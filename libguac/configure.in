@@ -1,0 +1,29 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_INIT(src/client.c)
+AM_INIT_AUTOMAKE(libguac, 0.0.1)
+AC_CONFIG_MACRO_DIR([m4])
+
+# Checks for programs.
+AC_PROG_CC
+AC_PROG_LIBTOOL
+
+# Checks for libraries.
+AC_CHECK_LIB([dl], [dlopen],, AC_MSG_ERROR("libdl is required for loading client plugins"))
+AC_CHECK_LIB([png], [png_write_png])
+
+# Checks for header files.
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h sys/time.h syslog.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([gettimeofday memmove memset select strdup])
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
