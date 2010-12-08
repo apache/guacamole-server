@@ -1,0 +1,22 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_INIT(src/daemon.c)
+AM_INIT_AUTOMAKE(guacd, 0.0.1)
+
+# Checks for programs.
+AC_PROG_CC
+
+# Checks for libraries.
+AC_CHECK_LIB([guac], [guac_get_client],, AC_MSG_ERROR("libguac must be installed first"))
+AC_CHECK_LIB([pthread], [pthread_create],, AC_MSG_ERROR("POSIX threads (libpthread) must be installed"))
+
+# Checks for header files.
+AC_CHECK_HEADERS([netinet/in.h stdlib.h string.h sys/socket.h syslog.h unistd.h guacamole/client.h])
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset socket strerror])
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
