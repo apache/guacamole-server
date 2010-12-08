@@ -1,0 +1,24 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_INIT(src/vnc_client.c)
+AM_INIT_AUTOMAKE([libguac_client_vnc], 0.0.1)
+AC_CONFIG_MACRO_DIR([m4])
+
+# Checks for programs.
+AC_PROG_CC
+AC_PROG_LIBTOOL
+
+# Checks for libraries.
+AC_CHECK_LIB([guac], [guac_get_client])
+AC_CHECK_LIB([png], [png_write_png])
+AC_CHECK_LIB([vncclient], [rfbInitClient])
+
+# Checks for header files.
+AC_CHECK_HEADERS([stdlib.h string.h syslog.h guacamole/client.h guacamole/guacio.h guacamole/protocol.h])
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
