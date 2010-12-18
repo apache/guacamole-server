@@ -85,6 +85,9 @@ int main(int argc, char* argv[]) {
     int listen_port = 4822; /* Default port */
     int opt;
 
+    /* Daemon Process */
+    pid_t daemon_pid;
+
     /* Parse arguments */
     while ((opt = getopt(argc, argv, "l:")) != -1) {
         if (opt == 'l') {
@@ -120,8 +123,22 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     } 
 
-    syslog(LOG_INFO, "Started, listening on port %i", listen_port);
+    /* Fork into background */
+    daemon_pid = fork();
 
+    /* If error, fail */
+    if (daemon_pid == -1) {
+        fprintf(stderr, "Error forking daemon process: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    /* If parent, exit */
+    else if (daemon_pid != 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    /* Otherwise, this is the daemon */
+    syslog(LOG_INFO, "Started, listening on port %i", listen_port);
 
     /* Daemon loop */
     for (;;) {
