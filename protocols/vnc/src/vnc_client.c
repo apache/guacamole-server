@@ -262,6 +262,9 @@ int vnc_guac_client_free_handler(guac_client* client) {
     guac_free_png_buffer(png_buffer, rfb_client->height);
     guac_free_png_buffer(png_buffer_alpha, rfb_client->height);
 
+    /* Free generic data struct */
+    free(client->data);
+
     /* Clean up VNC client*/
     rfbClientCleanup(rfb_client);
 
