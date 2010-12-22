@@ -98,6 +98,7 @@ guac_client* guac_get_client(int client_fd) {
         int result = guac_read_instruction(io, &instruction);
         if (result < 0) {
             syslog(LOG_ERR, "Error reading instruction while waiting for connect");
+            guac_close(io);
             return NULL;            
         }
 
@@ -121,6 +122,7 @@ guac_client* guac_get_client(int client_fd) {
                     syslog(LOG_ERR, "Could not open client plugin for protocol \"%s\": %s\n", protocol, dlerror());
                     guac_send_error(io, "Could not load server-side client plugin.");
                     guac_flush(io);
+                    guac_close(io);
                     guac_free_instruction_data(&instruction);
                     return NULL;
                 }
@@ -134,6 +136,7 @@ guac_client* guac_get_client(int client_fd) {
                     syslog(LOG_ERR, "Could not get guac_client_init in plugin: %s\n", error);
                     guac_send_error(io, "Invalid server-side client plugin.");
                     guac_flush(io);
+                    guac_close(io);
                     guac_free_instruction_data(&instruction);
                     return NULL;
                 }
@@ -145,6 +148,7 @@ guac_client* guac_get_client(int client_fd) {
                 if (alias.client_init(client, argc, argv) != 0) {
                     /* NOTE: On error, proxy client will send appropriate error message */
                     guac_free_instruction_data(&instruction);
+                    guac_close(io);
                     return NULL;
                 }
 
