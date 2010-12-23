@@ -57,6 +57,7 @@ GUACIO* guac_open(int fd) {
 
 void guac_close(GUACIO* io) {
     guac_flush(io);
+    free(io->instructionbuf);
     free(io);
 }
 
