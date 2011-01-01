@@ -96,6 +96,15 @@ char* guac_escape_string(const char* str);
 char* guac_unescape_string_inplace(char* str);
 
 /**
+ * Sends an args instruction over the given GUACIO connection. Each
+ * argument name will be automatically escaped for transmission.
+ *
+ * @param io The GUACIO connection to use.
+ * @param args The NULL-terminated array of argument names (strings).
+ */
+void guac_send_args(GUACIO* io, const char** name);
+
+/**
  * Sends a name instruction over the given GUACIO connection. The
  * name given will be automatically escaped for transmission.
  *

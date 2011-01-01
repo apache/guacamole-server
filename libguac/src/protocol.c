@@ -134,6 +134,27 @@ char* guac_unescape_string_inplace(char* str) {
 
 }
 
+void guac_send_args(GUACIO* io, const char** args) {
+
+    int i;
+
+    guac_write_string(io, "args:");
+
+    for (i=0; args[i] != NULL; i++) {
+
+        if (i > 0)
+            guac_write_string(io, ",");
+
+        char* escaped = guac_escape_string(args[i]); 
+        guac_write_string(io, escaped);
+        free(escaped);
+
+    }
+
+    guac_write_string(io, ";");
+
+}
+
 void guac_send_name(GUACIO* io, const char* name) {
 
     char* escaped = guac_escape_string(name); 

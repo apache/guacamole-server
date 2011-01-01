@@ -85,27 +85,30 @@ guac_client* guac_get_client(int client_fd) {
 
     char* error;
 
+    /* Client args description */
+    const char** client_args;
+
     /* Client arguments */
     int argc;
     char** argv;
 
-    /* Connect instruction */
+    /* Instruction */
     guac_instruction instruction;
 
-    /* Wait for connect instruction */
+    /* Wait for select instruction */
     for (;;) {
 
         int result = guac_read_instruction(io, &instruction);
         if (result < 0) {
-            syslog(LOG_ERR, "Error reading instruction while waiting for connect");
+            syslog(LOG_ERR, "Error reading instruction while waiting for select");
             guac_close(io);
             return NULL;            
         }
 
-        /* Connect instruction read */
+        /* Select instruction read */
         if (result > 0) {
 
-            if (strcmp(instruction.opcode, "connect") == 0) {
+            if (strcmp(instruction.opcode, "select") == 0) {
 
                 /* Get protocol from message */
                 char* protocol = instruction.argv[0];
@@ -140,6 +143,47 @@ guac_client* guac_get_client(int client_fd) {
                     guac_free_instruction_data(&instruction);
                     return NULL;
                 }
+
+                /* Get usage strig */
+                client_args = (const char**) dlsym(client->client_plugin_handle, "GUAC_CLIENT_ARGS");
+
+                if ((error = dlerror()) != NULL) {
+                    syslog(LOG_ERR, "Could not get GUAC_CLIENT_ in plugin: %s\n", error);
+                    guac_send_error(io, "Invalid server-side client plugin.");
+                    guac_flush(io);
+                    guac_close(io);
+                    guac_free_instruction_data(&instruction);
+                    return NULL;
+                }
+
+                /* Send args */
+                guac_send_args(io, client_args);
+                guac_flush(io);
+
+                guac_free_instruction_data(&instruction);
+                break;
+
+            } /* end if select */
+
+            guac_free_instruction_data(&instruction);
+        }
+
+    }
+
+    /* Wait for connect instruction */
+    for (;;) {
+
+        int result = guac_read_instruction(io, &instruction);
+        if (result < 0) {
+            syslog(LOG_ERR, "Error reading instruction while waiting for connect");
+            guac_close(io);
+            return NULL;            
+        }
+
+        /* Connect instruction read */
+        if (result > 0) {
+
+            if (strcmp(instruction.opcode, "connect") == 0) {
 
                 /* Initialize client arguments */
                 argc = instruction.argc;
