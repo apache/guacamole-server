@@ -31,6 +31,14 @@
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
+/* Client plugin arguments */
+const char* GUAC_CLIENT_ARGS[] = {
+    "hostname",
+    "port",
+    "password",
+    NULL
+};
+
 static char* __GUAC_CLIENT = "GUAC_CLIENT";
 
 typedef struct vnc_guac_client_data {
@@ -298,7 +306,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Password */
     rfb_client->GetPassword = guac_vnc_get_password;
 
-    if (argc < 3) {
+    if (argc < 2) {
         guac_send_error(client->io, "VNC client requires hostname and port arguments");
         guac_flush(client->io);
         return 1;
@@ -312,11 +320,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rfbClientSetClientData(rfb_client, __GUAC_CLIENT, client);
 
     /* Parse password from args if provided */
-    if (argc >= 4) {
+    if (argc >= 3) {
 
         /* Freed after use by libvncclient */
         guac_client_data->password = malloc(64);
-        strncpy(guac_client_data->password, argv[3], 63);
+        strncpy(guac_client_data->password, argv[2], 63);
 
     }
     else {
@@ -328,8 +336,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
 
     /* Set hostname and port */
-    rfb_client->serverHost = strdup(argv[1]);
-    rfb_client->serverPort = atoi(argv[2]);
+    rfb_client->serverHost = strdup(argv[0]);
+    rfb_client->serverPort = atoi(argv[1]);
 
     /* Connect */
     if (!rfbInitClient(rfb_client, NULL, NULL)) {
