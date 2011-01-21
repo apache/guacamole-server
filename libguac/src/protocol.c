@@ -175,6 +175,10 @@ void guac_send_size(GUACIO* io, int w, int h) {
     guac_write_string(io, ";");
 }
 
+void guac_send_ready(GUACIO* io) {
+    guac_write_string(io, "ready;");
+}
+
 void guac_send_clipboard(GUACIO* io, const char* data) {
 
     char* escaped = guac_escape_string(data); 
