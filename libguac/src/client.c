@@ -236,6 +236,19 @@ void guac_start_client(guac_client* client) {
     /* VNC Client Loop */
     for (;;) {
 
+        /* Handle server messages */
+        if (client->handle_messages) {
+
+            int retval = client->handle_messages(client);
+            if (retval) {
+                syslog(LOG_ERR, "Error handling server messages");
+                return;
+            }
+
+            guac_flush(io);
+
+        }
+
         wait_result = guac_instructions_waiting(io);
         if (wait_result > 0) {
 
@@ -247,21 +260,8 @@ void guac_start_client(guac_client* client) {
                 do {
 
                     if (strcmp(instruction.opcode, "ready") == 0) {
-
-                        /* Handle server messages */
-                        if (client->handle_messages) {
-
-                            int retval = client->handle_messages(client);
-                            if (retval) {
-                                syslog(LOG_ERR, "Error handling server messages");
-                                return;
-                            }
-
-                        }
-
                         guac_send_ready(io);
                         guac_flush(io);
-
                     }
 
                     else if (strcmp(instruction.opcode, "mouse") == 0) {
