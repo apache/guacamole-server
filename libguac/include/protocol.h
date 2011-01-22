@@ -124,20 +124,6 @@ void guac_send_name(GUACIO* io, const char* name);
 void guac_send_error(GUACIO* io, const char* error);
 
 /**
- * Sends a ready instruction over the given GUACIO connection. The
- * ready instruction merely signals the client that its ready
- * instruction has been handled. The ready exchange is intended to
- * synchronize instruction handling (if needed) and serve as a health
- * indicator for both client and server.
- *
- * Normally, this functino should not be called by client plugins, as
- * the ready instruction will be handled automatically.
- *
- * @param io The GUACIO connection to use.
- */
-void guac_send_ready(GUACIO* io);
-
-/**
  * Sends a clipboard instruction over the given GUACIO connection. The
  * clipboard data given will be automatically escaped for transmission.
  *

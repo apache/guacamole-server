@@ -259,12 +259,7 @@ void guac_start_client(guac_client* client) {
            
                 do {
 
-                    if (strcmp(instruction.opcode, "ready") == 0) {
-                        guac_send_ready(io);
-                        guac_flush(io);
-                    }
-
-                    else if (strcmp(instruction.opcode, "mouse") == 0) {
+                    if (strcmp(instruction.opcode, "mouse") == 0) {
                         if (client->mouse_handler)
                             if (
                                     client->mouse_handler(
