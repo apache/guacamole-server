@@ -22,14 +22,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+
+#ifdef __MINGW32__
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
+
+#ifdef __HAVE_PTHREAD_H__
 #include <pthread.h>
+#endif
 
 #include <errno.h>
-#include <syslog.h>
 
 #include <guacamole/client.h>
+#include <guacamole/guaclog.h>
 
 typedef struct client_thread_data {
 
@@ -43,13 +51,13 @@ void* start_client_thread(void* data) {
     guac_client* client;
     client_thread_data* thread_data = (client_thread_data*) data;
 
-    syslog(LOG_INFO, "Spawning client");
+    GUAC_LOG_INFO("Spawning client");
 
     /* Load and start client */
     client = guac_get_client(thread_data->fd); 
 
     if (client == NULL) {
-        syslog(LOG_ERR, "Client retrieval failed");
+        GUAC_LOG_ERROR("Client retrieval failed");
         return NULL;
     }
 
@@ -59,12 +67,12 @@ void* start_client_thread(void* data) {
 
     /* Close socket */
     if (close(thread_data->fd) < 0) {
-        syslog(LOG_ERR, "Error closing connection: %s", strerror(errno));
+        GUAC_LOG_ERROR("Error closing connection: %s", strerror(errno));
         free(data);
         return NULL;
     }
 
-    syslog(LOG_INFO, "Client finished");
+    GUAC_LOG_INFO("Client finished");
     free(data);
     return NULL;
 
@@ -129,6 +137,7 @@ int main(int argc, char* argv[]) {
     } 
 
     /* Fork into background */
+#ifdef fork
     daemon_pid = fork();
 
     /* If error, fail */
@@ -141,19 +150,25 @@ int main(int argc, char* argv[]) {
     else if (daemon_pid != 0) {
         exit(EXIT_SUCCESS);
     }
+#else
+    GUAC_LOG_INFO("fork() not defined at compile time.");
+    GUAC_LOG_INFO("guacd running in foreground only.");
+#endif
 
     /* Otherwise, this is the daemon */
-    syslog(LOG_INFO, "Started, listening on port %i", listen_port);
+    GUAC_LOG_INFO("Started, listening on port %i", listen_port);
 
     /* Daemon loop */
     for (;;) {
 
+#ifdef pthread_t
         pthread_t thread;
+#endif
         client_thread_data* data;
 
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
-            syslog(LOG_ERR, "Could not listen on socket: %s", strerror(errno));
+            GUAC_LOG_ERROR("Could not listen on socket: %s", strerror(errno));
             return 3;
         }
 
@@ -161,23 +176,29 @@ int main(int argc, char* argv[]) {
         client_addr_len = sizeof(client_addr);
         connected_socket_fd = accept(socket_fd, (struct sockaddr*) &client_addr, &client_addr_len);
         if (connected_socket_fd < 0) {
-            syslog(LOG_ERR, "Could not accept client connection: %s", strerror(errno));
+            GUAC_LOG_ERROR("Could not accept client connection: %s", strerror(errno));
             return 3;
         }
 
         data = malloc(sizeof(client_thread_data));
         data->fd = connected_socket_fd;
 
+#ifdef pthread_t
         if (pthread_create(&thread, NULL, start_client_thread, (void*) data)) {
-            syslog(LOG_ERR, "Could not create client thread: %s", strerror(errno));
+            GUAC_LOG_ERROR("Could not create client thread: %s", strerror(errno));
             return 3;
         }
+#else
+        GUAC_LOG_INFO("POSIX threads support not present at compile time.");
+        GUAC_LOG_INFO("guacd handling one connection at a time.");
+        start_client_thread(data);
+#endif
 
     }
 
     /* Close socket */
     if (close(socket_fd) < 0) {
-        syslog(LOG_ERR, "Could not close socket: %s", strerror(errno));
+        GUAC_LOG_ERROR("Could not close socket: %s", strerror(errno));
         return 3;
     }
 

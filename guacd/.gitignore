@@ -1,6 +1,7 @@
 
 # Compiled proxy
 guacd
+guacd.exe
 
 # Object code
 *.o
