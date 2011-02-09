@@ -23,7 +23,7 @@
 #include <png.h>
 #include <time.h>
 
-#include <syslog.h>
+#include <guacamole/guaclog.h>
 
 #include <rfb/rfbclient.h>
 
@@ -196,6 +196,22 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
 }
 
+void vnc_guac_client_sleep(int millis) {
+
+#ifdef nanosleep
+        struct timespec sleep_period;
+
+        sleep_period.tv_sec = 0;
+        sleep_period.tv_nsec = millis * 1000000L;
+
+        nanosleep(&sleep_period, NULL);
+#else
+#ifdef Sleep
+        Sleep(millis)
+#endif
+#endif
+
+}
 
 int vnc_guac_client_handle_messages(guac_client* client) {
 
@@ -205,26 +221,21 @@ int vnc_guac_client_handle_messages(guac_client* client) {
 
     wait_result = WaitForMessage(rfb_client, 2000);
     if (wait_result < 0) {
-        syslog(LOG_ERR, "Error waiting for VNC server message\n");
+        GUAC_LOG_ERROR("Error waiting for VNC server message\n");
         return 1;
     }
 
     if (wait_result > 0) {
 
-        struct timespec sleep_period;
-
         if (!HandleRFBServerMessage(rfb_client)) {
-            syslog(LOG_ERR, "Error handling VNC server message\n");
+            GUAC_LOG_ERROR("Error handling VNC server message\n");
             return 1;
         }
 
         /* Wait before returning ... don't want to handle
          * too many server messages. */
 
-        sleep_period.tv_sec = 0;
-        sleep_period.tv_nsec = 50000000L /* 50 ms */;
-
-        nanosleep(&sleep_period, NULL);
+        vnc_guac_client_sleep(50);
 
     }
 
