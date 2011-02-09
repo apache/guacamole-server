@@ -20,11 +20,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <syslog.h>
-
 #include <dlfcn.h>
 
+#include "guaclog.h"
 #include "guacio.h"
 #include "protocol.h"
 #include "client.h"
@@ -100,7 +98,7 @@ guac_client* guac_get_client(int client_fd) {
 
         int result = guac_read_instruction(io, &instruction);
         if (result < 0) {
-            syslog(LOG_ERR, "Error reading instruction while waiting for select");
+            GUAC_LOG_ERROR("Error reading instruction while waiting for select");
             guac_close(io);
             return NULL;            
         }
@@ -122,7 +120,7 @@ guac_client* guac_get_client(int client_fd) {
                 /* Load client plugin */
                 client->client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
                 if (!(client->client_plugin_handle)) {
-                    syslog(LOG_ERR, "Could not open client plugin for protocol \"%s\": %s\n", protocol, dlerror());
+                    GUAC_LOG_ERROR("Could not open client plugin for protocol \"%s\": %s\n", protocol, dlerror());
                     guac_send_error(io, "Could not load server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
@@ -136,7 +134,7 @@ guac_client* guac_get_client(int client_fd) {
                 alias.obj = dlsym(client->client_plugin_handle, "guac_client_init");
 
                 if ((error = dlerror()) != NULL) {
-                    syslog(LOG_ERR, "Could not get guac_client_init in plugin: %s\n", error);
+                    GUAC_LOG_ERROR("Could not get guac_client_init in plugin: %s\n", error);
                     guac_send_error(io, "Invalid server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
@@ -148,7 +146,7 @@ guac_client* guac_get_client(int client_fd) {
                 client_args = (const char**) dlsym(client->client_plugin_handle, "GUAC_CLIENT_ARGS");
 
                 if ((error = dlerror()) != NULL) {
-                    syslog(LOG_ERR, "Could not get GUAC_CLIENT_ in plugin: %s\n", error);
+                    GUAC_LOG_ERROR("Could not get GUAC_CLIENT_ in plugin: %s\n", error);
                     guac_send_error(io, "Invalid server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
@@ -175,7 +173,7 @@ guac_client* guac_get_client(int client_fd) {
 
         int result = guac_read_instruction(io, &instruction);
         if (result < 0) {
-            syslog(LOG_ERR, "Error reading instruction while waiting for connect");
+            GUAC_LOG_ERROR("Error reading instruction while waiting for connect");
             guac_close(io);
             return NULL;            
         }
@@ -213,14 +211,14 @@ void guac_free_client(guac_client* client) {
 
     if (client->free_handler) {
         if (client->free_handler(client))
-            syslog(LOG_ERR, "Error calling client free handler");
+            GUAC_LOG_ERROR("Error calling client free handler");
     }
 
     guac_close(client->io);
 
     /* Unload client plugin */
     if (dlclose(client->client_plugin_handle)) {
-        syslog(LOG_ERR, "Could not close client plugin while unloading client: %s", dlerror());
+        GUAC_LOG_ERROR("Could not close client plugin while unloading client: %s", dlerror());
     }
 
     free(client);
@@ -241,7 +239,7 @@ void guac_start_client(guac_client* client) {
 
             int retval = client->handle_messages(client);
             if (retval) {
-                syslog(LOG_ERR, "Error handling server messages");
+                GUAC_LOG_ERROR("Error handling server messages");
                 return;
             }
 
@@ -270,7 +268,7 @@ void guac_start_client(guac_client* client) {
                                     )
                                ) {
 
-                                syslog(LOG_ERR, "Error handling mouse instruction");
+                                GUAC_LOG_ERROR("Error handling mouse instruction");
                                 guac_free_instruction_data(&instruction);
                                 return;
 
@@ -287,7 +285,7 @@ void guac_start_client(guac_client* client) {
                                     )
                                ) {
 
-                                syslog(LOG_ERR, "Error handling key instruction");
+                                GUAC_LOG_ERROR("Error handling key instruction");
                                 guac_free_instruction_data(&instruction);
                                 return;
 
@@ -303,7 +301,7 @@ void guac_start_client(guac_client* client) {
                                     )
                                ) {
 
-                                syslog(LOG_ERR, "Error handling clipboard instruction");
+                                GUAC_LOG_ERROR("Error handling clipboard instruction");
                                 guac_free_instruction_data(&instruction);
                                 return;
 
@@ -311,7 +309,7 @@ void guac_start_client(guac_client* client) {
                     }
 
                     else if (strcmp(instruction.opcode, "disconnect") == 0) {
-                        syslog(LOG_INFO, "Client requested disconnect");
+                        GUAC_LOG_INFO("Client requested disconnect");
                         guac_free_instruction_data(&instruction);
                         return;
                     }
@@ -321,13 +319,13 @@ void guac_start_client(guac_client* client) {
                 } while ((retval = guac_read_instruction(io, &instruction)) > 0);
 
                 if (retval < 0) {
-                    syslog(LOG_ERR, "Error reading instruction from stream");
+                    GUAC_LOG_ERROR("Error reading instruction from stream");
                     return;
                 }
             }
 
             if (retval < 0) {
-                syslog(LOG_ERR, "Error or end of stream");
+                GUAC_LOG_ERROR("Error or end of stream");
                 return; /* EOF or error */
             }
 
@@ -335,7 +333,7 @@ void guac_start_client(guac_client* client) {
 
         }
         else if (wait_result < 0) {
-            syslog(LOG_ERR, "Error waiting for next instruction");
+            GUAC_LOG_ERROR("Error waiting for next instruction");
             return;
         }
 
