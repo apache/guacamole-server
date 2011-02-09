@@ -17,8 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _GUACLOG_H
-#define _GUACLOG_H
+#ifndef _LOG_H
+#define _LOG_H
 
 #ifdef HAVE_SYSLOG_H
 
@@ -30,8 +30,8 @@
 #else
 
     /* Logging for W32 */
-    #define GUAC_LOG_ERROR(...) fprintf(stderr, __VA_ARGS__)
-    #define GUAC_LOG_INFO(...)  fprintf(stderr, __VA_ARGS__)
+    #define GUAC_LOG_ERROR(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
+    #define GUAC_LOG_INFO(...)  fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
 
 #endif
 

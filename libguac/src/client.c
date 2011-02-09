@@ -22,7 +22,7 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include "guaclog.h"
+#include "log.h"
 #include "guacio.h"
 #include "protocol.h"
 #include "client.h"
