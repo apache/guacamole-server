@@ -23,7 +23,7 @@
 #include <png.h>
 #include <time.h>
 
-#include <guacamole/guaclog.h>
+#include <guacamole/log.h>
 
 #include <rfb/rfbclient.h>
 
