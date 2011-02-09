@@ -23,8 +23,18 @@
 #include <errno.h>
 #include <png.h>
 
+/* If png_structp not defined in png.h, try to include pngstruct.h */
+#ifndef png_structp 
+#include <pngstruct.h>
+#endif
+
 #include <sys/types.h>
+
+#ifdef __MINGW32__
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
+#endif
 
 #include "guacio.h"
 #include "protocol.h"

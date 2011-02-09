@@ -20,16 +20,16 @@
 #ifndef _GUACLOG_H
 #define _GUACLOG_H
 
-#ifndef __MINGW32__
+#ifdef HAVE_SYSLOG_H
 
-    // Logging for UNIX
+    /* Logging for UNIX */
     #include <syslog.h>
     #define GUAC_LOG_ERROR(...) syslog(LOG_ERR,  __VA_ARGS__)
     #define GUAC_LOG_INFO(...)  syslog(LOG_INFO, __VA_ARGS__)
 
 #else
 
-    // Logging for W32
+    /* Logging for W32 */
     #define GUAC_LOG_ERROR(...) fprintf(stderr, __VA_ARGS__)
     #define GUAC_LOG_INFO(...)  fprintf(stderr, __VA_ARGS__)
 
