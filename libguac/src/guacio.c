@@ -68,8 +68,13 @@ ssize_t __guac_write(GUACIO* io, const char* buf, int count) {
 
     int retval;
 
-    /* Write and time how long the write takes (microseconds) */
+#ifdef __MINGW32__
+    /* MINGW32 WINSOCK only works with send() */
+    retval = send(io->fd, buf, count, 0);
+#else
+    /* Use write() for all other platforms */
     retval = write(io->fd, buf, count);
+#endif
 
     return retval;
 }
