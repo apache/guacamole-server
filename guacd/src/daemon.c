@@ -25,9 +25,11 @@
 
 #ifdef __MINGW32__
 #include <winsock2.h>
+#define CLOSE_SOCKET(socket) closesocket(socket)
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
+#define CLOSE_SOCKET(socket) close(socket)
 #endif
 
 #ifdef __HAVE_PTHREAD_H__
@@ -36,8 +38,19 @@
 
 #include <errno.h>
 
+char error[65536];
+
+char* lasterror() {
+#ifdef __MINGW32__
+    snprintf(error, sizeof(error)-1, "ERROR #%i", GetLastError());
+    return error;
+#else
+    return strerror(errno);
+#endif
+}
+
 #include <guacamole/client.h>
-#include <guacamole/guaclog.h>
+#include <guacamole/log.h>
 
 typedef struct client_thread_data {
 
@@ -66,8 +79,8 @@ void* start_client_thread(void* data) {
     guac_free_client(client);
 
     /* Close socket */
-    if (close(thread_data->fd) < 0) {
-        GUAC_LOG_ERROR("Error closing connection: %s", strerror(errno));
+    if (CLOSE_SOCKET(thread_data->fd) < 0) {
+        GUAC_LOG_ERROR("Error closing connection: %s", lasterror());
         free(data);
         return NULL;
     }
@@ -118,21 +131,29 @@ int main(int argc, char* argv[]) {
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(listen_port);
 
+#ifdef __MINGW32__
+    WSADATA wsadata;
+    if (WSAStartup(MAKEWORD(1,1), &wsadata) == SOCKET_ERROR) {
+        fprintf(stderr, "Error creating socket.");
+        exit(EXIT_FAILURE);
+    }
+#endif
+
     /* Get socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
-        fprintf(stderr, "Error opening socket: %s\n", strerror(errno));
+        fprintf(stderr, "Error opening socket: %s\n", lasterror());
         exit(EXIT_FAILURE);
     }
 
     if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt_on, sizeof(opt_on))) {
-        fprintf(stderr, "Warning: Unable to set socket options for reuse: %s\n", strerror(errno));
+        fprintf(stderr, "Warning: Unable to set socket options for reuse: %s\n", lasterror());
     }
 
     /* Bind socket to address */
     if (bind(socket_fd, (struct sockaddr*) &server_addr,
                 sizeof(server_addr)) < 0) {
-        fprintf(stderr, "Error binding socket: %s\n", strerror(errno));
+        fprintf(stderr, "Error binding socket: %s\n", lasterror());
         exit(EXIT_FAILURE);
     } 
 
@@ -142,7 +163,7 @@ int main(int argc, char* argv[]) {
 
     /* If error, fail */
     if (daemon_pid == -1) {
-        fprintf(stderr, "Error forking daemon process: %s\n", strerror(errno));
+        fprintf(stderr, "Error forking daemon process: %s\n", lasterror());
         exit(EXIT_FAILURE);
     }
 
@@ -168,7 +189,7 @@ int main(int argc, char* argv[]) {
 
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
-            GUAC_LOG_ERROR("Could not listen on socket: %s", strerror(errno));
+            GUAC_LOG_ERROR("Could not listen on socket: %s", lasterror());
             return 3;
         }
 
@@ -176,7 +197,7 @@ int main(int argc, char* argv[]) {
         client_addr_len = sizeof(client_addr);
         connected_socket_fd = accept(socket_fd, (struct sockaddr*) &client_addr, &client_addr_len);
         if (connected_socket_fd < 0) {
-            GUAC_LOG_ERROR("Could not accept client connection: %s", strerror(errno));
+            GUAC_LOG_ERROR("Could not accept client connection: %s", lasterror());
             return 3;
         }
 
@@ -185,7 +206,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef pthread_t
         if (pthread_create(&thread, NULL, start_client_thread, (void*) data)) {
-            GUAC_LOG_ERROR("Could not create client thread: %s", strerror(errno));
+            GUAC_LOG_ERROR("Could not create client thread: %s", lasterror());
             return 3;
         }
 #else
@@ -197,8 +218,8 @@ int main(int argc, char* argv[]) {
     }
 
     /* Close socket */
-    if (close(socket_fd) < 0) {
-        GUAC_LOG_ERROR("Could not close socket: %s", strerror(errno));
+    if (CLOSE_SOCKET(socket_fd) < 0) {
+        GUAC_LOG_ERROR("Could not close socket: %s", lasterror());
         return 3;
     }
 
