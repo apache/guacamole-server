@@ -34,6 +34,9 @@
 
 #ifdef __HAVE_PTHREAD_H__
 #include <pthread.h>
+#elif defined(__MINGW32)
+#include <windows.h>
+#include <process.h>
 #endif
 
 #include <errno.h>
@@ -209,8 +212,14 @@ int main(int argc, char* argv[]) {
             GUAC_LOG_ERROR("Could not create client thread: %s", lasterror());
             return 3;
         }
+#elif __MINGW32__
+        if (_beginthread(start_client_thread, 0, (void*) data) == -1L) { 
+            GUAC_LOG_ERROR("Could not create client thread: %s", lasterror());
+            return 3;
+        }
 #else
-        GUAC_LOG_INFO("POSIX threads support not present at compile time.");
+#warning THREAD SUPPORT NOT FOUND! guacd will only be able to handle one connection at a time.
+        GUAC_LOG_INFO("Thread support not present at compile time.");
         GUAC_LOG_INFO("guacd handling one connection at a time.");
         start_client_thread(data);
 #endif
