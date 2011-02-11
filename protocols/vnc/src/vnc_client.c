@@ -199,17 +199,17 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
 void vnc_guac_client_sleep(int millis) {
 
-#ifdef nanosleep
+#ifdef HAVE_NANOSLEEP 
         struct timespec sleep_period;
 
         sleep_period.tv_sec = 0;
         sleep_period.tv_nsec = millis * 1000000L;
 
         nanosleep(&sleep_period, NULL);
-#else
-#ifdef Sleep
+#elif defined(__MINGW32__)
         Sleep(millis)
-#endif
+#else
+#warning No sleep/nanosleep function available. VNC client may not perform as expected. Consider editing the vnc_client.c to add support for your platform.
 #endif
 
 }
