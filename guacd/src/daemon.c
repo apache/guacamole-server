@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
     } 
 
     /* Fork into background */
-#ifdef fork
+#ifdef HAVE_FORK
     daemon_pid = fork();
 
     /* If error, fail */
