@@ -23,8 +23,7 @@
 #include <errno.h>
 #include <png.h>
 
-/* If png_structp not defined in png.h, try to include pngstruct.h */
-#ifndef png_structp 
+#ifdef HAVE_PNGSTRUCT_H
 #include <pngstruct.h>
 #endif
 
