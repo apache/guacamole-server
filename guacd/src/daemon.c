@@ -25,24 +25,33 @@
 
 #ifdef __MINGW32__
 #include <winsock2.h>
-#define CLOSE_SOCKET(socket) closesocket(socket)
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
-#define CLOSE_SOCKET(socket) close(socket)
 #endif
 
-#ifdef __HAVE_PTHREAD_H__
+#ifdef HAVE_LIBPTHREAD
 #include <pthread.h>
-#elif defined(__MINGW32)
+#elif defined(__MINGW32__)
 #include <windows.h>
 #include <process.h>
 #endif
 
 #include <errno.h>
 
-char error[65536];
+#include <guacamole/client.h>
+#include <guacamole/log.h>
 
+/* Windows / MINGW32 handles closing sockets differently */ 
+#ifdef __MINGW32__
+#define CLOSE_SOCKET(socket) closesocket(socket)
+#else
+#define CLOSE_SOCKET(socket) close(socket)
+#endif
+
+
+/* Cross-platform strerror()/errno clone */
+char error[65536];
 char* lasterror() {
 #ifdef __MINGW32__
     snprintf(error, sizeof(error)-1, "ERROR #%i", GetLastError());
@@ -52,8 +61,6 @@ char* lasterror() {
 #endif
 }
 
-#include <guacamole/client.h>
-#include <guacamole/log.h>
 
 typedef struct client_thread_data {
 
@@ -113,6 +120,11 @@ int main(int argc, char* argv[]) {
     /* Daemon Process */
     pid_t daemon_pid;
 
+#ifdef __MINGW32__
+    /* Structure for holding winsock version info */
+    WSADATA wsadata;
+#endif
+
     /* Parse arguments */
     while ((opt = getopt(argc, argv, "l:")) != -1) {
         if (opt == 'l') {
@@ -135,7 +147,7 @@ int main(int argc, char* argv[]) {
     server_addr.sin_port = htons(listen_port);
 
 #ifdef __MINGW32__
-    WSADATA wsadata;
+    /* If compiling for Windows, init winsock. */
     if (WSAStartup(MAKEWORD(1,1), &wsadata) == SOCKET_ERROR) {
         fprintf(stderr, "Error creating socket.");
         exit(EXIT_FAILURE);
@@ -185,7 +197,7 @@ int main(int argc, char* argv[]) {
     /* Daemon loop */
     for (;;) {
 
-#ifdef pthread_t
+#ifdef HAVE_LIBPTHREAD
         pthread_t thread;
 #endif
         client_thread_data* data;
@@ -207,7 +219,7 @@ int main(int argc, char* argv[]) {
         data = malloc(sizeof(client_thread_data));
         data->fd = connected_socket_fd;
 
-#ifdef pthread_t
+#ifdef HAVE_LIBPTHREAD
         if (pthread_create(&thread, NULL, start_client_thread, (void*) data)) {
             GUAC_LOG_ERROR("Could not create client thread: %s", lasterror());
             return 3;
