@@ -35,6 +35,7 @@
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
+    "read-only",
     "password",
     NULL
 };
@@ -300,22 +301,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     vnc_guac_client_data* guac_client_data;
 
-    /*** INIT ***/
-    rfb_client = rfbGetClient(8, 3, 4); /* 32-bpp client */
+    int read_only = 0;
 
-    /* Framebuffer update handler */
-    rfb_client->GotFrameBufferUpdate = guac_vnc_update;
-    rfb_client->GotCopyRect = guac_vnc_copyrect;
-
-    /* Enable client-side cursor */
-    rfb_client->GotCursorShape = guac_vnc_cursor;
-    rfb_client->appData.useRemoteCursor = TRUE;
-
-    /* Clipboard */
-    rfb_client->GotXCutText = guac_vnc_cut_text;
-
-    /* Password */
-    rfb_client->GetPassword = guac_vnc_get_password;
+    /*** PARSE ARGUMENTS ***/
 
     if (argc < 2) {
         guac_send_error(client->io, "VNC client requires hostname and port arguments");
@@ -327,15 +315,18 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data = malloc(sizeof(vnc_guac_client_data));
     client->data = guac_client_data;
 
-    /* Store Guac client in rfb client */
-    rfbClientSetClientData(rfb_client, __GUAC_CLIENT, client);
+    /* If read-only specified, set flag */
+    if (argc >= 3) {
+        if (strcmp(argv[2], "true") == 0)
+            read_only = 1;
+    }
 
     /* Parse password from args if provided */
-    if (argc >= 3) {
+    if (argc >= 4) {
 
         /* Freed after use by libvncclient */
         guac_client_data->password = malloc(64);
-        strncpy(guac_client_data->password, argv[2], 63);
+        strncpy(guac_client_data->password, argv[3], 63);
 
     }
     else {
@@ -345,6 +336,30 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         guac_client_data->password[0] = '\0';
 
     }
+
+    /*** INIT RFB CLIENT ***/
+
+    rfb_client = rfbGetClient(8, 3, 4); /* 32-bpp client */
+
+    /* Framebuffer update handler */
+    rfb_client->GotFrameBufferUpdate = guac_vnc_update;
+    rfb_client->GotCopyRect = guac_vnc_copyrect;
+
+    /* Do not handle clipboard and local cursor if read-only */
+    if (read_only == 0) {
+        /* Enable client-side cursor */
+        rfb_client->GotCursorShape = guac_vnc_cursor;
+        rfb_client->appData.useRemoteCursor = TRUE;
+
+        /* Clipboard */
+        rfb_client->GotXCutText = guac_vnc_cut_text;
+    }
+
+    /* Password */
+    rfb_client->GetPassword = guac_vnc_get_password;
+
+    /* Store Guac client in rfb client */
+    rfbClientSetClientData(rfb_client, __GUAC_CLIENT, client);
 
     /* Set hostname and port */
     rfb_client->serverHost = strdup(argv[0]);
@@ -369,9 +384,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Set handlers */
     client->handle_messages = vnc_guac_client_handle_messages;
-    client->mouse_handler = vnc_guac_client_mouse_handler;
-    client->key_handler = vnc_guac_client_key_handler;
-    client->clipboard_handler = vnc_guac_client_clipboard_handler;
+    if (read_only == 0) {
+        /* Do not handle mouse/keyboard/clipboard if read-only */
+        client->mouse_handler = vnc_guac_client_mouse_handler;
+        client->key_handler = vnc_guac_client_key_handler;
+        client->clipboard_handler = vnc_guac_client_clipboard_handler;
+    }
 
     /* Send name */
     guac_send_name(client->io, rfb_client->desktopName);
