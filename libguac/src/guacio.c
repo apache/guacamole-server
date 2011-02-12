@@ -23,8 +23,13 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include <time.h>
+#ifdef __MINGW32__
+#include <winsock2.h>
+#else
 #include <sys/select.h>
+#endif
+
+#include <time.h>
 #include <sys/time.h>
 
 #include "guacio.h"
@@ -48,9 +53,6 @@ GUACIO* guac_open(int fd) {
     io->instructionbuf = malloc(io->instructionbuf_size);
     io->instructionbuf_used_length = 0;
 
-    /* Set limit */
-    io->transfer_limit = 0;
-
     return io;
 
 }
@@ -64,41 +66,15 @@ void guac_close(GUACIO* io) {
 /* Write bytes, limit rate */
 ssize_t __guac_write(GUACIO* io, const char* buf, int count) {
 
-    struct timeval start, end;
     int retval;
 
-    /* Write and time how long the write takes (microseconds) */
-    gettimeofday(&start, NULL);
+#ifdef __MINGW32__
+    /* MINGW32 WINSOCK only works with send() */
+    retval = send(io->fd, buf, count, 0);
+#else
+    /* Use write() for all other platforms */
     retval = write(io->fd, buf, count);
-    gettimeofday(&end, NULL);
-
-    if (retval < 0)
-        return retval;
-
-    if (io->transfer_limit > 0) {
-
-        suseconds_t elapsed;
-        suseconds_t required_usecs;
-
-        /* Get elapsed time */
-        elapsed = (end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec;
-
-        /* Calculate how much time we must sleep */
-        required_usecs = retval * 1000 / io->transfer_limit - elapsed; /* useconds at transfer_limit KB/s*/
-
-        /* Sleep as necessary */
-        if (required_usecs > 0) {
-
-            struct timespec required_sleep;
-
-            required_sleep.tv_sec = required_usecs / 1000000;
-            required_sleep.tv_nsec = (required_usecs % 1000000) * 1000;
-
-            nanosleep(&required_sleep, NULL);
-
-        }
-
-    }
+#endif
 
     return retval;
 }
@@ -136,18 +112,10 @@ ssize_t guac_write_string(GUACIO* io, const char* str) {
         /* Flush when necessary, return on error */
         if (io->written > 8188 /* sizeof(out_buf) - 4 */) {
 
-            struct timeval start, end;
-            suseconds_t elapsed;
-
-            gettimeofday(&start, NULL);
             retval = __guac_write(io, out_buf, io->written);
-            gettimeofday(&end, NULL);
 
             if (retval < 0)
                 return retval;
-
-            /* Get elapsed time */
-            elapsed = (end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec;
 
             io->written = 0;
         }

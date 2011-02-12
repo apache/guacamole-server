@@ -12,9 +12,10 @@ AC_PROG_LIBTOOL
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen],, AC_MSG_ERROR("libdl is required for loading client plugins"))
 AC_CHECK_LIB([png], [png_write_png],, AC_MSG_ERROR("libpng is required for writing png messages"))
+AC_CHECK_LIB([wsock32], [main])
 
 # Checks for header files.
-AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h sys/time.h syslog.h unistd.h])
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h sys/time.h syslog.h unistd.h pngstruct.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T

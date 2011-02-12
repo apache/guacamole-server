@@ -23,8 +23,17 @@
 #include <errno.h>
 #include <png.h>
 
+#ifdef HAVE_PNGSTRUCT_H
+#include <pngstruct.h>
+#endif
+
 #include <sys/types.h>
+
+#ifdef __MINGW32__
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
+#endif
 
 #include "guacio.h"
 #include "protocol.h"

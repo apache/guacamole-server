@@ -79,13 +79,6 @@ typedef struct GUACIO {
      */
     char* instructionbuf;
 
-    /**
-     * The transfer limit, in kilobytes per second. If 0, there is no
-     * transfer limit. If non-zero, sleep calls are used at the end of
-     * a write to ensure output never exceeds the specified limit.
-     */
-    unsigned int transfer_limit; /* KB/sec */
-
 } GUACIO;
 
 /**
