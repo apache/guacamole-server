@@ -199,8 +199,10 @@ void guac_send_error(GUACIO* io, const char* error) {
 
 }
 
-void guac_send_copy(GUACIO* io, int srcx, int srcy, int w, int h, int dstx, int dsty) {
+void guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int dstl, int dstx, int dsty) {
     guac_write_string(io, "copy:");
+    guac_write_int(io, srcl);
+    guac_write_string(io, ",");
     guac_write_int(io, srcx);
     guac_write_string(io, ",");
     guac_write_int(io, srcy);
@@ -208,6 +210,8 @@ void guac_send_copy(GUACIO* io, int srcx, int srcy, int w, int h, int dstx, int 
     guac_write_int(io, w);
     guac_write_string(io, ",");
     guac_write_int(io, h);
+    guac_write_string(io, ",");
+    guac_write_int(io, dstl);
     guac_write_string(io, ",");
     guac_write_int(io, dstx);
     guac_write_string(io, ",");
@@ -228,7 +232,7 @@ void __guac_write_png(png_structp png, png_bytep data, png_size_t length) {
 void __guac_write_flush(png_structp png) {
 }
 
-void guac_send_png(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h) {
+void guac_send_png(GUACIO* io, int layer, int x, int y, png_byte** png_rows, int w, int h) {
 
     png_structp png;
     png_infop png_info;
@@ -272,6 +276,8 @@ void guac_send_png(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h) 
     );
     
     guac_write_string(io, "png:");
+    guac_write_int(io, layer);
+    guac_write_string(io, ",");
     guac_write_int(io, x);
     guac_write_string(io, ",");
     guac_write_int(io, y);

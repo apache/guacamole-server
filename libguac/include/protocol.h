@@ -145,22 +145,26 @@ void guac_send_size(GUACIO* io, int w, int h);
  * Sends a copy instruction over the given GUACIO connection.
  *
  * @param io The GUACIO connection to use.
+ * @param srcl The index of the source layer.
  * @param srcx The X coordinate of the source rectangle.
  * @param srcy The Y coordinate of the source rectangle.
  * @param w The width of the source rectangle.
  * @param h The height of the source rectangle.
+ * @param dstl The index of the destination layer.
  * @param dstx The X coordinate of the destination, where the source rectangle
  *             should be copied.
  * @param dsty The Y coordinate of the destination, where the source rectangle
  *             should be copied.
  */
-void guac_send_copy(GUACIO* io, int srcx, int srcy, int w, int h, int dstx, int dsty);
+void guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h,
+        int dstl, int dstx, int dsty);
 
 /**
  * Sends a png instruction over the given GUACIO connection. The PNG image data
  * given will be automatically base64-encoded for transmission.
  *
  * @param io The GUACIO connection to use.
+ * @param layer The index of the destination layer.
  * @param x The destination X coordinate.
  * @param y The destination Y coordinate.
  * @param png_rows A libpng-compatible PNG image buffer containing the image
@@ -168,21 +172,23 @@ void guac_send_copy(GUACIO* io, int srcx, int srcy, int w, int h, int dstx, int 
  * @param w The width of the image in the image buffer.
  * @param h The height of the image in the image buffer.
  */
-void guac_send_png(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h);
+void guac_send_png(GUACIO* io, int layer, int x, int y,
+        png_byte** png_rows, int w, int h);
 
 /**
  * Sends a cursor instruction over the given GUACIO connection. The PNG image
  * data given will be automatically base64-encoded for transmission.
  *
  * @param io The GUACIO connection to use.
- * @param x The destination X coordinate.
- * @param y The destination Y coordinate.
+ * @param x The X coordinate of the cursor hotspot.
+ * @param y The Y coordinate of the cursor hotspot.
  * @param png_rows A libpng-compatible PNG image buffer containing the image
  *                 data to send.
  * @param w The width of the image in the image buffer.
  * @param h The height of the image in the image buffer.
  */
-void guac_send_cursor(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h);
+void guac_send_cursor(GUACIO* io, int x, int y,
+        png_byte** png_rows, int w, int h);
 
 /**
  * Returns whether new instruction data is available on the given GUACIO
