@@ -248,7 +248,15 @@ void guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int 
 
 void __guac_write_png(png_structp png, png_bytep data, png_size_t length) {
 
-    if (guac_write_base64((GUACIO*) png->io_ptr, data, length) < 0) {
+#ifdef HAVE_PNG_GET_IO_PTR
+    GUACIO* io = (GUACIO*) png_get_io_ptr(png);
+#else
+    /* Direct access to io_ptr has been deprecated, but we'll
+       use it if we have to. */
+    GUACIO* io = (GUACIO*) png->io_ptr;
+#endif
+
+    if (guac_write_base64(io, data, length) < 0) {
         perror("Error writing PNG");
         png_error(png, "Error writing PNG");
         return;

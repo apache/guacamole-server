@@ -24,7 +24,7 @@ AC_TYPE_SSIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([gettimeofday memmove memset select strdup])
+AC_CHECK_FUNCS([gettimeofday memmove memset select strdup png_get_io_ptr])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
