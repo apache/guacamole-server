@@ -219,7 +219,7 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
 void vnc_guac_client_sleep(int millis) {
 
-#ifdef nanosleep
+#ifdef HAVE_NANOSLEEP 
         struct timespec sleep_period;
 
         sleep_period.tv_sec = 0;
