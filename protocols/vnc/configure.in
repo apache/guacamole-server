@@ -18,7 +18,6 @@ AC_CHECK_LIB([vncclient], [rfbInitClient],, AC_MSG_ERROR("libvncclient is requir
 AC_CHECK_HEADERS([stdlib.h string.h syslog.h guacamole/client.h guacamole/guacio.h guacamole/protocol.h])
 
 # Checks for library functions.
-AC_CHECK_FUNCS([nanosleep])
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([nanosleep])
 
