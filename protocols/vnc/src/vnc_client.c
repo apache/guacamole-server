@@ -226,10 +226,10 @@ void vnc_guac_client_sleep(int millis) {
         sleep_period.tv_nsec = millis * 1000000L;
 
         nanosleep(&sleep_period, NULL);
-#else
-#ifdef Sleep
+#elif defined(__MINGW32__)
         Sleep(millis)
-#endif
+#else
+#warning No sleep/nanosleep function available. VNC client may not perform as expected. Consider editing the vnc_client.c to add support for your platform.
 #endif
 
 }
