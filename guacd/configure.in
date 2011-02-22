@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_INIT(src/daemon.c)
-AM_INIT_AUTOMAKE(guacd, 0.0.1)
+AM_INIT_AUTOMAKE(guacd, 0.3.0)
 
 # Checks for programs.
 AC_PROG_CC
