@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_INIT(src/vnc_client.c)
-AM_INIT_AUTOMAKE([libguac-client-vnc], 0.0.1)
+AM_INIT_AUTOMAKE([libguac-client-vnc], 0.3.0)
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
