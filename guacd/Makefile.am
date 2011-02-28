@@ -7,7 +7,7 @@ init_SCRIPTS = init.d/guacd
 
 guacd_SOURCES = src/daemon.c
 
-EXTRA_DIST = init.d/guacd
+EXTRA_DIST = init.d/guacd.in
 CLEANFILES = $(init_SCRIPTS)
 
 init.d/guacd: init.d/guacd.in
