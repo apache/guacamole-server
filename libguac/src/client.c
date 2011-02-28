@@ -92,7 +92,7 @@ guac_client* guac_get_client(int client_fd) {
     GUACIO* io = guac_open(client_fd);
 
     /* Pluggable client */
-    char protocol_lib[256] = "libguac_client_";
+    char protocol_lib[256] = "libguac-client-";
     
     union {
         guac_client_init_handler* client_init;
