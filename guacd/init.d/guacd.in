@@ -49,17 +49,37 @@
 # Description: The Guacamole proxy daemon, required to translate remote desktop protocols into the text-based Guacamole protocol used by the JavaScript application.
 ### END INIT INFO
 
-# Source function library.
-. /lib/lsb/init-functions
-
 prog="guacd"
 exec="@sbindir@/$prog"
 pidfile="/var/run/$prog.pid"
 
+# Returns PID of currently running process, if any
+getpid() {
+
+    if [ -f "$pidfile" ]
+    then
+
+        read PID < "$pidfile"
+
+        # If pidfile contains PID and PID is valid
+        if [ -n "$PID" ] && ps "$PID" > /dev/null 2>&1
+        then
+            echo "$PID"
+            return 0
+        fi
+
+    fi
+
+    # pidfile/pid not found, or process is dead
+    return 1
+
+}
+
 start() {
     [ -x $exec ] || exit 5
     echo -n "Starting $prog: "
-    start_daemon -p "$pidfile" $exec -p "$pidfile" 
+
+    getpid > /dev/null || $exec -p "$pidfile" 
     retval=$?
 
     case "$retval" in
@@ -76,24 +96,31 @@ start() {
 
 stop() {
     echo -n "Stopping $prog: "
-    killproc -p "$pidfile" $prog
+    
+    PID=`getpid`
     retval=$?
 
     case "$retval" in
         0)
-            echo "SUCCESS"
+            if kill $PID > /dev/null 2>&1
+            then
+                echo "SUCCESS"
+                return 0
+            fi
+
+            echo "FAIL"
+            return 1
             ;;
         *)
-            echo "FAIL"
+            echo "SUCCESS (not running)"
+            return 0
             ;;
     esac
 
-    return $retval
 }
 
 restart() {
-    stop
-    start
+    stop && start
 }
 
 force_reload() {
@@ -102,7 +129,7 @@ force_reload() {
 
 status() {
     
-    PID=`pidofproc -p "$pidfile" $prog`
+    PID=`getpid`
     retval=$?
 
     case "$retval" in
