@@ -114,6 +114,7 @@ status() {
             ;;
     esac
 
+    return $retval
 
 }
 
@@ -121,8 +122,11 @@ case "$1" in
     start|stop|status|restart|force-reload)
         $1
         ;;
+    try-restart)
+        status && restart
+        ;;
     *)
-        echo "Usage: $0 {start|stop|status|restart|force-reload}"
+        echo "Usage: $0 {start|stop|status|restart|try-restart|force-reload}"
         exit 2
 esac
 exit $?
