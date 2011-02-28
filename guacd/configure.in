@@ -19,5 +19,12 @@ AC_CHECK_HEADERS([netinet/in.h stdlib.h string.h sys/socket.h syslog.h unistd.h 
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset socket strerror fork])
 
+# Options
+AC_ARG_WITH(init_dir,
+            [AS_HELP_STRING([--with-init-dir=<path>],
+                            [install an init script to the given directory])
+            ],init_dir=$withval)
+AC_SUBST(init_dir)
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

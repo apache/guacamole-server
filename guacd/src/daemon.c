@@ -135,6 +135,8 @@ int main(int argc, char* argv[]) {
     int listen_port = 4822; /* Default port */
     int opt;
 
+    char* pidfile = NULL;
+
     /* Daemon Process */
     pid_t daemon_pid;
 
@@ -144,7 +146,7 @@ int main(int argc, char* argv[]) {
 #endif
 
     /* Parse arguments */
-    while ((opt = getopt(argc, argv, "l:")) != -1) {
+    while ((opt = getopt(argc, argv, "l:p:")) != -1) {
         if (opt == 'l') {
             listen_port = atoi(optarg);
             if (listen_port <= 0) {
@@ -152,8 +154,11 @@ int main(int argc, char* argv[]) {
                 exit(EXIT_FAILURE);
             }
         }
+        else if (opt == 'p') {
+            pidfile = strdup(optarg);
+        }
         else {
-            fprintf(stderr, "USAGE: %s [-l LISTENPORT]\n", argv[0]);
+            fprintf(stderr, "USAGE: %s [-l LISTENPORT] [-p PIDFILE]\n", argv[0]);
             exit(EXIT_FAILURE);
         }
     }
@@ -200,8 +205,26 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    /* If parent, exit */
+    /* If parent, write PID file and exit */
     else if (daemon_pid != 0) {
+
+        if (pidfile != NULL) {
+
+            /* Attempt to open pidfile and write PID */
+            FILE* pidf = fopen(pidfile, "w");
+            if (pidf) {
+                fprintf(pidf, "%d\n", daemon_pid);
+                fclose(pidf);
+            }
+
+            /* Warn on failure */
+            else {
+                fprintf(stderr, "WARNING: Could not write PID file: %s\n", lasterror());
+                exit(EXIT_FAILURE);
+            }
+
+        }
+
         exit(EXIT_SUCCESS);
     }
 #else
