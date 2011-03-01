@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS = gnu
+AUTOMAKE_OPTIONS = foreign 
 
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Werror -Wall -Iinclude
