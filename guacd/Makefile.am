@@ -1,5 +1,5 @@
 
-AUTOMAKE_OPTIONS = gnu
+AUTOMAKE_OPTIONS = foreign 
 initdir = @init_dir@
 
 sbin_PROGRAMS = guacd
