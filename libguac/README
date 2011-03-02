@@ -1,0 +1,74 @@
+
+------------------------------------------------------------
+ About this README
+------------------------------------------------------------
+
+This README is intended to provide quick and to-the-point documentation for
+technical users intending to compile parts of Guacamole themselves.
+
+Distribution-specific packages are available from the files section of the main
+project page:
+ 
+    http://sourceforge.net/projects/guacamole/files/
+
+Distribution-specific documentation is provided on the Guacamole wiki:
+
+    http://guac-dev.org/
+
+
+------------------------------------------------------------
+ What is libguac?
+------------------------------------------------------------
+
+libguac is the core library for guacd (the Guacamole proxy) and any protocol
+support plugins for guacd.
+
+libguac provides efficient buffered I/O of text and base64 data, as well as
+somewhat abstracted functions for sending Guacamole instructions.
+
+
+------------------------------------------------------------
+ Compiling and installing libguac
+------------------------------------------------------------
+
+Please note that distribution-specific pre-compiled packages are available from
+the files section of the main project site:
+
+    http://sourceforge.net/projects/guacamole/files/
+
+libguac is built using the popular GNU Automake, and thus provides the standard
+configure script.
+
+1) Run configure
+
+    $ ./configure
+
+    Assuming all dependencies have been installed, this should succeed without
+    errors.
+
+2) Run make
+
+    $ make
+
+    libguac will now compile.
+
+3) Install (as root)
+
+    # make install
+
+    libguac will install to your /usr/local/lib directory by default. You can
+    change the install location by using the --prefix option for configure.
+
+    Several header files will also be installed to
+    /usr/local/include/guacamole.
+
+
+------------------------------------------------------------
+ Reporting problems
+------------------------------------------------------------
+
+Please report any bugs encountered by opening a new ticket at the Trac system
+hosted at:
+    
+    http://sourceforge.net/apps/trac/guacamole/
+
