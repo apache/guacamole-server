@@ -62,6 +62,11 @@ configure script.
     Several header files will also be installed to
     /usr/local/include/guacamole.
 
+    You will need to run ldconfig (as root) so that the library can be found
+    when guacd is run:
+
+    # ldconfig
+
 
 ------------------------------------------------------------
  Reporting problems
