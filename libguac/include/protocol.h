@@ -142,6 +142,19 @@ void guac_send_name(GUACIO* io, const char* name);
 void guac_send_error(GUACIO* io, const char* error);
 
 /**
+ * Sends a ready instruction over the given GUACIO connection. The
+ * ready instruction signals the client that the proxy is ready to
+ * handle server messages, and thus is ready to handle the client's
+ * ready message.
+ *
+ * Normally, this function should not be called by client plugins,
+ * as the ready instruction will be handled automatically.
+ *
+ * @param io The GUACIO connection to use.
+ */
+void guac_send_ready(GUACIO* io);
+
+/**
  * Sends a clipboard instruction over the given GUACIO connection. The
  * clipboard data given will be automatically escaped for transmission.
  *
