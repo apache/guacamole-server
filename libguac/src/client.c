@@ -213,11 +213,6 @@ guac_client* guac_get_client(int client_fd) {
                 }
 
                 guac_free_instruction_data(&instruction);
-
-                /* Send ready message */
-                guac_send_ready(io);
-                guac_flush(io);
-
                 return client;
 
             } /* end if connect */
@@ -254,8 +249,21 @@ void guac_start_client(guac_client* client) {
     guac_instruction instruction;
     int wait_result;
 
-    /* Client loop */
+    /* VNC Client Loop */
     for (;;) {
+
+        /* Handle server messages */
+        if (client->handle_messages) {
+
+            int retval = client->handle_messages(client);
+            if (retval) {
+                GUAC_LOG_ERROR("Error handling server messages");
+                return;
+            }
+
+            guac_flush(io);
+
+        }
 
         wait_result = guac_instructions_waiting(io);
         if (wait_result > 0) {
@@ -267,24 +275,7 @@ void guac_start_client(guac_client* client) {
            
                 do {
 
-                    if (strcmp(instruction.opcode, "ready") == 0) {
-
-                        /* Handle server messages */
-                        if (client->handle_messages) {
-
-                            int retval = client->handle_messages(client);
-                            if (retval) {
-                                GUAC_LOG_ERROR("Error handling server messages");
-                                return;
-                            }
-
-                            guac_send_ready(io);
-                            guac_flush(io);
-
-                        }
-
-                    }
-                    else if (strcmp(instruction.opcode, "mouse") == 0) {
+                    if (strcmp(instruction.opcode, "mouse") == 0) {
                         if (client->mouse_handler)
                             if (
                                     client->mouse_handler(
