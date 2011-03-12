@@ -97,7 +97,7 @@ ssize_t __guac_write(GUACIO* io, const char* buf, int count) {
     return retval;
 }
 
-ssize_t guac_write_int(GUACIO* io, unsigned int i) {
+ssize_t guac_write_int(GUACIO* io, unsigned long i) {
 
     char buffer[128];
     char* ptr = &(buffer[127]);

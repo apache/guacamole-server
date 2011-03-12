@@ -132,6 +132,15 @@ void guac_send_args(GUACIO* io, const char** name);
 void guac_send_name(GUACIO* io, const char* name);
 
 /**
+ * Sends a sync instruction over the given GUACIO connection. The
+ * current time in milliseconds should be passed in as the timestamp.
+ *
+ * @param io The GUACIO connection to use.
+ * @param timestamp The current timestamp (in milliseconds).
+ */
+void guac_send_sync(GUACIO* io, long timestamp);
+
+/**
  * Sends an error instruction over the given GUACIO connection. The
  * error description given will be automatically escaped for
  * transmission.

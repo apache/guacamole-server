@@ -37,6 +37,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_CLOCK_GETTIME
+#include <time.h>
+#else
+#include <sys/time.h>
+#endif
 #include <string.h>
 #include <dlfcn.h>
 
@@ -243,11 +248,42 @@ void guac_free_client(guac_client* client) {
 }
 
 
+long __guac_current_timestamp() {
+
+#ifdef HAVE_CLOCK_GETTIME
+
+    struct timespec current;
+
+    /* Get current time */
+    clock_gettime(CLOCK_REALTIME, &current);
+    
+    /* Calculate milliseconds */
+    return current.tv_sec * 1000 + current.tv_nsec / 1000000;
+
+#else
+
+    struct timeval current;
+
+    /* Get current time */
+    gettimeofday(&current, NULL);
+    
+    /* Calculate milliseconds */
+    return current.tv_sec * 1000 + current.tv_usec / 1000;
+
+#endif
+
+}
+
 void guac_start_client(guac_client* client) {
 
     GUACIO* io = client->io;
     guac_instruction instruction;
     int wait_result;
+    long last_received_timestamp;
+    long last_sent_timestamp;
+
+    /* Init timestamps */
+    last_received_timestamp = last_sent_timestamp = __guac_current_timestamp();
 
     /* VNC Client Loop */
     for (;;) {
@@ -255,13 +291,21 @@ void guac_start_client(guac_client* client) {
         /* Handle server messages */
         if (client->handle_messages) {
 
-            int retval = client->handle_messages(client);
-            if (retval) {
-                GUAC_LOG_ERROR("Error handling server messages");
-                return;
-            }
+            /* Only handle messages if synced within threshold */
+            if (last_sent_timestamp - last_received_timestamp < 200) {
 
-            guac_flush(io);
+                int retval = client->handle_messages(client);
+                if (retval) {
+                    GUAC_LOG_ERROR("Error handling server messages");
+                    return;
+                }
+
+                /* Send sync after updates */
+                last_sent_timestamp = __guac_current_timestamp();
+                guac_send_sync(io, last_sent_timestamp);
+
+                guac_flush(io);
+            }
 
         }
 
@@ -275,7 +319,15 @@ void guac_start_client(guac_client* client) {
            
                 do {
 
-                    if (strcmp(instruction.opcode, "mouse") == 0) {
+                    if (strcmp(instruction.opcode, "sync") == 0) {
+                        last_received_timestamp = atol(instruction.argv[0]);
+                        if (last_received_timestamp > last_sent_timestamp) {
+                            guac_send_error(io, "Received sync from future.");
+                            guac_free_instruction_data(&instruction);
+                            return;
+                        }
+                    }
+                    else if (strcmp(instruction.opcode, "mouse") == 0) {
                         if (client->mouse_handler)
                             if (
                                     client->mouse_handler(

@@ -226,6 +226,14 @@ void guac_send_error(GUACIO* io, const char* error) {
 
 }
 
+void guac_send_sync(GUACIO* io, long timestamp) {
+
+    guac_write_string(io, "sync:");
+    guac_write_int(io, timestamp);
+    guac_write_string(io, ";");
+
+}
+
 void guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int dstl, int dstx, int dsty) {
     guac_write_string(io, "copy:");
     guac_write_int(io, srcl);
