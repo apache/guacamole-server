@@ -291,6 +291,9 @@ void guac_start_client(guac_client* client) {
         /* Handle server messages */
         if (client->handle_messages) {
 
+            /* Get previous GUACIO state */
+            int last_total_written = io->total_written;
+
             /* Only handle messages if synced within threshold */
             if (last_sent_timestamp - last_received_timestamp < 200) {
 
@@ -300,9 +303,11 @@ void guac_start_client(guac_client* client) {
                     return;
                 }
 
-                /* Send sync after updates */
-                last_sent_timestamp = __guac_current_timestamp();
-                guac_send_sync(io, last_sent_timestamp);
+                /* If data was written during message handling */
+                if (io->total_written != last_total_written) {
+                    last_sent_timestamp = __guac_current_timestamp();
+                    guac_send_sync(io, last_sent_timestamp);
+                }
 
                 guac_flush(io);
             }

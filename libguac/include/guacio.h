@@ -75,6 +75,11 @@ typedef struct GUACIO {
     int written;
 
     /**
+     * The number of bytes written total, since this GUACIO was opened.
+     */
+    int total_written;
+
+    /**
      * The main write buffer. Bytes written go here before being flushed
      * to the open file descriptor.
      */
