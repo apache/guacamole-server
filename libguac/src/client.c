@@ -274,6 +274,26 @@ long __guac_current_timestamp() {
 
 }
 
+
+void __guac_sleep(int millis) {
+
+#ifdef HAVE_NANOSLEEP 
+        struct timespec sleep_period;
+
+        sleep_period.tv_sec = 0;
+        sleep_period.tv_nsec = millis * 1000000L;
+
+        nanosleep(&sleep_period, NULL);
+#elif defined(__MINGW32__)
+        Sleep(millis)
+#else
+#warning No sleep/nanosleep function available. Clients may not perform as expected. Consider patching libguac to add support for your platform.
+#endif
+
+}
+
+
+
 void guac_start_client(guac_client* client) {
 
     GUACIO* io = client->io;
@@ -295,7 +315,8 @@ void guac_start_client(guac_client* client) {
             int last_total_written = io->total_written;
 
             /* Only handle messages if synced within threshold */
-            if (last_sent_timestamp - last_received_timestamp < 200) {
+            if (last_sent_timestamp - last_received_timestamp
+                    < GUAC_SYNC_THRESHOLD) {
 
                 int retval = client->handle_messages(client);
                 if (retval) {
@@ -305,8 +326,14 @@ void guac_start_client(guac_client* client) {
 
                 /* If data was written during message handling */
                 if (io->total_written != last_total_written) {
+
+                    /* Sleep as necessary */
+                    __guac_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
+
+                    /* Update sync timestamp and send sync instruction */
                     last_sent_timestamp = __guac_current_timestamp();
                     guac_send_sync(io, last_sent_timestamp);
+
                 }
 
                 guac_flush(io);
