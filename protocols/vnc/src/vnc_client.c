@@ -217,23 +217,6 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
 }
 
-void vnc_guac_client_sleep(int millis) {
-
-#ifdef HAVE_NANOSLEEP 
-        struct timespec sleep_period;
-
-        sleep_period.tv_sec = 0;
-        sleep_period.tv_nsec = millis * 1000000L;
-
-        nanosleep(&sleep_period, NULL);
-#elif defined(__MINGW32__)
-        Sleep(millis)
-#else
-#warning No sleep/nanosleep function available. VNC client may not perform as expected. Consider editing the vnc_client.c to add support for your platform.
-#endif
-
-}
-
 int vnc_guac_client_handle_messages(guac_client* client) {
 
     int wait_result;
@@ -252,11 +235,6 @@ int vnc_guac_client_handle_messages(guac_client* client) {
             GUAC_LOG_ERROR("Error handling VNC server message\n");
             return 1;
         }
-
-        /* Wait before returning ... don't want to handle
-         * too many server messages. */
-
-        vnc_guac_client_sleep(50);
 
     }
 
