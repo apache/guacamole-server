@@ -54,6 +54,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
     "read-only",
+    "encodings",
     "password",
     NULL
 };
@@ -71,6 +72,7 @@ typedef struct vnc_guac_client_data {
 
     int copy_rect_used;
     char* password;
+    char* encodings;
 
 } vnc_guac_client_data;
 
@@ -307,6 +309,10 @@ int vnc_guac_client_free_handler(guac_client* client) {
     guac_free_png_buffer(png_buffer, guac_client_data->buffer_height);
     guac_free_png_buffer(png_buffer_alpha, guac_client_data->buffer_height);
 
+    /* Free encodings string, if used */
+    if (guac_client_data->encodings != NULL)
+        free(guac_client_data->encodings);
+
     /* Free generic data struct */
     free(client->data);
 
@@ -330,8 +336,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /*** PARSE ARGUMENTS ***/
 
-    if (argc < 2) {
-        guac_send_error(client->io, "VNC client requires hostname and port arguments");
+    if (argc < 5) {
+        guac_send_error(client->io, "Wrong argument count received.");
         guac_flush(client->io);
         return 1;
     }
@@ -341,26 +347,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->data = guac_client_data;
 
     /* If read-only specified, set flag */
-    if (argc >= 3) {
-        if (strcmp(argv[2], "true") == 0)
-            read_only = 1;
-    }
+    if (strcmp(argv[2], "true") == 0)
+        read_only = 1;
 
-    /* Parse password from args if provided */
-    if (argc >= 4) {
-
-        /* Freed after use by libvncclient */
-        guac_client_data->password = malloc(64);
-        strncpy(guac_client_data->password, argv[3], 63);
-
-    }
-    else {
-
-        /* Freed after use by libvncclient */
-        guac_client_data->password = malloc(64);
-        guac_client_data->password[0] = '\0';
-
-    }
+    /* Freed after use by libvncclient */
+    guac_client_data->password = malloc(64);
+    strncpy(guac_client_data->password, argv[3], 63);
 
     /*** INIT RFB CLIENT ***/
 
@@ -394,6 +386,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set hostname and port */
     rfb_client->serverHost = strdup(argv[0]);
     rfb_client->serverPort = atoi(argv[1]);
+
+    /* Set encodings if specified */
+    if (argv[3][0] != '\0')
+        rfb_client->appData.encodingsString = guac_client_data->encodings = strdup(argv[3]);
+    else
+        guac_client_data->encodings = NULL;
 
     /* Connect */
     if (!rfbInitClient(rfb_client, NULL, NULL)) {
