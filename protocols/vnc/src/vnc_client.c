@@ -63,8 +63,12 @@ static char* __GUAC_CLIENT = "GUAC_CLIENT";
 typedef struct vnc_guac_client_data {
     
     rfbClient* rfb_client;
+    MallocFrameBufferProc rfb_MallocFrameBuffer;
+
     png_byte** png_buffer;
     png_byte** png_buffer_alpha;
+    int buffer_height;
+
     int copy_rect_used;
     char* password;
 
@@ -207,6 +211,27 @@ char* guac_vnc_get_password(rfbClient* client) {
     return ((vnc_guac_client_data*) gc->data)->password;
 }
 
+rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
+
+    guac_client* gc = rfbClientGetClientData(rfb_client, __GUAC_CLIENT);
+    vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
+
+    /* Free old buffers */
+    guac_free_png_buffer(guac_client_data->png_buffer, guac_client_data->buffer_height);
+    guac_free_png_buffer(guac_client_data->png_buffer_alpha, guac_client_data->buffer_height);
+
+    /* Allocate new buffers */
+    guac_client_data->png_buffer = guac_alloc_png_buffer(rfb_client->width, rfb_client->height, 3); /* No-alpha */
+    guac_client_data->png_buffer_alpha = guac_alloc_png_buffer(rfb_client->width, rfb_client->height, 4); /* With alpha */
+    guac_client_data->buffer_height = rfb_client->height;
+
+    /* Send new size */
+    guac_send_size(gc->io, rfb_client->width, rfb_client->height);
+
+    /* Use original, wrapped proc */
+    return guac_client_data->rfb_MallocFrameBuffer(rfb_client);
+}
+
 
 void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
@@ -272,13 +297,15 @@ int vnc_guac_client_clipboard_handler(guac_client* client, char* data) {
 
 int vnc_guac_client_free_handler(guac_client* client) {
 
-    rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
-    png_byte** png_buffer = ((vnc_guac_client_data*) client->data)->png_buffer;
-    png_byte** png_buffer_alpha = ((vnc_guac_client_data*) client->data)->png_buffer_alpha;
+    vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) client->data;
+
+    rfbClient* rfb_client = guac_client_data->rfb_client;
+    png_byte** png_buffer = guac_client_data->png_buffer;
+    png_byte** png_buffer_alpha = guac_client_data->png_buffer_alpha;
 
     /* Free PNG data */
-    guac_free_png_buffer(png_buffer, rfb_client->height);
-    guac_free_png_buffer(png_buffer_alpha, rfb_client->height);
+    guac_free_png_buffer(png_buffer, guac_client_data->buffer_height);
+    guac_free_png_buffer(png_buffer_alpha, guac_client_data->buffer_height);
 
     /* Free generic data struct */
     free(client->data);
@@ -355,6 +382,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Password */
     rfb_client->GetPassword = guac_vnc_get_password;
+    
+    /* Hook into allocation so we can handle resize. */
+    guac_client_data->rfb_MallocFrameBuffer = rfb_client->MallocFrameBuffer;
+    rfb_client->MallocFrameBuffer = guac_vnc_malloc_framebuffer;
+    rfb_client->canHandleNewFBSize = 1;
 
     /* Store Guac client in rfb client */
     rfbClientSetClientData(rfb_client, __GUAC_CLIENT, client);
@@ -378,6 +410,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->rfb_client = rfb_client;
     guac_client_data->png_buffer = png_buffer;
     guac_client_data->png_buffer_alpha = png_buffer_alpha;
+    guac_client_data->buffer_height = rfb_client->height;
     guac_client_data->copy_rect_used = 0;
 
     /* Set handlers */
