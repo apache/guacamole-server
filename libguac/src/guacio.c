@@ -64,6 +64,7 @@ GUACIO* guac_open(int fd) {
     GUACIO* io = malloc(sizeof(GUACIO));
     io->ready = 0;
     io->written = 0;
+    io->total_written = 0;
     io->fd = fd;
 
     /* Allocate instruction buffer */
