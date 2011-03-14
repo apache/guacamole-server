@@ -219,8 +219,10 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
 
     /* Free old buffers */
-    guac_free_png_buffer(guac_client_data->png_buffer, guac_client_data->buffer_height);
-    guac_free_png_buffer(guac_client_data->png_buffer_alpha, guac_client_data->buffer_height);
+    if (guac_client_data->png_buffer != NULL)
+        guac_free_png_buffer(guac_client_data->png_buffer, guac_client_data->buffer_height);
+    if (guac_client_data->png_buffer_alpha != NULL)
+        guac_free_png_buffer(guac_client_data->png_buffer_alpha, guac_client_data->buffer_height);
 
     /* Allocate new buffers */
     guac_client_data->png_buffer = guac_alloc_png_buffer(rfb_client->width, rfb_client->height, 3); /* No-alpha */
@@ -351,12 +353,14 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         read_only = 1;
 
     /* Freed after use by libvncclient */
-    guac_client_data->password = malloc(64);
-    strncpy(guac_client_data->password, argv[3], 63);
+    guac_client_data->password = strdup(argv[4]);
 
     /*** INIT RFB CLIENT ***/
 
     rfb_client = rfbGetClient(8, 3, 4); /* 32-bpp client */
+
+    /* Store Guac client in rfb client */
+    rfbClientSetClientData(rfb_client, __GUAC_CLIENT, client);
 
     /* Framebuffer update handler */
     rfb_client->GotFrameBufferUpdate = guac_vnc_update;
@@ -376,12 +380,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rfb_client->GetPassword = guac_vnc_get_password;
     
     /* Hook into allocation so we can handle resize. */
+    guac_client_data->png_buffer = NULL;
+    guac_client_data->png_buffer_alpha = NULL;
     guac_client_data->rfb_MallocFrameBuffer = rfb_client->MallocFrameBuffer;
     rfb_client->MallocFrameBuffer = guac_vnc_malloc_framebuffer;
     rfb_client->canHandleNewFBSize = 1;
-
-    /* Store Guac client in rfb client */
-    rfbClientSetClientData(rfb_client, __GUAC_CLIENT, client);
 
     /* Set hostname and port */
     rfb_client->serverHost = strdup(argv[0]);
