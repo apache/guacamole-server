@@ -529,6 +529,6 @@ int guac_instructions_waiting(GUACIO* io) {
     if (io->instructionbuf_used_length > 0)
         return 1;
 
-    return guac_select(io, 1000);
+    return guac_select(io, GUAC_USEC_TIMEOUT);
 }
 

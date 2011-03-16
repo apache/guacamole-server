@@ -68,19 +68,6 @@
 #define GUAC_SYNC_FREQUENCY 5000
 
 /**
- * The number of milliseconds to wait for messages in any phase before
- * timing out and closing the connection with an error.
- */
-#define GUAC_TIMEOUT      15000
-
-/**
- * The number of microseconds to wait for messages in any phase before
- * timing out and closing the conncetion with an error. This is always
- * equal to GUAC_TIMEOUT * 1000.
- */
-#define GUAC_USEC_TIMEOUT (GUAC_TIMEOUT*1000)
-
-/**
  * The amount of time to wait after handling server messages. If a client
  * plugin has a message handler, and sends instructions when server messages
  * are being handled, there will be a pause of this many milliseconds before

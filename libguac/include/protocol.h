@@ -52,6 +52,19 @@
 
 
 /**
+ * The number of milliseconds to wait for messages in any phase before
+ * timing out and closing the connection with an error.
+ */
+#define GUAC_TIMEOUT      15000
+
+/**
+ * The number of microseconds to wait for messages in any phase before
+ * timing out and closing the conncetion with an error. This is always
+ * equal to GUAC_TIMEOUT * 1000.
+ */
+#define GUAC_USEC_TIMEOUT (GUAC_TIMEOUT*1000)
+
+/**
  * Represents a single instruction within the Guacamole protocol.
  */
 typedef struct guac_instruction {

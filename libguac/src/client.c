@@ -44,6 +44,7 @@
 #endif
 #include <string.h>
 #include <dlfcn.h>
+#include <pthread.h>
 
 #include "log.h"
 #include "guacio.h"
@@ -122,7 +123,7 @@ guac_client* guac_get_client(int client_fd) {
         int result;
 
         /* Wait for data until timeout */
-        result = guac_select(io, GUAC_USEC_TIMEOUT);
+        result = guac_instructions_waiting(io);
         if (result == 0) {
             guac_send_error(io, "Select timeout.");
             guac_close(io);
@@ -212,7 +213,7 @@ guac_client* guac_get_client(int client_fd) {
         int result;
 
         /* Wait for data until timeout */
-        result = guac_select(io, GUAC_USEC_TIMEOUT);
+        result = guac_instructions_waiting(io);
         if (result == 0) {
             guac_send_error(io, "Connect timeout.");
             guac_close(io);
@@ -324,33 +325,31 @@ void __guac_sleep(int millis) {
 }
 
 
+typedef struct __guac_client_thread_common {
 
-void guac_start_client(guac_client* client) {
-
-    GUACIO* io = client->io;
-    guac_instruction instruction;
-    int wait_result;
+    guac_client* client;
     long last_received_timestamp;
     long last_sent_timestamp;
 
-    /* Init timestamps */
-    last_received_timestamp = last_sent_timestamp = __guac_current_timestamp();
+    int client_active;
 
-    /* VNC Client Loop */
-    for (;;) {
+} __guac_client_thread_common;
 
-        /* Get current time and check timeout */
+
+void* __guac_client_output_thread(void* data) {
+
+    __guac_client_thread_common* common = (__guac_client_thread_common*) data;
+    guac_client* client = common->client;
+    GUACIO* io = client->io;
+
+    /* Guacamole client output loop */
+    while (common->client_active) {
+
+        /* Occasionally ping client with sync */
         long timestamp = __guac_current_timestamp();
-        if (timestamp - last_received_timestamp > GUAC_TIMEOUT) {
-            guac_send_error(io, "Sync timeout.");
-            guac_flush(io);
-            return;
-        }
-
-        /* If not timed out, ping client with sync */
-        if (timestamp - last_sent_timestamp > GUAC_SYNC_FREQUENCY) {
-            last_sent_timestamp = timestamp;
-            guac_send_sync(io, last_sent_timestamp);
+        if (timestamp - common->last_sent_timestamp > GUAC_SYNC_FREQUENCY) {
+            guac_send_sync(io, timestamp);
+            common->last_sent_timestamp = timestamp;
             guac_flush(io);
         }
 
@@ -361,13 +360,13 @@ void guac_start_client(guac_client* client) {
             int last_total_written = io->total_written;
 
             /* Only handle messages if synced within threshold */
-            if (last_sent_timestamp - last_received_timestamp
+            if (common->last_sent_timestamp - common->last_received_timestamp
                     < GUAC_SYNC_THRESHOLD) {
 
                 int retval = client->handle_messages(client);
                 if (retval) {
                     GUAC_LOG_ERROR("Error handling server messages");
-                    return;
+                    break;
                 }
 
                 /* If data was written during message handling */
@@ -377,8 +376,8 @@ void guac_start_client(guac_client* client) {
                     __guac_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
 
                     /* Update sync timestamp and send sync instruction */
-                    last_sent_timestamp = __guac_current_timestamp();
-                    guac_send_sync(io, last_sent_timestamp);
+                    common->last_sent_timestamp = __guac_current_timestamp();
+                    guac_send_sync(io, common->last_sent_timestamp);
 
                 }
 
@@ -387,7 +386,29 @@ void guac_start_client(guac_client* client) {
 
         }
 
-        wait_result = guac_instructions_waiting(io);
+        /* If no message handler, just sleep until next sync ping */
+        else
+            __guac_sleep(GUAC_SYNC_FREQUENCY);
+
+    } /* End of output loop */
+
+    common->client_active = 0;
+    return NULL;
+
+}
+
+void* __guac_client_input_thread(void* data) {
+
+    __guac_client_thread_common* common = (__guac_client_thread_common*) data;
+    guac_client* client = common->client;
+    GUACIO* io = client->io;
+
+    guac_instruction instruction;
+
+    /* Guacamole client input loop */
+    while (common->client_active) {
+
+        int wait_result = guac_instructions_waiting(io);
         if (wait_result > 0) {
 
             int retval;
@@ -398,11 +419,11 @@ void guac_start_client(guac_client* client) {
                 do {
 
                     if (strcmp(instruction.opcode, "sync") == 0) {
-                        last_received_timestamp = atol(instruction.argv[0]);
-                        if (last_received_timestamp > last_sent_timestamp) {
+                        common->last_received_timestamp = atol(instruction.argv[0]);
+                        if (common->last_received_timestamp > common->last_sent_timestamp) {
                             guac_send_error(io, "Received sync from future.");
                             guac_free_instruction_data(&instruction);
-                            return;
+                            break;
                         }
                     }
                     else if (strcmp(instruction.opcode, "mouse") == 0) {
@@ -418,7 +439,7 @@ void guac_start_client(guac_client* client) {
 
                                 GUAC_LOG_ERROR("Error handling mouse instruction");
                                 guac_free_instruction_data(&instruction);
-                                return;
+                                break;
 
                             }
                     }
@@ -435,7 +456,7 @@ void guac_start_client(guac_client* client) {
 
                                 GUAC_LOG_ERROR("Error handling key instruction");
                                 guac_free_instruction_data(&instruction);
-                                return;
+                                break;
 
                             }
                     }
@@ -451,7 +472,7 @@ void guac_start_client(guac_client* client) {
 
                                 GUAC_LOG_ERROR("Error handling clipboard instruction");
                                 guac_free_instruction_data(&instruction);
-                                return;
+                                break;
 
                             }
                     }
@@ -459,7 +480,7 @@ void guac_start_client(guac_client* client) {
                     else if (strcmp(instruction.opcode, "disconnect") == 0) {
                         GUAC_LOG_INFO("Client requested disconnect");
                         guac_free_instruction_data(&instruction);
-                        return;
+                        break;
                     }
 
                     guac_free_instruction_data(&instruction);
@@ -468,13 +489,13 @@ void guac_start_client(guac_client* client) {
 
                 if (retval < 0) {
                     GUAC_LOG_ERROR("Error reading instruction from stream");
-                    return;
+                    break;
                 }
             }
 
             if (retval < 0) {
                 GUAC_LOG_ERROR("Error or end of stream");
-                return; /* EOF or error */
+                break; /* EOF or error */
             }
 
             /* Otherwise, retval == 0 implies unfinished instruction */
@@ -482,10 +503,45 @@ void guac_start_client(guac_client* client) {
         }
         else if (wait_result < 0) {
             GUAC_LOG_ERROR("Error waiting for next instruction");
-            return;
+            break;
+        }
+        else { /* wait_result == 0 */
+            GUAC_LOG_ERROR("Timeout");
+            break;
         }
 
     }
+
+    common->client_active = 0;
+    return NULL;
+
+}
+
+void guac_start_client(guac_client* client) {
+
+    pthread_t input_thread, output_thread;
+    __guac_client_thread_common common;
+
+    /* Init thread data */
+    common.client = client;
+    common.last_received_timestamp = common.last_sent_timestamp = __guac_current_timestamp();
+    common.client_active = 1;
+
+    if (pthread_create(&output_thread, NULL, __guac_client_output_thread, (void*) &common)) {
+        /* THIS FUNCTION SHOULD RETURN A VALUE! */
+        return;
+    }
+
+    if (pthread_create(&input_thread, NULL, __guac_client_input_thread, (void*) &common)) {
+        /* THIS FUNCTION SHOULD RETURN A VALUE! */
+        return;
+    }
+
+    /* Wait for I/O threads */
+    pthread_join(input_thread, NULL);
+    pthread_join(output_thread, NULL);
+
+    /* Done */
 
 }
 
