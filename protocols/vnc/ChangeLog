@@ -1,3 +1,8 @@
+2011-03-13 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Support for framebuffer resizing
+	* "encodings" argument
+
 2011-02-28 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Initial release
