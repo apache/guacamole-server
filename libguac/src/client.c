@@ -119,9 +119,24 @@ guac_client* guac_get_client(int client_fd) {
     /* Wait for select instruction */
     for (;;) {
 
-        int result = guac_read_instruction(io, &instruction);
+        int result;
+
+        /* Wait for data until timeout */
+        result = guac_select(io, GUAC_USEC_TIMEOUT);
+        if (result == 0) {
+            guac_send_error(io, "Select timeout.");
+            guac_close(io);
+            return NULL;
+        }
+
+        /* If error occurs while waiting, exit with failure */
         if (result < 0) {
-            GUAC_LOG_ERROR("Error reading instruction while waiting for select");
+            guac_close(io);
+            return NULL;
+        }
+
+        result = guac_read_instruction(io, &instruction);
+        if (result < 0) {
             guac_close(io);
             return NULL;            
         }
@@ -194,7 +209,23 @@ guac_client* guac_get_client(int client_fd) {
     /* Wait for connect instruction */
     for (;;) {
 
-        int result = guac_read_instruction(io, &instruction);
+        int result;
+
+        /* Wait for data until timeout */
+        result = guac_select(io, GUAC_USEC_TIMEOUT);
+        if (result == 0) {
+            guac_send_error(io, "Connect timeout.");
+            guac_close(io);
+            return NULL;
+        }
+
+        /* If error occurs while waiting, exit with failure */
+        if (result < 0) {
+            guac_close(io);
+            return NULL;
+        }
+
+        result = guac_read_instruction(io, &instruction);
         if (result < 0) {
             GUAC_LOG_ERROR("Error reading instruction while waiting for connect");
             guac_close(io);
@@ -307,6 +338,21 @@ void guac_start_client(guac_client* client) {
 
     /* VNC Client Loop */
     for (;;) {
+
+        /* Get current time and check timeout */
+        long timestamp = __guac_current_timestamp();
+        if (timestamp - last_received_timestamp > GUAC_TIMEOUT) {
+            guac_send_error(io, "Sync timeout.");
+            guac_flush(io);
+            return;
+        }
+
+        /* If not timed out, ping client with sync */
+        if (timestamp - last_sent_timestamp > GUAC_SYNC_FREQUENCY) {
+            last_sent_timestamp = timestamp;
+            guac_send_sync(io, last_sent_timestamp);
+            guac_flush(io);
+        }
 
         /* Handle server messages */
         if (client->handle_messages) {
