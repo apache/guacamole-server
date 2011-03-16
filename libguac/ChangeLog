@@ -1,3 +1,8 @@
+2011-03-14 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Lag control ("sync" message)
+	* Automatic message handle frequency limiting
+
 2011-02-28 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Initial release
