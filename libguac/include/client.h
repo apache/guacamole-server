@@ -42,6 +42,7 @@
 #include <png.h>
 
 #include "guacio.h"
+#include "protocol.h"
 
 /**
  * Provides functions and structures required for defining (and handling) a proxy client.
@@ -104,6 +105,11 @@ typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
  */
 typedef int guac_client_free_handler(void* client);
 
+typedef enum guac_client_state {
+    RUNNING,
+    STOPPING
+} guac_client_state;
+
 /**
  * Guacamole proxy client.
  *
@@ -119,6 +125,10 @@ struct guac_client {
      * used only to communicate conveniently with the Guacamole web-client.
      */
     GUACIO* io;
+
+    guac_client_state state;
+    long last_received_timestamp;
+    long last_sent_timestamp;
 
     /**
      * Reference to dlopen'd client plugin.
@@ -283,5 +293,12 @@ png_byte** guac_alloc_png_buffer(int w, int h, int bpp);
  * @param h The height of the buffer to free.
  */
 void guac_free_png_buffer(png_byte** png_buffer, int h);
+
+int guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
+void guac_client_stop(guac_client* client);
+
+/* FIXME: MOVE THESE TO protocol.h */
+long guac_client_current_timestamp();
+void guac_client_sleep(int millis);
 
 #endif
