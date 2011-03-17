@@ -308,7 +308,6 @@ guac_client* guac_get_client(int client_fd) {
 }
 
 void guac_client_stop(guac_client* client) {
-    fprintf(stderr, "***************** STOPPING! *********************\n");
     client->state = STOPPING;
 }
 
