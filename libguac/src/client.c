@@ -376,6 +376,10 @@ void* __guac_client_output_thread(void* data) {
                 guac_flush(io);
             }
 
+            /* If sync threshold exceeded, don't spin waiting for resync */
+            else
+                guac_client_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
+
         }
 
         /* If no message handler, just sleep until next sync ping */
