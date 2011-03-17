@@ -308,6 +308,7 @@ guac_client* guac_get_client(int client_fd) {
 }
 
 void guac_client_stop(guac_client* client) {
+    fprintf(stderr, "***************** STOPPING! *********************\n");
     client->state = STOPPING;
 }
 
@@ -397,25 +398,16 @@ void* __guac_client_input_thread(void* data) {
     guac_instruction instruction;
 
     /* Guacamole client input loop */
-    while (client->state == RUNNING && guac_instructions_waiting(io) > 0) {
+    while (client->state == RUNNING && guac_read_instruction(io, &instruction) > 0) {
 
-        int retval;
-        while ((retval = guac_read_instruction(io, &instruction)) > 0) {
-
-            if (guac_client_handle_instruction(client, &instruction) < 0) {
-                guac_free_instruction_data(&instruction);
-                guac_client_stop(client);
-                return NULL;
-            }
-
+        /* Call handler, stop on error */
+        if (guac_client_handle_instruction(client, &instruction) < 0) {
             guac_free_instruction_data(&instruction);
-
+            break;
         }
 
-        if (retval < 0)
-            break;
-
-        /* Otherwise, retval == 0 implies unfinished instruction */
+        /* Free allocate instruction data */
+        guac_free_instruction_data(&instruction);
 
     }
 

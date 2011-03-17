@@ -248,9 +248,10 @@ int guac_instructions_waiting(GUACIO* io);
  *                           will be populated with data read from the given
  *                           GUACIO connection.
  * @return A positive value if data was successfully read, negative on
- *         error, or zero if the instrucion could not be read completely,
- *         in which case, subsequent calls to guac_read_instruction() will
- *         return the parsed instruction once enough data is available.
+ *         error, or zero if the instruction could not be read completely
+ *         because GUAC_TIMEOUT elapsed, in which case subsequent calls to
+ *         guac_read_instruction() will return the parsed instruction once
+ *         enough data is available.
  */
 int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction);
 

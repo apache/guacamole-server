@@ -497,16 +497,15 @@ int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction) {
         }
 
         /* No instruction yet? Get more data ... */
-        retval = guac_select(io, 1000);
+        retval = guac_select(io, GUAC_USEC_TIMEOUT);
         if (retval <= 0)
             return retval;
 
+        /* If more data is available, fill into buffer */
         retval = __guac_fill_instructionbuf(io);
-        if (retval < 0)
-            return retval;
+        if (retval < 0)  return retval; /* Error */
+        if (retval == 0) return -1;     /* EOF */
 
-        if (retval == 0)
-            return -1; /* EOF */
     }
 
 }
