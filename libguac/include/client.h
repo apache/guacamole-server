@@ -105,9 +105,24 @@ typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
  */
 typedef int guac_client_free_handler(void* client);
 
+/**
+ * Possible current states of the Guacamole client. Currently, the only
+ * two states are RUNNING and STOPPING.
+ */
 typedef enum guac_client_state {
+
+    /**
+     * The state of the client from when it has been allocated by the main
+     * daemon until it is killed or disconnected.
+     */
     RUNNING,
+
+    /**
+     * The state of the client when a stop has been requested, signalling the
+     * I/O threads to shutdown.
+     */
     STOPPING
+
 } guac_client_state;
 
 /**
@@ -126,8 +141,24 @@ struct guac_client {
      */
     GUACIO* io;
 
+    /**
+     * The current state of the client. When the client is first allocated,
+     * this will be initialized to RUNNING. It will remain at RUNNING until
+     * an event occurs which requires the client to shutdown, at which point
+     * the state becomes STOPPING.
+     */
     guac_client_state state;
+
+    /**
+     * The time (in milliseconds) of receipt of the last sync message from
+     * the client.
+     */
     long last_received_timestamp;
+
+    /**
+     * The time (in milliseconds) that the last sync message was sent to the
+     * client.
+     */
     long last_sent_timestamp;
 
     /**
@@ -294,7 +325,25 @@ png_byte** guac_alloc_png_buffer(int w, int h, int bpp);
  */
 void guac_free_png_buffer(png_byte** png_buffer, int h);
 
+/**
+ * Call the appropriate handler defined by the given client for the given
+ * instruction. A comparison is made between the instruction opcode and the
+ * initial handler lookup table defined in client-handlers.c. The intial
+ * handlers will in turn call the client's handler (if defined).
+ *
+ * @param client The proxy client whose handlers should be called.
+ * @param instruction The instruction to pass to the proxy client via the
+ *                    appropriate handler.
+ */
 int guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
+
+/**
+ * Signal the given client to stop. This will set the state of the given client
+ * to STOPPING, which signals the I/O threads to shutdown, and ultimately
+ * results in shutdown of the client.
+ *
+ * @param client The proxy client to stop.
+ */
 void guac_client_stop(guac_client* client);
 
 #endif
