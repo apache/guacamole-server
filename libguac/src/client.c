@@ -37,11 +37,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef HAVE_CLOCK_GETTIME
-#include <time.h>
-#else
-#include <sys/time.h>
-#endif
 #include <string.h>
 #include <dlfcn.h>
 #include <pthread.h>
@@ -79,50 +74,6 @@ void guac_free_png_buffer(png_byte** png_buffer, int h) {
 
 }
 
-
-long guac_client_current_timestamp() {
-
-#ifdef HAVE_CLOCK_GETTIME
-
-    struct timespec current;
-
-    /* Get current time */
-    clock_gettime(CLOCK_REALTIME, &current);
-    
-    /* Calculate milliseconds */
-    return current.tv_sec * 1000 + current.tv_nsec / 1000000;
-
-#else
-
-    struct timeval current;
-
-    /* Get current time */
-    gettimeofday(&current, NULL);
-    
-    /* Calculate milliseconds */
-    return current.tv_sec * 1000 + current.tv_usec / 1000;
-
-#endif
-
-}
-
-void guac_client_sleep(int millis) {
-
-#ifdef HAVE_NANOSLEEP 
-        struct timespec sleep_period;
-
-        sleep_period.tv_sec = 0;
-        sleep_period.tv_nsec = millis * 1000000L;
-
-        nanosleep(&sleep_period, NULL);
-#elif defined(__MINGW32__)
-        Sleep(millis)
-#else
-#warning No sleep/nanosleep function available. Clients may not perform as expected. Consider patching libguac to add support for your platform.
-#endif
-
-}
-
 guac_client* __guac_alloc_client(GUACIO* io) {
 
     /* Allocate new client (not handoff) */
@@ -131,7 +82,7 @@ guac_client* __guac_alloc_client(GUACIO* io) {
 
     /* Init new client */
     client->io = io;
-    client->last_received_timestamp = client->last_sent_timestamp = guac_client_current_timestamp();
+    client->last_received_timestamp = client->last_sent_timestamp = guac_current_timestamp();
     client->state = RUNNING;
 
     return client;
@@ -338,7 +289,7 @@ void* __guac_client_output_thread(void* data) {
     while (client->state == RUNNING) {
 
         /* Occasionally ping client with sync */
-        long timestamp = guac_client_current_timestamp();
+        long timestamp = guac_current_timestamp();
         if (timestamp - client->last_sent_timestamp > GUAC_SYNC_FREQUENCY) {
             client->last_sent_timestamp = timestamp;
             guac_send_sync(io, timestamp);
@@ -365,10 +316,10 @@ void* __guac_client_output_thread(void* data) {
                 if (io->total_written != last_total_written) {
 
                     /* Sleep as necessary */
-                    guac_client_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
+                    guac_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
 
                     /* Send sync instruction */
-                    client->last_sent_timestamp = guac_client_current_timestamp();
+                    client->last_sent_timestamp = guac_current_timestamp();
                     guac_send_sync(io, client->last_sent_timestamp);
 
                 }
@@ -378,13 +329,13 @@ void* __guac_client_output_thread(void* data) {
 
             /* If sync threshold exceeded, don't spin waiting for resync */
             else
-                guac_client_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
+                guac_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
 
         }
 
         /* If no message handler, just sleep until next sync ping */
         else
-            guac_client_sleep(GUAC_SYNC_FREQUENCY);
+            guac_sleep(GUAC_SYNC_FREQUENCY);
 
     } /* End of output loop */
 

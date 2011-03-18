@@ -35,8 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUACIO_H
-#define _GUACIO_H
+#ifndef _GUAC_GUACIO_H
+#define _GUAC_GUACIO_H
 
 #include <unistd.h>
 

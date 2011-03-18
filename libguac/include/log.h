@@ -35,8 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _LOG_H
-#define _LOG_H
+#ifndef _GUAC_LOG_H
+#define _GUAC_LOG_H
 
 #ifdef HAVE_SYSLOG_H
 

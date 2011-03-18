@@ -35,8 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __PROTOCOL_H
-#define __PROTOCOL_H
+#ifndef _GUAC_PROTOCOL_H
+#define _GUAC_PROTOCOL_H
 
 #include <png.h>
 
@@ -254,6 +254,9 @@ int guac_instructions_waiting(GUACIO* io);
  *         enough data is available.
  */
 int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction);
+
+long guac_current_timestamp();
+void guac_sleep(int millis);
 
 #endif
 

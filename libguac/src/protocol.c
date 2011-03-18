@@ -35,6 +35,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#ifdef HAVE_CLOCK_GETTIME
+#include <time.h>
+#else
+#include <sys/time.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -529,5 +535,48 @@ int guac_instructions_waiting(GUACIO* io) {
         return 1;
 
     return guac_select(io, GUAC_USEC_TIMEOUT);
+}
+
+long guac_current_timestamp() {
+
+#ifdef HAVE_CLOCK_GETTIME
+
+    struct timespec current;
+
+    /* Get current time */
+    clock_gettime(CLOCK_REALTIME, &current);
+    
+    /* Calculate milliseconds */
+    return current.tv_sec * 1000 + current.tv_nsec / 1000000;
+
+#else
+
+    struct timeval current;
+
+    /* Get current time */
+    gettimeofday(&current, NULL);
+    
+    /* Calculate milliseconds */
+    return current.tv_sec * 1000 + current.tv_usec / 1000;
+
+#endif
+
+}
+
+void guac_sleep(int millis) {
+
+#ifdef HAVE_NANOSLEEP 
+        struct timespec sleep_period;
+
+        sleep_period.tv_sec = 0;
+        sleep_period.tv_nsec = millis * 1000000L;
+
+        nanosleep(&sleep_period, NULL);
+#elif defined(__MINGW32__)
+        Sleep(millis)
+#else
+#warning No sleep/nanosleep function available. Clients may not perform as expected. Consider patching libguac to add support for your platform.
+#endif
+
 }
 

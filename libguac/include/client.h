@@ -36,8 +36,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-#ifndef _CLIENT_H
-#define _CLIENT_H
+#ifndef _GUAC_CLIENT_H
+#define _GUAC_CLIENT_H
 
 #include <png.h>
 
@@ -296,9 +296,5 @@ void guac_free_png_buffer(png_byte** png_buffer, int h);
 
 int guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
 void guac_client_stop(guac_client* client);
-
-/* FIXME: MOVE THESE TO protocol.h */
-long guac_client_current_timestamp();
-void guac_client_sleep(int millis);
 
 #endif
