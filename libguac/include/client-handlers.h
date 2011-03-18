@@ -41,23 +41,78 @@
 #include "client.h"
 #include "protocol.h"
 
+/**
+ * Provides initial handler functions and a lookup structure for automatically
+ * handling client instructions. This is used only internally within libguac,
+ * and is not installed along with the library.
+ *
+ * @file client-handlers.h
+ */
+
+/**
+ * Internal handler for Guacamole instructions.
+ */
 typedef int __guac_instruction_handler(guac_client* client, guac_instruction* copied);
 
+/**
+ * Structure mapping an instruction opcode to an instruction handler.
+ */
 typedef struct __guac_instruction_handler_mapping {
 
+    /**
+     * The instruction opcode which maps to a specific handler.
+     */
     char* opcode;
+
+    /**
+     * The handler which maps to a specific opcode.
+     */
     __guac_instruction_handler* handler;
 
 } __guac_instruction_handler_mapping;
 
+/**
+ * Internal initial handler for the sync instruction. When a sync instruction
+ * is received, this handler will be called. Sync instructions are automatically
+ * handled, thus there is no client handler for sync instruction.
+ */
 int __guac_handle_sync(guac_client* client, guac_instruction* instruction);
+
+/**
+ * Internal initial handler for the mouse instruction. When a mouse instruction
+ * is received, this handler will be called. The client's mouse handler will
+ * be invoked if defined.
+ */
 int __guac_handle_mouse(guac_client* client, guac_instruction* instruction);
+
+/**
+ * Internal initial handler for the key instruction. When a key instruction
+ * is received, this handler will be called. The client's key handler will
+ * be invoked if defined.
+ */
 int __guac_handle_key(guac_client* client, guac_instruction* instruction);
+
+/**
+ * Internal initial handler for the clipboard instruction. When a clipboard instruction
+ * is received, this handler will be called. The client's clipboard handler will
+ * be invoked if defined.
+ */
 int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction);
+
+/**
+ * Internal initial handler for the disconnect instruction. When a disconnect instruction
+ * is received, this handler will be called. Disconnect instructions are automatically
+ * handled, thus there is no client handler for disconnect instruction.
+ */
 int __guac_handle_disconnect(guac_client* client, guac_instruction* instruction);
 
+/**
+ * Instruction handler mapping table. This is a NULL-terminated array of
+ * __guac_instruction_handler_mapping structures, each mapping an opcode
+ * to a __guac_instruction_handler. The end of the array must be marked
+ * with a __guac_instruction_handler_mapping with the opcode set to
+ * NULL (the NULL terminator).
+ */
 extern __guac_instruction_handler_mapping __guac_instruction_handler_map[];
-
-int __guac_handle_instruction(guac_client* client, guac_instruction* instruction);
 
 #endif

@@ -41,6 +41,8 @@
 #include "protocol.h"
 #include "client-handlers.h"
 
+/* Guacamole instruction handler map */
+
 __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"sync",       __guac_handle_sync},
    {"mouse",      __guac_handle_mouse},
@@ -50,6 +52,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {NULL,         NULL}
 };
 
+/* Guacamole instruction handlers */
 
 int __guac_handle_sync(guac_client* client, guac_instruction* instruction) {
     long timestamp = atol(instruction->argv[0]);
@@ -93,6 +96,7 @@ int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction) 
 }
 
 int __guac_handle_disconnect(guac_client* client, guac_instruction* instruction) {
+    /* Return error code to force disconnect */
     return -1;
 }
 
