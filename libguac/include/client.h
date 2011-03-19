@@ -296,8 +296,11 @@ guac_client* guac_get_client(int client_fd);
  * Enter the main network message handling loop for the given client.
  *
  * @param client The proxy client to start handling messages of/for.
+ * @return Zero if the client successfully started, non-zero if an error
+ *         occurs during startup. Note that this function will still return
+ *         zero if an error occurs while the client is running.
  */
-void guac_start_client(guac_client* client);
+int guac_start_client(guac_client* client);
 
 /**
  * Free all resources associated with the given client.

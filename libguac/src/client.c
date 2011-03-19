@@ -387,18 +387,16 @@ void* __guac_client_input_thread(void* data) {
 
 }
 
-void guac_start_client(guac_client* client) {
+int guac_start_client(guac_client* client) {
 
     pthread_t input_thread, output_thread;
 
     if (pthread_create(&output_thread, NULL, __guac_client_output_thread, (void*) client)) {
-        /* THIS FUNCTION SHOULD RETURN A VALUE! */
-        return;
+        return -1;
     }
 
     if (pthread_create(&input_thread, NULL, __guac_client_input_thread, (void*) client)) {
-        /* THIS FUNCTION SHOULD RETURN A VALUE! */
-        return;
+        return -1;
     }
 
     /* Wait for I/O threads */
@@ -406,6 +404,7 @@ void guac_start_client(guac_client* client) {
     pthread_join(output_thread, NULL);
 
     /* Done */
+    return 0;
 
 }
 
