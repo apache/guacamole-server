@@ -265,6 +265,8 @@ int main(int argc, char* argv[]) {
             GUAC_LOG_ERROR("Could not create client thread: %s", lasterror());
             return 3;
         }
+
+        pthread_detach(thread);
 #elif __MINGW32__
         if (_beginthread(start_client_thread, 0, (void*) data) == -1L) { 
             GUAC_LOG_ERROR("Could not create client thread: %s", lasterror());
