@@ -167,97 +167,127 @@ char* guac_unescape_string_inplace(char* str) {
 
 }
 
-void guac_send_args(GUACIO* io, const char** args) {
+int guac_send_args(GUACIO* io, const char** args) {
 
     int i;
 
-    guac_write_string(io, "args:");
+    if (guac_write_string(io, "args:")) return -1;
 
     for (i=0; args[i] != NULL; i++) {
 
-        if (i > 0)
-            guac_write_string(io, ",");
+        if (i > 0) {
+            if (guac_write_string(io, ","))
+                return -1;
+        }
 
         char* escaped = guac_escape_string(args[i]); 
-        guac_write_string(io, escaped);
+        if (guac_write_string(io, escaped)) {
+            free(escaped);
+            return -1;
+        }
         free(escaped);
 
     }
 
-    guac_write_string(io, ";");
+    return guac_write_string(io, ";");
 
 }
 
-void guac_send_name(GUACIO* io, const char* name) {
+int guac_send_name(GUACIO* io, const char* name) {
 
     char* escaped = guac_escape_string(name); 
 
-    guac_write_string(io, "name:");
-    guac_write_string(io, escaped);
-    guac_write_string(io, ";");
+    if (
+        guac_write_string(io, "name:")
+        || guac_write_string(io, escaped)
+        || guac_write_string(io, ";")
+       ) {
+        free(escaped);
+        return -1;
+    }
 
     free(escaped);
+    return 0;
 
 }
 
-void guac_send_size(GUACIO* io, int w, int h) {
-    guac_write_string(io, "size:");
-    guac_write_int(io, w);
-    guac_write_string(io, ",");
-    guac_write_int(io, h);
-    guac_write_string(io, ";");
+int guac_send_size(GUACIO* io, int w, int h) {
+
+    return
+        guac_write_string(io, "size:")
+        || guac_write_int(io, w)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, h)
+        || guac_write_string(io, ";");
+
 }
 
-void guac_send_clipboard(GUACIO* io, const char* data) {
+int guac_send_clipboard(GUACIO* io, const char* data) {
 
     char* escaped = guac_escape_string(data); 
 
-    guac_write_string(io, "clipboard:");
-    guac_write_string(io, escaped);
-    guac_write_string(io, ";");
+    if (
+        guac_write_string(io, "clipboard:")
+        || guac_write_string(io, escaped)
+        || guac_write_string(io, ";")
+       ) {
+        free(escaped);
+        return -1;
+    }
 
     free(escaped);
+    return 0;
 
 }
 
-void guac_send_error(GUACIO* io, const char* error) {
+int guac_send_error(GUACIO* io, const char* error) {
 
     char* escaped = guac_escape_string(error); 
 
-    guac_write_string(io, "error:");
-    guac_write_string(io, escaped);
-    guac_write_string(io, ";");
+    if (
+        guac_write_string(io, "error:")
+        || guac_write_string(io, escaped)
+        || guac_write_string(io, ";")
+       ) {
+        free(escaped);
+        return -1;
+    }
 
     free(escaped);
+    return 0;
 
 }
 
-void guac_send_sync(GUACIO* io, long timestamp) {
+int guac_send_sync(GUACIO* io, long timestamp) {
 
-    guac_write_string(io, "sync:");
-    guac_write_int(io, timestamp);
-    guac_write_string(io, ";");
+    return 
+        guac_write_string(io, "sync:")
+        || guac_write_int(io, timestamp)
+        || guac_write_string(io, ";");
 
 }
 
-void guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int dstl, int dstx, int dsty) {
-    guac_write_string(io, "copy:");
-    guac_write_int(io, srcl);
-    guac_write_string(io, ",");
-    guac_write_int(io, srcx);
-    guac_write_string(io, ",");
-    guac_write_int(io, srcy);
-    guac_write_string(io, ",");
-    guac_write_int(io, w);
-    guac_write_string(io, ",");
-    guac_write_int(io, h);
-    guac_write_string(io, ",");
-    guac_write_int(io, dstl);
-    guac_write_string(io, ",");
-    guac_write_int(io, dstx);
-    guac_write_string(io, ",");
-    guac_write_int(io, dsty);
-    guac_write_string(io, ";");
+int guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int dstl, int dstx, int dsty) {
+
+    return
+        guac_write_string(io, "copy:")
+        || guac_write_int(io, srcl)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, srcx)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, srcy)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, w)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, h)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, dstl)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, dstx)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, dsty)
+        || guac_write_string(io, ";");
+
 }
 
 void __guac_write_png(png_structp png, png_bytep data, png_size_t length) {
@@ -281,7 +311,7 @@ void __guac_write_png(png_structp png, png_bytep data, png_size_t length) {
 void __guac_write_flush(png_structp png) {
 }
 
-void guac_send_png(GUACIO* io, int layer, int x, int y, png_byte** png_rows, int w, int h) {
+int guac_send_png(GUACIO* io, int layer, int x, int y, png_byte** png_rows, int w, int h) {
 
     png_structp png;
     png_infop png_info;
@@ -291,22 +321,19 @@ void guac_send_png(GUACIO* io, int layer, int x, int y, png_byte** png_rows, int
     /* Set up PNG writer */
     png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (!png) {
-        perror("Error initializing libpng write structure");
-        return;
+        return -1;
     }
 
     png_info = png_create_info_struct(png);
     if (!png_info) {
-        perror("Error initializing libpng info structure");
         png_destroy_write_struct(&png, NULL);
-        return;
+        return -1;
     }
 
     /* Set error handler */
     if (setjmp(png_jmpbuf(png))) {
-        perror("Error setting handler");
         png_destroy_write_struct(&png, &png_info);
-        return;
+        return -1;
     }
 
     png_set_write_fn(png, io, __guac_write_png, __guac_write_flush);
@@ -324,30 +351,34 @@ void guac_send_png(GUACIO* io, int layer, int x, int y, png_byte** png_rows, int
             PNG_FILTER_TYPE_DEFAULT
     );
     
-    guac_write_string(io, "png:");
-    guac_write_int(io, layer);
-    guac_write_string(io, ",");
-    guac_write_int(io, x);
-    guac_write_string(io, ",");
-    guac_write_int(io, y);
-    guac_write_string(io, ",");
+    if (
+           guac_write_string(io, "png:")
+        || guac_write_int(io, layer)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, x)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, y)
+        || guac_write_string(io, ",")
+       ) {
+        png_destroy_write_struct(&png, &png_info);
+        return -1;
+    }
+
     png_set_rows(png, png_info, png_rows);
     png_write_png(png, png_info, PNG_TRANSFORM_IDENTITY, NULL);
 
     if (guac_flush_base64(io) < 0) {
-        perror("Error flushing PNG");
-        png_error(png, "Error flushing PNG");
-        return;
+        png_destroy_write_struct(&png, &png_info);
+        return -1;
     }
 
     png_destroy_write_struct(&png, &png_info);
-
-    guac_write_string(io, ";");
+    return guac_write_string(io, ";");
 
 }
 
 
-void guac_send_cursor(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h) {
+int guac_send_cursor(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h) {
 
     png_structp png;
     png_infop png_info;
@@ -357,22 +388,19 @@ void guac_send_cursor(GUACIO* io, int x, int y, png_byte** png_rows, int w, int 
     /* Set up PNG writer */
     png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (!png) {
-        perror("Error initializing libpng write structure");
-        return;
+        return -1;
     }
 
     png_info = png_create_info_struct(png);
     if (!png_info) {
-        perror("Error initializing libpng info structure");
         png_destroy_write_struct(&png, NULL);
-        return;
+        return -1;
     }
 
     /* Set error handler */
     if (setjmp(png_jmpbuf(png))) {
-        perror("Error setting handler");
         png_destroy_write_struct(&png, &png_info);
-        return;
+        return -1;
     }
 
     png_set_write_fn(png, io, __guac_write_png, __guac_write_flush);
@@ -390,23 +418,27 @@ void guac_send_cursor(GUACIO* io, int x, int y, png_byte** png_rows, int w, int 
             PNG_FILTER_TYPE_DEFAULT
     );
     
-    guac_write_string(io, "cursor:");
-    guac_write_int(io, x);
-    guac_write_string(io, ",");
-    guac_write_int(io, y);
-    guac_write_string(io, ",");
+    if (
+        guac_write_string(io, "cursor:")
+        || guac_write_int(io, x)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, y)
+        || guac_write_string(io, ",")
+       ) {
+        png_destroy_write_struct(&png, &png_info);
+        return -1;
+    }
+
     png_set_rows(png, png_info, png_rows);
     png_write_png(png, png_info, PNG_TRANSFORM_IDENTITY, NULL);
 
     if (guac_flush_base64(io) < 0) {
-        perror("Error flushing PNG");
-        png_error(png, "Error flushing PNG");
-        return;
+        png_destroy_write_struct(&png, &png_info);
+        return -1;
     }
 
     png_destroy_write_struct(&png, &png_info);
-
-    guac_write_string(io, ";");
+    return guac_write_string(io, ";");
 
 }
 

@@ -132,8 +132,9 @@ char* guac_unescape_string_inplace(char* str);
  *
  * @param io The GUACIO connection to use.
  * @param args The NULL-terminated array of argument names (strings).
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_args(GUACIO* io, const char** name);
+int guac_send_args(GUACIO* io, const char** name);
 
 /**
  * Sends a name instruction over the given GUACIO connection. The
@@ -141,8 +142,9 @@ void guac_send_args(GUACIO* io, const char** name);
  *
  * @param io The GUACIO connection to use.
  * @param name The name to send within the name instruction.
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_name(GUACIO* io, const char* name);
+int guac_send_name(GUACIO* io, const char* name);
 
 /**
  * Sends a sync instruction over the given GUACIO connection. The
@@ -150,8 +152,9 @@ void guac_send_name(GUACIO* io, const char* name);
  *
  * @param io The GUACIO connection to use.
  * @param timestamp The current timestamp (in milliseconds).
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_sync(GUACIO* io, long timestamp);
+int guac_send_sync(GUACIO* io, long timestamp);
 
 /**
  * Sends an error instruction over the given GUACIO connection. The
@@ -160,8 +163,9 @@ void guac_send_sync(GUACIO* io, long timestamp);
  *
  * @param io The GUACIO connection to use.
  * @param error The description associated with the error.
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_error(GUACIO* io, const char* error);
+int guac_send_error(GUACIO* io, const char* error);
 
 /**
  * Sends a clipboard instruction over the given GUACIO connection. The
@@ -169,8 +173,9 @@ void guac_send_error(GUACIO* io, const char* error);
  *
  * @param io The GUACIO connection to use.
  * @param data The clipboard data to send.
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_clipboard(GUACIO* io, const char* data);
+int guac_send_clipboard(GUACIO* io, const char* data);
 
 /**
  * Sends a size instruction over the given GUACIO connection.
@@ -178,8 +183,9 @@ void guac_send_clipboard(GUACIO* io, const char* data);
  * @param io The GUACIO connection to use.
  * @param w The width of the display.
  * @param h The height of the display.
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_size(GUACIO* io, int w, int h);
+int guac_send_size(GUACIO* io, int w, int h);
 
 /**
  * Sends a copy instruction over the given GUACIO connection.
@@ -195,8 +201,9 @@ void guac_send_size(GUACIO* io, int w, int h);
  *             should be copied.
  * @param dsty The Y coordinate of the destination, where the source rectangle
  *             should be copied.
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h,
+int guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h,
         int dstl, int dstx, int dsty);
 
 /**
@@ -211,8 +218,9 @@ void guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h,
  *                 data to send.
  * @param w The width of the image in the image buffer.
  * @param h The height of the image in the image buffer.
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_png(GUACIO* io, int layer, int x, int y,
+int guac_send_png(GUACIO* io, int layer, int x, int y,
         png_byte** png_rows, int w, int h);
 
 /**
@@ -226,8 +234,9 @@ void guac_send_png(GUACIO* io, int layer, int x, int y,
  *                 data to send.
  * @param w The width of the image in the image buffer.
  * @param h The height of the image in the image buffer.
+ * @return Zero on success, non-zero on error.
  */
-void guac_send_cursor(GUACIO* io, int x, int y,
+int guac_send_cursor(GUACIO* io, int x, int y,
         png_byte** png_rows, int w, int h);
 
 /**
