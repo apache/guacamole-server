@@ -103,7 +103,7 @@ typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
  * Handler for freeing up any extra data allocated by the client
  * implementation.
  */
-typedef int guac_client_free_handler(void* client);
+typedef int guac_client_free_handler(guac_client* client);
 
 /**
  * Possible current states of the Guacamole client. Currently, the only
