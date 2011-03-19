@@ -214,7 +214,7 @@ int guac_send_name(GUACIO* io, const char* name) {
 int guac_send_size(GUACIO* io, int w, int h) {
 
     return
-        guac_write_string(io, "size:")
+           guac_write_string(io, "size:")
         || guac_write_int(io, w)
         || guac_write_string(io, ",")
         || guac_write_int(io, h)
@@ -227,7 +227,7 @@ int guac_send_clipboard(GUACIO* io, const char* data) {
     char* escaped = guac_escape_string(data); 
 
     if (
-        guac_write_string(io, "clipboard:")
+           guac_write_string(io, "clipboard:")
         || guac_write_string(io, escaped)
         || guac_write_string(io, ";")
        ) {
@@ -245,7 +245,7 @@ int guac_send_error(GUACIO* io, const char* error) {
     char* escaped = guac_escape_string(error); 
 
     if (
-        guac_write_string(io, "error:")
+           guac_write_string(io, "error:")
         || guac_write_string(io, escaped)
         || guac_write_string(io, ";")
        ) {
@@ -261,7 +261,7 @@ int guac_send_error(GUACIO* io, const char* error) {
 int guac_send_sync(GUACIO* io, long timestamp) {
 
     return 
-        guac_write_string(io, "sync:")
+           guac_write_string(io, "sync:")
         || guac_write_int(io, timestamp)
         || guac_write_string(io, ";");
 
@@ -270,7 +270,7 @@ int guac_send_sync(GUACIO* io, long timestamp) {
 int guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int dstl, int dstx, int dsty) {
 
     return
-        guac_write_string(io, "copy:")
+           guac_write_string(io, "copy:")
         || guac_write_int(io, srcl)
         || guac_write_string(io, ",")
         || guac_write_int(io, srcx)
@@ -419,7 +419,7 @@ int guac_send_cursor(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h
     );
     
     if (
-        guac_write_string(io, "cursor:")
+           guac_write_string(io, "cursor:")
         || guac_write_int(io, x)
         || guac_write_string(io, ",")
         || guac_write_int(io, y)

@@ -190,9 +190,14 @@ guac_client* guac_get_client(int client_fd) {
                     return NULL;
                 }
 
-                /* Send args */
-                guac_send_args(io, client_args);
-                guac_flush(io);
+                if (   /* Send args */
+                       guac_send_args(io, client_args)
+                    || guac_flush(io)
+                   ) {
+                    guac_close(io);
+                    guac_free_instruction_data(&instruction);
+                    return NULL;
+                }
 
                 guac_free_instruction_data(&instruction);
                 break;
@@ -292,8 +297,13 @@ void* __guac_client_output_thread(void* data) {
         long timestamp = guac_current_timestamp();
         if (timestamp - client->last_sent_timestamp > GUAC_SYNC_FREQUENCY) {
             client->last_sent_timestamp = timestamp;
-            guac_send_sync(io, timestamp);
-            guac_flush(io);
+            if (
+                   guac_send_sync(io, timestamp)
+                || guac_flush(io)
+               ) {
+                guac_client_stop(client);
+                return NULL;
+            }
         }
 
         /* Handle server messages */
@@ -320,11 +330,18 @@ void* __guac_client_output_thread(void* data) {
 
                     /* Send sync instruction */
                     client->last_sent_timestamp = guac_current_timestamp();
-                    guac_send_sync(io, client->last_sent_timestamp);
+                    if (guac_send_sync(io, client->last_sent_timestamp)) {
+                        guac_client_stop(client);
+                        return NULL;
+                    }
 
                 }
 
-                guac_flush(io);
+                if (guac_flush(io)) {
+                    guac_client_stop(client);
+                    return NULL;
+                }
+
             }
 
             /* If sync threshold exceeded, don't spin waiting for resync */
