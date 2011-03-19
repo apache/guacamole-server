@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/types.h>
 
 #ifdef __MINGW32__
@@ -103,7 +104,6 @@ void* start_client_thread(void* data) {
     }
 
     guac_start_client(client);
-
     guac_free_client(client);
 
     /* Close socket */
@@ -234,6 +234,11 @@ int main(int argc, char* argv[]) {
 
     /* Otherwise, this is the daemon */
     GUAC_LOG_INFO("Started, listening on port %i", listen_port);
+
+    /* Ignore SIGPIPE */
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+        GUAC_LOG_ERROR("Could not set handler for SIGPIPE to ignore. SIGPIPE will cause termination of the daemon.");
+    }
 
     /* Daemon loop */
     for (;;) {
