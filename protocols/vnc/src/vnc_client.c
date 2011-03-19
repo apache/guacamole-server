@@ -134,6 +134,8 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
     /* SEND CURSOR */
     guac_send_cursor(io, x, y, png_buffer, w, h);
 
+    /* libvncclient does not free rcMask as it does rcSource */
+    free(client->rcMask);
 }
 
 
@@ -317,6 +319,18 @@ int vnc_guac_client_free_handler(guac_client* client) {
     /* Free generic data struct */
     free(client->data);
 
+    /* Free memory not free'd by libvncclient's rfbClientCleanup() */
+    if (rfb_client->frameBuffer != NULL) free(rfb_client->frameBuffer);
+    if (rfb_client->raw_buffer != NULL) free(rfb_client->raw_buffer);
+    if (rfb_client->rcSource != NULL) free(rfb_client->rcSource);
+
+    /* Free VNC rfbClientData linked list (not free'd by rfbClientCleanup()) */
+    while (rfb_client->clientData != NULL) {
+        rfbClientData* next = rfb_client->clientData->next;
+        free(rfb_client->clientData);
+        rfb_client->clientData = next;
+    }
+
     /* Clean up VNC client*/
     rfbClientCleanup(rfb_client);
 
@@ -327,9 +341,6 @@ int vnc_guac_client_free_handler(guac_client* client) {
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
     rfbClient* rfb_client;
-
-    png_byte** png_buffer;
-    png_byte** png_buffer_alpha;
 
     vnc_guac_client_data* guac_client_data;
 
@@ -402,19 +413,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return 1;
     }
 
-    /* Allocate buffers */
-    png_buffer = guac_alloc_png_buffer(rfb_client->width, rfb_client->height, 3); /* No-alpha */
-    png_buffer_alpha = guac_alloc_png_buffer(rfb_client->width, rfb_client->height, 4); /* With alpha */
-
     /* Set remaining client data */
     guac_client_data->rfb_client = rfb_client;
-    guac_client_data->png_buffer = png_buffer;
-    guac_client_data->png_buffer_alpha = png_buffer_alpha;
-    guac_client_data->buffer_height = rfb_client->height;
     guac_client_data->copy_rect_used = 0;
 
     /* Set handlers */
     client->handle_messages = vnc_guac_client_handle_messages;
+    client->free_handler = vnc_guac_client_free_handler;
     if (read_only == 0) {
         /* Do not handle mouse/keyboard/clipboard if read-only */
         client->mouse_handler = vnc_guac_client_mouse_handler;
