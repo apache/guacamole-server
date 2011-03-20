@@ -44,7 +44,7 @@ libguacinc_HEADERS = include/client.h include/guacio.h include/protocol.h includ
 
 lib_LTLIBRARIES = libguac.la
 
-libguac_la_SOURCES = src/client.c src/guacio.c src/protocol.c src/client-handlers.c
+libguac_la_SOURCES = src/client.c src/guacio.c src/protocol.c src/client-handlers.c src/log.c
 
 libguac_la_LDFLAGS = -version-info 0:0:0
 

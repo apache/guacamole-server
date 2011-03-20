@@ -79,4 +79,3 @@ void guac_log_error(const char* str, ...) {
 
 }
 
-#endif
