@@ -255,14 +255,14 @@ int vnc_guac_client_handle_messages(guac_client* client) {
 
     wait_result = WaitForMessage(rfb_client, 1000000);
     if (wait_result < 0) {
-        GUAC_LOG_ERROR("Error waiting for VNC server message\n");
+        guac_log_error("Error waiting for VNC server message\n");
         return 1;
     }
 
     if (wait_result > 0) {
 
         if (!HandleRFBServerMessage(rfb_client)) {
-            GUAC_LOG_ERROR("Error handling VNC server message\n");
+            guac_log_error("Error handling VNC server message\n");
             return 1;
         }
 
