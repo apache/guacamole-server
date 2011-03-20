@@ -346,6 +346,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     int read_only = 0;
 
+    /* Set up libvncclient logging */
+    rfbClientLog = guac_log_info;
+    rfbClientErr = guac_log_error;
+
     /*** PARSE ARGUMENTS ***/
 
     if (argc < 5) {
