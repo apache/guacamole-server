@@ -93,13 +93,13 @@ void* start_client_thread(void* data) {
     guac_client* client;
     client_thread_data* thread_data = (client_thread_data*) data;
 
-    GUAC_LOG_INFO("Spawning client");
+    guac_log_info("Spawning client");
 
     /* Load and start client */
     client = guac_get_client(thread_data->fd); 
 
     if (client == NULL) {
-        GUAC_LOG_ERROR("Client retrieval failed");
+        guac_log_error("Client retrieval failed");
         return NULL;
     }
 
@@ -108,12 +108,12 @@ void* start_client_thread(void* data) {
 
     /* Close socket */
     if (CLOSE_SOCKET(thread_data->fd) < 0) {
-        GUAC_LOG_ERROR("Error closing connection: %s", lasterror());
+        guac_log_error("Error closing connection: %s", lasterror());
         free(data);
         return NULL;
     }
 
-    GUAC_LOG_INFO("Client finished");
+    guac_log_info("Client finished");
     free(data);
     return NULL;
 
@@ -228,16 +228,16 @@ int main(int argc, char* argv[]) {
         exit(EXIT_SUCCESS);
     }
 #else
-    GUAC_LOG_INFO("fork() not defined at compile time.");
-    GUAC_LOG_INFO("guacd running in foreground only.");
+    guac_log_info("fork() not defined at compile time.");
+    guac_log_info("guacd running in foreground only.");
 #endif
 
     /* Otherwise, this is the daemon */
-    GUAC_LOG_INFO("Started, listening on port %i", listen_port);
+    guac_log_info("Started, listening on port %i", listen_port);
 
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-        GUAC_LOG_ERROR("Could not set handler for SIGPIPE to ignore. SIGPIPE will cause termination of the daemon.");
+        guac_log_error("Could not set handler for SIGPIPE to ignore. SIGPIPE will cause termination of the daemon.");
     }
 
     /* Daemon loop */
@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) {
 
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
-            GUAC_LOG_ERROR("Could not listen on socket: %s", lasterror());
+            guac_log_error("Could not listen on socket: %s", lasterror());
             return 3;
         }
 
@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
         client_addr_len = sizeof(client_addr);
         connected_socket_fd = accept(socket_fd, (struct sockaddr*) &client_addr, &client_addr_len);
         if (connected_socket_fd < 0) {
-            GUAC_LOG_ERROR("Could not accept client connection: %s", lasterror());
+            guac_log_error("Could not accept client connection: %s", lasterror());
             return 3;
         }
 
@@ -267,20 +267,20 @@ int main(int argc, char* argv[]) {
 
 #ifdef HAVE_LIBPTHREAD
         if (pthread_create(&thread, NULL, start_client_thread, (void*) data)) {
-            GUAC_LOG_ERROR("Could not create client thread: %s", lasterror());
+            guac_log_error("Could not create client thread: %s", lasterror());
             return 3;
         }
 
         pthread_detach(thread);
 #elif __MINGW32__
         if (_beginthread(start_client_thread, 0, (void*) data) == -1L) { 
-            GUAC_LOG_ERROR("Could not create client thread: %s", lasterror());
+            guac_log_error("Could not create client thread: %s", lasterror());
             return 3;
         }
 #else
 #warning THREAD SUPPORT NOT FOUND! guacd will only be able to handle one connection at a time.
-        GUAC_LOG_INFO("Thread support not present at compile time.");
-        GUAC_LOG_INFO("guacd handling one connection at a time.");
+        guac_log_info("Thread support not present at compile time.");
+        guac_log_info("guacd handling one connection at a time.");
         start_client_thread(data);
 #endif
 
@@ -288,7 +288,7 @@ int main(int argc, char* argv[]) {
 
     /* Close socket */
     if (CLOSE_SOCKET(socket_fd) < 0) {
-        GUAC_LOG_ERROR("Could not close socket: %s", lasterror());
+        guac_log_error("Could not close socket: %s", lasterror());
         return 3;
     }
 
