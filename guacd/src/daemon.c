@@ -80,7 +80,6 @@ char* lasterror() {
 #endif
 }
 
-
 typedef struct client_thread_data {
 
     int fd;
@@ -100,6 +99,7 @@ void* start_client_thread(void* data) {
 
     if (client == NULL) {
         guac_log_error("Client retrieval failed");
+        free(data);
         return NULL;
     }
 
@@ -228,6 +228,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_SUCCESS);
     }
 #else
+    daemon_pid = getpid();
     guac_log_info("fork() not defined at compile time.");
     guac_log_info("guacd running in foreground only.");
 #endif
@@ -237,13 +238,20 @@ int main(int argc, char* argv[]) {
 
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-        guac_log_error("Could not set handler for SIGPIPE to ignore. SIGPIPE will cause termination of the daemon.");
+        guac_log_error("Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
+    }
+
+    /* Ignore SIGCHLD (force automatic removal of children) */
+    if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
+        guac_log_error("Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
     }
 
     /* Daemon loop */
     for (;;) {
 
-#ifdef HAVE_LIBPTHREAD
+#ifdef HAVE_FORK
+        pid_t child_pid;
+#elif HAVE_LIBPTHREAD
         pthread_t thread;
 #endif
         client_thread_data* data;
@@ -265,23 +273,61 @@ int main(int argc, char* argv[]) {
         data = malloc(sizeof(client_thread_data));
         data->fd = connected_socket_fd;
 
-#ifdef HAVE_LIBPTHREAD
-        if (pthread_create(&thread, NULL, start_client_thread, (void*) data)) {
-            guac_log_error("Could not create client thread: %s", lasterror());
-            return 3;
+        /* 
+         * Once connection is accepted, send child into background, whether through
+         * fork() or through creating a thread. If thead support is not present on
+         * the platform, guacd will still work, but will only be able to handle one
+         * connection at a time.
+         */
+
+#ifdef HAVE_FORK
+
+        /*** FORK ***/
+
+        /*
+         * Note that we prefer fork() over pthreads for connection-handling
+         * processes as they give each connection its own memory area, and
+         * isolate the main daemon and other connections from errors in any
+         * particular client plugin.
+         */
+
+        child_pid = fork();
+
+        /* If error, log */
+        if (child_pid == -1)
+            guac_log_error("Error forking child process: %s\n", lasterror());
+
+        /* If child, start client, and exit when finished */
+        else if (child_pid == 0) {
+            start_client_thread(data);
+            return 0;
         }
 
-        pthread_detach(thread);
-#elif __MINGW32__
-        if (_beginthread(start_client_thread, 0, (void*) data) == -1L) { 
+#elif HAVE_LIBPTHREAD
+
+        /*** PTHREADS ***/
+
+        if (pthread_create(&thread, NULL, start_client_thread, (void*) data))
             guac_log_error("Could not create client thread: %s", lasterror());
-            return 3;
-        }
+        else
+            pthread_detach(thread);
+
+#elif __MINGW32__
+
+        /*** Windows threads ***/
+
+        if (_beginthread(start_client_thread, 0, (void*) data) == -1L) 
+            guac_log_error("Could not create client thread: %s", lasterror());
+
 #else
 #warning THREAD SUPPORT NOT FOUND! guacd will only be able to handle one connection at a time.
+
+        /*** NO THREADS ***/
+
         guac_log_info("Thread support not present at compile time.");
         guac_log_info("guacd handling one connection at a time.");
         start_client_thread(data);
+
 #endif
 
     }
