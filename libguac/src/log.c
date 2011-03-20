@@ -45,35 +45,43 @@
 
 #include "log.h"
 
-void guac_log_info(const char* str, ...) {
-
-    va_list args;
-    va_start(args, str);
-
+void vguac_log_info(const char* format, va_list ap) {
 #ifdef HAVE_SYSLOG_H
-    vsyslog(LOG_ERR, str, args);
+    vsyslog(LOG_ERR, format, ap);
 #else
     fprintf(stderr, "guacamole: info:  ");
-    vfprintf(stderr, str, args);
+    vfprintf(stderr, format, ap);
     fprintf(stderr, "\n");
 #endif
+}
+
+void vguac_log_error(const char* format, va_list ap) {
+#ifdef HAVE_SYSLOG_H
+    vsyslog(LOG_INFO, format, ap);
+#else
+    fprintf(stderr, "guacamole: error: ");
+    vfprintf(stderr, format, ap);
+    fprintf(stderr, "\n");
+#endif
+}
+
+void guac_log_info(const char* format, ...) {
+
+    va_list args;
+    va_start(args, format);
+
+    vguac_log_info(format, args);
 
     va_end(args);
 
 }
 
-void guac_log_error(const char* str, ...) {
+void guac_log_error(const char* format, ...) {
 
     va_list args;
-    va_start(args, str);
+    va_start(args, format);
 
-#ifdef HAVE_SYSLOG_H
-    vsyslog(LOG_INFO, str, args);
-#else
-    fprintf(stderr, "guacamole: error: ");
-    vfprintf(stderr, str, args);
-    fprintf(stderr, "\n");
-#endif
+    vguac_log_error(format, args);
 
     va_end(args);
 
