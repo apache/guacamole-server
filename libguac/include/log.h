@@ -38,7 +38,32 @@
 #ifndef _GUAC_LOG_H
 #define _GUAC_LOG_H
 
+/**
+ * Provides basic cross-platform logging facilities.
+ *
+ * @file log.h
+ */
+
+/**
+ * Logs an informational message in the system log, whatever
+ * that may be for the system being used. This will currently
+ * log to syslog for platforms supporting it, and stderr for
+ * all others.
+ *
+ * @param str A printf-style format string to log.
+ * @param ... Arguments to use when filling the format string for printing.
+ */
 void guac_log_info(const char* str, ...);
+
+/**
+ * Logs an error message in the system log, whatever
+ * that may be for the system being used. This will currently
+ * log to syslog for platforms supporting it, and stderr for
+ * all others.
+ *
+ * @param str A printf-style format string to log.
+ * @param ... Arguments to use when filling the format string for printing.
+ */
 void guac_log_error(const char* str, ...);
 
 #endif
