@@ -156,7 +156,7 @@ guac_client* guac_get_client(int client_fd) {
                 /* Load client plugin */
                 client->client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
                 if (!(client->client_plugin_handle)) {
-                    GUAC_LOG_ERROR("Could not open client plugin for protocol \"%s\": %s\n", protocol, dlerror());
+                    guac_log_error("Could not open client plugin for protocol \"%s\": %s\n", protocol, dlerror());
                     guac_send_error(io, "Could not load server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
@@ -170,7 +170,7 @@ guac_client* guac_get_client(int client_fd) {
                 alias.obj = dlsym(client->client_plugin_handle, "guac_client_init");
 
                 if ((error = dlerror()) != NULL) {
-                    GUAC_LOG_ERROR("Could not get guac_client_init in plugin: %s\n", error);
+                    guac_log_error("Could not get guac_client_init in plugin: %s\n", error);
                     guac_send_error(io, "Invalid server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
@@ -182,7 +182,7 @@ guac_client* guac_get_client(int client_fd) {
                 client_args = (const char**) dlsym(client->client_plugin_handle, "GUAC_CLIENT_ARGS");
 
                 if ((error = dlerror()) != NULL) {
-                    GUAC_LOG_ERROR("Could not get GUAC_CLIENT_ in plugin: %s\n", error);
+                    guac_log_error("Could not get GUAC_CLIENT_ in plugin: %s\n", error);
                     guac_send_error(io, "Invalid server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
@@ -230,7 +230,7 @@ guac_client* guac_get_client(int client_fd) {
 
         result = guac_read_instruction(io, &instruction);
         if (result < 0) {
-            GUAC_LOG_ERROR("Error reading instruction while waiting for connect");
+            guac_log_error("Error reading instruction while waiting for connect");
             guac_close(io);
             return NULL;            
         }
@@ -271,14 +271,14 @@ void guac_free_client(guac_client* client) {
 
     if (client->free_handler) {
         if (client->free_handler(client))
-            GUAC_LOG_ERROR("Error calling client free handler");
+            guac_log_error("Error calling client free handler");
     }
 
     guac_close(client->io);
 
     /* Unload client plugin */
     if (dlclose(client->client_plugin_handle)) {
-        GUAC_LOG_ERROR("Could not close client plugin while unloading client: %s", dlerror());
+        guac_log_error("Could not close client plugin while unloading client: %s", dlerror());
     }
 
     free(client);
@@ -318,8 +318,9 @@ void* __guac_client_output_thread(void* data) {
 
                 int retval = client->handle_messages(client);
                 if (retval) {
-                    GUAC_LOG_ERROR("Error handling server messages");
-                    break;
+                    guac_log_error("Error handling server messages");
+                    guac_client_stop(client);
+                    return NULL;
                 }
 
                 /* If data was written during message handling */

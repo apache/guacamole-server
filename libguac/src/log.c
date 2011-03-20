@@ -35,10 +35,48 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_LOG_H
-#define _GUAC_LOG_H
+#ifdef HAVE_SYSLOG_H
+    #include <syslog.h>
+#else
+    #include <stdio.h>
+#endif
 
-void guac_log_info(const char* str, ...);
-void guac_log_error(const char* str, ...);
+#include <stdarg.h>
+
+#include "log.h"
+
+void guac_log_info(const char* str, ...) {
+
+    va_list args;
+    va_start(args, str);
+
+#ifdef HAVE_SYSLOG_H
+    vsyslog(LOG_ERR, str, args);
+#else
+    fprintf(stderr, "guacamole: info:  ");
+    vfprintf(stderr, str, args);
+    fprintf(stderr, "\n");
+#endif
+
+    va_end(args);
+
+}
+
+void guac_log_error(const char* str, ...) {
+
+    va_list args;
+    va_start(args, str);
+
+#ifdef HAVE_SYSLOG_H
+    vsyslog(LOG_INFO, str, args);
+#else
+    fprintf(stderr, "guacamole: error: ");
+    vfprintf(stderr, str, args);
+    fprintf(stderr, "\n");
+#endif
+
+    va_end(args);
+
+}
 
 #endif
