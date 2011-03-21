@@ -330,6 +330,12 @@ int guac_send_png(GUACIO* io, int layer, int x, int y, png_byte** png_rows, int 
         return -1;
     }
 
+    /* Do not filter (speed) */
+    png_set_filter(png, PNG_FILTER_TYPE_BASE, PNG_FILTER_VALUE_NONE);
+
+    /* Fast compression level */
+    png_set_compression_level(png, 1);
+
     /* Set error handler */
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &png_info);
