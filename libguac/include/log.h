@@ -38,6 +38,8 @@
 #ifndef _GUAC_LOG_H
 #define _GUAC_LOG_H
 
+#include <stdarg.h>
+
 /**
  * Provides basic cross-platform logging facilities.
  *
