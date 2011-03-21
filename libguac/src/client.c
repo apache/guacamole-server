@@ -182,7 +182,7 @@ guac_client* guac_get_client(int client_fd) {
                 client_args = (const char**) dlsym(client->client_plugin_handle, "GUAC_CLIENT_ARGS");
 
                 if ((error = dlerror()) != NULL) {
-                    guac_log_error("Could not get GUAC_CLIENT_ in plugin: %s\n", error);
+                    guac_log_error("Could not get GUAC_CLIENT_ARGS in plugin: %s\n", error);
                     guac_send_error(io, "Invalid server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
@@ -397,6 +397,8 @@ int guac_start_client(guac_client* client) {
     }
 
     if (pthread_create(&input_thread, NULL, __guac_client_input_thread, (void*) client)) {
+        guac_client_stop(client);
+        pthread_join(output_thread, NULL);
         return -1;
     }
 
