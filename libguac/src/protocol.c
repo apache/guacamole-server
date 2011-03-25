@@ -175,12 +175,14 @@ int guac_send_args(GUACIO* io, const char** args) {
 
     for (i=0; args[i] != NULL; i++) {
 
+        char* escaped;
+
         if (i > 0) {
             if (guac_write_string(io, ","))
                 return -1;
         }
 
-        char* escaped = guac_escape_string(args[i]); 
+        escaped = guac_escape_string(args[i]); 
         if (guac_write_string(io, escaped)) {
             free(escaped);
             return -1;
