@@ -37,6 +37,8 @@
 AUTOMAKE_OPTIONS = foreign 
 initdir = @init_dir@
 
+AM_CFLAGS = -Werror -Wall -pedantic
+
 sbin_PROGRAMS = guacd
 init_SCRIPTS = init.d/guacd
 
