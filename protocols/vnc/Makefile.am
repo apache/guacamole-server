@@ -37,7 +37,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall
+AM_CFLAGS = -Werror -Wall -pedantic
 
 lib_LTLIBRARIES = libguac-client-vnc.la
 
