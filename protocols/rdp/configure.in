@@ -46,6 +46,7 @@ AC_PROG_LIBTOOL
 AC_CHECK_LIB([guac], [guac_get_client],, AC_MSG_ERROR("libguac is required for communication via the guacamole protocol"))
 AC_CHECK_LIB([png], [png_write_png],, AC_MSG_ERROR("libpng is required for writing png messages"))
 AC_CHECK_LIB([freerdp], [freerdp_new],, AC_MSG_ERROR("libfreerdp is required"))
+AC_CHECK_LIB([freerdpchanman], [freerdp_chanman_new],, AC_MSG_ERROR("libfreerdp is required"))
 
 # Checks for header files.
 AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h])

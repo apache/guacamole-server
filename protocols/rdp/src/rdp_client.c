@@ -35,11 +35,18 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <stdlib.h>
+#include <string.h>
+
+#include <freerdp/freerdp.h>
+#include <freerdp/chanman.h>
 
 #include <guacamole/log.h>
 #include <guacamole/guacio.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
+
+#define RDP_DEFAULT_PORT 3389
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -50,10 +57,77 @@ const char* GUAC_CLIENT_ARGS[] = {
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
+    rdpInst* rdp_inst;
+    rdpChanMan* chanman;
+	rdpSet* settings;
+
+    char* hostname;
+    int port = RDP_DEFAULT_PORT;
+
+    if (argc < 2) {
+        guac_send_error(client->io, "Wrong argument count received.");
+        guac_flush(client->io);
+        return 1;
+    }
+
+    /* If port specified, use it */
+    if (argv[1][0] != '\0')
+        port = atoi(argv[1]);
+
+    hostname = argv[0];
+
+    /* Get channel manager */
+    chanman = freerdp_chanman_new();
+
+    /* INIT SETTINGS */
+    settings = malloc(sizeof(rdpSet));
+	memset(settings, 0, sizeof(rdpSet));
+
+    /* Set hostname */
+    strncpy(settings->hostname, hostname, sizeof(settings->hostname) - 1);
+
+    /* Default size */
+	settings->width = 1024;
+	settings->height = 768;
+
+	strncpy(settings->server, hostname, sizeof(settings->server));
+	strcpy(settings->username, "guest");
+
+	settings->tcp_port_rdp = port;
+	settings->encryption = 1;
+	settings->server_depth = 16;
+	settings->bitmap_cache = 1;
+	settings->bitmap_compression = 1;
+	settings->desktop_save = 0;
+	settings->rdp5_performanceflags =
+		RDP5_NO_WALLPAPER | RDP5_NO_FULLWINDOWDRAG | RDP5_NO_MENUANIMATIONS;
+	settings->off_screen_bitmaps = 1;
+	settings->triblt = 0;
+	settings->new_cursors = 1;
+	settings->rdp_version = 5;
+
+    /* Init chanman here? */
+
+    /* Init client */
+    rdp_inst = freerdp_new(settings);
+    if (rdp_inst == NULL) {
+        guac_send_error(client->io, "Error initializing RDP client");
+        guac_flush(client->io);
+        return 1;
+    }
+
+    /* freerdp_chanman_pre_connect ? */
+    /* rdp_inst->rdp_connect(rdp_inst) */
+    /* rdp_inst->rdp_disconnect(rdp_inst) */
+    /* freerdp_chanman_post_connect ? */
+
+    freerdp_free(rdp_inst);
+    freerdp_chanman_free(chanman);
+    free(settings);
+
     /* STUB */
     guac_send_error(client->io, "STUB");
-
-    return -1;
+    return 1;
 
 }
 
