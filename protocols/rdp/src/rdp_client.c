@@ -55,7 +55,33 @@ const char* GUAC_CLIENT_ARGS[] = {
     NULL
 };
 
+typedef struct rdp_guac_client_data {
+
+    rdpInst* rdp_inst;
+    rdpChanMan* chanman;
+	rdpSet* settings;
+
+} rdp_guac_client_data;
+
+int rdp_guac_client_free_handler(guac_client* client) {
+
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+
+    /* Free RDP client */
+    freerdp_free(guac_client_data->rdp_inst);
+    freerdp_chanman_free(guac_client_data->chanman);
+    free(guac_client_data->settings);
+
+    /* Free guac client data */
+    free(guac_client_data);
+
+    return 0;
+
+}
+
 int guac_client_init(guac_client* client, int argc, char** argv) {
+
+    rdp_guac_client_data* guac_client_data;
 
     rdpInst* rdp_inst;
     rdpChanMan* chanman;
@@ -121,9 +147,14 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* rdp_inst->rdp_disconnect(rdp_inst) */
     /* freerdp_chanman_post_connect ? */
 
-    freerdp_free(rdp_inst);
-    freerdp_chanman_free(chanman);
-    free(settings);
+    /* Init client data */
+    guac_client_data = malloc(sizeof(rdp_guac_client_data));
+    guac_client_data->settings = settings;
+    guac_client_data->chanman = chanman;
+    guac_client_data->rdp_inst = rdp_inst;
+
+    /* Client handlers */
+    client->free_handler = rdp_guac_client_free_handler;
 
     /* STUB */
     guac_send_error(client->io, "STUB");
