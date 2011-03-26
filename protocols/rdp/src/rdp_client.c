@@ -67,6 +67,9 @@ int rdp_guac_client_free_handler(guac_client* client) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
 
+    /* Disconnect client */
+    guac_client_data->rdp_inst->rdp_disconnect(guac_client_data->rdp_inst);
+
     /* Free RDP client */
     freerdp_free(guac_client_data->rdp_inst);
     freerdp_chanman_free(guac_client_data->chanman);
@@ -76,6 +79,16 @@ int rdp_guac_client_free_handler(guac_client* client) {
     free(guac_client_data);
 
     return 0;
+
+}
+
+void guac_rdp_ui_error(rdpInst* inst, char* text) {
+
+    guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io;
+
+    guac_send_error(io, text);
+    guac_flush(io);
 
 }
 
@@ -102,12 +115,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     hostname = argv[0];
 
+    /* Allocate client data */
+    guac_client_data = malloc(sizeof(rdp_guac_client_data));
+
     /* Get channel manager */
     chanman = freerdp_chanman_new();
+    guac_client_data->chanman = chanman;
 
     /* INIT SETTINGS */
     settings = malloc(sizeof(rdpSet));
 	memset(settings, 0, sizeof(rdpSet));
+    guac_client_data->settings = settings;
 
     /* Set hostname */
     strncpy(settings->hostname, hostname, sizeof(settings->hostname) - 1);
@@ -132,8 +150,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 	settings->new_cursors = 1;
 	settings->rdp_version = 5;
 
-    /* Init chanman here? */
-
     /* Init client */
     rdp_inst = freerdp_new(settings);
     if (rdp_inst == NULL) {
@@ -141,17 +157,35 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         guac_flush(client->io);
         return 1;
     }
-
-    /* freerdp_chanman_pre_connect ? */
-    /* rdp_inst->rdp_connect(rdp_inst) */
-    /* rdp_inst->rdp_disconnect(rdp_inst) */
-    /* freerdp_chanman_post_connect ? */
-
-    /* Init client data */
-    guac_client_data = malloc(sizeof(rdp_guac_client_data));
-    guac_client_data->settings = settings;
-    guac_client_data->chanman = chanman;
     guac_client_data->rdp_inst = rdp_inst;
+
+    /* Store client data */
+    rdp_inst->param1 = client;
+    client->data = guac_client_data;
+
+    /* RDP handlers */
+    rdp_inst->ui_error = guac_rdp_ui_error;
+
+    /* Init chanman (pre-connect) */
+    if (freerdp_chanman_pre_connect(chanman, rdp_inst)) {
+        guac_send_error(client->io, "Error initializing RDP client channel manager");
+        guac_flush(client->io);
+        return 1;
+    }
+
+    /* Connect to RDP server */
+    if (rdp_inst->rdp_connect(rdp_inst)) {
+        guac_send_error(client->io, "Error connection to RDP server");
+        guac_flush(client->io);
+        return 1;
+    }
+
+    /* Init chanman (post-connect) */
+    if (freerdp_chanman_post_connect(chanman, rdp_inst)) {
+        guac_send_error(client->io, "Error initializing RDP client channel manager");
+        guac_flush(client->io);
+        return 1;
+    }
 
     /* Client handlers */
     client->free_handler = rdp_guac_client_free_handler;
