@@ -38,7 +38,7 @@
 #ifndef _GUAC_PROTOCOL_H
 #define _GUAC_PROTOCOL_H
 
-#include <png.h>
+#include <cairo/cairo.h>
 
 #include "guacio.h"
 
@@ -214,14 +214,10 @@ int guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h,
  * @param layer The index of the destination layer.
  * @param x The destination X coordinate.
  * @param y The destination Y coordinate.
- * @param png_rows A libpng-compatible PNG image buffer containing the image
- *                 data to send.
- * @param w The width of the image in the image buffer.
- * @param h The height of the image in the image buffer.
+ * @param surface A cairo surface containing the image data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_send_png(GUACIO* io, int layer, int x, int y,
-        png_byte** png_rows, int w, int h);
+int guac_send_png(GUACIO* io, int layer, int x, int y, cairo_surface_t* surface);
 
 /**
  * Sends a cursor instruction over the given GUACIO connection. The PNG image
@@ -230,14 +226,10 @@ int guac_send_png(GUACIO* io, int layer, int x, int y,
  * @param io The GUACIO connection to use.
  * @param x The X coordinate of the cursor hotspot.
  * @param y The Y coordinate of the cursor hotspot.
- * @param png_rows A libpng-compatible PNG image buffer containing the image
- *                 data to send.
- * @param w The width of the image in the image buffer.
- * @param h The height of the image in the image buffer.
+ * @param surface A cairo surface containing the image data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_send_cursor(GUACIO* io, int x, int y,
-        png_byte** png_rows, int w, int h);
+int guac_send_cursor(GUACIO* io, int x, int y, cairo_surface_t* surface);
 
 /**
  * Returns whether new instruction data is available on the given GUACIO

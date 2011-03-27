@@ -35,9 +35,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifdef HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_NANOSLEEP)
 #include <time.h>
-#else
+#endif
+
+#ifndef HAVE_CLOCK_GETTIME
 #include <sys/time.h>
 #endif
 
@@ -45,11 +47,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <png.h>
 
-#ifdef HAVE_PNGSTRUCT_H
-#include <pngstruct.h>
-#endif
+#include <cairo/cairo.h>
 
 #include <sys/types.h>
 
@@ -292,75 +291,21 @@ int guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int d
 
 }
 
-void __guac_write_png(png_structp png, png_bytep data, png_size_t length) {
+cairo_status_t __guac_write_png(void* closure, const unsigned char* data, unsigned int length) {
 
-#ifdef HAVE_PNG_GET_IO_PTR
-    GUACIO* io = (GUACIO*) png_get_io_ptr(png);
-#else
-    /* Direct access to io_ptr has been deprecated, but we'll
-       use it if we have to. */
-    GUACIO* io = (GUACIO*) png->io_ptr;
-#endif
+    GUACIO* io = (GUACIO*) closure;
 
-    if (guac_write_base64(io, data, length) < 0) {
-        perror("Error writing PNG");
-        png_error(png, "Error writing PNG");
-        return;
-    }
+    if (guac_write_base64(io, data, length) < 0)
+        return CAIRO_STATUS_WRITE_ERROR;
+
+    return CAIRO_STATUS_SUCCESS;
 
 }
 
-void __guac_write_flush(png_structp png) {
-}
+int guac_send_png(GUACIO* io, int layer, int x, int y, cairo_surface_t* surface) {
 
-int guac_send_png(GUACIO* io, int layer, int x, int y, png_byte** png_rows, int w, int h) {
+    /* Write instruction and args */
 
-    png_structp png;
-    png_infop png_info;
-
-    /* Write image */
-
-    /* Set up PNG writer */
-    png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if (!png) {
-        return -1;
-    }
-
-    png_info = png_create_info_struct(png);
-    if (!png_info) {
-        png_destroy_write_struct(&png, NULL);
-        return -1;
-    }
-
-#ifdef GUAC_FAST_PNG
-    /* Do not filter (speed) */
-    png_set_filter(png, PNG_FILTER_TYPE_BASE, PNG_FILTER_VALUE_NONE);
-
-    /* Fast compression level */
-    png_set_compression_level(png, 1);
-#endif
-
-    /* Set error handler */
-    if (setjmp(png_jmpbuf(png))) {
-        png_destroy_write_struct(&png, &png_info);
-        return -1;
-    }
-
-    png_set_write_fn(png, io, __guac_write_png, __guac_write_flush);
-
-    /* Set PNG IHDR */
-    png_set_IHDR(
-            png,
-            png_info,
-            w,
-            h,
-            8,
-            PNG_COLOR_TYPE_RGB,
-            PNG_INTERLACE_NONE,
-            PNG_COMPRESSION_TYPE_DEFAULT,
-            PNG_FILTER_TYPE_DEFAULT
-    );
-    
     if (
            guac_write_string(io, "png:")
         || guac_write_int(io, layer)
@@ -370,64 +315,30 @@ int guac_send_png(GUACIO* io, int layer, int x, int y, png_byte** png_rows, int 
         || guac_write_int(io, y)
         || guac_write_string(io, ",")
        ) {
-        png_destroy_write_struct(&png, &png_info);
         return -1;
     }
 
-    png_set_rows(png, png_info, png_rows);
-    png_write_png(png, png_info, PNG_TRANSFORM_IDENTITY, NULL);
+    /* Write surface */
+
+    if (cairo_surface_write_to_png_stream(surface, __guac_write_png, io) != CAIRO_STATUS_SUCCESS) {
+        return -1;
+    }
 
     if (guac_flush_base64(io) < 0) {
-        png_destroy_write_struct(&png, &png_info);
         return -1;
     }
 
-    png_destroy_write_struct(&png, &png_info);
+    /* Finish instruction */
+
     return guac_write_string(io, ";");
 
 }
 
 
-int guac_send_cursor(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h) {
+int guac_send_cursor(GUACIO* io, int x, int y, cairo_surface_t* surface) {
 
-    png_structp png;
-    png_infop png_info;
+    /* Write instruction and args */
 
-    /* Write image */
-
-    /* Set up PNG writer */
-    png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if (!png) {
-        return -1;
-    }
-
-    png_info = png_create_info_struct(png);
-    if (!png_info) {
-        png_destroy_write_struct(&png, NULL);
-        return -1;
-    }
-
-    /* Set error handler */
-    if (setjmp(png_jmpbuf(png))) {
-        png_destroy_write_struct(&png, &png_info);
-        return -1;
-    }
-
-    png_set_write_fn(png, io, __guac_write_png, __guac_write_flush);
-
-    /* Set PNG IHDR */
-    png_set_IHDR(
-            png,
-            png_info,
-            w,
-            h,
-            8,
-            PNG_COLOR_TYPE_RGBA,
-            PNG_INTERLACE_NONE,
-            PNG_COMPRESSION_TYPE_DEFAULT,
-            PNG_FILTER_TYPE_DEFAULT
-    );
-    
     if (
            guac_write_string(io, "cursor:")
         || guac_write_int(io, x)
@@ -435,19 +346,21 @@ int guac_send_cursor(GUACIO* io, int x, int y, png_byte** png_rows, int w, int h
         || guac_write_int(io, y)
         || guac_write_string(io, ",")
        ) {
-        png_destroy_write_struct(&png, &png_info);
         return -1;
     }
 
-    png_set_rows(png, png_info, png_rows);
-    png_write_png(png, png_info, PNG_TRANSFORM_IDENTITY, NULL);
+    /* Write surface */
+
+    if (cairo_surface_write_to_png_stream(surface, __guac_write_png, io) != CAIRO_STATUS_SUCCESS) {
+        return -1;
+    }
 
     if (guac_flush_base64(io) < 0) {
-        png_destroy_write_struct(&png, &png_info);
         return -1;
     }
 
-    png_destroy_write_struct(&png, &png_info);
+    /* Finish instruction */
+
     return guac_write_string(io, ";");
 
 }

@@ -47,33 +47,6 @@
 #include "client.h"
 #include "client-handlers.h"
 
-png_byte** guac_alloc_png_buffer(int w, int h, int bpp) {
-
-    png_byte** png_buffer;
-    png_byte* row;
-    int y;
-
-    /* Allocate rows for PNG */
-    png_buffer = (png_byte**) malloc(h * sizeof(png_byte*));
-    for (y=0; y<h; y++) {
-        row = (png_byte*) malloc(sizeof(png_byte) * bpp * w);
-        png_buffer[y] = row;
-    }
-
-    return png_buffer;
-}
-
-void guac_free_png_buffer(png_byte** png_buffer, int h) {
-
-    int y;
-
-    /* Free PNG data */
-    for (y = 0; y<h; y++)
-        free(png_buffer[y]);
-    free(png_buffer);
-
-}
-
 guac_client* __guac_alloc_client(GUACIO* io) {
 
     /* Allocate new client (not handoff) */

@@ -39,8 +39,6 @@
 #ifndef _GUAC_CLIENT_H
 #define _GUAC_CLIENT_H
 
-#include <png.h>
-
 #include "guacio.h"
 #include "protocol.h"
 
@@ -308,25 +306,6 @@ int guac_start_client(guac_client* client);
  * @param client The proxy client to free all reasources of.
  */
 void guac_free_client(guac_client* client);
-
-/**
- * Allocate a libpng-compatible buffer to hold raw image data.
- *
- * @param w The width of the buffer to allocate, in pixels.
- * @param h The height of the buffer to allocate, in pixels.
- * @param bpp The number of bytes per pixel (3 for RGB images, 4 for RGBA).
- * @return A pointer to the newly allocated buffer.
- */
-png_byte** guac_alloc_png_buffer(int w, int h, int bpp);
-
-/**
- * Free all memory associated with the given libpng-compatible buffer
- * as allocated by guac_alloc_png_buffer.
- *
- * @param png_buffer The buffer to free.
- * @param h The height of the buffer to free.
- */
-void guac_free_png_buffer(png_byte** png_buffer, int h);
 
 /**
  * Call the appropriate handler defined by the given client for the given
