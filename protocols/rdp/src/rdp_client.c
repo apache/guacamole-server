@@ -82,6 +82,10 @@ int rdp_guac_client_free_handler(guac_client* client) {
 
 }
 
+int guac_rdp_ui_select(rdpInst* inst, int socket) {
+    return 1;
+}
+
 void guac_rdp_ui_error(rdpInst* inst, char* text) {
 
     guac_client* client = (guac_client*) inst->param1;
@@ -165,6 +169,48 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* RDP handlers */
     rdp_inst->ui_error = guac_rdp_ui_error;
+	/* rdp_inst->ui_warning = PLACEHOLDER */
+	/* rdp_inst->ui_unimpl = PLACEHOLDER */
+	/* rdp_inst->ui_begin_update = PLACEHOLDER */
+	/* rdp_inst->ui_end_update = PLACEHOLDER */
+	/* rdp_inst->ui_desktop_save = PLACEHOLDER */
+	/* rdp_inst->ui_desktop_restore = PLACEHOLDER */
+	/* rdp_inst->ui_create_bitmap = PLACEHOLDER */
+	/* rdp_inst->ui_paint_bitmap = PLACEHOLDER */
+	/* rdp_inst->ui_destroy_bitmap = PLACEHOLDER */
+	/* rdp_inst->ui_line = PLACEHOLDER */
+	/* rdp_inst->ui_rect = PLACEHOLDER */
+	/* rdp_inst->ui_polygon = PLACEHOLDER */
+	/* rdp_inst->ui_polyline = PLACEHOLDER */
+	/* rdp_inst->ui_ellipse = PLACEHOLDER */
+	/* rdp_inst->ui_start_draw_glyphs = PLACEHOLDER */
+	/* rdp_inst->ui_draw_glyph = PLACEHOLDER */
+	/* rdp_inst->ui_end_draw_glyphs = PLACEHOLDER */
+	/* rdp_inst->ui_get_toggle_keys_state = PLACEHOLDER */
+	/* rdp_inst->ui_bell = PLACEHOLDER */
+	/* rdp_inst->ui_destblt = PLACEHOLDER */
+	/* rdp_inst->ui_patblt = PLACEHOLDER */
+	/* rdp_inst->ui_screenblt = PLACEHOLDER */
+	/* rdp_inst->ui_memblt = PLACEHOLDER */
+	/* rdp_inst->ui_triblt = PLACEHOLDER */
+	/* rdp_inst->ui_create_glyph = PLACEHOLDER */
+	/* rdp_inst->ui_destroy_glyph = PLACEHOLDER */
+    rdp_inst->ui_select = guac_rdp_ui_select;
+	/* rdp_inst->ui_set_clip = PLACEHOLDER */
+	/* rdp_inst->ui_reset_clip = PLACEHOLDER */
+	/* rdp_inst->ui_resize_window = PLACEHOLDER */
+	/* rdp_inst->ui_set_cursor = PLACEHOLDER */
+	/* rdp_inst->ui_destroy_cursor = PLACEHOLDER */
+	/* rdp_inst->ui_create_cursor = PLACEHOLDER */
+	/* rdp_inst->ui_set_null_cursor = PLACEHOLDER */
+	/* rdp_inst->ui_set_default_cursor = PLACEHOLDER */
+	/* rdp_inst->ui_create_colourmap = PLACEHOLDER */
+	/* rdp_inst->ui_move_pointer = PLACEHOLDER */
+	/* rdp_inst->ui_set_colourmap = PLACEHOLDER */
+	/* rdp_inst->ui_create_surface = PLACEHOLDER */
+	/* rdp_inst->ui_set_surface = PLACEHOLDER */
+	/* rdp_inst->ui_destroy_surface = PLACEHOLDER */
+	/* rdp_inst->ui_channel_data = PLACEHOLDER */
 
     /* Init chanman (pre-connect) */
     if (freerdp_chanman_pre_connect(chanman, rdp_inst)) {
@@ -175,7 +221,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Connect to RDP server */
     if (rdp_inst->rdp_connect(rdp_inst)) {
-        guac_send_error(client->io, "Error connection to RDP server");
+        guac_send_error(client->io, "Error connecting to RDP server");
         guac_flush(client->io);
         return 1;
     }
