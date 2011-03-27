@@ -46,6 +46,8 @@
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
+#include "rdp_handlers.h"
+
 #define RDP_DEFAULT_PORT 3389
 
 /* Client plugin arguments */
@@ -79,20 +81,6 @@ int rdp_guac_client_free_handler(guac_client* client) {
     free(guac_client_data);
 
     return 0;
-
-}
-
-int guac_rdp_ui_select(rdpInst* inst, int socket) {
-    return 1;
-}
-
-void guac_rdp_ui_error(rdpInst* inst, char* text) {
-
-    guac_client* client = (guac_client*) inst->param1;
-    GUACIO* io = client->io;
-
-    guac_send_error(io, text);
-    guac_flush(io);
 
 }
 
@@ -169,48 +157,48 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* RDP handlers */
     rdp_inst->ui_error = guac_rdp_ui_error;
-	/* rdp_inst->ui_warning = PLACEHOLDER */
-	/* rdp_inst->ui_unimpl = PLACEHOLDER */
-	/* rdp_inst->ui_begin_update = PLACEHOLDER */
-	/* rdp_inst->ui_end_update = PLACEHOLDER */
-	/* rdp_inst->ui_desktop_save = PLACEHOLDER */
-	/* rdp_inst->ui_desktop_restore = PLACEHOLDER */
-	/* rdp_inst->ui_create_bitmap = PLACEHOLDER */
-	/* rdp_inst->ui_paint_bitmap = PLACEHOLDER */
-	/* rdp_inst->ui_destroy_bitmap = PLACEHOLDER */
-	/* rdp_inst->ui_line = PLACEHOLDER */
-	/* rdp_inst->ui_rect = PLACEHOLDER */
-	/* rdp_inst->ui_polygon = PLACEHOLDER */
-	/* rdp_inst->ui_polyline = PLACEHOLDER */
-	/* rdp_inst->ui_ellipse = PLACEHOLDER */
-	/* rdp_inst->ui_start_draw_glyphs = PLACEHOLDER */
-	/* rdp_inst->ui_draw_glyph = PLACEHOLDER */
-	/* rdp_inst->ui_end_draw_glyphs = PLACEHOLDER */
-	/* rdp_inst->ui_get_toggle_keys_state = PLACEHOLDER */
-	/* rdp_inst->ui_bell = PLACEHOLDER */
-	/* rdp_inst->ui_destblt = PLACEHOLDER */
-	/* rdp_inst->ui_patblt = PLACEHOLDER */
-	/* rdp_inst->ui_screenblt = PLACEHOLDER */
-	/* rdp_inst->ui_memblt = PLACEHOLDER */
-	/* rdp_inst->ui_triblt = PLACEHOLDER */
-	/* rdp_inst->ui_create_glyph = PLACEHOLDER */
-	/* rdp_inst->ui_destroy_glyph = PLACEHOLDER */
+	rdp_inst->ui_warning = guac_rdp_ui_warning;
+	rdp_inst->ui_unimpl = guac_rdp_ui_unimpl;
+	rdp_inst->ui_begin_update = guac_rdp_ui_begin_update;
+	rdp_inst->ui_end_update = guac_rdp_ui_end_update;
+	rdp_inst->ui_desktop_save = guac_rdp_ui_desktop_save;
+	rdp_inst->ui_desktop_restore = guac_rdp_ui_desktop_restore;
+	rdp_inst->ui_create_bitmap = guac_rdp_ui_create_bitmap;
+	rdp_inst->ui_paint_bitmap = guac_rdp_ui_paint_bitmap;
+	rdp_inst->ui_destroy_bitmap = guac_rdp_ui_destroy_bitmap;
+	rdp_inst->ui_line = guac_rdp_ui_line;
+	rdp_inst->ui_rect = guac_rdp_ui_rect;
+	rdp_inst->ui_polygon = guac_rdp_ui_polygon;
+	rdp_inst->ui_polyline = guac_rdp_ui_polyline;
+	rdp_inst->ui_ellipse = guac_rdp_ui_ellipse;
+	rdp_inst->ui_start_draw_glyphs = guac_rdp_ui_start_draw_glyphs;
+	rdp_inst->ui_draw_glyph = guac_rdp_ui_draw_glyph;
+	rdp_inst->ui_end_draw_glyphs = guac_rdp_ui_end_draw_glyphs;
+	rdp_inst->ui_get_toggle_keys_state = guac_rdp_ui_get_toggle_keys_state;
+	rdp_inst->ui_bell = guac_rdp_ui_bell;
+	rdp_inst->ui_destblt = guac_rdp_ui_destblt;
+	rdp_inst->ui_patblt = guac_rdp_ui_patblt;
+	rdp_inst->ui_screenblt = guac_rdp_ui_screenblt;
+	rdp_inst->ui_memblt = guac_rdp_ui_memblt;
+	rdp_inst->ui_triblt = guac_rdp_ui_triblt;
+	rdp_inst->ui_create_glyph = guac_rdp_ui_create_glyph;
+	rdp_inst->ui_destroy_glyph = guac_rdp_ui_destroy_glyph;
     rdp_inst->ui_select = guac_rdp_ui_select;
-	/* rdp_inst->ui_set_clip = PLACEHOLDER */
-	/* rdp_inst->ui_reset_clip = PLACEHOLDER */
-	/* rdp_inst->ui_resize_window = PLACEHOLDER */
-	/* rdp_inst->ui_set_cursor = PLACEHOLDER */
-	/* rdp_inst->ui_destroy_cursor = PLACEHOLDER */
-	/* rdp_inst->ui_create_cursor = PLACEHOLDER */
-	/* rdp_inst->ui_set_null_cursor = PLACEHOLDER */
-	/* rdp_inst->ui_set_default_cursor = PLACEHOLDER */
-	/* rdp_inst->ui_create_colourmap = PLACEHOLDER */
-	/* rdp_inst->ui_move_pointer = PLACEHOLDER */
-	/* rdp_inst->ui_set_colourmap = PLACEHOLDER */
-	/* rdp_inst->ui_create_surface = PLACEHOLDER */
-	/* rdp_inst->ui_set_surface = PLACEHOLDER */
-	/* rdp_inst->ui_destroy_surface = PLACEHOLDER */
-	/* rdp_inst->ui_channel_data = PLACEHOLDER */
+	rdp_inst->ui_set_clip = guac_rdp_ui_set_clip;
+	rdp_inst->ui_reset_clip = guac_rdp_ui_reset_clip;
+	rdp_inst->ui_resize_window = guac_rdp_ui_resize_window;
+	rdp_inst->ui_set_cursor = guac_rdp_ui_set_cursor;
+	rdp_inst->ui_destroy_cursor = guac_rdp_ui_destroy_cursor;
+	rdp_inst->ui_create_cursor = guac_rdp_ui_create_cursor;
+	rdp_inst->ui_set_null_cursor = guac_rdp_ui_set_null_cursor;
+	rdp_inst->ui_set_default_cursor = guac_rdp_ui_set_default_cursor;
+	rdp_inst->ui_create_colourmap = guac_rdp_ui_create_colourmap;
+	rdp_inst->ui_move_pointer = guac_rdp_ui_move_pointer;
+	rdp_inst->ui_set_colourmap = guac_rdp_ui_set_colourmap;
+	rdp_inst->ui_create_surface = guac_rdp_ui_create_surface;
+	rdp_inst->ui_set_surface = guac_rdp_ui_set_surface;
+	rdp_inst->ui_destroy_surface = guac_rdp_ui_destroy_surface;
+	rdp_inst->ui_channel_data = guac_rdp_ui_channel_data;
 
     /* Init chanman (pre-connect) */
     if (freerdp_chanman_pre_connect(chanman, rdp_inst)) {
