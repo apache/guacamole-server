@@ -38,6 +38,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/select.h>
+#include <errno.h>
+
 #include <freerdp/freerdp.h>
 #include <freerdp/chanman.h>
 
@@ -80,6 +83,88 @@ int rdp_guac_client_free_handler(guac_client* client) {
     /* Free guac client data */
     free(guac_client_data);
 
+    return 0;
+
+}
+
+int rdp_guac_client_handle_messages(guac_client* client) {
+
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    rdpInst* rdp_inst = guac_client_data->rdp_inst;
+    rdpChanMan* chanman = guac_client_data->chanman;
+
+    int index;
+    int max_fd, fd;
+    void* read_fds[32];
+    void* write_fds[32];
+    int read_count = 0;
+    int write_count = 0;
+
+    fd_set rfds, wfds;
+
+    /* get rdp fds */
+    if (rdp_inst->rdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
+        guac_log_error("Unable to read RDP file descriptors.");
+        return 1;
+    }
+
+    /* get channel fds */
+    if (freerdp_chanman_get_fds(chanman, rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
+        guac_log_error("Unable to read RDP channel file descriptors.");
+        return 1;
+    }
+
+    /* Construct read fd_set */
+    max_fd = 0;
+    FD_ZERO(&rfds);
+    for (index = 0; index < read_count; index++) {
+        fd = (int)(long) (read_fds[index]);
+        if (fd > max_fd)
+            max_fd = fd;
+        FD_SET(fd, &rfds);
+    }
+
+    /* Construct write fd_set */
+    FD_ZERO(&wfds);
+    for (index = 0; index < write_count; index++) {
+        fd = (int)(long) (write_fds[index]);
+        if (fd > max_fd)
+            max_fd = fd;
+        FD_SET(fd, &wfds);
+    }
+
+    /* If no file descriptors, error */
+    if (max_fd == 0) {
+        guac_log_error("No file descriptors");
+        return 1;
+    }
+
+    /* Otherwise, wait for file descriptors given */
+    if (select(max_fd + 1, &rfds, &wfds, NULL, NULL) == -1) {
+        /* these are not really errors */
+        if (!((errno == EAGAIN) ||
+            (errno == EWOULDBLOCK) ||
+            (errno == EINPROGRESS) ||
+            (errno == EINTR))) /* signal occurred */
+        {
+            guac_log_error("Error waiting for file descriptor.");
+            return 1;
+        }
+    }
+
+    /* check the libfreerdp fds */
+    if (rdp_inst->rdp_check_fds(rdp_inst) != 0) {
+        guac_log_error("Error handling RDP file descriptors.");
+        return 1;
+    }
+
+    /* check channel fds */
+    if (freerdp_chanman_check_fds(chanman, rdp_inst) != 0) {
+        guac_log_error("Error handling RDP channel file descriptors.");
+        return 1;
+    }
+
+    /* Success */
     return 0;
 
 }
@@ -223,10 +308,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Client handlers */
     client->free_handler = rdp_guac_client_free_handler;
+    client->handle_messages = rdp_guac_client_handle_messages;
 
-    /* STUB */
-    guac_send_error(client->io, "STUB");
-    return 1;
+    /* Success */
+    return 0;
 
 }
 
