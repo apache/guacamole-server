@@ -93,10 +93,15 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
     /* Copy image data from VNC client to RGBA buffer */
     for (dy = 0; dy<h; dy++) {
 
-        unsigned char* buffer_current = buffer_row_current;
+        unsigned char* buffer_current;
+        unsigned char* fb_current;
+        
+        /* Get current buffer row, advance to next */
+        buffer_current      = buffer_row_current;
         buffer_row_current += stride;
 
-        unsigned char* fb_current = fb_row_current;
+        /* Get current framebuffer row, advance to next */
+        fb_current      = fb_row_current;
         fb_row_current += fb_stride;
 
         for (dx = 0; dx<w; dx++) {
@@ -138,6 +143,10 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_ARGB32, w, h, stride);
     guac_send_cursor(io, x, y, surface);
 
+    /* Free surface */
+    cairo_surface_destroy(surface);
+    free(buffer);
+
     /* libvncclient does not free rcMask as it does rcSource */
     free(client->rcMask);
 }
@@ -149,15 +158,16 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     GUACIO* io = gc->io;
-    png_byte** png_buffer = ((vnc_guac_client_data*) gc->data)->png_buffer;
-    png_byte* row;
 
-    png_byte** png_row_current = png_buffer;
+    /* Cairo image buffer */
+    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
+    unsigned char* buffer = malloc(h*stride);
+    unsigned char* buffer_row_current = buffer;
+    cairo_surface_t* surface;
 
     unsigned int bpp = client->format.bitsPerPixel/8;
-    unsigned int bytesPerRow = bpp * client->width;
-    unsigned char* fb_row_current = client->frameBuffer + (y * bytesPerRow) + (x * bpp);
-    unsigned char* fb_row;
+    unsigned int fb_stride = bpp * client->width;
+    unsigned char* fb_row_current = client->frameBuffer + (y * fb_stride) + (x * bpp);
     unsigned int v;
 
     /* Ignore extra update if already handled by copyrect */
@@ -169,37 +179,51 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     /* Copy image data from VNC client to PNG */
     for (dy = y; dy<y+h; dy++) {
 
-        row = *(png_row_current++);
+        unsigned char* buffer_current;
+        unsigned char* fb_current;
+        
+        /* Get current buffer row, advance to next */
+        buffer_current      = buffer_row_current;
+        buffer_row_current += stride;
 
-        fb_row = fb_row_current;
-        fb_row_current += bytesPerRow;
+        /* Get current framebuffer row, advance to next */
+        fb_current      = fb_row_current;
+        fb_row_current += fb_stride;
 
         for (dx = x; dx<x+w; dx++) {
 
             switch (bpp) {
                 case 4:
-                    v = *((unsigned int*) fb_row);
+                    v = *((unsigned int*)   fb_current);
                     break;
 
                 case 2:
-                    v = *((unsigned short*) fb_row);
+                    v = *((unsigned short*) fb_current);
                     break;
 
                 default:
-                    v = *((unsigned char*) fb_row);
+                    v = *((unsigned char*)  fb_current);
             }
 
-            *(row++) = (v >> client->format.redShift) * 256 / (client->format.redMax+1);
-            *(row++) = (v >> client->format.greenShift) * 256 / (client->format.greenMax+1);
-            *(row++) = (v >> client->format.blueShift) * 256 / (client->format.blueMax+1);
+            /* Output RGB */
 
-            fb_row += bpp;
+              buffer_current++; /* High 8 bits unused in Cairo's RGB24 */
+            *(buffer_current++) = (v >> client->format.redShift)   * 0x100 / (client->format.redMax   + 1);
+            *(buffer_current++) = (v >> client->format.greenShift) * 0x100 / (client->format.greenMax + 1);
+            *(buffer_current++) = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax  + 1);
+
+            fb_current += bpp;
 
         }
     }
 
     /* For now, only use layer 0 */
-    guac_send_png(io, 0, x, y, png_buffer, w, h);
+    surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24, w, h, stride);
+    guac_send_png(io, 0, x, y, surface);
+
+    /* Free surface */
+    cairo_surface_destroy(surface);
+    free(buffer);
 
 }
 
