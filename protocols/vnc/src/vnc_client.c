@@ -93,11 +93,11 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
     /* Copy image data from VNC client to RGBA buffer */
     for (dy = 0; dy<h; dy++) {
 
-        unsigned char* buffer_current;
+        unsigned int*  buffer_current;
         unsigned char* fb_current;
         
         /* Get current buffer row, advance to next */
-        buffer_current      = buffer_row_current;
+        buffer_current      = (unsigned int*) buffer_row_current;
         buffer_row_current += stride;
 
         /* Get current framebuffer row, advance to next */
@@ -106,7 +106,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
         for (dx = 0; dx<w; dx++) {
 
-            unsigned char alpha;
+            unsigned char alpha, red, green, blue;
             unsigned int v;
 
             /* Read current pixel value */
@@ -127,11 +127,13 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
             if (*(fb_mask++)) alpha = 0xFF;
             else              alpha = 0x00;
 
+            /* Translate value to RGB */
+            red   = (v >> client->format.redShift)   * 0x100 / (client->format.redMax  + 1);
+            green = (v >> client->format.greenShift) * 0x100 / (client->format.greenMax+ 1);
+            blue  = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax + 1);
+
             /* Output ARGB */
-            *(buffer_current++) = alpha;
-            *(buffer_current++) = (v >> client->format.redShift)   * 0x100 / (client->format.redMax  + 1);
-            *(buffer_current++) = (v >> client->format.greenShift) * 0x100 / (client->format.greenMax+ 1);
-            *(buffer_current++) = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax + 1);
+            *(buffer_current++) = (alpha << 24) | (red << 16) | (green << 8) | blue;
 
             /* Next VNC pixel */
             fb_current += bpp;
@@ -168,7 +170,6 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     unsigned int bpp = client->format.bitsPerPixel/8;
     unsigned int fb_stride = bpp * client->width;
     unsigned char* fb_row_current = client->frameBuffer + (y * fb_stride) + (x * bpp);
-    unsigned int v;
 
     /* Ignore extra update if already handled by copyrect */
     if (((vnc_guac_client_data*) gc->data)->copy_rect_used) {
@@ -179,11 +180,11 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     /* Copy image data from VNC client to PNG */
     for (dy = y; dy<y+h; dy++) {
 
-        unsigned char* buffer_current;
+        unsigned int*  buffer_current;
         unsigned char* fb_current;
         
         /* Get current buffer row, advance to next */
-        buffer_current      = buffer_row_current;
+        buffer_current      = (unsigned int*) buffer_row_current;
         buffer_row_current += stride;
 
         /* Get current framebuffer row, advance to next */
@@ -191,6 +192,9 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
         fb_row_current += fb_stride;
 
         for (dx = x; dx<x+w; dx++) {
+
+            unsigned char red, green, blue;
+            unsigned int v;
 
             switch (bpp) {
                 case 4:
@@ -205,12 +209,13 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
                     v = *((unsigned char*)  fb_current);
             }
 
-            /* Output RGB */
+            /* Translate value to RGB */
+            red   = (v >> client->format.redShift)   * 0x100 / (client->format.redMax  + 1);
+            green = (v >> client->format.greenShift) * 0x100 / (client->format.greenMax+ 1);
+            blue  = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax + 1);
 
-              buffer_current++; /* High 8 bits unused in Cairo's RGB24 */
-            *(buffer_current++) = (v >> client->format.redShift)   * 0x100 / (client->format.redMax   + 1);
-            *(buffer_current++) = (v >> client->format.greenShift) * 0x100 / (client->format.greenMax + 1);
-            *(buffer_current++) = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax  + 1);
+            /* Output RGB */
+            *(buffer_current++) = (red << 16) | (green << 8) | blue;
 
             fb_current += bpp;
 
