@@ -156,26 +156,36 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
 void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
-    int dx, dy;
-
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     GUACIO* io = gc->io;
 
+    int dx, dy;
+
     /* Cairo image buffer */
-    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
-    unsigned char* buffer = malloc(h*stride);
-    unsigned char* buffer_row_current = buffer;
+    int stride;
+    unsigned char* buffer;
+    unsigned char* buffer_row_current;
     cairo_surface_t* surface;
 
-    unsigned int bpp = client->format.bitsPerPixel/8;
-    unsigned int fb_stride = bpp * client->width;
-    unsigned char* fb_row_current = client->frameBuffer + (y * fb_stride) + (x * bpp);
+    /* VNC framebuffer */
+    unsigned int bpp;
+    unsigned int fb_stride;
+    unsigned char* fb_row_current;
 
     /* Ignore extra update if already handled by copyrect */
     if (((vnc_guac_client_data*) gc->data)->copy_rect_used) {
         ((vnc_guac_client_data*) gc->data)->copy_rect_used = 0;
         return;
     }
+
+    /* Init Cairo buffer */
+    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
+    buffer = malloc(h*stride);
+    buffer_row_current = buffer;
+
+    bpp = client->format.bitsPerPixel/8;
+    fb_stride = bpp * client->width;
+    fb_row_current = client->frameBuffer + (y * fb_stride) + (x * bpp);
 
     /* Copy image data from VNC client to PNG */
     for (dy = y; dy<y+h; dy++) {
