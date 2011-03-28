@@ -50,8 +50,7 @@
 #include <guacamole/client.h>
 
 #include "rdp_handlers.h"
-
-#define RDP_DEFAULT_PORT 3389
+#include "rdp_client.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -59,14 +58,6 @@ const char* GUAC_CLIENT_ARGS[] = {
     "port",
     NULL
 };
-
-typedef struct rdp_guac_client_data {
-
-    rdpInst* rdp_inst;
-    rdpChanMan* chanman;
-	rdpSet* settings;
-
-} rdp_guac_client_data;
 
 int rdp_guac_client_free_handler(guac_client* client) {
 

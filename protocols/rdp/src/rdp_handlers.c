@@ -218,7 +218,7 @@ RD_HBITMAP guac_rdp_ui_create_surface(rdpInst* inst, int width, int height, RD_H
 }
 
 void guac_rdp_ui_set_surface(rdpInst* inst, RD_HBITMAP surface) {
-    fprintf(stderr, "guac_rdp_ui_set_surface: STUB\n");
+    fprintf(stderr, "guac_rdp_ui_set_surface: STUB (surface=%p)\n", surface);
 }
 
 void guac_rdp_ui_destroy_surface(rdpInst* inst, RD_HBITMAP surface) {
