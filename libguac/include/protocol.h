@@ -82,20 +82,20 @@ typedef enum guac_composite_mode_t {
      * 0 = Active, 1 = Inactive
      */
                  /* ABCD */
-    NOP   = 0x0, /* 0000 */
+    /* NOT IMPL'D:  0000 */
     RIN   = 0x1, /* 0001 */
     ROUT  = 0x2, /* 0010 */
     DEST  = 0x3, /* 0011 */
     IN    = 0x4, /* 0100 */
-    /* NO P/D NAME: 0101 */
+    /* NOT IMPL'D:  0101 */
     ATOP  = 0x6, /* 0110 */
-    /* NO P/D NAME: 0111 */
+    /* NOT IMPL'D:  0111 */
     OUT   = 0x8, /* 1000 */
     RATOP = 0x9, /* 1001 */
     XOR   = 0xA, /* 1010 */
     ROVER = 0xB, /* 1011 */
     SRC   = 0xC, /* 1100 */
-    /* NO P/D NAME: 1101 */
+    /* NOT IMPL'D:  1101 */
     OVER  = 0xE, /* 1110 */
     PLUS  = 0xF  /* 1111 */
 
