@@ -268,7 +268,9 @@ int guac_send_sync(GUACIO* io, long timestamp) {
 
 }
 
-int guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int dstl, int dstx, int dsty) {
+int guac_send_copy(GUACIO* io,
+        int srcl, int srcx, int srcy, int w, int h,
+        guac_composite_mode_t mode, int dstl, int dstx, int dsty) {
 
     return
            guac_write_string(io, "copy:")
@@ -281,6 +283,8 @@ int guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h, int d
         || guac_write_int(io, w)
         || guac_write_string(io, ",")
         || guac_write_int(io, h)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, mode)
         || guac_write_string(io, ",")
         || guac_write_int(io, dstl)
         || guac_write_string(io, ",")
@@ -302,12 +306,15 @@ cairo_status_t __guac_write_png(void* closure, const unsigned char* data, unsign
 
 }
 
-int guac_send_png(GUACIO* io, int layer, int x, int y, cairo_surface_t* surface) {
+int guac_send_png(GUACIO* io, guac_composite_mode_t mode,
+        int layer, int x, int y, cairo_surface_t* surface) {
 
     /* Write instruction and args */
 
     if (
            guac_write_string(io, "png:")
+        || guac_write_int(io, mode)
+        || guac_write_string(io, ",")
         || guac_write_int(io, layer)
         || guac_write_string(io, ",")
         || guac_write_int(io, x)

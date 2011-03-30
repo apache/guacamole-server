@@ -64,6 +64,44 @@
  */
 #define GUAC_USEC_TIMEOUT (GUAC_TIMEOUT*1000)
 
+
+/**
+ * Composite modes used by Guacamole draw instructions. Each
+ * composite mode maps to a unique channel mask integer.
+ */
+typedef enum guac_composite_mode_t {
+
+    /*
+     * (NOTE - set notation encoded in UTF-8):
+     *
+     * A: Source where destination transparent = S ∩ D′
+     * B: Source where destination opaque      = S ∩ D
+     * C: Destination where source transparent = D ∩ S′
+     * D: Destination where source opaque      = D ∩ S
+     *
+     * 0 = Active, 1 = Inactive
+     */
+                 /* ABCD */
+    NOP   = 0x0, /* 0000 */
+    RIN   = 0x1, /* 0001 */
+    ROUT  = 0x2, /* 0010 */
+    DEST  = 0x3, /* 0011 */
+    IN    = 0x4, /* 0100 */
+    /* NO P/D NAME: 0101 */
+    ATOP  = 0x6, /* 0110 */
+    /* NO P/D NAME: 0111 */
+    OUT   = 0x8, /* 1000 */
+    RATOP = 0x9, /* 1001 */
+    XOR   = 0xA, /* 1010 */
+    ROVER = 0xB, /* 1011 */
+    SRC   = 0xC, /* 1100 */
+    /* NO P/D NAME: 1101 */
+    OVER  = 0xE, /* 1110 */
+    PLUS  = 0xF  /* 1111 */
+
+} guac_composite_mode_t;
+
+
 /**
  * Represents a single instruction within the Guacamole protocol.
  */
@@ -196,6 +234,7 @@ int guac_send_size(GUACIO* io, int w, int h);
  * @param srcy The Y coordinate of the source rectangle.
  * @param w The width of the source rectangle.
  * @param h The height of the source rectangle.
+ * @param mode The composite mode to use.
  * @param dstl The index of the destination layer.
  * @param dstx The X coordinate of the destination, where the source rectangle
  *             should be copied.
@@ -203,21 +242,24 @@ int guac_send_size(GUACIO* io, int w, int h);
  *             should be copied.
  * @return Zero on success, non-zero on error.
  */
-int guac_send_copy(GUACIO* io, int srcl, int srcx, int srcy, int w, int h,
-        int dstl, int dstx, int dsty);
+int guac_send_copy(GUACIO* io, 
+        int srcl, int srcx, int srcy, int w, int h,
+        guac_composite_mode_t mode, int dstl, int dstx, int dsty);
 
 /**
  * Sends a png instruction over the given GUACIO connection. The PNG image data
  * given will be automatically base64-encoded for transmission.
  *
  * @param io The GUACIO connection to use.
+ * @param mode The composite mode to use.
  * @param layer The index of the destination layer.
  * @param x The destination X coordinate.
  * @param y The destination Y coordinate.
  * @param surface A cairo surface containing the image data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_send_png(GUACIO* io, int layer, int x, int y, cairo_surface_t* surface);
+int guac_send_png(GUACIO* io, guac_composite_mode_t mode,
+        int layer, int x, int y, cairo_surface_t* surface);
 
 /**
  * Sends a cursor instruction over the given GUACIO connection. The PNG image
