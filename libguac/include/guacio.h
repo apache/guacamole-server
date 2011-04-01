@@ -123,7 +123,7 @@ GUACIO* guac_open(int fd);
  * @param i The unsigned int to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
  */
-ssize_t guac_write_int(GUACIO* io, unsigned long i);
+ssize_t guac_write_int(GUACIO* io, long i);
 
 /**
  * Writes the given string to the given GUACIO object. The data

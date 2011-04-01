@@ -98,21 +98,31 @@ ssize_t __guac_write(GUACIO* io, const char* buf, int count) {
     return retval;
 }
 
-ssize_t guac_write_int(GUACIO* io, unsigned long i) {
+ssize_t guac_write_int(GUACIO* io, long i) {
 
     char buffer[128];
     char* ptr = &(buffer[127]);
+    int nonneg;
+
+    /* Obtain non-negative value */
+    if (i < 0) nonneg = -i;
+    else       nonneg = i;
+
+    /* Generate numeric string */
 
     *ptr = 0;
 
     do {
 
         ptr--;
-        *ptr = '0' + (i % 10);
+        *ptr = '0' + (nonneg % 10);
 
-        i /= 10;
+        nonneg /= 10;
 
-    } while (i > 0 && ptr >= buffer);
+    } while (nonneg > 0 && ptr >= buffer);
+
+    /* Prepend with dash if negative */
+    if (i < 0 && ptr >= buffer) *(--ptr) = '-';
 
     return guac_write_string(io, ptr);
 
