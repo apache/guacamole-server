@@ -170,6 +170,10 @@ int guac_send_args(GUACIO* io, const char** args) {
 
     int i;
 
+    /* Handle protocols with no args */
+    if (args[0] == NULL)
+        return guac_write_string(io, "args;");
+
     if (guac_write_string(io, "args:")) return -1;
 
     for (i=0; args[i] != NULL; i++) {
@@ -530,8 +534,8 @@ void guac_sleep(int millis) {
 #ifdef HAVE_NANOSLEEP 
         struct timespec sleep_period;
 
-        sleep_period.tv_sec = 0;
-        sleep_period.tv_nsec = millis * 1000000L;
+        sleep_period.tv_sec =   millis / 1000;
+        sleep_period.tv_nsec = (millis % 1000) * 1000000L;
 
         nanosleep(&sleep_period, NULL);
 #elif defined(__MINGW32__)
