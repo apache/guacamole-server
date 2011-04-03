@@ -102,7 +102,7 @@ ssize_t guac_write_int(GUACIO* io, long i) {
 
     char buffer[128];
     char* ptr = &(buffer[127]);
-    int nonneg;
+    long nonneg;
 
     /* Obtain non-negative value */
     if (i < 0) nonneg = -i;
