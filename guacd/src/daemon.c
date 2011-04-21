@@ -44,21 +44,16 @@
 
 #ifdef __MINGW32__
 #include <winsock2.h>
+typedef int socklen_t;
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif
 
-#ifdef HAVE_LIBPTHREAD
-#include <pthread.h>
-#elif defined(__MINGW32__)
-#include <windows.h>
-#include <process.h>
-#endif
-
 #include <errno.h>
 
 #include <guacamole/client.h>
+#include <guacamole/thread.h>
 #include <guacamole/log.h>
 
 /* Windows / MINGW32 handles closing sockets differently */ 
@@ -73,7 +68,7 @@
 char error[65536];
 char* lasterror() {
 #ifdef __MINGW32__
-    snprintf(error, sizeof(error)-1, "ERROR #%i", GetLastError());
+    snprintf(error, sizeof(error)-1, "ERROR #%li", GetLastError());
     return error;
 #else
     return strerror(errno);
@@ -124,11 +119,11 @@ int main(int argc, char* argv[]) {
     /* Server */
     int socket_fd;
     struct sockaddr_in server_addr;
-    int opt_on = 1;
+    const char opt_on[] = {1};
 
     /* Client */
     struct sockaddr_in client_addr;
-    unsigned int client_addr_len;
+    socklen_t client_addr_len;
     int connected_socket_fd;
 
     /* Arguments */
@@ -184,7 +179,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt_on, sizeof(opt_on))) {
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, opt_on, sizeof(opt_on))) {
         fprintf(stderr, "Warning: Unable to set socket options for reuse: %s\n", lasterror());
     }
 
@@ -236,6 +231,7 @@ int main(int argc, char* argv[]) {
     /* Otherwise, this is the daemon */
     guac_log_info("Started, listening on port %i", listen_port);
 
+#ifndef __MINGW32__
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
         guac_log_error("Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
@@ -245,14 +241,15 @@ int main(int argc, char* argv[]) {
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
         guac_log_error("Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
     }
+#endif
 
     /* Daemon loop */
     for (;;) {
 
 #ifdef HAVE_FORK
         pid_t child_pid;
-#elif HAVE_LIBPTHREAD
-        pthread_t thread;
+#else
+        guac_thread_t thread;
 #endif
         client_thread_data* data;
 
@@ -285,7 +282,7 @@ int main(int argc, char* argv[]) {
         /*** FORK ***/
 
         /*
-         * Note that we prefer fork() over pthreads for connection-handling
+         * Note that we prefer fork() over threads for connection-handling
          * processes as they give each connection its own memory area, and
          * isolate the main daemon and other connections from errors in any
          * particular client plugin.
@@ -303,30 +300,10 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
-#elif HAVE_LIBPTHREAD
-
-        /*** PTHREADS ***/
-
-        if (pthread_create(&thread, NULL, start_client_thread, (void*) data))
-            guac_log_error("Could not create client thread: %s", lasterror());
-        else
-            pthread_detach(thread);
-
-#elif __MINGW32__
-
-        /*** Windows threads ***/
-
-        if (_beginthread(start_client_thread, 0, (void*) data) == -1L) 
-            guac_log_error("Could not create client thread: %s", lasterror());
-
 #else
-#warning THREAD SUPPORT NOT FOUND! guacd will only be able to handle one connection at a time.
 
-        /*** NO THREADS ***/
-
-        guac_log_info("Thread support not present at compile time.");
-        guac_log_info("guacd handling one connection at a time.");
-        start_client_thread(data);
+        if (guac_thread_create(&thread, start_client_thread, (void*) data))
+            guac_log_error("Could not create client thread: %s", lasterror());
 
 #endif
 
