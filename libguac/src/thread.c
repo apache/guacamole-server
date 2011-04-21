@@ -49,7 +49,11 @@ int guac_thread_create(guac_thread_t* thread, void*(*function)(void*), void* dat
     return pthread_create(thread, NULL, function, data);
 #elif defined(__MINGW32__)
     *thread = _beginthreadex(NULL, 0,
-            function, data, 0 /* Create running */, NULL);
+            (unsigned(__stdcall*)(void*)) function, data,
+            0 /* Create running */, NULL);
+    if (thread == 0)
+        return errno;
+    return 0;
 #endif
 }
 
@@ -57,7 +61,7 @@ void guac_thread_join(guac_thread_t thread) {
 #ifdef HAVE_LIBPTHREAD
     pthread_join(thread, NULL);
 #elif defined(__MINGW32__)
-    WaitForSingleObject(thread, INFINITE);
+    WaitForSingleObject(&thread, INFINITE);
 #endif
 }
 

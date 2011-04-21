@@ -539,7 +539,7 @@ void guac_sleep(int millis) {
 
         nanosleep(&sleep_period, NULL);
 #elif defined(__MINGW32__)
-        Sleep(millis)
+        Sleep(millis);
 #else
 #warning No sleep/nanosleep function available. Clients may not perform as expected. Consider patching libguac to add support for your platform.
 #endif
