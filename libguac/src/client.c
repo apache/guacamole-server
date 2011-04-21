@@ -39,8 +39,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <dlfcn.h>
-#include <pthread.h>
 
+#include "thread.h"
 #include "log.h"
 #include "guacio.h"
 #include "protocol.h"
@@ -363,21 +363,21 @@ void* __guac_client_input_thread(void* data) {
 
 int guac_start_client(guac_client* client) {
 
-    pthread_t input_thread, output_thread;
+    guac_thread_t input_thread, output_thread;
 
-    if (pthread_create(&output_thread, NULL, __guac_client_output_thread, (void*) client)) {
+    if (guac_thread_create(&output_thread, __guac_client_output_thread, (void*) client)) {
         return -1;
     }
 
-    if (pthread_create(&input_thread, NULL, __guac_client_input_thread, (void*) client)) {
+    if (guac_thread_create(&input_thread, __guac_client_input_thread, (void*) client)) {
         guac_client_stop(client);
-        pthread_join(output_thread, NULL);
+        guac_thread_join(output_thread);
         return -1;
     }
 
     /* Wait for I/O threads */
-    pthread_join(input_thread, NULL);
-    pthread_join(output_thread, NULL);
+    guac_thread_join(input_thread);
+    guac_thread_join(output_thread);
 
     /* Done */
     return 0;

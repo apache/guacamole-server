@@ -57,7 +57,7 @@ typedef uintptr_t guac_thread_t;
 
 #endif
 
-void guac_thread_create(guac_thread_t* thread, void*(*function)(void*), void* data);
+int guac_thread_create(guac_thread_t* thread, void*(*function)(void*), void* data);
 void guac_thread_join(guac_thread_t thread);
 
 #endif

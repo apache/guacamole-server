@@ -44,9 +44,9 @@
 #include <process.h>
 #endif
 
-void guac_thread_create(guac_thread_t* thread, void*(*function)(void*), void* data) {
+int guac_thread_create(guac_thread_t* thread, void*(*function)(void*), void* data) {
 #ifdef HAVE_LIBPTHREAD
-    pthread_create(thread, NULL, function, data);
+    return pthread_create(thread, NULL, function, data);
 #elif defined(__MINGW32__)
     *thread = _beginthreadex(NULL, 0,
             function, data, 0 /* Create running */, NULL);
