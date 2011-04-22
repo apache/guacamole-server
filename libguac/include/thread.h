@@ -53,7 +53,7 @@ typedef pthread_t guac_thread_t;
 
 #include <windows.h>
 #include <process.h>
-typedef uintptr_t guac_thread_t;
+typedef HANDLE guac_thread_t;
 
 #endif
 
