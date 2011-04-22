@@ -45,9 +45,11 @@
 #ifdef __MINGW32__
 #include <winsock2.h>
 typedef int socklen_t;
+typedef char* sockopt_p;
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
+typedef void* sockopt_p;
 #endif
 
 #include <errno.h>
@@ -119,7 +121,7 @@ int main(int argc, char* argv[]) {
     /* Server */
     int socket_fd;
     struct sockaddr_in server_addr;
-    const char opt_on[] = {1};
+    int opt_on = 1;
 
     /* Client */
     struct sockaddr_in client_addr;
@@ -179,7 +181,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, opt_on, sizeof(opt_on))) {
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_p) &opt_on, sizeof(opt_on))) {
         fprintf(stderr, "Warning: Unable to set socket options for reuse: %s\n", lasterror());
     }
 
