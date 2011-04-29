@@ -151,13 +151,13 @@ struct guac_client {
      * The time (in milliseconds) of receipt of the last sync message from
      * the client.
      */
-    long last_received_timestamp;
+    guac_timestamp_t last_received_timestamp;
 
     /**
      * The time (in milliseconds) that the last sync message was sent to the
      * client.
      */
-    long last_sent_timestamp;
+    guac_timestamp_t last_sent_timestamp;
 
     /**
      * Reference to dlopen'd client plugin.

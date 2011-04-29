@@ -98,11 +98,11 @@ ssize_t __guac_write(GUACIO* io, const char* buf, int count) {
     return retval;
 }
 
-ssize_t guac_write_int(GUACIO* io, long i) {
+ssize_t guac_write_int(GUACIO* io, int64_t i) {
 
     char buffer[128];
     char* ptr = &(buffer[127]);
-    long nonneg;
+    int64_t nonneg;
 
     /* Obtain non-negative value */
     if (i < 0) nonneg = -i;

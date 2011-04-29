@@ -263,7 +263,7 @@ int guac_send_error(GUACIO* io, const char* error) {
 
 }
 
-int guac_send_sync(GUACIO* io, long timestamp) {
+int guac_send_sync(GUACIO* io, guac_timestamp_t timestamp) {
 
     return 
            guac_write_string(io, "sync:")
@@ -503,7 +503,7 @@ int guac_instructions_waiting(GUACIO* io) {
     return guac_select(io, GUAC_USEC_TIMEOUT);
 }
 
-long guac_current_timestamp() {
+guac_timestamp_t guac_current_timestamp() {
 
 #ifdef HAVE_CLOCK_GETTIME
 
@@ -513,7 +513,7 @@ long guac_current_timestamp() {
     clock_gettime(CLOCK_REALTIME, &current);
     
     /* Calculate milliseconds */
-    return current.tv_sec * 1000 + current.tv_nsec / 1000000;
+    return (guac_timestamp_t) current.tv_sec * 1000 + current.tv_nsec / 1000000;
 
 #else
 
@@ -523,7 +523,7 @@ long guac_current_timestamp() {
     gettimeofday(&current, NULL);
     
     /* Calculate milliseconds */
-    return current.tv_sec * 1000 + current.tv_usec / 1000;
+    return (guac_timestamp_t) current.tv_sec * 1000 + current.tv_usec / 1000;
 
 #endif
 

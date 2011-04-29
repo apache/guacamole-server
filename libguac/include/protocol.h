@@ -64,6 +64,7 @@
  */
 #define GUAC_USEC_TIMEOUT (GUAC_TIMEOUT*1000)
 
+typedef int64_t guac_timestamp_t;
 
 /**
  * Composite modes used by Guacamole draw instructions. Each
@@ -192,7 +193,7 @@ int guac_send_name(GUACIO* io, const char* name);
  * @param timestamp The current timestamp (in milliseconds).
  * @return Zero on success, non-zero on error.
  */
-int guac_send_sync(GUACIO* io, long timestamp);
+int guac_send_sync(GUACIO* io, guac_timestamp_t timestamp);
 
 /**
  * Sends an error instruction over the given GUACIO connection. The
@@ -298,7 +299,7 @@ int guac_instructions_waiting(GUACIO* io);
  */
 int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction);
 
-long guac_current_timestamp();
+guac_timestamp_t guac_current_timestamp();
 void guac_sleep(int millis);
 
 #endif

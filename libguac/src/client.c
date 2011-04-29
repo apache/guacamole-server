@@ -267,7 +267,7 @@ void* __guac_client_output_thread(void* data) {
     while (client->state == RUNNING) {
 
         /* Occasionally ping client with sync */
-        long timestamp = guac_current_timestamp();
+        guac_timestamp_t timestamp = guac_current_timestamp();
         if (timestamp - client->last_sent_timestamp > GUAC_SYNC_FREQUENCY) {
             client->last_sent_timestamp = timestamp;
             if (
