@@ -115,6 +115,17 @@ typedef struct GUACIO {
 GUACIO* guac_open(int fd);
 
 /**
+ * Parses the given string as a decimal number, returning the result as
+ * a 64-bit signed value. This value will be 64-bit regardless of platform.
+ *
+ * @param str The string to parse into a 64-bit integer.
+ * @return The 64-bit integer representation of the number in the given
+ *         string, undefined if the string does not contain a properly
+ *         formatted number.
+ */
+int64_t guac_parse_int(const char* str);
+
+/**
  * Writes the given unsigned int to the given GUACIO object. The data
  * written may be buffered until the buffer is flushed automatically or
  * manually.

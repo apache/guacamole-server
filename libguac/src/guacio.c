@@ -98,6 +98,24 @@ ssize_t __guac_write(GUACIO* io, const char* buf, int count) {
     return retval;
 }
 
+int64_t guac_parse_int(const char* str) {
+
+    int sign = 1;
+    int64_t num = 0;
+
+    for (; *str != '\0'; str++) {
+
+        if (*str == '-')
+            sign = -sign;
+        else
+            num = num * 10 + (*str - '0');
+
+    }
+
+    return num * sign;
+
+}
+
 ssize_t guac_write_int(GUACIO* io, int64_t i) {
 
     char buffer[128];
