@@ -38,13 +38,15 @@
 
 # guacd
 #
-# chkconfig:   - 20 80
+# chkconfig:   2345 20 80
 # description: Guacamole proxy daemon
 
 ### BEGIN INIT INFO
 # Provides:          guacd
 # Required-Start:    $network $syslog 
 # Required-Stop:     $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
 # Short-Description: Guacamole proxy daemon
 # Description: The Guacamole proxy daemon, required to translate remote desktop protocols into the text-based Guacamole protocol used by the JavaScript application.
 ### END INIT INFO
