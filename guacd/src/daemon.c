@@ -302,6 +302,11 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
+        /* If parent, close reference to child's descriptor */
+        else if (CLOSE_SOCKET(connected_socket_fd) < 0) {
+            guac_log_error("Error closing daemon reference to child descriptor: %s", lasterror());
+        }
+
 #else
 
         if (guac_thread_create(&thread, start_client_thread, (void*) data))
