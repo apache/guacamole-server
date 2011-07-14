@@ -42,15 +42,8 @@
 #include <signal.h>
 #include <sys/types.h>
 
-#ifdef __MINGW32__
-#include <winsock2.h>
-typedef int socklen_t;
-typedef char* sockopt_p;
-#else
 #include <sys/socket.h>
 #include <netinet/in.h>
-typedef void* sockopt_p;
-#endif
 
 #include <errno.h>
 
@@ -58,24 +51,6 @@ typedef void* sockopt_p;
 #include <guacamole/thread.h>
 #include <guacamole/log.h>
 
-/* Windows / MINGW32 handles closing sockets differently */ 
-#ifdef __MINGW32__
-#define CLOSE_SOCKET(socket) closesocket(socket)
-#else
-#define CLOSE_SOCKET(socket) close(socket)
-#endif
-
-
-/* Cross-platform strerror()/errno clone */
-char error[65536];
-char* lasterror() {
-#ifdef __MINGW32__
-    snprintf(error, sizeof(error)-1, "ERROR #%li", GetLastError());
-    return error;
-#else
-    return strerror(errno);
-#endif
-}
 
 typedef struct client_thread_data {
 
@@ -104,8 +79,8 @@ void* start_client_thread(void* data) {
     guac_free_client(client);
 
     /* Close socket */
-    if (CLOSE_SOCKET(thread_data->fd) < 0) {
-        guac_log_error("Error closing connection: %s", lasterror());
+    if (close(thread_data->fd) < 0) {
+        guac_log_error("Error closing connection: %s", strerror(errno));
         free(data);
         return NULL;
     }
@@ -137,11 +112,6 @@ int main(int argc, char* argv[]) {
     /* Daemon Process */
     pid_t daemon_pid;
 
-#ifdef __MINGW32__
-    /* Structure for holding winsock version info */
-    WSADATA wsadata;
-#endif
-
     /* Parse arguments */
     while ((opt = getopt(argc, argv, "l:p:")) != -1) {
         if (opt == 'l') {
@@ -166,29 +136,21 @@ int main(int argc, char* argv[]) {
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(listen_port);
 
-#ifdef __MINGW32__
-    /* If compiling for Windows, init winsock. */
-    if (WSAStartup(MAKEWORD(1,1), &wsadata) == SOCKET_ERROR) {
-        fprintf(stderr, "Error creating socket.");
-        exit(EXIT_FAILURE);
-    }
-#endif
-
     /* Get socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
-        fprintf(stderr, "Error opening socket: %s\n", lasterror());
+        fprintf(stderr, "Error opening socket: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_p) &opt_on, sizeof(opt_on))) {
-        fprintf(stderr, "Warning: Unable to set socket options for reuse: %s\n", lasterror());
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (void*) &opt_on, sizeof(opt_on))) {
+        fprintf(stderr, "Warning: Unable to set socket options for reuse: %s\n", strerror(errno));
     }
 
     /* Bind socket to address */
     if (bind(socket_fd, (struct sockaddr*) &server_addr,
                 sizeof(server_addr)) < 0) {
-        fprintf(stderr, "Error binding socket: %s\n", lasterror());
+        fprintf(stderr, "Error binding socket: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     } 
 
@@ -198,7 +160,7 @@ int main(int argc, char* argv[]) {
 
     /* If error, fail */
     if (daemon_pid == -1) {
-        fprintf(stderr, "Error forking daemon process: %s\n", lasterror());
+        fprintf(stderr, "Error forking daemon process: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -216,7 +178,7 @@ int main(int argc, char* argv[]) {
 
             /* Warn on failure */
             else {
-                fprintf(stderr, "WARNING: Could not write PID file: %s\n", lasterror());
+                fprintf(stderr, "WARNING: Could not write PID file: %s\n", strerror(errno));
                 exit(EXIT_FAILURE);
             }
 
@@ -233,7 +195,6 @@ int main(int argc, char* argv[]) {
     /* Otherwise, this is the daemon */
     guac_log_info("Started, listening on port %i", listen_port);
 
-#ifndef __MINGW32__
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
         guac_log_error("Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
@@ -243,7 +204,6 @@ int main(int argc, char* argv[]) {
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
         guac_log_error("Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
     }
-#endif
 
     /* Daemon loop */
     for (;;) {
@@ -257,7 +217,7 @@ int main(int argc, char* argv[]) {
 
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
-            guac_log_error("Could not listen on socket: %s", lasterror());
+            guac_log_error("Could not listen on socket: %s", strerror(errno));
             return 3;
         }
 
@@ -265,7 +225,7 @@ int main(int argc, char* argv[]) {
         client_addr_len = sizeof(client_addr);
         connected_socket_fd = accept(socket_fd, (struct sockaddr*) &client_addr, &client_addr_len);
         if (connected_socket_fd < 0) {
-            guac_log_error("Could not accept client connection: %s", lasterror());
+            guac_log_error("Could not accept client connection: %s", strerror(errno));
             return 3;
         }
 
@@ -294,7 +254,7 @@ int main(int argc, char* argv[]) {
 
         /* If error, log */
         if (child_pid == -1)
-            guac_log_error("Error forking child process: %s\n", lasterror());
+            guac_log_error("Error forking child process: %s\n", strerror(errno));
 
         /* If child, start client, and exit when finished */
         else if (child_pid == 0) {
@@ -303,22 +263,22 @@ int main(int argc, char* argv[]) {
         }
 
         /* If parent, close reference to child's descriptor */
-        else if (CLOSE_SOCKET(connected_socket_fd) < 0) {
-            guac_log_error("Error closing daemon reference to child descriptor: %s", lasterror());
+        else if (close(connected_socket_fd) < 0) {
+            guac_log_error("Error closing daemon reference to child descriptor: %s", strerror(errno));
         }
 
 #else
 
         if (guac_thread_create(&thread, start_client_thread, (void*) data))
-            guac_log_error("Could not create client thread: %s", lasterror());
+            guac_log_error("Could not create client thread: %s", strerror(errno));
 
 #endif
 
     }
 
     /* Close socket */
-    if (CLOSE_SOCKET(socket_fd) < 0) {
-        guac_log_error("Could not close socket: %s", lasterror());
+    if (close(socket_fd) < 0) {
+        guac_log_error("Could not close socket: %s", strerror(errno));
         return 3;
     }
 

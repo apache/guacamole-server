@@ -43,7 +43,6 @@ AC_PROG_CC
 # Checks for libraries.
 AC_CHECK_LIB([guac], [guac_get_client],, AC_MSG_ERROR("libguac must be installed first"))
 AC_CHECK_LIB([pthread], [pthread_create])
-AC_CHECK_LIB([wsock32], [main])
 
 # Checks for header files.
 AC_CHECK_HEADERS([netinet/in.h stdlib.h string.h sys/socket.h syslog.h unistd.h guacamole/client.h])
