@@ -46,10 +46,6 @@
 
 #include "rdp_handlers.h"
 
-long surface = 1;
-long bitmap = 1;
-long glyph = 1;
-
 void guac_rdp_ui_error(rdpInst* inst, const char* text) {
 
     guac_client* client = (guac_client*) inst->param1;
@@ -69,9 +65,11 @@ void guac_rdp_ui_unimpl(rdpInst* inst, const char* text) {
 }
 
 void guac_rdp_ui_begin_update(rdpInst* inst) {
+    /* UNUSED */
 }
 
 void guac_rdp_ui_end_update(rdpInst* inst) {
+    /* UNUSED */
 }
 
 void guac_rdp_ui_desktop_save(rdpInst* inst, int offset, int x, int y, int cx, int cy) {
@@ -83,8 +81,15 @@ void guac_rdp_ui_desktop_restore(rdpInst* inst, int offset, int x, int y, int cx
 }
 
 RD_HBITMAP guac_rdp_ui_create_bitmap(rdpInst* inst, int width, int height, uint8* data) {
-    guac_log_info("guac_rdp_ui_create_bitmap: %ix%i, bpp=%i\n", width, height, inst->settings->server_depth);
-    return (RD_HBITMAP) bitmap++;
+
+    /* Allocate and return buffer */
+    guac_client* client = (guac_client*) inst->param1;
+    guac_layer* buffer = guac_client_alloc_buffer(client);
+
+    guac_log_info("guac_rdp_ui_create_bitmap: STUB %ix%i, bpp=%i (got buffer %i)\n", width, height, inst->settings->server_depth, buffer->index);
+
+    return (RD_HBITMAP) buffer;
+
 }
 
 void guac_rdp_ui_paint_bitmap(rdpInst* inst, int x, int y, int cx, int cy, int width, int height, uint8* data) {
@@ -92,7 +97,11 @@ void guac_rdp_ui_paint_bitmap(rdpInst* inst, int x, int y, int cx, int cy, int w
 }
 
 void guac_rdp_ui_destroy_bitmap(rdpInst* inst, RD_HBITMAP bmp) {
-    guac_log_info("guac_rdp_ui_destroy_bitmap: STUB\n");
+
+    /* Free buffer */
+    guac_client* client = (guac_client*) inst->param1;
+    guac_client_free_buffer(client, (guac_layer*) bmp);
+
 }
 
 void guac_rdp_ui_line(rdpInst* inst, uint8 opcode, int startx, int starty, int endx, int endy, RD_PEN* pen) {
@@ -157,12 +166,20 @@ void guac_rdp_ui_triblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int c
 }
 
 RD_HGLYPH guac_rdp_ui_create_glyph(rdpInst* inst, int width, int height, uint8* data) {
+
+    /* Allocate and return buffer */
+    guac_client* client = (guac_client*) inst->param1;
     guac_log_info("guac_rdp_ui_create_glyph: STUB\n");
-    return (RD_HGLYPH) glyph++;
+    return (RD_HGLYPH) guac_client_alloc_buffer(client);
+
 }
 
 void guac_rdp_ui_destroy_glyph(rdpInst* inst, RD_HGLYPH glyph) {
-    guac_log_info("guac_rdp_ui_destroy_glyph: STUB\n");
+
+    /* Free buffer */
+    guac_client* client = (guac_client*) inst->param1;
+    guac_client_free_buffer(client, (guac_layer*) glyph);
+
 }
 
 int guac_rdp_ui_select(rdpInst* inst, int rdp_socket) {
@@ -216,8 +233,11 @@ void guac_rdp_ui_set_colormap(rdpInst* inst, RD_HPALETTE map) {
 }
 
 RD_HBITMAP guac_rdp_ui_create_surface(rdpInst* inst, int width, int height, RD_HBITMAP old) {
-    guac_log_info("guac_rdp_ui_create_surface: %ix%i\n", width, height);
-    return (RD_HBITMAP) surface++;
+
+    /* Allocate and return buffer */
+    guac_client* client = (guac_client*) inst->param1;
+    return (RD_HBITMAP) guac_client_alloc_buffer(client);
+
 }
 
 void guac_rdp_ui_set_surface(rdpInst* inst, RD_HBITMAP surface) {
@@ -239,7 +259,11 @@ void guac_rdp_ui_set_surface(rdpInst* inst, RD_HBITMAP surface) {
 }
 
 void guac_rdp_ui_destroy_surface(rdpInst* inst, RD_HBITMAP surface) {
-    guac_log_info("guac_rdp_ui_destroy_surface: STUB\n");
+
+    /* Free buffer */
+    guac_client* client = (guac_client*) inst->param1;
+    guac_client_free_buffer(client, (guac_layer*) surface);
+
 }
 
 void guac_rdp_ui_channel_data(rdpInst* inst, int chan_id, char* data, int data_size, int flags, int total_size) {
