@@ -211,8 +211,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 	settings->bitmap_cache = 1;
 	settings->bitmap_compression = 1;
 	settings->desktop_save = 0;
-	settings->rdp5_performanceflags =
-		RDP5_NO_WALLPAPER | RDP5_NO_FULLWINDOWDRAG | RDP5_NO_MENUANIMATIONS;
+	settings->performanceflags =
+		PERF_DISABLE_WALLPAPER
+        | PERF_DISABLE_FULLWINDOWDRAG
+        | PERF_DISABLE_MENUANIMATIONS;
 	settings->off_screen_bitmaps = 1;
 	settings->triblt = 0;
 	settings->new_cursors = 1;
@@ -268,9 +270,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 	rdp_inst->ui_create_cursor = guac_rdp_ui_create_cursor;
 	rdp_inst->ui_set_null_cursor = guac_rdp_ui_set_null_cursor;
 	rdp_inst->ui_set_default_cursor = guac_rdp_ui_set_default_cursor;
-	rdp_inst->ui_create_colourmap = guac_rdp_ui_create_colourmap;
+	rdp_inst->ui_create_colormap = guac_rdp_ui_create_colormap;
 	rdp_inst->ui_move_pointer = guac_rdp_ui_move_pointer;
-	rdp_inst->ui_set_colourmap = guac_rdp_ui_set_colourmap;
+	rdp_inst->ui_set_colormap = guac_rdp_ui_set_colormap;
 	rdp_inst->ui_create_surface = guac_rdp_ui_create_surface;
 	rdp_inst->ui_set_surface = guac_rdp_ui_set_surface;
 	rdp_inst->ui_destroy_surface = guac_rdp_ui_destroy_surface;

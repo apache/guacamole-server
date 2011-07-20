@@ -37,15 +37,20 @@
 
 #include <stdio.h>
 
-#include <freerdp/freerdp.h>
-
+#include <guacamole/log.h>
+#include <guacamole/guacio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
-#include <guacamole/guacio.h>
+
+#include <freerdp/freerdp.h>
 
 #include "rdp_handlers.h"
 
-void guac_rdp_ui_error(rdpInst* inst, char* text) {
+long surface = 1;
+long bitmap = 1;
+long glyph = 1;
+
+void guac_rdp_ui_error(rdpInst* inst, const char* text) {
 
     guac_client* client = (guac_client*) inst->param1;
     GUACIO* io = client->io;
@@ -55,111 +60,109 @@ void guac_rdp_ui_error(rdpInst* inst, char* text) {
 
 }
 
-void guac_rdp_ui_warning(rdpInst* inst, char* text) {
-    fprintf(stderr, "guac_rdp_ui_warning: STUB\n");
+void guac_rdp_ui_warning(rdpInst* inst, const char* text) {
+    guac_log_info("guac_rdp_ui_warning: %s\n", text);
 }
 
-void guac_rdp_ui_unimpl(rdpInst* inst, char* text) {
-    fprintf(stderr, "guac_rdp_ui_unimpl: STUB\n");
+void guac_rdp_ui_unimpl(rdpInst* inst, const char* text) {
+    guac_log_info("guac_rdp_ui_unimpl: %s\n", text);
 }
 
 void guac_rdp_ui_begin_update(rdpInst* inst) {
-    fprintf(stderr, "guac_rdp_ui_begin_update: STUB\n");
 }
 
 void guac_rdp_ui_end_update(rdpInst* inst) {
-    fprintf(stderr, "guac_rdp_ui_end_update: STUB\n");
 }
 
 void guac_rdp_ui_desktop_save(rdpInst* inst, int offset, int x, int y, int cx, int cy) {
-    fprintf(stderr, "guac_rdp_ui_desktop_save: STUB\n");
+    guac_log_info("guac_rdp_ui_desktop_save: STUB\n");
 }
 
 void guac_rdp_ui_desktop_restore(rdpInst* inst, int offset, int x, int y, int cx, int cy) {
-    fprintf(stderr, "guac_rdp_ui_desktop_restore: STUB\n");
+    guac_log_info("guac_rdp_ui_desktop_restore: STUB\n");
 }
 
 RD_HBITMAP guac_rdp_ui_create_bitmap(rdpInst* inst, int width, int height, uint8* data) {
-    fprintf(stderr, "guac_rdp_ui_create_bitmap: STUB\n");
-    return NULL;
+    guac_log_info("guac_rdp_ui_create_bitmap: %ix%i, bpp=%i\n", width, height, inst->settings->server_depth);
+    return (RD_HBITMAP) bitmap++;
 }
 
 void guac_rdp_ui_paint_bitmap(rdpInst* inst, int x, int y, int cx, int cy, int width, int height, uint8* data) {
-    fprintf(stderr, "guac_rdp_ui_paint_bitmap: STUB\n");
+    guac_log_info("guac_rdp_ui_paint_bitmap: STUB\n");
 }
 
 void guac_rdp_ui_destroy_bitmap(rdpInst* inst, RD_HBITMAP bmp) {
-    fprintf(stderr, "guac_rdp_ui_destroy_bitmap: STUB\n");
+    guac_log_info("guac_rdp_ui_destroy_bitmap: STUB\n");
 }
 
 void guac_rdp_ui_line(rdpInst* inst, uint8 opcode, int startx, int starty, int endx, int endy, RD_PEN* pen) {
-    fprintf(stderr, "guac_rdp_ui_line: STUB\n");
+    guac_log_info("guac_rdp_ui_line: STUB\n");
 }
 
 void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, int colour) {
-    fprintf(stderr, "guac_rdp_ui_rect: STUB\n");
+    guac_log_info("guac_rdp_ui_rect: STUB\n");
 }
 
 void guac_rdp_ui_polygon(rdpInst* inst, uint8 opcode, uint8 fillmode, RD_POINT* point, int npoints, RD_BRUSH* brush, int bgcolour, int fgcolour) {
-    fprintf(stderr, "guac_rdp_ui_polygon: STUB\n");
+    guac_log_info("guac_rdp_ui_polygon: STUB\n");
 }
 
 void guac_rdp_ui_polyline(rdpInst* inst, uint8 opcode, RD_POINT* points, int npoints, RD_PEN* pen) {
-    fprintf(stderr, "guac_rdp_ui_polyline: STUB\n");
+    guac_log_info("guac_rdp_ui_polyline: STUB\n");
 }
 
 void guac_rdp_ui_ellipse(rdpInst* inst, uint8 opcode, uint8 fillmode, int x, int y, int cx, int cy, RD_BRUSH*  brush, int bgcolour, int fgcolour) {
-    fprintf(stderr, "guac_rdp_ui_ellipse: STUB\n");
+    guac_log_info("guac_rdp_ui_ellipse: STUB\n");
 }
 
 void guac_rdp_ui_start_draw_glyphs(rdpInst* inst, int bgcolour, int fgcolour) {
-    fprintf(stderr, "guac_rdp_ui_start_draw_glyphs: STUB\n");
+    guac_log_info("guac_rdp_ui_start_draw_glyphs: STUB\n");
 }
 
 void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int cx, int cy, RD_HGLYPH glyph) {
-    fprintf(stderr, "guac_rdp_ui_draw_glyph: STUB\n");
+    guac_log_info("guac_rdp_ui_draw_glyph: STUB\n");
 }
 
 void guac_rdp_ui_end_draw_glyphs(rdpInst* inst, int x, int y, int cx, int cy) {
-    fprintf(stderr, "guac_rdp_ui_end_draw_glyphs: STUB\n");
+    guac_log_info("guac_rdp_ui_end_draw_glyphs: STUB\n");
 }
 
 uint32 guac_rdp_ui_get_toggle_keys_state(rdpInst* inst) {
-    fprintf(stderr, "guac_rdp_ui_get_toggle_keys_state: STUB\n");
+    guac_log_info("guac_rdp_ui_get_toggle_keys_state: STUB\n");
     return 0;
 }
 
 void guac_rdp_ui_bell(rdpInst* inst) {
-    fprintf(stderr, "guac_rdp_ui_bell: STUB\n");
+    guac_log_info("guac_rdp_ui_bell: STUB\n");
 }
 
 void guac_rdp_ui_destblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy) {
-    fprintf(stderr, "guac_rdp_ui_destblt: STUB\n");
+    guac_log_info("guac_rdp_ui_destblt: STUB\n");
 }
 
 void guac_rdp_ui_patblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_BRUSH* brush, int bgcolour, int fgcolour) {
-    fprintf(stderr, "guac_rdp_ui_patblt: STUB\n");
+    guac_log_info("guac_rdp_ui_patblt: STUB\n");
 }
 
 void guac_rdp_ui_screenblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, int srcx, int srcy) {
-    fprintf(stderr, "guac_rdp_ui_screenblt: STUB\n");
+    guac_log_info("guac_rdp_ui_screenblt: STUB\n");
 }
 
 void guac_rdp_ui_memblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_HBITMAP src, int srcx, int srcy) {
-    fprintf(stderr, "guac_rdp_ui_memblt: STUB\n");
+    guac_log_info("guac_rdp_ui_memblt: STUB\n");
 }
 
 void guac_rdp_ui_triblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_HBITMAP src, int srcx, int srcy, RD_BRUSH* brush, int bgcolour,  int fgcolour) {
-    fprintf(stderr, "guac_rdp_ui_triblt: STUB\n");
+    guac_log_info("guac_rdp_ui_triblt: STUB\n");
 }
 
 RD_HGLYPH guac_rdp_ui_create_glyph(rdpInst* inst, int width, int height, uint8* data) {
-    fprintf(stderr, "guac_rdp_ui_create_glyph: STUB\n");
-    return NULL;
+    guac_log_info("guac_rdp_ui_create_glyph: STUB\n");
+    return (RD_HGLYPH) glyph++;
 }
 
 void guac_rdp_ui_destroy_glyph(rdpInst* inst, RD_HGLYPH glyph) {
-    fprintf(stderr, "guac_rdp_ui_destroy_glyph: STUB\n");
+    guac_log_info("guac_rdp_ui_destroy_glyph: STUB\n");
 }
 
 int guac_rdp_ui_select(rdpInst* inst, int rdp_socket) {
@@ -167,66 +170,80 @@ int guac_rdp_ui_select(rdpInst* inst, int rdp_socket) {
 }
 
 void guac_rdp_ui_set_clip(rdpInst* inst, int x, int y, int cx, int cy) {
-    fprintf(stderr, "guac_rdp_ui_set_clip: STUB\n");
+    guac_log_info("guac_rdp_ui_set_clip: STUB\n");
 }
 
 void guac_rdp_ui_reset_clip(rdpInst* inst) {
-    fprintf(stderr, "guac_rdp_ui_reset_clip: STUB\n");
+    guac_log_info("guac_rdp_ui_reset_clip: STUB\n");
 }
 
 void guac_rdp_ui_resize_window(rdpInst* inst) {
-    fprintf(stderr, "guac_rdp_ui_resize_window: STUB\n");
+    guac_log_info("guac_rdp_ui_resize_window: %ix%i\n", inst->settings->width, inst->settings->height);
 }
 
 void guac_rdp_ui_set_cursor(rdpInst* inst, RD_HCURSOR cursor) {
-    fprintf(stderr, "guac_rdp_ui_set_cursor: STUB\n");
+    guac_log_info("guac_rdp_ui_set_cursor: STUB\n");
 }
 
 void guac_rdp_ui_destroy_cursor(rdpInst* inst, RD_HCURSOR cursor) {
-    fprintf(stderr, "guac_rdp_ui_destroy_cursor: STUB\n");
+    guac_log_info("guac_rdp_ui_destroy_cursor: STUB\n");
 }
 
 RD_HCURSOR guac_rdp_ui_create_cursor(rdpInst* inst, unsigned int x, unsigned int y, int width, int height, uint8* andmask, uint8* xormask, int bpp) {
-    fprintf(stderr, "guac_rdp_ui_create_cursor: STUB\n");
+    guac_log_info("guac_rdp_ui_create_cursor: STUB\n");
     return NULL;
 }
 
 void guac_rdp_ui_set_null_cursor(rdpInst* inst) {
-    fprintf(stderr, "guac_rdp_ui_set_null_cursor: STUB\n");
+    guac_log_info("guac_rdp_ui_set_null_cursor: STUB\n");
 }
 
 void guac_rdp_ui_set_default_cursor(rdpInst* inst) {
-    fprintf(stderr, "guac_rdp_ui_set_default_cursor: STUB\n");
+    guac_log_info("guac_rdp_ui_set_default_cursor: STUB\n");
 }
 
-RD_HCOLOURMAP guac_rdp_ui_create_colourmap(rdpInst* inst, RD_COLOURMAP* colours) {
-    fprintf(stderr, "guac_rdp_ui_create_colourmap: STUB\n");
+RD_HPALETTE guac_rdp_ui_create_colormap(rdpInst* inst, RD_PALETTE* colours) {
+    guac_log_info("guac_rdp_ui_create_colormap: STUB\n");
     return NULL;
 }
 
 void guac_rdp_ui_move_pointer(rdpInst* inst, int x, int y) {
-    fprintf(stderr, "guac_rdp_ui_move_pointer: STUB\n");
+    guac_log_info("guac_rdp_ui_move_pointer: STUB\n");
 }
 
-void guac_rdp_ui_set_colourmap(rdpInst* inst, RD_HCOLOURMAP map) {
-    fprintf(stderr, "guac_rdp_ui_set_colourmap: STUB\n");
+void guac_rdp_ui_set_colormap(rdpInst* inst, RD_HPALETTE map) {
+    guac_log_info("guac_rdp_ui_set_colormap: STUB\n");
 }
 
 RD_HBITMAP guac_rdp_ui_create_surface(rdpInst* inst, int width, int height, RD_HBITMAP old) {
-    fprintf(stderr, "guac_rdp_ui_create_surface: STUB\n");
-    return NULL;
+    guac_log_info("guac_rdp_ui_create_surface: %ix%i\n", width, height);
+    return (RD_HBITMAP) surface++;
 }
 
 void guac_rdp_ui_set_surface(rdpInst* inst, RD_HBITMAP surface) {
-    fprintf(stderr, "guac_rdp_ui_set_surface: STUB (surface=%p)\n", surface);
+
+    guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io;
+
+    /* Init desktop */
+    if (surface == NULL) {
+
+        guac_send_name(io, inst->settings->server);
+        guac_send_size(io, inst->settings->width, inst->settings->height);
+        guac_flush(io);
+
+    }
+    else
+        guac_log_info("guac_rdp_ui_set_surface: STUB (surface=%p) ... %ix%i\n", surface, inst->settings->width, inst->settings->height);
+
 }
 
 void guac_rdp_ui_destroy_surface(rdpInst* inst, RD_HBITMAP surface) {
-    fprintf(stderr, "guac_rdp_ui_destroy_surface: STUB\n");
+    guac_log_info("guac_rdp_ui_destroy_surface: STUB\n");
 }
 
 void guac_rdp_ui_channel_data(rdpInst* inst, int chan_id, char* data, int data_size, int flags, int total_size) {
-    fprintf(stderr, "guac_rdp_ui_channel_data: STUB\n");
+    guac_log_info("guac_rdp_ui_channel_data: STUB\n");
 }
 
 

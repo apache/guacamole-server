@@ -40,9 +40,9 @@
 
 #include <freerdp/freerdp.h>
 
-void guac_rdp_ui_error(rdpInst* inst, char* text);
-void guac_rdp_ui_warning(rdpInst* inst, char* text);
-void guac_rdp_ui_unimpl(rdpInst* inst, char* text);
+void guac_rdp_ui_error(rdpInst* inst, const char* text);
+void guac_rdp_ui_warning(rdpInst* inst, const char* text);
+void guac_rdp_ui_unimpl(rdpInst* inst, const char* text);
 void guac_rdp_ui_begin_update(rdpInst* inst);
 void guac_rdp_ui_end_update(rdpInst* inst);
 void guac_rdp_ui_desktop_save(rdpInst* inst, int offset, int x, int y, int cx, int cy);
@@ -76,9 +76,9 @@ void guac_rdp_ui_destroy_cursor(rdpInst* inst, RD_HCURSOR cursor);
 RD_HCURSOR guac_rdp_ui_create_cursor(rdpInst* inst, unsigned int x, unsigned int y, int width, int height, uint8* andmask, uint8* xormask, int bpp);
 void guac_rdp_ui_set_null_cursor(rdpInst* inst);
 void guac_rdp_ui_set_default_cursor(rdpInst* inst);
-RD_HCOLOURMAP guac_rdp_ui_create_colourmap(rdpInst* inst, RD_COLOURMAP* colours);
+RD_HPALETTE guac_rdp_ui_create_colormap(rdpInst* inst, RD_PALETTE* colours);
 void guac_rdp_ui_move_pointer(rdpInst* inst, int x, int y);
-void guac_rdp_ui_set_colourmap(rdpInst* inst, RD_HCOLOURMAP map);
+void guac_rdp_ui_set_colormap(rdpInst* inst, RD_HPALETTE map);
 RD_HBITMAP guac_rdp_ui_create_surface(rdpInst* inst, int width, int height, RD_HBITMAP old);
 void guac_rdp_ui_set_surface(rdpInst* inst, RD_HBITMAP surface);
 void guac_rdp_ui_destroy_surface(rdpInst* inst, RD_HBITMAP surface);
