@@ -148,6 +148,29 @@ struct guac_client {
     guac_client_state state;
 
     /**
+     * The head pointer of the list of all available (allocated but not used)
+     * layers.
+     */
+    guac_layer* available_layers;
+
+    /**
+     * The index of the next available buffer.
+     */
+    int next_buffer_index;
+
+    /**
+     * The head pointer of the list of all available (allocated but not used)
+     * buffers.
+     */
+    guac_layer* available_buffers;
+
+    /**
+     * The head pointer of the list of all allocated layers, regardless of use
+     * status.
+     */
+    guac_layer* all_layers;
+
+    /**
      * The time (in milliseconds) of receipt of the last sync message from
      * the client.
      */
@@ -327,5 +350,44 @@ int guac_client_handle_instruction(guac_client* client, guac_instruction* instru
  * @param client The proxy client to stop.
  */
 void guac_client_stop(guac_client* client);
+
+/**
+ * Allocates a new buffer (invisible layer). An arbitrary index is
+ * automatically assigned if no existing buffer is available for use.
+ *
+ * @param client The proxy client to allocate the buffer for.
+ * @return The next available buffer, or a newly allocated buffer.
+ */
+guac_layer* guac_client_alloc_buffer(guac_client* client);
+
+/**
+ * Allocates a new layer. The layer will be given the specified index,
+ * even if the layer returned was a previously used (and free'd) layer.
+ *
+ * @param client The proxy client to allocate the layer buffer for.
+ * @param index The index of the layer to allocate.
+ * @return The next available layer, or a newly allocated layer.
+ */
+guac_layer* guac_client_alloc_layer(guac_client* client, int index);
+
+/**
+ * Returns the given buffer to the pool of available buffers, such that it
+ * can be reused by any subsequent call to guac_client_allow_buffer().
+ *
+ * @param client The proxy client to return the buffer to.
+ * @param layer The buffer to return to the pool of available buffers.
+ */
+void guac_client_free_buffer(guac_client* client, guac_layer* layer);
+
+/**
+ * Returns the given layer to the pool of available layers, such that it
+ * can be reused by any subsequent call to guac_client_allow_layer().
+ *
+ * @param client The proxy client to return the layer to.
+ * @param layer The layer to return to the pool of available layers.
+ */
+void guac_client_free_layer(guac_client* client, guac_layer* layer);
+
+extern const guac_layer* GUAC_DEFAULT_LAYER;
 
 #endif

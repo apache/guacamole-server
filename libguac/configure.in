@@ -40,7 +40,14 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CC_C99
 AC_PROG_LIBTOOL
+
+# POSIX
+AC_DEFINE(_POSIX_C_SOURCE, 199309L)
+
+# BSD
+AC_DEFINE(_BSD_SOURCE)
 
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen],, AC_MSG_ERROR("libdl is required for loading client plugins"))

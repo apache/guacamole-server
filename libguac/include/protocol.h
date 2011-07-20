@@ -102,6 +102,30 @@ typedef enum guac_composite_mode_t {
 
 } guac_composite_mode_t;
 
+typedef struct guac_layer guac_layer;
+
+/**
+ * Represents a single layer within the Guacamole protocol.
+ */
+struct guac_layer {
+
+    /**
+     * The index of this layer.
+     */
+    int index;
+
+    /**
+     * The next allocated layer in the list of all layers.
+     */
+    guac_layer* next;
+
+    /**
+     * The next available (unused) layer in the list of
+     * allocated but free'd layers.
+     */
+    guac_layer* next_available;
+
+};
 
 /**
  * Represents a single instruction within the Guacamole protocol.
@@ -230,13 +254,13 @@ int guac_send_size(GUACIO* io, int w, int h);
  * Sends a copy instruction over the given GUACIO connection.
  *
  * @param io The GUACIO connection to use.
- * @param srcl The index of the source layer.
+ * @param srcl The source layer.
  * @param srcx The X coordinate of the source rectangle.
  * @param srcy The Y coordinate of the source rectangle.
  * @param w The width of the source rectangle.
  * @param h The height of the source rectangle.
  * @param mode The composite mode to use.
- * @param dstl The index of the destination layer.
+ * @param dstl The destination layer.
  * @param dstx The X coordinate of the destination, where the source rectangle
  *             should be copied.
  * @param dsty The Y coordinate of the destination, where the source rectangle
@@ -244,8 +268,8 @@ int guac_send_size(GUACIO* io, int w, int h);
  * @return Zero on success, non-zero on error.
  */
 int guac_send_copy(GUACIO* io, 
-        int srcl, int srcx, int srcy, int w, int h,
-        guac_composite_mode_t mode, int dstl, int dstx, int dsty);
+        const guac_layer* srcl, int srcx, int srcy, int w, int h,
+        guac_composite_mode_t mode, const guac_layer* dstl, int dstx, int dsty);
 
 /**
  * Sends a png instruction over the given GUACIO connection. The PNG image data
@@ -253,14 +277,14 @@ int guac_send_copy(GUACIO* io,
  *
  * @param io The GUACIO connection to use.
  * @param mode The composite mode to use.
- * @param layer The index of the destination layer.
+ * @param layer The destination layer.
  * @param x The destination X coordinate.
  * @param y The destination Y coordinate.
  * @param surface A cairo surface containing the image data to send.
  * @return Zero on success, non-zero on error.
  */
 int guac_send_png(GUACIO* io, guac_composite_mode_t mode,
-        int layer, int x, int y, cairo_surface_t* surface);
+        const guac_layer* layer, int x, int y, cairo_surface_t* surface);
 
 /**
  * Sends a cursor instruction over the given GUACIO connection. The PNG image
