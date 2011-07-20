@@ -232,9 +232,9 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
         }
     }
 
-    /* For now, only use layer 0 */
+    /* For now, only use default layer */
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24, w, h, stride);
-    guac_send_png(io, GUAC_COMP_OVER, 0, x, y, surface);
+    guac_send_png(io, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y, surface);
 
     /* Free surface */
     cairo_surface_destroy(surface);
@@ -247,10 +247,10 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     GUACIO* io = gc->io;
 
-    /* For now, only use layer 0 */
+    /* For now, only use default layer */
     guac_send_copy(io,
-                  0, src_x,  src_y, w, h,
-            GUAC_COMP_OVER, 0, dest_x, dest_y);
+                            GUAC_DEFAULT_LAYER, src_x,  src_y, w, h,
+            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, dest_x, dest_y);
 
     ((vnc_guac_client_data*) gc->data)->copy_rect_used = 1;
 
