@@ -36,6 +36,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <cairo/cairo.h>
 
 #include <guacamole/log.h>
 #include <guacamole/guacio.h>
@@ -69,7 +72,9 @@ void guac_rdp_ui_begin_update(rdpInst* inst) {
 }
 
 void guac_rdp_ui_end_update(rdpInst* inst) {
-    /* UNUSED */
+    guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io;
+    guac_flush(io);
 }
 
 void guac_rdp_ui_desktop_save(rdpInst* inst, int offset, int x, int y, int cx, int cy) {
@@ -80,13 +85,75 @@ void guac_rdp_ui_desktop_restore(rdpInst* inst, int offset, int x, int y, int cx
     guac_log_info("guac_rdp_ui_desktop_restore: STUB\n");
 }
 
+
 RD_HBITMAP guac_rdp_ui_create_bitmap(rdpInst* inst, int width, int height, uint8* data) {
 
-    /* Allocate and return buffer */
+    /* Allocate buffer */
     guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io; 
     guac_layer* buffer = guac_client_alloc_buffer(client);
 
-    guac_log_info("guac_rdp_ui_create_bitmap: STUB %ix%i, bpp=%i (got buffer %i)\n", width, height, inst->settings->server_depth, buffer->index);
+    int x, y;
+    int stride;
+    int bpp = inst->settings->server_depth / 8;
+    unsigned char* image_buffer;
+    unsigned char* image_buffer_row;
+
+    cairo_surface_t* surface;
+
+    /* Init Cairo buffer */
+    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
+    image_buffer = malloc(height*stride);
+    image_buffer_row = image_buffer;
+
+    /* Copy image data from image data to buffer */
+    for (y = 0; y<height; y++) {
+
+        unsigned int*  image_buffer_current;
+        
+        /* Get current buffer row, advance to next */
+        image_buffer_current  = (unsigned int*) image_buffer_row;
+        image_buffer_row     += stride;
+
+        for (x = 0; x<width; x++) {
+
+            unsigned char red, green, blue;
+            unsigned int v;
+
+            switch (bpp) {
+                case 3:
+                    blue  = *((unsigned char*) data++);
+                    green = *((unsigned char*) data++);
+                    red   = *((unsigned char*) data++);
+                    break;
+
+                case 2:
+                    v  = *((unsigned char*) data++);
+                    v |= *((unsigned char*) data++) << 8;
+
+                    red   = ((v >> 8) & 0xF8) | ((v >> 13) & 0x07);
+                    green = ((v >> 3) & 0xFC) | ((v >>  9) & 0x03);
+                    blue  = ((v << 3) & 0xF8) | ((v >>  2) & 0x07);
+                    break;
+
+                default: /* The Magenta of Failure */
+                    red   = 0xFF;
+                    green = 0x00;
+                    blue  = 0xFF;
+            }
+
+            /* Output RGB */
+            *(image_buffer_current++) = (red << 16) | (green << 8) | blue;
+
+        }
+    }
+
+    surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_RGB24, width, height, stride);
+    guac_send_png(io, GUAC_COMP_OVER, buffer, 0, 0, surface);
+
+    /* Free surface */
+    cairo_surface_destroy(surface);
+    free(image_buffer);
 
     return (RD_HBITMAP) buffer;
 
@@ -108,11 +175,49 @@ void guac_rdp_ui_line(rdpInst* inst, uint8 opcode, int startx, int starty, int e
     guac_log_info("guac_rdp_ui_line: STUB\n");
 }
 
-void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, int colour) {
-    guac_log_info("guac_rdp_ui_rect: STUB\n");
+void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, int color) {
+
+    guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io;
+
+    unsigned char red, green, blue;
+
+    /* Create surface */
+    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, cx, cy);
+    cairo_t* cairo = cairo_create(surface);
+   
+    switch (inst->settings->server_depth) {
+        case 24:
+            red   = (color >> 16) & 0xFF;
+            green = (color >>  8) & 0xFF;
+            blue  = (color      ) & 0xFF;
+            break;
+
+        case 16:
+            red   = ((color >> 8) & 0xF8) | ((color >> 13) & 0x07);
+            green = ((color >> 3) & 0xFC) | ((color >>  9) & 0x03);
+            blue  = ((color << 3) & 0xF8) | ((color >>  2) & 0x07);
+            break;
+
+        default: /* The Magenta of Failure */
+            red   = 0xFF;
+            green = 0x00;
+            blue  = 0xFF;
+    }
+
+    /* Render rectangle */ 
+    cairo_set_source_rgb(cairo, red, green, blue);
+    cairo_rectangle(cairo, 0, 0, cx, cy);
+    cairo_fill(cairo);
+
+    /* Send background */
+    cairo_destroy(cairo);
+    guac_send_png(io, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y, surface);
+    cairo_surface_destroy(surface);
+
 }
 
-void guac_rdp_ui_polygon(rdpInst* inst, uint8 opcode, uint8 fillmode, RD_POINT* point, int npoints, RD_BRUSH* brush, int bgcolour, int fgcolour) {
+void guac_rdp_ui_polygon(rdpInst* inst, uint8 opcode, uint8 fillmode, RD_POINT* point, int npoints, RD_BRUSH* brush, int bgcolor, int fgcolor) {
     guac_log_info("guac_rdp_ui_polygon: STUB\n");
 }
 
@@ -120,12 +225,12 @@ void guac_rdp_ui_polyline(rdpInst* inst, uint8 opcode, RD_POINT* points, int npo
     guac_log_info("guac_rdp_ui_polyline: STUB\n");
 }
 
-void guac_rdp_ui_ellipse(rdpInst* inst, uint8 opcode, uint8 fillmode, int x, int y, int cx, int cy, RD_BRUSH*  brush, int bgcolour, int fgcolour) {
+void guac_rdp_ui_ellipse(rdpInst* inst, uint8 opcode, uint8 fillmode, int x, int y, int cx, int cy, RD_BRUSH*  brush, int bgcolor, int fgcolor) {
     guac_log_info("guac_rdp_ui_ellipse: STUB\n");
 }
 
-void guac_rdp_ui_start_draw_glyphs(rdpInst* inst, int bgcolour, int fgcolour) {
-    guac_log_info("guac_rdp_ui_start_draw_glyphs: STUB\n");
+void guac_rdp_ui_start_draw_glyphs(rdpInst* inst, int bgcolor, int fgcolor) {
+    /* UNUSED */
 }
 
 void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int cx, int cy, RD_HGLYPH glyph) {
@@ -133,7 +238,7 @@ void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int cx, int cy, RD_HGLY
 }
 
 void guac_rdp_ui_end_draw_glyphs(rdpInst* inst, int x, int y, int cx, int cy) {
-    guac_log_info("guac_rdp_ui_end_draw_glyphs: STUB\n");
+    /* UNUSED */
 }
 
 uint32 guac_rdp_ui_get_toggle_keys_state(rdpInst* inst) {
@@ -149,7 +254,7 @@ void guac_rdp_ui_destblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int 
     guac_log_info("guac_rdp_ui_destblt: STUB\n");
 }
 
-void guac_rdp_ui_patblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_BRUSH* brush, int bgcolour, int fgcolour) {
+void guac_rdp_ui_patblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_BRUSH* brush, int bgcolor, int fgcolor) {
     guac_log_info("guac_rdp_ui_patblt: STUB\n");
 }
 
@@ -157,11 +262,21 @@ void guac_rdp_ui_screenblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, in
     guac_log_info("guac_rdp_ui_screenblt: STUB\n");
 }
 
-void guac_rdp_ui_memblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_HBITMAP src, int srcx, int srcy) {
-    guac_log_info("guac_rdp_ui_memblt: STUB\n");
+void guac_rdp_ui_memblt(rdpInst* inst, uint8 opcode, int x, int y, int width, int height, RD_HBITMAP src, int srcx, int srcy) {
+
+    guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io;
+
+    guac_log_info("guac_rdp_ui_memblt: opcode=%i, index=%i\n", opcode,
+            ((guac_layer*) src)->index);
+
+    guac_send_copy(io,
+            (guac_layer*) src, srcx, srcy, width, height,
+            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y);
+
 }
 
-void guac_rdp_ui_triblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_HBITMAP src, int srcx, int srcy, RD_BRUSH* brush, int bgcolour,  int fgcolour) {
+void guac_rdp_ui_triblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_HBITMAP src, int srcx, int srcy, RD_BRUSH* brush, int bgcolor,  int fgcolor) {
     guac_log_info("guac_rdp_ui_triblt: STUB\n");
 }
 
@@ -219,7 +334,7 @@ void guac_rdp_ui_set_default_cursor(rdpInst* inst) {
     guac_log_info("guac_rdp_ui_set_default_cursor: STUB\n");
 }
 
-RD_HPALETTE guac_rdp_ui_create_colormap(rdpInst* inst, RD_PALETTE* colours) {
+RD_HPALETTE guac_rdp_ui_create_colormap(rdpInst* inst, RD_PALETTE* colors) {
     guac_log_info("guac_rdp_ui_create_colormap: STUB\n");
     return NULL;
 }
