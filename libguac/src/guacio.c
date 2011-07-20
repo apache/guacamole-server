@@ -40,6 +40,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #ifdef __MINGW32__
 #include <winsock2.h>

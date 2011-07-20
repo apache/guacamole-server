@@ -38,6 +38,7 @@
 #ifndef _GUAC_GUACIO_H
 #define _GUAC_GUACIO_H
 
+#include <stdint.h>
 #include <unistd.h>
 
 /**
