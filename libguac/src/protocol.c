@@ -299,6 +299,54 @@ int guac_send_copy(GUACIO* io,
 
 }
 
+int guac_send_rect(GUACIO* io,
+        guac_composite_mode_t mode, const guac_layer* layer,
+        int x, int y, int width, int height,
+        int r, int g, int b, int a) {
+
+    return
+           guac_write_string(io, "rect:")
+        || guac_write_int(io, mode)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, layer->index)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, x)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, y)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, width)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, height)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, r)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, g)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, b)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, a)
+        || guac_write_string(io, ";");
+
+}
+
+int guac_send_clip(GUACIO* io, const guac_layer* layer,
+        int x, int y, int width, int height) {
+
+    return
+           guac_write_string(io, "clip:")
+        || guac_write_int(io, layer->index)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, x)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, y)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, width)
+        || guac_write_string(io, ",")
+        || guac_write_int(io, height)
+        || guac_write_string(io, ";");
+
+}
+
 cairo_status_t __guac_write_png(void* closure, const unsigned char* data, unsigned int length) {
 
     GUACIO* io = (GUACIO*) closure;

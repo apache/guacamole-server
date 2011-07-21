@@ -272,6 +272,40 @@ int guac_send_copy(GUACIO* io,
         guac_composite_mode_t mode, const guac_layer* dstl, int dstx, int dsty);
 
 /**
+ * Sends a rect instruction over the given GUACIO connection.
+ *
+ * @param io The GUACIO connection to use.
+ * @param mode The composite mode to use.
+ * @param layer The destination layer.
+ * @param x The X coordinate of the rectangle.
+ * @param y The Y coordinate of the rectangle.
+ * @param width The width of the rectangle.
+ * @param height The height of the rectangle.
+ * @param r The red component of the color of the rectangle.
+ * @param g The green component of the color of the rectangle.
+ * @param b The blue component of the color of the rectangle.
+ * @param a The alpha (transparency) component of the color of the rectangle.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_send_rect(GUACIO* io,
+        guac_composite_mode_t mode, const guac_layer* layer,
+        int x, int y, int width, int height,
+        int r, int g, int b, int a);
+
+/**
+ * Sends a clip instruction over the given GUACIO connection.
+*
+ * @param io The GUACIO connection to use.
+ * @param layer The layer to set the clipping region of.
+ * @param x The X coordinate of the clipping rectangle.
+ * @param y The Y coordinate of the clipping rectangle.
+ * @param width The width of the clipping rectangle.
+ * @param height The height of the clipping rectangle.
+ */
+int guac_send_clip(GUACIO* io, const guac_layer* layer,
+        int x, int y, int width, int height);
+
+/**
  * Sends a png instruction over the given GUACIO connection. The PNG image data
  * given will be automatically base64-encoded for transmission.
  *
