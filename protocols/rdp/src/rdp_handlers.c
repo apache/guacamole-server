@@ -48,6 +48,32 @@
 #include <freerdp/freerdp.h>
 
 #include "rdp_handlers.h"
+#include "rdp_client.h"
+
+
+void guac_rdp_convert_color(int depth, int color, guac_rdp_color* comp) {
+
+    switch (depth) {
+
+        case 24:
+            comp->red   = (color >> 16) & 0xFF;
+            comp->green = (color >>  8) & 0xFF;
+            comp->blue  = (color      ) & 0xFF;
+            break;
+
+        case 16:
+            comp->red   = ((color >> 8) & 0xF8) | ((color >> 13) & 0x07);
+            comp->green = ((color >> 3) & 0xFC) | ((color >>  9) & 0x03);
+            comp->blue  = ((color << 3) & 0xF8) | ((color >>  2) & 0x07);
+            break;
+
+        default: /* The Magenta of Failure */
+            comp->red   = 0xFF;
+            comp->green = 0x00;
+            comp->blue  = 0xFF;
+    }
+
+}
 
 void guac_rdp_ui_error(rdpInst* inst, const char* text) {
 
@@ -221,28 +247,51 @@ void guac_rdp_ui_ellipse(rdpInst* inst, uint8 opcode, uint8 fillmode, int x, int
 }
 
 void guac_rdp_ui_start_draw_glyphs(rdpInst* inst, int bgcolor, int fgcolor) {
-    /* UNUSED ... for now */
+
+    guac_client* client = (guac_client*) inst->param1;
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+
+    guac_rdp_convert_color(
+            inst->settings->server_depth,
+            bgcolor,
+            &(guac_client_data->background));
+
+    guac_rdp_convert_color(
+            inst->settings->server_depth,
+            fgcolor,
+            &(guac_client_data->foreground));
+
 }
 
 void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int width, int height, RD_HGLYPH glyph) {
 
     guac_client* client = (guac_client*) inst->param1;
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     GUACIO* io = client->io;
+
+    /* NOTE: Originally: Stencil=SRC, FG=ATOP, BG=RATOP */
+    /* Temporarily removed BG drawing... */
 
     /* Stencil */
     guac_send_copy(io,
             (guac_layer*) glyph, 0, 0, width, height,
-            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER, x, y);
+            GUAC_COMP_ROUT, GUAC_DEFAULT_LAYER, x, y);
 
     /* Foreground */
-    guac_send_rect(io, GUAC_COMP_ATOP, GUAC_DEFAULT_LAYER,
-            x, y, width, height,
-            0, 255, 0, 255);
-
-    /* Background */
     guac_send_rect(io, GUAC_COMP_RATOP, GUAC_DEFAULT_LAYER,
             x, y, width, height,
-            255, 0, 0, 255);
+            guac_client_data->foreground.red,
+            guac_client_data->foreground.green,
+            guac_client_data->foreground.blue,
+            255);
+
+    /* Background */
+    /*guac_send_rect(io, GUAC_COMP_RATOP, GUAC_DEFAULT_LAYER,
+            x, y, width, height,
+            guac_client_data->background.red,
+            guac_client_data->background.green,
+            guac_client_data->background.blue,
+            255);*/
 
 }
 
@@ -276,8 +325,9 @@ void guac_rdp_ui_memblt(rdpInst* inst, uint8 opcode, int x, int y, int width, in
     guac_client* client = (guac_client*) inst->param1;
     GUACIO* io = client->io;
 
-    guac_log_info("guac_rdp_ui_memblt: opcode=%i, index=%i\n", opcode,
-            ((guac_layer*) src)->index);
+    if (opcode != 204)
+        guac_log_info("guac_rdp_ui_memblt: opcode=%i, index=%i\n", opcode,
+                ((guac_layer*) src)->index);
 
     guac_send_copy(io,
             (guac_layer*) src, srcx, srcy, width, height,
@@ -364,11 +414,21 @@ int guac_rdp_ui_select(rdpInst* inst, int rdp_socket) {
 }
 
 void guac_rdp_ui_set_clip(rdpInst* inst, int x, int y, int cx, int cy) {
-    guac_log_info("guac_rdp_ui_set_clip: STUB\n");
+
+    guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io;
+
+    guac_send_clip(io, GUAC_DEFAULT_LAYER, x, y, cx, cy);
+
 }
 
 void guac_rdp_ui_reset_clip(rdpInst* inst) {
-    guac_log_info("guac_rdp_ui_reset_clip: STUB\n");
+
+    guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io;
+
+    guac_send_clip(io, GUAC_DEFAULT_LAYER, 0, 0, inst->settings->width, inst->settings->height);
+
 }
 
 void guac_rdp_ui_resize_window(rdpInst* inst) {
@@ -384,8 +444,11 @@ void guac_rdp_ui_destroy_cursor(rdpInst* inst, RD_HCURSOR cursor) {
 }
 
 RD_HCURSOR guac_rdp_ui_create_cursor(rdpInst* inst, unsigned int x, unsigned int y, int width, int height, uint8* andmask, uint8* xormask, int bpp) {
+    
+    guac_client* client = (guac_client*) inst->param1;
     guac_log_info("guac_rdp_ui_create_cursor: STUB\n");
-    return NULL;
+    return guac_client_alloc_buffer(client);
+
 }
 
 void guac_rdp_ui_set_null_cursor(rdpInst* inst) {

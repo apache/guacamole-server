@@ -46,16 +46,28 @@
 
 #define RDP_DEFAULT_PORT 3389
 
+typedef struct guac_rdp_color {
+    int red;
+    int green;
+    int blue;
+} guac_rdp_color;
+
 typedef struct rdp_guac_client_data {
 
     rdpInst* rdp_inst;
     rdpChanMan* chanman;
 	rdpSet* settings;
 
+    int mouse_button_mask;
+
+    guac_rdp_color foreground;
+    guac_rdp_color background;
+
 } rdp_guac_client_data;
 
 int rdp_guac_client_free_handler(guac_client* client);
 int rdp_guac_client_handle_messages(guac_client* client);
+int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
 
 #endif
 

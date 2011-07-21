@@ -43,6 +43,7 @@
 
 #include <freerdp/freerdp.h>
 #include <freerdp/chanman.h>
+#include <freerdp/constants_ui.h>
 
 #include <guacamole/log.h>
 #include <guacamole/guacio.h>
@@ -228,6 +229,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return 1;
     }
     guac_client_data->rdp_inst = rdp_inst;
+    guac_client_data->mouse_button_mask = 0;
 
     /* Store client data */
     rdp_inst->param1 = client;
@@ -302,9 +304,34 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Client handlers */
     client->free_handler = rdp_guac_client_free_handler;
     client->handle_messages = rdp_guac_client_handle_messages;
+    client->mouse_handler = rdp_guac_client_mouse_handler;
 
     /* Success */
     return 0;
 
 }
 
+int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
+
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    rdpInst* rdp_inst = guac_client_data->rdp_inst;
+
+    /* If no buttons pressed */
+    if (mask == 0) {
+
+        /* Send mouse move event if no buttons pressed before */
+        if (guac_client_data->mouse_button_mask == 0)
+            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_MOVE, x, y);
+
+        /* Otherwise, send mouse up event, releasing any old buttons */
+        else
+            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_BUTTON1, x, y);
+    }
+
+    /* Otherwise, send mouse down event */
+    else
+        rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_DOWN | PTRFLAGS_BUTTON1, x, y);
+
+    guac_client_data->mouse_button_mask = mask;
+    return 0;
+}
