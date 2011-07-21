@@ -293,7 +293,7 @@ RD_HGLYPH guac_rdp_ui_create_glyph(rdpInst* inst, int width, int height, uint8* 
     cairo_surface_t* surface;
 
     /* Init Cairo buffer */
-    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
+    stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
     image_buffer = malloc(height*stride);
     image_buffer_row = image_buffer;
 
@@ -316,9 +316,9 @@ RD_HGLYPH guac_rdp_ui_create_glyph(rdpInst* inst, int width, int height, uint8* 
 
                 /* Output RGB */
                 if (v & 0x80)
-                    *(image_buffer_current++) = 0x000000;
+                    *(image_buffer_current++) = 0xFF000000;
                 else
-                    *(image_buffer_current++) = 0xFFFFFF;
+                    *(image_buffer_current++) = 0x00000000;
 
                 /* Next bit */
                 v <<= 1;
@@ -328,7 +328,7 @@ RD_HGLYPH guac_rdp_ui_create_glyph(rdpInst* inst, int width, int height, uint8* 
         }
     }
 
-    surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_RGB24, width, height, stride);
+    surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_ARGB32, width, height, stride);
     guac_send_png(io, GUAC_COMP_OVER, glyph, 0, 0, surface);
 
     /* Free surface */
