@@ -182,10 +182,6 @@ void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, int color) {
 
     unsigned char red, green, blue;
 
-    /* Create surface */
-    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, cx, cy);
-    cairo_t* cairo = cairo_create(surface);
-   
     switch (inst->settings->server_depth) {
         case 24:
             red   = (color >> 16) & 0xFF;
@@ -205,15 +201,10 @@ void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, int color) {
             blue  = 0xFF;
     }
 
-    /* Render rectangle */ 
-    cairo_set_source_rgb(cairo, red, green, blue);
-    cairo_rectangle(cairo, 0, 0, cx, cy);
-    cairo_fill(cairo);
-
-    /* Send background */
-    cairo_destroy(cairo);
-    guac_send_png(io, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y, surface);
-    cairo_surface_destroy(surface);
+    /* Send rectangle */
+    guac_send_rect(io, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
+            x, y, cx, cy,
+            red, green, blue, 0xFF);
 
 }
 
@@ -230,11 +221,18 @@ void guac_rdp_ui_ellipse(rdpInst* inst, uint8 opcode, uint8 fillmode, int x, int
 }
 
 void guac_rdp_ui_start_draw_glyphs(rdpInst* inst, int bgcolor, int fgcolor) {
-    /* UNUSED */
+    /* UNUSED ... for now */
 }
 
-void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int cx, int cy, RD_HGLYPH glyph) {
-    guac_log_info("guac_rdp_ui_draw_glyph: STUB\n");
+void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int width, int height, RD_HGLYPH glyph) {
+
+    guac_client* client = (guac_client*) inst->param1;
+    GUACIO* io = client->io;
+
+    guac_send_copy(io,
+            (guac_layer*) glyph, 0, 0, width, height,
+            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y);
+
 }
 
 void guac_rdp_ui_end_draw_glyphs(rdpInst* inst, int x, int y, int cx, int cy) {
@@ -282,10 +280,63 @@ void guac_rdp_ui_triblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int c
 
 RD_HGLYPH guac_rdp_ui_create_glyph(rdpInst* inst, int width, int height, uint8* data) {
 
-    /* Allocate and return buffer */
+    /* Allocate buffer */
     guac_client* client = (guac_client*) inst->param1;
-    guac_log_info("guac_rdp_ui_create_glyph: STUB\n");
-    return (RD_HGLYPH) guac_client_alloc_buffer(client);
+    GUACIO* io = client->io;
+    guac_layer* glyph = guac_client_alloc_buffer(client);
+
+    int x, y, i;
+    int stride;
+    unsigned char* image_buffer;
+    unsigned char* image_buffer_row;
+
+    cairo_surface_t* surface;
+
+    /* Init Cairo buffer */
+    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
+    image_buffer = malloc(height*stride);
+    image_buffer_row = image_buffer;
+
+    /* Copy image data from image data to buffer */
+    for (y = 0; y<height; y++) {
+
+        unsigned int*  image_buffer_current;
+        
+        /* Get current buffer row, advance to next */
+        image_buffer_current  = (unsigned int*) image_buffer_row;
+        image_buffer_row     += stride;
+
+        for (x = 0; x<width;) {
+
+            /* Get byte from image data */
+            unsigned int v = *(data++);
+
+            /* Read bits, write pixels */
+            for (i = 0; i<8 && x<width; i++, x++) {
+
+                /* Output RGB */
+                if (v & 0x80)
+                    *(image_buffer_current++) = 0x000000;
+                else
+                    *(image_buffer_current++) = 0xFFFFFF;
+
+                /* Next bit */
+                v <<= 1;
+
+            }
+
+        }
+    }
+
+    surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_RGB24, width, height, stride);
+    guac_send_png(io, GUAC_COMP_OVER, glyph, 0, 0, surface);
+
+    /* Free surface */
+    cairo_surface_destroy(surface);
+    free(image_buffer);
+
+
+    return (RD_HGLYPH) glyph;
 
 }
 
