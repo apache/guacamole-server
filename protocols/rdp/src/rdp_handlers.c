@@ -229,9 +229,20 @@ void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int width, int height, 
     guac_client* client = (guac_client*) inst->param1;
     GUACIO* io = client->io;
 
+    /* Stencil */
     guac_send_copy(io,
             (guac_layer*) glyph, 0, 0, width, height,
-            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y);
+            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER, x, y);
+
+    /* Foreground */
+    guac_send_rect(io, GUAC_COMP_ATOP, GUAC_DEFAULT_LAYER,
+            x, y, width, height,
+            0, 255, 0, 255);
+
+    /* Background */
+    guac_send_rect(io, GUAC_COMP_RATOP, GUAC_DEFAULT_LAYER,
+            x, y, width, height,
+            255, 0, 0, 255);
 
 }
 
@@ -329,7 +340,7 @@ RD_HGLYPH guac_rdp_ui_create_glyph(rdpInst* inst, int width, int height, uint8* 
     }
 
     surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_ARGB32, width, height, stride);
-    guac_send_png(io, GUAC_COMP_OVER, glyph, 0, 0, surface);
+    guac_send_png(io, GUAC_COMP_SRC, glyph, 0, 0, surface);
 
     /* Free surface */
     cairo_surface_destroy(surface);
