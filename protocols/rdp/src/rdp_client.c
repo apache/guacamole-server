@@ -52,6 +52,7 @@
 
 #include "rdp_handlers.h"
 #include "rdp_client.h"
+#include "rdp_keymap.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -230,6 +231,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
     guac_client_data->rdp_inst = rdp_inst;
     guac_client_data->mouse_button_mask = 0;
+    guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
 
     /* Store client data */
     rdp_inst->param1 = client;
@@ -305,6 +307,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->free_handler = rdp_guac_client_free_handler;
     client->handle_messages = rdp_guac_client_handle_messages;
     client->mouse_handler = rdp_guac_client_mouse_handler;
+    client->key_handler = rdp_guac_client_key_handler;
 
     /* Success */
     return 0;
@@ -335,3 +338,29 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     guac_client_data->mouse_button_mask = mask;
     return 0;
 }
+
+int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
+
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    rdpInst* rdp_inst = guac_client_data->rdp_inst;
+
+    /* If keysym can be in lookup table */
+    if (keysym <= 0xFFFF) {
+
+        /* Look up scancode */
+        int scancode = 
+            guac_rdp_keysym_scancode[(keysym & 0xFF00) >> 8][keysym & 0xFF];
+
+        /* If defined, send event */
+        if (scancode != 0)
+            rdp_inst->rdp_send_input(
+                    rdp_inst, RDP_INPUT_SCANCODE,
+                    pressed ? RDP_KEYPRESS : RDP_KEYRELEASE,
+                    scancode, 
+                    0);
+
+    }
+
+    return 0;
+}
+

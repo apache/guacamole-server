@@ -84,5 +84,7 @@ void guac_rdp_ui_set_surface(rdpInst* inst, RD_HBITMAP surface);
 void guac_rdp_ui_destroy_surface(rdpInst* inst, RD_HBITMAP surface);
 void guac_rdp_ui_channel_data(rdpInst* inst, int chan_id, char* data, int data_size, int flags, int total_size);
 
+extern const int guac_rdp_letter_scancodes[];
+
 #endif
 

@@ -35,42 +35,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_CLIENT_RDP_CLIENT
-#define _GUAC_CLIENT_RDP_CLIENT
+#ifndef _GUAC_CLIENT_RDP_KEYMAP
+#define _GUAC_CLIENT_RDP_KEYMAP
 
-#include <freerdp/freerdp.h>
-#include <freerdp/chanman.h>
-
-#include <guacamole/client.h>
-
-
-#define RDP_DEFAULT_PORT 3389
-
-typedef struct guac_rdp_color {
-    int red;
-    int green;
-    int blue;
-} guac_rdp_color;
-
-typedef struct rdp_guac_client_data {
-
-    rdpInst* rdp_inst;
-    rdpChanMan* chanman;
-	rdpSet* settings;
-
-    int mouse_button_mask;
-
-    guac_rdp_color foreground;
-    guac_rdp_color background;
-
-    const guac_layer* current_surface;
-
-} rdp_guac_client_data;
-
-int rdp_guac_client_free_handler(guac_client* client);
-int rdp_guac_client_handle_messages(guac_client* client);
-int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed);
+extern const int guac_rdp_keysym_scancode[256][256];
 
 #endif
 
