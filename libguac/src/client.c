@@ -105,7 +105,7 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index) {
 }
 
 void guac_client_free_layer(guac_client* client, guac_layer* layer) {
-    layer->next = client->available_layers;
+    layer->next_available = client->available_layers;
     client->available_layers = layer;
 }
 
@@ -138,7 +138,7 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
 }
 
 void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
-    layer->next = client->available_buffers;
+    layer->next_available = client->available_buffers;
     client->available_buffers = layer;
 }
 
