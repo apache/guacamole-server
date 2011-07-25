@@ -319,23 +319,24 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     rdpInst* rdp_inst = guac_client_data->rdp_inst;
 
-    /* If no buttons pressed */
-    if (mask == 0) {
+    /* If button mask unchanged, just send move event */
+    if (mask == guac_client_data->mouse_button_mask)
+        rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_MOVE, x, y);
 
-        /* Send mouse move event if no buttons pressed before */
-        if (guac_client_data->mouse_button_mask == 0)
-            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_MOVE, x, y);
+    /* Otherwise, send events describing button change */
+    else {
 
-        /* Otherwise, send mouse up event, releasing any old buttons */
-        else
+        /* Release event */
+        if (mask == 0)
             rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_BUTTON1, x, y);
+
+        /* Press event */
+        else
+            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_DOWN | PTRFLAGS_BUTTON1, x, y);
+
+        guac_client_data->mouse_button_mask = mask;
     }
 
-    /* Otherwise, send mouse down event */
-    else
-        rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_DOWN | PTRFLAGS_BUTTON1, x, y);
-
-    guac_client_data->mouse_button_mask = mask;
     return 0;
 }
 
