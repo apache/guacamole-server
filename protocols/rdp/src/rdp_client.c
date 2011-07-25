@@ -356,9 +356,9 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
         if (keymap->scancode != 0)
             rdp_inst->rdp_send_input(
                     rdp_inst, RDP_INPUT_SCANCODE,
-                    pressed ? RDP_KEYPRESS : RDP_KEYRELEASE,
+                    (pressed ? RDP_KEYPRESS : RDP_KEYRELEASE) | keymap->flags,
                     keymap->scancode, 
-                    keymap->flags);
+                    0);
 
     }
 
