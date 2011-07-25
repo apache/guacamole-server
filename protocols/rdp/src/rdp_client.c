@@ -348,16 +348,16 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     if (keysym <= 0xFFFF) {
 
         /* Look up scancode */
-        int scancode = 
-            guac_rdp_keysym_scancode[(keysym & 0xFF00) >> 8][keysym & 0xFF];
+        const guac_rdp_keymap* keymap = 
+            &guac_rdp_keysym_scancode[(keysym & 0xFF00) >> 8][keysym & 0xFF];
 
         /* If defined, send event */
-        if (scancode != 0)
+        if (keymap->scancode != 0)
             rdp_inst->rdp_send_input(
                     rdp_inst, RDP_INPUT_SCANCODE,
                     pressed ? RDP_KEYPRESS : RDP_KEYRELEASE,
-                    scancode, 
-                    0);
+                    keymap->scancode, 
+                    keymap->flags);
 
     }
 

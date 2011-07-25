@@ -38,7 +38,12 @@
 #ifndef _GUAC_CLIENT_RDP_KEYMAP
 #define _GUAC_CLIENT_RDP_KEYMAP
 
-extern const int guac_rdp_keysym_scancode[256][256];
+typedef struct guac_rdp_keymap {
+    int scancode;
+    int flags;
+} guac_rdp_keymap;
+
+extern const guac_rdp_keymap guac_rdp_keysym_scancode[256][256];
 
 #endif
 
