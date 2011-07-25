@@ -2356,10 +2356,10 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x00, .flags = 0x00 }, /* 0x08f8 */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x08f9 */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x08fa */
-        { .scancode = 0x4B, .flags = KBD_FLAG_EXT }, /* 0x08fb (leftarrow) */
-        { .scancode = 0x48, .flags = KBD_FLAG_EXT }, /* 0x08fc (uparrow) */
-        { .scancode = 0x4D, .flags = KBD_FLAG_EXT }, /* 0x08fd (rightarrow) */
-        { .scancode = 0x50, .flags = KBD_FLAG_EXT }, /* 0x08fe (downarrow) */
+        { .scancode = 0x00, .flags = 0x00 }, /* 0x08fb (leftarrow) */
+        { .scancode = 0x00, .flags = 0x00 }, /* 0x08fc (uparrow) */
+        { .scancode = 0x00, .flags = 0x00 }, /* 0x08fd (rightarrow) */
+        { .scancode = 0x00, .flags = 0x00 }, /* 0x08fe (downarrow) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x08ff */
     },
     {                                        /* 0x09?? */
@@ -5260,10 +5260,10 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff4e */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff4f */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff50 (Home) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xff51 (Left) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xff52 (Up) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xff53 (Right) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xff54 (Down) */
+        { .scancode = 0x4B, .flags = KBD_FLAG_EXT }, /* 0xff51 (Left) */
+        { .scancode = 0x48, .flags = KBD_FLAG_EXT }, /* 0xff52 (Up) */
+        { .scancode = 0x4D, .flags = KBD_FLAG_EXT }, /* 0xff53 (Right) */
+        { .scancode = 0x50, .flags = KBD_FLAG_EXT }, /* 0xff54 (Down) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff55 (Page_Up) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff56 (Page_Down) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff57 (End) */
