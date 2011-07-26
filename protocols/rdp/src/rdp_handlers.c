@@ -120,7 +120,7 @@ RD_HBITMAP guac_rdp_ui_create_bitmap(rdpInst* inst, int width, int height, uint8
 
     int x, y;
     int stride;
-    int bpp = inst->settings->server_depth / 8;
+    int bpp = (inst->settings->server_depth + 7) / 8;
     unsigned char* image_buffer;
     unsigned char* image_buffer_row;
 
@@ -174,7 +174,7 @@ RD_HBITMAP guac_rdp_ui_create_bitmap(rdpInst* inst, int width, int height, uint8
     }
 
     surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_RGB24, width, height, stride);
-    guac_send_png(io, GUAC_COMP_OVER, buffer, 0, 0, surface);
+    guac_send_png(io, GUAC_COMP_SRC, buffer, 0, 0, surface);
     guac_flush(io);
 
     /* Free surface */
@@ -194,41 +194,49 @@ void guac_rdp_ui_paint_bitmap(rdpInst* inst, int x, int y, int cx, int cy, int w
 
     int dx, dy;
     int stride;
-    int bpp = inst->settings->server_depth / 8;
+    int bpp = (inst->settings->server_depth + 7) / 8;
     unsigned char* image_buffer;
     unsigned char* image_buffer_row;
+
+    int data_stride = width * bpp;
+    unsigned char* data_row = data;
 
     cairo_surface_t* surface;
 
     /* Init Cairo buffer */
-    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
+    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, cx);
     image_buffer = malloc(height*stride);
     image_buffer_row = image_buffer;
 
     /* Copy image data from image data to buffer */
-    for (dy = 0; dy<height; dy++) {
+    for (dy = 0; dy<cy; dy++) {
 
         unsigned int*  image_buffer_current;
+        unsigned char* data_current = data_row;
         
         /* Get current buffer row, advance to next */
         image_buffer_current  = (unsigned int*) image_buffer_row;
         image_buffer_row     += stride;
 
-        for (dx = 0; dx<width; dx++) {
+        /* Get current data row, advance to next */
+        data_current = data_row;
+        data_row += data_stride;
+
+        for (dx = 0; dx<cx; dx++) {
 
             unsigned char red, green, blue;
             unsigned int v;
 
             switch (bpp) {
                 case 3:
-                    blue  = *((unsigned char*) data++);
-                    green = *((unsigned char*) data++);
-                    red   = *((unsigned char*) data++);
+                    blue  = *((unsigned char*) data_current++);
+                    green = *((unsigned char*) data_current++);
+                    red   = *((unsigned char*) data_current++);
                     break;
 
                 case 2:
-                    v  = *((unsigned char*) data++);
-                    v |= *((unsigned char*) data++) << 8;
+                    v  = *((unsigned char*) data_current++);
+                    v |= *((unsigned char*) data_current++) << 8;
 
                     red   = ((v >> 8) & 0xF8) | ((v >> 13) & 0x07);
                     green = ((v >> 3) & 0xFC) | ((v >>  9) & 0x03);
@@ -247,7 +255,7 @@ void guac_rdp_ui_paint_bitmap(rdpInst* inst, int x, int y, int cx, int cy, int w
         }
     }
 
-    surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_RGB24, width, height, stride);
+    surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_RGB24, cx, cy, stride);
     guac_send_png(io, GUAC_COMP_OVER, current_surface, x, y, surface);
     guac_flush(io);
 
@@ -404,7 +412,7 @@ void guac_rdp_ui_memblt(rdpInst* inst, uint8 opcode, int x, int y, int width, in
 
     guac_client* client = (guac_client*) inst->param1;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
-    const guac_layer* current_surface = guac_client_data->current_surface; 
+    const guac_layer* current_surface = guac_client_data->current_surface;
     GUACIO* io = client->io;
 
     if (opcode != 204)
