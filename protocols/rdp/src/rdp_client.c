@@ -359,6 +359,8 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
                     (pressed ? RDP_KEYPRESS : RDP_KEYRELEASE) | keymap->flags,
                     keymap->scancode, 
                     0);
+        else
+            guac_log_info("unmapped keysym: 0x%x", keysym);
 
     }
 

@@ -74,21 +74,21 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x00, .flags = 0x00 }, /* 0x001e */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x001f */
         { .scancode = 0x39, .flags = 0x00 }, /* 0x0020 (space) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0021 (exclam) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0022 (quotedbl) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0023 (numbersign) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0024 (dollar) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0025 (percent) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0026 (ampersand) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0027 (quoteright) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0028 (parenleft) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0029 (parenright) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x002a (asterisk) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x002b (plus) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x002c (comma) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x002d (minus) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x002e (period) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x002f (slash) */
+        { .scancode = 0x02, .flags = 0x00 }, /* 0x0021 (exclam) */
+        { .scancode = 0x28, .flags = 0x00 }, /* 0x0022 (quotedbl) */
+        { .scancode = 0x04, .flags = 0x00 }, /* 0x0023 (numbersign) */
+        { .scancode = 0x05, .flags = 0x00 }, /* 0x0024 (dollar) */
+        { .scancode = 0x06, .flags = 0x00 }, /* 0x0025 (percent) */
+        { .scancode = 0x08, .flags = 0x00 }, /* 0x0026 (ampersand) */
+        { .scancode = 0x28, .flags = 0x00 }, /* 0x0027 (quoteright) */
+        { .scancode = 0x0A, .flags = 0x00 }, /* 0x0028 (parenleft) */
+        { .scancode = 0x0B, .flags = 0x00 }, /* 0x0029 (parenright) */
+        { .scancode = 0x09, .flags = 0x00 }, /* 0x002a (asterisk) */
+        { .scancode = 0x0D, .flags = 0x00 }, /* 0x002b (plus) */
+        { .scancode = 0x33, .flags = 0x00 }, /* 0x002c (comma) */
+        { .scancode = 0x0C, .flags = 0x00 }, /* 0x002d (minus) */
+        { .scancode = 0x34, .flags = 0x00 }, /* 0x002e (period) */
+        { .scancode = 0x35, .flags = 0x00 }, /* 0x002f (slash) */
         { .scancode = 0x0B, .flags = 0x00 }, /* 0x0030 (0) */
         { .scancode = 0x02, .flags = 0x00 }, /* 0x0031 (1) */
         { .scancode = 0x03, .flags = 0x00 }, /* 0x0032 (2) */
@@ -99,13 +99,13 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x08, .flags = 0x00 }, /* 0x0037 (7) */
         { .scancode = 0x09, .flags = 0x00 }, /* 0x0038 (8) */
         { .scancode = 0x0A, .flags = 0x00 }, /* 0x0039 (9) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x003a (colon) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x003b (semicolon) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x003c (less) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x003d (equal) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x003e (greater) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x003f (question) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0040 (at) */
+        { .scancode = 0x27, .flags = 0x00 }, /* 0x003a (colon) */
+        { .scancode = 0x27, .flags = 0x00 }, /* 0x003b (semicolon) */
+        { .scancode = 0x33, .flags = 0x00 }, /* 0x003c (less) */
+        { .scancode = 0x0D, .flags = 0x00 }, /* 0x003d (equal) */
+        { .scancode = 0x34, .flags = 0x00 }, /* 0x003e (greater) */
+        { .scancode = 0x35, .flags = 0x00 }, /* 0x003f (question) */
+        { .scancode = 0x03, .flags = 0x00 }, /* 0x0040 (at) */
         { .scancode = 0x1E, .flags = 0x00 }, /* 0x0041 (A) */
         { .scancode = 0x30, .flags = 0x00 }, /* 0x0042 (B) */
         { .scancode = 0x2E, .flags = 0x00 }, /* 0x0043 (C) */
@@ -132,12 +132,12 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x2D, .flags = 0x00 }, /* 0x0058 (X) */
         { .scancode = 0x15, .flags = 0x00 }, /* 0x0059 (Y) */
         { .scancode = 0x2C, .flags = 0x00 }, /* 0x005a (Z) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x005b (bracketleft) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x005c (backslash) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x005d (bracketright) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x005e (asciicircum) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x005f (underscore) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x0060 (quoteleft) */
+        { .scancode = 0x1A, .flags = 0x00 }, /* 0x005b (bracketleft) */
+        { .scancode = 0x2B, .flags = 0x00 }, /* 0x005c (backslash) */
+        { .scancode = 0x1B, .flags = 0x00 }, /* 0x005d (bracketright) */
+        { .scancode = 0x29, .flags = 0x00 }, /* 0x005e (asciicircum) */
+        { .scancode = 0x0C, .flags = 0x00 }, /* 0x005f (underscore) */
+        { .scancode = 0x29, .flags = 0x00 }, /* 0x0060 (quoteleft) */
         { .scancode = 0x1E, .flags = 0x00 }, /* 0x0061 (a) */
         { .scancode = 0x30, .flags = 0x00 }, /* 0x0062 (b) */
         { .scancode = 0x2E, .flags = 0x00 }, /* 0x0063 (c) */
@@ -164,10 +164,10 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x2D, .flags = 0x00 }, /* 0x0078 (x) */
         { .scancode = 0x15, .flags = 0x00 }, /* 0x0079 (y) */
         { .scancode = 0x2C, .flags = 0x00 }, /* 0x007a (z) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x007b (braceleft) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x007c (bar) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x007d (braceright) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0x007e (asciitilde) */
+        { .scancode = 0x1A, .flags = 0x00 }, /* 0x007b (braceleft) */
+        { .scancode = 0x2B, .flags = 0x00 }, /* 0x007c (bar) */
+        { .scancode = 0x1B, .flags = 0x00 }, /* 0x007d (braceright) */
+        { .scancode = 0x29, .flags = 0x00 }, /* 0x007e (asciitilde) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x007f */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x0080 */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x0081 */
