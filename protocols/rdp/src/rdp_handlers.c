@@ -395,7 +395,7 @@ void guac_rdp_ui_screenblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, in
     GUACIO* io = client->io;
 
     guac_send_copy(io,
-            (guac_layer*) current_surface, srcx, srcy, cx, cy,
+            GUAC_DEFAULT_LAYER, srcx, srcy, cx, cy,
             GUAC_COMP_OVER, current_surface, x, y);
 
 }
