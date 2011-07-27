@@ -326,13 +326,62 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     /* Otherwise, send events describing button change */
     else {
 
+        /* Mouse buttons which have JUST become released */
+        int released_mask =  guac_client_data->mouse_button_mask & ~mask;
+
+        /* Mouse buttons which have JUST become pressed */
+        int pressed_mask  = ~guac_client_data->mouse_button_mask &  mask;
+
         /* Release event */
-        if (mask == 0)
-            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_BUTTON1, x, y);
+        if (released_mask & 0x07) {
+
+            /* Calculate flags */
+            int flags = 0;
+            if (released_mask & 0x01) flags |= PTRFLAGS_BUTTON1;
+            if (released_mask & 0x02) flags |= PTRFLAGS_BUTTON3;
+            if (released_mask & 0x04) flags |= PTRFLAGS_BUTTON2;
+
+            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, flags, x, y);
+
+        }
 
         /* Press event */
-        else
-            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_DOWN | PTRFLAGS_BUTTON1, x, y);
+        if (pressed_mask & 0x07) {
+
+            /* Calculate flags */
+            int flags = PTRFLAGS_DOWN;
+            if (pressed_mask & 0x01) flags |= PTRFLAGS_BUTTON1;
+            if (pressed_mask & 0x02) flags |= PTRFLAGS_BUTTON3;
+            if (pressed_mask & 0x04) flags |= PTRFLAGS_BUTTON2;
+            if (pressed_mask & 0x08) flags |= PTRFLAGS_WHEEL | 0x78;
+            if (pressed_mask & 0x10) flags |= PTRFLAGS_WHEEL | PTRFLAGS_WHEEL_NEGATIVE | 0x88;
+
+            /* Send event */
+            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, flags, x, y);
+
+        }
+
+        /* Scroll event */
+        if (pressed_mask & 0x18) {
+
+            /* Down */
+            if (pressed_mask & 0x08)
+                rdp_inst->rdp_send_input(
+                        rdp_inst,
+                        RDP_INPUT_MOUSE,
+                        PTRFLAGS_WHEEL | 0x78,
+                        x, y);
+
+            /* Up */
+            if (pressed_mask & 0x10)
+                rdp_inst->rdp_send_input(
+                        rdp_inst,
+                        RDP_INPUT_MOUSE,
+                        PTRFLAGS_WHEEL | PTRFLAGS_WHEEL_NEGATIVE | 0x88,
+                        x, y);
+
+        }
+
 
         guac_client_data->mouse_button_mask = mask;
     }
