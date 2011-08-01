@@ -37,11 +37,12 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic -Iinclude
 
 lib_LTLIBRARIES = libguac-client-ssh.la
 
-libguac_client_ssh_la_SOURCES = src/ssh.c
+libguac_client_ssh_la_SOURCES = src/ssh_client.c
 
+libguac_client_ssh_la_CFLAGS = -Werror -Wall -pedantic -Iinclude @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@
+libguac_client_ssh_la_LIBADD = @PANGO_LIBS@ @PANGOCAIRO_LIBS@
 libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0
 
