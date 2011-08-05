@@ -186,6 +186,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                     if (value == 0) {
                         term->foreground = term->default_foreground;
                         term->background = term->default_background;
+                        term->reverse = 0;
                     }
 
                     /* Foreground */
@@ -195,6 +196,14 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                     /* Background */
                     else if (value >= 40 && value <= 47)
                         term->background = value - 40;
+
+                    /* Reverse video */
+                    else if (value == 7)
+                        term->reverse = 1;
+
+                    /* Reset reverse video */
+                    else if (value == 27)
+                        term->reverse = 0;
 
                     else
                         guac_log_info("Unhandled graphics rendition: %i", value);
