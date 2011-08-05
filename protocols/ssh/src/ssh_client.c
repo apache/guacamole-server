@@ -64,10 +64,49 @@ const char* GUAC_CLIENT_ARGS[] = {
     NULL
 };
 
-int ssh_guac_client_handle_messages(guac_client* client);
-int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int ssh_guac_client_send_glyph(guac_client* client, int row, int col, char c);
-int ssh_guac_client_write(guac_client* client, const char* c, int size);
+int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pressed) {
+
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
+    /* If key pressed */
+    if (pressed) {
+
+        /* If simple ASCII key */
+        if (keysym >= 0x00 && keysym <= 0xFF) {
+            /* Add to password */
+            client_data->password[client_data->password_length++] = keysym;
+            ssh_guac_terminal_write(client_data->term, "*", 1);
+            guac_flush(client->io);
+        }
+        else if (keysym == 0xFF08) {
+
+            if (client_data->password_length > 0) {
+                client_data->password_length--;
+
+                /* Backspace */
+                ssh_guac_terminal_write(client_data->term, "\x08\x1B[K", 4);
+                guac_flush(client->io);
+            }
+
+        }
+        else if (keysym == 0xFF0D) {
+
+            /* Finish password */
+            client_data->password[client_data->password_length] = '\0';
+
+            /* Clear screen */
+            ssh_guac_terminal_write(client_data->term, "\x1B[2J\x1B[1;1H", 10);
+            guac_flush(client->io);
+
+            return ssh_guac_client_auth(client, client_data->password);
+
+        }
+
+    }
+
+    return 0;
+
+}
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
@@ -113,6 +152,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Otherwise, prompt for password */
     else {
+        
+        client_data->password_length = 0;
+        ssh_guac_terminal_write(client_data->term, "Password: ", 10);
+        guac_flush(client->io);
+
+        client->key_handler = ssh_guac_client_password_key_handler;
+
     }
 
     /* Success */
@@ -179,5 +225,6 @@ int ssh_guac_client_auth(guac_client* client, const char* password) {
     return 0;
 
 }
+
 
 

@@ -35,13 +35,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _SSH_GUAC_CLIENT_H
-#define _SSH_GUAC_CLIENT_H
+#ifndef _SSH_GUAC_TERMINAL_HANDLERS
+#define _SSH_GUAC_TERMINAL_HANDLERS
 
 #include <stdlib.h>
 #include <string.h>
-
-#include <libssh/libssh.h>
 
 #include <cairo/cairo.h>
 #include <pango/pangocairo.h>
@@ -51,23 +49,13 @@
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
-#include "ssh_client.h"
-#include "ssh_handlers.h"
 #include "ssh_terminal.h"
 
-typedef struct ssh_guac_client_data {
-
-    ssh_session session;
-    ssh_channel term_channel;
-
-    ssh_guac_terminal* term;
-
-    char password[1024];
-    int password_length;
-
-} ssh_guac_client_data;
-
-int ssh_guac_client_auth(guac_client* client, const char* password);
+int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c);
+int ssh_guac_terminal_escape(ssh_guac_terminal* term, char c);
+int ssh_guac_terminal_charset(ssh_guac_terminal* term, char c);
+int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c);
+int ssh_guac_terminal_osc(ssh_guac_terminal* term, char c);
 
 #endif
 

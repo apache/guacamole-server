@@ -49,14 +49,11 @@
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
-#define SSH_TERM_STATE_NULL 0
-#define SSH_TERM_STATE_ECHO 1
-#define SSH_TERM_STATE_ESC  2
-#define SSH_TERM_STATE_CSI  3
-#define SSH_TERM_STATE_OSC  4
-#define SSH_TERM_STATE_CHARSET 5
+typedef struct ssh_guac_terminal ssh_guac_terminal;
 
-typedef struct ssh_guac_terminal {
+typedef int ssh_guac_terminal_char_handler(ssh_guac_terminal* term, char c);
+
+struct ssh_guac_terminal {
 
     PangoFontDescription* font_desc;
 
@@ -68,7 +65,7 @@ typedef struct ssh_guac_terminal {
 
     int term_width;
     int term_height;
-    int term_state;
+    ssh_guac_terminal_char_handler* char_handler;
 
     int term_seq_argc;
     int term_seq_argv[16];
@@ -78,12 +75,13 @@ typedef struct ssh_guac_terminal {
     int cursor_row;
     int cursor_col;
 
-} ssh_guac_terminal;
+};
 
 ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client);
 void ssh_guac_terminal_free(ssh_guac_terminal* term);
 
 int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size);
+int ssh_guac_terminal_send_glyph(ssh_guac_terminal* term, int row, int col, char c);
 
 #endif
 

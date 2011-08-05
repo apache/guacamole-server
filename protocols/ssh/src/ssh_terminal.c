@@ -47,6 +47,7 @@
 #include <guacamole/client.h>
 
 #include "ssh_terminal.h"
+#include "ssh_terminal_handlers.h"
 
 ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
@@ -63,7 +64,7 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
     term->term_width = 160;
     term->term_height = 50;
-    term->term_state = SSH_TERM_STATE_ECHO;
+    term->char_handler = ssh_guac_terminal_echo; 
 
     /* Get font */
     term->font_desc = pango_font_description_new();
@@ -148,7 +149,7 @@ guac_layer* __ssh_guac_terminal_get_glyph(ssh_guac_terminal* term, char c) {
 
 }
 
-int __ssh_guac_terminal_send_glyph(ssh_guac_terminal* term, int row, int col, char c) {
+int ssh_guac_terminal_send_glyph(ssh_guac_terminal* term, int row, int col, char c) {
 
     GUACIO* io = term->client->io;
     guac_layer* glyph = __ssh_guac_terminal_get_glyph(term, c);
@@ -163,295 +164,8 @@ int __ssh_guac_terminal_send_glyph(ssh_guac_terminal* term, int row, int col, ch
 
 int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size) {
 
-    GUACIO* io = term->client->io;
-
     while (size > 0) {
-
-        switch (term->term_state) {
-
-            case SSH_TERM_STATE_NULL:
-                break;
-
-            case SSH_TERM_STATE_ECHO:
-
-                /* Wrap if necessary */
-                if (term->cursor_col >= term->term_width) {
-                    term->cursor_col = 0;
-                    term->cursor_row++;
-                }
-
-                /* Scroll up if necessary */
-                if (term->cursor_row >= term->term_height) {
-                    term->cursor_row = term->term_height - 1;
-                    
-                    /* Copy screen up by one row */
-                    guac_send_copy(io,
-                            GUAC_DEFAULT_LAYER, 0, term->char_height,
-                            term->char_width * term->term_width,
-                            term->char_height * (term->term_height - 1),
-                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER, 0, 0);
-
-                    /* Fill bottom row with background */
-                    guac_send_rect(io,
-                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                            0, term->char_height * (term->term_height - 1),
-                            term->char_width * term->term_width,
-                            term->char_height * term->term_height,
-                            0, 0, 0, 255);
-
-                }
-
-
-
-                switch (*c) {
-
-                    /* Bell */
-                    case 0x07:
-                        break;
-
-                    /* Backspace */
-                    case 0x08:
-                        if (term->cursor_col >= 1)
-                            term->cursor_col--;
-                        break;
-
-                    /* Carriage return */
-                    case '\r':
-                        term->cursor_col = 0;
-                        break;
-
-                    /* Line feed */
-                    case '\n':
-                        term->cursor_row++;
-                        break;
-
-                    /* ESC */
-                    case 0x1B:
-                        term->term_state = SSH_TERM_STATE_ESC;
-                        break;
-
-                    /* Displayable chars */
-                    default:
-                        __ssh_guac_terminal_send_glyph(term,
-                                term->cursor_row,
-                                term->cursor_col,
-                                *c);
-
-                        /* Advance cursor */
-                        term->cursor_col++;
-                }
-
-                /* End of SSH_TERM_STATE_ECHO */
-                break;
-
-            case SSH_TERM_STATE_CHARSET:
-                term->term_state = SSH_TERM_STATE_ECHO;
-                break;
-
-            case SSH_TERM_STATE_ESC:
-
-                switch (*c) {
-
-                    case '(':
-                        term->term_state = SSH_TERM_STATE_CHARSET;
-                        break;
-
-                    case ']':
-                        term->term_state = SSH_TERM_STATE_OSC;
-                        term->term_seq_argc = 0;
-                        term->term_seq_argv_buffer_current = 0;
-                        break;
-
-                    case '[':
-                        term->term_state = SSH_TERM_STATE_CSI;
-                        term->term_seq_argc = 0;
-                        term->term_seq_argv_buffer_current = 0;
-                        break;
-
-                    default:
-                        guac_log_info("Unhandled ESC sequence: %c", *c);
-                        term->term_state = SSH_TERM_STATE_ECHO;
-
-                }
-
-                /* End of SSH_TERM_STATE_ESC */
-                break;
-
-            case SSH_TERM_STATE_OSC:
-  
-                /* TODO: Implement OSC */
-                if (*c == 0x9C || *c == 0x5C || *c == 0x07) /* ECMA-48 ST (String Terminator */
-                   term->term_state = SSH_TERM_STATE_ECHO; 
-
-                /* End of SSH_TERM_STATE_OSC */
-                break;
-
-            case SSH_TERM_STATE_CSI:
-
-                /* FIXME: "The sequence of parameters may be preceded by a single question mark. */
-                if (*c == '?')
-                    break; /* Ignore question marks for now... */
-
-                /* Digits get concatenated into argv */
-                if (*c >= '0' && *c <= '9') {
-
-                    /* Concatenate digit if there is space in buffer */
-                    if (term->term_seq_argv_buffer_current <
-                            sizeof(term->term_seq_argv_buffer)) {
-
-                        term->term_seq_argv_buffer[
-                            term->term_seq_argv_buffer_current++
-                            ] = *c;
-                    }
-
-                }
-
-                /* Any non-digit stops the parameter, and possibly the sequence */
-                else {
-
-                    /* At most 16 parameters */
-                    if (term->term_seq_argc < 16) {
-                        /* Finish parameter */
-                        term->term_seq_argv_buffer[term->term_seq_argv_buffer_current] = 0;
-                        term->term_seq_argv[term->term_seq_argc++] =
-                            atoi(term->term_seq_argv_buffer);
-
-                        /* Prepare for next parameter */
-                        term->term_seq_argv_buffer_current = 0;
-                    }
-
-                    /* Handle CSI functions */ 
-                    switch (*c) {
-
-                        /* H: Move cursor */
-                        case 'H':
-                            term->cursor_row = term->term_seq_argv[0] - 1;
-                            term->cursor_col = term->term_seq_argv[1] - 1;
-                            break;
-
-                        /* J: Erase display */
-                        case 'J':
-
-                            /* Erase from cursor to end of display */
-                            if (term->term_seq_argv[0] == 0) {
-
-                                /* Until end of line */
-                                guac_send_rect(io,
-                                        GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                        term->cursor_col * term->char_width,
-                                        term->cursor_row * term->char_height,
-                                        (term->term_width - term->cursor_col) * term->char_width,
-                                        term->char_height,
-                                        0, 0, 0, 255); /* Background color */
-
-                                /* Until end of display */
-                                if (term->cursor_row < term->term_height - 1) {
-                                    guac_send_rect(io,
-                                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                            0,
-                                            (term->cursor_row+1) * term->char_height,
-                                            term->term_width * term->char_width,
-                                            term->term_height * term->char_height,
-                                            0, 0, 0, 255); /* Background color */
-                                }
-
-                            }
-                            
-                            /* Erase from start to cursor */
-                            else if (term->term_seq_argv[0] == 1) {
-
-                                /* Until start of line */
-                                guac_send_rect(io,
-                                        GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                        0,
-                                        term->cursor_row * term->char_height,
-                                        term->cursor_col * term->char_width,
-                                        term->char_height,
-                                        0, 0, 0, 255); /* Background color */
-
-                                /* From start */
-                                if (term->cursor_row >= 1) {
-                                    guac_send_rect(io,
-                                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                            0,
-                                            0,
-                                            term->term_width * term->char_width,
-                                            (term->cursor_row-1) * term->char_height,
-                                            0, 0, 0, 255); /* Background color */
-                                }
-
-                            }
-
-                            /* Entire screen */
-                            else if (term->term_seq_argv[0] == 2) {
-                                guac_send_rect(io,
-                                        GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                        0,
-                                        0,
-                                        term->term_width * term->char_width,
-                                        term->term_height * term->char_height,
-                                        0, 0, 0, 255); /* Background color */
-                            }
-
-                            break;
-
-                        /* K: Erase line */
-                        case 'K':
-
-                            /* Erase from cursor to end of line */
-                            if (term->term_seq_argv[0] == 0) {
-                                guac_send_rect(io,
-                                        GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                        term->cursor_col * term->char_width,
-                                        term->cursor_row * term->char_height,
-                                        (term->term_width - term->cursor_col) * term->char_width,
-                                        term->char_height,
-                                        0, 0, 0, 255); /* Background color */
-                            }
-
-                            /* Erase from start to cursor */
-                            else if (term->term_seq_argv[0] == 1) {
-                                guac_send_rect(io,
-                                        GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                        0,
-                                        term->cursor_row * term->char_height,
-                                        term->cursor_col * term->char_width,
-                                        term->char_height,
-                                        0, 0, 0, 255); /* Background color */
-                            }
-
-                            /* Erase line */
-                            else if (term->term_seq_argv[0] == 2) {
-                                guac_send_rect(io,
-                                        GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                        0,
-                                        term->cursor_row * term->char_height,
-                                        term->term_width * term->char_width,
-                                        term->char_height,
-                                        0, 0, 0, 255); /* Background color */
-                            }
-
-                            break;
-
-                        /* Warn of unhandled codes */
-                        default:
-                            if (*c != ';')
-                                guac_log_info("Unhandled CSI sequence: %c", *c);
-
-                    }
-
-                    /* If not a semicolon, end of CSI sequence */
-                    if (*c != ';')
-                        term->term_state = SSH_TERM_STATE_ECHO;
-
-                }
-
-                /* End of SSH_TERM_STATE_CSI */
-                break;
-
-        }
-
-        c++;
+        term->char_handler(term, *(c++));
         size--;
     }
 
