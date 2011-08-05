@@ -88,10 +88,10 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
 
         /* Displayable chars */
         default:
-            ssh_guac_terminal_send_glyph(term,
+            ssh_guac_terminal_set(term,
                     term->cursor_row,
                     term->cursor_col,
-                    c);
+                    c, term->foreground, term->background);
 
             /* Advance cursor */
             term->cursor_col++;
@@ -158,6 +158,8 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
     /* Any non-digit stops the parameter, and possibly the sequence */
     else {
 
+        int i;
+
         /* At most 16 parameters */
         if (argc < 16) {
 
@@ -172,6 +174,34 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
         /* Handle CSI functions */ 
         switch (c) {
+
+            /* m: Set graphics rendition */
+            case 'm':
+
+                for (i=0; i<argc; i++) {
+
+                    int value = argv[i];
+
+                    /* Reset attributes */
+                    if (value == 0) {
+                        term->foreground = term->default_foreground;
+                        term->background = term->default_background;
+                    }
+
+                    /* Foreground */
+                    else if (value >= 30 && value <= 37)
+                        term->foreground = value - 30;
+
+                    /* Background */
+                    else if (value >= 40 && value <= 47)
+                        term->background = value - 40;
+
+                    else
+                        guac_log_info("Unhandled graphics rendition: %i", value);
+
+                }
+
+                break;
 
             /* H: Move cursor */
             case 'H':

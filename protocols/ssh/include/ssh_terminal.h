@@ -91,7 +91,8 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client);
 void ssh_guac_terminal_free(ssh_guac_terminal* term);
 
 int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size);
-int ssh_guac_terminal_send_glyph(ssh_guac_terminal* term, int row, int col, char c);
+int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
+        char c, int foreground, int background);
 
 int ssh_guac_terminal_copy(ssh_guac_terminal* term,
         int src_row, int src_col, int rows, int cols,

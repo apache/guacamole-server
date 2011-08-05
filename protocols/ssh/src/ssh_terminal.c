@@ -123,7 +123,7 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
     /* Clear with background color */
     ssh_guac_terminal_clear(term,
-            0, 0, term->term_width, term->term_height,
+            0, 0, term->term_height, term->term_width,
             term->background);
 
     return term;
@@ -190,16 +190,56 @@ guac_layer* __ssh_guac_terminal_get_glyph(ssh_guac_terminal* term, char c) {
 
 }
 
-int ssh_guac_terminal_send_glyph(ssh_guac_terminal* term, int row, int col, char c) {
+int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
+        char c, int foreground, int background) {
 
     GUACIO* io = term->client->io;
     guac_layer* glyph = __ssh_guac_terminal_get_glyph(term, c);
 
-    return guac_send_copy(io,
-            glyph, 0, 0, term->char_width, term->char_height,
-            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-            term->char_width * col,
-            term->char_height * row);
+    /* Get background color */
+    const ssh_guac_terminal_color* background_color =
+        &ssh_guac_terminal_palette[background];
+
+    guac_send_copy(io,
+        glyph, 0, 0, term->char_width, term->char_height,
+        GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
+        term->char_width * col,
+        term->char_height * row);
+
+    /* If foreground different from default, colorize */
+    if (foreground != term->default_foreground) {
+
+        /* Get color */
+        const ssh_guac_terminal_color* color =
+            &ssh_guac_terminal_palette[foreground];
+
+        /* Colorize letter */
+        guac_send_rect(io,
+            GUAC_COMP_ATOP, GUAC_DEFAULT_LAYER,
+
+            term->char_width * col, term->char_height * row,
+            term->char_width,       term->char_height,
+
+            color->red,
+            color->green,
+            color->blue,
+            255);
+
+    }
+
+    /* Set background */
+    guac_send_rect(io,
+        GUAC_COMP_ROVER, GUAC_DEFAULT_LAYER,
+
+        term->char_width * col, term->char_height * row,
+        term->char_width,       term->char_height,
+
+        background_color->red,
+        background_color->green,
+        background_color->blue,
+        255);
+
+    return 0;
 
 }
 
