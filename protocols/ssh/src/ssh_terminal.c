@@ -173,3 +173,102 @@ int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size) {
 
 }
 
+int ssh_guac_terminal_copy(ssh_guac_terminal* term,
+        int src_row, int src_col, int rows, int cols,
+        int dst_row, int dst_col) {
+
+    GUACIO* io = term->client->io;
+
+    /* Send copy instruction */
+    return guac_send_copy(io,
+
+            GUAC_DEFAULT_LAYER,
+            src_col * term->char_width, src_row * term->char_height,
+            cols    * term->char_width, rows    * term->char_height,
+
+            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
+            dst_col * term->char_width, dst_row * term->char_height);
+
+}
+
+
+int ssh_guac_terminal_clear(ssh_guac_terminal* term,
+        int row, int col, int rows, int cols) {
+
+    GUACIO* io = term->client->io;
+
+    /* Fill with background */
+    return guac_send_rect(io,
+            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
+
+            col  * term->char_width, row  * term->char_height,
+            cols * term->char_width, rows * term->char_height,
+
+            /* Background */
+            0, 0, 0, 255);
+
+}
+
+int ssh_guac_terminal_scroll_up(ssh_guac_terminal* term,
+        int start_row, int end_row, int amount) {
+
+    /* Calculate height of scroll region */
+    int height = end_row - start_row + 1;
+
+    return 
+
+        /* Move rows within scroll region up by the given amount */
+        ssh_guac_terminal_copy(term,
+                start_row + amount, 0,
+                height - amount, term->term_width,
+                start_row, 0)
+
+        /* Fill new rows with background */
+        || ssh_guac_terminal_clear(term,
+                end_row - amount + 1, 0, amount, term->term_width);
+
+}
+
+
+int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
+        int start_row, int start_col,
+        int end_row, int end_col) {
+
+    /* If not at far left, must clear sub-region to far right */
+    if (start_col > 0) {
+
+        /* Clear from start_col to far right */
+        if (ssh_guac_terminal_clear(term,
+                start_row, start_col, 1, term->term_width - start_col))
+            return 1;
+
+        /* One less row to clear */
+        start_row++;
+    }
+
+    /* If not at far right, must clear sub-region to far left */
+    if (end_col < term->term_width - 1) {
+
+        /* Clear from far left to end_col */
+        if (ssh_guac_terminal_clear(term,
+                end_row, 0, 1, end_col + 1))
+            return 1;
+
+        /* One less row to clear */
+        end_row--;
+
+    }
+
+    /* Remaining region now guaranteed rectangular. Clear, if possible */
+    if (start_row <= end_row) {
+
+        if (ssh_guac_terminal_clear(term,
+                start_row, 0, end_row - start_row + 1, term->term_width))
+            return 1;
+
+    }
+
+    return 0;
+
+}
+

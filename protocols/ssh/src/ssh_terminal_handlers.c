@@ -42,16 +42,11 @@
 #include <pango/pangocairo.h>
 
 #include <guacamole/log.h>
-#include <guacamole/guacio.h>
-#include <guacamole/protocol.h>
-#include <guacamole/client.h>
 
 #include "ssh_terminal.h"
 #include "ssh_terminal_handlers.h"
 
 int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
-
-    GUACIO* io = term->client->io;
 
     /* Wrap if necessary */
     if (term->cursor_col >= term->term_width) {
@@ -62,21 +57,9 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
     /* Scroll up if necessary */
     if (term->cursor_row >= term->term_height) {
         term->cursor_row = term->term_height - 1;
-        
-        /* Copy screen up by one row */
-        guac_send_copy(io,
-                GUAC_DEFAULT_LAYER, 0, term->char_height,
-                term->char_width * term->term_width,
-                term->char_height * (term->term_height - 1),
-                GUAC_COMP_SRC, GUAC_DEFAULT_LAYER, 0, 0);
 
-        /* Fill bottom row with background */
-        guac_send_rect(io,
-                GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                0, term->char_height * (term->term_height - 1),
-                term->char_width * term->term_width,
-                term->char_height * term->term_height,
-                0, 0, 0, 255);
+        /* Scroll up by one row */        
+        ssh_guac_terminal_scroll_up(term, 0, term->term_height - 1, 1);
 
     }
 
@@ -155,8 +138,6 @@ int ssh_guac_terminal_charset(ssh_guac_terminal* term, char c) {
 
 int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
-    GUACIO* io = term->client->io;
-
     /* CSI function arguments */
     static int argc = 0;
     static int argv[16];
@@ -204,67 +185,23 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
             /* J: Erase display */
             case 'J':
-
+ 
                 /* Erase from cursor to end of display */
-                if (argv[0] == 0) {
-
-                    /* Until end of line */
-                    guac_send_rect(io,
-                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                            term->cursor_col * term->char_width,
-                            term->cursor_row * term->char_height,
-                            (term->term_width - term->cursor_col) * term->char_width,
-                            term->char_height,
-                            0, 0, 0, 255); /* Background color */
-
-                    /* Until end of display */
-                    if (term->cursor_row < term->term_height - 1) {
-                        guac_send_rect(io,
-                                GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                0,
-                                (term->cursor_row+1) * term->char_height,
-                                term->term_width * term->char_width,
-                                term->term_height * term->char_height,
-                                0, 0, 0, 255); /* Background color */
-                    }
-
-                }
+                if (argv[0] == 0)
+                    ssh_guac_terminal_clear_range(term,
+                            term->cursor_row, term->cursor_col,
+                            term->term_height-1, term->term_width-1);
                 
                 /* Erase from start to cursor */
-                else if (argv[0] == 1) {
-
-                    /* Until start of line */
-                    guac_send_rect(io,
-                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                            0,
-                            term->cursor_row * term->char_height,
-                            term->cursor_col * term->char_width,
-                            term->char_height,
-                            0, 0, 0, 255); /* Background color */
-
-                    /* From start */
-                    if (term->cursor_row >= 1) {
-                        guac_send_rect(io,
-                                GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                                0,
-                                0,
-                                term->term_width * term->char_width,
-                                (term->cursor_row-1) * term->char_height,
-                                0, 0, 0, 255); /* Background color */
-                    }
-
-                }
+                else if (argv[0] == 1)
+                    ssh_guac_terminal_clear_range(term,
+                            0, 0,
+                            term->cursor_row, term->cursor_col);
 
                 /* Entire screen */
-                else if (argv[0] == 2) {
-                    guac_send_rect(io,
-                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                            0,
-                            0,
-                            term->term_width * term->char_width,
-                            term->term_height * term->char_height,
-                            0, 0, 0, 255); /* Background color */
-                }
+                else if (argv[0] == 2)
+                    ssh_guac_terminal_clear(term,
+                            0, 0, term->term_height, term->term_width);
 
                 break;
 
@@ -272,37 +209,22 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
             case 'K':
 
                 /* Erase from cursor to end of line */
-                if (argv[0] == 0) {
-                    guac_send_rect(io,
-                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                            term->cursor_col * term->char_width,
-                            term->cursor_row * term->char_height,
-                            (term->term_width - term->cursor_col) * term->char_width,
-                            term->char_height,
-                            0, 0, 0, 255); /* Background color */
-                }
+                if (argv[0] == 0)
+                    ssh_guac_terminal_clear(term,
+                            term->cursor_row, term->cursor_col,
+                            1, term->term_width - term->cursor_col);
 
                 /* Erase from start to cursor */
-                else if (argv[0] == 1) {
-                    guac_send_rect(io,
-                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                            0,
-                            term->cursor_row * term->char_height,
-                            term->cursor_col * term->char_width,
-                            term->char_height,
-                            0, 0, 0, 255); /* Background color */
-                }
+                else if (argv[0] == 1)
+                    ssh_guac_terminal_clear(term,
+                            term->cursor_row, 0,
+                            1, term->cursor_col + 1);
 
                 /* Erase line */
-                else if (argv[0] == 2) {
-                    guac_send_rect(io,
-                            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
-                            0,
-                            term->cursor_row * term->char_height,
-                            term->term_width * term->char_width,
-                            term->char_height,
-                            0, 0, 0, 255); /* Background color */
-                }
+                else if (argv[0] == 2)
+                    ssh_guac_terminal_clear(term,
+                            term->cursor_row, 0,
+                            1, term->term_width);
 
                 break;
 

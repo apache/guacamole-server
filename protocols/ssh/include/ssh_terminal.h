@@ -79,5 +79,18 @@ void ssh_guac_terminal_free(ssh_guac_terminal* term);
 int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size);
 int ssh_guac_terminal_send_glyph(ssh_guac_terminal* term, int row, int col, char c);
 
+int ssh_guac_terminal_copy(ssh_guac_terminal* term,
+        int src_row, int src_col, int rows, int cols,
+        int dst_row, int dst_col);
+int ssh_guac_terminal_clear(ssh_guac_terminal* term,
+        int row, int col, int rows, int cols);
+
+int ssh_guac_terminal_scroll_up(ssh_guac_terminal* term,
+        int start_row, int end_row, int amount);
+
+int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
+        int start_row, int start_col,
+        int end_row, int end_col);
+
 #endif
 
