@@ -151,7 +151,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
     /* CSI function arguments */
     static int argc = 0;
-    static int argv[16];
+    static int argv[16] = {0};
 
     /* Argument building counter and buffer */
     static int argv_length = 0;
@@ -173,7 +173,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
     /* Any non-digit stops the parameter, and possibly the sequence */
     else {
 
-        int i;
+        int i, row, col;
 
         /* At most 16 parameters */
         if (argc < 16) {
@@ -259,8 +259,12 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
             /* H: Move cursor */
             case 'H':
-                term->cursor_row = argv[0] - 1;
-                term->cursor_col = argv[1] - 1;
+
+                row = argv[0]; if (row != 0) row--;
+                col = argv[1]; if (col != 0) col--;
+
+                term->cursor_row = row;
+                term->cursor_col = col;
                 break;
 
             /* J: Erase display */
@@ -325,6 +329,10 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
         /* If not a semicolon, end of CSI sequence */
         if (c != ';') {
             term->char_handler = ssh_guac_terminal_echo;
+
+            /* Reset parameters */
+            for (i=0; i<argc; i++)
+                argv[i] = 0;
 
             /* Reset argument counters */
             argc = 0;
