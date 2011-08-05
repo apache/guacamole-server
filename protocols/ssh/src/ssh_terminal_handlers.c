@@ -44,6 +44,9 @@
 
 int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
 
+    int foreground = term->foreground;
+    int background = term->background;
+
     /* Wrap if necessary */
     if (term->cursor_col >= term->term_width) {
         term->cursor_col = 0;
@@ -88,10 +91,22 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
 
         /* Displayable chars */
         default:
+
+            /* Handle reverse video */
+            if (term->reverse) {
+                int swap = background;
+                background = foreground;
+                foreground = swap;
+            }
+
+            /* Handle bold */
+            if (term->bold && foreground <= 7)
+                foreground += 8;
+
             ssh_guac_terminal_set(term,
                     term->cursor_row,
                     term->cursor_col,
-                    c, term->foreground, term->background);
+                    c, foreground, background);
 
             /* Advance cursor */
             term->cursor_col++;
@@ -187,7 +202,17 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                         term->foreground = term->default_foreground;
                         term->background = term->default_background;
                         term->reverse = 0;
+                        term->underscore = 0;
+                        term->bold = 0;
                     }
+
+                    /* Bold */
+                    else if (value == 1)
+                        term->bold = 1;
+
+                    /* Underscore on */
+                    else if (value == 4)
+                        term->underscore = 1;
 
                     /* Foreground */
                     else if (value >= 30 && value <= 37)
@@ -197,6 +222,22 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                     else if (value >= 40 && value <= 47)
                         term->background = value - 40;
 
+                    /* Underscore on, default foreground */
+                    else if (value == 38) {
+                        term->underscore = 1;
+                        term->foreground = term->default_foreground;
+                    }
+
+                    /* Underscore off, default foreground */
+                    else if (value == 39) {
+                        term->underscore = 0;
+                        term->foreground = term->default_foreground;
+                    }
+
+                    /* Reset background */
+                    else if (value == 49)
+                        term->background = term->default_background;
+
                     /* Reverse video */
                     else if (value == 7)
                         term->reverse = 1;
@@ -204,6 +245,10 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                     /* Reset reverse video */
                     else if (value == 27)
                         term->reverse = 0;
+
+                    /* Reset intensity */
+                    else if (value == 27)
+                        term->bold = 0;
 
                     else
                         guac_log_info("Unhandled graphics rendition: %i", value);

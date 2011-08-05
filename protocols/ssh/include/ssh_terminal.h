@@ -72,6 +72,8 @@ struct ssh_guac_terminal {
     int foreground;
     int background;
     int reverse;
+    int bold;
+    int underscore;
 
     int default_foreground;
     int default_background;

@@ -85,7 +85,9 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
     term->foreground = term->default_foreground = 7; /* White */
     term->background = term->default_background = 0; /* Black */
-    term->reverse = 0; /* Normal video */
+    term->reverse = 0;    /* Normal video */
+    term->bold = 0;       /* Normal intensity */
+    term->underscore = 0; /* No underline */
 
     term->cursor_row = 0;
     term->cursor_col = 0;
@@ -197,13 +199,6 @@ int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
     GUACIO* io = term->client->io;
     guac_layer* glyph = __ssh_guac_terminal_get_glyph(term, c);
     const ssh_guac_terminal_color* background_color;
-
-    /* Handle reverse video */
-    if (term->reverse) {
-        int swap = background;
-        background = foreground;
-        foreground = swap;
-    }
 
     /* Get background color */
     background_color = &ssh_guac_terminal_palette[background];
