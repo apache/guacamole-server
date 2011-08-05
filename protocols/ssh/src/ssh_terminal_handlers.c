@@ -47,21 +47,6 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
     int foreground = term->foreground;
     int background = term->background;
 
-    /* Wrap if necessary */
-    if (term->cursor_col >= term->term_width) {
-        term->cursor_col = 0;
-        term->cursor_row++;
-    }
-
-    /* Scroll up if necessary */
-    if (term->cursor_row >= term->term_height) {
-        term->cursor_row = term->term_height - 1;
-
-        /* Scroll up by one row */        
-        ssh_guac_terminal_scroll_up(term, 0, term->term_height - 1, 1);
-
-    }
-
     switch (c) {
 
         /* Bell */
@@ -82,6 +67,15 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
         /* Line feed */
         case '\n':
             term->cursor_row++;
+
+            /* Scroll up if necessary */
+            if (term->cursor_row >= term->term_height) {
+                term->cursor_row = term->term_height - 1;
+
+                /* Scroll up by one row */        
+                ssh_guac_terminal_scroll_up(term, 0, term->term_height - 1, 1);
+
+            }
             break;
 
         /* ESC */
@@ -91,6 +85,21 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
 
         /* Displayable chars */
         default:
+
+            /* Wrap if necessary */
+            if (term->cursor_col >= term->term_width) {
+                term->cursor_col = 0;
+                term->cursor_row++;
+            }
+
+            /* Scroll up if necessary */
+            if (term->cursor_row >= term->term_height) {
+                term->cursor_row = term->term_height - 1;
+
+                /* Scroll up by one row */        
+                ssh_guac_terminal_scroll_up(term, 0, term->term_height - 1, 1);
+
+            }
 
             /* Handle reverse video */
             if (term->reverse) {
@@ -110,6 +119,7 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
 
             /* Advance cursor */
             term->cursor_col++;
+
     }
 
     return 0;
