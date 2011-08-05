@@ -69,9 +69,23 @@ struct ssh_guac_terminal {
     int cursor_row;
     int cursor_col;
 
+    int foreground;
+    int background;
+
+    int default_foreground;
+    int default_background;
+
     ssh_guac_terminal_char_handler* char_handler;
 
 };
+
+typedef struct ssh_guac_terminal_color {
+    int red;
+    int green;
+    int blue;
+} ssh_guac_terminal_color;
+
+extern const ssh_guac_terminal_color ssh_guac_terminal_palette[16];
 
 ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client);
 void ssh_guac_terminal_free(ssh_guac_terminal* term);
@@ -82,15 +96,16 @@ int ssh_guac_terminal_send_glyph(ssh_guac_terminal* term, int row, int col, char
 int ssh_guac_terminal_copy(ssh_guac_terminal* term,
         int src_row, int src_col, int rows, int cols,
         int dst_row, int dst_col);
+
 int ssh_guac_terminal_clear(ssh_guac_terminal* term,
-        int row, int col, int rows, int cols);
+        int row, int col, int rows, int cols, int background_color);
 
 int ssh_guac_terminal_scroll_up(ssh_guac_terminal* term,
         int start_row, int end_row, int amount);
 
 int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
         int start_row, int start_col,
-        int end_row, int end_col);
+        int end_row, int end_col, int background_color);
 
 #endif
 

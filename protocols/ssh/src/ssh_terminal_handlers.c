@@ -186,18 +186,21 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 if (argv[0] == 0)
                     ssh_guac_terminal_clear_range(term,
                             term->cursor_row, term->cursor_col,
-                            term->term_height-1, term->term_width-1);
+                            term->term_height-1, term->term_width-1,
+                            term->background);
                 
                 /* Erase from start to cursor */
                 else if (argv[0] == 1)
                     ssh_guac_terminal_clear_range(term,
                             0, 0,
-                            term->cursor_row, term->cursor_col);
+                            term->cursor_row, term->cursor_col,
+                            term->background);
 
                 /* Entire screen */
                 else if (argv[0] == 2)
                     ssh_guac_terminal_clear(term,
-                            0, 0, term->term_height, term->term_width);
+                            0, 0, term->term_height, term->term_width,
+                            term->background);
 
                 break;
 
@@ -208,19 +211,23 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 if (argv[0] == 0)
                     ssh_guac_terminal_clear(term,
                             term->cursor_row, term->cursor_col,
-                            1, term->term_width - term->cursor_col);
+                            1, term->term_width - term->cursor_col,
+                            term->background);
+
 
                 /* Erase from start to cursor */
                 else if (argv[0] == 1)
                     ssh_guac_terminal_clear(term,
                             term->cursor_row, 0,
-                            1, term->cursor_col + 1);
+                            1, term->cursor_col + 1,
+                            term->background);
 
                 /* Erase line */
                 else if (argv[0] == 2)
                     ssh_guac_terminal_clear(term,
                             term->cursor_row, 0,
-                            1, term->term_width);
+                            1, term->term_width,
+                            term->background);
 
                 break;
 

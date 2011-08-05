@@ -49,6 +49,30 @@
 #include "ssh_terminal.h"
 #include "ssh_terminal_handlers.h"
 
+const ssh_guac_terminal_color ssh_guac_terminal_palette[16] = {
+
+    /* Normal colors */
+    {0x00, 0x00, 0x00}, /* Black   */
+    {0x80, 0x00, 0x00}, /* Red     */
+    {0x00, 0x80, 0x00}, /* Green   */
+    {0x80, 0x80, 0x00}, /* Brown   */
+    {0x00, 0x00, 0x80}, /* Blue    */
+    {0x80, 0x00, 0x80}, /* Magenta */
+    {0x00, 0x80, 0x80}, /* Cyan    */
+    {0x80, 0x80, 0x80}, /* White   */
+
+    /* Intense colors */
+    {0x40, 0x40, 0x40}, /* Black   */
+    {0xFF, 0x00, 0x00}, /* Red     */
+    {0x00, 0xFF, 0x00}, /* Green   */
+    {0xFF, 0xFF, 0x00}, /* Brown   */
+    {0x00, 0x00, 0xFF}, /* Blue    */
+    {0xFF, 0x00, 0xFF}, /* Magenta */
+    {0x00, 0xFF, 0xFF}, /* Cyan    */
+    {0xFF, 0xFF, 0xFF}, /* White   */
+
+};
+
 ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
     PangoFontMap* font_map;
@@ -58,6 +82,9 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
     ssh_guac_terminal* term = malloc(sizeof(ssh_guac_terminal));
     term->client = client;
+
+    term->foreground = term->default_foreground = 7; /* White */
+    term->background = term->default_background = 0; /* Black */
 
     term->cursor_row = 0;
     term->cursor_col = 0;
@@ -94,6 +121,11 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
         (pango_font_metrics_get_descent(metrics)
             + pango_font_metrics_get_ascent(metrics)) / PANGO_SCALE;
 
+    /* Clear with background color */
+    ssh_guac_terminal_clear(term,
+            0, 0, term->term_width, term->term_height,
+            term->background);
+
     return term;
 
 }
@@ -106,6 +138,10 @@ guac_layer* __ssh_guac_terminal_get_glyph(ssh_guac_terminal* term, char c) {
 
     GUACIO* io = term->client->io;
     guac_layer* glyph;
+    
+    /* Use default foreground color */
+    const ssh_guac_terminal_color* color =
+        &ssh_guac_terminal_palette[term->default_foreground];
 
     cairo_surface_t* surface;
     cairo_t* cairo;
@@ -128,7 +164,12 @@ guac_layer* __ssh_guac_terminal_get_glyph(ssh_guac_terminal* term, char c) {
     pango_layout_set_text(layout, &c, 1);
 
     /* Draw */
-    cairo_set_source_rgba(cairo, 1.0, 1.0, 1.0, 1.0);
+    cairo_set_source_rgba(cairo,
+            color->red   / 255.0,
+            color->green / 255.0,
+            color->blue  / 255.0,
+            1.0 /* alpha */ );
+
     cairo_move_to(cairo, 0.0, 0.0);
     pango_cairo_show_layout(cairo, layout);
 
@@ -193,19 +234,20 @@ int ssh_guac_terminal_copy(ssh_guac_terminal* term,
 
 
 int ssh_guac_terminal_clear(ssh_guac_terminal* term,
-        int row, int col, int rows, int cols) {
+        int row, int col, int rows, int cols, int background_color) {
 
     GUACIO* io = term->client->io;
+    const ssh_guac_terminal_color* color =
+        &ssh_guac_terminal_palette[background_color];
 
-    /* Fill with background */
+    /* Fill with color */
     return guac_send_rect(io,
             GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
 
             col  * term->char_width, row  * term->char_height,
             cols * term->char_width, rows * term->char_height,
 
-            /* Background */
-            0, 0, 0, 255);
+            color->red, color->green, color->blue, 255);
 
 }
 
@@ -214,7 +256,7 @@ int ssh_guac_terminal_scroll_up(ssh_guac_terminal* term,
 
     /* Calculate height of scroll region */
     int height = end_row - start_row + 1;
-
+    
     return 
 
         /* Move rows within scroll region up by the given amount */
@@ -225,21 +267,23 @@ int ssh_guac_terminal_scroll_up(ssh_guac_terminal* term,
 
         /* Fill new rows with background */
         || ssh_guac_terminal_clear(term,
-                end_row - amount + 1, 0, amount, term->term_width);
+                end_row - amount + 1, 0, amount, term->term_width,
+                term->background);
 
 }
 
 
 int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
         int start_row, int start_col,
-        int end_row, int end_col) {
+        int end_row, int end_col, int background_color) {
 
     /* If not at far left, must clear sub-region to far right */
     if (start_col > 0) {
 
         /* Clear from start_col to far right */
         if (ssh_guac_terminal_clear(term,
-                start_row, start_col, 1, term->term_width - start_col))
+                start_row, start_col, 1, term->term_width - start_col,
+                background_color))
             return 1;
 
         /* One less row to clear */
@@ -251,7 +295,8 @@ int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
 
         /* Clear from far left to end_col */
         if (ssh_guac_terminal_clear(term,
-                end_row, 0, 1, end_col + 1))
+                end_row, 0, 1, end_col + 1,
+                background_color))
             return 1;
 
         /* One less row to clear */
@@ -263,7 +308,8 @@ int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
     if (start_row <= end_row) {
 
         if (ssh_guac_terminal_clear(term,
-                start_row, 0, end_row - start_row + 1, term->term_width))
+                start_row, 0, end_row - start_row + 1, term->term_width,
+                background_color))
             return 1;
 
     }
