@@ -132,14 +132,10 @@ int ssh_guac_terminal_escape(ssh_guac_terminal* term, char c) {
 
         case ']':
             term->char_handler = ssh_guac_terminal_osc; 
-            term->term_seq_argc = 0;
-            term->term_seq_argv_buffer_current = 0;
             break;
 
         case '[':
             term->char_handler = ssh_guac_terminal_csi; 
-            term->term_seq_argc = 0;
-            term->term_seq_argv_buffer_current = 0;
             break;
 
         default:
@@ -161,6 +157,14 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
     GUACIO* io = term->client->io;
 
+    /* CSI function arguments */
+    static int argc = 0;
+    static int argv[16];
+
+    /* Argument building counter and buffer */
+    static int argv_length = 0;
+    static char argv_buffer[256];
+
     /* FIXME: "The sequence of parameters may be preceded by a single question mark. */
     if (c == '?')
         return 0;
@@ -169,13 +173,8 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
     if (c >= '0' && c <= '9') {
 
         /* Concatenate digit if there is space in buffer */
-        if (term->term_seq_argv_buffer_current <
-                sizeof(term->term_seq_argv_buffer)) {
-
-            term->term_seq_argv_buffer[
-                term->term_seq_argv_buffer_current++
-                ] = c;
-        }
+        if (argv_length < sizeof(argv_buffer)-1)
+            argv_buffer[argv_length++] = c;
 
     }
 
@@ -183,14 +182,15 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
     else {
 
         /* At most 16 parameters */
-        if (term->term_seq_argc < 16) {
+        if (argc < 16) {
+
             /* Finish parameter */
-            term->term_seq_argv_buffer[term->term_seq_argv_buffer_current] = 0;
-            term->term_seq_argv[term->term_seq_argc++] =
-                atoi(term->term_seq_argv_buffer);
+            argv_buffer[argv_length] = 0;
+            argv[argc++] = atoi(argv_buffer);
 
             /* Prepare for next parameter */
-            term->term_seq_argv_buffer_current = 0;
+            argv_length = 0;
+
         }
 
         /* Handle CSI functions */ 
@@ -198,15 +198,15 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
             /* H: Move cursor */
             case 'H':
-                term->cursor_row = term->term_seq_argv[0] - 1;
-                term->cursor_col = term->term_seq_argv[1] - 1;
+                term->cursor_row = argv[0] - 1;
+                term->cursor_col = argv[1] - 1;
                 break;
 
             /* J: Erase display */
             case 'J':
 
                 /* Erase from cursor to end of display */
-                if (term->term_seq_argv[0] == 0) {
+                if (argv[0] == 0) {
 
                     /* Until end of line */
                     guac_send_rect(io,
@@ -231,7 +231,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 }
                 
                 /* Erase from start to cursor */
-                else if (term->term_seq_argv[0] == 1) {
+                else if (argv[0] == 1) {
 
                     /* Until start of line */
                     guac_send_rect(io,
@@ -256,7 +256,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 }
 
                 /* Entire screen */
-                else if (term->term_seq_argv[0] == 2) {
+                else if (argv[0] == 2) {
                     guac_send_rect(io,
                             GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
                             0,
@@ -272,7 +272,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
             case 'K':
 
                 /* Erase from cursor to end of line */
-                if (term->term_seq_argv[0] == 0) {
+                if (argv[0] == 0) {
                     guac_send_rect(io,
                             GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
                             term->cursor_col * term->char_width,
@@ -283,7 +283,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 }
 
                 /* Erase from start to cursor */
-                else if (term->term_seq_argv[0] == 1) {
+                else if (argv[0] == 1) {
                     guac_send_rect(io,
                             GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
                             0,
@@ -294,7 +294,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 }
 
                 /* Erase line */
-                else if (term->term_seq_argv[0] == 2) {
+                else if (argv[0] == 2) {
                     guac_send_rect(io,
                             GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
                             0,
@@ -314,8 +314,13 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
         }
 
         /* If not a semicolon, end of CSI sequence */
-        if (c != ';')
-            term->char_handler = ssh_guac_terminal_echo; 
+        if (c != ';') {
+            term->char_handler = ssh_guac_terminal_echo;
+
+            /* Reset argument counters */
+            argc = 0;
+            argv_length = 0;
+        }
 
     }
 

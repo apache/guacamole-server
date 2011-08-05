@@ -55,9 +55,9 @@ typedef int ssh_guac_terminal_char_handler(ssh_guac_terminal* term, char c);
 
 struct ssh_guac_terminal {
 
-    PangoFontDescription* font_desc;
-
     guac_client* client;
+
+    PangoFontDescription* font_desc;
     guac_layer* glyphs[256];
 
     int char_width;
@@ -65,15 +65,11 @@ struct ssh_guac_terminal {
 
     int term_width;
     int term_height;
-    ssh_guac_terminal_char_handler* char_handler;
-
-    int term_seq_argc;
-    int term_seq_argv[16];
-    char term_seq_argv_buffer[16];
-    int term_seq_argv_buffer_current;
 
     int cursor_row;
     int cursor_col;
+
+    ssh_guac_terminal_char_handler* char_handler;
 
 };
 
