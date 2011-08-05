@@ -36,10 +36,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
-#include <string.h>
-
-#include <cairo/cairo.h>
-#include <pango/pangocairo.h>
 
 #include <guacamole/log.h>
 
