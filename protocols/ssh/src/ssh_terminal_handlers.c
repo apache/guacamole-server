@@ -183,7 +183,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
     /* Any non-digit stops the parameter, and possibly the sequence */
     else {
 
-        int i, row, col;
+        int i, row, col, amount;
 
         /* At most 16 parameters */
         if (argc < 16) {
@@ -199,6 +199,65 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
         /* Handle CSI functions */ 
         switch (c) {
+
+            /* A: Move up */
+            case 'A':
+
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Move cursor */
+                term->cursor_row -= amount;
+                if (term->cursor_row < 0)
+                    term->cursor_row = 0;
+
+                break;
+
+            /* B: Move down */
+            case 'B':
+
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Move cursor */
+                term->cursor_row += amount;
+                if (term->cursor_row >= term->term_height)
+                    term->cursor_row = term->term_height - 1;
+
+                break;
+
+            /* D: Move left */
+            case 'D':
+
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Move cursor */
+                term->cursor_col -= amount;
+                if (term->cursor_col < 0)
+                    term->cursor_col = 0;
+
+                break;
+
+            /* C: Move right */
+            case 'C':
+
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Move cursor */
+                term->cursor_col += amount;
+                if (term->cursor_col >= term->term_width)
+                    term->cursor_col = term->term_width - 1;
+
+                break;
+
+
+
 
             /* m: Set graphics rendition */
             case 'm':
@@ -276,6 +335,19 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 term->cursor_row = row;
                 term->cursor_col = col;
                 break;
+
+            /* G: Move cursor, current row */
+            case 'G':
+                col = argv[0]; if (col != 0) col--;
+                term->cursor_col = col;
+                break;
+
+            /* d: Move cursor, current col */
+            case 'd':
+                row = argv[0]; if (row != 0) row--;
+                term->cursor_row = row;
+                break;
+
 
             /* J: Erase display */
             case 'J':

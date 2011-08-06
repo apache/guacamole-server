@@ -49,13 +49,6 @@
 #include "ssh_handlers.h"
 #include "ssh_terminal.h"
 
-#define SSH_TERM_STATE_NULL 0
-#define SSH_TERM_STATE_ECHO 1
-#define SSH_TERM_STATE_ESC  2
-#define SSH_TERM_STATE_CSI  3
-#define SSH_TERM_STATE_OSC  4
-#define SSH_TERM_STATE_CHARSET 5
-
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
