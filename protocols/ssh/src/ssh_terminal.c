@@ -92,15 +92,18 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
     term->cursor_row = 0;
     term->cursor_col = 0;
 
-    term->term_width = 160;
-    term->term_height = 50;
+    term->term_width = 80;
+    term->term_height = 24;
     term->char_handler = ssh_guac_terminal_echo; 
+
+    term->scroll_start = 0;
+    term->scroll_end = term->term_height - 1;
 
     /* Get font */
     term->font_desc = pango_font_description_new();
     pango_font_description_set_family(term->font_desc, "monospace");
     pango_font_description_set_weight(term->font_desc, PANGO_WEIGHT_NORMAL);
-    pango_font_description_set_size(term->font_desc, 8*PANGO_SCALE);
+    pango_font_description_set_size(term->font_desc, 14*PANGO_SCALE);
 
     font_map = pango_cairo_font_map_get_default();
     context = pango_font_map_create_context(font_map);

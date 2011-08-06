@@ -69,11 +69,11 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
             term->cursor_row++;
 
             /* Scroll up if necessary */
-            if (term->cursor_row >= term->term_height) {
-                term->cursor_row = term->term_height - 1;
+            if (term->cursor_row > term->scroll_end) {
+                term->cursor_row = term->scroll_end;
 
                 /* Scroll up by one row */        
-                ssh_guac_terminal_scroll_up(term, 0, term->term_height - 1, 1);
+                ssh_guac_terminal_scroll_up(term, term->scroll_start, term->scroll_end, 1);
 
             }
             break;
@@ -93,11 +93,11 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
             }
 
             /* Scroll up if necessary */
-            if (term->cursor_row >= term->term_height) {
-                term->cursor_row = term->term_height - 1;
+            if (term->cursor_row > term->scroll_end) {
+                term->cursor_row = term->scroll_end;
 
                 /* Scroll up by one row */        
-                ssh_guac_terminal_scroll_up(term, 0, term->term_height - 1, 1);
+                ssh_guac_terminal_scroll_up(term, term->scroll_start, term->scroll_end, 1);
 
             }
 
@@ -324,6 +324,12 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 }
 
+                break;
+
+            /* r: Set scrolling region */
+            case 'r':
+                term->scroll_start = argv[0]-1;
+                term->scroll_end   = argv[1]-1;
                 break;
 
             /* H: Move cursor */

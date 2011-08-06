@@ -66,6 +66,9 @@ struct ssh_guac_terminal {
     int term_width;
     int term_height;
 
+    int scroll_start;
+    int scroll_end;
+
     int cursor_row;
     int cursor_col;
 

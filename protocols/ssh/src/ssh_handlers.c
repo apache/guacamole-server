@@ -111,6 +111,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
         else if (keysym == 0xFF08) data = 0x08;
         else if (keysym == 0xFF09) data = 0x09;
         else if (keysym == 0xFF0D) data = 0x0D;
+        else if (keysym == 0xFF1B) data = 0x1B;
 
         else
             return 0;
