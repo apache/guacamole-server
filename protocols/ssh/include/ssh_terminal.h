@@ -38,10 +38,6 @@
 #ifndef _SSH_GUAC_TERMINAL_H
 #define _SSH_GUAC_TERMINAL_H
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <cairo/cairo.h>
 #include <pango/pangocairo.h>
 
 #include <guacamole/log.h>
@@ -51,25 +47,103 @@
 
 typedef struct ssh_guac_terminal ssh_guac_terminal;
 
+/**
+ * Handler for characters printed to the terminal. When a character is printed,
+ * the current char handler for the terminal is called and given that
+ * character.
+ */
 typedef int ssh_guac_terminal_char_handler(ssh_guac_terminal* term, char c);
 
+/**
+ * Represents a single character for display in a terminal, including actual
+ * character value, foreground color, and background color.
+ */
+typedef struct ssh_guac_terminal_char {
+
+    /**
+     * The character value of the character to display.
+     */
+    char value;
+
+    /**
+     * The foreground color of the character to display.
+     */
+    int foreground;
+
+    /**
+     * The background color of the character to display.
+     */
+    int background;
+
+} ssh_guac_terminal_char;
+
+/**
+ * Represents a terminal emulator which uses a given Guacamole client to
+ * render itself.
+ */
 struct ssh_guac_terminal {
 
+    /**
+     * The Guacamole client this terminal emulator will use for rendering.
+     */
     guac_client* client;
 
+    /**
+     * The description of the font to use for rendering.
+     */
     PangoFontDescription* font_desc;
+
+    /**
+     * A simple mapping of glyphs to their corresponding buffers. When a new
+     * glyph is drawn, the data for that glyph is saved into an off-screen
+     * buffer for later reuse.
+     */
     guac_layer* glyphs[256];
 
+    /**
+     * Array of scrollback buffer rows, where each row is an array of 
+     * characters.
+     */
+    ssh_guac_terminal_char** scrollback;
+
+    /**
+     * The width of each character, in pixels.
+     */
     int char_width;
+
+    /**
+     * The height of each character, in pixels.
+     */
     int char_height;
 
+    /**
+     * The width of the terminal, in characters.
+     */
     int term_width;
+
+    /**
+     * The height of the terminal, in characters.
+     */
     int term_height;
 
+    /**
+     * The index of the first row in the scrolling region.
+     */
     int scroll_start;
+
+    /**
+     * The index of the last row in the scrolling region.
+     */
     int scroll_end;
 
+    /**
+     * The current row location of the cursor.
+     */
     int cursor_row;
+
+    /**
+     * The current column location of the cursor.
+     */
     int cursor_col;
 
     int foreground;
@@ -97,6 +171,7 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client);
 void ssh_guac_terminal_free(ssh_guac_terminal* term);
 
 int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size);
+
 int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
         char c, int foreground, int background);
 

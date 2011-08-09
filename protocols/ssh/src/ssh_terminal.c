@@ -75,6 +75,8 @@ const ssh_guac_terminal_color ssh_guac_terminal_palette[16] = {
 
 ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
+    int row, col;
+
     PangoFontMap* font_map;
     PangoFont* font;
     PangoFontMetrics* metrics;
@@ -98,6 +100,28 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
     term->scroll_start = 0;
     term->scroll_end = term->term_height - 1;
+
+    /* Create scrollback buffer */
+    term->scrollback = malloc(term->term_height * sizeof(ssh_guac_terminal_char*));
+
+    /* Init buffer */
+    for (row = 0; row < term->term_height; row++) {
+
+        /* Create row */
+        ssh_guac_terminal_char* current_row =
+            term->scrollback[row] = malloc(term->term_width * sizeof(ssh_guac_terminal_char));
+
+        /* Init row */
+        for (col = 0; col < term->term_width; col++) {
+
+            /* Empty character, default colors */
+            current_row[col].value = '\0';
+            current_row[col].foreground = term->default_foreground;
+            current_row[col].background = term->default_background;
+
+        }
+
+    }
 
     /* Get font */
     term->font_desc = pango_font_description_new();
