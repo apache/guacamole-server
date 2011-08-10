@@ -93,6 +93,7 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
     term->cursor_row = 0;
     term->cursor_col = 0;
+    term->cursor_layer = guac_client_alloc_layer(client, 1);
 
     term->term_width = 80;
     term->term_height = 24;
@@ -220,6 +221,33 @@ guac_layer* __ssh_guac_terminal_get_glyph(ssh_guac_terminal* term, char c) {
 
 }
 
+int ssh_guac_terminal_redraw_cursor(ssh_guac_terminal* term) {
+
+    GUACIO* io = term->client->io;
+
+    /* Erase old cursor */
+    return
+        guac_send_rect(io,
+            GUAC_COMP_SRC, term->cursor_layer,
+
+            0, 0,
+            term->char_width * term->term_width,
+            term->char_height * term->term_height,
+
+            0, 0, 0, 0)
+
+        || guac_send_rect(io,
+            GUAC_COMP_SRC, term->cursor_layer,
+
+            term->char_width * term->cursor_col,
+            term->char_height * term->cursor_row,
+            term->char_width, term->char_height,
+
+            0x40, 0xFF, 0x80,
+            0x80);
+
+}
+
 int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
         char c, int foreground, int background) {
 
@@ -342,6 +370,26 @@ int ssh_guac_terminal_scroll_up(ssh_guac_terminal* term,
 
 }
 
+int ssh_guac_terminal_scroll_down(ssh_guac_terminal* term,
+        int start_row, int end_row, int amount) {
+
+    /* Calculate height of scroll region */
+    int height = end_row - start_row + 1;
+    
+    return 
+
+        /* Move rows within scroll region down by the given amount */
+        ssh_guac_terminal_copy(term,
+                start_row, 0,
+                height - amount, term->term_width,
+                start_row + amount, 0)
+
+        /* Fill new rows with background */
+        || ssh_guac_terminal_clear(term,
+                start_row, 0, amount, term->term_width,
+                term->background);
+
+}
 
 int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
         int start_row, int start_col,

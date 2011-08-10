@@ -407,6 +407,17 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 break;
 
+            /* L: Insert blank lines (scroll down) */
+            case 'L':
+
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                ssh_guac_terminal_scroll_down(term,
+                        term->cursor_row, term->scroll_end, amount);
+
+                break;
+
             /* Warn of unhandled codes */
             default:
                 if (c != ';')

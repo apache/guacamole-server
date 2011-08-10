@@ -69,6 +69,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
             /* Add to password */
             client_data->password[client_data->password_length++] = keysym;
             ssh_guac_terminal_write(client_data->term, "*", 1);
+            ssh_guac_terminal_redraw_cursor(client_data->term);
             guac_flush(client->io);
         }
         else if (keysym == 0xFF08) {
@@ -78,6 +79,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
 
                 /* Backspace */
                 ssh_guac_terminal_write(client_data->term, "\x08\x1B[K", 4);
+                ssh_guac_terminal_redraw_cursor(client_data->term);
                 guac_flush(client->io);
             }
 
@@ -89,6 +91,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
 
             /* Clear screen */
             ssh_guac_terminal_write(client_data->term, "\x1B[2J\x1B[1;1H", 10);
+            ssh_guac_terminal_redraw_cursor(client_data->term);
             guac_flush(client->io);
 
             return ssh_guac_client_auth(client, client_data->password);
@@ -148,6 +151,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         
         client_data->password_length = 0;
         ssh_guac_terminal_write(client_data->term, "Password: ", 10);
+        ssh_guac_terminal_redraw_cursor(client_data->term);
         guac_flush(client->io);
 
         client->key_handler = ssh_guac_client_password_key_handler;

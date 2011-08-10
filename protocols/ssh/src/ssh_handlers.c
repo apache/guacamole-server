@@ -60,6 +60,8 @@ int ssh_guac_client_handle_messages(guac_client* client) {
     ssh_channel read_channels[2];
     struct timeval timeout;
 
+    guac_log_info("ENTER HANDLE MESSAGES...");
+
     /* Channels to read */
     read_channels[0] = client_data->term_channel;
     read_channels[1] = NULL;
@@ -73,13 +75,17 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
         int bytes_read = 0;
 
+        guac_log_info("DONE WAITING (%i)", GUAC_SYNC_FREQUENCY);
+
         /* While data available, write to terminal */
         while (channel_is_open(client_data->term_channel)
                 && !channel_is_eof(client_data->term_channel)
                 && (bytes_read = channel_read_nonblocking(client_data->term_channel, buffer, sizeof(buffer), 0)) > 0) {
 
-            ssh_guac_terminal_write(client_data->term, buffer, bytes_read);
-            guac_flush(io);
+            if (ssh_guac_terminal_write(client_data->term, buffer, bytes_read)
+                || ssh_guac_terminal_redraw_cursor(client_data->term)
+                || guac_flush(io))
+                return 1;
 
         }
 
@@ -91,6 +97,7 @@ int ssh_guac_client_handle_messages(guac_client* client) {
         }
     }
 
+    guac_log_info("LEAVE HANDLE MESSAGES");
     return 0;
 
 }

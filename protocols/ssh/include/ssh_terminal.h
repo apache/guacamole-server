@@ -146,6 +146,11 @@ struct ssh_guac_terminal {
      */
     int cursor_col;
 
+    /**
+     * Simple cursor layer until scrollback, etc. is implemented.
+     */
+    guac_layer* cursor_layer;
+
     int foreground;
     int background;
     int reverse;
@@ -172,6 +177,8 @@ void ssh_guac_terminal_free(ssh_guac_terminal* term);
 
 int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size);
 
+int ssh_guac_terminal_redraw_cursor(ssh_guac_terminal* term);
+
 int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
         char c, int foreground, int background);
 
@@ -183,6 +190,9 @@ int ssh_guac_terminal_clear(ssh_guac_terminal* term,
         int row, int col, int rows, int cols, int background_color);
 
 int ssh_guac_terminal_scroll_up(ssh_guac_terminal* term,
+        int start_row, int end_row, int amount);
+
+int ssh_guac_terminal_scroll_down(ssh_guac_terminal* term,
         int start_row, int end_row, int amount);
 
 int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
