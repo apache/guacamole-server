@@ -116,21 +116,30 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     /* If key pressed */
     if (pressed) {
 
-        char data;
-
         /* If simple ASCII key */
-        if (keysym >= 0x00 && keysym <= 0xFF)
-            data = (char) keysym;
+        if (keysym >= 0x00 && keysym <= 0xFF) {
+            char data = (char) keysym;
+            return channel_write(client_data->term_channel, &data, 1);
+        }
 
-        else if (keysym == 0xFF08) data = 0x08;
-        else if (keysym == 0xFF09) data = 0x09;
-        else if (keysym == 0xFF0D) data = 0x0D;
-        else if (keysym == 0xFF1B) data = 0x1B;
+        else {
 
-        else
-            return 0;
+            int length = 0;
+            const char* data = NULL;
 
-        return channel_write(client_data->term_channel, &data, 1);
+                 if (keysym == 0xFF08) { data = "\x08"; length = 1; }
+            else if (keysym == 0xFF09) { data = "\x09"; length = 1; }
+            else if (keysym == 0xFF0D) { data = "\x0D"; length = 1; }
+            else if (keysym == 0xFF1B) { data = "\x1B"; length = 1; }
+
+            /* Arrow keys */
+            else if (keysym == 0xFF52) { data = "\x1B\x5B""A"; length = 3; }
+            else if (keysym == 0xFF54) { data = "\x1B\x5B""B"; length = 3; }
+            else if (keysym == 0xFF53) { data = "\x1B\x5B""C"; length = 3; }
+            else if (keysym == 0xFF51) { data = "\x1B\x5B""D"; length = 3; }
+
+            return channel_write(client_data->term_channel, data, length);
+        }
 
     }
 

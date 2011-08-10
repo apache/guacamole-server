@@ -286,7 +286,7 @@ int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
     }
 
     /* Set background */
-    guac_send_rect(io,
+    /*guac_send_rect(io,
         GUAC_COMP_ROVER, GUAC_DEFAULT_LAYER,
 
         term->char_width * col, term->char_height * row,
@@ -295,7 +295,7 @@ int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
         background_color->red,
         background_color->green,
         background_color->blue,
-        255);
+        255);*/
 
     return 0;
 

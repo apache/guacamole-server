@@ -451,6 +451,27 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 break;
 
+            /* @: Insert characters (scroll right) */
+            case '@':
+
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Scroll right by amount */
+                if (term->cursor_col + amount < term->term_width)
+                    ssh_guac_terminal_copy(term,
+                            term->cursor_row, term->cursor_col,
+                            1, term->term_width - term->cursor_col - amount, 
+                            term->cursor_row, term->cursor_col + amount);
+
+                /* Clear left */
+                ssh_guac_terminal_clear(term,
+                        term->cursor_row, term->cursor_col,
+                        1, amount,
+                        term->background);
+
+                break;
+
             /* Warn of unhandled codes */
             default:
                 if (c != ';')
