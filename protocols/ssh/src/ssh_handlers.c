@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <sys/select.h>
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -57,25 +59,31 @@ int ssh_guac_client_handle_messages(guac_client* client) {
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     char buffer[8192];
 
-    ssh_channel read_channels[2];
+    ssh_channel channels[2], out_channels[2];
     struct timeval timeout;
-
-    guac_log_info("ENTER HANDLE MESSAGES...");
+    fd_set fds;
+    int ssh_fd;
 
     /* Channels to read */
-    read_channels[0] = client_data->term_channel;
-    read_channels[1] = NULL;
+    channels[0] = client_data->term_channel;
+    channels[1] = NULL;
+
+    /* Get SSH file descriptor */
+    ssh_fd = ssh_get_fd(client_data->session);
+
+    /* Build fd_set */
+    FD_ZERO(&fds);
+    FD_SET(ssh_fd, &fds);
 
     /* Time to wait */
     timeout.tv_sec = GUAC_SYNC_FREQUENCY / 1000;
     timeout.tv_usec = (GUAC_SYNC_FREQUENCY % 1000) * 1000;
 
     /* Wait for data to be available */
-    if (channel_select(read_channels, NULL, NULL, &timeout) == SSH_OK) {
+    if (ssh_select(channels, out_channels, ssh_fd+1, &fds, &timeout)
+            == SSH_OK) {
 
         int bytes_read = 0;
-
-        guac_log_info("DONE WAITING (%i)", GUAC_SYNC_FREQUENCY);
 
         /* While data available, write to terminal */
         while (channel_is_open(client_data->term_channel)
@@ -97,7 +105,6 @@ int ssh_guac_client_handle_messages(guac_client* client) {
         }
     }
 
-    guac_log_info("LEAVE HANDLE MESSAGES");
     return 0;
 
 }
