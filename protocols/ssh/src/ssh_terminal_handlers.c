@@ -418,7 +418,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 break;
 
-            /* L: Delete lines (scroll up) */
+            /* M: Delete lines (scroll up) */
             case 'M':
 
                 amount = argv[0];
@@ -426,6 +426,28 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 ssh_guac_terminal_scroll_up(term,
                         term->cursor_row, term->scroll_end, amount);
+
+                break;
+
+            /* P: Delete characters (scroll left) */
+            case 'P':
+
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Scroll left by amount */
+                if (term->cursor_col + amount < term->term_width)
+                    ssh_guac_terminal_copy(term,
+                            term->cursor_row, term->cursor_col + amount,
+                            1,
+                            term->term_width - term->cursor_col - amount, 
+                            term->cursor_row, term->cursor_col);
+
+                /* Clear right */
+                ssh_guac_terminal_clear(term,
+                        term->cursor_row, term->term_width - amount,
+                        1, amount,
+                        term->background);
 
                 break;
 
