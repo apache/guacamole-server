@@ -277,7 +277,7 @@ void guac_rdp_ui_line(rdpInst* inst, uint8 opcode, int startx, int starty, int e
     guac_log_info("guac_rdp_ui_line: STUB\n");
 }
 
-void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, int color) {
+void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, uint32 color) {
 
     guac_client* client = (guac_client*) inst->param1;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
@@ -312,7 +312,7 @@ void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, int color) {
 
 }
 
-void guac_rdp_ui_polygon(rdpInst* inst, uint8 opcode, uint8 fillmode, RD_POINT* point, int npoints, RD_BRUSH* brush, int bgcolor, int fgcolor) {
+void guac_rdp_ui_polygon(rdpInst* inst, uint8 opcode, uint8 fillmode, RD_POINT* point, int npoints, RD_BRUSH* brush, uint32 bgcolor, uint32 fgcolor) {
     guac_log_info("guac_rdp_ui_polygon: STUB\n");
 }
 
@@ -320,11 +320,11 @@ void guac_rdp_ui_polyline(rdpInst* inst, uint8 opcode, RD_POINT* points, int npo
     guac_log_info("guac_rdp_ui_polyline: STUB\n");
 }
 
-void guac_rdp_ui_ellipse(rdpInst* inst, uint8 opcode, uint8 fillmode, int x, int y, int cx, int cy, RD_BRUSH*  brush, int bgcolor, int fgcolor) {
+void guac_rdp_ui_ellipse(rdpInst* inst, uint8 opcode, uint8 fillmode, int x, int y, int cx, int cy, RD_BRUSH*  brush, uint32 bgcolor, uint32 fgcolor) {
     guac_log_info("guac_rdp_ui_ellipse: STUB\n");
 }
 
-void guac_rdp_ui_start_draw_glyphs(rdpInst* inst, int bgcolor, int fgcolor) {
+void guac_rdp_ui_start_draw_glyphs(rdpInst* inst, uint32 bgcolor, uint32 fgcolor) {
 
     guac_client* client = (guac_client*) inst->param1;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
@@ -391,7 +391,7 @@ void guac_rdp_ui_destblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int 
     guac_log_info("guac_rdp_ui_destblt: STUB\n");
 }
 
-void guac_rdp_ui_patblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_BRUSH* brush, int bgcolor, int fgcolor) {
+void guac_rdp_ui_patblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_BRUSH* brush, uint32 bgcolor, uint32 fgcolor) {
     guac_log_info("guac_rdp_ui_patblt: STUB\n");
 }
 
@@ -425,7 +425,7 @@ void guac_rdp_ui_memblt(rdpInst* inst, uint8 opcode, int x, int y, int width, in
 
 }
 
-void guac_rdp_ui_triblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_HBITMAP src, int srcx, int srcy, RD_BRUSH* brush, int bgcolor,  int fgcolor) {
+void guac_rdp_ui_triblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_HBITMAP src, int srcx, int srcy, RD_BRUSH* brush, uint32 bgcolor,  uint32 fgcolor) {
     guac_log_info("guac_rdp_ui_triblt: STUB\n");
 }
 

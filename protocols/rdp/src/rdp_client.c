@@ -43,7 +43,7 @@
 
 #include <freerdp/freerdp.h>
 #include <freerdp/chanman.h>
-#include <freerdp/constants_ui.h>
+#include <freerdp/constants/core.h>
 
 #include <guacamole/log.h>
 #include <guacamole/guacio.h>
@@ -274,9 +274,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 	rdp_inst->ui_create_cursor = guac_rdp_ui_create_cursor;
 	rdp_inst->ui_set_null_cursor = guac_rdp_ui_set_null_cursor;
 	rdp_inst->ui_set_default_cursor = guac_rdp_ui_set_default_cursor;
-	rdp_inst->ui_create_colormap = guac_rdp_ui_create_colormap;
+	rdp_inst->ui_create_palette = guac_rdp_ui_create_palette;
 	rdp_inst->ui_move_pointer = guac_rdp_ui_move_pointer;
-	rdp_inst->ui_set_colormap = guac_rdp_ui_set_colormap;
+	rdp_inst->ui_set_palette = guac_rdp_ui_set_palette;
 	rdp_inst->ui_create_surface = guac_rdp_ui_create_surface;
 	rdp_inst->ui_set_surface = guac_rdp_ui_set_surface;
 	rdp_inst->ui_destroy_surface = guac_rdp_ui_destroy_surface;
@@ -321,7 +321,7 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
     /* If button mask unchanged, just send move event */
     if (mask == guac_client_data->mouse_button_mask)
-        rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, PTRFLAGS_MOVE, x, y);
+        rdp_inst->rdp_send_input_mouse(rdp_inst, PTRFLAGS_MOVE, x, y);
 
     /* Otherwise, send events describing button change */
     else {
@@ -341,7 +341,7 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
             if (released_mask & 0x02) flags |= PTRFLAGS_BUTTON3;
             if (released_mask & 0x04) flags |= PTRFLAGS_BUTTON2;
 
-            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, flags, x, y);
+            rdp_inst->rdp_send_input_mouse(rdp_inst, flags, x, y);
 
         }
 
@@ -357,7 +357,7 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
             if (pressed_mask & 0x10) flags |= PTRFLAGS_WHEEL | PTRFLAGS_WHEEL_NEGATIVE | 0x88;
 
             /* Send event */
-            rdp_inst->rdp_send_input(rdp_inst, RDP_INPUT_MOUSE, flags, x, y);
+            rdp_inst->rdp_send_input_mouse(rdp_inst, flags, x, y);
 
         }
 
@@ -366,17 +366,15 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
             /* Down */
             if (pressed_mask & 0x08)
-                rdp_inst->rdp_send_input(
+                rdp_inst->rdp_send_input_mouse(
                         rdp_inst,
-                        RDP_INPUT_MOUSE,
                         PTRFLAGS_WHEEL | 0x78,
                         x, y);
 
             /* Up */
             if (pressed_mask & 0x10)
-                rdp_inst->rdp_send_input(
+                rdp_inst->rdp_send_input_mouse(
                         rdp_inst,
-                        RDP_INPUT_MOUSE,
                         PTRFLAGS_WHEEL | PTRFLAGS_WHEEL_NEGATIVE | 0x88,
                         x, y);
 
@@ -403,9 +401,9 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
         /* If defined, send event */
         if (keymap->scancode != 0)
-            rdp_inst->rdp_send_input(
-                    rdp_inst, RDP_INPUT_SCANCODE,
-                    (pressed ? RDP_KEYPRESS : RDP_KEYRELEASE) | keymap->flags,
+            rdp_inst->rdp_send_input_scancode(
+                    rdp_inst,
+                    (pressed ? KBDFLAGS_DOWN : KBDFLAGS_RELEASE) | keymap->flags,
                     keymap->scancode, 
                     0);
         else
