@@ -616,4 +616,12 @@ void guac_rdp_ui_channel_data(rdpInst* inst, int chan_id, char* data, int data_s
     guac_log_info("guac_rdp_ui_channel_data: STUB\n");
 }
 
+RD_HPALETTE guac_rdp_ui_create_palette(rdpInst* inst, RD_PALETTE* colours) {
+    guac_log_info("guac_rdp_ui_create_palette: STUB\n");
+    return NULL;
+}
+
+void guac_rdp_ui_set_palette(rdpInst* inst, RD_HPALETTE map) {
+    guac_log_info("guac_rdp_ui_set_palette: STUB\n");
+}
 
