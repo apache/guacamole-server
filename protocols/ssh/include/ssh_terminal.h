@@ -94,11 +94,16 @@ struct ssh_guac_terminal {
     PangoFontDescription* font_desc;
 
     /**
-     * A simple mapping of glyphs to their corresponding buffers. When a new
-     * glyph is drawn, the data for that glyph is saved into an off-screen
-     * buffer for later reuse.
+     * A single wide layer holding each glyph, with each glyph only
+     * colored with foreground color (background remains transparent).
      */
-    guac_layer* glyphs[256];
+    guac_layer* glyph_stroke;
+
+    /**
+     * A single wide layer holding each glyph, with each glyph properly
+     * colored with foreground and background color (no transparency at all).
+     */
+    guac_layer* filled_glyphs;
 
     /**
      * Array of scrollback buffer rows, where each row is an array of 

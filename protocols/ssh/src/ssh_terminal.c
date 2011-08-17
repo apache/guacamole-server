@@ -53,22 +53,22 @@ const ssh_guac_terminal_color ssh_guac_terminal_palette[16] = {
 
     /* Normal colors */
     {0x00, 0x00, 0x00}, /* Black   */
-    {0x80, 0x00, 0x00}, /* Red     */
-    {0x00, 0x80, 0x00}, /* Green   */
-    {0x80, 0x80, 0x00}, /* Brown   */
-    {0x00, 0x00, 0x80}, /* Blue    */
-    {0x80, 0x00, 0x80}, /* Magenta */
-    {0x00, 0x80, 0x80}, /* Cyan    */
-    {0x80, 0x80, 0x80}, /* White   */
+    {0x99, 0x3E, 0x3E}, /* Red     */
+    {0x3E, 0x99, 0x3E}, /* Green   */
+    {0x99, 0x99, 0x3E}, /* Brown   */
+    {0x3E, 0x3E, 0x99}, /* Blue    */
+    {0x99, 0x3E, 0x99}, /* Magenta */
+    {0x3E, 0x99, 0x99}, /* Cyan    */
+    {0x99, 0x99, 0x99}, /* White   */
 
     /* Intense colors */
-    {0x40, 0x40, 0x40}, /* Black   */
-    {0xFF, 0x00, 0x00}, /* Red     */
-    {0x00, 0xFF, 0x00}, /* Green   */
-    {0xFF, 0xFF, 0x00}, /* Brown   */
-    {0x00, 0x00, 0xFF}, /* Blue    */
-    {0xFF, 0x00, 0xFF}, /* Magenta */
-    {0x00, 0xFF, 0xFF}, /* Cyan    */
+    {0x3E, 0x3E, 0x3E}, /* Black   */
+    {0xFF, 0x67, 0x67}, /* Red     */
+    {0x67, 0xFF, 0x67}, /* Green   */
+    {0xFF, 0xFF, 0x67}, /* Brown   */
+    {0x67, 0x67, 0xFF}, /* Blue    */
+    {0xFF, 0x67, 0xFF}, /* Magenta */
+    {0x67, 0xFF, 0xFF}, /* Cyan    */
     {0xFF, 0xFF, 0xFF}, /* White   */
 
 };
@@ -95,8 +95,8 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
     term->cursor_col = 0;
     term->cursor_layer = guac_client_alloc_layer(client, 1);
 
-    term->term_width = 80;
-    term->term_height = 24;
+    term->term_width = 100;
+    term->term_height = 37;
     term->char_handler = ssh_guac_terminal_echo; 
 
     term->scroll_start = 0;
@@ -128,7 +128,7 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
     term->font_desc = pango_font_description_new();
     pango_font_description_set_family(term->font_desc, "monospace");
     pango_font_description_set_weight(term->font_desc, PANGO_WEIGHT_NORMAL);
-    pango_font_description_set_size(term->font_desc, 14*PANGO_SCALE);
+    pango_font_description_set_size(term->font_desc, 10*PANGO_SCALE);
 
     font_map = pango_cairo_font_map_get_default();
     context = pango_font_map_create_context(font_map);
