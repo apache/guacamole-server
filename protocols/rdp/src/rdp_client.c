@@ -217,10 +217,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 		PERF_DISABLE_WALLPAPER
         | PERF_DISABLE_FULLWINDOWDRAG
         | PERF_DISABLE_MENUANIMATIONS;
+	settings->mouse_motion = 1;
 	settings->off_screen_bitmaps = 1;
 	settings->triblt = 0;
+	settings->software_gdi = 0;
 	settings->new_cursors = 1;
 	settings->rdp_version = 5;
+	settings->rdp_security = 1;
 
     /* Init client */
     rdp_inst = freerdp_new(settings);
@@ -233,9 +236,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->mouse_button_mask = 0;
     guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
 
+
     /* Store client data */
     rdp_inst->param1 = client;
     client->data = guac_client_data;
+
 
     /* RDP handlers */
     rdp_inst->ui_error = guac_rdp_ui_error;
@@ -403,9 +408,9 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
         if (keymap->scancode != 0)
             rdp_inst->rdp_send_input_scancode(
                     rdp_inst,
-                    (pressed ? KBDFLAGS_DOWN : KBDFLAGS_RELEASE) | keymap->flags,
-                    keymap->scancode, 
-                    0);
+                    !pressed,
+                    keymap->flags & KBDFLAGS_EXTENDED,
+                    keymap->scancode);
         else
             guac_log_info("unmapped keysym: 0x%x", keysym);
 
