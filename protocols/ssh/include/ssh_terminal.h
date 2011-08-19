@@ -94,6 +94,26 @@ struct ssh_guac_terminal {
     PangoFontDescription* font_desc;
 
     /**
+     * Index of next glyph to create
+     */
+    int next_glyph;
+
+    /**
+     * Index of locations for each glyph in the stroke and fill layers.
+     */
+    int glyphs[256];
+
+    /**
+     * Color of glyphs in copy buffer
+     */
+    int glyph_foreground;
+
+    /**
+     * Color of glyphs in copy buffer
+     */
+    int glyph_background;
+
+    /**
      * A single wide layer holding each glyph, with each glyph only
      * colored with foreground color (background remains transparent).
      */
@@ -184,8 +204,10 @@ int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size);
 
 int ssh_guac_terminal_redraw_cursor(ssh_guac_terminal* term);
 
-int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col,
-        char c, int foreground, int background);
+int ssh_guac_terminal_set_colors(ssh_guac_terminal* term,
+        int foreground, int background);
+
+int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col, char c);
 
 int ssh_guac_terminal_copy(ssh_guac_terminal* term,
         int src_row, int src_col, int rows, int cols,

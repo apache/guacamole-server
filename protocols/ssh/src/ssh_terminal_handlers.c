@@ -112,10 +112,13 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
             if (term->bold && foreground <= 7)
                 foreground += 8;
 
+            ssh_guac_terminal_set_colors(term,
+                    foreground, background);
+
             ssh_guac_terminal_set(term,
                     term->cursor_row,
                     term->cursor_col,
-                    c, foreground, background);
+                    c);
 
             /* Advance cursor */
             term->cursor_col++;
