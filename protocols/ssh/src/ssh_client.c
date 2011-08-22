@@ -114,6 +114,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Init client data */
     client->data = client_data;
     client_data->term = term;
+    client_data->mod_ctrl = 0;
 
     /* Send name and dimensions */
     guac_send_name(io, "SSH TEST");

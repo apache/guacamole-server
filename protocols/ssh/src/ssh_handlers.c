@@ -113,13 +113,28 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
 
+    /* Track modifiers */
+    if (keysym == 0xFFE3) {
+        client_data->mod_ctrl = pressed;
+    }
+        
     /* If key pressed */
-    if (pressed) {
+    else if (pressed) {
 
         /* If simple ASCII key */
         if (keysym >= 0x00 && keysym <= 0xFF) {
             char data = (char) keysym;
+
+            /* Handle Ctrl modifier */
+            if (client_data->mod_ctrl) {
+                if (keysym >= 'A' && keysym <= 'Z')
+                    data = (char) (keysym - 'A' + 1);
+                else if (keysym >= 'a' && keysym <= 'z')
+                    data = (char) (keysym - 'a' + 1);
+            }
+
             return channel_write(client_data->term_channel, &data, 1);
+
         }
 
         else {

@@ -65,6 +65,8 @@ typedef struct ssh_guac_client_data {
     char password[1024];
     int password_length;
 
+    int mod_ctrl;
+
 } ssh_guac_client_data;
 
 int ssh_guac_client_auth(guac_client* client, const char* password);
