@@ -82,7 +82,6 @@ typedef enum guac_composite_mode_t {
      */
                            /* ABCD */
     GUAC_COMP_ROUT  = 0x2, /* 0010 - Clears destination where source opaque  */
-    GUAC_COMP_DEST  = 0x3, /* 0011 - No operation                            */
     GUAC_COMP_ATOP  = 0x6, /* 0110 - Fill where destination opaque only      */
     GUAC_COMP_XOR   = 0xA, /* 1010 - XOR                                     */
     GUAC_COMP_ROVER = 0xB, /* 1011 - Fill where destination transparent only */
@@ -90,10 +89,11 @@ typedef enum guac_composite_mode_t {
     GUAC_COMP_PLUS  = 0xF, /* 1111 - Add                                     */
 
     /* Unimplemented in client: */
-    /* NOT IMPL'D:            0000 - Clear          */
-    /* NOT IMPL'D:            0101 - Additive IN    */
-    /* NOT IMPL'D:            0111 - Additive ATOP  */
-    /* NOT IMPL'D:            1101 - Additive RATOP */
+    /* NOT IMPLEMENTED:       0000 - Clear          */
+    /* NOT IMPLEMENTED:       0011 - No operation   */
+    /* NOT IMPLEMENTED:       0101 - Additive IN    */
+    /* NOT IMPLEMENTED:       0111 - Additive ATOP  */
+    /* NOT IMPLEMENTED:       1101 - Additive RATOP */
 
     /* Buggy in webkit browsers, as they keep channel C on in all cases: */
     GUAC_COMP_RIN   = 0x1, /* 0001 */
