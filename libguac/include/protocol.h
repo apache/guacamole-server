@@ -73,32 +73,34 @@ typedef int64_t guac_timestamp_t;
 typedef enum guac_composite_mode_t {
 
     /*
-     * (NOTE - set notation encoded in UTF-8):
-     *
-     * A: Source where destination transparent = S ∩ D′
-     * B: Source where destination opaque      = S ∩ D
-     * C: Destination where source transparent = D ∩ S′
-     * D: Destination where source opaque      = D ∩ S
+     * A: Source where destination transparent = S n D'
+     * B: Source where destination opaque      = S n D
+     * C: Destination where source transparent = D n S'
+     * D: Destination where source opaque      = D n S
      *
      * 0 = Active, 1 = Inactive
      */
                            /* ABCD */
-    /* NOT IMPL'D:            0000 */
+    GUAC_COMP_ROUT  = 0x2, /* 0010 - Clears destination where source opaque  */
+    GUAC_COMP_DEST  = 0x3, /* 0011 - No operation                            */
+    GUAC_COMP_ATOP  = 0x6, /* 0110 - Fill where destination opaque only      */
+    GUAC_COMP_XOR   = 0xA, /* 1010 - XOR                                     */
+    GUAC_COMP_ROVER = 0xB, /* 1011 - Fill where destination transparent only */
+    GUAC_COMP_OVER  = 0xE, /* 1110 - Draw normally                           */
+    GUAC_COMP_PLUS  = 0xF, /* 1111 - Add                                     */
+
+    /* Unimplemented in client: */
+    /* NOT IMPL'D:            0000 - Clear          */
+    /* NOT IMPL'D:            0101 - Additive IN    */
+    /* NOT IMPL'D:            0111 - Additive ATOP  */
+    /* NOT IMPL'D:            1101 - Additive RATOP */
+
+    /* Buggy in webkit browsers, as they keep channel C on in all cases: */
     GUAC_COMP_RIN   = 0x1, /* 0001 */
-    GUAC_COMP_ROUT  = 0x2, /* 0010 */
-    GUAC_COMP_DEST  = 0x3, /* 0011 */
     GUAC_COMP_IN    = 0x4, /* 0100 */
-    /* NOT IMPL'D:            0101 */
-    GUAC_COMP_ATOP  = 0x6, /* 0110 */
-    /* NOT IMPL'D:            0111 */
     GUAC_COMP_OUT   = 0x8, /* 1000 */
     GUAC_COMP_RATOP = 0x9, /* 1001 */
-    GUAC_COMP_XOR   = 0xA, /* 1010 */
-    GUAC_COMP_ROVER = 0xB, /* 1011 */
-    GUAC_COMP_SRC   = 0xC, /* 1100 */
-    /* NOT IMPL'D:            1101 */
-    GUAC_COMP_OVER  = 0xE, /* 1110 */
-    GUAC_COMP_PLUS  = 0xF  /* 1111 */
+    GUAC_COMP_SRC   = 0xC  /* 1100 */
 
 } guac_composite_mode_t;
 
