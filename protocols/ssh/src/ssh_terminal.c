@@ -221,7 +221,7 @@ int __ssh_guac_terminal_get_glyph(ssh_guac_terminal* term, char c) {
     /* Send glyph and update filled flyphs */
     guac_send_png(io, GUAC_COMP_OVER, term->glyph_stroke, location * term->char_width, 0, surface);
 
-    guac_send_rect(io, GUAC_COMP_SRC, term->filled_glyphs,
+    guac_send_rect(io, GUAC_COMP_OVER, term->filled_glyphs,
             location * term->char_width, 0,
             term->char_width, term->char_height,
             background->red,
@@ -249,16 +249,16 @@ int ssh_guac_terminal_redraw_cursor(ssh_guac_terminal* term) {
     /* Erase old cursor */
     return
         guac_send_rect(io,
-            GUAC_COMP_SRC, term->cursor_layer,
+            GUAC_COMP_ROUT, term->cursor_layer,
 
             0, 0,
             term->char_width * term->term_width,
             term->char_height * term->term_height,
 
-            0, 0, 0, 0)
+            0, 0, 0, 0xFF)
 
         || guac_send_rect(io,
-            GUAC_COMP_SRC, term->cursor_layer,
+            GUAC_COMP_OVER, term->cursor_layer,
 
             term->char_width * term->cursor_col,
             term->char_height * term->cursor_row,
@@ -304,7 +304,7 @@ int ssh_guac_terminal_set_colors(ssh_guac_terminal* term,
 
         /* Set background */
         guac_send_rect(io,
-            GUAC_COMP_SRC, term->filled_glyphs,
+            GUAC_COMP_OVER, term->filled_glyphs,
 
             0, 0,
             term->char_width * term->next_glyph, term->char_height,
@@ -340,7 +340,7 @@ int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col, char c) {
     return guac_send_copy(io,
         term->filled_glyphs,
         location * term->char_width, 0, term->char_width, term->char_height,
-        GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
+        GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
         term->char_width * col,
         term->char_height * row);
 
@@ -370,7 +370,7 @@ int ssh_guac_terminal_copy(ssh_guac_terminal* term,
             src_col * term->char_width, src_row * term->char_height,
             cols    * term->char_width, rows    * term->char_height,
 
-            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
+            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
             dst_col * term->char_width, dst_row * term->char_height);
 
 }
@@ -385,7 +385,7 @@ int ssh_guac_terminal_clear(ssh_guac_terminal* term,
 
     /* Fill with color */
     return guac_send_rect(io,
-            GUAC_COMP_SRC, GUAC_DEFAULT_LAYER,
+            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
 
             col  * term->char_width, row  * term->char_height,
             cols * term->char_width, rows * term->char_height,
