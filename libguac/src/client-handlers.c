@@ -90,7 +90,7 @@ int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction) 
     if (client->clipboard_handler)
         return client->clipboard_handler(
             client,
-            guac_unescape_string_inplace(instruction->argv[0]) /* data */
+            instruction->argv[0] /* data */
         );
     return 0;
 }
