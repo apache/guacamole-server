@@ -145,8 +145,7 @@ typedef struct guac_instruction {
     int argc;
 
     /**
-     * Array of all arguments passed to this instruction. Strings
-     * are not already unescaped.
+     * Array of all arguments passed to this instruction.
      */
     char** argv;
 
@@ -173,27 +172,7 @@ void guac_free_instruction_data(guac_instruction* instruction);
 void guac_free_instruction(guac_instruction* instruction);
 
 /**
- * Escapes the given string as necessary to be passed within
- * a Guacamole instruction. The returned string must later be
- * released with a call to free().
- *
- * @param str The string to escape.
- * @return A new escaped string, which must be freed with free().
- */
-char* guac_escape_string(const char* str);
-
-/**
- * Unescapes the given string in-place, as an unescaped string
- * is always the same length or shorter than the original.
- *
- * @param str The string to unescape.
- * @return A pointer to the original string, which is now unescaped.
- */
-char* guac_unescape_string_inplace(char* str);
-
-/**
- * Sends an args instruction over the given GUACIO connection. Each
- * argument name will be automatically escaped for transmission.
+ * Sends an args instruction over the given GUACIO connection.
  *
  * @param io The GUACIO connection to use.
  * @param args The NULL-terminated array of argument names (strings).
@@ -202,8 +181,7 @@ char* guac_unescape_string_inplace(char* str);
 int guac_send_args(GUACIO* io, const char** name);
 
 /**
- * Sends a name instruction over the given GUACIO connection. The
- * name given will be automatically escaped for transmission.
+ * Sends a name instruction over the given GUACIO connection.
  *
  * @param io The GUACIO connection to use.
  * @param name The name to send within the name instruction.
@@ -222,9 +200,7 @@ int guac_send_name(GUACIO* io, const char* name);
 int guac_send_sync(GUACIO* io, guac_timestamp_t timestamp);
 
 /**
- * Sends an error instruction over the given GUACIO connection. The
- * error description given will be automatically escaped for
- * transmission.
+ * Sends an error instruction over the given GUACIO connection.
  *
  * @param io The GUACIO connection to use.
  * @param error The description associated with the error.
@@ -233,8 +209,7 @@ int guac_send_sync(GUACIO* io, guac_timestamp_t timestamp);
 int guac_send_error(GUACIO* io, const char* error);
 
 /**
- * Sends a clipboard instruction over the given GUACIO connection. The
- * clipboard data given will be automatically escaped for transmission.
+ * Sends a clipboard instruction over the given GUACIO connection.
  *
  * @param io The GUACIO connection to use.
  * @param data The clipboard data to send.

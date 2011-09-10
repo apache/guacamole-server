@@ -45,6 +45,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include <errno.h>
 
@@ -61,108 +63,20 @@
 #include "guacio.h"
 #include "protocol.h"
 
-char* guac_escape_string(const char* str) {
+ssize_t __guac_write_length_string(GUACIO* io, const char* str) {
 
-    char* escaped;
-    char* current;
-
-    int i;
-    int length = 0;
-
-    /* Determine length */
-    for (i=0; str[i] != '\0'; i++) {
-        switch (str[i]) {
-
-            case ';':
-            case ',':
-            case '\\':
-                length += 2;
-                break;
-
-            default:
-                length++;
-
-        }
-    }
-
-    /* Allocate new */
-    escaped = malloc(length+1);
-
-    current = escaped;
-    for (i=0; str[i] != '\0'; i++) {
-        switch (str[i]) {
-
-            case ';':
-                *(current++) = '\\';
-                *(current++) = 's';
-                break;
-
-            case ',':
-                *(current++) = '\\';
-                *(current++) = 'c';
-                break;
-
-            case '\\':
-                *(current++) = '\\';
-                *(current++) = '\\';
-                break;
-
-            default:
-                *(current++) = str[i];
-        }
-
-    }
-
-    *current = '\0';
-
-    return escaped;
+    return
+           guac_write_int(io, strlen(str))
+        || guac_write_string(io, ".")
+        || guac_write_string(io, str);
 
 }
 
-char* guac_unescape_string_inplace(char* str) {
+ssize_t __guac_write_length_int(GUACIO* io, int64_t i) {
 
-    char* from;
-    char* to;
-
-    from = to = str;
-    for (;;) {
-
-        char c = *(from++);
-
-        if (c == '\\') {
-
-            c = *(from++);
-            if (c == 's')
-                *(to++) = ';';
-
-            else if (c == 'c')
-                *(to++) = ',';
-
-            else if (c == '\\')
-                *(to++) = '\\';
-
-            else if (c == '\0') {
-                *(to++) = '\\';
-                break;
-            }
-
-            else {
-                *(to++) = '\\';
-                *(to++) = c;
-            }
-        }
-
-        else if (c == '\0')
-            break;
-
-        else
-            *(to++) = c;
-
-    }
-
-    *to = '\0';
-
-    return str;
+    char buffer[128];
+    snprintf(buffer, sizeof(buffer), "%"PRIi64, i);
+    return __guac_write_length_string(io, buffer);
 
 }
 
@@ -170,27 +84,15 @@ int guac_send_args(GUACIO* io, const char** args) {
 
     int i;
 
-    /* Handle protocols with no args */
-    if (args[0] == NULL)
-        return guac_write_string(io, "args;");
-
-    if (guac_write_string(io, "args:")) return -1;
+    if (guac_write_string(io, "4.args")) return -1;
 
     for (i=0; args[i] != NULL; i++) {
 
-        char* escaped;
-
-        if (i > 0) {
-            if (guac_write_string(io, ","))
-                return -1;
-        }
-
-        escaped = guac_escape_string(args[i]); 
-        if (guac_write_string(io, escaped)) {
-            free(escaped);
+        if (guac_write_string(io, ","))
             return -1;
-        }
-        free(escaped);
+
+        if (__guac_write_length_string(io, args[i]))
+            return -1;
 
     }
 
@@ -200,74 +102,46 @@ int guac_send_args(GUACIO* io, const char** args) {
 
 int guac_send_name(GUACIO* io, const char* name) {
 
-    char* escaped = guac_escape_string(name); 
-
-    if (
-        guac_write_string(io, "name:")
-        || guac_write_string(io, escaped)
-        || guac_write_string(io, ";")
-       ) {
-        free(escaped);
-        return -1;
-    }
-
-    free(escaped);
-    return 0;
+    return
+           guac_write_string(io, "4.name,")
+        || __guac_write_length_string(io, name)
+        || guac_write_string(io, ";");
 
 }
 
 int guac_send_size(GUACIO* io, int w, int h) {
 
     return
-           guac_write_string(io, "size:")
-        || guac_write_int(io, w)
+           guac_write_string(io, "4.size,")
+        || __guac_write_length_int(io, w)
         || guac_write_string(io, ",")
-        || guac_write_int(io, h)
+        || __guac_write_length_int(io, h)
         || guac_write_string(io, ";");
 
 }
 
 int guac_send_clipboard(GUACIO* io, const char* data) {
 
-    char* escaped = guac_escape_string(data); 
-
-    if (
-           guac_write_string(io, "clipboard:")
-        || guac_write_string(io, escaped)
-        || guac_write_string(io, ";")
-       ) {
-        free(escaped);
-        return -1;
-    }
-
-    free(escaped);
-    return 0;
+    return
+           guac_write_string(io, "9.clipboard,")
+        || __guac_write_length_string(io, data)
+        || guac_write_string(io, ";");
 
 }
 
 int guac_send_error(GUACIO* io, const char* error) {
 
-    char* escaped = guac_escape_string(error); 
-
-    if (
-           guac_write_string(io, "error:")
-        || guac_write_string(io, escaped)
-        || guac_write_string(io, ";")
-       ) {
-        free(escaped);
-        return -1;
-    }
-
-    free(escaped);
-    return 0;
-
+    return
+           guac_write_string(io, "5.error,")
+        || __guac_write_length_string(io, error)
+        || guac_write_string(io, ";");
 }
 
 int guac_send_sync(GUACIO* io, guac_timestamp_t timestamp) {
 
     return 
-           guac_write_string(io, "sync:")
-        || guac_write_int(io, timestamp)
+           guac_write_string(io, "4.sync,")
+        || __guac_write_length_int(io, timestamp)
         || guac_write_string(io, ";");
 
 }
@@ -277,24 +151,24 @@ int guac_send_copy(GUACIO* io,
         guac_composite_mode_t mode, const guac_layer* dstl, int dstx, int dsty) {
 
     return
-           guac_write_string(io, "copy:")
-        || guac_write_int(io, srcl->index)
+           guac_write_string(io, "4.copy,")
+        || __guac_write_length_int(io, srcl->index)
         || guac_write_string(io, ",")
-        || guac_write_int(io, srcx)
+        || __guac_write_length_int(io, srcx)
         || guac_write_string(io, ",")
-        || guac_write_int(io, srcy)
+        || __guac_write_length_int(io, srcy)
         || guac_write_string(io, ",")
-        || guac_write_int(io, w)
+        || __guac_write_length_int(io, w)
         || guac_write_string(io, ",")
-        || guac_write_int(io, h)
+        || __guac_write_length_int(io, h)
         || guac_write_string(io, ",")
-        || guac_write_int(io, mode)
+        || __guac_write_length_int(io, mode)
         || guac_write_string(io, ",")
-        || guac_write_int(io, dstl->index)
+        || __guac_write_length_int(io, dstl->index)
         || guac_write_string(io, ",")
-        || guac_write_int(io, dstx)
+        || __guac_write_length_int(io, dstx)
         || guac_write_string(io, ",")
-        || guac_write_int(io, dsty)
+        || __guac_write_length_int(io, dsty)
         || guac_write_string(io, ";");
 
 }
@@ -305,26 +179,26 @@ int guac_send_rect(GUACIO* io,
         int r, int g, int b, int a) {
 
     return
-           guac_write_string(io, "rect:")
-        || guac_write_int(io, mode)
+           guac_write_string(io, "4,rect,")
+        || __guac_write_length_int(io, mode)
         || guac_write_string(io, ",")
-        || guac_write_int(io, layer->index)
+        || __guac_write_length_int(io, layer->index)
         || guac_write_string(io, ",")
-        || guac_write_int(io, x)
+        || __guac_write_length_int(io, x)
         || guac_write_string(io, ",")
-        || guac_write_int(io, y)
+        || __guac_write_length_int(io, y)
         || guac_write_string(io, ",")
-        || guac_write_int(io, width)
+        || __guac_write_length_int(io, width)
         || guac_write_string(io, ",")
-        || guac_write_int(io, height)
+        || __guac_write_length_int(io, height)
         || guac_write_string(io, ",")
-        || guac_write_int(io, r)
+        || __guac_write_length_int(io, r)
         || guac_write_string(io, ",")
-        || guac_write_int(io, g)
+        || __guac_write_length_int(io, g)
         || guac_write_string(io, ",")
-        || guac_write_int(io, b)
+        || __guac_write_length_int(io, b)
         || guac_write_string(io, ",")
-        || guac_write_int(io, a)
+        || __guac_write_length_int(io, a)
         || guac_write_string(io, ";");
 
 }
@@ -333,94 +207,120 @@ int guac_send_clip(GUACIO* io, const guac_layer* layer,
         int x, int y, int width, int height) {
 
     return
-           guac_write_string(io, "clip:")
-        || guac_write_int(io, layer->index)
+           guac_write_string(io, "4.clip,")
+        || __guac_write_length_int(io, layer->index)
         || guac_write_string(io, ",")
-        || guac_write_int(io, x)
+        || __guac_write_length_int(io, x)
         || guac_write_string(io, ",")
-        || guac_write_int(io, y)
+        || __guac_write_length_int(io, y)
         || guac_write_string(io, ",")
-        || guac_write_int(io, width)
+        || __guac_write_length_int(io, width)
         || guac_write_string(io, ",")
-        || guac_write_int(io, height)
+        || __guac_write_length_int(io, height)
         || guac_write_string(io, ";");
 
 }
 
+typedef struct __guac_write_png_data {
+
+    GUACIO* io;
+
+    char* buffer;
+    int buffer_size;
+    int data_size;
+
+} __guac_write_png_data;
+
 cairo_status_t __guac_write_png(void* closure, const unsigned char* data, unsigned int length) {
 
-    GUACIO* io = (GUACIO*) closure;
+    __guac_write_png_data* png_data = (__guac_write_png_data*) closure;
 
-    if (guac_write_base64(io, data, length) < 0)
-        return CAIRO_STATUS_WRITE_ERROR;
+    /* Calculate next buffer size */
+    int next_size = png_data->data_size + length;
+
+    /* If need resizing, double buffer size until big enough */
+    if (next_size > png_data->buffer_size) {
+
+        char* new_buffer;
+
+        do {
+            png_data->buffer_size <<= 1;
+        } while (next_size > png_data->buffer_size);
+
+        /* Resize buffer */
+        new_buffer = realloc(png_data->buffer, png_data->buffer_size);
+        png_data->buffer = new_buffer;
+
+    }
+
+    /* Append data to buffer */
+    memcpy(png_data->buffer + png_data->data_size, data, length);
 
     return CAIRO_STATUS_SUCCESS;
 
 }
 
-int guac_send_png(GUACIO* io, guac_composite_mode_t mode,
-        const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
+int __guac_write_length_png(GUACIO* io, cairo_surface_t* surface) {
 
-    /* Write instruction and args */
-
-    if (
-           guac_write_string(io, "png:")
-        || guac_write_int(io, mode)
-        || guac_write_string(io, ",")
-        || guac_write_int(io, layer->index)
-        || guac_write_string(io, ",")
-        || guac_write_int(io, x)
-        || guac_write_string(io, ",")
-        || guac_write_int(io, y)
-        || guac_write_string(io, ",")
-       ) {
-        return -1;
-    }
+    __guac_write_png_data png_data;
+    int base64_length;
 
     /* Write surface */
 
-    if (cairo_surface_write_to_png_stream(surface, __guac_write_png, io) != CAIRO_STATUS_SUCCESS) {
+    png_data.io = io;
+    png_data.buffer_size = 8192;
+    png_data.buffer = malloc(png_data.buffer_size);
+    png_data.data_size = 0;
+
+    if (cairo_surface_write_to_png_stream(surface, __guac_write_png, &png_data) != CAIRO_STATUS_SUCCESS) {
         return -1;
     }
 
-    if (guac_flush_base64(io) < 0) {
+    base64_length = (png_data.data_size + 2) / 3 * 4;
+
+    /* Write instruction and args */
+    if (
+           guac_write_int(io, base64_length)
+        || guac_write_string(io, ".")
+        || guac_write_base64(io, png_data.buffer, png_data.data_size)
+        || guac_flush_base64(io))
         return -1;
-    }
 
-    /* Finish instruction */
+    free(png_data.buffer);
+    return 0;
 
-    return guac_write_string(io, ";");
+}
+
+
+int guac_send_png(GUACIO* io, guac_composite_mode_t mode,
+        const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
+
+    return
+           guac_write_string(io, "3.png,")
+        || __guac_write_length_int(io, mode)
+        || guac_write_string(io, ",")
+        || __guac_write_length_int(io, layer->index)
+        || guac_write_string(io, ",")
+        || __guac_write_length_int(io, x)
+        || guac_write_string(io, ",")
+        || __guac_write_length_int(io, y)
+        || guac_write_string(io, ",")
+        || __guac_write_length_png(io, surface)
+        || guac_write_string(io, ";");
 
 }
 
 
 int guac_send_cursor(GUACIO* io, int x, int y, cairo_surface_t* surface) {
 
-    /* Write instruction and args */
-
-    if (
-           guac_write_string(io, "cursor:")
-        || guac_write_int(io, x)
+    return
+           guac_write_string(io, "6.cursor,")
+        || __guac_write_length_int(io, x)
         || guac_write_string(io, ",")
-        || guac_write_int(io, y)
+        || __guac_write_length_int(io, y)
         || guac_write_string(io, ",")
-       ) {
-        return -1;
-    }
-
-    /* Write surface */
-
-    if (cairo_surface_write_to_png_stream(surface, __guac_write_png, io) != CAIRO_STATUS_SUCCESS) {
-        return -1;
-    }
-
-    if (guac_flush_base64(io) < 0) {
-        return -1;
-    }
-
-    /* Finish instruction */
-
-    return guac_write_string(io, ";");
+        || __guac_write_length_png(io, surface)
+        || guac_write_string(io, ";");
 
 }
 

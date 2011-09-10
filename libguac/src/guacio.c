@@ -41,6 +41,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #ifdef __MINGW32__
 #include <winsock2.h>
@@ -120,30 +121,8 @@ int64_t guac_parse_int(const char* str) {
 ssize_t guac_write_int(GUACIO* io, int64_t i) {
 
     char buffer[128];
-    char* ptr = &(buffer[127]);
-    int64_t nonneg;
-
-    /* Obtain non-negative value */
-    if (i < 0) nonneg = -i;
-    else       nonneg = i;
-
-    /* Generate numeric string */
-
-    *ptr = 0;
-
-    do {
-
-        ptr--;
-        *ptr = '0' + (nonneg % 10);
-
-        nonneg /= 10;
-
-    } while (nonneg > 0 && ptr >= buffer);
-
-    /* Prepend with dash if negative */
-    if (i < 0 && ptr >= buffer) *(--ptr) = '-';
-
-    return guac_write_string(io, ptr);
+    snprintf(buffer, sizeof(buffer), "%"PRIi64, i);
+    return guac_write_string(io, buffer);
 
 }
 
