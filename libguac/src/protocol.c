@@ -255,6 +255,7 @@ cairo_status_t __guac_write_png(void* closure, const unsigned char* data, unsign
 
     /* Append data to buffer */
     memcpy(png_data->buffer + png_data->data_size, data, length);
+    png_data->data_size += length;
 
     return CAIRO_STATUS_SUCCESS;
 
@@ -278,13 +279,15 @@ int __guac_write_length_png(GUACIO* io, cairo_surface_t* surface) {
 
     base64_length = (png_data.data_size + 2) / 3 * 4;
 
-    /* Write instruction and args */
+    /* Write length and data */
     if (
            guac_write_int(io, base64_length)
         || guac_write_string(io, ".")
         || guac_write_base64(io, png_data.buffer, png_data.data_size)
-        || guac_flush_base64(io))
+        || guac_flush_base64(io)) {
+        free(png_data.buffer);
         return -1;
+    }
 
     free(png_data.buffer);
     return 0;
