@@ -242,7 +242,7 @@ ssize_t guac_write_base64(GUACIO* io, const void* buf, size_t count) {
 
     }
 
-    return count;
+    return 0;
 
 }
 
