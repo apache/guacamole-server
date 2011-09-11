@@ -179,7 +179,7 @@ int guac_send_rect(GUACIO* io,
         int r, int g, int b, int a) {
 
     return
-           guac_write_string(io, "4,rect,")
+           guac_write_string(io, "4.rect,")
         || __guac_write_length_int(io, mode)
         || guac_write_string(io, ",")
         || __guac_write_length_int(io, layer->index)
