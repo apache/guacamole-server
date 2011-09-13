@@ -359,18 +359,18 @@ void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int width, int height, 
             guac_client_data->foreground.blue,
             255);
 
-    /* Stencil */
-    guac_send_copy(io,
-            (guac_layer*) glyph, 0, 0, width, height,
-            GUAC_COMP_OVER, current_surface, x, y);
-
     /* Background */
-    /*guac_send_rect(io, GUAC_COMP_RATOP, current_surface,
+    /*guac_send_rect(io, GUAC_COMP_OVER, current_surface,
             x, y, width, height,
             guac_client_data->background.red,
             guac_client_data->background.green,
             guac_client_data->background.blue,
             255);*/
+
+    /* Draw */
+    guac_send_copy(io,
+            (guac_layer*) glyph, 0, 0, width, height,
+            GUAC_COMP_OVER, current_surface, x, y);
 
 }
 
