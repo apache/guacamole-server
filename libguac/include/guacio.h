@@ -87,6 +87,11 @@ typedef struct GUACIO {
     char out_buf[8192];
 
     /**
+     * The current location of parsing within the instruction buffer.
+     */
+    int instructionbuf_parse_start;
+
+    /**
      * The current size of the instruction buffer.
      */
     int instructionbuf_size;
@@ -102,6 +107,17 @@ typedef struct GUACIO {
      * those instructions are complete and ready to be parsed.
      */
     char* instructionbuf;
+
+    /**
+     * The number of elements parsed so far.
+     */
+    int instructionbuf_elementc;
+
+    /**
+     * Array of pointers into the instruction buffer, where each pointer
+     * points to the start of the corresponding element.
+     */
+    char* instructionbuf_elementv[64];
 
 } GUACIO;
 

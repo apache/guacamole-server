@@ -73,6 +73,8 @@ GUACIO* guac_open(int fd) {
     io->instructionbuf_size = 1024;
     io->instructionbuf = malloc(io->instructionbuf_size);
     io->instructionbuf_used_length = 0;
+    io->instructionbuf_parse_start = 0;
+    io->instructionbuf_elementc = 0;
 
     return io;
 

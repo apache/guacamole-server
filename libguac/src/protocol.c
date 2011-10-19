@@ -359,62 +359,83 @@ int __guac_fill_instructionbuf(GUACIO* io) {
 int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction) {
 
     int retval;
-    int i = 0;
-    int argcount = 0;
-    int j;
-    int current_arg = 0;
+    int i = io->instructionbuf_parse_start;
     
     /* Loop until a instruction is read */
     for (;;) {
 
-        /* Search for end of instruction */
-        for (; i < io->instructionbuf_used_length; i++) {
+        /* Length of element */
+        int element_length = 0;
 
-            /* Count arguments as we look for the end */
-            if (io->instructionbuf[i] == ',')
-                argcount++;
-            else if (io->instructionbuf[i] == ':' && argcount == 0)
-                argcount++;
+        /* Parse instruction in buffe */
+        while (i < io->instructionbuf_used_length) {
 
-            /* End found ... */
-            else if (io->instructionbuf[i] == ';') {
+            /* Read character from buffer */
+            char c = io->instructionbuf[i++];
 
-                /* Parse new instruction */
-                char* instruction = malloc(i+1);
-                memcpy(instruction, io->instructionbuf, i+1);
-                instruction[i] = '\0'; /* Replace semicolon with null terminator. */
+            /* If digit, calculate element length */
+            if (c >= '0' && c <= '9')
+                element_length = element_length * 10 + c - '0';
 
-                parsed_instruction->opcode = NULL;
+            /* Otherwise, if end of length */
+            else if (c == '.') {
 
-                parsed_instruction->argc = argcount;
-                parsed_instruction->argv = malloc(sizeof(char*) * argcount);
+                /* Verify element is fully read */
+                if (i + element_length < io->instructionbuf_used_length) {
 
-                for (j=0; j<i; j++) {
+                    /* Get element value */
+                    char* elementv = &(io->instructionbuf[i]);
+                   
+                    /* Get terminator, set null terminator of elementv */ 
+                    char terminator = elementv[element_length];
+                    elementv[element_length] = '\0';
 
-                    /* If encountered a colon, and no opcode parsed yet, set opcode and following argument */
-                    if (instruction[j] == ':' && parsed_instruction->opcode == NULL) {
-                        instruction[j] = '\0';
-                        parsed_instruction->argv[current_arg++] = &(instruction[j+1]);
-                        parsed_instruction->opcode = instruction;
-                    }
+                    /* Move to terminator of element */
+                    i += element_length;
 
-                    /* If encountered a comma, set following argument */
-                    else if (instruction[j] == ',') {
-                        instruction[j] = '\0';
-                        parsed_instruction->argv[current_arg++] = &(instruction[j+1]);
-                    }
-                }
+                    /* Reset element length */
+                    element_length = 0;
 
-                /* If no arguments, set opcode to entire instruction */
-                if (parsed_instruction->opcode == NULL)
-                    parsed_instruction->opcode = instruction;
+                    /* As element has been read successfully, update
+                     * parse start */
+                    io->instructionbuf_parse_start = i;
 
-                /* Found. Reset buffer */
-                memmove(io->instructionbuf, io->instructionbuf + i + 1, io->instructionbuf_used_length - i - 1);
-                io->instructionbuf_used_length -= i + 1;
+                    /* Save element */
+                    io->instructionbuf_elementv[io->instructionbuf_elementc++] = elementv;
 
-                /* Done */
-                return 1;
+                    /* Finish parse if terminator is a semicolon */
+                    if (terminator == ';') {
+
+                        int j;
+
+                        /* Init parsed instruction */
+                        parsed_instruction->argc = io->instructionbuf_elementc - 1;
+                        parsed_instruction->argv = malloc(sizeof(char*) * parsed_instruction->argc);
+
+                        /* Set opcode */
+                        parsed_instruction->opcode = strdup(io->instructionbuf_elementv[0]);
+
+                        /* Copy element values to parsed instruction */
+                        for (j=0; j<parsed_instruction->argc; j++)
+                            parsed_instruction->argv[j] = strdup(io->instructionbuf_elementv[j+1]);
+
+                        /* Reset buffer */
+                        memmove(io->instructionbuf, io->instructionbuf + i + 1, io->instructionbuf_used_length - i - 1);
+                        io->instructionbuf_used_length -= i + 1;
+                        io->instructionbuf_parse_start = 0;
+                        io->instructionbuf_elementc = 0;
+
+                        /* Done */
+                        return 1;
+
+                    } /* end if terminator */
+
+                } /* end if element fully read */
+
+                /* Otherwise, read more data */
+                else
+                    break;
+
             }
 
         }
