@@ -518,3 +518,24 @@ void guac_sleep(int millis) {
 
 }
 
+void guac_layer_png(guac_layer* layer, guac_composite_mode_t mode,
+        int x, int y, cairo_surface_t* surface) {
+    /* STUB */
+}
+
+void guac_layer_copy(guac_layer* layer, guac_composite_mode_t mode,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h,
+        int dstx, int dsty) {
+    /* STUB */
+}
+
+void guac_layer_clip(guac_layer* layer,
+        int x, int y, int width, int height) {
+    /* STUB */
+}
+
+int guac_layer_flush(guac_layer* layer, GUACIO* io) {
+    /* STUB */
+    return 0;
+}
+

@@ -148,12 +148,6 @@ struct guac_client {
     guac_client_state state;
 
     /**
-     * The head pointer of the list of all available (allocated but not used)
-     * layers.
-     */
-    guac_layer* available_layers;
-
-    /**
      * The index of the next available buffer.
      */
     int next_buffer_index;
@@ -378,15 +372,6 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index);
  * @param layer The buffer to return to the pool of available buffers.
  */
 void guac_client_free_buffer(guac_client* client, guac_layer* layer);
-
-/**
- * Returns the given layer to the pool of available layers, such that it
- * can be reused by any subsequent call to guac_client_allow_layer().
- *
- * @param client The proxy client to return the layer to.
- * @param layer The layer to return to the pool of available layers.
- */
-void guac_client_free_layer(guac_client* client, guac_layer* layer);
 
 extern const guac_layer* GUAC_DEFAULT_LAYER;
 

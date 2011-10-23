@@ -68,7 +68,6 @@ guac_client* __guac_alloc_client(GUACIO* io) {
     client->state = RUNNING;
 
     client->all_layers         = NULL;
-    client->available_layers   = NULL;
     client->available_buffers = NULL;
 
     client->next_buffer_index = -1;
@@ -80,33 +79,17 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index) {
 
     guac_layer* allocd_layer;
 
-    /* If available layers, pop off first available layer */
-    if (client->available_layers != NULL) {
-        allocd_layer = client->available_layers;
-        client->available_layers = client->available_layers->next_available;
-        allocd_layer->next_available = NULL;
-    }
+    /* Init new layer */
+    allocd_layer = malloc(sizeof(guac_layer));
+    allocd_layer->update_queue_head = NULL;
 
-    /* If no available layers, allocate new layer, add to all_layers list */
-    else {
-
-        /* Init new layer */
-        allocd_layer = malloc(sizeof(guac_layer));
-
-        /* Add to all_layers list */
-        allocd_layer->next = client->all_layers;
-        client->all_layers = allocd_layer;
-
-    }
+    /* Add to all_layers list */
+    allocd_layer->next = client->all_layers;
+    client->all_layers = allocd_layer;
 
     allocd_layer->index = index;
     return allocd_layer;
 
-}
-
-void guac_client_free_layer(guac_client* client, guac_layer* layer) {
-    layer->next_available = client->available_layers;
-    client->available_layers = layer;
 }
 
 guac_layer* guac_client_alloc_buffer(guac_client* client) {
@@ -126,6 +109,7 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
         /* Init new layer */
         allocd_layer = malloc(sizeof(guac_layer));
         allocd_layer->index = client->next_buffer_index--;
+        allocd_layer->update_queue_head = NULL;
 
         /* Add to all_layers list */
         allocd_layer->next = client->all_layers;
@@ -138,8 +122,23 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
 }
 
 void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
+
+    /* Add layer to pool of available buffers */
     layer->next_available = client->available_buffers;
     client->available_buffers = layer;
+
+    /* Free all queued updates */
+    while (layer->update_queue_head != NULL) {
+
+        /* Get unflushed update, update queue head */
+        guac_layer_update* unflushed_update = layer->update_queue_head;
+        layer->update_queue_head = unflushed_update->next;
+
+        /* Free update */
+        free(unflushed_update);
+
+    }
+
 }
 
 guac_client* guac_get_client(int client_fd) {
@@ -336,9 +335,26 @@ void guac_free_client(guac_client* client) {
 
     /* Free all layers */
     while (client->all_layers != NULL) {
+
+        /* Get layer, update layer pool head */
         guac_layer* layer = client->all_layers;
         client->all_layers = layer->next;
+
+        /* Free all queued updates */
+        while (layer->update_queue_head != NULL) {
+
+            /* Get unflushed update, update queue head */
+            guac_layer_update* unflushed_update = layer->update_queue_head;
+            layer->update_queue_head = unflushed_update->next;
+
+            /* Free update */
+            free(unflushed_update);
+
+        }
+
+        /* Free layer */
         free(layer);
+
     }
 
     free(client);
