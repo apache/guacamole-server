@@ -142,12 +142,32 @@ struct guac_layer_update {
     /**
      * The layer to retrieve image data from.
      */
-    guac_layer* src_layer;
+    const guac_layer* src_layer;
 
     /**
      * The surface to retrieve image data from.
      */
     cairo_surface_t* src_image;
+
+    /**
+     * The red component of the source color.
+     */
+    int src_red;
+
+    /**
+     * The green component of the source color.
+     */
+    int src_green;
+
+    /**
+     * The blue component of the source color.
+     */
+    int src_blue;
+
+    /**
+     * The alpha component of the source color.
+     */
+    int src_alpha;
 
     /**
      * The X coordinage of the upper-left corner of the

@@ -518,20 +518,97 @@ void guac_sleep(int millis) {
 
 }
 
+void _guac_layer_add_update(guac_layer* layer, guac_layer_update* update) {
+
+    /* Add update to queue head */
+    update->next = layer->update_queue_head;
+    layer->update_queue_head = update;
+
+}
+
 void guac_layer_png(guac_layer* layer, guac_composite_mode_t mode,
         int x, int y, cairo_surface_t* surface) {
-    /* STUB */
+
+    /* Allocate update */
+    guac_layer_update* update = (guac_layer_update*) malloc(sizeof(guac_layer_update));
+
+    /* Set parameters of update */
+    update->type = GUAC_LAYER_UPDATE_PNG;
+    update->mode = mode;
+    update->src_image = surface;
+    update->dst_layer = layer;
+    update->dst_x = x;
+    update->dst_y = y;
+
+    /* Add to layer queue */
+    _guac_layer_add_update(layer, update);
+
 }
 
 void guac_layer_copy(guac_layer* layer, guac_composite_mode_t mode,
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
         int dstx, int dsty) {
-    /* STUB */
+
+    /* Allocate update */
+    guac_layer_update* update = (guac_layer_update*) malloc(sizeof(guac_layer_update));
+
+    /* Set parameters of update */
+    update->type = GUAC_LAYER_UPDATE_COPY;
+    update->mode = mode;
+    update->src_layer = srcl;
+    update->src_x = srcx;
+    update->src_y = srcy;
+    update->width = w;
+    update->height = h;
+    update->dst_layer = layer;
+    update->dst_x = dstx;
+    update->dst_y = dsty;
+
+    /* Add to layer queue */
+    _guac_layer_add_update(layer, update);
+
 }
 
 void guac_layer_clip(guac_layer* layer,
         int x, int y, int width, int height) {
-    /* STUB */
+
+    /* Allocate update */
+    guac_layer_update* update = (guac_layer_update*) malloc(sizeof(guac_layer_update));
+
+    /* Set parameters of update */
+    update->type = GUAC_LAYER_UPDATE_CLIP;
+    update->dst_x = x;
+    update->dst_y = y;
+    update->width = width;
+    update->height = height;
+
+    /* Add to layer queue */
+    _guac_layer_add_update(layer, update);
+
+}
+
+void guac_layer_rect(guac_layer* layer, guac_composite_mode_t mode,
+        int x, int y, int width, int height,
+        int r, int g, int b, int a) {
+
+    /* Allocate update */
+    guac_layer_update* update = (guac_layer_update*) malloc(sizeof(guac_layer_update));
+
+    /* Set parameters of update */
+    update->type = GUAC_LAYER_UPDATE_RECT;
+    update->mode = mode;
+    update->src_red = r;
+    update->src_green = g;
+    update->src_blue = b;
+    update->src_alpha = a;
+    update->dst_x = x;
+    update->dst_y = y;
+    update->width = width;
+    update->height = height;
+
+    /* Add to layer queue */
+    _guac_layer_add_update(layer, update);
+
 }
 
 int guac_layer_flush(guac_layer* layer, GUACIO* io) {
