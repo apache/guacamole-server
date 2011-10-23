@@ -271,13 +271,14 @@ int guac_send_rect(GUACIO* io,
 
 /**
  * Sends a clip instruction over the given GUACIO connection.
-*
+ *
  * @param io The GUACIO connection to use.
  * @param layer The layer to set the clipping region of.
  * @param x The X coordinate of the clipping rectangle.
  * @param y The Y coordinate of the clipping rectangle.
  * @param width The width of the clipping rectangle.
  * @param height The height of the clipping rectangle.
+ * @return Zero on success, non-zero on error.
  */
 int guac_send_clip(GUACIO* io, const guac_layer* layer,
         int x, int y, int width, int height);
@@ -308,6 +309,90 @@ int guac_send_png(GUACIO* io, guac_composite_mode_t mode,
  * @return Zero on success, non-zero on error.
  */
 int guac_send_cursor(GUACIO* io, int x, int y, cairo_surface_t* surface);
+
+/**
+ * Queues a png instruction in the given layer. The layer may combine
+ * and re-order multiple instructions into more efficient instructions
+ * providing the end result is the same image.
+ *
+ * @param layer The destination layer.
+ * @param mode The composite mode to use.
+ * @param x The destination X coordinate.
+ * @param y The destination Y coordinate.
+ * @param surface A cairo surface containing the image data to send.
+ */
+void guac_layer_png(guac_layer* layer, guac_composite_mode_t mode,
+        int x, int y, cairo_surface_t* surface);
+
+/**
+ * Queues a copy instruction in a given layer. The layer may combine
+ * and re-order multiple instructions into more efficient instructions
+ * providing the end result is the same image.
+ *
+ * @param layer The destination layer.
+ * @param mode The composite mode to use.
+ * @param srcl The source layer.
+ * @param srcx The X coordinate of the source rectangle.
+ * @param srcy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
+ * @param dstx The X coordinate of the destination, where the source rectangle
+ *             should be copied.
+ * @param dsty The Y coordinate of the destination, where the source rectangle
+ *             should be copied.
+ */
+void guac_layer_copy(guac_layer* layer, guac_composite_mode_t mode,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h,
+        int dstx, int dsty);
+
+/**
+ * Queues a clip instruction in a given layer. The layer may combine
+ * and re-order multiple instructions into more efficient instructions
+ * providing the end result is the same image.
+ *
+ * @param layer The layer to set the clipping region of.
+ * @param x The X coordinate of the clipping rectangle.
+ * @param y The Y coordinate of the clipping rectangle.
+ * @param width The width of the clipping rectangle.
+ * @param height The height of the clipping rectangle.
+ */
+void guac_layer_clip(guac_layer* layer,
+        int x, int y, int width, int height);
+
+/**
+ * Queues a rect instruction in a given layer. The layer may combine
+ * and re-order multiple instructions into more efficient instructions
+ * providing the end result is the same image.
+ *
+ * @param layer The destination layer.
+ * @param mode The composite mode to use.
+ * @param x The X coordinate of the rectangle.
+ * @param y The Y coordinate of the rectangle.
+ * @param width The width of the rectangle.
+ * @param height The height of the rectangle.
+ * @param r The red component of the color of the rectangle.
+ * @param g The green component of the color of the rectangle.
+ * @param b The blue component of the color of the rectangle.
+ * @param a The alpha (transparency) component of the color of the rectangle.
+ */
+void guac_layer_rect(guac_layer* layer, guac_composite_mode_t mode,
+        int x, int y, int width, int height,
+        int r, int g, int b, int a);
+
+/**
+ * Flushes any queued instructions in the given layer, sending those
+ * instructions over the given GUACIO connection. These instructions
+ * may not be identical to the instructions originally queued; they
+ * may be re-ordered or combined providing the end result of executing
+ * all instructions sent by guac_flush() is identical to executing all
+ * previously queued instructions as specified and in order.
+ *
+ * @param layer The layer to flush.
+ * @param io The GUACIO connection to use.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_layer_flush(guac_layer* layer, GUACIO* io);
+
 
 /**
  * Returns whether new instruction data is available on the given GUACIO
