@@ -612,7 +612,98 @@ void guac_layer_rect(guac_layer* layer, guac_composite_mode_t mode,
 }
 
 int guac_layer_flush(guac_layer* layer, GUACIO* io) {
-    /* STUB */
+
+    while (layer->update_queue_head != NULL) {
+
+        /* Get next update, update queue head. */
+        guac_layer_update* update = layer->update_queue_head;
+        layer->update_queue_head = update->next;
+
+        /* Send instruction appropriate for update type */
+        switch (update->type) {
+
+            /* "png" instruction */
+            case GUAC_LAYER_UPDATE_PNG:
+
+                if (guac_send_png(io,
+                            update->mode,
+                            update->dst_layer,
+                            update->dst_x,
+                            update->dst_y,
+                            update->src_image
+                            )) {
+                    cairo_surface_destroy(update->src_image);
+                    free(update);
+                    return -1;
+                }
+
+                cairo_surface_destroy(update->src_image);
+                break;
+
+            /* "copy" instruction */
+            case GUAC_LAYER_UPDATE_COPY:
+
+                if (guac_send_copy(io,
+                            update->src_layer,
+                            update->src_x,
+                            update->src_y,
+                            update->width,
+                            update->height,
+                            update->mode,
+                            update->dst_layer,
+                            update->dst_x,
+                            update->dst_y
+                            )) {
+                    free(update);
+                    return -1;
+                }
+
+                break;
+
+            /* "clip" instruction */
+            case GUAC_LAYER_UPDATE_CLIP:
+
+                if (guac_send_clip(io,
+                            update->dst_layer,
+                            update->dst_x,
+                            update->dst_y,
+                            update->width,
+                            update->height
+                            )) {
+                    free(update);
+                    return -1;
+                }
+
+                break;
+
+            /* "rect" instruction */
+            case GUAC_LAYER_UPDATE_RECT:
+
+                if (guac_send_rect(io,
+                            update->mode,
+                            update->dst_layer,
+                            update->dst_x,
+                            update->dst_y,
+                            update->width,
+                            update->height,
+                            update->src_red,
+                            update->src_green,
+                            update->src_blue,
+                            update->src_alpha
+                            )) {
+                    free(update);
+                    return -1;
+                }
+
+                break;
+
+        } /* end of switch update type */
+
+        /* Free update */
+        free(update);
+
+    }
+
     return 0;
 }
 
