@@ -63,6 +63,9 @@
 #include "guacio.h"
 #include "protocol.h"
 
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
 ssize_t __guac_write_length_string(GUACIO* io, const char* str) {
 
     return
@@ -518,11 +521,17 @@ void guac_sleep(int millis) {
 
 }
 
-void _guac_layer_add_update(guac_layer* layer, guac_layer_update* update) {
+void __guac_layer_add_update(guac_layer* layer, guac_layer_update* update) {
 
-    /* Add update to queue head */
-    update->next = layer->update_queue_head;
-    layer->update_queue_head = update;
+    /* Add update to queue tail */
+    if (layer->update_queue_tail != NULL)
+        layer->update_queue_tail = layer->update_queue_tail->next = update;
+
+    /* Set both head and tail if necessary */
+    else
+        layer->update_queue_tail = layer->update_queue_head = update;
+
+    update->next = NULL;
 
 }
 
@@ -539,9 +548,11 @@ void guac_layer_png(guac_layer* layer, guac_composite_mode_t mode,
     update->dst_layer = layer;
     update->dst_x = x;
     update->dst_y = y;
+    update->width = cairo_image_surface_get_width(surface);
+    update->height = cairo_image_surface_get_height(surface);
 
     /* Add to layer queue */
-    _guac_layer_add_update(layer, update);
+    __guac_layer_add_update(layer, update);
 
 }
 
@@ -565,7 +576,7 @@ void guac_layer_copy(guac_layer* layer, guac_composite_mode_t mode,
     update->dst_y = dsty;
 
     /* Add to layer queue */
-    _guac_layer_add_update(layer, update);
+    __guac_layer_add_update(layer, update);
 
 }
 
@@ -583,7 +594,7 @@ void guac_layer_clip(guac_layer* layer,
     update->height = height;
 
     /* Add to layer queue */
-    _guac_layer_add_update(layer, update);
+    __guac_layer_add_update(layer, update);
 
 }
 
@@ -607,13 +618,41 @@ void guac_layer_rect(guac_layer* layer, guac_composite_mode_t mode,
     update->height = height;
 
     /* Add to layer queue */
-    _guac_layer_add_update(layer, update);
+    __guac_layer_add_update(layer, update);
+
+}
+
+int __guac_layer_update_intersects(
+        const guac_layer_update* update1, const guac_layer_update* update2) {
+
+    /* If update1 X is within width of update2 
+       or update2 X is within width of update1 */
+    if ((update1->dst_x >= update2->dst_x && update1->dst_x < update2->dst_x + update2->width)
+    ||  (update2->dst_x >= update1->dst_x && update2->dst_x < update1->dst_x + update2->width)) {
+
+        /* If update1 Y is within height of update2 
+           or update2 Y is within height of update1 */
+        if ((update1->dst_y >= update2->dst_y && update1->dst_y < update2->dst_y + update2->height)
+        ||  (update2->dst_y >= update1->dst_y && update2->dst_y < update1->dst_y + update2->height)) {
+
+            /* Register instersection */
+            return 1;
+
+        }
+
+    }
+
+    /* Otherwise, no intersection */
+    return 0;
 
 }
 
 int guac_layer_flush(guac_layer* layer, GUACIO* io) {
 
     while (layer->update_queue_head != NULL) {
+
+        guac_layer_update* later_update;
+        int update_merged = 0;
 
         /* Get next update, update queue head. */
         guac_layer_update* update = layer->update_queue_head;
@@ -625,16 +664,114 @@ int guac_layer_flush(guac_layer* layer, GUACIO* io) {
             /* "png" instruction */
             case GUAC_LAYER_UPDATE_PNG:
 
-                if (guac_send_png(io,
-                            update->mode,
-                            update->dst_layer,
-                            update->dst_x,
-                            update->dst_y,
-                            update->src_image
-                            )) {
-                    cairo_surface_destroy(update->src_image);
-                    free(update);
-                    return -1;
+                /* Decide whether or not to send */
+                later_update = update->next;
+                while (later_update != NULL) {
+
+                    /* If destination rectangles intersect */
+                    if (__guac_layer_update_intersects(update, later_update)) {
+
+                        cairo_surface_t* merged_surface;
+                        cairo_t* cairo;
+                        int merged_x, merged_y, merged_width, merged_height;
+
+                        /* Cannot combine anything if intersection with non-PNG */
+                        if (later_update->type != GUAC_LAYER_UPDATE_PNG)
+                            break;
+
+                        /* Cannot combine if modes differ */
+                        if (later_update->mode != update->mode)
+                            break;
+
+                        /* For now, only combine for GUAC_COMP_OVER */
+                        if (later_update->mode != GUAC_COMP_OVER)
+                            break;
+
+                        /* Calculate merged dimensions */
+                        merged_x = MIN(update->dst_x, later_update->dst_x);
+                        merged_y = MIN(update->dst_y, later_update->dst_y);
+
+                        merged_width = MAX(
+                                update->dst_x + update->width, 
+                                later_update->dst_x + later_update->width
+                        ) - merged_x;
+
+                        merged_height = MAX(
+                                update->dst_y + update->height, 
+                                later_update->dst_y + later_update->height
+                        ) - merged_y;
+
+                        /* Create surface for merging */
+                        merged_surface = cairo_image_surface_create(
+                                CAIRO_FORMAT_ARGB32, merged_width, merged_height);
+
+                        /* Get drawing context */
+                        cairo = cairo_create(merged_surface);
+
+                        /* Draw first update within merged surface */
+                        cairo_set_source_surface(cairo,
+                                update->src_image,
+                                update->dst_x - merged_x,
+                                update->dst_y - merged_y);
+
+                        cairo_rectangle(cairo,
+                                update->dst_x - merged_x,
+                                update->dst_y - merged_y,
+                                update->width,
+                                update->height);
+
+                        cairo_fill(cairo);
+
+                        /* Draw second update within merged surface */
+                        cairo_set_source_surface(cairo,
+                                later_update->src_image,
+                                later_update->dst_x - merged_x,
+                                later_update->dst_y - merged_y);
+
+                        cairo_rectangle(cairo,
+                                later_update->dst_x - merged_x,
+                                later_update->dst_y - merged_y,
+                                later_update->width,
+                                later_update->height);
+
+                        cairo_fill(cairo);
+
+                        /* Done drawing */
+                        cairo_destroy(cairo);
+
+                        /* Alter update dimensions */
+                        later_update->dst_x = merged_x;
+                        later_update->dst_y = merged_y;
+                        later_update->width = merged_width;
+                        later_update->height = merged_height;
+
+                        /* Alter update to include merged data*/
+                        cairo_surface_destroy(later_update->src_image);
+                        later_update->src_image = merged_surface;
+
+                        update_merged = 1;
+                        break;
+
+                    }
+
+                    /* Get next update */
+                    later_update = later_update->next;
+
+                }
+
+                /* Send instruction if update was not merged */
+                if (!update_merged) {
+                    if (guac_send_png(io,
+                                update->mode,
+                                update->dst_layer,
+                                update->dst_x,
+                                update->dst_y,
+                                update->src_image
+                                )) {
+                        cairo_surface_destroy(update->src_image);
+                        free(update);
+                        return -1;
+                    }
                 }
 
                 cairo_surface_destroy(update->src_image);
@@ -703,6 +840,9 @@ int guac_layer_flush(guac_layer* layer, GUACIO* io) {
         free(update);
 
     }
+
+    /* Queue is now empty */
+    layer->update_queue_tail = NULL;
 
     return 0;
 }

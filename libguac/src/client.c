@@ -47,15 +47,6 @@
 #include "client.h"
 #include "client-handlers.h"
 
-guac_layer __GUAC_DEFAULT_LAYER = {
-    .index = 0,
-    .next = NULL,
-    .next_available = NULL
-};
-
-const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
-
-
 guac_client* __guac_alloc_client(GUACIO* io) {
 
     /* Allocate new client (not handoff) */
@@ -72,6 +63,9 @@ guac_client* __guac_alloc_client(GUACIO* io) {
 
     client->next_buffer_index = -1;
 
+    /* Allocate default layer */
+    client->default_layer = guac_client_alloc_layer(client, 0);
+
     return client;
 }
 
@@ -82,6 +76,7 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index) {
     /* Init new layer */
     allocd_layer = malloc(sizeof(guac_layer));
     allocd_layer->update_queue_head = NULL;
+    allocd_layer->update_queue_tail = NULL;
 
     /* Add to all_layers list */
     allocd_layer->next = client->all_layers;
@@ -110,6 +105,7 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
         allocd_layer = malloc(sizeof(guac_layer));
         allocd_layer->index = client->next_buffer_index--;
         allocd_layer->update_queue_head = NULL;
+        allocd_layer->update_queue_tail = NULL;
 
         /* Add to all_layers list */
         allocd_layer->next = client->all_layers;
@@ -138,6 +134,9 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
         free(unflushed_update);
 
     }
+
+    /* Queue is now empty */
+    layer->update_queue_tail = NULL;
 
 }
 

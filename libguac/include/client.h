@@ -165,6 +165,11 @@ struct guac_client {
     guac_layer* all_layers;
 
     /**
+     * Pointer to a pre-allocated default layer (layer 0)
+     */
+    guac_layer* default_layer;
+
+    /**
      * The time (in milliseconds) of receipt of the last sync message from
      * the client.
      */
@@ -372,7 +377,5 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index);
  * @param layer The buffer to return to the pool of available buffers.
  */
 void guac_client_free_buffer(guac_client* client, guac_layer* layer);
-
-extern const guac_layer* GUAC_DEFAULT_LAYER;
 
 #endif

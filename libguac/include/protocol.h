@@ -245,6 +245,11 @@ struct guac_layer {
      */
     guac_layer_update* update_queue_head;
 
+    /**
+     * The last element in this layer's update queue.
+     */
+    guac_layer_update* update_queue_tail;
+
 };
 
 /**
