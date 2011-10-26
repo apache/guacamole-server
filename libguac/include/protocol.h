@@ -104,120 +104,7 @@ typedef enum guac_composite_mode_t {
 
 } guac_composite_mode_t;
 
-typedef struct guac_layer_update guac_layer_update;
 typedef struct guac_layer guac_layer;
-
-
-/**
- * The type of a layer update (png, copy, or rect, for
- * example).
- */
-typedef enum guac_layer_update_type_t {
-
-    GUAC_LAYER_UPDATE_PNG,
-    GUAC_LAYER_UPDATE_COPY,
-    GUAC_LAYER_UPDATE_CLIP,
-    GUAC_LAYER_UPDATE_RECT
-
-} guac_layer_update_type_t;
-
-/**
- * Represents an abstract graphical update or state change
- * of a layer, including dirty rectangle information.
- */
-struct guac_layer_update {
-
-    /**
-     * The type of this update. Update type corresponds
-     * directly to the instruction that would be sent
-     * if the queue is flushed.
-     */
-    guac_layer_update_type_t type;
-
-    /**
-     * The composite mode to use in this update.
-     */
-    guac_composite_mode_t mode;
-
-    /**
-     * The layer to retrieve image data from.
-     */
-    const guac_layer* src_layer;
-
-    /**
-     * The surface to retrieve image data from.
-     */
-    cairo_surface_t* src_image;
-
-    /**
-     * The red component of the source color.
-     */
-    int src_red;
-
-    /**
-     * The green component of the source color.
-     */
-    int src_green;
-
-    /**
-     * The blue component of the source color.
-     */
-    int src_blue;
-
-    /**
-     * The alpha component of the source color.
-     */
-    int src_alpha;
-
-    /**
-     * The X coordinage of the upper-left corner of the
-     * source rectangle.
-     */
-    int src_x;
-
-    /**
-     * The Y coordinage of the upper-left corner of the
-     * source rectangle.
-     */
-    int src_y;
-
-    /**
-     * The layer this update should affect.
-     */
-    guac_layer* dst_layer;
-
-    /**
-     * The X coordinate of the upper-left corner of the
-     * destination rectangle.
-     */
-    int dst_x;
-
-    /**
-     * The Y coordinate of the upper-left corner of the
-     * destination rectangle.
-     */
-    int dst_y;
-
-    /**
-     * The width of the destination or source rectangle.
-     * The dimensions of the destination and source
-     * rectangles are always identical.
-     */
-    int width;
-
-    /**
-     * The height of the destination or source rectangle.
-     * The dimensions of the destination and source
-     * rectangles are always identical.
-     */
-    int height;
-
-    /**
-     * The next update in the update queue, if any.
-     */
-    guac_layer_update* next;
-
-};
 
 /**
  * Represents a single layer within the Guacamole protocol.
@@ -239,16 +126,6 @@ struct guac_layer {
      * allocated but free'd layers.
      */
     guac_layer* next_available;
-
-    /**
-     * The first element in this layer's update queue.
-     */
-    guac_layer_update* update_queue_head;
-
-    /**
-     * The last element in this layer's update queue.
-     */
-    guac_layer_update* update_queue_tail;
 
 };
 

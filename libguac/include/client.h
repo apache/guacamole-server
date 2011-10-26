@@ -103,6 +103,120 @@ typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
  */
 typedef int guac_client_free_handler(guac_client* client);
 
+typedef struct guac_client_update guac_client_update;
+
+/**
+ * The type of a layer update (png, copy, or rect, for
+ * example).
+ */
+typedef enum guac_client_update_type_t {
+
+    GUAC_CLIENT_UPDATE_PNG,
+    GUAC_CLIENT_UPDATE_COPY,
+    GUAC_CLIENT_UPDATE_CLIP,
+    GUAC_CLIENT_UPDATE_RECT
+
+} guac_client_update_type_t;
+
+/**
+ * Represents an abstract graphical update or state change
+ * of a client, including dirty rectangle information.
+ */
+struct guac_client_update {
+
+    /**
+     * The type of this update. Update type corresponds
+     * directly to the instruction that would be sent
+     * if the queue is flushed.
+     */
+    guac_client_update_type_t type;
+
+    /**
+     * The composite mode to use in this update.
+     */
+    guac_composite_mode_t mode;
+
+    /**
+     * The layer to retrieve image data from.
+     */
+    const guac_layer* src_layer;
+
+    /**
+     * The surface to retrieve image data from.
+     */
+    cairo_surface_t* src_image;
+
+    /**
+     * The red component of the source color.
+     */
+    int src_red;
+
+    /**
+     * The green component of the source color.
+     */
+    int src_green;
+
+    /**
+     * The blue component of the source color.
+     */
+    int src_blue;
+
+    /**
+     * The alpha component of the source color.
+     */
+    int src_alpha;
+
+    /**
+     * The X coordinage of the upper-left corner of the
+     * source rectangle.
+     */
+    int src_x;
+
+    /**
+     * The Y coordinage of the upper-left corner of the
+     * source rectangle.
+     */
+    int src_y;
+
+    /**
+     * The layer this update should affect.
+     */
+    const guac_layer* dst_layer;
+
+    /**
+     * The X coordinate of the upper-left corner of the
+     * destination rectangle.
+     */
+    int dst_x;
+
+    /**
+     * The Y coordinate of the upper-left corner of the
+     * destination rectangle.
+     */
+    int dst_y;
+
+    /**
+     * The width of the destination or source rectangle.
+     * The dimensions of the destination and source
+     * rectangles are always identical.
+     */
+    int width;
+
+    /**
+     * The height of the destination or source rectangle.
+     * The dimensions of the destination and source
+     * rectangles are always identical.
+     */
+    int height;
+
+    /**
+     * The next update in the update queue, if any.
+     */
+    guac_client_update* next;
+
+};
+
+
 /**
  * Possible current states of the Guacamole client. Currently, the only
  * two states are RUNNING and STOPPING.
@@ -165,9 +279,14 @@ struct guac_client {
     guac_layer* all_layers;
 
     /**
-     * Pointer to a pre-allocated default layer (layer 0)
+     * The first element in this client's update queue.
      */
-    guac_layer* default_layer;
+    guac_client_update* update_queue_head;
+
+    /**
+     * The last element in this client's update queue.
+     */
+    guac_client_update* update_queue_tail;
 
     /**
      * The time (in milliseconds) of receipt of the last sync message from
@@ -377,5 +496,97 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index);
  * @param layer The buffer to return to the pool of available buffers.
  */
 void guac_client_free_buffer(guac_client* client, guac_layer* layer);
+
+/**
+ * Queues a png instruction in the given client. The client may combine
+ * and re-order multiple instructions into more efficient instructions
+ * providing the end result is the same image.
+ *
+ * @param client The proxy client which will queue the instruction.
+ * @param layer The destination layer.
+ * @param mode The composite mode to use.
+ * @param x The destination X coordinate.
+ * @param y The destination Y coordinate.
+ * @param surface A cairo surface containing the image data to send.
+ */
+void guac_client_queue_png(guac_client* client, guac_composite_mode_t mode,
+        const guac_layer* layer, int x, int y, cairo_surface_t* surface);
+
+/**
+ * Queues a copy instruction in a given client. The client may combine
+ * and re-order multiple instructions into more efficient instructions
+ * providing the end result is the same image.
+ *
+ * @param client The proxy client which will queue the instruction.
+ * @param srcl The source layer.
+ * @param srcx The X coordinate of the source rectangle.
+ * @param srcy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
+ * @param mode The composite mode to use.
+ * @param dstl The destination layer.
+ * @param dstx The X coordinate of the destination, where the source rectangle
+ *             should be copied.
+ * @param dsty The Y coordinate of the destination, where the source rectangle
+ *             should be copied.
+ */
+void guac_client_queue_copy(guac_client* client,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h,
+        guac_composite_mode_t mode, const guac_layer* dstl, int dstx, int dsty);
+
+/**
+ * Queues a clip instruction in a given client. The client may combine
+ * and re-order multiple instructions into more efficient instructions
+ * providing the end result is the same image.
+ *
+ * @param client The proxy client which will queue the instruction.
+ * @param layer The layer to set the clipping region of.
+ * @param x The X coordinate of the clipping rectangle.
+ * @param y The Y coordinate of the clipping rectangle.
+ * @param width The width of the clipping rectangle.
+ * @param height The height of the clipping rectangle.
+ */
+void guac_client_queue_clip(guac_client* client, const guac_layer* layer,
+        int x, int y, int width, int height);
+
+/**
+ * Queues a rect instruction in a given layer. The layer may combine
+ * and re-order multiple instructions into more efficient instructions
+ * providing the end result is the same image.
+ *
+ * @param client The proxy client which will queue the instruction.
+ * @param mode The composite mode to use.
+ * @param layer The destination layer.
+ * @param x The X coordinate of the rectangle.
+ * @param y The Y coordinate of the rectangle.
+ * @param width The width of the rectangle.
+ * @param height The height of the rectangle.
+ * @param r The red component of the color of the rectangle.
+ * @param g The green component of the color of the rectangle.
+ * @param b The blue component of the color of the rectangle.
+ * @param a The alpha (transparency) component of the color of the rectangle.
+ */
+void guac_client_queue_rect(guac_client* client,
+        const guac_layer* layer, guac_composite_mode_t mode,
+        int x, int y, int width, int height,
+        int r, int g, int b, int a);
+
+/**
+ * Flushes any queued instructions in the given client, sending those
+ * instructions over the given GUACIO connection. These instructions
+ * may not be identical to the instructions originally queued; they
+ * may be re-ordered or combined providing the end result of executing
+ * all instructions sent by guac_client_queue_flush() is identical to
+ * executing all previously queued instructions as specified and in order.
+ *
+ * @param client The client to flush.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_client_queue_flush(guac_client* client);
+
+/**
+ * The default Guacamole client layer, layer 0.
+ */
+extern const guac_layer* GUAC_DEFAULT_LAYER;
 
 #endif
