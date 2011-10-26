@@ -234,7 +234,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
     guac_client_data->rdp_inst = rdp_inst;
     guac_client_data->mouse_button_mask = 0;
-    guac_client_data->current_surface = client->default_layer;
+    guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
 
 
     /* Store client data */

@@ -403,7 +403,7 @@ void guac_rdp_ui_screenblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, in
     GUACIO* io = client->io;
 
     guac_send_copy(io,
-            client->default_layer, srcx, srcy, cx, cy,
+            GUAC_DEFAULT_LAYER, srcx, srcy, cx, cy,
             GUAC_COMP_OVER, current_surface, x, y);
 
 }
@@ -596,7 +596,7 @@ void guac_rdp_ui_set_surface(rdpInst* inst, RD_HBITMAP surface) {
         guac_send_size(io, inst->settings->width, inst->settings->height);
         guac_flush(io);
 
-        guac_client_data->current_surface = client->default_layer;
+        guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
     }
     else {
         guac_client_data->current_surface = surface;
