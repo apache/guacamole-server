@@ -36,6 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "client.h"
 #include "protocol.h"
@@ -53,7 +54,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
 };
 
 /* Guacamole instruction handlers */
-#include <stdio.h>
+
 int __guac_handle_sync(guac_client* client, guac_instruction* instruction) {
     guac_timestamp_t timestamp = guac_parse_int(instruction->argv[0]);
 
