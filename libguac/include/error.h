@@ -49,7 +49,7 @@
 /**
  * Return codes shared by all Guacamole functions which can fail.
  */
-typedef enum guac_status_t {
+typedef enum guac_status {
 
     /**
      * No errors occurred and the operation was successful.
@@ -91,11 +91,11 @@ typedef enum guac_status_t {
      */
     GUAC_STATUS_BAD_STATE
 
-} guac_status_t;
+} guac_status;
 
 /**
  * Returns a human-readable explanation of the status code given.
  */
-const char* guac_status_string(guac_status_t status);
+const char* guac_status_string(guac_status status);
 
 #endif

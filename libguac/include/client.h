@@ -41,6 +41,7 @@
 
 #include "guacio.h"
 #include "protocol.h"
+#include "error.h"
 
 /**
  * Provides functions and structures required for defining (and handling) a proxy client.
@@ -80,28 +81,28 @@ typedef struct guac_client guac_client;
  * Handler for server messages (where "server" refers to the server that
  * the proxy client is connected to).
  */
-typedef int guac_client_handle_messages(guac_client* client);
+typedef guac_status guac_client_handle_messages(guac_client* client);
 
 /**
  * Handler for Guacamole mouse events.
  */
-typedef int guac_client_mouse_handler(guac_client* client, int x, int y, int button_mask);
+typedef guac_status guac_client_mouse_handler(guac_client* client, int x, int y, int button_mask);
 
 /**
  * Handler for Guacamole key events.
  */
-typedef int guac_client_key_handler(guac_client* client, int keysym, int pressed);
+typedef guac_status guac_client_key_handler(guac_client* client, int keysym, int pressed);
 
 /**
  * Handler for Guacamole clipboard events.
  */
-typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
+typedef guac_status guac_client_clipboard_handler(guac_client* client, char* copied);
 
 /**
  * Handler for freeing up any extra data allocated by the client
  * implementation.
  */
-typedef int guac_client_free_handler(guac_client* client);
+typedef guac_status guac_client_free_handler(guac_client* client);
 
 /**
  * Possible current states of the Guacamole client. Currently, the only
@@ -295,7 +296,7 @@ struct guac_client {
 /**
  * Handler which should initialize the given guac_client.
  */
-typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
+typedef guac_status guac_client_init_handler(guac_client* client, int argc, char** argv);
 
 /**
  * Initialize and return a new guac_client. The pluggable client will be chosen based on
@@ -315,14 +316,14 @@ guac_client* guac_get_client(int client_fd);
  *         occurs during startup. Note that this function will still return
  *         zero if an error occurs while the client is running.
  */
-int guac_start_client(guac_client* client);
+guac_status guac_start_client(guac_client* client);
 
 /**
  * Free all resources associated with the given client.
  *
  * @param client The proxy client to free all reasources of.
  */
-void guac_free_client(guac_client* client);
+guac_status guac_free_client(guac_client* client);
 
 /**
  * Call the appropriate handler defined by the given client for the given
@@ -334,7 +335,7 @@ void guac_free_client(guac_client* client);
  * @param instruction The instruction to pass to the proxy client via the
  *                    appropriate handler.
  */
-int guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
+guac_status guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
 
 /**
  * Signal the given client to stop. This will set the state of the given client
@@ -343,7 +344,7 @@ int guac_client_handle_instruction(guac_client* client, guac_instruction* instru
  *
  * @param client The proxy client to stop.
  */
-void guac_client_stop(guac_client* client);
+guac_status guac_client_stop(guac_client* client);
 
 /**
  * Allocates a new buffer (invisible layer). An arbitrary index is
@@ -371,7 +372,7 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index);
  * @param client The proxy client to return the buffer to.
  * @param layer The buffer to return to the pool of available buffers.
  */
-void guac_client_free_buffer(guac_client* client, guac_layer* layer);
+guac_status guac_client_free_buffer(guac_client* client, guac_layer* layer);
 
 /**
  * The default Guacamole client layer, layer 0.
