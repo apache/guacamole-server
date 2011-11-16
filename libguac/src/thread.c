@@ -44,11 +44,11 @@
 #include <process.h>
 #endif
 
-int guac_thread_create(guac_thread_t* thread, void*(*function)(void*), void* data) {
+int guac_thread_create(guac_thread* thread, void*(*function)(void*), void* data) {
 #ifdef HAVE_LIBPTHREAD
     return pthread_create(thread, NULL, function, data);
 #elif defined(__MINGW32__)
-    *thread = (guac_thread_t) _beginthreadex(NULL, 0,
+    *thread = (guac_thread) _beginthreadex(NULL, 0,
             (unsigned(__stdcall*)(void*)) function, data,
             0 /* Create running */, NULL);
     if (thread == 0)
@@ -57,7 +57,7 @@ int guac_thread_create(guac_thread_t* thread, void*(*function)(void*), void* dat
 #endif
 }
 
-void guac_thread_join(guac_thread_t thread) {
+void guac_thread_join(guac_thread thread) {
 #ifdef HAVE_LIBPTHREAD
     pthread_join(thread, NULL);
 #elif defined(__MINGW32__)

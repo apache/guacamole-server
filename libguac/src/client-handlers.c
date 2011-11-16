@@ -56,7 +56,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
 /* Guacamole instruction handlers */
 
 int __guac_handle_sync(guac_client* client, guac_instruction* instruction) {
-    guac_timestamp_t timestamp = guac_parse_int(instruction->argv[0]);
+    guac_timestamp timestamp = guac_parse_int(instruction->argv[0]);
 
     /* Error if timestamp is in future */
     if (timestamp > client->last_sent_timestamp)

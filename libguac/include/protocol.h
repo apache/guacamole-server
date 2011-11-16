@@ -64,13 +64,13 @@
  */
 #define GUAC_USEC_TIMEOUT (GUAC_TIMEOUT*1000)
 
-typedef int64_t guac_timestamp_t;
+typedef int64_t guac_timestamp;
 
 /**
  * Composite modes used by Guacamole draw instructions. Each
  * composite mode maps to a unique channel mask integer.
  */
-typedef enum guac_composite_mode_t {
+typedef enum guac_composite_mode {
 
     /*
      * A: Source where destination transparent = S n D'
@@ -102,7 +102,7 @@ typedef enum guac_composite_mode_t {
     GUAC_COMP_RATOP = 0x9, /* 1001 */
     GUAC_COMP_SRC   = 0xC  /* 1100 */
 
-} guac_composite_mode_t;
+} guac_composite_mode;
 
 typedef struct guac_layer guac_layer;
 
@@ -197,7 +197,7 @@ int guac_send_name(GUACIO* io, const char* name);
  * @param timestamp The current timestamp (in milliseconds).
  * @return Zero on success, non-zero on error.
  */
-int guac_send_sync(GUACIO* io, guac_timestamp_t timestamp);
+int guac_send_sync(GUACIO* io, guac_timestamp timestamp);
 
 /**
  * Sends an error instruction over the given GUACIO connection.
@@ -246,7 +246,7 @@ int guac_send_size(GUACIO* io, int w, int h);
  */
 int guac_send_copy(GUACIO* io, 
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
-        guac_composite_mode_t mode, const guac_layer* dstl, int dstx, int dsty);
+        guac_composite_mode mode, const guac_layer* dstl, int dstx, int dsty);
 
 /**
  * Sends a rect instruction over the given GUACIO connection.
@@ -265,7 +265,7 @@ int guac_send_copy(GUACIO* io,
  * @return Zero on success, non-zero on error.
  */
 int guac_send_rect(GUACIO* io,
-        guac_composite_mode_t mode, const guac_layer* layer,
+        guac_composite_mode mode, const guac_layer* layer,
         int x, int y, int width, int height,
         int r, int g, int b, int a);
 
@@ -295,7 +295,7 @@ int guac_send_clip(GUACIO* io, const guac_layer* layer,
  * @param surface A cairo surface containing the image data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_send_png(GUACIO* io, guac_composite_mode_t mode,
+int guac_send_png(GUACIO* io, guac_composite_mode mode,
         const guac_layer* layer, int x, int y, cairo_surface_t* surface);
 
 /**
@@ -335,7 +335,7 @@ int guac_instructions_waiting(GUACIO* io);
  */
 int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction);
 
-guac_timestamp_t guac_current_timestamp();
+guac_timestamp guac_current_timestamp();
 void guac_sleep(int millis);
 
 #endif

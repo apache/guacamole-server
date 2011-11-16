@@ -342,13 +342,13 @@ void* __guac_client_output_thread(void* data) {
     guac_client* client = (guac_client*) data;
     GUACIO* io = client->io;
 
-    guac_timestamp_t last_ping_timestamp = guac_current_timestamp();
+    guac_timestamp last_ping_timestamp = guac_current_timestamp();
 
     /* Guacamole client output loop */
     while (client->state == RUNNING) {
 
         /* Occasionally ping client with repeat of last sync */
-        guac_timestamp_t timestamp = guac_current_timestamp();
+        guac_timestamp timestamp = guac_current_timestamp();
         if (timestamp - last_ping_timestamp > GUAC_SYNC_FREQUENCY) {
             last_ping_timestamp = timestamp;
             if (
@@ -444,7 +444,7 @@ void* __guac_client_input_thread(void* data) {
 
 int guac_start_client(guac_client* client) {
 
-    guac_thread_t input_thread, output_thread;
+    guac_thread input_thread, output_thread;
 
     if (guac_thread_create(&output_thread, __guac_client_output_thread, (void*) client)) {
         return -1;

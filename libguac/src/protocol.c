@@ -137,7 +137,7 @@ int guac_send_error(GUACIO* io, const char* error) {
         || guac_write_string(io, ";");
 }
 
-int guac_send_sync(GUACIO* io, guac_timestamp_t timestamp) {
+int guac_send_sync(GUACIO* io, guac_timestamp timestamp) {
 
     return 
            guac_write_string(io, "4.sync,")
@@ -148,7 +148,7 @@ int guac_send_sync(GUACIO* io, guac_timestamp_t timestamp) {
 
 int guac_send_copy(GUACIO* io,
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
-        guac_composite_mode_t mode, const guac_layer* dstl, int dstx, int dsty) {
+        guac_composite_mode mode, const guac_layer* dstl, int dstx, int dsty) {
 
     return
            guac_write_string(io, "4.copy,")
@@ -174,7 +174,7 @@ int guac_send_copy(GUACIO* io,
 }
 
 int guac_send_rect(GUACIO* io,
-        guac_composite_mode_t mode, const guac_layer* layer,
+        guac_composite_mode mode, const guac_layer* layer,
         int x, int y, int width, int height,
         int r, int g, int b, int a) {
 
@@ -295,7 +295,7 @@ int __guac_write_length_png(GUACIO* io, cairo_surface_t* surface) {
 }
 
 
-int guac_send_png(GUACIO* io, guac_composite_mode_t mode,
+int guac_send_png(GUACIO* io, guac_composite_mode mode,
         const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
 
     return
@@ -475,7 +475,7 @@ int guac_instructions_waiting(GUACIO* io) {
     return guac_select(io, GUAC_USEC_TIMEOUT);
 }
 
-guac_timestamp_t guac_current_timestamp() {
+guac_timestamp guac_current_timestamp() {
 
 #ifdef HAVE_CLOCK_GETTIME
 
@@ -485,7 +485,7 @@ guac_timestamp_t guac_current_timestamp() {
     clock_gettime(CLOCK_REALTIME, &current);
     
     /* Calculate milliseconds */
-    return (guac_timestamp_t) current.tv_sec * 1000 + current.tv_nsec / 1000000;
+    return (guac_timestamp) current.tv_sec * 1000 + current.tv_nsec / 1000000;
 
 #else
 
@@ -495,7 +495,7 @@ guac_timestamp_t guac_current_timestamp() {
     gettimeofday(&current, NULL);
     
     /* Calculate milliseconds */
-    return (guac_timestamp_t) current.tv_sec * 1000 + current.tv_usec / 1000;
+    return (guac_timestamp) current.tv_sec * 1000 + current.tv_usec / 1000;
 
 #endif
 

@@ -47,17 +47,17 @@
 #ifdef HAVE_LIBPTHREAD
 
 #include <pthread.h>
-typedef pthread_t guac_thread_t;
+typedef pthread_t guac_thread;
 
 #elif defined(__MINGW32__)
 
 #include <windows.h>
 #include <process.h>
-typedef HANDLE guac_thread_t;
+typedef HANDLE guac_thread;
 
 #endif
 
-int guac_thread_create(guac_thread_t* thread, void*(*function)(void*), void* data);
-void guac_thread_join(guac_thread_t thread);
+int guac_thread_create(guac_thread* thread, void*(*function)(void*), void* data);
+void guac_thread_join(guac_thread thread);
 
 #endif
