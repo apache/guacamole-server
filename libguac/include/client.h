@@ -312,9 +312,10 @@ guac_client* guac_get_client(int client_fd);
  * Enter the main network message handling loop for the given client.
  *
  * @param client The proxy client to start handling messages of/for.
- * @return Zero if the client successfully started, non-zero if an error
- *         occurs during startup. Note that this function will still return
- *         zero if an error occurs while the client is running.
+ * @return GUAC_STATUS_SUCCESS if the client successfully started, or any
+ *         other status code if an error occurs during startup. Note that
+ *         this function will still return GUAC_STATUS_SUCCESS
+ *         if an error occurs while the client is running.
  */
 guac_status guac_start_client(guac_client* client);
 
@@ -323,7 +324,7 @@ guac_status guac_start_client(guac_client* client);
  *
  * @param client The proxy client to free all reasources of.
  */
-guac_status guac_free_client(guac_client* client);
+void guac_free_client(guac_client* client);
 
 /**
  * Call the appropriate handler defined by the given client for the given
@@ -334,6 +335,9 @@ guac_status guac_free_client(guac_client* client);
  * @param client The proxy client whose handlers should be called.
  * @param instruction The instruction to pass to the proxy client via the
  *                    appropriate handler.
+ * @return GUAC_STATUS_SUCCESS if no handler was defined or if the handler
+ *         was called successfully, or any other status code if an error
+ *         occurs while calling the defined handler.
  */
 guac_status guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
 
@@ -344,7 +348,7 @@ guac_status guac_client_handle_instruction(guac_client* client, guac_instruction
  *
  * @param client The proxy client to stop.
  */
-guac_status guac_client_stop(guac_client* client);
+void guac_client_stop(guac_client* client);
 
 /**
  * Allocates a new buffer (invisible layer). An arbitrary index is
@@ -372,7 +376,7 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index);
  * @param client The proxy client to return the buffer to.
  * @param layer The buffer to return to the pool of available buffers.
  */
-guac_status guac_client_free_buffer(guac_client* client, guac_layer* layer);
+void guac_client_free_buffer(guac_client* client, guac_layer* layer);
 
 /**
  * The default Guacamole client layer, layer 0.

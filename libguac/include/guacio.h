@@ -151,7 +151,7 @@ int64_t guac_parse_int(const char* str);
  * @param i The unsigned int to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
  */
-ssize_t guac_write_int(GUACIO* io, int64_t i);
+guac_status guac_write_int(GUACIO* io, int64_t i);
 
 /**
  * Writes the given string to the given GUACIO object. The data
@@ -164,7 +164,7 @@ ssize_t guac_write_int(GUACIO* io, int64_t i);
  * @param str The string to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
 */
-ssize_t guac_write_string(GUACIO* io, const char* str);
+guac_status guac_write_string(GUACIO* io, const char* str);
 
 /**
  * Writes the given binary data to the given GUACIO object as base64-encoded
@@ -179,7 +179,7 @@ ssize_t guac_write_string(GUACIO* io, const char* str);
  * @param count The number of bytes to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
  */
-ssize_t guac_write_base64(GUACIO* io, const void* buf, size_t count);
+guac_status guac_write_base64(GUACIO* io, const void* buf, size_t count);
 
 /**
  * Flushes the base64 buffer, writing padding characters as necessary.
@@ -187,7 +187,7 @@ ssize_t guac_write_base64(GUACIO* io, const void* buf, size_t count);
  * @param io The GUACIO object to flush
  * @return Zero on success, or non-zero if an error occurs during flush.
  */
-ssize_t guac_flush_base64(GUACIO* io);
+guac_status guac_flush_base64(GUACIO* io);
 
 /**
  * Flushes the write buffer.
@@ -195,7 +195,7 @@ ssize_t guac_flush_base64(GUACIO* io);
  * @param io The GUACIO object to flush
  * @return Zero on success, or non-zero if an error occurs during flush.
  */
-ssize_t guac_flush(GUACIO* io);
+guac_status guac_flush(GUACIO* io);
 
 
 /**
@@ -208,7 +208,7 @@ ssize_t guac_flush(GUACIO* io);
  * @return Positive on success, zero if the timeout elapsed and no data is
  *         available, negative on error.
  */
-int guac_select(GUACIO* io, int usec_timeout);
+guac_status guac_select(GUACIO* io, int usec_timeout);
 
 /**
  * Frees resources allocated to the given GUACIO object. Note that this

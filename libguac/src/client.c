@@ -161,26 +161,22 @@ guac_client* guac_get_client(int client_fd) {
 
         /* Wait for data until timeout */
         result = guac_instructions_waiting(io);
-        if (result == 0) {
+        if (result == GUAC_STATUS_TIMEOUT) {
             guac_send_error(io, "Select timeout.");
             guac_close(io);
             return NULL;
         }
 
         /* If error occurs while waiting, exit with failure */
-        if (result < 0) {
+        if (result != GUAC_STATUS_SUCCESS) {
             guac_close(io);
             return NULL;
         }
 
         result = guac_read_instruction(io, &instruction);
-        if (result < 0) {
-            guac_close(io);
-            return NULL;            
-        }
 
         /* Select instruction read */
-        if (result > 0) {
+        if (result == GUAC_STATUS_SUCCESS) {
 
             if (strcmp(instruction.opcode, "select") == 0) {
 
@@ -245,6 +241,12 @@ guac_client* guac_get_client(int client_fd) {
             } /* end if select */
 
             guac_free_instruction_data(&instruction);
+        }
+
+        /* Give up on any legitimate error */
+        else if (result != GUAC_STATUS_INPUT_UNAVAILABLE) {
+            guac_close(io);
+            return NULL;            
         }
 
     }
