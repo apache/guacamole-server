@@ -145,5 +145,8 @@ guac_status* __guac_error() {
     return &__guac_error_unsafe_storage;
 }
 
+/* Warn about threadsafety */
+#warn No threadsafe implementation of __guac_error exists for your platform, so a default non-threadsafe implementation has been used instead. This may lead to incorrect status codes being reported for failures. Please consider adding support for your platform, or filing a bug report with the Guacamole project.
+
 #endif
 
