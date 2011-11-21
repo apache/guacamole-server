@@ -64,6 +64,9 @@
  */
 #define GUAC_USEC_TIMEOUT (GUAC_TIMEOUT*1000)
 
+/**
+ * An arbitrary timestamp denoting a relative time value in milliseconds.
+ */
 typedef int64_t guac_timestamp;
 
 /**
@@ -174,6 +177,9 @@ void guac_free_instruction(guac_instruction* instruction);
 /**
  * Sends an args instruction over the given GUACIO connection.
  *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param io The GUACIO connection to use.
  * @param args The NULL-terminated array of argument names (strings).
  * @return Zero on success, non-zero on error.
@@ -193,6 +199,9 @@ int guac_send_name(GUACIO* io, const char* name);
  * Sends a sync instruction over the given GUACIO connection. The
  * current time in milliseconds should be passed in as the timestamp.
  *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param io The GUACIO connection to use.
  * @param timestamp The current timestamp (in milliseconds).
  * @return Zero on success, non-zero on error.
@@ -201,6 +210,9 @@ int guac_send_sync(GUACIO* io, guac_timestamp timestamp);
 
 /**
  * Sends an error instruction over the given GUACIO connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
  *
  * @param io The GUACIO connection to use.
  * @param error The description associated with the error.
@@ -211,6 +223,9 @@ int guac_send_error(GUACIO* io, const char* error);
 /**
  * Sends a clipboard instruction over the given GUACIO connection.
  *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param io The GUACIO connection to use.
  * @param data The clipboard data to send.
  * @return Zero on success, non-zero on error.
@@ -219,6 +234,9 @@ int guac_send_clipboard(GUACIO* io, const char* data);
 
 /**
  * Sends a size instruction over the given GUACIO connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
  *
  * @param io The GUACIO connection to use.
  * @param w The width of the display.
@@ -229,6 +247,9 @@ int guac_send_size(GUACIO* io, int w, int h);
 
 /**
  * Sends a copy instruction over the given GUACIO connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
  *
  * @param io The GUACIO connection to use.
  * @param srcl The source layer.
@@ -251,6 +272,9 @@ int guac_send_copy(GUACIO* io,
 /**
  * Sends a rect instruction over the given GUACIO connection.
  *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param io The GUACIO connection to use.
  * @param mode The composite mode to use.
  * @param layer The destination layer.
@@ -272,6 +296,9 @@ int guac_send_rect(GUACIO* io,
 /**
  * Sends a clip instruction over the given GUACIO connection.
  *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param io The GUACIO connection to use.
  * @param layer The layer to set the clipping region of.
  * @param x The X coordinate of the clipping rectangle.
@@ -287,6 +314,9 @@ int guac_send_clip(GUACIO* io, const guac_layer* layer,
  * Sends a png instruction over the given GUACIO connection. The PNG image data
  * given will be automatically base64-encoded for transmission.
  *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param io The GUACIO connection to use.
  * @param mode The composite mode to use.
  * @param layer The destination layer.
@@ -301,6 +331,9 @@ int guac_send_png(GUACIO* io, guac_composite_mode mode,
 /**
  * Sends a cursor instruction over the given GUACIO connection. The PNG image
  * data given will be automatically base64-encoded for transmission.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
  *
  * @param io The GUACIO connection to use.
  * @param x The X coordinate of the cursor hotspot.
@@ -323,6 +356,9 @@ int guac_instructions_waiting(GUACIO* io);
 /**
  * Reads a single instruction from the given GUACIO connection.
  *
+ * If an error occurs reading the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param io The GUACIO connection to use.
  * @param parsed_instruction A pointer to a guac_instruction structure which
  *                           will be populated with data read from the given
@@ -335,7 +371,22 @@ int guac_instructions_waiting(GUACIO* io);
  */
 int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction);
 
+/**
+ * Returns an arbitrary timestamp. The difference between return values of any
+ * two calls is equal to the amount of time in milliseconds between those 
+ * calls. The return value from a single call will not have any useful
+ * (or defined) meaning.
+ *
+ * @return An arbitrary millisecond timestamp.
+ */
 guac_timestamp guac_current_timestamp();
+
+/**
+ * Suspends execution of the current thread for the given number of
+ * milliseconds.
+ *
+ * @param millis The number of milliseconds to sleep.
+ */
 void guac_sleep(int millis);
 
 #endif
