@@ -98,6 +98,14 @@ typedef enum guac_status {
  */
 const char* guac_status_string(guac_status status);
 
+/**
+ * Returns the status code associated with the error which occurred during the
+ * last function call. This value will only be set by functions documented to
+ * use it (most libguac functions), and is undefined if no error occurred.
+ *
+ * The storage of this value is thread-local. Assignment of a status code to
+ * guac_error in one thread will not affect its value in another thread.
+ */
 #define guac_error (*__guac_error())
 
 guac_status* __guac_error();
