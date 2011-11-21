@@ -53,6 +53,7 @@
 #include <sys/time.h>
 
 #include "guacio.h"
+#include "error.h"
 
 char __GUACIO_BASE64_CHARACTERS[64] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -64,6 +65,13 @@ char __GUACIO_BASE64_CHARACTERS[64] = {
 GUACIO* guac_open(int fd) {
 
     GUACIO* io = malloc(sizeof(GUACIO));
+
+    /* If no memory available, return with error */
+    if (io == NULL) {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        return NULL;
+    }
+
     io->ready = 0;
     io->written = 0;
     io->total_written = 0;
@@ -72,6 +80,15 @@ GUACIO* guac_open(int fd) {
     /* Allocate instruction buffer */
     io->instructionbuf_size = 1024;
     io->instructionbuf = malloc(io->instructionbuf_size);
+
+    /* If no memory available, return with error */
+    if (io->instructionbuf == NULL) {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        free(io);
+        return NULL;
+    }
+
+    /* Init members */
     io->instructionbuf_used_length = 0;
     io->instructionbuf_parse_start = 0;
     io->instructionbuf_elementc = 0;
@@ -98,6 +115,10 @@ ssize_t __guac_write(GUACIO* io, const char* buf, int count) {
     /* Use write() for all other platforms */
     retval = write(io->fd, buf, count);
 #endif
+
+    /* Record errors in guac_error */
+    if (retval < 0)
+        guac_error = GUAC_STATUS_OUTPUT_ERROR;
 
     return retval;
 }

@@ -125,9 +125,13 @@ typedef struct GUACIO {
  * Allocates and initializes a new GUACIO object with the given open
  * file descriptor.
  *
+ * If an error occurs while allocating the GUACIO object, NULL is returned,
+ * and guac_error is set appropriately.
+ *
  * @param fd An open file descriptor that this GUACIO object should manage.
  * @return A newly allocated GUACIO object associated with the given
- *         file descriptor.
+ *         file descriptor, or NULL if an error occurs while allocating
+ *         the GUACIO object.
  */
 GUACIO* guac_open(int fd);
 
@@ -147,6 +151,9 @@ int64_t guac_parse_int(const char* str);
  * written may be buffered until the buffer is flushed automatically or
  * manually.
  *
+ * If an error occurs while writing, a non-zero value is returned, and
+ * guac_error is set appropriately.
+ *
  * @param io The GUACIO object to write to.
  * @param i The unsigned int to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
@@ -159,6 +166,9 @@ ssize_t guac_write_int(GUACIO* io, int64_t i);
  * manually. Note that if the string can contain characters used
  * internally by the Guacamole protocol (commas, semicolons, or
  * backslashes) it will need to be escaped.
+ *
+ * If an error occurs while writing, a non-zero value is returned, and
+ * guac_error is set appropriately.
  *
  * @param io The GUACIO object to write to.
  * @param str The string to write.
@@ -174,6 +184,9 @@ ssize_t guac_write_string(GUACIO* io, const char* str);
  * be made before non-base64 writes (or writes of an independent block of
  * base64 data) can be made.
  *
+ * If an error occurs while writing, a non-zero value is returned, and
+ * guac_error is set appropriately.
+ *
  * @param io The GUACIO object to write to.
  * @param buf A buffer containing the data to write.
  * @param count The number of bytes to write.
@@ -184,6 +197,9 @@ ssize_t guac_write_base64(GUACIO* io, const void* buf, size_t count);
 /**
  * Flushes the base64 buffer, writing padding characters as necessary.
  *
+ * If an error occurs while writing, a non-zero value is returned, and
+ * guac_error is set appropriately.
+ *
  * @param io The GUACIO object to flush
  * @return Zero on success, or non-zero if an error occurs during flush.
  */
@@ -191,6 +207,9 @@ ssize_t guac_flush_base64(GUACIO* io);
 
 /**
  * Flushes the write buffer.
+ *
+ * If an error occurs while writing, a non-zero value is returned, and
+ * guac_error is set appropriately.
  *
  * @param io The GUACIO object to flush
  * @return Zero on success, or non-zero if an error occurs during flush.
