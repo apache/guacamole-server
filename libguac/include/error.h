@@ -68,12 +68,6 @@ typedef enum guac_status {
     GUAC_STATUS_NO_INPUT,
 
     /**
-     * No data could be read from an input stream, but data may be available
-     * if the operation is retried.
-     */
-    GUAC_STATUS_INPUT_UNAVAILABLE,
-
-    /**
      * A timeout occurred while reading from the input stream associated
      * with the operation.
      */
