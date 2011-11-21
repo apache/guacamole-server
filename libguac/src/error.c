@@ -35,8 +35,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "error.h"
+#include <stdlib.h>
 
+#ifdef HAVE_LIBPTHREAD
+#include <pthread.h>
+#endif
+
+#include "error.h"
 
 /* Error strings */
 
@@ -51,7 +56,7 @@ const char* __GUAC_STATUS_BAD_STATE_STR          = "Illegal state";
 const char* __GUAC_STATUS_INVALID_STATUS_STR     = "UNKNOWN STATUS CODE";
 
 
-const char* guac_status_string(guac_status_t status) {
+const char* guac_status_string(guac_status status) {
 
     switch (status) {
 
@@ -93,4 +98,57 @@ const char* guac_status_string(guac_status_t status) {
     }
 
 }
+
+#ifdef HAVE_LIBPTHREAD
+
+/* PThread implementation of __guac_error */
+
+static pthread_key_t  __guac_error_key;
+static pthread_once_t __guac_error_key_init = PTHREAD_ONCE_INIT;
+
+static void __guac_free_error(void* status) {
+
+    /* Free memory allocated to status variable */
+    free(status);
+
+}
+
+static void __guac_alloc_error_key() {
+
+    /* Create key, destroy any allocated variable on thread exit */
+    pthread_key_create(&__guac_error_key, __guac_free_error);
+
+}
+
+guac_status* __guac_error() {
+
+    /* Pointer for thread-local data */
+    guac_status* status;
+
+    /* Init error key, if not already initialized */
+    pthread_once(&__guac_error_key_init, __guac_alloc_error_key);
+
+    /* Retrieve thread-local status variable */
+    status = (guac_status*) pthread_getspecific(__guac_error_key);
+
+    /* Allocate thread-local status variable if not already allocated */
+    if (status == NULL) {
+        status = malloc(sizeof(guac_status));
+        pthread_setspecific(__guac_error_key, status);
+    }
+
+    return status;
+
+}
+
+#else
+
+/* Default (not-threadsafe) implementation */
+static guac_status __guac_error_unsafe_storage;
+
+guac_status* __guac_error() {
+    return &__guac_error_unsafe_storage;
+}
+
+#endif
 

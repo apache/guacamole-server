@@ -104,4 +104,8 @@ typedef enum guac_status {
  */
 const char* guac_status_string(guac_status status);
 
+#define guac_error (*__guac_error())
+
+guac_status* __guac_error();
+
 #endif
