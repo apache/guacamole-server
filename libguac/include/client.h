@@ -301,11 +301,13 @@ typedef int guac_client_init_handler(guac_client* client, int argc, char** argv)
  * Initialize and return a new guac_client. The pluggable client will be chosen based on
  * the first connect message received on the given file descriptor.
  *
- * @param client_fd The file descriptor associated with the socket associated with the connection to the
- *                  web-client tunnel.
+ * @param client_fd The file descriptor associated with the socket associated
+ *                  with the connection to the web-client tunnel.
+ * @param usec_timeout The maximum number of microseconds to wait for each
+ *                     instruction during the initial client handshake.
  * @return A pointer to the newly initialized client.
  */
-guac_client* guac_get_client(int client_fd);
+guac_client* guac_get_client(int client_fd, int usec_timeout);
 
 /**
  * Free all resources associated with the given client.

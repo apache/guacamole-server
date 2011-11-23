@@ -52,19 +52,6 @@
 
 
 /**
- * The number of milliseconds to wait for messages in any phase before
- * timing out and closing the connection with an error.
- */
-#define GUAC_TIMEOUT      15000
-
-/**
- * The number of microseconds to wait for messages in any phase before
- * timing out and closing the conncetion with an error. This is always
- * equal to GUAC_TIMEOUT * 1000.
- */
-#define GUAC_USEC_TIMEOUT (GUAC_TIMEOUT*1000)
-
-/**
  * An arbitrary timestamp denoting a relative time value in milliseconds.
  */
 typedef int64_t guac_timestamp;
@@ -348,10 +335,12 @@ int guac_send_cursor(GUACIO* io, int x, int y, cairo_surface_t* surface);
  * connection for parsing.
  *
  * @param io The GUACIO connection to use.
+ * @param usec_timeout The maximum number of microseconds to wait before
+ *                     giving up.
  * @return A positive value if data is available, negative on error, or
  *         zero if no data is currently available.
  */
-int guac_instructions_waiting(GUACIO* io);
+int guac_instructions_waiting(GUACIO* io, int usec_timeout);
 
 /**
  * Reads a single instruction from the given GUACIO connection.
@@ -360,16 +349,19 @@ int guac_instructions_waiting(GUACIO* io);
  * returned, and guac_error is set appropriately.
  *
  * @param io The GUACIO connection to use.
+ * @param usec_timeout The maximum number of microseconds to wait before
+ *                     giving up.
  * @param parsed_instruction A pointer to a guac_instruction structure which
  *                           will be populated with data read from the given
  *                           GUACIO connection.
  * @return A positive value if data was successfully read, negative on
  *         error, or zero if the instruction could not be read completely
- *         because GUAC_TIMEOUT elapsed, in which case subsequent calls to
+ *         because the timeout elapsed, in which case subsequent calls to
  *         guac_read_instruction() will return the parsed instruction once
  *         enough data is available.
  */
-int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction);
+int guac_read_instruction(GUACIO* io, int usec_timeout,
+        guac_instruction* parsed_instruction);
 
 /**
  * Returns an arbitrary timestamp. The difference between return values of any

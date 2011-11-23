@@ -128,7 +128,7 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
 
 }
 
-guac_client* guac_get_client(int client_fd) {
+guac_client* guac_get_client(int client_fd, int usec_timeout) {
 
     guac_client* client;
     GUACIO* io = guac_open(client_fd);
@@ -159,7 +159,7 @@ guac_client* guac_get_client(int client_fd) {
         int result;
 
         /* Wait for data until timeout */
-        result = guac_instructions_waiting(io);
+        result = guac_instructions_waiting(io, usec_timeout);
         if (result == 0) {
             guac_send_error(io, "Select timeout.");
             guac_close(io);
@@ -172,7 +172,7 @@ guac_client* guac_get_client(int client_fd) {
             return NULL;
         }
 
-        result = guac_read_instruction(io, &instruction);
+        result = guac_read_instruction(io, usec_timeout, &instruction);
         if (result < 0) {
             guac_close(io);
             return NULL;            
@@ -254,7 +254,7 @@ guac_client* guac_get_client(int client_fd) {
         int result;
 
         /* Wait for data until timeout */
-        result = guac_instructions_waiting(io);
+        result = guac_instructions_waiting(io, usec_timeout);
         if (result == 0) {
             guac_send_error(io, "Connect timeout.");
             guac_close(io);
@@ -267,7 +267,7 @@ guac_client* guac_get_client(int client_fd) {
             return NULL;
         }
 
-        result = guac_read_instruction(io, &instruction);
+        result = guac_read_instruction(io, usec_timeout, &instruction);
         if (result < 0) {
             guac_log_error("Error reading instruction while waiting for connect");
             guac_close(io);

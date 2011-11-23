@@ -356,7 +356,8 @@ int __guac_fill_instructionbuf(GUACIO* io) {
 }
 
 /* Returns new instruction if one exists, or NULL if no more instructions. */
-int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction) {
+int guac_read_instruction(GUACIO* io, int usec_timeout,
+        guac_instruction* parsed_instruction) {
 
     int retval;
     int i = io->instructionbuf_parse_start;
@@ -441,7 +442,7 @@ int guac_read_instruction(GUACIO* io, guac_instruction* parsed_instruction) {
         }
 
         /* No instruction yet? Get more data ... */
-        retval = guac_select(io, GUAC_USEC_TIMEOUT);
+        retval = guac_select(io, usec_timeout);
         if (retval <= 0)
             return retval;
 
@@ -467,12 +468,12 @@ void guac_free_instruction(guac_instruction* instruction) {
 }
 
 
-int guac_instructions_waiting(GUACIO* io) {
+int guac_instructions_waiting(GUACIO* io, int usec_timeout) {
 
     if (io->instructionbuf_used_length > 0)
         return 1;
 
-    return guac_select(io, GUAC_USEC_TIMEOUT);
+    return guac_select(io, usec_timeout);
 }
 
 guac_timestamp guac_current_timestamp() {
