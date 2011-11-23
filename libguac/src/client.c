@@ -40,7 +40,6 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include "thread.h"
 #include "log.h"
 #include "guacio.h"
 #include "protocol.h"
