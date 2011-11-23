@@ -48,32 +48,6 @@
  * @file client.h
  */
 
-/**
- * The time to allow between sync responses in milliseconds. If a sync
- * instruction is sent to the client and no response is received within this
- * timeframe, server messages will not be handled until a sync instruction is
- * received from the client.
- */
-#define GUAC_SYNC_THRESHOLD 500
-
-/**
- * The time to allow between server sync messages in milliseconds. A sync
- * message from the server will be sent every GUAC_SYNC_FREQUENCY milliseconds.
- * As this will induce a response from a client that is not malfunctioning,
- * this is used to detect when a client has died. This must be set to a
- * reasonable value to avoid clients being disconnected unnecessarily due
- * to timeout.
- */
-#define GUAC_SYNC_FREQUENCY 5000
-
-/**
- * The amount of time to wait after handling server messages. If a client
- * plugin has a message handler, and sends instructions when server messages
- * are being handled, there will be a pause of this many milliseconds before
- * the next call to the message handler.
- */
-#define GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY 50
-
 typedef struct guac_client guac_client;
 
 /**
