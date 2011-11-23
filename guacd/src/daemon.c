@@ -68,7 +68,7 @@ void* start_client_thread(void* data) {
     guac_log_info("Spawning client");
 
     /* Load and start client */
-    client = guac_get_client(thread_data->fd); 
+    client = guac_get_client(thread_data->fd, GUAC_USEC_TIMEOUT); 
 
     if (client == NULL) {
         guac_log_error("Client retrieval failed");

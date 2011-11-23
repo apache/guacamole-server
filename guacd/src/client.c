@@ -135,7 +135,7 @@ void* __guac_client_input_thread(void* data) {
     guac_instruction instruction;
 
     /* Guacamole client input loop */
-    while (client->state == RUNNING && guac_read_instruction(io, &instruction) > 0) {
+    while (client->state == RUNNING && guac_read_instruction(io, GUAC_USEC_TIMEOUT, &instruction) > 0) {
 
         /* Call handler, stop on error */
         if (guac_client_handle_instruction(client, &instruction) < 0) {
