@@ -308,16 +308,6 @@ typedef int guac_client_init_handler(guac_client* client, int argc, char** argv)
 guac_client* guac_get_client(int client_fd);
 
 /**
- * Enter the main network message handling loop for the given client.
- *
- * @param client The proxy client to start handling messages of/for.
- * @return Zero if the client successfully started, non-zero if an error
- *         occurs during startup. Note that this function will still return
- *         zero if an error occurs while the client is running.
- */
-int guac_start_client(guac_client* client);
-
-/**
  * Free all resources associated with the given client.
  *
  * @param client The proxy client to free all reasources of.
@@ -335,15 +325,6 @@ void guac_free_client(guac_client* client);
  *                    appropriate handler.
  */
 int guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
-
-/**
- * Signal the given client to stop. This will set the state of the given client
- * to STOPPING, which signals the I/O threads to shutdown, and ultimately
- * results in shutdown of the client.
- *
- * @param client The proxy client to stop.
- */
-void guac_client_stop(guac_client* client);
 
 /**
  * Allocates a new buffer (invisible layer). An arbitrary index is
