@@ -40,9 +40,9 @@
 #include <guacamole/guacio.h>
 #include <guacamole/client.h>
 #include <guacamole/log.h>
-#include <guacamole/thread.h>
 
 #include "client.h"
+#include "thread.h"
 
 void guac_client_stop(guac_client* client) {
     client->state = STOPPING;
