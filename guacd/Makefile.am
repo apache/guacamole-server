@@ -37,12 +37,13 @@
 AUTOMAKE_OPTIONS = foreign 
 initdir = @init_dir@
 
-AM_CFLAGS = -Werror -Wall -pedantic
+AM_CFLAGS = -Werror -Wall -pedantic -Iinclude
 
 sbin_PROGRAMS = guacd
 init_SCRIPTS = init.d/guacd
 
-guacd_SOURCES = src/daemon.c
+noinst_HEADERS = include/client.h
+guacd_SOURCES = src/daemon.c src/client.c
 
 EXTRA_DIST = init.d/guacd.in
 CLEANFILES = $(init_SCRIPTS)

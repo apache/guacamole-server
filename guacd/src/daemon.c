@@ -51,6 +51,7 @@
 #include <guacamole/thread.h>
 #include <guacamole/log.h>
 
+#include "client.h"
 
 typedef struct client_thread_data {
 
