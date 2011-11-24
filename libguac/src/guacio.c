@@ -299,17 +299,28 @@ int guac_select(GUACIO* io, int usec_timeout) {
 
     fd_set fds;
     struct timeval timeout;
+    int retval;
 
+    /* No timeout if usec_timeout is negative */
     if (usec_timeout < 0)
-        return select(io->fd + 1, &fds, NULL, NULL, NULL); 
+        retval = select(io->fd + 1, &fds, NULL, NULL, NULL); 
 
-    timeout.tv_sec = usec_timeout/1000000;
-    timeout.tv_usec = usec_timeout%1000000;
+    /* Handle timeout if specified */
+    else {
+        timeout.tv_sec = usec_timeout/1000000;
+        timeout.tv_usec = usec_timeout%1000000;
 
-    FD_ZERO(&fds);
-    FD_SET(io->fd, &fds);
+        FD_ZERO(&fds);
+        FD_SET(io->fd, &fds);
 
-    return select(io->fd + 1, &fds, NULL, NULL, &timeout); 
+        retval = select(io->fd + 1, &fds, NULL, NULL, &timeout);
+    }
+
+    /* Properly set guac_error */
+    if (retval <  0) guac_error = GUAC_STATUS_INPUT_ERROR;
+    if (retval == 0) guac_error = GUAC_STATUS_INPUT_TIMEOUT;
+
+    return retval;
 
 }
 

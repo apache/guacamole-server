@@ -216,6 +216,12 @@ ssize_t guac_flush(GUACIO* io);
  * Waits for input to be available on the given GUACIO object until the
  * specified timeout elapses.
  *
+ * If an error occurs while waiting, a negative value is returned, and
+ * guac_error is set appropriately.
+ *
+ * If a timeout occurs while waiting, zero value is returned, and
+ * guac_error is set to GUAC_STATUS_INPUT_TIMEOUT.
+ *
  * @param io The GUACIO object to wait for.
  * @param usec_timeout The maximum number of microseconds to wait for data, or
  *                     -1 to potentially wait forever.
