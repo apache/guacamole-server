@@ -62,62 +62,57 @@ typedef struct GUACIO {
     /**
      * The number of bytes present in the base64 "ready" buffer.
      */
-    int ready;
+    int __ready;
 
     /**
      * The base64 "ready" buffer. Once this buffer is filled, base64 data is
      * flushed to the main write buffer.
      */
-    int ready_buf[3];
+    int __ready_buf[3];
 
     /**
      * The number of bytes currently in the main write buffer.
      */
-    int written;
-
-    /**
-     * The number of bytes written total, since this GUACIO was opened.
-     */
-    int total_written;
+    int __written;
 
     /**
      * The main write buffer. Bytes written go here before being flushed
      * to the open file descriptor.
      */
-    char out_buf[8192];
+    char __out_buf[8192];
 
     /**
      * The current location of parsing within the instruction buffer.
      */
-    int instructionbuf_parse_start;
+    int __instructionbuf_parse_start;
 
     /**
      * The current size of the instruction buffer.
      */
-    int instructionbuf_size;
+    int __instructionbuf_size;
 
     /**
      * The number of bytes currently in the instruction buffer.
      */
-    int instructionbuf_used_length;
+    int __instructionbuf_used_length;
 
     /**
      * The instruction buffer. This is essentially the input buffer,
      * provided as a convenience to be used to buffer instructions until
      * those instructions are complete and ready to be parsed.
      */
-    char* instructionbuf;
+    char* __instructionbuf;
 
     /**
      * The number of elements parsed so far.
      */
-    int instructionbuf_elementc;
+    int __instructionbuf_elementc;
 
     /**
      * Array of pointers into the instruction buffer, where each pointer
      * points to the start of the corresponding element.
      */
-    char* instructionbuf_elementv[64];
+    char* __instructionbuf_elementv[64];
 
 } GUACIO;
 

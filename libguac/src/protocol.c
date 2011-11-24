@@ -328,27 +328,27 @@ int guac_send_cursor(GUACIO* io, int x, int y, cairo_surface_t* surface) {
 }
 
 
-int __guac_fill_instructionbuf(GUACIO* io) {
+int __guac_fill___instructionbuf(GUACIO* io) {
 
     int retval;
     
     /* Attempt to fill buffer */
     retval = recv(
             io->fd,
-            io->instructionbuf + io->instructionbuf_used_length,
-            io->instructionbuf_size - io->instructionbuf_used_length,
+            io->__instructionbuf + io->__instructionbuf_used_length,
+            io->__instructionbuf_size - io->__instructionbuf_used_length,
             0
     );
 
     if (retval < 0)
         return retval;
 
-    io->instructionbuf_used_length += retval;
+    io->__instructionbuf_used_length += retval;
 
     /* Expand buffer if necessary */
-    if (io->instructionbuf_used_length > io->instructionbuf_size / 2) {
-        io->instructionbuf_size *= 2;
-        io->instructionbuf = realloc(io->instructionbuf, io->instructionbuf_size);
+    if (io->__instructionbuf_used_length > io->__instructionbuf_size / 2) {
+        io->__instructionbuf_size *= 2;
+        io->__instructionbuf = realloc(io->__instructionbuf, io->__instructionbuf_size);
     }
 
     return retval;
@@ -360,7 +360,7 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
         guac_instruction* parsed_instruction) {
 
     int retval;
-    int i = io->instructionbuf_parse_start;
+    int i = io->__instructionbuf_parse_start;
     
     /* Loop until a instruction is read */
     for (;;) {
@@ -369,10 +369,10 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
         int element_length = 0;
 
         /* Parse instruction in buffe */
-        while (i < io->instructionbuf_used_length) {
+        while (i < io->__instructionbuf_used_length) {
 
             /* Read character from buffer */
-            char c = io->instructionbuf[i++];
+            char c = io->__instructionbuf[i++];
 
             /* If digit, calculate element length */
             if (c >= '0' && c <= '9')
@@ -382,10 +382,10 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
             else if (c == '.') {
 
                 /* Verify element is fully read */
-                if (i + element_length < io->instructionbuf_used_length) {
+                if (i + element_length < io->__instructionbuf_used_length) {
 
                     /* Get element value */
-                    char* elementv = &(io->instructionbuf[i]);
+                    char* elementv = &(io->__instructionbuf[i]);
                    
                     /* Get terminator, set null terminator of elementv */ 
                     char terminator = elementv[element_length];
@@ -399,10 +399,10 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
 
                     /* As element has been read successfully, update
                      * parse start */
-                    io->instructionbuf_parse_start = i;
+                    io->__instructionbuf_parse_start = i;
 
                     /* Save element */
-                    io->instructionbuf_elementv[io->instructionbuf_elementc++] = elementv;
+                    io->__instructionbuf_elementv[io->__instructionbuf_elementc++] = elementv;
 
                     /* Finish parse if terminator is a semicolon */
                     if (terminator == ';') {
@@ -410,21 +410,21 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
                         int j;
 
                         /* Init parsed instruction */
-                        parsed_instruction->argc = io->instructionbuf_elementc - 1;
+                        parsed_instruction->argc = io->__instructionbuf_elementc - 1;
                         parsed_instruction->argv = malloc(sizeof(char*) * parsed_instruction->argc);
 
                         /* Set opcode */
-                        parsed_instruction->opcode = strdup(io->instructionbuf_elementv[0]);
+                        parsed_instruction->opcode = strdup(io->__instructionbuf_elementv[0]);
 
                         /* Copy element values to parsed instruction */
                         for (j=0; j<parsed_instruction->argc; j++)
-                            parsed_instruction->argv[j] = strdup(io->instructionbuf_elementv[j+1]);
+                            parsed_instruction->argv[j] = strdup(io->__instructionbuf_elementv[j+1]);
 
                         /* Reset buffer */
-                        memmove(io->instructionbuf, io->instructionbuf + i + 1, io->instructionbuf_used_length - i - 1);
-                        io->instructionbuf_used_length -= i + 1;
-                        io->instructionbuf_parse_start = 0;
-                        io->instructionbuf_elementc = 0;
+                        memmove(io->__instructionbuf, io->__instructionbuf + i + 1, io->__instructionbuf_used_length - i - 1);
+                        io->__instructionbuf_used_length -= i + 1;
+                        io->__instructionbuf_parse_start = 0;
+                        io->__instructionbuf_elementc = 0;
 
                         /* Done */
                         return 1;
@@ -447,7 +447,7 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
             return retval;
 
         /* If more data is available, fill into buffer */
-        retval = __guac_fill_instructionbuf(io);
+        retval = __guac_fill___instructionbuf(io);
         if (retval < 0)  return retval; /* Error */
         if (retval == 0) return -1;     /* EOF */
 
@@ -470,7 +470,7 @@ void guac_free_instruction(guac_instruction* instruction) {
 
 int guac_instructions_waiting(GUACIO* io, int usec_timeout) {
 
-    if (io->instructionbuf_used_length > 0)
+    if (io->__instructionbuf_used_length > 0)
         return 1;
 
     return guac_select(io, usec_timeout);

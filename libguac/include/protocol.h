@@ -109,13 +109,13 @@ struct guac_layer {
     /**
      * The next allocated layer in the list of all layers.
      */
-    guac_layer* next;
+    guac_layer* __next;
 
     /**
      * The next available (unused) layer in the list of
      * allocated but free'd layers.
      */
-    guac_layer* next_available;
+    guac_layer* __next_available;
 
 };
 

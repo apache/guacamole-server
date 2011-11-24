@@ -124,19 +124,19 @@ struct guac_client {
     /**
      * The index of the next available buffer.
      */
-    int next_buffer_index;
+    int __next_buffer_index;
 
     /**
      * The head pointer of the list of all available (allocated but not used)
      * buffers.
      */
-    guac_layer* available_buffers;
+    guac_layer* __available_buffers;
 
     /**
      * The head pointer of the list of all allocated layers, regardless of use
      * status.
      */
-    guac_layer* all_layers;
+    guac_layer* __all_layers;
 
     /**
      * The time (in milliseconds) of receipt of the last sync message from
@@ -153,7 +153,7 @@ struct guac_client {
     /**
      * Reference to dlopen'd client plugin.
      */
-    void* client_plugin_handle;
+    void* __client_plugin_handle;
 
     /**
      * Arbitrary reference to proxy client-specific data. Implementors of a

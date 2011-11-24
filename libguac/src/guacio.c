@@ -72,26 +72,25 @@ GUACIO* guac_open(int fd) {
         return NULL;
     }
 
-    io->ready = 0;
-    io->written = 0;
-    io->total_written = 0;
+    io->__ready = 0;
+    io->__written = 0;
     io->fd = fd;
 
     /* Allocate instruction buffer */
-    io->instructionbuf_size = 1024;
-    io->instructionbuf = malloc(io->instructionbuf_size);
+    io->__instructionbuf_size = 1024;
+    io->__instructionbuf = malloc(io->__instructionbuf_size);
 
     /* If no memory available, return with error */
-    if (io->instructionbuf == NULL) {
+    if (io->__instructionbuf == NULL) {
         guac_error = GUAC_STATUS_NO_MEMORY;
         free(io);
         return NULL;
     }
 
     /* Init members */
-    io->instructionbuf_used_length = 0;
-    io->instructionbuf_parse_start = 0;
-    io->instructionbuf_elementc = 0;
+    io->__instructionbuf_used_length = 0;
+    io->__instructionbuf_parse_start = 0;
+    io->__instructionbuf_elementc = 0;
 
     return io;
 
@@ -99,7 +98,7 @@ GUACIO* guac_open(int fd) {
 
 void guac_close(GUACIO* io) {
     guac_flush(io);
-    free(io->instructionbuf);
+    free(io->__instructionbuf);
     free(io);
 }
 
@@ -151,24 +150,23 @@ ssize_t guac_write_int(GUACIO* io, int64_t i) {
 
 ssize_t guac_write_string(GUACIO* io, const char* str) {
 
-    char* out_buf = io->out_buf;
+    char* __out_buf = io->__out_buf;
 
     int retval;
 
     for (; *str != '\0'; str++) {
 
-        out_buf[io->written++] = *str; 
-        io->total_written++;
+        __out_buf[io->__written++] = *str; 
 
         /* Flush when necessary, return on error */
-        if (io->written > 8188 /* sizeof(out_buf) - 4 */) {
+        if (io->__written > 8188 /* sizeof(__out_buf) - 4 */) {
 
-            retval = __guac_write(io, out_buf, io->written);
+            retval = __guac_write(io, __out_buf, io->__written);
 
             if (retval < 0)
                 return retval;
 
-            io->written = 0;
+            io->__written = 0;
         }
 
     }
@@ -179,45 +177,40 @@ ssize_t guac_write_string(GUACIO* io, const char* str) {
 
 ssize_t __guac_write_base64_triplet(GUACIO* io, int a, int b, int c) {
 
-    char* out_buf = io->out_buf;
+    char* __out_buf = io->__out_buf;
 
     int retval;
 
     /* Byte 1 */
-    out_buf[io->written++] = __GUACIO_BASE64_CHARACTERS[(a & 0xFC) >> 2]; /* [AAAAAA]AABBBB BBBBCC CCCCCC */
-    io->total_written++;
+    __out_buf[io->__written++] = __GUACIO_BASE64_CHARACTERS[(a & 0xFC) >> 2]; /* [AAAAAA]AABBBB BBBBCC CCCCCC */
 
     if (b >= 0) {
-        out_buf[io->written++] = __GUACIO_BASE64_CHARACTERS[((a & 0x03) << 4) | ((b & 0xF0) >> 4)]; /* AAAAAA[AABBBB]BBBBCC CCCCCC */
-        io->total_written++;
+        __out_buf[io->__written++] = __GUACIO_BASE64_CHARACTERS[((a & 0x03) << 4) | ((b & 0xF0) >> 4)]; /* AAAAAA[AABBBB]BBBBCC CCCCCC */
 
         if (c >= 0) {
-            out_buf[io->written++] = __GUACIO_BASE64_CHARACTERS[((b & 0x0F) << 2) | ((c & 0xC0) >> 6)]; /* AAAAAA AABBBB[BBBBCC]CCCCCC */
-            out_buf[io->written++] = __GUACIO_BASE64_CHARACTERS[c & 0x3F]; /* AAAAAA AABBBB BBBBCC[CCCCCC] */
-            io->total_written += 2;
+            __out_buf[io->__written++] = __GUACIO_BASE64_CHARACTERS[((b & 0x0F) << 2) | ((c & 0xC0) >> 6)]; /* AAAAAA AABBBB[BBBBCC]CCCCCC */
+            __out_buf[io->__written++] = __GUACIO_BASE64_CHARACTERS[c & 0x3F]; /* AAAAAA AABBBB BBBBCC[CCCCCC] */
         }
         else { 
-            out_buf[io->written++] = __GUACIO_BASE64_CHARACTERS[((b & 0x0F) << 2)]; /* AAAAAA AABBBB[BBBB--]------ */
-            out_buf[io->written++] = '='; /* AAAAAA AABBBB BBBB--[------] */
-            io->total_written += 2;
+            __out_buf[io->__written++] = __GUACIO_BASE64_CHARACTERS[((b & 0x0F) << 2)]; /* AAAAAA AABBBB[BBBB--]------ */
+            __out_buf[io->__written++] = '='; /* AAAAAA AABBBB BBBB--[------] */
         }
     }
     else {
-        out_buf[io->written++] = __GUACIO_BASE64_CHARACTERS[((a & 0x03) << 4)]; /* AAAAAA[AA----]------ ------ */
-        out_buf[io->written++] = '='; /* AAAAAA AA----[------]------ */
-        out_buf[io->written++] = '='; /* AAAAAA AA---- ------[------] */
-        io->total_written += 3;
+        __out_buf[io->__written++] = __GUACIO_BASE64_CHARACTERS[((a & 0x03) << 4)]; /* AAAAAA[AA----]------ ------ */
+        __out_buf[io->__written++] = '='; /* AAAAAA AA----[------]------ */
+        __out_buf[io->__written++] = '='; /* AAAAAA AA---- ------[------] */
     }
 
-    /* At this point, 4 bytes have been io->written */
+    /* At this point, 4 bytes have been io->__written */
 
     /* Flush when necessary, return on error */
-    if (io->written > 8188 /* sizeof(out_buf) - 4 */) {
-        retval = __guac_write(io, out_buf, io->written);
+    if (io->__written > 8188 /* sizeof(__out_buf) - 4 */) {
+        retval = __guac_write(io, __out_buf, io->__written);
         if (retval < 0)
             return retval;
 
-        io->written = 0;
+        io->__written = 0;
     }
 
     if (b < 0)
@@ -232,19 +225,19 @@ ssize_t __guac_write_base64_triplet(GUACIO* io, int a, int b, int c) {
 
 ssize_t __guac_write_base64_byte(GUACIO* io, char buf) {
 
-    int* ready_buf = io->ready_buf;
+    int* __ready_buf = io->__ready_buf;
 
     int retval;
 
-    ready_buf[io->ready++] = buf & 0xFF;
+    __ready_buf[io->__ready++] = buf & 0xFF;
 
     /* Flush triplet */
-    if (io->ready == 3) {
-        retval = __guac_write_base64_triplet(io, ready_buf[0], ready_buf[1], ready_buf[2]);
+    if (io->__ready == 3) {
+        retval = __guac_write_base64_triplet(io, __ready_buf[0], __ready_buf[1], __ready_buf[2]);
         if (retval < 0)
             return retval;
 
-        io->ready = 0;
+        io->__ready = 0;
     }
 
     return 1;
@@ -274,12 +267,12 @@ ssize_t guac_flush(GUACIO* io) {
     int retval;
 
     /* Flush remaining bytes in buffer */
-    if (io->written > 0) {
-        retval = __guac_write(io, io->out_buf, io->written);
+    if (io->__written > 0) {
+        retval = __guac_write(io, io->__out_buf, io->__written);
         if (retval < 0)
             return retval;
 
-        io->written = 0;
+        io->__written = 0;
     }
 
     return 0;
@@ -291,7 +284,7 @@ ssize_t guac_flush_base64(GUACIO* io) {
     int retval;
 
     /* Flush triplet to output buffer */
-    while (io->ready > 0) {
+    while (io->__ready > 0) {
         retval = __guac_write_base64_byte(io, -1);
         if (retval < 0)
             return retval;

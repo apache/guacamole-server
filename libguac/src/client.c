@@ -51,8 +51,8 @@
 
 guac_layer __GUAC_DEFAULT_LAYER = {
     .index = 0,
-    .next = NULL,
-    .next_available = NULL
+    .__next = NULL,
+    .__next_available = NULL
 };
 
 const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
@@ -68,10 +68,10 @@ guac_client* __guac_alloc_client(GUACIO* io) {
     client->last_received_timestamp = client->last_sent_timestamp = guac_current_timestamp();
     client->state = RUNNING;
 
-    client->all_layers        = NULL;
-    client->available_buffers = NULL;
+    client->__all_layers        = NULL;
+    client->__available_buffers = NULL;
 
-    client->next_buffer_index = -1;
+    client->__next_buffer_index = -1;
 
     return client;
 }
@@ -83,9 +83,9 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index) {
     /* Init new layer */
     allocd_layer = malloc(sizeof(guac_layer));
 
-    /* Add to all_layers list */
-    allocd_layer->next = client->all_layers;
-    client->all_layers = allocd_layer;
+    /* Add to __all_layers list */
+    allocd_layer->__next = client->__all_layers;
+    client->__all_layers = allocd_layer;
 
     allocd_layer->index = index;
     return allocd_layer;
@@ -97,22 +97,22 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
     guac_layer* allocd_layer;
 
     /* If available layers, pop off first available buffer */
-    if (client->available_buffers != NULL) {
-        allocd_layer = client->available_buffers;
-        client->available_buffers = client->available_buffers->next_available;
-        allocd_layer->next_available = NULL;
+    if (client->__available_buffers != NULL) {
+        allocd_layer = client->__available_buffers;
+        client->__available_buffers = client->__available_buffers->__next_available;
+        allocd_layer->__next_available = NULL;
     }
 
-    /* If no available buffer, allocate new buffer, add to all_layers list */
+    /* If no available buffer, allocate new buffer, add to __all_layers list */
     else {
 
         /* Init new layer */
         allocd_layer = malloc(sizeof(guac_layer));
-        allocd_layer->index = client->next_buffer_index--;
+        allocd_layer->index = client->__next_buffer_index--;
 
-        /* Add to all_layers list */
-        allocd_layer->next = client->all_layers;
-        client->all_layers = allocd_layer;
+        /* Add to __all_layers list */
+        allocd_layer->__next = client->__all_layers;
+        client->__all_layers = allocd_layer;
 
     }
 
@@ -123,8 +123,8 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
 void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
 
     /* Add layer to pool of available buffers */
-    layer->next_available = client->available_buffers;
-    client->available_buffers = layer;
+    layer->__next_available = client->__available_buffers;
+    client->__available_buffers = layer;
 
 }
 
@@ -193,8 +193,8 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                 client = __guac_alloc_client(io);
 
                 /* Load client plugin */
-                client->client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
-                if (!(client->client_plugin_handle)) {
+                client->__client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
+                if (!(client->__client_plugin_handle)) {
                     guac_log_error("Could not open client plugin for protocol \"%s\": %s\n", protocol, dlerror());
                     guac_send_error(io, "Could not load server-side client plugin.");
                     guac_flush(io);
@@ -206,7 +206,7 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                 dlerror(); /* Clear errors */
 
                 /* Get init function */
-                alias.obj = dlsym(client->client_plugin_handle, "guac_client_init");
+                alias.obj = dlsym(client->__client_plugin_handle, "guac_client_init");
 
                 if ((error = dlerror()) != NULL) {
                     guac_log_error("Could not get guac_client_init in plugin: %s\n", error);
@@ -218,7 +218,7 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                 }
 
                 /* Get usage strig */
-                client_args = (const char**) dlsym(client->client_plugin_handle, "GUAC_CLIENT_ARGS");
+                client_args = (const char**) dlsym(client->__client_plugin_handle, "GUAC_CLIENT_ARGS");
 
                 if ((error = dlerror()) != NULL) {
                     guac_log_error("Could not get GUAC_CLIENT_ARGS in plugin: %s\n", error);
@@ -312,16 +312,16 @@ void guac_free_client(guac_client* client) {
     guac_close(client->io);
 
     /* Unload client plugin */
-    if (dlclose(client->client_plugin_handle)) {
+    if (dlclose(client->__client_plugin_handle)) {
         guac_log_error("Could not close client plugin while unloading client: %s", dlerror());
     }
 
     /* Free all layers */
-    while (client->all_layers != NULL) {
+    while (client->__all_layers != NULL) {
 
         /* Get layer, update layer pool head */
-        guac_layer* layer = client->all_layers;
-        client->all_layers = layer->next;
+        guac_layer* layer = client->__all_layers;
+        client->__all_layers = layer->__next;
 
         /* Free layer */
         free(layer);
