@@ -49,6 +49,7 @@ const char* __GUAC_STATUS_SUCCESS_STR        = "Success";
 const char* __GUAC_STATUS_NO_MEMORY_STR      = "Insufficient memory";
 const char* __GUAC_STATUS_NO_INPUT_STR       = "End of input stream";
 const char* __GUAC_STATUS_INPUT_TIMEOUT_STR  = "Read timeout";
+const char* __GUAC_STATUS_SEE_ERRNO_STR      = "(see value of errno)";
 const char* __GUAC_STATUS_OUTPUT_ERROR_STR   = "Output error";
 const char* __GUAC_STATUS_BAD_ARGUMENT_STR   = "Invalid argument";
 const char* __GUAC_STATUS_BAD_STATE_STR      = "Illegal state";
@@ -74,6 +75,10 @@ const char* guac_status_string(guac_status status) {
         /* Input timeout */
 		case GUAC_STATUS_INPUT_TIMEOUT:
             return __GUAC_STATUS_INPUT_TIMEOUT_STR;
+
+        /* Further information in errno */
+		case GUAC_STATUS_SEE_ERRNO:
+            return __GUAC_STATUS_SEE_ERRNO_STR;
 
         /* Output error */
 		case GUAC_STATUS_OUTPUT_ERROR:

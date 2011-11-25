@@ -151,7 +151,7 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
     char** argv;
 
     /* Instruction */
-    guac_instruction instruction;
+    guac_instruction* instruction;
 
     /* Wait for select instruction */
     for (;;) {
@@ -172,19 +172,19 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
             return NULL;
         }
 
-        result = guac_read_instruction(io, usec_timeout, &instruction);
-        if (result < 0) {
+        instruction = guac_read_instruction(io, usec_timeout);
+        if (instruction == NULL) {
             guac_close(io);
             return NULL;            
         }
 
         /* Select instruction read */
-        if (result > 0) {
+        else {
 
-            if (strcmp(instruction.opcode, "select") == 0) {
+            if (strcmp(instruction->opcode, "select") == 0) {
 
                 /* Get protocol from message */
-                char* protocol = instruction.argv[0];
+                char* protocol = instruction->argv[0];
 
                 strcat(protocol_lib, protocol);
                 strcat(protocol_lib, ".so");
@@ -199,7 +199,7 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                     guac_send_error(io, "Could not load server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
-                    guac_free_instruction_data(&instruction);
+                    guac_free_instruction(instruction);
                     return NULL;
                 }
 
@@ -213,7 +213,7 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                     guac_send_error(io, "Invalid server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
-                    guac_free_instruction_data(&instruction);
+                    guac_free_instruction(instruction);
                     return NULL;
                 }
 
@@ -225,7 +225,7 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                     guac_send_error(io, "Invalid server-side client plugin.");
                     guac_flush(io);
                     guac_close(io);
-                    guac_free_instruction_data(&instruction);
+                    guac_free_instruction(instruction);
                     return NULL;
                 }
 
@@ -234,16 +234,16 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                     || guac_flush(io)
                    ) {
                     guac_close(io);
-                    guac_free_instruction_data(&instruction);
+                    guac_free_instruction(instruction);
                     return NULL;
                 }
 
-                guac_free_instruction_data(&instruction);
+                guac_free_instruction(instruction);
                 break;
 
             } /* end if select */
 
-            guac_free_instruction_data(&instruction);
+            guac_free_instruction(instruction);
         }
 
     }
@@ -267,35 +267,35 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
             return NULL;
         }
 
-        result = guac_read_instruction(io, usec_timeout, &instruction);
-        if (result < 0) {
+        instruction = guac_read_instruction(io, usec_timeout);
+        if (instruction == NULL) {
             guac_log_error("Error reading instruction while waiting for connect");
             guac_close(io);
             return NULL;            
         }
 
         /* Connect instruction read */
-        if (result > 0) {
+        else {
 
-            if (strcmp(instruction.opcode, "connect") == 0) {
+            if (strcmp(instruction->opcode, "connect") == 0) {
 
                 /* Initialize client arguments */
-                argc = instruction.argc;
-                argv = instruction.argv;
+                argc = instruction->argc;
+                argv = instruction->argv;
 
                 if (alias.client_init(client, argc, argv) != 0) {
                     /* NOTE: On error, proxy client will send appropriate error message */
-                    guac_free_instruction_data(&instruction);
+                    guac_free_instruction(instruction);
                     guac_close(io);
                     return NULL;
                 }
 
-                guac_free_instruction_data(&instruction);
+                guac_free_instruction(instruction);
                 return client;
 
             } /* end if connect */
 
-            guac_free_instruction_data(&instruction);
+            guac_free_instruction(instruction);
         }
 
     }

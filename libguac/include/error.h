@@ -74,6 +74,12 @@ typedef enum guac_status {
     GUAC_STATUS_INPUT_TIMEOUT,
 
     /**
+     * An error occurred, and further information about the error is already
+     * stored in errno.
+     */
+    GUAC_STATUS_SEE_ERRNO,
+
+    /**
      * An error prevented the operation from writing to its associated
      * output stream.
      */

@@ -62,6 +62,7 @@
 
 #include "guacio.h"
 #include "protocol.h"
+#include "error.h"
 
 ssize_t __guac_write_length_string(GUACIO* io, const char* str) {
 
@@ -328,7 +329,7 @@ int guac_send_cursor(GUACIO* io, int x, int y, cairo_surface_t* surface) {
 }
 
 
-int __guac_fill___instructionbuf(GUACIO* io) {
+int __guac_fill_instructionbuf(GUACIO* io) {
 
     int retval;
     
@@ -356,8 +357,7 @@ int __guac_fill___instructionbuf(GUACIO* io) {
 }
 
 /* Returns new instruction if one exists, or NULL if no more instructions. */
-int guac_read_instruction(GUACIO* io, int usec_timeout,
-        guac_instruction* parsed_instruction) {
+guac_instruction* guac_read_instruction(GUACIO* io, int usec_timeout) {
 
     int retval;
     int i = io->__instructionbuf_parse_start;
@@ -407,18 +407,58 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
                     /* Finish parse if terminator is a semicolon */
                     if (terminator == ';') {
 
+                        guac_instruction* parsed_instruction;
                         int j;
+
+                        /* Allocate instruction */
+                        parsed_instruction = malloc(sizeof(guac_instruction));
+                        if (parsed_instruction == NULL) {
+                            guac_error = GUAC_STATUS_NO_MEMORY;
+                            return NULL;
+                        }
 
                         /* Init parsed instruction */
                         parsed_instruction->argc = io->__instructionbuf_elementc - 1;
                         parsed_instruction->argv = malloc(sizeof(char*) * parsed_instruction->argc);
 
+                        /* Fail if memory could not be alloc'd for argv */
+                        if (parsed_instruction->argv == NULL) {
+                            guac_error = GUAC_STATUS_NO_MEMORY;
+                            free(parsed_instruction);
+                            return NULL;
+                        }
+
                         /* Set opcode */
                         parsed_instruction->opcode = strdup(io->__instructionbuf_elementv[0]);
 
+                        /* Fail if memory could not be alloc'd for opcode */
+                        if (parsed_instruction->opcode == NULL) {
+                            guac_error = GUAC_STATUS_NO_MEMORY;
+                            free(parsed_instruction->argv);
+                            free(parsed_instruction);
+                            return NULL;
+                        }
+
+
                         /* Copy element values to parsed instruction */
-                        for (j=0; j<parsed_instruction->argc; j++)
+                        for (j=0; j<parsed_instruction->argc; j++) {
                             parsed_instruction->argv[j] = strdup(io->__instructionbuf_elementv[j+1]);
+
+                            /* Free memory and fail if out of mem */
+                            if (parsed_instruction->argv[j] == NULL) {
+                                guac_error = GUAC_STATUS_NO_MEMORY;
+
+                                /* Free all alloc'd argv values */
+                                while (--j >= 0)
+                                    free(parsed_instruction->argv[j]);
+
+                                free(parsed_instruction->opcode);
+                                free(parsed_instruction->argv);
+                                free(parsed_instruction);
+                                return NULL;
+                            }
+
+                        }
 
                         /* Reset buffer */
                         memmove(io->__instructionbuf, io->__instructionbuf + i + 1, io->__instructionbuf_used_length - i - 1);
@@ -427,7 +467,7 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
                         io->__instructionbuf_elementc = 0;
 
                         /* Done */
-                        return 1;
+                        return parsed_instruction;
 
                     } /* end if terminator */
 
@@ -444,12 +484,20 @@ int guac_read_instruction(GUACIO* io, int usec_timeout,
         /* No instruction yet? Get more data ... */
         retval = guac_select(io, usec_timeout);
         if (retval <= 0)
-            return retval;
+            return NULL;
 
         /* If more data is available, fill into buffer */
-        retval = __guac_fill___instructionbuf(io);
-        if (retval < 0)  return retval; /* Error */
-        if (retval == 0) return -1;     /* EOF */
+        retval = __guac_fill_instructionbuf(io);
+
+        /* Error, guac_error already set */
+        if (retval < 0)
+            return NULL;
+
+        /* EOF */
+        if (retval == 0) {
+            guac_error = GUAC_STATUS_NO_INPUT;
+            return NULL;
+        }
 
     }
 

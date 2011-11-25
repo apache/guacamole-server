@@ -117,7 +117,7 @@ ssize_t __guac_write(GUACIO* io, const char* buf, int count) {
 
     /* Record errors in guac_error */
     if (retval < 0)
-        guac_error = GUAC_STATUS_OUTPUT_ERROR;
+        guac_error = GUAC_STATUS_SEE_ERRNO;
 
     return retval;
 }
@@ -317,7 +317,7 @@ int guac_select(GUACIO* io, int usec_timeout) {
     }
 
     /* Properly set guac_error */
-    if (retval <  0) guac_error = GUAC_STATUS_INPUT_ERROR;
+    if (retval <  0) guac_error = GUAC_STATUS_SEE_ERRNO;
     if (retval == 0) guac_error = GUAC_STATUS_INPUT_TIMEOUT;
 
     return retval;
