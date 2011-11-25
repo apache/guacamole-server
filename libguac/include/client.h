@@ -357,6 +357,27 @@ struct guac_client {
 };
 
 /**
+ * Open the plugin which provides support for the given protocol, if it
+ * exists.
+ *
+ * @param protocol The name of the protocol to retrieve the client plugin
+ *                 for.
+ * @return The client plugin supporting the given protocol, or NULL if
+ *         an error occurs or no such plugin exists.
+ */
+guac_client_plugin* guac_client_plugin_open(const char* protocol);
+
+/**
+ * Close the given plugin, releasing all associated resources. This function
+ * must be called after use of a client plugin is finished.
+ *
+ * @param plugin The client plugin to close.
+ * @return Zero on success, non-zero if an error occurred while releasing
+ *         the resources associated with the plugin.
+ */
+int guac_client_plugin_close(guac_client_plugin* plugin);
+
+/**
  * Initialize and return a new guac_client. The pluggable client will be
  * initialized using the arguments provided.
  *
