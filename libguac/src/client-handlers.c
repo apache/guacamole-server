@@ -53,10 +53,29 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {NULL,         NULL}
 };
 
+int64_t __guac_parse_int(const char* str) {
+
+    int sign = 1;
+    int64_t num = 0;
+
+    for (; *str != '\0'; str++) {
+
+        if (*str == '-')
+            sign = -sign;
+        else
+            num = num * 10 + (*str - '0');
+
+    }
+
+    return num * sign;
+
+}
+
+
 /* Guacamole instruction handlers */
 
 int __guac_handle_sync(guac_client* client, guac_instruction* instruction) {
-    guac_timestamp timestamp = guac_parse_int(instruction->argv[0]);
+    guac_timestamp timestamp = __guac_parse_int(instruction->argv[0]);
 
     /* Error if timestamp is in future */
     if (timestamp > client->last_sent_timestamp)

@@ -122,24 +122,6 @@ ssize_t __guac_socket_write(guac_socket* io, const char* buf, int count) {
     return retval;
 }
 
-int64_t guac_parse_int(const char* str) {
-
-    int sign = 1;
-    int64_t num = 0;
-
-    for (; *str != '\0'; str++) {
-
-        if (*str == '-')
-            sign = -sign;
-        else
-            num = num * 10 + (*str - '0');
-
-    }
-
-    return num * sign;
-
-}
-
 ssize_t guac_socket_write_int(guac_socket* io, int64_t i) {
 
     char buffer[128];
