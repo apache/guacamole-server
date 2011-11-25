@@ -348,3 +348,43 @@ int guac_client_handle_instruction(guac_client* client, guac_instruction* instru
 
 }
 
+void vguac_client_log_info(guac_client* client, const char* format,
+        va_list ap) {
+
+    /* Call handler if defined */
+    if (client->log_info_handler != NULL)
+        client->log_info_handler(client, format, ap);
+
+}
+
+void vguac_client_log_error(guac_client* client, const char* format,
+        va_list ap) {
+
+    /* Call handler if defined */
+    if (client->log_error_handler != NULL)
+        client->log_error_handler(client, format, ap);
+
+}
+
+void guac_client_log_info(guac_client* client, const char* format, ...) {
+
+    va_list args;
+    va_start(args, format);
+
+    vguac_client_log_info(client, format, args);
+
+    va_end(args);
+
+}
+
+void guac_client_log_error(guac_client* client, const char* format, ...) {
+
+    va_list args;
+    va_start(args, format);
+
+    vguac_client_log_error(client, format, args);
+
+    va_end(args);
+
+}
+
