@@ -51,6 +51,7 @@
  */
 
 typedef struct guac_client guac_client;
+typedef struct guac_client_plugin guac_client_plugin;
 
 /**
  * Handler for server messages (where "server" refers to the server that
@@ -85,6 +86,11 @@ typedef int guac_client_free_handler(guac_client* client);
 typedef void guac_client_log_handler(guac_client* client, const char* format, va_list args); 
 
 /**
+ * Handler which should initialize the given guac_client.
+ */
+typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
+
+/**
  * Possible current states of the Guacamole client. Currently, the only
  * two states are RUNNING and STOPPING.
  */
@@ -105,6 +111,33 @@ typedef enum guac_client_state {
 } guac_client_state;
 
 /**
+ * A handle to a client plugin, containing enough information about the
+ * plugin to complete the initial protocol handshake and instantiate a new
+ * client supporting the protocol provided by the client plugin. 
+ */
+struct guac_client_plugin {
+
+    /**
+     * Reference to dlopen'd client plugin.
+     */
+    void* __client_plugin_handle;
+
+    /**
+     * Reference to the init handler of this client plugin. This
+     * function will be called when the client plugin is started.
+     */
+    guac_client_init_handler* init_handler;
+
+    /**
+     * NULL-terminated array of all arguments accepted by this client
+     * plugin, in order. The values of these arguments will be passed
+     * to the init_handler if the client plugin is started.
+     */
+    const char** args;
+
+};
+
+/**
  * Guacamole proxy client.
  *
  * Represents a Guacamole proxy client (the client which communicates to
@@ -113,10 +146,11 @@ typedef enum guac_client_state {
 struct guac_client {
 
     /**
-     * The guac_socket structure to be used to communicate with the web-client. It is
-     * expected that the implementor of any Guacamole proxy client will provide
-     * their own mechanism of I/O for their protocol. The guac_socket structure is
-     * used only to communicate conveniently with the Guacamole web-client.
+     * The guac_socket structure to be used to communicate with the web-client.
+     * It is expected that the implementor of any Guacamole proxy client will
+     * provide their own mechanism of I/O for their protocol. The guac_socket
+     * structure is used only to communicate conveniently with the Guacamole
+     * web-client.
      */
     guac_socket* io;
 
@@ -156,11 +190,6 @@ struct guac_client {
      * client.
      */
     guac_timestamp last_sent_timestamp;
-
-    /**
-     * Reference to dlopen'd client plugin.
-     */
-    void* __client_plugin_handle;
 
     /**
      * Arbitrary reference to proxy client-specific data. Implementors of a
@@ -288,7 +317,7 @@ struct guac_client {
      *
      *     void function_of_daemon() {
      *
-     *         guac_client* client = [client from guac_get_client()];
+     *         guac_client* client = [client from guac_client_plugin_get_client()];
      *
      *         client->log_info_handler = log_handler;
      *
@@ -315,7 +344,7 @@ struct guac_client {
      *
      *     void function_of_daemon() {
      *
-     *         guac_client* client = [client from guac_get_client()];
+     *         guac_client* client = [client from guac_client_plugin_get_client()];
      *
      *         client->log_error_handler = log_handler;
      *
@@ -328,22 +357,17 @@ struct guac_client {
 };
 
 /**
- * Handler which should initialize the given guac_client.
- */
-typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
-
-/**
  * Initialize and return a new guac_client. The pluggable client will be
- * chosen based on the first connect message received on the given file
- * descriptor.
+ * initialized using the arguments provided.
  *
- * @param client_fd The file descriptor associated with the socket associated
- *                  with the connection to the web-client tunnel.
- * @param usec_timeout The maximum number of microseconds to wait for each
- *                     instruction during the initial client handshake.
+ * @param plugin The client plugin to use to create the new client.
+ * @param io The guac_socket the client should use for communication.
+ * @param argc The number of arguments being passed to the client.
+ * @param argv All arguments to be passed to the client.
  * @return A pointer to the newly initialized client.
  */
-guac_client* guac_get_client(int client_fd, int usec_timeout);
+guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
+        guac_socket* io, int argc, char** argv);
 
 /**
  * Free all resources associated with the given client.
