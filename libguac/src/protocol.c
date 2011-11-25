@@ -576,20 +576,3 @@ guac_timestamp guac_protocol_get_timestamp() {
 
 }
 
-void guac_sleep(int millis) {
-
-#ifdef HAVE_NANOSLEEP 
-        struct timespec sleep_period;
-
-        sleep_period.tv_sec =   millis / 1000;
-        sleep_period.tv_nsec = (millis % 1000) * 1000000L;
-
-        nanosleep(&sleep_period, NULL);
-#elif defined(__MINGW32__)
-        Sleep(millis);
-#else
-#warning No sleep/nanosleep function available. Clients may not perform as expected. Consider patching libguac to add support for your platform.
-#endif
-
-}
-

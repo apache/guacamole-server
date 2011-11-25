@@ -380,13 +380,5 @@ guac_instruction* guac_protocol_expect_instruction(guac_socket* io, int usec_tim
  */
 guac_timestamp guac_protocol_get_timestamp();
 
-/**
- * Suspends execution of the current thread for the given number of
- * milliseconds.
- *
- * @param millis The number of milliseconds to sleep.
- */
-void guac_sleep(int millis);
-
 #endif
 
