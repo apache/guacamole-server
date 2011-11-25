@@ -40,8 +40,7 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include "log.h"
-#include "guacio.h"
+#include "socket.h"
 #include "protocol.h"
 #include "client.h"
 #include "client-handlers.h"
@@ -57,7 +56,7 @@ guac_layer __GUAC_DEFAULT_LAYER = {
 
 const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
 
-guac_client* __guac_alloc_client(GUACIO* io) {
+guac_client* __guac_alloc_client(guac_socket* io) {
 
     /* Allocate new client (not handoff) */
     guac_client* client = malloc(sizeof(guac_client));
@@ -65,7 +64,7 @@ guac_client* __guac_alloc_client(GUACIO* io) {
 
     /* Init new client */
     client->io = io;
-    client->last_received_timestamp = client->last_sent_timestamp = guac_current_timestamp();
+    client->last_received_timestamp = client->last_sent_timestamp = guac_protocol_get_timestamp();
     client->state = RUNNING;
 
     client->__all_layers        = NULL;
@@ -131,7 +130,7 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
 guac_client* guac_get_client(int client_fd, int usec_timeout) {
 
     guac_client* client;
-    GUACIO* io = guac_open(client_fd);
+    guac_socket* io = guac_socket_open(client_fd);
 
     /* Pluggable client */
     char protocol_lib[256] = "libguac-client-";
@@ -159,22 +158,22 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
         int result;
 
         /* Wait for data until timeout */
-        result = guac_instructions_waiting(io, usec_timeout);
+        result = guac_protocol_instructions_waiting(io, usec_timeout);
         if (result == 0) {
-            guac_send_error(io, "Select timeout.");
-            guac_close(io);
+            guac_protocol_send_error(io, "Select timeout.");
+            guac_socket_close(io);
             return NULL;
         }
 
         /* If error occurs while waiting, exit with failure */
         if (result < 0) {
-            guac_close(io);
+            guac_socket_close(io);
             return NULL;
         }
 
-        instruction = guac_read_instruction(io, usec_timeout);
+        instruction = guac_protocol_read_instruction(io, usec_timeout);
         if (instruction == NULL) {
-            guac_close(io);
+            guac_socket_close(io);
             return NULL;            
         }
 
@@ -195,11 +194,11 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                 /* Load client plugin */
                 client->__client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
                 if (!(client->__client_plugin_handle)) {
-                    guac_log_error("Could not open client plugin for protocol \"%s\": %s\n", protocol, dlerror());
-                    guac_send_error(io, "Could not load server-side client plugin.");
-                    guac_flush(io);
-                    guac_close(io);
-                    guac_free_instruction(instruction);
+                    guac_client_log_error(client, "Could not open client plugin for protocol \"%s\": %s\n", protocol, dlerror());
+                    guac_protocol_send_error(io, "Could not load server-side client plugin.");
+                    guac_socket_flush(io);
+                    guac_socket_close(io);
+                    guac_instruction_free(instruction);
                     return NULL;
                 }
 
@@ -209,11 +208,11 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                 alias.obj = dlsym(client->__client_plugin_handle, "guac_client_init");
 
                 if ((error = dlerror()) != NULL) {
-                    guac_log_error("Could not get guac_client_init in plugin: %s\n", error);
-                    guac_send_error(io, "Invalid server-side client plugin.");
-                    guac_flush(io);
-                    guac_close(io);
-                    guac_free_instruction(instruction);
+                    guac_client_log_error(client, "Could not get guac_client_init in plugin: %s\n", error);
+                    guac_protocol_send_error(io, "Invalid server-side client plugin.");
+                    guac_socket_flush(io);
+                    guac_socket_close(io);
+                    guac_instruction_free(instruction);
                     return NULL;
                 }
 
@@ -221,29 +220,29 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
                 client_args = (const char**) dlsym(client->__client_plugin_handle, "GUAC_CLIENT_ARGS");
 
                 if ((error = dlerror()) != NULL) {
-                    guac_log_error("Could not get GUAC_CLIENT_ARGS in plugin: %s\n", error);
-                    guac_send_error(io, "Invalid server-side client plugin.");
-                    guac_flush(io);
-                    guac_close(io);
-                    guac_free_instruction(instruction);
+                    guac_client_log_error(client, "Could not get GUAC_CLIENT_ARGS in plugin: %s\n", error);
+                    guac_protocol_send_error(io, "Invalid server-side client plugin.");
+                    guac_socket_flush(io);
+                    guac_socket_close(io);
+                    guac_instruction_free(instruction);
                     return NULL;
                 }
 
                 if (   /* Send args */
-                       guac_send_args(io, client_args)
-                    || guac_flush(io)
+                       guac_protocol_send_args(io, client_args)
+                    || guac_socket_flush(io)
                    ) {
-                    guac_close(io);
-                    guac_free_instruction(instruction);
+                    guac_socket_close(io);
+                    guac_instruction_free(instruction);
                     return NULL;
                 }
 
-                guac_free_instruction(instruction);
+                guac_instruction_free(instruction);
                 break;
 
             } /* end if select */
 
-            guac_free_instruction(instruction);
+            guac_instruction_free(instruction);
         }
 
     }
@@ -254,23 +253,23 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
         int result;
 
         /* Wait for data until timeout */
-        result = guac_instructions_waiting(io, usec_timeout);
+        result = guac_protocol_instructions_waiting(io, usec_timeout);
         if (result == 0) {
-            guac_send_error(io, "Connect timeout.");
-            guac_close(io);
+            guac_protocol_send_error(io, "Connect timeout.");
+            guac_socket_close(io);
             return NULL;
         }
 
         /* If error occurs while waiting, exit with failure */
         if (result < 0) {
-            guac_close(io);
+            guac_socket_close(io);
             return NULL;
         }
 
-        instruction = guac_read_instruction(io, usec_timeout);
+        instruction = guac_protocol_read_instruction(io, usec_timeout);
         if (instruction == NULL) {
-            guac_log_error("Error reading instruction while waiting for connect");
-            guac_close(io);
+            guac_client_log_error(client, "Error reading instruction while waiting for connect");
+            guac_socket_close(io);
             return NULL;            
         }
 
@@ -285,35 +284,35 @@ guac_client* guac_get_client(int client_fd, int usec_timeout) {
 
                 if (alias.client_init(client, argc, argv) != 0) {
                     /* NOTE: On error, proxy client will send appropriate error message */
-                    guac_free_instruction(instruction);
-                    guac_close(io);
+                    guac_instruction_free(instruction);
+                    guac_socket_close(io);
                     return NULL;
                 }
 
-                guac_free_instruction(instruction);
+                guac_instruction_free(instruction);
                 return client;
 
             } /* end if connect */
 
-            guac_free_instruction(instruction);
+            guac_instruction_free(instruction);
         }
 
     }
 
 }
 
-void guac_free_client(guac_client* client) {
+void guac_client_free(guac_client* client) {
 
     if (client->free_handler) {
         if (client->free_handler(client))
-            guac_log_error("Error calling client free handler");
+            guac_client_log_error(client, "Error calling client free handler");
     }
 
-    guac_close(client->io);
+    guac_socket_close(client->io);
 
     /* Unload client plugin */
     if (dlclose(client->__client_plugin_handle)) {
-        guac_log_error("Could not close client plugin while unloading client: %s", dlerror());
+        guac_client_log_error(client, "Could not close client plugin while unloading client: %s", dlerror());
     }
 
     /* Free all layers */

@@ -35,24 +35,24 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_GUACIO_H
-#define _GUAC_GUACIO_H
+#ifndef _GUAC_SOCKET_H
+#define _GUAC_SOCKET_H
 
 #include <stdint.h>
 #include <unistd.h>
 
 /**
- * Defines the GUACIO object and functionss for using and manipulating it.
+ * Defines the guac_socket object and functionss for using and manipulating it.
  *
- * @file guacio.h
+ * @file socket.h
  */
 
 
 /**
- * The core I/O object of Guacamole. GUACIO provides buffered input and output
- * as well as convenience methods for efficiently writing base64 data.
+ * The core I/O object of Guacamole. guac_socket provides buffered input and
+ * output as well as convenience methods for efficiently writing base64 data.
  */
-typedef struct GUACIO {
+typedef struct guac_socket {
 
     /**
      * The file descriptor to be read from / written to.
@@ -114,21 +114,21 @@ typedef struct GUACIO {
      */
     char* __instructionbuf_elementv[64];
 
-} GUACIO;
+} guac_socket;
 
 /**
- * Allocates and initializes a new GUACIO object with the given open
+ * Allocates and initializes a new guac_socket object with the given open
  * file descriptor.
  *
- * If an error occurs while allocating the GUACIO object, NULL is returned,
+ * If an error occurs while allocating the guac_socket object, NULL is returned,
  * and guac_error is set appropriately.
  *
- * @param fd An open file descriptor that this GUACIO object should manage.
- * @return A newly allocated GUACIO object associated with the given
+ * @param fd An open file descriptor that this guac_socket object should manage.
+ * @return A newly allocated guac_socket object associated with the given
  *         file descriptor, or NULL if an error occurs while allocating
- *         the GUACIO object.
+ *         the guac_socket object.
  */
-GUACIO* guac_open(int fd);
+guac_socket* guac_socket_open(int fd);
 
 /**
  * Parses the given string as a decimal number, returning the result as
@@ -142,21 +142,21 @@ GUACIO* guac_open(int fd);
 int64_t guac_parse_int(const char* str);
 
 /**
- * Writes the given unsigned int to the given GUACIO object. The data
+ * Writes the given unsigned int to the given guac_socket object. The data
  * written may be buffered until the buffer is flushed automatically or
  * manually.
  *
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The GUACIO object to write to.
+ * @param io The guac_socket object to write to.
  * @param i The unsigned int to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
  */
-ssize_t guac_write_int(GUACIO* io, int64_t i);
+ssize_t guac_socket_write_int(guac_socket* io, int64_t i);
 
 /**
- * Writes the given string to the given GUACIO object. The data
+ * Writes the given string to the given guac_socket object. The data
  * written may be buffered until the buffer is flushed automatically or
  * manually. Note that if the string can contain characters used
  * internally by the Guacamole protocol (commas, semicolons, or
@@ -165,29 +165,29 @@ ssize_t guac_write_int(GUACIO* io, int64_t i);
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The GUACIO object to write to.
+ * @param io The guac_socket object to write to.
  * @param str The string to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
 */
-ssize_t guac_write_string(GUACIO* io, const char* str);
+ssize_t guac_socket_write_string(guac_socket* io, const char* str);
 
 /**
- * Writes the given binary data to the given GUACIO object as base64-encoded
+ * Writes the given binary data to the given guac_socket object as base64-encoded
  * data. The data written may be buffered until the buffer is flushed
  * automatically or manually. Beware that because base64 data is buffered
- * on top of the write buffer already used, a call to guac_flush_base64() must
+ * on top of the write buffer already used, a call to guac_socket_flush_base64() must
  * be made before non-base64 writes (or writes of an independent block of
  * base64 data) can be made.
  *
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The GUACIO object to write to.
+ * @param io The guac_socket object to write to.
  * @param buf A buffer containing the data to write.
  * @param count The number of bytes to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
  */
-ssize_t guac_write_base64(GUACIO* io, const void* buf, size_t count);
+ssize_t guac_socket_write_base64(guac_socket* io, const void* buf, size_t count);
 
 /**
  * Flushes the base64 buffer, writing padding characters as necessary.
@@ -195,10 +195,10 @@ ssize_t guac_write_base64(GUACIO* io, const void* buf, size_t count);
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The GUACIO object to flush
+ * @param io The guac_socket object to flush
  * @return Zero on success, or non-zero if an error occurs during flush.
  */
-ssize_t guac_flush_base64(GUACIO* io);
+ssize_t guac_socket_flush_base64(guac_socket* io);
 
 /**
  * Flushes the write buffer.
@@ -206,14 +206,14 @@ ssize_t guac_flush_base64(GUACIO* io);
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The GUACIO object to flush
+ * @param io The guac_socket object to flush
  * @return Zero on success, or non-zero if an error occurs during flush.
  */
-ssize_t guac_flush(GUACIO* io);
+ssize_t guac_socket_flush(guac_socket* io);
 
 
 /**
- * Waits for input to be available on the given GUACIO object until the
+ * Waits for input to be available on the given guac_socket object until the
  * specified timeout elapses.
  *
  * If an error occurs while waiting, a negative value is returned, and
@@ -222,22 +222,22 @@ ssize_t guac_flush(GUACIO* io);
  * If a timeout occurs while waiting, zero value is returned, and
  * guac_error is set to GUAC_STATUS_INPUT_TIMEOUT.
  *
- * @param io The GUACIO object to wait for.
+ * @param io The guac_socket object to wait for.
  * @param usec_timeout The maximum number of microseconds to wait for data, or
  *                     -1 to potentially wait forever.
  * @return Positive on success, zero if the timeout elapsed and no data is
  *         available, negative on error.
  */
-int guac_select(GUACIO* io, int usec_timeout);
+int guac_socket_select(guac_socket* io, int usec_timeout);
 
 /**
- * Frees resources allocated to the given GUACIO object. Note that this
+ * Frees resources allocated to the given guac_socket object. Note that this
  * implicitly flush all buffers, but will NOT close the associated file
  * descriptor.
  *
- * @param io The GUACIO object to close.
+ * @param io The guac_socket object to close.
  */
-void guac_close(GUACIO* io);
+void guac_socket_close(guac_socket* io);
 
 #endif
 

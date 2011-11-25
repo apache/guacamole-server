@@ -39,7 +39,9 @@
 #ifndef _GUAC_CLIENT_H
 #define _GUAC_CLIENT_H
 
-#include "guacio.h"
+#include <stdarg.h>
+
+#include "socket.h"
 #include "protocol.h"
 
 /**
@@ -78,6 +80,11 @@ typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
 typedef int guac_client_free_handler(guac_client* client);
 
 /**
+ * Handler for logging messages
+ */
+typedef void guac_client_log_handler(guac_client* client, const char* format, va_list args); 
+
+/**
  * Possible current states of the Guacamole client. Currently, the only
  * two states are RUNNING and STOPPING.
  */
@@ -106,12 +113,12 @@ typedef enum guac_client_state {
 struct guac_client {
 
     /**
-     * The GUACIO structure to be used to communicate with the web-client. It is
+     * The guac_socket structure to be used to communicate with the web-client. It is
      * expected that the implementor of any Guacamole proxy client will provide
-     * their own mechanism of I/O for their protocol. The GUACIO structure is
+     * their own mechanism of I/O for their protocol. The guac_socket structure is
      * used only to communicate conveniently with the Guacamole web-client.
      */
-    GUACIO* io;
+    guac_socket* io;
 
     /**
      * The current state of the client. When the client is first allocated,
@@ -169,7 +176,7 @@ struct guac_client {
      *
      * Example:
      * @code
-     *     void handle_messages(guac_client* client);
+     *     int handle_messages(guac_client* client);
      *
      *     int guac_client_init(guac_client* client, int argc, char** argv) {
      *         client->handle_messages = handle_messages;
@@ -196,7 +203,7 @@ struct guac_client {
 
      * Example:
      * @code
-     *     void mouse_handler(guac_client* client, int x, int y, int button_mask);
+     *     int mouse_handler(guac_client* client, int x, int y, int button_mask);
      *
      *     int guac_client_init(guac_client* client, int argc, char** argv) {
      *         client->mouse_handler = mouse_handler;
@@ -214,7 +221,7 @@ struct guac_client {
      *
      * Example:
      * @code
-     *     void key_handler(guac_client* client, int keysym, int pressed);
+     *     int key_handler(guac_client* client, int keysym, int pressed);
      *
      *     int guac_client_init(guac_client* client, int argc, char** argv) {
      *         client->key_handler = key_handler;
@@ -235,7 +242,7 @@ struct guac_client {
      *
      * Example:
      * @code
-     *     void clipboard_handler(guac_client* client, char* copied);
+     *     int clipboard_handler(guac_client* client, char* copied);
      *
      *     int guac_client_init(guac_client* client, int argc, char** argv) {
      *         client->clipboard_handler = clipboard_handler;
@@ -255,7 +262,7 @@ struct guac_client {
      *
      * Example:
      * @code
-     *     void free_handler(guac_client* client);
+     *     int free_handler(guac_client* client);
      *
      *     int guac_client_init(guac_client* client, int argc, char** argv) {
      *         client->free_handler = free_handler;
@@ -263,6 +270,60 @@ struct guac_client {
      * @endcode
      */
     guac_client_free_handler* free_handler;
+
+    /**
+     * Handler for logging informational messages. This handler will be called
+     * via guac_client_log_info() when the client needs to log information.
+     *
+     * In general, only programs loading the client should implement this
+     * handler, as those are the programs that would provide the logging
+     * facilities.
+     *
+     * Client implementations should expect these handlers to already be
+     * set.
+     *
+     * Example:
+     * @code
+     *     void log_handler(guac_client* client, const char* format, va_list args);
+     *
+     *     void function_of_daemon() {
+     *
+     *         guac_client* client = [client from guac_get_client()];
+     *
+     *         client->log_info_handler = log_handler;
+     *
+     *     }
+     * @endcode
+     */
+    guac_client_log_handler* log_info_handler;
+
+
+    /**
+     * Handler for logging error messages. This handler will be called
+     * via guac_client_log_error() when the client needs to log an error.
+     *
+     * In general, only programs loading the client should implement this
+     * handler, as those are the programs that would provide the logging
+     * facilities.
+     *
+     * Client implementations should expect these handlers to already be
+     * set.
+     *
+     * Example:
+     * @code
+     *     void log_handler(guac_client* client, const char* format, va_list args);
+     *
+     *     void function_of_daemon() {
+     *
+     *         guac_client* client = [client from guac_get_client()];
+     *
+     *         client->log_error_handler = log_handler;
+     *
+     *     }
+     * @endcode
+     */
+    guac_client_log_handler* log_error_handler;
+
 
 };
 
@@ -272,8 +333,9 @@ struct guac_client {
 typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
 
 /**
- * Initialize and return a new guac_client. The pluggable client will be chosen based on
- * the first connect message received on the given file descriptor.
+ * Initialize and return a new guac_client. The pluggable client will be
+ * chosen based on the first connect message received on the given file
+ * descriptor.
  *
  * @param client_fd The file descriptor associated with the socket associated
  *                  with the connection to the web-client tunnel.
@@ -288,7 +350,7 @@ guac_client* guac_get_client(int client_fd, int usec_timeout);
  *
  * @param client The proxy client to free all reasources of.
  */
-void guac_free_client(guac_client* client);
+void guac_client_free(guac_client* client);
 
 /**
  * Call the appropriate handler defined by the given client for the given
@@ -329,6 +391,56 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index);
  * @param layer The buffer to return to the pool of available buffers.
  */
 void guac_client_free_buffer(guac_client* client, guac_layer* layer);
+
+/**
+ * Logs an informational message in the log used by the given client. The
+ * logger used will normally be defined by guacd (or whichever program loads
+ * the proxy client) by setting the logging handlers of the client when it is
+ * loaded.
+ *
+ * @param client The proxy client to log an informational message for.
+ * @param format A printf-style format string to log.
+ * @param ... Arguments to use when filling the format string for printing.
+ */
+void guac_client_log_info(guac_client* client, const char* format, ...);
+
+/**
+ * Logs an error message in the log used by the given client. The logger
+ * used will normally be defined by guacd (or whichever program loads the
+ * proxy client) by setting the logging handlers of the client when it is
+ * loaded.
+ *
+ * @param client The proxy client to log an error for.
+ * @param format A printf-style format string to log.
+ * @param ... Arguments to use when filling the format string for printing.
+ */
+void guac_client_log_error(guac_client* client, const char* format, ...);
+
+/**
+ * Logs an informational message in the log used by the given client. The
+ * logger used will normally be defined by guacd (or whichever program loads
+ * the proxy client) by setting the logging handlers of the client when it is
+ * loaded.
+ *
+ * @param client The proxy client to log an informational message for.
+ * @param format A printf-style format string to log.
+ * @param ap The va_list containing the arguments to be used when filling the
+ *           format string for printing.
+ */
+void vguac_client_log_info(guac_client* client, const char* format, va_list ap);
+
+/**
+ * Logs an error message in the log used by the given client. The logger
+ * used will normally be defined by guacd (or whichever program loads the
+ * proxy client) by setting the logging handlers of the client when it is
+ * loaded.
+ *
+ * @param client The proxy client to log an error for.
+ * @param format A printf-style format string to log.
+ * @param ap The va_list containing the arguments to be used when filling the
+ *           format string for printing.
+ */
+void vguac_client_log_error(guac_client* client, const char* format, va_list ap);
 
 /**
  * The default Guacamole client layer, layer 0.
