@@ -74,9 +74,6 @@ void* __guac_client_output_thread(void* data) {
         /* Handle server messages */
         if (client->handle_messages) {
 
-            /* Get previous GUACIO state */
-            int last_total_written = io->total_written;
-
             /* Only handle messages if synced within threshold */
             if (client->last_sent_timestamp - client->last_received_timestamp
                     < GUAC_SYNC_THRESHOLD) {
@@ -88,19 +85,14 @@ void* __guac_client_output_thread(void* data) {
                     return NULL;
                 }
 
-                /* If data was written during message handling */
-                if (io->total_written != last_total_written) {
+                /* Sleep as necessary */
+                guac_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
 
-                    /* Sleep as necessary */
-                    guac_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
-
-                    /* Send sync instruction */
-                    client->last_sent_timestamp = guac_current_timestamp();
-                    if (guac_send_sync(io, client->last_sent_timestamp)) {
-                        guac_client_stop(client);
-                        return NULL;
-                    }
-
+                /* Send sync instruction */
+                client->last_sent_timestamp = guac_current_timestamp();
+                if (guac_send_sync(io, client->last_sent_timestamp)) {
+                    guac_client_stop(client);
+                    return NULL;
                 }
 
                 if (guac_flush(io)) {
@@ -132,23 +124,31 @@ void* __guac_client_input_thread(void* data) {
     guac_client* client = (guac_client*) data;
     GUACIO* io = client->io;
 
-    guac_instruction instruction;
-
     /* Guacamole client input loop */
-    while (client->state == RUNNING && guac_read_instruction(io, GUAC_USEC_TIMEOUT, &instruction) > 0) {
+    while (client->state == RUNNING) {
 
-        /* Call handler, stop on error */
-        if (guac_client_handle_instruction(client, &instruction) < 0) {
-            guac_free_instruction_data(&instruction);
-            break;
+        /* Read instruction */
+        guac_instruction* instruction =
+            guac_read_instruction(io, GUAC_USEC_TIMEOUT);
+
+        /* Stop on error */
+        if (instruction == NULL) {
+            guac_client_stop(client);
+            return NULL;
         }
 
-        /* Free allocate instruction data */
-        guac_free_instruction_data(&instruction);
+        /* Call handler, stop on error */
+        if (guac_client_handle_instruction(client, instruction) < 0) {
+            guac_free_instruction(instruction);
+            guac_client_stop(client);
+            return NULL;
+        }
+
+        /* Free allocated instruction */
+        guac_free_instruction(instruction);
 
     }
 
-    guac_client_stop(client);
     return NULL;
 
 }
