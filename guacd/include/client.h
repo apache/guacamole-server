@@ -40,12 +40,6 @@
 #define _GUACD_CLIENT_H
 
 /**
- * Provides functions and structures required for defining (and handling) a proxy client.
- *
- * @file client.h
- */
-
-/**
  * The time to allow between sync responses in milliseconds. If a sync
  * instruction is sent to the client and no response is received within this
  * timeframe, server messages will not be handled until a sync instruction is

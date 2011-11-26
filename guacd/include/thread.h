@@ -35,8 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_THREAD_H
-#define _GUAC_THREAD_H
+#ifndef _GUACD_THREAD_H
+#define _GUACD_THREAD_H
 
 /**
  * Provides basic cross-platform threads.
