@@ -44,8 +44,7 @@
 
 #include <rfb/rfbclient.h>
 
-#include <guacamole/log.h>
-#include <guacamole/guacio.h>
+#include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
@@ -75,7 +74,7 @@ typedef struct vnc_guac_client_data {
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
-    GUACIO* io = gc->io;
+    guac_socket* socket = gc->socket;
 
     /* Cairo image buffer */
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
@@ -143,7 +142,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     /* SEND CURSOR */
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_ARGB32, w, h, stride);
-    guac_send_cursor(io, x, y, surface);
+    guac_protocol_send_cursor(socket, x, y, surface);
 
     /* Free surface */
     cairo_surface_destroy(surface);
@@ -157,7 +156,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
-    GUACIO* io = gc->io;
+    guac_socket* socket = gc->socket;
 
     int dx, dy;
 
@@ -234,7 +233,7 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
     /* For now, only use default layer */
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24, w, h, stride);
-    guac_send_png(io, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y, surface);
+    guac_protocol_send_png(socket, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y, surface);
 
     /* Free surface */
     cairo_surface_destroy(surface);
@@ -245,10 +244,10 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
-    GUACIO* io = gc->io;
+    guac_socket* socket = gc->socket;
 
     /* For now, only use default layer */
-    guac_send_copy(io,
+    guac_protocol_send_copy(socket,
                             GUAC_DEFAULT_LAYER, src_x,  src_y, w, h,
             GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, dest_x, dest_y);
 
@@ -267,7 +266,7 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
 
     /* Send new size */
-    guac_send_size(gc->io, rfb_client->width, rfb_client->height);
+    guac_protocol_send_size(gc->socket, rfb_client->width, rfb_client->height);
 
     /* Use original, wrapped proc */
     return guac_client_data->rfb_MallocFrameBuffer(rfb_client);
@@ -277,9 +276,9 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
 void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
-    GUACIO* io = gc->io;
+    guac_socket* socket = gc->socket;
 
-    guac_send_clipboard(io, text);
+    guac_protocol_send_clipboard(socket, text);
 
 }
 
@@ -290,14 +289,14 @@ int vnc_guac_client_handle_messages(guac_client* client) {
 
     wait_result = WaitForMessage(rfb_client, 1000000);
     if (wait_result < 0) {
-        guac_log_error("Error waiting for VNC server message\n");
+        guac_client_log_error(client, "Error waiting for VNC server message\n");
         return 1;
     }
 
     if (wait_result > 0) {
 
         if (!HandleRFBServerMessage(rfb_client)) {
-            guac_log_error("Error handling VNC server message\n");
+            guac_client_log_error(client, "Error handling VNC server message\n");
             return 1;
         }
 
@@ -374,15 +373,15 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     int read_only = 0;
 
-    /* Set up libvncclient logging */
-    rfbClientLog = guac_log_info;
-    rfbClientErr = guac_log_error;
+    /* FIXME: Set up libvncclient logging */
+    /*rfbClientLog = guac_log_info;
+    rfbClientErr = guac_log_error;*/
 
     /*** PARSE ARGUMENTS ***/
 
     if (argc < 5) {
-        guac_send_error(client->io, "Wrong argument count received.");
-        guac_flush(client->io);
+        guac_protocol_send_error(client->socket, "Wrong argument count received.");
+        guac_socket_flush(client->socket);
         return 1;
     }
 
@@ -438,8 +437,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Connect */
     if (!rfbInitClient(rfb_client, NULL, NULL)) {
-        guac_send_error(client->io, "Error initializing VNC client");
-        guac_flush(client->io);
+        guac_protocol_send_error(client->socket, "Error initializing VNC client");
+        guac_socket_flush(client->socket);
         return 1;
     }
 
@@ -458,10 +457,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
 
     /* Send name */
-    guac_send_name(client->io, rfb_client->desktopName);
+    guac_protocol_send_name(client->socket, rfb_client->desktopName);
 
     /* Send size */
-    guac_send_size(client->io, rfb_client->width, rfb_client->height);
+    guac_protocol_send_size(client->socket, rfb_client->width, rfb_client->height);
 
     return 0;
 
