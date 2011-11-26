@@ -64,7 +64,7 @@ void guac_client_stop(guac_client* client) {
 void* __guac_client_output_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
-    guac_socket* io = client->io;
+    guac_socket* socket = client->socket;
 
     guac_timestamp last_ping_timestamp = guac_protocol_get_timestamp();
 
@@ -79,14 +79,14 @@ void* __guac_client_output_thread(void* data) {
             last_ping_timestamp = timestamp;
 
             /* Send sync */
-            if (guac_protocol_send_sync(io, client->last_sent_timestamp)) {
+            if (guac_protocol_send_sync(socket, client->last_sent_timestamp)) {
                 guac_client_log_error(client, "Error sending \"sync\" instruction: %s", guac_status_string(guac_error));
                 guac_client_stop(client);
                 return NULL;
             }
 
             /* Flush */
-            if (guac_socket_flush(io)) {
+            if (guac_socket_flush(socket)) {
                 guac_client_log_error(client, "Error flushing output: %s", guac_status_string(guac_error));
                 guac_client_stop(client);
                 return NULL;
@@ -113,13 +113,13 @@ void* __guac_client_output_thread(void* data) {
 
                 /* Send sync instruction */
                 client->last_sent_timestamp = guac_protocol_get_timestamp();
-                if (guac_protocol_send_sync(io, client->last_sent_timestamp)) {
+                if (guac_protocol_send_sync(socket, client->last_sent_timestamp)) {
                     guac_client_log_error(client, "Error sending \"sync\" instruction: %s", guac_status_string(guac_error));
                     guac_client_stop(client);
                     return NULL;
                 }
 
-                if (guac_socket_flush(io)) {
+                if (guac_socket_flush(socket)) {
                     guac_client_log_error(client, "Error flushing output: %s", guac_status_string(guac_error));
                     guac_client_stop(client);
                     return NULL;
@@ -147,14 +147,14 @@ void* __guac_client_output_thread(void* data) {
 void* __guac_client_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
-    guac_socket* io = client->io;
+    guac_socket* socket = client->socket;
 
     /* Guacamole client input loop */
     while (client->state == RUNNING) {
 
         /* Read instruction */
         guac_instruction* instruction =
-            guac_protocol_read_instruction(io, GUAC_USEC_TIMEOUT);
+            guac_protocol_read_instruction(socket, GUAC_USEC_TIMEOUT);
 
         /* Stop on error */
         if (instruction == NULL) {
