@@ -73,10 +73,15 @@ void* start_client_thread(void* data) {
     socket = guac_socket_open(thread_data->fd);
 
     /* Get protocol from select instruction */
-    select =
-        guac_protocol_expect_instruction(socket, GUAC_USEC_TIMEOUT, "select");
+    select = guac_protocol_expect_instruction(
+            socket, GUAC_USEC_TIMEOUT, "select");
     if (select == NULL) {
-        /* TODO: LOG */
+
+        /* Log error */
+        syslog(LOG_ERR, "Error reading \"select\": %s",
+                guac_status_string(guac_error));
+
+        /* Free resources */
         guac_socket_close(socket);
         free(data);
         return NULL;
@@ -84,18 +89,30 @@ void* start_client_thread(void* data) {
 
     /* Validate args to select */
     if (select->argc != 1) {
-        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+
+        /* Log error */
+        syslog(LOG_ERR, "Bad number of arguments to \"select\" (%i)",
+                select->argc);
+
+        /* Free resources */
         guac_socket_close(socket);
         free(data);
         return NULL;
     }
+
+    syslog(LOG_INFO, "Protocol \"%s\" selected", select->argv[0]);
 
     /* Get plugin from protocol in select */
     plugin = guac_client_plugin_open(select->argv[0]);
     guac_instruction_free(select);
 
     if (plugin == NULL) {
-        /* TODO: LOG ERROR */
+
+        /* Log error */
+        syslog(LOG_ERR, "Error loading client plugin: %s",
+                guac_status_string(guac_error));
+
+        /* Free resources */
         guac_socket_close(socket);
         free(data);
         return NULL;
@@ -105,9 +122,12 @@ void* start_client_thread(void* data) {
     if (guac_protocol_send_args(socket, plugin->args)
             || guac_socket_flush(socket)) {
 
-        if (guac_client_plugin_close(plugin)) {
-            /* TODO: LOG ERROR */
-        }
+        /* Log error */
+        syslog(LOG_ERR, "Error sending \"args\": %s",
+                guac_status_string(guac_error));
+
+        if (guac_client_plugin_close(plugin))
+            syslog(LOG_ERR, "Error closing client plugin");
 
         guac_socket_close(socket);
         free(data);
@@ -115,13 +135,16 @@ void* start_client_thread(void* data) {
     }
 
     /* Get args from connect instruction */
-    connect =
-        guac_protocol_expect_instruction(socket, GUAC_USEC_TIMEOUT, "connect");
+    connect = guac_protocol_expect_instruction(
+            socket, GUAC_USEC_TIMEOUT, "connect");
     if (connect == NULL) {
 
-        if (guac_client_plugin_close(plugin)) {
-            /* TODO: LOG ERROR */
-        }
+        /* Log error */
+        syslog(LOG_ERR, "Error reading \"connect\": %s",
+                guac_status_string(guac_error));
+
+        if (guac_client_plugin_close(plugin))
+            syslog(LOG_ERR, "Error closing client plugin");
 
         guac_socket_close(socket);
         free(data);
@@ -135,9 +158,11 @@ void* start_client_thread(void* data) {
 
     if (client == NULL) {
 
-        if (guac_client_plugin_close(plugin)) {
-            /* TODO: LOG ERROR */
-        }
+        syslog(LOG_ERR, "Error instantiating client: %s",
+                guac_status_string(guac_error));
+
+        if (guac_client_plugin_close(plugin))
+            syslog(LOG_ERR, "Error closing client plugin");
 
         guac_socket_close(socket);
         free(data);
@@ -145,13 +170,14 @@ void* start_client_thread(void* data) {
     }
 
     /* Start client threads */
+    syslog(LOG_INFO, "Starting client");
     guac_start_client(client);
 
     /* Clean up */
+    syslog(LOG_INFO, "Client finished");
     guac_client_free(client);
-    if (guac_client_plugin_close(plugin)) {
-        /* TODO: LOG ERROR */
-    }
+    if (guac_client_plugin_close(plugin))
+        syslog(LOG_ERR, "Error closing client plugin");
 
     /* Close socket */
     guac_socket_close(socket);
