@@ -45,8 +45,7 @@
 #include <freerdp/chanman.h>
 #include <freerdp/constants/core.h>
 
-#include <guacamole/log.h>
-#include <guacamole/guacio.h>
+#include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
@@ -97,13 +96,13 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
     /* get rdp fds */
     if (rdp_inst->rdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
-        guac_log_error("Unable to read RDP file descriptors.");
+        guac_client_log_error(client, "Unable to read RDP file descriptors.");
         return 1;
     }
 
     /* get channel fds */
     if (freerdp_chanman_get_fds(chanman, rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
-        guac_log_error("Unable to read RDP channel file descriptors.");
+        guac_client_log_error(client, "Unable to read RDP channel file descriptors.");
         return 1;
     }
 
@@ -128,7 +127,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
     /* If no file descriptors, error */
     if (max_fd == 0) {
-        guac_log_error("No file descriptors");
+        guac_client_log_error(client, "No file descriptors");
         return 1;
     }
 
@@ -140,20 +139,20 @@ int rdp_guac_client_handle_messages(guac_client* client) {
             (errno == EINPROGRESS) ||
             (errno == EINTR))) /* signal occurred */
         {
-            guac_log_error("Error waiting for file descriptor.");
+            guac_client_log_error(client, "Error waiting for file descriptor.");
             return 1;
         }
     }
 
     /* check the libfreerdp fds */
     if (rdp_inst->rdp_check_fds(rdp_inst) != 0) {
-        guac_log_error("Error handling RDP file descriptors.");
+        guac_client_log_error(client, "Error handling RDP file descriptors.");
         return 1;
     }
 
     /* check channel fds */
     if (freerdp_chanman_check_fds(chanman, rdp_inst) != 0) {
-        guac_log_error("Error handling RDP channel file descriptors.");
+        guac_client_log_error(client, "Error handling RDP channel file descriptors.");
         return 1;
     }
 
@@ -174,8 +173,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     int port = RDP_DEFAULT_PORT;
 
     if (argc < 2) {
-        guac_send_error(client->io, "Wrong argument count received.");
-        guac_flush(client->io);
+        guac_protocol_send_error(client->socket, "Wrong argument count received.");
+        guac_socket_flush(client->socket);
         return 1;
     }
 
@@ -228,8 +227,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Init client */
     rdp_inst = freerdp_new(settings);
     if (rdp_inst == NULL) {
-        guac_send_error(client->io, "Error initializing RDP client");
-        guac_flush(client->io);
+        guac_protocol_send_error(client->socket, "Error initializing RDP client");
+        guac_socket_flush(client->socket);
         return 1;
     }
     guac_client_data->rdp_inst = rdp_inst;
@@ -289,22 +288,22 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Init chanman (pre-connect) */
     if (freerdp_chanman_pre_connect(chanman, rdp_inst)) {
-        guac_send_error(client->io, "Error initializing RDP client channel manager");
-        guac_flush(client->io);
+        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
+        guac_socket_flush(client->socket);
         return 1;
     }
 
     /* Connect to RDP server */
     if (rdp_inst->rdp_connect(rdp_inst)) {
-        guac_send_error(client->io, "Error connecting to RDP server");
-        guac_flush(client->io);
+        guac_protocol_send_error(client->socket, "Error connecting to RDP server");
+        guac_socket_flush(client->socket);
         return 1;
     }
 
     /* Init chanman (post-connect) */
     if (freerdp_chanman_post_connect(chanman, rdp_inst)) {
-        guac_send_error(client->io, "Error initializing RDP client channel manager");
-        guac_flush(client->io);
+        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
+        guac_socket_flush(client->socket);
         return 1;
     }
 
@@ -412,7 +411,7 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
                     keymap->flags & KBDFLAGS_EXTENDED,
                     keymap->scancode);
         else
-            guac_log_info("unmapped keysym: 0x%x", keysym);
+            guac_client_log_info(client, "unmapped keysym: 0x%x", keysym);
 
     }
 
