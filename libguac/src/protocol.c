@@ -368,7 +368,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
         /* Length of element */
         int element_length = 0;
 
-        /* Parse instruction in buffe */
+        /* Parse instruction in buffer */
         while (i < socket->__instructionbuf_used_length) {
 
             /* Read character from buffer */
@@ -391,8 +391,8 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
                     char terminator = elementv[element_length];
                     elementv[element_length] = '\0';
 
-                    /* Move to terminator of element */
-                    i += element_length;
+                    /* Move to char after terminator of element */
+                    i += element_length+1;
 
                     /* Reset element length */
                     element_length = 0;
@@ -471,12 +471,24 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
 
                     } /* end if terminator */
 
+                    /* Error if expected comma is not present */
+                    else if (terminator != ',') {
+                        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+                        return NULL;
+                    }
+
                 } /* end if element fully read */
 
                 /* Otherwise, read more data */
                 else
                     break;
 
+            }
+
+            /* Error if length is non-numeric or does not end in a period */
+            else {
+                guac_error = GUAC_STATUS_BAD_ARGUMENT;
+                return NULL;
             }
 
         }
