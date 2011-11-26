@@ -40,9 +40,6 @@
 
 #include <pango/pangocairo.h>
 
-#include <guacamole/log.h>
-#include <guacamole/guacio.h>
-#include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
 typedef struct ssh_guac_terminal ssh_guac_terminal;

@@ -40,8 +40,7 @@
 
 #include <libssh/libssh.h>
 
-#include <guacamole/log.h>
-#include <guacamole/guacio.h>
+#include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
@@ -70,7 +69,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
             client_data->password[client_data->password_length++] = keysym;
             ssh_guac_terminal_write(client_data->term, "*", 1);
             ssh_guac_terminal_redraw_cursor(client_data->term);
-            guac_flush(client->io);
+            guac_socket_flush(client->socket);
         }
         else if (keysym == 0xFF08) {
 
@@ -80,7 +79,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
                 /* Backspace */
                 ssh_guac_terminal_write(client_data->term, "\x08\x1B[K", 4);
                 ssh_guac_terminal_redraw_cursor(client_data->term);
-                guac_flush(client->io);
+                guac_socket_flush(client->socket);
             }
 
         }
@@ -92,7 +91,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
             /* Clear screen */
             ssh_guac_terminal_write(client_data->term, "\x1B[2J\x1B[1;1H", 10);
             ssh_guac_terminal_redraw_cursor(client_data->term);
-            guac_flush(client->io);
+            guac_socket_flush(client->socket);
 
             return ssh_guac_client_auth(client, client_data->password);
 
@@ -106,7 +105,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
-    GUACIO* io = client->io;
+    guac_socket* socket = client->socket;
 
     ssh_guac_client_data* client_data = malloc(sizeof(ssh_guac_client_data));
     ssh_guac_terminal* term = ssh_guac_terminal_create(client);
@@ -117,18 +116,18 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->mod_ctrl = 0;
 
     /* Send name and dimensions */
-    guac_send_name(io, "SSH TEST");
-    guac_send_size(io,
+    guac_protocol_send_name(socket, "SSH TEST");
+    guac_protocol_send_size(socket,
             term->char_width  * term->term_width,
             term->char_height * term->term_height);
 
-    guac_flush(io);
+    guac_socket_flush(socket);
 
     /* Open SSH session */
     client_data->session = ssh_new();
     if (client_data->session == NULL) {
-        guac_send_error(io, "Unable to create SSH session.");
-        guac_flush(io);
+        guac_protocol_send_error(socket, "Unable to create SSH session.");
+        guac_socket_flush(socket);
         return 1;
     }
 
@@ -138,8 +137,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Connect */
     if (ssh_connect(client_data->session) != SSH_OK) {
-        guac_send_error(io, "Unable to connect via SSH.");
-        guac_flush(io);
+        guac_protocol_send_error(socket, "Unable to connect via SSH.");
+        guac_socket_flush(socket);
         return 1;
     }
 
@@ -153,7 +152,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         client_data->password_length = 0;
         ssh_guac_terminal_write(client_data->term, "Password: ", 10);
         ssh_guac_terminal_redraw_cursor(client_data->term);
-        guac_flush(client->io);
+        guac_socket_flush(client->socket);
 
         client->key_handler = ssh_guac_client_password_key_handler;
 
@@ -166,54 +165,54 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
 int ssh_guac_client_auth(guac_client* client, const char* password) {
 
-    GUACIO* io = client->io;
+    guac_socket* socket = client->socket;
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     ssh_guac_terminal* term = client_data->term;
 
     /* Authenticate */
     if (ssh_userauth_password(client_data->session, NULL, password) != SSH_AUTH_SUCCESS) {
-        guac_send_error(io, "SSH auth failed.");
-        guac_flush(io);
+        guac_protocol_send_error(socket, "SSH auth failed.");
+        guac_socket_flush(socket);
         return 1;
     }
 
     /* Open channel for terminal */
     client_data->term_channel = channel_new(client_data->session);
     if (client_data->term_channel == NULL) {
-        guac_send_error(io, "Unable to open channel.");
-        guac_flush(io);
+        guac_protocol_send_error(socket, "Unable to open channel.");
+        guac_socket_flush(socket);
         return 1;
     }
 
     /* Open session for channel */
     if (channel_open_session(client_data->term_channel) != SSH_OK) {
-        guac_send_error(io, "Unable to open channel session.");
-        guac_flush(io);
+        guac_protocol_send_error(socket, "Unable to open channel session.");
+        guac_socket_flush(socket);
         return 1;
     }
 
     /* Request PTY */
     if (channel_request_pty(client_data->term_channel) != SSH_OK) {
-        guac_send_error(io, "Unable to allocate PTY for channel.");
-        guac_flush(io);
+        guac_protocol_send_error(socket, "Unable to allocate PTY for channel.");
+        guac_socket_flush(socket);
         return 1;
     }
 
     /* Request PTY size */
     if (channel_change_pty_size(client_data->term_channel, term->term_width, term->term_height) != SSH_OK) {
-        guac_send_error(io, "Unable to change PTY size.");
-        guac_flush(io);
+        guac_protocol_send_error(socket, "Unable to change PTY size.");
+        guac_socket_flush(socket);
         return 1;
     }
 
     /* Request shell */
     if (channel_request_shell(client_data->term_channel) != SSH_OK) {
-        guac_send_error(io, "Unable to associate shell with PTY.");
-        guac_flush(io);
+        guac_protocol_send_error(socket, "Unable to associate shell with PTY.");
+        guac_socket_flush(socket);
         return 1;
     }
 
-    guac_log_info("SSH connection successful.");
+    guac_client_log_info(client, "SSH connection successful.");
 
     /* Set handlers */
     client->handle_messages = ssh_guac_client_handle_messages;

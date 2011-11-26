@@ -38,17 +38,8 @@
 #ifndef _SSH_GUAC_CLIENT_H
 #define _SSH_GUAC_CLIENT_H
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <libssh/libssh.h>
 
-#include <cairo/cairo.h>
-#include <pango/pangocairo.h>
-
-#include <guacamole/log.h>
-#include <guacamole/guacio.h>
-#include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
 #include "ssh_client.h"

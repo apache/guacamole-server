@@ -45,8 +45,7 @@
 #include <cairo/cairo.h>
 #include <pango/pangocairo.h>
 
-#include <guacamole/log.h>
-#include <guacamole/guacio.h>
+#include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
@@ -55,7 +54,7 @@
 
 int ssh_guac_client_handle_messages(guac_client* client) {
 
-    GUACIO* io = client->io;
+    guac_socket* socket = client->socket;
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     char buffer[8192];
 
@@ -76,8 +75,8 @@ int ssh_guac_client_handle_messages(guac_client* client) {
     FD_SET(ssh_fd, &fds);
 
     /* Time to wait */
-    timeout.tv_sec = GUAC_SYNC_FREQUENCY / 1000;
-    timeout.tv_usec = (GUAC_SYNC_FREQUENCY % 1000) * 1000;
+    timeout.tv_sec =  1;
+    timeout.tv_usec = 0;
 
     /* Wait for data to be available */
     if (ssh_select(channels, out_channels, ssh_fd+1, &fds, &timeout)
@@ -92,15 +91,15 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
             if (ssh_guac_terminal_write(client_data->term, buffer, bytes_read)
                 || ssh_guac_terminal_redraw_cursor(client_data->term)
-                || guac_flush(io))
+                || guac_socket_flush(socket))
                 return 1;
 
         }
 
         /* Notify on error */
         if (bytes_read < 0) {
-            guac_send_error(io, "Error reading data.");
-            guac_flush(io);
+            guac_protocol_send_error(socket, "Error reading data.");
+            guac_socket_flush(socket);
             return 1;
         }
     }

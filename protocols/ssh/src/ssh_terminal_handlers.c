@@ -37,8 +37,6 @@
 
 #include <stdlib.h>
 
-#include <guacamole/log.h>
-
 #include "ssh_terminal.h"
 #include "ssh_terminal_handlers.h"
 
@@ -146,7 +144,7 @@ int ssh_guac_terminal_escape(ssh_guac_terminal* term, char c) {
             break;
 
         default:
-            guac_log_info("Unhandled ESC sequence: %c", c);
+            guac_client_log_info(term->client, "Unhandled ESC sequence: %c", c);
             term->char_handler = ssh_guac_terminal_echo; 
 
     }
@@ -323,7 +321,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                         term->bold = 0;
 
                     else
-                        guac_log_info("Unhandled graphics rendition: %i", value);
+                        guac_client_log_info(term->client, "Unhandled graphics rendition: %i", value);
 
                 }
 
@@ -478,7 +476,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
             /* Warn of unhandled codes */
             default:
                 if (c != ';')
-                    guac_log_info("Unhandled CSI sequence: %c", c);
+                    guac_client_log_info(term->client, "Unhandled CSI sequence: %c", c);
 
         }
 

@@ -38,17 +38,6 @@
 #ifndef _SSH_GUAC_TERMINAL_HANDLERS
 #define _SSH_GUAC_TERMINAL_HANDLERS
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <cairo/cairo.h>
-#include <pango/pangocairo.h>
-
-#include <guacamole/log.h>
-#include <guacamole/guacio.h>
-#include <guacamole/protocol.h>
-#include <guacamole/client.h>
-
 #include "ssh_terminal.h"
 
 int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c);
