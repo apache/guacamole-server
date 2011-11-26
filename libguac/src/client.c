@@ -210,7 +210,7 @@ guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
     client->__next_buffer_index = -1;
 
     if (plugin->init_handler(client, argc, argv) != 0) {
-        guac_client_free(client);
+        free(client);
         return NULL;
     }
 

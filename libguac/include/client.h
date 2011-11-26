@@ -287,6 +287,9 @@ struct guac_client {
      * by the proxy, and any data allocated by the proxy client should be
      * freed.
      *
+     * Note that this handler will NOT be called if the client's
+     * guac_client_init() function fails.
+     *
      * Implement this handler if you store data inside the client.
      *
      * Example:
