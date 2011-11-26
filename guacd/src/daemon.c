@@ -154,7 +154,7 @@ void* start_client_thread(void* data) {
     /* Load and init client */
     client = guac_client_plugin_get_client(plugin, socket,
             connect->argc, connect->argv); 
-    guac_instruction_free(select);
+    guac_instruction_free(connect);
 
     if (client == NULL) {
 
