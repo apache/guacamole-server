@@ -127,6 +127,10 @@ guac_client_plugin* guac_client_plugin_open(const char* protocol) {
         void* obj;
     } alias;
 
+    /* Add protocol and .so suffix to protocol_lib */
+    strcat(protocol_lib, protocol);
+    strcat(protocol_lib, ".so");
+
     /* Load client plugin */
     client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
     if (!client_plugin_handle) {

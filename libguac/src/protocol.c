@@ -461,8 +461,8 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
                         }
 
                         /* Reset buffer */
-                        memmove(socket->__instructionbuf, socket->__instructionbuf + i + 1, socket->__instructionbuf_used_length - i - 1);
-                        socket->__instructionbuf_used_length -= i + 1;
+                        memmove(socket->__instructionbuf, socket->__instructionbuf + i, socket->__instructionbuf_used_length - i);
+                        socket->__instructionbuf_used_length -= i;
                         socket->__instructionbuf_parse_start = 0;
                         socket->__instructionbuf_elementc = 0;
 
