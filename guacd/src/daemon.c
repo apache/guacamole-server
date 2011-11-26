@@ -46,10 +46,10 @@
 #include <netinet/in.h>
 
 #include <errno.h>
+#include <syslog.h>
 
 #include <guacamole/client.h>
-#include <guacamole/thread.h>
-#include <guacamole/log.h>
+#include <guacamole/error.h>
 
 #include "client.h"
 
@@ -63,30 +63,99 @@ typedef struct client_thread_data {
 void* start_client_thread(void* data) {
 
     guac_client* client;
+    guac_client_plugin* plugin;
     client_thread_data* thread_data = (client_thread_data*) data;
+    guac_socket* socket;
+    guac_instruction* select;
+    guac_instruction* connect;
 
-    guac_log_info("Spawning client");
+    /* Open guac_socket */
+    socket = guac_socket_open(thread_data->fd);
 
-    /* Load and start client */
-    client = guac_get_client(thread_data->fd, GUAC_USEC_TIMEOUT); 
+    /* Get protocol from select instruction */
+    select =
+        guac_protocol_expect_instruction(socket, GUAC_USEC_TIMEOUT, "select");
+    if (select == NULL) {
+        /* TODO: LOG */
+        guac_socket_close(socket);
+        free(data);
+        return NULL;
+    }
+
+    /* Validate args to select */
+    if (select->argc != 1) {
+        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+        guac_socket_close(socket);
+        free(data);
+        return NULL;
+    }
+
+    /* Get plugin from protocol in select */
+    plugin = guac_client_plugin_open(select->argv[0]);
+    guac_instruction_free(select);
+
+    if (plugin == NULL) {
+        /* TODO: LOG ERROR */
+        guac_socket_close(socket);
+        free(data);
+        return NULL;
+    }
+
+    /* Send args response */
+    if (guac_protocol_send_args(socket, plugin->args)) {
+
+        if (guac_client_plugin_close(plugin)) {
+            /* TODO: LOG ERROR */
+        }
+
+        guac_socket_close(socket);
+        free(data);
+        return NULL;
+    }
+
+    /* Get args from connect instruction */
+    connect =
+        guac_protocol_expect_instruction(socket, GUAC_USEC_TIMEOUT, "connect");
+    if (connect == NULL) {
+
+        if (guac_client_plugin_close(plugin)) {
+            /* TODO: LOG ERROR */
+        }
+
+        guac_socket_close(socket);
+        free(data);
+        return NULL;
+    }
+
+    /* Load and init client */
+    client = guac_client_plugin_get_client(plugin, socket,
+            connect->argc, connect->argv); 
+    guac_instruction_free(select);
 
     if (client == NULL) {
-        guac_log_error("Client retrieval failed");
+
+        if (guac_client_plugin_close(plugin)) {
+            /* TODO: LOG ERROR */
+        }
+
+        guac_socket_close(socket);
         free(data);
         return NULL;
     }
 
+    /* Start client threads */
     guac_start_client(client);
-    guac_free_client(client);
+
+    /* Clean up */
+    guac_client_free(client);
+    if (guac_client_plugin_close(plugin)) {
+        /* TODO: LOG ERROR */
+    }
 
     /* Close socket */
-    if (close(thread_data->fd) < 0) {
-        guac_log_error("Error closing connection: %s", strerror(errno));
-        free(data);
-        return NULL;
-    }
+    guac_socket_close(socket);
+    close(thread_data->fd);
 
-    guac_log_info("Client finished");
     free(data);
     return NULL;
 
@@ -189,21 +258,21 @@ int main(int argc, char* argv[]) {
     }
 #else
     daemon_pid = getpid();
-    guac_log_info("fork() not defined at compile time.");
-    guac_log_info("guacd running in foreground only.");
+    syslog(LOG_INFO, "fork() not defined at compile time.");
+    syslog(LOG_INFO, "guacd running in foreground only.");
 #endif
 
     /* Otherwise, this is the daemon */
-    guac_log_info("Started, listening on port %i", listen_port);
+    syslog(LOG_INFO, "Started, listening on port %i", listen_port);
 
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-        guac_log_error("Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
+        syslog(LOG_ERR, "Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
     }
 
     /* Ignore SIGCHLD (force automatic removal of children) */
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-        guac_log_error("Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
+        syslog(LOG_ERR, "Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
     }
 
     /* Daemon loop */
@@ -218,7 +287,7 @@ int main(int argc, char* argv[]) {
 
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
-            guac_log_error("Could not listen on socket: %s", strerror(errno));
+            syslog(LOG_ERR, "Could not listen on socket: %s", strerror(errno));
             return 3;
         }
 
@@ -226,7 +295,7 @@ int main(int argc, char* argv[]) {
         client_addr_len = sizeof(client_addr);
         connected_socket_fd = accept(socket_fd, (struct sockaddr*) &client_addr, &client_addr_len);
         if (connected_socket_fd < 0) {
-            guac_log_error("Could not accept client connection: %s", strerror(errno));
+            syslog(LOG_ERR, "Could not accept client connection: %s", strerror(errno));
             return 3;
         }
 
@@ -255,7 +324,7 @@ int main(int argc, char* argv[]) {
 
         /* If error, log */
         if (child_pid == -1)
-            guac_log_error("Error forking child process: %s\n", strerror(errno));
+            syslog(LOG_ERR, "Error forking child process: %s\n", strerror(errno));
 
         /* If child, start client, and exit when finished */
         else if (child_pid == 0) {
@@ -265,13 +334,13 @@ int main(int argc, char* argv[]) {
 
         /* If parent, close reference to child's descriptor */
         else if (close(connected_socket_fd) < 0) {
-            guac_log_error("Error closing daemon reference to child descriptor: %s", strerror(errno));
+            syslog(LOG_ERR, "Error closing daemon reference to child descriptor: %s", strerror(errno));
         }
 
 #else
 
         if (guac_thread_create(&thread, start_client_thread, (void*) data))
-            guac_log_error("Could not create client thread: %s", strerror(errno));
+            syslog(LOG_ERR, "Could not create client thread: %s", strerror(errno));
 
 #endif
 
@@ -279,7 +348,7 @@ int main(int argc, char* argv[]) {
 
     /* Close socket */
     if (close(socket_fd) < 0) {
-        guac_log_error("Could not close socket: %s", strerror(errno));
+        syslog(LOG_ERR, "Could not close socket: %s", strerror(errno));
         return 3;
     }
 
