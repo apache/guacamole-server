@@ -155,20 +155,20 @@ void guac_instruction_free(guac_instruction* instruction);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param args The NULL-terminated array of argument names (strings).
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_args(guac_socket* io, const char** name);
+int guac_protocol_send_args(guac_socket* socket, const char** name);
 
 /**
  * Sends a name instruction over the given guac_socket connection.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param name The name to send within the name instruction.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_name(guac_socket* io, const char* name);
+int guac_protocol_send_name(guac_socket* socket, const char* name);
 
 /**
  * Sends a sync instruction over the given guac_socket connection. The
@@ -177,11 +177,11 @@ int guac_protocol_send_name(guac_socket* io, const char* name);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param timestamp The current timestamp (in milliseconds).
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_sync(guac_socket* io, guac_timestamp timestamp);
+int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
 
 /**
  * Sends an error instruction over the given guac_socket connection.
@@ -189,11 +189,11 @@ int guac_protocol_send_sync(guac_socket* io, guac_timestamp timestamp);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param error The description associated with the error.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_error(guac_socket* io, const char* error);
+int guac_protocol_send_error(guac_socket* socket, const char* error);
 
 /**
  * Sends a clipboard instruction over the given guac_socket connection.
@@ -201,11 +201,11 @@ int guac_protocol_send_error(guac_socket* io, const char* error);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param data The clipboard data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_clipboard(guac_socket* io, const char* data);
+int guac_protocol_send_clipboard(guac_socket* socket, const char* data);
 
 /**
  * Sends a size instruction over the given guac_socket connection.
@@ -213,12 +213,12 @@ int guac_protocol_send_clipboard(guac_socket* io, const char* data);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param w The width of the display.
  * @param h The height of the display.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_size(guac_socket* io, int w, int h);
+int guac_protocol_send_size(guac_socket* socket, int w, int h);
 
 /**
  * Sends a copy instruction over the given guac_socket connection.
@@ -226,7 +226,7 @@ int guac_protocol_send_size(guac_socket* io, int w, int h);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param srcl The source layer.
  * @param srcx The X coordinate of the source rectangle.
  * @param srcy The Y coordinate of the source rectangle.
@@ -240,7 +240,7 @@ int guac_protocol_send_size(guac_socket* io, int w, int h);
  *             should be copied.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_copy(guac_socket* io, 
+int guac_protocol_send_copy(guac_socket* socket, 
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
         guac_composite_mode mode, const guac_layer* dstl, int dstx, int dsty);
 
@@ -250,7 +250,7 @@ int guac_protocol_send_copy(guac_socket* io,
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param mode The composite mode to use.
  * @param layer The destination layer.
  * @param x The X coordinate of the rectangle.
@@ -263,7 +263,7 @@ int guac_protocol_send_copy(guac_socket* io,
  * @param a The alpha (transparency) component of the color of the rectangle.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_rect(guac_socket* io,
+int guac_protocol_send_rect(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
         int x, int y, int width, int height,
         int r, int g, int b, int a);
@@ -274,7 +274,7 @@ int guac_protocol_send_rect(guac_socket* io,
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param layer The layer to set the clipping region of.
  * @param x The X coordinate of the clipping rectangle.
  * @param y The Y coordinate of the clipping rectangle.
@@ -282,7 +282,7 @@ int guac_protocol_send_rect(guac_socket* io,
  * @param height The height of the clipping rectangle.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_clip(guac_socket* io, const guac_layer* layer,
+int guac_protocol_send_clip(guac_socket* socket, const guac_layer* layer,
         int x, int y, int width, int height);
 
 /**
@@ -292,7 +292,7 @@ int guac_protocol_send_clip(guac_socket* io, const guac_layer* layer,
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param mode The composite mode to use.
  * @param layer The destination layer.
  * @param x The destination X coordinate.
@@ -300,7 +300,7 @@ int guac_protocol_send_clip(guac_socket* io, const guac_layer* layer,
  * @param surface A cairo surface containing the image data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_png(guac_socket* io, guac_composite_mode mode,
+int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
         const guac_layer* layer, int x, int y, cairo_surface_t* surface);
 
 /**
@@ -310,25 +310,25 @@ int guac_protocol_send_png(guac_socket* io, guac_composite_mode mode,
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param x The X coordinate of the cursor hotspot.
  * @param y The Y coordinate of the cursor hotspot.
  * @param surface A cairo surface containing the image data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_cursor(guac_socket* io, int x, int y, cairo_surface_t* surface);
+int guac_protocol_send_cursor(guac_socket* socket, int x, int y, cairo_surface_t* surface);
 
 /**
  * Returns whether new instruction data is available on the given guac_socket
  * connection for parsing.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param usec_timeout The maximum number of microseconds to wait before
  *                     giving up.
  * @return A positive value if data is available, negative on error, or
  *         zero if no data is currently available.
  */
-int guac_protocol_instructions_waiting(guac_socket* io, int usec_timeout);
+int guac_protocol_instructions_waiting(guac_socket* socket, int usec_timeout);
 
 /**
  * Reads a single instruction from the given guac_socket connection.
@@ -336,7 +336,7 @@ int guac_protocol_instructions_waiting(guac_socket* io, int usec_timeout);
  * If an error occurs reading the instruction, NULL is returned,
  * and guac_error is set appropriately.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param usec_timeout The maximum number of microseconds to wait before
  *                     giving up.
  * @return A new instruction if data was successfully read, NULL on
@@ -346,7 +346,7 @@ int guac_protocol_instructions_waiting(guac_socket* io, int usec_timeout);
  *         guac_protocol_read_instruction() will return the parsed instruction once
  *         enough data is available.
  */
-guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeout);
+guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_timeout);
 
 /**
  * Reads a single instruction with the given opcode from the given guac_socket
@@ -358,7 +358,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
  * If the instruction read is not the expected instruction, NULL is returned,
  * and guac_error is set to GUAC_STATUS_BAD_STATE.
  *
- * @param io The guac_socket connection to use.
+ * @param socket The guac_socket connection to use.
  * @param usec_timeout The maximum number of microseconds to wait before
  *                     giving up.
  * @param opcode The opcode of the instruction to read.
@@ -367,7 +367,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
  *         a different opcode, NULL is returned and guac_error is set to
  *         GUAC_STATUS_BAD_STATE.
  */
-guac_instruction* guac_protocol_expect_instruction(guac_socket* io, int usec_timeout,
+guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec_timeout,
         const char* opcode);
 
 /**

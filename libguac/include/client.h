@@ -152,7 +152,7 @@ struct guac_client {
      * structure is used only to communicate conveniently with the Guacamole
      * web-client.
      */
-    guac_socket* io;
+    guac_socket* socket;
 
     /**
      * The current state of the client. When the client is first allocated,
@@ -382,13 +382,13 @@ int guac_client_plugin_close(guac_client_plugin* plugin);
  * initialized using the arguments provided.
  *
  * @param plugin The client plugin to use to create the new client.
- * @param io The guac_socket the client should use for communication.
+ * @param socket The guac_socket the client should use for communication.
  * @param argc The number of arguments being passed to the client.
  * @param argv All arguments to be passed to the client.
  * @return A pointer to the newly initialized client.
  */
 guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
-        guac_socket* io, int argc, char** argv);
+        guac_socket* socket, int argc, char** argv);
 
 /**
  * Free all resources associated with the given client.

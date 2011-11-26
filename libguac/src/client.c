@@ -182,7 +182,7 @@ int guac_client_plugin_close(guac_client_plugin* plugin) {
 }
 
 guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
-        guac_socket* io, int argc, char** argv) {
+        guac_socket* socket, int argc, char** argv) {
 
     /* Allocate new client */
     guac_client* client = malloc(sizeof(guac_client));
@@ -194,7 +194,7 @@ guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
     /* Init new client */
     memset(client, 0, sizeof(guac_client));
 
-    client->io = io;
+    client->socket = socket;
     client->last_received_timestamp =
         client->last_sent_timestamp = guac_protocol_get_timestamp();
 

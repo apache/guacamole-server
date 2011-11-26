@@ -138,11 +138,11 @@ guac_socket* guac_socket_open(int fd);
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The guac_socket object to write to.
+ * @param socket The guac_socket object to write to.
  * @param i The unsigned int to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
  */
-ssize_t guac_socket_write_int(guac_socket* io, int64_t i);
+ssize_t guac_socket_write_int(guac_socket* socket, int64_t i);
 
 /**
  * Writes the given string to the given guac_socket object. The data
@@ -154,11 +154,11 @@ ssize_t guac_socket_write_int(guac_socket* io, int64_t i);
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The guac_socket object to write to.
+ * @param socket The guac_socket object to write to.
  * @param str The string to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
 */
-ssize_t guac_socket_write_string(guac_socket* io, const char* str);
+ssize_t guac_socket_write_string(guac_socket* socket, const char* str);
 
 /**
  * Writes the given binary data to the given guac_socket object as base64-encoded
@@ -171,12 +171,12 @@ ssize_t guac_socket_write_string(guac_socket* io, const char* str);
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The guac_socket object to write to.
+ * @param socket The guac_socket object to write to.
  * @param buf A buffer containing the data to write.
  * @param count The number of bytes to write.
  * @return Zero on success, or non-zero if an error occurs while writing.
  */
-ssize_t guac_socket_write_base64(guac_socket* io, const void* buf, size_t count);
+ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t count);
 
 /**
  * Flushes the base64 buffer, writing padding characters as necessary.
@@ -184,10 +184,10 @@ ssize_t guac_socket_write_base64(guac_socket* io, const void* buf, size_t count)
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The guac_socket object to flush
+ * @param socket The guac_socket object to flush
  * @return Zero on success, or non-zero if an error occurs during flush.
  */
-ssize_t guac_socket_flush_base64(guac_socket* io);
+ssize_t guac_socket_flush_base64(guac_socket* socket);
 
 /**
  * Flushes the write buffer.
@@ -195,10 +195,10 @@ ssize_t guac_socket_flush_base64(guac_socket* io);
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
  *
- * @param io The guac_socket object to flush
+ * @param socket The guac_socket object to flush
  * @return Zero on success, or non-zero if an error occurs during flush.
  */
-ssize_t guac_socket_flush(guac_socket* io);
+ssize_t guac_socket_flush(guac_socket* socket);
 
 
 /**
@@ -211,22 +211,22 @@ ssize_t guac_socket_flush(guac_socket* io);
  * If a timeout occurs while waiting, zero value is returned, and
  * guac_error is set to GUAC_STATUS_INPUT_TIMEOUT.
  *
- * @param io The guac_socket object to wait for.
+ * @param socket The guac_socket object to wait for.
  * @param usec_timeout The maximum number of microseconds to wait for data, or
  *                     -1 to potentially wait forever.
  * @return Positive on success, zero if the timeout elapsed and no data is
  *         available, negative on error.
  */
-int guac_socket_select(guac_socket* io, int usec_timeout);
+int guac_socket_select(guac_socket* socket, int usec_timeout);
 
 /**
  * Frees resources allocated to the given guac_socket object. Note that this
  * implicitly flush all buffers, but will NOT close the associated file
  * descriptor.
  *
- * @param io The guac_socket object to close.
+ * @param socket The guac_socket object to close.
  */
-void guac_socket_close(guac_socket* io);
+void guac_socket_close(guac_socket* socket);
 
 #endif
 

@@ -64,167 +64,167 @@
 #include "protocol.h"
 #include "error.h"
 
-ssize_t __guac_socket_write_length_string(guac_socket* io, const char* str) {
+ssize_t __guac_socket_write_length_string(guac_socket* socket, const char* str) {
 
     return
-           guac_socket_write_int(io, strlen(str))
-        || guac_socket_write_string(io, ".")
-        || guac_socket_write_string(io, str);
+           guac_socket_write_int(socket, strlen(str))
+        || guac_socket_write_string(socket, ".")
+        || guac_socket_write_string(socket, str);
 
 }
 
-ssize_t __guac_socket_write_length_int(guac_socket* io, int64_t i) {
+ssize_t __guac_socket_write_length_int(guac_socket* socket, int64_t i) {
 
     char buffer[128];
     snprintf(buffer, sizeof(buffer), "%"PRIi64, i);
-    return __guac_socket_write_length_string(io, buffer);
+    return __guac_socket_write_length_string(socket, buffer);
 
 }
 
-int guac_protocol_send_args(guac_socket* io, const char** args) {
+int guac_protocol_send_args(guac_socket* socket, const char** args) {
 
     int i;
 
-    if (guac_socket_write_string(io, "4.args")) return -1;
+    if (guac_socket_write_string(socket, "4.args")) return -1;
 
     for (i=0; args[i] != NULL; i++) {
 
-        if (guac_socket_write_string(io, ","))
+        if (guac_socket_write_string(socket, ","))
             return -1;
 
-        if (__guac_socket_write_length_string(io, args[i]))
+        if (__guac_socket_write_length_string(socket, args[i]))
             return -1;
 
     }
 
-    return guac_socket_write_string(io, ";");
+    return guac_socket_write_string(socket, ";");
 
 }
 
-int guac_protocol_send_name(guac_socket* io, const char* name) {
+int guac_protocol_send_name(guac_socket* socket, const char* name) {
 
     return
-           guac_socket_write_string(io, "4.name,")
-        || __guac_socket_write_length_string(io, name)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "4.name,")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ";");
 
 }
 
-int guac_protocol_send_size(guac_socket* io, int w, int h) {
+int guac_protocol_send_size(guac_socket* socket, int w, int h) {
 
     return
-           guac_socket_write_string(io, "4.size,")
-        || __guac_socket_write_length_int(io, w)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, h)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "4.size,")
+        || __guac_socket_write_length_int(socket, w)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, h)
+        || guac_socket_write_string(socket, ";");
 
 }
 
-int guac_protocol_send_clipboard(guac_socket* io, const char* data) {
+int guac_protocol_send_clipboard(guac_socket* socket, const char* data) {
 
     return
-           guac_socket_write_string(io, "9.clipboard,")
-        || __guac_socket_write_length_string(io, data)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "9.clipboard,")
+        || __guac_socket_write_length_string(socket, data)
+        || guac_socket_write_string(socket, ";");
 
 }
 
-int guac_protocol_send_error(guac_socket* io, const char* error) {
+int guac_protocol_send_error(guac_socket* socket, const char* error) {
 
     return
-           guac_socket_write_string(io, "5.error,")
-        || __guac_socket_write_length_string(io, error)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "5.error,")
+        || __guac_socket_write_length_string(socket, error)
+        || guac_socket_write_string(socket, ";");
 }
 
-int guac_protocol_send_sync(guac_socket* io, guac_timestamp timestamp) {
+int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp) {
 
     return 
-           guac_socket_write_string(io, "4.sync,")
-        || __guac_socket_write_length_int(io, timestamp)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "4.sync,")
+        || __guac_socket_write_length_int(socket, timestamp)
+        || guac_socket_write_string(socket, ";");
 
 }
 
-int guac_protocol_send_copy(guac_socket* io,
+int guac_protocol_send_copy(guac_socket* socket,
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
         guac_composite_mode mode, const guac_layer* dstl, int dstx, int dsty) {
 
     return
-           guac_socket_write_string(io, "4.copy,")
-        || __guac_socket_write_length_int(io, srcl->index)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, srcx)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, srcy)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, w)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, h)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, mode)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, dstl->index)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, dstx)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, dsty)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "4.copy,")
+        || __guac_socket_write_length_int(socket, srcl->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcx)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcy)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, w)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, h)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, mode)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, dstl->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, dstx)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, dsty)
+        || guac_socket_write_string(socket, ";");
 
 }
 
-int guac_protocol_send_rect(guac_socket* io,
+int guac_protocol_send_rect(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
         int x, int y, int width, int height,
         int r, int g, int b, int a) {
 
     return
-           guac_socket_write_string(io, "4.rect,")
-        || __guac_socket_write_length_int(io, mode)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, layer->index)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, x)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, y)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, width)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, height)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, r)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, g)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, b)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, a)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "4.rect,")
+        || __guac_socket_write_length_int(socket, mode)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, width)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, height)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, r)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, g)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, b)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, a)
+        || guac_socket_write_string(socket, ";");
 
 }
 
-int guac_protocol_send_clip(guac_socket* io, const guac_layer* layer,
+int guac_protocol_send_clip(guac_socket* socket, const guac_layer* layer,
         int x, int y, int width, int height) {
 
     return
-           guac_socket_write_string(io, "4.clip,")
-        || __guac_socket_write_length_int(io, layer->index)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, x)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, y)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, width)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, height)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "4.clip,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, width)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, height)
+        || guac_socket_write_string(socket, ";");
 
 }
 
 typedef struct __guac_socket_write_png_data {
 
-    guac_socket* io;
+    guac_socket* socket;
 
     char* buffer;
     int buffer_size;
@@ -262,14 +262,14 @@ cairo_status_t __guac_socket_write_png(void* closure, const unsigned char* data,
 
 }
 
-int __guac_socket_write_length_png(guac_socket* io, cairo_surface_t* surface) {
+int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface) {
 
     __guac_socket_write_png_data png_data;
     int base64_length;
 
     /* Write surface */
 
-    png_data.io = io;
+    png_data.socket = socket;
     png_data.buffer_size = 8192;
     png_data.buffer = malloc(png_data.buffer_size);
     png_data.data_size = 0;
@@ -282,10 +282,10 @@ int __guac_socket_write_length_png(guac_socket* io, cairo_surface_t* surface) {
 
     /* Write length and data */
     if (
-           guac_socket_write_int(io, base64_length)
-        || guac_socket_write_string(io, ".")
-        || guac_socket_write_base64(io, png_data.buffer, png_data.data_size)
-        || guac_socket_flush_base64(io)) {
+           guac_socket_write_int(socket, base64_length)
+        || guac_socket_write_string(socket, ".")
+        || guac_socket_write_base64(socket, png_data.buffer, png_data.data_size)
+        || guac_socket_flush_base64(socket)) {
         free(png_data.buffer);
         return -1;
     }
@@ -296,60 +296,60 @@ int __guac_socket_write_length_png(guac_socket* io, cairo_surface_t* surface) {
 }
 
 
-int guac_protocol_send_png(guac_socket* io, guac_composite_mode mode,
+int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
         const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
 
     return
-           guac_socket_write_string(io, "3.png,")
-        || __guac_socket_write_length_int(io, mode)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, layer->index)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, x)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, y)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_png(io, surface)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "3.png,")
+        || __guac_socket_write_length_int(socket, mode)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_png(socket, surface)
+        || guac_socket_write_string(socket, ";");
 
 }
 
 
-int guac_protocol_send_cursor(guac_socket* io, int x, int y, cairo_surface_t* surface) {
+int guac_protocol_send_cursor(guac_socket* socket, int x, int y, cairo_surface_t* surface) {
 
     return
-           guac_socket_write_string(io, "6.cursor,")
-        || __guac_socket_write_length_int(io, x)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_int(io, y)
-        || guac_socket_write_string(io, ",")
-        || __guac_socket_write_length_png(io, surface)
-        || guac_socket_write_string(io, ";");
+           guac_socket_write_string(socket, "6.cursor,")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_png(socket, surface)
+        || guac_socket_write_string(socket, ";");
 
 }
 
 
-int __guac_fill_instructionbuf(guac_socket* io) {
+int __guac_fill_instructionbuf(guac_socket* socket) {
 
     int retval;
     
     /* Attempt to fill buffer */
     retval = recv(
-            io->fd,
-            io->__instructionbuf + io->__instructionbuf_used_length,
-            io->__instructionbuf_size - io->__instructionbuf_used_length,
+            socket->fd,
+            socket->__instructionbuf + socket->__instructionbuf_used_length,
+            socket->__instructionbuf_size - socket->__instructionbuf_used_length,
             0
     );
 
     if (retval < 0)
         return retval;
 
-    io->__instructionbuf_used_length += retval;
+    socket->__instructionbuf_used_length += retval;
 
     /* Expand buffer if necessary */
-    if (io->__instructionbuf_used_length > io->__instructionbuf_size / 2) {
-        io->__instructionbuf_size *= 2;
-        io->__instructionbuf = realloc(io->__instructionbuf, io->__instructionbuf_size);
+    if (socket->__instructionbuf_used_length > socket->__instructionbuf_size / 2) {
+        socket->__instructionbuf_size *= 2;
+        socket->__instructionbuf = realloc(socket->__instructionbuf, socket->__instructionbuf_size);
     }
 
     return retval;
@@ -357,10 +357,10 @@ int __guac_fill_instructionbuf(guac_socket* io) {
 }
 
 /* Returns new instruction if one exists, or NULL if no more instructions. */
-guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeout) {
+guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_timeout) {
 
     int retval;
-    int i = io->__instructionbuf_parse_start;
+    int i = socket->__instructionbuf_parse_start;
     
     /* Loop until a instruction is read */
     for (;;) {
@@ -369,10 +369,10 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
         int element_length = 0;
 
         /* Parse instruction in buffe */
-        while (i < io->__instructionbuf_used_length) {
+        while (i < socket->__instructionbuf_used_length) {
 
             /* Read character from buffer */
-            char c = io->__instructionbuf[i++];
+            char c = socket->__instructionbuf[i++];
 
             /* If digit, calculate element length */
             if (c >= '0' && c <= '9')
@@ -382,10 +382,10 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
             else if (c == '.') {
 
                 /* Verify element is fully read */
-                if (i + element_length < io->__instructionbuf_used_length) {
+                if (i + element_length < socket->__instructionbuf_used_length) {
 
                     /* Get element value */
-                    char* elementv = &(io->__instructionbuf[i]);
+                    char* elementv = &(socket->__instructionbuf[i]);
                    
                     /* Get terminator, set null terminator of elementv */ 
                     char terminator = elementv[element_length];
@@ -399,10 +399,10 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
 
                     /* As element has been read successfully, update
                      * parse start */
-                    io->__instructionbuf_parse_start = i;
+                    socket->__instructionbuf_parse_start = i;
 
                     /* Save element */
-                    io->__instructionbuf_elementv[io->__instructionbuf_elementc++] = elementv;
+                    socket->__instructionbuf_elementv[socket->__instructionbuf_elementc++] = elementv;
 
                     /* Finish parse if terminator is a semicolon */
                     if (terminator == ';') {
@@ -418,7 +418,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
                         }
 
                         /* Init parsed instruction */
-                        parsed_instruction->argc = io->__instructionbuf_elementc - 1;
+                        parsed_instruction->argc = socket->__instructionbuf_elementc - 1;
                         parsed_instruction->argv = malloc(sizeof(char*) * parsed_instruction->argc);
 
                         /* Fail if memory could not be alloc'd for argv */
@@ -429,7 +429,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
                         }
 
                         /* Set opcode */
-                        parsed_instruction->opcode = strdup(io->__instructionbuf_elementv[0]);
+                        parsed_instruction->opcode = strdup(socket->__instructionbuf_elementv[0]);
 
                         /* Fail if memory could not be alloc'd for opcode */
                         if (parsed_instruction->opcode == NULL) {
@@ -442,7 +442,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
 
                         /* Copy element values to parsed instruction */
                         for (j=0; j<parsed_instruction->argc; j++) {
-                            parsed_instruction->argv[j] = strdup(io->__instructionbuf_elementv[j+1]);
+                            parsed_instruction->argv[j] = strdup(socket->__instructionbuf_elementv[j+1]);
 
                             /* Free memory and fail if out of mem */
                             if (parsed_instruction->argv[j] == NULL) {
@@ -461,10 +461,10 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
                         }
 
                         /* Reset buffer */
-                        memmove(io->__instructionbuf, io->__instructionbuf + i + 1, io->__instructionbuf_used_length - i - 1);
-                        io->__instructionbuf_used_length -= i + 1;
-                        io->__instructionbuf_parse_start = 0;
-                        io->__instructionbuf_elementc = 0;
+                        memmove(socket->__instructionbuf, socket->__instructionbuf + i + 1, socket->__instructionbuf_used_length - i - 1);
+                        socket->__instructionbuf_used_length -= i + 1;
+                        socket->__instructionbuf_parse_start = 0;
+                        socket->__instructionbuf_elementc = 0;
 
                         /* Done */
                         return parsed_instruction;
@@ -482,12 +482,12 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
         }
 
         /* No instruction yet? Get more data ... */
-        retval = guac_socket_select(io, usec_timeout);
+        retval = guac_socket_select(socket, usec_timeout);
         if (retval <= 0)
             return NULL;
 
         /* If more data is available, fill into buffer */
-        retval = __guac_fill_instructionbuf(io);
+        retval = __guac_fill_instructionbuf(socket);
 
         /* Error, guac_error already set */
         if (retval < 0)
@@ -503,17 +503,17 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* io, int usec_timeo
 
 }
 
-guac_instruction* guac_protocol_expect_instruction(guac_socket* io, int usec_timeout,
+guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec_timeout,
         const char* opcode) {
 
     guac_instruction* instruction;
 
     /* Wait for data until timeout */
-    if (guac_protocol_instructions_waiting(io, usec_timeout) <= 0)
+    if (guac_protocol_instructions_waiting(socket, usec_timeout) <= 0)
         return NULL;
 
     /* Read available instruction */
-    instruction = guac_protocol_read_instruction(io, usec_timeout);
+    instruction = guac_protocol_read_instruction(socket, usec_timeout);
     if (instruction == NULL)
         return NULL;            
 
@@ -542,12 +542,12 @@ void guac_instruction_free(guac_instruction* instruction) {
 }
 
 
-int guac_protocol_instructions_waiting(guac_socket* io, int usec_timeout) {
+int guac_protocol_instructions_waiting(guac_socket* socket, int usec_timeout) {
 
-    if (io->__instructionbuf_used_length > 0)
+    if (socket->__instructionbuf_used_length > 0)
         return 1;
 
-    return guac_socket_select(io, usec_timeout);
+    return guac_socket_select(socket, usec_timeout);
 }
 
 guac_timestamp guac_protocol_get_timestamp() {

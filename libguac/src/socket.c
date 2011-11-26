@@ -64,55 +64,55 @@ char __guac_socket_BASE64_CHARACTERS[64] = {
 
 guac_socket* guac_socket_open(int fd) {
 
-    guac_socket* io = malloc(sizeof(guac_socket));
+    guac_socket* socket = malloc(sizeof(guac_socket));
 
     /* If no memory available, return with error */
-    if (io == NULL) {
+    if (socket == NULL) {
         guac_error = GUAC_STATUS_NO_MEMORY;
         return NULL;
     }
 
-    io->__ready = 0;
-    io->__written = 0;
-    io->fd = fd;
+    socket->__ready = 0;
+    socket->__written = 0;
+    socket->fd = fd;
 
     /* Allocate instruction buffer */
-    io->__instructionbuf_size = 1024;
-    io->__instructionbuf = malloc(io->__instructionbuf_size);
+    socket->__instructionbuf_size = 1024;
+    socket->__instructionbuf = malloc(socket->__instructionbuf_size);
 
     /* If no memory available, return with error */
-    if (io->__instructionbuf == NULL) {
+    if (socket->__instructionbuf == NULL) {
         guac_error = GUAC_STATUS_NO_MEMORY;
-        free(io);
+        free(socket);
         return NULL;
     }
 
     /* Init members */
-    io->__instructionbuf_used_length = 0;
-    io->__instructionbuf_parse_start = 0;
-    io->__instructionbuf_elementc = 0;
+    socket->__instructionbuf_used_length = 0;
+    socket->__instructionbuf_parse_start = 0;
+    socket->__instructionbuf_elementc = 0;
 
-    return io;
+    return socket;
 
 }
 
-void guac_socket_close(guac_socket* io) {
-    guac_socket_flush(io);
-    free(io->__instructionbuf);
-    free(io);
+void guac_socket_close(guac_socket* socket) {
+    guac_socket_flush(socket);
+    free(socket->__instructionbuf);
+    free(socket);
 }
 
 /* Write bytes, limit rate */
-ssize_t __guac_socket_write(guac_socket* io, const char* buf, int count) {
+ssize_t __guac_socket_write(guac_socket* socket, const char* buf, int count) {
 
     int retval;
 
 #ifdef __MINGW32__
     /* MINGW32 WINSOCK only works with send() */
-    retval = send(io->fd, buf, count, 0);
+    retval = send(socket->fd, buf, count, 0);
 #else
     /* Use write() for all other platforms */
-    retval = write(io->fd, buf, count);
+    retval = write(socket->fd, buf, count);
 #endif
 
     /* Record errors in guac_error */
@@ -122,33 +122,33 @@ ssize_t __guac_socket_write(guac_socket* io, const char* buf, int count) {
     return retval;
 }
 
-ssize_t guac_socket_write_int(guac_socket* io, int64_t i) {
+ssize_t guac_socket_write_int(guac_socket* socket, int64_t i) {
 
     char buffer[128];
     snprintf(buffer, sizeof(buffer), "%"PRIi64, i);
-    return guac_socket_write_string(io, buffer);
+    return guac_socket_write_string(socket, buffer);
 
 }
 
-ssize_t guac_socket_write_string(guac_socket* io, const char* str) {
+ssize_t guac_socket_write_string(guac_socket* socket, const char* str) {
 
-    char* __out_buf = io->__out_buf;
+    char* __out_buf = socket->__out_buf;
 
     int retval;
 
     for (; *str != '\0'; str++) {
 
-        __out_buf[io->__written++] = *str; 
+        __out_buf[socket->__written++] = *str; 
 
         /* Flush when necessary, return on error */
-        if (io->__written > 8188 /* sizeof(__out_buf) - 4 */) {
+        if (socket->__written > 8188 /* sizeof(__out_buf) - 4 */) {
 
-            retval = __guac_socket_write(io, __out_buf, io->__written);
+            retval = __guac_socket_write(socket, __out_buf, socket->__written);
 
             if (retval < 0)
                 return retval;
 
-            io->__written = 0;
+            socket->__written = 0;
         }
 
     }
@@ -157,42 +157,42 @@ ssize_t guac_socket_write_string(guac_socket* io, const char* str) {
 
 }
 
-ssize_t __guac_socket_write_base64_triplet(guac_socket* io, int a, int b, int c) {
+ssize_t __guac_socket_write_base64_triplet(guac_socket* socket, int a, int b, int c) {
 
-    char* __out_buf = io->__out_buf;
+    char* __out_buf = socket->__out_buf;
 
     int retval;
 
     /* Byte 1 */
-    __out_buf[io->__written++] = __guac_socket_BASE64_CHARACTERS[(a & 0xFC) >> 2]; /* [AAAAAA]AABBBB BBBBCC CCCCCC */
+    __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[(a & 0xFC) >> 2]; /* [AAAAAA]AABBBB BBBBCC CCCCCC */
 
     if (b >= 0) {
-        __out_buf[io->__written++] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4) | ((b & 0xF0) >> 4)]; /* AAAAAA[AABBBB]BBBBCC CCCCCC */
+        __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4) | ((b & 0xF0) >> 4)]; /* AAAAAA[AABBBB]BBBBCC CCCCCC */
 
         if (c >= 0) {
-            __out_buf[io->__written++] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2) | ((c & 0xC0) >> 6)]; /* AAAAAA AABBBB[BBBBCC]CCCCCC */
-            __out_buf[io->__written++] = __guac_socket_BASE64_CHARACTERS[c & 0x3F]; /* AAAAAA AABBBB BBBBCC[CCCCCC] */
+            __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2) | ((c & 0xC0) >> 6)]; /* AAAAAA AABBBB[BBBBCC]CCCCCC */
+            __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[c & 0x3F]; /* AAAAAA AABBBB BBBBCC[CCCCCC] */
         }
         else { 
-            __out_buf[io->__written++] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2)]; /* AAAAAA AABBBB[BBBB--]------ */
-            __out_buf[io->__written++] = '='; /* AAAAAA AABBBB BBBB--[------] */
+            __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2)]; /* AAAAAA AABBBB[BBBB--]------ */
+            __out_buf[socket->__written++] = '='; /* AAAAAA AABBBB BBBB--[------] */
         }
     }
     else {
-        __out_buf[io->__written++] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4)]; /* AAAAAA[AA----]------ ------ */
-        __out_buf[io->__written++] = '='; /* AAAAAA AA----[------]------ */
-        __out_buf[io->__written++] = '='; /* AAAAAA AA---- ------[------] */
+        __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4)]; /* AAAAAA[AA----]------ ------ */
+        __out_buf[socket->__written++] = '='; /* AAAAAA AA----[------]------ */
+        __out_buf[socket->__written++] = '='; /* AAAAAA AA---- ------[------] */
     }
 
-    /* At this point, 4 bytes have been io->__written */
+    /* At this point, 4 bytes have been socket->__written */
 
     /* Flush when necessary, return on error */
-    if (io->__written > 8188 /* sizeof(__out_buf) - 4 */) {
-        retval = __guac_socket_write(io, __out_buf, io->__written);
+    if (socket->__written > 8188 /* sizeof(__out_buf) - 4 */) {
+        retval = __guac_socket_write(socket, __out_buf, socket->__written);
         if (retval < 0)
             return retval;
 
-        io->__written = 0;
+        socket->__written = 0;
     }
 
     if (b < 0)
@@ -205,27 +205,27 @@ ssize_t __guac_socket_write_base64_triplet(guac_socket* io, int a, int b, int c)
 
 }
 
-ssize_t __guac_socket_write_base64_byte(guac_socket* io, char buf) {
+ssize_t __guac_socket_write_base64_byte(guac_socket* socket, char buf) {
 
-    int* __ready_buf = io->__ready_buf;
+    int* __ready_buf = socket->__ready_buf;
 
     int retval;
 
-    __ready_buf[io->__ready++] = buf & 0xFF;
+    __ready_buf[socket->__ready++] = buf & 0xFF;
 
     /* Flush triplet */
-    if (io->__ready == 3) {
-        retval = __guac_socket_write_base64_triplet(io, __ready_buf[0], __ready_buf[1], __ready_buf[2]);
+    if (socket->__ready == 3) {
+        retval = __guac_socket_write_base64_triplet(socket, __ready_buf[0], __ready_buf[1], __ready_buf[2]);
         if (retval < 0)
             return retval;
 
-        io->__ready = 0;
+        socket->__ready = 0;
     }
 
     return 1;
 }
 
-ssize_t guac_socket_write_base64(guac_socket* io, const void* buf, size_t count) {
+ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t count) {
 
     int retval;
 
@@ -234,7 +234,7 @@ ssize_t guac_socket_write_base64(guac_socket* io, const void* buf, size_t count)
 
     while (char_buf < end) {
 
-        retval = __guac_socket_write_base64_byte(io, *(char_buf++));
+        retval = __guac_socket_write_base64_byte(socket, *(char_buf++));
         if (retval < 0)
             return retval;
 
@@ -244,30 +244,30 @@ ssize_t guac_socket_write_base64(guac_socket* io, const void* buf, size_t count)
 
 }
 
-ssize_t guac_socket_flush(guac_socket* io) {
+ssize_t guac_socket_flush(guac_socket* socket) {
 
     int retval;
 
     /* Flush remaining bytes in buffer */
-    if (io->__written > 0) {
-        retval = __guac_socket_write(io, io->__out_buf, io->__written);
+    if (socket->__written > 0) {
+        retval = __guac_socket_write(socket, socket->__out_buf, socket->__written);
         if (retval < 0)
             return retval;
 
-        io->__written = 0;
+        socket->__written = 0;
     }
 
     return 0;
 
 }
 
-ssize_t guac_socket_flush_base64(guac_socket* io) {
+ssize_t guac_socket_flush_base64(guac_socket* socket) {
 
     int retval;
 
     /* Flush triplet to output buffer */
-    while (io->__ready > 0) {
-        retval = __guac_socket_write_base64_byte(io, -1);
+    while (socket->__ready > 0) {
+        retval = __guac_socket_write_base64_byte(socket, -1);
         if (retval < 0)
             return retval;
     }
@@ -277,7 +277,7 @@ ssize_t guac_socket_flush_base64(guac_socket* io) {
 }
 
 
-int guac_socket_select(guac_socket* io, int usec_timeout) {
+int guac_socket_select(guac_socket* socket, int usec_timeout) {
 
     fd_set fds;
     struct timeval timeout;
@@ -285,7 +285,7 @@ int guac_socket_select(guac_socket* io, int usec_timeout) {
 
     /* No timeout if usec_timeout is negative */
     if (usec_timeout < 0)
-        retval = select(io->fd + 1, &fds, NULL, NULL, NULL); 
+        retval = select(socket->fd + 1, &fds, NULL, NULL, NULL); 
 
     /* Handle timeout if specified */
     else {
@@ -293,9 +293,9 @@ int guac_socket_select(guac_socket* io, int usec_timeout) {
         timeout.tv_usec = usec_timeout%1000000;
 
         FD_ZERO(&fds);
-        FD_SET(io->fd, &fds);
+        FD_SET(socket->fd, &fds);
 
-        retval = select(io->fd + 1, &fds, NULL, NULL, &timeout);
+        retval = select(socket->fd + 1, &fds, NULL, NULL, &timeout);
     }
 
     /* Properly set guac_error */
