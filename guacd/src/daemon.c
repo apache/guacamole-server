@@ -102,7 +102,8 @@ void* start_client_thread(void* data) {
     }
 
     /* Send args response */
-    if (guac_protocol_send_args(socket, plugin->args)) {
+    if (guac_protocol_send_args(socket, plugin->args)
+            || guac_socket_flush(socket)) {
 
         if (guac_client_plugin_close(plugin)) {
             /* TODO: LOG ERROR */
