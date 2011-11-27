@@ -116,4 +116,17 @@ const char* guac_status_string(guac_status status);
 
 guac_status* __guac_error();
 
+/**
+ * Returns a message describing the error which occurred during the last
+ * function call. If an error occurred, but no message is associated with it,
+ * NULL is returned. This value is undefined if no error occurred.
+ *
+ * The storage of this value is thread-local. Assignment of a message to
+ * guac_error_message in one thread will not affect its value in another
+ * thread.
+ */
+#define guac_error_message (*__guac_error_message())
+
+const char** __guac_error_message();
+
 #endif

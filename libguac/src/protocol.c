@@ -414,6 +414,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
                         parsed_instruction = malloc(sizeof(guac_instruction));
                         if (parsed_instruction == NULL) {
                             guac_error = GUAC_STATUS_NO_MEMORY;
+                            guac_error_message = "Could not allocate memory for parsed instruction";
                             return NULL;
                         }
 
@@ -424,6 +425,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
                         /* Fail if memory could not be alloc'd for argv */
                         if (parsed_instruction->argv == NULL) {
                             guac_error = GUAC_STATUS_NO_MEMORY;
+                            guac_error_message = "Could not allocate memory for arguments of parsed instruction";
                             free(parsed_instruction);
                             return NULL;
                         }
@@ -434,6 +436,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
                         /* Fail if memory could not be alloc'd for opcode */
                         if (parsed_instruction->opcode == NULL) {
                             guac_error = GUAC_STATUS_NO_MEMORY;
+                            guac_error_message = "Could not allocate memory for opcode of parsed instruction";
                             free(parsed_instruction->argv);
                             free(parsed_instruction);
                             return NULL;
@@ -447,6 +450,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
                             /* Free memory and fail if out of mem */
                             if (parsed_instruction->argv[j] == NULL) {
                                 guac_error = GUAC_STATUS_NO_MEMORY;
+                                guac_error_message = "Could not allocate memory for single argument of parsed instruction";
 
                                 /* Free all alloc'd argv values */
                                 while (--j >= 0)
@@ -474,6 +478,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
                     /* Error if expected comma is not present */
                     else if (terminator != ',') {
                         guac_error = GUAC_STATUS_BAD_ARGUMENT;
+                        guac_error_message = "Element terminator of instructioni was not ';' nor ','";
                         return NULL;
                     }
 
@@ -488,6 +493,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
             /* Error if length is non-numeric or does not end in a period */
             else {
                 guac_error = GUAC_STATUS_BAD_ARGUMENT;
+                guac_error_message = "Non-numeric character in element length";
                 return NULL;
             }
 
@@ -508,6 +514,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
         /* EOF */
         if (retval == 0) {
             guac_error = GUAC_STATUS_NO_INPUT;
+            guac_error_message = "End of stream reached while reading instruction";
             return NULL;
         }
 
@@ -532,6 +539,7 @@ guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec
     /* Validate instruction */
     if (strcmp(instruction->opcode, opcode) != 0) {
         guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Instruction read did not have expected opcode";
         guac_instruction_free(instruction);
         return NULL;
     }

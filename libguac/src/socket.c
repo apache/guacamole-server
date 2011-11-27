@@ -69,6 +69,7 @@ guac_socket* guac_socket_open(int fd) {
     /* If no memory available, return with error */
     if (socket == NULL) {
         guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for socket";
         return NULL;
     }
 
@@ -83,6 +84,7 @@ guac_socket* guac_socket_open(int fd) {
     /* If no memory available, return with error */
     if (socket->__instructionbuf == NULL) {
         guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for instruction buffer";
         free(socket);
         return NULL;
     }
@@ -116,8 +118,10 @@ ssize_t __guac_socket_write(guac_socket* socket, const char* buf, int count) {
 #endif
 
     /* Record errors in guac_error */
-    if (retval < 0)
+    if (retval < 0) {
         guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error writing data to socket";
+    }
 
     return retval;
 }
@@ -299,8 +303,15 @@ int guac_socket_select(guac_socket* socket, int usec_timeout) {
     }
 
     /* Properly set guac_error */
-    if (retval <  0) guac_error = GUAC_STATUS_SEE_ERRNO;
-    if (retval == 0) guac_error = GUAC_STATUS_INPUT_TIMEOUT;
+    if (retval <  0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error while waiting for data on socket";
+    }
+
+    if (retval == 0) {
+        guac_error = GUAC_STATUS_INPUT_TIMEOUT;
+        guac_error_message = "Timeout while waiting for data on socket";
+    }
 
     return retval;
 
