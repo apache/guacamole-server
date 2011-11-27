@@ -33,3 +33,6 @@ libtool
 ltmain.sh
 missing
 
+# Generated docs
+doc/doxygen-output
+
