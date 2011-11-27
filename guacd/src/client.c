@@ -38,9 +38,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <guacamole/guacio.h>
+#include <guacamole/socket.h>
 #include <guacamole/client.h>
-#include <guacamole/log.h>
 #include <guacamole/error.h>
 
 #include "client.h"
