@@ -45,6 +45,11 @@
 #include "client.h"
 #include "thread.h"
 
+/**
+ * Sleep for the given number of milliseconds.
+ *
+ * @param millis The number of milliseconds to sleep.
+ */
 void __guacd_sleep(int millis) {
 
     struct timespec sleep_period;
@@ -79,14 +84,18 @@ void* __guac_client_output_thread(void* data) {
 
             /* Send sync */
             if (guac_protocol_send_sync(socket, client->last_sent_timestamp)) {
-                guac_client_log_error(client, "Error sending \"sync\" instruction: %s", guac_status_string(guac_error));
+                guac_client_log_error(client,
+                        "Error sending \"sync\" instruction: %s",
+                        guac_status_string(guac_error));
                 guac_client_stop(client);
                 return NULL;
             }
 
             /* Flush */
             if (guac_socket_flush(socket)) {
-                guac_client_log_error(client, "Error flushing output: %s", guac_status_string(guac_error));
+                guac_client_log_error(client,
+                        "Error flushing output: %s",
+                        guac_status_string(guac_error));
                 guac_client_stop(client);
                 return NULL;
             }
@@ -102,33 +111,36 @@ void* __guac_client_output_thread(void* data) {
 
                 int retval = client->handle_messages(client);
                 if (retval) {
-                    guac_client_log_error(client, "Error handling server messages: %s", guac_status_string(guac_error));
+                    guac_client_log_error(client,
+                            "Error handling server messages: %s",
+                            guac_status_string(guac_error));
                     guac_client_stop(client);
                     return NULL;
                 }
-
-                /* Sleep as necessary */
-                __guacd_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
 
                 /* Send sync instruction */
                 client->last_sent_timestamp = guac_protocol_get_timestamp();
                 if (guac_protocol_send_sync(socket, client->last_sent_timestamp)) {
-                    guac_client_log_error(client, "Error sending \"sync\" instruction: %s", guac_status_string(guac_error));
+                    guac_client_log_error(client, 
+                            "Error sending \"sync\" instruction: %s",
+                            guac_status_string(guac_error));
                     guac_client_stop(client);
                     return NULL;
                 }
 
+                /* Flush */
                 if (guac_socket_flush(socket)) {
-                    guac_client_log_error(client, "Error flushing output: %s", guac_status_string(guac_error));
+                    guac_client_log_error(client,
+                            "Error flushing output: %s",
+                            guac_status_string(guac_error));
                     guac_client_stop(client);
                     return NULL;
                 }
 
             }
 
-            /* If sync threshold exceeded, don't spin waiting for resync */
-            else
-                __guacd_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
+            /* Sleep before handling more messages */
+            __guacd_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
 
         }
 
@@ -157,14 +169,18 @@ void* __guac_client_input_thread(void* data) {
 
         /* Stop on error */
         if (instruction == NULL) {
-            guac_client_log_error(client, "Error reading instruction: %s", guac_status_string(guac_error));
+            guac_client_log_error(client,
+                    "Error reading instruction: %s",
+                    guac_status_string(guac_error));
             guac_client_stop(client);
             return NULL;
         }
 
         /* Call handler, stop on error */
         if (guac_client_handle_instruction(client, instruction) < 0) {
-            guac_client_log_error(client, "Error in client \"%s\" instruction handler: %s", instruction->opcode, guac_status_string(guac_error));
+            guac_client_log_error(client,
+                    "Error in client \"%s\" instruction handler: %s",
+                    instruction->opcode, guac_status_string(guac_error));
             guac_instruction_free(instruction);
             guac_client_stop(client);
             return NULL;
@@ -184,10 +200,12 @@ int guac_start_client(guac_client* client) {
     guac_thread input_thread, output_thread;
 
     if (guac_thread_create(&output_thread, __guac_client_output_thread, (void*) client)) {
+        guac_client_log_error(client, "Unable to start output thread");
         return -1;
     }
 
     if (guac_thread_create(&input_thread, __guac_client_input_thread, (void*) client)) {
+        guac_client_log_error(client, "Unable to start input thread");
         guac_client_stop(client);
         guac_thread_join(output_thread);
         return -1;
@@ -201,5 +219,4 @@ int guac_start_client(guac_client* client) {
     return 0;
 
 }
-
 

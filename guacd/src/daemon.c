@@ -64,13 +64,14 @@ void* start_client_thread(void* data) {
 
     guac_client* client;
     guac_client_plugin* plugin;
-    client_thread_data* thread_data = (client_thread_data*) data;
-    guac_socket* socket;
     guac_instruction* select;
     guac_instruction* connect;
 
+    /* Get thread data */
+    client_thread_data* thread_data = (client_thread_data*) data;
+
     /* Open guac_socket */
-    socket = guac_socket_open(thread_data->fd);
+    guac_socket* socket = guac_socket_open(thread_data->fd);
 
     /* Get protocol from select instruction */
     select = guac_protocol_expect_instruction(
@@ -171,10 +172,12 @@ void* start_client_thread(void* data) {
 
     /* Start client threads */
     syslog(LOG_INFO, "Starting client");
-    guac_start_client(client);
+    if (guac_start_client(client))
+        syslog(LOG_ERR, "Client finished abnormally");
+    else
+        syslog(LOG_INFO, "Client finished normally");
 
     /* Clean up */
-    syslog(LOG_INFO, "Client finished");
     guac_client_free(client);
     if (guac_client_plugin_close(plugin))
         syslog(LOG_ERR, "Error closing client plugin");
@@ -290,7 +293,7 @@ int main(int argc, char* argv[]) {
 #endif
 
     /* Otherwise, this is the daemon */
-    syslog(LOG_INFO, "Started, listening on port %i", listen_port);
+    syslog(LOG_INFO, "Listening on port %i", listen_port);
 
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
