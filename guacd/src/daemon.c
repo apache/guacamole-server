@@ -60,6 +60,14 @@ typedef struct client_thread_data {
 } client_thread_data;
 
 
+void __guacd_log_info(guac_client* client, const char* format, va_list args) {
+    vsyslog(LOG_INFO, format, args);
+}
+
+void __guacd_log_error(guac_client* client, const char* format, va_list args) {
+    vsyslog(LOG_ERR, format, args);
+}
+
 void* start_client_thread(void* data) {
 
     guac_client* client;
@@ -169,6 +177,10 @@ void* start_client_thread(void* data) {
         free(data);
         return NULL;
     }
+
+    /* Set up logging in client */
+    client->log_info_handler  = __guacd_log_info;
+    client->log_error_handler = __guacd_log_error;
 
     /* Start client threads */
     syslog(LOG_INFO, "Starting client");
