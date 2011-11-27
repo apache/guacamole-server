@@ -541,16 +541,19 @@ guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec
 
 }
 
-void guac_instruction_free_data(guac_instruction* instruction) {
-    free(instruction->opcode);
-
-    if (instruction->argv)
-        free(instruction->argv);
-}
 
 void guac_instruction_free(guac_instruction* instruction) {
-    guac_instruction_free_data(instruction);
+
+    /* Free opcode */
+    free(instruction->opcode);
+
+    /* Free argv if set (may be NULL of argc is 0) */
+    if (instruction->argv)
+        free(instruction->argv);
+
+    /* Free instruction */
     free(instruction);
+
 }
 
 
