@@ -52,6 +52,7 @@
 #include <guacamole/error.h>
 
 #include "client.h"
+#include "log.h"
 
 typedef struct client_thread_data {
 
@@ -59,31 +60,6 @@ typedef struct client_thread_data {
 
 } client_thread_data;
 
-
-void __guacd_log_info(guac_client* client, const char* format, va_list args) {
-    vsyslog(LOG_INFO, format, args);
-}
-
-void __guacd_log_error(guac_client* client, const char* format, va_list args) {
-    vsyslog(LOG_ERR, format, args);
-}
-
-void guacd_log_guac_error(const char* message) {
-
-    /* If error message provided, include in log */
-    if (guac_error_message != NULL)
-        syslog(LOG_ERR, "%s: %s: %s",
-                message,
-                guac_error_message,
-                guac_status_string(guac_error));
-
-    /* Otherwise just log with standard status string */
-    else
-        syslog(LOG_ERR, "%s: %s",
-                message,
-                guac_status_string(guac_error));
-
-}
 
 void* start_client_thread(void* data) {
 
@@ -191,8 +167,8 @@ void* start_client_thread(void* data) {
     }
 
     /* Set up logging in client */
-    client->log_info_handler  = __guacd_log_info;
-    client->log_error_handler = __guacd_log_error;
+    client->log_info_handler  = guacd_log_info;
+    client->log_error_handler = guacd_log_error;
 
     /* Start client threads */
     syslog(LOG_INFO, "Starting client");
