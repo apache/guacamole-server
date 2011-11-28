@@ -68,6 +68,23 @@ void __guacd_log_error(guac_client* client, const char* format, va_list args) {
     vsyslog(LOG_ERR, format, args);
 }
 
+void guacd_log_guac_error(const char* message) {
+
+    /* If error message provided, include in log */
+    if (guac_error_message != NULL)
+        syslog(LOG_ERR, "%s: %s: %s",
+                message,
+                guac_error_message,
+                guac_status_string(guac_error));
+
+    /* Otherwise just log with standard status string */
+    else
+        syslog(LOG_ERR, "%s: %s",
+                message,
+                guac_status_string(guac_error));
+
+}
+
 void* start_client_thread(void* data) {
 
     guac_client* client;
@@ -87,8 +104,7 @@ void* start_client_thread(void* data) {
     if (select == NULL) {
 
         /* Log error */
-        syslog(LOG_ERR, "Error reading \"select\": %s",
-                guac_status_string(guac_error));
+        guacd_log_guac_error("Error reading \"select\"");
 
         /* Free resources */
         guac_socket_close(socket);
@@ -118,8 +134,7 @@ void* start_client_thread(void* data) {
     if (plugin == NULL) {
 
         /* Log error */
-        syslog(LOG_ERR, "Error loading client plugin: %s",
-                guac_status_string(guac_error));
+        guacd_log_guac_error("Error loading client plugin");
 
         /* Free resources */
         guac_socket_close(socket);
@@ -132,11 +147,10 @@ void* start_client_thread(void* data) {
             || guac_socket_flush(socket)) {
 
         /* Log error */
-        syslog(LOG_ERR, "Error sending \"args\": %s",
-                guac_status_string(guac_error));
+        guacd_log_guac_error("Error sending \"args\"");
 
         if (guac_client_plugin_close(plugin))
-            syslog(LOG_ERR, "Error closing client plugin");
+            guacd_log_guac_error("Error closing client plugin");
 
         guac_socket_close(socket);
         free(data);
@@ -149,11 +163,10 @@ void* start_client_thread(void* data) {
     if (connect == NULL) {
 
         /* Log error */
-        syslog(LOG_ERR, "Error reading \"connect\": %s",
-                guac_status_string(guac_error));
+        guacd_log_guac_error("Error reading \"connect\"");
 
         if (guac_client_plugin_close(plugin))
-            syslog(LOG_ERR, "Error closing client plugin");
+            guacd_log_guac_error("Error closing client plugin");
 
         guac_socket_close(socket);
         free(data);
@@ -167,11 +180,10 @@ void* start_client_thread(void* data) {
 
     if (client == NULL) {
 
-        syslog(LOG_ERR, "Error instantiating client: %s",
-                guac_status_string(guac_error));
+        guacd_log_guac_error("Error instantiating client");
 
         if (guac_client_plugin_close(plugin))
-            syslog(LOG_ERR, "Error closing client plugin");
+            guacd_log_guac_error("Error closing client plugin");
 
         guac_socket_close(socket);
         free(data);
