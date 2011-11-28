@@ -360,13 +360,15 @@ int __guac_fill_instructionbuf(guac_socket* socket) {
 guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_timeout) {
 
     int retval;
-    int i = socket->__instructionbuf_parse_start;
-    
+   
     /* Loop until a instruction is read */
     for (;;) {
 
         /* Length of element */
         int element_length = 0;
+
+        /* Position within buffer */
+        int i = socket->__instructionbuf_parse_start;
 
         /* Parse instruction in buffer */
         while (i < socket->__instructionbuf_used_length) {
