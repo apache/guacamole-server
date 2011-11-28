@@ -171,6 +171,11 @@ void* __guac_client_input_thread(void* data) {
             return NULL;
         }
 
+        /* Reset guac_error and guac_error_message (client handlers are not
+         * guaranteed to set these) */
+        guac_error = GUAC_STATUS_SUCCESS;
+        guac_error_message = NULL;
+
         /* Call handler, stop on error */
         if (guac_client_handle_instruction(client, instruction) < 0) {
 
