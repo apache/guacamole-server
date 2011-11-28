@@ -135,8 +135,9 @@ void* __guac_client_output_thread(void* data) {
 
             }
 
-            /* Sleep before handling more messages */
-            __guacd_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
+            /* Do not spin while waiting for old sync */
+            else
+                __guacd_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
 
         }
 
