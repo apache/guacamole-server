@@ -76,7 +76,7 @@ void* start_client_thread(void* data) {
 
     /* Get protocol from select instruction */
     select = guac_protocol_expect_instruction(
-            socket, GUAC_USEC_TIMEOUT, "select");
+            socket, GUACD_USEC_TIMEOUT, "select");
     if (select == NULL) {
 
         /* Log error */
@@ -135,7 +135,7 @@ void* start_client_thread(void* data) {
 
     /* Get args from connect instruction */
     connect = guac_protocol_expect_instruction(
-            socket, GUAC_USEC_TIMEOUT, "connect");
+            socket, GUACD_USEC_TIMEOUT, "connect");
     if (connect == NULL) {
 
         /* Log error */
@@ -255,7 +255,6 @@ int main(int argc, char* argv[]) {
     } 
 
     /* Fork into background */
-#ifdef HAVE_FORK
     daemon_pid = fork();
 
     /* If error, fail */
@@ -286,11 +285,9 @@ int main(int argc, char* argv[]) {
 
         exit(EXIT_SUCCESS);
     }
-#else
-    daemon_pid = getpid();
-    syslog(LOG_INFO, "fork() not defined at compile time.");
-    syslog(LOG_INFO, "guacd running in foreground only.");
-#endif
+
+    /* Open log */
+    openlog(NULL, LOG_PID, LOG_DAEMON);
 
     /* Otherwise, this is the daemon */
     syslog(LOG_INFO, "Listening on port %i", listen_port);
@@ -308,11 +305,7 @@ int main(int argc, char* argv[]) {
     /* Daemon loop */
     for (;;) {
 
-#ifdef HAVE_FORK
         pid_t child_pid;
-#else
-        guac_thread_t thread;
-#endif
         client_thread_data* data;
 
         /* Listen for connections */
@@ -333,17 +326,8 @@ int main(int argc, char* argv[]) {
         data->fd = connected_socket_fd;
 
         /* 
-         * Once connection is accepted, send child into background, whether through
-         * fork() or through creating a thread. If thead support is not present on
-         * the platform, guacd will still work, but will only be able to handle one
-         * connection at a time.
-         */
-
-#ifdef HAVE_FORK
-
-        /*** FORK ***/
-
-        /*
+         * Once connection is accepted, send child into background.
+         *
          * Note that we prefer fork() over threads for connection-handling
          * processes as they give each connection its own memory area, and
          * isolate the main daemon and other connections from errors in any
@@ -366,13 +350,6 @@ int main(int argc, char* argv[]) {
         else if (close(connected_socket_fd) < 0) {
             syslog(LOG_ERR, "Error closing daemon reference to child descriptor: %s", strerror(errno));
         }
-
-#else
-
-        if (guac_thread_create(&thread, start_client_thread, (void*) data))
-            syslog(LOG_ERR, "Could not create client thread: %s", strerror(errno));
-
-#endif
 
     }
 

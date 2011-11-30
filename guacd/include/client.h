@@ -45,17 +45,17 @@
  * timeframe, server messages will not be handled until a sync instruction is
  * received from the client.
  */
-#define GUAC_SYNC_THRESHOLD 500
+#define GUACD_SYNC_THRESHOLD 500
 
 /**
  * The time to allow between server sync messages in milliseconds. A sync
- * message from the server will be sent every GUAC_SYNC_FREQUENCY milliseconds.
+ * message from the server will be sent every GUACD_SYNC_FREQUENCY milliseconds.
  * As this will induce a response from a client that is not malfunctioning,
  * this is used to detect when a client has died. This must be set to a
  * reasonable value to avoid clients being disconnected unnecessarily due
  * to timeout.
  */
-#define GUAC_SYNC_FREQUENCY 5000
+#define GUACD_SYNC_FREQUENCY 5000
 
 /**
  * The amount of time to wait after handling server messages. If a client
@@ -63,20 +63,21 @@
  * are being handled, there will be a pause of this many milliseconds before
  * the next call to the message handler.
  */
-#define GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY 50
+#define GUACD_MESSAGE_HANDLE_FREQUENCY 50
+
 
 /**
  * The number of milliseconds to wait for messages in any phase before
  * timing out and closing the connection with an error.
  */
-#define GUAC_TIMEOUT      15000
+#define GUACD_TIMEOUT      15000
 
 /**
  * The number of microseconds to wait for messages in any phase before
  * timing out and closing the conncetion with an error. This is always
- * equal to GUAC_TIMEOUT * 1000.
+ * equal to GUACD_TIMEOUT * 1000.
  */
-#define GUAC_USEC_TIMEOUT (GUAC_TIMEOUT*1000)
+#define GUACD_USEC_TIMEOUT (GUACD_TIMEOUT*1000)
 
 
 void guac_client_stop(guac_client* client);

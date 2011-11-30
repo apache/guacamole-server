@@ -78,7 +78,7 @@ void* __guac_client_output_thread(void* data) {
 
         /* Occasionally ping client with repeat of last sync */
         guac_timestamp timestamp = guac_protocol_get_timestamp();
-        if (timestamp - last_ping_timestamp > GUAC_SYNC_FREQUENCY) {
+        if (timestamp - last_ping_timestamp > GUACD_SYNC_FREQUENCY) {
 
             /* Record time of last synnc */
             last_ping_timestamp = timestamp;
@@ -106,7 +106,7 @@ void* __guac_client_output_thread(void* data) {
 
             /* Only handle messages if synced within threshold */
             if (client->last_sent_timestamp - client->last_received_timestamp
-                    < GUAC_SYNC_THRESHOLD) {
+                    < GUACD_SYNC_THRESHOLD) {
 
                 int retval = client->handle_messages(client);
                 if (retval) {
@@ -137,13 +137,13 @@ void* __guac_client_output_thread(void* data) {
 
             /* Do not spin while waiting for old sync */
             else
-                __guacd_sleep(GUAC_SERVER_MESSAGE_HANDLE_FREQUENCY);
+                __guacd_sleep(GUACD_MESSAGE_HANDLE_FREQUENCY);
 
         }
 
         /* If no message handler, just sleep until next sync ping */
         else
-            __guacd_sleep(GUAC_SYNC_FREQUENCY);
+            __guacd_sleep(GUACD_SYNC_FREQUENCY);
 
     } /* End of output loop */
 
@@ -162,7 +162,7 @@ void* __guac_client_input_thread(void* data) {
 
         /* Read instruction */
         guac_instruction* instruction =
-            guac_protocol_read_instruction(socket, GUAC_USEC_TIMEOUT);
+            guac_protocol_read_instruction(socket, GUACD_USEC_TIMEOUT);
 
         /* Stop on error */
         if (instruction == NULL) {
