@@ -306,3 +306,7 @@ void guac_client_log_error(guac_client* client, const char* format, ...) {
 
 }
 
+void guac_client_stop(guac_client* client) {
+    client->state = STOPPING;
+}
+

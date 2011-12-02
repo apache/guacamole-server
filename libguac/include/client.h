@@ -491,6 +491,15 @@ void vguac_client_log_info(guac_client* client, const char* format, va_list ap);
 void vguac_client_log_error(guac_client* client, const char* format, va_list ap);
 
 /**
+ * Signals the given client to stop gracefully. This is a completely
+ * cooperative signal, and can be ignored by the client or the hosting
+ * daemon.
+ *
+ * @param client The proxy client to signal to stop.
+ */
+void guac_client_stop(guac_client* client);
+
+/**
  * The default Guacamole client layer, layer 0.
  */
 extern const guac_layer* GUAC_DEFAULT_LAYER;
