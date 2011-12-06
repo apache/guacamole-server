@@ -54,25 +54,15 @@
 #include "client.h"
 #include "log.h"
 
-typedef struct client_thread_data {
-
-    int fd;
-
-} client_thread_data;
-
-
-void* start_client_thread(void* data) {
+void guacd_handle_connection(int fd) {
 
     guac_client* client;
     guac_client_plugin* plugin;
     guac_instruction* select;
     guac_instruction* connect;
 
-    /* Get thread data */
-    client_thread_data* thread_data = (client_thread_data*) data;
-
     /* Open guac_socket */
-    guac_socket* socket = guac_socket_open(thread_data->fd);
+    guac_socket* socket = guac_socket_open(fd);
 
     /* Get protocol from select instruction */
     select = guac_protocol_expect_instruction(
@@ -84,8 +74,7 @@ void* start_client_thread(void* data) {
 
         /* Free resources */
         guac_socket_close(socket);
-        free(data);
-        return NULL;
+        return;
     }
 
     /* Validate args to select */
@@ -97,8 +86,7 @@ void* start_client_thread(void* data) {
 
         /* Free resources */
         guac_socket_close(socket);
-        free(data);
-        return NULL;
+        return;
     }
 
     syslog(LOG_INFO, "Protocol \"%s\" selected", select->argv[0]);
@@ -114,8 +102,7 @@ void* start_client_thread(void* data) {
 
         /* Free resources */
         guac_socket_close(socket);
-        free(data);
-        return NULL;
+        return;
     }
 
     /* Send args response */
@@ -129,8 +116,7 @@ void* start_client_thread(void* data) {
             guacd_log_guac_error("Error closing client plugin");
 
         guac_socket_close(socket);
-        free(data);
-        return NULL;
+        return;
     }
 
     /* Get args from connect instruction */
@@ -145,8 +131,7 @@ void* start_client_thread(void* data) {
             guacd_log_guac_error("Error closing client plugin");
 
         guac_socket_close(socket);
-        free(data);
-        return NULL;
+        return;
     }
 
     /* Load and init client */
@@ -162,8 +147,7 @@ void* start_client_thread(void* data) {
             guacd_log_guac_error("Error closing client plugin");
 
         guac_socket_close(socket);
-        free(data);
-        return NULL;
+        return;
     }
 
     /* Set up logging in client */
@@ -184,10 +168,8 @@ void* start_client_thread(void* data) {
 
     /* Close socket */
     guac_socket_close(socket);
-    close(thread_data->fd);
 
-    free(data);
-    return NULL;
+    return;
 
 }
 
@@ -306,7 +288,6 @@ int main(int argc, char* argv[]) {
     for (;;) {
 
         pid_t child_pid;
-        client_thread_data* data;
 
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
@@ -321,9 +302,6 @@ int main(int argc, char* argv[]) {
             syslog(LOG_ERR, "Could not accept client connection: %s", strerror(errno));
             return 3;
         }
-
-        data = malloc(sizeof(client_thread_data));
-        data->fd = connected_socket_fd;
 
         /* 
          * Once connection is accepted, send child into background.
@@ -342,7 +320,8 @@ int main(int argc, char* argv[]) {
 
         /* If child, start client, and exit when finished */
         else if (child_pid == 0) {
-            start_client_thread(data);
+            guacd_handle_connection(connected_socket_fd);
+            close(connected_socket_fd);
             return 0;
         }
 
