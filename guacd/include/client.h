@@ -79,6 +79,6 @@
  */
 #define GUACD_USEC_TIMEOUT (GUACD_TIMEOUT*1000)
 
-int guac_start_client(guac_client* client);
+int guacd_client_start(guac_client* client);
 
 #endif

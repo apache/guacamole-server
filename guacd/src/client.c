@@ -37,13 +37,13 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <pthread.h>
 
 #include <guacamole/socket.h>
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 
 #include "client.h"
-#include "thread.h"
 #include "log.h"
 
 /**
@@ -51,7 +51,7 @@
  *
  * @param millis The number of milliseconds to sleep.
  */
-void __guacd_sleep(int millis) {
+void __guacdd_sleep(int millis) {
 
     struct timespec sleep_period;
 
@@ -62,7 +62,7 @@ void __guacd_sleep(int millis) {
 
 }
 
-void* __guac_client_output_thread(void* data) {
+void* __guacd_client_output_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
     guac_socket* socket = client->socket;
@@ -133,13 +133,13 @@ void* __guac_client_output_thread(void* data) {
 
             /* Do not spin while waiting for old sync */
             else
-                __guacd_sleep(GUACD_MESSAGE_HANDLE_FREQUENCY);
+                __guacdd_sleep(GUACD_MESSAGE_HANDLE_FREQUENCY);
 
         }
 
         /* If no message handler, just sleep until next sync ping */
         else
-            __guacd_sleep(GUACD_SYNC_FREQUENCY);
+            __guacdd_sleep(GUACD_SYNC_FREQUENCY);
 
     } /* End of output loop */
 
@@ -148,7 +148,7 @@ void* __guac_client_output_thread(void* data) {
 
 }
 
-void* __guac_client_input_thread(void* data) {
+void* __guacd_client_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
     guac_socket* socket = client->socket;
@@ -199,25 +199,25 @@ void* __guac_client_input_thread(void* data) {
 
 }
 
-int guac_start_client(guac_client* client) {
+int guacd_client_start(guac_client* client) {
 
-    guac_thread input_thread, output_thread;
+    pthread_t input_thread, output_thread;
 
-    if (guac_thread_create(&output_thread, __guac_client_output_thread, (void*) client)) {
+    if (pthread_create(&output_thread, NULL, __guacd_client_output_thread, (void*) client)) {
         guac_client_log_error(client, "Unable to start output thread");
         return -1;
     }
 
-    if (guac_thread_create(&input_thread, __guac_client_input_thread, (void*) client)) {
+    if (pthread_create(&input_thread, NULL, __guacd_client_input_thread, (void*) client)) {
         guac_client_log_error(client, "Unable to start input thread");
         guac_client_stop(client);
-        guac_thread_join(output_thread);
+        pthread_join(output_thread, NULL);
         return -1;
     }
 
     /* Wait for I/O threads */
-    guac_thread_join(input_thread);
-    guac_thread_join(output_thread);
+    pthread_join(input_thread, NULL);
+    pthread_join(output_thread, NULL);
 
     /* Done */
     return 0;

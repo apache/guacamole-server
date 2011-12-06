@@ -42,8 +42,8 @@ AM_CFLAGS = -Werror -Wall -pedantic -Iinclude
 sbin_PROGRAMS = guacd
 init_SCRIPTS = init.d/guacd
 
-noinst_HEADERS = include/client.h include/thread.h include/log.h
-guacd_SOURCES = src/daemon.c src/client.c src/thread.c src/log.c
+noinst_HEADERS = include/client.h include/log.h
+guacd_SOURCES = src/daemon.c src/client.c src/log.c
 
 EXTRA_DIST = init.d/guacd.in
 CLEANFILES = $(init_SCRIPTS)

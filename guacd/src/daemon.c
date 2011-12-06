@@ -172,7 +172,7 @@ void* start_client_thread(void* data) {
 
     /* Start client threads */
     syslog(LOG_INFO, "Starting client");
-    if (guac_start_client(client))
+    if (guacd_client_start(client))
         syslog(LOG_ERR, "Client finished abnormally");
     else
         syslog(LOG_INFO, "Client finished normally");
