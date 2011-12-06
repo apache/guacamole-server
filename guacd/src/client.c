@@ -62,10 +62,6 @@ void __guacd_sleep(int millis) {
 
 }
 
-void guac_client_stop(guac_client* client) {
-    client->state = STOPPING;
-}
-
 void* __guac_client_output_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
