@@ -43,6 +43,7 @@
 #include <sys/types.h>
 
 #include <sys/socket.h>
+#include <netdb.h>
 #include <netinet/in.h>
 
 #include <errno.h>
@@ -177,7 +178,10 @@ int main(int argc, char* argv[]) {
 
     /* Server */
     int socket_fd;
-    struct sockaddr_in server_addr;
+    struct addrinfo* addresses;
+    struct addrinfo* current_address;
+    char bound_address[1024];
+    char bound_port[64];
     int opt_on = 1;
 
     /* Client */
@@ -186,37 +190,45 @@ int main(int argc, char* argv[]) {
     int connected_socket_fd;
 
     /* Arguments */
-    int listen_port = 4822; /* Default port */
+    char* listen_address = NULL; /* Default address of INADDR_ANY */
+    char* listen_port = "4822";  /* Default port */
+    char* pidfile = NULL;
     int opt;
 
-    char* pidfile = NULL;
+    /* General */
+    int retval;
 
     /* Daemon Process */
     pid_t daemon_pid;
 
     /* Parse arguments */
-    while ((opt = getopt(argc, argv, "l:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:")) != -1) {
         if (opt == 'l') {
-            listen_port = atoi(optarg);
-            if (listen_port <= 0) {
-                fprintf(stderr, "Invalid port: %s\n", optarg);
-                exit(EXIT_FAILURE);
-            }
+            listen_port = strdup(optarg);
+        }
+        else if (opt == 'b') {
+            listen_address = strdup(optarg);
         }
         else if (opt == 'p') {
             pidfile = strdup(optarg);
         }
         else {
-            fprintf(stderr, "USAGE: %s [-l LISTENPORT] [-p PIDFILE]\n", argv[0]);
+
+            fprintf(stderr, "USAGE: %s"
+                    " [-l LISTENPORT]"
+                    " [-b LISTENADDRESS]"
+                    " [-p PIDFILE]\n", argv[0]);
+
             exit(EXIT_FAILURE);
         }
     }
 
-    /* Get binding address */
-    memset(&server_addr, 0, sizeof(server_addr)); /* Zero struct */
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(listen_port);
+    /* Get addresses for binding */
+    if ((retval = getaddrinfo(listen_address, listen_port, NULL, &addresses))) {
+        fprintf(stderr, "Error parsing given address or port: %s\n",
+                gai_strerror(retval));
+        exit(EXIT_FAILURE);
+    }
 
     /* Get socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -225,16 +237,38 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    /* Allow socket reuse */
     if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (void*) &opt_on, sizeof(opt_on))) {
         fprintf(stderr, "Warning: Unable to set socket options for reuse: %s\n", strerror(errno));
     }
 
-    /* Bind socket to address */
-    if (bind(socket_fd, (struct sockaddr*) &server_addr,
-                sizeof(server_addr)) < 0) {
-        fprintf(stderr, "Error binding socket: %s\n", strerror(errno));
+    /* Attempt binding of each address until success */
+    current_address = addresses;
+    while (current_address != NULL) {
+
+        /* Attempt to bind socket to address */
+        if (bind(socket_fd,
+                    current_address->ai_addr,
+                    current_address->ai_addrlen) == 0) {
+
+            /* Done if successful bind */
+            break;
+
+        }
+
+        /* Otherwise log error */
+        else
+            fprintf(stderr, "Error binding socket: %s\n", strerror(errno));
+
+        current_address = current_address->ai_next;
+
+    }
+
+    /* If unable to bind to anything, fail */
+    if (current_address == NULL) {
+        fprintf(stderr, "Unable to bind socket to any addresses.\n");
         exit(EXIT_FAILURE);
-    } 
+    }
 
     /* Fork into background */
     daemon_pid = fork();
@@ -271,9 +305,6 @@ int main(int argc, char* argv[]) {
     /* Open log */
     openlog(NULL, LOG_PID, LOG_DAEMON);
 
-    /* Otherwise, this is the daemon */
-    syslog(LOG_INFO, "Listening on port %i", listen_port);
-
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
         syslog(LOG_ERR, "Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
@@ -283,6 +314,19 @@ int main(int argc, char* argv[]) {
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
         syslog(LOG_ERR, "Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
     }
+
+    /* Log address and port */
+    if (getnameinfo(current_address->ai_addr, current_address->ai_addrlen,
+            bound_address, sizeof(bound_address),
+            bound_port, sizeof(bound_port),
+            0))
+        syslog(LOG_WARNING, "Could not resolve name of listening host.");
+    else
+        syslog(LOG_INFO,
+                "Listening on host %s, port %s", bound_address, bound_port);
+
+    /* Free addresses */
+    freeaddrinfo(addresses);
 
     /* Daemon loop */
     for (;;) {
