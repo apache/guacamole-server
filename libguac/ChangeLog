@@ -1,3 +1,14 @@
+2011-12-11 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Added functions for alloc/free of layers and buffers
+	* Added "clip" instruction
+	* New, more efficient instruction format
+	* Fixed guac_write_base64 to match docs
+	* Added guac_error for error reporting and logging
+	* Consistent naming conventions
+	* Migrated daemon-specific functionality to guacd
+	* Made private members of structs private (using double-underscore prefix)
+
 2011-03-14 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Lag control ("sync" message)
