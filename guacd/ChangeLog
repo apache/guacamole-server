@@ -1,3 +1,12 @@
+2011-12-11 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Migrated daemon functions from libguac to guacd
+	* Improved logging
+	* Updated to match naming conventions
+	* Removed forced sleep between message handles (much faster)
+	* Added manpage
+	* Added -b option for specifying bind address
+
 2011-02-28 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Initial release
