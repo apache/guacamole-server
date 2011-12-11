@@ -41,6 +41,7 @@ AM_CFLAGS = -Werror -Wall -pedantic -Iinclude
 
 sbin_PROGRAMS = guacd
 init_SCRIPTS = init.d/guacd
+man_MANS = man/guacd.8
 
 noinst_HEADERS = include/client.h include/log.h
 guacd_SOURCES = src/daemon.c src/client.c src/log.c
