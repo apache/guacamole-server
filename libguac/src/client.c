@@ -186,6 +186,8 @@ int guac_client_plugin_close(guac_client_plugin* plugin) {
         return -1;
     }
 
+    /* Free plugin handle */
+    free(plugin);
     return 0;
 
 }
