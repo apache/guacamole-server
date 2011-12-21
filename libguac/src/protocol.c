@@ -554,12 +554,22 @@ guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec
 
 void guac_instruction_free(guac_instruction* instruction) {
 
+    int argc = instruction->argc;
+
     /* Free opcode */
     free(instruction->opcode);
 
     /* Free argv if set (may be NULL of argc is 0) */
-    if (instruction->argv)
+    if (instruction->argv) {
+
+        /* All argument values */
+        while (argc > 0)
+            free(instruction->argv[--argc]);
+
+        /* Free actual array */
         free(instruction->argv);
+
+    }
 
     /* Free instruction */
     free(instruction);
