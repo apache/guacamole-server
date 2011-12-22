@@ -36,15 +36,11 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <syslog.h>
 
 #include <rfb/rfbclient.h>
 
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
 #include "client.h"

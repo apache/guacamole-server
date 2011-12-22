@@ -38,16 +38,6 @@
 #ifndef __GUAC_VNC_GUAC_HANDLERS_H
 #define __GUAC_VNC_GUAC_HANDLERS_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <syslog.h>
-
-#include <rfb/rfbclient.h>
-
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
 int vnc_guac_client_handle_messages(guac_client* client);

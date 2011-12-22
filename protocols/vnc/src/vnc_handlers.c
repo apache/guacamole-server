@@ -36,8 +36,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <time.h>
 #include <syslog.h>
 

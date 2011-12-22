@@ -35,19 +35,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <syslog.h>
-
-#include <cairo/cairo.h>
+#ifndef __GUAC_VNC_VNC_HANDLERS_H
+#define __GUAC_VNC_VNC_HANDLERS_H
 
 #include <rfb/rfbclient.h>
-
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
-#include <guacamole/client.h>
 
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp);
 void guac_vnc_update(rfbClient* client, int x, int y, int w, int h);
@@ -57,4 +48,6 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client);
 void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen);
 void guac_vnc_client_log_info(const char* format, ...);
 void guac_vnc_client_log_error(const char* format, ...);
+
+#endif
 

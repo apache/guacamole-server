@@ -48,7 +48,7 @@ AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawi
 AC_CHECK_LIB([vncclient], [rfbInitClient],, AC_MSG_ERROR("libvncclient is required"))
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdlib.h string.h syslog.h guacamole/client.h guacamole/guacio.h guacamole/protocol.h])
+AC_CHECK_HEADERS([stdlib.h string.h syslog.h guacamole/client.h guacamole/socket.h guacamole/protocol.h])
 
 # Checks for library functions.
 AC_FUNC_MALLOC
