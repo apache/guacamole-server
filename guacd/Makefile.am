@@ -46,7 +46,7 @@ man_MANS = man/guacd.8
 noinst_HEADERS = include/client.h include/log.h
 guacd_SOURCES = src/daemon.c src/client.c src/log.c
 
-EXTRA_DIST = init.d/guacd.in
+EXTRA_DIST = init.d/guacd.in man/guacd.8
 CLEANFILES = $(init_SCRIPTS)
 
 init.d/guacd: init.d/guacd.in
