@@ -49,6 +49,8 @@
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
+#include "client.h"
+
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);

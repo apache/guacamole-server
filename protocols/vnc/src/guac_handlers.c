@@ -41,26 +41,13 @@
 #include <time.h>
 #include <syslog.h>
 
-#include <cairo/cairo.h>
-
 #include <rfb/rfbclient.h>
 
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
-static char* __GUAC_CLIENT = "GUAC_CLIENT";
-
-typedef struct vnc_guac_client_data {
-    
-    rfbClient* rfb_client;
-    MallocFrameBufferProc rfb_MallocFrameBuffer;
-
-    int copy_rect_used;
-    char* password;
-    char* encodings;
-
-} vnc_guac_client_data;
+#include "client.h"
 
 int vnc_guac_client_handle_messages(guac_client* client) {
 
@@ -143,10 +130,4 @@ int vnc_guac_client_free_handler(guac_client* client) {
 
     return 0;
 }
-
-
-/* 
- * Logging, required as libvncclient does not pass the client
- * to its logging functions, thus we cannot use guac_client_log*()
- */
 

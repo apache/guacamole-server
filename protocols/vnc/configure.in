@@ -34,7 +34,7 @@
 #
 # ***** END LICENSE BLOCK *****
 
-AC_INIT(src/vnc_client.c)
+AC_INIT(src/client.c)
 AM_INIT_AUTOMAKE([libguac-client-vnc], 0.5.0)
 AC_CONFIG_MACRO_DIR([m4])
 

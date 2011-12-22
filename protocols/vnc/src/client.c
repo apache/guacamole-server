@@ -41,13 +41,15 @@
 #include <time.h>
 #include <syslog.h>
 
-#include <cairo/cairo.h>
-
 #include <rfb/rfbclient.h>
 
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
+
+#include "client.h"
+#include "vnc_handlers.h"
+#include "guac_handlers.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -59,128 +61,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     NULL
 };
 
-static char* __GUAC_CLIENT = "GUAC_CLIENT";
-
-typedef struct vnc_guac_client_data {
-    
-    rfbClient* rfb_client;
-    MallocFrameBufferProc rfb_MallocFrameBuffer;
-
-    int copy_rect_used;
-    char* password;
-    char* encodings;
-
-} vnc_guac_client_data;
-
-int vnc_guac_client_handle_messages(guac_client* client) {
-
-    int wait_result;
-    rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
-
-    wait_result = WaitForMessage(rfb_client, 1000000);
-    if (wait_result < 0) {
-        guac_client_log_error(client, "Error waiting for VNC server message\n");
-        return 1;
-    }
-
-    if (wait_result > 0) {
-
-        if (!HandleRFBServerMessage(rfb_client)) {
-            guac_client_log_error(client, "Error handling VNC server message\n");
-            return 1;
-        }
-
-    }
-
-    return 0;
-
-}
-
-
-int vnc_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
-
-    rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
-
-    SendPointerEvent(rfb_client, x, y, mask);
-
-    return 0;
-}
-
-int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
-
-    rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
-
-    SendKeyEvent(rfb_client, keysym, pressed);
-
-    return 0;
-}
-
-int vnc_guac_client_clipboard_handler(guac_client* client, char* data) {
-
-    rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
-
-    SendClientCutText(rfb_client, data, strlen(data));
-
-    return 0;
-}
-
-int vnc_guac_client_free_handler(guac_client* client) {
-
-    vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) client->data;
-    rfbClient* rfb_client = guac_client_data->rfb_client;
-
-    /* Free encodings string, if used */
-    if (guac_client_data->encodings != NULL)
-        free(guac_client_data->encodings);
-
-    /* Free generic data struct */
-    free(client->data);
-
-    /* Free memory not free'd by libvncclient's rfbClientCleanup() */
-    if (rfb_client->frameBuffer != NULL) free(rfb_client->frameBuffer);
-    if (rfb_client->raw_buffer != NULL) free(rfb_client->raw_buffer);
-    if (rfb_client->rcSource != NULL) free(rfb_client->rcSource);
-
-    /* Free VNC rfbClientData linked list (not free'd by rfbClientCleanup()) */
-    while (rfb_client->clientData != NULL) {
-        rfbClientData* next = rfb_client->clientData->next;
-        free(rfb_client->clientData);
-        rfb_client->clientData = next;
-    }
-
-    /* Clean up VNC client*/
-    rfbClientCleanup(rfb_client);
-
-    return 0;
-}
-
-
-/* 
- * Logging, required as libvncclient does not pass the client
- * to its logging functions, thus we cannot use guac_client_log*()
- */
-void vnc_guac_client_log_info(const char* format, ...) {
-
-    va_list args;
-    va_start(args, format);
-
-    vsyslog(LOG_INFO, format, args);
-
-    va_end(args);
-
-}
-
-void vnc_guac_client_log_error(const char* format, ...) {
-
-    va_list args;
-    va_start(args, format);
-
-    vsyslog(LOG_ERR, format, args);
-
-    va_end(args);
-
-}
-
+char* __GUAC_CLIENT = "GUAC_CLIENT";
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
@@ -191,8 +72,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     int read_only = 0;
 
     /* Set up libvncclient logging */
-    rfbClientLog = vnc_guac_client_log_info;
-    rfbClientErr = vnc_guac_client_log_error;
+    rfbClientLog = guac_vnc_client_log_info;
+    rfbClientErr = guac_vnc_client_log_error;
 
     /*** PARSE ARGUMENTS ***/
 
