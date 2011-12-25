@@ -210,7 +210,7 @@ guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
     client->last_received_timestamp =
         client->last_sent_timestamp = guac_protocol_get_timestamp();
 
-    client->state = RUNNING;
+    client->state = GUAC_CLIENT_RUNNING;
 
     client->__all_layers        = NULL;
     client->__available_buffers = NULL;
@@ -309,6 +309,6 @@ void guac_client_log_error(guac_client* client, const char* format, ...) {
 }
 
 void guac_client_stop(guac_client* client) {
-    client->state = STOPPING;
+    client->state = GUAC_CLIENT_STOPPING;
 }
 
