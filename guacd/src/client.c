@@ -70,7 +70,7 @@ void* __guacd_client_output_thread(void* data) {
     guac_timestamp last_ping_timestamp = guac_protocol_get_timestamp();
 
     /* Guacamole client output loop */
-    while (client->state == RUNNING) {
+    while (client->state == GUAC_CLIENT_RUNNING) {
 
         /* Occasionally ping client with repeat of last sync */
         guac_timestamp timestamp = guac_protocol_get_timestamp();
@@ -154,7 +154,7 @@ void* __guacd_client_input_thread(void* data) {
     guac_socket* socket = client->socket;
 
     /* Guacamole client input loop */
-    while (client->state == RUNNING) {
+    while (client->state == GUAC_CLIENT_RUNNING) {
 
         /* Read instruction */
         guac_instruction* instruction =
