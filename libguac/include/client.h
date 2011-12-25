@@ -91,8 +91,33 @@ typedef void guac_client_log_handler(guac_client* client, const char* format, va
 typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
 
 /**
+ * Button mask value for the left mouse button.
+ */
+#define GUAC_CLIENT_MOUSE_LEFT        0x01
+
+/**
+ * Button mask value for the middle mouse button.
+ */
+#define GUAC_CLIENT_MOUSE_MIDDLE      0x02
+
+/**
+ * Button mask value for the right mouse button.
+ */
+#define GUAC_CLIENT_MOUSE_RIGHT       0x04
+
+/**
+ * Button mask value for scrolling the mouse scrollwheel up. 
+ */
+#define GUAC_CLIENT_MOUSE_SCROLL_UP   0x08
+
+/**
+ * Button mask value for scrolling the mouse scrollwheel down. 
+ */
+#define GUAC_CLIENT_MOUSE_SCROLL_DOWN 0x10
+
+/**
  * Possible current states of the Guacamole client. Currently, the only
- * two states are RUNNING and STOPPING.
+ * two states are GUAC_CLIENT_RUNNING and GUAC_CLIENT_STOPPING.
  */
 typedef enum guac_client_state {
 
@@ -100,13 +125,13 @@ typedef enum guac_client_state {
      * The state of the client from when it has been allocated by the main
      * daemon until it is killed or disconnected.
      */
-    RUNNING,
+    GUAC_CLIENT_RUNNING,
 
     /**
      * The state of the client when a stop has been requested, signalling the
      * I/O threads to shutdown.
      */
-    STOPPING
+    GUAC_CLIENT_STOPPING
 
 } guac_client_state;
 
@@ -156,9 +181,9 @@ struct guac_client {
 
     /**
      * The current state of the client. When the client is first allocated,
-     * this will be initialized to RUNNING. It will remain at RUNNING until
-     * an event occurs which requires the client to shutdown, at which point
-     * the state becomes STOPPING.
+     * this will be initialized to GUAC_CLIENT_RUNNING. It will remain at
+     * GUAC_CLIENT_RUNNING until an event occurs which requires the client to
+     * shutdown, at which point the state becomes GUAC_CLIENT_STOPPING.
      */
     guac_client_state state;
 
