@@ -20,6 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -42,6 +43,9 @@
 
 int ssh_guac_client_handle_messages(guac_client* client);
 int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed);
+int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
+int ssh_guac_client_clipboard_handler(guac_client* client, char* data);
+int ssh_guac_client_free_handler(guac_client* client);
 
 #endif
 

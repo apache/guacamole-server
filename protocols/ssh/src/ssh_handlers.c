@@ -20,6 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -108,6 +109,46 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
 }
 
+int ssh_guac_client_clipboard_handler(guac_client* client, char* data) {
+
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
+    free(client_data->clipboard_data);
+
+    client_data->clipboard_data = strdup(data);
+
+    guac_client_log_info(client, "Clipboard data recieved: %s", data);
+
+    return 0;
+}
+
+
+
+int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
+
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
+    /* Mouse just changed from down to up */
+    int mouse_up =
+            (client_data->mouse_mask & GUAC_CLIENT_MOUSE_RIGHT)
+        && !(mask                    & GUAC_CLIENT_MOUSE_RIGHT);
+
+    guac_client_log_info(client, "CLICK? x=%i, y=%i, mask=%i, mouse_up=%i", x, y, mask, mouse_up);
+
+    client_data->mouse_mask = mask;
+
+    /* Paste contents of clipboard on right mouse button up */
+    if(mouse_up && client_data->clipboard_data != NULL) {
+
+        int length = strlen(client_data->clipboard_data);
+
+        if(length)
+            return channel_write(client_data->term_channel, client_data->clipboard_data, length);
+    }
+
+    return 0;
+}
+
 int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
@@ -159,5 +200,21 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
     return 0;
 
+}
+
+int ssh_guac_client_free_handler(guac_client* client) {
+
+    ssh_guac_client_data* guac_client_data = (ssh_guac_client_data*) client->data;
+
+    /* Free terminal */
+    ssh_guac_terminal_free(guac_client_data->term);
+
+    /* Free clipboard data */
+    free(guac_client_data->clipboard_data);
+
+    /* Free generic data struct */
+    free(client->data);
+
+    return 0;
 }
 

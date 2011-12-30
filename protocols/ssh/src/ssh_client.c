@@ -20,6 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -114,6 +115,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->data = client_data;
     client_data->term = term;
     client_data->mod_ctrl = 0;
+    client_data->clipboard_data = NULL;
 
     /* Send name and dimensions */
     guac_protocol_send_name(socket, "SSH TEST");
@@ -216,7 +218,11 @@ int ssh_guac_client_auth(guac_client* client, const char* password) {
 
     /* Set handlers */
     client->handle_messages = ssh_guac_client_handle_messages;
+    client->free_handler = ssh_guac_client_free_handler;
+    client->mouse_handler = ssh_guac_client_mouse_handler;
     client->key_handler = ssh_guac_client_key_handler;
+    client->clipboard_handler = ssh_guac_client_clipboard_handler;
+
 
     /* Success */
     return 0;

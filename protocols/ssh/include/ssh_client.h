@@ -20,6 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -52,11 +53,14 @@ typedef struct ssh_guac_client_data {
     ssh_channel term_channel;
 
     ssh_guac_terminal* term;
+    
+    char * clipboard_data;
 
     char password[1024];
     int password_length;
 
     int mod_ctrl;
+    int mouse_mask;
 
 } ssh_guac_client_data;
 

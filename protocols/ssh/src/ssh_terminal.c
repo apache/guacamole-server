@@ -20,6 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -165,7 +166,12 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 }
 
 void ssh_guac_terminal_free(ssh_guac_terminal* term) {
-    /* STUB */
+    
+    /* Free scrollback buffer */
+    for (int row = 0; row < term->term_height; row++) 
+        free(term->scrollback[row]);
+
+    free(term->scrollback);
 }
 
 int __ssh_guac_terminal_get_glyph(ssh_guac_terminal* term, char c) {
