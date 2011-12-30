@@ -91,27 +91,35 @@ typedef void guac_client_log_handler(guac_client* client, const char* format, va
 typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
 
 /**
- * Button mask value for the left mouse button.
+ * The flag set in the mouse button mask when the left mouse button is down.
  */
 #define GUAC_CLIENT_MOUSE_LEFT        0x01
 
 /**
- * Button mask value for the middle mouse button.
+ * The flag set in the mouse button mask when the middle mouse button is down.
  */
 #define GUAC_CLIENT_MOUSE_MIDDLE      0x02
 
 /**
- * Button mask value for the right mouse button.
+ * The flag set in the mouse button mask when the right mouse button is down.
  */
 #define GUAC_CLIENT_MOUSE_RIGHT       0x04
 
 /**
- * Button mask value for scrolling the mouse scrollwheel up. 
+ * The flag set in the mouse button mask when the mouse scrollwheel is scrolled
+ * up. Note that mouse scrollwheels are actually sets of two buttons. One
+ * button is pressed and released for an upward scroll, and the other is
+ * pressed and released for a downward scroll. Some mice may actually implement
+ * these as separate buttons, not a wheel.
  */
 #define GUAC_CLIENT_MOUSE_SCROLL_UP   0x08
 
 /**
- * Button mask value for scrolling the mouse scrollwheel down. 
+ * The flag set in the mouse button mask when the mouse scrollwheel is scrolled
+ * down. Note that mouse scrollwheels are actually sets of two buttons. One
+ * button is pressed and released for an upward scroll, and the other is
+ * pressed and released for a downward scroll. Some mice may actually implement
+ * these as separate buttons, not a wheel.
  */
 #define GUAC_CLIENT_MOUSE_SCROLL_DOWN 0x10
 
