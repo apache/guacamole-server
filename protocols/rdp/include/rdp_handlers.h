@@ -35,56 +35,48 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_CLIENT_RDP_HANDLERS
-#define _GUAC_CLIENT_RDP_HANDLERS
+#ifndef _GUAC_RDP_RDP_HANDLERS_H
+#define _GUAC_RDP_RDP_HANDLERS_H
 
 #include <freerdp/freerdp.h>
+#include <freerdp/codec/bitmap.h>
 
-void guac_rdp_ui_error(rdpInst* inst, const char* text);
-void guac_rdp_ui_warning(rdpInst* inst, const char* text);
-void guac_rdp_ui_unimpl(rdpInst* inst, const char* text);
-void guac_rdp_ui_begin_update(rdpInst* inst);
-void guac_rdp_ui_end_update(rdpInst* inst);
-void guac_rdp_ui_desktop_save(rdpInst* inst, int offset, int x, int y, int cx, int cy);
-void guac_rdp_ui_desktop_restore(rdpInst* inst, int offset, int x, int y, int cx, int cy);
-RD_HBITMAP guac_rdp_ui_create_bitmap(rdpInst* inst, int width, int height, uint8* data);
-void guac_rdp_ui_paint_bitmap(rdpInst* inst, int x, int y, int cx, int cy, int width, int height, uint8* data);
-void guac_rdp_ui_destroy_bitmap(rdpInst* inst, RD_HBITMAP bmp);
-void guac_rdp_ui_line(rdpInst* inst, uint8 opcode, int startx, int starty, int endx, int endy, RD_PEN* pen);
-void guac_rdp_ui_rect(rdpInst* inst, int x, int y, int cx, int cy, uint32 colour);
-void guac_rdp_ui_polygon(rdpInst* inst, uint8 opcode, uint8 fillmode, RD_POINT* point, int npoints, RD_BRUSH* brush, uint32 bgcolor, uint32 fgcolor);
-void guac_rdp_ui_polyline(rdpInst* inst, uint8 opcode, RD_POINT* points, int npoints, RD_PEN* pen);
-void guac_rdp_ui_ellipse(rdpInst* inst, uint8 opcode, uint8 fillmode, int x, int y, int cx, int cy, RD_BRUSH* brush, uint32 bgcolor, uint32 fgcolor);
-void guac_rdp_ui_start_draw_glyphs(rdpInst* inst, uint32 bgcolor, uint32 fgcolor);
-void guac_rdp_ui_draw_glyph(rdpInst* inst, int x, int y, int cx, int cy, RD_HGLYPH glyph);
-void guac_rdp_ui_end_draw_glyphs(rdpInst* inst, int x, int y, int cx, int cy);
-uint32 guac_rdp_ui_get_toggle_keys_state(rdpInst* inst);
-void guac_rdp_ui_bell(rdpInst* inst);
-void guac_rdp_ui_destblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy);
-void guac_rdp_ui_patblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_BRUSH* brush, uint32 bgcolor, uint32 fgcolor);
-void guac_rdp_ui_screenblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, int srcx, int srcy);
-void guac_rdp_ui_memblt(rdpInst* inst, uint8 opcode, int x, int y, int width, int height, RD_HBITMAP src, int srcx, int srcy);
-void guac_rdp_ui_triblt(rdpInst* inst, uint8 opcode, int x, int y, int cx, int cy, RD_HBITMAP src, int srcx, int srcy, RD_BRUSH* brush, uint32 bgcolor,  uint32 fgcolor);
-RD_HGLYPH guac_rdp_ui_create_glyph(rdpInst* inst, int width, int height, uint8* data);
-void guac_rdp_ui_destroy_glyph(rdpInst* inst, RD_HGLYPH glyph);
-int guac_rdp_ui_select(rdpInst* inst, int rdp_socket);
-void guac_rdp_ui_set_clip(rdpInst* inst, int x, int y, int cx, int cy);
-void guac_rdp_ui_reset_clip(rdpInst* inst);
-void guac_rdp_ui_resize_window(rdpInst* inst);
-void guac_rdp_ui_set_cursor(rdpInst* inst, RD_HCURSOR cursor);
-void guac_rdp_ui_destroy_cursor(rdpInst* inst, RD_HCURSOR cursor);
-RD_HCURSOR guac_rdp_ui_create_cursor(rdpInst* inst, unsigned int x, unsigned int y, int width, int height, uint8* andmask, uint8* xormask, int bpp);
-void guac_rdp_ui_set_null_cursor(rdpInst* inst);
-void guac_rdp_ui_set_default_cursor(rdpInst* inst);
-void guac_rdp_ui_move_pointer(rdpInst* inst, int x, int y);
-RD_HBITMAP guac_rdp_ui_create_surface(rdpInst* inst, int width, int height, RD_HBITMAP old);
-void guac_rdp_ui_set_surface(rdpInst* inst, RD_HBITMAP surface);
-void guac_rdp_ui_destroy_surface(rdpInst* inst, RD_HBITMAP surface);
-void guac_rdp_ui_channel_data(rdpInst* inst, int chan_id, char* data, int data_size, int flags, int total_size);
-RD_HPALETTE guac_rdp_ui_create_palette(rdpInst* inst, RD_PALETTE* colours);
-void guac_rdp_ui_set_palette(rdpInst* inst, RD_HPALETTE map);
+int guac_rdp_ui_select(freerdp* inst, int rdp_socket);
 
-extern const int guac_rdp_letter_scancodes[];
+void guac_rdp_ui_resize_window(freerdp* inst);
+
+void guac_rdp_ui_move_pointer(freerdp* inst, int x, int y);
+
+void guac_rdp_ui_set_clip(freerdp* inst, int x, int y, int cx, int cy);
+void guac_rdp_ui_reset_clip(freerdp* inst);
+
+void guac_rdp_ui_rect(freerdp* inst, int x, int y, int cx, int cy, uint32 colour);
+
+rdpBitmap* guac_rdp_ui_create_bitmap(freerdp* inst, int width, int height, uint8* data);
+void guac_rdp_ui_paint_bitmap(freerdp* inst, int x, int y, int cx, int cy, int width, int height, uint8* data);
+void guac_rdp_ui_destroy_bitmap(freerdp* inst, rdpBitmap* bmp);
+
+void guac_rdp_ui_destblt(freerdp* inst, uint8 opcode, int x, int y, int cx, int cy);
+void guac_rdp_ui_patblt(freerdp* inst, uint8 opcode, int x, int y, int cx, int cy, rdpBrush* brush, uint32 bgcolor, uint32 fgcolor);
+void guac_rdp_ui_screenblt(freerdp* inst, uint8 opcode, int x, int y, int cx, int cy, int srcx, int srcy);
+void guac_rdp_ui_memblt(freerdp* inst, uint8 opcode, int x, int y, int width, int height, rdpBitmap* src, int srcx, int srcy);
+void guac_rdp_ui_triblt(freerdp* inst, uint8 opcode, int x, int y, int cx, int cy, rdpBitmap* src, int srcx, int srcy, rdpBrush* brush, uint32 bgcolor,  uint32 fgcolor);
+
+void guac_rdp_ui_start_draw_glyphs(freerdp* inst, uint32 bgcolor, uint32 fgcolor);
+void guac_rdp_ui_draw_glyph(freerdp* inst, int x, int y, int cx, int cy, rdpGlyph* glyph);
+void guac_rdp_ui_end_draw_glyphs(freerdp* inst, int x, int y, int cx, int cy);
+rdpGlyph* guac_rdp_ui_create_glyph(freerdp* inst, int width, int height, uint8* data);
+void guac_rdp_ui_destroy_glyph(freerdp* inst, rdpGlyph* glyph);
+
+void guac_rdp_ui_set_pointer(freerdp* inst, rdpPointer pointer);
+void guac_rdp_ui_destroy_pointer(freerdp* inst, rdpPointer pointer);
+rdpPointer guac_rdp_ui_create_pointer(freerdp* inst, unsigned int x, unsigned int y, int width, int height, uint8* andmask, uint8* xormask, int bpp);
+void guac_rdp_ui_set_null_pointer(freerdp* inst);
+void guac_rdp_ui_set_default_pointer(freerdp* inst);
+
+rdpBitmap* guac_rdp_ui_create_surface(freerdp* inst, int width, int height, rdpBitmap* old);
+void guac_rdp_ui_set_surface(freerdp* inst, rdpBitmap* surface);
+void guac_rdp_ui_destroy_surface(freerdp* inst, rdpBitmap* surface);
 
 #endif
 

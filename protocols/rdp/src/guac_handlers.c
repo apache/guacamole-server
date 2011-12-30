@@ -42,23 +42,16 @@
 #include <errno.h>
 
 #include <freerdp/freerdp.h>
-#include <freerdp/chanman.h>
-#include <freerdp/constants/core.h>
+#include <freerdp/channels/channels.h>
+#include <freerdp/input.h>
 
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
+#include "client.h"
 #include "rdp_handlers.h"
-#include "rdp_client.h"
 #include "rdp_keymap.h"
-
-/* Client plugin arguments */
-const char* GUAC_CLIENT_ARGS[] = {
-    "hostname",
-    "port",
-    NULL
-};
 
 int rdp_guac_client_free_handler(guac_client* client) {
 
@@ -69,7 +62,7 @@ int rdp_guac_client_free_handler(guac_client* client) {
 
     /* Free RDP client */
     freerdp_free(guac_client_data->rdp_inst);
-    freerdp_chanman_free(guac_client_data->chanman);
+    freerdp_channels_free(guac_client_data->channels);
     free(guac_client_data->settings);
 
     /* Free guac client data */
@@ -83,7 +76,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     rdpInst* rdp_inst = guac_client_data->rdp_inst;
-    rdpChanMan* chanman = guac_client_data->chanman;
+    rdpChannels* channels = guac_client_data->channels;
 
     int index;
     int max_fd, fd;
@@ -101,7 +94,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* get channel fds */
-    if (freerdp_chanman_get_fds(chanman, rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
+    if (freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
         guac_client_log_error(client, "Unable to read RDP channel file descriptors.");
         return 1;
     }
@@ -151,167 +144,10 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* check channel fds */
-    if (freerdp_chanman_check_fds(chanman, rdp_inst) != 0) {
+    if (freerdp_channels_check_fds(channels, rdp_inst) != 0) {
         guac_client_log_error(client, "Error handling RDP channel file descriptors.");
         return 1;
     }
-
-    /* Success */
-    return 0;
-
-}
-
-int guac_client_init(guac_client* client, int argc, char** argv) {
-
-    rdp_guac_client_data* guac_client_data;
-
-    rdpInst* rdp_inst;
-    rdpChanMan* chanman;
-	rdpSet* settings;
-
-    char* hostname;
-    int port = RDP_DEFAULT_PORT;
-
-    if (argc < 2) {
-        guac_protocol_send_error(client->socket, "Wrong argument count received.");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
-
-    /* If port specified, use it */
-    if (argv[1][0] != '\0')
-        port = atoi(argv[1]);
-
-    hostname = argv[0];
-
-    /* Allocate client data */
-    guac_client_data = malloc(sizeof(rdp_guac_client_data));
-
-    /* Get channel manager */
-    chanman = freerdp_chanman_new();
-    guac_client_data->chanman = chanman;
-
-    /* INIT SETTINGS */
-    settings = malloc(sizeof(rdpSet));
-	memset(settings, 0, sizeof(rdpSet));
-    guac_client_data->settings = settings;
-
-    /* Set hostname */
-    strncpy(settings->hostname, hostname, sizeof(settings->hostname) - 1);
-
-    /* Default size */
-	settings->width = 1024;
-	settings->height = 768;
-
-	strncpy(settings->server, hostname, sizeof(settings->server));
-	strcpy(settings->username, "guest");
-
-	settings->tcp_port_rdp = port;
-	settings->encryption = 1;
-	settings->server_depth = 16;
-	settings->bitmap_cache = 1;
-	settings->bitmap_compression = 1;
-	settings->desktop_save = 0;
-	settings->performanceflags =
-		PERF_DISABLE_WALLPAPER
-        | PERF_DISABLE_FULLWINDOWDRAG
-        | PERF_DISABLE_MENUANIMATIONS;
-	settings->mouse_motion = 1;
-	settings->off_screen_bitmaps = 1;
-	settings->triblt = 0;
-	settings->software_gdi = 0;
-	settings->new_cursors = 1;
-	settings->rdp_version = 5;
-	settings->rdp_security = 1;
-
-    /* Init client */
-    rdp_inst = freerdp_new(settings);
-    if (rdp_inst == NULL) {
-        guac_protocol_send_error(client->socket, "Error initializing RDP client");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
-    guac_client_data->rdp_inst = rdp_inst;
-    guac_client_data->mouse_button_mask = 0;
-    guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
-
-
-    /* Store client data */
-    rdp_inst->param1 = client;
-    client->data = guac_client_data;
-
-
-    /* RDP handlers */
-    rdp_inst->ui_error = guac_rdp_ui_error;
-	rdp_inst->ui_warning = guac_rdp_ui_warning;
-	rdp_inst->ui_unimpl = guac_rdp_ui_unimpl;
-	rdp_inst->ui_begin_update = guac_rdp_ui_begin_update;
-	rdp_inst->ui_end_update = guac_rdp_ui_end_update;
-	rdp_inst->ui_desktop_save = guac_rdp_ui_desktop_save;
-	rdp_inst->ui_desktop_restore = guac_rdp_ui_desktop_restore;
-	rdp_inst->ui_create_bitmap = guac_rdp_ui_create_bitmap;
-	rdp_inst->ui_paint_bitmap = guac_rdp_ui_paint_bitmap;
-	rdp_inst->ui_destroy_bitmap = guac_rdp_ui_destroy_bitmap;
-	rdp_inst->ui_line = guac_rdp_ui_line;
-	rdp_inst->ui_rect = guac_rdp_ui_rect;
-	rdp_inst->ui_polygon = guac_rdp_ui_polygon;
-	rdp_inst->ui_polyline = guac_rdp_ui_polyline;
-	rdp_inst->ui_ellipse = guac_rdp_ui_ellipse;
-	rdp_inst->ui_start_draw_glyphs = guac_rdp_ui_start_draw_glyphs;
-	rdp_inst->ui_draw_glyph = guac_rdp_ui_draw_glyph;
-	rdp_inst->ui_end_draw_glyphs = guac_rdp_ui_end_draw_glyphs;
-	rdp_inst->ui_get_toggle_keys_state = guac_rdp_ui_get_toggle_keys_state;
-	rdp_inst->ui_bell = guac_rdp_ui_bell;
-	rdp_inst->ui_destblt = guac_rdp_ui_destblt;
-	rdp_inst->ui_patblt = guac_rdp_ui_patblt;
-	rdp_inst->ui_screenblt = guac_rdp_ui_screenblt;
-	rdp_inst->ui_memblt = guac_rdp_ui_memblt;
-	rdp_inst->ui_triblt = guac_rdp_ui_triblt;
-	rdp_inst->ui_create_glyph = guac_rdp_ui_create_glyph;
-	rdp_inst->ui_destroy_glyph = guac_rdp_ui_destroy_glyph;
-    rdp_inst->ui_select = guac_rdp_ui_select;
-	rdp_inst->ui_set_clip = guac_rdp_ui_set_clip;
-	rdp_inst->ui_reset_clip = guac_rdp_ui_reset_clip;
-	rdp_inst->ui_resize_window = guac_rdp_ui_resize_window;
-	rdp_inst->ui_set_cursor = guac_rdp_ui_set_cursor;
-	rdp_inst->ui_destroy_cursor = guac_rdp_ui_destroy_cursor;
-	rdp_inst->ui_create_cursor = guac_rdp_ui_create_cursor;
-	rdp_inst->ui_set_null_cursor = guac_rdp_ui_set_null_cursor;
-	rdp_inst->ui_set_default_cursor = guac_rdp_ui_set_default_cursor;
-	rdp_inst->ui_create_palette = guac_rdp_ui_create_palette;
-	rdp_inst->ui_move_pointer = guac_rdp_ui_move_pointer;
-	rdp_inst->ui_set_palette = guac_rdp_ui_set_palette;
-	rdp_inst->ui_create_surface = guac_rdp_ui_create_surface;
-	rdp_inst->ui_set_surface = guac_rdp_ui_set_surface;
-	rdp_inst->ui_destroy_surface = guac_rdp_ui_destroy_surface;
-	rdp_inst->ui_channel_data = guac_rdp_ui_channel_data;
-
-    /* Init chanman (pre-connect) */
-    if (freerdp_chanman_pre_connect(chanman, rdp_inst)) {
-        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
-
-    /* Connect to RDP server */
-    if (rdp_inst->rdp_connect(rdp_inst)) {
-        guac_protocol_send_error(client->socket, "Error connecting to RDP server");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
-
-    /* Init chanman (post-connect) */
-    if (freerdp_chanman_post_connect(chanman, rdp_inst)) {
-        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
-
-    /* Client handlers */
-    client->free_handler = rdp_guac_client_free_handler;
-    client->handle_messages = rdp_guac_client_handle_messages;
-    client->mouse_handler = rdp_guac_client_mouse_handler;
-    client->key_handler = rdp_guac_client_key_handler;
 
     /* Success */
     return 0;
@@ -325,7 +161,7 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
     /* If button mask unchanged, just send move event */
     if (mask == guac_client_data->mouse_button_mask)
-        rdp_inst->rdp_send_input_mouse(rdp_inst, PTRFLAGS_MOVE, x, y);
+        rdp_inst->rdp_send_input_mouse(rdp_inst, PTR_FLAGS_MOVE, x, y);
 
     /* Otherwise, send events describing button change */
     else {
@@ -341,9 +177,9 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
             /* Calculate flags */
             int flags = 0;
-            if (released_mask & 0x01) flags |= PTRFLAGS_BUTTON1;
-            if (released_mask & 0x02) flags |= PTRFLAGS_BUTTON3;
-            if (released_mask & 0x04) flags |= PTRFLAGS_BUTTON2;
+            if (released_mask & 0x01) flags |= PTR_FLAGS_BUTTON1;
+            if (released_mask & 0x02) flags |= PTR_FLAGS_BUTTON3;
+            if (released_mask & 0x04) flags |= PTR_FLAGS_BUTTON2;
 
             rdp_inst->rdp_send_input_mouse(rdp_inst, flags, x, y);
 
@@ -353,12 +189,12 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
         if (pressed_mask & 0x07) {
 
             /* Calculate flags */
-            int flags = PTRFLAGS_DOWN;
-            if (pressed_mask & 0x01) flags |= PTRFLAGS_BUTTON1;
-            if (pressed_mask & 0x02) flags |= PTRFLAGS_BUTTON3;
-            if (pressed_mask & 0x04) flags |= PTRFLAGS_BUTTON2;
-            if (pressed_mask & 0x08) flags |= PTRFLAGS_WHEEL | 0x78;
-            if (pressed_mask & 0x10) flags |= PTRFLAGS_WHEEL | PTRFLAGS_WHEEL_NEGATIVE | 0x88;
+            int flags = PTR_FLAGS_DOWN;
+            if (pressed_mask & 0x01) flags |= PTR_FLAGS_BUTTON1;
+            if (pressed_mask & 0x02) flags |= PTR_FLAGS_BUTTON3;
+            if (pressed_mask & 0x04) flags |= PTR_FLAGS_BUTTON2;
+            if (pressed_mask & 0x08) flags |= PTR_FLAGS_WHEEL | 0x78;
+            if (pressed_mask & 0x10) flags |= PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88;
 
             /* Send event */
             rdp_inst->rdp_send_input_mouse(rdp_inst, flags, x, y);
@@ -372,14 +208,14 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
             if (pressed_mask & 0x08)
                 rdp_inst->rdp_send_input_mouse(
                         rdp_inst,
-                        PTRFLAGS_WHEEL | 0x78,
+                        PTR_FLAGS_WHEEL | 0x78,
                         x, y);
 
             /* Up */
             if (pressed_mask & 0x10)
                 rdp_inst->rdp_send_input_mouse(
                         rdp_inst,
-                        PTRFLAGS_WHEEL | PTRFLAGS_WHEEL_NEGATIVE | 0x88,
+                        PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88,
                         x, y);
 
         }
@@ -408,7 +244,7 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             rdp_inst->rdp_send_input_scancode(
                     rdp_inst,
                     !pressed,
-                    keymap->flags & KBDFLAGS_EXTENDED,
+                    keymap->flags & KBD_FLAGS_EXTENDED,
                     keymap->scancode);
         else
             guac_client_log_info(client, "unmapped keysym: 0x%x", keysym);

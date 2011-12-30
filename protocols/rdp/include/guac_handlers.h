@@ -35,15 +35,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_RDP_RDP_KEYMAP_H
-#define _GUAC_RDP_RDP_KEYMAP_H
+#ifndef _GUAC_RDP_GUAC_HANDLERS_H
+#define _GUAC_RDP_GUAC_HANDLERS_H
 
-typedef struct guac_rdp_keymap {
-    int scancode;
-    int flags;
-} guac_rdp_keymap;
+#include <guacamole/client.h>
 
-extern const guac_rdp_keymap guac_rdp_keysym_scancode[256][256];
+int rdp_guac_client_free_handler(guac_client* client);
+int rdp_guac_client_handle_messages(guac_client* client);
+int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
+int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed);
 
 #endif
 

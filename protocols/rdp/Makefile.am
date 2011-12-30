@@ -41,7 +41,7 @@ AM_CFLAGS = -Werror -Wall -pedantic -Iinclude
 
 lib_LTLIBRARIES = libguac-client-rdp.la
 
-libguac_client_rdp_la_SOURCES = src/rdp_client.c src/rdp_handlers.c src/rdp_keymap.c
+libguac_client_rdp_la_SOURCES = src/client.c src/rdp_handlers.c src/rdp_keymap.c
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0
 
