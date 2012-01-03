@@ -162,13 +162,23 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set settings */
     settings = rdp_inst->settings;
 
+    /* --no-auth */
+    settings->authentication = false;
+
+    /* --sec rdp */
+    settings->rdp_security = true;
+    settings->tls_security = false;
+    settings->nla_security = false;
+    settings->encryption = true;
+    settings->encryption_method = ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
+    settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
+
     /* Default size */
 	settings->width = 1024;
 	settings->height = 768;
 
     /* Set hostname */
     settings->hostname = strdup(hostname);
-
 	settings->window_title = strdup(hostname);
 	settings->username = "guest";
 
