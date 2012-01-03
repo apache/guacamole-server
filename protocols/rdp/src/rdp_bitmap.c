@@ -93,14 +93,31 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
     /* Store buffer reference in bitmap */
     ((guac_rdp_bitmap*) bitmap)->layer = buffer;
 
+    guac_client_log_info(client, "guac_rdp_bitmap_new()");
+
 }
 
 void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
-    /* STUB */
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_socket* socket = client->socket;
+
+    /* Copy image data from buffer to visible layer */
+    guac_protocol_send_copy(socket,
+            ((guac_rdp_bitmap*) bitmap)->layer,
+            0, 0, bitmap->width, bitmap->height,
+            GUAC_COMP_OVER,
+            GUAC_DEFAULT_LAYER, bitmap->left, bitmap->top);
+
+    guac_client_log_info(client, "guac_rdp_bitmap_paint()");
+
 }
 
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_client_free_buffer(client, ((guac_rdp_bitmap*) bitmap)->layer);
+
+    guac_client_log_info(client, "guac_rdp_bitmap_free()");
+
 }
 

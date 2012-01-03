@@ -79,13 +79,13 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     fd_set rfds, wfds;
 
     /* get rdp fds */
-    if (freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
+    if (!freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
         guac_client_log_error(client, "Unable to read RDP file descriptors.");
         return 1;
     }
 
     /* get channel fds */
-    if (freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
+    if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
         guac_client_log_error(client, "Unable to read RDP channel file descriptors.");
         return 1;
     }
@@ -128,14 +128,14 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         }
     }
 
-    /* check the libfreerdp fds */
-    if (freerdp_check_fds(rdp_inst) != 0) {
+    /* Check the libfreerdp fds */
+    if (!freerdp_check_fds(rdp_inst)) {
         guac_client_log_error(client, "Error handling RDP file descriptors.");
         return 1;
     }
 
-    /* check channel fds */
-    if (freerdp_channels_check_fds(channels, rdp_inst) != 0) {
+    /* Check channel fds */
+    if (!freerdp_channels_check_fds(channels, rdp_inst)) {
         guac_client_log_error(client, "Error handling RDP channel file descriptors.");
         return 1;
     }
