@@ -51,7 +51,6 @@
 
 #include "client.h"
 #include "guac_handlers.h"
-#include "rdp_handlers.h"
 #include "rdp_keymap.h"
 
 /* Client plugin arguments */
