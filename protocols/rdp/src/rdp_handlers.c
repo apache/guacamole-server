@@ -113,35 +113,6 @@ void guac_rdp_ui_end_update(freerdp* inst) {
     guac_socket_flush(socket);
 }
 
-void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
-
-    /* Allocate buffer */
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_socket* socket = client->socket; 
-    guac_layer* buffer = guac_client_alloc_buffer(client);
-
-    /* Convert image data to 32-bit RGB */
-    unsigned char* image_buffer = freerdp_image_convert(bitmap->data, NULL,
-            bitmap->width, bitmap->height,
-            context->instance->settings->color_depth,
-            32, (HCLRCONV) &_guac_rdp_clrconv);
-
-    /* Create surface from image data */
-    cairo_surface_t* surface = cairo_image_surface_create_for_data(
-        bitmap->data, CAIRO_FORMAT_RGB24,
-        bitmap->width, bitmap->height, 4*bitmap->width);
-
-    /* Send surface to buffer */
-    guac_protocol_send_png(socket, GUAC_COMP_SRC, buffer, 0, 0, surface);
-
-    /* Free surface */
-    cairo_surface_destroy(surface);
-    free(image_buffer);
-
-    /* FIXME: What do we do with buffer?? */
-
-}
-
 void guac_rdp_ui_paint_bitmap(freerdp* inst, int x, int y, int cx, int cy, int width, int height, uint8* data) {
 
     guac_client* client = ((rdp_freerdp_context*) inst->context)->client;
