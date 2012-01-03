@@ -78,6 +78,8 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
     fd_set rfds, wfds;
 
+    guac_client_log_info(client, "handle_messages() start");
+
     /* get rdp fds */
     if (!freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
         guac_client_log_error(client, "Unable to read RDP file descriptors.");
@@ -141,6 +143,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* Success */
+    guac_client_log_info(client, "handle_messages() end");
     return 0;
 
 }
