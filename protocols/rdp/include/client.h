@@ -39,7 +39,6 @@
 #define _GUAC_RDP_CLIENT_H
 
 #include <freerdp/freerdp.h>
-#include <freerdp/channels/channels.h>
 
 #include <guacamole/client.h>
 
@@ -54,7 +53,6 @@ typedef struct guac_rdp_color {
 typedef struct rdp_guac_client_data {
 
     freerdp* rdp_inst;
-    rdpChannels* channels;
 	rdpSettings* settings;
 
     int mouse_button_mask;

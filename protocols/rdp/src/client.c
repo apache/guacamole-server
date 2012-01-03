@@ -63,8 +63,59 @@ const char* GUAC_CLIENT_ARGS[] = {
     NULL
 };
 
+boolean rdp_freerdp_pre_connect(freerdp* instance) {
+
+    rdpContext* context = instance->context;
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    rdpChannels* channels = context->channels;
+    rdpBitmap* bitmap;
+
+    /* Set up bitmap handling */
+    bitmap = xnew(rdpBitmap);
+    bitmap->size = sizeof(guac_rdp_bitmap);
+    bitmap->New = guac_rdp_bitmap_new;
+    /* bitmap->Free = guac_rdp_bitmap_free; */
+    /* bitmap->Paint = guac_rdp_bitmap_paint; */
+    /* bitmap->Decompress = guac_rdp_bitmap_decompress; */
+    /* bitmap->SetSurface = guac_rdp_bitmap_setsurface; */
+    graphics_register_bitmap(context->graphics, bitmap);
+
+    /* Init channels (pre-connect) */
+    if (freerdp_channels_pre_connect(channels, instance)) {
+        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
+        guac_socket_flush(client->socket);
+        return false;
+    }
+
+    return true;
+
+}
+
+boolean rdp_freerdp_post_connect(freerdp* instance) {
+
+    rdpContext* context = instance->context;
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    rdpChannels* channels = instance->context->channels;
+
+    /* Init channels (post-connect) */
+    if (freerdp_channels_post_connect(channels, instance)) {
+        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
+        guac_socket_flush(client->socket);
+        return false;
+    }
+
+    /* Client handlers */
+    client->free_handler = rdp_guac_client_free_handler;
+    client->handle_messages = rdp_guac_client_handle_messages;
+    client->mouse_handler = rdp_guac_client_mouse_handler;
+    client->key_handler = rdp_guac_client_key_handler;
+
+    return true;
+
+}
+
 void rdp_freerdp_context_new(freerdp* instance, rdpContext* context) {
-    /* EMPTY */
+    context->channels = freerdp_channels_new();
 }
 
 void rdp_freerdp_context_free(freerdp* instance, rdpContext* context) {
@@ -76,9 +127,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rdp_guac_client_data* guac_client_data;
 
     freerdp* rdp_inst;
-    rdpChannels* channels;
 	rdpSettings* settings;
-    rdpBitmap* bitmap;
 
     char* hostname;
     int port = RDP_DEFAULT_PORT;
@@ -98,37 +147,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Allocate client data */
     guac_client_data = malloc(sizeof(rdp_guac_client_data));
 
-    /* Get channel manager */
-    channels = freerdp_channels_new();
-    guac_client_data->channels = channels;
-
-    /* INIT SETTINGS */
-    settings = malloc(sizeof(rdpSettings));
-	memset(settings, 0, sizeof(rdpSettings));
-    guac_client_data->settings = settings;
-
-    /* Set hostname */
-    strncpy(settings->hostname, hostname, sizeof(settings->hostname) - 1);
-
-    /* Default size */
-	settings->width = 1024;
-	settings->height = 768;
-
-	strncpy(settings->window_title, hostname, sizeof(settings->window_title));
-	strcpy(settings->username, "guest");
-
-    /* FIXME: Set RDP settings->* */
-
     /* Init client */
-    rdp_inst = freerdp_new(settings);
-    if (rdp_inst == NULL) {
-        guac_protocol_send_error(client->socket, "Error initializing RDP client");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
-    guac_client_data->rdp_inst = rdp_inst;
-    guac_client_data->mouse_button_mask = 0;
-    guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
+    freerdp_channels_global_init();
+    rdp_inst = freerdp_new();
+    rdp_inst->PreConnect = rdp_freerdp_pre_connect;
+    rdp_inst->PostConnect = rdp_freerdp_post_connect;
 
     /* Allocate FreeRDP context */
     rdp_inst->context_size = sizeof(rdp_freerdp_context);
@@ -136,26 +159,26 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rdp_inst->ContextFree = (pContextFree) rdp_freerdp_context_free;
     freerdp_context_new(rdp_inst);
 
+    /* Set settings */
+    settings = rdp_inst->settings;
+
+    /* Default size */
+	settings->width = 1024;
+	settings->height = 768;
+
+    /* Set hostname */
+    settings->hostname = strdup(hostname);
+
+	settings->window_title = strdup(hostname);
+	settings->username = "guest";
+
     /* Store client data */
+    guac_client_data->rdp_inst = rdp_inst;
+    guac_client_data->mouse_button_mask = 0;
+    guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
+
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
     client->data = guac_client_data;
-
-    /* Set up bitmap handling */
-    bitmap = xnew(rdpBitmap);
-    bitmap->size = sizeof(guac_rdp_bitmap);
-    bitmap->New = guac_rdp_bitmap_new;
-    /* bitmap->Free = guac_rdp_bitmap_free; */
-    /* bitmap->Paint = guac_rdp_bitmap_paint; */
-    /* bitmap->Decompress = guac_rdp_bitmap_decompress; */
-    /* bitmap->SetSurface = guac_rdp_bitmap_setsurface; */
-    graphics_register_bitmap(rdp_inst->context->graphics, bitmap);
-
-    /* Init channels (pre-connect) */
-    if (freerdp_channels_pre_connect(channels, rdp_inst)) {
-        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
@@ -163,19 +186,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         guac_socket_flush(client->socket);
         return 1;
     }
-
-    /* Init channels (post-connect) */
-    if (freerdp_channels_post_connect(channels, rdp_inst)) {
-        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
-
-    /* Client handlers */
-    client->free_handler = rdp_guac_client_free_handler;
-    client->handle_messages = rdp_guac_client_handle_messages;
-    client->mouse_handler = rdp_guac_client_mouse_handler;
-    client->key_handler = rdp_guac_client_key_handler;
 
     /* Success */
     return 0;

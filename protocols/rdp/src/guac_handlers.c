@@ -67,7 +67,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     freerdp* rdp_inst = guac_client_data->rdp_inst;
-    rdpChannels* channels = guac_client_data->channels;
+    rdpChannels* channels = rdp_inst->context->channels;
 
     int index;
     int max_fd, fd;
