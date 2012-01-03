@@ -95,3 +95,12 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
 }
 
+void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
+    /* STUB */
+}
+
+void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_free_buffer(client, ((guac_rdp_bitmap*) bitmap)->layer);
+}
+

@@ -74,8 +74,8 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     bitmap = xnew(rdpBitmap);
     bitmap->size = sizeof(guac_rdp_bitmap);
     bitmap->New = guac_rdp_bitmap_new;
-    /* bitmap->Free = guac_rdp_bitmap_free; */
-    /* bitmap->Paint = guac_rdp_bitmap_paint; */
+    bitmap->Free = guac_rdp_bitmap_free;
+    bitmap->Paint = guac_rdp_bitmap_paint;
     /* bitmap->Decompress = guac_rdp_bitmap_decompress; */
     /* bitmap->SetSurface = guac_rdp_bitmap_setsurface; */
     graphics_register_bitmap(context->graphics, bitmap);
