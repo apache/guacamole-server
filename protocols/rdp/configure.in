@@ -49,6 +49,7 @@ AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawi
 AC_CHECK_LIB([freerdp-core], [freerdp_new],, AC_MSG_ERROR("libfreerdp-core is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],, AC_MSG_ERROR("libfreerdp-channels is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-utils], [xzalloc],, AC_MSG_ERROR("libfreerdp-utils is required (part of FreeRDP)"))
+AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],, AC_MSG_ERROR("libfreerdp-codec is required (part of FreeRDP)"))
 
 # Checks for header files.
 AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h])
