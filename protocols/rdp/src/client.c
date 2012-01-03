@@ -42,6 +42,8 @@
 #include <errno.h>
 
 #include <freerdp/freerdp.h>
+#include <freerdp/utils/memory.h>
+#include <freerdp/cache/bitmap.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/input.h>
 
@@ -52,6 +54,7 @@
 #include "client.h"
 #include "guac_handlers.h"
 #include "rdp_keymap.h"
+#include "rdp_bitmap.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -75,6 +78,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     freerdp* rdp_inst;
     rdpChannels* channels;
 	rdpSettings* settings;
+    rdpBitmap* bitmap;
 
     char* hostname;
     int port = RDP_DEFAULT_PORT;
@@ -136,7 +140,15 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
     client->data = guac_client_data;
 
-    /* FIXME: Set RDP handlers */
+    /* Set up bitmap handling */
+    bitmap = xnew(rdpBitmap);
+    bitmap->size = sizeof(guac_rdp_bitmap);
+    bitmap->New = guac_rdp_bitmap_new;
+    /* bitmap->Free = guac_rdp_bitmap_free; */
+    /* bitmap->Paint = guac_rdp_bitmap_paint; */
+    /* bitmap->Decompress = guac_rdp_bitmap_decompress; */
+    /* bitmap->SetSurface = guac_rdp_bitmap_setsurface; */
+    graphics_register_bitmap(rdp_inst->context->graphics, bitmap);
 
     /* Init channels (pre-connect) */
     if (freerdp_channels_pre_connect(channels, rdp_inst)) {
