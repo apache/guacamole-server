@@ -135,7 +135,7 @@ guac_client_plugin* guac_client_plugin_open(const char* protocol) {
     client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
     if (!client_plugin_handle) {
         guac_error = GUAC_STATUS_BAD_ARGUMENT;
-        guac_error_message = "Client plugin not found";
+        guac_error_message = dlerror();
         return NULL;
     }
 
