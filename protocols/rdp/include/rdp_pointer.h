@@ -35,30 +35,26 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_RDP_RDP_BITMAP_H
-#define _GUAC_RDP_RDP_BITMAP_H
+#ifndef _GUAC_RDP_RDP_POINTER_H
+#define _GUAC_RDP_RDP_POINTER_H
 
 #include <freerdp/freerdp.h>
 
 #include <guacamole/protocol.h>
 
-typedef struct guac_rdp_bitmap {
+typedef struct guac_rdp_pointer {
 
     /**
-     * FreeRDP bitmap data - MUST GO FIRST.
+     * FreeRDP pointer data - MUST GO FIRST.
      */
-    rdpBitmap bitmap;
+    rdpPointer pointer;
 
-    /**
-     * Guacamole layer containing cached image data.
-     */
-    guac_layer* layer;
+    /* TODO: STUB */
 
-} guac_rdp_bitmap;
+} guac_rdp_pointer;
 
-void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);
-void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap);
-void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap);
-void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean primary);
+void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer);
+void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer);
+void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer);
 
 #endif

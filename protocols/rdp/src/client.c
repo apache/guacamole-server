@@ -55,6 +55,8 @@
 #include "guac_handlers.h"
 #include "rdp_keymap.h"
 #include "rdp_bitmap.h"
+#include "rdp_glyph.h"
+#include "rdp_pointer.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -69,6 +71,8 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdpChannels* channels = context->channels;
     rdpBitmap* bitmap;
+    rdpGlyph* glyph;
+    rdpPointer* pointer;
 
     /* Set up bitmap handling */
     bitmap = xnew(rdpBitmap);
@@ -77,8 +81,24 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     bitmap->Free = guac_rdp_bitmap_free;
     bitmap->Paint = guac_rdp_bitmap_paint;
     /* bitmap->Decompress = guac_rdp_bitmap_decompress; */
-    /* bitmap->SetSurface = guac_rdp_bitmap_setsurface; */
+    bitmap->SetSurface = guac_rdp_bitmap_setsurface;
     graphics_register_bitmap(context->graphics, bitmap);
+
+    /* Set up glyph handling */
+    glyph = xnew(rdpGlyph);
+    glyph->size = sizeof(guac_rdp_glyph);
+    glyph->New = guac_rdp_glyph_new;
+    glyph->Free = guac_rdp_glyph_free;
+    glyph->Draw = guac_rdp_glyph_draw;
+    graphics_register_glyph(context->graphics, glyph);
+
+    /* Set up pointer handling */
+    pointer = xnew(rdpPointer);
+    pointer->size = sizeof(guac_rdp_pointer);
+    pointer->New = guac_rdp_pointer_new;
+    pointer->Free = guac_rdp_pointer_free;
+    pointer->Set = guac_rdp_pointer_set;
+    graphics_register_pointer(context->graphics, pointer);
 
     /* Init channels (pre-connect) */
     if (freerdp_channels_pre_connect(channels, instance)) {

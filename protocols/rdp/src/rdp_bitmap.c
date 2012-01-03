@@ -121,3 +121,8 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
 
 }
 
+void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean primary) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_log_info(client, "guac_rdp_bitmap_setsurface()");
+}
+
