@@ -117,8 +117,6 @@ int ssh_guac_client_clipboard_handler(guac_client* client, char* data) {
 
     client_data->clipboard_data = strdup(data);
 
-    guac_client_log_info(client, "Clipboard data recieved: %s", data);
-
     return 0;
 }
 
@@ -132,8 +130,6 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     int mouse_up =
             (client_data->mouse_mask & GUAC_CLIENT_MOUSE_RIGHT)
         && !(mask                    & GUAC_CLIENT_MOUSE_RIGHT);
-
-    guac_client_log_info(client, "CLICK? x=%i, y=%i, mask=%i, mouse_up=%i", x, y, mask, mouse_up);
 
     client_data->mouse_mask = mask;
 
