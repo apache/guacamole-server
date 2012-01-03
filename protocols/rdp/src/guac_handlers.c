@@ -50,23 +50,14 @@
 #include <guacamole/client.h>
 
 #include "client.h"
-#include "rdp_handlers.h"
 #include "rdp_keymap.h"
+#include "guac_handlers.h"
 
 int rdp_guac_client_free_handler(guac_client* client) {
 
-    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    /* STUB */
 
-    /* Disconnect client */
-    guac_client_data->rdp_inst->rdp_disconnect(guac_client_data->rdp_inst);
-
-    /* Free RDP client */
-    freerdp_free(guac_client_data->rdp_inst);
-    freerdp_channels_free(guac_client_data->channels);
-    free(guac_client_data->settings);
-
-    /* Free guac client data */
-    free(guac_client_data);
+    /* FIXME: Clean up RDP client + disconnect */
 
     return 0;
 
@@ -75,7 +66,7 @@ int rdp_guac_client_free_handler(guac_client* client) {
 int rdp_guac_client_handle_messages(guac_client* client) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
-    rdpInst* rdp_inst = guac_client_data->rdp_inst;
+    freerdp* rdp_inst = guac_client_data->rdp_inst;
     rdpChannels* channels = guac_client_data->channels;
 
     int index;
@@ -88,7 +79,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     fd_set rfds, wfds;
 
     /* get rdp fds */
-    if (rdp_inst->rdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
+    if (freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count) != 0) {
         guac_client_log_error(client, "Unable to read RDP file descriptors.");
         return 1;
     }
@@ -138,7 +129,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* check the libfreerdp fds */
-    if (rdp_inst->rdp_check_fds(rdp_inst) != 0) {
+    if (freerdp_check_fds(rdp_inst) != 0) {
         guac_client_log_error(client, "Error handling RDP file descriptors.");
         return 1;
     }
@@ -157,11 +148,11 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
-    rdpInst* rdp_inst = guac_client_data->rdp_inst;
+    freerdp* rdp_inst = guac_client_data->rdp_inst;
 
     /* If button mask unchanged, just send move event */
     if (mask == guac_client_data->mouse_button_mask)
-        rdp_inst->rdp_send_input_mouse(rdp_inst, PTR_FLAGS_MOVE, x, y);
+        rdp_inst->input->MouseEvent(rdp_inst->input, PTR_FLAGS_MOVE, x, y);
 
     /* Otherwise, send events describing button change */
     else {
@@ -181,7 +172,7 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
             if (released_mask & 0x02) flags |= PTR_FLAGS_BUTTON3;
             if (released_mask & 0x04) flags |= PTR_FLAGS_BUTTON2;
 
-            rdp_inst->rdp_send_input_mouse(rdp_inst, flags, x, y);
+            rdp_inst->input->MouseEvent(rdp_inst->input, flags, x, y);
 
         }
 
@@ -197,7 +188,7 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
             if (pressed_mask & 0x10) flags |= PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88;
 
             /* Send event */
-            rdp_inst->rdp_send_input_mouse(rdp_inst, flags, x, y);
+            rdp_inst->input->MouseEvent(rdp_inst->input, flags, x, y);
 
         }
 
@@ -206,15 +197,15 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
             /* Down */
             if (pressed_mask & 0x08)
-                rdp_inst->rdp_send_input_mouse(
-                        rdp_inst,
+                rdp_inst->input->MouseEvent(
+                        rdp_inst->input,
                         PTR_FLAGS_WHEEL | 0x78,
                         x, y);
 
             /* Up */
             if (pressed_mask & 0x10)
-                rdp_inst->rdp_send_input_mouse(
-                        rdp_inst,
+                rdp_inst->input->MouseEvent(
+                        rdp_inst->input,
                         PTR_FLAGS_WHEEL | PTR_FLAGS_WHEEL_NEGATIVE | 0x88,
                         x, y);
 
@@ -230,7 +221,7 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
-    rdpInst* rdp_inst = guac_client_data->rdp_inst;
+    freerdp* rdp_inst = guac_client_data->rdp_inst;
 
     /* If keysym can be in lookup table */
     if (keysym <= 0xFFFF) {
@@ -241,10 +232,10 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
         /* If defined, send event */
         if (keymap->scancode != 0)
-            rdp_inst->rdp_send_input_scancode(
-                    rdp_inst,
-                    !pressed,
-                    keymap->flags & KBD_FLAGS_EXTENDED,
+            rdp_inst->input->KeyboardEvent(
+                    rdp_inst->input,
+                    keymap->flags
+                        | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
                     keymap->scancode);
         else
             guac_client_log_info(client, "unmapped keysym: 0x%x", keysym);
