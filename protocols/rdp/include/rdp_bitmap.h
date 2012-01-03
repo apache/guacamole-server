@@ -40,6 +40,22 @@
 
 #include <freerdp/freerdp.h>
 
+#include <guacamole/protocol.h>
+
+typedef struct guac_rdp_bitmap {
+
+    /**
+     * FreeRDP bitmap data - MUST GO FIRST.
+     */
+    rdpBitmap bitmap;
+
+    /**
+     * Guacamole layer containing cached image data.
+     */
+    guac_layer* layer;
+
+} guac_rdp_bitmap;
+
 void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);
 
 #endif
