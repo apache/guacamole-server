@@ -35,7 +35,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include <freerdp/constants/core.h>
+#include <freerdp/input.h>
 
 #include "rdp_keymap.h"
 
@@ -5260,10 +5260,10 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff4e */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff4f */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff50 (Home) */
-        { .scancode = 0x4B, .flags = KBDFLAGS_EXTENDED }, /* 0xff51 (Left) */
-        { .scancode = 0x48, .flags = KBDFLAGS_EXTENDED }, /* 0xff52 (Up) */
-        { .scancode = 0x4D, .flags = KBDFLAGS_EXTENDED }, /* 0xff53 (Right) */
-        { .scancode = 0x50, .flags = KBDFLAGS_EXTENDED }, /* 0xff54 (Down) */
+        { .scancode = 0x4B, .flags = KBD_FLAGS_EXTENDED }, /* 0xff51 (Left) */
+        { .scancode = 0x48, .flags = KBD_FLAGS_EXTENDED }, /* 0xff52 (Up) */
+        { .scancode = 0x4D, .flags = KBD_FLAGS_EXTENDED }, /* 0xff53 (Right) */
+        { .scancode = 0x50, .flags = KBD_FLAGS_EXTENDED }, /* 0xff54 (Down) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff55 (Page_Up) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff56 (Page_Down) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff57 (End) */
@@ -5434,7 +5434,7 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x00, .flags = 0x00 }, /* 0xfffc */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xfffd */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xfffe */
-        { .scancode = 0x53, .flags = KBDFLAGS_EXTENDED }, /* 0xffff (Delete) */
+        { .scancode = 0x53, .flags = KBD_FLAGS_EXTENDED }, /* 0xffff (Delete) */
     },
 };
 
