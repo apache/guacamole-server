@@ -45,9 +45,19 @@
 #include <guacamole/protocol.h>
 
 #include <freerdp/freerdp.h>
+#include <freerdp/codec/color.h>
 
 #include "client.h"
 #include "rdp_handlers.h"
+
+
+static CLRCONV _guac_rdp_clrconv = {
+    .alpha  = 1,
+    .invert = 0,
+    .rgb555 = 0,
+    .palette = NULL
+};
+
 
 void guac_rdp_convert_color(int depth, int color, guac_rdp_color* comp) {
 
@@ -103,77 +113,32 @@ void guac_rdp_ui_end_update(freerdp* inst) {
     guac_socket_flush(socket);
 }
 
-rdpBitmap* guac_rdp_ui_create_bitmap(freerdp* inst, int width, int height, uint8* data) {
+void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Allocate buffer */
-    guac_client* client = ((rdp_freerdp_context*) inst->context)->client;
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_socket* socket = client->socket; 
     guac_layer* buffer = guac_client_alloc_buffer(client);
 
-    int x, y;
-    int stride;
-    int bpp = (inst->settings->server_depth + 7) / 8;
-    unsigned char* image_buffer;
-    unsigned char* image_buffer_row;
+    /* Convert image data to 32-bit RGB */
+    unsigned char* image_buffer = freerdp_image_convert(bitmap->data, NULL,
+            bitmap->width, bitmap->height,
+            context->instance->settings->color_depth,
+            32, (HCLRCONV) &_guac_rdp_clrconv);
 
-    cairo_surface_t* surface;
+    /* Create surface from image data */
+    cairo_surface_t* surface = cairo_image_surface_create_for_data(
+        bitmap->data, CAIRO_FORMAT_RGB24,
+        bitmap->width, bitmap->height, 4*bitmap->width);
 
-    /* Init Cairo buffer */
-    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, width);
-    image_buffer = malloc(height*stride);
-    image_buffer_row = image_buffer;
-
-    /* Copy image data from image data to buffer */
-    for (y = 0; y<height; y++) {
-
-        unsigned int*  image_buffer_current;
-        
-        /* Get current buffer row, advance to next */
-        image_buffer_current  = (unsigned int*) image_buffer_row;
-        image_buffer_row     += stride;
-
-        for (x = 0; x<width; x++) {
-
-            unsigned char red, green, blue;
-            unsigned int v;
-
-            switch (bpp) {
-                case 3:
-                    blue  = *((unsigned char*) data++);
-                    green = *((unsigned char*) data++);
-                    red   = *((unsigned char*) data++);
-                    break;
-
-                case 2:
-                    v  = *((unsigned char*) data++);
-                    v |= *((unsigned char*) data++) << 8;
-
-                    red   = ((v >> 8) & 0xF8) | ((v >> 13) & 0x07);
-                    green = ((v >> 3) & 0xFC) | ((v >>  9) & 0x03);
-                    blue  = ((v << 3) & 0xF8) | ((v >>  2) & 0x07);
-                    break;
-
-                default: /* The Magenta of Failure */
-                    red   = 0xFF;
-                    green = 0x00;
-                    blue  = 0xFF;
-            }
-
-            /* Output RGB */
-            *(image_buffer_current++) = (red << 16) | (green << 8) | blue;
-
-        }
-    }
-
-    surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_RGB24, width, height, stride);
+    /* Send surface to buffer */
     guac_protocol_send_png(socket, GUAC_COMP_SRC, buffer, 0, 0, surface);
-    guac_socket_flush(socket);
 
     /* Free surface */
     cairo_surface_destroy(surface);
     free(image_buffer);
 
-    return (rdpBitmap*) buffer;
+    /* FIXME: What do we do with buffer?? */
 
 }
 
