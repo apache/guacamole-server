@@ -35,45 +35,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_RDP_CLIENT_H
-#define _GUAC_RDP_CLIENT_H
+#ifndef _GUAC_RDP_RDP_GDI_H
+#define _GUAC_RDP_RDP_GDI_H
 
 #include <freerdp/freerdp.h>
-#include <freerdp/codec/color.h>
 
-#include <guacamole/client.h>
-
-#define RDP_DEFAULT_PORT 3389
-
-typedef struct guac_rdp_color {
-    int red;
-    int green;
-    int blue;
-} guac_rdp_color;
-
-typedef struct rdp_guac_client_data {
-
-    freerdp* rdp_inst;
-	rdpSettings* settings;
-
-    int mouse_button_mask;
-
-    guac_rdp_color foreground;
-    guac_rdp_color background;
-
-    const guac_layer* current_surface;
-
-} rdp_guac_client_data;
-
-typedef struct rdp_freerdp_context {
-
-    rdpContext _p;
-
-    guac_client* client;
-
-} rdp_freerdp_context;
-
-extern CLRCONV guac_rdp_clrconv;
+void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt);
+void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt);
+void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt);
+void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt);
+void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect);
 
 #endif
-

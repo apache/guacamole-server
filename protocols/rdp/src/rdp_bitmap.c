@@ -50,13 +50,6 @@
 #include "client.h"
 #include "rdp_bitmap.h"
 
-static CLRCONV _guac_rdp_clrconv = {
-    .alpha  = 1,
-    .invert = 0,
-    .rgb555 = 0,
-    .palette = NULL
-};
-
 void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Allocate buffer */
@@ -71,7 +64,7 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
         unsigned char* image_buffer = freerdp_image_convert(bitmap->data, NULL,
                 bitmap->width, bitmap->height,
                 context->instance->settings->color_depth,
-                32, (HCLRCONV) &_guac_rdp_clrconv);
+                32, (HCLRCONV) &guac_rdp_clrconv);
 
         /* Create surface from image data */
         cairo_surface_t* surface = cairo_image_surface_create_for_data(

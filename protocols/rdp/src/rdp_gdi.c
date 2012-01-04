@@ -35,45 +35,47 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_RDP_CLIENT_H
-#define _GUAC_RDP_CLIENT_H
-
 #include <freerdp/freerdp.h>
-#include <freerdp/codec/color.h>
 
 #include <guacamole/client.h>
 
-#define RDP_DEFAULT_PORT 3389
+#include "client.h"
 
-typedef struct guac_rdp_color {
-    int red;
-    int green;
-    int blue;
-} guac_rdp_color;
+void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_log_info(client, "guac_rdp_gdi_dstblt()");
+}
 
-typedef struct rdp_guac_client_data {
+void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_log_info(client, "guac_rdp_gdi_patblt()");
+}
 
-    freerdp* rdp_inst;
-	rdpSettings* settings;
+void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_log_info(client, "guac_rdp_gdi_scrblt()");
+}
 
-    int mouse_button_mask;
+void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_log_info(client, "guac_rdp_gdi_memblt()");
+}
 
-    guac_rdp_color foreground;
-    guac_rdp_color background;
+void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect) {
 
-    const guac_layer* current_surface;
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    uint32 color = freerdp_color_convert(opaque_rect->color,
+            context->instance->settings->color_depth, 32, &guac_rdp_clrconv);
 
-} rdp_guac_client_data;
+    guac_protocol_send_rect(client->socket,
+            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
+            opaque_rect->nLeftRect, opaque_rect->nTopRect,
+            opaque_rect->nWidth, opaque_rect->nHeight,
+            (color >> 16) & 0xFF,
+            (color >> 8 ) & 0xFF,
+            (color      ) & 0xFF,
+            255);
 
-typedef struct rdp_freerdp_context {
+}
 
-    rdpContext _p;
-
-    guac_client* client;
-
-} rdp_freerdp_context;
-
-extern CLRCONV guac_rdp_clrconv;
-
-#endif
 

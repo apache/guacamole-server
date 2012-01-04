@@ -58,12 +58,20 @@
 #include "rdp_bitmap.h"
 #include "rdp_glyph.h"
 #include "rdp_pointer.h"
+#include "rdp_gdi.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
     NULL
+};
+
+CLRCONV guac_rdp_clrconv = {
+    .alpha  = 1,
+    .invert = 0,
+    .rgb555 = 0,
+    .palette = NULL
 };
 
 boolean rdp_freerdp_pre_connect(freerdp* instance) {
@@ -74,6 +82,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     rdpBitmap* bitmap;
     rdpGlyph* glyph;
     rdpPointer* pointer;
+    rdpPrimaryUpdate* primary;
 
     /* Set up bitmap handling */
     bitmap = xnew(rdpBitmap);
@@ -100,6 +109,15 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     pointer->Free = guac_rdp_pointer_free;
     pointer->Set = guac_rdp_pointer_set;
     graphics_register_pointer(context->graphics, pointer);
+
+    /* Set up GDI */
+    primary = instance->update->primary;
+
+    primary->DstBlt = guac_rdp_gdi_dstblt;
+    primary->PatBlt = guac_rdp_gdi_patblt;
+    primary->ScrBlt = guac_rdp_gdi_scrblt;
+    primary->MemBlt = guac_rdp_gdi_memblt;
+    primary->OpaqueRect = guac_rdp_gdi_opaquerect;
 
     /* Init channels (pre-connect) */
     if (freerdp_channels_pre_connect(channels, instance)) {
@@ -130,6 +148,10 @@ boolean rdp_freerdp_post_connect(freerdp* instance) {
     client->handle_messages = rdp_guac_client_handle_messages;
     client->mouse_handler = rdp_guac_client_mouse_handler;
     client->key_handler = rdp_guac_client_key_handler;
+
+    /* FIXME: Actually read REAL screen size from whatever RDP sends us */
+    guac_protocol_send_size(client->socket, 1024, 768);
+    guac_socket_flush(client->socket);
 
     return true;
 
@@ -225,9 +247,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->order_support[NEG_MEMBLT_V2_INDEX] = bitmap_cache;
     settings->order_support[NEG_MEM3BLT_V2_INDEX] = false;
     settings->order_support[NEG_SAVEBITMAP_INDEX] = false;
-    settings->order_support[NEG_GLYPH_INDEX_INDEX] = true;
-    settings->order_support[NEG_FAST_INDEX_INDEX] = true;
-    settings->order_support[NEG_FAST_GLYPH_INDEX] = true;
+    settings->order_support[NEG_GLYPH_INDEX_INDEX] = false;
+    settings->order_support[NEG_FAST_INDEX_INDEX] = false;
+    settings->order_support[NEG_FAST_GLYPH_INDEX] = false;
     settings->order_support[NEG_POLYGON_SC_INDEX] = false;
     settings->order_support[NEG_POLYGON_CB_INDEX] = false;
     settings->order_support[NEG_ELLIPSE_SC_INDEX] = false;
