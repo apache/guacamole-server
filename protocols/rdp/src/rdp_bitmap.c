@@ -119,3 +119,8 @@ void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean 
     guac_client_log_info(client, "guac_rdp_bitmap_setsurface()");
 }
 
+void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, uint8* data, int width, int height, int bpp, int length, boolean compressed) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_log_info(client, "guac_rdp_bitmap_decompress()");
+}
+

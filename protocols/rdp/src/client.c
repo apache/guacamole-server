@@ -44,6 +44,11 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/utils/memory.h>
 #include <freerdp/cache/bitmap.h>
+#include <freerdp/cache/brush.h>
+#include <freerdp/cache/glyph.h>
+#include <freerdp/cache/palette.h>
+#include <freerdp/cache/pointer.h>
+#include <freerdp/cache/offscreen.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/input.h>
 #include <freerdp/constants.h>
@@ -84,13 +89,16 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     rdpPointer* pointer;
     rdpPrimaryUpdate* primary;
 
+    /* Init FreeRDP cache */
+    instance->context->cache = cache_new(instance->settings);
+
     /* Set up bitmap handling */
     bitmap = xnew(rdpBitmap);
     bitmap->size = sizeof(guac_rdp_bitmap);
     bitmap->New = guac_rdp_bitmap_new;
     bitmap->Free = guac_rdp_bitmap_free;
     bitmap->Paint = guac_rdp_bitmap_paint;
-    /* bitmap->Decompress = guac_rdp_bitmap_decompress; */
+    bitmap->Decompress = guac_rdp_bitmap_decompress;
     bitmap->SetSurface = guac_rdp_bitmap_setsurface;
     graphics_register_bitmap(context->graphics, bitmap);
 
@@ -118,6 +126,13 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     primary->ScrBlt = guac_rdp_gdi_scrblt;
     primary->MemBlt = guac_rdp_gdi_memblt;
     primary->OpaqueRect = guac_rdp_gdi_opaquerect;
+
+    /*pointer_cache_register_callbacks(instance->update);*/
+    glyph_cache_register_callbacks(instance->update);
+    /*brush_cache_register_callbacks(instance->update);*/
+    bitmap_cache_register_callbacks(instance->update);
+    /*offscreen_cache_register_callbacks(instance->update);*/
+    /*palette_cache_register_callbacks(instance->update);*/
 
     /* Init channels (pre-connect) */
     if (freerdp_channels_pre_connect(channels, instance)) {

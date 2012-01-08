@@ -46,6 +46,7 @@ AC_PROG_LIBTOOL
 # Checks for libraries.
 AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))
 AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
+AC_CHECK_LIB([freerdp-cache], [glyph_cache_register_callbacks],, AC_MSG_ERROR("libfreerdp-cache is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-core], [freerdp_new],, AC_MSG_ERROR("libfreerdp-core is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],, AC_MSG_ERROR("libfreerdp-channels is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-utils], [xzalloc],, AC_MSG_ERROR("libfreerdp-utils is required (part of FreeRDP)"))
