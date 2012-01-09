@@ -57,3 +57,15 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph) {
     guac_client_log_info(client, "guac_rdp_glyph_free()");
 }
 
+void guac_rdp_glyph_begindraw(rdpContext* context,
+        int x, int y, int width, int height, uint32 bgcolor, uint32 fgcolor) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_log_info(client, "guac_rdp_glyph_begindraw()");
+}
+
+void guac_rdp_glyph_enddraw(rdpContext* context,
+        int x, int y, int width, int height, uint32 bgcolor, uint32 fgcolor) {
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_client_log_info(client, "guac_rdp_glyph_enddraw()");
+}
+

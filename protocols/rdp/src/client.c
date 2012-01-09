@@ -108,6 +108,8 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     glyph->New = guac_rdp_glyph_new;
     glyph->Free = guac_rdp_glyph_free;
     glyph->Draw = guac_rdp_glyph_draw;
+    glyph->BeginDraw = guac_rdp_glyph_begindraw;
+    glyph->EndDraw = guac_rdp_glyph_enddraw;
     graphics_register_glyph(context->graphics, glyph);
 
     /* Set up pointer handling */
