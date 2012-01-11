@@ -67,8 +67,10 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
     uint32 color = freerdp_color_convert(opaque_rect->color,
             context->instance->settings->color_depth, 32, &guac_rdp_clrconv);
 
+    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
+
     guac_protocol_send_rect(client->socket,
-            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
+            GUAC_COMP_OVER, current_layer,
             opaque_rect->nLeftRect, opaque_rect->nTopRect,
             opaque_rect->nWidth, opaque_rect->nHeight,
             (color >> 16) & 0xFF,

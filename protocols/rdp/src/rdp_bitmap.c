@@ -45,7 +45,9 @@
 #include <guacamole/protocol.h>
 
 #include <freerdp/freerdp.h>
+#include <freerdp/utils/memory.h>
 #include <freerdp/codec/color.h>
+#include <freerdp/codec/bitmap.h>
 
 #include "client.h"
 #include "rdp_bitmap.h"
@@ -85,9 +87,6 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Store buffer reference in bitmap */
     ((guac_rdp_bitmap*) bitmap)->layer = buffer;
-
-    guac_client_log_info(client, "guac_rdp_bitmap_new()");
-
 }
 
 void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
@@ -101,26 +100,37 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
             0, 0, bitmap->width, bitmap->height,
             GUAC_COMP_OVER,
             GUAC_DEFAULT_LAYER, bitmap->left, bitmap->top);
-
-    guac_client_log_info(client, "guac_rdp_bitmap_paint()");
-
 }
 
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_client_free_buffer(client, ((guac_rdp_bitmap*) bitmap)->layer);
-
-    guac_client_log_info(client, "guac_rdp_bitmap_free()");
-
 }
 
 void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean primary) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_bitmap_setsurface()");
+
+    ((rdp_guac_client_data*) client->data)->current_surface 
+        = ((guac_rdp_bitmap*) bitmap)->layer;
 }
 
 void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, uint8* data, int width, int height, int bpp, int length, boolean compressed) {
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_bitmap_decompress()");
+
+    int size = width * height * (bpp + 7) / 8;
+
+    if (bitmap->data == NULL)
+        bitmap->data = (uint8*) xmalloc(size);
+    else
+        bitmap->data = (uint8*) xrealloc(bitmap->data, size);
+
+    if (compressed)
+        bitmap_decompress(data, bitmap->data, width, height, length, bpp, bpp);
+    else
+        freerdp_image_flip(data, bitmap->data, width, height, bpp);
+
+    bitmap->compressed = false;
+    bitmap->length = size;
+    bitmap->bpp = bpp;
+
 }
 
