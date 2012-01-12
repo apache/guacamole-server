@@ -78,10 +78,17 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
     guac_layer* allocd_layer;
 
     /* If available layers, pop off first available buffer */
-    if (client->__available_buffers != NULL) {
+    if (client->__next_buffer_index <= -GUAC_BUFFER_POOL_INITIAL_SIZE &&
+            client->__available_buffers != NULL) {
+
         allocd_layer = client->__available_buffers;
         client->__available_buffers = client->__available_buffers->__next_available;
         allocd_layer->__next_available = NULL;
+
+        /* If last buffer, reset last available buffer pointer */
+        if (allocd_layer == client->__last_available_buffer)
+            client->__last_available_buffer = NULL;
+
     }
 
     /* If no available buffer, allocate new buffer, add to __all_layers list */
@@ -103,9 +110,11 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
 
 void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
 
-    /* Add layer to pool of available buffers */
-    layer->__next_available = client->__available_buffers;
-    client->__available_buffers = layer;
+    /* Add layer to tail of pool of available buffers */
+    if (client->__last_available_buffer != NULL)
+        client->__last_available_buffer->__next_available = layer;
+
+    client->__last_available_buffer = layer;
 
 }
 

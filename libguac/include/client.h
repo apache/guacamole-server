@@ -124,6 +124,14 @@ typedef int guac_client_init_handler(guac_client* client, int argc, char** argv)
 #define GUAC_CLIENT_MOUSE_SCROLL_DOWN 0x10
 
 /**
+ * The minimum number of buffers to create before allowing free'd buffers to
+ * be reclaimed. In the case a protocol rapidly creates, uses, and destroys
+ * buffers, this can prevent unnecessary reuse of the same buffer (which
+ * would make draw operations unnecessarily synchronous).
+ */
+#define GUAC_BUFFER_POOL_INITIAL_SIZE 1024
+
+/**
  * Possible current states of the Guacamole client. Currently, the only
  * two states are GUAC_CLIENT_RUNNING and GUAC_CLIENT_STOPPING.
  */
@@ -205,6 +213,11 @@ struct guac_client {
      * buffers.
      */
     guac_layer* __available_buffers;
+
+    /**
+     * Pointer to the last buffer in the list of all available buffers.
+     */
+    guac_layer* __last_available_buffer;
 
     /**
      * The head pointer of the list of all allocated layers, regardless of use
