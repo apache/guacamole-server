@@ -46,5 +46,5 @@ lib_LTLIBRARIES = libguac.la
 
 libguac_la_SOURCES = src/client.c src/socket.c src/protocol.c src/client-handlers.c src/error.c
 
-libguac_la_LDFLAGS = -version-info 2:0:0
+libguac_la_LDFLAGS = -version-info 3:0:0
 

@@ -204,28 +204,6 @@ struct guac_client {
     guac_client_state state;
 
     /**
-     * The index of the next available buffer.
-     */
-    int __next_buffer_index;
-
-    /**
-     * The head pointer of the list of all available (allocated but not used)
-     * buffers.
-     */
-    guac_layer* __available_buffers;
-
-    /**
-     * Pointer to the last buffer in the list of all available buffers.
-     */
-    guac_layer* __last_available_buffer;
-
-    /**
-     * The head pointer of the list of all allocated layers, regardless of use
-     * status.
-     */
-    guac_layer* __all_layers;
-
-    /**
      * The time (in milliseconds) of receipt of the last sync message from
      * the client.
      */
@@ -402,6 +380,27 @@ struct guac_client {
      */
     guac_client_log_handler* log_error_handler;
 
+    /**
+     * The index of the next available buffer.
+     */
+    int __next_buffer_index;
+
+    /**
+     * The head pointer of the list of all available (allocated but not used)
+     * buffers.
+     */
+    guac_layer* __available_buffers;
+
+    /**
+     * Pointer to the last buffer in the list of all available buffers.
+     */
+    guac_layer* __last_available_buffer;
+
+    /**
+     * The head pointer of the list of all allocated layers, regardless of use
+     * status.
+     */
+    guac_layer* __all_layers;
 
 };
 
