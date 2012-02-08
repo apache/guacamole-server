@@ -54,10 +54,8 @@
 
 void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
-    /* Allocate buffer */
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_socket* socket = client->socket; 
-    guac_layer* buffer = guac_client_alloc_buffer(client);
 
     /* Convert image data if present */
     if (bitmap->data != NULL) {
@@ -68,25 +66,46 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
                 context->instance->settings->color_depth,
                 32, (HCLRCONV) &guac_rdp_clrconv);
 
-        /* Create surface from image data */
-        cairo_surface_t* surface = cairo_image_surface_create_for_data(
-            bitmap->data, CAIRO_FORMAT_RGB24,
-            bitmap->width, bitmap->height, 4*bitmap->width);
+        /* If not ephemeral, send to client */
+        if (!bitmap->ephemeral) {
 
-        /* Send surface to buffer */
-        guac_protocol_send_png(socket, GUAC_COMP_SRC, buffer, 0, 0, surface);
+            /* Allocate buffer */
+            guac_layer* buffer = guac_client_alloc_buffer(client);
 
-        /* Free surface */
-        cairo_surface_destroy(surface);
+            /* Create surface from image data */
+            cairo_surface_t* surface = cairo_image_surface_create_for_data(
+                bitmap->data, CAIRO_FORMAT_RGB24,
+                bitmap->width, bitmap->height, 4*bitmap->width);
 
-        /* Free image data if actually alloated */
-        if (image_buffer != bitmap->data)
-            free(image_buffer);
+            /* Send surface to buffer */
+            guac_protocol_send_png(socket, GUAC_COMP_SRC, buffer, 0, 0, surface);
+
+            /* Free surface */
+            cairo_surface_destroy(surface);
+
+            /* Free image data if actually alloated */
+            if (image_buffer != bitmap->data)
+                free(image_buffer);
+
+            /* Store buffer reference in bitmap */
+            ((guac_rdp_bitmap*) bitmap)->layer = buffer;
+
+        }
+
+        /* Otherwise, store converted image in bitmap, free any existing */
+        else {
+
+            /* Free existing image, if any */
+            if (image_buffer != bitmap->data)
+                free(bitmap->data);
+
+            /* Store converted image in bitmap */
+            bitmap->data = image_buffer;
+
+        }
 
     }
 
-    /* Store buffer reference in bitmap */
-    ((guac_rdp_bitmap*) bitmap)->layer = buffer;
 }
 
 void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
@@ -94,12 +113,16 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_socket* socket = client->socket;
 
-    /* Copy image data from buffer to visible layer */
-    guac_protocol_send_copy(socket,
-            ((guac_rdp_bitmap*) bitmap)->layer,
-            0, 0, bitmap->width, bitmap->height,
-            GUAC_COMP_OVER,
-            GUAC_DEFAULT_LAYER, bitmap->left, bitmap->top);
+    /* If not ephemeral, copy image data from buffer to visible layer */
+    if (!bitmap->ephemeral)
+        guac_protocol_send_copy(socket,
+                ((guac_rdp_bitmap*) bitmap)->layer,
+                0, 0, bitmap->width, bitmap->height,
+                GUAC_COMP_OVER,
+                GUAC_DEFAULT_LAYER, bitmap->left, bitmap->top);
+
+    /* Otherwise, buffer apparently should not be drawn ... */
+
 }
 
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
@@ -110,8 +133,12 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
 void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean primary) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
-    ((rdp_guac_client_data*) client->data)->current_surface 
-        = ((guac_rdp_bitmap*) bitmap)->layer;
+    if (primary)
+        ((rdp_guac_client_data*) client->data)->current_surface
+            = GUAC_DEFAULT_LAYER;
+    else
+        ((rdp_guac_client_data*) client->data)->current_surface 
+            = ((guac_rdp_bitmap*) bitmap)->layer;
 }
 
 void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, uint8* data, int width, int height, int bpp, int length, boolean compressed) {
