@@ -124,6 +124,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Set up GDI */
     instance->update->Palette = guac_rdp_gdi_palette_update;
+    instance->update->SetBounds = guac_rdp_gdi_set_bounds;
 
     primary = instance->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;

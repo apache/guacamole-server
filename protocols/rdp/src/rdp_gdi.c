@@ -88,3 +88,30 @@ void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette) {
     clrconv->palette->entries = palette->entries;
 
 }
+
+void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
+
+    /* Set clip if specified */
+    if (bounds != NULL)
+        guac_protocol_send_clip(
+                client->socket,
+                current_layer,
+                bounds->left,
+                bounds->top,
+                bounds->right - bounds->left + 1,
+                bounds->bottom - bounds->top + 1);
+
+    /* Otherwise, reset clip */
+    else
+        guac_protocol_send_clip(
+                client->socket,
+                current_layer,
+                0, 0,
+                context->instance->settings->width,
+                context->instance->settings->height);
+
+}
+
