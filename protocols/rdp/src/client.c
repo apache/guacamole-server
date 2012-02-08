@@ -170,9 +170,9 @@ boolean rdp_freerdp_post_connect(freerdp* instance) {
     client->mouse_handler = rdp_guac_client_mouse_handler;
     client->key_handler = rdp_guac_client_key_handler;
 
-    /* FIXME: Actually read REAL screen size from whatever RDP sends us */
-    guac_protocol_send_size(client->socket, 1024, 768);
-    guac_socket_flush(client->socket);
+    /* Send size */
+    guac_protocol_send_size(client->socket,
+            instance->settings->width, instance->settings->height);
 
     return true;
 
