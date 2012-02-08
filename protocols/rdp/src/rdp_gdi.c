@@ -65,7 +65,8 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     uint32 color = freerdp_color_convert(opaque_rect->color,
-            context->instance->settings->color_depth, 32, &guac_rdp_clrconv);
+            context->instance->settings->color_depth, 32,
+            ((rdp_freerdp_context*) context)->clrconv);
 
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
@@ -80,4 +81,10 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
 }
 
+void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette) {
 
+    CLRCONV* clrconv = ((rdp_freerdp_context*) context)->clrconv;
+    clrconv->palette->count = palette->number;
+    clrconv->palette->entries = palette->entries;
+
+}

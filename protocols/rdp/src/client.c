@@ -72,13 +72,6 @@ const char* GUAC_CLIENT_ARGS[] = {
     NULL
 };
 
-CLRCONV guac_rdp_clrconv = {
-    .alpha  = 1,
-    .invert = 0,
-    .rgb555 = 0,
-    .palette = NULL
-};
-
 boolean rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
@@ -88,6 +81,15 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     rdpGlyph* glyph;
     rdpPointer* pointer;
     rdpPrimaryUpdate* primary;
+    CLRCONV* clrconv;
+
+    /* Init color conversion structure */
+    clrconv = xnew(CLRCONV);
+    clrconv->alpha = 1;
+    clrconv->invert = 0;
+    clrconv->rgb555 = 0;
+    clrconv->palette = xnew(rdpPalette);
+    ((rdp_freerdp_context*) context)->clrconv = clrconv;
 
     /* Init FreeRDP cache */
     instance->context->cache = cache_new(instance->settings);
@@ -121,8 +123,9 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     graphics_register_pointer(context->graphics, pointer);
 
     /* Set up GDI */
-    primary = instance->update->primary;
+    instance->update->Palette = guac_rdp_gdi_palette_update;
 
+    primary = instance->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;
     primary->PatBlt = guac_rdp_gdi_patblt;
     primary->ScrBlt = guac_rdp_gdi_scrblt;

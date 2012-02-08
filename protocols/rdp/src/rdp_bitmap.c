@@ -64,7 +64,7 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
         unsigned char* image_buffer = freerdp_image_convert(bitmap->data, NULL,
                 bitmap->width, bitmap->height,
                 context->instance->settings->color_depth,
-                32, (HCLRCONV) &guac_rdp_clrconv);
+                32, ((rdp_freerdp_context*) context)->clrconv);
 
         /* If not ephemeral, send to client */
         if (!bitmap->ephemeral) {
@@ -102,6 +102,9 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
             /* Store converted image in bitmap */
             bitmap->data = image_buffer;
 
+            /* Not stored in a layer */
+            ((guac_rdp_bitmap*) bitmap)->layer = NULL;
+
         }
 
     }
@@ -127,7 +130,10 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
 
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_free_buffer(client, ((guac_rdp_bitmap*) bitmap)->layer);
+
+    /* Free layer, if any */
+    if (((guac_rdp_bitmap*) bitmap)->layer != NULL)
+        guac_client_free_buffer(client, ((guac_rdp_bitmap*) bitmap)->layer);
 }
 
 void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean primary) {

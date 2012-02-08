@@ -70,10 +70,9 @@ typedef struct rdp_freerdp_context {
     rdpContext _p;
 
     guac_client* client;
+    CLRCONV* clrconv;
 
 } rdp_freerdp_context;
-
-extern CLRCONV guac_rdp_clrconv;
 
 #endif
 
