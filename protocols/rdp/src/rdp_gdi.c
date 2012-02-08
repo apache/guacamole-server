@@ -40,6 +40,7 @@
 #include <guacamole/client.h>
 
 #include "client.h"
+#include "rdp_bitmap.h"
 
 void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -57,8 +58,19 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
 }
 
 void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
+
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_gdi_memblt()");
+    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
+    guac_socket* socket = client->socket;
+    guac_rdp_bitmap* bitmap = (guac_rdp_bitmap*) memblt->bitmap;
+
+    if (bitmap->layer != NULL)
+        guac_protocol_send_copy(socket,
+                bitmap->layer,
+                memblt->nXSrc, memblt->nYSrc, memblt->nWidth, memblt->nHeight,
+                GUAC_COMP_OVER,
+                current_layer, memblt->nLeftRect, memblt->nTopRect);
+
 }
 
 void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect) {

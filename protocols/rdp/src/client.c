@@ -133,12 +133,12 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     primary->MemBlt = guac_rdp_gdi_memblt;
     primary->OpaqueRect = guac_rdp_gdi_opaquerect;
 
-    /*pointer_cache_register_callbacks(instance->update);*/
+    pointer_cache_register_callbacks(instance->update);
     glyph_cache_register_callbacks(instance->update);
-    /*brush_cache_register_callbacks(instance->update);*/
+    brush_cache_register_callbacks(instance->update);
     bitmap_cache_register_callbacks(instance->update);
-    /*offscreen_cache_register_callbacks(instance->update);*/
-    /*palette_cache_register_callbacks(instance->update);*/
+    offscreen_cache_register_callbacks(instance->update);
+    palette_cache_register_callbacks(instance->update);
 
     /* Init channels (pre-connect) */
     if (freerdp_channels_pre_connect(channels, instance)) {
