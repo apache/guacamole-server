@@ -74,7 +74,7 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
         /* Create surface from image data */
         cairo_surface_t* surface = cairo_image_surface_create_for_data(
-            bitmap->data, CAIRO_FORMAT_RGB24,
+            image_buffer, CAIRO_FORMAT_RGB24,
             bitmap->width, bitmap->height, 4*bitmap->width);
 
         /* Send surface to buffer */
