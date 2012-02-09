@@ -112,8 +112,18 @@ void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph) {
 void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
-   
+  
+    /* Colorize glyph */
+    guac_protocol_send_rect(client->socket,
+            GUAC_COMP_ATOP, ((guac_rdp_glyph*) glyph)->layer,
+            0, 0, glyph->cx, glyph->cy,
+            guac_client_data->foreground.red,
+            guac_client_data->foreground.green,
+            guac_client_data->foreground.blue,
+            255);
+
     /* Draw glyph */
     guac_protocol_send_copy(client->socket,
            ((guac_rdp_glyph*) glyph)->layer, 0, 0, glyph->cx, glyph->cy,
@@ -127,14 +137,27 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph) {
 }
 
 void guac_rdp_glyph_begindraw(rdpContext* context,
-        int x, int y, int width, int height, uint32 bgcolor, uint32 fgcolor) {
+        int x, int y, int width, int height, uint32 fgcolor, uint32 bgcolor) {
+
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_glyph_begindraw()");
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+
+    bgcolor = freerdp_color_convert(bgcolor,
+            context->instance->settings->color_depth, 32,
+            ((rdp_freerdp_context*) context)->clrconv);
+
+    fgcolor = freerdp_color_convert(fgcolor,
+            context->instance->settings->color_depth, 32,
+            ((rdp_freerdp_context*) context)->clrconv);
+
+    guac_client_data->foreground.red   =  fgcolor & 0x0000FF;
+    guac_client_data->foreground.green = (fgcolor & 0x00FF00) >> 8;
+    guac_client_data->foreground.blue  = (fgcolor & 0xFF0000) >> 16;
+
 }
 
 void guac_rdp_glyph_enddraw(rdpContext* context,
-        int x, int y, int width, int height, uint32 bgcolor, uint32 fgcolor) {
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_glyph_enddraw()");
+        int x, int y, int width, int height, uint32 fgcolor, uint32 bgcolor) {
+    /* UNUSED */
 }
 

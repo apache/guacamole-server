@@ -60,8 +60,8 @@ void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph);
 void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y);
 void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph);
 void guac_rdp_glyph_begindraw(rdpContext* context,
-        int x, int y, int width, int height, uint32 bgcolor, uint32 fgcolor);
+        int x, int y, int width, int height, uint32 fgcolor, uint32 bgcolor);
 void guac_rdp_glyph_enddraw(rdpContext* context,
-        int x, int y, int width, int height, uint32 bgcolor, uint32 fgcolor);
+        int x, int y, int width, int height, uint32 fgcolor, uint32 bgcolor);
 
 #endif
