@@ -53,8 +53,17 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
 }
 
 void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
+
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_gdi_scrblt()");
+    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
+
+    /* Copy screen rect to current surface */
+    guac_protocol_send_copy(client->socket,
+            GUAC_DEFAULT_LAYER,
+            scrblt->nXSrc, scrblt->nYSrc, scrblt->nWidth, scrblt->nHeight,
+            GUAC_COMP_OVER, current_layer,
+            scrblt->nLeftRect, scrblt->nTopRect);
+
 }
 
 void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
