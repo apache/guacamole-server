@@ -214,11 +214,31 @@ int guac_protocol_send_clipboard(guac_socket* socket, const char* data);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param w The width of the display.
- * @param h The height of the display.
+ * @param layer The layer to resize.
+ * @param w The new width of the layer.
+ * @param h The new height of the layer.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_size(guac_socket* socket, int w, int h);
+int guac_protocol_send_size(guac_socket* socket, const guac_layer* layer,
+        int w, int h);
+
+/**
+ * Sends a move instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The layer to move.
+ * @param parent The parent layer the specified layer will be positioned
+ *               relative to.
+ * @param x The X coordinate of the layer.
+ * @param y The Y coordinate of the layer.
+ * @param z The Z index of the layer, relative to other layers in its parent.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_move(guac_socket* socket, const guac_layer* layer,
+        const guac_layer* parent, int x, int y, int z);
 
 /**
  * Sends a copy instruction over the given guac_socket connection.
