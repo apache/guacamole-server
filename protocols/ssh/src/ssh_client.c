@@ -120,6 +120,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Send name and dimensions */
     guac_protocol_send_name(socket, "SSH TEST");
     guac_protocol_send_size(socket,
+            GUAC_DEFAULT_LAYER,
             term->char_width  * term->term_width,
             term->char_height * term->term_height);
 
