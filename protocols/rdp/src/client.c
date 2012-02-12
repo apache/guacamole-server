@@ -171,7 +171,7 @@ boolean rdp_freerdp_post_connect(freerdp* instance) {
     client->key_handler = rdp_guac_client_key_handler;
 
     /* Send size */
-    guac_protocol_send_size(client->socket,
+    guac_protocol_send_size(client->socket, GUAC_DEFAULT_LAYER,
             instance->settings->width, instance->settings->height);
 
     return true;
