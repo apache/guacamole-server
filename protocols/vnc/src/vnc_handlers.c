@@ -53,6 +53,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     guac_socket* socket = gc->socket;
+    const guac_layer* cursor_layer = ((vnc_guac_client_data*) gc->data)->cursor;
 
     /* Cairo image buffer */
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
@@ -118,9 +119,13 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
         }
     }
 
-    /* SEND CURSOR */
+    /* Send cursor data*/
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_ARGB32, w, h, stride);
-    guac_protocol_send_cursor(socket, x, y, surface);
+    guac_protocol_send_png(socket,
+            GUAC_COMP_SRC, cursor_layer, 0, 0, surface);
+
+    /* Update cursor */
+    guac_protocol_send_cursor(socket, x, y, cursor_layer, 0, 0, w, h);
 
     /* Free surface */
     cairo_surface_destroy(surface);
@@ -244,7 +249,8 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
 
     /* Send new size */
-    guac_protocol_send_size(gc->socket, rfb_client->width, rfb_client->height);
+    guac_protocol_send_size(gc->socket,
+            GUAC_DEFAULT_LAYER, rfb_client->width, rfb_client->height);
 
     /* Use original, wrapped proc */
     return guac_client_data->rfb_MallocFrameBuffer(rfb_client);

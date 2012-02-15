@@ -51,6 +51,8 @@ typedef struct vnc_guac_client_data {
     char* password;
     char* encodings;
 
+    guac_layer* cursor;
+
 } vnc_guac_client_data;
 
 #endif

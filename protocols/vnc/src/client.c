@@ -140,6 +140,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set remaining client data */
     guac_client_data->rfb_client = rfb_client;
     guac_client_data->copy_rect_used = 0;
+    guac_client_data->cursor = guac_client_alloc_buffer(client);
 
     /* Set handlers */
     client->handle_messages = vnc_guac_client_handle_messages;
@@ -155,7 +156,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_protocol_send_name(client->socket, rfb_client->desktopName);
 
     /* Send size */
-    guac_protocol_send_size(client->socket, rfb_client->width, rfb_client->height);
+    guac_protocol_send_size(client->socket,
+            GUAC_DEFAULT_LAYER, rfb_client->width, rfb_client->height);
 
     return 0;
 
