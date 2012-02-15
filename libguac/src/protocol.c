@@ -336,15 +336,23 @@ int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
 }
 
 
-int guac_protocol_send_cursor(guac_socket* socket, int x, int y, cairo_surface_t* surface) {
-
+int guac_protocol_send_cursor(guac_socket* socket, int x, int y,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h) {
     return
            guac_socket_write_string(socket, "6.cursor,")
         || __guac_socket_write_length_int(socket, x)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_int(socket, y)
         || guac_socket_write_string(socket, ",")
-        || __guac_socket_write_length_png(socket, surface)
+        || __guac_socket_write_length_int(socket, srcl->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcx)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcy)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, w)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, h)
         || guac_socket_write_string(socket, ";");
 
 }

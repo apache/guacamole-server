@@ -333,10 +333,15 @@ int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
  * @param socket The guac_socket connection to use.
  * @param x The X coordinate of the cursor hotspot.
  * @param y The Y coordinate of the cursor hotspot.
- * @param surface A cairo surface containing the image data to send.
+ * @param srcl The source layer.
+ * @param srcx The X coordinate of the source rectangle.
+ * @param srcy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_cursor(guac_socket* socket, int x, int y, cairo_surface_t* surface);
+int guac_protocol_send_cursor(guac_socket* socket, int x, int y,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h);
 
 /**
  * Returns whether new instruction data is available on the given guac_socket
