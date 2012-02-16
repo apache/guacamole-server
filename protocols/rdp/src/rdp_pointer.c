@@ -44,17 +44,58 @@
 #include "rdp_pointer.h"
 
 void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
+
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_pointer_new()");
+    guac_socket* socket = client->socket;
+
+    /* Allocate data for image */
+    unsigned char* data =
+        (unsigned char*) malloc(pointer->width * pointer->height * 4);
+
+    /* Allocate layer */
+    guac_layer* buffer = guac_client_alloc_buffer(client);
+
+    cairo_surface_t* surface;
+
+    /* Convert to alpha cursor if mask data present */
+    if (pointer->andMaskData && pointer->xorMaskData)
+        freerdp_alpha_cursor_convert(data,
+                pointer->xorMaskData, pointer->andMaskData,
+                pointer->width, pointer->height, pointer->xorBpp,
+                ((rdp_freerdp_context*) context)->clrconv);
+
+    /* Create surface from image data */
+    surface = cairo_image_surface_create_for_data(
+        data, CAIRO_FORMAT_ARGB32,
+        pointer->width, pointer->height, 4*pointer->width);
+
+    /* Send surface to buffer */
+    guac_protocol_send_png(socket, GUAC_COMP_SRC, buffer, 0, 0, surface);
+
+    /* Free surface */
+    cairo_surface_destroy(surface);
+
+    /* Remember buffer */
+    ((guac_rdp_pointer*) pointer)->layer = buffer;
+
 }
 
 void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer) {
+
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_pointer_set()");
+    guac_socket* socket = client->socket;
+
+    /* Set cursor */
+    guac_protocol_send_cursor(socket, pointer->xPos, pointer->yPos,
+            ((guac_rdp_pointer*) pointer)->layer,
+            0, 0, pointer->width, pointer->height);
+
 }
 
 void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {
+
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_pointer_free()");
+    guac_client_free_buffer(client, ((guac_rdp_pointer*) pointer)->layer);
+
 }
 
