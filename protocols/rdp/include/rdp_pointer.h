@@ -49,7 +49,10 @@ typedef struct guac_rdp_pointer {
      */
     rdpPointer pointer;
 
-    /* TODO: STUB */
+    /**
+     * Guacamole layer containing cached image data.
+     */
+    guac_layer* layer;
 
 } guac_rdp_pointer;
 
