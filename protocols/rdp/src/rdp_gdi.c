@@ -43,8 +43,32 @@
 #include "rdp_bitmap.h"
 
 void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
+
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_gdi_dstblt()");
+    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
+
+    switch (dstblt->bRop) {
+
+        /* Blackness */
+        case 0:
+
+            /* Send black rectangle */
+            guac_protocol_send_rect(client->socket,
+                    GUAC_COMP_OVER, current_layer,
+                    dstblt->nLeftRect, dstblt->nTopRect,
+                    dstblt->nWidth, dstblt->nHeight,
+                    0, 0, 0, 255);
+            break;
+
+        /* Unsupported ROP3 */
+        default:
+            guac_client_log_info(client,
+                    "guac_rdp_gdi_dstblt(rop3=%i)", dstblt->bRop);
+
+    }
+
+
+
 }
 
 void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
