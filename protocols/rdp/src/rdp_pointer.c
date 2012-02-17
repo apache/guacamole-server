@@ -74,6 +74,7 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
     /* Free surface */
     cairo_surface_destroy(surface);
+    free(data);
 
     /* Remember buffer */
     ((guac_rdp_pointer*) pointer)->layer = buffer;
