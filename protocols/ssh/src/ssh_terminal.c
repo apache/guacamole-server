@@ -253,24 +253,13 @@ int ssh_guac_terminal_redraw_cursor(ssh_guac_terminal* term) {
 
     /* Erase old cursor */
     return
-        guac_protocol_send_rect(socket,
-            GUAC_COMP_ROUT, term->cursor_layer,
+        guac_protocol_send_move(socket,
+            term->cursor_layer,
 
-            0, 0,
-            term->char_width * term->term_width,
-            term->char_height * term->term_height,
-
-            0, 0, 0, 0xFF)
-
-        || guac_protocol_send_rect(socket,
-            GUAC_COMP_OVER, term->cursor_layer,
-
+            GUAC_DEFAULT_LAYER,
             term->char_width * term->cursor_col,
             term->char_height * term->cursor_row,
-            term->char_width, term->char_height,
-
-            0x40, 0xFF, 0x80,
-            0x80);
+            1);
 
 }
 
