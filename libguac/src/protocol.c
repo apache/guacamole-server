@@ -142,6 +142,15 @@ int guac_protocol_send_move(guac_socket* socket, const guac_layer* layer,
 
 }
 
+int guac_protocol_send_dispose(guac_socket* socket, const guac_layer* layer) {
+
+    return
+           guac_socket_write_string(socket, "7.dispose,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ";");
+
+}
+
 int guac_protocol_send_clipboard(guac_socket* socket, const char* data) {
 
     return

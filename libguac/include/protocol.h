@@ -241,6 +241,18 @@ int guac_protocol_send_move(guac_socket* socket, const guac_layer* layer,
         const guac_layer* parent, int x, int y, int z);
 
 /**
+ * Sends a dispose instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The layer to dispose.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_dispose(guac_socket* socket, const guac_layer* layer);
+
+/**
  * Sends a copy instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
