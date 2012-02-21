@@ -90,7 +90,12 @@ typedef enum guac_composite_mode {
     GUAC_COMP_IN    = 0x4, /* 0100 */
     GUAC_COMP_OUT   = 0x8, /* 1000 */
     GUAC_COMP_RATOP = 0x9, /* 1001 */
-    GUAC_COMP_SRC   = 0xC  /* 1100 */
+    GUAC_COMP_SRC   = 0xC, /* 1100 */
+
+	GUAC_COMP_OR	= 0xF0, /* perform OR ternary raster operation */
+	GUAC_COMP_AND	= 0xF1, /* perform AND ternary raster operation */
+	GUAC_COMP_XOR2	= 0xF2,  /* perform XOR ternary raster operation */
+	GUAC_COMP_NOR	= 0xF3   /* perform NOR ternary raster operation */
 
 } guac_composite_mode;
 
