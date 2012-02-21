@@ -53,7 +53,8 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     guac_socket* socket = gc->socket;
-    const guac_layer* cursor_layer = ((vnc_guac_client_data*) gc->data)->cursor;
+    vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
+    const guac_layer* cursor_layer = guac_client_data->cursor;
 
     /* Cairo image buffer */
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
@@ -111,7 +112,10 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
             blue  = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax + 1);
 
             /* Output ARGB */
-            *(buffer_current++) = (alpha << 24) | (red << 16) | (green << 8) | blue;
+            if (guac_client_data->swap_red_blue)
+                *(buffer_current++) = (alpha << 24) | (blue << 16) | (green << 8) | red;
+            else
+                *(buffer_current++) = (alpha << 24) | (red  << 16) | (green << 8) | blue;
 
             /* Next VNC pixel */
             fb_current += bpp;
@@ -139,6 +143,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
+    vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
     guac_socket* socket = gc->socket;
 
     int dx, dy;
@@ -155,8 +160,8 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     unsigned char* fb_row_current;
 
     /* Ignore extra update if already handled by copyrect */
-    if (((vnc_guac_client_data*) gc->data)->copy_rect_used) {
-        ((vnc_guac_client_data*) gc->data)->copy_rect_used = 0;
+    if (guac_client_data->copy_rect_used) {
+        guac_client_data->copy_rect_used = 0;
         return;
     }
 
@@ -207,7 +212,10 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
             blue  = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax + 1);
 
             /* Output RGB */
-            *(buffer_current++) = (red << 16) | (green << 8) | blue;
+            if (guac_client_data->swap_red_blue)
+                *(buffer_current++) = (blue << 16) | (green << 8) | red;
+            else
+                *(buffer_current++) = (red  << 16) | (green << 8) | blue;
 
             fb_current += bpp;
 
