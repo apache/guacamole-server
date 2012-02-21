@@ -50,6 +50,7 @@ typedef struct vnc_guac_client_data {
     int copy_rect_used;
     char* password;
     char* encodings;
+    int swap_red_blue;
 
     guac_layer* cursor;
 

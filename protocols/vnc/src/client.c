@@ -55,6 +55,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "read-only",
     "encodings",
     "password",
+    "swap-red-blue",
     NULL
 };
 
@@ -66,7 +67,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     vnc_guac_client_data* guac_client_data;
 
-    int read_only = 0;
+    int read_only;
 
     /* Set up libvncclient logging */
     rfbClientLog = guac_vnc_client_log_info;
@@ -74,7 +75,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /*** PARSE ARGUMENTS ***/
 
-    if (argc < 5) {
+    if (argc < 6) {
         guac_protocol_send_error(client->socket, "Wrong argument count received.");
         guac_socket_flush(client->socket);
         return 1;
@@ -84,9 +85,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data = malloc(sizeof(vnc_guac_client_data));
     client->data = guac_client_data;
 
-    /* If read-only specified, set flag */
-    if (strcmp(argv[2], "true") == 0)
-        read_only = 1;
+    /* Set read-only flag */
+    read_only = (strcmp(argv[2], "true") == 0);
+
+    /* Set red/blue swap flag */
+    guac_client_data->swap_red_blue = (strcmp(argv[5], "true") == 0);
 
     /* Freed after use by libvncclient */
     guac_client_data->password = strdup(argv[4]);
