@@ -45,3 +45,5 @@ libguac_client_rdp_la_SOURCES = src/client.c src/rdp_keymap.c src/rdp_bitmap.c s
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0
 
+EXTRA_DIST = LICENSE
+
