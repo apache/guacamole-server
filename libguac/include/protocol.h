@@ -283,22 +283,143 @@ int guac_protocol_send_copy(guac_socket* socket,
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param mode The composite mode to use.
  * @param layer The destination layer.
  * @param x The X coordinate of the rectangle.
  * @param y The Y coordinate of the rectangle.
  * @param width The width of the rectangle.
  * @param height The height of the rectangle.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_rect(guac_socket* socket, const guac_layer* layer,
+        int x, int y, int width, int height);
+
+/**
+ * Sends an lpath instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @param x The X coordinate of the point to add to the path.
+ * @param y The Y coordinate of the point to add to the path.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_lpath(guac_socket* socket, const guac_layer* layer,
+        int x, int y);
+
+/**
+ * Sends a qpath instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @param x The X coordinate of the point to add to the path.
+ * @param y The Y coordinate of the point to add to the path.
+ * @param cpx The X coordinate of the control point.
+ * @param cpy The Y coordinate of the control point.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_qpath(guac_socket* socket, const guac_layer* layer,
+
+/**
+ * Sends a cpath instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @param x The X coordinate of the point to add to the path.
+ * @param y The Y coordinate of the point to add to the path.
+ * @param cp1x The X coordinate of the first control point.
+ * @param cp1y The Y coordinate of the first control point.
+ * @param cp2x The X coordinate of the second control point.
+ * @param cp2y The Y coordinate of the second control point.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_cpath(guac_socket* socket, const guac_layer* layer,
+        int x, int y, int cp1x, int cp1y, int cp2x, int cp2y);
+
+/**
+ * Sends a cfill instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param mode The composite mode to use.
+ * @param layer The destination layer.
  * @param r The red component of the color of the rectangle.
  * @param g The green component of the color of the rectangle.
  * @param b The blue component of the color of the rectangle.
  * @param a The alpha (transparency) component of the color of the rectangle.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_rect(guac_socket* socket,
+int guac_protocol_send_cfill(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
-        int x, int y, int width, int height,
         int r, int g, int b, int a);
+
+/**
+ * Sends an rfill instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param mode The composite mode to use.
+ * @param layer The destination layer.
+ * @param srcl The source layer.
+ * @param srcx The X coordinate of the source rectangle.
+ * @param srcy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_rfill(guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h);
+
+/**
+ * Sends a cstroke instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param mode The composite mode to use.
+ * @param layer The destination layer.
+ * @param r The red component of the color of the rectangle.
+ * @param g The green component of the color of the rectangle.
+ * @param b The blue component of the color of the rectangle.
+ * @param a The alpha (transparency) component of the color of the rectangle.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_cstroke(guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer,
+        int r, int g, int b, int a);
+
+/**
+ * Sends an rstroke instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param mode The composite mode to use.
+ * @param layer The destination layer.
+ * @param srcl The source layer.
+ * @param srcx The X coordinate of the source rectangle.
+ * @param srcy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_rstroke(guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h);
 
 /**
  * Sends a clip instruction over the given guac_socket connection.
@@ -308,14 +429,45 @@ int guac_protocol_send_rect(guac_socket* socket,
  *
  * @param socket The guac_socket connection to use.
  * @param layer The layer to set the clipping region of.
- * @param x The X coordinate of the clipping rectangle.
- * @param y The Y coordinate of the clipping rectangle.
- * @param width The width of the clipping rectangle.
- * @param height The height of the clipping rectangle.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_clip(guac_socket* socket, const guac_layer* layer,
-        int x, int y, int width, int height);
+int guac_protocol_send_clip(guac_socket* socket, const guac_layer* layer);
+
+/**
+ * Sends a push instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The layer to set the clipping region of.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_push(guac_socket* socket, const guac_layer* layer);
+
+/**
+ * Sends a pop instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The layer to set the clipping region of.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_pop(guac_socket* socket, const guac_layer* layer);
+
+/**
+ * Sends a reset instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The layer to set the clipping region of.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer);
 
 /**
  * Sends a png instruction over the given guac_socket connection. The PNG image data
