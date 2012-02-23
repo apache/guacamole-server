@@ -85,7 +85,7 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    uint32 color = freerdp_color_convert(opaque_rect->color,
+    uint32 color = freerdp_color_convert_var(opaque_rect->color,
             context->instance->settings->color_depth, 32,
             ((rdp_freerdp_context*) context)->clrconv);
 
