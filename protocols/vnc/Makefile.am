@@ -44,6 +44,7 @@ lib_LTLIBRARIES = libguac-client-vnc.la
 libguac_client_vnc_la_SOURCES = src/client.c src/vnc_handlers.c src/guac_handlers.c
 noinst_HEADERS = include/client.h include/vnc_handlers.h include/guac_handlers.h
 
-
 libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0
+
+EXTRA_DIST = LICENSE
 
