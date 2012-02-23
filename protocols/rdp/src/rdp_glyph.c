@@ -142,11 +142,11 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
 
-    bgcolor = freerdp_color_convert(bgcolor,
+    bgcolor = freerdp_color_convert_var(bgcolor,
             context->instance->settings->color_depth, 32,
             ((rdp_freerdp_context*) context)->clrconv);
 
-    fgcolor = freerdp_color_convert(fgcolor,
+    fgcolor = freerdp_color_convert_var(fgcolor,
             context->instance->settings->color_depth, 32,
             ((rdp_freerdp_context*) context)->clrconv);
 
