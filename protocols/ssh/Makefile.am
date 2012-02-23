@@ -46,3 +46,5 @@ libguac_client_ssh_la_CFLAGS = -Werror -Wall -pedantic -Iinclude @PANGO_CFLAGS@ 
 libguac_client_ssh_la_LIBADD = @PANGO_LIBS@ @PANGOCAIRO_LIBS@
 libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0
 
+EXTRA_DIST = LICENSE
+
