@@ -42,32 +42,35 @@
 #include "client.h"
 #include "rdp_bitmap.h"
 
-guac_composite_mode guac_rdp_rop3_composite_mode(guac_client* client,
+guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
         int rop3) {
 
     /* Translate supported ROP3 opcodes into composite modes */
     switch (rop3) {
 
         /* "SRCINVERT" (src ^ dest) */
-        case 0x66: return GUAC_COMP_BINARY_XOR;
+        case 0x66: return GUAC_TRANSFER_BINARY_SRC;
 
         /* "SRCAND" (src & dest) */
-        case 0x88: return GUAC_COMP_BINARY_AND;
+        case 0x88: return GUAC_TRANSFER_BINARY_AND;
 
         /* "MERGEPAINT" !(src | dest)*/
-        case 0xBB: return GUAC_COMP_BINARY_NOR;
+        case 0xBB: return GUAC_TRANSFER_BINARY_NOR;
 
         /* "SRCCOPY" (src) */
-        case 0xCC: return GUAC_COMP_OVER;
+        case 0xCC: return GUAC_TRANSFER_BINARY_SRC;
 
         /* "SRCPAINT" (src | dest) */
-        case 0xEE: return GUAC_COMP_BINARY_OR;
+        case 0xEE: return GUAC_TRANSFER_BINARY_OR;
 
     }
 
     /* Log warning if ROP3 opcode not supported */
-    guac_client_log_info (client, "guac_rdp_rop3_composite_mode: UNSUPPORTED opcode = 0x%02X", rop3);
-    return GUAC_COMP_OVER;
+    guac_client_log_info (client, "guac_rdp_rop3_transfer_function: "
+            "UNSUPPORTED opcode = 0x%02X", rop3);
+
+    /* Default to BINARY_SRC */
+    return GUAC_TRANSFER_BINARY_SRC;
 
 }
 
@@ -126,12 +129,27 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     guac_socket* socket = client->socket;
     guac_rdp_bitmap* bitmap = (guac_rdp_bitmap*) memblt->bitmap;
 
-    if (bitmap->layer != NULL)
-        guac_protocol_send_copy(socket,
-                bitmap->layer,
-                memblt->nXSrc, memblt->nYSrc, memblt->nWidth, memblt->nHeight,
-                guac_rdp_rop3_composite_mode(client, memblt->bRop),
-                current_layer, memblt->nLeftRect, memblt->nTopRect);
+    if (bitmap->layer != NULL) {
+
+        /* If operation is just SRC, simply copy */
+        if (memblt->bRop == 0xCC)
+            guac_protocol_send_copy(socket,
+                    bitmap->layer,
+                    memblt->nXSrc, memblt->nYSrc,
+                    memblt->nWidth, memblt->nHeight,
+                    GUAC_COMP_OVER,
+                    current_layer, memblt->nLeftRect, memblt->nTopRect);
+
+        /* Otherwise, use transfer */
+        else
+            guac_protocol_send_transfer(socket,
+                    bitmap->layer,
+                    memblt->nXSrc, memblt->nYSrc,
+                    memblt->nWidth, memblt->nHeight,
+                    guac_rdp_rop3_transfer_function(client, memblt->bRop),
+                    current_layer, memblt->nLeftRect, memblt->nTopRect);
+
+    }
 
 }
 
