@@ -92,10 +92,46 @@ typedef enum guac_composite_mode {
     GUAC_COMP_RATOP = 0x9, /* 1001 */
     GUAC_COMP_SRC   = 0xC, /* 1100 */
 
-	GUAC_COMP_OR	= 0xF0, /* perform OR ternary raster operation */
-	GUAC_COMP_AND	= 0xF1, /* perform AND ternary raster operation */
-	GUAC_COMP_XOR2	= 0xF2,  /* perform XOR ternary raster operation */
-	GUAC_COMP_NOR	= 0xF3   /* perform NOR ternary raster operation */
+    /* Bitwise composite operations (binary) */
+
+    /*
+     * A: S' & D'
+     * B: S' & D
+     * C: S  & D'
+     * D: S  & D
+     *
+     * 0 = Active, 1 = Inactive
+     */
+
+                                        /* ABCD */
+	GUAC_COMP_BINARY_BLACK      = 0x10, /* 0000 */
+	GUAC_COMP_BINARY_WHITE      = 0x1F, /* 1111 */
+
+	GUAC_COMP_BINARY_SRC        = 0x13, /* 0011 */
+	GUAC_COMP_BINARY_DEST       = 0x15, /* 0101 */
+	GUAC_COMP_BINARY_NSRC       = 0x1C, /* 1100 */
+	GUAC_COMP_BINARY_NDEST      = 0x1A, /* 1010 */
+
+	GUAC_COMP_BINARY_AND        = 0x11, /* 0001 */
+	GUAC_COMP_BINARY_NAND       = 0x1E, /* 1110 */
+
+	GUAC_COMP_BINARY_OR         = 0x17, /* 0111 */
+	GUAC_COMP_BINARY_NOR        = 0x18, /* 1000 */
+
+	GUAC_COMP_BINARY_XOR        = 0x16, /* 0110 */
+	GUAC_COMP_BINARY_XNOR       = 0x19, /* 1001 */
+
+	GUAC_COMP_BINARY_NSRC_AND   = 0x14, /* 0100 */
+	GUAC_COMP_BINARY_NSRC_NAND  = 0x1B, /* 1011 */
+
+	GUAC_COMP_BINARY_NSRC_OR    = 0x1D, /* 1101 */
+	GUAC_COMP_BINARY_NSRC_NOR   = 0x12, /* 0010 */
+
+	GUAC_COMP_BINARY_NDEST_AND  = 0x12, /* 0010 */
+	GUAC_COMP_BINARY_NDEST_NAND = 0x1D, /* 1101 */
+
+	GUAC_COMP_BINARY_NDEST_OR   = 0x1B, /* 1011 */
+	GUAC_COMP_BINARY_NDEST_NOR  = 0x14  /* 0100 */
 
 } guac_composite_mode;
 
