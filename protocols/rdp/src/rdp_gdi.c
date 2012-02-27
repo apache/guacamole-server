@@ -42,6 +42,35 @@
 #include "client.h"
 #include "rdp_bitmap.h"
 
+guac_composite_mode guac_rdp_rop3_composite_mode(guac_client* client,
+        int rop3) {
+
+    /* Translate supported ROP3 opcodes into composite modes */
+    switch (rop3) {
+
+        /* "SRCINVERT" (src ^ dest) */
+        case 0x66: return GUAC_COMP_BINARY_XOR;
+
+        /* "SRCAND" (src & dest) */
+        case 0x88: return GUAC_COMP_BINARY_AND;
+
+        /* "MERGEPAINT" !(src | dest)*/
+        case 0xBB: return GUAC_COMP_BINARY_NOR;
+
+        /* "SRCCOPY" (src) */
+        case 0xCC: return GUAC_COMP_OVER;
+
+        /* "SRCPAINT" (src | dest) */
+        case 0xEE: return GUAC_COMP_BINARY_OR;
+
+    }
+
+    /* Log warning if ROP3 opcode not supported */
+    guac_client_log_info (client, "guac_rdp_rop3_composite_mode: UNSUPPORTED opcode = 0x%02X", rop3);
+    return GUAC_COMP_OVER;
+
+}
+
 void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -97,23 +126,11 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     guac_socket* socket = client->socket;
     guac_rdp_bitmap* bitmap = (guac_rdp_bitmap*) memblt->bitmap;
 
-    guac_composite_mode cmode = GUAC_COMP_OVER;
-
-    if (memblt->bRop == 204) cmode = GUAC_COMP_OVER;
-    else if (memblt->bRop == 238) cmode = GUAC_COMP_OR;
-    else if (memblt->bRop == 136) cmode = GUAC_COMP_AND;
-    else if (memblt->bRop == 102) cmode = GUAC_COMP_XOR2;
-    else if (memblt->bRop == 187) cmode = GUAC_COMP_NOR;
-    else
-    {
-        guac_client_log_info (client, "guac_rdp_gdi_memblt: UNSUPPORTED opcode = %d (0x%02X)", memblt->bRop, memblt->bRop);
-    }
-
     if (bitmap->layer != NULL)
         guac_protocol_send_copy(socket,
                 bitmap->layer,
                 memblt->nXSrc, memblt->nYSrc, memblt->nWidth, memblt->nHeight,
-                cmode,
+                guac_rdp_rop3_composite_mode(client, memblt->bRop),
                 current_layer, memblt->nLeftRect, memblt->nTopRect);
 
 }

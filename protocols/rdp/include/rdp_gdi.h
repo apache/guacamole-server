@@ -38,7 +38,10 @@
 #ifndef _GUAC_RDP_RDP_GDI_H
 #define _GUAC_RDP_RDP_GDI_H
 
+#include <guacamole/protocol.h>
 #include <freerdp/freerdp.h>
+
+guac_composite_mode guac_rdp_rop3_composite_mode(guac_client* client, int rop3);
 
 void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt);
 void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt);
