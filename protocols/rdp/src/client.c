@@ -69,24 +69,24 @@
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
-	"username",
-	"password",
-	"width",
-	"height",
-	"initial_program",
-	"color_depth",
+    "username",
+    "password",
+    "width",
+    "height",
+    "initial_program",
+    "color_depth",
     NULL
 };
 
 enum ARGS_IDX {
-	IDX_HOSTNAME,
-	IDX_PORT,
-	IDX_USERNAME,
-	IDX_PASSWORD,
-	IDX_WIDTH,
-	IDX_HEIGHT,
-	IDX_INITIAL_PROGRAM,
-	IDX_COLOR_DEPTH
+    IDX_HOSTNAME,
+    IDX_PORT,
+    IDX_USERNAME,
+    IDX_PASSWORD,
+    IDX_WIDTH,
+    IDX_HEIGHT,
+    IDX_INITIAL_PROGRAM,
+    IDX_COLOR_DEPTH
 };
 
 boolean rdp_freerdp_pre_connect(freerdp* instance) {
@@ -208,7 +208,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rdp_guac_client_data* guac_client_data;
 
     freerdp* rdp_inst;
-	rdpSettings* settings;
+    rdpSettings* settings;
 
     char* hostname;
     int port = RDP_DEFAULT_PORT;
@@ -256,37 +256,37 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
 
     /* session width */
-	settings->width = 1024;
-	if (argv[IDX_WIDTH][0] != '\0')
-		settings->width = atoi(argv[IDX_WIDTH]);
-	if (settings->width == 0)
-		settings->width = 1024;
+    settings->width = 1024;
+    if (argv[IDX_WIDTH][0] != '\0')
+        settings->width = atoi(argv[IDX_WIDTH]);
+    if (settings->width == 0)
+        settings->width = 1024;
 
-	/* session height */
-	settings->height = 768;
-	if (argv[IDX_HEIGHT][0] != '\0')
-		settings->height = atoi(argv[IDX_HEIGHT]);
-	if (settings->height == 0)
-		settings->height = 768;
+    /* session height */
+    settings->height = 768;
+    if (argv[IDX_HEIGHT][0] != '\0')
+        settings->height = atoi(argv[IDX_HEIGHT]);
+    if (settings->height == 0)
+        settings->height = 768;
 
     /* Set hostname */
     settings->hostname = strdup(hostname);
-	settings->window_title = strdup(hostname);
+    settings->window_title = strdup(hostname);
 
-	/* username */
-	settings->username = "guest";
-	if (argv[IDX_USERNAME][0] != '\0')
-		settings->username = strdup (argv[IDX_USERNAME]);
+    /* username */
+    settings->username = "guest";
+    if (argv[IDX_USERNAME][0] != '\0')
+        settings->username = strdup (argv[IDX_USERNAME]);
 
-	/* password */
-	if (argv[IDX_PASSWORD][0] != '\0') {
-		settings->password = strdup (argv[IDX_PASSWORD]);
-		settings->autologon = 1;
-	}
+    /* password */
+    if (argv[IDX_PASSWORD][0] != '\0') {
+        settings->password = strdup (argv[IDX_PASSWORD]);
+        settings->autologon = 1;
+    }
 
-	/* initial program */
-	if (argv[IDX_INITIAL_PROGRAM][0] != '\0')
-		settings->shell = strdup (argv[IDX_INITIAL_PROGRAM]);
+    /* initial program */
+    if (argv[IDX_INITIAL_PROGRAM][0] != '\0')
+        settings->shell = strdup (argv[IDX_INITIAL_PROGRAM]);
 
     /* Order support */
     bitmap_cache = settings->bitmap_cache;

@@ -97,17 +97,17 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     guac_socket* socket = client->socket;
     guac_rdp_bitmap* bitmap = (guac_rdp_bitmap*) memblt->bitmap;
 
-	guac_composite_mode cmode = GUAC_COMP_OVER;
+    guac_composite_mode cmode = GUAC_COMP_OVER;
 
-	if (memblt->bRop == 204) cmode = GUAC_COMP_OVER;
-	else if (memblt->bRop == 238) cmode = GUAC_COMP_OR;
-	else if (memblt->bRop == 136) cmode = GUAC_COMP_AND;
-	else if (memblt->bRop == 102) cmode = GUAC_COMP_XOR2;
-	else if (memblt->bRop == 187) cmode = GUAC_COMP_NOR;
-	else
-	{
-		guac_client_log_info (client, "guac_rdp_gdi_memblt: UNSUPPORTED opcode = %d (0x%02X)", memblt->bRop, memblt->bRop);
-	}
+    if (memblt->bRop == 204) cmode = GUAC_COMP_OVER;
+    else if (memblt->bRop == 238) cmode = GUAC_COMP_OR;
+    else if (memblt->bRop == 136) cmode = GUAC_COMP_AND;
+    else if (memblt->bRop == 102) cmode = GUAC_COMP_XOR2;
+    else if (memblt->bRop == 187) cmode = GUAC_COMP_NOR;
+    else
+    {
+        guac_client_log_info (client, "guac_rdp_gdi_memblt: UNSUPPORTED opcode = %d (0x%02X)", memblt->bRop, memblt->bRop);
+    }
 
     if (bitmap->layer != NULL)
         guac_protocol_send_copy(socket,
