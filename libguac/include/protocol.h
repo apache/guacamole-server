@@ -103,33 +103,41 @@ typedef enum guac_composite_mode {
      * 0 = Active, 1 = Inactive
      */
 
-                                        /* ABCD */
+    /* Constant functions */            /* ABCD */
 	GUAC_COMP_BINARY_BLACK      = 0x10, /* 0000 */
 	GUAC_COMP_BINARY_WHITE      = 0x1F, /* 1111 */
 
+    /* Copy functions */
 	GUAC_COMP_BINARY_SRC        = 0x13, /* 0011 */
 	GUAC_COMP_BINARY_DEST       = 0x15, /* 0101 */
 	GUAC_COMP_BINARY_NSRC       = 0x1C, /* 1100 */
 	GUAC_COMP_BINARY_NDEST      = 0x1A, /* 1010 */
 
+    /* AND / NAND */
 	GUAC_COMP_BINARY_AND        = 0x11, /* 0001 */
 	GUAC_COMP_BINARY_NAND       = 0x1E, /* 1110 */
 
+    /* OR / NOR */
 	GUAC_COMP_BINARY_OR         = 0x17, /* 0111 */
 	GUAC_COMP_BINARY_NOR        = 0x18, /* 1000 */
 
+    /* XOR / XNOR */
 	GUAC_COMP_BINARY_XOR        = 0x16, /* 0110 */
 	GUAC_COMP_BINARY_XNOR       = 0x19, /* 1001 */
 
+    /* AND / NAND with inverted source */
 	GUAC_COMP_BINARY_NSRC_AND   = 0x14, /* 0100 */
 	GUAC_COMP_BINARY_NSRC_NAND  = 0x1B, /* 1011 */
 
+    /* OR / NOR with inverted source */
 	GUAC_COMP_BINARY_NSRC_OR    = 0x1D, /* 1101 */
 	GUAC_COMP_BINARY_NSRC_NOR   = 0x12, /* 0010 */
 
+    /* AND / NAND with inverted destination */
 	GUAC_COMP_BINARY_NDEST_AND  = 0x12, /* 0010 */
 	GUAC_COMP_BINARY_NDEST_NAND = 0x1D, /* 1101 */
 
+    /* OR / NOR with inverted destination */
 	GUAC_COMP_BINARY_NDEST_OR   = 0x1B, /* 1011 */
 	GUAC_COMP_BINARY_NDEST_NOR  = 0x14  /* 0100 */
 
