@@ -204,6 +204,33 @@ int guac_protocol_send_copy(guac_socket* socket,
 
 }
 
+int guac_protocol_send_transfer(guac_socket* socket,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h,
+        guac_transfer_function fn, const guac_layer* dstl, int dstx, int dsty) {
+
+    return
+           guac_socket_write_string(socket, "8.transfer,")
+        || __guac_socket_write_length_int(socket, srcl->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcx)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcy)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, w)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, h)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, fn)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, dstl->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, dstx)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, dsty)
+        || guac_socket_write_string(socket, ";");
+
+}
+
 int guac_protocol_send_rect(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
         int x, int y, int width, int height,
