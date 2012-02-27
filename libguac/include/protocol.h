@@ -103,45 +103,54 @@ typedef enum guac_composite_mode {
      * 0 = Active, 1 = Inactive
      */
 
-    /* Constant functions */            /* ABCD */
-    GUAC_COMP_BINARY_BLACK      = 0x10, /* 0000 */
-    GUAC_COMP_BINARY_WHITE      = 0x1F, /* 1111 */
+} guac_composite_mode;
+
+
+/**
+ * Default transfer functions. There is no current facility in the
+ * Guacamole protocol to define custom transfer functions.
+ */
+typedef enum guac_transfer_function {
+
+    /* Constant functions */                /* ABCD */
+    GUAC_TRANSFER_BINARY_BLACK      = 0x10, /* 0000 */
+    GUAC_TRANSFER_BINARY_WHITE      = 0x1F, /* 1111 */
 
     /* Copy functions */
-    GUAC_COMP_BINARY_SRC        = 0x13, /* 0011 */
-    GUAC_COMP_BINARY_DEST       = 0x15, /* 0101 */
-    GUAC_COMP_BINARY_NSRC       = 0x1C, /* 1100 */
-    GUAC_COMP_BINARY_NDEST      = 0x1A, /* 1010 */
+    GUAC_TRANSFER_BINARY_SRC        = 0x13, /* 0011 */
+    GUAC_TRANSFER_BINARY_DEST       = 0x15, /* 0101 */
+    GUAC_TRANSFER_BINARY_NSRC       = 0x1C, /* 1100 */
+    GUAC_TRANSFER_BINARY_NDEST      = 0x1A, /* 1010 */
 
     /* AND / NAND */
-    GUAC_COMP_BINARY_AND        = 0x11, /* 0001 */
-    GUAC_COMP_BINARY_NAND       = 0x1E, /* 1110 */
+    GUAC_TRANSFER_BINARY_AND        = 0x11, /* 0001 */
+    GUAC_TRANSFER_BINARY_NAND       = 0x1E, /* 1110 */
 
     /* OR / NOR */
-    GUAC_COMP_BINARY_OR         = 0x17, /* 0111 */
-    GUAC_COMP_BINARY_NOR        = 0x18, /* 1000 */
+    GUAC_TRANSFER_BINARY_OR         = 0x17, /* 0111 */
+    GUAC_TRANSFER_BINARY_NOR        = 0x18, /* 1000 */
 
     /* XOR / XNOR */
-    GUAC_COMP_BINARY_XOR        = 0x16, /* 0110 */
-    GUAC_COMP_BINARY_XNOR       = 0x19, /* 1001 */
+    GUAC_TRANSFER_BINARY_XOR        = 0x16, /* 0110 */
+    GUAC_TRANSFER_BINARY_XNOR       = 0x19, /* 1001 */
 
     /* AND / NAND with inverted source */
-    GUAC_COMP_BINARY_NSRC_AND   = 0x14, /* 0100 */
-    GUAC_COMP_BINARY_NSRC_NAND  = 0x1B, /* 1011 */
+    GUAC_TRANSFER_BINARY_NSRC_AND   = 0x14, /* 0100 */
+    GUAC_TRANSFER_BINARY_NSRC_NAND  = 0x1B, /* 1011 */
 
     /* OR / NOR with inverted source */
-    GUAC_COMP_BINARY_NSRC_OR    = 0x1D, /* 1101 */
-    GUAC_COMP_BINARY_NSRC_NOR   = 0x12, /* 0010 */
+    GUAC_TRANSFER_BINARY_NSRC_OR    = 0x1D, /* 1101 */
+    GUAC_TRANSFER_BINARY_NSRC_NOR   = 0x12, /* 0010 */
 
     /* AND / NAND with inverted destination */
-    GUAC_COMP_BINARY_NDEST_AND  = 0x12, /* 0010 */
-    GUAC_COMP_BINARY_NDEST_NAND = 0x1D, /* 1101 */
+    GUAC_TRANSFER_BINARY_NDEST_AND  = 0x12, /* 0010 */
+    GUAC_TRANSFER_BINARY_NDEST_NAND = 0x1D, /* 1101 */
 
     /* OR / NOR with inverted destination */
-    GUAC_COMP_BINARY_NDEST_OR   = 0x1B, /* 1011 */
-    GUAC_COMP_BINARY_NDEST_NOR  = 0x14  /* 0100 */
+    GUAC_TRANSFER_BINARY_NDEST_OR   = 0x1B, /* 1011 */
+    GUAC_TRANSFER_BINARY_NDEST_NOR  = 0x14  /* 0100 */
 
-} guac_composite_mode;
+} guac_transfer_function;
 
 typedef struct guac_layer guac_layer;
 
@@ -324,6 +333,30 @@ int guac_protocol_send_dispose(guac_socket* socket, const guac_layer* layer);
 int guac_protocol_send_copy(guac_socket* socket, 
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
         guac_composite_mode mode, const guac_layer* dstl, int dstx, int dsty);
+
+/**
+ * Sends a transfer instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param srcl The source layer.
+ * @param srcx The X coordinate of the source rectangle.
+ * @param srcy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
+ * @param fn The transfer function to use.
+ * @param dstl The destination layer.
+ * @param dstx The X coordinate of the destination, where the source rectangle
+ *             should be copied.
+ * @param dsty The Y coordinate of the destination, where the source rectangle
+ *             should be copied.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_transfer(guac_socket* socket, 
+        const guac_layer* srcl, int srcx, int srcy, int w, int h,
+        guac_transfer_function fn, const guac_layer* dstl, int dstx, int dsty);
 
 /**
  * Sends a rect instruction over the given guac_socket connection.
