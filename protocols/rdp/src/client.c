@@ -271,6 +271,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Set hostname */
     settings->hostname = strdup(hostname);
+    settings->port = port;
     settings->window_title = strdup(hostname);
 
     /* username */
