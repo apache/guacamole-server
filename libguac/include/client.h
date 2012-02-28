@@ -397,6 +397,22 @@ struct guac_client {
     guac_layer* __last_available_buffer;
 
     /**
+     * The index of the next available layer.
+     */
+    int __next_layer_index;
+
+    /**
+     * The head pointer of the list of all available (allocated but not used)
+     * layers.
+     */
+    guac_layer* __available_layers;
+
+    /**
+     * Pointer to the last layer in the list of all available layers.
+     */
+    guac_layer* __last_available_layer;
+
+    /**
      * The head pointer of the list of all allocated layers, regardless of use
      * status.
      */
@@ -467,14 +483,13 @@ int guac_client_handle_instruction(guac_client* client, guac_instruction* instru
 guac_layer* guac_client_alloc_buffer(guac_client* client);
 
 /**
- * Allocates a new layer. The layer will be given the specified index,
- * even if the layer returned was a previously used (and free'd) layer.
+ * Allocates a new layer. An arbitrary index is automatically assigned
+ * if no existing layer is available for use.
  *
  * @param client The proxy client to allocate the layer buffer for.
- * @param index The index of the layer to allocate.
  * @return The next available layer, or a newly allocated layer.
  */
-guac_layer* guac_client_alloc_layer(guac_client* client, int index);
+guac_layer* guac_client_alloc_layer(guac_client* client);
 
 /**
  * Returns the given buffer to the pool of available buffers, such that it
@@ -484,6 +499,16 @@ guac_layer* guac_client_alloc_layer(guac_client* client, int index);
  * @param layer The buffer to return to the pool of available buffers.
  */
 void guac_client_free_buffer(guac_client* client, guac_layer* layer);
+
+/**
+ * Returns the given layer to the pool of available layers, such that it
+ * can be reused by any subsequent call to guac_client_allow_layer().
+ *
+ * @param client The proxy client to return the layer to.
+ * @param layer The buffer to return to the pool of available layer.
+ */
+void guac_client_free_layer(guac_client* client, guac_layer* layer);
+
 
 /**
  * Logs an informational message in the log used by the given client. The

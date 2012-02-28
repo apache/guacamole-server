@@ -57,18 +57,37 @@ guac_layer __GUAC_DEFAULT_LAYER = {
 
 const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
 
-guac_layer* guac_client_alloc_layer(guac_client* client, int index) {
+guac_layer* guac_client_alloc_layer(guac_client* client) {
 
     guac_layer* allocd_layer;
 
-    /* Init new layer */
-    allocd_layer = malloc(sizeof(guac_layer));
+    /* If available layers, pop off first available layer */
+    if (client->__next_layer_index >= GUAC_BUFFER_POOL_INITIAL_SIZE &&
+            client->__available_layers != NULL) {
 
-    /* Add to __all_layers list */
-    allocd_layer->__next = client->__all_layers;
-    client->__all_layers = allocd_layer;
+        allocd_layer = client->__available_layers;
+        client->__available_layers = client->__available_layers->__next_available;
+        allocd_layer->__next_available = NULL;
 
-    allocd_layer->index = index;
+        /* If last layer, reset last available layer pointer */
+        if (allocd_layer == client->__last_available_layer)
+            client->__last_available_layer = NULL;
+
+    }
+
+    /* If no available layer, allocate new layer, add to __all_layers list */
+    else {
+
+        /* Init new layer */
+        allocd_layer = malloc(sizeof(guac_layer));
+        allocd_layer->index = client->__next_layer_index++;
+
+        /* Add to __all_layers list */
+        allocd_layer->__next = client->__all_layers;
+        client->__all_layers = allocd_layer;
+
+    }
+
     return allocd_layer;
 
 }
@@ -115,6 +134,16 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
         client->__last_available_buffer->__next_available = layer;
 
     client->__last_available_buffer = layer;
+
+}
+
+void guac_client_free_layer(guac_client* client, guac_layer* layer) {
+
+    /* Add layer to tail of pool of available layers */
+    if (client->__last_available_layer != NULL)
+        client->__last_available_layer->__next_available = layer;
+
+    client->__last_available_layer = layer;
 
 }
 
@@ -222,9 +251,11 @@ guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
     client->state = GUAC_CLIENT_RUNNING;
 
     client->__all_layers        = NULL;
-    client->__available_buffers = NULL;
+    client->__available_buffers = client->__last_available_buffer = NULL;
+    client->__available_layers  = client->__last_available_layer  = NULL;
 
     client->__next_buffer_index = -1;
+    client->__next_layer_index  =  1;
 
     if (plugin->init_handler(client, argc, argv) != 0) {
         free(client);
