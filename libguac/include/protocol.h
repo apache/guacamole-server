@@ -405,6 +405,7 @@ int guac_protocol_send_lpath(guac_socket* socket, const guac_layer* layer,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_qpath(guac_socket* socket, const guac_layer* layer,
+        int x, int y, int cpx, int cpy);
 
 /**
  * Sends a cpath instruction over the given guac_socket connection.
@@ -638,8 +639,8 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_t
  *         a different opcode, NULL is returned and guac_error is set to
  *         GUAC_STATUS_BAD_STATE.
  */
-guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec_timeout,
-        const char* opcode);
+guac_instruction* guac_protocol_expect_instruction(guac_socket* socket,
+        int usec_timeout, const char* opcode);
 
 /**
  * Returns an arbitrary timestamp. The difference between return values of any
