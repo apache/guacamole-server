@@ -293,7 +293,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
     settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
     settings->order_support[NEG_DSTBLT_INDEX] = true;
-    settings->order_support[NEG_PATBLT_INDEX] = true;
+    settings->order_support[NEG_PATBLT_INDEX] = false; //true;
     settings->order_support[NEG_SCRBLT_INDEX] = true;
     settings->order_support[NEG_OPAQUE_RECT_INDEX] = true;
     settings->order_support[NEG_DRAWNINEGRID_INDEX] = false;
