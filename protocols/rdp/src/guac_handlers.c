@@ -116,7 +116,10 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* Otherwise, wait for file descriptors given */
-    if (select(max_fd + 1, &rfds, &wfds, NULL, NULL) == -1) {
+	struct timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 250000;
+    if (select(max_fd + 1, &rfds, &wfds, NULL, &timeout) == -1) {
         /* these are not really errors */
         if (!((errno == EAGAIN) ||
             (errno == EWOULDBLOCK) ||
