@@ -49,13 +49,13 @@ guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
     switch (rop3) {
 
         /* "SRCINVERT" (src ^ dest) */
-        case 0x66: return GUAC_TRANSFER_BINARY_SRC;
+        case 0x66: return GUAC_TRANSFER_BINARY_XOR;
 
         /* "SRCAND" (src & dest) */
         case 0x88: return GUAC_TRANSFER_BINARY_AND;
 
-        /* "MERGEPAINT" !(src | dest)*/
-        case 0xBB: return GUAC_TRANSFER_BINARY_NOR;
+        /* "MERGEPAINT" (!src | dest)*/
+        case 0xBB: return GUAC_TRANSFER_BINARY_NSRC_OR;
 
         /* "SRCCOPY" (src) */
         case 0xCC: return GUAC_TRANSFER_BINARY_SRC;
