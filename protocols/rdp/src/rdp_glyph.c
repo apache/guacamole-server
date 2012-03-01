@@ -114,7 +114,7 @@ void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
-  
+ 
     /* Colorize glyph */
     guac_protocol_send_rect(client->socket,
             GUAC_COMP_ATOP, ((guac_rdp_glyph*) glyph)->layer,
@@ -141,6 +141,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
     bgcolor = freerdp_color_convert_var(bgcolor,
             context->instance->settings->color_depth, 32,
@@ -154,6 +155,18 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
     guac_client_data->foreground.green = (fgcolor & 0x00FF00) >> 8;
     guac_client_data->foreground.blue  = (fgcolor & 0xFF0000) >> 16;
 
+    guac_client_data->background.red    =  bgcolor & 0x0000FF;
+    guac_client_data->background.green  = (bgcolor & 0x00FF00) >> 8;
+    guac_client_data->background.blue   = (bgcolor & 0xFF0000) >> 16;
+
+	/* paint background on destination */
+    guac_protocol_send_rect(client->socket,
+            GUAC_COMP_OVER, current_layer,
+            x, y, width, height,
+            guac_client_data->background.red,
+            guac_client_data->background.green,
+            guac_client_data->background.blue,
+            255);
 }
 
 void guac_rdp_glyph_enddraw(rdpContext* context,
