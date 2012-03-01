@@ -39,6 +39,7 @@ AM_INIT_AUTOMAKE(guacd, 0.5.0)
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CC_C99
 
 # Checks for libraries.
 AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))

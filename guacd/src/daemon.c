@@ -184,6 +184,12 @@ int main(int argc, char* argv[]) {
     char bound_port[64];
     int opt_on = 1;
 
+    struct addrinfo hints = {
+        .ai_family   = AF_UNSPEC,
+        .ai_socktype = SOCK_STREAM,
+        .ai_protocol = IPPROTO_TCP
+    };
+
     /* Client */
     struct sockaddr_in client_addr;
     socklen_t client_addr_len;
@@ -224,7 +230,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* Get addresses for binding */
-    if ((retval = getaddrinfo(listen_address, listen_port, NULL, &addresses))) {
+    if ((retval = getaddrinfo(listen_address, listen_port, &hints, &addresses))) {
         fprintf(stderr, "Error parsing given address or port: %s\n",
                 gai_strerror(retval));
         exit(EXIT_FAILURE);
@@ -246,10 +252,24 @@ int main(int argc, char* argv[]) {
     current_address = addresses;
     while (current_address != NULL) {
 
+        int retval;
+
+        /* Resolve hostname */
+        if ((retval = getnameinfo(current_address->ai_addr,
+                current_address->ai_addrlen,
+                bound_address, sizeof(bound_address),
+                bound_port, sizeof(bound_port),
+                NI_NUMERICHOST | NI_NUMERICSERV)))
+            fprintf(stderr, "Unable to resolve host: %s\n",
+                    gai_strerror(retval));
+
         /* Attempt to bind socket to address */
         if (bind(socket_fd,
                     current_address->ai_addr,
                     current_address->ai_addrlen) == 0) {
+
+            fprintf(stderr, "Successfully bound socket to "
+                    "host %s, port %s\n", bound_address, bound_port);
 
             /* Done if successful bind */
             break;
@@ -258,7 +278,9 @@ int main(int argc, char* argv[]) {
 
         /* Otherwise log error */
         else
-            fprintf(stderr, "Error binding socket: %s\n", strerror(errno));
+            fprintf(stderr, "Error binding socket to "
+                    "host %s, port %s: %s\n",
+                    bound_address, bound_port, strerror(errno));
 
         current_address = current_address->ai_next;
 
@@ -315,15 +337,9 @@ int main(int argc, char* argv[]) {
         syslog(LOG_ERR, "Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
     }
 
-    /* Log address and port */
-    if (getnameinfo(current_address->ai_addr, current_address->ai_addrlen,
-            bound_address, sizeof(bound_address),
-            bound_port, sizeof(bound_port),
-            0))
-        syslog(LOG_WARNING, "Could not resolve name of listening host.");
-    else
-        syslog(LOG_INFO,
-                "Listening on host %s, port %s", bound_address, bound_port);
+    /* Log listening status */
+    syslog(LOG_INFO,
+            "Listening on host %s, port %s", bound_address, bound_port);
 
     /* Free addresses */
     freeaddrinfo(addresses);
