@@ -78,8 +78,8 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     fd_set rfds, wfds;
 
     struct timeval timeout = {
-        .tv_sec = 0;
-        .tv_usec = 250000;
+        .tv_sec = 0,
+        .tv_usec = 250000
     };
 
     /* get rdp fds */
