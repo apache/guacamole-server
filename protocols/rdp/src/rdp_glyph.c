@@ -151,13 +151,13 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
             context->instance->settings->color_depth, 32,
             ((rdp_freerdp_context*) context)->clrconv);
 
-    guac_client_data->foreground.red   =  fgcolor & 0x0000FF;
+    guac_client_data->foreground.blue  =  fgcolor & 0x0000FF;
     guac_client_data->foreground.green = (fgcolor & 0x00FF00) >> 8;
-    guac_client_data->foreground.blue  = (fgcolor & 0xFF0000) >> 16;
+    guac_client_data->foreground.red   = (fgcolor & 0xFF0000) >> 16;
 
-    guac_client_data->background.red    =  bgcolor & 0x0000FF;
+    guac_client_data->background.blue   =  bgcolor & 0x0000FF;
     guac_client_data->background.green  = (bgcolor & 0x00FF00) >> 8;
-    guac_client_data->background.blue   = (bgcolor & 0xFF0000) >> 16;
+    guac_client_data->background.red    = (bgcolor & 0xFF0000) >> 16;
 
 	/* paint background on destination */
     guac_protocol_send_rect(client->socket,
