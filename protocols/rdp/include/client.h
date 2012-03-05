@@ -54,7 +54,7 @@ typedef struct guac_rdp_color {
 typedef struct rdp_guac_client_data {
 
     freerdp* rdp_inst;
-	rdpSettings* settings;
+    rdpSettings* settings;
 
     int mouse_button_mask;
 

@@ -75,8 +75,12 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     void* write_fds[32];
     int read_count = 0;
     int write_count = 0;
-
     fd_set rfds, wfds;
+
+    struct timeval timeout = {
+        .tv_sec = 0;
+        .tv_usec = 250000;
+    };
 
     /* get rdp fds */
     if (!freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
@@ -116,9 +120,6 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* Otherwise, wait for file descriptors given */
-	struct timeval timeout;
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 250000;
     if (select(max_fd + 1, &rfds, &wfds, NULL, &timeout) == -1) {
         /* these are not really errors */
         if (!((errno == EAGAIN) ||

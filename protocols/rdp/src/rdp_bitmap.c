@@ -113,8 +113,8 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_socket* socket = client->socket;
 
-	int width = bitmap->right - bitmap->left + 1;
-	int height = bitmap->bottom - bitmap->top + 1;
+    int width = bitmap->right - bitmap->left + 1;
+    int height = bitmap->bottom - bitmap->top + 1;
 
     guac_protocol_send_copy(socket,
             ((guac_rdp_bitmap*) bitmap)->layer,
