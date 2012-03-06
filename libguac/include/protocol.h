@@ -152,6 +152,24 @@ typedef enum guac_transfer_function {
 
 } guac_transfer_function;
 
+/**
+ * Supported line cap styles
+ */
+typedef enum guac_line_cap_style {
+    GUAC_LINE_CAP_BUTT   = 0x0,
+    GUAC_LINE_CAP_ROUND  = 0x1,
+    GUAC_LINE_CAP_SQUARE = 0x2,
+} guac_line_cap;
+
+/**
+ * Supported line join styles
+ */
+typedef enum guac_line_join_style {
+    GUAC_LINE_JOIN_BEVEL = 0x0,
+    GUAC_LINE_JOIN_MITRE = 0x1,
+    GUAC_LINE_JOIN_ROUND = 0x2,
+} guac_line_join;
+
 typedef struct guac_layer guac_layer;
 
 /**
@@ -474,6 +492,9 @@ int guac_protocol_send_rfill(guac_socket* socket,
  * @param socket The guac_socket connection to use.
  * @param mode The composite mode to use.
  * @param layer The destination layer.
+ * @param cap The style of line cap to use when drawing the stroke.
+ * @param join The style of line join to use when drawing the stroke.
+ * @param thickness The thickness of the stroke in pixels.
  * @param r The red component of the color of the rectangle.
  * @param g The green component of the color of the rectangle.
  * @param b The blue component of the color of the rectangle.
@@ -482,6 +503,7 @@ int guac_protocol_send_rfill(guac_socket* socket,
  */
 int guac_protocol_send_cstroke(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
+        guac_line_cap_style cap, guac_line_join_style join, int thickness,
         int r, int g, int b, int a);
 
 /**
@@ -493,6 +515,9 @@ int guac_protocol_send_cstroke(guac_socket* socket,
  * @param socket The guac_socket connection to use.
  * @param mode The composite mode to use.
  * @param layer The destination layer.
+ * @param cap The style of line cap to use when drawing the stroke.
+ * @param join The style of line join to use when drawing the stroke.
+ * @param thickness The thickness of the stroke in pixels.
  * @param srcl The source layer.
  * @param srcx The X coordinate of the source rectangle.
  * @param srcy The Y coordinate of the source rectangle.
@@ -502,6 +527,7 @@ int guac_protocol_send_cstroke(guac_socket* socket,
  */
 int guac_protocol_send_rstroke(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
+        guac_line_cap_style cap, guac_line_join_style join, int thickness,
         const guac_layer* srcl, int srcx, int srcy, int w, int h);
 
 /**
