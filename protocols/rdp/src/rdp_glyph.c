@@ -160,7 +160,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
     guac_client_data->background.green  = (bgcolor & 0x00FF00) >> 8;
     guac_client_data->background.red    = (bgcolor & 0xFF0000) >> 16;
 
-    /* paint background on destination */
+    /* Paint background on destination */
     guac_protocol_send_rect(client->socket,
             GUAC_COMP_OVER, current_layer,
             x, y, width, height,
@@ -168,6 +168,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
             guac_client_data->background.green,
             guac_client_data->background.blue,
             255);
+
 }
 
 void guac_rdp_glyph_enddraw(rdpContext* context,

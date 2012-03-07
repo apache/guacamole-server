@@ -295,7 +295,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
     settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
     settings->order_support[NEG_DSTBLT_INDEX] = true;
-    settings->order_support[NEG_PATBLT_INDEX] = false; //true;
+    settings->order_support[NEG_PATBLT_INDEX] = false; /* PATBLT not yet supported */
     settings->order_support[NEG_SCRBLT_INDEX] = true;
     settings->order_support[NEG_OPAQUE_RECT_INDEX] = true;
     settings->order_support[NEG_DRAWNINEGRID_INDEX] = false;
@@ -311,9 +311,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->order_support[NEG_MEMBLT_V2_INDEX] = bitmap_cache;
     settings->order_support[NEG_MEM3BLT_V2_INDEX] = false;
     settings->order_support[NEG_SAVEBITMAP_INDEX] = false;
-    settings->order_support[NEG_GLYPH_INDEX_INDEX] = false;
-    settings->order_support[NEG_FAST_INDEX_INDEX] = false;
-    settings->order_support[NEG_FAST_GLYPH_INDEX] = false;
+    settings->order_support[NEG_GLYPH_INDEX_INDEX] = true;
+    settings->order_support[NEG_FAST_INDEX_INDEX] = true;
+    settings->order_support[NEG_FAST_GLYPH_INDEX] = true;
     settings->order_support[NEG_POLYGON_SC_INDEX] = false;
     settings->order_support[NEG_POLYGON_CB_INDEX] = false;
     settings->order_support[NEG_ELLIPSE_SC_INDEX] = false;
