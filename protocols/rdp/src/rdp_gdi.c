@@ -201,7 +201,9 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
                     guac_rdp_rop3_transfer_function(client, memblt->bRop),
                     current_layer, memblt->nLeftRect, memblt->nTopRect);
 
-    }
+        }
+
+    } /* end if layer not NULL */
 
 }
 
