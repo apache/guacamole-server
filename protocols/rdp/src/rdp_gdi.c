@@ -49,11 +49,32 @@ guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
     /* Translate supported ROP3 opcodes into composite modes */
     switch (rop3) {
 
+        /* "DSon" !(src | dest) */
+        case 0x11: return GUAC_TRANSFER_BINARY_NOR;
+
+        /* "DSna" !src & dest */
+        case 0x22: return GUAC_TRANSFER_BINARY_NSRC_AND;
+
+        /* "Sn" !src */
+        case 0x33: return GUAC_TRANSFER_BINARY_NSRC;
+
+        /* "SDna" (src & !dest) */
+        case 0x44: return GUAC_TRANSFER_BINARY_NDEST_AND;
+
+        /* "Dn" !dest */
+        case 0x55: return GUAC_TRANSFER_BINARY_NDEST;
+
         /* "SRCINVERT" (src ^ dest) */
         case 0x66: return GUAC_TRANSFER_BINARY_XOR;
 
+        /* "DSan" !(src & dest) */
+        case 0x77: return GUAC_TRANSFER_BINARY_NAND;
+
         /* "SRCAND" (src & dest) */
         case 0x88: return GUAC_TRANSFER_BINARY_AND;
+
+        /* "DSxn" !(src ^ dest) */
+        case 0x99: return GUAC_TRANSFER_BINARY_XNOR;
 
         /* "MERGEPAINT" (!src | dest)*/
         case 0xBB: return GUAC_TRANSFER_BINARY_NSRC_OR;
@@ -61,8 +82,15 @@ guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
         /* "SRCCOPY" (src) */
         case 0xCC: return GUAC_TRANSFER_BINARY_SRC;
 
+        /* "SDno" (src | !dest) */
+        case 0xDD: return GUAC_TRANSFER_BINARY_NDEST_OR;
+
         /* "SRCPAINT" (src | dest) */
         case 0xEE: return GUAC_TRANSFER_BINARY_OR;
+
+        /* 0x00 = "BLACKNESS" (0) */
+        /* 0xAA = "NOP" (dest) */
+        /* 0xFF = "WHITENESS" (1) */
 
     }
 
