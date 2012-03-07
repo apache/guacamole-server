@@ -79,9 +79,6 @@ guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
         /* "MERGEPAINT" (!src | dest)*/
         case 0xBB: return GUAC_TRANSFER_BINARY_NSRC_OR;
 
-        /* "SRCCOPY" (src) */
-        case 0xCC: return GUAC_TRANSFER_BINARY_SRC;
-
         /* "SDno" (src | !dest) */
         case 0xDD: return GUAC_TRANSFER_BINARY_NDEST_OR;
 
@@ -90,6 +87,7 @@ guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
 
         /* 0x00 = "BLACKNESS" (0) */
         /* 0xAA = "NOP" (dest) */
+        /* 0xCC = "SRCCOPY" (src) */
         /* 0xFF = "WHITENESS" (1) */
 
     }
@@ -160,17 +158,42 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
     if (bitmap->layer != NULL) {
 
+        switch (memblt->bRop) {
+
+        /* If blackness, send black rectangle */
+        case 0x00:
+            guac_protocol_send_rect(client->socket,
+                    GUAC_COMP_OVER, current_layer,
+                    memblt->nLeftRect, memblt->nTopRect,
+                    memblt->nWidth, memblt->nHeight,
+                    0x00, 0x00, 0x00, 0xFF);
+            break;
+
+        /* If NOP, do nothing */
+        case 0xAA:
+            break;
+
         /* If operation is just SRC, simply copy */
-        if (memblt->bRop == 0xCC)
+        case 0xCC: 
             guac_protocol_send_copy(socket,
                     bitmap->layer,
                     memblt->nXSrc, memblt->nYSrc,
                     memblt->nWidth, memblt->nHeight,
                     GUAC_COMP_OVER,
                     current_layer, memblt->nLeftRect, memblt->nTopRect);
+            break;
+
+        /* If whiteness, send white rectangle */
+        case 0xFF:
+            guac_protocol_send_rect(client->socket,
+                    GUAC_COMP_OVER, current_layer,
+                    memblt->nLeftRect, memblt->nTopRect,
+                    memblt->nWidth, memblt->nHeight,
+                    0xFF, 0xFF, 0xFF, 0xFF);
+            break;
 
         /* Otherwise, use transfer */
-        else
+        default:
             guac_protocol_send_transfer(socket,
                     bitmap->layer,
                     memblt->nXSrc, memblt->nYSrc,
