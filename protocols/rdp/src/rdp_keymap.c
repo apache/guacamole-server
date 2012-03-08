@@ -5282,7 +5282,7 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff64 */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff65 (Undo) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff66 (Redo) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xff67 (Menu) */
+        { .scancode = 0x5D, .flags = KBD_FLAGS_EXTENDED }, /* 0xff67 (Menu) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff68 (Find) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff69 (Cancel) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xff6a (Help) */
@@ -5412,10 +5412,10 @@ const guac_rdp_keymap guac_rdp_keysym_scancode[256][256] = {
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffe6 (Shift_Lock) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffe7 (Meta_L) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffe8 (Meta_R) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffe9 (Alt_L) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffea (Alt_R) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffeb (Super_L) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffec (Super_R) */
+        { .scancode = 0x38, .flags = 0x00 }, /* 0xffe9 (Alt_L) */
+        { .scancode = 0x38, .flags = 0x00 }, /* 0xffea (Alt_R) */
+        { .scancode = 0x5B, .flags = KBD_FLAGS_EXTENDED }, /* 0xffeb (Super_L) */
+        { .scancode = 0x5C, .flags = KBD_FLAGS_EXTENDED }, /* 0xffec (Super_R) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffed (Hyper_L) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffee (Hyper_R) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffef */
