@@ -302,8 +302,28 @@ guac_timestamp guac_protocol_get_timestamp();
  */
 int guac_protocol_send_args(guac_socket* socket, const char** args);
 
-/* TODO: guac_protocol_send_connect */
-/* TODO: guac_protocol_send_disconnect */
+/**
+ * Sends a connect instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param args The NULL-terminated array of argument values (strings).
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_connect(guac_socket* socket, const char** args);
+
+/**
+ * Sends a disconnect instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_disconnect(guac_socket* socket);
 
 /**
  * Sends an error instruction over the given guac_socket connection.
@@ -317,8 +337,31 @@ int guac_protocol_send_args(guac_socket* socket, const char** args);
  */
 int guac_protocol_send_error(guac_socket* socket, const char* error);
 
-/* TODO: guac_protocol_send_set */
-/* TODO: guac_protocol_send_select */
+/**
+ * Sends a set instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param name The name of the parameter to set.
+ * @param value The value to set the parameter to.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_set(guac_socket* socket, const char* name,
+        const char* value);
+
+/**
+ * Sends a select instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param protocol The protocol to request.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_select(guac_socket* socket, const char* protocol);
 
 /**
  * Sends a sync instruction over the given guac_socket connection. The
@@ -590,7 +633,26 @@ int guac_protocol_send_transfer(guac_socket* socket,
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
         guac_transfer_function fn, const guac_layer* dstl, int dstx, int dsty);
 
-/* TODO: guac_protocol_send_transform */
+/**
+ * Sends a transform instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The layer to apply the given transform matrix to.
+ * @param a The first value of the affine transform matrix.
+ * @param b The second value of the affine transform matrix.
+ * @param c The third value of the affine transform matrix.
+ * @param d The fourth value of the affine transform matrix.
+ * @param e The fifth value of the affine transform matrix.
+ * @param f The sixth value of the affine transform matrix.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_transform(guac_socket* socket, 
+        const guac_layer* layer,
+        double a, double b, double c,
+        double d, double e, double f);
 
 /* LAYER INSTRUCTIONS */
 
@@ -606,7 +668,26 @@ int guac_protocol_send_transfer(guac_socket* socket,
  */
 int guac_protocol_send_dispose(guac_socket* socket, const guac_layer* layer);
 
-/* TODO: guac_protocol_send_distort */
+/**
+ * Sends a distort instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The layer to distort with the given transform matrix.
+ * @param a The first value of the affine transform matrix.
+ * @param b The second value of the affine transform matrix.
+ * @param c The third value of the affine transform matrix.
+ * @param d The fourth value of the affine transform matrix.
+ * @param e The fifth value of the affine transform matrix.
+ * @param f The sixth value of the affine transform matrix.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_distort(guac_socket* socket, 
+        const guac_layer* layer,
+        double a, double b, double c,
+        double d, double e, double f);
 
 /**
  * Sends a move instruction over the given guac_socket connection.
@@ -626,7 +707,19 @@ int guac_protocol_send_dispose(guac_socket* socket, const guac_layer* layer);
 int guac_protocol_send_move(guac_socket* socket, const guac_layer* layer,
         const guac_layer* parent, int x, int y, int z);
 
-/* TODO: guac_protocol_send_shade */
+/**
+ * Sends a shade instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The layer to shade.
+ * @param a The alpha value of the layer.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_shade(guac_socket* socket, const guac_layer* layer,
+        int a);
 
 /**
  * Sends a size instruction over the given guac_socket connection.
