@@ -85,6 +85,15 @@ ssize_t __guac_socket_write_length_int(guac_socket* socket, int64_t i) {
 }
 
 
+ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
+
+    char buffer[128];
+    snprintf(buffer, sizeof(buffer), "%g", d);
+    return __guac_socket_write_length_string(socket, buffer);
+
+}
+
+
 /* PNG output formatting */
 
 typedef struct __guac_socket_write_png_data {
@@ -631,6 +640,30 @@ int guac_protocol_send_dispose(guac_socket* socket, const guac_layer* layer) {
 }
 
 
+int guac_protocol_send_distort(guac_socket* socket, const guac_layer* layer,
+        double a, double b, double c,
+        double d, double e, double f) {
+
+    return 
+           guac_socket_write_string(socket, "7.distort,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, a)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, b)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, c)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, d)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, e)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, f)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
 int guac_protocol_send_error(guac_socket* socket, const char* error) {
 
     return
@@ -670,6 +703,29 @@ int guac_protocol_send_name(guac_socket* socket, const char* name) {
 }
 
 
+int guac_protocol_send_path(guac_socket* socket, const guac_layer* layer,
+        int x, int y, int cp1x, int cp1y, int cp2x, int cp2y) {
+
+    return
+           guac_socket_write_string(socket, "4.path,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, cp1x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, cp1y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, cp2x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, cp2y)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
 int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
         const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
 
@@ -689,6 +745,26 @@ int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
 }
 
 
+int guac_protocol_send_pop(guac_socket* socket, const guac_layer* layer) {
+
+    return
+           guac_socket_write_string(socket, "3.pop,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
+int guac_protocol_send_push(guac_socket* socket, const guac_layer* layer) {
+
+    return
+           guac_socket_write_string(socket, "4.push,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
 int guac_protocol_send_rect(guac_socket* socket,
         const guac_layer* layer, int x, int y, int width, int height) {
 
@@ -703,6 +779,71 @@ int guac_protocol_send_rect(guac_socket* socket,
         || __guac_socket_write_length_int(socket, width)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_int(socket, height)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
+int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer) {
+
+    return
+           guac_socket_write_string(socket, "5.reset,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
+int guac_protocol_send_rfill(guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h) {
+
+    return
+           guac_socket_write_string(socket, "5.rfill,")
+        || __guac_socket_write_length_int(socket, mode)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcl->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcx)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcy)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, w)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, h)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
+int guac_protocol_send_rstroke(guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer,
+        guac_line_cap_style cap, guac_line_join_style join, int thickness,
+        const guac_layer* srcl, int srcx, int srcy, int w, int h) {
+
+    return
+           guac_socket_write_string(socket, "7.rstroke,")
+        || __guac_socket_write_length_int(socket, mode)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, cap)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, join)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, thickness)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcl->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcx)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, srcy)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, w)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, h)
         || guac_socket_write_string(socket, ";");
 
 }
@@ -729,6 +870,20 @@ int guac_protocol_send_select(guac_socket* socket, const char* protocol) {
         || guac_socket_write_string(socket, ";");
 
 }
+
+
+int guac_protocol_send_shade(guac_socket* socket, const guac_layer* layer,
+        int a) {
+
+    return
+           guac_socket_write_string(socket, "5.shade,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, a)
+        || guac_socket_write_string(socket, ";");
+
+}
+
 
 
 int guac_protocol_send_size(guac_socket* socket, const guac_layer* layer,
@@ -779,6 +934,30 @@ int guac_protocol_send_transfer(guac_socket* socket,
         || __guac_socket_write_length_int(socket, dstx)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_int(socket, dsty)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
+int guac_protocol_send_transform(guac_socket* socket, const guac_layer* layer,
+        double a, double b, double c,
+        double d, double e, double f) {
+
+    return 
+           guac_socket_write_string(socket, "9.transform,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, a)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, b)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, c)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, d)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, e)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, f)
         || guac_socket_write_string(socket, ";");
 
 }
