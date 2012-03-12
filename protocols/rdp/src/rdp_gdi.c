@@ -112,11 +112,14 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
         case 0:
 
             /* Send black rectangle */
-            guac_protocol_send_rect(client->socket,
-                    GUAC_COMP_OVER, current_layer,
+            guac_protocol_send_rect(client->socket, current_layer,
                     dstblt->nLeftRect, dstblt->nTopRect,
-                    dstblt->nWidth, dstblt->nHeight,
+                    dstblt->nWidth, dstblt->nHeight);
+
+            guac_protocol_send_cfill(client->socket,
+                    GUAC_COMP_OVER, current_layer,
                     0, 0, 0, 255);
+
             break;
 
         /* Unsupported ROP3 */
@@ -162,10 +165,12 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
         /* If blackness, send black rectangle */
         case 0x00:
-            guac_protocol_send_rect(client->socket,
-                    GUAC_COMP_OVER, current_layer,
+            guac_protocol_send_rect(client->socket, current_layer,
                     memblt->nLeftRect, memblt->nTopRect,
-                    memblt->nWidth, memblt->nHeight,
+                    memblt->nWidth, memblt->nHeight);
+
+            guac_protocol_send_cfill(client->socket,
+                    GUAC_COMP_OVER, current_layer,
                     0x00, 0x00, 0x00, 0xFF);
             break;
 
@@ -185,10 +190,12 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
         /* If whiteness, send white rectangle */
         case 0xFF:
-            guac_protocol_send_rect(client->socket,
-                    GUAC_COMP_OVER, current_layer,
+            guac_protocol_send_rect(client->socket, current_layer,
                     memblt->nLeftRect, memblt->nTopRect,
-                    memblt->nWidth, memblt->nHeight,
+                    memblt->nWidth, memblt->nHeight);
+
+            guac_protocol_send_cfill(client->socket,
+                    GUAC_COMP_OVER, current_layer,
                     0xFF, 0xFF, 0xFF, 0xFF);
             break;
 
@@ -216,10 +223,12 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
-    guac_protocol_send_rect(client->socket,
-            GUAC_COMP_OVER, current_layer,
+    guac_protocol_send_rect(client->socket, current_layer,
             opaque_rect->nLeftRect, opaque_rect->nTopRect,
-            opaque_rect->nWidth, opaque_rect->nHeight,
+            opaque_rect->nWidth, opaque_rect->nHeight);
+
+    guac_protocol_send_cfill(client->socket,
+            GUAC_COMP_OVER, current_layer,
             (color >> 16) & 0xFF,
             (color >> 8 ) & 0xFF,
             (color      ) & 0xFF,
@@ -240,24 +249,18 @@ void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
+    /* Reset clip */
+    guac_protocol_send_reset(client->socket, current_layer);
+
     /* Set clip if specified */
-    if (bounds != NULL)
-        guac_protocol_send_clip(
-                client->socket,
-                current_layer,
-                bounds->left,
-                bounds->top,
+    if (bounds != NULL) {
+        guac_protocol_send_rect(client->socket, current_layer,
+                bounds->left, bounds->top,
                 bounds->right - bounds->left + 1,
                 bounds->bottom - bounds->top + 1);
 
-    /* Otherwise, reset clip */
-    else
-        guac_protocol_send_clip(
-                client->socket,
-                current_layer,
-                0, 0,
-                context->instance->settings->width,
-                context->instance->settings->height);
+        guac_protocol_send_clip(client->socket, current_layer);
+    }
 
 }
 
