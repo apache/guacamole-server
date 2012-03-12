@@ -128,11 +128,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_protocol_send_size(socket, term->cursor_layer, term->char_width, term->char_height);
 
     /* Draw cursor */
-    guac_protocol_send_rect(socket,
+    guac_protocol_send_rect(socket, term->cursor_layer,
+        0, 0, term->char_width, term->char_height);
+
+    guac_protocol_send_cfill(socket,
         GUAC_COMP_OVER, term->cursor_layer,
-        0, 0, term->char_width, term->char_height,
-        0x40, 0xFF, 0x80,
-        0x80);
+        0x40, 0xFF, 0x80, 0x80);
 
     guac_socket_flush(socket);
 

@@ -97,7 +97,7 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
 
     term->cursor_row = 0;
     term->cursor_col = 0;
-    term->cursor_layer = guac_client_alloc_layer(client, 1);
+    term->cursor_layer = guac_client_alloc_layer(client);
 
     term->term_width = 100;
     term->term_height = 37;
@@ -226,9 +226,11 @@ int __ssh_guac_terminal_get_glyph(ssh_guac_terminal* term, char c) {
     /* Send glyph and update filled flyphs */
     guac_protocol_send_png(socket, GUAC_COMP_OVER, term->glyph_stroke, location * term->char_width, 0, surface);
 
-    guac_protocol_send_rect(socket, GUAC_COMP_OVER, term->filled_glyphs,
+    guac_protocol_send_rect(socket, term->filled_glyphs,
             location * term->char_width, 0,
-            term->char_width, term->char_height,
+            term->char_width, term->char_height);
+
+    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, term->filled_glyphs,
             background->red,
             background->green,
             background->blue,
@@ -280,12 +282,11 @@ int ssh_guac_terminal_set_colors(ssh_guac_terminal* term,
             &ssh_guac_terminal_palette[foreground];
 
         /* Colorize letter */
-        guac_protocol_send_rect(socket,
-            GUAC_COMP_ATOP, term->glyph_stroke,
-
+        guac_protocol_send_rect(socket, term->glyph_stroke,
             0, 0,
-            term->char_width * term->next_glyph, term->char_height,
+            term->char_width * term->next_glyph, term->char_height);
 
+        guac_protocol_send_cfill(socket, GUAC_COMP_ATOP, term->glyph_stroke,
             color->red,
             color->green,
             color->blue,
@@ -297,12 +298,11 @@ int ssh_guac_terminal_set_colors(ssh_guac_terminal* term,
     if (foreground != term->glyph_foreground || background != term->glyph_background) {
 
         /* Set background */
-        guac_protocol_send_rect(socket,
-            GUAC_COMP_OVER, term->filled_glyphs,
-
+        guac_protocol_send_rect(socket, term->filled_glyphs,
             0, 0,
-            term->char_width * term->next_glyph, term->char_height,
+            term->char_width * term->next_glyph, term->char_height);
 
+        guac_protocol_send_cfill(socket, GUAC_COMP_OVER, term->filled_glyphs,
             background_color->red,
             background_color->green,
             background_color->blue,
@@ -378,12 +378,12 @@ int ssh_guac_terminal_clear(ssh_guac_terminal* term,
         &ssh_guac_terminal_palette[background_color];
 
     /* Fill with color */
-    return guac_protocol_send_rect(socket,
-            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
-
+    return
+        guac_protocol_send_rect(socket, GUAC_DEFAULT_LAYER,
             col  * term->char_width, row  * term->char_height,
-            cols * term->char_width, rows * term->char_height,
+            cols * term->char_width, rows * term->char_height)
 
+     || guac_protocol_send_cfill(socket, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
             color->red, color->green, color->blue, 255);
 
 }
