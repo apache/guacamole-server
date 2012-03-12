@@ -476,6 +476,42 @@ int guac_protocol_send_cursor(guac_socket* socket, int x, int y,
         const guac_layer* srcl, int srcx, int srcy, int w, int h);
 
 /**
+ * Sends an lfill instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param mode The composite mode to use.
+ * @param layer The destination layer.
+ * @param srcl The source layer.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_lfill(guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer,
+        const guac_layer* srcl);
+
+/**
+ * Sends an lstroke instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param mode The composite mode to use.
+ * @param layer The destination layer.
+ * @param cap The style of line cap to use when drawing the stroke.
+ * @param join The style of line join to use when drawing the stroke.
+ * @param thickness The thickness of the stroke in pixels.
+ * @param srcl The source layer.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_lstroke(guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer,
+        guac_line_cap_style cap, guac_line_join_style join, int thickness,
+        const guac_layer* srcl);
+
+/**
  * Sends a path instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -564,50 +600,6 @@ int guac_protocol_send_rect(guac_socket* socket, const guac_layer* layer,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer);
-
-/**
- * Sends an rfill instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param mode The composite mode to use.
- * @param layer The destination layer.
- * @param srcl The source layer.
- * @param srcx The X coordinate of the source rectangle.
- * @param srcy The Y coordinate of the source rectangle.
- * @param w The width of the source rectangle.
- * @param h The height of the source rectangle.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_rfill(guac_socket* socket,
-        guac_composite_mode mode, const guac_layer* layer,
-        const guac_layer* srcl, int srcx, int srcy, int w, int h);
-
-/**
- * Sends an rstroke instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param mode The composite mode to use.
- * @param layer The destination layer.
- * @param cap The style of line cap to use when drawing the stroke.
- * @param join The style of line join to use when drawing the stroke.
- * @param thickness The thickness of the stroke in pixels.
- * @param srcl The source layer.
- * @param srcx The X coordinate of the source rectangle.
- * @param srcy The Y coordinate of the source rectangle.
- * @param w The width of the source rectangle.
- * @param h The height of the source rectangle.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_rstroke(guac_socket* socket,
-        guac_composite_mode mode, const guac_layer* layer,
-        guac_line_cap_style cap, guac_line_join_style join, int thickness,
-        const guac_layer* srcl, int srcx, int srcy, int w, int h);
 
 /**
  * Sends a transfer instruction over the given guac_socket connection.
