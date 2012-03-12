@@ -166,7 +166,7 @@ typedef enum guac_line_cap_style {
  */
 typedef enum guac_line_join_style {
     GUAC_LINE_JOIN_BEVEL = 0x0,
-    GUAC_LINE_JOIN_MITRE = 0x1,
+    GUAC_LINE_JOIN_MITER = 0x1,
     GUAC_LINE_JOIN_ROUND = 0x2
 } guac_line_join_style;
 
