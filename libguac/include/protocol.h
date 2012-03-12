@@ -90,7 +90,7 @@ typedef enum guac_composite_mode {
     GUAC_COMP_IN    = 0x4, /* 0100 */
     GUAC_COMP_OUT   = 0x8, /* 1000 */
     GUAC_COMP_RATOP = 0x9, /* 1001 */
-    GUAC_COMP_SRC   = 0xC, /* 1100 */
+    GUAC_COMP_SRC   = 0xC  /* 1100 */
 
     /* Bitwise composite operations (binary) */
 
@@ -158,7 +158,7 @@ typedef enum guac_transfer_function {
 typedef enum guac_line_cap_style {
     GUAC_LINE_CAP_BUTT   = 0x0,
     GUAC_LINE_CAP_ROUND  = 0x1,
-    GUAC_LINE_CAP_SQUARE = 0x2,
+    GUAC_LINE_CAP_SQUARE = 0x2
 } guac_line_cap_style;
 
 /**
@@ -167,7 +167,7 @@ typedef enum guac_line_cap_style {
 typedef enum guac_line_join_style {
     GUAC_LINE_JOIN_BEVEL = 0x0,
     GUAC_LINE_JOIN_MITRE = 0x1,
-    GUAC_LINE_JOIN_ROUND = 0x2,
+    GUAC_LINE_JOIN_ROUND = 0x2
 } guac_line_join_style;
 
 typedef struct guac_layer guac_layer;
