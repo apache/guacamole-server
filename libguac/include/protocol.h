@@ -379,6 +379,24 @@ int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
 /* DRAWING INSTRUCTIONS */
 
 /**
+ * Sends an arc instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @param x The X coordinate of the center of the circle containing the arc.
+ * @param y The Y coordinate of the center of the circle containing the arc. 
+ * @param radius The radius of the circle containing the arc.
+ * @param startAngle The starting angle, in radians.
+ * @param endAngle The ending angle, in radians.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
+        int x, int y, int radius, double startAngle, double endAngle);
+
+/**
  * Sends a cfill instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -408,6 +426,18 @@ int guac_protocol_send_cfill(guac_socket* socket,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_clip(guac_socket* socket, const guac_layer* layer);
+
+/**
+ * Sends a close instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_close(guac_socket* socket, const guac_layer* layer);
 
 /**
  * Sends a copy instruction over the given guac_socket connection.
@@ -476,6 +506,37 @@ int guac_protocol_send_cursor(guac_socket* socket, int x, int y,
         const guac_layer* srcl, int srcx, int srcy, int w, int h);
 
 /**
+ * Sends a curve instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @param cp1x The X coordinate of the first control point.
+ * @param cp1y The Y coordinate of the first control point.
+ * @param cp2x The X coordinate of the second control point.
+ * @param cp2y The Y coordinate of the second control point.
+ * @param x The X coordinate of the endpoint of the curve.
+ * @param y The Y coordinate of the endpoint of the curve.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_curve(guac_socket* socket, const guac_layer* layer,
+        int cp1x, int cp1y, int cp2x, int cp2y, int x, int y);
+
+/**
+ * Sends an identity instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_identity(guac_socket* socket, const guac_layer* layer);
+
+/**
  * Sends an lfill instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -490,6 +551,21 @@ int guac_protocol_send_cursor(guac_socket* socket, int x, int y,
 int guac_protocol_send_lfill(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
         const guac_layer* srcl);
+
+/**
+ * Sends a line instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @param x The X coordinate of the endpoint of the line.
+ * @param y The Y coordinate of the endpoint of the line.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_line(guac_socket* socket, const guac_layer* layer,
+        int x, int y);
 
 /**
  * Sends an lstroke instruction over the given guac_socket connection.
@@ -510,25 +586,6 @@ int guac_protocol_send_lstroke(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
         guac_line_cap_style cap, guac_line_join_style join, int thickness,
         const guac_layer* srcl);
-
-/**
- * Sends a path instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param layer The destination layer.
- * @param x The X coordinate of the point to add to the path.
- * @param y The Y coordinate of the point to add to the path.
- * @param cp1x The X coordinate of the first control point.
- * @param cp1y The Y coordinate of the first control point.
- * @param cp2x The X coordinate of the second control point.
- * @param cp2y The Y coordinate of the second control point.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_path(guac_socket* socket, const guac_layer* layer,
-        int x, int y, int cp1x, int cp1y, int cp2x, int cp2y);
 
 /**
  * Sends a png instruction over the given guac_socket connection. The PNG image
@@ -600,6 +657,21 @@ int guac_protocol_send_rect(guac_socket* socket, const guac_layer* layer,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer);
+
+/**
+ * Sends a start instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @param x The X coordinate of the first point of the subpath.
+ * @param y The Y coordinate of the first point of the subpath.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_start(guac_socket* socket, const guac_layer* layer,
+        int x, int y);
 
 /**
  * Sends a transfer instruction over the given guac_socket connection.
