@@ -344,12 +344,13 @@ int guac_protocol_send_error(guac_socket* socket, const char* error);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
+ * @param layer The layer to set the parameter of.
  * @param name The name of the parameter to set.
  * @param value The value to set the parameter to.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_set(guac_socket* socket, const char* name,
-        const char* value);
+int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
+        const char* name, const char* value);
 
 /**
  * Sends a select instruction over the given guac_socket connection.

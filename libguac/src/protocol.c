@@ -888,11 +888,13 @@ int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer) {
 }
 
 
-int guac_protocol_send_set(guac_socket* socket, const char* name,
-        const char* value) {
+int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
+        const char* name, const char* value) {
 
     return
            guac_socket_write_string(socket, "3.set,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, name)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, value)
