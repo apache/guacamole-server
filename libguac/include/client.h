@@ -344,9 +344,7 @@ struct guac_client {
      *
      *     void function_of_daemon() {
      *
-     *         guac_client* client = [client from guac_client_plugin_get_client()];
-     *
-     *         client->log_info_handler = log_handler;
+     *         guac_client* client = [pass log_handler to guac_client_plugin_get_client()];
      *
      *     }
      * @endcode
@@ -371,9 +369,7 @@ struct guac_client {
      *
      *     void function_of_daemon() {
      *
-     *         guac_client* client = [client from guac_client_plugin_get_client()];
-     *
-     *         client->log_error_handler = log_handler;
+     *         guac_client* client = [pass log_handler to guac_client_plugin_get_client()];
      *
      *     }
      * @endcode
