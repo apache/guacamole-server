@@ -449,10 +449,16 @@ int guac_client_plugin_close(guac_client_plugin* plugin);
  * @param socket The guac_socket the client should use for communication.
  * @param argc The number of arguments being passed to the client.
  * @param argv All arguments to be passed to the client.
+ * @param log_info_handler Info logging handler to provide to the client before
+ *                         initializing.
+ * @param log_error_handler Error logging handler to provide to the client
+ *                          before initializing.
  * @return A pointer to the newly initialized client.
  */
 guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
-        guac_socket* socket, int argc, char** argv);
+        guac_socket* socket, int argc, char** argv,
+        guac_client_log_handler* log_info_handler,
+        guac_client_log_handler* log_error_handler);
 
 /**
  * Free all resources associated with the given client.

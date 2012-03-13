@@ -231,7 +231,9 @@ int guac_client_plugin_close(guac_client_plugin* plugin) {
 }
 
 guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
-        guac_socket* socket, int argc, char** argv) {
+        guac_socket* socket, int argc, char** argv,
+        guac_client_log_handler* log_info_handler,
+        guac_client_log_handler* log_error_handler) {
 
     /* Allocate new client */
     guac_client* client = malloc(sizeof(guac_client));
@@ -256,6 +258,10 @@ guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
 
     client->__next_buffer_index = -1;
     client->__next_layer_index  =  1;
+
+    /* Set up logging in client */
+    client->log_info_handler  = log_info_handler;
+    client->log_error_handler = log_error_handler;
 
     if (plugin->init_handler(client, argc, argv) != 0) {
         free(client);
