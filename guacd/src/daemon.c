@@ -137,7 +137,9 @@ void guacd_handle_connection(int fd) {
 
     /* Load and init client */
     client = guac_client_plugin_get_client(plugin, socket,
-            connect->argc, connect->argv); 
+            connect->argc, connect->argv,
+            guacd_log_info, guacd_log_error);
+
     guac_instruction_free(connect);
 
     if (client == NULL) {
@@ -150,10 +152,6 @@ void guacd_handle_connection(int fd) {
         guac_socket_close(socket);
         return;
     }
-
-    /* Set up logging in client */
-    client->log_info_handler  = guacd_log_info;
-    client->log_error_handler = guacd_log_error;
 
     /* Start client threads */
     syslog(LOG_INFO, "Starting client");
