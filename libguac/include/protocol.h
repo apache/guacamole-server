@@ -392,10 +392,13 @@ int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
  * @param radius The radius of the circle containing the arc.
  * @param startAngle The starting angle, in radians.
  * @param endAngle The ending angle, in radians.
+ * @param negative Zero if the arc should be drawn in order of increasing
+ *                 angle, non-zero otherwise.
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
-        int x, int y, int radius, double startAngle, double endAngle);
+        int x, int y, int radius, double startAngle, double endAngle,
+        int negative);
 
 /**
  * Sends a cfill instruction over the given guac_socket connection.

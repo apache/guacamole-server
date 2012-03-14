@@ -484,7 +484,8 @@ int guac_protocol_send_args(guac_socket* socket, const char** args) {
 
 
 int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
-        int x, int y, int radius, double startAngle, double endAngle) {
+        int x, int y, int radius, double startAngle, double endAngle,
+        int negative) {
 
     return
            guac_socket_write_string(socket, "3.arc,")
@@ -499,6 +500,8 @@ int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
         || __guac_socket_write_length_double(socket, startAngle)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_double(socket, endAngle)
+        || guac_socket_write_string(socket, ",")
+        || guac_socket_write_string(socket, negative ? "1" : "0")
         || guac_socket_write_string(socket, ";");
 
 }
