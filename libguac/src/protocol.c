@@ -180,21 +180,28 @@ int __guac_fill_instructionbuf(guac_socket* socket) {
     
     /* Attempt to fill buffer */
     retval = recv(
-            socket->fd,
-            socket->__instructionbuf + socket->__instructionbuf_used_length,
-            socket->__instructionbuf_size - socket->__instructionbuf_used_length,
-            0
+        socket->fd,
+        socket->__instructionbuf + socket->__instructionbuf_used_length,
+        socket->__instructionbuf_size - socket->__instructionbuf_used_length,
+        0
     );
 
-    if (retval < 0)
+    /* Set guac_error if recv() unsuccessful */
+    if (retval < 0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error filling instruction buffer";
         return retval;
+    }
 
     socket->__instructionbuf_used_length += retval;
 
     /* Expand buffer if necessary */
-    if (socket->__instructionbuf_used_length > socket->__instructionbuf_size / 2) {
+    if (socket->__instructionbuf_used_length >
+            socket->__instructionbuf_size / 2) {
+
         socket->__instructionbuf_size *= 2;
-        socket->__instructionbuf = realloc(socket->__instructionbuf, socket->__instructionbuf_size);
+        socket->__instructionbuf = realloc(socket->__instructionbuf,
+                socket->__instructionbuf_size);
     }
 
     return retval;
@@ -203,7 +210,8 @@ int __guac_fill_instructionbuf(guac_socket* socket) {
 
 
 /* Returns new instruction if one exists, or NULL if no more instructions. */
-guac_instruction* guac_protocol_read_instruction(guac_socket* socket, int usec_timeout) {
+guac_instruction* guac_protocol_read_instruction(guac_socket* socket,
+        int usec_timeout) {
 
     int retval;
    
