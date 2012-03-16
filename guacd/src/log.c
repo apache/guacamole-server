@@ -47,25 +47,29 @@
 
 void vguacd_log_info(const char* format, va_list args) {
 
+    /* Copy log message into buffer */
+    char message[2048];
+    vsnprintf(message, sizeof(message), format, args);
+
     /* Log to syslog */
-    vsyslog(LOG_INFO, format, args);
+    syslog(LOG_INFO, "%s", message);
 
     /* Log to STDERR */
-    fprintf(stderr, "guacd[%i]: INFO:  ", getpid());
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "guacd[%i]: INFO:  %s\n", getpid(), message);
 
 }
 
 void vguacd_log_error(const char* format, va_list args) {
 
+    /* Copy log message into buffer */
+    char message[2048];
+    vsnprintf(message, sizeof(message), format, args);
+
     /* Log to syslog */
-    vsyslog(LOG_ERR, format, args);
+    syslog(LOG_ERR, "%s", message);
 
     /* Log to STDERR */
-    fprintf(stderr, "guacd[%i]: ERROR: ", getpid());
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "guacd[%i]: ERROR: %s\n", getpid(), message);
 
 }
 
