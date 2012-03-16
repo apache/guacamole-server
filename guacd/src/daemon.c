@@ -266,7 +266,7 @@ int main(int argc, char* argv[]) {
                     current_address->ai_addr,
                     current_address->ai_addrlen) == 0) {
 
-            guacd_log_error("Successfully bound socket to "
+            guacd_log_info("Successfully bound socket to "
                     "host %s, port %s", bound_address, bound_port);
 
             /* Done if successful bind */
@@ -274,9 +274,9 @@ int main(int argc, char* argv[]) {
 
         }
 
-        /* Otherwise log error */
+        /* Otherwise log information regarding bind failure */
         else
-            guacd_log_error("Error binding socket to "
+            guacd_log_info("Unable to bind socket to "
                     "host %s, port %s: %s",
                     bound_address, bound_port, strerror(errno));
 
@@ -327,12 +327,12 @@ int main(int argc, char* argv[]) {
 
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-        guacd_log_error("Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
+        guacd_log_info("Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
     }
 
     /* Ignore SIGCHLD (force automatic removal of children) */
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-        guacd_log_error("Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
+        guacd_log_info("Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
     }
 
     /* Log listening status */
