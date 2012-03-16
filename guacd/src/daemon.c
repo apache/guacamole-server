@@ -82,7 +82,7 @@ void guacd_handle_connection(int fd) {
     if (select->argc != 1) {
 
         /* Log error */
-        syslog(LOG_ERR, "Bad number of arguments to \"select\" (%i)",
+        guacd_log_error("Bad number of arguments to \"select\" (%i)",
                 select->argc);
 
         /* Free resources */
@@ -90,7 +90,7 @@ void guacd_handle_connection(int fd) {
         return;
     }
 
-    syslog(LOG_INFO, "Protocol \"%s\" selected", select->argv[0]);
+    guacd_log_info("Protocol \"%s\" selected", select->argv[0]);
 
     /* Get plugin from protocol in select */
     plugin = guac_client_plugin_open(select->argv[0]);
@@ -154,16 +154,16 @@ void guacd_handle_connection(int fd) {
     }
 
     /* Start client threads */
-    syslog(LOG_INFO, "Starting client");
+    guacd_log_info("Starting client");
     if (guacd_client_start(client))
-        syslog(LOG_ERR, "Client finished abnormally");
+        guacd_log_error("Client finished abnormally");
     else
-        syslog(LOG_INFO, "Client finished normally");
+        guacd_log_info("Client finished normally");
 
     /* Clean up */
     guac_client_free(client);
     if (guac_client_plugin_close(plugin))
-        syslog(LOG_ERR, "Error closing client plugin");
+        guacd_log_error("Error closing client plugin");
 
     /* Close socket */
     guac_socket_close(socket);
@@ -229,7 +229,7 @@ int main(int argc, char* argv[]) {
 
     /* Get addresses for binding */
     if ((retval = getaddrinfo(listen_address, listen_port, &hints, &addresses))) {
-        fprintf(stderr, "Error parsing given address or port: %s\n",
+        guacd_log_error("Error parsing given address or port: %s\n",
                 gai_strerror(retval));
         exit(EXIT_FAILURE);
     }
@@ -237,13 +237,13 @@ int main(int argc, char* argv[]) {
     /* Get socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
-        fprintf(stderr, "Error opening socket: %s\n", strerror(errno));
+        guacd_log_error("Error opening socket: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     /* Allow socket reuse */
     if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (void*) &opt_on, sizeof(opt_on))) {
-        fprintf(stderr, "Warning: Unable to set socket options for reuse: %s\n", strerror(errno));
+        guacd_log_info("Unable to set socket options for reuse: %s\n", strerror(errno));
     }
 
     /* Attempt binding of each address until success */
@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
                 bound_address, sizeof(bound_address),
                 bound_port, sizeof(bound_port),
                 NI_NUMERICHOST | NI_NUMERICSERV)))
-            fprintf(stderr, "Unable to resolve host: %s\n",
+            guacd_log_error("Unable to resolve host: %s\n",
                     gai_strerror(retval));
 
         /* Attempt to bind socket to address */
@@ -266,7 +266,7 @@ int main(int argc, char* argv[]) {
                     current_address->ai_addr,
                     current_address->ai_addrlen) == 0) {
 
-            fprintf(stderr, "Successfully bound socket to "
+            guacd_log_error("Successfully bound socket to "
                     "host %s, port %s\n", bound_address, bound_port);
 
             /* Done if successful bind */
@@ -276,7 +276,7 @@ int main(int argc, char* argv[]) {
 
         /* Otherwise log error */
         else
-            fprintf(stderr, "Error binding socket to "
+            guacd_log_error("Error binding socket to "
                     "host %s, port %s: %s\n",
                     bound_address, bound_port, strerror(errno));
 
@@ -286,7 +286,7 @@ int main(int argc, char* argv[]) {
 
     /* If unable to bind to anything, fail */
     if (current_address == NULL) {
-        fprintf(stderr, "Unable to bind socket to any addresses.\n");
+        guacd_log_error("Unable to bind socket to any addresses.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -295,7 +295,7 @@ int main(int argc, char* argv[]) {
 
     /* If error, fail */
     if (daemon_pid == -1) {
-        fprintf(stderr, "Error forking daemon process: %s\n", strerror(errno));
+        guacd_log_error("Error forking daemon process: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -313,7 +313,7 @@ int main(int argc, char* argv[]) {
 
             /* Warn on failure */
             else {
-                fprintf(stderr, "WARNING: Could not write PID file: %s\n", strerror(errno));
+                guacd_log_error("Could not write PID file: %s\n", strerror(errno));
                 exit(EXIT_FAILURE);
             }
 
@@ -327,12 +327,12 @@ int main(int argc, char* argv[]) {
 
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-        syslog(LOG_ERR, "Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
+        guacd_log_error("Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
     }
 
     /* Ignore SIGCHLD (force automatic removal of children) */
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-        syslog(LOG_ERR, "Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
+        guacd_log_error("Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
     }
 
     /* Log listening status */
@@ -349,7 +349,7 @@ int main(int argc, char* argv[]) {
 
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
-            syslog(LOG_ERR, "Could not listen on socket: %s", strerror(errno));
+            guacd_log_error("Could not listen on socket: %s", strerror(errno));
             return 3;
         }
 
@@ -357,7 +357,7 @@ int main(int argc, char* argv[]) {
         client_addr_len = sizeof(client_addr);
         connected_socket_fd = accept(socket_fd, (struct sockaddr*) &client_addr, &client_addr_len);
         if (connected_socket_fd < 0) {
-            syslog(LOG_ERR, "Could not accept client connection: %s", strerror(errno));
+            guacd_log_error("Could not accept client connection: %s", strerror(errno));
             return 3;
         }
 
@@ -374,7 +374,7 @@ int main(int argc, char* argv[]) {
 
         /* If error, log */
         if (child_pid == -1)
-            syslog(LOG_ERR, "Error forking child process: %s\n", strerror(errno));
+            guacd_log_error("Error forking child process: %s\n", strerror(errno));
 
         /* If child, start client, and exit when finished */
         else if (child_pid == 0) {
@@ -385,14 +385,14 @@ int main(int argc, char* argv[]) {
 
         /* If parent, close reference to child's descriptor */
         else if (close(connected_socket_fd) < 0) {
-            syslog(LOG_ERR, "Error closing daemon reference to child descriptor: %s", strerror(errno));
+            guacd_log_error("Error closing daemon reference to child descriptor: %s", strerror(errno));
         }
 
     }
 
     /* Close socket */
     if (close(socket_fd) < 0) {
-        syslog(LOG_ERR, "Could not close socket: %s", strerror(errno));
+        guacd_log_error("Could not close socket: %s", strerror(errno));
         return 3;
     }
 
