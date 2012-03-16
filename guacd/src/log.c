@@ -37,30 +37,74 @@
 
 #include <errno.h>
 #include <syslog.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 
-void guacd_log_info(guac_client* client, const char* format, va_list args) {
+void vguacd_log_info(const char* format, va_list args) {
+
+    /* Log to syslog */
     vsyslog(LOG_INFO, format, args);
+
+    /* Log to STDERR */
+    fprintf(stderr, "guacd[%i]: INFO:  ", getpid());
+    vfprintf(stderr, format, args);
+    fprintf(stderr, "\n");
+
 }
 
-void guacd_log_error(guac_client* client, const char* format, va_list args) {
+void vguacd_log_error(const char* format, va_list args) {
+
+    /* Log to syslog */
     vsyslog(LOG_ERR, format, args);
+
+    /* Log to STDERR */
+    fprintf(stderr, "guacd[%i]: ERROR: ", getpid());
+    vfprintf(stderr, format, args);
+    fprintf(stderr, "\n");
+
+}
+
+void guacd_log_info(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vguacd_log_info(format, args);
+    va_end(args);
+}
+
+void guacd_log_error(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vguacd_log_error(format, args);
+    va_end(args);
+}
+
+void guacd_client_log_info(guac_client* client, const char* format,
+        va_list args) {
+    vguacd_log_info(format, args);
+}
+
+void guacd_client_log_error(guac_client* client, const char* format,
+        va_list args) {
+    vguacd_log_error(format, args);
 }
 
 void guacd_log_guac_error(const char* message) {
 
     /* If error message provided, include in log */
     if (guac_error_message != NULL)
-        syslog(LOG_ERR, "%s: %s: %s",
+        guacd_log_error("%s: %s: %s",
                 message,
                 guac_error_message,
                 guac_status_string(guac_error));
 
     /* Otherwise just log with standard status string */
     else
-        syslog(LOG_ERR, "%s: %s",
+        guacd_log_error("%s: %s",
                 message,
                 guac_status_string(guac_error));
 

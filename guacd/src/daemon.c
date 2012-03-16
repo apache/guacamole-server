@@ -138,7 +138,7 @@ void guacd_handle_connection(int fd) {
     /* Load and init client */
     client = guac_client_plugin_get_client(plugin, socket,
             connect->argc, connect->argv,
-            guacd_log_info, guacd_log_error);
+            guacd_client_log_info, guacd_client_log_error);
 
     guac_instruction_free(connect);
 

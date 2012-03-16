@@ -40,8 +40,15 @@
 
 #include <guacamole/client.h>
 
-void guacd_log_info(guac_client* client, const char* format, va_list args);
-void guacd_log_error(guac_client* client, const char* format, va_list args);
+
+void vguacd_log_info(const char* format, va_list args);
+void vguacd_log_error(const char* format, va_list args);
+void guacd_log_info(const char* format, ...);
+void guacd_log_error(const char* format, ...);
+
+void guacd_client_log_info(guac_client* client, const char* format, va_list args);
+void guacd_client_log_error(guac_client* client, const char* format, va_list args);
+
 void guacd_log_guac_error(const char* message);
 void guacd_client_log_guac_error(guac_client* client, const char* message);
 
