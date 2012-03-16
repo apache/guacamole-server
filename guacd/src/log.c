@@ -45,6 +45,9 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 
+/* Log prefix, defaulting to "guacd" */
+char log_prefix[64] = "guacd";
+
 void vguacd_log_info(const char* format, va_list args) {
 
     /* Copy log message into buffer */
@@ -55,7 +58,7 @@ void vguacd_log_info(const char* format, va_list args) {
     syslog(LOG_INFO, "%s", message);
 
     /* Log to STDERR */
-    fprintf(stderr, "guacd[%i]: INFO:  %s\n", getpid(), message);
+    fprintf(stderr, "%s[%i]: INFO:  %s\n", log_prefix, getpid(), message);
 
 }
 
@@ -69,7 +72,7 @@ void vguacd_log_error(const char* format, va_list args) {
     syslog(LOG_ERR, "%s", message);
 
     /* Log to STDERR */
-    fprintf(stderr, "guacd[%i]: ERROR: %s\n", getpid(), message);
+    fprintf(stderr, "%s[%i]: ERROR: %s\n", log_prefix, getpid(), message);
 
 }
 

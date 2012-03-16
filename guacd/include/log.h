@@ -40,6 +40,7 @@
 
 #include <guacamole/client.h>
 
+extern char log_prefix[64];
 
 void vguacd_log_info(const char* format, va_list args);
 void vguacd_log_error(const char* format, va_list args);

@@ -48,6 +48,7 @@
 
 #include <errno.h>
 #include <syslog.h>
+#include <libgen.h>
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
@@ -226,6 +227,10 @@ int main(int argc, char* argv[]) {
             exit(EXIT_FAILURE);
         }
     }
+
+    /* Set up logging prefix */
+    strncpy(log_prefix, basename(argv[0]), sizeof(log_prefix));
+
 
     /* Get addresses for binding */
     if ((retval = getaddrinfo(listen_address, listen_port, &hints, &addresses))) {
