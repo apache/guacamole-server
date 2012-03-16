@@ -229,7 +229,7 @@ int main(int argc, char* argv[]) {
 
     /* Get addresses for binding */
     if ((retval = getaddrinfo(listen_address, listen_port, &hints, &addresses))) {
-        guacd_log_error("Error parsing given address or port: %s\n",
+        guacd_log_error("Error parsing given address or port: %s",
                 gai_strerror(retval));
         exit(EXIT_FAILURE);
     }
@@ -237,13 +237,13 @@ int main(int argc, char* argv[]) {
     /* Get socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
-        guacd_log_error("Error opening socket: %s\n", strerror(errno));
+        guacd_log_error("Error opening socket: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     /* Allow socket reuse */
     if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (void*) &opt_on, sizeof(opt_on))) {
-        guacd_log_info("Unable to set socket options for reuse: %s\n", strerror(errno));
+        guacd_log_info("Unable to set socket options for reuse: %s", strerror(errno));
     }
 
     /* Attempt binding of each address until success */
@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
                 bound_address, sizeof(bound_address),
                 bound_port, sizeof(bound_port),
                 NI_NUMERICHOST | NI_NUMERICSERV)))
-            guacd_log_error("Unable to resolve host: %s\n",
+            guacd_log_error("Unable to resolve host: %s",
                     gai_strerror(retval));
 
         /* Attempt to bind socket to address */
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
                     current_address->ai_addrlen) == 0) {
 
             guacd_log_error("Successfully bound socket to "
-                    "host %s, port %s\n", bound_address, bound_port);
+                    "host %s, port %s", bound_address, bound_port);
 
             /* Done if successful bind */
             break;
@@ -277,7 +277,7 @@ int main(int argc, char* argv[]) {
         /* Otherwise log error */
         else
             guacd_log_error("Error binding socket to "
-                    "host %s, port %s: %s\n",
+                    "host %s, port %s: %s",
                     bound_address, bound_port, strerror(errno));
 
         current_address = current_address->ai_next;
@@ -286,7 +286,7 @@ int main(int argc, char* argv[]) {
 
     /* If unable to bind to anything, fail */
     if (current_address == NULL) {
-        guacd_log_error("Unable to bind socket to any addresses.\n");
+        guacd_log_error("Unable to bind socket to any addresses.");
         exit(EXIT_FAILURE);
     }
 
@@ -295,7 +295,7 @@ int main(int argc, char* argv[]) {
 
     /* If error, fail */
     if (daemon_pid == -1) {
-        guacd_log_error("Error forking daemon process: %s\n", strerror(errno));
+        guacd_log_error("Error forking daemon process: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -313,7 +313,7 @@ int main(int argc, char* argv[]) {
 
             /* Warn on failure */
             else {
-                guacd_log_error("Could not write PID file: %s\n", strerror(errno));
+                guacd_log_error("Could not write PID file: %s", strerror(errno));
                 exit(EXIT_FAILURE);
             }
 
@@ -374,7 +374,7 @@ int main(int argc, char* argv[]) {
 
         /* If error, log */
         if (child_pid == -1)
-            guacd_log_error("Error forking child process: %s\n", strerror(errno));
+            guacd_log_error("Error forking child process: %s", strerror(errno));
 
         /* If child, start client, and exit when finished */
         else if (child_pid == 0) {
