@@ -68,7 +68,30 @@ typedef struct guac_rdp_keymap {
 
 } guac_rdp_keymap;
 
+/**
+ * Represents the Alt-code which types a given keysym. This is used as a
+ * fallback mapping, should a particular keymap not support a certain keysym.
+ *
+ * See: http://en.wikipedia.org/wiki/Alt_code
+ */
+typedef struct guac_rdp_alt_keymap {
+
+    /**
+     * The 4-digit Alt-code which types this keysym.
+     */
+    char alt_code[4];
+
+} guac_rdp_alt_keymap;
+
+/**
+ * Map of X11 keysyms to RDP scancodes.
+ */
 extern const guac_rdp_keymap guac_rdp_keysym_scancode[256][256];
+
+/**
+ * Map of X11 keysyms to Windows Alt-codes.
+ */
+extern const guac_rdp_alt_keymap guac_rdp_keysym_altcode[256][256];
 
 #endif
 
