@@ -79,7 +79,7 @@ typedef struct guac_rdp_altcode_map {
     /**
      * The 4-digit Alt-code which types this keysym.
      */
-    char altcode[4];
+    const char* altcode;
 
 } guac_rdp_altcode_map;
 
