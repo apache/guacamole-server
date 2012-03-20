@@ -43,6 +43,8 @@
 
 #include <guacamole/client.h>
 
+#include "rdp_keymap.h"
+
 #define RDP_DEFAULT_PORT 3389
 
 typedef struct guac_rdp_color {
@@ -62,6 +64,8 @@ typedef struct rdp_guac_client_data {
     guac_rdp_color background;
 
     const guac_layer* current_surface;
+
+    const guac_rdp_keysym_scancode_map* keysym_scancodes;
 
 } rdp_guac_client_data;
 

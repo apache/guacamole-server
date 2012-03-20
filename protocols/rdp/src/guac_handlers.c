@@ -227,21 +227,21 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     freerdp* rdp_inst = guac_client_data->rdp_inst;
+    const guac_rdp_keysym_scancode_map* keysym_scancodes = guac_client_data->keysym_scancodes;
 
     /* If keysym can be in lookup table */
     if (keysym <= 0xFFFF) {
 
-        /* Look up scancode */
-        const guac_rdp_keymap* keymap = 
-            &guac_rdp_keysym_scancode[(keysym & 0xFF00) >> 8][keysym & 0xFF];
+        /* Look up scancode mapping */
+        const guac_rdp_scancode_map* scancode_map = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, keysym);
 
         /* If defined, send event */
-        if (keymap->scancode != 0)
+        if (scancode_map->scancode != 0)
             rdp_inst->input->KeyboardEvent(
                     rdp_inst->input,
-                    keymap->flags
+                    scancode_map->flags
                         | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
-                    keymap->scancode);
+                    scancode_map->scancode);
         else
             guac_client_log_info(client, "unmapped keysym: 0x%x", keysym);
 

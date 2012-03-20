@@ -42,7 +42,7 @@
  * Represents a keysym-to-scancode mapping for RDP, with extra information
  * about the state of prerequisite keysyms.
  */
-typedef struct guac_rdp_keymap {
+typedef struct guac_rdp_scancode_map {
 
     /**
      * The scancode this keysym maps to.
@@ -66,7 +66,7 @@ typedef struct guac_rdp_keymap {
      */
     int* clear_keysyms;
 
-} guac_rdp_keymap;
+} guac_rdp_scancode_map;
 
 /**
  * Represents the Alt-code which types a given keysym. This is used as a
@@ -74,24 +74,39 @@ typedef struct guac_rdp_keymap {
  *
  * See: http://en.wikipedia.org/wiki/Alt_code
  */
-typedef struct guac_rdp_alt_keymap {
+typedef struct guac_rdp_altcode_map {
 
     /**
      * The 4-digit Alt-code which types this keysym.
      */
-    char alt_code[4];
+    char altcode[4];
 
-} guac_rdp_alt_keymap;
+} guac_rdp_altcode_map;
 
 /**
- * Map of X11 keysyms to RDP scancodes.
+ * Static mapping from keysyms to scancodes.
  */
-extern const guac_rdp_keymap guac_rdp_keysym_scancode[256][256];
+typedef guac_rdp_scancode_map guac_rdp_keysym_scancode_map[256][256];
+
+/**
+ * Static mapping from keysyms to Alt-codes.
+ */
+typedef guac_rdp_altcode_map guac_rdp_keysym_altcode_map[256][256];
+
+/**
+ * Map of X11 keysyms to RDP scancodes (US English).
+ */
+extern const guac_rdp_keysym_scancode_map guac_rdp_keysym_scancode_en_us;
 
 /**
  * Map of X11 keysyms to Windows Alt-codes.
  */
-extern const guac_rdp_alt_keymap guac_rdp_keysym_altcode[256][256];
+extern const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode;
+
+/**
+ * Simple macro for referencing the mapped value of an altcode or scancode for a given keysym.
+ */
+#define GUAC_RDP_KEYSYM_LOOKUP(keysym_mapping, keysym) (&((keysym_mapping)[((keysym) & 0xFF00) >> 8][(keysym) & 0xFF]))
 
 #endif
 
