@@ -40,7 +40,7 @@
 
 #include "rdp_keymap.h"
 
-const guac_rdp_scancode_map guac_rdp_keysym_scancode_en_us[256][256] = {
+const guac_rdp_keysym_scancode_map guac_rdp_keysym_scancode_en_us = {
     {                                        /* 0x00?? */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x0000 */
         { .scancode = 0x00, .flags = 0x00 }, /* 0x0001 */
