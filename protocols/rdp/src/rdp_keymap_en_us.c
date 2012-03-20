@@ -5356,16 +5356,16 @@ const guac_rdp_keysym_scancode_map guac_rdp_keysym_scancode_en_us = {
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffad (KP_Subtract) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffae (KP_Decimal) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffaf (KP_Divide) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb0 (KP_0) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb1 (KP_1) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb2 (KP_2) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb3 (KP_3) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb4 (KP_4) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb5 (KP_5) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb6 (KP_6) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb7 (KP_7) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb8 (KP_8) */
-        { .scancode = 0x00, .flags = 0x00 }, /* 0xffb9 (KP_9) */
+        { .scancode = 0x52, .flags = 0x00 }, /* 0xffb0 (KP_0) */
+        { .scancode = 0x4F, .flags = 0x00 }, /* 0xffb1 (KP_1) */
+        { .scancode = 0x50, .flags = 0x00 }, /* 0xffb2 (KP_2) */
+        { .scancode = 0x51, .flags = 0x00 }, /* 0xffb3 (KP_3) */
+        { .scancode = 0x4B, .flags = 0x00 }, /* 0xffb4 (KP_4) */
+        { .scancode = 0x4C, .flags = 0x00 }, /* 0xffb5 (KP_5) */
+        { .scancode = 0x4D, .flags = 0x00 }, /* 0xffb6 (KP_6) */
+        { .scancode = 0x47, .flags = 0x00 }, /* 0xffb7 (KP_7) */
+        { .scancode = 0x48, .flags = 0x00 }, /* 0xffb8 (KP_8) */
+        { .scancode = 0x49, .flags = 0x00 }, /* 0xffb9 (KP_9) */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffba */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffbb */
         { .scancode = 0x00, .flags = 0x00 }, /* 0xffbc */
