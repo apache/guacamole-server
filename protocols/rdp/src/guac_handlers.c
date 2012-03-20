@@ -223,6 +223,40 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     return 0;
 }
 
+void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
+
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    freerdp* rdp_inst = guac_client_data->rdp_inst;
+    const guac_rdp_keysym_scancode_map* keysym_scancodes = guac_client_data->keysym_scancodes;
+
+    /* Lookup scancode for Alt */
+    int alt = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFE9 /* Alt_L */)->scancode;
+    guac_client_log_info(client, "ALTCODE: alt=%i", alt);
+
+    /* Press Alt */
+    rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, alt);
+
+    /* For each character in Alt-code ... */
+    while (*altcode != '\0') {
+
+        /* Get scancode of keypad digit */
+        int scancode = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFB0 + (*altcode) - '0')->scancode;
+
+        /* Press and release digit */
+        rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, scancode);
+        rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_RELEASE, scancode);
+        guac_client_log_info(client, "ALTCODE: scan=%i", scancode);
+
+        /* Next character */
+        altcode++;
+    }
+
+    /* Release Alt */
+    rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_RELEASE, alt);
+    guac_client_log_info(client, "ALTCODE: done");
+
+}
+
 int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
@@ -242,8 +276,24 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
                     scancode_map->flags
                         | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
                     scancode_map->scancode);
-        else
-            guac_client_log_info(client, "unmapped keysym: 0x%x", keysym);
+
+        /* If undefined, try to type using Alt-code */
+        else {
+
+            const guac_rdp_altcode_map* altcode_map = GUAC_RDP_KEYSYM_LOOKUP(guac_rdp_keysym_altcode, keysym);
+            if (altcode_map->altcode != NULL) {
+
+                /* Only send Alt-code on press */
+                if (pressed)
+                    __guac_rdp_send_altcode(client, altcode_map->altcode);
+
+            }
+
+            /* If no defined Alt-code, log warning */
+            else
+                guac_client_log_info(client, "unmapped keysym: 0x%x", keysym);
+
+        }
 
     }
 
