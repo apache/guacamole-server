@@ -38,9 +38,34 @@
 #ifndef _GUAC_RDP_RDP_KEYMAP_H
 #define _GUAC_RDP_RDP_KEYMAP_H
 
+/**
+ * Represents a keysym-to-scancode mapping for RDP, with extra information
+ * about the state of prerequisite keysyms.
+ */
 typedef struct guac_rdp_keymap {
+
+    /**
+     * The scancode this keysym maps to.
+     */
     int scancode;
+
+    /**
+     * Required RDP-specific flags
+     */
     int flags;
+
+    /**
+     * Null-terminated list of keysyms which must be down for this keysym
+     * to be properly typed.
+     */
+    int* set_keysyms;
+
+    /**
+     * Null-terminated list of keysyms which must be up for this keysym
+     * to be properly typed.
+     */
+    int* clear_keysyms;
+
 } guac_rdp_keymap;
 
 extern const guac_rdp_keymap guac_rdp_keysym_scancode[256][256];
