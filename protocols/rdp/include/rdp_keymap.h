@@ -114,6 +114,11 @@ typedef int guac_rdp_keysym_state_map[256][256];
 extern const guac_rdp_keymap guac_rdp_keymap_en_us;
 
 /**
+ * Map of X11 keysyms to RDP scancodes (common non-printable keys).
+ */
+extern const guac_rdp_keymap guac_rdp_keymap_base;
+
+/**
  * Simple macro for referencing the mapped value of an altcode or scancode for a given keysym.
  */
 #define GUAC_RDP_KEYSYM_LOOKUP(keysym_mapping, keysym) ((keysym_mapping)[((keysym) & 0xFF00) >> 8][(keysym) & 0xFF])
