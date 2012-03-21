@@ -336,6 +336,9 @@ void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, in
         if (current_state == from)
             __guac_rdp_send_keysym(client, *keysym_string, to);
 
+        /* Next keysym */
+        keysym_string++;
+
     }
 
 }
