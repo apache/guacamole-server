@@ -118,5 +118,15 @@ extern const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode;
  */
 extern const int GUAC_KEYSYMS_SHIFT[];
 
+/**
+ * Keysym string containing only the left "alt" key.
+ */
+extern const int GUAC_KEYSYMS_ALT[];
+
+/**
+ * Keysym string containing all modifier keys.
+ */
+extern const int GUAC_KEYSYMS_ALL_MODIFIERS[];
+
 #endif
 
