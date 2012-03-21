@@ -111,7 +111,7 @@ extern const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode;
 /**
  * Simple macro for referencing the mapped value of an altcode or scancode for a given keysym.
  */
-#define GUAC_RDP_KEYSYM_LOOKUP(keysym_mapping, keysym) (&((keysym_mapping)[((keysym) & 0xFF00) >> 8][(keysym) & 0xFF]))
+#define GUAC_RDP_KEYSYM_LOOKUP(keysym_mapping, keysym) ((keysym_mapping)[((keysym) & 0xFF00) >> 8][(keysym) & 0xFF])
 
 /**
  * Keysym string containing only the left "shift" key.

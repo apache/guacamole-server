@@ -234,7 +234,7 @@ void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
     const guac_rdp_keysym_scancode_map* keysym_scancodes = guac_client_data->keysym_scancodes;
 
     /* Lookup scancode for Alt */
-    int alt = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFE9 /* Alt_L */)->scancode;
+    int alt = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFE9 /* Alt_L */).scancode;
 
     /* Press Alt */
     rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, alt);
@@ -243,7 +243,7 @@ void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
     while (*altcode != '\0') {
 
         /* Get scancode of keypad digit */
-        int scancode = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFB0 + (*altcode) - '0')->scancode;
+        int scancode = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFB0 + (*altcode) - '0').scancode;
 
         /* Press and release digit */
         rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, scancode);
@@ -268,7 +268,7 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
     if (keysym <= 0xFFFF) {
 
         /* Look up scancode mapping */
-        const guac_rdp_scancode_map* scancode_map = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, keysym);
+        const guac_rdp_scancode_map* scancode_map = &GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, keysym);
 
         /* If defined, send event */
         if (scancode_map->scancode != 0) {
@@ -293,7 +293,7 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
         /* If undefined, try to type using Alt-code */
         else {
 
-            const guac_rdp_altcode_map* altcode_map = GUAC_RDP_KEYSYM_LOOKUP(guac_rdp_keysym_altcode, keysym);
+            const guac_rdp_altcode_map* altcode_map = &GUAC_RDP_KEYSYM_LOOKUP(guac_rdp_keysym_altcode, keysym);
             if (altcode_map->altcode != NULL) {
 
                 /* Only send Alt-code on press */
@@ -323,7 +323,12 @@ void __guac_rdp_send_keysym_string(guac_client* client, const int* keysym_string
 
 int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
-    return __guac_rdp_send_keysym(client, keysym, pressed);;
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+
+    /* Update keysym state */
+    GUAC_RDP_KEYSYM_LOOKUP(guac_client_data->keysym_state, keysym) = pressed;
+
+    return __guac_rdp_send_keysym(client, keysym, pressed);
 
 }
 
