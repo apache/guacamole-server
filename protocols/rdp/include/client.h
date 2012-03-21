@@ -67,6 +67,8 @@ typedef struct rdp_guac_client_data {
 
     const guac_rdp_keysym_scancode_map* keysym_scancodes;
 
+    guac_rdp_keysym_state_map keysym_state;
+
 } rdp_guac_client_data;
 
 typedef struct rdp_freerdp_context {

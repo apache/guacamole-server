@@ -84,6 +84,11 @@ typedef struct guac_rdp_altcode_map {
 } guac_rdp_altcode_map;
 
 /**
+ * Mapping from keysym to current state
+ */
+typedef int guac_rdp_keysym_state_map[256][256];
+
+/**
  * Static mapping from keysyms to scancodes.
  */
 typedef guac_rdp_scancode_map guac_rdp_keysym_scancode_map[256][256];

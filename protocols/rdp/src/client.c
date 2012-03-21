@@ -325,6 +325,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
     guac_client_data->keysym_scancodes = &guac_rdp_keysym_scancode_en_us;
 
+    /* Clear keysym state mapping */
+    memset(guac_client_data->keysym_state, 0, sizeof(guac_rdp_keysym_state_map));
+
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
     client->data = guac_client_data;
 
