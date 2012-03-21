@@ -41,7 +41,7 @@
 #include "rdp_keymap.h"
 
 const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
-    {                                        /* 0x00?? */
+    {                          /* 0x00?? */
         { .altcode = NULL   }, /* 0x0000 */
         { .altcode = NULL   }, /* 0x0001 */
         { .altcode = NULL   }, /* 0x0002 */
@@ -299,7 +299,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x00fe (thorn) */
         { .altcode = NULL   }, /* 0x00ff (ydiaeresis) */
     },
-    {                                        /* 0x01?? */
+    {                          /* 0x01?? */
         { .altcode = NULL   }, /* 0x0100 */
         { .altcode = NULL   }, /* 0x0101 */
         { .altcode = NULL   }, /* 0x0102 */
@@ -557,7 +557,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x01fe (tcedilla) */
         { .altcode = NULL   }, /* 0x01ff (abovedot) */
     },
-    {                                        /* 0x02?? */
+    {                          /* 0x02?? */
         { .altcode = NULL   }, /* 0x0200 */
         { .altcode = NULL   }, /* 0x0201 */
         { .altcode = NULL   }, /* 0x0202 */
@@ -815,7 +815,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x02fe (scircumflex) */
         { .altcode = NULL   }, /* 0x02ff */
     },
-    {                                        /* 0x03?? */
+    {                          /* 0x03?? */
         { .altcode = NULL   }, /* 0x0300 */
         { .altcode = NULL   }, /* 0x0301 */
         { .altcode = NULL   }, /* 0x0302 */
@@ -1073,7 +1073,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x03fe (umacron) */
         { .altcode = NULL   }, /* 0x03ff */
     },
-    {                                        /* 0x04?? */
+    {                          /* 0x04?? */
         { .altcode = NULL   }, /* 0x0400 */
         { .altcode = NULL   }, /* 0x0401 */
         { .altcode = NULL   }, /* 0x0402 */
@@ -1331,7 +1331,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x04fe */
         { .altcode = NULL   }, /* 0x04ff */
     },
-    {                                        /* 0x05?? */
+    {                          /* 0x05?? */
         { .altcode = NULL   }, /* 0x0500 */
         { .altcode = NULL   }, /* 0x0501 */
         { .altcode = NULL   }, /* 0x0502 */
@@ -1589,7 +1589,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x05fe */
         { .altcode = NULL   }, /* 0x05ff */
     },
-    {                                        /* 0x06?? */
+    {                          /* 0x06?? */
         { .altcode = NULL   }, /* 0x0600 */
         { .altcode = NULL   }, /* 0x0601 */
         { .altcode = NULL   }, /* 0x0602 */
@@ -1847,7 +1847,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x06fe (Cyrillic_CHE) */
         { .altcode = NULL   }, /* 0x06ff (Cyrillic_HARDSIGN) */
     },
-    {                                        /* 0x07?? */
+    {                          /* 0x07?? */
         { .altcode = NULL   }, /* 0x0700 */
         { .altcode = NULL   }, /* 0x0701 */
         { .altcode = NULL   }, /* 0x0702 */
@@ -2105,7 +2105,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x07fe */
         { .altcode = NULL   }, /* 0x07ff */
     },
-    {                                        /* 0x08?? */
+    {                          /* 0x08?? */
         { .altcode = NULL   }, /* 0x0800 */
         { .altcode = NULL   }, /* 0x0801 */
         { .altcode = NULL   }, /* 0x0802 */
@@ -2363,7 +2363,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x08fe (downarrow) */
         { .altcode = NULL   }, /* 0x08ff */
     },
-    {                                        /* 0x09?? */
+    {                          /* 0x09?? */
         { .altcode = NULL   }, /* 0x0900 */
         { .altcode = NULL   }, /* 0x0901 */
         { .altcode = NULL   }, /* 0x0902 */
@@ -2621,7 +2621,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x09fe */
         { .altcode = NULL   }, /* 0x09ff */
     },
-    {                                        /* 0x0a?? */
+    {                          /* 0x0a?? */
         { .altcode = NULL   }, /* 0x0a00 */
         { .altcode = NULL   }, /* 0x0a01 */
         { .altcode = NULL   }, /* 0x0a02 */
@@ -2879,7 +2879,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x0afe (doublelowquotemark) */
         { .altcode = NULL   }, /* 0x0aff (cursor) */
     },
-    {                                        /* 0x0b?? */
+    {                          /* 0x0b?? */
         { .altcode = NULL   }, /* 0x0b00 */
         { .altcode = NULL   }, /* 0x0b01 */
         { .altcode = NULL   }, /* 0x0b02 */
@@ -3137,7 +3137,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x0bfe */
         { .altcode = NULL   }, /* 0x0bff */
     },
-    {                                        /* 0x0c?? */
+    {                          /* 0x0c?? */
         { .altcode = NULL   }, /* 0x0c00 */
         { .altcode = NULL   }, /* 0x0c01 */
         { .altcode = NULL   }, /* 0x0c02 */
@@ -3395,7 +3395,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x0cfe */
         { .altcode = NULL   }, /* 0x0cff */
     },
-    {                                        /* 0x0d?? */
+    {                          /* 0x0d?? */
         { .altcode = NULL   }, /* 0x0d00 */
         { .altcode = NULL   }, /* 0x0d01 */
         { .altcode = NULL   }, /* 0x0d02 */
@@ -3653,7 +3653,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x0dfe */
         { .altcode = NULL   }, /* 0x0dff */
     },
-    {                                        /* 0x0e?? */
+    {                          /* 0x0e?? */
         { .altcode = NULL   }, /* 0x0e00 */
         { .altcode = NULL   }, /* 0x0e01 */
         { .altcode = NULL   }, /* 0x0e02 */
@@ -3915,7 +3915,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
     {{NULL  }}, /* 0x10?? */
     {{NULL  }}, /* 0x11?? */
     {{NULL  }}, /* 0x12?? */
-    {                                        /* 0x13?? */
+    {                          /* 0x13?? */
         { .altcode = NULL   }, /* 0x1300 */
         { .altcode = NULL   }, /* 0x1301 */
         { .altcode = NULL   }, /* 0x1302 */
@@ -4185,7 +4185,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
     {{NULL  }}, /* 0x1d?? */
     {{NULL  }}, /* 0x1e?? */
     {{NULL  }}, /* 0x1f?? */
-    {                                        /* 0x20?? */
+    {                          /* 0x20?? */
         { .altcode = NULL   }, /* 0x2000 */
         { .altcode = NULL   }, /* 0x2001 */
         { .altcode = NULL   }, /* 0x2002 */
@@ -4663,7 +4663,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
     {{NULL  }}, /* 0xfa?? */
     {{NULL  }}, /* 0xfb?? */
     {{NULL  }}, /* 0xfc?? */
-    {                                        /* 0xfd?? */
+    {                          /* 0xfd?? */
         { .altcode = NULL   }, /* 0xfd00 */
         { .altcode = NULL   }, /* 0xfd01 (3270_Duplicate) */
         { .altcode = NULL   }, /* 0xfd02 (3270_FieldMark) */
@@ -4921,7 +4921,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0xfdfe */
         { .altcode = NULL   }, /* 0xfdff */
     },
-    {                                        /* 0xfe?? */
+    {                          /* 0xfe?? */
         { .altcode = NULL   }, /* 0xfe00 */
         { .altcode = NULL   }, /* 0xfe01 (ISO_Lock) */
         { .altcode = NULL   }, /* 0xfe02 (ISO_Level2_Latch) */
@@ -5179,7 +5179,7 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0xfefe */
         { .altcode = NULL   }, /* 0xfeff */
     },
-    {                                        /* 0xff?? */
+    {                          /* 0xff?? */
         { .altcode = NULL   }, /* 0xff00 */
         { .altcode = NULL   }, /* 0xff01 */
         { .altcode = NULL   }, /* 0xff02 */
