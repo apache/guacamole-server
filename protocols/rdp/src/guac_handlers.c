@@ -231,7 +231,6 @@ void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
 
     /* Lookup scancode for Alt */
     int alt = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFE9 /* Alt_L */)->scancode;
-    guac_client_log_info(client, "ALTCODE: alt=%i", alt);
 
     /* Press Alt */
     rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, alt);
@@ -245,7 +244,6 @@ void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
         /* Press and release digit */
         rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, scancode);
         rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_RELEASE, scancode);
-        guac_client_log_info(client, "ALTCODE: scan=%i", scancode);
 
         /* Next character */
         altcode++;
@@ -253,7 +251,14 @@ void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
 
     /* Release Alt */
     rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_RELEASE, alt);
-    guac_client_log_info(client, "ALTCODE: done");
+
+}
+
+void __rdp_guac_client_send_keysym_string(guac_client* client, int* keysym_string, int pressed) {
+
+    /* Send all keysyms in string, NULL terminated */
+    while (*keysym_string != 0)
+        rdp_guac_client_key_handler(client, *(keysym_string++), pressed);
 
 }
 
@@ -270,12 +275,24 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
         const guac_rdp_scancode_map* scancode_map = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, keysym);
 
         /* If defined, send event */
-        if (scancode_map->scancode != 0)
+        if (scancode_map->scancode != 0) {
+
+            /* If defined, send any prerequesite keys */
+            if (scancode_map->set_keysyms != NULL)
+                __rdp_guac_client_send_keysym_string(client, scancode_map->set_keysyms, 1);
+
+            /* Send actual key */
             rdp_inst->input->KeyboardEvent(
                     rdp_inst->input,
                     scancode_map->flags
                         | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
                     scancode_map->scancode);
+
+            /* If defined, release any prerequesite keys */
+            if (scancode_map->set_keysyms != NULL)
+                __rdp_guac_client_send_keysym_string(client, scancode_map->set_keysyms, 0);
+
+        }
 
         /* If undefined, try to type using Alt-code */
         else {
