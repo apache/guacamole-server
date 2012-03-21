@@ -217,7 +217,7 @@ void __guac_rdp_client_load_keymap(guac_client* client,
         __guac_rdp_client_load_keymap(client, keymap->parent);
 
     /* Log load */
-    guac_client_log_info(client, "Loading keymap %s", keymap->name);
+    guac_client_log_info(client, "Loading keymap \"%s\"", keymap->name);
 
     /* Load mapping into keymap */
     while (mapping->keysym != 0) {
