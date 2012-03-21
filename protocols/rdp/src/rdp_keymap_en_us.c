@@ -78,7 +78,8 @@ const guac_rdp_keysym_scancode_map guac_rdp_keysym_scancode_en_us = {
         { .scancode = 0x02, .flags = 0x00 }, /* 0x0021 (exclam) */
         { .scancode = 0x28, .flags = 0x00 }, /* 0x0022 (quotedbl) */
         { .scancode = 0x04, .flags = 0x00 }, /* 0x0023 (numbersign) */
-        { .scancode = 0x05, .flags = 0x00 }, /* 0x0024 (dollar) */
+        { .scancode = 0x05, .flags = 0x00,
+            .set_keysyms = GUAC_KEYSYMS_SHIFT }, /* 0x0024 (dollar) */
         { .scancode = 0x06, .flags = 0x00 }, /* 0x0025 (percent) */
         { .scancode = 0x08, .flags = 0x00 }, /* 0x0026 (ampersand) */
         { .scancode = 0x28, .flags = 0x00 }, /* 0x0027 (quoteright) */

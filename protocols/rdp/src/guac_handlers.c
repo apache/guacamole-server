@@ -254,7 +254,7 @@ void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
 
 }
 
-void __rdp_guac_client_send_keysym_string(guac_client* client, int* keysym_string, int pressed) {
+void __rdp_guac_client_send_keysym_string(guac_client* client, const int* keysym_string, int pressed) {
 
     /* Send all keysyms in string, NULL terminated */
     while (*keysym_string != 0)
