@@ -42,136 +42,136 @@
 
 const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
     {                          /* 0x00?? */
-        { .altcode = NULL   }, /* 0x0000 */
-        { .altcode = NULL   }, /* 0x0001 */
-        { .altcode = NULL   }, /* 0x0002 */
-        { .altcode = NULL   }, /* 0x0003 */
-        { .altcode = NULL   }, /* 0x0004 */
-        { .altcode = NULL   }, /* 0x0005 */
-        { .altcode = NULL   }, /* 0x0006 */
-        { .altcode = NULL   }, /* 0x0007 */
-        { .altcode = NULL   }, /* 0x0008 */
-        { .altcode = NULL   }, /* 0x0009 */
-        { .altcode = NULL   }, /* 0x000a */
-        { .altcode = NULL   }, /* 0x000b */
-        { .altcode = NULL   }, /* 0x000c */
-        { .altcode = NULL   }, /* 0x000d */
-        { .altcode = NULL   }, /* 0x000e */
-        { .altcode = NULL   }, /* 0x000f */
-        { .altcode = NULL   }, /* 0x0010 */
-        { .altcode = NULL   }, /* 0x0011 */
-        { .altcode = NULL   }, /* 0x0012 */
-        { .altcode = NULL   }, /* 0x0013 */
-        { .altcode = NULL   }, /* 0x0014 */
-        { .altcode = NULL   }, /* 0x0015 */
-        { .altcode = NULL   }, /* 0x0016 */
-        { .altcode = NULL   }, /* 0x0017 */
-        { .altcode = NULL   }, /* 0x0018 */
-        { .altcode = NULL   }, /* 0x0019 */
-        { .altcode = NULL   }, /* 0x001a */
-        { .altcode = NULL   }, /* 0x001b */
-        { .altcode = NULL   }, /* 0x001c */
-        { .altcode = NULL   }, /* 0x001d */
-        { .altcode = NULL   }, /* 0x001e */
-        { .altcode = NULL   }, /* 0x001f */
-        { .altcode = NULL   }, /* 0x0020 (space) */
-        { .altcode = NULL   }, /* 0x0021 (exclam) */
-        { .altcode = NULL   }, /* 0x0022 (quotedbl) */
-        { .altcode = NULL   }, /* 0x0023 (numbersign) */
-        { .altcode = NULL   }, /* 0x0024 (dollar) */
-        { .altcode = NULL   }, /* 0x0025 (percent) */
-        { .altcode = NULL   }, /* 0x0026 (ampersand) */
-        { .altcode = NULL   }, /* 0x0027 (quoteright) */
-        { .altcode = NULL   }, /* 0x0028 (parenleft) */
-        { .altcode = NULL   }, /* 0x0029 (parenright) */
-        { .altcode = NULL   }, /* 0x002a (asterisk) */
-        { .altcode = NULL   }, /* 0x002b (plus) */
-        { .altcode = NULL   }, /* 0x002c (comma) */
-        { .altcode = NULL   }, /* 0x002d (minus) */
-        { .altcode = NULL   }, /* 0x002e (period) */
-        { .altcode = NULL   }, /* 0x002f (slash) */
-        { .altcode = NULL   }, /* 0x0030 (0) */
-        { .altcode = NULL   }, /* 0x0031 (1) */
-        { .altcode = NULL   }, /* 0x0032 (2) */
-        { .altcode = NULL   }, /* 0x0033 (3) */
-        { .altcode = NULL   }, /* 0x0034 (4) */
-        { .altcode = NULL   }, /* 0x0035 (5) */
-        { .altcode = NULL   }, /* 0x0036 (6) */
-        { .altcode = NULL   }, /* 0x0037 (7) */
-        { .altcode = NULL   }, /* 0x0038 (8) */
-        { .altcode = NULL   }, /* 0x0039 (9) */
-        { .altcode = NULL   }, /* 0x003a (colon) */
-        { .altcode = NULL   }, /* 0x003b (semicolon) */
-        { .altcode = NULL   }, /* 0x003c (less) */
-        { .altcode = NULL   }, /* 0x003d (equal) */
-        { .altcode = NULL   }, /* 0x003e (greater) */
-        { .altcode = NULL   }, /* 0x003f (question) */
-        { .altcode = NULL   }, /* 0x0040 (at) */
-        { .altcode = NULL   }, /* 0x0041 (A) */
-        { .altcode = NULL   }, /* 0x0042 (B) */
-        { .altcode = NULL   }, /* 0x0043 (C) */
-        { .altcode = NULL   }, /* 0x0044 (D) */
-        { .altcode = NULL   }, /* 0x0045 (E) */
-        { .altcode = NULL   }, /* 0x0046 (F) */
-        { .altcode = NULL   }, /* 0x0047 (G) */
-        { .altcode = NULL   }, /* 0x0048 (H) */
-        { .altcode = NULL   }, /* 0x0049 (I) */
-        { .altcode = NULL   }, /* 0x004a (J) */
-        { .altcode = NULL   }, /* 0x004b (K) */
-        { .altcode = NULL   }, /* 0x004c (L) */
-        { .altcode = NULL   }, /* 0x004d (M) */
-        { .altcode = NULL   }, /* 0x004e (N) */
-        { .altcode = NULL   }, /* 0x004f (O) */
-        { .altcode = NULL   }, /* 0x0050 (P) */
-        { .altcode = NULL   }, /* 0x0051 (Q) */
-        { .altcode = NULL   }, /* 0x0052 (R) */
-        { .altcode = NULL   }, /* 0x0053 (S) */
-        { .altcode = NULL   }, /* 0x0054 (T) */
-        { .altcode = NULL   }, /* 0x0055 (U) */
-        { .altcode = NULL   }, /* 0x0056 (V) */
-        { .altcode = NULL   }, /* 0x0057 (W) */
-        { .altcode = NULL   }, /* 0x0058 (X) */
-        { .altcode = NULL   }, /* 0x0059 (Y) */
-        { .altcode = NULL   }, /* 0x005a (Z) */
-        { .altcode = NULL   }, /* 0x005b (bracketleft) */
-        { .altcode = NULL   }, /* 0x005c (backslash) */
-        { .altcode = NULL   }, /* 0x005d (bracketright) */
-        { .altcode = NULL   }, /* 0x005e (asciicircum) */
-        { .altcode = NULL   }, /* 0x005f (underscore) */
-        { .altcode = NULL   }, /* 0x0060 (quoteleft) */
-        { .altcode = NULL   }, /* 0x0061 (a) */
-        { .altcode = NULL   }, /* 0x0062 (b) */
-        { .altcode = NULL   }, /* 0x0063 (c) */
-        { .altcode = NULL   }, /* 0x0064 (d) */
-        { .altcode = NULL   }, /* 0x0065 (e) */
-        { .altcode = NULL   }, /* 0x0066 (f) */
-        { .altcode = NULL   }, /* 0x0067 (g) */
-        { .altcode = NULL   }, /* 0x0068 (h) */
-        { .altcode = NULL   }, /* 0x0069 (i) */
-        { .altcode = NULL   }, /* 0x006a (j) */
-        { .altcode = NULL   }, /* 0x006b (k) */
-        { .altcode = NULL   }, /* 0x006c (l) */
-        { .altcode = NULL   }, /* 0x006d (m) */
-        { .altcode = NULL   }, /* 0x006e (n) */
-        { .altcode = NULL   }, /* 0x006f (o) */
-        { .altcode = NULL   }, /* 0x0070 (p) */
-        { .altcode = NULL   }, /* 0x0071 (q) */
-        { .altcode = NULL   }, /* 0x0072 (r) */
-        { .altcode = NULL   }, /* 0x0073 (s) */
-        { .altcode = NULL   }, /* 0x0074 (t) */
-        { .altcode = NULL   }, /* 0x0075 (u) */
-        { .altcode = NULL   }, /* 0x0076 (v) */
-        { .altcode = NULL   }, /* 0x0077 (w) */
-        { .altcode = NULL   }, /* 0x0078 (x) */
-        { .altcode = NULL   }, /* 0x0079 (y) */
-        { .altcode = NULL   }, /* 0x007a (z) */
-        { .altcode = NULL   }, /* 0x007b (braceleft) */
-        { .altcode = NULL   }, /* 0x007c (bar) */
-        { .altcode = NULL   }, /* 0x007d (braceright) */
-        { .altcode = NULL   }, /* 0x007e (asciitilde) */
-        { .altcode = NULL   }, /* 0x007f */
+        { .altcode = "0000" }, /* 0x0000 */
+        { .altcode = "0001" }, /* 0x0001 */
+        { .altcode = "0002" }, /* 0x0002 */
+        { .altcode = "0003" }, /* 0x0003 */
+        { .altcode = "0004" }, /* 0x0004 */
+        { .altcode = "0005" }, /* 0x0005 */
+        { .altcode = "0006" }, /* 0x0006 */
+        { .altcode = "0007" }, /* 0x0007 */
+        { .altcode = "0008" }, /* 0x0008 */
+        { .altcode = "0009" }, /* 0x0009 */
+        { .altcode = "0010" }, /* 0x000a */
+        { .altcode = "0011" }, /* 0x000b */
+        { .altcode = "0012" }, /* 0x000c */
+        { .altcode = "0013" }, /* 0x000d */
+        { .altcode = "0014" }, /* 0x000e */
+        { .altcode = "0015" }, /* 0x000f */
+        { .altcode = "0016" }, /* 0x0010 */
+        { .altcode = "0017" }, /* 0x0011 */
+        { .altcode = "0018" }, /* 0x0012 */
+        { .altcode = "0019" }, /* 0x0013 */
+        { .altcode = "0020" }, /* 0x0014 */
+        { .altcode = "0021" }, /* 0x0015 */
+        { .altcode = "0022" }, /* 0x0016 */
+        { .altcode = "0023" }, /* 0x0017 */
+        { .altcode = "0024" }, /* 0x0018 */
+        { .altcode = "0025" }, /* 0x0019 */
+        { .altcode = "0026" }, /* 0x001a */
+        { .altcode = "0027" }, /* 0x001b */
+        { .altcode = "0028" }, /* 0x001c */
+        { .altcode = "0029" }, /* 0x001d */
+        { .altcode = "0030" }, /* 0x001e */
+        { .altcode = "0031" }, /* 0x001f */
+        { .altcode = "0032" }, /* 0x0020 (space) */
+        { .altcode = "0033" }, /* 0x0021 (exclam) */
+        { .altcode = "0034" }, /* 0x0022 (quotedbl) */
+        { .altcode = "0035" }, /* 0x0023 (numbersign) */
+        { .altcode = "0036" }, /* 0x0024 (dollar) */
+        { .altcode = "0037" }, /* 0x0025 (percent) */
+        { .altcode = "0038" }, /* 0x0026 (ampersand) */
+        { .altcode = "0039" }, /* 0x0027 (quoteright) */
+        { .altcode = "0040" }, /* 0x0028 (parenleft) */
+        { .altcode = "0041" }, /* 0x0029 (parenright) */
+        { .altcode = "0042" }, /* 0x002a (asterisk) */
+        { .altcode = "0043" }, /* 0x002b (plus) */
+        { .altcode = "0044" }, /* 0x002c (comma) */
+        { .altcode = "0045" }, /* 0x002d (minus) */
+        { .altcode = "0046" }, /* 0x002e (period) */
+        { .altcode = "0047" }, /* 0x002f (slash) */
+        { .altcode = "0048" }, /* 0x0030 (0) */
+        { .altcode = "0049" }, /* 0x0031 (1) */
+        { .altcode = "0050" }, /* 0x0032 (2) */
+        { .altcode = "0051" }, /* 0x0033 (3) */
+        { .altcode = "0052" }, /* 0x0034 (4) */
+        { .altcode = "0053" }, /* 0x0035 (5) */
+        { .altcode = "0054" }, /* 0x0036 (6) */
+        { .altcode = "0055" }, /* 0x0037 (7) */
+        { .altcode = "0056" }, /* 0x0038 (8) */
+        { .altcode = "0057" }, /* 0x0039 (9) */
+        { .altcode = "0058" }, /* 0x003a (colon) */
+        { .altcode = "0059" }, /* 0x003b (semicolon) */
+        { .altcode = "0060" }, /* 0x003c (less) */
+        { .altcode = "0061" }, /* 0x003d (equal) */
+        { .altcode = "0062" }, /* 0x003e (greater) */
+        { .altcode = "0063" }, /* 0x003f (question) */
+        { .altcode = "0064" }, /* 0x0040 (at) */
+        { .altcode = "0065" }, /* 0x0041 (A) */
+        { .altcode = "0066" }, /* 0x0042 (B) */
+        { .altcode = "0067" }, /* 0x0043 (C) */
+        { .altcode = "0068" }, /* 0x0044 (D) */
+        { .altcode = "0069" }, /* 0x0045 (E) */
+        { .altcode = "0070" }, /* 0x0046 (F) */
+        { .altcode = "0071" }, /* 0x0047 (G) */
+        { .altcode = "0072" }, /* 0x0048 (H) */
+        { .altcode = "0073" }, /* 0x0049 (I) */
+        { .altcode = "0074" }, /* 0x004a (J) */
+        { .altcode = "0075" }, /* 0x004b (K) */
+        { .altcode = "0076" }, /* 0x004c (L) */
+        { .altcode = "0077" }, /* 0x004d (M) */
+        { .altcode = "0078" }, /* 0x004e (N) */
+        { .altcode = "0079" }, /* 0x004f (O) */
+        { .altcode = "0080" }, /* 0x0050 (P) */
+        { .altcode = "0081" }, /* 0x0051 (Q) */
+        { .altcode = "0082" }, /* 0x0052 (R) */
+        { .altcode = "0083" }, /* 0x0053 (S) */
+        { .altcode = "0084" }, /* 0x0054 (T) */
+        { .altcode = "0085" }, /* 0x0055 (U) */
+        { .altcode = "0086" }, /* 0x0056 (V) */
+        { .altcode = "0087" }, /* 0x0057 (W) */
+        { .altcode = "0088" }, /* 0x0058 (X) */
+        { .altcode = "0089" }, /* 0x0059 (Y) */
+        { .altcode = "0090" }, /* 0x005a (Z) */
+        { .altcode = "0091" }, /* 0x005b (bracketleft) */
+        { .altcode = "0092" }, /* 0x005c (backslash) */
+        { .altcode = "0093" }, /* 0x005d (bracketright) */
+        { .altcode = "0094" }, /* 0x005e (asciicircum) */
+        { .altcode = "0095" }, /* 0x005f (underscore) */
+        { .altcode = "0096" }, /* 0x0060 (quoteleft) */
+        { .altcode = "0097" }, /* 0x0061 (a) */
+        { .altcode = "0098" }, /* 0x0062 (b) */
+        { .altcode = "0099" }, /* 0x0063 (c) */
+        { .altcode = "0100" }, /* 0x0064 (d) */
+        { .altcode = "0101" }, /* 0x0065 (e) */
+        { .altcode = "0102" }, /* 0x0066 (f) */
+        { .altcode = "0103" }, /* 0x0067 (g) */
+        { .altcode = "0104" }, /* 0x0068 (h) */
+        { .altcode = "0105" }, /* 0x0069 (i) */
+        { .altcode = "0106" }, /* 0x006a (j) */
+        { .altcode = "0107" }, /* 0x006b (k) */
+        { .altcode = "0108" }, /* 0x006c (l) */
+        { .altcode = "0109" }, /* 0x006d (m) */
+        { .altcode = "0110" }, /* 0x006e (n) */
+        { .altcode = "0111" }, /* 0x006f (o) */
+        { .altcode = "0112" }, /* 0x0070 (p) */
+        { .altcode = "0113" }, /* 0x0071 (q) */
+        { .altcode = "0114" }, /* 0x0072 (r) */
+        { .altcode = "0115" }, /* 0x0073 (s) */
+        { .altcode = "0116" }, /* 0x0074 (t) */
+        { .altcode = "0117" }, /* 0x0075 (u) */
+        { .altcode = "0118" }, /* 0x0076 (v) */
+        { .altcode = "0119" }, /* 0x0077 (w) */
+        { .altcode = "0120" }, /* 0x0078 (x) */
+        { .altcode = "0121" }, /* 0x0079 (y) */
+        { .altcode = "0122" }, /* 0x007a (z) */
+        { .altcode = "0123" }, /* 0x007b (braceleft) */
+        { .altcode = "0124" }, /* 0x007c (bar) */
+        { .altcode = "0125" }, /* 0x007d (braceright) */
+        { .altcode = "0126" }, /* 0x007e (asciitilde) */
+        { .altcode = "0127" }, /* 0x007f */
         { .altcode = NULL   }, /* 0x0080 */
-        { .altcode = NULL   }, /* 0x0081 */
+        { .altcode = "0129" }, /* 0x0081 */
         { .altcode = NULL   }, /* 0x0082 */
         { .altcode = NULL   }, /* 0x0083 */
         { .altcode = NULL   }, /* 0x0084 */
@@ -183,10 +183,10 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x008a */
         { .altcode = NULL   }, /* 0x008b */
         { .altcode = NULL   }, /* 0x008c */
-        { .altcode = NULL   }, /* 0x008d */
+        { .altcode = "0141" }, /* 0x008d */
         { .altcode = NULL   }, /* 0x008e */
-        { .altcode = NULL   }, /* 0x008f */
-        { .altcode = NULL   }, /* 0x0090 */
+        { .altcode = "0143" }, /* 0x008f */
+        { .altcode = "0144" }, /* 0x0090 */
         { .altcode = NULL   }, /* 0x0091 */
         { .altcode = NULL   }, /* 0x0092 */
         { .altcode = NULL   }, /* 0x0093 */
@@ -199,105 +199,105 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x009a */
         { .altcode = NULL   }, /* 0x009b */
         { .altcode = NULL   }, /* 0x009c */
-        { .altcode = NULL   }, /* 0x009d */
+        { .altcode = "0157" }, /* 0x009d */
         { .altcode = NULL   }, /* 0x009e */
         { .altcode = NULL   }, /* 0x009f */
-        { .altcode = NULL   }, /* 0x00a0 (nobreakspace) */
-        { .altcode = NULL   }, /* 0x00a1 (exclamdown) */
-        { .altcode = NULL   }, /* 0x00a2 (cent) */
-        { .altcode = NULL   }, /* 0x00a3 (sterling) */
-        { .altcode = NULL   }, /* 0x00a4 (currency) */
-        { .altcode = NULL   }, /* 0x00a5 (yen) */
-        { .altcode = NULL   }, /* 0x00a6 (brokenbar) */
-        { .altcode = NULL   }, /* 0x00a7 (section) */
-        { .altcode = NULL   }, /* 0x00a8 (diaeresis) */
-        { .altcode = NULL   }, /* 0x00a9 (copyright) */
-        { .altcode = NULL   }, /* 0x00aa (ordfeminine) */
-        { .altcode = NULL   }, /* 0x00ab (guillemotleft) */
-        { .altcode = NULL   }, /* 0x00ac (notsign) */
-        { .altcode = NULL   }, /* 0x00ad (hyphen) */
-        { .altcode = NULL   }, /* 0x00ae (registered) */
-        { .altcode = NULL   }, /* 0x00af (macron) */
-        { .altcode = NULL   }, /* 0x00b0 (degree) */
-        { .altcode = NULL   }, /* 0x00b1 (plusminus) */
-        { .altcode = NULL   }, /* 0x00b2 (twosuperior) */
-        { .altcode = NULL   }, /* 0x00b3 (threesuperior) */
-        { .altcode = NULL   }, /* 0x00b4 (acute) */
-        { .altcode = NULL   }, /* 0x00b5 (mu) */
-        { .altcode = NULL   }, /* 0x00b6 (paragraph) */
-        { .altcode = NULL   }, /* 0x00b7 (periodcentered) */
-        { .altcode = NULL   }, /* 0x00b8 (cedilla) */
-        { .altcode = NULL   }, /* 0x00b9 (onesuperior) */
-        { .altcode = NULL   }, /* 0x00ba (masculine) */
-        { .altcode = NULL   }, /* 0x00bb (guillemotright) */
-        { .altcode = NULL   }, /* 0x00bc (onequarter) */
-        { .altcode = NULL   }, /* 0x00bd (onehalf) */
-        { .altcode = NULL   }, /* 0x00be (threequarters) */
-        { .altcode = NULL   }, /* 0x00bf (questiondown) */
-        { .altcode = NULL   }, /* 0x00c0 (Agrave) */
-        { .altcode = NULL   }, /* 0x00c1 (Aacute) */
-        { .altcode = NULL   }, /* 0x00c2 (Acircumflex) */
-        { .altcode = NULL   }, /* 0x00c3 (Atilde) */
-        { .altcode = NULL   }, /* 0x00c4 (Adiaeresis) */
-        { .altcode = NULL   }, /* 0x00c5 (Aring) */
-        { .altcode = NULL   }, /* 0x00c6 (AE) */
-        { .altcode = NULL   }, /* 0x00c7 (Ccedilla) */
-        { .altcode = NULL   }, /* 0x00c8 (Egrave) */
-        { .altcode = NULL   }, /* 0x00c9 (Eacute) */
-        { .altcode = NULL   }, /* 0x00ca (Ecircumflex) */
-        { .altcode = NULL   }, /* 0x00cb (Ediaeresis) */
-        { .altcode = NULL   }, /* 0x00cc (Igrave) */
-        { .altcode = NULL   }, /* 0x00cd (Iacute) */
-        { .altcode = NULL   }, /* 0x00ce (Icircumflex) */
-        { .altcode = NULL   }, /* 0x00cf (Idiaeresis) */
-        { .altcode = NULL   }, /* 0x00d0 (Eth) */
-        { .altcode = NULL   }, /* 0x00d1 (Ntilde) */
-        { .altcode = NULL   }, /* 0x00d2 (Ograve) */
-        { .altcode = NULL   }, /* 0x00d3 (Oacute) */
-        { .altcode = NULL   }, /* 0x00d4 (Ocircumflex) */
-        { .altcode = NULL   }, /* 0x00d5 (Otilde) */
-        { .altcode = NULL   }, /* 0x00d6 (Odiaeresis) */
-        { .altcode = NULL   }, /* 0x00d7 (multiply) */
-        { .altcode = NULL   }, /* 0x00d8 (Ooblique) */
-        { .altcode = NULL   }, /* 0x00d9 (Ugrave) */
-        { .altcode = NULL   }, /* 0x00da (Uacute) */
-        { .altcode = NULL   }, /* 0x00db (Ucircumflex) */
-        { .altcode = NULL   }, /* 0x00dc (Udiaeresis) */
-        { .altcode = NULL   }, /* 0x00dd (Yacute) */
-        { .altcode = NULL   }, /* 0x00de (Thorn) */
-        { .altcode = NULL   }, /* 0x00df (ssharp) */
-        { .altcode = NULL   }, /* 0x00e0 (agrave) */
-        { .altcode = NULL   }, /* 0x00e1 (aacute) */
-        { .altcode = NULL   }, /* 0x00e2 (acircumflex) */
-        { .altcode = NULL   }, /* 0x00e3 (atilde) */
-        { .altcode = NULL   }, /* 0x00e4 (adiaeresis) */
-        { .altcode = NULL   }, /* 0x00e5 (aring) */
-        { .altcode = NULL   }, /* 0x00e6 (ae) */
-        { .altcode = NULL   }, /* 0x00e7 (ccedilla) */
-        { .altcode = NULL   }, /* 0x00e8 (egrave) */
-        { .altcode = NULL   }, /* 0x00e9 (eacute) */
-        { .altcode = NULL   }, /* 0x00ea (ecircumflex) */
-        { .altcode = NULL   }, /* 0x00eb (ediaeresis) */
-        { .altcode = NULL   }, /* 0x00ec (igrave) */
-        { .altcode = NULL   }, /* 0x00ed (iacute) */
-        { .altcode = NULL   }, /* 0x00ee (icircumflex) */
-        { .altcode = NULL   }, /* 0x00ef (idiaeresis) */
-        { .altcode = NULL   }, /* 0x00f0 (eth) */
-        { .altcode = NULL   }, /* 0x00f1 (ntilde) */
-        { .altcode = NULL   }, /* 0x00f2 (ograve) */
-        { .altcode = NULL   }, /* 0x00f3 (oacute) */
-        { .altcode = NULL   }, /* 0x00f4 (ocircumflex) */
-        { .altcode = NULL   }, /* 0x00f5 (otilde) */
-        { .altcode = NULL   }, /* 0x00f6 (odiaeresis) */
-        { .altcode = NULL   }, /* 0x00f7 (division) */
-        { .altcode = NULL   }, /* 0x00f8 (ooblique) */
-        { .altcode = NULL   }, /* 0x00f9 (ugrave) */
-        { .altcode = NULL   }, /* 0x00fa (uacute) */
-        { .altcode = NULL   }, /* 0x00fb (ucircumflex) */
-        { .altcode = NULL   }, /* 0x00fc (udiaeresis) */
-        { .altcode = NULL   }, /* 0x00fd (yacute) */
-        { .altcode = NULL   }, /* 0x00fe (thorn) */
-        { .altcode = NULL   }, /* 0x00ff (ydiaeresis) */
+        { .altcode = "0160" }, /* 0x00a0 (nobreakspace) */
+        { .altcode = "0161" }, /* 0x00a1 (exclamdown) */
+        { .altcode = "0162" }, /* 0x00a2 (cent) */
+        { .altcode = "0163" }, /* 0x00a3 (sterling) */
+        { .altcode = "0164" }, /* 0x00a4 (currency) */
+        { .altcode = "0165" }, /* 0x00a5 (yen) */
+        { .altcode = "0166" }, /* 0x00a6 (brokenbar) */
+        { .altcode = "0167" }, /* 0x00a7 (section) */
+        { .altcode = "0168" }, /* 0x00a8 (diaeresis) */
+        { .altcode = "0169" }, /* 0x00a9 (copyright) */
+        { .altcode = "0170" }, /* 0x00aa (ordfeminine) */
+        { .altcode = "0171" }, /* 0x00ab (guillemotleft) */
+        { .altcode = "0172" }, /* 0x00ac (notsign) */
+        { .altcode = "0173" }, /* 0x00ad (hyphen) */
+        { .altcode = "0174" }, /* 0x00ae (registered) */
+        { .altcode = "0175" }, /* 0x00af (macron) */
+        { .altcode = "0176" }, /* 0x00b0 (degree) */
+        { .altcode = "0177" }, /* 0x00b1 (plusminus) */
+        { .altcode = "0178" }, /* 0x00b2 (twosuperior) */
+        { .altcode = "0179" }, /* 0x00b3 (threesuperior) */
+        { .altcode = "0180" }, /* 0x00b4 (acute) */
+        { .altcode = "0181" }, /* 0x00b5 (mu) */
+        { .altcode = "0182" }, /* 0x00b6 (paragraph) */
+        { .altcode = "0183" }, /* 0x00b7 (periodcentered) */
+        { .altcode = "0184" }, /* 0x00b8 (cedilla) */
+        { .altcode = "0185" }, /* 0x00b9 (onesuperior) */
+        { .altcode = "0186" }, /* 0x00ba (masculine) */
+        { .altcode = "0187" }, /* 0x00bb (guillemotright) */
+        { .altcode = "0188" }, /* 0x00bc (onequarter) */
+        { .altcode = "0189" }, /* 0x00bd (onehalf) */
+        { .altcode = "0190" }, /* 0x00be (threequarters) */
+        { .altcode = "0191" }, /* 0x00bf (questiondown) */
+        { .altcode = "0192" }, /* 0x00c0 (Agrave) */
+        { .altcode = "0193" }, /* 0x00c1 (Aacute) */
+        { .altcode = "0194" }, /* 0x00c2 (Acircumflex) */
+        { .altcode = "0195" }, /* 0x00c3 (Atilde) */
+        { .altcode = "0196" }, /* 0x00c4 (Adiaeresis) */
+        { .altcode = "0197" }, /* 0x00c5 (Aring) */
+        { .altcode = "0198" }, /* 0x00c6 (AE) */
+        { .altcode = "0199" }, /* 0x00c7 (Ccedilla) */
+        { .altcode = "0200" }, /* 0x00c8 (Egrave) */
+        { .altcode = "0201" }, /* 0x00c9 (Eacute) */
+        { .altcode = "0202" }, /* 0x00ca (Ecircumflex) */
+        { .altcode = "0203" }, /* 0x00cb (Ediaeresis) */
+        { .altcode = "0204" }, /* 0x00cc (Igrave) */
+        { .altcode = "0205" }, /* 0x00cd (Iacute) */
+        { .altcode = "0206" }, /* 0x00ce (Icircumflex) */
+        { .altcode = "0207" }, /* 0x00cf (Idiaeresis) */
+        { .altcode = "0208" }, /* 0x00d0 (Eth) */
+        { .altcode = "0209" }, /* 0x00d1 (Ntilde) */
+        { .altcode = "0210" }, /* 0x00d2 (Ograve) */
+        { .altcode = "0211" }, /* 0x00d3 (Oacute) */
+        { .altcode = "0212" }, /* 0x00d4 (Ocircumflex) */
+        { .altcode = "0213" }, /* 0x00d5 (Otilde) */
+        { .altcode = "0214" }, /* 0x00d6 (Odiaeresis) */
+        { .altcode = "0215" }, /* 0x00d7 (multiply) */
+        { .altcode = "0216" }, /* 0x00d8 (Ooblique) */
+        { .altcode = "0217" }, /* 0x00d9 (Ugrave) */
+        { .altcode = "0218" }, /* 0x00da (Uacute) */
+        { .altcode = "0219" }, /* 0x00db (Ucircumflex) */
+        { .altcode = "0220" }, /* 0x00dc (Udiaeresis) */
+        { .altcode = "0221" }, /* 0x00dd (Yacute) */
+        { .altcode = "0222" }, /* 0x00de (Thorn) */
+        { .altcode = "0223" }, /* 0x00df (ssharp) */
+        { .altcode = "0224" }, /* 0x00e0 (agrave) */
+        { .altcode = "0225" }, /* 0x00e1 (aacute) */
+        { .altcode = "0226" }, /* 0x00e2 (acircumflex) */
+        { .altcode = "0227" }, /* 0x00e3 (atilde) */
+        { .altcode = "0228" }, /* 0x00e4 (adiaeresis) */
+        { .altcode = "0229" }, /* 0x00e5 (aring) */
+        { .altcode = "0230" }, /* 0x00e6 (ae) */
+        { .altcode = "0231" }, /* 0x00e7 (ccedilla) */
+        { .altcode = "0232" }, /* 0x00e8 (egrave) */
+        { .altcode = "0233" }, /* 0x00e9 (eacute) */
+        { .altcode = "0234" }, /* 0x00ea (ecircumflex) */
+        { .altcode = "0235" }, /* 0x00eb (ediaeresis) */
+        { .altcode = "0236" }, /* 0x00ec (igrave) */
+        { .altcode = "0237" }, /* 0x00ed (iacute) */
+        { .altcode = "0238" }, /* 0x00ee (icircumflex) */
+        { .altcode = "0239" }, /* 0x00ef (idiaeresis) */
+        { .altcode = "0240" }, /* 0x00f0 (eth) */
+        { .altcode = "0241" }, /* 0x00f1 (ntilde) */
+        { .altcode = "0242" }, /* 0x00f2 (ograve) */
+        { .altcode = "0243" }, /* 0x00f3 (oacute) */
+        { .altcode = "0244" }, /* 0x00f4 (ocircumflex) */
+        { .altcode = "0245" }, /* 0x00f5 (otilde) */
+        { .altcode = "0246" }, /* 0x00f6 (odiaeresis) */
+        { .altcode = "0247" }, /* 0x00f7 (division) */
+        { .altcode = "0248" }, /* 0x00f8 (ooblique) */
+        { .altcode = "0249" }, /* 0x00f9 (ugrave) */
+        { .altcode = "0250" }, /* 0x00fa (uacute) */
+        { .altcode = "0251" }, /* 0x00fb (ucircumflex) */
+        { .altcode = "0252" }, /* 0x00fc (udiaeresis) */
+        { .altcode = "0253" }, /* 0x00fd (yacute) */
+        { .altcode = "0254" }, /* 0x00fe (thorn) */
+        { .altcode = "0255" }, /* 0x00ff (ydiaeresis) */
     },
     {                          /* 0x01?? */
         { .altcode = NULL   }, /* 0x0100 */
@@ -3911,10 +3911,10 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x0efe */
         { .altcode = NULL   }, /* 0x0eff (Korean_Won) */
     },
-    {{NULL  }}, /* 0x0f?? */
-    {{NULL  }}, /* 0x10?? */
-    {{NULL  }}, /* 0x11?? */
-    {{NULL  }}, /* 0x12?? */
+    {{NULL}}, /* 0x0f?? */
+    {{NULL}}, /* 0x10?? */
+    {{NULL}}, /* 0x11?? */
+    {{NULL}}, /* 0x12?? */
     {                          /* 0x13?? */
         { .altcode = NULL   }, /* 0x1300 */
         { .altcode = NULL   }, /* 0x1301 */
@@ -4173,18 +4173,18 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x13fe */
         { .altcode = NULL   }, /* 0x13ff */
     },
-    {{NULL  }}, /* 0x14?? */
-    {{NULL  }}, /* 0x15?? */
-    {{NULL  }}, /* 0x16?? */
-    {{NULL  }}, /* 0x17?? */
-    {{NULL  }}, /* 0x18?? */
-    {{NULL  }}, /* 0x19?? */
-    {{NULL  }}, /* 0x1a?? */
-    {{NULL  }}, /* 0x1b?? */
-    {{NULL  }}, /* 0x1c?? */
-    {{NULL  }}, /* 0x1d?? */
-    {{NULL  }}, /* 0x1e?? */
-    {{NULL  }}, /* 0x1f?? */
+    {{NULL}}, /* 0x14?? */
+    {{NULL}}, /* 0x15?? */
+    {{NULL}}, /* 0x16?? */
+    {{NULL}}, /* 0x17?? */
+    {{NULL}}, /* 0x18?? */
+    {{NULL}}, /* 0x19?? */
+    {{NULL}}, /* 0x1a?? */
+    {{NULL}}, /* 0x1b?? */
+    {{NULL}}, /* 0x1c?? */
+    {{NULL}}, /* 0x1d?? */
+    {{NULL}}, /* 0x1e?? */
+    {{NULL}}, /* 0x1f?? */
     {                          /* 0x20?? */
         { .altcode = NULL   }, /* 0x2000 */
         { .altcode = NULL   }, /* 0x2001 */
@@ -4443,226 +4443,226 @@ const guac_rdp_keysym_altcode_map guac_rdp_keysym_altcode = {
         { .altcode = NULL   }, /* 0x20fe */
         { .altcode = NULL   }, /* 0x20ff */
     },
-    {{NULL  }}, /* 0x21?? */
-    {{NULL  }}, /* 0x22?? */
-    {{NULL  }}, /* 0x23?? */
-    {{NULL  }}, /* 0x24?? */
-    {{NULL  }}, /* 0x25?? */
-    {{NULL  }}, /* 0x26?? */
-    {{NULL  }}, /* 0x27?? */
-    {{NULL  }}, /* 0x28?? */
-    {{NULL  }}, /* 0x29?? */
-    {{NULL  }}, /* 0x2a?? */
-    {{NULL  }}, /* 0x2b?? */
-    {{NULL  }}, /* 0x2c?? */
-    {{NULL  }}, /* 0x2d?? */
-    {{NULL  }}, /* 0x2e?? */
-    {{NULL  }}, /* 0x2f?? */
-    {{NULL  }}, /* 0x30?? */
-    {{NULL  }}, /* 0x31?? */
-    {{NULL  }}, /* 0x32?? */
-    {{NULL  }}, /* 0x33?? */
-    {{NULL  }}, /* 0x34?? */
-    {{NULL  }}, /* 0x35?? */
-    {{NULL  }}, /* 0x36?? */
-    {{NULL  }}, /* 0x37?? */
-    {{NULL  }}, /* 0x38?? */
-    {{NULL  }}, /* 0x39?? */
-    {{NULL  }}, /* 0x3a?? */
-    {{NULL  }}, /* 0x3b?? */
-    {{NULL  }}, /* 0x3c?? */
-    {{NULL  }}, /* 0x3d?? */
-    {{NULL  }}, /* 0x3e?? */
-    {{NULL  }}, /* 0x3f?? */
-    {{NULL  }}, /* 0x40?? */
-    {{NULL  }}, /* 0x41?? */
-    {{NULL  }}, /* 0x42?? */
-    {{NULL  }}, /* 0x43?? */
-    {{NULL  }}, /* 0x44?? */
-    {{NULL  }}, /* 0x45?? */
-    {{NULL  }}, /* 0x46?? */
-    {{NULL  }}, /* 0x47?? */
-    {{NULL  }}, /* 0x48?? */
-    {{NULL  }}, /* 0x49?? */
-    {{NULL  }}, /* 0x4a?? */
-    {{NULL  }}, /* 0x4b?? */
-    {{NULL  }}, /* 0x4c?? */
-    {{NULL  }}, /* 0x4d?? */
-    {{NULL  }}, /* 0x4e?? */
-    {{NULL  }}, /* 0x4f?? */
-    {{NULL  }}, /* 0x50?? */
-    {{NULL  }}, /* 0x51?? */
-    {{NULL  }}, /* 0x52?? */
-    {{NULL  }}, /* 0x53?? */
-    {{NULL  }}, /* 0x54?? */
-    {{NULL  }}, /* 0x55?? */
-    {{NULL  }}, /* 0x56?? */
-    {{NULL  }}, /* 0x57?? */
-    {{NULL  }}, /* 0x58?? */
-    {{NULL  }}, /* 0x59?? */
-    {{NULL  }}, /* 0x5a?? */
-    {{NULL  }}, /* 0x5b?? */
-    {{NULL  }}, /* 0x5c?? */
-    {{NULL  }}, /* 0x5d?? */
-    {{NULL  }}, /* 0x5e?? */
-    {{NULL  }}, /* 0x5f?? */
-    {{NULL  }}, /* 0x60?? */
-    {{NULL  }}, /* 0x61?? */
-    {{NULL  }}, /* 0x62?? */
-    {{NULL  }}, /* 0x63?? */
-    {{NULL  }}, /* 0x64?? */
-    {{NULL  }}, /* 0x65?? */
-    {{NULL  }}, /* 0x66?? */
-    {{NULL  }}, /* 0x67?? */
-    {{NULL  }}, /* 0x68?? */
-    {{NULL  }}, /* 0x69?? */
-    {{NULL  }}, /* 0x6a?? */
-    {{NULL  }}, /* 0x6b?? */
-    {{NULL  }}, /* 0x6c?? */
-    {{NULL  }}, /* 0x6d?? */
-    {{NULL  }}, /* 0x6e?? */
-    {{NULL  }}, /* 0x6f?? */
-    {{NULL  }}, /* 0x70?? */
-    {{NULL  }}, /* 0x71?? */
-    {{NULL  }}, /* 0x72?? */
-    {{NULL  }}, /* 0x73?? */
-    {{NULL  }}, /* 0x74?? */
-    {{NULL  }}, /* 0x75?? */
-    {{NULL  }}, /* 0x76?? */
-    {{NULL  }}, /* 0x77?? */
-    {{NULL  }}, /* 0x78?? */
-    {{NULL  }}, /* 0x79?? */
-    {{NULL  }}, /* 0x7a?? */
-    {{NULL  }}, /* 0x7b?? */
-    {{NULL  }}, /* 0x7c?? */
-    {{NULL  }}, /* 0x7d?? */
-    {{NULL  }}, /* 0x7e?? */
-    {{NULL  }}, /* 0x7f?? */
-    {{NULL  }}, /* 0x80?? */
-    {{NULL  }}, /* 0x81?? */
-    {{NULL  }}, /* 0x82?? */
-    {{NULL  }}, /* 0x83?? */
-    {{NULL  }}, /* 0x84?? */
-    {{NULL  }}, /* 0x85?? */
-    {{NULL  }}, /* 0x86?? */
-    {{NULL  }}, /* 0x87?? */
-    {{NULL  }}, /* 0x88?? */
-    {{NULL  }}, /* 0x89?? */
-    {{NULL  }}, /* 0x8a?? */
-    {{NULL  }}, /* 0x8b?? */
-    {{NULL  }}, /* 0x8c?? */
-    {{NULL  }}, /* 0x8d?? */
-    {{NULL  }}, /* 0x8e?? */
-    {{NULL  }}, /* 0x8f?? */
-    {{NULL  }}, /* 0x90?? */
-    {{NULL  }}, /* 0x91?? */
-    {{NULL  }}, /* 0x92?? */
-    {{NULL  }}, /* 0x93?? */
-    {{NULL  }}, /* 0x94?? */
-    {{NULL  }}, /* 0x95?? */
-    {{NULL  }}, /* 0x96?? */
-    {{NULL  }}, /* 0x97?? */
-    {{NULL  }}, /* 0x98?? */
-    {{NULL  }}, /* 0x99?? */
-    {{NULL  }}, /* 0x9a?? */
-    {{NULL  }}, /* 0x9b?? */
-    {{NULL  }}, /* 0x9c?? */
-    {{NULL  }}, /* 0x9d?? */
-    {{NULL  }}, /* 0x9e?? */
-    {{NULL  }}, /* 0x9f?? */
-    {{NULL  }}, /* 0xa0?? */
-    {{NULL  }}, /* 0xa1?? */
-    {{NULL  }}, /* 0xa2?? */
-    {{NULL  }}, /* 0xa3?? */
-    {{NULL  }}, /* 0xa4?? */
-    {{NULL  }}, /* 0xa5?? */
-    {{NULL  }}, /* 0xa6?? */
-    {{NULL  }}, /* 0xa7?? */
-    {{NULL  }}, /* 0xa8?? */
-    {{NULL  }}, /* 0xa9?? */
-    {{NULL  }}, /* 0xaa?? */
-    {{NULL  }}, /* 0xab?? */
-    {{NULL  }}, /* 0xac?? */
-    {{NULL  }}, /* 0xad?? */
-    {{NULL  }}, /* 0xae?? */
-    {{NULL  }}, /* 0xaf?? */
-    {{NULL  }}, /* 0xb0?? */
-    {{NULL  }}, /* 0xb1?? */
-    {{NULL  }}, /* 0xb2?? */
-    {{NULL  }}, /* 0xb3?? */
-    {{NULL  }}, /* 0xb4?? */
-    {{NULL  }}, /* 0xb5?? */
-    {{NULL  }}, /* 0xb6?? */
-    {{NULL  }}, /* 0xb7?? */
-    {{NULL  }}, /* 0xb8?? */
-    {{NULL  }}, /* 0xb9?? */
-    {{NULL  }}, /* 0xba?? */
-    {{NULL  }}, /* 0xbb?? */
-    {{NULL  }}, /* 0xbc?? */
-    {{NULL  }}, /* 0xbd?? */
-    {{NULL  }}, /* 0xbe?? */
-    {{NULL  }}, /* 0xbf?? */
-    {{NULL  }}, /* 0xc0?? */
-    {{NULL  }}, /* 0xc1?? */
-    {{NULL  }}, /* 0xc2?? */
-    {{NULL  }}, /* 0xc3?? */
-    {{NULL  }}, /* 0xc4?? */
-    {{NULL  }}, /* 0xc5?? */
-    {{NULL  }}, /* 0xc6?? */
-    {{NULL  }}, /* 0xc7?? */
-    {{NULL  }}, /* 0xc8?? */
-    {{NULL  }}, /* 0xc9?? */
-    {{NULL  }}, /* 0xca?? */
-    {{NULL  }}, /* 0xcb?? */
-    {{NULL  }}, /* 0xcc?? */
-    {{NULL  }}, /* 0xcd?? */
-    {{NULL  }}, /* 0xce?? */
-    {{NULL  }}, /* 0xcf?? */
-    {{NULL  }}, /* 0xd0?? */
-    {{NULL  }}, /* 0xd1?? */
-    {{NULL  }}, /* 0xd2?? */
-    {{NULL  }}, /* 0xd3?? */
-    {{NULL  }}, /* 0xd4?? */
-    {{NULL  }}, /* 0xd5?? */
-    {{NULL  }}, /* 0xd6?? */
-    {{NULL  }}, /* 0xd7?? */
-    {{NULL  }}, /* 0xd8?? */
-    {{NULL  }}, /* 0xd9?? */
-    {{NULL  }}, /* 0xda?? */
-    {{NULL  }}, /* 0xdb?? */
-    {{NULL  }}, /* 0xdc?? */
-    {{NULL  }}, /* 0xdd?? */
-    {{NULL  }}, /* 0xde?? */
-    {{NULL  }}, /* 0xdf?? */
-    {{NULL  }}, /* 0xe0?? */
-    {{NULL  }}, /* 0xe1?? */
-    {{NULL  }}, /* 0xe2?? */
-    {{NULL  }}, /* 0xe3?? */
-    {{NULL  }}, /* 0xe4?? */
-    {{NULL  }}, /* 0xe5?? */
-    {{NULL  }}, /* 0xe6?? */
-    {{NULL  }}, /* 0xe7?? */
-    {{NULL  }}, /* 0xe8?? */
-    {{NULL  }}, /* 0xe9?? */
-    {{NULL  }}, /* 0xea?? */
-    {{NULL  }}, /* 0xeb?? */
-    {{NULL  }}, /* 0xec?? */
-    {{NULL  }}, /* 0xed?? */
-    {{NULL  }}, /* 0xee?? */
-    {{NULL  }}, /* 0xef?? */
-    {{NULL  }}, /* 0xf0?? */
-    {{NULL  }}, /* 0xf1?? */
-    {{NULL  }}, /* 0xf2?? */
-    {{NULL  }}, /* 0xf3?? */
-    {{NULL  }}, /* 0xf4?? */
-    {{NULL  }}, /* 0xf5?? */
-    {{NULL  }}, /* 0xf6?? */
-    {{NULL  }}, /* 0xf7?? */
-    {{NULL  }}, /* 0xf8?? */
-    {{NULL  }}, /* 0xf9?? */
-    {{NULL  }}, /* 0xfa?? */
-    {{NULL  }}, /* 0xfb?? */
-    {{NULL  }}, /* 0xfc?? */
+    {{NULL}}, /* 0x21?? */
+    {{NULL}}, /* 0x22?? */
+    {{NULL}}, /* 0x23?? */
+    {{NULL}}, /* 0x24?? */
+    {{NULL}}, /* 0x25?? */
+    {{NULL}}, /* 0x26?? */
+    {{NULL}}, /* 0x27?? */
+    {{NULL}}, /* 0x28?? */
+    {{NULL}}, /* 0x29?? */
+    {{NULL}}, /* 0x2a?? */
+    {{NULL}}, /* 0x2b?? */
+    {{NULL}}, /* 0x2c?? */
+    {{NULL}}, /* 0x2d?? */
+    {{NULL}}, /* 0x2e?? */
+    {{NULL}}, /* 0x2f?? */
+    {{NULL}}, /* 0x30?? */
+    {{NULL}}, /* 0x31?? */
+    {{NULL}}, /* 0x32?? */
+    {{NULL}}, /* 0x33?? */
+    {{NULL}}, /* 0x34?? */
+    {{NULL}}, /* 0x35?? */
+    {{NULL}}, /* 0x36?? */
+    {{NULL}}, /* 0x37?? */
+    {{NULL}}, /* 0x38?? */
+    {{NULL}}, /* 0x39?? */
+    {{NULL}}, /* 0x3a?? */
+    {{NULL}}, /* 0x3b?? */
+    {{NULL}}, /* 0x3c?? */
+    {{NULL}}, /* 0x3d?? */
+    {{NULL}}, /* 0x3e?? */
+    {{NULL}}, /* 0x3f?? */
+    {{NULL}}, /* 0x40?? */
+    {{NULL}}, /* 0x41?? */
+    {{NULL}}, /* 0x42?? */
+    {{NULL}}, /* 0x43?? */
+    {{NULL}}, /* 0x44?? */
+    {{NULL}}, /* 0x45?? */
+    {{NULL}}, /* 0x46?? */
+    {{NULL}}, /* 0x47?? */
+    {{NULL}}, /* 0x48?? */
+    {{NULL}}, /* 0x49?? */
+    {{NULL}}, /* 0x4a?? */
+    {{NULL}}, /* 0x4b?? */
+    {{NULL}}, /* 0x4c?? */
+    {{NULL}}, /* 0x4d?? */
+    {{NULL}}, /* 0x4e?? */
+    {{NULL}}, /* 0x4f?? */
+    {{NULL}}, /* 0x50?? */
+    {{NULL}}, /* 0x51?? */
+    {{NULL}}, /* 0x52?? */
+    {{NULL}}, /* 0x53?? */
+    {{NULL}}, /* 0x54?? */
+    {{NULL}}, /* 0x55?? */
+    {{NULL}}, /* 0x56?? */
+    {{NULL}}, /* 0x57?? */
+    {{NULL}}, /* 0x58?? */
+    {{NULL}}, /* 0x59?? */
+    {{NULL}}, /* 0x5a?? */
+    {{NULL}}, /* 0x5b?? */
+    {{NULL}}, /* 0x5c?? */
+    {{NULL}}, /* 0x5d?? */
+    {{NULL}}, /* 0x5e?? */
+    {{NULL}}, /* 0x5f?? */
+    {{NULL}}, /* 0x60?? */
+    {{NULL}}, /* 0x61?? */
+    {{NULL}}, /* 0x62?? */
+    {{NULL}}, /* 0x63?? */
+    {{NULL}}, /* 0x64?? */
+    {{NULL}}, /* 0x65?? */
+    {{NULL}}, /* 0x66?? */
+    {{NULL}}, /* 0x67?? */
+    {{NULL}}, /* 0x68?? */
+    {{NULL}}, /* 0x69?? */
+    {{NULL}}, /* 0x6a?? */
+    {{NULL}}, /* 0x6b?? */
+    {{NULL}}, /* 0x6c?? */
+    {{NULL}}, /* 0x6d?? */
+    {{NULL}}, /* 0x6e?? */
+    {{NULL}}, /* 0x6f?? */
+    {{NULL}}, /* 0x70?? */
+    {{NULL}}, /* 0x71?? */
+    {{NULL}}, /* 0x72?? */
+    {{NULL}}, /* 0x73?? */
+    {{NULL}}, /* 0x74?? */
+    {{NULL}}, /* 0x75?? */
+    {{NULL}}, /* 0x76?? */
+    {{NULL}}, /* 0x77?? */
+    {{NULL}}, /* 0x78?? */
+    {{NULL}}, /* 0x79?? */
+    {{NULL}}, /* 0x7a?? */
+    {{NULL}}, /* 0x7b?? */
+    {{NULL}}, /* 0x7c?? */
+    {{NULL}}, /* 0x7d?? */
+    {{NULL}}, /* 0x7e?? */
+    {{NULL}}, /* 0x7f?? */
+    {{NULL}}, /* 0x80?? */
+    {{NULL}}, /* 0x81?? */
+    {{NULL}}, /* 0x82?? */
+    {{NULL}}, /* 0x83?? */
+    {{NULL}}, /* 0x84?? */
+    {{NULL}}, /* 0x85?? */
+    {{NULL}}, /* 0x86?? */
+    {{NULL}}, /* 0x87?? */
+    {{NULL}}, /* 0x88?? */
+    {{NULL}}, /* 0x89?? */
+    {{NULL}}, /* 0x8a?? */
+    {{NULL}}, /* 0x8b?? */
+    {{NULL}}, /* 0x8c?? */
+    {{NULL}}, /* 0x8d?? */
+    {{NULL}}, /* 0x8e?? */
+    {{NULL}}, /* 0x8f?? */
+    {{NULL}}, /* 0x90?? */
+    {{NULL}}, /* 0x91?? */
+    {{NULL}}, /* 0x92?? */
+    {{NULL}}, /* 0x93?? */
+    {{NULL}}, /* 0x94?? */
+    {{NULL}}, /* 0x95?? */
+    {{NULL}}, /* 0x96?? */
+    {{NULL}}, /* 0x97?? */
+    {{NULL}}, /* 0x98?? */
+    {{NULL}}, /* 0x99?? */
+    {{NULL}}, /* 0x9a?? */
+    {{NULL}}, /* 0x9b?? */
+    {{NULL}}, /* 0x9c?? */
+    {{NULL}}, /* 0x9d?? */
+    {{NULL}}, /* 0x9e?? */
+    {{NULL}}, /* 0x9f?? */
+    {{NULL}}, /* 0xa0?? */
+    {{NULL}}, /* 0xa1?? */
+    {{NULL}}, /* 0xa2?? */
+    {{NULL}}, /* 0xa3?? */
+    {{NULL}}, /* 0xa4?? */
+    {{NULL}}, /* 0xa5?? */
+    {{NULL}}, /* 0xa6?? */
+    {{NULL}}, /* 0xa7?? */
+    {{NULL}}, /* 0xa8?? */
+    {{NULL}}, /* 0xa9?? */
+    {{NULL}}, /* 0xaa?? */
+    {{NULL}}, /* 0xab?? */
+    {{NULL}}, /* 0xac?? */
+    {{NULL}}, /* 0xad?? */
+    {{NULL}}, /* 0xae?? */
+    {{NULL}}, /* 0xaf?? */
+    {{NULL}}, /* 0xb0?? */
+    {{NULL}}, /* 0xb1?? */
+    {{NULL}}, /* 0xb2?? */
+    {{NULL}}, /* 0xb3?? */
+    {{NULL}}, /* 0xb4?? */
+    {{NULL}}, /* 0xb5?? */
+    {{NULL}}, /* 0xb6?? */
+    {{NULL}}, /* 0xb7?? */
+    {{NULL}}, /* 0xb8?? */
+    {{NULL}}, /* 0xb9?? */
+    {{NULL}}, /* 0xba?? */
+    {{NULL}}, /* 0xbb?? */
+    {{NULL}}, /* 0xbc?? */
+    {{NULL}}, /* 0xbd?? */
+    {{NULL}}, /* 0xbe?? */
+    {{NULL}}, /* 0xbf?? */
+    {{NULL}}, /* 0xc0?? */
+    {{NULL}}, /* 0xc1?? */
+    {{NULL}}, /* 0xc2?? */
+    {{NULL}}, /* 0xc3?? */
+    {{NULL}}, /* 0xc4?? */
+    {{NULL}}, /* 0xc5?? */
+    {{NULL}}, /* 0xc6?? */
+    {{NULL}}, /* 0xc7?? */
+    {{NULL}}, /* 0xc8?? */
+    {{NULL}}, /* 0xc9?? */
+    {{NULL}}, /* 0xca?? */
+    {{NULL}}, /* 0xcb?? */
+    {{NULL}}, /* 0xcc?? */
+    {{NULL}}, /* 0xcd?? */
+    {{NULL}}, /* 0xce?? */
+    {{NULL}}, /* 0xcf?? */
+    {{NULL}}, /* 0xd0?? */
+    {{NULL}}, /* 0xd1?? */
+    {{NULL}}, /* 0xd2?? */
+    {{NULL}}, /* 0xd3?? */
+    {{NULL}}, /* 0xd4?? */
+    {{NULL}}, /* 0xd5?? */
+    {{NULL}}, /* 0xd6?? */
+    {{NULL}}, /* 0xd7?? */
+    {{NULL}}, /* 0xd8?? */
+    {{NULL}}, /* 0xd9?? */
+    {{NULL}}, /* 0xda?? */
+    {{NULL}}, /* 0xdb?? */
+    {{NULL}}, /* 0xdc?? */
+    {{NULL}}, /* 0xdd?? */
+    {{NULL}}, /* 0xde?? */
+    {{NULL}}, /* 0xdf?? */
+    {{NULL}}, /* 0xe0?? */
+    {{NULL}}, /* 0xe1?? */
+    {{NULL}}, /* 0xe2?? */
+    {{NULL}}, /* 0xe3?? */
+    {{NULL}}, /* 0xe4?? */
+    {{NULL}}, /* 0xe5?? */
+    {{NULL}}, /* 0xe6?? */
+    {{NULL}}, /* 0xe7?? */
+    {{NULL}}, /* 0xe8?? */
+    {{NULL}}, /* 0xe9?? */
+    {{NULL}}, /* 0xea?? */
+    {{NULL}}, /* 0xeb?? */
+    {{NULL}}, /* 0xec?? */
+    {{NULL}}, /* 0xed?? */
+    {{NULL}}, /* 0xee?? */
+    {{NULL}}, /* 0xef?? */
+    {{NULL}}, /* 0xf0?? */
+    {{NULL}}, /* 0xf1?? */
+    {{NULL}}, /* 0xf2?? */
+    {{NULL}}, /* 0xf3?? */
+    {{NULL}}, /* 0xf4?? */
+    {{NULL}}, /* 0xf5?? */
+    {{NULL}}, /* 0xf6?? */
+    {{NULL}}, /* 0xf7?? */
+    {{NULL}}, /* 0xf8?? */
+    {{NULL}}, /* 0xf9?? */
+    {{NULL}}, /* 0xfa?? */
+    {{NULL}}, /* 0xfb?? */
+    {{NULL}}, /* 0xfc?? */
     {                          /* 0xfd?? */
         { .altcode = NULL   }, /* 0xfd00 */
         { .altcode = NULL   }, /* 0xfd01 (3270_Duplicate) */
