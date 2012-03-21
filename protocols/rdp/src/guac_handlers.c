@@ -236,6 +236,9 @@ void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
     /* Lookup scancode for Alt */
     int alt = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFE9 /* Alt_L */).scancode;
 
+    /* Release all pressed modifiers */
+    __guac_rdp_update_keysyms(client, GUAC_KEYSYMS_ALL_MODIFIERS, 1, 0);
+
     /* Press Alt */
     rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, alt);
 
@@ -255,6 +258,9 @@ void __guac_rdp_send_altcode(guac_client* client, const char* altcode) {
 
     /* Release Alt */
     rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_RELEASE, alt);
+
+    /* Press all originally pressed modifiers */
+    __guac_rdp_update_keysyms(client, GUAC_KEYSYMS_ALL_MODIFIERS, 1, 1);
 
 }
 
