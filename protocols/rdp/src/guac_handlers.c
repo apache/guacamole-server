@@ -231,11 +231,12 @@ void __guac_rdp_send_altcode(guac_client* client, int altcode) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     freerdp* rdp_inst = guac_client_data->rdp_inst;
-    const guac_rdp_keysym_scancode_map* keysym_scancodes = guac_client_data->keysym_scancodes;
     int i;
 
     /* Lookup scancode for Alt */
-    int alt = GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, 0xFFE9 /* Alt_L */).scancode;
+    int alt = GUAC_RDP_KEYSYM_LOOKUP(
+            guac_client_data->keymap,
+            0xFFE9 /* Alt_L */).scancode;
 
     /* Release all pressed modifiers */
     __guac_rdp_update_keysyms(client, GUAC_KEYSYMS_ALL_MODIFIERS, 1, 0);
@@ -248,7 +249,7 @@ void __guac_rdp_send_altcode(guac_client* client, int altcode) {
 
         /* Get scancode of keypad digit */
         int scancode = GUAC_RDP_KEYSYM_LOOKUP(
-                *keysym_scancodes,
+                guac_client_data->keymap,
                 0xFFB0 + (altcode / 1000)
         ).scancode;
 
@@ -273,39 +274,39 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     freerdp* rdp_inst = guac_client_data->rdp_inst;
-    const guac_rdp_keysym_scancode_map* keysym_scancodes = guac_client_data->keysym_scancodes;
 
     /* If keysym can be in lookup table */
     if (keysym <= 0xFFFF) {
 
         /* Look up scancode mapping */
-        const guac_rdp_scancode_map* scancode_map = &GUAC_RDP_KEYSYM_LOOKUP(*keysym_scancodes, keysym);
+        const guac_rdp_keysym_desc* keysym_desc =
+            &GUAC_RDP_KEYSYM_LOOKUP(guac_client_data->keymap, keysym);
 
         /* If defined, send event */
-        if (scancode_map->scancode != 0) {
+        if (keysym_desc->scancode != 0) {
 
             /* If defined, send any prerequesite keys that must be set */
-            if (scancode_map->set_keysyms != NULL)
-                __guac_rdp_update_keysyms(client, scancode_map->set_keysyms, 0, 1);
+            if (keysym_desc->set_keysyms != NULL)
+                __guac_rdp_update_keysyms(client, keysym_desc->set_keysyms, 0, 1);
 
             /* If defined, release any keys that must be cleared */
-            if (scancode_map->clear_keysyms != NULL)
-                __guac_rdp_update_keysyms(client, scancode_map->clear_keysyms, 1, 0);
+            if (keysym_desc->clear_keysyms != NULL)
+                __guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 0);
 
             /* Send actual key */
             rdp_inst->input->KeyboardEvent(
                     rdp_inst->input,
-                    scancode_map->flags
+                    keysym_desc->flags
                         | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
-                    scancode_map->scancode);
+                    keysym_desc->scancode);
 
             /* If defined, release any keys that were originally released */
-            if (scancode_map->set_keysyms != NULL)
-                __guac_rdp_update_keysyms(client, scancode_map->set_keysyms, 0, 0);
+            if (keysym_desc->set_keysyms != NULL)
+                __guac_rdp_update_keysyms(client, keysym_desc->set_keysyms, 0, 0);
 
             /* If defined, send any keys that were originally set */
-            if (scancode_map->clear_keysyms != NULL)
-                __guac_rdp_update_keysyms(client, scancode_map->clear_keysyms, 1, 1);
+            if (keysym_desc->clear_keysyms != NULL)
+                __guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 1);
 
         }
 

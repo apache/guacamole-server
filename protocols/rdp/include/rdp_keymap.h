@@ -42,7 +42,12 @@
  * Represents a keysym-to-scancode mapping for RDP, with extra information
  * about the state of prerequisite keysyms.
  */
-typedef struct guac_rdp_scancode_map {
+typedef struct guac_rdp_keysym_desc {
+
+    /**
+     * The keysym being mapped.
+     */
+    int keysym;
 
     /**
      * The scancode this keysym maps to.
@@ -50,7 +55,7 @@ typedef struct guac_rdp_scancode_map {
     int scancode;
 
     /**
-     * Required RDP-specific flags
+     * Required RDP-specific flags.
      */
     int flags;
 
@@ -66,7 +71,37 @@ typedef struct guac_rdp_scancode_map {
      */
     const int* clear_keysyms;
 
-} guac_rdp_scancode_map;
+} guac_rdp_keysym_desc;
+
+/**
+ * Hierarchical keysym mapping
+ */
+typedef struct guac_rdp_keymap guac_rdp_keymap;
+struct guac_rdp_keymap {
+
+    /**
+     * The parent mapping this map will inherit its initial mapping from.
+     * Any other mapping information will add to or override the mapping
+     * inherited from the parent.
+     */
+    const guac_rdp_keymap* parent;
+
+    /**
+     * Descriptive name of this keymap
+     */
+    const char* name;
+
+    /**
+     * Null-terminated array of scancode mappings.
+     */
+    const guac_rdp_keysym_desc* mapping;
+
+};
+
+/**
+ * Static mapping from keysyms to scancodes.
+ */
+typedef guac_rdp_keysym_desc guac_rdp_static_keymap[256][256];
 
 /**
  * Mapping from keysym to current state
@@ -74,14 +109,9 @@ typedef struct guac_rdp_scancode_map {
 typedef int guac_rdp_keysym_state_map[256][256];
 
 /**
- * Static mapping from keysyms to scancodes.
- */
-typedef guac_rdp_scancode_map guac_rdp_keysym_scancode_map[256][256];
-
-/**
  * Map of X11 keysyms to RDP scancodes (US English).
  */
-extern const guac_rdp_keysym_scancode_map guac_rdp_keysym_scancode_en_us;
+extern const guac_rdp_keymap guac_rdp_keymap_en_us;
 
 /**
  * Simple macro for referencing the mapped value of an altcode or scancode for a given keysym.

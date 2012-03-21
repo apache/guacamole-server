@@ -65,7 +65,7 @@ typedef struct rdp_guac_client_data {
 
     const guac_layer* current_surface;
 
-    const guac_rdp_keysym_scancode_map* keysym_scancodes;
+    guac_rdp_static_keymap keymap;
 
     guac_rdp_keysym_state_map keysym_state;
 

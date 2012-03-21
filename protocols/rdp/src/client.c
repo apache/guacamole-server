@@ -204,6 +204,35 @@ void rdp_freerdp_context_free(freerdp* instance, rdpContext* context) {
     /* EMPTY */
 }
 
+void __guac_rdp_client_load_keymap(guac_client* client,
+        const guac_rdp_keymap* keymap) {
+
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) client->data;
+    /* Get mapping */
+    const guac_rdp_keysym_desc* mapping = keymap->mapping;
+
+    /* If parent exists, load parent first */
+    if (keymap->parent != NULL)
+        __guac_rdp_client_load_keymap(client, keymap->parent);
+
+    /* Log load */
+    guac_client_log_info(client, "Loading keymap %s", keymap->name);
+
+    /* Load mapping into keymap */
+    while (mapping->keysym != 0) {
+
+        /* Copy mapping */
+        GUAC_RDP_KEYSYM_LOOKUP(guac_client_data->keymap, mapping->keysym) =
+            *mapping;
+
+        /* Next keysym */
+        mapping++;
+
+    }
+
+}
+
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
     rdp_guac_client_data* guac_client_data;
@@ -323,13 +352,19 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->rdp_inst = rdp_inst;
     guac_client_data->mouse_button_mask = 0;
     guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
-    guac_client_data->keysym_scancodes = &guac_rdp_keysym_scancode_en_us;
 
-    /* Clear keysym state mapping */
-    memset(guac_client_data->keysym_state, 0, sizeof(guac_rdp_keysym_state_map));
+    /* Clear keysym state mapping and keymap */
+    memset(guac_client_data->keysym_state, 0,
+            sizeof(guac_rdp_keysym_state_map));
 
-    ((rdp_freerdp_context*) rdp_inst->context)->client = client;
+    memset(guac_client_data->keymap, 0,
+            sizeof(guac_rdp_static_keymap));
+
     client->data = guac_client_data;
+    ((rdp_freerdp_context*) rdp_inst->context)->client = client;
+
+    /* Load keymap into client */
+    __guac_rdp_client_load_keymap(client, &guac_rdp_keymap_en_us);
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
