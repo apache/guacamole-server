@@ -121,6 +121,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     bitmap->Decompress = guac_rdp_bitmap_decompress;
     bitmap->SetSurface = guac_rdp_bitmap_setsurface;
     graphics_register_bitmap(context->graphics, bitmap);
+    xfree(bitmap);
 
     /* Set up glyph handling */
     glyph = xnew(rdpGlyph);
@@ -131,6 +132,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     glyph->BeginDraw = guac_rdp_glyph_begindraw;
     glyph->EndDraw = guac_rdp_glyph_enddraw;
     graphics_register_glyph(context->graphics, glyph);
+    xfree(glyph);
 
     /* Set up pointer handling */
     pointer = xnew(rdpPointer);
@@ -139,6 +141,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     pointer->Free = guac_rdp_pointer_free;
     pointer->Set = guac_rdp_pointer_set;
     graphics_register_pointer(context->graphics, pointer);
+    xfree(pointer);
 
     /* Set up GDI */
     instance->update->Palette = guac_rdp_gdi_palette_update;

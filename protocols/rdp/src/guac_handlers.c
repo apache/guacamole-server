@@ -45,6 +45,8 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/input.h>
+#include <freerdp/codec/color.h>
+#include <freerdp/cache/cache.h>
 
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
@@ -58,11 +60,25 @@ void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, in
 int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);
 void __guac_rdp_send_altcode(guac_client* client, int altcode);
 
+
 int rdp_guac_client_free_handler(guac_client* client) {
 
-    /* STUB */
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) client->data;
 
-    /* FIXME: Clean up RDP client + disconnect */
+    freerdp* rdp_inst = guac_client_data->rdp_inst;
+    rdpChannels* channels = rdp_inst->context->channels;
+
+    /* Clean up RDP client */
+	freerdp_channels_close(channels, rdp_inst);
+	freerdp_channels_free(channels);
+	freerdp_disconnect(rdp_inst);
+    freerdp_clrconv_free(((rdp_freerdp_context*) rdp_inst->context)->clrconv);
+    cache_free(rdp_inst->context->cache);
+    freerdp_free(rdp_inst);
+
+    /* Free client data */
+    free(guac_client_data);
 
     return 0;
 
