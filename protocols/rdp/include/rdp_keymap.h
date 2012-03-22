@@ -129,9 +129,29 @@ extern const guac_rdp_keymap guac_rdp_keymap_base;
 extern const int GUAC_KEYSYMS_SHIFT[];
 
 /**
+ * Keysym string containing both "shift" keys.
+ */
+extern const int GUAC_KEYSYMS_ALL_SHIFT[];
+
+/**
+ * Keysym string containing only the left "ctrl" key.
+ */
+extern const int GUAC_KEYSYMS_CTRL[];
+
+/**
+ * Keysym string containing both "ctrl" keys.
+ */
+extern const int GUAC_KEYSYMS_ALL_CTRL[];
+
+/**
  * Keysym string containing only the left "alt" key.
  */
 extern const int GUAC_KEYSYMS_ALT[];
+
+/**
+ * Keysym string containing both "alt" keys.
+ */
+extern const int GUAC_KEYSYMS_ALL_ALT[];
 
 /**
  * Keysym string containing all modifier keys.

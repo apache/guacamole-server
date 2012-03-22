@@ -89,60 +89,76 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* comma */
-    { .keysym = 0x002c, .scancode = 0x33 },
+    { .keysym = 0x002c, .scancode = 0x33,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* minus */
-    { .keysym = 0x002d, .scancode = 0x0C },
+    { .keysym = 0x002d, .scancode = 0x0C,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* period */
-    { .keysym = 0x002e, .scancode = 0x34 },
+    { .keysym = 0x002e, .scancode = 0x34,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* slash */
-    { .keysym = 0x002f, .scancode = 0x35 },
+    { .keysym = 0x002f, .scancode = 0x35,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 0 */
-    { .keysym = 0x0030, .scancode = 0x0B },
+    { .keysym = 0x0030, .scancode = 0x0B,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 1 */
-    { .keysym = 0x0031, .scancode = 0x02 },
+    { .keysym = 0x0031, .scancode = 0x02,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 2 */
-    { .keysym = 0x0032, .scancode = 0x03 },
+    { .keysym = 0x0032, .scancode = 0x03,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 3 */
-    { .keysym = 0x0033, .scancode = 0x04 },
+    { .keysym = 0x0033, .scancode = 0x04,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 4 */
-    { .keysym = 0x0034, .scancode = 0x05 },
+    { .keysym = 0x0034, .scancode = 0x05,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 5 */
-    { .keysym = 0x0035, .scancode = 0x06 },
+    { .keysym = 0x0035, .scancode = 0x06,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 6 */
-    { .keysym = 0x0036, .scancode = 0x07 },
+    { .keysym = 0x0036, .scancode = 0x07,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 7 */
-    { .keysym = 0x0037, .scancode = 0x08 },
+    { .keysym = 0x0037, .scancode = 0x08,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 8 */
-    { .keysym = 0x0038, .scancode = 0x09 },
+    { .keysym = 0x0038, .scancode = 0x09,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* 9 */
-    { .keysym = 0x0039, .scancode = 0x0A },
+    { .keysym = 0x0039, .scancode = 0x0A,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* colon */
     { .keysym = 0x003a, .scancode = 0x27,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* semicolon */
-    { .keysym = 0x003b, .scancode = 0x27 },
+    { .keysym = 0x003b, .scancode = 0x27,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* less */
     { .keysym = 0x003c, .scancode = 0x33,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* equal */
-    { .keysym = 0x003d, .scancode = 0x0D },
+    { .keysym = 0x003d, .scancode = 0x0D,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* greater */
     { .keysym = 0x003e, .scancode = 0x34,
@@ -261,16 +277,19 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* bracketleft */
-    { .keysym = 0x005b, .scancode = 0x1A },
+    { .keysym = 0x005b, .scancode = 0x1A,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* backslash */
-    { .keysym = 0x005c, .scancode = 0x2B },
+    { .keysym = 0x005c, .scancode = 0x2B,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* bracketright */
-    { .keysym = 0x005d, .scancode = 0x1B },
+    { .keysym = 0x005d, .scancode = 0x1B,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* asciicircum */
-    { .keysym = 0x005e, .scancode = 0x29,
+    { .keysym = 0x005e, .scancode = 0x07,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* underscore */
@@ -278,85 +297,112 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* quoteleft */
-    { .keysym = 0x0060, .scancode = 0x29 },
+    { .keysym = 0x0060, .scancode = 0x29,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* a */
-    { .keysym = 0x0061, .scancode = 0x1E },
+    { .keysym = 0x0061, .scancode = 0x1E,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* b */
-    { .keysym = 0x0062, .scancode = 0x30 },
+    { .keysym = 0x0062, .scancode = 0x30,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* c */
-    { .keysym = 0x0063, .scancode = 0x2E },
+    { .keysym = 0x0063, .scancode = 0x2E,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* d */
-    { .keysym = 0x0064, .scancode = 0x20 },
+    { .keysym = 0x0064, .scancode = 0x20,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* e */
-    { .keysym = 0x0065, .scancode = 0x12 },
+    { .keysym = 0x0065, .scancode = 0x12,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* f */
-    { .keysym = 0x0066, .scancode = 0x21 },
+    { .keysym = 0x0066, .scancode = 0x21,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* g */
-    { .keysym = 0x0067, .scancode = 0x22 },
+    { .keysym = 0x0067, .scancode = 0x22,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* h */
-    { .keysym = 0x0068, .scancode = 0x23 },
+    { .keysym = 0x0068, .scancode = 0x23,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* i */
-    { .keysym = 0x0069, .scancode = 0x17 },
+    { .keysym = 0x0069, .scancode = 0x17,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* j */
-    { .keysym = 0x006a, .scancode = 0x24 },
+    { .keysym = 0x006a, .scancode = 0x24,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* k */
-    { .keysym = 0x006b, .scancode = 0x25 },
+    { .keysym = 0x006b, .scancode = 0x25,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* l */
-    { .keysym = 0x006c, .scancode = 0x26 },
+    { .keysym = 0x006c, .scancode = 0x26,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* m */
-    { .keysym = 0x006d, .scancode = 0x32 },
+    { .keysym = 0x006d, .scancode = 0x32,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* n */
-    { .keysym = 0x006e, .scancode = 0x31 },
+    { .keysym = 0x006e, .scancode = 0x31,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* o */
-    { .keysym = 0x006f, .scancode = 0x18 },
+    { .keysym = 0x006f, .scancode = 0x18,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* p */
-    { .keysym = 0x0070, .scancode = 0x19 },
+    { .keysym = 0x0070, .scancode = 0x19,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* q */
-    { .keysym = 0x0071, .scancode = 0x10 },
+    { .keysym = 0x0071, .scancode = 0x10,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* r */
-    { .keysym = 0x0072, .scancode = 0x13 },
+    { .keysym = 0x0072, .scancode = 0x13,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* s */
-    { .keysym = 0x0073, .scancode = 0x1F },
+    { .keysym = 0x0073, .scancode = 0x1F,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* t */
-    { .keysym = 0x0074, .scancode = 0x14 },
+    { .keysym = 0x0074, .scancode = 0x14,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* u */
-    { .keysym = 0x0075, .scancode = 0x16 },
+    { .keysym = 0x0075, .scancode = 0x16,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* v */
-    { .keysym = 0x0076, .scancode = 0x2F },
+    { .keysym = 0x0076, .scancode = 0x2F,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* w */
-    { .keysym = 0x0077, .scancode = 0x11 },
+    { .keysym = 0x0077, .scancode = 0x11,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* x */
-    { .keysym = 0x0078, .scancode = 0x2D },
+    { .keysym = 0x0078, .scancode = 0x2D,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* y */
-    { .keysym = 0x0079, .scancode = 0x15 },
+    { .keysym = 0x0079, .scancode = 0x15,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* z */
-    { .keysym = 0x007a, .scancode = 0x2C },
+    { .keysym = 0x007a, .scancode = 0x2C,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* braceleft */
     { .keysym = 0x007b, .scancode = 0x1A,

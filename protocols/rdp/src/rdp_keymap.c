@@ -38,8 +38,13 @@
 #include "rdp_keymap.h"
 
 const int GUAC_KEYSYMS_SHIFT[] = {0xFFE1, 0};
+const int GUAC_KEYSYMS_ALL_SHIFT[] = {0xFFE1, 0xFFE2, 0};
+
+const int GUAC_KEYSYMS_CTRL[] = {0xFFE3, 0};
+const int GUAC_KEYSYMS_ALL_CTRL[] = {0xFFE3, 0xFFE4, 0};
 
 const int GUAC_KEYSYMS_ALT[] = {0xFFE9, 0};
+const int GUAC_KEYSYMS_ALL_ALT[] = {0xFFE9, 0xFFEA, 0};
 
 const int GUAC_KEYSYMS_ALL_MODIFIERS[] = {
     0xFFE1, 0xFFE2, /* Left and right shift */
