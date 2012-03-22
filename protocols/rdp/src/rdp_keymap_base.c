@@ -51,6 +51,16 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     /* Return */
     { .keysym = 0xff0d, .scancode = 0x1C },
 
+    /* Scroll_Lock */
+    { .keysym = 0xff14, .scancode = 0x46 },
+
+    /* Escape */
+    { .keysym = 0xff1b, .scancode = 0x01 },
+
+    /* Home */
+    { .keysym = 0xff50, .scancode = 0x47,
+        .flags = KBD_FLAGS_EXTENDED },
+
     /* Left */
     { .keysym = 0xff51, .scancode = 0x4B,
         .flags = KBD_FLAGS_EXTENDED },
@@ -67,9 +77,28 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     { .keysym = 0xff54, .scancode = 0x50,
         .flags = KBD_FLAGS_EXTENDED },
 
+    /* Page_Up */
+    { .keysym = 0xff55, .scancode = 0x49,
+        .flags = KBD_FLAGS_EXTENDED },
+
     /* Menu */
     { .keysym = 0xff67, .scancode = 0x5D,
         .flags = KBD_FLAGS_EXTENDED },
+
+    /* Page_Down */
+    { .keysym = 0xff56, .scancode = 0x51,
+        .flags = KBD_FLAGS_EXTENDED },
+
+    /* End */
+    { .keysym = 0xff57, .scancode = 0x4F,
+        .flags = KBD_FLAGS_EXTENDED },
+
+    /* Insert */
+    { .keysym = 0xff63, .scancode = 0x52,
+        .flags = KBD_FLAGS_EXTENDED },
+
+    /* Num_Lock */
+    { .keysym = 0xff7f, .scancode = 0x45 },
 
     /* KP_0 */
     { .keysym = 0xffb0, .scancode = 0x52 },
@@ -101,6 +130,42 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     /* KP_9 */
     { .keysym = 0xffb9, .scancode = 0x49 },
 
+    /* F1 */
+    { .keysym = 0xffbe, .scancode = 0x3B },
+
+    /* F2 */
+    { .keysym = 0xffbf, .scancode = 0x3C },
+
+    /* F3 */
+    { .keysym = 0xffc0, .scancode = 0x3D },
+
+    /* F4 */
+    { .keysym = 0xffc1, .scancode = 0x3E },
+
+    /* F5 */
+    { .keysym = 0xffc2, .scancode = 0x3F },
+
+    /* F6 */
+    { .keysym = 0xffc3, .scancode = 0x40 },
+
+    /* F7 */
+    { .keysym = 0xffc4, .scancode = 0x41 },
+
+    /* F8 */
+    { .keysym = 0xffc5, .scancode = 0x42 },
+
+    /* F9 */
+    { .keysym = 0xffc6, .scancode = 0x43 },
+
+    /* F10 */
+    { .keysym = 0xffc7, .scancode = 0x44 },
+
+    /* F11 */
+    { .keysym = 0xffc8, .scancode = 0x57 },
+
+    /* F12 */
+    { .keysym = 0xffc9, .scancode = 0x58 },
+
     /* Shift_L */
     { .keysym = 0xffe1, .scancode = 0x2A },
 
@@ -112,6 +177,10 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* Control_R */
     { .keysym = 0xffe4, .scancode = 0x1D },
+
+    /* Caps_Lock */
+    { .keysym = 0xffe5, .scancode = 0x3A,
+        .flags = KBD_FLAGS_EXTENDED },
 
     /* Alt_L */
     { .keysym = 0xffe9, .scancode = 0x38 },
