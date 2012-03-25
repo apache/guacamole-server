@@ -57,6 +57,7 @@
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 
 #include "client.h"
 #include "guac_handlers.h"
@@ -248,8 +249,14 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     boolean bitmap_cache;
 
     if (argc < 8) {
-        guac_protocol_send_error(client->socket, "Wrong argument count received.");
+
+        guac_protocol_send_error(client->socket,
+                "Wrong argument count received.");
         guac_socket_flush(client->socket);
+
+        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+        guac_error_message = "Wrong argument count received";
+
         return 1;
     }
 
@@ -371,8 +378,14 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
-        guac_protocol_send_error(client->socket, "Error connecting to RDP server");
+
+        guac_protocol_send_error(client->socket,
+                "Error connecting to RDP server");
         guac_socket_flush(client->socket);
+
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Error connecting to RDP server";
+
         return 1;
     }
 

@@ -51,6 +51,7 @@
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 
 #include "client.h"
 #include "rdp_keymap.h"
@@ -105,13 +106,15 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
     /* get rdp fds */
     if (!freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
-        guac_client_log_error(client, "Unable to read RDP file descriptors.");
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Unable to read RDP file descriptors";
         return 1;
     }
 
     /* get channel fds */
     if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
-        guac_client_log_error(client, "Unable to read RDP channel file descriptors.");
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Unable to read RDP channel file descriptors";
         return 1;
     }
 
@@ -136,7 +139,8 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
     /* If no file descriptors, error */
     if (max_fd == 0) {
-        guac_client_log_error(client, "No file descriptors");
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "No file descriptors";
         return 1;
     }
 
@@ -148,20 +152,23 @@ int rdp_guac_client_handle_messages(guac_client* client) {
             (errno == EINPROGRESS) ||
             (errno == EINTR))) /* signal occurred */
         {
-            guac_client_log_error(client, "Error waiting for file descriptor.");
+            guac_error = GUAC_STATUS_SEE_ERRNO;
+            guac_error_message = "Error waiting for file descriptor";
             return 1;
         }
     }
 
     /* Check the libfreerdp fds */
     if (!freerdp_check_fds(rdp_inst)) {
-        guac_client_log_error(client, "Error handling RDP file descriptors.");
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Error handling RDP file descriptors";
         return 1;
     }
 
     /* Check channel fds */
     if (!freerdp_channels_check_fds(channels, rdp_inst)) {
-        guac_client_log_error(client, "Error handling RDP channel file descriptors.");
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Error handling RDP channel file descriptors";
         return 1;
     }
 
