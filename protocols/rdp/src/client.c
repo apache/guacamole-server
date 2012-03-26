@@ -389,6 +389,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return 1;
     }
 
+    /* Send connection name */
+    guac_protocol_send_name(client->socket, settings->window_title);
+
     /* Success */
     return 0;
 
