@@ -172,6 +172,13 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         return 1;
     }
 
+    /* Handle RDP disconnect */
+    if (freerdp_shall_disconnect(rdp_inst)) {
+        guac_error = GUAC_STATUS_NO_INPUT;
+        guac_error_message = "RDP server closed connection";
+        return 1;
+    }
+
     /* Success */
     return 0;
 
