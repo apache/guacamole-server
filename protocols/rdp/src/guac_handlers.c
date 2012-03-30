@@ -47,6 +47,8 @@
 #include <freerdp/input.h>
 #include <freerdp/codec/color.h>
 #include <freerdp/cache/cache.h>
+#include <freerdp/utils/event.h>
+#include <freerdp/plugins/cliprdr.h>
 
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
@@ -55,6 +57,7 @@
 
 #include "client.h"
 #include "rdp_keymap.h"
+#include "rdp_cliprdr.h"
 #include "guac_handlers.h"
 
 void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, int from, int to);
@@ -98,6 +101,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     int read_count = 0;
     int write_count = 0;
     fd_set rfds, wfds;
+    RDP_EVENT* event;
 
     struct timeval timeout = {
         .tv_sec = 0,
@@ -170,6 +174,18 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         guac_error = GUAC_STATUS_BAD_STATE;
         guac_error_message = "Error handling RDP channel file descriptors";
         return 1;
+    }
+
+    /* Check for channel events */
+    event = freerdp_channels_pop_event(channels);
+    if (event) {
+
+        /* Handle clipboard events */
+        if (event->event_class == RDP_EVENT_CLASS_CLIPRDR)
+            guac_rdp_process_cliprdr_event(client, event);
+
+        freerdp_event_free(event);
+
     }
 
     /* Handle RDP disconnect */

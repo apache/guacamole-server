@@ -91,6 +91,10 @@ enum ARGS_IDX {
     IDX_COLOR_DEPTH
 };
 
+int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, uint8* data, int size, int flags, int total_size) {
+    return freerdp_channels_data(rdp_inst, channelId, data, size, flags, total_size);
+}
+
 boolean rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
@@ -101,6 +105,9 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     rdpPointer* pointer;
     rdpPrimaryUpdate* primary;
     CLRCONV* clrconv;
+
+    /* Load clipboard plugin */
+    freerdp_channels_load_plugin(channels, instance->settings, "cliprdr", NULL);
 
     /* Init color conversion structure */
     clrconv = xnew(CLRCONV);
@@ -274,6 +281,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rdp_inst = freerdp_new();
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->PostConnect = rdp_freerdp_post_connect;
+    rdp_inst->ReceiveChannelData = __guac_receive_channel_data;
 
     /* Allocate FreeRDP context */
     rdp_inst->context_size = sizeof(rdp_freerdp_context);
