@@ -308,8 +308,6 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
 
     }
 
-    guac_palette_free(palette);
-
     /* Write image info */
     png_set_IHDR(
         png,
@@ -332,6 +330,9 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
 
     /* Finish write */
     png_destroy_write_struct(&png, &png_info);
+
+    /* Free palette */
+    guac_palette_free(palette);
 
     /* Free PNG data */
     for (y=0; y<height; y++)
