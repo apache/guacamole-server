@@ -80,13 +80,14 @@ guac_palette* guac_palette_alloc(cairo_surface_t* surface) {
                 if (entry->index == 0) {
 
                     /* Stop if already at capacity */
-                    if (palette->colors == 256) {
+                    if (palette->size == 256) {
                         guac_palette_free(palette);
                         return NULL;
                     }
 
                     /* Add color to map, done */
-                    entry->index = ++palette->colors;
+                    palette->colors[palette->size] = color;
+                    entry->index = ++palette->size;
                     entry->color = color;
                     break;
 

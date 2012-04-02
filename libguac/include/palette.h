@@ -51,7 +51,8 @@ typedef struct guac_palette_entry {
 typedef struct guac_palette {
 
     guac_palette_entry entries[0xFFF];
-    int colors;
+    int colors[256];
+    int size;
 
 } guac_palette;
 

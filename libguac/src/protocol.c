@@ -230,9 +230,11 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
 
         guac_palette* palette = guac_palette_alloc(surface);
         if (palette != NULL) {
+
             fprintf(stderr,
                     "Created palette with %i entries.\n",
-                    palette->colors);
+                    palette->size);
+
             guac_palette_free(palette);
         }
 
