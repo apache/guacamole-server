@@ -164,6 +164,7 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
     png_structp png;
     png_infop png_info;
     png_byte** png_rows;
+    int bpp;
 
     int x, y;
 
@@ -190,6 +191,12 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
     /* If not possible, resort to Cairo PNG writer */
     if (palette == NULL)
         return __guac_socket_write_length_png_cairo(socket, surface);
+
+    /* Calculate BPP from palette size */
+    if      (palette->size <= 2)  bpp = 1;
+    else if (palette->size <= 4)  bpp = 2;
+    else if (palette->size <= 16) bpp = 4;
+    else                          bpp = 8;
 
     /* Set up PNG writer */
     png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -252,7 +259,7 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
         png_info,
         width,
         height,
-        8,
+        bpp,
         PNG_COLOR_TYPE_PALETTE,
         PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_DEFAULT,
@@ -264,7 +271,7 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
 
     /* Write image */
     png_set_rows(png, png_info, png_rows);
-    png_write_png(png, png_info, PNG_TRANSFORM_IDENTITY, NULL);
+    png_write_png(png, png_info, PNG_TRANSFORM_PACKING, NULL);
 
     /* Finish write */
     png_destroy_write_struct(&png, &png_info);
