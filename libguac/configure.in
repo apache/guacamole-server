@@ -51,12 +51,13 @@ AC_DEFINE(_BSD_SOURCE)
 
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen],, AC_MSG_ERROR("libdl is required for loading client plugins"))
+AC_CHECK_LIB([png], [png_write_png],, AC_MSG_ERROR("libpng is required for writing png messages"))
 AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([wsock32], [main])
 
 # Checks for header files.
-AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h])
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h pngstruct.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
@@ -65,7 +66,7 @@ AC_TYPE_SSIZE_T
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
+AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup png_get_io_ptr nanosleep])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
