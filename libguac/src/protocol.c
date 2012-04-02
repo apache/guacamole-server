@@ -152,59 +152,10 @@ void __guac_socket_flush_png(png_structp png) {
     /* Dummy function */
 }
 
-png_byte** __guac_create_png_rgb(cairo_surface_t* surface, int alpha) {
+int __guac_socket_write_length_png_cairo(guac_socket* socket, cairo_surface_t* surface) {
 
-    png_byte** png_rows;
-    int x, y;
-
-    int width = cairo_image_surface_get_width(surface);
-    int height = cairo_image_surface_get_height(surface);
-    int stride = cairo_image_surface_get_stride(surface);
-    unsigned char* data = cairo_image_surface_get_data(surface);
-
-    /* Fail if not an image surface */
-    if (data == NULL)
-        return NULL;
-
-    int bpp;
-    if (alpha) bpp = 4;
-    else       bpp = 3;
-
-    /* Copy data from surface into PNG data */
-    png_rows = (png_byte**) malloc(sizeof(png_byte*) * height);
-    for (y=0; y<height; y++) {
-
-        /* Allocate new PNG row */
-        png_byte* row = (png_byte*) malloc(sizeof(png_byte) * width * bpp);
-        png_rows[y] = row;
-
-        /* Copy data from surface into current row */
-        for (x=0; x<width; x++) {
-            row[bpp*x]   = data[4*x+2];
-            row[bpp*x+1] = data[4*x+1];
-            row[bpp*x+2] = data[4*x];
-
-            if (alpha)
-                row[bpp*x+3] = data[4*x+3];
-        }
-
-        /* Advance to next data row */
-        data += stride;
-
-    }
-
-    return png_rows;
-
-}
-
-void __guac_free_png(png_byte** png_rows, int height) {
-
-    int y;
-
-    /* Free PNG data */
-    for (y=0; y<height; y++)
-        free(png_rows[y]);
-    free(png_rows);
+    /* STUB */
+    return guac_socket_write_string(socket, "0.");
 
 }
 
@@ -213,7 +164,8 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
     png_structp png;
     png_infop png_info;
     png_byte** png_rows;
-    int png_format;
+
+    int x, y;
 
     __guac_socket_write_png_data png_data;
     int base64_length;
@@ -222,36 +174,22 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
     cairo_format_t format = cairo_image_surface_get_format(surface);
     int width = cairo_image_surface_get_width(surface);
     int height = cairo_image_surface_get_height(surface);
+    int stride = cairo_image_surface_get_stride(surface);
+    unsigned char* data = cairo_image_surface_get_data(surface);
+
+    /* If not RGB24, use Cairo PNG writer */
+    if (format != CAIRO_FORMAT_RGB24 || data == NULL)
+        return __guac_socket_write_length_png_cairo(socket, surface);
 
     /* Flush pending operations to surface */
     cairo_surface_flush(surface);
 
-    if (format == CAIRO_FORMAT_RGB24) {
+    /* Attempt to build palette */
+    guac_palette* palette = guac_palette_alloc(surface);
 
-        guac_palette* palette = guac_palette_alloc(surface);
-        if (palette != NULL) {
-
-            fprintf(stderr,
-                    "Created palette with %i entries.\n",
-                    palette->size);
-
-            guac_palette_free(palette);
-        }
-
-        png_rows = __guac_create_png_rgb(surface, 0);
-        png_format = PNG_COLOR_TYPE_RGB;
-    }
-    else if (format == CAIRO_FORMAT_ARGB32) {
-        png_rows = __guac_create_png_rgb(surface, 1);
-        png_format = PNG_COLOR_TYPE_RGB_ALPHA;
-    }
-    else
-        return -1; /* FIXME: Format not yet supported */
-
-    /* If not an image surface, fail */
-    if (png_rows == NULL) {
-        return -1; /* FIXME: Set guac_error, etc? */
-    }
+    /* If not possible, resort to Cairo PNG writer */
+    if (palette == NULL)
+        return __guac_socket_write_length_png_cairo(socket, surface);
 
     /* Set up PNG writer */
     png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -282,6 +220,36 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
             __guac_socket_write_png,
             __guac_socket_flush_png);
 
+    /* Copy data from surface into PNG data */
+    png_rows = (png_byte**) malloc(sizeof(png_byte*) * height);
+    for (y=0; y<height; y++) {
+
+        /* Allocate new PNG row */
+        png_byte* row = (png_byte*) malloc(sizeof(png_byte) * width);
+        png_rows[y] = row;
+
+        /* Copy data from surface into current row */
+        for (x=0; x<width; x++) {
+
+            /* Get pixel color */
+            int color = ((uint32_t*) data)[x] & 0xFFFFFF;
+
+            /* Set index in row */
+            row[x] = guac_palette_find(palette, color);
+
+        }
+
+        /* Advance to next data row */
+        data += stride;
+
+    }
+
+    fprintf(stderr,
+            "Created palette with %i entries.\n",
+            palette->size);
+
+    guac_palette_free(palette);
+
     /* Write image info */
     png_set_IHDR(
         png,
@@ -289,7 +257,7 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
         width,
         height,
         8,
-        png_format,
+        PNG_COLOR_TYPE_PALETTE,
         PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_DEFAULT,
         PNG_FILTER_TYPE_DEFAULT
@@ -302,7 +270,10 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
     /* Finish write */
     png_destroy_write_struct(&png, &png_info);
 
-    __guac_free_png(png_rows, height);
+    /* Free PNG data */
+    for (y=0; y<height; y++)
+        free(png_rows[y]);
+    free(png_rows);
 
     base64_length = (png_data.data_size + 2) / 3 * 4;
 
