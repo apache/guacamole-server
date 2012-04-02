@@ -227,7 +227,15 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
     cairo_surface_flush(surface);
 
     if (format == CAIRO_FORMAT_RGB24) {
-        __guac_create_palette(surface);
+
+        guac_palette* palette = guac_palette_alloc(surface);
+        if (palette != NULL) {
+            fprintf(stderr,
+                    "Created palette with %i entries.\n",
+                    palette->colors);
+            guac_palette_free(palette);
+        }
+
         png_rows = __guac_create_png_rgb(surface, 0);
         png_format = PNG_COLOR_TYPE_RGB;
     }

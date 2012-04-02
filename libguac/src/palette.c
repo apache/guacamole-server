@@ -47,7 +47,7 @@
 
 #include "palette.h"
 
-guac_palette* __guac_create_palette(cairo_surface_t* surface) {
+guac_palette* guac_palette_alloc(cairo_surface_t* surface) {
 
     int x, y;
 
@@ -81,7 +81,7 @@ guac_palette* __guac_create_palette(cairo_surface_t* surface) {
 
                     /* Stop if already at capacity */
                     if (palette->colors == 256) {
-                        __guac_free_palette(palette);
+                        guac_palette_free(palette);
                         return NULL;
                     }
 
@@ -111,7 +111,7 @@ guac_palette* __guac_create_palette(cairo_surface_t* surface) {
 
 }
 
-void __guac_free_palette(guac_palette* palette) {
+void guac_palette_free(guac_palette* palette) {
     free(palette);
 }
 

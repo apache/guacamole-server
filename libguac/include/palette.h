@@ -55,8 +55,8 @@ typedef struct guac_palette {
 
 } guac_palette;
 
-guac_palette* __guac_create_palette(cairo_surface_t* surface);
-void __guac_free_palette(guac_palette* palette);
+guac_palette* guac_palette_alloc(cairo_surface_t* surface);
+void guac_palette_free(guac_palette* palette);
 
 #endif
 
