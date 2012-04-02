@@ -113,6 +113,70 @@ typedef struct __guac_socket_write_png_data {
 
 } __guac_socket_write_png_data;
 
+cairo_status_t __guac_socket_write_png_cairo(void* closure, const unsigned char* data, unsigned int length) {
+
+    __guac_socket_write_png_data* png_data = (__guac_socket_write_png_data*) closure;
+
+    /* Calculate next buffer size */
+    int next_size = png_data->data_size + length;
+
+    /* If need resizing, double buffer size until big enough */
+    if (next_size > png_data->buffer_size) {
+
+        char* new_buffer;
+
+        do {
+            png_data->buffer_size <<= 1;
+        } while (next_size > png_data->buffer_size);
+
+        /* Resize buffer */
+        new_buffer = realloc(png_data->buffer, png_data->buffer_size);
+        png_data->buffer = new_buffer;
+
+    }
+
+    /* Append data to buffer */
+    memcpy(png_data->buffer + png_data->data_size, data, length);
+    png_data->data_size += length;
+
+    return CAIRO_STATUS_SUCCESS;
+
+}
+
+
+int __guac_socket_write_length_png_cairo(guac_socket* socket, cairo_surface_t* surface) {
+
+    __guac_socket_write_png_data png_data;
+    int base64_length;
+
+    /* Write surface */
+
+    png_data.socket = socket;
+    png_data.buffer_size = 8192;
+    png_data.buffer = malloc(png_data.buffer_size);
+    png_data.data_size = 0;
+
+    if (cairo_surface_write_to_png_stream(surface, __guac_socket_write_png_cairo, &png_data) != CAIRO_STATUS_SUCCESS) {
+        return -1;
+    }
+
+    base64_length = (png_data.data_size + 2) / 3 * 4;
+
+    /* Write length and data */
+    if (
+           guac_socket_write_int(socket, base64_length)
+        || guac_socket_write_string(socket, ".")
+        || guac_socket_write_base64(socket, png_data.buffer, png_data.data_size)
+        || guac_socket_flush_base64(socket)) {
+        free(png_data.buffer);
+        return -1;
+    }
+
+    free(png_data.buffer);
+    return 0;
+
+}
+
 void __guac_socket_write_png(png_structp png,
         png_bytep data, png_size_t length) {
 
@@ -150,13 +214,6 @@ void __guac_socket_write_png(png_structp png,
 
 void __guac_socket_flush_png(png_structp png) {
     /* Dummy function */
-}
-
-int __guac_socket_write_length_png_cairo(guac_socket* socket, cairo_surface_t* surface) {
-
-    /* STUB */
-    return guac_socket_write_string(socket, "0.");
-
 }
 
 int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface) {
