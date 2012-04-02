@@ -54,6 +54,8 @@
 #include <pngstruct.h>
 #endif
 
+#include <png.h>
+
 #include <cairo/cairo.h>
 
 #include <sys/types.h>
@@ -108,12 +110,18 @@ typedef struct __guac_socket_write_png_data {
     int buffer_size;
     int data_size;
 
-}
- __guac_socket_write_png_data;
+} __guac_socket_write_png_data;
 
-cairo_status_t __guac_socket_write_png(void* closure, const unsigned char* data, unsigned int length) {
+void __guac_socket_write_png(png_structp png,
+        png_bytep data, png_size_t length) {
 
-    __guac_socket_write_png_data* png_data = (__guac_socket_write_png_data*) closure;
+    /* Get png buffer structure */
+    __guac_socket_write_png_data* png_data;
+#ifdef HAVE_PNG_GET_IO_PTR
+    png_data = (__guac_socket_write_png_data*) png_get_io_ptr(png);
+#else
+    png_data = (__guac_socket_write_png_data*) png->io_ptr;
+#endif
 
     /* Calculate next buffer size */
     int next_size = png_data->data_size + length;
@@ -137,26 +145,111 @@ cairo_status_t __guac_socket_write_png(void* closure, const unsigned char* data,
     memcpy(png_data->buffer + png_data->data_size, data, length);
     png_data->data_size += length;
 
-    return CAIRO_STATUS_SUCCESS;
-
 }
 
+void __guac_socket_flush_png(png_structp png) {
+    /* Dummy function */
+}
 
 int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface) {
+
+    png_structp png;
+    png_infop png_info;
+    png_byte** png_rows;
+
+    int x, y;
 
     __guac_socket_write_png_data png_data;
     int base64_length;
 
-    /* Write surface */
+    /* Get image surface properties and data */
+    /*cairo_format_t format = cairo_image_surface_get_format(surface);*/
+    int width = cairo_image_surface_get_width(surface);
+    int height = cairo_image_surface_get_height(surface);
+    int stride = cairo_image_surface_get_stride(surface);
+    unsigned char* data = cairo_image_surface_get_data(surface);
 
+    /* Flush pending operations to surface */
+    cairo_surface_flush(surface);
+
+    /* If not an image surface, fail */
+    if (data == NULL) {
+        return -1; /* FIXME: Set guac_error, etc? */
+    }
+
+    /* Copy data from surface into PNG data */
+    png_rows = (png_byte**) malloc(sizeof(png_byte*) * height);
+    for (y=0; y<height; y++) {
+
+        /* Allocate new PNG row */
+        png_byte* row = (png_byte*) malloc(sizeof(png_byte) * width * 3);
+        png_rows[y] = row;
+
+        /* Copy data from surface into current row */
+        for (x=0; x<width; x++) {
+            row[3*x]   = data[4*x+2];
+            row[3*x+1] = data[4*x+1];
+            row[3*x+2] = data[4*x];
+        }
+
+        /* Advance to next data row */
+        data += stride;
+
+    }
+
+    /* Set up PNG writer */
+    png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (!png) {
+        return -1; /* FIXME: Set guac_error, etc? */
+    }
+
+    png_info = png_create_info_struct(png);
+    if (!png_info) {
+        png_destroy_write_struct(&png, NULL);
+        return -1; /* FIXME: Set guac_error, etc? */
+    }
+
+    /* Set error handler */
+    if (setjmp(png_jmpbuf(png))) {
+        png_destroy_write_struct(&png, &png_info);
+        return -1; /* FIXME: Set guac_error, etc? */
+    }
+
+    /* Set up buffer structure */
     png_data.socket = socket;
     png_data.buffer_size = 8192;
     png_data.buffer = malloc(png_data.buffer_size);
     png_data.data_size = 0;
 
-    if (cairo_surface_write_to_png_stream(surface, __guac_socket_write_png, &png_data) != CAIRO_STATUS_SUCCESS) {
-        return -1;
-    }
+    /* Set up writer */
+    png_set_write_fn(png, &png_data,
+            __guac_socket_write_png,
+            __guac_socket_flush_png);
+
+    /* Write image info */
+    png_set_IHDR(
+        png,
+        png_info,
+        width,
+        height,
+        8,
+        PNG_COLOR_TYPE_RGB,
+        PNG_INTERLACE_NONE,
+        PNG_COMPRESSION_TYPE_DEFAULT,
+        PNG_FILTER_TYPE_DEFAULT
+    );
+
+    /* Write image */
+    png_set_rows(png, png_info, png_rows);
+    png_write_png(png, png_info, PNG_TRANSFORM_IDENTITY, NULL);
+
+    /* Finish write */
+    png_destroy_write_struct(&png, &png_info);
+
+    /* Free PNG data */
+    for (y=0; y<height; y++)
+        free(png_rows[y]);
+    free(png_rows);
 
     base64_length = (png_data.data_size + 2) / 3 * 4;
 
