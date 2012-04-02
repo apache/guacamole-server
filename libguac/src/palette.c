@@ -89,9 +89,9 @@ guac_palette* guac_palette_alloc(cairo_surface_t* surface) {
 
                     /* Store in palette */
                     c = &(palette->colors[palette->size]);
-                    c->blue  = (color & 0x0000FF);
-                    c->green = (color & 0x00FF00) >> 8;
-                    c->red   = (color & 0xFF0000) >> 16;
+                    c->blue  = (color      ) & 0xFF;
+                    c->green = (color >> 8 ) & 0xFF;
+                    c->red   = (color >> 16) & 0xFF;
 
                     /* Add color to map */
                     entry->index = ++palette->size;
@@ -138,7 +138,7 @@ int guac_palette_find(guac_palette* palette, int color) {
 
         /* Otherwise, if color indeed stored here, done */
         if (entry->color == color)
-            return entry->index;
+            return entry->index - 1;
 
         /* Otherwise, collision. Move on to another bucket */
         hash = (hash+1) & 0xFFF;
