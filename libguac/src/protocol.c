@@ -69,6 +69,7 @@
 #include "socket.h"
 #include "protocol.h"
 #include "error.h"
+#include "palette.h"
 
 /* Output formatting functions */
 
@@ -149,77 +150,6 @@ void __guac_socket_write_png(png_structp png,
 
 void __guac_socket_flush_png(png_structp png) {
     /* Dummy function */
-}
-
-typedef struct __guac_palette {
-
-    int index;
-    int color;
-
-} __guac_palette;
-
-void __guac_create_palette(cairo_surface_t* surface) {
-
-    int x, y;
-
-    int width = cairo_image_surface_get_width(surface);
-    int height = cairo_image_surface_get_height(surface);
-    int stride = cairo_image_surface_get_stride(surface);
-    unsigned char* data = cairo_image_surface_get_data(surface);
-
-    /* Simple palette map */
-    __guac_palette palette[0xFFF] = {{0}};
-    int colors = 0;
-
-    for (y=0; y<height; y++) {
-
-        for (x=0; x<width; x++) {
-
-            /* Get pixel color */
-            int color = ((uint32_t*) data)[x] & 0xFFFFFF;
-
-            /* Calculate hash code */
-            int hash = ((color & 0xFFF000) >> 12) ^ (color & 0xFFF);
-
-            __guac_palette* entry;
-
-            /* Search for open palette entry */
-            for (;;) {
-                
-                entry = &palette[hash];
-
-                /* If we've found a free space, use it */
-                if (entry->index == 0) {
-
-                    /* Stop if already at capacity */
-                    if (colors == 256)
-                        return;
-
-                    /* Add color to map, done */
-                    entry->index = ++colors;
-                    entry->color = color;
-                    break;
-
-                }
-
-                /* Otherwise, if already stored here, done */
-                if (entry->color == color)
-                    break;
-
-                /* Otherwise, collision. Move on to another bucket */
-                hash = (hash+1) & 0xFFF;
-
-            }
-
-        }
-
-        /* Advance to next data row */
-        data += stride;
-
-    }
-
-    fprintf(stderr, "%i colors!\n", colors);
-
 }
 
 png_byte** __guac_create_png_rgb(cairo_surface_t* surface, int alpha) {
