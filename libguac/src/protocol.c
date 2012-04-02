@@ -50,6 +50,10 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef HAVE_PNGSTRUCT_H
+#include <pngstruct.h>
+#endif
+
 #include <cairo/cairo.h>
 
 #include <sys/types.h>
