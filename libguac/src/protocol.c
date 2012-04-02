@@ -244,10 +244,6 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
 
     }
 
-    fprintf(stderr,
-            "Created palette with %i entries.\n",
-            palette->size);
-
     guac_palette_free(palette);
 
     /* Write image info */
