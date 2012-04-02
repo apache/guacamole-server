@@ -111,6 +111,33 @@ guac_palette* guac_palette_alloc(cairo_surface_t* surface) {
 
 }
 
+int guac_palette_find(guac_palette* palette, int color) {
+
+    /* Calculate hash code */
+    int hash = ((color & 0xFFF000) >> 12) ^ (color & 0xFFF);
+
+    guac_palette_entry* entry;
+
+    /* Search for palette entry */
+    for (;;) {
+        
+        entry = &(palette->entries[hash]);
+
+        /* If we've found a free space, color not stored. */
+        if (entry->index == 0)
+            return -1;
+
+        /* Otherwise, if color indeed stored here, done */
+        if (entry->color == color)
+            return entry->index;
+
+        /* Otherwise, collision. Move on to another bucket */
+        hash = (hash+1) & 0xFFF;
+
+    }
+
+}
+
 void guac_palette_free(guac_palette* palette) {
     free(palette);
 }
