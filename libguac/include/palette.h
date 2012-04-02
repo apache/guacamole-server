@@ -38,6 +38,7 @@
 #ifndef __GUAC_PALETTE_H
 #define __GUAC_PALETTE_H
 
+#include <png.h>
 #include <cairo/cairo.h>
 
 typedef struct guac_palette_entry {
@@ -51,7 +52,7 @@ typedef struct guac_palette_entry {
 typedef struct guac_palette {
 
     guac_palette_entry entries[0xFFF];
-    int colors[256];
+    png_color colors[256];
     int size;
 
 } guac_palette;

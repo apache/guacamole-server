@@ -263,6 +263,9 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
         PNG_FILTER_TYPE_DEFAULT
     );
 
+    /* Write palette */
+    png_set_PLTE(png, png_info, palette->colors, palette->size);
+
     /* Write image */
     png_set_rows(png, png_info, png_rows);
     png_write_png(png, png_info, PNG_TRANSFORM_IDENTITY, NULL);
