@@ -73,19 +73,20 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
                 context->instance->settings->color_depth,
                 32, ((rdp_freerdp_context*) context)->clrconv);
 
-        /* Create surface from image data */
-        cairo_surface_t* surface = cairo_image_surface_create_for_data(
-            image_buffer, CAIRO_FORMAT_RGB24,
-            bitmap->width, bitmap->height, 4*bitmap->width);
-
-        /* Send surface to buffer */
-        guac_protocol_send_png(socket, GUAC_COMP_SRC, buffer, 0, 0, surface);
-
-        /* Free surface */
-        cairo_surface_destroy(surface);
-
-        /* If ephemeral, just free image data */
+        /* If not ephemeral, store cached image, and free image data */
         if (!bitmap->ephemeral) {
+
+            /* Create surface from image data */
+            cairo_surface_t* surface = cairo_image_surface_create_for_data(
+                image_buffer, CAIRO_FORMAT_RGB24,
+                bitmap->width, bitmap->height, 4*bitmap->width);
+
+            /* Send surface to buffer */
+            guac_protocol_send_png(socket,
+                    GUAC_COMP_SRC, buffer, 0, 0, surface);
+
+            /* Free surface */
+            cairo_surface_destroy(surface);
 
             /* Free image data if actually alloated */
             if (image_buffer != bitmap->data)
@@ -117,11 +118,31 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
     int width = bitmap->right - bitmap->left + 1;
     int height = bitmap->bottom - bitmap->top + 1;
 
-    guac_protocol_send_copy(socket,
-            ((guac_rdp_bitmap*) bitmap)->layer,
-            0, 0, width, height,
-            GUAC_COMP_OVER,
-            GUAC_DEFAULT_LAYER, bitmap->left, bitmap->top);
+    /* If not ephemeral, retrieve from cache */
+    if (!bitmap->ephemeral)
+        guac_protocol_send_copy(socket,
+                ((guac_rdp_bitmap*) bitmap)->layer,
+                0, 0, width, height,
+                GUAC_COMP_OVER,
+                GUAC_DEFAULT_LAYER, bitmap->left, bitmap->top);
+
+    /* Otherwise, draw with stored image data */
+    else if (bitmap->data != NULL) {
+
+        /* Create surface from image data */
+        cairo_surface_t* surface = cairo_image_surface_create_for_data(
+            bitmap->data, CAIRO_FORMAT_RGB24,
+            width, height, 4*bitmap->width);
+
+        /* Send surface to buffer */
+        guac_protocol_send_png(socket,
+                GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
+                bitmap->left, bitmap->top, surface);
+
+        /* Free surface */
+        cairo_surface_destroy(surface);
+
+    }
 
 }
 
