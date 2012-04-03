@@ -99,7 +99,6 @@ void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph) {
 
     surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_ARGB32, width, height, stride);
     guac_protocol_send_png(socket, GUAC_COMP_SRC, layer, 0, 0, surface);
-    guac_socket_flush(socket);
 
     /* Free surface */
     cairo_surface_destroy(surface);
