@@ -145,6 +145,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     xfree(pointer);
 
     /* Set up GDI */
+    instance->update->EndPaint = guac_rdp_gdi_end_paint;
     instance->update->Palette = guac_rdp_gdi_palette_update;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
 
