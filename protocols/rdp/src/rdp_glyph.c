@@ -45,11 +45,6 @@
 
 void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph) {
 
-    /* Allocate buffer */
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_socket* socket = client->socket;
-    guac_layer* layer = guac_client_alloc_buffer(client);
-
     int x, y, i;
     int stride;
     unsigned char* image_buffer;
@@ -58,8 +53,6 @@ void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph) {
     unsigned char* data = glyph->aj;
     int width  = glyph->cx;
     int height = glyph->cy;
-
-    cairo_surface_t* surface;
 
     /* Init Cairo buffer */
     stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
@@ -97,15 +90,9 @@ void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph) {
         }
     }
 
-    surface = cairo_image_surface_create_for_data(image_buffer, CAIRO_FORMAT_ARGB32, width, height, stride);
-    guac_protocol_send_png(socket, GUAC_COMP_SRC, layer, 0, 0, surface);
-
-    /* Free surface */
-    cairo_surface_destroy(surface);
-    free(image_buffer);
-
-    /* Store layer */
-    ((guac_rdp_glyph*) glyph)->layer = layer;
+    /* Store glyph surface */
+    ((guac_rdp_glyph*) glyph)->surface = cairo_image_surface_create_for_data(
+            image_buffer, CAIRO_FORMAT_ARGB32, width, height, stride);
 
 }
 
@@ -113,29 +100,27 @@ void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
-    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
  
-    /* Colorize glyph */
-    guac_protocol_send_rect(client->socket, ((guac_rdp_glyph*) glyph)->layer,
-            0, 0, glyph->cx, glyph->cy);
+    /* Use glyph as mask */
+    cairo_mask_surface(
+            guac_client_data->glyph_cairo,
+            ((guac_rdp_glyph*) glyph)->surface, x, y);
 
-    guac_protocol_send_cfill(client->socket,
-            GUAC_COMP_ATOP, ((guac_rdp_glyph*) glyph)->layer,
-            guac_client_data->foreground.red,
-            guac_client_data->foreground.green,
-            guac_client_data->foreground.blue,
-            255);
-
-    /* Draw glyph */
-    guac_protocol_send_copy(client->socket,
-           ((guac_rdp_glyph*) glyph)->layer, 0, 0, glyph->cx, glyph->cy,
-           GUAC_COMP_OVER, current_layer, x, y); 
+    /* Fill rectangle with foreground */
+    cairo_rectangle(guac_client_data->glyph_cairo, x, y, glyph->cx, glyph->cy);
+    cairo_fill(guac_client_data->glyph_cairo);
 
 }
 
 void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph) {
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_free_buffer(client, ((guac_rdp_glyph*) glyph)->layer);
+
+    unsigned char* image_buffer = cairo_image_surface_get_data(
+            ((guac_rdp_glyph*) glyph)->surface);
+
+    /* Free surface */
+    cairo_surface_destroy(((guac_rdp_glyph*) glyph)->surface);
+    free(image_buffer);
+
 }
 
 void guac_rdp_glyph_begindraw(rdpContext* context,
@@ -143,7 +128,6 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
-    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
     bgcolor = freerdp_color_convert_var(bgcolor,
             context->instance->settings->color_depth, 32,
@@ -161,21 +145,47 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
     guac_client_data->background.green  = (bgcolor & 0x00FF00) >> 8;
     guac_client_data->background.red    = (bgcolor & 0xFF0000) >> 16;
 
-    /* Paint background on destination */
-    guac_protocol_send_rect(client->socket, current_layer,
-            x, y, width, height);
+    /* Create glyph surface and cairo instance */
+    guac_client_data->glyph_surface = cairo_image_surface_create(
+            CAIRO_FORMAT_RGB24, width, height);
 
-    guac_protocol_send_cfill(client->socket,
-            GUAC_COMP_OVER, current_layer,
-            guac_client_data->background.red,
-            guac_client_data->background.green,
-            guac_client_data->background.blue,
-            255);
+    guac_client_data->glyph_cairo = cairo_create(
+        guac_client_data->glyph_surface);
+
+    /* Fill with color */
+    cairo_set_source_rgb(guac_client_data->glyph_cairo,
+            guac_client_data->background.red   / 255.0,
+            guac_client_data->background.green / 255.0,
+            guac_client_data->background.blue  / 255.0);
+
+    cairo_rectangle(guac_client_data->glyph_cairo,
+            0, 0, width, height);
+
+    cairo_fill(guac_client_data->glyph_cairo);
+
+    /* Prepare for glyph drawing */
+    cairo_set_source_rgb(guac_client_data->glyph_cairo,
+            guac_client_data->foreground.red   / 255.0,
+            guac_client_data->foreground.green / 255.0,
+            guac_client_data->foreground.blue  / 255.0);
 
 }
 
 void guac_rdp_glyph_enddraw(rdpContext* context,
         int x, int y, int width, int height, uint32 fgcolor, uint32 bgcolor) {
-    /* UNUSED */
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
+
+    /* Send surface with all glyphs to layer */
+    guac_protocol_send_png(client->socket,
+            GUAC_COMP_OVER, current_layer, x, y,
+            guac_client_data->glyph_surface);
+
+    /* Clean up cairo and glyph surface */
+    cairo_destroy(guac_client_data->glyph_cairo);
+    cairo_surface_destroy(guac_client_data->glyph_surface);
+
 }
 

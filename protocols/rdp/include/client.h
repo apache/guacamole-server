@@ -63,6 +63,16 @@ typedef struct rdp_guac_client_data {
     guac_rdp_color foreground;
     guac_rdp_color background;
 
+    /**
+     * Cairo surface which will receive all drawn glyphs.
+     */
+    cairo_surface_t* glyph_surface;
+
+    /**
+     * Cairo instance for drawing to glyph surface.
+     */
+    cairo_t* glyph_cairo;
+
     const guac_layer* current_surface;
 
     guac_rdp_static_keymap keymap;

@@ -50,9 +50,9 @@ typedef struct guac_rdp_glyph {
     rdpGlyph glyph;
 
     /**
-     * Guacamole layer containing cached image data.
+     * Cairo surface layer containing cached image data.
      */
-    guac_layer* layer;
+    cairo_surface_t* surface;
 
 } guac_rdp_glyph;
 
