@@ -393,12 +393,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_protocol_send_size(client->socket, GUAC_DEFAULT_LAYER,
             settings->width, settings->height);
 
-    /* Create glyph surface and cairo instance */
-    guac_client_data->glyph_surface = cairo_image_surface_create(
+    /* Create glyph surfaces */
+    guac_client_data->opaque_glyph_surface = cairo_image_surface_create(
             CAIRO_FORMAT_RGB24, settings->width, settings->height);
 
-    guac_client_data->glyph_cairo = cairo_create(
-        guac_client_data->glyph_surface);
+    guac_client_data->trans_glyph_surface = cairo_image_surface_create(
+            CAIRO_FORMAT_ARGB32, settings->width, settings->height);
 
     /* Success */
     return 0;

@@ -139,6 +139,14 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
     /* Fill background with color if specified */
     if (width != 0 && height != 0) {
 
+        /* Prepare for opaque glyphs */
+        guac_client_data->glyph_surface = 
+            guac_client_data->opaque_glyph_surface;
+
+        /* Create cairo instance */
+        guac_client_data->glyph_cairo = cairo_create(
+            guac_client_data->glyph_surface);
+
         /* Convert background color */
         bgcolor = freerdp_color_convert_var(bgcolor,
                 context->instance->settings->color_depth, 32,
@@ -154,6 +162,29 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
                 ((bgcolor & 0xFF0000) >> 16) / 255.0);
 
         cairo_fill(guac_client_data->glyph_cairo);
+
+    }
+
+    /* Otherwise, prepare for transparent glyphs  */
+    else {
+
+        /* Select transparent glyph surface */
+        guac_client_data->glyph_surface = 
+            guac_client_data->trans_glyph_surface;
+
+        guac_client_data->glyph_cairo = cairo_create(
+            guac_client_data->glyph_surface);
+
+        /* Clear surface */
+        cairo_set_operator(guac_client_data->glyph_cairo,
+            CAIRO_OPERATOR_SOURCE);
+
+        cairo_set_source_rgba(guac_client_data->glyph_cairo, 0, 0, 0, 0);
+        cairo_paint(guac_client_data->glyph_cairo);
+
+        /* Restore operator */
+        cairo_set_operator(guac_client_data->glyph_cairo,
+            CAIRO_OPERATOR_OVER);
 
     }
 
@@ -192,6 +223,9 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
 
     /* Destroy surface */
     cairo_surface_destroy(surface);
+
+    /* Destroy cairo instance */
+    cairo_destroy(guac_client_data->glyph_cairo);
 
 }
 
