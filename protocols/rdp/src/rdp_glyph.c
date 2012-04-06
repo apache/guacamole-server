@@ -39,6 +39,7 @@
 #include <freerdp/freerdp.h>
 
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 
 #include "client.h"
 #include "rdp_glyph.h"
@@ -100,15 +101,15 @@ void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
- 
+
+    /* Do not attempt to draw glyphs if glyph drawing is not begun */
+    if (guac_client_data->glyph_cairo == NULL)
+        return;
+
     /* Use glyph as mask */
     cairo_mask_surface(
             guac_client_data->glyph_cairo,
             ((guac_rdp_glyph*) glyph)->surface, x, y);
-
-    /* Fill rectangle with foreground */
-    cairo_rectangle(guac_client_data->glyph_cairo, x, y, glyph->cx, glyph->cy);
-    cairo_fill(guac_client_data->glyph_cairo);
 
 }
 
@@ -127,47 +128,40 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
         int x, int y, int width, int height, uint32 fgcolor, uint32 bgcolor) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) client->data;
 
-    bgcolor = freerdp_color_convert_var(bgcolor,
-            context->instance->settings->color_depth, 32,
-            ((rdp_freerdp_context*) context)->clrconv);
-
+    /* Convert foreground color */
     fgcolor = freerdp_color_convert_var(fgcolor,
             context->instance->settings->color_depth, 32,
             ((rdp_freerdp_context*) context)->clrconv);
 
-    guac_client_data->foreground.blue  =  fgcolor & 0x0000FF;
-    guac_client_data->foreground.green = (fgcolor & 0x00FF00) >> 8;
-    guac_client_data->foreground.red   = (fgcolor & 0xFF0000) >> 16;
+    /* Fill background with color if specified */
+    if (width != 0 && height != 0) {
 
-    guac_client_data->background.blue   =  bgcolor & 0x0000FF;
-    guac_client_data->background.green  = (bgcolor & 0x00FF00) >> 8;
-    guac_client_data->background.red    = (bgcolor & 0xFF0000) >> 16;
+        /* Convert background color */
+        bgcolor = freerdp_color_convert_var(bgcolor,
+                context->instance->settings->color_depth, 32,
+                ((rdp_freerdp_context*) context)->clrconv);
 
-    /* Create glyph surface and cairo instance */
-    guac_client_data->glyph_surface = cairo_image_surface_create(
-            CAIRO_FORMAT_RGB24, width, height);
+        /* Fill background */
+        cairo_rectangle(guac_client_data->glyph_cairo,
+                x, y, width, height);
 
-    guac_client_data->glyph_cairo = cairo_create(
-        guac_client_data->glyph_surface);
+        cairo_set_source_rgb(guac_client_data->glyph_cairo,
+                ( bgcolor & 0x0000FF       ) / 255.0,
+                ((bgcolor & 0x00FF00) >> 8 ) / 255.0,
+                ((bgcolor & 0xFF0000) >> 16) / 255.0);
 
-    /* Fill with color */
-    cairo_set_source_rgb(guac_client_data->glyph_cairo,
-            guac_client_data->background.red   / 255.0,
-            guac_client_data->background.green / 255.0,
-            guac_client_data->background.blue  / 255.0);
+        cairo_fill(guac_client_data->glyph_cairo);
 
-    cairo_rectangle(guac_client_data->glyph_cairo,
-            0, 0, width, height);
-
-    cairo_fill(guac_client_data->glyph_cairo);
+    }
 
     /* Prepare for glyph drawing */
     cairo_set_source_rgb(guac_client_data->glyph_cairo,
-            guac_client_data->foreground.red   / 255.0,
-            guac_client_data->foreground.green / 255.0,
-            guac_client_data->foreground.blue  / 255.0);
+            ( fgcolor & 0x0000FF       ) / 255.0,
+            ((fgcolor & 0x00FF00) >> 8 ) / 255.0,
+            ((fgcolor & 0xFF0000) >> 16) / 255.0);
 
 }
 
@@ -178,14 +172,26 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
+    /* Use glyph surface to provide image data for glyph rectangle */
+    cairo_surface_t* glyph_surface = guac_client_data->glyph_surface;
+    int stride = cairo_image_surface_get_stride(glyph_surface);
+
+    /* Ensure data is ready */
+    cairo_surface_flush(glyph_surface);
+
+    /* Create surface for subsection with text */
+    cairo_surface_t* surface = cairo_image_surface_create_for_data(
+            cairo_image_surface_get_data(glyph_surface) + 4*x + y*stride,
+            cairo_image_surface_get_format(glyph_surface),
+            width, height, stride);
+
     /* Send surface with all glyphs to layer */
     guac_protocol_send_png(client->socket,
             GUAC_COMP_OVER, current_layer, x, y,
-            guac_client_data->glyph_surface);
+            surface);
 
-    /* Clean up cairo and glyph surface */
-    cairo_destroy(guac_client_data->glyph_cairo);
-    cairo_surface_destroy(guac_client_data->glyph_surface);
+    /* Destroy surface */
+    cairo_surface_destroy(surface);
 
 }
 

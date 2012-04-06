@@ -193,10 +193,6 @@ boolean rdp_freerdp_post_connect(freerdp* instance) {
     client->mouse_handler = rdp_guac_client_mouse_handler;
     client->key_handler = rdp_guac_client_key_handler;
 
-    /* Send size */
-    guac_protocol_send_size(client->socket, GUAC_DEFAULT_LAYER,
-            instance->settings->width, instance->settings->height);
-
     return true;
 
 }
@@ -392,6 +388,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Send connection name */
     guac_protocol_send_name(client->socket, settings->window_title);
+
+    /* Send size */
+    guac_protocol_send_size(client->socket, GUAC_DEFAULT_LAYER,
+            settings->width, settings->height);
+
+    /* Create glyph surface and cairo instance */
+    guac_client_data->glyph_surface = cairo_image_surface_create(
+            CAIRO_FORMAT_RGB24, settings->width, settings->height);
+
+    guac_client_data->glyph_cairo = cairo_create(
+        guac_client_data->glyph_surface);
 
     /* Success */
     return 0;

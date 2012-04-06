@@ -47,21 +47,12 @@
 
 #define RDP_DEFAULT_PORT 3389
 
-typedef struct guac_rdp_color {
-    int red;
-    int green;
-    int blue;
-} guac_rdp_color;
-
 typedef struct rdp_guac_client_data {
 
     freerdp* rdp_inst;
     rdpSettings* settings;
 
     int mouse_button_mask;
-
-    guac_rdp_color foreground;
-    guac_rdp_color background;
 
     /**
      * Cairo surface which will receive all drawn glyphs.
