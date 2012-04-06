@@ -157,9 +157,9 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
                 x, y, width, height);
 
         cairo_set_source_rgb(guac_client_data->glyph_cairo,
-                ( bgcolor & 0x0000FF       ) / 255.0,
+                ((bgcolor & 0xFF0000) >> 16) / 255.0,
                 ((bgcolor & 0x00FF00) >> 8 ) / 255.0,
-                ((bgcolor & 0xFF0000) >> 16) / 255.0);
+                ( bgcolor & 0x0000FF       ) / 255.0);
 
         cairo_fill(guac_client_data->glyph_cairo);
 
@@ -190,9 +190,9 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
 
     /* Prepare for glyph drawing */
     cairo_set_source_rgb(guac_client_data->glyph_cairo,
-            ( fgcolor & 0x0000FF       ) / 255.0,
+            ((fgcolor & 0xFF0000) >> 16) / 255.0,
             ((fgcolor & 0x00FF00) >> 8 ) / 255.0,
-            ((fgcolor & 0xFF0000) >> 16) / 255.0);
+            ( fgcolor & 0x0000FF       ) / 255.0);
 
 }
 
