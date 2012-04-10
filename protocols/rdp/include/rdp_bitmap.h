@@ -61,6 +61,7 @@ typedef struct guac_rdp_bitmap {
 
 } guac_rdp_bitmap;
 
+void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap);
 void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);
 void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, uint8* data, int width, int height, int bpp, int length, boolean compressed);
 void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap);

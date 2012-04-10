@@ -53,7 +53,7 @@
 #include "client.h"
 #include "rdp_bitmap.h"
 
-void __guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
+void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_socket* socket = client->socket; 
@@ -122,12 +122,8 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
 
     /* If not cached, cache if necessary */
     if (((guac_rdp_bitmap*) bitmap)->layer == NULL
-            && ((guac_rdp_bitmap*) bitmap)->used >= 2) {
-        __guac_rdp_cache_bitmap(context, bitmap);
-
-        guac_client_log_info(client, "Deferred cache! bitmap used=%i", ((guac_rdp_bitmap*) bitmap)->used);
-
-    }
+            && ((guac_rdp_bitmap*) bitmap)->used >= 1)
+        guac_rdp_cache_bitmap(context, bitmap);
 
     /* If cached, retrieve from cache */
     if (((guac_rdp_bitmap*) bitmap)->layer != NULL)
@@ -158,8 +154,6 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
     /* Increment usage counter */
     ((guac_rdp_bitmap*) bitmap)->used++;
 
-    guac_client_log_info(client, "Used bitmap... used=%i", ((guac_rdp_bitmap*) bitmap)->used);
-
 }
 
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
@@ -182,7 +176,7 @@ void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean 
 
         /* If not available as a surface, make available. */
         if (((guac_rdp_bitmap*) bitmap)->layer == NULL)
-            __guac_rdp_cache_bitmap(context, bitmap);
+            guac_rdp_cache_bitmap(context, bitmap);
 
         ((rdp_guac_client_data*) client->data)->current_surface 
             = ((guac_rdp_bitmap*) bitmap)->layer;
