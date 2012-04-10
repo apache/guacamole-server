@@ -58,11 +58,11 @@ void __guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_socket* socket = client->socket; 
 
+    /* Allocate buffer */
+    guac_layer* buffer = guac_client_alloc_buffer(client);
+
     /* Cache image data if present */
     if (bitmap->data != NULL) {
-
-        /* Allocate buffer */
-        guac_layer* buffer = guac_client_alloc_buffer(client);
 
         /* Create surface from image data */
         cairo_surface_t* surface = cairo_image_surface_create_for_data(
@@ -76,10 +76,10 @@ void __guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
         /* Free surface */
         cairo_surface_destroy(surface);
 
-        /* Store buffer reference in bitmap */
-        ((guac_rdp_bitmap*) bitmap)->layer = buffer;
-
     }
+
+    /* Store buffer reference in bitmap */
+    ((guac_rdp_bitmap*) bitmap)->layer = buffer;
 
 }
 
@@ -171,9 +171,12 @@ void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean 
 
     else {
 
-        if (((guac_rdp_bitmap*) bitmap)->layer != NULL)
-            ((rdp_guac_client_data*) client->data)->current_surface 
-                = ((guac_rdp_bitmap*) bitmap)->layer;
+        /* If not available as a surface, make available. */
+        if (((guac_rdp_bitmap*) bitmap)->layer == NULL)
+            __guac_rdp_cache_bitmap(context, bitmap);
+
+        ((rdp_guac_client_data*) client->data)->current_surface 
+            = ((guac_rdp_bitmap*) bitmap)->layer;
 
     }
 
