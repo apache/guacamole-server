@@ -133,6 +133,9 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
     if (client->__last_available_buffer != NULL)
         client->__last_available_buffer->__next_available = layer;
 
+    if (client->__available_buffers == NULL)
+        client->__available_buffers = layer;
+
     client->__last_available_buffer = layer;
 
 }
@@ -142,6 +145,9 @@ void guac_client_free_layer(guac_client* client, guac_layer* layer) {
     /* Add layer to tail of pool of available layers */
     if (client->__last_available_layer != NULL)
         client->__last_available_layer->__next_available = layer;
+
+    if (client->__available_layers == NULL)
+        client->__available_layers = layer;
 
     client->__last_available_layer = layer;
 
