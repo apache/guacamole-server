@@ -54,6 +54,11 @@ typedef struct guac_rdp_bitmap {
      */
     guac_layer* layer;
 
+    /**
+     * The number of times a bitmap has been used.
+     */
+    int used;
+
 } guac_rdp_bitmap;
 
 void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);

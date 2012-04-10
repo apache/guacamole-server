@@ -102,19 +102,13 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
         /* Store converted image in bitmap */
         bitmap->data = image_buffer;
 
-        /* If not ephemeral, store cached image */
-        if (!bitmap->ephemeral)
-            __guac_rdp_cache_bitmap(context, bitmap);
-
-        else
-            /* No corresponding layer */
-            ((guac_rdp_bitmap*) bitmap)->layer = NULL;
-
     }
 
-    else
-        /* No corresponding layer */
-        ((guac_rdp_bitmap*) bitmap)->layer = NULL;
+    /* No corresponding layer yet - caching is deferred. */
+    ((guac_rdp_bitmap*) bitmap)->layer = NULL;
+
+    /* Start at zero usage */
+    ((guac_rdp_bitmap*) bitmap)->used = 0;
 
 }
 
@@ -125,6 +119,15 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
 
     int width = bitmap->right - bitmap->left + 1;
     int height = bitmap->bottom - bitmap->top + 1;
+
+    /* If not cached, cache if necessary */
+    if (((guac_rdp_bitmap*) bitmap)->layer == NULL
+            && ((guac_rdp_bitmap*) bitmap)->used >= 2) {
+        __guac_rdp_cache_bitmap(context, bitmap);
+
+        guac_client_log_info(client, "Deferred cache! bitmap used=%i", ((guac_rdp_bitmap*) bitmap)->used);
+
+    }
 
     /* If cached, retrieve from cache */
     if (((guac_rdp_bitmap*) bitmap)->layer != NULL)
@@ -152,14 +155,20 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
 
     }
 
+    /* Increment usage counter */
+    ((guac_rdp_bitmap*) bitmap)->used++;
+
+    guac_client_log_info(client, "Used bitmap... used=%i", ((guac_rdp_bitmap*) bitmap)->used);
+
 }
 
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
-    /* Free layer, if any */
+    /* If cached, free buffer */
     if (((guac_rdp_bitmap*) bitmap)->layer != NULL)
         guac_client_free_buffer(client, ((guac_rdp_bitmap*) bitmap)->layer);
+
 }
 
 void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean primary) {
