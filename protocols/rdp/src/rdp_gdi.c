@@ -180,7 +180,8 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
         case 0xCC: 
 
             /* If not cached, cache if necessary */
-            if (((guac_rdp_bitmap*) bitmap)->used >= 1)
+            if (((guac_rdp_bitmap*) bitmap)->layer == NULL
+                    && ((guac_rdp_bitmap*) bitmap)->used >= 1)
                 guac_rdp_cache_bitmap(context, memblt->bitmap);
 
             /* If not cached, send as PNG */
