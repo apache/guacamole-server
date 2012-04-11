@@ -207,6 +207,14 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
     cairo_surface_t* glyph_surface = guac_client_data->glyph_surface;
     int stride = cairo_image_surface_get_stride(glyph_surface);
 
+    /* Calculate bounds */
+    int max_width = cairo_image_surface_get_width(glyph_surface) - x;
+    int max_height = cairo_image_surface_get_height(glyph_surface) - y;
+
+    /* Ensure dimensions of glyph do not exceed bounds */
+    if (width > max_width) width = max_width;
+    if (height > max_height) height = max_height;
+
     /* Ensure data is ready */
     cairo_surface_flush(glyph_surface);
 
