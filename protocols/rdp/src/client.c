@@ -152,6 +152,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     xfree(pointer);
 
     /* Set up GDI */
+    instance->update->EndPaint = guac_rdp_gdi_end_paint;
     instance->update->Palette = guac_rdp_gdi_palette_update;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
 
@@ -198,10 +199,6 @@ boolean rdp_freerdp_post_connect(freerdp* instance) {
     client->handle_messages = rdp_guac_client_handle_messages;
     client->mouse_handler = rdp_guac_client_mouse_handler;
     client->key_handler = rdp_guac_client_key_handler;
-
-    /* Send size */
-    guac_protocol_send_size(client->socket, GUAC_DEFAULT_LAYER,
-            instance->settings->width, instance->settings->height);
 
     return true;
 
@@ -399,6 +396,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Send connection name */
     guac_protocol_send_name(client->socket, settings->window_title);
+
+    /* Send size */
+    guac_protocol_send_size(client->socket, GUAC_DEFAULT_LAYER,
+            settings->width, settings->height);
+
+    /* Create glyph surfaces */
+    guac_client_data->opaque_glyph_surface = cairo_image_surface_create(
+            CAIRO_FORMAT_RGB24, settings->width, settings->height);
+
+    guac_client_data->trans_glyph_surface = cairo_image_surface_create(
+            CAIRO_FORMAT_ARGB32, settings->width, settings->height);
 
     /* Success */
     return 0;

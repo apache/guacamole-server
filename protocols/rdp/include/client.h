@@ -47,12 +47,6 @@
 
 #define RDP_DEFAULT_PORT 3389
 
-typedef struct guac_rdp_color {
-    int red;
-    int green;
-    int blue;
-} guac_rdp_color;
-
 typedef struct rdp_guac_client_data {
 
     freerdp* rdp_inst;
@@ -60,8 +54,27 @@ typedef struct rdp_guac_client_data {
 
     int mouse_button_mask;
 
-    guac_rdp_color foreground;
-    guac_rdp_color background;
+    /**
+     * Cairo surface which will receive all TRANSPARENT glyphs.
+     */
+    cairo_surface_t* trans_glyph_surface;
+
+    /**
+     * Cairo surface which will receive all OPAQUE glyphs.
+     */
+    cairo_surface_t* opaque_glyph_surface;
+
+    /**
+     * The current Cairo surface which will receive all drawn glyphs,
+     * depending on whether we are currently drawing transparent or
+     * opaque glyphs.
+     */
+    cairo_surface_t* glyph_surface;
+
+    /**
+     * Cairo instance for drawing to the current glyph surface.
+     */
+    cairo_t* glyph_cairo;
 
     const guac_layer* current_surface;
 

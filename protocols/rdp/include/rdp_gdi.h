@@ -51,5 +51,6 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt);
 void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect);
 void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette);
 void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds);
+void guac_rdp_gdi_end_paint(rdpContext* context);
 
 #endif
