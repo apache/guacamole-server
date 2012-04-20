@@ -157,6 +157,8 @@ int __guac_socket_write_length_png_cairo(guac_socket* socket, cairo_surface_t* s
     png_data.data_size = 0;
 
     if (cairo_surface_write_to_png_stream(surface, __guac_socket_write_png_cairo, &png_data) != CAIRO_STATUS_SUCCESS) {
+        guac_error = GUAC_STATUS_OUTPUT_ERROR;
+        guac_error_message = "Cairo PNG backend failed";
         return -1;
     }
 
@@ -258,19 +260,25 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
     /* Set up PNG writer */
     png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (!png) {
-        return -1; /* FIXME: Set guac_error, etc? */
+        guac_error = GUAC_STATUS_OUTPUT_ERROR;
+        guac_error_message = "libpng failed to create write structure";
+        return -1;
     }
 
     png_info = png_create_info_struct(png);
     if (!png_info) {
         png_destroy_write_struct(&png, NULL);
-        return -1; /* FIXME: Set guac_error, etc? */
+        guac_error = GUAC_STATUS_OUTPUT_ERROR;
+        guac_error_message = "libpng failed to create info structure";
+        return -1;
     }
 
     /* Set error handler */
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &png_info);
-        return -1; /* FIXME: Set guac_error, etc? */
+        guac_error = GUAC_STATUS_OUTPUT_ERROR;
+        guac_error_message = "libpng output error";
+        return -1;
     }
 
     /* Set up buffer structure */
