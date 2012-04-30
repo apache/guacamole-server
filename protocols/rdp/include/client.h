@@ -82,6 +82,8 @@ typedef struct rdp_guac_client_data {
 
     guac_rdp_keysym_state_map keysym_state;
 
+    const char* clipboard;
+
 } rdp_guac_client_data;
 
 typedef struct rdp_freerdp_context {

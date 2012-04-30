@@ -144,8 +144,16 @@ void guac_rdp_process_cb_data_response(guac_client* client,
         RDP_CB_DATA_RESPONSE_EVENT* event) {
 
     /* Received clipboard data */
-    if (event->data[event->size - 1] == '\0')
+    if (event->data[event->size - 1] == '\0') {
+
+        /* Store clipboard data */
+        ((rdp_guac_client_data*) client->data)->clipboard =
+            strdup((char*) event->data);
+
+        /* Send clipboard data */
         guac_protocol_send_clipboard(client->socket, (char*) event->data);
+
+    }
     else
         guac_client_log_error(client,
                 "Clipboard data missing null terminator");
