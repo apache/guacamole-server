@@ -409,3 +409,28 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
 }
 
+int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
+
+    rdpChannels* channels = 
+        ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
+
+    RDP_CB_FORMAT_LIST_EVENT* format_list =
+        (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
+            RDP_EVENT_CLASS_CLIPRDR,
+            RDP_EVENT_TYPE_CB_FORMAT_LIST,
+            NULL, NULL);
+
+    /* Store data in client */
+    ((rdp_guac_client_data*) client->data)->clipboard = strdup(data);
+
+    /* Notify server that text data is now available */
+    format_list->formats = (uint32*) malloc(sizeof(uint32));
+    format_list->formats[0] = CB_FORMAT_TEXT;
+    format_list->num_formats = 1;
+
+    freerdp_channels_send_event(channels, (RDP_EVENT*) format_list);
+
+    return 0;
+
+}
+

@@ -199,6 +199,7 @@ boolean rdp_freerdp_post_connect(freerdp* instance) {
     client->handle_messages = rdp_guac_client_handle_messages;
     client->mouse_handler = rdp_guac_client_mouse_handler;
     client->key_handler = rdp_guac_client_key_handler;
+    client->clipboard_handler = rdp_guac_client_clipboard_handler;
 
     return true;
 

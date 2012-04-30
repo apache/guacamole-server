@@ -60,7 +60,8 @@ void guac_rdp_process_cliprdr_event(guac_client* client, RDP_EVENT* event) {
                 break;
 
             case RDP_EVENT_TYPE_CB_DATA_REQUEST:
-                guac_rdp_process_cb_data_request(client, event);
+                guac_rdp_process_cb_data_request(client,
+                        (RDP_CB_DATA_REQUEST_EVENT*) event);
                 break;
 
             case RDP_EVENT_TYPE_CB_DATA_RESPONSE:
@@ -135,9 +136,40 @@ void guac_rdp_process_cb_format_list(guac_client* client,
 
 }
 
-void guac_rdp_process_cb_data_request(guac_client* client, RDP_EVENT* event) {
-    /* STUB */
-    guac_client_log_info(client, "data_request");
+void guac_rdp_process_cb_data_request(guac_client* client,
+        RDP_CB_DATA_REQUEST_EVENT* event) {
+
+    rdpChannels* channels = 
+        ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
+
+    /* If text requested, send clipboard text contents */
+    if (event->format == CB_FORMAT_TEXT) {
+
+        /* Get clipboard data */
+        const char* clipboard =
+            ((rdp_guac_client_data*) client->data)->clipboard;
+
+        /* Create new data response */
+        RDP_CB_DATA_RESPONSE_EVENT* data_response =
+            (RDP_CB_DATA_RESPONSE_EVENT*) freerdp_event_new(
+                    RDP_EVENT_CLASS_CLIPRDR,
+                    RDP_EVENT_TYPE_CB_DATA_RESPONSE,
+                    NULL, NULL);
+
+        /* Set data and length */
+        data_response->data = (uint8*) strdup(clipboard);
+        data_response->size = strlen(clipboard) + 1;
+
+        /* Send response */
+        freerdp_channels_send_event(channels, (RDP_EVENT*) data_response);
+
+    }
+
+    /* Otherwise ... failure */
+    else
+        guac_client_log_error(client, 
+                "Server requested unsupported clipboard data type");
+
 }
 
 void guac_rdp_process_cb_data_response(guac_client* client,
