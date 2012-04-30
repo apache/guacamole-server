@@ -41,7 +41,7 @@ the files section of the main project site:
 guacd is built using the popular GNU Automake, and thus provides the standard
 configure script. Before compiling, you need to have compiled and installed
 libguac, the core Guacamole library. This is available from the main Guacamole
-site at http://guacamole.sourceforge.net/.
+site at http://guac-dev.org/.
 
 1) Run configure
 
