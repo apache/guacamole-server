@@ -51,19 +51,21 @@ void guac_rdp_process_cliprdr_event(guac_client* client, RDP_EVENT* event) {
         switch (event->event_type) {
 
             case RDP_EVENT_TYPE_CB_MONITOR_READY:
-                guac_rdp_process_cb_monitor_ready(client);
+                guac_rdp_process_cb_monitor_ready(client, event);
                 break;
 
             case RDP_EVENT_TYPE_CB_FORMAT_LIST:
-                guac_rdp_process_cb_format_list(client);
+                guac_rdp_process_cb_format_list(client,
+                        (RDP_CB_FORMAT_LIST_EVENT*) event);
                 break;
 
             case RDP_EVENT_TYPE_CB_DATA_REQUEST:
-                guac_rdp_process_cb_data_request(client);
+                guac_rdp_process_cb_data_request(client, event);
                 break;
 
             case RDP_EVENT_TYPE_CB_DATA_RESPONSE:
-                guac_rdp_process_cb_data_response(client);
+                guac_rdp_process_cb_data_response(client,
+                        (RDP_CB_DATA_RESPONSE_EVENT*) event);
                 break;
 
             default:
@@ -74,31 +76,79 @@ void guac_rdp_process_cliprdr_event(guac_client* client, RDP_EVENT* event) {
 
 }
 
-void guac_rdp_process_cb_monitor_ready(guac_client* client) {
+void guac_rdp_process_cb_monitor_ready(guac_client* client, RDP_EVENT* event) {
 
     rdpChannels* channels = 
         ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
 
-    RDP_EVENT* event = freerdp_event_new(
+    RDP_CB_FORMAT_LIST_EVENT* format_list =
+        (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
             RDP_EVENT_CLASS_CLIPRDR,
             RDP_EVENT_TYPE_CB_FORMAT_LIST,
             NULL, NULL);
 
-    ((RDP_CB_FORMAT_LIST_EVENT*) event)->num_formats = 0;
+    /* Received notification of clipboard support. */
 
-    freerdp_channels_send_event(channels, event);
+    /* Respond with supported format list */
+    format_list->formats = (uint32*) malloc(sizeof(uint32));
+    format_list->formats[0] = CB_FORMAT_TEXT;
+    format_list->num_formats = 1;
+
+    freerdp_channels_send_event(channels, (RDP_EVENT*) format_list);
 
 }
 
-void guac_rdp_process_cb_format_list(guac_client* client) {
-    /* STUB */
+void guac_rdp_process_cb_format_list(guac_client* client,
+        RDP_CB_FORMAT_LIST_EVENT* event) {
+
+    rdpChannels* channels = 
+        ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
+
+    /* Received notification of available data */
+
+    int i;
+    for (i=0; i<event->num_formats; i++) {
+
+        /* If plain text available, request it */
+        if (event->formats[i] == CB_FORMAT_TEXT) {
+
+            /* Create new data request */
+            RDP_CB_DATA_REQUEST_EVENT* data_request =
+                (RDP_CB_DATA_REQUEST_EVENT*) freerdp_event_new(
+                        RDP_EVENT_CLASS_CLIPRDR,
+                        RDP_EVENT_TYPE_CB_DATA_REQUEST,
+                        NULL, NULL);
+
+            /* We want plain text */
+            data_request->format = CB_FORMAT_TEXT;
+
+            /* Send request */
+            freerdp_channels_send_event(channels, (RDP_EVENT*) data_request);
+            return;
+
+        }
+
+    }
+
+    /* Otherwise, no supported data available */
+    guac_client_log_info(client, "Ignoring unsupported clipboard data");
+
 }
 
-void guac_rdp_process_cb_data_request(guac_client* client) {
+void guac_rdp_process_cb_data_request(guac_client* client, RDP_EVENT* event) {
     /* STUB */
+    guac_client_log_info(client, "data_request");
 }
 
-void guac_rdp_process_cb_data_response(guac_client* client) {
-    /* STUB */
+void guac_rdp_process_cb_data_response(guac_client* client,
+        RDP_CB_DATA_RESPONSE_EVENT* event) {
+
+    /* Received clipboard data */
+    if (event->data[event->size - 1] == '\0')
+        guac_protocol_send_clipboard(client->socket, (char*) event->data);
+    else
+        guac_client_log_error(client,
+                "Clipboard data missing null terminator");
+
 }
 

@@ -41,10 +41,14 @@
 #include <freerdp/freerdp.h>
 
 void guac_rdp_process_cliprdr_event(guac_client* client, RDP_EVENT* event);
-void guac_rdp_process_cb_monitor_ready(guac_client* client);
-void guac_rdp_process_cb_format_list(guac_client* client);
-void guac_rdp_process_cb_data_request(guac_client* client);
-void guac_rdp_process_cb_data_response(guac_client* client);
+void guac_rdp_process_cb_monitor_ready(guac_client* client, RDP_EVENT* event);
+
+void guac_rdp_process_cb_format_list(guac_client* client,
+        RDP_CB_FORMAT_LIST_EVENT* event);
+
+void guac_rdp_process_cb_data_request(guac_client* client, RDP_EVENT* event);
+void guac_rdp_process_cb_data_response(guac_client* client,
+        RDP_CB_DATA_RESPONSE_EVENT* event);
 
 #endif
 
