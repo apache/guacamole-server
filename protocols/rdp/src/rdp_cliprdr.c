@@ -157,8 +157,14 @@ void guac_rdp_process_cb_data_request(guac_client* client,
                     NULL, NULL);
 
         /* Set data and length */
-        data_response->data = (uint8*) strdup(clipboard);
-        data_response->size = strlen(clipboard) + 1;
+        if (clipboard != NULL) {
+            data_response->data = (uint8*) strdup(clipboard);
+            data_response->size = strlen(clipboard) + 1;
+        }
+        else {
+            data_response->data = (uint8*) strdup("");
+            data_response->size = 1;
+        }
 
         /* Send response */
         freerdp_channels_send_event(channels, (RDP_EVENT*) data_response);
@@ -177,6 +183,9 @@ void guac_rdp_process_cb_data_response(guac_client* client,
 
     /* Received clipboard data */
     if (event->data[event->size - 1] == '\0') {
+
+        /* Free existing data */
+        free(((rdp_guac_client_data*) client->data)->clipboard);
 
         /* Store clipboard data */
         ((rdp_guac_client_data*) client->data)->clipboard =

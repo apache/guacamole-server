@@ -420,6 +420,9 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
             RDP_EVENT_TYPE_CB_FORMAT_LIST,
             NULL, NULL);
 
+    /* Free existing data */
+    free(((rdp_guac_client_data*) client->data)->clipboard);
+
     /* Store data in client */
     ((rdp_guac_client_data*) client->data)->clipboard = strdup(data);
 
