@@ -59,6 +59,7 @@
 #include "rdp_keymap.h"
 #include "rdp_cliprdr.h"
 #include "guac_handlers.h"
+#include "unicode_convtable.h"
 
 void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, int from, int to);
 int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);
@@ -344,10 +345,12 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
             /* Send actual key */
             rdp_inst->input->KeyboardEvent(
-                    rdp_inst->input,
+					rdp_inst->input,
                     keysym_desc->flags
-                        | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
-                    keysym_desc->scancode);
+					    | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
+					keysym_desc->scancode);
+
+			guac_client_log_info(client, "Base flags are %d", keysym_desc->flags);
 
             /* If defined, release any keys that were originally released */
             if (keysym_desc->set_keysyms != NULL)
@@ -357,23 +360,39 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
             if (keysym_desc->clear_keysyms != NULL)
                 __guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 1);
 
-        }
 
-        /* If undefined but has Alt-code, use Alt-Code */
-        else if (keysym <= 0xFF) {
 
-            /* NOTE: The Alt-codes are conveniently identical to keysyms. */
+        /* /\* If undefined but has Alt-code, use Alt-Code *\/ */
+        /* else if (keysym <= 0xFF) { */
 
-            /* Only send Alt-code on press */
-            if (pressed)
-                __guac_rdp_send_altcode(client, keysym);
+        /*     /\* NOTE: The Alt-codes are conveniently identical to keysyms. *\/ */
 
-        }
+        /*     /\* Only send Alt-code on press *\/ */
+        /*     if (pressed) */
+        /*         __guac_rdp_send_altcode(client, keysym); */
 
-        /* If no defined Alt-code, log warning */
-        else
-            guac_client_log_info(client, "unmapped keysym: 0x%x", keysym);
+        /* } */
 
+        /* /\* If no defined Alt-code, log warning *\/ */
+        /* else */
+        /*     guac_client_log_info(client, "unmapped keysym: 0x%x", keysym); */
+
+        } else {
+			/* Fall back to unicode events */
+			int unicode_code = keysym2uni(keysym);
+			guac_client_log_info(client, "Translated keysym:0x%x to unicode:0x%x (pressed=%d flag=%d)", 
+								 keysym, unicode_code, pressed,	pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE);
+
+			/* LibfreeRDP seems not to take into account the DOWN/RELEASE flags.
+			 *   So we send only the key once.
+			 */
+			if (pressed) {
+            rdp_inst->input->UnicodeKeyboardEvent(
+                    rdp_inst->input,
+					0,//pressed ? KBD_FLAGS_DOW : KBD_FLAGS_RELEASE,
+                    unicode_code);
+			}
+		}
     }
 
     return 0;
