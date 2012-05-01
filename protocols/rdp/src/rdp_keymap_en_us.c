@@ -37,6 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <freerdp/input.h>
+#include <freerdp/kbd/layouts.h>
 
 #include "rdp_keymap.h"
 
@@ -429,7 +430,8 @@ const guac_rdp_keymap guac_rdp_keymap_en_us = {
     .name = "en-us-qwerty",
 
     .parent = &guac_rdp_keymap_base,
-    .mapping = __guac_rdp_keymap_mapping
+    .mapping = __guac_rdp_keymap_mapping,
+    .freerdp_keyboard_layout = KBD_US
 
 };
 

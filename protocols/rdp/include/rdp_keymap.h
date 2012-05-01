@@ -38,6 +38,8 @@
 #ifndef _GUAC_RDP_RDP_KEYMAP_H
 #define _GUAC_RDP_RDP_KEYMAP_H
 
+#include <freerdp/kbd/layouts.h>
+
 /**
  * Represents a keysym-to-scancode mapping for RDP, with extra information
  * about the state of prerequisite keysyms.
@@ -95,6 +97,13 @@ struct guac_rdp_keymap {
      * Null-terminated array of scancode mappings.
      */
     const guac_rdp_keysym_desc* mapping;
+
+    /**
+     * FreeRDP keyboard layout associated with this
+     * keymap. If this keymap is selected, this layout
+     * will be requested from the server.
+     */
+    const uint32 freerdp_keyboard_layout;
 
 };
 

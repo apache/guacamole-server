@@ -218,6 +218,7 @@ void __guac_rdp_client_load_keymap(guac_client* client,
 
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) client->data;
+
     /* Get mapping */
     const guac_rdp_keysym_desc* mapping = keymap->mapping;
 
@@ -252,6 +253,15 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     char* hostname;
     int port = RDP_DEFAULT_PORT;
     boolean bitmap_cache;
+
+    /**
+     * Selected server-side keymap. Client will be assumed to also use this
+     * keymap. Keys will be sent to server based on client input on a
+     * best-effort basis.
+     *
+     * Currently hard-coded to en-us-qwerty.
+     */
+    const guac_rdp_keymap* chosen_keymap = &guac_rdp_keymap_en_us;
 
     if (argc < 8) {
 
@@ -381,7 +391,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
 
     /* Load keymap into client */
-    __guac_rdp_client_load_keymap(client, &guac_rdp_keymap_en_us);
+    __guac_rdp_client_load_keymap(client, chosen_keymap);
+
+    /* Set server-side keymap */
+    settings->kbd_layout = chosen_keymap->freerdp_keyboard_layout; 
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
