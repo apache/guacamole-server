@@ -45,13 +45,31 @@
 
 #include "rdp_keymap.h"
 
+/**
+ * The default RDP port.
+ */
 #define RDP_DEFAULT_PORT 3389
 
+/**
+ * Client data that will remain accessible through the guac_client.
+ * This should generally include data commonly used by Guacamole handlers.
+ */
 typedef struct rdp_guac_client_data {
 
+    /**
+     * Pointer to the FreeRDP client instance handling the current connection.
+     */
     freerdp* rdp_inst;
+
+    /**
+     * The settings structure associated with the FreeRDP client instance
+     * handling the current connection.
+     */
     rdpSettings* settings;
 
+    /**
+     * Button mask containing the OR'd value of all currently pressed buttons.
+     */
     int mouse_button_mask;
 
     /**
@@ -76,21 +94,55 @@ typedef struct rdp_guac_client_data {
      */
     cairo_t* glyph_cairo;
 
+    /**
+     * The Guacamole layer that GDI operations should draw to. RDP messages
+     * exist which change this surface to allow drawing to occur off-screen.
+     */
     const guac_layer* current_surface;
 
+    /**
+     * The keymap to use when translating keysyms into scancodes or sequences
+     * of scancodes for RDP.
+     */
     guac_rdp_static_keymap keymap;
 
+    /**
+     * The state of all keys, based on whether events for pressing/releasing
+     * particular keysyms have been received. This is necessary in order to
+     * determine which keys must be released/pressed when a particular
+     * keysym can only be typed through a sequence of scancodes (such as
+     * an Alt-code) because the server-side keymap does not support that
+     * keysym.
+     */
     guac_rdp_keysym_state_map keysym_state;
 
+    /**
+     * The current text (NOT Unicode) clipboard contents.
+     */
     char* clipboard;
 
 } rdp_guac_client_data;
 
+/**
+ * Client data that will remain accessible through the RDP context.
+ * This should generally include data commonly used by FreeRDP handlers.
+ */
 typedef struct rdp_freerdp_context {
 
+    /**
+     * The parent context. THIS MUST BE THE FIRST ELEMENT.
+     */
     rdpContext _p;
 
+    /**
+     * Pointer to the guac_client instance handling the RDP connection with
+     * this context.
+     */
     guac_client* client;
+
+    /**
+     * Color conversion structure to be used to convert RDP images to PNGs.
+     */
     CLRCONV* clrconv;
 
 } rdp_freerdp_context;
