@@ -71,18 +71,20 @@
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
+    "domain",
     "username",
     "password",
     "width",
     "height",
-    "initial_program",
-    "color_depth",
+    "initial-program",
+    "color-depth",
     NULL
 };
 
 enum ARGS_IDX {
     IDX_HOSTNAME,
     IDX_PORT,
+    IDX_DOMAIN,
     IDX_USERNAME,
     IDX_PASSWORD,
     IDX_WIDTH,
@@ -263,7 +265,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
      */
     const guac_rdp_keymap* chosen_keymap = &guac_rdp_keymap_en_us;
 
-    if (argc < 8) {
+    if (argc < 9) {
 
         guac_protocol_send_error(client->socket,
                 "Wrong argument count received.");
@@ -330,20 +332,24 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->port = port;
     settings->window_title = strdup(hostname);
 
-    /* username */
+    /* Domain */
+    if (argv[IDX_DOMAIN][0] != '\0')
+        settings->domain = strdup(argv[IDX_DOMAIN]);
+
+    /* Username */
     settings->username = "guest";
     if (argv[IDX_USERNAME][0] != '\0')
-        settings->username = strdup (argv[IDX_USERNAME]);
+        settings->username = strdup(argv[IDX_USERNAME]);
 
-    /* password */
+    /* Password */
     if (argv[IDX_PASSWORD][0] != '\0') {
-        settings->password = strdup (argv[IDX_PASSWORD]);
+        settings->password = strdup(argv[IDX_PASSWORD]);
         settings->autologon = 1;
     }
 
-    /* initial program */
+    /* Initial program */
     if (argv[IDX_INITIAL_PROGRAM][0] != '\0')
-        settings->shell = strdup (argv[IDX_INITIAL_PROGRAM]);
+        settings->shell = strdup(argv[IDX_INITIAL_PROGRAM]);
 
     /* Order support */
     bitmap_cache = settings->bitmap_cache;
