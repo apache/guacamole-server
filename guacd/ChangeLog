@@ -1,5 +1,13 @@
 2011-12-11 Michael Jumper <zhangmaike@users.sourceforge.net>
 
+	* Migrated to libguac 0.6.0
+	* Add manpage and LICENSE to source .tar.gz
+	* Restrict addresses used for binding
+	* Improve logging
+	* Log messages to both syslog and STDERR
+
+2011-12-11 Michael Jumper <zhangmaike@users.sourceforge.net>
+
 	* Migrated daemon functions from libguac to guacd
 	* Improved logging
 	* Updated to match naming conventions
