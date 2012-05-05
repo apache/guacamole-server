@@ -1,3 +1,14 @@
+2011-05-04 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Buffer/layer allocation and pooling fixes
+	* Automatic PNG palletization
+	* Fix error reporting
+	* Add log handlers for guac_client_plugin_get_client()
+	* Add layer and drawing instructions
+	* Reorganized source
+	* Raster operations
+	* Cacheable cursors
+
 2011-12-11 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Added functions for alloc/free of layers and buffers
