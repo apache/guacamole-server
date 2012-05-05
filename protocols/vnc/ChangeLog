@@ -1,3 +1,9 @@
+2011-05-04 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Migrated to 0.6.0 version of libguac API
+	* Ensure LICENSE is included in source .tar.gz
+	* Add swap-red-blue parameter
+
 2011-12-11 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Migrated to 0.5.0 version of libguac API
