@@ -326,7 +326,7 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
     freerdp* rdp_inst = guac_client_data->rdp_inst;
 
     /* If keysym can be in lookup table */
-    if (keysym <= 0xFFFF) {
+    //if (keysym <= 0xFFFF) {
 
         /* Look up scancode mapping */
         const guac_rdp_keysym_desc* keysym_desc =
@@ -391,9 +391,12 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
                     rdp_inst->input,
 					0,//pressed ? KBD_FLAGS_DOW : KBD_FLAGS_RELEASE,
                     unicode_code);
+			} else {
+				
+				guac_client_log_info(client, "Ignoring release");
 			}
 		}
-    }
+		//}
 
     return 0;
 }
