@@ -38,7 +38,8 @@
 #ifndef _GUAC_RDP_RDP_KEYMAP_H
 #define _GUAC_RDP_RDP_KEYMAP_H
 
-#include <freerdp/kbd/layouts.h>
+#include <freerdp/locale/keyboard.h>
+
 
 /**
  * Represents a keysym-to-scancode mapping for RDP, with extra information

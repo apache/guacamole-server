@@ -37,7 +37,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <freerdp/input.h>
-#include <freerdp/kbd/layouts.h>
+
+#include <freerdp/locale/keyboard.h>
 
 #include "rdp_keymap.h"
 
