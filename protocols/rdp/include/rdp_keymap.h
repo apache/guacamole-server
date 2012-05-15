@@ -40,7 +40,6 @@
 
 #include <freerdp/locale/keyboard.h>
 
-
 /**
  * Represents a keysym-to-scancode mapping for RDP, with extra information
  * about the state of prerequisite keysyms.

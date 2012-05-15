@@ -345,12 +345,12 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
             /* Send actual key */
             rdp_inst->input->KeyboardEvent(
-					rdp_inst->input,
+                    rdp_inst->input,
                     keysym_desc->flags
-					    | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
-					keysym_desc->scancode);
+                        | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
+                    keysym_desc->scancode);
 
-			guac_client_log_info(client, "Base flags are %d", keysym_desc->flags);
+            guac_client_log_info(client, "Base flags are %d", keysym_desc->flags);
 
             /* If defined, release any keys that were originally released */
             if (keysym_desc->set_keysyms != NULL)
@@ -361,35 +361,21 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
                 __guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 1);
 
 
-
-        /* /\* If undefined but has Alt-code, use Alt-Code *\/ */
-        /* else if (keysym <= 0xFF) { */
-
-        /*     /\* NOTE: The Alt-codes are conveniently identical to keysyms. *\/ */
-
-        /*     /\* Only send Alt-code on press *\/ */
-        /*     if (pressed) */
-        /*         __guac_rdp_send_altcode(client, keysym); */
-
-        /* } */
-
-        /* /\* If no defined Alt-code, log warning *\/ */
-        /* else */
-        /*     guac_client_log_info(client, "unmapped keysym: 0x%x", keysym); */
-
         } else {
-			/* Fall back to unicode events */
+			/* Fall back to unicode events if undefined inside current keymap */
 			int unicode_code = keysym2uni(keysym);
 			guac_client_log_info(client, "Translated keysym:0x%x to unicode:0x%x (pressed=%d flag=%d)", 
 								 keysym, unicode_code, pressed,	pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE);
 
 			/* LibfreeRDP seems not to take into account the DOWN/RELEASE flags.
-			 *   So we send only the key once.
+			 *   So we send only on of the two key events.
 			 */
 			if (pressed) {
             rdp_inst->input->UnicodeKeyboardEvent(
                     rdp_inst->input,
-					0,//pressed ? KBD_FLAGS_DOW : KBD_FLAGS_RELEASE,
+                    //pressed ? KBD_FLAGS_DOW : KBD_FLAGS_RELEASE, <- not 
+                    // taken into account
+					0,
                     unicode_code);
 			} else {
 				

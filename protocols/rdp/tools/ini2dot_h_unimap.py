@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#
 # Copyright (C) 2012 Ulteo SAS
 # http://www.ulteo.com
 # Author Jocelyn DELALANDE <j.delalande@ulteo.com> 2012
@@ -9,6 +9,10 @@
 #
 # Used to extract the keysym<->unicode mapping exceptions from 
 # unicode_exception.ini (can be found in Ulteo patched version of xrdp)
+#
+# Such an ini file can be found at
+# http://www.ulteo.com/home/en/download/sourcecode (xrdp folder)
+#
 
 import sys
 import ConfigParser
