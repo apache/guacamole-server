@@ -21,6 +21,9 @@
  *
  * Contributor(s):
  * Matt Hortman
+ * Jocelyn DELALANDE <j.delalande@ulteo.com> Ulteo SAS - http://www.ulteo.com
+ *
+ * Portions created by Ulteo SAS employees are Copyright (C) 2012 Ulteo SAS
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
