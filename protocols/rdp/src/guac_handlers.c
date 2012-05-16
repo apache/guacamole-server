@@ -65,7 +65,6 @@
 
 void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, int from, int to);
 int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);
-void __guac_rdp_send_altcode(guac_client* client, int altcode);
 
 
 int rdp_guac_client_free_handler(guac_client* client) {
@@ -279,48 +278,6 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     return 0;
 }
 
-void __guac_rdp_send_altcode(guac_client* client, int altcode) {
-
-    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
-    freerdp* rdp_inst = guac_client_data->rdp_inst;
-    int i;
-
-    /* Lookup scancode for Alt */
-    int alt = GUAC_RDP_KEYSYM_LOOKUP(
-            guac_client_data->keymap,
-            0xFFE9 /* Alt_L */).scancode;
-
-    /* Release all pressed modifiers */
-    __guac_rdp_update_keysyms(client, GUAC_KEYSYMS_ALL_MODIFIERS, 1, 0);
-
-    /* Press Alt */
-    rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, alt);
-
-    /* For each character in four-digit Alt-code ... */
-    for (i=0; i<4; i++) {
-
-        /* Get scancode of keypad digit */
-        int scancode = GUAC_RDP_KEYSYM_LOOKUP(
-                guac_client_data->keymap,
-                0xFFB0 + (altcode / 1000)
-        ).scancode;
-
-        /* Press and release digit */
-        rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_DOWN, scancode);
-        rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_RELEASE, scancode);
-
-        /* Shift digits left by one place */
-        altcode = (altcode * 10) % 10000;
-
-    }
-
-    /* Release Alt */
-    rdp_inst->input->KeyboardEvent(rdp_inst->input, KBD_FLAGS_RELEASE, alt);
-
-    /* Press all originally pressed modifiers */
-    __guac_rdp_update_keysyms(client, GUAC_KEYSYMS_ALL_MODIFIERS, 1, 1);
-
-}
 
 int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
