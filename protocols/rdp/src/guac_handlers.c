@@ -62,7 +62,6 @@
 #include "rdp_keymap.h"
 #include "rdp_cliprdr.h"
 #include "guac_handlers.h"
-#include "unicode_convtable.h"
 
 void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, int from, int to);
 int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);
@@ -329,7 +328,7 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
     freerdp* rdp_inst = guac_client_data->rdp_inst;
 
     /* If keysym can be in lookup table */
-    //if (keysym <= 0xFFFF) {
+    if (keysym <= 0xFFFF) {
 
         /* Look up scancode mapping */
         const guac_rdp_keysym_desc* keysym_desc =
@@ -363,29 +362,33 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
             if (keysym_desc->clear_keysyms != NULL)
                 __guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 1);
 
+            return 0;
 
-        } else {
-			/* Fall back to unicode events if undefined inside current keymap */
-			int unicode_code = keysym2uni(keysym);
-			guac_client_log_info(client, "Translated keysym:0x%x to unicode:0x%x (pressed=%d flag=%d)", 
-								 keysym, unicode_code, pressed,	pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE);
+        }
+    }
 
-			/* LibfreeRDP seems not to take into account the DOWN/RELEASE flags.
-			 *   So we send only on of the two key events.
-			 */
-			if (pressed) {
-            rdp_inst->input->UnicodeKeyboardEvent(
-                    rdp_inst->input,
-                    //pressed ? KBD_FLAGS_DOW : KBD_FLAGS_RELEASE, <- not 
-                    // taken into account
-					0,
-                    unicode_code);
-			} else {
-				
-				guac_client_log_info(client, "Ignoring release");
-			}
-		}
-		//}
+    /* Fall back to unicode events if undefined inside current keymap */
+
+    /* Only send when key pressed - Unicode events do not have DOWN/RELEASE flags */
+    if (pressed) {
+
+        /* Translate keysym into codepoint */
+        int codepoint;
+        if (keysym <= 0xFF)
+            codepoint = keysym;
+        else
+            codepoint = keysym & 0xFFFFFF;
+
+        guac_client_log_info(client, "Translated keysym 0x%x to U+%04X", keysym, codepoint);
+
+        /* Send Unicode event */
+        rdp_inst->input->UnicodeKeyboardEvent(
+                rdp_inst->input,
+                0, codepoint);
+    }
+    
+    else
+        guac_client_log_info(client, "Ignoring key release (Unicode event)");
 
     return 0;
 }
