@@ -309,8 +309,6 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
                         | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
                     keysym_desc->scancode);
 
-            guac_client_log_info(client, "Base flags are %d", keysym_desc->flags);
-
             /* If defined, release any keys that were originally released */
             if (keysym_desc->set_keysyms != NULL)
                 __guac_rdp_update_keysyms(client, keysym_desc->set_keysyms, 0, 0);
@@ -326,17 +324,25 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
     /* Fall back to unicode events if undefined inside current keymap */
 
-    /* Only send when key pressed - Unicode events do not have DOWN/RELEASE flags */
+    /* Only send when key pressed - Unicode events do not have
+     * DOWN/RELEASE flags */
     if (pressed) {
 
         /* Translate keysym into codepoint */
         int codepoint;
         if (keysym <= 0xFF)
             codepoint = keysym;
-        else
+        else if (keysym >= 0x1000000)
             codepoint = keysym & 0xFFFFFF;
+        else {
+            guac_client_log_info(client,
+                    "Unmapped keysym has no equivalent unicode "
+                    "value: 0x%x", keysym);
+            return 0;
+        }
 
-        guac_client_log_info(client, "Translated keysym 0x%x to U+%04X", keysym, codepoint);
+        guac_client_log_info(client, "Translated keysym 0x%x to U+%04X",
+                keysym, codepoint);
 
         /* Send Unicode event */
         rdp_inst->input->UnicodeKeyboardEvent(
