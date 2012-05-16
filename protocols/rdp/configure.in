@@ -53,7 +53,7 @@ AC_CHECK_LIB([freerdp-utils], [xzalloc],, AC_MSG_ERROR("libfreerdp-utils is requ
 AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],, AC_MSG_ERROR("libfreerdp-codec is required (part of FreeRDP)"))
 
 # Checks for header files.
-AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h])
+AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h freerdp/locale/keyboard.h freerdp/kbd/layouts.h])
 
 # Checks for library functions.
 AC_FUNC_MALLOC
