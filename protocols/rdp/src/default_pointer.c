@@ -62,8 +62,3 @@ unsigned char guac_rdp_default_pointer[] = {
 
 };
 
-/* Undefine image-specific macros */
-#undef X
-#undef O
-#undef _
-
