@@ -66,6 +66,7 @@
 #include "rdp_glyph.h"
 #include "rdp_pointer.h"
 #include "rdp_gdi.h"
+#include "default_pointer.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {

@@ -101,26 +101,3 @@ void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {
 
 }
 
-void guac_rdp_pointer_set_default(guac_client* client) {
-
-    guac_socket* socket = client->socket;
-
-    /* Draw to buffer */
-    guac_layer* cursor = guac_client_alloc_buffer(client);
-
-    cairo_surface_t* graphic = cairo_image_surface_create_for_data(
-            guac_rdp_default_pointer,
-            CAIRO_FORMAT_ARGB32,
-            11, 16, 11*4);
-
-    guac_protocol_send_png(socket, GUAC_COMP_OVER, cursor, 0, 0, graphic);
-    cairo_surface_destroy(graphic);
-
-    /* Set cursor */
-    guac_protocol_send_cursor(socket, 0, 0, cursor, 0, 0, 11, 16);
-
-    /* Free buffer */
-    guac_client_free_buffer(client, cursor);
-
-}
-

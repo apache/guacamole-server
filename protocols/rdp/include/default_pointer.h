@@ -38,9 +38,39 @@
 #ifndef _GUAC_RDP_DEFAULT_POINTER_H
 #define _GUAC_RDP_DEFAULT_POINTER_H
 
+#include <cairo/cairo.h>
+#include <guacamole/client.h>
+
 /**
- * Embedded 11x16 24-bit RGBA cursor graphic.
+ * Width of the embedded mouse cursor graphic.
+ */
+extern const int guac_rdp_default_pointer_width;
+
+/**
+ * Height of the embedded mouse cursor graphic.
+ */
+extern const int guac_rdp_default_pointer_height;
+
+/**
+ * Number of bytes in each row of the embedded mouse cursor graphic.
+ */
+extern const int guac_rdp_default_pointer_stride;
+
+/**
+ * The Cairo grapic format of the mouse cursor graphic.
+ */
+extern const cairo_format_t guac_rdp_default_pointer_format;
+
+/**
+ * Embedded mouse cursor graphic.
  */
 extern unsigned char guac_rdp_default_pointer[];
+
+/**
+ * Set the cursor of the remote display to the embedded cursor graphic.
+ *
+ * @param client The guac_client to send the cursor to.
+ */
+void guac_rdp_pointer_set_default(guac_client* client);
 
 #endif
