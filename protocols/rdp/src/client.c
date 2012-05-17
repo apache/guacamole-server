@@ -429,6 +429,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->trans_glyph_surface = cairo_image_surface_create(
             CAIRO_FORMAT_ARGB32, settings->width, settings->height);
 
+    /* Set default pointer */
+    guac_rdp_pointer_set_default(client);
+
     /* Success */
     return 0;
 

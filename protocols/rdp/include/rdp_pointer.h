@@ -59,5 +59,6 @@ typedef struct guac_rdp_pointer {
 void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer);
 void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer);
 void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer);
+void guac_rdp_pointer_set_default(guac_client* client);
 
 #endif

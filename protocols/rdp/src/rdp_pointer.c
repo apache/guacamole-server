@@ -100,3 +100,38 @@ void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {
 
 }
 
+void guac_rdp_pointer_set_default(guac_client* client) {
+
+    guac_socket* socket = client->socket;
+
+    /* Draw to buffer */
+    guac_layer* cursor = guac_client_alloc_buffer(client);
+    guac_protocol_send_size(socket, cursor, 110, 160);
+
+    /* Draw cursor */
+    guac_protocol_send_start(socket, cursor,  0,  0);
+    guac_protocol_send_line(socket, cursor,  10, 10);
+    guac_protocol_send_line(socket, cursor,   6, 10);
+    guac_protocol_send_line(socket, cursor,   8, 15);
+    guac_protocol_send_line(socket, cursor,   5, 15);
+    guac_protocol_send_line(socket, cursor,   3, 11);
+    guac_protocol_send_line(socket, cursor,   0, 14);
+    guac_protocol_send_close(socket, cursor);
+
+    /* Fill */
+    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, cursor,
+            0x00, 0x00, 0x00, 0xFF);
+
+    /* Stroke */
+    guac_protocol_send_cstroke(socket, GUAC_COMP_OVER, cursor,
+            GUAC_LINE_CAP_SQUARE, GUAC_LINE_JOIN_BEVEL, 1,
+            0xFF, 0xFF, 0xFF, 0xFF);
+
+    /* Set cursor */
+    guac_protocol_send_cursor(socket, 0, 0, cursor, 0, 0, 11, 16);
+
+    /* Free buffer */
+    guac_client_free_buffer(client, cursor);
+
+}
+
