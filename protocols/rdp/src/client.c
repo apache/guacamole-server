@@ -338,7 +338,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         settings->domain = strdup(argv[IDX_DOMAIN]);
 
     /* Username */
-    settings->username = "guest";
     if (argv[IDX_USERNAME][0] != '\0')
         settings->username = strdup(argv[IDX_USERNAME]);
 
