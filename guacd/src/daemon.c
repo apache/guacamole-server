@@ -20,6 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *  David PHAM-VAN <d.pham-van@ulteo.com> Ulteo SAS - http://www.ulteo.com
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -199,6 +200,7 @@ int main(int argc, char* argv[]) {
     char* listen_port = "4822";  /* Default port */
     char* pidfile = NULL;
     int opt;
+    int foreground = 0;
 
     /* General */
     int retval;
@@ -207,12 +209,15 @@ int main(int argc, char* argv[]) {
     pid_t daemon_pid;
 
     /* Parse arguments */
-    while ((opt = getopt(argc, argv, "l:b:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:f")) != -1) {
         if (opt == 'l') {
             listen_port = strdup(optarg);
         }
         else if (opt == 'b') {
             listen_address = strdup(optarg);
+        }
+        else if (opt == 'f') {
+            foreground = 1;
         }
         else if (opt == 'p') {
             pidfile = strdup(optarg);
@@ -222,6 +227,7 @@ int main(int argc, char* argv[]) {
             fprintf(stderr, "USAGE: %s"
                     " [-l LISTENPORT]"
                     " [-b LISTENADDRESS]"
+                    " [-f foreground]"
                     " [-p PIDFILE]\n", argv[0]);
 
             exit(EXIT_FAILURE);
@@ -295,36 +301,38 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    /* Fork into background */
-    daemon_pid = fork();
+    if (!foreground) {
+        /* Fork into background */
+        daemon_pid = fork();
 
-    /* If error, fail */
-    if (daemon_pid == -1) {
-        guacd_log_error("Error forking daemon process: %s", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    /* If parent, write PID file and exit */
-    else if (daemon_pid != 0) {
-
-        if (pidfile != NULL) {
-
-            /* Attempt to open pidfile and write PID */
-            FILE* pidf = fopen(pidfile, "w");
-            if (pidf) {
-                fprintf(pidf, "%d\n", daemon_pid);
-                fclose(pidf);
-            }
-
-            /* Warn on failure */
-            else {
-                guacd_log_error("Could not write PID file: %s", strerror(errno));
-                exit(EXIT_FAILURE);
-            }
-
+        /* If error, fail */
+        if (daemon_pid == -1) {
+            guacd_log_error("Error forking daemon process: %s", strerror(errno));
+            exit(EXIT_FAILURE);
         }
 
-        exit(EXIT_SUCCESS);
+        /* If parent, write PID file and exit */
+        else if (daemon_pid != 0) {
+
+            if (pidfile != NULL) {
+
+                /* Attempt to open pidfile and write PID */
+                FILE* pidf = fopen(pidfile, "w");
+                if (pidf) {
+                    fprintf(pidf, "%d\n", daemon_pid);
+                    fclose(pidf);
+                }
+
+                /* Warn on failure */
+                else {
+                    guacd_log_error("Could not write PID file: %s", strerror(errno));
+                    exit(EXIT_FAILURE);
+                }
+
+            }
+
+            exit(EXIT_SUCCESS);
+        }
     }
 
     /* Open log */
