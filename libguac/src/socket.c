@@ -209,13 +209,13 @@ ssize_t __guac_socket_write_base64_triplet(guac_socket* socket, int a, int b, in
 
 }
 
-ssize_t __guac_socket_write_base64_byte(guac_socket* socket, char buf) {
+ssize_t __guac_socket_write_base64_byte(guac_socket* socket, int buf) {
 
     int* __ready_buf = socket->__ready_buf;
 
     int retval;
 
-    __ready_buf[socket->__ready++] = buf & 0xFF;
+    __ready_buf[socket->__ready++] = buf;
 
     /* Flush triplet */
     if (socket->__ready == 3) {
@@ -233,8 +233,8 @@ ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t co
 
     int retval;
 
-    const char* char_buf = (const char*) buf;
-    const char* end = char_buf + count;
+    const unsigned char* char_buf = (const unsigned char*) buf;
+    const unsigned char* end = char_buf + count;
 
     while (char_buf < end) {
 
