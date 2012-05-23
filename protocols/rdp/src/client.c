@@ -151,6 +151,8 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     pointer->New = guac_rdp_pointer_new;
     pointer->Free = guac_rdp_pointer_free;
     pointer->Set = guac_rdp_pointer_set;
+    pointer->SetNull = guac_rdp_pointer_set_null;
+    pointer->SetDefault = guac_rdp_pointer_set_default;
     graphics_register_pointer(context->graphics, pointer);
     xfree(pointer);
 

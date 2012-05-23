@@ -20,6 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *  David PHAM-VAN <d.pham-van@ulteo.com> Ulteo SAS - http://www.ulteo.com
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -99,5 +100,11 @@ void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_client_free_buffer(client, ((guac_rdp_pointer*) pointer)->layer);
 
+}
+
+void guac_rdp_pointer_set_null(rdpContext* context) {
+}
+
+void guac_rdp_pointer_set_default(rdpContext* context) {
 }
 

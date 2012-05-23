@@ -20,6 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *  David PHAM-VAN <d.pham-van@ulteo.com> Ulteo SAS - http://www.ulteo.com
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -59,5 +60,7 @@ typedef struct guac_rdp_pointer {
 void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer);
 void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer);
 void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer);
+void guac_rdp_pointer_set_null(rdpContext* context);
+void guac_rdp_pointer_set_default(rdpContext* context);
 
 #endif
