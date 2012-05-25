@@ -152,8 +152,12 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     pointer->New = guac_rdp_pointer_new;
     pointer->Free = guac_rdp_pointer_free;
     pointer->Set = guac_rdp_pointer_set;
+#ifdef HAVE_RDPPOINTER_SETNULL
     pointer->SetNull = guac_rdp_pointer_set_null;
+#endif
+#ifdef HAVE_RDPPOINTER_SETDEFAULT
     pointer->SetDefault = guac_rdp_pointer_set_default;
+#endif
     graphics_register_pointer(context->graphics, pointer);
     xfree(pointer);
 
@@ -433,7 +437,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             CAIRO_FORMAT_ARGB32, settings->width, settings->height);
 
     /* Set default pointer */
-    guac_rdp_pointer_set_default(client);
+    guac_rdp_set_default_pointer(client);
 
     /* Success */
     return 0;

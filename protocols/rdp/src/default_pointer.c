@@ -76,7 +76,7 @@ unsigned char guac_rdp_default_pointer[] = {
 };
 
 
-void guac_rdp_pointer_set_default(guac_client* client) {
+void guac_rdp_set_default_pointer(guac_client* client) {
 
     guac_socket* socket = client->socket;
 

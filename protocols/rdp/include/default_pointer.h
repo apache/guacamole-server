@@ -71,6 +71,6 @@ extern unsigned char guac_rdp_default_pointer[];
  *
  * @param client The guac_client to send the cursor to.
  */
-void guac_rdp_pointer_set_default(guac_client* client);
+void guac_rdp_set_default_pointer(guac_client* client);
 
 #endif

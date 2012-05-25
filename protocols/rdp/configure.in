@@ -55,6 +55,11 @@ AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],, AC_MSG_ERROR("libfreerdp
 # Checks for header files.
 AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h freerdp/locale/keyboard.h freerdp/kbd/layouts.h])
 
+# Check for FreeRDP version-specific features
+AC_CHECK_MEMBERS([rdpPointer.SetDefault, rdpPointer.SetNull],
+                [], [],
+                [[#include <freerdp/freerdp.h>]])
+
 # Checks for library functions.
 AC_FUNC_MALLOC
 
