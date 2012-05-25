@@ -1,4 +1,4 @@
-.TH guacd 8 "10 Dec 2011" "version 0.5.0" "Guacamole"
+.TH guacd 8 "6 May 2012" "version 0.6.0" "Guacamole"
 .
 .SH NAME
 guacd \- Guacamole proxy daemon
@@ -8,6 +8,7 @@ guacd \- Guacamole proxy daemon
 [\fB-b\fR \fIHOST\fR]
 [\fB-l\fR \fIPORT\fR]
 [\fB-p\fR \fIFILE\fR]
+[\fB-f\fR]
 .
 .SH DESCRIPTION
 .B guacd
@@ -38,6 +39,12 @@ Causes
 to write the PID of the daemon process to the specified
 file. This is useful for init scripts and is used by the provided init
 script.
+.TP
+\fB\-f\fR
+Causes
+.B guacd
+to run in the foreground, rather than automatically forking into the
+background.
 .
 .SH AUTHOR
 Written by Michael Jumper <zhangmaike@users.sourceforge.net>
