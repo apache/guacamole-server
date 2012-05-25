@@ -88,7 +88,11 @@ guacd itself directly without the init script (as any user):
 
     $ guacd
 
-guacd currently takes two command-line options:
+guacd currently takes four command-line options:
+
+    -b HOST 
+
+        Changes the host or address that guacd listens on.
 
     -l PORT
 
@@ -99,6 +103,10 @@ guacd currently takes two command-line options:
         Causes guacd to write the PID of the daemon process to the specified
         file. This is useful for init scripts and is used by the provided init
         script.
+
+    -f
+        Causes guacd to run in the foreground, rather than automatically
+        forking into the background. 
 
 
 ------------------------------------------------------------
