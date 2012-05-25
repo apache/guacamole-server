@@ -20,7 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *  David PHAM-VAN <d.pham-van@ulteo.com> Ulteo SAS - http://www.ulteo.com
+ * David PHAM-VAN <d.pham-van@ulteo.com> Ulteo SAS - http://www.ulteo.com
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -227,8 +227,8 @@ int main(int argc, char* argv[]) {
             fprintf(stderr, "USAGE: %s"
                     " [-l LISTENPORT]"
                     " [-b LISTENADDRESS]"
-                    " [-f foreground]"
-                    " [-p PIDFILE]\n", argv[0]);
+                    " [-p PIDFILE]",
+                    " [-f]\n", argv[0]);
 
             exit(EXIT_FAILURE);
         }
@@ -302,6 +302,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (!foreground) {
+
         /* Fork into background */
         daemon_pid = fork();
 
