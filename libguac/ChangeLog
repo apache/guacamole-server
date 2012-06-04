@@ -1,4 +1,8 @@
-2011-05-04 Michael Jumper <zhangmaike@users.sourceforge.net>
+2012-05-23 David Pham-Van <d.pham-van@ulteo.com>
+
+	* Corrected padding in base64 encoding
+
+2012-05-04 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Buffer/layer allocation and pooling fixes
 	* Automatic PNG palletization
