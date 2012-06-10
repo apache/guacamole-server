@@ -103,8 +103,10 @@ void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {
 }
 
 void guac_rdp_pointer_set_null(rdpContext* context) {
+    /* STUB */
 }
 
 void guac_rdp_pointer_set_default(rdpContext* context) {
+    /* STUB */
 }
 
