@@ -1,3 +1,16 @@
+2012-05-23 David Pham-Van <d.pham-van@ulteo.com>
+
+	* Add SetNull and SetDefault handlers (fixes #148)
+
+2012-05-04 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Removed Alt-code fallback mode
+	* Added embedded default mouse pointer 
+
+2012-05-15 Jocelyn Delalande <j.delalande@ulteo.com>
+
+	* Unicode keyboard events
+
 2012-05-04 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Initial release
