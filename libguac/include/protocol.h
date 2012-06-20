@@ -52,6 +52,21 @@
 
 
 /**
+ * Annotates a resource related to printing.
+ */
+#define GUAC_REL_PRINTER "printer"
+
+/**
+ * Annotates a resource related to file transfer.
+ */
+#define GUAC_REL_FILE    "file"
+
+/**
+ * Annotates a resource related to audio.
+ */
+#define GUAC_REL_AUDIO   "audio"
+
+/**
  * An arbitrary timestamp denoting a relative time value in milliseconds.
  */
 typedef int64_t guac_timestamp;
@@ -183,6 +198,13 @@ struct guac_layer {
     int index;
 
     /**
+     * The string which must be passed via a resource instruction to denote
+     * a resource related to this layer. This value is automatically set
+     * upon allocation.
+     */
+    const char* rel;
+
+    /**
      * The next allocated layer in the list of all layers.
      */
     guac_layer* __next;
@@ -291,6 +313,20 @@ guac_timestamp guac_protocol_get_timestamp();
 /* CONTROL INSTRUCTIONS */
 
 /**
+ * Sends an accept instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param uuid The UUID of the resource that is being accepted.
+ * @param mimetype The mimetype being accepted.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_accept(guac_socket* socket, const char* uuid,
+        const char* mimetype);
+
+/**
  * Sends an args instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -336,6 +372,36 @@ int guac_protocol_send_disconnect(guac_socket* socket);
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_error(guac_socket* socket, const char* error);
+
+/**
+ * Sends a reject instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param uuid The UUID of the resource that is being rejected.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_reject(guac_socket* socket, const char* uuid);
+
+/**
+ * Sends a resource instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param rel What this resource is related to (see the GUAC_REL_*
+ *            constants).
+ * @param uuid The UUID of the resource that will be exposed.
+ * @param mimetypes An array of strings, where each string is an available
+ *                  mimetype.
+ * @param length The number of elements in the array of mimetype strings.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_resource(guac_socket* socket, const char* rel,
+        const char* uuid, const char** mimetypes, int length);
 
 /**
  * Sends a set instruction over the given guac_socket connection.
