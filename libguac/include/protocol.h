@@ -425,7 +425,7 @@ int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param protocol The protocol to request.
+ * @param protocol The protocol or resource UUID to request.
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_select(guac_socket* socket, const char* protocol);
