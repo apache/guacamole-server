@@ -40,7 +40,7 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Werror -Wall -pedantic -Iinclude
 
 libguacincdir = $(includedir)/guacamole
-libguacinc_HEADERS = include/client.h include/socket.h include/protocol.h include/client-handlers.h include/error.h
+libguacinc_HEADERS = include/client.h include/socket.h include/protocol.h include/error.h
 
 lib_LTLIBRARIES = libguac.la
 
@@ -48,7 +48,7 @@ libguac_la_SOURCES = src/client.c src/socket.c src/protocol.c src/client-handler
 
 libguac_la_LDFLAGS = -version-info 3:1:0
 
-noinst_HEADERS = include/palette.h
+noinst_HEADERS = include/palette.h include/client-handlers.h
 
 EXTRA_DIST = LICENSE doc/Doxyfile
 
