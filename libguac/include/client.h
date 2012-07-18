@@ -123,6 +123,18 @@ typedef void guac_client_log_handler(guac_client* client, const char* format, va
 typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
 
 /**
+ * Handler which will be called whenever a resource is being exposed.
+ */
+typedef int guac_client_resource_handler(guac_client* client,
+        guac_resource* resource);
+
+/**
+ * Handler which will be called whenever a valid resource is selected.
+ */
+typedef int guac_client_stream_handler(guac_client* client,
+        guac_resource* resource);
+
+/**
  * The flag set in the mouse button mask when the left mouse button is down.
  */
 #define GUAC_CLIENT_MOUSE_LEFT        0x01
