@@ -48,7 +48,7 @@ libguac_la_SOURCES = src/client.c src/socket.c src/protocol.c src/client-handler
 
 libguac_la_LDFLAGS = -version-info 3:1:0
 
-noinst_HEADERS = include/palette.h include/client-handlers.h
+noinst_HEADERS = include/palette.h include/client-handlers.h include/unicode.h
 
 EXTRA_DIST = LICENSE doc/Doxyfile
 
