@@ -73,10 +73,46 @@
 
 /* Output formatting functions */
 
+ssize_t __guac_utf8_strlen(const char* str) {
+
+    /* The current length of the string */
+    int length = 0;
+
+    /* Number of characters before start of next character */
+    int skip = 0;
+
+    while (*str != 0) {
+
+        /* If skipping, then skip */
+        if (skip > 0) skip--;
+
+        /* Otherwise, determine next skip value, and increment length */
+        else {
+
+            /* Get next character */
+            unsigned char c = (unsigned char) *str;
+
+            /* Determine skip value (size in bytes of rest of character) */
+            if      ((c >>= 1) == 0x7E) skip = 5;
+            else if ((c >>= 1) == 0x3E) skip = 4;
+            else if ((c >>= 1) == 0x1E) skip = 3;
+            else if ((c >>= 1) == 0x0E) skip = 2;
+            else if ((c >>= 1) == 0x06) skip = 1;
+
+            length++;
+        }
+
+        str++;
+    }
+
+    return length;
+
+}
+
 ssize_t __guac_socket_write_length_string(guac_socket* socket, const char* str) {
 
     return
-           guac_socket_write_int(socket, strlen(str))
+           guac_socket_write_int(socket, __guac_utf8_strlen(str))
         || guac_socket_write_string(socket, ".")
         || guac_socket_write_string(socket, str);
 
