@@ -38,6 +38,8 @@
 #ifndef _GUAC_UNICODE_H
 #define _GUAC_UNICODE_H
 
+#include <stddef.h>
+
 /**
  * Given the initial byte of a single UTF-8 character, returns the overall
  * byte size of the entire character.

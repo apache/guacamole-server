@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <stddef.h>
+
 #include "unicode.h"
 
 size_t guac_utf8_charsize(unsigned char c) {
