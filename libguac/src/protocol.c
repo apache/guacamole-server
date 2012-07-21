@@ -412,8 +412,14 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket,
     /* Loop until a instruction is read */
     for (;;) {
 
-        /* Length of element */
+        /* Length of element, in Unicode characters */
         int element_length = 0;
+
+        /* Length of element, in bytes */
+        int element_byte_length = 0;
+
+        /* Current position within the element, in Unicode characters */
+        int current_unicode_length = 0;
 
         /* Position within buffer */
         int i = socket->__instructionbuf_parse_start;
@@ -431,21 +437,34 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket,
             /* Otherwise, if end of length */
             else if (c == '.') {
 
+                /* Calculate element byte length by walking buffer */
+                while (i + element_byte_length <
+                            socket->__instructionbuf_used_length) {
+
+                    /* Get next byte */
+                    c = socket->__instructionbuf[i + element_byte_length];
+
+                    /* Update byte and character lengths */
+                    element_byte_length += guac_utf8_charsize((unsigned) c);
+                    current_unicode_length++;
+
+                }
+
                 /* Verify element is fully read */
-                if (i + element_length < socket->__instructionbuf_used_length) {
+                if (current_unicode_length == element_length) {
 
                     /* Get element value */
                     char* elementv = &(socket->__instructionbuf[i]);
                    
                     /* Get terminator, set null terminator of elementv */ 
-                    char terminator = elementv[element_length];
-                    elementv[element_length] = '\0';
+                    char terminator = elementv[element_byte_length];
+                    elementv[element_byte_length] = '\0';
 
                     /* Move to char after terminator of element */
-                    i += element_length+1;
+                    i += element_byte_length+1;
 
                     /* Reset element length */
-                    element_length = 0;
+                    element_length = element_byte_length = 0;
 
                     /* As element has been read successfully, update
                      * parse start */
