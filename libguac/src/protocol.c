@@ -439,7 +439,8 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket,
 
                 /* Calculate element byte length by walking buffer */
                 while (i + element_byte_length <
-                            socket->__instructionbuf_used_length) {
+                            socket->__instructionbuf_used_length
+                    && current_unicode_length < element_length) {
 
                     /* Get next byte */
                     c = socket->__instructionbuf[i + element_byte_length];
@@ -464,7 +465,9 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket,
                     i += element_byte_length+1;
 
                     /* Reset element length */
-                    element_length = element_byte_length = 0;
+                    element_length =
+                    element_byte_length =
+                    current_unicode_length = 0;
 
                     /* As element has been read successfully, update
                      * parse start */
