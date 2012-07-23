@@ -373,11 +373,10 @@ int __guac_fill_instructionbuf(guac_socket* socket) {
     int retval;
     
     /* Attempt to fill buffer */
-    retval = recv(
+    retval = read(
         socket->fd,
         socket->__instructionbuf + socket->__instructionbuf_used_length,
-        socket->__instructionbuf_size - socket->__instructionbuf_used_length,
-        0
+        socket->__instructionbuf_size - socket->__instructionbuf_used_length
     );
 
     /* Set guac_error if recv() unsuccessful */
