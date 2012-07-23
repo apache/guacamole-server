@@ -54,7 +54,7 @@ int cleanup_suite() {
     return 0;
 }
 
-void test_unicode() {
+void test_instruction_parse() {
 
     int rfd, wfd;
     int fd[2], childpid;
@@ -126,22 +126,22 @@ void test_unicode() {
 
 int main() {
 
-    CU_pSuite pSuite;
+    CU_pSuite suite;
 
     /* Init registry */
     if (CU_initialize_registry() != CUE_SUCCESS)
         return CU_get_error();
 
     /* Add protocol test suite */
-    pSuite = CU_add_suite("protocol", init_suite, cleanup_suite);
-    if (pSuite == NULL) {
+    suite = CU_add_suite("protocol", init_suite, cleanup_suite);
+    if (suite == NULL) {
         CU_cleanup_registry();
         return CU_get_error();
     }
 
     /* Add tests */
     if (
-            CU_add_test(pSuite, "unicode-support", test_unicode) == NULL
+        CU_add_test(suite, "instruction-parse", test_instruction_parse) == NULL
        ) {
         CU_cleanup_registry();
         return CU_get_error();
