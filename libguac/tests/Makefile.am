@@ -36,6 +36,7 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
+AM_CFLAGS = -Werror -Wall -pedantic -I../include
 
 TESTS = test_protocol
 check_PROGRAMS = test_protocol

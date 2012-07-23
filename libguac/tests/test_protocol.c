@@ -35,7 +35,16 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <CUnit/Basic.h>
+
+#include "socket.h"
+#include "protocol.h"
+#include "error.h"
+
+#define UTF8_DOG "\xe7\x8a\xac"
 
 int init_suite() {
     return 0;
@@ -46,6 +55,73 @@ int cleanup_suite() {
 }
 
 void test_unicode() {
+
+    int rfd, wfd;
+    int fd[2], childpid;
+
+    char test_string[] = "4.test,3.a" UTF8_DOG "b,"
+                         "5.12345,4.a" UTF8_DOG UTF8_DOG "c;"
+                         "5.test2,10.hellohello,15.worldworldworld;";
+
+    /* Create pipe */
+    pipe(fd);
+
+    /* File descriptors */
+    rfd = fd[0];
+    wfd = fd[1];
+
+    /* Fork */
+    if ((childpid = fork()) == -1) {
+        /* ERROR */
+        perror("fork");
+        return;
+    }
+
+    /* Child (pipe writer) */
+    if (childpid != 0) {
+        close(rfd);
+        write(wfd, test_string, sizeof(test_string));
+        exit(0);
+    }
+
+    /* Parent (unit test) */
+    else {
+
+        guac_socket* socket;
+        guac_instruction* instruction;
+
+        close(wfd);
+
+        /* Open guac socket */
+        socket = guac_socket_open(rfd);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(socket);
+
+        /* Read instruction */
+        instruction = guac_protocol_read_instruction(socket, 1000000);
+        CU_ASSERT_PTR_NOT_NULL_FATAL(instruction);
+        
+        /* Validate contents */
+        CU_ASSERT_STRING_EQUAL(instruction->opcode, "test");
+        CU_ASSERT_EQUAL_FATAL(instruction->argc, 3);
+        CU_ASSERT_STRING_EQUAL(instruction->argv[0], "a" UTF8_DOG "b");
+        CU_ASSERT_STRING_EQUAL(instruction->argv[1], "12345");
+        CU_ASSERT_STRING_EQUAL(instruction->argv[2], "a" UTF8_DOG UTF8_DOG "c");
+        
+        /* Read another instruction */
+        guac_instruction_free(instruction);
+        instruction = guac_protocol_read_instruction(socket, 1000000);
+
+        /* Validate contents */
+        CU_ASSERT_STRING_EQUAL(instruction->opcode, "test2");
+        CU_ASSERT_EQUAL_FATAL(instruction->argc, 2);
+        CU_ASSERT_STRING_EQUAL(instruction->argv[0], "hellohello");
+        CU_ASSERT_STRING_EQUAL(instruction->argv[1], "worldworldworld");
+
+        guac_instruction_free(instruction);
+        guac_socket_close(socket);
+
+    }
+ 
 }
 
 int main() {
