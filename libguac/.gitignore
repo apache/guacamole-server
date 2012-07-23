@@ -5,6 +5,10 @@
 *.lo
 *.la
 
+# Test binaries
+tests/test_*
+!tests/test_*.[ch]
+
 # Backup files
 *~
 

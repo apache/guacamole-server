@@ -37,7 +37,10 @@
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src . tests
+TESTS = test_unicode
+check_PROGRAMS = test_unicode
+test_unicode_SOURCES = test_unicode.c
+test_unicode_CFLAGS = @CHECK_CFLAGS@
+test_unicode_LDADD = $(top_builddir)/src/libguac.la @CHECK_LIBS@
 
-EXTRA_DIST = LICENSE doc/Doxyfile
 
