@@ -68,8 +68,9 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup png_get_io_ptr nanosleep])
 
-# Check for "Check" (for unit tests)
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
+# Check for unit testing library
+AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
+AC_SUBST(CUNIT_LIBS)
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile

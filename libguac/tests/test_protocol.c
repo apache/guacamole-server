@@ -35,7 +35,47 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-int main() {
+#include <CUnit/Basic.h>
+
+int init_suite() {
     return 0;
+}
+
+int cleanup_suite() {
+    return 0;
+}
+
+void test_unicode() {
+}
+
+int main() {
+
+    CU_pSuite pSuite;
+
+    /* Init registry */
+    if (CU_initialize_registry() != CUE_SUCCESS)
+        return CU_get_error();
+
+    /* Add protocol test suite */
+    pSuite = CU_add_suite("protocol", init_suite, cleanup_suite);
+    if (pSuite == NULL) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+
+    /* Add tests */
+    if (
+            CU_add_test(pSuite, "unicode-support", test_unicode) == NULL
+       ) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
+
+    /* Run tests */
+    CU_basic_set_mode(CU_BRM_VERBOSE);
+    CU_basic_run_tests();
+    CU_cleanup_registry();
+    return CU_get_error();
+
 }
 
