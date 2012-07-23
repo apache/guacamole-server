@@ -54,6 +54,76 @@ int cleanup_suite() {
     return 0;
 }
 
+void test_instruction_write() {
+
+    int rfd, wfd;
+    int fd[2], childpid;
+
+    /* Create pipe */
+    pipe(fd);
+
+    /* File descriptors */
+    rfd = fd[0];
+    wfd = fd[1];
+
+    /* Fork */
+    if ((childpid = fork()) == -1) {
+        /* ERROR */
+        perror("fork");
+        return;
+    }
+
+    /* Child (pipe writer) */
+    if (childpid != 0) {
+
+        guac_socket* socket;
+
+        close(rfd);
+
+        /* Open guac socket */
+        socket = guac_socket_open(wfd);
+
+        /* Write instruction */
+        guac_protocol_send_clipboard(socket, "a" UTF8_DOG "b" UTF8_DOG "c");
+        guac_protocol_send_sync(socket, 12345);
+        guac_socket_flush(socket);
+
+        guac_socket_close(socket);
+        exit(0);
+    }
+
+    /* Parent (unit test) */
+    else {
+
+        char expected[] =
+            "9.clipboard,5.a" UTF8_DOG "b" UTF8_DOG "c;"
+            "4.sync,5.12345;";
+
+        int numread;
+        char buffer[1024];
+        int offset = 0;
+
+        close(wfd);
+
+        /* Read everything available into buffer */
+        while ((numread =
+                    read(rfd,
+                        &(buffer[offset]),
+                        sizeof(buffer)-offset)) != 0) {
+            offset += numread;
+        }
+
+        /* Add NULL terminator */
+        buffer[offset] = '\0';
+
+        /* Read value should be equal to expected value */
+        CU_ASSERT_STRING_EQUAL(buffer, expected);
+
+    }
+ 
+}
+
+
 void test_instruction_read() {
 
     int rfd, wfd;
@@ -142,6 +212,7 @@ int main() {
     /* Add tests */
     if (
         CU_add_test(suite, "instruction-read", test_instruction_read) == NULL
+     || CU_add_test(suite, "instruction-write", test_instruction_write) == NULL
        ) {
         CU_cleanup_registry();
         return CU_get_error();
