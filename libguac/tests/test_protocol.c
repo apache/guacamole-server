@@ -54,7 +54,7 @@ int cleanup_suite() {
     return 0;
 }
 
-void test_instruction_parse() {
+void test_instruction_read() {
 
     int rfd, wfd;
     int fd[2], childpid;
@@ -141,7 +141,7 @@ int main() {
 
     /* Add tests */
     if (
-        CU_add_test(suite, "instruction-parse", test_instruction_parse) == NULL
+        CU_add_test(suite, "instruction-read", test_instruction_read) == NULL
        ) {
         CU_cleanup_registry();
         return CU_get_error();
