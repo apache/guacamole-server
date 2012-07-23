@@ -37,22 +37,36 @@
 
 #include <CUnit/Basic.h>
 
-#include "protocol/suite.h"
+#include "suite.h"
 
-int main() {
+int protocol_suite_init() {
+    return 0;
+}
 
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
+int protocol_suite_cleanup() {
+    return 0;
+}
+
+int register_protocol_suite() {
+
+    /* Add protocol test suite */
+    CU_pSuite suite = CU_add_suite("protocol",
+            protocol_suite_init, protocol_suite_cleanup);
+    if (suite == NULL) {
+        CU_cleanup_registry();
         return CU_get_error();
+    }
 
-    /* Register suites */
-    register_protocol_suite();
+    /* Add tests */
+    if (
+        CU_add_test(suite, "instruction-read", test_instruction_read) == NULL
+     || CU_add_test(suite, "instruction-write", test_instruction_write) == NULL
+       ) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
 
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
+    return 0;
 
 }
 

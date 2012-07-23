@@ -40,6 +40,12 @@ AM_CFLAGS = -Werror -Wall -pedantic -I../include
 
 TESTS = test_protocol
 check_PROGRAMS = test_protocol
-test_protocol_SOURCES = test_protocol.c
+
+test_protocol_SOURCES = \
+    test_protocol.c              \
+	protocol/suite.c             \
+	protocol/instruction_read.c  \
+	protocol/instruction_write.c
+
 test_protocol_LDADD = $(top_builddir)/src/libguac.la @CUNIT_LIBS@
 

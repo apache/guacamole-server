@@ -35,24 +35,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include <CUnit/Basic.h>
+#ifndef _GUAC_TEST_PROTOCOL_SUITE_H
+#define _GUAC_TEST_PROTOCOL_SUITE_H
 
-#include "protocol/suite.h"
+#define UTF8_DOG "\xe7\x8a\xac"
 
-int main() {
+int register_protocol_suite();
 
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
-        return CU_get_error();
+void test_instruction_read();
+void test_instruction_write();
 
-    /* Register suites */
-    register_protocol_suite();
-
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
-
-}
+#endif
 
