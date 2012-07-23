@@ -76,7 +76,7 @@ void test_instruction_write() {
         socket = guac_socket_open(wfd);
 
         /* Write instruction */
-        guac_protocol_send_clipboard(socket, "a" UTF8_DOG "b" UTF8_DOG "c");
+        guac_protocol_send_clipboard(socket, "a" UTF8_4 "b" UTF8_4 "c");
         guac_protocol_send_sync(socket, 12345);
         guac_socket_flush(socket);
 
@@ -88,7 +88,7 @@ void test_instruction_write() {
     else {
 
         char expected[] =
-            "9.clipboard,5.a" UTF8_DOG "b" UTF8_DOG "c;"
+            "9.clipboard,11.a" UTF8_4 "b" UTF8_4 "c;"
             "4.sync,5.12345;";
 
         int numread;

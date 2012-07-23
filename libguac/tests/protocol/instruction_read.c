@@ -51,8 +51,8 @@ void test_instruction_read() {
     int rfd, wfd;
     int fd[2], childpid;
 
-    char test_string[] = "4.test,3.a" UTF8_DOG "b,"
-                         "5.12345,4.a" UTF8_DOG UTF8_DOG "c;"
+    char test_string[] = "4.test,6.a" UTF8_4 "b,"
+                         "5.12345,10.a" UTF8_8 "c;"
                          "5.test2,10.hellohello,15.worldworldworld;";
 
     /* Create pipe */
@@ -95,9 +95,9 @@ void test_instruction_read() {
         /* Validate contents */
         CU_ASSERT_STRING_EQUAL(instruction->opcode, "test");
         CU_ASSERT_EQUAL_FATAL(instruction->argc, 3);
-        CU_ASSERT_STRING_EQUAL(instruction->argv[0], "a" UTF8_DOG "b");
+        CU_ASSERT_STRING_EQUAL(instruction->argv[0], "a" UTF8_4 "b");
         CU_ASSERT_STRING_EQUAL(instruction->argv[1], "12345");
-        CU_ASSERT_STRING_EQUAL(instruction->argv[2], "a" UTF8_DOG UTF8_DOG "c");
+        CU_ASSERT_STRING_EQUAL(instruction->argv[2], "a" UTF8_8 "c");
         
         /* Read another instruction */
         guac_instruction_free(instruction);
