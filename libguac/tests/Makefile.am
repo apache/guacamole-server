@@ -37,10 +37,9 @@
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
 
-TESTS = test_unicode
-check_PROGRAMS = test_unicode
-test_unicode_SOURCES = test_unicode.c
-test_unicode_CFLAGS = @CHECK_CFLAGS@
-test_unicode_LDADD = $(top_builddir)/src/libguac.la @CHECK_LIBS@
-
+TESTS = test_protocol
+check_PROGRAMS = test_protocol
+test_protocol_SOURCES = test_protocol.c
+test_protocol_CFLAGS = @CHECK_CFLAGS@
+test_protocol_LDADD = $(top_builddir)/src/libguac.la @CHECK_LIBS@
 
