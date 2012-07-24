@@ -9,6 +9,11 @@
 tests/test_*
 !tests/test_*.[ch]
 
+# gcov files
+*.gcda
+*.gcov
+*.gcno
+
 # Backup files
 *~
 
