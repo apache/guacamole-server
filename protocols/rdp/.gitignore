@@ -21,7 +21,8 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/
-m4/
+m4/*
+!README
 config.guess
 config.log
 config.status
