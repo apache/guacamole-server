@@ -60,5 +60,5 @@ libguac_la_SOURCES =  \
 	unicode.c
 
 lib_LTLIBRARIES = libguac.la
-libguac_la_LDFLAGS = -version-info 3:1:0
+libguac_la_LDFLAGS = -version-info 3:2:0
 
