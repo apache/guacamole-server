@@ -47,5 +47,8 @@ test_protocol_SOURCES = \
 	protocol/instruction_read.c  \
 	protocol/instruction_write.c
 
+noinst_HEADERS = \
+	protocol/suite.h
+
 test_protocol_LDADD = $(top_builddir)/src/libguac.la @CUNIT_LIBS@
 
