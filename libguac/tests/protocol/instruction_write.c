@@ -52,7 +52,7 @@ void test_instruction_write() {
     int fd[2], childpid;
 
     /* Create pipe */
-    pipe(fd);
+    CU_ASSERT_EQUAL_FATAL(pipe(fd), 0);
 
     /* File descriptors */
     rfd = fd[0];

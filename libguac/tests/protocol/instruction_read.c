@@ -56,7 +56,7 @@ void test_instruction_read() {
                          "5.test2,10.hellohello,15.worldworldworld;";
 
     /* Create pipe */
-    pipe(fd);
+    CU_ASSERT_EQUAL_FATAL(pipe(fd), 0);
 
     /* File descriptors */
     rfd = fd[0];
@@ -72,7 +72,10 @@ void test_instruction_read() {
     /* Child (pipe writer) */
     if (childpid != 0) {
         close(rfd);
-        write(wfd, test_string, sizeof(test_string));
+        CU_ASSERT_EQUAL(
+            write(wfd, test_string, sizeof(test_string)),
+            sizeof(test_string)
+        );
         exit(0);
     }
 
