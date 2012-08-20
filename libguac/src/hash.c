@@ -44,10 +44,10 @@
  * evenly, while guaranteeing that all 24-bit numbers are mapped onto
  * themselves.
  */
-int _guac_hash_32to24(int value) {
+unsigned int _guac_hash_32to24(unsigned int value) {
 
     /* Grab highest-order byte */
-    int upper = value & 0xFF000000;
+    unsigned int upper = value & 0xFF000000;
 
     /* XOR upper with lower three bytes, truncate to 24-bit */
     return
@@ -73,10 +73,10 @@ unsigned int _guac_rotate(unsigned int value, int amount) {
 
 }
 
-int guac_hash_surface(cairo_surface_t* surface) {
+unsigned int guac_hash_surface(cairo_surface_t* surface) {
 
     /* Init to zero */
-    int hash_value = 0;
+    unsigned int hash_value = 0;
 
     int x, y;
 
@@ -95,19 +95,19 @@ int guac_hash_surface(cairo_surface_t* surface) {
         for (x=0; x<width; x++) {
 
             /* Get color at current pixel */
-            int color = *row;
+            unsigned int color = *row;
             row++;
 
             /* Compute next hash */
             hash_value =
-                _guac_rotate(hash_value, 1) ^ _guac_hash_32to24(color);
+                _guac_rotate(hash_value, 1) ^ color;
 
         }
 
     } /* end for each row */
 
     /* Done */
-    return hash_value;
+    return _guac_hash_32to24(hash_value);
 
 }
 

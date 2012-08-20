@@ -51,7 +51,7 @@
  * @return An arbitrary 24-bit unsigned integer value intended to be well
  *         distributed across different images.
  */
-int guac_hash_surface(cairo_surface_t* surface);
+unsigned int guac_hash_surface(cairo_surface_t* surface);
 
 #endif
 
