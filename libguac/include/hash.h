@@ -53,5 +53,7 @@
  */
 unsigned int guac_hash_surface(cairo_surface_t* surface);
 
+int guac_surface_cmp(cairo_surface_t* a, cairo_surface_t* b);
+
 #endif
 

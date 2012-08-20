@@ -37,6 +37,7 @@
 
 
 #include <stdint.h>
+#include <string.h>
 #include <cairo/cairo.h>
 
 /*
@@ -111,3 +112,40 @@ unsigned int guac_hash_surface(cairo_surface_t* surface) {
 
 }
 
+int guac_surface_cmp(cairo_surface_t* a, cairo_surface_t* b) {
+
+    /* Surface A metrics */
+    unsigned char* data_a = cairo_image_surface_get_data(a);
+    int width_a = cairo_image_surface_get_width(a);
+    int height_a = cairo_image_surface_get_height(a);
+    int stride_a = cairo_image_surface_get_stride(a);
+
+    /* Surface B metrics */
+    unsigned char* data_b = cairo_image_surface_get_data(b);
+    int width_b = cairo_image_surface_get_width(b);
+    int height_b = cairo_image_surface_get_height(b);
+    int stride_b = cairo_image_surface_get_stride(b);
+
+    int y;
+
+    /* If core dimensions differ, just compare those. Done. */
+    if (width_a != width_b) return width_a - width_b;
+    if (height_a != height_b) return height_a - height_b;
+
+    for (y=0; y<height_a; y++) {
+
+        /* Compare row. If different, use that result. */
+        int cmp_result = memcmp(data_a, data_b, width_a * 4);
+        if (cmp_result != 0)
+            return cmp_result;
+
+        /* Next row */
+        data_a += stride_a;
+        data_b += stride_b;
+
+    }
+
+    /* Otherwise, same. */
+    return 0;
+
+}
