@@ -101,7 +101,7 @@ unsigned int guac_hash_surface(cairo_surface_t* surface) {
 
             /* Compute next hash */
             hash_value =
-                _guac_rotate(hash_value, 1) ^ color;
+                _guac_rotate(hash_value, 1) ^ color ^ 0x1B872E69;
 
         }
 
