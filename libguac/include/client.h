@@ -50,6 +50,38 @@
  * @file client.h
  */
 
+/**
+ * String prefix which begins the library filename of all client plugins.
+ */
+#define GUAC_PROTOCOL_LIBRARY_PREFIX "libguac-client-"
+
+/**
+ * String suffix which ends the library filename of all client plugins.
+ */
+#define GUAC_PROTOCOL_LIBRARY_SUFFIX ".so"
+
+/**
+ * The maximum number of characters (COUNTING NULL TERMINATOR) to allow
+ * for protocol names within the library filename of client plugins.
+ */
+#define GUAC_PROTOCOL_NAME_LIMIT 256
+
+/**
+ * The maximum number of characters (INCLUDING NULL TERMINATOR) that a
+ * character array containing the concatenation of the library prefix,
+ * protocol name, and suffix can contain, assuming the protocol name is
+ * limited to GUAC_PROTOCOL_NAME_LIMIT characters.
+ */
+#define GUAC_PROTOCOL_LIBRARY_LIMIT (                                  \
+                                                                       \
+      sizeof(GUAC_PROTOCOL_LIBRARY_PREFIX) - 1 /* "libguac-client-" */ \
+    +        GUAC_PROTOCOL_NAME_LIMIT      - 1 /* [up to 256 chars] */ \
+    + sizeof(GUAC_PROTOCOL_LIBRARY_SUFFIX) - 1 /* ".so"             */ \
+    + 1                                        /* NULL terminator   */ \
+                                                                       \
+)
+
+
 typedef struct guac_client guac_client;
 typedef struct guac_client_plugin guac_client_plugin;
 

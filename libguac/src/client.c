@@ -164,16 +164,17 @@ guac_client_plugin* guac_client_plugin_open(const char* protocol) {
     const char** client_args;
 
     /* Pluggable client */
-    char protocol_lib[256] = "libguac-client-";
-    
+    char protocol_lib[GUAC_PROTOCOL_LIBRARY_LIMIT] =
+        GUAC_PROTOCOL_LIBRARY_PREFIX;
+ 
     union {
         guac_client_init_handler* client_init;
         void* obj;
     } alias;
 
     /* Add protocol and .so suffix to protocol_lib */
-    strcat(protocol_lib, protocol);
-    strcat(protocol_lib, ".so");
+    strncat(protocol_lib, protocol, GUAC_PROTOCOL_NAME_LIMIT-1);
+    strcat(protocol_lib, GUAC_PROTOCOL_LIBRARY_SUFFIX);
 
     /* Load client plugin */
     client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
