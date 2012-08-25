@@ -51,6 +51,7 @@
 
 guac_layer __GUAC_DEFAULT_LAYER = {
     .index = 0,
+    .uri = "layer://0",
     .__next = NULL,
     .__next_available = NULL
 };
@@ -80,6 +81,8 @@ guac_layer* guac_client_alloc_layer(guac_client* client) {
         /* Init new layer */
         allocd_layer = malloc(sizeof(guac_layer));
         allocd_layer->index = client->__next_layer_index++;
+        allocd_layer->uri = malloc(64);
+        snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
 
         /* Add to __all_layers list */
         allocd_layer->__next = client->__all_layers;
@@ -114,6 +117,8 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
         /* Init new layer */
         allocd_layer = malloc(sizeof(guac_layer));
         allocd_layer->index = client->__next_buffer_index--;
+        allocd_layer->uri = malloc(64);
+        snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
 
         /* Add to __all_layers list */
         allocd_layer->__next = client->__all_layers;
@@ -290,6 +295,7 @@ void guac_client_free(guac_client* client) {
         client->__all_layers = layer->__next;
 
         /* Free layer */
+        free(layer->uri);
         free(layer);
 
     }

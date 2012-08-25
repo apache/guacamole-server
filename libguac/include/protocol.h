@@ -52,21 +52,6 @@
 
 
 /**
- * Annotates a resource related to printing.
- */
-#define GUAC_REL_PRINTER "printer"
-
-/**
- * Annotates a resource related to file transfer.
- */
-#define GUAC_REL_FILE    "file"
-
-/**
- * Annotates a resource related to audio.
- */
-#define GUAC_REL_AUDIO   "audio"
-
-/**
  * An arbitrary timestamp denoting a relative time value in milliseconds.
  */
 typedef int64_t guac_timestamp;
@@ -185,6 +170,24 @@ typedef enum guac_line_join_style {
     GUAC_LINE_JOIN_ROUND = 0x2
 } guac_line_join_style;
 
+/**
+ * Represents a single resource which can be requested or exposed via
+ * the Guacamole protocol.
+ */
+typedef struct guac_resource {
+
+    /**
+     * The UUID of this resource.
+     */
+    const char* uuid;
+
+    /**
+     * Arbitrary data associated with this resource.
+     */
+    void* data;
+
+} guac_resource;
+
 typedef struct guac_layer guac_layer;
 
 /**
@@ -198,11 +201,11 @@ struct guac_layer {
     int index;
 
     /**
-     * The string which must be passed via a resource instruction to denote
+     * The URI which must be passed via a resource instruction to denote
      * a resource related to this layer. This value is automatically set
      * upon allocation.
      */
-    const char* rel;
+    char* uri;
 
     /**
      * The next allocated layer in the list of all layers.
@@ -392,15 +395,14 @@ int guac_protocol_send_reject(guac_socket* socket, const char* uuid);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param rel What this resource is related to (see the GUAC_REL_*
- *            constants).
+ * @param uri The destination URI that this resource should be exposed through.
  * @param uuid The UUID of the resource that will be exposed.
  * @param mimetypes An array of strings, where each string is an available
  *                  mimetype.
  * @param length The number of elements in the array of mimetype strings.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_resource(guac_socket* socket, const char* rel,
+int guac_protocol_send_resource(guac_socket* socket, const char* uri,
         const char* uuid, const char** mimetypes, int length);
 
 /**
