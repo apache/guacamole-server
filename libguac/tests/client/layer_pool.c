@@ -35,9 +35,51 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <CUnit/Basic.h>
+
+#include "client.h"
 #include "client_suite.h"
 
 void test_layer_pool() {
+
+    guac_client* client;
+
+    int i;
+    int seen[GUAC_BUFFER_POOL_INITIAL_SIZE] = {0};
+
+    guac_layer* layer;
+
+    /* Get client */
+    client = guac_client_alloc();
+    CU_ASSERT_PTR_NOT_NULL_FATAL(client);
+
+    /* Fill pool */
+    for (i=0; i<GUAC_BUFFER_POOL_INITIAL_SIZE; i++) {
+
+        layer = guac_client_alloc_layer(client);
+
+        /* Index should be less than pool size */
+        CU_ASSERT_PTR_NOT_NULL_FATAL(layer);
+        CU_ASSERT(layer->index > 0);
+        CU_ASSERT(layer->index < GUAC_BUFFER_POOL_INITIAL_SIZE);
+
+        /* This should be a layer we have not seen yet */
+        CU_ASSERT_FALSE(seen[layer->index]);
+        seen[layer->index] = 1;
+
+        guac_client_free_layer(client, layer);
+
+    }
+
+    /* Now that pool is filled, we should get a previously seen layer */
+    layer = guac_client_alloc_layer(client);
+
+    CU_ASSERT(layer->index > 0);
+    CU_ASSERT(layer->index < GUAC_BUFFER_POOL_INITIAL_SIZE);
+    CU_ASSERT_TRUE(seen[layer->index]);
+
+    /* Free client */
+    guac_client_free(client);
 
 }
 
