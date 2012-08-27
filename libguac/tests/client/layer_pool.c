@@ -58,14 +58,14 @@ void test_layer_pool() {
 
         layer = guac_client_alloc_layer(client);
 
-        /* Index should be less than pool size */
+        /* Index should be within pool size */
         CU_ASSERT_PTR_NOT_NULL_FATAL(layer);
         CU_ASSERT(layer->index > 0);
-        CU_ASSERT(layer->index < GUAC_BUFFER_POOL_INITIAL_SIZE);
+        CU_ASSERT(layer->index <= GUAC_BUFFER_POOL_INITIAL_SIZE);
 
         /* This should be a layer we have not seen yet */
-        CU_ASSERT_FALSE(seen[layer->index]);
-        seen[layer->index] = 1;
+        CU_ASSERT_FALSE(seen[layer->index - 1]);
+        seen[layer->index - 1] = 1;
 
         guac_client_free_layer(client, layer);
 
@@ -75,8 +75,8 @@ void test_layer_pool() {
     layer = guac_client_alloc_layer(client);
 
     CU_ASSERT(layer->index > 0);
-    CU_ASSERT(layer->index < GUAC_BUFFER_POOL_INITIAL_SIZE);
-    CU_ASSERT_TRUE(seen[layer->index]);
+    CU_ASSERT(layer->index <= GUAC_BUFFER_POOL_INITIAL_SIZE);
+    CU_ASSERT_TRUE(seen[layer->index - 1]);
 
     /* Free client */
     guac_client_free(client);
