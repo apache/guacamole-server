@@ -177,9 +177,9 @@ typedef enum guac_line_join_style {
 typedef struct guac_resource {
 
     /**
-     * The UUID of this resource.
+     * The index of this resource.
      */
-    const char* uuid;
+    int index;
 
     /**
      * Arbitrary data associated with this resource.
@@ -316,20 +316,6 @@ guac_timestamp guac_protocol_get_timestamp();
 /* CONTROL INSTRUCTIONS */
 
 /**
- * Sends an accept instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param uuid The UUID of the resource that is being accepted.
- * @param mimetype The mimetype being accepted.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_accept(guac_socket* socket, const char* uuid,
-        const char* mimetype);
-
-/**
  * Sends an args instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -354,6 +340,20 @@ int guac_protocol_send_args(guac_socket* socket, const char** args);
 int guac_protocol_send_connect(guac_socket* socket, const char** args);
 
 /**
+ * Sends a data instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param resource The resource associated with the data being sent.
+ * @param data The data to send.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_data(guac_socket* socket, guac_resource* resource,
+        const unsigned char* data);
+
+/**
  * Sends a disconnect instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -363,6 +363,18 @@ int guac_protocol_send_connect(guac_socket* socket, const char** args);
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_disconnect(guac_socket* socket);
+
+/**
+ * Sends an end instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param resource The resource being closed.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_end(guac_socket* socket, guac_resource* resource);
 
 /**
  * Sends an error instruction over the given guac_socket connection.
@@ -377,33 +389,20 @@ int guac_protocol_send_disconnect(guac_socket* socket);
 int guac_protocol_send_error(guac_socket* socket, const char* error);
 
 /**
- * Sends a reject instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param uuid The UUID of the resource that is being rejected.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_reject(guac_socket* socket, const char* uuid);
-
-/**
  * Sends a resource instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param uri The destination URI that this resource should be exposed through.
- * @param uuid The UUID of the resource that will be exposed.
- * @param mimetypes An array of strings, where each string is an available
- *                  mimetype.
- * @param length The number of elements in the array of mimetype strings.
+ * @param resource The resource being exposed.
+ * @param uri The URI this resource should be exposed to.
+ * @param mimetypes A NULL-terminated array of strings, where each string is
+ *                  an available mimetype.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_resource(guac_socket* socket, const char* uri,
-        const char* uuid, const char** mimetypes, int length);
+int guac_protocol_send_resource(guac_socket* socket, guac_resource* resource,
+        const char* uri, const char** mimetypes);
 
 /**
  * Sends a set instruction over the given guac_socket connection.
@@ -427,7 +426,7 @@ int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param protocol The protocol or resource UUID to request.
+ * @param protocol The protocol to request.
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_select(guac_socket* socket, const char* protocol);

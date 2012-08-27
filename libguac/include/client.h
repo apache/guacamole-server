@@ -123,16 +123,31 @@ typedef void guac_client_log_handler(guac_client* client, const char* format, va
 typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
 
 /**
- * Handler which will be called whenever a resource is being exposed.
+ * Handler which will be called whenever a resource has been accepted by the
+ * client.
  */
-typedef int guac_client_resource_handler(guac_client* client,
-        guac_resource* resource);
+typedef int guac_client_accept_handler(guac_client* client,
+        guac_resource* resource, const char* mimetype);
 
 /**
- * Handler which will be called whenever a valid resource is selected.
+ * Handler which will be called whenever a resource has been rejected by the
+ * client.
  */
-typedef int guac_client_stream_handler(guac_client* client,
+typedef int guac_client_reject_handler(guac_client* client,
         guac_resource* resource);
+
+/*
+ * NOTE: The data and end instructions are currently implemented client-side
+ *       only, and allocation of resources must ALWAYS be server-side.
+ *
+ *       Each resource is mono-directional. Two resources must be allocated for
+ *       bidirectional communication.
+ *
+ *       Exposure of client-side resources to the server will be accomplished
+ *       over the same protocol (resource -> accept/reject -> data -> end). The
+ *       mono-directional nature of resources will allow the index spaces of
+ *       client and server resources to be independent.
+ */
 
 /**
  * The flag set in the mouse button mask when the left mouse button is down.
@@ -557,6 +572,14 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer);
  */
 void guac_client_free_layer(guac_client* client, guac_layer* layer);
 
+/**
+ * Allocates a new resource. An arbitrary index is automatically assigned
+ * if no existing resource index is available for use.
+ *
+ * @param client The proxy client to allocate the resource for.
+ * @return The next available resource, or a newly allocated resource.
+ */
+guac_resource* guac_client_alloc_resource(guac_client* client);
 
 /**
  * Logs an informational message in the log used by the given client. The
