@@ -348,10 +348,12 @@ int guac_protocol_send_connect(guac_socket* socket, const char** args);
  * @param socket The guac_socket connection to use.
  * @param resource The resource associated with the data being sent.
  * @param data The data to send.
+ * @param size The number of bytes from the beginning of the given buffer
+ *             of data to send.
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_data(guac_socket* socket, guac_resource* resource,
-        const unsigned char* data);
+        const unsigned char* data, size_t size);
 
 /**
  * Sends a disconnect instruction over the given guac_socket connection.
