@@ -470,23 +470,25 @@ guac_client_plugin* guac_client_plugin_open(const char* protocol);
 int guac_client_plugin_close(guac_client_plugin* plugin);
 
 /**
- * Initialize and return a new guac_client. The pluggable client will be
- * initialized using the arguments provided.
+ * Initializes the given guac_client using the initialization routing provided
+ * by the given guac_client_plugin.
  *
- * @param plugin The client plugin to use to create the new client.
- * @param socket The guac_socket the client should use for communication.
+ * @param client The guac_client to initialize.
+ * @param plugin The client plugin to use to initialize the new client.
  * @param argc The number of arguments being passed to the client.
  * @param argv All arguments to be passed to the client.
- * @param log_info_handler Info logging handler to provide to the client before
- *                         initializing.
- * @param log_error_handler Error logging handler to provide to the client
- *                          before initializing.
- * @return A pointer to the newly initialized client.
+ * @return Zero if initialization was successful, non-zero otherwise.
  */
-guac_client* guac_client_plugin_get_client(guac_client_plugin* plugin,
-        guac_socket* socket, int argc, char** argv,
-        guac_client_log_handler* log_info_handler,
-        guac_client_log_handler* log_error_handler);
+int guac_client_init(guac_client* client,
+        guac_client_plugin* plugin, int argc, char** argv);
+
+/**
+ * Returns a new, barebones guac_client. This new guac_client has no handlers
+ * set, but is otherwise usable.
+ *
+ * @return A pointer to the new client.
+ */
+guac_client* guac_client_alloc();
 
 /**
  * Free all resources associated with the given client.
