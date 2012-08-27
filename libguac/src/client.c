@@ -62,7 +62,7 @@ guac_layer* guac_client_alloc_layer(guac_client* client) {
     guac_layer* allocd_layer;
 
     /* If available layers, pop off first available layer */
-    if (client->__next_layer_index >= GUAC_BUFFER_POOL_INITIAL_SIZE &&
+    if (client->__next_layer_index > GUAC_BUFFER_POOL_INITIAL_SIZE &&
             client->__available_layers != NULL) {
 
         allocd_layer = client->__available_layers;
@@ -96,7 +96,7 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
     guac_layer* allocd_layer;
 
     /* If available layers, pop off first available buffer */
-    if (client->__next_buffer_index <= -GUAC_BUFFER_POOL_INITIAL_SIZE &&
+    if (client->__next_buffer_index < -GUAC_BUFFER_POOL_INITIAL_SIZE &&
             client->__available_buffers != NULL) {
 
         allocd_layer = client->__available_buffers;
