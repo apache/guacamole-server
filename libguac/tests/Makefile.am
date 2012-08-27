@@ -38,17 +38,25 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Werror -Wall -pedantic -I../include
 
-TESTS = test_protocol
-check_PROGRAMS = test_protocol
+TESTS = test_protocol test_client
+check_PROGRAMS = test_protocol test_client
 
-test_protocol_SOURCES = \
+noinst_HEADERS =     \
+	protocol/suite.h \
+	client/client_suite.h
+
+test_protocol_SOURCES =          \
     test_protocol.c              \
 	protocol/suite.c             \
 	protocol/instruction_read.c  \
 	protocol/instruction_write.c
 
-noinst_HEADERS = \
-	protocol/suite.h
-
 test_protocol_LDADD = $(top_builddir)/src/libguac.la @CUNIT_LIBS@
+
+test_client_SOURCES =          \
+    test_client.c              \
+	client/client_suite.c      \
+	client/layer_pool.c
+
+test_client_LDADD = $(top_builddir)/src/libguac.la @CUNIT_LIBS@
 
