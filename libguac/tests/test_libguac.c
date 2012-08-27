@@ -38,6 +38,7 @@
 #include <CUnit/Basic.h>
 
 #include "protocol/suite.h"
+#include "client/client_suite.h"
 
 int main() {
 
@@ -47,6 +48,7 @@ int main() {
 
     /* Register suites */
     register_protocol_suite();
+    register_client_suite();
 
     /* Run tests */
     CU_basic_set_mode(CU_BRM_VERBOSE);
