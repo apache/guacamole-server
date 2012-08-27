@@ -56,6 +56,9 @@ void test_layer_pool() {
     /* Fill pool */
     for (i=0; i<GUAC_BUFFER_POOL_INITIAL_SIZE; i++) {
 
+        /* Allocate and throw away a buffer (should not disturb layer alloc) */
+        CU_ASSERT_PTR_NOT_NULL_FATAL(guac_client_alloc_buffer(client));
+
         layer = guac_client_alloc_layer(client);
 
         /* Index should be within pool size */
