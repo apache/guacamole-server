@@ -60,6 +60,7 @@ int register_client_suite() {
     /* Add tests */
     if (
         CU_add_test(suite, "layer-pool", test_layer_pool) == NULL
+     || CU_add_test(suite, "buffer-pool", test_buffer_pool) == NULL
        ) {
         CU_cleanup_registry();
         return CU_get_error();

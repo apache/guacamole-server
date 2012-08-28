@@ -51,6 +51,7 @@ test_libguac_SOURCES =           \
 	protocol/instruction_read.c  \
 	protocol/instruction_write.c \
 	client/client_suite.c        \
+	client/buffer_pool.c         \
 	client/layer_pool.c
 
 test_libguac_LDADD = $(top_builddir)/src/libguac.la @CUNIT_LIBS@
