@@ -70,6 +70,7 @@ void guacd_handle_connection(int fd) {
     guac_client_plugin* plugin;
     guac_instruction* select;
     guac_instruction* connect;
+    int init_result;
 
     /* Open guac_socket */
     guac_socket* socket = guac_socket_open(fd);
@@ -144,14 +145,22 @@ void guacd_handle_connection(int fd) {
         return;
     }
 
-    /* Load and init client */
-    client = guac_client_plugin_get_client(plugin, socket,
-            connect->argc, connect->argv,
-            guacd_client_log_info, guacd_client_log_error);
+    /* Get client */
+    client = guac_client_alloc();
+    client->socket = socket;
+    client->log_info_handler = guacd_client_log_info;
+    client->log_error_handler = guacd_client_log_error;
+
+    /* Init client */
+    init_result =
+        guac_client_init(client, plugin, connect->argc, connect->argv);
 
     guac_instruction_free(connect);
 
-    if (client == NULL) {
+    /* If client could not be started, free everything and fail */
+    if (init_result) {
+
+        guac_client_free(client);
 
         guacd_log_guac_error("Error instantiating client");
 
