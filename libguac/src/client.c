@@ -242,8 +242,8 @@ int guac_client_plugin_close(guac_client_plugin* plugin) {
 
 }
 
-int guac_client_init(guac_client* client,
-        guac_client_plugin* plugin, int argc, char** argv) {
+int guac_client_plugin_init_client(guac_client_plugin* plugin,
+        guac_client* client, int argc, char** argv) {
 
     return plugin->init_handler(client, argc, argv);
 
