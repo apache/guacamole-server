@@ -152,8 +152,8 @@ void guacd_handle_connection(int fd) {
     client->log_error_handler = guacd_client_log_error;
 
     /* Init client */
-    init_result =
-        guac_client_init(client, plugin, connect->argc, connect->argv);
+    init_result = guac_client_plugin_init_client(plugin,
+                client, connect->argc, connect->argv);
 
     guac_instruction_free(connect);
 
