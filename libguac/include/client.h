@@ -582,6 +582,17 @@ void guac_client_free_layer(guac_client* client, guac_layer* layer);
 guac_resource* guac_client_alloc_resource(guac_client* client);
 
 /**
+ * Frees an existing resource, re-adding it to the client's resource
+ * pool, such that it can be reused by a subsequent call to
+ * guac_client_alloc_resource().
+ *
+ * @param client The proxy client to free the resource for.
+ * @oaran resource The resource to return to the resource pool.
+ */
+void guac_client_free_resource(guac_client* client, guac_resource* resource);
+
+
+/**
  * Logs an informational message in the log used by the given client. The
  * logger used will normally be defined by guacd (or whichever program loads
  * the proxy client) by setting the logging handlers of the client when it is
