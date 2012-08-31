@@ -358,6 +358,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (argv[IDX_INITIAL_PROGRAM][0] != '\0')
         settings->shell = strdup(argv[IDX_INITIAL_PROGRAM]);
 
+    /* session color depth */
+    settings->color_depth = 16;
+    if (argv[IDX_COLOR_DEPTH][0] != '\0')
+        settings->color_depth = atoi(argv[IDX_COLOR_DEPTH]);
+    if (settings->color_depth == 0)
+        settings->color_depth = 16;
+
     /* Order support */
     bitmap_cache = settings->bitmap_cache;
     settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
