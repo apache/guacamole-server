@@ -44,9 +44,11 @@
                         <xsl:for-each select="param">
                             <paramdef>
                                 <xsl:value-of select="type"/>
-                                <parameter>
-                                    <xsl:value-of select="declname"/>
-                                </parameter>
+                                <xsl:if test="declname">
+                                    <parameter>
+                                        <xsl:value-of select="declname"/>
+                                    </parameter>
+                                </xsl:if>
                             </paramdef>
                         </xsl:for-each>
                     </funcprototype>
