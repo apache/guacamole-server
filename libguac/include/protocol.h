@@ -50,12 +50,6 @@
  * @file protocol.h
  */
 
-
-/**
- * An arbitrary timestamp denoting a relative time value in milliseconds.
- */
-typedef int64_t guac_timestamp;
-
 /**
  * Composite modes used by Guacamole draw instructions. Each
  * composite mode maps to a unique channel mask integer.
@@ -169,16 +163,6 @@ typedef enum guac_line_join_style {
     GUAC_LINE_JOIN_MITER = 0x1,
     GUAC_LINE_JOIN_ROUND = 0x2
 } guac_line_join_style;
-
-/**
- * Returns an arbitrary timestamp. The difference between return values of any
- * two calls is equal to the amount of time in milliseconds between those 
- * calls. The return value from a single call will not have any useful
- * (or defined) meaning.
- *
- * @return An arbitrary millisecond timestamp.
- */
-guac_timestamp guac_protocol_get_timestamp();
 
 /* CONTROL INSTRUCTIONS */
 
