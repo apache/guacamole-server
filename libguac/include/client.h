@@ -50,40 +50,7 @@
  * @file client.h
  */
 
-/**
- * String prefix which begins the library filename of all client plugins.
- */
-#define GUAC_PROTOCOL_LIBRARY_PREFIX "libguac-client-"
-
-/**
- * String suffix which ends the library filename of all client plugins.
- */
-#define GUAC_PROTOCOL_LIBRARY_SUFFIX ".so"
-
-/**
- * The maximum number of characters (COUNTING NULL TERMINATOR) to allow
- * for protocol names within the library filename of client plugins.
- */
-#define GUAC_PROTOCOL_NAME_LIMIT 256
-
-/**
- * The maximum number of characters (INCLUDING NULL TERMINATOR) that a
- * character array containing the concatenation of the library prefix,
- * protocol name, and suffix can contain, assuming the protocol name is
- * limited to GUAC_PROTOCOL_NAME_LIMIT characters.
- */
-#define GUAC_PROTOCOL_LIBRARY_LIMIT (                                  \
-                                                                       \
-      sizeof(GUAC_PROTOCOL_LIBRARY_PREFIX) - 1 /* "libguac-client-" */ \
-    +        GUAC_PROTOCOL_NAME_LIMIT      - 1 /* [up to 256 chars] */ \
-    + sizeof(GUAC_PROTOCOL_LIBRARY_SUFFIX) - 1 /* ".so"             */ \
-    + 1                                        /* NULL terminator   */ \
-                                                                       \
-)
-
-
 typedef struct guac_client guac_client;
-typedef struct guac_client_plugin guac_client_plugin;
 
 /**
  * Handler for server messages (where "server" refers to the server that
@@ -182,33 +149,6 @@ typedef enum guac_client_state {
     GUAC_CLIENT_STOPPING
 
 } guac_client_state;
-
-/**
- * A handle to a client plugin, containing enough information about the
- * plugin to complete the initial protocol handshake and instantiate a new
- * client supporting the protocol provided by the client plugin. 
- */
-struct guac_client_plugin {
-
-    /**
-     * Reference to dlopen'd client plugin.
-     */
-    void* __client_plugin_handle;
-
-    /**
-     * Reference to the init handler of this client plugin. This
-     * function will be called when the client plugin is started.
-     */
-    guac_client_init_handler* init_handler;
-
-    /**
-     * NULL-terminated array of all arguments accepted by this client
-     * plugin, in order. The values of these arguments will be passed
-     * to the init_handler if the client plugin is started.
-     */
-    const char** args;
-
-};
 
 /**
  * Guacamole proxy client.
@@ -447,40 +387,6 @@ struct guac_client {
     guac_layer* __all_layers;
 
 };
-
-/**
- * Open the plugin which provides support for the given protocol, if it
- * exists.
- *
- * @param protocol The name of the protocol to retrieve the client plugin
- *                 for.
- * @return The client plugin supporting the given protocol, or NULL if
- *         an error occurs or no such plugin exists.
- */
-guac_client_plugin* guac_client_plugin_open(const char* protocol);
-
-/**
- * Close the given plugin, releasing all associated resources. This function
- * must be called after use of a client plugin is finished.
- *
- * @param plugin The client plugin to close.
- * @return Zero on success, non-zero if an error occurred while releasing
- *         the resources associated with the plugin.
- */
-int guac_client_plugin_close(guac_client_plugin* plugin);
-
-/**
- * Initializes the given guac_client using the initialization routine provided
- * by the given guac_client_plugin.
- *
- * @param plugin The client plugin to use to initialize the new client.
- * @param client The guac_client to initialize.
- * @param argc The number of arguments being passed to the client.
- * @param argv All arguments to be passed to the client.
- * @return Zero if initialization was successful, non-zero otherwise.
- */
-int guac_client_plugin_init_client(guac_client_plugin* plugin, 
-        guac_client* client, int argc, char** argv);
 
 /**
  * Returns a new, barebones guac_client. This new guac_client has no handlers
