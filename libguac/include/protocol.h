@@ -170,38 +170,6 @@ typedef enum guac_line_join_style {
     GUAC_LINE_JOIN_ROUND = 0x2
 } guac_line_join_style;
 
-typedef struct guac_layer guac_layer;
-
-/**
- * Represents a single layer within the Guacamole protocol.
- */
-struct guac_layer {
-
-    /**
-     * The index of this layer.
-     */
-    int index;
-
-    /**
-     * The URI which must be passed via a resource instruction to denote
-     * a resource related to this layer. This value is automatically set
-     * upon allocation.
-     */
-    char* uri;
-
-    /**
-     * The next allocated layer in the list of all layers.
-     */
-    guac_layer* __next;
-
-    /**
-     * The next available (unused) layer in the list of
-     * allocated but free'd layers.
-     */
-    guac_layer* __next_available;
-
-};
-
 /**
  * Represents a single instruction within the Guacamole protocol.
  */

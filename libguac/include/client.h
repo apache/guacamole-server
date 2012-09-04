@@ -510,42 +510,6 @@ void guac_client_free(guac_client* client);
 int guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
 
 /**
- * Allocates a new buffer (invisible layer). An arbitrary index is
- * automatically assigned if no existing buffer is available for use.
- *
- * @param client The proxy client to allocate the buffer for.
- * @return The next available buffer, or a newly allocated buffer.
- */
-guac_layer* guac_client_alloc_buffer(guac_client* client);
-
-/**
- * Allocates a new layer. An arbitrary index is automatically assigned
- * if no existing layer is available for use.
- *
- * @param client The proxy client to allocate the layer buffer for.
- * @return The next available layer, or a newly allocated layer.
- */
-guac_layer* guac_client_alloc_layer(guac_client* client);
-
-/**
- * Returns the given buffer to the pool of available buffers, such that it
- * can be reused by any subsequent call to guac_client_allow_buffer().
- *
- * @param client The proxy client to return the buffer to.
- * @param layer The buffer to return to the pool of available buffers.
- */
-void guac_client_free_buffer(guac_client* client, guac_layer* layer);
-
-/**
- * Returns the given layer to the pool of available layers, such that it
- * can be reused by any subsequent call to guac_client_allow_layer().
- *
- * @param client The proxy client to return the layer to.
- * @param layer The buffer to return to the pool of available layer.
- */
-void guac_client_free_layer(guac_client* client, guac_layer* layer);
-
-/**
  * Logs an informational message in the log used by the given client. The
  * logger used will normally be defined by guacd (or whichever program loads
  * the proxy client) by setting the logging handlers of the client when it is
