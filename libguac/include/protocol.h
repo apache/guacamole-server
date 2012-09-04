@@ -170,24 +170,6 @@ typedef enum guac_line_join_style {
     GUAC_LINE_JOIN_ROUND = 0x2
 } guac_line_join_style;
 
-/**
- * Represents a single resource which can be requested or exposed via
- * the Guacamole protocol.
- */
-typedef struct guac_resource {
-
-    /**
-     * The index of this resource.
-     */
-    int index;
-
-    /**
-     * Arbitrary data associated with this resource.
-     */
-    void* data;
-
-} guac_resource;
-
 typedef struct guac_layer guac_layer;
 
 /**
