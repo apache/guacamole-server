@@ -38,6 +38,8 @@
 #ifndef _GUAC_TIME_H
 #define _GUAC_TIME_H
 
+#include <stdint.h>
+
 /**
  * Provides functions and structures for creating timestamps.
  *

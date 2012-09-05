@@ -39,15 +39,20 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Werror -Wall -pedantic -I../include
 
 libguacincdir = $(includedir)/guacamole
-libguacinc_HEADERS =      \
-	../include/client.h   \
-	../include/socket.h   \
-	../include/protocol.h \
-	../include/error.h
+libguacinc_HEADERS =          \
+    ../include/client.h       \
+    ../include/error.h        \
+    ../include/instruction.h  \
+    ../include/layer.h        \
+    ../include/plugin.h       \
+    ../include/protocol.h     \
+    ../include/resource.h     \
+    ../include/socket.h       \
+    ../include/time.h
 
 noinst_HEADERS =                 \
-    ../include/palette.h         \
     ../include/client-handlers.h \
+    ../include/palette.h         \
 	../include/unicode.h
 
 libguac_la_SOURCES =  \

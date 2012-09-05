@@ -38,6 +38,8 @@
 #ifndef _GUAC_LAYER_H
 #define _GUAC_LAYER_H
 
+#include "client.h"
+
 /**
  * Provides functions and structures required for allocating and using layers.
  *
