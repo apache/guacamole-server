@@ -43,7 +43,7 @@
 #include "layer.h"
 #include "resource.h"
 #include "socket.h"
-#include "time.h"
+#include "timestamp.h"
 
 /**
  * Provides functions and structures required for communicating using the

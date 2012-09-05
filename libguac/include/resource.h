@@ -39,8 +39,6 @@
 #ifndef _GUAC_RESOURCE_H
 #define _GUAC_RESOURCE_H
 
-#include "client.h"
-
 /**
  * Provides functions and structures required for handling resources.
  *
@@ -87,24 +85,5 @@ typedef int guac_resource_accept_handler(guac_resource* resource, const char* mi
  * client.
  */
 typedef int guac_resource_reject_handler(guac_resource* resource);
-
-/**
- * Allocates a new resource. An arbitrary index is automatically assigned
- * if no existing resource index is available for use.
- *
- * @param client The proxy client to allocate the resource for.
- * @return The next available resource, or a newly allocated resource.
- */
-guac_resource* guac_client_alloc_resource(guac_client* client);
-
-/**
- * Frees an existing resource, re-adding it to the client's resource
- * pool, such that it can be reused by a subsequent call to
- * guac_client_alloc_resource().
- *
- * @param client The proxy client to free the resource for.
- * @oaran resource The resource to return to the resource pool.
- */
-void guac_client_free_resource(guac_client* client, guac_resource* resource);
 
 #endif

@@ -35,16 +35,19 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <dlfcn.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "socket.h"
-#include "protocol.h"
 #include "client.h"
 #include "client-handlers.h"
 #include "error.h"
+#include "layer.h"
+#include "plugin.h"
+#include "protocol.h"
+#include "socket.h"
+#include "time.h"
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -263,7 +266,7 @@ guac_client* guac_client_alloc() {
     memset(client, 0, sizeof(guac_client));
 
     client->last_received_timestamp =
-        client->last_sent_timestamp = guac_protocol_get_timestamp();
+        client->last_sent_timestamp = guac_timestamp_current();
 
     client->state = GUAC_CLIENT_RUNNING;
 

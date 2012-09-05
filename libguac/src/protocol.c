@@ -66,10 +66,12 @@
 #include <sys/socket.h>
 #endif
 
-#include "socket.h"
-#include "protocol.h"
 #include "error.h"
+#include "instruction.h"
+#include "layer.h"
 #include "palette.h"
+#include "protocol.h"
+#include "socket.h"
 #include "unicode.h"
 
 /* Output formatting functions */
@@ -600,7 +602,7 @@ guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec
     guac_instruction* instruction;
 
     /* Wait for data until timeout */
-    if (guac_protocol_instructions_waiting(socket, usec_timeout) <= 0)
+    if (guac_instruction_waiting(socket, usec_timeout) <= 0)
         return NULL;
 
     /* Read available instruction */

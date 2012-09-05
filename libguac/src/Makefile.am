@@ -48,7 +48,7 @@ libguacinc_HEADERS =          \
     ../include/protocol.h     \
     ../include/resource.h     \
     ../include/socket.h       \
-    ../include/time.h
+    ../include/timestamp.h
 
 noinst_HEADERS =                 \
     ../include/client-handlers.h \

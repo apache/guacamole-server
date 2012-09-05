@@ -43,7 +43,7 @@
 /**
  * Provides functions and structures for creating timestamps.
  *
- * @file time.h
+ * @file timestamp.h
  */
 
 /**

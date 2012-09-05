@@ -43,8 +43,9 @@
 
 #include "instruction.h"
 #include "layer.h"
+#include "resource.h"
 #include "socket.h"
-#include "time.h"
+#include "timestamp.h"
 
 /**
  * Provides functions and structures required for defining (and handling) a proxy client.
@@ -475,6 +476,61 @@ void vguac_client_log_error(guac_client* client, const char* format, va_list ap)
  * @param client The proxy client to signal to stop.
  */
 void guac_client_stop(guac_client* client);
+
+/**
+ * Allocates a new buffer (invisible layer). An arbitrary index is
+ * automatically assigned if no existing buffer is available for use.
+ *
+ * @param client The proxy client to allocate the buffer for.
+ * @return The next available buffer, or a newly allocated buffer.
+ */
+guac_layer* guac_client_alloc_buffer(guac_client* client);
+
+/**
+ * Allocates a new layer. An arbitrary index is automatically assigned
+ * if no existing layer is available for use.
+ *
+ * @param client The proxy client to allocate the layer buffer for.
+ * @return The next available layer, or a newly allocated layer.
+ */
+guac_layer* guac_client_alloc_layer(guac_client* client);
+
+/**
+ * Returns the given buffer to the pool of available buffers, such that it
+ * can be reused by any subsequent call to guac_client_allow_buffer().
+ *
+ * @param client The proxy client to return the buffer to.
+ * @param layer The buffer to return to the pool of available buffers.
+ */
+void guac_client_free_buffer(guac_client* client, guac_layer* layer);
+
+/**
+ * Returns the given layer to the pool of available layers, such that it
+ * can be reused by any subsequent call to guac_client_allow_layer().
+ *
+ * @param client The proxy client to return the layer to.
+ * @param layer The buffer to return to the pool of available layer.
+ */
+void guac_client_free_layer(guac_client* client, guac_layer* layer);
+
+/**
+ * Allocates a new resource. An arbitrary index is automatically assigned
+ * if no existing resource index is available for use.
+ *
+ * @param client The proxy client to allocate the resource for.
+ * @return The next available resource, or a newly allocated resource.
+ */
+guac_resource* guac_client_alloc_resource(guac_client* client);
+
+/**
+ * Frees an existing resource, re-adding it to the client's resource
+ * pool, such that it can be reused by a subsequent call to
+ * guac_client_alloc_resource().
+ *
+ * @param client The proxy client to free the resource for.
+ * @oaran resource The resource to return to the resource pool.
+ */
+void guac_client_free_resource(guac_client* client, guac_resource* resource);
 
 /**
  * The default Guacamole client layer, layer 0.
