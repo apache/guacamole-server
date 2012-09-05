@@ -405,7 +405,7 @@ int __guac_fill_instructionbuf(guac_socket* socket) {
 
 
 /* Returns new instruction if one exists, or NULL if no more instructions. */
-guac_instruction* guac_protocol_read_instruction(guac_socket* socket,
+guac_instruction* guac_instruction_read(guac_socket* socket,
         int usec_timeout) {
 
     int retval;
@@ -596,7 +596,7 @@ guac_instruction* guac_protocol_read_instruction(guac_socket* socket,
 }
 
 
-guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec_timeout,
+guac_instruction* guac_instruction_expect(guac_socket* socket, int usec_timeout,
         const char* opcode) {
 
     guac_instruction* instruction;
@@ -606,7 +606,7 @@ guac_instruction* guac_protocol_expect_instruction(guac_socket* socket, int usec
         return NULL;
 
     /* Read available instruction */
-    instruction = guac_protocol_read_instruction(socket, usec_timeout);
+    instruction = guac_instruction_read(socket, usec_timeout);
     if (instruction == NULL)
         return NULL;            
 
@@ -649,7 +649,7 @@ void guac_instruction_free(guac_instruction* instruction) {
 }
 
 
-int guac_protocol_instructions_waiting(guac_socket* socket, int usec_timeout) {
+int guac_instruction_waiting(guac_socket* socket, int usec_timeout) {
 
     if (socket->__instructionbuf_used_length > 0)
         return 1;
@@ -658,7 +658,7 @@ int guac_protocol_instructions_waiting(guac_socket* socket, int usec_timeout) {
 }
 
 
-guac_timestamp guac_protocol_get_timestamp() {
+guac_timestamp guac_timestamp_current() {
 
 #ifdef HAVE_CLOCK_GETTIME
 

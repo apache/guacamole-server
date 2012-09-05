@@ -40,9 +40,10 @@
 #include <stdlib.h>
 #include <CUnit/Basic.h>
 
-#include "socket.h"
-#include "protocol.h"
 #include "error.h"
+#include "instruction.h"
+#include "protocol.h"
+#include "socket.h"
 
 #include "suite.h"
 
@@ -92,7 +93,7 @@ void test_instruction_read() {
         CU_ASSERT_PTR_NOT_NULL_FATAL(socket);
 
         /* Read instruction */
-        instruction = guac_protocol_read_instruction(socket, 1000000);
+        instruction = guac_instruction_read(socket, 1000000);
         CU_ASSERT_PTR_NOT_NULL_FATAL(instruction);
         
         /* Validate contents */
@@ -104,7 +105,7 @@ void test_instruction_read() {
         
         /* Read another instruction */
         guac_instruction_free(instruction);
-        instruction = guac_protocol_read_instruction(socket, 1000000);
+        instruction = guac_instruction_read(socket, 1000000);
 
         /* Validate contents */
         CU_ASSERT_STRING_EQUAL(instruction->opcode, "test2");

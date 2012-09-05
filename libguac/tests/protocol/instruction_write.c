@@ -40,9 +40,10 @@
 #include <stdlib.h>
 #include <CUnit/Basic.h>
 
-#include "socket.h"
-#include "protocol.h"
 #include "error.h"
+#include "instruction.h"
+#include "protocol.h"
+#include "socket.h"
 
 #include "suite.h"
 
