@@ -40,7 +40,10 @@
 
 #include <cairo/cairo.h>
 
+#include "layer.h"
+#include "resource.h"
 #include "socket.h"
+#include "time.h"
 
 /**
  * Provides functions and structures required for communicating using the

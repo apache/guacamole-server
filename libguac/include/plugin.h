@@ -39,6 +39,8 @@
 #ifndef _GUAC_PLUGIN_H
 #define _GUAC_PLUGIN_H
 
+#include "client.h"
+
 /**
  * Provides functions and structures required for handling a client plugin.
  *

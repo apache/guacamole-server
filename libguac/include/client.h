@@ -41,8 +41,10 @@
 
 #include <stdarg.h>
 
+#include "instruction.h"
+#include "layer.h"
 #include "socket.h"
-#include "protocol.h"
+#include "time.h"
 
 /**
  * Provides functions and structures required for defining (and handling) a proxy client.

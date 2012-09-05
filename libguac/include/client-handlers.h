@@ -39,7 +39,7 @@
 #define _GUAC_CLIENT_HANDLERS__H
 
 #include "client.h"
-#include "protocol.h"
+#include "instruction.h"
 
 /**
  * Provides initial handler functions and a lookup structure for automatically
