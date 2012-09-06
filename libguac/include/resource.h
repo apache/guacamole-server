@@ -56,6 +56,8 @@
  * @file resource.h
  */
 
+typedef struct guac_resource guac_resource;
+
 /**
  * Handler which begins resource transfer when the client accepts an exposed resource.
  */
@@ -70,7 +72,7 @@ typedef int guac_resource_reject_handler(guac_resource* resource);
  * Represents a single resource which can be requested or exposed via
  * the Guacamole protocol.
  */
-typedef struct guac_resource {
+struct guac_resource {
 
     /**
      * The index of this resource.
@@ -92,6 +94,6 @@ typedef struct guac_resource {
      */
     void* data;
 
-} guac_resource;
+};
 
 #endif
