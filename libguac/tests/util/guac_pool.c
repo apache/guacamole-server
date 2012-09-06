@@ -93,10 +93,10 @@ void test_guac_pool() {
 
     }
 
-    /* Pool is filled to minimum now. Next value should be size + 1. */
+    /* Pool is filled to minimum now. Next value should be equal to size. */
     value = guac_pool_next_int(pool);
 
-    CU_ASSERT_EQUAL(POOL_SIZE+1, value);
+    CU_ASSERT_EQUAL(POOL_SIZE, value);
 
     /* Free pool */
     guac_pool_free(pool);
