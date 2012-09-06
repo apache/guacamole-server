@@ -36,18 +36,30 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "pool.h"
 
 guac_pool* guac_pool_alloc(int size) {
 
-    /* STUB */
-    return NULL;
+    guac_pool* pool = malloc(sizeof(guac_pool));
+
+    /* If unable to allocate, just return NULL. */
+    if (pool == NULL)
+        return NULL;
+
+    /* Initialize empty pool */
+    pool->min_size = size;
+    pool->__next_value = 0;
+    pool->__head = NULL;
+    pool->__tail = NULL;
+
+    return pool;
 
 }
 
 void guac_pool_free(guac_pool* pool) {
-    /* STUB */
+    free(pool);
 }
 
 int guac_pool_next_int(guac_pool* pool) {
