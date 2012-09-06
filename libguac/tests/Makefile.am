@@ -41,18 +41,21 @@ AM_CFLAGS = -Werror -Wall -pedantic -I../include
 TESTS = test_libguac
 check_PROGRAMS = test_libguac
 
-noinst_HEADERS =     \
-	protocol/suite.h \
-	client/client_suite.h
+noinst_HEADERS =          \
+	client/client_suite.h \
+	protocol/suite.h      \
+	util/util_suite.h
 
 test_libguac_SOURCES =           \
     test_libguac.c               \
+	client/client_suite.c        \
+	client/buffer_pool.c         \
+	client/layer_pool.c          \
 	protocol/suite.c             \
 	protocol/instruction_read.c  \
 	protocol/instruction_write.c \
-	client/client_suite.c        \
-	client/buffer_pool.c         \
-	client/layer_pool.c
+	util/util_suite.c            \
+	util/guac_pool.c
 
 test_libguac_LDADD = $(top_builddir)/src/libguac.la @CUNIT_LIBS@
 

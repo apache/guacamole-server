@@ -35,28 +35,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include <CUnit/Basic.h>
+#ifndef _GUAC_TEST_UTIL_SUITE_H
+#define _GUAC_TEST_UTIL_SUITE_H
 
-#include "protocol/suite.h"
-#include "client/client_suite.h"
-#include "util/util_suite.h"
+int register_util_suite();
 
-int main() {
+void test_guac_pool();
 
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
-        return CU_get_error();
-
-    /* Register suites */
-    register_protocol_suite();
-    register_client_suite();
-    register_util_suite();
-
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
-
-}
+#endif
 
