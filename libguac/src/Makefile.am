@@ -57,11 +57,12 @@ noinst_HEADERS =                 \
 
 libguac_la_SOURCES =  \
     client.c          \
-	socket.c          \
-	protocol.c        \
 	client-handlers.c \
 	error.c           \
+	instruction.c     \
 	palette.c         \
+	protocol.c        \
+	socket.c          \
 	unicode.c
 
 lib_LTLIBRARIES = libguac.la
