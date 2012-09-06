@@ -53,6 +53,7 @@ libguacinc_HEADERS =          \
 noinst_HEADERS =                 \
     ../include/client-handlers.h \
     ../include/palette.h         \
+    ../include/pool.h            \
 	../include/unicode.h
 
 libguac_la_SOURCES =  \
