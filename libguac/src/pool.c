@@ -68,6 +68,21 @@ int guac_pool_next_int(guac_pool* pool) {
 }
 
 void guac_pool_free_int(guac_pool* pool, int value) {
-    /* STUB */
+
+    /* Allocate and initialize new returned value */
+    guac_pool_int* pool_int = malloc(sizeof(guac_pool_int));
+    pool_int->value = value;
+    pool_int->__next = NULL;
+
+    /* If pool empty, store as sole entry. */
+    if (pool->__tail == NULL)
+        pool->__head = pool->__tail = pool_int;
+
+    /* Otherwise, append to end of pool. */
+    else {
+        pool->__tail->__next = pool_int;
+        pool->__tail = pool_int;
+    }
+
 }
 
