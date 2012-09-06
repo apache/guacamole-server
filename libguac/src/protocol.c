@@ -35,14 +35,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_NANOSLEEP)
-#include <time.h>
-#endif
-
-#ifndef HAVE_CLOCK_GETTIME
-#include <sys/time.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -59,12 +51,6 @@
 #include <cairo/cairo.h>
 
 #include <sys/types.h>
-
-#ifdef __MINGW32__
-#include <winsock2.h>
-#else
-#include <sys/socket.h>
-#endif
 
 #include "error.h"
 #include "layer.h"
@@ -363,33 +349,6 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
 
     free(png_data.buffer);
     return 0;
-
-}
-
-
-guac_timestamp guac_timestamp_current() {
-
-#ifdef HAVE_CLOCK_GETTIME
-
-    struct timespec current;
-
-    /* Get current time */
-    clock_gettime(CLOCK_REALTIME, &current);
-    
-    /* Calculate milliseconds */
-    return (guac_timestamp) current.tv_sec * 1000 + current.tv_nsec / 1000000;
-
-#else
-
-    struct timeval current;
-
-    /* Get current time */
-    gettimeofday(&current, NULL);
-    
-    /* Calculate milliseconds */
-    return (guac_timestamp) current.tv_sec * 1000 + current.tv_usec / 1000;
-
-#endif
 
 }
 

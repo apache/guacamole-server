@@ -63,6 +63,7 @@ libguac_la_SOURCES =  \
 	palette.c         \
 	protocol.c        \
 	socket.c          \
+	timestamp.c       \
 	unicode.c
 
 lib_LTLIBRARIES = libguac.la
