@@ -86,7 +86,7 @@ struct guac_pool_int {
      * The next available (unused) guac_pool_int in the list of
      * allocated but free'd ints.
      */
-    __guac_pool_int* __next;
+    guac_pool_int* __next;
 
 };
 
