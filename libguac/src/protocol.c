@@ -551,7 +551,7 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
                     /* Error if expected comma is not present */
                     else if (terminator != ',') {
                         guac_error = GUAC_STATUS_BAD_ARGUMENT;
-                        guac_error_message = "Element terminator of instructioni was not ';' nor ','";
+                        guac_error_message = "Element terminator of instruction was not ';' nor ','";
                         return NULL;
                     }
 
