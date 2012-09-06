@@ -57,6 +57,16 @@
  */
 
 /**
+ * Handler which begins resource transfer when the client accepts an exposed resource.
+ */
+typedef int guac_resource_accept_handler(guac_resource* resource, const char* mimetype);
+
+/**
+ * Handler which cancels resource transfer when the client rejects an exposed resource.
+ */
+typedef int guac_resource_reject_handler(guac_resource* resource);
+
+/**
  * Represents a single resource which can be requested or exposed via
  * the Guacamole protocol.
  */
@@ -68,22 +78,20 @@ typedef struct guac_resource {
     int index;
 
     /**
+     * Handler which will be called when this resource is accepted by the client.
+     */
+    guac_resource_accept_handler* accept_handler;
+
+    /**
+     * Handler which will be called when this resource is rejected by the client.
+     */
+    guac_resource_reject_handler* reject_handler;
+
+    /**
      * Arbitrary data associated with this resource.
      */
     void* data;
 
 } guac_resource;
-
-/**
- * Handler which will be called whenever a resource has been accepted by the
- * client.
- */
-typedef int guac_resource_accept_handler(guac_resource* resource, const char* mimetype);
-
-/**
- * Handler which will be called whenever a resource has been rejected by the
- * client.
- */
-typedef int guac_resource_reject_handler(guac_resource* resource);
 
 #endif
