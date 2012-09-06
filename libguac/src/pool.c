@@ -63,8 +63,32 @@ void guac_pool_free(guac_pool* pool) {
 }
 
 int guac_pool_next_int(guac_pool* pool) {
-    /* STUB */
-    return 0;
+
+    int value;
+
+    /* If more integers are needed, or we are out of integers, return a new one. */
+    if (pool->__head == NULL || pool->__next_value < pool->min_size)
+        return pool->__next_value++;
+
+    /* Otherwise, remove first integer. */
+    value = pool->__head->value;
+
+    /* If only one element exists, reset pool to empty. */
+    if (pool->__tail == pool->__head) {
+        free(pool->__head);
+        pool->__head = NULL;
+        pool->__tail = NULL;
+    }
+
+    /* Otherwise, advance head. */
+    else {
+        guac_pool_int* old_head = pool->__head;
+        pool->__head = old_head->__next;
+        free(old_head);
+    }
+
+    /* Return retrieved value. */
+    return value;
 }
 
 void guac_pool_free_int(guac_pool* pool, int value) {
