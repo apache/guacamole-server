@@ -61,6 +61,7 @@ libguac_la_SOURCES =  \
 	error.c           \
 	instruction.c     \
 	palette.c         \
+	plugin.c          \
 	protocol.c        \
 	socket.c          \
 	timestamp.c       \
