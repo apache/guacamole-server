@@ -174,6 +174,14 @@ void guac_client_free(guac_client* client) {
 
     }
 
+    /* Free layer pools */
+    guac_pool_free(client->__buffer_pool);
+    guac_pool_free(client->__layer_pool);
+
+    /* Free resource pool */
+    guac_pool_free(client->__resource_pool);
+    free(client->__resource_map);
+
     free(client);
 }
 
