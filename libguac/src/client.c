@@ -118,8 +118,15 @@ guac_client* guac_client_alloc() {
 
     client->state = GUAC_CLIENT_RUNNING;
 
+    /* Allocate buffer and layer pools */
     client->__buffer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
     client->__layer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
+
+    /* Allocate resource pool */
+    client->__resource_pool = guac_pool_alloc(0);
+    client->__available_resource_slots = GUAC_RESOURCE_MAP_INITIAL_SIZE;
+    client->__resource_map =
+        malloc(sizeof(guac_resource*) * client->__available_resource_slots);
 
     return client;
 

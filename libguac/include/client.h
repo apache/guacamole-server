@@ -135,6 +135,14 @@ typedef int guac_client_init_handler(guac_client* client, int argc, char** argv)
 #define GUAC_BUFFER_POOL_INITIAL_SIZE 1024
 
 /**
+ * The number of initial slots to allocate for resources within the client resource
+ * map. The client resource map maps resource indices to actual guac_resource instances.
+ * This map will need to be reallocated once the number of resources required exceeds
+ * the available number of slots.
+ */
+#define GUAC_RESOURCE_MAP_INITIAL_SIZE 1024
+
+/**
  * Possible current states of the Guacamole client. Currently, the only
  * two states are GUAC_CLIENT_RUNNING and GUAC_CLIENT_STOPPING.
  */
@@ -353,14 +361,32 @@ struct guac_client {
     guac_client_log_handler* log_error_handler;
 
     /**
-     * Pool of buffer indices.
+     * Pool of buffer indices. Buffers are simply layers with negative indices. Note that
+     * because guac_pool always gives non-negative indices starting at 0, the output of
+     * this guac_pool will be adjusted.
      */
     guac_pool* __buffer_pool;
 
     /**
-     * Pool of layer indices.
+     * Pool of layer indices. Note that because guac_pool always gives non-negative indices
+     * starting at 0, the output of this guac_pool will be adjusted.
      */
     guac_pool* __layer_pool;
+
+    /**
+     * Pool of server-side resource indices.
+     */
+    guac_pool* __resource_pool;
+
+    /**
+     * Array of all allocated resources.
+     */
+    guac_resource** __resource_map;
+
+    /**
+     * The number of elements in the __resource_map array.
+     */
+    int __available_resource_slots;
 
 };
 
