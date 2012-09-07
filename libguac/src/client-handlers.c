@@ -50,6 +50,8 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"key",        __guac_handle_key},
    {"clipboard",  __guac_handle_clipboard},
    {"disconnect", __guac_handle_disconnect},
+   {"accept",     __guac_handle_accept},
+   {"reject",     __guac_handle_reject},
    {NULL,         NULL}
 };
 
@@ -117,6 +119,16 @@ int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction) 
 
 int __guac_handle_disconnect(guac_client* client, guac_instruction* instruction) {
     /* Return error code to force disconnect */
+    return -1;
+}
+
+int __guac_handle_accept(guac_client* client, guac_instruction* instruction) {
+    /* STUB */
+    return -1;
+}
+
+int __guac_handle_reject(guac_client* client, guac_instruction* instruction) {
+    /* STUB */
     return -1;
 }
 
