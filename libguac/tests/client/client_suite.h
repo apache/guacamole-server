@@ -42,6 +42,7 @@ int register_client_suite();
 
 void test_layer_pool();
 void test_buffer_pool();
+void test_resource_pool();
 
 #endif
 
