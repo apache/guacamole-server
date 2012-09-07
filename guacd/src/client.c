@@ -42,6 +42,8 @@
 #include <guacamole/socket.h>
 #include <guacamole/client.h>
 #include <guacamole/error.h>
+#include <guacamole/protocol.h>
+#include <guacamole/timestamp.h>
 
 #include "client.h"
 #include "log.h"
@@ -67,13 +69,13 @@ void* __guacd_client_output_thread(void* data) {
     guac_client* client = (guac_client*) data;
     guac_socket* socket = client->socket;
 
-    guac_timestamp last_ping_timestamp = guac_protocol_get_timestamp();
+    guac_timestamp last_ping_timestamp = guac_timestamp_current();
 
     /* Guacamole client output loop */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
         /* Occasionally ping client with repeat of last sync */
-        guac_timestamp timestamp = guac_protocol_get_timestamp();
+        guac_timestamp timestamp = guac_timestamp_current();
         if (timestamp - last_ping_timestamp > GUACD_SYNC_FREQUENCY) {
 
             /* Record time of last synnc */
@@ -113,7 +115,7 @@ void* __guacd_client_output_thread(void* data) {
                 }
 
                 /* Send sync instruction */
-                client->last_sent_timestamp = guac_protocol_get_timestamp();
+                client->last_sent_timestamp = guac_timestamp_current();
                 if (guac_protocol_send_sync(socket, client->last_sent_timestamp)) {
                     guacd_client_log_guac_error(client, 
                             "Error sending \"sync\" instruction");
@@ -158,7 +160,7 @@ void* __guacd_client_input_thread(void* data) {
 
         /* Read instruction */
         guac_instruction* instruction =
-            guac_protocol_read_instruction(socket, GUACD_USEC_TIMEOUT);
+            guac_instruction_read(socket, GUACD_USEC_TIMEOUT);
 
         /* Stop on error */
         if (instruction == NULL) {

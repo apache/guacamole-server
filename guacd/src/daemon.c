@@ -57,6 +57,9 @@
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
+#include <guacamole/instruction.h>
+#include <guacamole/plugin.h>
+#include <guacamole/protocol.h>
 
 #include "client.h"
 #include "log.h"
@@ -76,7 +79,7 @@ void guacd_handle_connection(int fd) {
     guac_socket* socket = guac_socket_open(fd);
 
     /* Get protocol from select instruction */
-    select = guac_protocol_expect_instruction(
+    select = guac_instruction_expect(
             socket, GUACD_USEC_TIMEOUT, "select");
     if (select == NULL) {
 
@@ -131,7 +134,7 @@ void guacd_handle_connection(int fd) {
     }
 
     /* Get args from connect instruction */
-    connect = guac_protocol_expect_instruction(
+    connect = guac_instruction_expect(
             socket, GUACD_USEC_TIMEOUT, "connect");
     if (connect == NULL) {
 
