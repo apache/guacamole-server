@@ -65,8 +65,8 @@ void test_guac_pool() {
         value = guac_pool_next_int(pool);
 
         /* Value should be within pool size */
-        CU_ASSERT(value >= 0);
-        CU_ASSERT(value <  POOL_SIZE);
+        CU_ASSERT_FATAL(value >= 0);
+        CU_ASSERT_FATAL(value <  POOL_SIZE);
 
         /* This should be an integer we have not seen yet */
         CU_ASSERT_EQUAL(UNSEEN, seen[value]);
@@ -84,8 +84,8 @@ void test_guac_pool() {
         value = guac_pool_next_int(pool);
 
         /* Value should be within pool size */
-        CU_ASSERT(value >= 0);
-        CU_ASSERT(value <  POOL_SIZE);
+        CU_ASSERT_FATAL(value >= 0);
+        CU_ASSERT_FATAL(value <  POOL_SIZE);
 
         /* This should be an integer we have seen already */
         CU_ASSERT_EQUAL(SEEN_PHASE_1, seen[value]);
