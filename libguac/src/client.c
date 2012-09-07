@@ -44,6 +44,7 @@
 #include "error.h"
 #include "layer.h"
 #include "plugin.h"
+#include "pool.h"
 #include "protocol.h"
 #include "socket.h"
 #include "time.h"
@@ -51,43 +52,17 @@
 guac_layer __GUAC_DEFAULT_LAYER = {
     .index = 0,
     .uri = "layer://0",
-    .__next = NULL,
-    .__next_available = NULL
 };
 
 const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
 
 guac_layer* guac_client_alloc_layer(guac_client* client) {
 
-    guac_layer* allocd_layer;
-
-    /* If available layers, pop off first available layer */
-    if (client->__next_layer_index > GUAC_BUFFER_POOL_INITIAL_SIZE &&
-            client->__available_layers != NULL) {
-
-        allocd_layer = client->__available_layers;
-        client->__available_layers = client->__available_layers->__next_available;
-
-        /* If last layer, reset last available layer pointer */
-        if (allocd_layer == client->__last_available_layer)
-            client->__last_available_layer = NULL;
-
-    }
-
-    /* If no available layer, allocate new layer, add to __all_layers list */
-    else {
-
-        /* Init new layer */
-        allocd_layer = malloc(sizeof(guac_layer));
-        allocd_layer->index = client->__next_layer_index++;
-        allocd_layer->uri = malloc(64);
-        snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
-
-        /* Add to __all_layers list */
-        allocd_layer->__next = client->__all_layers;
-        client->__all_layers = allocd_layer;
-
-    }
+    /* Init new layer */
+    guac_layer* allocd_layer = malloc(sizeof(guac_layer));
+    allocd_layer->index = guac_pool_next_int(client->__layer_pool)+1;
+    allocd_layer->uri = malloc(64);
+    snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
 
     return allocd_layer;
 
@@ -95,35 +70,11 @@ guac_layer* guac_client_alloc_layer(guac_client* client) {
 
 guac_layer* guac_client_alloc_buffer(guac_client* client) {
 
-    guac_layer* allocd_layer;
-
-    /* If available layers, pop off first available buffer */
-    if (client->__next_buffer_index < -GUAC_BUFFER_POOL_INITIAL_SIZE &&
-            client->__available_buffers != NULL) {
-
-        allocd_layer = client->__available_buffers;
-        client->__available_buffers = client->__available_buffers->__next_available;
-
-        /* If last buffer, reset last available buffer pointer */
-        if (allocd_layer == client->__last_available_buffer)
-            client->__last_available_buffer = NULL;
-
-    }
-
-    /* If no available buffer, allocate new buffer, add to __all_layers list */
-    else {
-
-        /* Init new layer */
-        allocd_layer = malloc(sizeof(guac_layer));
-        allocd_layer->index = client->__next_buffer_index--;
-        allocd_layer->uri = malloc(64);
-        snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
-
-        /* Add to __all_layers list */
-        allocd_layer->__next = client->__all_layers;
-        client->__all_layers = allocd_layer;
-
-    }
+    /* Init new layer */
+    guac_layer* allocd_layer = malloc(sizeof(guac_layer));
+    allocd_layer->index = -guac_pool_next_int(client->__buffer_pool) - 1;
+    allocd_layer->uri = malloc(64);
+    snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
 
     return allocd_layer;
 
@@ -131,29 +82,21 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
 
 void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
 
-    /* Add layer to tail of pool of available buffers */
-    if (client->__last_available_buffer != NULL)
-        client->__last_available_buffer->__next_available = layer;
+    /* Release index to pool */
+    guac_pool_free_int(client->__buffer_pool, -layer->index - 1);
 
-    if (client->__available_buffers == NULL)
-        client->__available_buffers = layer;
-
-    client->__last_available_buffer = layer;
-    layer->__next_available = NULL;
+    /* Free layer */
+    free(layer);
 
 }
 
 void guac_client_free_layer(guac_client* client, guac_layer* layer) {
 
-    /* Add layer to tail of pool of available layers */
-    if (client->__last_available_layer != NULL)
-        client->__last_available_layer->__next_available = layer;
+    /* Release index to pool */
+    guac_pool_free_int(client->__layer_pool, layer->index - 1);
 
-    if (client->__available_layers == NULL)
-        client->__available_layers = layer;
-
-    client->__last_available_layer = layer;
-    layer->__next_available = NULL;
+    /* Free layer */
+    free(layer);
 
 }
 
@@ -175,12 +118,8 @@ guac_client* guac_client_alloc() {
 
     client->state = GUAC_CLIENT_RUNNING;
 
-    client->__all_layers        = NULL;
-    client->__available_buffers = client->__last_available_buffer = NULL;
-    client->__available_layers  = client->__last_available_layer  = NULL;
-
-    client->__next_buffer_index = -1;
-    client->__next_layer_index  =  1;
+    client->__buffer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
+    client->__layer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
 
     return client;
 
@@ -192,19 +131,6 @@ void guac_client_free(guac_client* client) {
 
         /* FIXME: Errors currently ignored... */
         client->free_handler(client);
-
-    }
-
-    /* Free all layers */
-    while (client->__all_layers != NULL) {
-
-        /* Get layer, update layer pool head */
-        guac_layer* layer = client->__all_layers;
-        client->__all_layers = layer->__next;
-
-        /* Free layer */
-        free(layer->uri);
-        free(layer);
 
     }
 

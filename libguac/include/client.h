@@ -43,6 +43,7 @@
 
 #include "instruction.h"
 #include "layer.h"
+#include "pool.h"
 #include "resource.h"
 #include "socket.h"
 #include "timestamp.h"
@@ -352,42 +353,14 @@ struct guac_client {
     guac_client_log_handler* log_error_handler;
 
     /**
-     * The index of the next available buffer.
+     * Pool of buffer indices.
      */
-    int __next_buffer_index;
+    guac_pool* __buffer_pool;
 
     /**
-     * The head pointer of the list of all available (allocated but not used)
-     * buffers.
+     * Pool of layer indices.
      */
-    guac_layer* __available_buffers;
-
-    /**
-     * Pointer to the last buffer in the list of all available buffers.
-     */
-    guac_layer* __last_available_buffer;
-
-    /**
-     * The index of the next available layer.
-     */
-    int __next_layer_index;
-
-    /**
-     * The head pointer of the list of all available (allocated but not used)
-     * layers.
-     */
-    guac_layer* __available_layers;
-
-    /**
-     * Pointer to the last layer in the list of all available layers.
-     */
-    guac_layer* __last_available_layer;
-
-    /**
-     * The head pointer of the list of all allocated layers, regardless of use
-     * status.
-     */
-    guac_layer* __all_layers;
+    guac_pool* __layer_pool;
 
 };
 
