@@ -42,10 +42,11 @@ libguacincdir = $(includedir)/guacamole
 libguacinc_HEADERS =          \
     ../include/client.h       \
     ../include/error.h        \
-	../include/hash.h     \
+	../include/hash.h         \
     ../include/instruction.h  \
     ../include/layer.h        \
     ../include/plugin.h       \
+    ../include/pool.h         \
     ../include/protocol.h     \
     ../include/resource.h     \
     ../include/socket.h       \
@@ -54,7 +55,6 @@ libguacinc_HEADERS =          \
 noinst_HEADERS =                 \
     ../include/client-handlers.h \
     ../include/palette.h         \
-    ../include/pool.h            \
 	../include/unicode.h
 
 libguac_la_SOURCES =  \
