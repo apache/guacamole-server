@@ -56,6 +56,29 @@ guac_layer __GUAC_DEFAULT_LAYER = {
 
 const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
 
+guac_resource* guac_client_alloc_resource(guac_client* client) {
+
+    /* Init new layer */
+    guac_resource* resource = malloc(sizeof(guac_resource));
+    resource->index = guac_pool_next_int(client->__resource_pool);
+    resource->accept_handler = NULL;
+    resource->reject_handler = NULL;
+    resource->data = NULL;
+
+    /* Resize resource map if necessary */
+    if (resource->index >= client->__available_resource_slots) {
+        client->__available_resource_slots = resource->index * 2;
+        client->__resource_map = realloc(client->__resource_map,
+                sizeof(guac_resource*) * client->__available_resource_slots);
+    }
+
+    /* Store resource in map */
+    client->__resource_map[resource->index] = resource;
+
+    return resource;
+
+}
+
 guac_layer* guac_client_alloc_layer(guac_client* client) {
 
     /* Init new layer */
@@ -77,6 +100,16 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
     snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
 
     return allocd_layer;
+
+}
+
+void guac_client_free_resource(guac_client* client, guac_resource* resource) {
+
+    /* Release index to pool */
+    guac_pool_free_int(client->__resource_pool, resource->index);
+
+    /* Free resource */
+    free(resource);
 
 }
 
