@@ -123,12 +123,41 @@ int __guac_handle_disconnect(guac_client* client, guac_instruction* instruction)
 }
 
 int __guac_handle_accept(guac_client* client, guac_instruction* instruction) {
-    /* STUB */
-    return -1;
+
+    /* Get index, check validity */
+    int index = __guac_parse_int(instruction->argv[0]);
+    if (index < client->__available_resource_slots) {
+
+        /* Build parameters */
+        char* mimetype = instruction->argv[1];
+        guac_resource* resource = client->__resource_map[index];
+
+        /* If accept handler defined, call it */
+        if (resource->accept_handler)
+            return resource->accept_handler(resource, mimetype);
+
+    }
+
+    /* Ignore invalid indices */
+    return 0;
+
 }
 
 int __guac_handle_reject(guac_client* client, guac_instruction* instruction) {
-    /* STUB */
-    return -1;
+
+    /* Get index, check validity */
+    int index = __guac_parse_int(instruction->argv[0]);
+    if (index < client->__available_resource_slots) {
+
+        /* Build parameters */
+        guac_resource* resource = client->__resource_map[index];
+
+        /* If reject handler defined, call it */
+        if (resource->reject_handler)
+            return resource->reject_handler(resource);
+
+    }
+
+    return 0;
 }
 
