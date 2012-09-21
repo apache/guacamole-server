@@ -59,12 +59,15 @@
 typedef struct guac_resource guac_resource;
 
 /**
- * Handler which begins resource transfer when the client accepts an exposed resource.
+ * Handler which begins resource transfer when the client accepts an exposed
+ * resource.
  */
-typedef int guac_resource_accept_handler(guac_resource* resource, const char* mimetype);
+typedef int guac_resource_accept_handler(guac_resource* resource,
+        const char* mimetype);
 
 /**
- * Handler which cancels resource transfer when the client rejects an exposed resource.
+ * Handler which cancels resource transfer when the client rejects an exposed
+ * resource.
  */
 typedef int guac_resource_reject_handler(guac_resource* resource);
 
@@ -80,12 +83,14 @@ struct guac_resource {
     int index;
 
     /**
-     * Handler which will be called when this resource is accepted by the client.
+     * Handler which will be called when this resource is accepted by the
+     * client.
      */
     guac_resource_accept_handler* accept_handler;
 
     /**
-     * Handler which will be called when this resource is rejected by the client.
+     * Handler which will be called when this resource is rejected by the
+     * client.
      */
     guac_resource_reject_handler* reject_handler;
 
