@@ -39,6 +39,8 @@
 #ifndef _GUAC_RESOURCE_H
 #define _GUAC_RESOURCE_H
 
+#include "client.h"
+
 /**
  * Provides functions and structures required for handling resources.
  *
@@ -93,6 +95,11 @@ struct guac_resource {
      * client.
      */
     guac_resource_reject_handler* reject_handler;
+
+    /**
+     * The client this resource was allocated for.
+     */
+    guac_client* client;
 
     /**
      * Arbitrary data associated with this resource.
