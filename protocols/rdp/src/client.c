@@ -321,14 +321,14 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->encryption_method = ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
     settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
 
-    /* session width */
+    /* Session width */
     settings->width = 1024;
     if (argv[IDX_WIDTH][0] != '\0')
         settings->width = atoi(argv[IDX_WIDTH]);
     if (settings->width == 0)
         settings->width = 1024;
 
-    /* session height */
+    /* Session height */
     settings->height = 768;
     if (argv[IDX_HEIGHT][0] != '\0')
         settings->height = atoi(argv[IDX_HEIGHT]);
@@ -358,7 +358,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (argv[IDX_INITIAL_PROGRAM][0] != '\0')
         settings->shell = strdup(argv[IDX_INITIAL_PROGRAM]);
 
-    /* session color depth */
+    /* Session color depth */
     settings->color_depth = 16;
     if (argv[IDX_COLOR_DEPTH][0] != '\0')
         settings->color_depth = atoi(argv[IDX_COLOR_DEPTH]);
