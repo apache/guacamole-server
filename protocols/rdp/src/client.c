@@ -322,18 +322,30 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
 
     /* Session width */
-    settings->width = 1024;
+    settings->width = RDP_DEFAULT_WIDTH;
     if (argv[IDX_WIDTH][0] != '\0')
         settings->width = atoi(argv[IDX_WIDTH]);
-    if (settings->width == 0)
-        settings->width = 1024;
+
+    /* Use default width if given width is invalid. */
+    if (settings->width == 0) {
+        settings->width = RDP_DEFAULT_WIDTH;
+        guac_client_log_error(client,
+                "Invalid width: \"%s\". Using default of %i.",
+                argv[IDX_WIDTH], settings->width);
+    }
 
     /* Session height */
-    settings->height = 768;
+    settings->height = RDP_DEFAULT_HEIGHT;
     if (argv[IDX_HEIGHT][0] != '\0')
         settings->height = atoi(argv[IDX_HEIGHT]);
-    if (settings->height == 0)
-        settings->height = 768;
+
+    /* Use default height if given height is invalid. */
+    if (settings->height == 0) {
+        settings->height = RDP_DEFAULT_HEIGHT;
+        guac_client_log_error(client,
+                "Invalid height: \"%s\". Using default of %i.",
+                argv[IDX_WIDTH], settings->height);
+    }
 
     /* Set hostname */
     settings->hostname = strdup(hostname);
@@ -359,11 +371,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         settings->shell = strdup(argv[IDX_INITIAL_PROGRAM]);
 
     /* Session color depth */
-    settings->color_depth = 16;
+    settings->color_depth = RDP_DEFAULT_DEPTH;
     if (argv[IDX_COLOR_DEPTH][0] != '\0')
         settings->color_depth = atoi(argv[IDX_COLOR_DEPTH]);
-    if (settings->color_depth == 0)
-        settings->color_depth = 16;
+
+    /* Use default depth if given depth is invalid. */
+    if (settings->color_depth == 0) {
+        settings->color_depth = RDP_DEFAULT_DEPTH;
+        guac_client_log_error(client,
+                "Invalid color-depth: \"%s\". Using default of %i.",
+                argv[IDX_WIDTH], settings->color_depth);
+    }
 
     /* Order support */
     bitmap_cache = settings->bitmap_cache;

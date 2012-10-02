@@ -51,6 +51,21 @@
 #define RDP_DEFAULT_PORT 3389
 
 /**
+ * Default screen width, in pixels.
+ */
+#define RDP_DEFAULT_WIDTH  1024
+
+/**
+ * Default screen height, in pixels.
+ */
+#define RDP_DEFAULT_HEIGHT 768 
+
+/**
+ * Default color depth, in bits.
+ */
+#define RDP_DEFAULT_DEPTH  16 
+
+/**
  * Client data that will remain accessible through the guac_client.
  * This should generally include data commonly used by Guacamole handlers.
  */
