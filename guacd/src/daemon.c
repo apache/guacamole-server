@@ -208,8 +208,10 @@ int daemonize() {
     }
 
     /* Exit if we are the parent */
-    if (pid > 0)
-       _exit(0);
+    if (pid > 0) {
+        guacd_log_info("Exiting and passing control to PID %i", pid);
+        _exit(0);
+    }
 
     /* Start a new session (if not already group leader) */
     setsid();
@@ -222,8 +224,10 @@ int daemonize() {
     }
 
     /* Exit if we are the parent */
-    if (pid > 0)
-       _exit(0);
+    if (pid > 0) {
+        guacd_log_info("Exiting and passing control to PID %i", pid);
+        _exit(0);
+    }
 
     /* Change to root directory */
     if (chdir(GUACD_ROOT) < 0) {
