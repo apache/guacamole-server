@@ -1,3 +1,7 @@
+2012-09-10 Alex Bligh <alex@alex.org.uk>
+
+	* Fix daemonization (ticket #178, Debian bug #685637)
+
 2012-05-24 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Update README and manpage

@@ -42,6 +42,9 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <ctype.h>
 
 #include <sys/socket.h>
 #include <netdb.h>
@@ -56,6 +59,9 @@
 
 #include "client.h"
 #include "log.h"
+
+#define GUACD_DEV_NULL "/dev/null"
+#define GUACD_ROOT     "/"
 
 void guacd_handle_connection(int fd) {
 
@@ -170,9 +176,79 @@ void guacd_handle_connection(int fd) {
     /* Close socket */
     guac_socket_close(socket);
 
-    return;
+}
+
+int redirect_fd(int fd, int flags) {
+
+    /* Attempt to open bit bucket */
+    int new_fd = open(GUACD_DEV_NULL, flags);
+    if (new_fd < 0)
+        return 1;
+
+    /* If descriptor is different, redirect old to new and close new */
+    if (new_fd != fd) {
+        dup2(new_fd, fd);
+        close(new_fd);
+    }
+
+    return 0;
 
 }
+
+int daemonize() {
+
+    pid_t pid;
+
+    /* Fork once to ensure we aren't the process group leader */
+    pid = fork();
+    if (pid < 0) {
+        guacd_log_error("Could not fork() parent: %s", strerror(errno));
+        return 1;
+    }
+
+    /* Exit if we are the parent */
+    if (pid > 0)
+       _exit(0);
+
+    /* Start a new session (if not already group leader) */
+    setsid();
+
+    /* Fork again so the session group leader exits */
+    pid = fork();
+    if (pid < 0) {
+        guacd_log_error("Could not fork() group leader: %s", strerror(errno));
+        return 1;
+    }
+
+    /* Exit if we are the parent */
+    if (pid > 0)
+       _exit(0);
+
+    /* Change to root directory */
+    if (chdir(GUACD_ROOT) < 0) {
+        guacd_log_error(
+                "Unable to change working directory to "
+                GUACD_ROOT);
+        return 1;
+    }
+
+    /* Reopen the 3 stdxxx to /dev/null */
+
+    if (redirect_fd(STDIN_FILENO, O_RDONLY)
+    || redirect_fd(STDOUT_FILENO, O_WRONLY)
+    || redirect_fd(STDERR_FILENO, O_WRONLY)) {
+
+        guacd_log_error(
+                "Unable to redirect standard file descriptors to "
+                GUACD_DEV_NULL);
+        return 1;
+    }
+
+    /* Success */
+    return 0;
+
+}
+
 
 int main(int argc, char* argv[]) {
 
@@ -205,9 +281,6 @@ int main(int argc, char* argv[]) {
     /* General */
     int retval;
 
-    /* Daemon Process */
-    pid_t daemon_pid;
-
     /* Parse arguments */
     while ((opt = getopt(argc, argv, "l:b:p:f")) != -1) {
         if (opt == 'l') {
@@ -237,12 +310,17 @@ int main(int argc, char* argv[]) {
     /* Set up logging prefix */
     strncpy(log_prefix, basename(argv[0]), sizeof(log_prefix));
 
+    /* Open log as early as we can */
+    openlog(NULL, LOG_PID, LOG_DAEMON);
 
     /* Get addresses for binding */
-    if ((retval = getaddrinfo(listen_address, listen_port, &hints, &addresses))) {
+    if ((retval = getaddrinfo(listen_address, listen_port,
+                    &hints, &addresses))) {
+
         guacd_log_error("Error parsing given address or port: %s",
                 gai_strerror(retval));
         exit(EXIT_FAILURE);
+
     }
 
     /* Get socket */
@@ -253,8 +331,10 @@ int main(int argc, char* argv[]) {
     }
 
     /* Allow socket reuse */
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, (void*) &opt_on, sizeof(opt_on))) {
-        guacd_log_info("Unable to set socket options for reuse: %s", strerror(errno));
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR,
+                (void*) &opt_on, sizeof(opt_on))) {
+        guacd_log_info("Unable to set socket options for reuse: %s",
+                strerror(errno));
     }
 
     /* Attempt binding of each address until success */
@@ -301,57 +381,49 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    /* Daemonize if requested */
     if (!foreground) {
 
-        /* Fork into background */
-        daemon_pid = fork();
-
-        /* If error, fail */
-        if (daemon_pid == -1) {
-            guacd_log_error("Error forking daemon process: %s", strerror(errno));
+        /* Attempt to daemonize process */
+        if (daemonize()) {
+            guacd_log_error("Could not become a daemon.");
             exit(EXIT_FAILURE);
         }
 
-        /* If parent, write PID file and exit */
-        else if (daemon_pid != 0) {
-
-            if (pidfile != NULL) {
-
-                /* Attempt to open pidfile and write PID */
-                FILE* pidf = fopen(pidfile, "w");
-                if (pidf) {
-                    fprintf(pidf, "%d\n", daemon_pid);
-                    fclose(pidf);
-                }
-
-                /* Warn on failure */
-                else {
-                    guacd_log_error("Could not write PID file: %s", strerror(errno));
-                    exit(EXIT_FAILURE);
-                }
-
-            }
-
-            exit(EXIT_SUCCESS);
-        }
     }
 
-    /* Open log */
-    openlog(NULL, LOG_PID, LOG_DAEMON);
+    /* Write PID file if requested */
+    if (pidfile != NULL) {
+
+        /* Attempt to open pidfile and write PID */
+        FILE* pidf = fopen(pidfile, "w");
+        if (pidf) {
+            fprintf(pidf, "%d\n", getpid());
+            fclose(pidf);
+        }
+        
+        /* Fail if could not write PID file*/
+        else {
+            guacd_log_error("Could not write PID file: %s", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+
+    }
 
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-        guacd_log_info("Could not set handler for SIGPIPE to ignore. SIGPIPE may cause termination of the daemon.");
+        guacd_log_info("Could not set handler for SIGPIPE to ignore. "
+                "SIGPIPE may cause termination of the daemon.");
     }
 
     /* Ignore SIGCHLD (force automatic removal of children) */
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-        guacd_log_info("Could not set handler for SIGCHLD to ignore. Child processes may pile up in the process table.");
+        guacd_log_info("Could not set handler for SIGCHLD to ignore. "
+                "Child processes may pile up in the process table.");
     }
 
     /* Log listening status */
-    syslog(LOG_INFO,
-            "Listening on host %s, port %s", bound_address, bound_port);
+    guacd_log_info("Listening on host %s, port %s", bound_address, bound_port);
 
     /* Free addresses */
     freeaddrinfo(addresses);
@@ -369,9 +441,12 @@ int main(int argc, char* argv[]) {
 
         /* Accept connection */
         client_addr_len = sizeof(client_addr);
-        connected_socket_fd = accept(socket_fd, (struct sockaddr*) &client_addr, &client_addr_len);
+        connected_socket_fd = accept(socket_fd,
+                (struct sockaddr*) &client_addr, &client_addr_len);
+
         if (connected_socket_fd < 0) {
-            guacd_log_error("Could not accept client connection: %s", strerror(errno));
+            guacd_log_error("Could not accept client connection: %s",
+                    strerror(errno));
             return 3;
         }
 
@@ -399,7 +474,8 @@ int main(int argc, char* argv[]) {
 
         /* If parent, close reference to child's descriptor */
         else if (close(connected_socket_fd) < 0) {
-            guacd_log_error("Error closing daemon reference to child descriptor: %s", strerror(errno));
+            guacd_log_error("Error closing daemon reference to "
+                    "child descriptor: %s", strerror(errno));
         }
 
     }
