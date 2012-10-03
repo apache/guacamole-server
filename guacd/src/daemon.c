@@ -318,6 +318,9 @@ int main(int argc, char* argv[]) {
     /* Open log as early as we can */
     openlog(NULL, LOG_PID, LOG_DAEMON);
 
+    /* Log start */
+    guacd_log_info("Guacamole proxy daemon (guacd) version " VERSION);
+
     /* Get addresses for binding */
     if ((retval = getaddrinfo(listen_address, listen_port,
                     &hints, &addresses))) {
