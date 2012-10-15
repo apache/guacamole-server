@@ -35,7 +35,7 @@
 # ***** END LICENSE BLOCK *****
 
 AC_INIT(src/daemon.c)
-AM_INIT_AUTOMAKE(guacd, 0.6.1)
+AM_INIT_AUTOMAKE(guacd, 0.6.2)
 
 # Checks for programs.
 AC_PROG_CC
