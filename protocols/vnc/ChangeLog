@@ -1,3 +1,7 @@
+2012-10-15 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Fix m4/ autoreconf error
+
 2011-05-04 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Migrated to 0.6.0 version of libguac API
