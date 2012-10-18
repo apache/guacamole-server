@@ -41,7 +41,6 @@
 #include <cairo/cairo.h>
 
 #include "layer.h"
-#include "resource.h"
 #include "socket.h"
 #include "timestamp.h"
 
@@ -194,22 +193,6 @@ int guac_protocol_send_args(guac_socket* socket, const char** args);
 int guac_protocol_send_connect(guac_socket* socket, const char** args);
 
 /**
- * Sends a data instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param resource The resource associated with the data being sent.
- * @param data The data to send.
- * @param size The number of bytes from the beginning of the given buffer
- *             of data to send.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_data(guac_socket* socket, guac_resource* resource,
-        const unsigned char* data, size_t size);
-
-/**
  * Sends a disconnect instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -219,18 +202,6 @@ int guac_protocol_send_data(guac_socket* socket, guac_resource* resource,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_disconnect(guac_socket* socket);
-
-/**
- * Sends an end instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param resource The resource being closed.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_end(guac_socket* socket, guac_resource* resource);
 
 /**
  * Sends an error instruction over the given guac_socket connection.
@@ -243,22 +214,6 @@ int guac_protocol_send_end(guac_socket* socket, guac_resource* resource);
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_error(guac_socket* socket, const char* error);
-
-/**
- * Sends a resource instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param resource The resource being exposed.
- * @param uri The URI this resource should be exposed to.
- * @param mimetypes A NULL-terminated array of strings, where each string is
- *                  an available mimetype.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_resource(guac_socket* socket, guac_resource* resource,
-        const char* uri, const char** mimetypes);
 
 /**
  * Sends a set instruction over the given guac_socket connection.

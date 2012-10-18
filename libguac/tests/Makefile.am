@@ -51,7 +51,6 @@ test_libguac_SOURCES =           \
 	client/client_suite.c        \
 	client/buffer_pool.c         \
 	client/layer_pool.c          \
-	client/resource_pool.c       \
 	protocol/suite.c             \
 	protocol/instruction_read.c  \
 	protocol/instruction_write.c \

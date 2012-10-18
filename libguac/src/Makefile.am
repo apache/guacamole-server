@@ -48,7 +48,6 @@ libguacinc_HEADERS =          \
     ../include/plugin.h       \
     ../include/pool.h         \
     ../include/protocol.h     \
-    ../include/resource.h     \
     ../include/socket.h       \
     ../include/timestamp.h
 

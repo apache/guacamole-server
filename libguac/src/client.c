@@ -50,42 +50,16 @@
 #include "time.h"
 
 guac_layer __GUAC_DEFAULT_LAYER = {
-    .index = 0,
-    .uri = "layer://0",
+    .index = 0
 };
 
 const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
-
-guac_resource* guac_client_alloc_resource(guac_client* client) {
-
-    /* Init new layer */
-    guac_resource* resource = malloc(sizeof(guac_resource));
-    resource->index = guac_pool_next_int(client->__resource_pool);
-    resource->accept_handler = NULL;
-    resource->reject_handler = NULL;
-    resource->data = NULL;
-
-    /* Resize resource map if necessary */
-    if (resource->index >= client->__available_resource_slots) {
-        client->__available_resource_slots = resource->index * 2;
-        client->__resource_map = realloc(client->__resource_map,
-                sizeof(guac_resource*) * client->__available_resource_slots);
-    }
-
-    /* Store resource in map */
-    client->__resource_map[resource->index] = resource;
-
-    return resource;
-
-}
 
 guac_layer* guac_client_alloc_layer(guac_client* client) {
 
     /* Init new layer */
     guac_layer* allocd_layer = malloc(sizeof(guac_layer));
     allocd_layer->index = guac_pool_next_int(client->__layer_pool)+1;
-    allocd_layer->uri = malloc(64);
-    snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
 
     return allocd_layer;
 
@@ -96,20 +70,8 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
     /* Init new layer */
     guac_layer* allocd_layer = malloc(sizeof(guac_layer));
     allocd_layer->index = -guac_pool_next_int(client->__buffer_pool) - 1;
-    allocd_layer->uri = malloc(64);
-    snprintf(allocd_layer->uri, 64, "layer://%i", allocd_layer->index);
 
     return allocd_layer;
-
-}
-
-void guac_client_free_resource(guac_client* client, guac_resource* resource) {
-
-    /* Release index to pool */
-    guac_pool_free_int(client->__resource_pool, resource->index);
-
-    /* Free resource */
-    free(resource);
 
 }
 
@@ -155,12 +117,6 @@ guac_client* guac_client_alloc() {
     client->__buffer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
     client->__layer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
 
-    /* Allocate resource pool */
-    client->__resource_pool = guac_pool_alloc(0);
-    client->__available_resource_slots = GUAC_RESOURCE_MAP_INITIAL_SIZE;
-    client->__resource_map =
-        malloc(sizeof(guac_resource*) * client->__available_resource_slots);
-
     return client;
 
 }
@@ -177,10 +133,6 @@ void guac_client_free(guac_client* client) {
     /* Free layer pools */
     guac_pool_free(client->__buffer_pool);
     guac_pool_free(client->__layer_pool);
-
-    /* Free resource pool */
-    guac_pool_free(client->__resource_pool);
-    free(client->__resource_map);
 
     free(client);
 }

@@ -44,7 +44,6 @@
 #include "instruction.h"
 #include "layer.h"
 #include "pool.h"
-#include "resource.h"
 #include "socket.h"
 #include "timestamp.h"
 
@@ -133,14 +132,6 @@ typedef int guac_client_init_handler(guac_client* client, int argc, char** argv)
  * would make draw operations unnecessarily synchronous).
  */
 #define GUAC_BUFFER_POOL_INITIAL_SIZE 1024
-
-/**
- * The number of initial slots to allocate for resources within the client resource
- * map. The client resource map maps resource indices to actual guac_resource instances.
- * This map will need to be reallocated once the number of resources required exceeds
- * the available number of slots.
- */
-#define GUAC_RESOURCE_MAP_INITIAL_SIZE 1024
 
 /**
  * Possible current states of the Guacamole client. Currently, the only
@@ -373,21 +364,6 @@ struct guac_client {
      */
     guac_pool* __layer_pool;
 
-    /**
-     * Pool of server-side resource indices.
-     */
-    guac_pool* __resource_pool;
-
-    /**
-     * Array of all allocated resources.
-     */
-    guac_resource** __resource_map;
-
-    /**
-     * The number of elements in the __resource_map array.
-     */
-    int __available_resource_slots;
-
 };
 
 /**
@@ -511,25 +487,6 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer);
  * @param layer The buffer to return to the pool of available layer.
  */
 void guac_client_free_layer(guac_client* client, guac_layer* layer);
-
-/**
- * Allocates a new resource. An arbitrary index is automatically assigned
- * if no existing resource index is available for use.
- *
- * @param client The proxy client to allocate the resource for.
- * @return The next available resource, or a newly allocated resource.
- */
-guac_resource* guac_client_alloc_resource(guac_client* client);
-
-/**
- * Frees an existing resource, re-adding it to the client's resource
- * pool, such that it can be reused by a subsequent call to
- * guac_client_alloc_resource().
- *
- * @param client The proxy client to free the resource for.
- * @oaran resource The resource to return to the resource pool.
- */
-void guac_client_free_resource(guac_client* client, guac_resource* resource);
 
 /**
  * The default Guacamole client layer, layer 0.

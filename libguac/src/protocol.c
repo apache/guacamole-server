@@ -575,26 +575,6 @@ int guac_protocol_send_curve(guac_socket* socket, const guac_layer* layer,
 }
 
 
-int guac_protocol_send_data(guac_socket* socket, guac_resource* resource,
-        const unsigned char* data, size_t size) {
-
-    /* Calculate base64 length */
-    int base64_length = (size + 2) / 3 * 4;
-
-    /* Send base64-encoded data */
-    return
-           guac_socket_write_string(socket, "4.data,")
-        || __guac_socket_write_length_int(socket, resource->index)
-        || guac_socket_write_string(socket, ",")
-        || guac_socket_write_int(socket, base64_length)
-        || guac_socket_write_string(socket, ".")
-        || guac_socket_write_base64(socket, data, size)
-        || guac_socket_flush_base64(socket)
-        || guac_socket_write_string(socket, ";");
-
-}
-
-
 int guac_protocol_send_disconnect(guac_socket* socket) {
     return guac_socket_write_string(socket, "10.disconnect;");
 }
@@ -631,15 +611,6 @@ int guac_protocol_send_distort(guac_socket* socket, const guac_layer* layer,
         || __guac_socket_write_length_double(socket, f)
         || guac_socket_write_string(socket, ";");
 
-}
-
-
-int guac_protocol_send_end(guac_socket* socket, guac_resource* resource) {
-
-    return
-           guac_socket_write_string(socket, "3.end,")
-        || __guac_socket_write_length_int(socket, resource->index)
-        || guac_socket_write_string(socket, ";");
 }
 
 
@@ -809,39 +780,6 @@ int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer) {
            guac_socket_write_string(socket, "5.reset,")
         || __guac_socket_write_length_int(socket, layer->index)
         || guac_socket_write_string(socket, ";");
-
-}
-
-
-int guac_protocol_send_resource(guac_socket* socket, guac_resource* resource,
-        const char* uri, const char** mimetypes) {
-
-    /* Write resource header */
-    if (
-           guac_socket_write_string(socket, "8.resource,")
-        || __guac_socket_write_length_int(socket, resource->index)
-        || guac_socket_write_string(socket, ",")
-        || __guac_socket_write_length_string(socket, uri)
-       )
-        return -1;
-
-    /* Write each mimetype */
-    while (*mimetypes != NULL) {
-
-        /* Write mimetype */
-        if (  
-               guac_socket_write_string(socket, ",")
-            || __guac_socket_write_length_string(socket, *mimetypes)
-           )
-            return -1;
-
-        /* Next mimetype */
-        mimetypes++;
-
-    }
-
-    /* Finish instruction */
-    return  guac_socket_write_string(socket, ";");
 
 }
 

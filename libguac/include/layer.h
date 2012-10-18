@@ -56,13 +56,6 @@ struct guac_layer {
      */
     int index;
 
-    /**
-     * The URI which must be passed via a resource instruction to denote
-     * a resource related to this layer. This value is automatically set
-     * upon allocation.
-     */
-    char* uri;
-
 };
 
 #endif

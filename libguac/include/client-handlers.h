@@ -107,20 +107,6 @@ int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction);
 int __guac_handle_disconnect(guac_client* client, guac_instruction* instruction);
 
 /**
- * Internal initial handler for the accept instruction. When an accept instruction
- * is received, this handler will be called. The accept handler of the corresponding
- * resource will be called if the resource is valid and the handler is defined.
- */
-int __guac_handle_accept(guac_client* client, guac_instruction* instruction);
-
-/**
- * Internal initial handler for the reject instruction. When a reject instruction
- * is received, this handler will be called. The reject handler of the corresponding
- * resource will be called if the resource is valid and the handler is defined.
- */
-int __guac_handle_reject(guac_client* client, guac_instruction* instruction);
-
-/**
  * Instruction handler mapping table. This is a NULL-terminated array of
  * __guac_instruction_handler_mapping structures, each mapping an opcode
  * to a __guac_instruction_handler. The end of the array must be marked
