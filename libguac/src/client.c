@@ -88,10 +88,30 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
 void guac_client_free_layer(guac_client* client, guac_layer* layer) {
 
     /* Release index to pool */
-    guac_pool_free_int(client->__layer_pool, layer->index - 1);
+    guac_pool_free_int(client->__layer_pool, layer->index);
 
     /* Free layer */
     free(layer);
+
+}
+
+guac_stream* guac_client_alloc_stream(guac_client* client) {
+
+    /* Init new stream */
+    guac_stream* allocd_stream = malloc(sizeof(guac_stream));
+    allocd_stream->index = guac_pool_next_int(client->__stream_pool);
+
+    return allocd_stream;
+
+}
+
+void guac_client_free_stream(guac_client* client, guac_stream* stream) {
+
+    /* Release index to pool */
+    guac_pool_free_int(client->__stream_pool, stream->index - 1);
+
+    /* Free stream */
+    free(stream);
 
 }
 
@@ -116,6 +136,9 @@ guac_client* guac_client_alloc() {
     /* Allocate buffer and layer pools */
     client->__buffer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
     client->__layer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
+
+    /* Allocate stream pool */
+    client->__stream_pool = guac_pool_alloc(0);
 
     return client;
 

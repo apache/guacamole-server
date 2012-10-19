@@ -45,6 +45,7 @@
 #include "layer.h"
 #include "pool.h"
 #include "socket.h"
+#include "stream.h"
 #include "timestamp.h"
 
 /**
@@ -352,17 +353,23 @@ struct guac_client {
     guac_client_log_handler* log_error_handler;
 
     /**
-     * Pool of buffer indices. Buffers are simply layers with negative indices. Note that
-     * because guac_pool always gives non-negative indices starting at 0, the output of
-     * this guac_pool will be adjusted.
+     * Pool of buffer indices. Buffers are simply layers with negative indices.
+     * Note that because guac_pool always gives non-negative indices starting
+     * at 0, the output of this guac_pool will be adjusted.
      */
     guac_pool* __buffer_pool;
 
     /**
-     * Pool of layer indices. Note that because guac_pool always gives non-negative indices
-     * starting at 0, the output of this guac_pool will be adjusted.
+     * Pool of layer indices. Note that because guac_pool always gives
+     * non-negative indices starting at 0, the output of this guac_pool will
+     * be adjusted.
      */
     guac_pool* __layer_pool;
+
+    /**
+     * Pool of stream indices.
+     */
+    guac_pool* __stream_pool;
 
 };
 
@@ -487,6 +494,25 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer);
  * @param layer The buffer to return to the pool of available layer.
  */
 void guac_client_free_layer(guac_client* client, guac_layer* layer);
+
+/**
+ * Allocates a new stream. An arbitrary index is automatically assigned
+ * if no previously-allocated stream is available for use.
+ *
+ * @param client The proxy client to allocate the layer buffer for.
+ * @return The next available stream, or a newly allocated stream.
+ */
+guac_stream* guac_client_alloc_stream(guac_client* client);
+
+/**
+ * Returns the given stream to the pool of available streams, such that it
+ * can be reused by any subsequent call to guac_client_alloc_stream().
+ *
+ * @param client The proxy client to return the buffer to.
+ * @param stream The stream to return to the pool of available stream.
+ */
+void guac_client_free_stream(guac_client* client, guac_stream* stream);
+
 
 /**
  * The default Guacamole client layer, layer 0.
