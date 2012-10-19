@@ -233,7 +233,7 @@ guac_socket* guac_socket_open(int fd) {
     data->fd = fd;
     socket->data = data;
 
-    /* FIXME: Set read/write/free handlers */
+    /* Set read/write handlers */
     socket->read_handler   = __guac_socket_fd_read_handler;
     socket->write_handler  = __guac_socket_fd_write_handler;
     socket->select_handler = __guac_socket_fd_select_handler;
