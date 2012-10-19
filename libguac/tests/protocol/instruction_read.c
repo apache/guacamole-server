@@ -114,7 +114,7 @@ void test_instruction_read() {
         CU_ASSERT_STRING_EQUAL(instruction->argv[1], "worldworldworld");
 
         guac_instruction_free(instruction);
-        guac_socket_close(socket);
+        guac_socket_free(socket);
 
     }
  

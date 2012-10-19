@@ -81,7 +81,7 @@ void test_instruction_write() {
         guac_protocol_send_sync(socket, 12345);
         guac_socket_flush(socket);
 
-        guac_socket_close(socket);
+        guac_socket_free(socket);
         exit(0);
     }
 
