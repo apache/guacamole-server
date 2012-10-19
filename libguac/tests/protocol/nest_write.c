@@ -95,7 +95,7 @@ void test_nest_write() {
     else {
 
         char expected[] =
-            "4.nest,1.0,33."
+            "4.nest,1.0,42."
                 "9.clipboard,11.a" UTF8_4 "b" UTF8_4 "c;"
                 "4.sync,5.12345;"
             ";";
