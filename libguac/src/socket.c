@@ -64,6 +64,82 @@ char __guac_socket_BASE64_CHARACTERS[64] = {
     '8', '9', '+', '/'
 };
 
+ssize_t __guac_socket_write(guac_socket* socket,
+        void* buf, size_t count) {
+
+    /* If handler defined, call it. */
+    if (socket->write_handler)
+        return socket->write_handler(socket, buf, count);
+
+    /* Otherwise, pretend everything was written. */
+    return count;
+
+}
+
+/* Write bytes, limit rate */
+ssize_t __guac_socket_fd_write_handler(guac_socket* socket,
+        void* buf, size_t count) {
+
+    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    int retval;
+
+#ifdef __MINGW32__
+    /* MINGW32 WINSOCK only works with send() */
+    retval = send(data->fd, buf, count, 0);
+#else
+    /* Use write() for all other platforms */
+    retval = write(data->fd, buf, count);
+#endif
+
+    /* Record errors in guac_error */
+    if (retval < 0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error writing data to socket";
+    }
+
+    return retval;
+}
+
+
+int __guac_socket_fd_select_handler(guac_socket* socket, int usec_timeout) {
+
+    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+
+    fd_set fds;
+    struct timeval timeout;
+    int retval;
+
+    /* No timeout if usec_timeout is negative */
+    if (usec_timeout < 0)
+        retval = select(data->fd + 1, &fds, NULL, NULL, NULL); 
+
+    /* Handle timeout if specified */
+    else {
+        timeout.tv_sec = usec_timeout/1000000;
+        timeout.tv_usec = usec_timeout%1000000;
+
+        FD_ZERO(&fds);
+        FD_SET(data->fd, &fds);
+
+        retval = select(data->fd + 1, &fds, NULL, NULL, &timeout);
+    }
+
+    /* Properly set guac_error */
+    if (retval <  0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error while waiting for data on socket";
+    }
+
+    if (retval == 0) {
+        guac_error = GUAC_STATUS_INPUT_TIMEOUT;
+        guac_error_message = "Timeout while waiting for data on socket";
+    }
+
+    return retval;
+
+}
+
+
 guac_socket* guac_socket_alloc() {
 
     guac_socket* socket = malloc(sizeof(guac_socket));
@@ -117,6 +193,7 @@ guac_socket* guac_socket_open(int fd) {
     socket->data = data;
 
     /* FIXME: Set read/write/free handlers */
+    socket->write_handler = __guac_socket_fd_write_handler;
 
     return socket;
 
@@ -126,29 +203,6 @@ void guac_socket_free(guac_socket* socket) {
     guac_socket_flush(socket);
     free(socket->__instructionbuf);
     free(socket);
-}
-
-/* Write bytes, limit rate */
-ssize_t __guac_socket_write(guac_socket* socket, const char* buf, int count) {
-
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
-    int retval;
-
-#ifdef __MINGW32__
-    /* MINGW32 WINSOCK only works with send() */
-    retval = send(data->fd, buf, count, 0);
-#else
-    /* Use write() for all other platforms */
-    retval = write(data->fd, buf, count);
-#endif
-
-    /* Record errors in guac_error */
-    if (retval < 0) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Error writing data to socket";
-    }
-
-    return retval;
 }
 
 ssize_t guac_socket_write_int(guac_socket* socket, int64_t i) {
@@ -172,8 +226,7 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str) {
         /* Flush when necessary, return on error */
         if (socket->__written > 8188 /* sizeof(__out_buf) - 4 */) {
 
-            retval = socket->write_handler(socket,
-                    __out_buf, socket->__written);
+            retval = __guac_socket_write(socket, __out_buf, socket->__written);
 
             if (retval < 0)
                 return retval;
@@ -219,7 +272,7 @@ ssize_t __guac_socket_write_base64_triplet(guac_socket* socket, int a, int b, in
 
     /* Flush when necessary, return on error */
     if (socket->__written > 8188 /* sizeof(__out_buf) - 4 */) {
-        retval = socket->write_handler(socket, __out_buf, socket->__written);
+        retval = __guac_socket_write(socket, __out_buf, socket->__written);
         if (retval < 0)
             return retval;
 
@@ -281,7 +334,8 @@ ssize_t guac_socket_flush(guac_socket* socket) {
 
     /* Flush remaining bytes in buffer */
     if (socket->__written > 0) {
-        retval = __guac_socket_write(socket, socket->__out_buf, socket->__written);
+        retval = __guac_socket_write(socket, 
+                socket->__out_buf, socket->__written);
         if (retval < 0)
             return retval;
 
@@ -310,37 +364,12 @@ ssize_t guac_socket_flush_base64(guac_socket* socket) {
 
 int guac_socket_select(guac_socket* socket, int usec_timeout) {
 
-    fd_set fds;
-    struct timeval timeout;
-    int retval;
+    /* Call select handler if defined */
+    if (socket->select_handler)
+        return socket->select_handler(socket, usec_timeout);
 
-    /* No timeout if usec_timeout is negative */
-    if (usec_timeout < 0)
-        retval = select(socket->fd + 1, &fds, NULL, NULL, NULL); 
-
-    /* Handle timeout if specified */
-    else {
-        timeout.tv_sec = usec_timeout/1000000;
-        timeout.tv_usec = usec_timeout%1000000;
-
-        FD_ZERO(&fds);
-        FD_SET(socket->fd, &fds);
-
-        retval = select(socket->fd + 1, &fds, NULL, NULL, &timeout);
-    }
-
-    /* Properly set guac_error */
-    if (retval <  0) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Error while waiting for data on socket";
-    }
-
-    if (retval == 0) {
-        guac_error = GUAC_STATUS_INPUT_TIMEOUT;
-        guac_error_message = "Timeout while waiting for data on socket";
-    }
-
-    return retval;
+    /* Otherwise, assume ready. */
+    return 1;
 
 }
 
