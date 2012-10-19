@@ -220,6 +220,22 @@ void guac_socket_free(guac_socket* socket);
 guac_socket* guac_socket_open(int fd);
 
 /**
+ * Allocates and initializes a new guac_socket which writes all data via
+ * nest instructions to the given existing, open guac_socket.
+ *
+ * If an error occurs while allocating the guac_socket object, NULL is returned,
+ * and guac_error is set appropriately.
+ *
+ * @param parent The guac_socket this new guac_socket should write nest
+ *               instructions to.
+ * @param index The stream index to use for the written nest instructions.
+ * @return A newly allocated guac_socket object associated with the given
+ *         guac_socket and stream index, or NULL if an error occurs while
+ *         allocating the guac_socket object.
+ */
+guac_socket* guac_socket_nest(guac_socket* parent, int index);
+
+/**
  * Writes the given unsigned int to the given guac_socket object. The data
  * written may be buffered until the buffer is flushed automatically or
  * manually.
