@@ -68,6 +68,7 @@ libguac_la_SOURCES =  \
 	pool.c            \
 	protocol.c        \
 	socket.c          \
+	socket-fd.c       \
 	timestamp.c       \
 	unicode.c
 
