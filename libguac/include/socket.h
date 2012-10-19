@@ -47,6 +47,12 @@
  * @file socket.h
  */
 
+typedef struct guac_socket_fd_data {
+
+    int fd;
+
+} guac_socket_fd_data;
+
 typedef struct guac_socket guac_socket;
 
 /**
@@ -74,6 +80,19 @@ typedef ssize_t guac_socket_read_handler(guac_socket* socket,
  */
 typedef ssize_t guac_socket_write_handler(guac_socket* socket,
         void* buf, size_t count);
+
+/**
+ * Generic handler for socket select operations, similar to the POSIX select()
+ * function. When guac_socket_select() is called on a guac_socket, its
+ * guac_socket_select_handler will be invoked, if defined.
+ *
+ * @param socket The guac_socket being selected.
+ * @param usec_timeout The maximum number of microseconds to wait for data, or
+ *                     -1 to potentially wait forever.
+ * @return Positive on success, zero if the timeout elapsed and no data is
+ *         available, negative on error.
+ */
+typedef int guac_socket_select_handler(guac_socket* socket, int usec_timeout);
 
 /**
  * Generic handler for the closing of a socket, modeled after the standard
@@ -107,6 +126,12 @@ struct guac_socket {
      * handler might only get called when the socket is flushed.
      */
     guac_socket_write_handler* write_handler;
+
+    /**
+     * Handler which will be called whenever guac_socket_select is invoked
+     * on this socket.
+     */
+    guac_socket_select_handler* select_handler;
 
     /**
      * Handler which will be called when the socket is free'd (closed).

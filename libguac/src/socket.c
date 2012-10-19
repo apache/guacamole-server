@@ -57,13 +57,14 @@
 #include "error.h"
 
 char __guac_socket_BASE64_CHARACTERS[64] = {
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-    'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/', 
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
+    'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+    't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', '+', '/'
 };
 
-guac_socket* guac_socket_open(int fd) {
+guac_socket* guac_socket_alloc() {
 
     guac_socket* socket = malloc(sizeof(guac_socket));
 
@@ -76,7 +77,7 @@ guac_socket* guac_socket_open(int fd) {
 
     socket->__ready = 0;
     socket->__written = 0;
-    socket->fd = fd;
+    socket->data = NULL;
 
     /* Allocate instruction buffer */
     socket->__instructionbuf_size = 1024;
@@ -95,11 +96,33 @@ guac_socket* guac_socket_open(int fd) {
     socket->__instructionbuf_parse_start = 0;
     socket->__instructionbuf_elementc = 0;
 
+    /* No handlers yet */
+    socket->read_handler   = NULL;
+    socket->write_handler  = NULL;
+    socket->select_handler = NULL;
+    socket->free_handler   = NULL;
+
     return socket;
 
 }
 
-void guac_socket_close(guac_socket* socket) {
+guac_socket* guac_socket_open(int fd) {
+
+    /* Allocate socket and associated data */
+    guac_socket* socket = guac_socket_alloc();
+    guac_socket_fd_data* data = malloc(sizeof(guac_socket_fd_data));
+
+    /* Store file descriptor as socket data */
+    data->fd = fd;
+    socket->data = data;
+
+    /* FIXME: Set read/write/free handlers */
+
+    return socket;
+
+}
+
+void guac_socket_free(guac_socket* socket) {
     guac_socket_flush(socket);
     free(socket->__instructionbuf);
     free(socket);
@@ -108,14 +131,15 @@ void guac_socket_close(guac_socket* socket) {
 /* Write bytes, limit rate */
 ssize_t __guac_socket_write(guac_socket* socket, const char* buf, int count) {
 
+    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
     int retval;
 
 #ifdef __MINGW32__
     /* MINGW32 WINSOCK only works with send() */
-    retval = send(socket->fd, buf, count, 0);
+    retval = send(data->fd, buf, count, 0);
 #else
     /* Use write() for all other platforms */
-    retval = write(socket->fd, buf, count);
+    retval = write(data->fd, buf, count);
 #endif
 
     /* Record errors in guac_error */
