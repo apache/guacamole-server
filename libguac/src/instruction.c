@@ -50,8 +50,8 @@ int __guac_fill_instructionbuf(guac_socket* socket) {
     int retval;
     
     /* Attempt to fill buffer */
-    retval = read(
-        socket->fd,
+    retval = guac_socket_read(
+        socket,
         socket->__instructionbuf + socket->__instructionbuf_used_length,
         socket->__instructionbuf_size - socket->__instructionbuf_used_length
     );

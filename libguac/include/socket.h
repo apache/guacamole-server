@@ -47,17 +47,71 @@
  * @file socket.h
  */
 
+typedef struct guac_socket guac_socket;
+
+/**
+ * Generic read handler for socket read operations, modeled after the standard
+ * POSIX read() function. When set within a guac_socket, a handler of this type
+ * will be called when data needs to be read into the socket.
+ *
+ * @param socket The guac_socket being read from.
+ * @param buf The arbitrary buffer we must populate with data.
+ * @param count The maximum number of bytes to read into the buffer.
+ * @return The number of bytes read, or -1 if an error occurs.
+ */
+typedef ssize_t guac_socket_read_handler(guac_socket* socket,
+        void* buf, size_t count);
+
+/**
+ * Generic write handler for socket write operations, modeled after the standard
+ * POSIX write() function. When set within a guac_socket, a handler of this type
+ * will be called when data needs to be write into the socket.
+ *
+ * @param socket The guac_socket being written to.
+ * @param buf The arbitrary buffer containing data to be written.
+ * @param count The maximum number of bytes to write from the buffer.
+ * @return The number of bytes written, or -1 if an error occurs.
+ */
+typedef ssize_t guac_socket_write_handler(guac_socket* socket,
+        void* buf, size_t count);
+
+/**
+ * Generic handler for the closing of a socket, modeled after the standard
+ * POSIX close() function. When set within a guac_socket, a handler of this type
+ * will be called when the socket is closed.
+ *
+ * @param socket The guac_socket being closed.
+ * @return Zero on success, or -1 if an error occurs.
+ */
+typedef int guac_socket_free_handler(guac_socket* socket);
 
 /**
  * The core I/O object of Guacamole. guac_socket provides buffered input and
  * output as well as convenience methods for efficiently writing base64 data.
  */
-typedef struct guac_socket {
+struct guac_socket {
 
     /**
-     * The file descriptor to be read from / written to.
+     * Arbitrary socket-specific data.
      */
-    int fd; 
+    void* data;
+
+    /**
+     * Handler which will be called when data needs to be read from the socket.
+     */
+    guac_socket_read_handler* read_handler;
+
+    /**
+     * Handler which will be called whenever data is written to this socket.
+     * Note that because guac_socket automatically buffers written data, this
+     * handler might only get called when the socket is flushed.
+     */
+    guac_socket_write_handler* write_handler;
+
+    /**
+     * Handler which will be called when the socket is free'd (closed).
+     */
+    guac_socket_free_handler* free_handler;
     
     /**
      * The number of bytes present in the base64 "ready" buffer.
@@ -114,7 +168,23 @@ typedef struct guac_socket {
      */
     char* __instructionbuf_elementv[64];
 
-} guac_socket;
+};
+
+/**
+ * Allocates a new, completely blank guac_socket. This guac_socket will do
+ * absolutely nothing when used unless its handlers are defined.
+ *
+ * @returns A newly-allocated guac_socket, or NULL if the guac_socket could
+ *          not be allocated.
+ */
+guac_socket* guac_socket_alloc();
+
+/**
+ * Frees the given guac_socket and all associated resources.
+ *
+ * @param socket The guac_socket to free.
+ */
+void guac_socket_free(guac_socket* socket);
 
 /**
  * Allocates and initializes a new guac_socket object with the given open
@@ -161,11 +231,11 @@ ssize_t guac_socket_write_int(guac_socket* socket, int64_t i);
 ssize_t guac_socket_write_string(guac_socket* socket, const char* str);
 
 /**
- * Writes the given binary data to the given guac_socket object as base64-encoded
- * data. The data written may be buffered until the buffer is flushed
+ * Writes the given binary data to the given guac_socket object as base64-
+ * encoded data. The data written may be buffered until the buffer is flushed
  * automatically or manually. Beware that because base64 data is buffered
- * on top of the write buffer already used, a call to guac_socket_flush_base64() must
- * be made before non-base64 writes (or writes of an independent block of
+ * on top of the write buffer already used, a call to guac_socket_flush_base64()
+ * must be made before non-base64 writes (or writes of an independent block of
  * base64 data) can be made.
  *
  * If an error occurs while writing, a non-zero value is returned, and
@@ -177,6 +247,35 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str);
  * @return Zero on success, or non-zero if an error occurs while writing.
  */
 ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t count);
+
+/**
+ * Writes the given data to the specified socket. The data written may be
+ * buffered until the buffer is flushed automatically or manually.
+ *
+ * If an error occurs while writing, a non-zero value is returned, and
+ * guac_error is set appropriately.
+ *
+ * @param socket The guac_socket object to write to.
+ * @param buf A buffer containing the data to write.
+ * @param count The number of bytes to write.
+ * @return Zero on success, or non-zero if an error occurs while writing.
+ */
+ssize_t guac_socket_write(guac_socket* socket, const void* buf, size_t count);
+
+/**
+ * Attempts to read data from the socket, filling up to the specified number
+ * of bytes in the given buffer.
+ *
+ * If an error occurs while writing, a non-zero value is returned, and
+ * guac_error is set appropriately.
+ *
+ * @param socket The guac_socket to read from.
+ * @param buf The buffer to read bytes into.
+ * @param count The maximum number of bytes to read.
+ * @return The number of bytes read, or non-zero if an error occurs while
+ *         reading.
+ */
+ssize_t guac_socket_read(guac_socket* socket, const void* buf, size_t count);
 
 /**
  * Flushes the base64 buffer, writing padding characters as necessary.
@@ -218,15 +317,6 @@ ssize_t guac_socket_flush(guac_socket* socket);
  *         available, negative on error.
  */
 int guac_socket_select(guac_socket* socket, int usec_timeout);
-
-/**
- * Frees resources allocated to the given guac_socket object. Note that this
- * implicitly flush all buffers, but will NOT close the associated file
- * descriptor.
- *
- * @param socket The guac_socket object to close.
- */
-void guac_socket_close(guac_socket* socket);
 
 #endif
 

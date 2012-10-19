@@ -148,12 +148,14 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str) {
         /* Flush when necessary, return on error */
         if (socket->__written > 8188 /* sizeof(__out_buf) - 4 */) {
 
-            retval = __guac_socket_write(socket, __out_buf, socket->__written);
+            retval = socket->write_handler(socket,
+                    __out_buf, socket->__written);
 
             if (retval < 0)
                 return retval;
 
             socket->__written = 0;
+
         }
 
     }
@@ -193,7 +195,7 @@ ssize_t __guac_socket_write_base64_triplet(guac_socket* socket, int a, int b, in
 
     /* Flush when necessary, return on error */
     if (socket->__written > 8188 /* sizeof(__out_buf) - 4 */) {
-        retval = __guac_socket_write(socket, __out_buf, socket->__written);
+        retval = socket->write_handler(socket, __out_buf, socket->__written);
         if (retval < 0)
             return retval;
 
