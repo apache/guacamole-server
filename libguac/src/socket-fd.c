@@ -56,6 +56,12 @@
 #include "socket.h"
 #include "error.h"
 
+typedef struct guac_socket_fd_data {
+
+    int fd;
+
+} guac_socket_fd_data;
+
 ssize_t __guac_socket_fd_read_handler(guac_socket* socket,
         void* buf, size_t count) {
 

@@ -47,12 +47,6 @@
  * @file socket.h
  */
 
-typedef struct guac_socket_fd_data {
-
-    int fd;
-
-} guac_socket_fd_data;
-
 typedef struct guac_socket guac_socket;
 
 /**
