@@ -54,6 +54,7 @@ test_libguac_SOURCES =           \
 	protocol/suite.c             \
 	protocol/instruction_read.c  \
 	protocol/instruction_write.c \
+	protocol/nest_write.c        \
 	util/util_suite.c            \
 	util/guac_pool.c
 

@@ -61,6 +61,7 @@ int register_protocol_suite() {
     if (
         CU_add_test(suite, "instruction-read", test_instruction_read) == NULL
      || CU_add_test(suite, "instruction-write", test_instruction_write) == NULL
+     || CU_add_test(suite, "nest-write", test_nest_write) == NULL
        ) {
         CU_cleanup_registry();
         return CU_get_error();

@@ -50,6 +50,7 @@ int register_protocol_suite();
 
 void test_instruction_read();
 void test_instruction_write();
+void test_nest_write();
 
 #endif
 
