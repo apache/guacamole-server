@@ -715,6 +715,17 @@ int guac_protocol_send_name(guac_socket* socket, const char* name) {
 
 }
 
+int guac_protocol_send_nest(guac_socket* socket, int index,
+        const char* data) {
+
+    return
+           guac_socket_write_string(socket, "4.nest,")
+        || __guac_socket_write_length_int(socket, index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, data)
+        || guac_socket_write_string(socket, ";");
+
+}
 
 int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
         const guac_layer* layer, int x, int y, cairo_surface_t* surface) {

@@ -216,6 +216,22 @@ int guac_protocol_send_disconnect(guac_socket* socket);
 int guac_protocol_send_error(guac_socket* socket, const char* error);
 
 /**
+ * Sends a nest instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param index The integer index of the stram to send the protocol
+ *              data over.
+ * @param data A string containing protocol data, which must be UTF-8
+ *             encoded and null-terminated.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_nest(guac_socket* socket, int index,
+        const char* data);
+
+/**
  * Sends a set instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
