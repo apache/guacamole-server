@@ -76,7 +76,48 @@ ssize_t __guac_socket_write(guac_socket* socket,
 
 }
 
-/* Write bytes, limit rate */
+/* TODO: Implement guac_socket_write (buffered write) */
+
+ssize_t guac_socket_read(guac_socket* socket, void* buf, size_t count) {
+
+    /* If handler defined, call it. */
+    if (socket->read_handler)
+        return socket->read_handler(socket, buf, count);
+
+    /* Otherwise, pretend nothing was read. */
+    return 0;
+
+}
+
+int guac_socket_select(guac_socket* socket, int usec_timeout) {
+
+    /* Call select handler if defined */
+    if (socket->select_handler)
+        return socket->select_handler(socket, usec_timeout);
+
+    /* Otherwise, assume ready. */
+    return 1;
+
+}
+
+ssize_t __guac_socket_fd_read_handler(guac_socket* socket,
+        void* buf, size_t count) {
+
+    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+
+    /* Read from socket */
+    int retval = read(data->fd, buf, count);
+
+    /* Record errors in guac_error */
+    if (retval < 0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error reading data from socket";
+    }
+
+    return retval;
+
+}
+
 ssize_t __guac_socket_fd_write_handler(guac_socket* socket,
         void* buf, size_t count) {
 
@@ -193,6 +234,7 @@ guac_socket* guac_socket_open(int fd) {
     socket->data = data;
 
     /* FIXME: Set read/write/free handlers */
+    socket->read_handler   = __guac_socket_fd_read_handler;
     socket->write_handler  = __guac_socket_fd_write_handler;
     socket->select_handler = __guac_socket_fd_select_handler;
 
@@ -201,6 +243,11 @@ guac_socket* guac_socket_open(int fd) {
 }
 
 void guac_socket_free(guac_socket* socket) {
+
+    /* Call free handler if defined */
+    if (socket->free_handler)
+        socket->free_handler(socket);
+
     guac_socket_flush(socket);
     free(socket->__instructionbuf);
     free(socket);
@@ -359,18 +406,6 @@ ssize_t guac_socket_flush_base64(guac_socket* socket) {
     }
 
     return 0;
-
-}
-
-
-int guac_socket_select(guac_socket* socket, int usec_timeout) {
-
-    /* Call select handler if defined */
-    if (socket->select_handler)
-        return socket->select_handler(socket, usec_timeout);
-
-    /* Otherwise, assume ready. */
-    return 1;
 
 }
 

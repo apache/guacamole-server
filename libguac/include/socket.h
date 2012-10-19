@@ -300,7 +300,7 @@ ssize_t guac_socket_write(guac_socket* socket, const void* buf, size_t count);
  * @return The number of bytes read, or non-zero if an error occurs while
  *         reading.
  */
-ssize_t guac_socket_read(guac_socket* socket, const void* buf, size_t count);
+ssize_t guac_socket_read(guac_socket* socket, void* buf, size_t count);
 
 /**
  * Flushes the base64 buffer, writing padding characters as necessary.
