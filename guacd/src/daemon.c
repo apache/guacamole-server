@@ -87,7 +87,7 @@ void guacd_handle_connection(int fd) {
         guacd_log_guac_error("Error reading \"select\"");
 
         /* Free resources */
-        guac_socket_close(socket);
+        guac_socket_free(socket);
         return;
     }
 
@@ -99,7 +99,7 @@ void guacd_handle_connection(int fd) {
                 select->argc);
 
         /* Free resources */
-        guac_socket_close(socket);
+        guac_socket_free(socket);
         return;
     }
 
@@ -115,7 +115,7 @@ void guacd_handle_connection(int fd) {
         guacd_log_guac_error("Error loading client plugin");
 
         /* Free resources */
-        guac_socket_close(socket);
+        guac_socket_free(socket);
         return;
     }
 
@@ -129,7 +129,7 @@ void guacd_handle_connection(int fd) {
         if (guac_client_plugin_close(plugin))
             guacd_log_guac_error("Error closing client plugin");
 
-        guac_socket_close(socket);
+        guac_socket_free(socket);
         return;
     }
 
@@ -144,7 +144,7 @@ void guacd_handle_connection(int fd) {
         if (guac_client_plugin_close(plugin))
             guacd_log_guac_error("Error closing client plugin");
 
-        guac_socket_close(socket);
+        guac_socket_free(socket);
         return;
     }
 
@@ -170,7 +170,7 @@ void guacd_handle_connection(int fd) {
         if (guac_client_plugin_close(plugin))
             guacd_log_guac_error("Error closing client plugin");
 
-        guac_socket_close(socket);
+        guac_socket_free(socket);
         return;
     }
 
@@ -187,7 +187,7 @@ void guacd_handle_connection(int fd) {
         guacd_log_error("Error closing client plugin");
 
     /* Close socket */
-    guac_socket_close(socket);
+    guac_socket_free(socket);
 
 }
 
