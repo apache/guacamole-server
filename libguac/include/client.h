@@ -78,6 +78,22 @@ typedef int guac_client_key_handler(guac_client* client, int keysym, int pressed
 typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
 
 /**
+ * Handler for Guacamole screen size events.
+ */
+typedef int guac_client_size_handler(guac_client* client,
+        int width, int height);
+
+/**
+ * Handler for Guacamole audio format events.
+ */
+typedef int guac_client_audio_handler(guac_client* client, char* mimetype);
+
+/**
+ * Handler for Guacamole video format events.
+ */
+typedef int guac_client_video_handler(guac_client* client, char* mimetype);
+
+/**
  * Handler for freeing up any extra data allocated by the client
  * implementation.
  */
@@ -279,6 +295,57 @@ struct guac_client {
      * @endcode
      */
     guac_client_clipboard_handler* clipboard_handler;
+
+    /**
+     * Handler for size events sent by the Guacamole web-client.
+     *
+     * The handler takes an integer width and integer height, representing
+     * the current visible screen area of the client.
+     *
+     * Example:
+     * @code
+     *     int size_handler(guac_client* client, int width, int height);
+     *
+     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *         client->size_handler = size_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_size_handler* size_handler;
+
+    /**
+     * Handler for audio format events sent by the Guacamole web-client.
+     *
+     * The handler takes the mimetype of the audio format being advertised
+     * as supported by the client.
+     *
+     * Example:
+     * @code
+     *     int audio_handler(guac_client* client, char* mimetype);
+     *
+     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *         client->audio_handler = audio_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_audio_handler* audio_handler;
+
+    /**
+     * Handler for video format events sent by the Guacamole web-client.
+     *
+     * The handler takes the mimetype of the video format being advertised
+     * as supported by the client.
+     *
+     * Example:
+     * @code
+     *     int video_handler(guac_client* client, char* mimetype);
+     *
+     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *         client->video_handler = video_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_video_handler* video_handler;
 
     /**
      * Handler for freeing data when the client is being unloaded.

@@ -100,6 +100,27 @@ int __guac_handle_key(guac_client* client, guac_instruction* instruction);
 int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction);
 
 /**
+ * Internal initial handler for the size instruction. When a size instruction
+ * is received, this handler will be called. The client's size handler will
+ * be invoked if defined.
+ */
+int __guac_handle_size(guac_client* client, guac_instruction* instruction);
+
+/**
+ * Internal initial handler for the video instruction. When a video instruction
+ * is received, this handler will be called. The client's video handler will
+ * be invoked if defined.
+ */
+int __guac_handle_video(guac_client* client, guac_instruction* instruction);
+
+/**
+ * Internal initial handler for the audio instruction. When a audio instruction
+ * is received, this handler will be called. The client's audio handler will
+ * be invoked if defined.
+ */
+int __guac_handle_audio(guac_client* client, guac_instruction* instruction);
+
+/**
  * Internal initial handler for the disconnect instruction. When a disconnect instruction
  * is received, this handler will be called. Disconnect instructions are automatically
  * handled, thus there is no client handler for disconnect instruction.
