@@ -42,6 +42,7 @@
 #include <freerdp/plugins/cliprdr.h>
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 
 #include "client.h"
 #include "rdp_cliprdr.h"
