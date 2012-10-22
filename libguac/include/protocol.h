@@ -181,17 +181,6 @@ typedef enum guac_line_join_style {
 int guac_protocol_send_args(guac_socket* socket, const char** args);
 
 /**
- * Sends a begin instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_begin(guac_socket* socket);
-
-/**
  * Sends a connect instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
