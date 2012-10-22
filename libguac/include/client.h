@@ -171,6 +171,42 @@ typedef enum guac_client_state {
 } guac_client_state;
 
 /**
+ * Information exposed by the remote client during the connection handshake
+ * which can be used by a client plugin.
+ */
+typedef struct guac_client_info {
+
+    /**
+     * The number of pixels the remote client requests for the display width.
+     * This need not be honored by a client plugin implementation, but if the
+     * underlying protocol of the client plugin supports dynamic sizing of the
+     * screen, honoring the display size request is recommended.
+     */
+    int optimal_width;
+
+    /**
+     * The number of pixels the remote client requests for the display height.
+     * This need not be honored by a client plugin implementation, but if the
+     * underlying protocol of the client plugin supports dynamic sizing of the
+     * screen, honoring the display size request is recommended.
+     */
+    int optimal_height;
+
+    /**
+     * NULL-terminated array of client-supported audio mimetypes. If the client
+     * does not support audio at all, this will be NULL.
+     */
+    char* audio_mimetypes;
+
+    /**
+     * NULL-terminated array of client-supported video mimetypes. If the client
+     * does not support video at all, this will be NULL.
+     */
+    char* video_mimetypes;
+
+} guac_client_info;
+
+/**
  * Guacamole proxy client.
  *
  * Represents a Guacamole proxy client (the client which communicates to
@@ -206,6 +242,12 @@ struct guac_client {
      * client.
      */
     guac_timestamp last_sent_timestamp;
+
+    /**
+     * Information structure containing properties exposed by the remote
+     * client during the initial handshake process.
+     */
+    guac_client_info info;
 
     /**
      * Arbitrary reference to proxy client-specific data. Implementors of a
