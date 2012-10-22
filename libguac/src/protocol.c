@@ -399,6 +399,9 @@ int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
 
 }
 
+int guac_protocol_send_begin(guac_socket* socket) {
+    return guac_socket_write_string(socket, "5.begin;");
+}
 
 int guac_protocol_send_cfill(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
