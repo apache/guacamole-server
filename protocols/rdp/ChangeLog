@@ -1,3 +1,7 @@
+2012-10-22 Michael Jumper <zhangmzike@users.sourceforge.net>
+
+	* Use guac_client_info to choose optimal size if size not overridden
+
 2012-08-31 Laurent Meunier <laurent@deltalima.net>
 
 	* Use configured color depth
