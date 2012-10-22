@@ -106,8 +106,8 @@ void guacd_log_guac_error(const char* message) {
     if (guac_error_message != NULL)
         guacd_log_error("%s: %s: %s",
                 message,
-                guac_error_message,
-                guac_status_string(guac_error));
+                guac_status_string(guac_error),
+                guac_error_message);
 
     /* Otherwise just log with standard status string */
     else
@@ -123,8 +123,8 @@ void guacd_client_log_guac_error(guac_client* client, const char* message) {
     if (guac_error_message != NULL)
         guac_client_log_error(client, "%s: %s: %s",
                 message,
-                guac_error_message,
-                guac_status_string(guac_error));
+                guac_status_string(guac_error),
+                guac_error_message);
 
     /* Otherwise just log with standard status string */
     else
