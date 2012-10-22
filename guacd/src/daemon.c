@@ -72,6 +72,9 @@ void guacd_handle_connection(int fd) {
     guac_client* client;
     guac_client_plugin* plugin;
     guac_instruction* select;
+    guac_instruction* size;
+    guac_instruction* audio;
+    guac_instruction* video;
     guac_instruction* connect;
     int init_result;
 
@@ -133,6 +136,45 @@ void guacd_handle_connection(int fd) {
         return;
     }
 
+    /* Get optimal screen size */
+    size = guac_instruction_expect(
+            socket, GUACD_USEC_TIMEOUT, "size");
+    if (size == NULL) {
+
+        /* Log error */
+        guacd_log_guac_error("Error reading \"size\"");
+
+        /* Free resources */
+        guac_socket_free(socket);
+        return;
+    }
+
+    /* Get supported audio formats */
+    audio = guac_instruction_expect(
+            socket, GUACD_USEC_TIMEOUT, "audio");
+    if (audio == NULL) {
+
+        /* Log error */
+        guacd_log_guac_error("Error reading \"audio\"");
+
+        /* Free resources */
+        guac_socket_free(socket);
+        return;
+    }
+
+    /* Get supported video formats */
+    video = guac_instruction_expect(
+            socket, GUACD_USEC_TIMEOUT, "video");
+    if (video == NULL) {
+
+        /* Log error */
+        guacd_log_guac_error("Error reading \"video\"");
+
+        /* Free resources */
+        guac_socket_free(socket);
+        return;
+    }
+
     /* Get args from connect instruction */
     connect = guac_instruction_expect(
             socket, GUACD_USEC_TIMEOUT, "connect");
@@ -153,6 +195,10 @@ void guacd_handle_connection(int fd) {
     client->socket = socket;
     client->log_info_handler = guacd_client_log_info;
     client->log_error_handler = guacd_client_log_error;
+
+    /* Parse optimal screen dimensions from size instruction */
+    client->info.optimal_width  = atoi(size->argv[0]);
+    client->info.optimal_height = atoi(size->argv[1]);
 
     /* Init client */
     init_result = guac_client_plugin_init_client(plugin,
