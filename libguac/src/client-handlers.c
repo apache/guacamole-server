@@ -51,8 +51,6 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"clipboard",  __guac_handle_clipboard},
    {"disconnect", __guac_handle_disconnect},
    {"size",       __guac_handle_size},
-   {"audio",      __guac_handle_audio},
-   {"video",      __guac_handle_video},
    {NULL,         NULL}
 };
 
@@ -124,24 +122,6 @@ int __guac_handle_size(guac_client* client, guac_instruction* instruction) {
             client,
             atoi(instruction->argv[0]), /* width */
             atoi(instruction->argv[1])  /* height */
-        );
-    return 0;
-}
-
-int __guac_handle_video(guac_client* client, guac_instruction* instruction) {
-    if (client->video_handler)
-        return client->video_handler(
-            client,
-            instruction->argv[0] /* mimetype */
-        );
-    return 0;
-}
-
-int __guac_handle_audio(guac_client* client, guac_instruction* instruction) {
-    if (client->audio_handler)
-        return client->audio_handler(
-            client,
-            instruction->argv[0] /* mimetype */
         );
     return 0;
 }

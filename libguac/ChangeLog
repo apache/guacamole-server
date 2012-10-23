@@ -1,7 +1,7 @@
 2012-10-22 Michael Jumper <zhangmzike@users.sourceforge.net>
 
 	* Implement protocol nesting (via "nest" instruction)
-	* Add size/audio/video events
+	* Add size events
 	* Add guac_client_info structure to be populated during handshake
 
 2012-07-23 Michael Jumper <zhangmaike@users.sourceforge.net>
