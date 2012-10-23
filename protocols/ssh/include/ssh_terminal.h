@@ -194,7 +194,9 @@ typedef struct ssh_guac_terminal_color {
 
 extern const ssh_guac_terminal_color ssh_guac_terminal_palette[16];
 
-ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client);
+ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client,
+        int width, int height);
+
 void ssh_guac_terminal_free(ssh_guac_terminal* term);
 
 int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size);

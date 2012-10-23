@@ -109,7 +109,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_socket* socket = client->socket;
 
     ssh_guac_client_data* client_data = malloc(sizeof(ssh_guac_client_data));
-    ssh_guac_terminal* term = ssh_guac_terminal_create(client);
+    ssh_guac_terminal* term = ssh_guac_terminal_create(client,
+            client->info.optimal_width, client->info.optimal_height);
 
     /* Init client data */
     client->data = client_data;

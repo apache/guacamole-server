@@ -73,7 +73,8 @@ const ssh_guac_terminal_color ssh_guac_terminal_palette[16] = {
 
 };
 
-ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
+ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client,
+        int width, int height) {
 
     int row, col;
 
@@ -94,39 +95,6 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
     memset(term->glyphs, 0, sizeof(term->glyphs));
     term->glyph_stroke = guac_client_alloc_buffer(client);
     term->filled_glyphs = guac_client_alloc_buffer(client);
-
-    term->cursor_row = 0;
-    term->cursor_col = 0;
-    term->cursor_layer = guac_client_alloc_layer(client);
-
-    term->term_width = 100;
-    term->term_height = 37;
-    term->char_handler = ssh_guac_terminal_echo; 
-
-    term->scroll_start = 0;
-    term->scroll_end = term->term_height - 1;
-
-    /* Create scrollback buffer */
-    term->scrollback = malloc(term->term_height * sizeof(ssh_guac_terminal_char*));
-
-    /* Init buffer */
-    for (row = 0; row < term->term_height; row++) {
-
-        /* Create row */
-        ssh_guac_terminal_char* current_row =
-            term->scrollback[row] = malloc(term->term_width * sizeof(ssh_guac_terminal_char));
-
-        /* Init row */
-        for (col = 0; col < term->term_width; col++) {
-
-            /* Empty character, default colors */
-            current_row[col].value = '\0';
-            current_row[col].foreground = term->default_foreground;
-            current_row[col].background = term->default_background;
-
-        }
-
-    }
 
     /* Get font */
     term->font_desc = pango_font_description_new();
@@ -155,6 +123,40 @@ ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client) {
     term->char_height =
         (pango_font_metrics_get_descent(metrics)
             + pango_font_metrics_get_ascent(metrics)) / PANGO_SCALE;
+
+
+    term->cursor_row = 0;
+    term->cursor_col = 0;
+    term->cursor_layer = guac_client_alloc_layer(client);
+
+    term->term_width = width / term->char_width;
+    term->term_height = height / term->char_height;
+    term->char_handler = ssh_guac_terminal_echo; 
+
+    term->scroll_start = 0;
+    term->scroll_end = term->term_height - 1;
+
+    /* Create scrollback buffer */
+    term->scrollback = malloc(term->term_height * sizeof(ssh_guac_terminal_char*));
+
+    /* Init buffer */
+    for (row = 0; row < term->term_height; row++) {
+
+        /* Create row */
+        ssh_guac_terminal_char* current_row =
+            term->scrollback[row] = malloc(term->term_width * sizeof(ssh_guac_terminal_char));
+
+        /* Init row */
+        for (col = 0; col < term->term_width; col++) {
+
+            /* Empty character, default colors */
+            current_row[col].value = '\0';
+            current_row[col].foreground = term->default_foreground;
+            current_row[col].background = term->default_background;
+
+        }
+
+    }
 
     /* Clear with background color */
     ssh_guac_terminal_clear(term,
