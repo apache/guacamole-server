@@ -1,3 +1,7 @@
+2012-10-24 Michael Jumper <zhangmzike@users.sourceforge.net>
+
+	* Implement audio instruction
+
 2012-10-22 Michael Jumper <zhangmzike@users.sourceforge.net>
 
 	* Implement protocol nesting (via "nest" instruction)
