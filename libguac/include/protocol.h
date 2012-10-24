@@ -271,6 +271,25 @@ int guac_protocol_send_select(guac_socket* socket, const char* protocol);
  */
 int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
 
+/* MEDIA INSTRUCTIONS */
+
+/**
+ * Sends an audio instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param channel The index of the audio channel the sound should play on.
+ * @param mimetype The mimetype of the data being sent.
+ * @param duration The duration of the sound being sent, in milliseconds.
+ * @param data The audio data to be sent.
+ * @param size The number of bytes of audio data to send.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_audio(guac_socket* socket, int channel,
+        const char* mimetype, int duration, void* data, int size);
+
 /* DRAWING INSTRUCTIONS */
 
 /**
