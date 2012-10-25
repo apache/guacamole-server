@@ -1,3 +1,8 @@
+2012-10-25 Michael Jumper <zhangmzike@users.sourceforge.net>
+
+	* Implement video instruction
+	* Implement chunked write versions of audio/video functions
+
 2012-10-24 Michael Jumper <zhangmzike@users.sourceforge.net>
 
 	* Implement audio instruction
