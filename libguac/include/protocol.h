@@ -290,6 +290,23 @@ int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
 int guac_protocol_send_audio(guac_socket* socket, int channel,
         const char* mimetype, int duration, void* data, int size);
 
+/**
+ * Sends an video instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param layer The destination layer.
+ * @param mimetype The mimetype of the data being sent.
+ * @param duration The duration of the video being sent, in milliseconds.
+ * @param data The video data to be sent.
+ * @param size The number of bytes of video data to send.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_video(guac_socket* socket, const guac_layer* layer,
+        const char* mimetype, int duration, void* data, int size);
+
 /* DRAWING INSTRUCTIONS */
 
 /**

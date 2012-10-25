@@ -944,4 +944,23 @@ int guac_protocol_send_transform(guac_socket* socket, const guac_layer* layer,
 
 }
 
+int guac_protocol_send_video(guac_socket* socket, const guac_layer* layer,
+        const char* mimetype, int duration, void* data, int size) {
 
+    int base64_length = (size + 2) / 3 * 4;
+
+    return
+           guac_socket_write_string(socket, "5.video,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, duration)
+        || guac_socket_write_string(socket, ",")
+        || guac_socket_write_int(socket, base64_length)
+        || guac_socket_write_string(socket, ".")
+        || guac_socket_write_base64(socket, data, size)
+        || guac_socket_flush_base64(socket)
+        || guac_socket_write_string(socket, ";");
+
+}
