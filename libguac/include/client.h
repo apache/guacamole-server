@@ -196,13 +196,13 @@ typedef struct guac_client_info {
      * NULL-terminated array of client-supported audio mimetypes. If the client
      * does not support audio at all, this will be NULL.
      */
-    char* audio_mimetypes;
+    const char** audio_mimetypes;
 
     /**
      * NULL-terminated array of client-supported video mimetypes. If the client
      * does not support video at all, this will be NULL.
      */
-    char* video_mimetypes;
+    const char** video_mimetypes;
 
 } guac_client_info;
 
