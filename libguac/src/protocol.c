@@ -665,6 +665,48 @@ int guac_protocol_send_error(guac_socket* socket, const char* error) {
 }
 
 
+int guac_protocol_send_file(guac_socket* socket, const char* name,
+        const char* mimetype, void* data, int size) {
+
+    return
+           guac_protocol_send_file_header(socket, name,
+                mimetype, size)
+        || guac_protocol_send_file_data(socket, data, size)
+        || guac_protocol_send_file_end(socket);
+
+}
+
+int guac_protocol_send_file_header(guac_socket* socket, const char* name,
+        const char* mimetype, int size) {
+
+    int base64_length = (size + 2) / 3 * 4;
+
+    return
+           guac_socket_write_string(socket, "4.file,")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || guac_socket_write_int(socket, base64_length)
+        || guac_socket_write_string(socket, ".");
+
+}
+
+int guac_protocol_send_file_data(guac_socket* socket, void* data, int count) {
+
+    return guac_socket_write_base64(socket, data, count);
+
+}
+
+int guac_protocol_send_file_end(guac_socket* socket) {
+
+    return
+           guac_socket_flush_base64(socket)
+        || guac_socket_write_string(socket, ";");
+
+}
+
+
 int guac_protocol_send_identity(guac_socket* socket, const guac_layer* layer) {
 
     return
