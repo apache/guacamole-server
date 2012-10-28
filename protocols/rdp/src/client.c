@@ -112,7 +112,14 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     CLRCONV* clrconv;
 
     /* Load clipboard plugin */
-    freerdp_channels_load_plugin(channels, instance->settings, "cliprdr", NULL);
+    if (freerdp_channels_load_plugin(channels, instance->settings,
+                "cliprdr", NULL))
+        guac_client_log_error(client, "Failed to load cliprdr plugin.");
+
+    /* Load sound plugin */
+    if (freerdp_channels_load_plugin(channels, instance->settings,
+                "guac_rdpsnd", client))
+        guac_client_log_error(client, "Failed to load guac_rdpsnd plugin.");
 
     /* Init color conversion structure */
     clrconv = xnew(CLRCONV);

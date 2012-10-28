@@ -37,18 +37,15 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -Iinclude
+AM_CFLAGS = -Werror -Wall -pedantic -Iinclude
 
 lib_LTLIBRARIES = libguac-client-rdp.la
-freerdp_LTLIBRARIES = guac_rdpsnd.la
 
 libguac_client_rdp_la_SOURCES = src/client.c src/rdp_bitmap.c src/rdp_glyph.c src/rdp_pointer.c src/rdp_gdi.c src/guac_handlers.c src/rdp_cliprdr.c \
 				 src/rdp_keymap.c \
 				 src/rdp_keymap_base.c \
 				 src/rdp_keymap_en_us.c \
 				 src/default_pointer.c
-
-guac_rdpsnd_la_SOURCES = guac_rdpsnd/rdpsnd_main.c
 
 noinst_HEADERS =              \
 	include/client.h          \
@@ -59,13 +56,9 @@ noinst_HEADERS =              \
 	include/rdp_gdi.h         \
 	include/rdp_glyph.h       \
 	include/rdp_keymap.h      \
-	include/rdp_pointer.h     \
-	guac_rdpsnd/rdpsnd_main.h
+	include/rdp_pointer.h
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0
-guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared
-
-freerdpdir = ${libdir}/freerdp/
 
 EXTRA_DIST = LICENSE
 
