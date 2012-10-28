@@ -42,18 +42,29 @@ AM_CFLAGS = -Werror -Wall -Iinclude
 lib_LTLIBRARIES = libguac-client-rdp.la
 freerdp_LTLIBRARIES = guac_rdpsnd.la
 
-libguac_client_rdp_la_SOURCES = src/client.c src/rdp_bitmap.c src/rdp_glyph.c src/rdp_pointer.c src/rdp_gdi.c src/guac_handlers.c src/rdp_cliprdr.c \
-				 src/rdp_keymap.c \
-				 src/rdp_keymap_base.c \
-				 src/rdp_keymap_en_us.c \
-				 src/default_pointer.c
+libguac_client_rdp_la_SOURCES = \
+	src/audio.c            \
+	src/client.c           \
+	src/rdp_bitmap.c       \
+	src/rdp_glyph.c        \
+	src/rdp_pointer.c      \
+	src/rdp_gdi.c          \
+	src/guac_handlers.c    \
+	src/ogg_encoder.c      \
+	src/rdp_cliprdr.c      \
+	src/rdp_keymap.c       \
+	src/rdp_keymap_base.c  \
+	src/rdp_keymap_en_us.c \
+	src/default_pointer.c
 
 guac_rdpsnd_la_SOURCES = guac_rdpsnd/messages.c guac_rdpsnd/service.c
 
 noinst_HEADERS =              \
+	include/audio.h           \
 	include/client.h          \
 	include/default_pointer.h \
 	include/guac_handlers.h   \
+	include/ogg_encoder.h     \
 	include/rdp_bitmap.h      \
 	include/rdp_cliprdr.h     \
 	include/rdp_gdi.h         \
