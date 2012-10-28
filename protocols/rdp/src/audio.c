@@ -47,6 +47,7 @@ audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
 
     /* Allocate stream */
     audio_stream* audio = (audio_stream*) malloc(sizeof(audio_stream));
+    audio->client = client;
 
     /* Reset buffer stats */
     audio->used = 0;
