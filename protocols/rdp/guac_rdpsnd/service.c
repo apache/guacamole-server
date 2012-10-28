@@ -31,6 +31,7 @@
 
 #include <guacamole/client.h>
 
+#include "audio.h"
 #include "service.h"
 #include "messages.h"
 
@@ -41,12 +42,12 @@ DEFINE_SVC_PLUGIN(guac_rdpsnd, "rdpsnd",
 
 void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin) {
 
-    /* Get client from plugin */
-    guac_client* client = (guac_client*)
+    /* Get audio stream from plugin */
+    audio_stream* audio = (audio_stream*)
         plugin->channel_entry_points.pExtendedData;
 
     /* Log that sound has been loaded */
-    guac_client_log_info(client, "guac_rdpsnd connected.");
+    guac_client_log_info(audio->client, "guac_rdpsnd connected.");
 
 }
 
@@ -63,15 +64,15 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
 
 	guac_rdpsndPlugin* rdpsnd = (guac_rdpsndPlugin*) plugin;
 
-    /* Get client from plugin */
-    guac_client* client = (guac_client*)
+    /* Get audio stream from plugin */
+    audio_stream* audio = (audio_stream*)
         plugin->channel_entry_points.pExtendedData;
 
 	uint8 msgType;
 	uint16 BodySize;
 
 	if (rdpsnd->expectingWave) {
-        rdpsnd_process_message_wave(rdpsnd, client, input_stream);
+        rdpsnd_process_message_wave(rdpsnd, audio, input_stream);
 		return;
 	}
 
@@ -83,23 +84,23 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
 	switch (msgType) {
 
 		case SNDC_FORMATS:
-			guac_rdpsnd_process_message_formats(rdpsnd, client, input_stream);
+			guac_rdpsnd_process_message_formats(rdpsnd, audio, input_stream);
 			break;
 
 		case SNDC_TRAINING:
-			guac_rdpsnd_process_message_training(rdpsnd, client, input_stream);
+			guac_rdpsnd_process_message_training(rdpsnd, audio, input_stream);
 			break;
 
 		case SNDC_WAVE:
-			guac_rdpsnd_process_message_wave_info(rdpsnd, client, input_stream, BodySize);
+			guac_rdpsnd_process_message_wave_info(rdpsnd, audio, input_stream, BodySize);
 			break;
 
 		case SNDC_CLOSE:
-			guac_rdpsnd_process_message_close(rdpsnd, client);
+			guac_rdpsnd_process_message_close(rdpsnd, audio);
 			break;
 
 		case SNDC_SETVOLUME:
-			guac_rdpsnd_process_message_setvolume(rdpsnd, client, input_stream);
+			guac_rdpsnd_process_message_setvolume(rdpsnd, audio, input_stream);
 			break;
 
 		default:

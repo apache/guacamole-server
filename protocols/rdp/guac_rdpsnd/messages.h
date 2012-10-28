@@ -54,22 +54,22 @@ typedef struct rdpsndFormat {
 } rdpsndFormat;
 
 void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* data_in);
+        audio_stream* audio, STREAM* data_in);
 
 void guac_rdpsnd_process_message_training(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* data_in);
+        audio_stream* audio, STREAM* data_in);
 
 void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* data_in, uint16 BodySize);
+        audio_stream* audio, STREAM* data_in, uint16 BodySize);
 
 void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* data_in);
+        audio_stream* audio, STREAM* data_in);
 
 void guac_rdpsnd_process_message_setvolume(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* data_in);
+        audio_stream* audio, STREAM* data_in);
 
 void guac_rdpsnd_process_message_close(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client);
+        audio_stream* audio);
 
 #endif
 

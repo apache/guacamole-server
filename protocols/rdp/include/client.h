@@ -45,6 +45,7 @@
 
 #include <guacamole/client.h>
 
+#include "audio.h"
 #include "rdp_keymap.h"
 
 /**
@@ -137,6 +138,11 @@ typedef struct rdp_guac_client_data {
      * The current text (NOT Unicode) clipboard contents.
      */
     char* clipboard;
+
+    /**
+     * Audio output, if any.
+     */
+    audio_stream* audio;
 
 } rdp_guac_client_data;
 

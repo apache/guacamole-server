@@ -61,6 +61,9 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 
+#include "audio.h"
+#include "ogg_encoder.h"
+
 #include "client.h"
 #include "guac_handlers.h"
 #include "rdp_keymap.h"
@@ -110,16 +113,43 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     rdpPointer* pointer;
     rdpPrimaryUpdate* primary;
     CLRCONV* clrconv;
+    int i;
+
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) client->data;
 
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
                 "cliprdr", NULL))
         guac_client_log_error(client, "Failed to load cliprdr plugin.");
 
-    /* Load sound plugin */
-    if (freerdp_channels_load_plugin(channels, instance->settings,
-                "guac_rdpsnd", client))
-        guac_client_log_error(client, "Failed to load guac_rdpsnd plugin.");
+    /* Choose an encoding */
+    for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
+
+        const char* mimetype = client->info.audio_mimetypes[i];
+
+        // If Ogg is supported, done.
+        if (strcmp(mimetype, "audio/ogg") == 0) {
+            guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
+            guac_client_data->audio = audio_stream_alloc(client, ogg_encoder);
+            break;
+        }
+
+    }
+
+    /* If an encoding is available, load the sound plugin */
+    if (guac_client_data->audio != NULL) {
+
+        /* Load sound plugin */
+        if (freerdp_channels_load_plugin(channels, instance->settings,
+                    "guac_rdpsnd", guac_client_data->audio))
+            guac_client_log_error(client,
+                    "Failed to load guac_rdpsnd plugin.");
+
+    }
+    else
+        guac_client_log_info(client,
+                "No available audio encoding. Sound disabled.");
 
     /* Init color conversion structure */
     clrconv = xnew(CLRCONV);
@@ -425,6 +455,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->mouse_button_mask = 0;
     guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
     guac_client_data->clipboard = NULL;
+    guac_client_data->audio = NULL;
 
     /* Clear keysym state mapping and keymap */
     memset(guac_client_data->keysym_state, 0,

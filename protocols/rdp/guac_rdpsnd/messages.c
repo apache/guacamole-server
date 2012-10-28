@@ -31,6 +31,7 @@
 
 #include <guacamole/client.h>
 
+#include "audio.h"
 #include "service.h"
 #include "messages.h"
 
@@ -39,7 +40,7 @@
 /* receives a list of server supported formats and returns a list
    of client supported formats */
 void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* input_stream) {
+        audio_stream* audio, STREAM* input_stream) {
 
 	uint16 wNumberOfFormats;
 	uint16 nFormat;
@@ -96,7 +97,7 @@ void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
 
 		if (format->wFormatTag == WAVE_FORMAT_PCM) {
 
-            guac_client_log_info(client,
+            guac_client_log_info(audio->client,
                     "Accepted format: %i-bit PCM with %i channels at "
                     "%i Hz",
                     format->wBitsPerSample,
@@ -143,7 +144,7 @@ void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
 
 /* server is getting a feel of the round trip time */
 void guac_rdpsnd_process_message_training(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* input_stream) {
+        audio_stream* audio, STREAM* input_stream) {
 
 	uint16 wTimeStamp;
 	uint16 wPackSize;
@@ -165,7 +166,7 @@ void guac_rdpsnd_process_message_training(guac_rdpsndPlugin* rdpsnd,
 
 }
 
-void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd, guac_client* client, STREAM* input_stream, uint16 BodySize) {
+void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd, audio_stream* audio, STREAM* input_stream, uint16 BodySize) {
 
 	uint16 wFormatNo;
 
@@ -184,7 +185,7 @@ void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd, guac_clien
 
 /* header is not removed from data in this function */
 void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* input_stream) {
+        audio_stream* audio, STREAM* input_stream) {
 
 	rdpSvcPlugin* plugin = (rdpSvcPlugin*)rdpsnd;
 
@@ -202,7 +203,7 @@ void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
     buffer = stream_get_head(input_stream);
     size = stream_get_size(input_stream);
 
-    guac_client_log_info(client, "Got sound: %i bytes.", size);
+    guac_client_log_info(audio->client, "Got sound: %i bytes.", size);
 
 	output_stream = stream_new(8);
 	stream_write_uint8(output_stream, SNDC_WAVECONFIRM);
@@ -217,7 +218,7 @@ void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_process_message_setvolume(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client, STREAM* input_stream) {
+        audio_stream* audio, STREAM* input_stream) {
 
     /* Ignored for now */
 	uint32 dwVolume;
@@ -226,7 +227,7 @@ void guac_rdpsnd_process_message_setvolume(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_process_message_close(guac_rdpsndPlugin* rdpsnd,
-        guac_client* client) {
+        audio_stream* audio) {
 	rdpsnd->plugin.interval_ms = 10;
 }
 
