@@ -59,51 +59,42 @@ typedef struct guac_rdpsndPlugin {
 	rdpSvcPlugin plugin;
 
 	uint8 cBlockNo;
-	rdpsndFormat* supported_formats;
-	int n_supported_formats;
-	int current_format;
 
 	boolean expectingWave;
 	uint8 waveData[4];
 	uint16 waveDataSize;
 	uint32 wTimeStamp; /* server timestamp */
-	uint32 wave_timestamp; /* client timestamp */
-
-	boolean is_open;
-	uint32 close_timestamp;
-
-	uint16 fixed_format;
-	uint16 fixed_channel;
-	uint32 fixed_rate;
-	int latency;
 
 } guac_rdpsndPlugin ;
+
+
+void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin);
 
 void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
         STREAM* data_in);
 
-void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
-        STREAM* data_in);
-
-void guac_rdpsnd_process_message_training(guac_rdpsndPlugin* rdpsnd,
-        STREAM* data_in);
-
-void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd,
-        STREAM* data_in, uint16 BodySize);
-
-void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
-        STREAM* data_in);
-
-void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin);
-
-void guac_rdpsnd_process_message_setvolume(guac_rdpsndPlugin* rdpsnd,
-        STREAM* data_in);
-
-void guac_rdpsnd_process_message_close(guac_rdpsndPlugin* rdpsnd);
-
 void guac_rdpsnd_process_terminate(rdpSvcPlugin* plugin);
 
 void guac_rdpsnd_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event);
+
+
+void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
+        guac_client* client, STREAM* data_in);
+
+void guac_rdpsnd_process_message_training(guac_rdpsndPlugin* rdpsnd,
+        guac_client* client, STREAM* data_in);
+
+void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd,
+        guac_client* client, STREAM* data_in, uint16 BodySize);
+
+void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
+        guac_client* client, STREAM* data_in);
+
+void guac_rdpsnd_process_message_setvolume(guac_rdpsndPlugin* rdpsnd,
+        guac_client* client, STREAM* data_in);
+
+void guac_rdpsnd_process_message_close(guac_rdpsndPlugin* rdpsnd,
+        guac_client* client);
 
 #endif /* __RDPSND_MAIN_H */
 
