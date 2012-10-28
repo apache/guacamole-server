@@ -57,7 +57,10 @@ libguac_client_rdp_la_SOURCES = \
 	src/rdp_keymap_en_us.c \
 	src/default_pointer.c
 
-guac_rdpsnd_la_SOURCES = guac_rdpsnd/messages.c guac_rdpsnd/service.c
+guac_rdpsnd_la_SOURCES =   \
+	src/audio.c            \
+	guac_rdpsnd/messages.c \
+	guac_rdpsnd/service.c
 
 noinst_HEADERS =              \
 	include/audio.h           \

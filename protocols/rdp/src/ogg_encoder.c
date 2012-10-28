@@ -54,7 +54,8 @@ void ogg_encoder_end_handler(audio_stream* audio) {
 
 }
 
-void ogg_encoder_write_handler(audio_stream* audio, int* pcm_data, int length) {
+void ogg_encoder_write_handler(audio_stream* audio, 
+        unsigned char* pcm_data, int length) {
 
     guac_client_log_info(audio->client,
             "OGG: Writing data to stream, length=%i",

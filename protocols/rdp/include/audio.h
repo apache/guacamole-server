@@ -57,7 +57,7 @@ typedef void audio_encoder_end_handler(audio_stream* audio);
  * Handler which is called when the audio stream is flushed.
  */
 typedef void audio_encoder_write_handler(audio_stream* audio,
-        int* pcm_data, int length);
+        unsigned char* pcm_data, int length);
 
 /**
  * Arbitrary audio codec encoder.
@@ -89,23 +89,38 @@ typedef struct audio_encoder {
 struct audio_stream {
 
     /**
-     * PCM data buffer, 16-bit samples, 2-channel.
+     * PCM data buffer, 16-bit samples, 2-channel, 44100 Hz.
      */
-    int* pcm_data;
+    unsigned char* pcm_data;
 
     /**
-     * Number of samples in buffer.
+     * Number of bytes in buffer.
      */
     int used;
 
     /**
-     * Maximum number of samples in buffer.
+     * Maximum number of bytes in buffer.
      */
     int length;
 
     /**
-     * Arbitrary codec encoder. When the PCM buffer is flushed, PCM data will be sent
-     * to this encoder.
+     * Encoded audio data buffer, as written by the encoder.
+     */
+    unsigned char* encoded_data;
+
+    /**
+     * Number of bytes in the encoded data buffer.
+     */
+    int encoded_data_used;
+
+    /**
+     * Maximum number of bytes in the encoded data buffer.
+     */
+    int encoded_data_length;
+
+    /**
+     * Arbitrary codec encoder. When the PCM buffer is flushed, PCM data will
+     * be sent to this encoder.
      */
     audio_encoder* encoder;
 
@@ -145,12 +160,26 @@ void audio_stream_end(audio_stream* stream);
 /**
  * Writes PCM data to the given audio stream.
  */
-void audio_stream_write_pcm(audio_stream* stream, const int* data, int length);
+void audio_stream_write_pcm(audio_stream* stream,
+        unsigned char* data, int length);
 
 /**
  * Flushes the given audio stream.
  */
 void audio_stream_flush(audio_stream* stream);
+
+/**
+ * Appends arbitrarily-encoded data to the encoded_data buffer
+ * within the given audio stream.
+ */
+void audio_stream_append_data(audio_stream* stream,
+        unsigned char* data, int length);
+
+/**
+ * Clears all data from the encoded_data buffer in the given
+ * audio stream.
+ */
+void audio_stream_clear_data(audio_stream* stream);
 
 #endif
 

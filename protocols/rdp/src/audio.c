@@ -53,8 +53,12 @@ audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
     audio->used = 0;
     audio->length = 0x40000;
 
-    /* Allocate buffer */
-    audio->pcm_data = malloc(sizeof(int) * audio->length);
+    audio->encoded_data_used = 0;
+    audio->encoded_data_length = 0x40000;
+
+    /* Allocate bufferis */
+    audio->pcm_data = malloc(audio->length);
+    audio->encoded_data = malloc(audio->encoded_data_length);
 
     /* Assign encoder */
     audio->encoder = encoder;
@@ -77,14 +81,15 @@ void audio_stream_free(audio_stream* audio) {
     free(audio);
 }
 
-void audio_stream_write_pcm(audio_stream* audio, const int* data, int length) {
+void audio_stream_write_pcm(audio_stream* audio, 
+        unsigned char* data, int length) {
 
     /* Resize audio buffer if necessary */
     if (length > audio->length) {
 
         /* Resize to double provided length */
         audio->length = length*2;
-        audio->pcm_data = realloc(audio, sizeof(int) * audio->length);
+        audio->pcm_data = realloc(audio->pcm_data, audio->length);
 
     }
 
@@ -93,7 +98,7 @@ void audio_stream_write_pcm(audio_stream* audio, const int* data, int length) {
         audio_stream_flush(audio);
 
     /* Append to buffer */
-    memcpy(&(audio->pcm_data[audio->used]), data, sizeof(int) * length);
+    memcpy(&(audio->pcm_data[audio->used]), data, length);
     audio->used += length;
 
 }
@@ -112,5 +117,28 @@ void audio_stream_flush(audio_stream* audio) {
 
     }
 
+}
+
+void audio_stream_append_data(audio_stream* audio,
+        unsigned char* data, int length) {
+
+    /* Resize audio buffer if necessary */
+    if (audio->encoded_data_used + length > audio->encoded_data_length) {
+
+        /* Increase to double concatenated size to accomodate */
+        audio->encoded_data_length = (audio->encoded_data_length + length)*2;
+        audio->encoded_data = realloc(audio->encoded_data,
+                audio->encoded_data_length);
+
+    }
+
+    /* Append to buffer */
+    memcpy(&(audio->encoded_data[audio->encoded_data_used]), data, length);
+    audio->encoded_data_used += length;
+
+}
+
+void audio_stream_clear_data(audio_stream* audio) {
+    audio->encoded_data_used = 0;
 }
 
