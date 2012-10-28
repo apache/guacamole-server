@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 
-#ifndef __RDPSND_MAIN_H
-#define __RDPSND_MAIN_H
+#ifndef __GUAC_RDPSND_MESSAGES_H
+#define __GUAC_RDPSND_MESSAGES_H
 
 #define SNDC_CLOSE         1
 #define SNDC_WAVE          2
@@ -53,31 +53,6 @@ typedef struct rdpsndFormat {
 	uint8* data;
 } rdpsndFormat;
 
-
-typedef struct guac_rdpsndPlugin {
-
-	rdpSvcPlugin plugin;
-
-	uint8 cBlockNo;
-
-	boolean expectingWave;
-	uint8 waveData[4];
-	uint16 waveDataSize;
-	uint32 wTimeStamp; /* server timestamp */
-
-} guac_rdpsndPlugin ;
-
-
-void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin);
-
-void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
-        STREAM* data_in);
-
-void guac_rdpsnd_process_terminate(rdpSvcPlugin* plugin);
-
-void guac_rdpsnd_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event);
-
-
 void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
         guac_client* client, STREAM* data_in);
 
@@ -96,5 +71,5 @@ void guac_rdpsnd_process_message_setvolume(guac_rdpsndPlugin* rdpsnd,
 void guac_rdpsnd_process_message_close(guac_rdpsndPlugin* rdpsnd,
         guac_client* client);
 
-#endif /* __RDPSND_MAIN_H */
+#endif
 

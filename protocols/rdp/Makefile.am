@@ -48,7 +48,7 @@ libguac_client_rdp_la_SOURCES = src/client.c src/rdp_bitmap.c src/rdp_glyph.c sr
 				 src/rdp_keymap_en_us.c \
 				 src/default_pointer.c
 
-guac_rdpsnd_la_SOURCES = guac_rdpsnd/rdpsnd_main.c
+guac_rdpsnd_la_SOURCES = guac_rdpsnd/messages.c guac_rdpsnd/service.c
 
 noinst_HEADERS =              \
 	include/client.h          \
@@ -60,7 +60,8 @@ noinst_HEADERS =              \
 	include/rdp_glyph.h       \
 	include/rdp_keymap.h      \
 	include/rdp_pointer.h     \
-	guac_rdpsnd/rdpsnd_main.h
+	guac_rdpsnd/messages.h    \
+	guac_rdpsnd/service.h
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0
 guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared
