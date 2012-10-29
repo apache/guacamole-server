@@ -98,6 +98,9 @@ void audio_stream_end(audio_stream* audio) {
             0, "audio/ogg" /* FIXME: Hard-coded mimetype */,
             duration, audio->encoded_data, audio->encoded_data_used);
 
+    /* Clear data */
+    audio->encoded_data_used = 0;
+
 }
 
 void audio_stream_free(audio_stream* audio) {

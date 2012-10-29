@@ -53,7 +53,7 @@ void ogg_encoder_begin_handler(audio_stream* audio) {
 
     /* Init state */
     vorbis_info_init(&(state->info));
-    vorbis_encode_init_vbr(&(state->info), audio->channels, audio->rate, 0.1);
+    vorbis_encode_init_vbr(&(state->info), audio->channels, audio->rate, 0.4);
 
     vorbis_analysis_init(&(state->vorbis_state), &(state->info));
     vorbis_block_init(&(state->vorbis_state), &(state->vorbis_block));
@@ -98,10 +98,58 @@ void ogg_encoder_begin_handler(audio_stream* audio) {
 
 }
 
+void ogg_encoder_write_blocks(audio_stream* audio) {
+
+    /* Get state */
+    ogg_encoder_state* state = (ogg_encoder_state*) audio->data;
+
+    while (vorbis_analysis_blockout(&(state->vorbis_state),
+                &(state->vorbis_block)) == 1) {
+
+        /* Analyze */
+        vorbis_analysis(&(state->vorbis_block), NULL);
+        vorbis_bitrate_addblock(&(state->vorbis_block));
+
+        /* Flush Ogg pages */
+        while (vorbis_bitrate_flushpacket(&(state->vorbis_state),
+                    &(state->ogg_packet))) {
+
+            /* Weld packet into bitstream */
+            ogg_stream_packetin(&(state->ogg_state), &(state->ogg_packet));
+
+            /* Write out pages */
+            while (ogg_stream_pageout(&(state->ogg_state),
+                        &(state->ogg_page)) != 0) {
+
+                /* Write packet header */
+                audio_stream_write_encoded(audio,
+                        state->ogg_page.header,
+                        state->ogg_page.header_len);
+
+                /* Write packet body */
+                audio_stream_write_encoded(audio,
+                        state->ogg_page.body,
+                        state->ogg_page.body_len);
+
+                if (ogg_page_eos(&(state->ogg_page)))
+                    break;
+
+            }
+
+        }
+
+    }
+
+}
+
 void ogg_encoder_end_handler(audio_stream* audio) {
 
     /* Get state */
     ogg_encoder_state* state = (ogg_encoder_state*) audio->data;
+
+    /* Write end-of-stream */
+    vorbis_analysis_wrote(&(state->vorbis_state), 0);
+    ogg_encoder_write_blocks(audio);
 
     /* Clean up encoder */
     ogg_stream_clear(&(state->ogg_state));
@@ -118,9 +166,33 @@ void ogg_encoder_end_handler(audio_stream* audio) {
 void ogg_encoder_write_handler(audio_stream* audio, 
         unsigned char* pcm_data, int length) {
 
-    guac_client_log_info(audio->client,
-            "OGG: Writing data to stream, length=%i",
-            length);
+    /* Get state */
+    ogg_encoder_state* state = (ogg_encoder_state*) audio->data;
+
+    /* Calculate samples */
+    int samples = length / audio->channels * 8 / audio->bps;
+    int i;
+
+    /* Get buffer */
+    float** buffer = vorbis_analysis_buffer(&(state->vorbis_state), samples);
+
+    for (i=0; i<samples; i++) {
+
+        /* FIXME: For now, assume 2 channels, 16-bit */
+        int left  = ((pcm_data[i*4+1] & 0xFF) << 8) | (pcm_data[i*4]   & 0xFF);
+        int right = ((pcm_data[i*4+3] & 0xFF) << 8) | (pcm_data[i*4+2] & 0xFF);
+
+        /* Store sample in buffer */
+        buffer[0][i] = left  / 32768.f;
+        buffer[1][i] = right / 32768.f;
+
+    }
+
+    /* Submit data */
+    vorbis_analysis_wrote(&(state->vorbis_state), samples);
+
+    /* Write data */
+    ogg_encoder_write_blocks(audio);
 
 }
 
