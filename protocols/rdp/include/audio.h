@@ -152,6 +152,11 @@ struct audio_stream {
     int bps;
 
     /**
+     * The number of PCM bytes written since the audio chunk began.
+     */
+    int pcm_bytes_written;
+
+    /**
      * Encoder-specific state data.
      */
     void* data;

@@ -200,6 +200,10 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         return 1;
     }
 
+    /* Flush any audio */
+    if (guac_client_data->audio != NULL)
+        guac_socket_flush(guac_client_data->audio->stream->socket);
+
     /* Success */
     return 0;
 

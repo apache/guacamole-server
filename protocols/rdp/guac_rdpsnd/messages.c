@@ -206,8 +206,6 @@ void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
     buffer = stream_get_head(input_stream);
     size = stream_get_size(input_stream);
 
-    guac_client_log_info(audio->client, "Got sound: %i bytes.", size);
-
     /* Write rest of audio packet */
     audio_stream_write_pcm(audio, buffer, size);
     audio_stream_end(audio);

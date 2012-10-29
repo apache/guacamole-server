@@ -56,7 +56,7 @@ audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
     audio->encoded_data_used = 0;
     audio->encoded_data_length = 0x40000;
 
-    /* Allocate bufferis */
+    /* Allocate buffers */
     audio->pcm_data = malloc(audio->length);
     audio->encoded_data = malloc(audio->encoded_data_length);
 
@@ -74,14 +74,30 @@ void audio_stream_begin(audio_stream* audio, int rate, int channels, int bps) {
     audio->channels = channels;
     audio->bps = bps;
 
+    /* Reset write counter */
+    audio->pcm_bytes_written = 0;
+
     /* Call handler */
     audio->encoder->begin_handler(audio);
 
 }
 
 void audio_stream_end(audio_stream* audio) {
+
+    /* Calculate duration of PCM data */
+    int duration = 
+            audio->pcm_bytes_written * 1000 * 8 / audio->rate
+                / audio->channels / audio->bps;
+
+    /* Flush stream and finish encoding */
     audio_stream_flush(audio);
     audio->encoder->end_handler(audio);
+
+    /* Send audio */
+    guac_protocol_send_audio(audio->stream->socket,
+            0, "audio/ogg" /* FIXME: Hard-coded mimetype */,
+            duration, audio->encoded_data, audio->encoded_data_used);
+
 }
 
 void audio_stream_free(audio_stream* audio) {
@@ -91,6 +107,9 @@ void audio_stream_free(audio_stream* audio) {
 
 void audio_stream_write_pcm(audio_stream* audio, 
         unsigned char* data, int length) {
+
+    /* Update counter */
+    audio->pcm_bytes_written += length;
 
     /* Resize audio buffer if necessary */
     if (length > audio->length) {
