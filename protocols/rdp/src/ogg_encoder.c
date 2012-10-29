@@ -35,22 +35,83 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <stdlib.h>
+
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 
+#include <vorbis/vorbisenc.h>
+
 #include "audio.h"
+#include "ogg_encoder.h"
 
 void ogg_encoder_begin_handler(audio_stream* audio) {
 
-    guac_client_log_info(audio->client,
-            "OGG: Beginning audio stream.");
+    /* Allocate stream state */
+    ogg_encoder_state* state = (ogg_encoder_state*)
+        malloc(sizeof(ogg_encoder_state));
+
+    /* Init state */
+    vorbis_info_init(&(state->info));
+    vorbis_encode_init_vbr(&(state->info), audio->channels, audio->rate, 0.1);
+
+    vorbis_analysis_init(&(state->vorbis_state), &(state->info));
+    vorbis_block_init(&(state->vorbis_state), &(state->vorbis_block));
+
+    vorbis_comment_init(&(state->comment));
+    vorbis_comment_add_tag(&(state->comment), "ENCODER", "libguac-client-rdp");
+
+    ogg_stream_init(&(state->ogg_state), rand());
+
+    /* Write headers */
+    {
+        ogg_packet header;
+        ogg_packet header_comm;
+        ogg_packet header_code;
+
+        vorbis_analysis_headerout(
+                &(state->vorbis_state),
+                &(state->comment),
+                &header, &header_comm, &header_code);
+
+        ogg_stream_packetin(&(state->ogg_state), &header);
+        ogg_stream_packetin(&(state->ogg_state), &header_comm);
+        ogg_stream_packetin(&(state->ogg_state), &header_code);
+
+        /* For each packet */
+        while (ogg_stream_flush(&(state->ogg_state), &(state->ogg_page)) != 0) {
+
+            /* Write packet header */
+            audio_stream_write_encoded(audio,
+                    state->ogg_page.header,
+                    state->ogg_page.header_len);
+
+            /* Write packet body */
+            audio_stream_write_encoded(audio,
+                    state->ogg_page.body,
+                    state->ogg_page.body_len);
+        }
+
+    }
+
+    audio->data = state;
 
 }
 
 void ogg_encoder_end_handler(audio_stream* audio) {
 
-    guac_client_log_info(audio->client,
-            "OGG: Ending audio stream.");
+    /* Get state */
+    ogg_encoder_state* state = (ogg_encoder_state*) audio->data;
+
+    /* Clean up encoder */
+    ogg_stream_clear(&(state->ogg_state));
+    vorbis_block_clear(&(state->vorbis_block));
+    vorbis_dsp_clear(&(state->vorbis_state));
+    vorbis_comment_clear(&(state->comment));
+    vorbis_info_clear(&(state->info));
+
+    /* Free stream state */
+    free(audio->data);
 
 }
 

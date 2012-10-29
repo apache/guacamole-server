@@ -40,6 +40,27 @@
 
 #include "audio.h"
 
+#include <vorbis/vorbisenc.h>
+
+typedef struct ogg_encoder_state {
+
+    /**
+     * Ogg state
+     */
+    ogg_stream_state ogg_state;
+    ogg_page ogg_page;
+    ogg_packet ogg_packet;
+
+    /**
+     * Vorbis state
+     */
+    vorbis_info info;
+    vorbis_comment comment;
+    vorbis_dsp_state vorbis_state;
+    vorbis_block vorbis_block;
+
+} ogg_encoder_state;
+
 extern audio_encoder* ogg_encoder;
 
 #endif
