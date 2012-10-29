@@ -134,6 +134,23 @@ struct audio_stream {
      */
     guac_stream* stream;
 
+    /**
+     * The number of samples per second of PCM data sent to this stream.
+     */
+    int rate;
+
+    /**
+     * The number of audio channels per sample of PCM data. Legal values are
+     * 1 or 2.
+     */
+    int channels;
+
+    /**
+     * The number of bits per sample per channel for PCM data. Legal values are
+     * 8 or 16.
+     */
+    int bps;
+
 };
 
 /**
@@ -150,7 +167,7 @@ void audio_stream_free(audio_stream* stream);
 /**
  * Begins a new audio stream.
  */
-void audio_stream_begin(audio_stream* stream);
+void audio_stream_begin(audio_stream* stream, int rate, int channels, int bps);
 
 /**
  * Ends the current audio stream.
@@ -172,14 +189,8 @@ void audio_stream_flush(audio_stream* stream);
  * Appends arbitrarily-encoded data to the encoded_data buffer
  * within the given audio stream.
  */
-void audio_stream_append_data(audio_stream* stream,
+void audio_stream_write_encoded(audio_stream* audio,
         unsigned char* data, int length);
-
-/**
- * Clears all data from the encoded_data buffer in the given
- * audio stream.
- */
-void audio_stream_clear_data(audio_stream* stream);
 
 #endif
 

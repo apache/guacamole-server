@@ -67,8 +67,16 @@ audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
     return audio;
 }
 
-void audio_stream_begin(audio_stream* audio) {
+void audio_stream_begin(audio_stream* audio, int rate, int channels, int bps) {
+
+    /* Load PCM properties */
+    audio->rate = rate;
+    audio->channels = channels;
+    audio->bps = bps;
+
+    /* Call handler */
     audio->encoder->begin_handler(audio);
+
 }
 
 void audio_stream_end(audio_stream* audio) {
@@ -119,7 +127,7 @@ void audio_stream_flush(audio_stream* audio) {
 
 }
 
-void audio_stream_append_data(audio_stream* audio,
+void audio_stream_write_encoded(audio_stream* audio,
         unsigned char* data, int length) {
 
     /* Resize audio buffer if necessary */
@@ -136,9 +144,5 @@ void audio_stream_append_data(audio_stream* audio,
     memcpy(&(audio->encoded_data[audio->encoded_data_used]), data, length);
     audio->encoded_data_used += length;
 
-}
-
-void audio_stream_clear_data(audio_stream* audio) {
-    audio->encoded_data_used = 0;
 }
 

@@ -181,6 +181,9 @@ void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd, audio_stre
 	rdpsnd->waveDataSize = BodySize - 8;
 	rdpsnd->expectingWave = true;
 
+    audio_stream_begin(audio, 22050, 2, 16); /* FIXME: Hard-coding rates */
+    audio_stream_write_pcm(audio, rdpsnd->waveData, 4);
+
 }
 
 /* header is not removed from data in this function */
@@ -205,8 +208,7 @@ void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
 
     guac_client_log_info(audio->client, "Got sound: %i bytes.", size);
 
-    /* For now, start AND end stream right here */
-    audio_stream_begin(audio);
+    /* Write rest of audio packet */
     audio_stream_write_pcm(audio, buffer, size);
     audio_stream_end(audio);
 
