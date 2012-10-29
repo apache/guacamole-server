@@ -151,6 +151,11 @@ struct audio_stream {
      */
     int bps;
 
+    /**
+     * Encoder-specific state data.
+     */
+    void* data;
+
 };
 
 /**
