@@ -52,6 +52,8 @@ AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],, AC_MSG_ERROR("libfreer
 AC_CHECK_LIB([freerdp-utils], [xzalloc],, AC_MSG_ERROR("libfreerdp-utils is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],, AC_MSG_ERROR("libfreerdp-codec is required (part of FreeRDP)"))
 
+AC_CHECK_LIB([vorbisenc], [vorbis_encode_init],, AC_MSG_ERROR("libvorbisenc is required for sound"))
+
 # Checks for header files.
 AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h freerdp/locale/keyboard.h freerdp/kbd/layouts.h])
 
