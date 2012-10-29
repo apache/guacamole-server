@@ -176,11 +176,13 @@ void ogg_encoder_write_handler(audio_stream* audio,
     /* Get buffer */
     float** buffer = vorbis_analysis_buffer(&(state->vorbis_state), samples);
 
+    signed char* readbuffer = (signed char*) pcm_data;
+
     for (i=0; i<samples; i++) {
 
         /* FIXME: For now, assume 2 channels, 16-bit */
-        int left  = ((pcm_data[i*4+1] & 0xFF) << 8) | (pcm_data[i*4]   & 0xFF);
-        int right = ((pcm_data[i*4+3] & 0xFF) << 8) | (pcm_data[i*4+2] & 0xFF);
+        int left  = ((readbuffer[i*4+1]<<8)|(0x00ff&(int)readbuffer[i*4]));
+        int right = ((readbuffer[i*4+3]<<8)|(0x00ff&(int)readbuffer[i*4+2]));
 
         /* Store sample in buffer */
         buffer[0][i] = left  / 32768.f;
