@@ -200,6 +200,18 @@ void guacd_handle_connection(int fd) {
     client->info.optimal_width  = atoi(size->argv[0]);
     client->info.optimal_height = atoi(size->argv[1]);
 
+    /* Store audio mimetypes */
+    client->info.audio_mimetypes = malloc(sizeof(char*) * (audio->argc+1));
+    memcpy(client->info.audio_mimetypes, audio->argv,
+            sizeof(char*) * audio->argc);
+    client->info.audio_mimetypes[audio->argc] = NULL;
+
+    /* Store video mimetypes */
+    client->info.video_mimetypes = malloc(sizeof(char*) * (video->argc+1));
+    memcpy(client->info.video_mimetypes, video->argv,
+            sizeof(char*) * video->argc);
+    client->info.video_mimetypes[video->argc] = NULL;
+
     /* Init client */
     init_result = guac_client_plugin_init_client(plugin,
                 client, connect->argc, connect->argv);
@@ -226,6 +238,10 @@ void guacd_handle_connection(int fd) {
         guacd_log_error("Client finished abnormally");
     else
         guacd_log_info("Client finished normally");
+
+    /* Free mimetype lists */
+    free(client->info.audio_mimetypes);
+    free(client->info.video_mimetypes);
 
     /* Clean up */
     guac_client_free(client);
