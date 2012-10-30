@@ -182,7 +182,6 @@ void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd, audio_stre
 	rdpsnd->expectingWave = true;
 
     audio_stream_begin(audio, 22050, 2, 16); /* FIXME: Hard-coding rates */
-    audio_stream_write_pcm(audio, rdpsnd->waveData, 4);
 
 }
 
@@ -194,20 +193,13 @@ void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
 
 	STREAM* output_stream;
 
-    int size;
-    unsigned char* buffer;
+    unsigned char* buffer = stream_get_head(input_stream);
 
 	rdpsnd->expectingWave = 0;
-	memcpy(stream_get_head(input_stream), rdpsnd->waveData, 4);
-	if (stream_get_size(input_stream) != rdpsnd->waveDataSize) {
-		return;
-	}
-
-    buffer = stream_get_head(input_stream);
-    size = stream_get_size(input_stream);
+	memcpy(buffer, rdpsnd->waveData, 4);
 
     /* Write rest of audio packet */
-    audio_stream_write_pcm(audio, buffer, size);
+    audio_stream_write_pcm(audio, buffer, rdpsnd->waveDataSize);
     audio_stream_end(audio);
 
 	output_stream = stream_new(8);

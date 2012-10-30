@@ -84,14 +84,16 @@ void audio_stream_begin(audio_stream* audio, int rate, int channels, int bps) {
 
 void audio_stream_end(audio_stream* audio) {
 
-    /* Calculate duration of PCM data */
-    int duration = 
-            audio->pcm_bytes_written * 1000 * 8 / audio->rate
-                / audio->channels / audio->bps;
+    int duration;
 
     /* Flush stream and finish encoding */
     audio_stream_flush(audio);
     audio->encoder->end_handler(audio);
+
+    /* Calculate duration of PCM data */
+    duration = 
+            audio->pcm_bytes_written * 1000 * 8 / audio->rate
+                / audio->channels / audio->bps;
 
     /* Send audio */
     guac_protocol_send_audio(audio->stream->socket,
