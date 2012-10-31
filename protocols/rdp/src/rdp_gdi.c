@@ -36,6 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <pthread.h>
 #include <freerdp/freerdp.h>
 
 #include <guacamole/client.h>
@@ -106,6 +107,9 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+    pthread_mutex_lock(&(data->update_lock));
+
     switch (dstblt->bRop) {
 
         /* Blackness */
@@ -129,7 +133,7 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
 
     }
 
-
+    pthread_mutex_unlock(&(data->update_lock));
 
 }
 
@@ -142,6 +146,9 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
+    
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+    pthread_mutex_lock(&(data->update_lock));
 
     /* Copy screen rect to current surface */
     guac_protocol_send_copy(client->socket,
@@ -149,6 +156,8 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
             scrblt->nXSrc, scrblt->nYSrc, scrblt->nWidth, scrblt->nHeight,
             GUAC_COMP_OVER, current_layer,
             scrblt->nLeftRect, scrblt->nTopRect);
+
+    pthread_mutex_unlock(&(data->update_lock));
 
 }
 
@@ -158,6 +167,9 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
     guac_socket* socket = client->socket;
     guac_rdp_bitmap* bitmap = (guac_rdp_bitmap*) memblt->bitmap;
+
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+    pthread_mutex_lock(&(data->update_lock));
 
     switch (memblt->bRop) {
 
@@ -250,6 +262,8 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
     }
 
+    pthread_mutex_unlock(&(data->update_lock));
+
 }
 
 void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect) {
@@ -261,6 +275,9 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+    pthread_mutex_lock(&(data->update_lock));
+
     guac_protocol_send_rect(client->socket, current_layer,
             opaque_rect->nLeftRect, opaque_rect->nTopRect,
             opaque_rect->nWidth, opaque_rect->nHeight);
@@ -271,6 +288,8 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
             (color >> 8 ) & 0xFF,
             (color      ) & 0xFF,
             255);
+
+    pthread_mutex_unlock(&(data->update_lock));
 
 }
 
@@ -287,6 +306,9 @@ void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+    pthread_mutex_lock(&(data->update_lock));
+
     /* Reset clip */
     guac_protocol_send_reset(client->socket, current_layer);
 
@@ -299,6 +321,8 @@ void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
 
         guac_protocol_send_clip(client->socket, current_layer);
     }
+
+    pthread_mutex_unlock(&(data->update_lock));
 
 }
 

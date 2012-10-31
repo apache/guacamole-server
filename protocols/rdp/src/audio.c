@@ -37,11 +37,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 
 #include "audio.h"
+#include "client.h"
 
 audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
 
@@ -86,6 +88,8 @@ void audio_stream_end(audio_stream* audio) {
 
     int duration;
 
+    rdp_guac_client_data* data = (rdp_guac_client_data*) audio->client->data;
+
     /* Flush stream and finish encoding */
     audio_stream_flush(audio);
     audio->encoder->end_handler(audio);
@@ -95,10 +99,14 @@ void audio_stream_end(audio_stream* audio) {
             audio->pcm_bytes_written * 1000 * 8 / audio->rate
                 / audio->channels / audio->bps;
 
+    pthread_mutex_lock(&(data->update_lock));
+
     /* Send audio */
     guac_protocol_send_audio(audio->stream->socket,
             0, "audio/ogg" /* FIXME: Hard-coded mimetype */,
             duration, audio->encoded_data, audio->encoded_data_used);
+
+    pthread_mutex_unlock(&(data->update_lock));
 
     /* Clear data */
     audio->encoded_data_used = 0;

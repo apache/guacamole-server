@@ -51,6 +51,7 @@ AC_CHECK_LIB([freerdp-core], [freerdp_new],, AC_MSG_ERROR("libfreerdp-core is re
 AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],, AC_MSG_ERROR("libfreerdp-channels is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-utils], [xzalloc],, AC_MSG_ERROR("libfreerdp-utils is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],, AC_MSG_ERROR("libfreerdp-codec is required (part of FreeRDP)"))
+AC_CHECK_LIB([pthread], [pthread_mutex_init],, AC_MSG_ERROR("libpthread is required"))
 
 AC_CHECK_LIB([vorbisenc], [vorbis_encode_init],, AC_MSG_ERROR("libvorbisenc is required for sound"))
 

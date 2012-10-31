@@ -38,6 +38,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include <cairo/cairo.h>
 
@@ -64,6 +65,9 @@ void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
     /* Cache image data if present */
     if (bitmap->data != NULL) {
 
+        rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+        pthread_mutex_lock(&(data->update_lock));
+
         /* Create surface from image data */
         cairo_surface_t* surface = cairo_image_surface_create_for_data(
             bitmap->data, CAIRO_FORMAT_RGB24,
@@ -76,6 +80,7 @@ void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
         /* Free surface */
         cairo_surface_destroy(surface);
 
+        pthread_mutex_unlock(&(data->update_lock));
     }
 
     /* Store buffer reference in bitmap */
@@ -120,6 +125,9 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
     int width = bitmap->right - bitmap->left + 1;
     int height = bitmap->bottom - bitmap->top + 1;
 
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+    pthread_mutex_lock(&(data->update_lock));
+
     /* If not cached, cache if necessary */
     if (((guac_rdp_bitmap*) bitmap)->layer == NULL
             && ((guac_rdp_bitmap*) bitmap)->used >= 1)
@@ -154,6 +162,7 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
     /* Increment usage counter */
     ((guac_rdp_bitmap*) bitmap)->used++;
 
+    pthread_mutex_unlock(&(data->update_lock));
 }
 
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {

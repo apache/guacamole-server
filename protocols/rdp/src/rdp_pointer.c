@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-
+#include <pthread.h>
 #include <freerdp/freerdp.h>
 
 #include <guacamole/client.h>
@@ -58,6 +58,9 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
     guac_layer* buffer = guac_client_alloc_buffer(client);
 
     cairo_surface_t* surface;
+
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    pthread_mutex_lock(&(client_data->update_lock));
 
     /* Convert to alpha cursor if mask data present */
     if (pointer->andMaskData && pointer->xorMaskData)
@@ -81,6 +84,7 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
     /* Remember buffer */
     ((guac_rdp_pointer*) pointer)->layer = buffer;
 
+    pthread_mutex_unlock(&(client_data->update_lock));
 }
 
 void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer) {
@@ -88,11 +92,15 @@ void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_socket* socket = client->socket;
 
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+    pthread_mutex_lock(&(data->update_lock));
+
     /* Set cursor */
     guac_protocol_send_cursor(socket, pointer->xPos, pointer->yPos,
             ((guac_rdp_pointer*) pointer)->layer,
             0, 0, pointer->width, pointer->height);
 
+    pthread_mutex_unlock(&(data->update_lock));
 }
 
 void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {

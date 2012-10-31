@@ -36,6 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <pthread.h>
 #include <freerdp/freerdp.h>
 
 #include <guacamole/client.h>
@@ -203,6 +204,8 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
+    pthread_mutex_lock(&(guac_client_data->update_lock));
+
     /* Use glyph surface to provide image data for glyph rectangle */
     cairo_surface_t* glyph_surface = guac_client_data->glyph_surface;
     int stride = cairo_image_surface_get_stride(glyph_surface);
@@ -235,5 +238,6 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
     /* Destroy cairo instance */
     cairo_destroy(guac_client_data->glyph_cairo);
 
+    pthread_mutex_unlock(&(guac_client_data->update_lock));
 }
 

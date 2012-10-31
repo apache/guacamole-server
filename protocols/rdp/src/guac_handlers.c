@@ -39,6 +39,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -201,8 +202,11 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* Flush any audio */
-    if (guac_client_data->audio != NULL)
+    if (guac_client_data->audio != NULL) {
+        pthread_mutex_lock(&(guac_client_data->update_lock));
         guac_socket_flush(guac_client_data->audio->stream->socket);
+        pthread_mutex_unlock(&(guac_client_data->update_lock));
+    }
 
     /* Success */
     return 0;
