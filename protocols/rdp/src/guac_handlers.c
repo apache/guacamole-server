@@ -218,6 +218,8 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     freerdp* rdp_inst = guac_client_data->rdp_inst;
 
+    pthread_mutex_lock(&(guac_client_data->rdp_lock));
+
     /* If button mask unchanged, just send move event */
     if (mask == guac_client_data->mouse_button_mask)
         rdp_inst->input->MouseEvent(rdp_inst->input, PTR_FLAGS_MOVE, x, y);
@@ -283,6 +285,8 @@ int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
         guac_client_data->mouse_button_mask = mask;
     }
 
+    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+
     return 0;
 }
 
@@ -301,6 +305,8 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
         /* If defined, send event */
         if (keysym_desc->scancode != 0) {
+
+            pthread_mutex_lock(&(guac_client_data->rdp_lock));
 
             /* If defined, send any prerequesite keys that must be set */
             if (keysym_desc->set_keysyms != NULL)
@@ -324,6 +330,8 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
             /* If defined, send any keys that were originally set */
             if (keysym_desc->clear_keysyms != NULL)
                 __guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 1);
+
+            pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 
             return 0;
 
@@ -352,10 +360,15 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
         guac_client_log_info(client, "Translated keysym 0x%x to U+%04X",
                 keysym, codepoint);
 
+        pthread_mutex_lock(&(guac_client_data->rdp_lock));
+
         /* Send Unicode event */
         rdp_inst->input->UnicodeKeyboardEvent(
                 rdp_inst->input,
                 0, codepoint);
+
+        pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+
     }
     
     else

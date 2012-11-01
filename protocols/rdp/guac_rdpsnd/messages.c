@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +35,7 @@
 #include "audio.h"
 #include "service.h"
 #include "messages.h"
+#include "client.h"
 
 /* MESSAGE HANDLERS */
 
@@ -52,6 +54,9 @@ void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
 	uint8* format_mark;
 	uint8* data_mark;
 	int pos;
+
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) audio->client->data;
 
 	stream_seek_uint32(input_stream); /* dwFlags */
 	stream_seek_uint32(input_stream); /* dwVolume */
@@ -147,6 +152,7 @@ void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
 	stream_write_uint16(output_stream, n_out_formats);
 	stream_set_pos(output_stream, pos);
 
+    pthread_mutex_lock(&(guac_client_data->rdp_lock));
 	svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
 
 	if (wVersion >= 6) {
@@ -162,6 +168,8 @@ void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
 		svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
 	}
 
+    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+
 }
 
 /* server is getting a feel of the round trip time */
@@ -171,6 +179,9 @@ void guac_rdpsnd_process_message_training(guac_rdpsndPlugin* rdpsnd,
 	uint16 wTimeStamp;
 	uint16 wPackSize;
 	STREAM* output_stream;
+
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) audio->client->data;
 
     /* Read timestamp */
 	stream_read_uint16(input_stream, wTimeStamp);
@@ -184,7 +195,9 @@ void guac_rdpsnd_process_message_training(guac_rdpsndPlugin* rdpsnd,
 	stream_write_uint16(output_stream, wTimeStamp);
 	stream_write_uint16(output_stream, wPackSize);
 
+    pthread_mutex_lock(&(guac_client_data->rdp_lock));
 	svc_plugin_send((rdpSvcPlugin*) rdpsnd, output_stream);
+    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 
 }
 
@@ -221,6 +234,9 @@ void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
 
     unsigned char* buffer = stream_get_head(input_stream);
 
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) audio->client->data;
+
 	rdpsnd->expectingWave = 0;
 	memcpy(buffer, rdpsnd->waveData, 4);
 
@@ -236,7 +252,10 @@ void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
 	stream_write_uint8(output_stream, rdpsnd->cBlockNo); /* cConfirmedBlockNo */
 	stream_write_uint8(output_stream, 0); /* bPad */
 
+    pthread_mutex_lock(&(guac_client_data->rdp_lock));
     svc_plugin_send(plugin, output_stream);
+    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+
 	rdpsnd->plugin.interval_ms = 10;
 }
 

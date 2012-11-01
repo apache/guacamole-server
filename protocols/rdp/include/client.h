@@ -149,6 +149,11 @@ typedef struct rdp_guac_client_data {
      */
     pthread_mutex_t update_lock;
 
+    /**
+     * Lock which is locked and unlocked for each RDP message.
+     */
+    pthread_mutex_t rdp_lock;
+
     pthread_mutexattr_t attributes;
 
 } rdp_guac_client_data;
