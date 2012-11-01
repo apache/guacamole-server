@@ -45,24 +45,27 @@ freerdp_LTLIBRARIES = guac_rdpsnd.la
 libguac_client_rdp_la_SOURCES = \
 	src/audio.c            \
 	src/client.c           \
-	src/rdp_bitmap.c       \
-	src/rdp_glyph.c        \
-	src/rdp_pointer.c      \
-	src/rdp_gdi.c          \
+	src/default_pointer.c  \
 	src/guac_handlers.c    \
 	src/ogg_encoder.c      \
+	src/rdp_bitmap.c       \
 	src/rdp_cliprdr.c      \
-	src/rdp_keymap.c       \
+	src/rdp_gdi.c          \
+	src/rdp_glyph.c        \
 	src/rdp_keymap_base.c  \
+	src/rdp_keymap.c       \
 	src/rdp_keymap_en_us.c \
-	src/default_pointer.c
+	src/rdp_pointer.c      \
+	src/wav_encoder.c
 
 guac_rdpsnd_la_SOURCES =   \
-	src/audio.c            \
 	guac_rdpsnd/messages.c \
-	guac_rdpsnd/service.c
+	guac_rdpsnd/service.c  \
+	src/audio.c
 
 noinst_HEADERS =              \
+	guac_rdpsnd/messages.h    \
+	guac_rdpsnd/service.h     \
 	include/audio.h           \
 	include/client.h          \
 	include/default_pointer.h \
@@ -74,8 +77,7 @@ noinst_HEADERS =              \
 	include/rdp_glyph.h       \
 	include/rdp_keymap.h      \
 	include/rdp_pointer.h     \
-	guac_rdpsnd/messages.h    \
-	guac_rdpsnd/service.h
+	include/wav_encoder.h
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0
 guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared
