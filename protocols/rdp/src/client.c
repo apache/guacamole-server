@@ -66,6 +66,7 @@
 
 #include "audio.h"
 #include "ogg_encoder.h"
+#include "wav_encoder.h"
 
 #include "client.h"
 #include "guac_handlers.h"
@@ -135,6 +136,13 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
         if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
             guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
             guac_client_data->audio = audio_stream_alloc(client, ogg_encoder);
+            break;
+        }
+
+        // If wav is supported, done.
+        if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
+            guac_client_log_info(client, "Loading wav encoder.");
+            guac_client_data->audio = audio_stream_alloc(client, wav_encoder);
             break;
         }
 
