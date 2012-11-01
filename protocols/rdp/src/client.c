@@ -132,7 +132,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
         const char* mimetype = client->info.audio_mimetypes[i];
 
         // If Ogg is supported, done.
-        if (strcmp(mimetype, "audio/ogg") == 0) {
+        if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
             guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
             guac_client_data->audio = audio_stream_alloc(client, ogg_encoder);
             break;
