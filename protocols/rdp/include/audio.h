@@ -65,6 +65,12 @@ typedef void audio_encoder_write_handler(audio_stream* audio,
 typedef struct audio_encoder {
 
     /**
+     * The mimetype of the audio data encoded by this audio
+     * encoder.
+     */
+    const char* mimetype;
+
+    /**
      * Handler which will be called when the audio stream is opened.
      */
     audio_encoder_begin_handler* begin_handler;

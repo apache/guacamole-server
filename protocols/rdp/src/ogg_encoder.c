@@ -200,6 +200,7 @@ void ogg_encoder_write_handler(audio_stream* audio,
 
 /* Encoder handlers */
 audio_encoder _ogg_encoder = {
+    .mimetype      = "audio/ogg",
     .begin_handler = ogg_encoder_begin_handler,
     .write_handler = ogg_encoder_write_handler,
     .end_handler   = ogg_encoder_end_handler

@@ -103,7 +103,7 @@ void audio_stream_end(audio_stream* audio) {
 
     /* Send audio */
     guac_protocol_send_audio(audio->stream->socket,
-            0, "audio/ogg" /* FIXME: Hard-coded mimetype */,
+            0, audio->encoder->mimetype,
             duration, audio->encoded_data, audio->encoded_data_used);
 
     pthread_mutex_unlock(&(data->update_lock));

@@ -97,21 +97,43 @@ void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
 
 		if (format->wFormatTag == WAVE_FORMAT_PCM) {
 
-            guac_client_log_info(audio->client,
-                    "Accepted format: %i-bit PCM with %i channels at "
-                    "%i Hz",
-                    format->wBitsPerSample,
-                    format->nChannels,
-                    format->nSamplesPerSec);
+            /* If can fit another format, accept it */
+            if (rdpsnd->format_count < GUAC_RDP_MAX_FORMATS) {
 
-			stream_check_size(output_stream, 18 + format->cbSize);
-			stream_write(output_stream, format_mark, 18 + format->cbSize);
-			if (format->cbSize > 0)
-			{
-				format->data = xmalloc(format->cbSize);
-				memcpy(format->data, data_mark, format->cbSize);
-			}
-			n_out_formats++;
+                /* Add channel */
+                int current = rdpsnd->format_count++;
+                rdpsnd->formats[current].rate     = format->nSamplesPerSec;
+                rdpsnd->formats[current].channels = format->nChannels;
+                rdpsnd->formats[current].bps      = format->wBitsPerSample;
+
+                /* Log format */
+                guac_client_log_info(audio->client,
+                        "Accepted format: %i-bit PCM with %i channels at "
+                        "%i Hz",
+                        format->wBitsPerSample,
+                        format->nChannels,
+                        format->nSamplesPerSec);
+
+                /* Store as accepted for future response */
+                stream_check_size(output_stream, 18 + format->cbSize);
+                stream_write(output_stream, format_mark, 18 + format->cbSize);
+                if (format->cbSize > 0) {
+                    format->data = xmalloc(format->cbSize);
+                    memcpy(format->data, data_mark, format->cbSize);
+                }
+                n_out_formats++;
+
+            }
+
+            /* Otherwise, log that we dropped one */
+            else
+                guac_client_log_info(audio->client,
+                        "Dropped valid format: %i-bit PCM with %i channels at "
+                        "%i Hz",
+                        format->wBitsPerSample,
+                        format->nChannels,
+                        format->nSamplesPerSec);
+
 		}
 
 	}
@@ -181,7 +203,11 @@ void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd, audio_stre
 	rdpsnd->waveDataSize = BodySize - 8;
 	rdpsnd->expectingWave = true;
 
-    audio_stream_begin(audio, 22050, 2, 16); /* FIXME: Hard-coding rates */
+    /* Init stream with requested format */
+    audio_stream_begin(audio,
+            rdpsnd->formats[wFormatNo].rate,
+            rdpsnd->formats[wFormatNo].channels,
+            rdpsnd->formats[wFormatNo].bps);
 
 }
 

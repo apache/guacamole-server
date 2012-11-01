@@ -20,6 +20,21 @@
 #ifndef __GUAC_RDPSND_SERVICE_H
 #define __GUAC_RDPSND_SERVICE_H
 
+
+#define GUAC_RDP_MAX_FORMATS 16
+
+
+typedef struct guac_pcm_format {
+
+    int rate;
+
+    int channels;
+
+    int bps;
+
+} guac_pcm_format;
+
+
 typedef struct guac_rdpsndPlugin {
 
 	rdpSvcPlugin plugin;
@@ -31,7 +46,11 @@ typedef struct guac_rdpsndPlugin {
 	uint16 waveDataSize;
 	uint32 wTimeStamp; /* server timestamp */
 
-} guac_rdpsndPlugin ;
+    guac_pcm_format formats[GUAC_RDP_MAX_FORMATS];
+
+    int format_count;
+
+} guac_rdpsndPlugin;
 
 void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin);
 
