@@ -86,7 +86,7 @@ void audio_stream_begin(audio_stream* audio, int rate, int channels, int bps) {
 
 void audio_stream_end(audio_stream* audio) {
 
-    int duration;
+    double duration;
 
     rdp_guac_client_data* data = (rdp_guac_client_data*) audio->client->data;
 
@@ -95,9 +95,8 @@ void audio_stream_end(audio_stream* audio) {
     audio->encoder->end_handler(audio);
 
     /* Calculate duration of PCM data */
-    duration = 
-            audio->pcm_bytes_written * 1000 * 8 / audio->rate
-                / audio->channels / audio->bps;
+    duration = ((double) (audio->pcm_bytes_written * 1000 * 8))
+                / audio->rate / audio->channels / audio->bps;
 
     pthread_mutex_lock(&(data->update_lock));
 
