@@ -1,33 +1,47 @@
-/**
- * FreeRDP: A Remote Desktop Protocol client.
- * Audio Output Virtual Channel
+
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
- * Copyright 2009-2011 Jay Sorg
- * Copyright 2010-2011 Vic Lee
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * The Original Code is libguac-client-rdp.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+ * The Initial Developer of the Original Code is
+ * Michael Jumper.
+ * Portions created by the Initial Developer are Copyright (C) 2011
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 #include <pthread.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <freerdp/constants.h>
 #include <freerdp/types.h>
 #include <freerdp/utils/memory.h>
 #include <freerdp/utils/stream.h>
-#include <freerdp/utils/list.h>
-#include <freerdp/utils/load_plugin.h>
 #include <freerdp/utils/svc_plugin.h>
 
 #include <guacamole/client.h>
@@ -39,94 +53,104 @@
 
 /* MESSAGE HANDLERS */
 
-/* receives a list of server supported formats and returns a list
-   of client supported formats */
-void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream) {
+void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
+        audio_stream* audio, STREAM* input_stream, 
+        guac_rdpsnd_pdu_header* header) {
 
-	uint16 wNumberOfFormats;
-	uint16 nFormat;
-	uint16 wVersion;
-	STREAM* output_stream;
-	rdpsndFormat* out_formats;
-	uint16 n_out_formats;
-	rdpsndFormat* format;
-	uint8* format_mark;
-	uint8* data_mark;
-	int pos;
+    int server_format_count;
+    int server_version;
+    int i;
+
+    STREAM* output_stream;
+    int output_body_size;
+    unsigned char* output_stream_end;
 
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) audio->client->data;
 
-	stream_seek_uint32(input_stream); /* dwFlags */
-	stream_seek_uint32(input_stream); /* dwVolume */
-	stream_seek_uint32(input_stream); /* dwPitch */
-	stream_seek_uint16(input_stream); /* wDGramPort */
-	stream_read_uint16(input_stream, wNumberOfFormats);
-	stream_read_uint8(input_stream, rdpsnd->cBlockNo); /* cLastBlockConfirmed */
-	stream_read_uint16(input_stream, wVersion);
-	stream_seek_uint8(input_stream); /* bPad */
+    /* Format header */
+    stream_seek(input_stream, 14);
+    stream_read_uint16(input_stream, server_format_count);
+    stream_seek_uint8(input_stream);
+    stream_read_uint16(input_stream, server_version);
+    stream_seek_uint8(input_stream);
 
-	out_formats = (rdpsndFormat*)
-        xzalloc(wNumberOfFormats * sizeof(rdpsndFormat));
+    /* Initialize Client Audio Formats and Version PDU */
+    output_stream = stream_new(24);
+    stream_write_uint8(output_stream,  SNDC_FORMATS);
+    stream_write_uint8(output_stream,  0);
 
-	n_out_formats = 0;
+    /* Fill in body size later */
+    stream_seek_uint16(output_stream); /* offset = 0x02 */
 
-	output_stream = stream_new(24);
-	stream_write_uint8(output_stream, SNDC_FORMATS); /* msgType */
-	stream_write_uint8(output_stream, 0); /* bPad */
-	stream_seek_uint16(output_stream); /* BodySize */
-	stream_write_uint32(output_stream, TSSNDCAPS_ALIVE); /* dwFlags */
-	stream_write_uint32(output_stream, 0); /* dwVolume */
-	stream_write_uint32(output_stream, 0); /* dwPitch */
-	stream_write_uint16_be(output_stream, 0); /* wDGramPort */
-	stream_seek_uint16(output_stream); /* wNumberOfFormats */
-	stream_write_uint8(output_stream, 0); /* cLastBlockConfirmed */
-	stream_write_uint16(output_stream, 6); /* wVersion */
-	stream_write_uint8(output_stream, 0); /* bPad */
+    /* Flags, volume, and pitch */
+    stream_write_uint32(output_stream, TSSNDCAPS_ALIVE);
+    stream_write_uint32(output_stream, 0);
+    stream_write_uint32(output_stream, 0);
 
-	for (nFormat = 0; nFormat < wNumberOfFormats; nFormat++) {
+    /* Datagram port (UDP) */
+    stream_write_uint16(output_stream, 0);
 
-		stream_get_mark(input_stream, format_mark);
-		format = &out_formats[n_out_formats];
-		stream_read_uint16(input_stream, format->wFormatTag);
-		stream_read_uint16(input_stream, format->nChannels);
-		stream_read_uint32(input_stream, format->nSamplesPerSec);
-		stream_seek_uint32(input_stream); /* nAvgBytesPerSec */
-		stream_read_uint16(input_stream, format->nBlockAlign);
-		stream_read_uint16(input_stream, format->wBitsPerSample);
-		stream_read_uint16(input_stream, format->cbSize);
-		stream_get_mark(input_stream, data_mark);
-		stream_seek(input_stream, format->cbSize);
-		format->data = NULL;
+    /* Fill in format count later */
+    stream_seek_uint16(output_stream); /* offset = 0x12 */
 
-		if (format->wFormatTag == WAVE_FORMAT_PCM) {
+    /* Version and padding */
+    stream_write_uint8(output_stream,  0);
+    stream_write_uint16(output_stream, 6);
+    stream_write_uint8(output_stream,  0);
+
+    /* Check each server format, respond if supported */
+    for (i=0; i < server_format_count; i++) {
+
+        unsigned char* format_start;
+
+        int format_tag;
+        int channels;
+        int rate;
+        int bps;
+        int body_size;
+
+        /* Remember position in stream */
+        stream_get_mark(input_stream, format_start);
+
+        /* Read format */
+        stream_read_uint16(input_stream, format_tag);
+        stream_read_uint16(input_stream, channels);
+        stream_read_uint32(input_stream, rate);
+        stream_seek_uint32(input_stream);
+        stream_seek_uint16(input_stream);
+        stream_read_uint16(input_stream, bps);
+
+        /* Skip past extra data */
+        stream_read_uint16(input_stream, body_size);
+        stream_seek(input_stream, body_size);
+
+        /* If PCM, accept */
+        if (format_tag == WAVE_FORMAT_PCM) {
 
             /* If can fit another format, accept it */
             if (rdpsnd->format_count < GUAC_RDP_MAX_FORMATS) {
 
                 /* Add channel */
                 int current = rdpsnd->format_count++;
-                rdpsnd->formats[current].rate     = format->nSamplesPerSec;
-                rdpsnd->formats[current].channels = format->nChannels;
-                rdpsnd->formats[current].bps      = format->wBitsPerSample;
+                rdpsnd->formats[current].rate     = rate;
+                rdpsnd->formats[current].channels = channels;
+                rdpsnd->formats[current].bps      = bps;
 
                 /* Log format */
                 guac_client_log_info(audio->client,
                         "Accepted format: %i-bit PCM with %i channels at "
                         "%i Hz",
-                        format->wBitsPerSample,
-                        format->nChannels,
-                        format->nSamplesPerSec);
+                        bps, channels, rate);
 
-                /* Store as accepted for future response */
-                stream_check_size(output_stream, 18 + format->cbSize);
-                stream_write(output_stream, format_mark, 18 + format->cbSize);
-                if (format->cbSize > 0) {
-                    format->data = xmalloc(format->cbSize);
-                    memcpy(format->data, data_mark, format->cbSize);
-                }
-                n_out_formats++;
+                /* Queue format for sending as accepted */
+                stream_check_size(output_stream, 18 + body_size);
+                stream_write(output_stream, format_start, 18 + body_size);
+
+                /* 
+                 * BEWARE that using stream_check_size means that any "marks"
+                 * set via stream_set_mark on output_stream are invalid.
+                 */
 
             }
 
@@ -135,141 +159,155 @@ void guac_rdpsnd_process_message_formats(guac_rdpsndPlugin* rdpsnd,
                 guac_client_log_info(audio->client,
                         "Dropped valid format: %i-bit PCM with %i channels at "
                         "%i Hz",
-                        format->wBitsPerSample,
-                        format->nChannels,
-                        format->nSamplesPerSec);
+                        bps, channels, rate);
 
-		}
+        }
 
-	}
+    }
 
-    xfree(out_formats);
+    /* Calculate size of PDU */
+    output_body_size = stream_get_length(output_stream) - 4;
+    stream_get_mark(output_stream, output_stream_end);
 
-	pos = stream_get_pos(output_stream);
-	stream_set_pos(output_stream, 2);
-	stream_write_uint16(output_stream, pos - 4);
-	stream_set_pos(output_stream, 18);
-	stream_write_uint16(output_stream, n_out_formats);
-	stream_set_pos(output_stream, pos);
+    /* Set body size */
+    stream_set_pos(output_stream, 0x02);
+    stream_write_uint16(output_stream, output_body_size);
 
+    /* Set format count */
+    stream_set_pos(output_stream, 0x12);
+    stream_write_uint16(output_stream, rdpsnd->format_count);
+
+    /* Reposition cursor at end (necessary for message send) */
+    stream_set_mark(output_stream, output_stream_end);
+
+    /* Send accepted formats */
     pthread_mutex_lock(&(guac_client_data->rdp_lock));
-	svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
+    svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
 
-	if (wVersion >= 6) {
+    /* If version greater than 6, must send Quality Mode PDU */
+    if (server_version >= 6) {
 
-        /* Respond with guality mode */
-		output_stream = stream_new(8);
-		stream_write_uint8(output_stream, SNDC_QUALITYMODE); /* msgType */
-		stream_write_uint8(output_stream, 0);                /* bPad */
-		stream_write_uint16(output_stream, 4);               /* BodySize */
-		stream_write_uint16(output_stream, HIGH_QUALITY);    /* wQualityMode */
-		stream_write_uint16(output_stream, 0);               /* Reserved */
+        /* Always send High Quality for now */
+        output_stream = stream_new(8);
+        stream_write_uint8(output_stream, SNDC_QUALITYMODE);
+        stream_write_uint8(output_stream, 0);
+        stream_write_uint16(output_stream, 4);
+        stream_write_uint16(output_stream, HIGH_QUALITY);
+        stream_write_uint16(output_stream, 0);
 
-		svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
-	}
+        svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
+    }
 
     pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 
 }
 
 /* server is getting a feel of the round trip time */
-void guac_rdpsnd_process_message_training(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream) {
+void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
+        audio_stream* audio, STREAM* input_stream,
+        guac_rdpsnd_pdu_header* header) {
 
-	uint16 wTimeStamp;
-	uint16 wPackSize;
-	STREAM* output_stream;
+    int data_size;
+    STREAM* output_stream;
 
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) audio->client->data;
 
-    /* Read timestamp */
-	stream_read_uint16(input_stream, wTimeStamp);
-	stream_read_uint16(input_stream, wPackSize);
+    /* Read timestamp and data size */
+    stream_read_uint16(input_stream, rdpsnd->server_timestamp);
+    stream_read_uint16(input_stream, data_size);
 
     /* Send training response */
-	output_stream = stream_new(8);
-	stream_write_uint8(output_stream, SNDC_TRAINING); /* msgType */
-	stream_write_uint8(output_stream, 0);             /* bPad */
-	stream_write_uint16(output_stream, 4);            /* BodySize */
-	stream_write_uint16(output_stream, wTimeStamp);
-	stream_write_uint16(output_stream, wPackSize);
+    output_stream = stream_new(8);
+    stream_write_uint8(output_stream, SNDC_TRAINING);
+    stream_write_uint8(output_stream, 0);
+    stream_write_uint16(output_stream, 4);
+    stream_write_uint16(output_stream, rdpsnd->server_timestamp);
+    stream_write_uint16(output_stream, data_size);
 
     pthread_mutex_lock(&(guac_client_data->rdp_lock));
-	svc_plugin_send((rdpSvcPlugin*) rdpsnd, output_stream);
+    svc_plugin_send((rdpSvcPlugin*) rdpsnd, output_stream);
     pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 
 }
 
-void guac_rdpsnd_process_message_wave_info(guac_rdpsndPlugin* rdpsnd, audio_stream* audio, STREAM* input_stream, uint16 BodySize) {
+void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
+        audio_stream* audio, STREAM* input_stream,
+        guac_rdpsnd_pdu_header* header) {
 
-	uint16 wFormatNo;
+    unsigned char buffer[4];
+    int format;
 
     /* Read wave information */
-	stream_read_uint16(input_stream, rdpsnd->wTimeStamp);
-	stream_read_uint16(input_stream, wFormatNo);
-	stream_read_uint8(input_stream, rdpsnd->cBlockNo);
-	stream_seek(input_stream, 3); /* bPad */
-	stream_read(input_stream, rdpsnd->waveData, 4);
+    stream_read_uint16(input_stream, rdpsnd->server_timestamp);
+    stream_read_uint16(input_stream, format);
+    stream_read_uint8(input_stream, rdpsnd->waveinfo_block_number);
+    stream_seek(input_stream, 3);
+    stream_read(input_stream, buffer, 4);
+
+    /*
+     * Size of incoming wave data is equal to the body size field of this
+     * header, less the size of a WaveInfo PDU (not including the header),
+     * thus body_size - 12.
+     */
+    rdpsnd->incoming_wave_size = header->body_size - 12;
 
     /* Read wave in next iteration */
-	rdpsnd->waveDataSize = BodySize - 8;
-	rdpsnd->expectingWave = true;
+    rdpsnd->next_pdu_is_wave = true;
 
     /* Init stream with requested format */
     audio_stream_begin(audio,
-            rdpsnd->formats[wFormatNo].rate,
-            rdpsnd->formats[wFormatNo].channels,
-            rdpsnd->formats[wFormatNo].bps);
+            rdpsnd->formats[format].rate,
+            rdpsnd->formats[format].channels,
+            rdpsnd->formats[format].bps);
+
+    /* Write initial 4 bytes of data */
+    audio_stream_write_pcm(audio, buffer, 4);
 
 }
 
-/* header is not removed from data in this function */
-void rdpsnd_process_message_wave(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream) {
+void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
+        audio_stream* audio, STREAM* input_stream,
+        guac_rdpsnd_pdu_header* header) {
 
-	rdpSvcPlugin* plugin = (rdpSvcPlugin*)rdpsnd;
-
-	STREAM* output_stream;
-
-    unsigned char* buffer = stream_get_head(input_stream);
+    rdpSvcPlugin* plugin = (rdpSvcPlugin*)rdpsnd;
 
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) audio->client->data;
 
-	rdpsnd->expectingWave = 0;
-	memcpy(buffer, rdpsnd->waveData, 4);
+    /* Wave Confirmation PDU */
+    STREAM* output_stream = stream_new(8);
+
+    /* Get wave data */
+    unsigned char* buffer = stream_get_head(input_stream) + 4;
 
     /* Write rest of audio packet */
-    audio_stream_write_pcm(audio, buffer, rdpsnd->waveDataSize);
+    audio_stream_write_pcm(audio, buffer, rdpsnd->incoming_wave_size);
     audio_stream_end(audio);
 
-	output_stream = stream_new(8);
-	stream_write_uint8(output_stream, SNDC_WAVECONFIRM);
-	stream_write_uint8(output_stream, 0);
-	stream_write_uint16(output_stream, 4);
-	stream_write_uint16(output_stream, rdpsnd->wTimeStamp);
-	stream_write_uint8(output_stream, rdpsnd->cBlockNo); /* cConfirmedBlockNo */
-	stream_write_uint8(output_stream, 0); /* bPad */
+    /* Write Wave Confirmation PDU */
+    stream_write_uint8(output_stream, SNDC_WAVECONFIRM);
+    stream_write_uint8(output_stream, 0);
+    stream_write_uint16(output_stream, 4);
+    stream_write_uint16(output_stream, rdpsnd->server_timestamp);
+    stream_write_uint8(output_stream, rdpsnd->waveinfo_block_number);
+    stream_write_uint8(output_stream, 0);
 
+    /* Send Wave Confirmation PDU */
     pthread_mutex_lock(&(guac_client_data->rdp_lock));
     svc_plugin_send(plugin, output_stream);
     pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 
-	rdpsnd->plugin.interval_ms = 10;
-}
-
-void guac_rdpsnd_process_message_setvolume(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream) {
-
-    /* Ignored for now */
-	uint32 dwVolume;
-	stream_read_uint32(input_stream, dwVolume);
+    /* We no longer expect to receive wave data */
+    rdpsnd->next_pdu_is_wave = false;
 
 }
 
-void guac_rdpsnd_process_message_close(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio) {
-	rdpsnd->plugin.interval_ms = 10;
+void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
+        audio_stream* audio, STREAM* input_stream,
+        guac_rdpsnd_pdu_header* header) {
+
+    /* STUB: Do nothing for now */
+
 }
 
