@@ -288,7 +288,7 @@ int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_audio(guac_socket* socket, int channel,
-        const char* mimetype, int duration, void* data, int size);
+        const char* mimetype, double duration, void* data, int size);
 
 /**
  * Begins a audio instruction over the given guac_socket connection. Only the
@@ -315,7 +315,7 @@ int guac_protocol_send_audio(guac_socket* socket, int channel,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_audio_header(guac_socket* socket,
-        int channel, const char* mimetype, int duration, int size);
+        int channel, const char* mimetype, double duration, int size);
 
 /**
  * Writes a block of audio data to the currently in-progress audio instruction
@@ -438,7 +438,7 @@ int guac_protocol_send_file_end(guac_socket* socket);
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_video(guac_socket* socket, const guac_layer* layer,
-        const char* mimetype, int duration, void* data, int size);
+        const char* mimetype, double duration, void* data, int size);
 
 /**
  * Begins a video instruction over the given guac_socket connection. Only the
@@ -465,7 +465,7 @@ int guac_protocol_send_video(guac_socket* socket, const guac_layer* layer,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_video_header(guac_socket* socket,
-        const guac_layer* layer, const char* mimetype, int duration, int size);
+        const guac_layer* layer, const char* mimetype, double duration, int size);
 
 /**
  * Writes a block of video data to the currently in-progress video instruction

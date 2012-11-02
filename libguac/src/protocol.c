@@ -400,7 +400,7 @@ int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
 }
 
 int guac_protocol_send_audio(guac_socket* socket, int channel,
-        const char* mimetype, int duration, void* data, int size) {
+        const char* mimetype, double duration, void* data, int size) {
 
     return
            guac_protocol_send_audio_header(socket, channel,
@@ -411,7 +411,7 @@ int guac_protocol_send_audio(guac_socket* socket, int channel,
 }
 
 int guac_protocol_send_audio_header(guac_socket* socket,
-        int channel, const char* mimetype, int duration, int size) {
+        int channel, const char* mimetype, double duration, int size) {
 
     int base64_length = (size + 2) / 3 * 4;
 
@@ -421,7 +421,7 @@ int guac_protocol_send_audio_header(guac_socket* socket,
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, mimetype)
         || guac_socket_write_string(socket, ",")
-        || __guac_socket_write_length_int(socket, duration)
+        || __guac_socket_write_length_double(socket, duration)
         || guac_socket_write_string(socket, ",")
         || guac_socket_write_int(socket, base64_length)
         || guac_socket_write_string(socket, ".");
@@ -1009,7 +1009,7 @@ int guac_protocol_send_transform(guac_socket* socket, const guac_layer* layer,
 }
 
 int guac_protocol_send_video(guac_socket* socket, const guac_layer* layer,
-        const char* mimetype, int duration, void* data, int size) {
+        const char* mimetype, double duration, void* data, int size) {
 
     return
            guac_protocol_send_video_header(socket, layer,
@@ -1020,7 +1020,7 @@ int guac_protocol_send_video(guac_socket* socket, const guac_layer* layer,
 }
 
 int guac_protocol_send_video_header(guac_socket* socket,
-        const guac_layer* layer, const char* mimetype, int duration, int size) {
+        const guac_layer* layer, const char* mimetype, double duration, int size) {
 
     int base64_length = (size + 2) / 3 * 4;
 
@@ -1030,7 +1030,7 @@ int guac_protocol_send_video_header(guac_socket* socket,
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, mimetype)
         || guac_socket_write_string(socket, ",")
-        || __guac_socket_write_length_int(socket, duration)
+        || __guac_socket_write_length_double(socket, duration)
         || guac_socket_write_string(socket, ",")
         || guac_socket_write_int(socket, base64_length)
         || guac_socket_write_string(socket, ".");
