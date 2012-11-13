@@ -83,7 +83,7 @@ ssize_t __guac_socket_write_length_int(guac_socket* socket, int64_t i) {
 ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
 
     char buffer[128];
-    snprintf(buffer, sizeof(buffer), "%g", d);
+    snprintf(buffer, sizeof(buffer), "%.16g", d);
     return __guac_socket_write_length_string(socket, buffer);
 
 }
