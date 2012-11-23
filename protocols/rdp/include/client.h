@@ -140,6 +140,11 @@ typedef struct rdp_guac_client_data {
     char* clipboard;
 
     /**
+     * Whether audio is enabled.
+     */
+    int audio_enabled;
+
+    /**
      * Audio output, if any.
      */
     audio_stream* audio;

@@ -91,6 +91,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "height",
     "initial-program",
     "color-depth",
+    "disable-audio",
     NULL
 };
 
@@ -103,7 +104,8 @@ enum ARGS_IDX {
     IDX_WIDTH,
     IDX_HEIGHT,
     IDX_INITIAL_PROGRAM,
-    IDX_COLOR_DEPTH
+    IDX_COLOR_DEPTH,
+    IDX_DISABLE_AUDIO
 };
 
 int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, uint8* data, int size, int flags, int total_size) {
@@ -130,42 +132,49 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
                 "cliprdr", NULL))
         guac_client_log_error(client, "Failed to load cliprdr plugin.");
 
-    /* Choose an encoding */
-    for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
+    /* If audio enabled, choose an encoder */
+    if (guac_client_data->audio_enabled) {
 
-        const char* mimetype = client->info.audio_mimetypes[i];
+        /* Choose an encoding */
+        for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
+
+            const char* mimetype = client->info.audio_mimetypes[i];
 
 #ifdef ENABLE_OGG
-        /* If Ogg is supported, done. */
-        if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
-            guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
-            guac_client_data->audio = audio_stream_alloc(client, ogg_encoder);
-            break;
-        }
+            /* If Ogg is supported, done. */
+            if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
+                guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
+                guac_client_data->audio = audio_stream_alloc(client,
+                        ogg_encoder);
+                break;
+            }
 #endif
 
-        /* If wav is supported, done. */
-        if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
-            guac_client_log_info(client, "Loading wav encoder.");
-            guac_client_data->audio = audio_stream_alloc(client, wav_encoder);
-            break;
+            /* If wav is supported, done. */
+            if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
+                guac_client_log_info(client, "Loading wav encoder.");
+                guac_client_data->audio = audio_stream_alloc(client,
+                        wav_encoder);
+                break;
+            }
+
         }
 
-    }
+        /* If an encoding is available, load the sound plugin */
+        if (guac_client_data->audio != NULL) {
 
-    /* If an encoding is available, load the sound plugin */
-    if (guac_client_data->audio != NULL) {
+            /* Load sound plugin */
+            if (freerdp_channels_load_plugin(channels, instance->settings,
+                        "guac_rdpsnd", guac_client_data->audio))
+                guac_client_log_error(client,
+                        "Failed to load guac_rdpsnd plugin.");
 
-        /* Load sound plugin */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
-                    "guac_rdpsnd", guac_client_data->audio))
-            guac_client_log_error(client,
-                    "Failed to load guac_rdpsnd plugin.");
+        }
+        else
+            guac_client_log_info(client,
+                    "No available audio encoding. Sound disabled.");
 
-    }
-    else
-        guac_client_log_info(client,
-                "No available audio encoding. Sound disabled.");
+    } /* end if audio enabled */
 
     /* Init color conversion structure */
     clrconv = xnew(CLRCONV);
@@ -436,6 +445,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                 "Invalid color-depth: \"%s\". Using default of %i.",
                 argv[IDX_WIDTH], settings->color_depth);
     }
+
+    /* Audio enable/disable */
+    guac_client_data->audio_enabled =
+        (strcmp(argv[IDX_DISABLE_AUDIO], "true") != 0);
 
     /* Order support */
     bitmap_cache = settings->bitmap_cache;
