@@ -53,7 +53,23 @@ AC_CHECK_LIB([freerdp-utils], [xzalloc],, AC_MSG_ERROR("libfreerdp-utils is requ
 AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],, AC_MSG_ERROR("libfreerdp-codec is required (part of FreeRDP)"))
 AC_CHECK_LIB([pthread], [pthread_mutex_init],, AC_MSG_ERROR("libpthread is required"))
 
-AC_CHECK_LIB([vorbisenc], [vorbis_encode_init],, AC_MSG_ERROR("libvorbisenc is required for sound"))
+# Check for libvorbisenc
+
+have_vorbisenc=no
+AC_CHECK_HEADER(vorbis/vorbisenc.h,
+    AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [have_vorbisenc=yes]))
+AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbisenc}" = "xyes"])
+
+if test "x${have_vorbisenc}" = "xno"
+then
+    AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libvorbisenc.
+   Sound will not be encoded with Ogg Vorbis.
+  --------------------------------------------])
+else
+    AC_DEFINE([ENABLE_OGG])
+fi
 
 # Checks for header files.
 AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h freerdp/locale/keyboard.h freerdp/kbd/layouts.h])

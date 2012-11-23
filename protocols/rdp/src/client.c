@@ -65,8 +65,11 @@
 #include <guacamole/error.h>
 
 #include "audio.h"
-#include "ogg_encoder.h"
 #include "wav_encoder.h"
+
+#ifdef ENABLE_OGG
+#include "ogg_encoder.h"
+#endif
 
 #include "client.h"
 #include "guac_handlers.h"
@@ -132,12 +135,14 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
 
         const char* mimetype = client->info.audio_mimetypes[i];
 
+#ifdef ENABLE_OGG
         /* If Ogg is supported, done. */
         if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
             guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
             guac_client_data->audio = audio_stream_alloc(client, ogg_encoder);
             break;
         }
+#endif
 
         /* If wav is supported, done. */
         if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
