@@ -55,9 +55,9 @@ AC_CHECK_LIB([pthread], [pthread_mutex_init],, AC_MSG_ERROR("libpthread is requi
 
 # Check for libvorbisenc
 
-have_vorbisenc=no
-AC_CHECK_HEADER(vorbis/vorbisenc.h,
-    AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [have_vorbisenc=yes]))
+have_vorbisenc=yes
+AC_CHECK_HEADER(vorbis/vorbisenc.h,, [have_vorbisenc=no])
+AC_CHECK_LIB([vorbisenc], [vorbis_encode_init],, [have_vorbisenc=no])
 AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbisenc}" = "xyes"])
 
 if test "x${have_vorbisenc}" = "xno"
