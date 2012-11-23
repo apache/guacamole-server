@@ -1,4 +1,12 @@
-2012-10-22 Michael Jumper <zhangmzike@users.sourceforge.net>
+2012-11-22 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Add disable-audio option (fixes #221)
+
+2012-11-02 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Added sound support (fixes #32)
+
+2012-10-22 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Use guac_client_info to choose optimal size if size not overridden
 
