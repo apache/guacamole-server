@@ -168,6 +168,8 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         }
     }
 
+    pthread_mutex_lock(&(guac_client_data->rdp_lock));
+
     /* Check the libfreerdp fds */
     if (!freerdp_check_fds(rdp_inst)) {
         guac_error = GUAC_STATUS_BAD_STATE;
@@ -200,6 +202,8 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         guac_error_message = "RDP server closed connection";
         return 1;
     }
+
+    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 
     /* Flush any audio */
     if (guac_client_data->audio != NULL) {
