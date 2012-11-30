@@ -59,7 +59,20 @@ guac_pool* guac_pool_alloc(int size) {
 }
 
 void guac_pool_free(guac_pool* pool) {
+
+    /* Free all ints in pool */
+    guac_pool_int* current = pool->__head;
+    while (current != NULL) {
+
+        guac_pool_int* old = current;
+        current = current->__next;
+
+        free(old);
+    }
+
+    /* Free pool */
     free(pool);
+
 }
 
 int guac_pool_next_int(guac_pool* pool) {
