@@ -166,6 +166,9 @@ void guac_client_free(guac_client* client) {
     guac_pool_free(client->__buffer_pool);
     guac_pool_free(client->__layer_pool);
 
+    /* Free stream pool */
+    guac_pool_free(client->__stream_pool);
+
     free(client);
 }
 
