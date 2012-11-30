@@ -243,6 +243,11 @@ void guacd_handle_connection(int fd) {
     free(client->info.audio_mimetypes);
     free(client->info.video_mimetypes);
 
+    /* Free remaining instructions */
+    guac_instruction_free(audio);
+    guac_instruction_free(video);
+    guac_instruction_free(size);
+
     /* Clean up */
     guac_client_free(client);
     if (guac_client_plugin_close(plugin))
