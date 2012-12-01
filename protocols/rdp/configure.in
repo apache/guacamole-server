@@ -35,7 +35,7 @@
 # ***** END LICENSE BLOCK *****
 
 AC_INIT(src/client.c)
-AM_INIT_AUTOMAKE([libguac-client-rdp], 0.6.2)
+AM_INIT_AUTOMAKE([libguac-client-rdp], 0.7.0)
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
