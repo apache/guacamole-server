@@ -47,16 +47,24 @@
 
 typedef struct guac_pool_int guac_pool_int;
 
+/**
+ * A pool of integers. Integers can be removed from and later free'd back
+ * into the pool. New integers are returned when the pool is exhausted,
+ * or when the pool has not met some minimum size. Old, free'd integers
+ * are returned otherwise.
+ */
 typedef struct guac_pool {
 
     /**
-     * The minimum number of integers which must have been returned by guac_pool_next_int
-     * before previously-used and freed integers are allowed to be returned.
+     * The minimum number of integers which must have been returned by
+     * guac_pool_next_int before previously-used and freed integers are
+     * allowed to be returned.
      */
     int min_size;
 
     /**
-     * The next integer to be released (after no more integers remain in the pool.
+     * The next integer to be released (after no more integers remain in the
+     * pool.
      */
     int __next_value;
 
@@ -73,7 +81,7 @@ typedef struct guac_pool {
 } guac_pool;
 
 /**
- * Represents a single layer within the Guacamole protocol.
+ * Represents a single integer within a larger pool of integers.
  */
 struct guac_pool_int {
 
