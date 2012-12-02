@@ -39,8 +39,8 @@
 #define _GUAC_POOL_H
 
 /**
- * Provides functions and structures for maintaining dynamically allocated and freed
- * pools of integers.
+ * Provides functions and structures for maintaining dynamically allocated and
+ * freed pools of integers.
  *
  * @file pool.h
  */

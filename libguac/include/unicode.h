@@ -41,6 +41,12 @@
 #include <stddef.h>
 
 /**
+ * Provides functions for manipulating Unicode strings.
+ *
+ * @file unicode.h
+ */
+
+/**
  * Given the initial byte of a single UTF-8 character, returns the overall
  * byte size of the entire character.
  *

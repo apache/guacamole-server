@@ -42,7 +42,7 @@
  * Provides functions and structures required for allocating and using nested
  * streams.
  *
- * @file layer.h
+ * @file stream.h
  */
 
 typedef struct guac_stream guac_stream;
