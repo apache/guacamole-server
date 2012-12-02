@@ -56,16 +56,16 @@
 #include "socket.h"
 #include "error.h"
 
-typedef struct guac_socket_fd_data {
+typedef struct __guac_socket_fd_data {
 
     int fd;
 
-} guac_socket_fd_data;
+} __guac_socket_fd_data;
 
 ssize_t __guac_socket_fd_read_handler(guac_socket* socket,
         void* buf, size_t count) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    __guac_socket_fd_data* data = (__guac_socket_fd_data*) socket->data;
 
     /* Read from socket */
     int retval = read(data->fd, buf, count);
@@ -83,7 +83,7 @@ ssize_t __guac_socket_fd_read_handler(guac_socket* socket,
 ssize_t __guac_socket_fd_write_handler(guac_socket* socket,
         void* buf, size_t count) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    __guac_socket_fd_data* data = (__guac_socket_fd_data*) socket->data;
     int retval;
 
 #ifdef __MINGW32__
@@ -106,7 +106,7 @@ ssize_t __guac_socket_fd_write_handler(guac_socket* socket,
 
 int __guac_socket_fd_select_handler(guac_socket* socket, int usec_timeout) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    __guac_socket_fd_data* data = (__guac_socket_fd_data*) socket->data;
 
     fd_set fds;
     struct timeval timeout;
@@ -146,7 +146,7 @@ guac_socket* guac_socket_open(int fd) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
-    guac_socket_fd_data* data = malloc(sizeof(guac_socket_fd_data));
+    __guac_socket_fd_data* data = malloc(sizeof(__guac_socket_fd_data));
 
     /* Store file descriptor as socket data */
     data->fd = fd;

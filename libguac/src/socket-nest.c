@@ -60,18 +60,18 @@
 
 #define GUAC_SOCKET_NEST_BUFFER_SIZE 8192
 
-typedef struct guac_socket_nest_data {
+typedef struct __guac_socket_nest_data {
 
     guac_socket* parent;
     char buffer[GUAC_SOCKET_NEST_BUFFER_SIZE];
     int index;
 
-} guac_socket_nest_data;
+} __guac_socket_nest_data;
 
 ssize_t __guac_socket_nest_write_handler(guac_socket* socket,
         void* buf, size_t count) {
 
-    guac_socket_nest_data* data = (guac_socket_nest_data*) socket->data;
+    __guac_socket_nest_data* data = (__guac_socket_nest_data*) socket->data;
     unsigned char* source = (unsigned char*) buf;
 
     /* Current location in destination buffer during copy */
@@ -137,7 +137,7 @@ guac_socket* guac_socket_nest(guac_socket* parent, int index) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
-    guac_socket_nest_data* data = malloc(sizeof(guac_socket_nest_data));
+    __guac_socket_nest_data* data = malloc(sizeof(__guac_socket_nest_data));
 
     /* Store file descriptor as socket data */
     data->parent = parent;
