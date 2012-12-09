@@ -42,20 +42,20 @@
 
 #include <guacamole/client.h>
 
-typedef struct ssh_guac_terminal ssh_guac_terminal;
+typedef struct guac_terminal guac_terminal;
 
 /**
  * Handler for characters printed to the terminal. When a character is printed,
  * the current char handler for the terminal is called and given that
  * character.
  */
-typedef int ssh_guac_terminal_char_handler(ssh_guac_terminal* term, char c);
+typedef int guac_terminal_char_handler(guac_terminal* term, char c);
 
 /**
  * Represents a single character for display in a terminal, including actual
  * character value, foreground color, and background color.
  */
-typedef struct ssh_guac_terminal_char {
+typedef struct guac_terminal_char {
 
     /**
      * The character value of the character to display.
@@ -72,13 +72,13 @@ typedef struct ssh_guac_terminal_char {
      */
     int background;
 
-} ssh_guac_terminal_char;
+} guac_terminal_char;
 
 /**
  * Represents a terminal emulator which uses a given Guacamole client to
  * render itself.
  */
-struct ssh_guac_terminal {
+struct guac_terminal {
 
     /**
      * The Guacamole client this terminal emulator will use for rendering.
@@ -126,7 +126,7 @@ struct ssh_guac_terminal {
      * Array of scrollback buffer rows, where each row is an array of 
      * characters.
      */
-    ssh_guac_terminal_char** scrollback;
+    guac_terminal_char** scrollback;
 
     /**
      * The width of each character, in pixels.
@@ -182,46 +182,46 @@ struct ssh_guac_terminal {
     int default_foreground;
     int default_background;
 
-    ssh_guac_terminal_char_handler* char_handler;
+    guac_terminal_char_handler* char_handler;
 
 };
 
-typedef struct ssh_guac_terminal_color {
+typedef struct guac_terminal_color {
     int red;
     int green;
     int blue;
-} ssh_guac_terminal_color;
+} guac_terminal_color;
 
-extern const ssh_guac_terminal_color ssh_guac_terminal_palette[16];
+extern const guac_terminal_color guac_terminal_palette[16];
 
-ssh_guac_terminal* ssh_guac_terminal_create(guac_client* client,
+guac_terminal* guac_terminal_create(guac_client* client,
         int width, int height);
 
-void ssh_guac_terminal_free(ssh_guac_terminal* term);
+void guac_terminal_free(guac_terminal* term);
 
-int ssh_guac_terminal_write(ssh_guac_terminal* term, const char* c, int size);
+int guac_terminal_write(guac_terminal* term, const char* c, int size);
 
-int ssh_guac_terminal_redraw_cursor(ssh_guac_terminal* term);
+int guac_terminal_redraw_cursor(guac_terminal* term);
 
-int ssh_guac_terminal_set_colors(ssh_guac_terminal* term,
+int guac_terminal_set_colors(guac_terminal* term,
         int foreground, int background);
 
-int ssh_guac_terminal_set(ssh_guac_terminal* term, int row, int col, char c);
+int guac_terminal_set(guac_terminal* term, int row, int col, char c);
 
-int ssh_guac_terminal_copy(ssh_guac_terminal* term,
+int guac_terminal_copy(guac_terminal* term,
         int src_row, int src_col, int rows, int cols,
         int dst_row, int dst_col);
 
-int ssh_guac_terminal_clear(ssh_guac_terminal* term,
+int guac_terminal_clear(guac_terminal* term,
         int row, int col, int rows, int cols, int background_color);
 
-int ssh_guac_terminal_scroll_up(ssh_guac_terminal* term,
+int guac_terminal_scroll_up(guac_terminal* term,
         int start_row, int end_row, int amount);
 
-int ssh_guac_terminal_scroll_down(ssh_guac_terminal* term,
+int guac_terminal_scroll_down(guac_terminal* term,
         int start_row, int end_row, int amount);
 
-int ssh_guac_terminal_clear_range(ssh_guac_terminal* term,
+int guac_terminal_clear_range(guac_terminal* term,
         int start_row, int start_col,
         int end_row, int end_col, int background_color);
 

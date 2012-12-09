@@ -38,13 +38,13 @@
 #ifndef _SSH_GUAC_TERMINAL_HANDLERS
 #define _SSH_GUAC_TERMINAL_HANDLERS
 
-#include "ssh_terminal.h"
+#include "terminal.h"
 
-int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c);
-int ssh_guac_terminal_escape(ssh_guac_terminal* term, char c);
-int ssh_guac_terminal_charset(ssh_guac_terminal* term, char c);
-int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c);
-int ssh_guac_terminal_osc(ssh_guac_terminal* term, char c);
+int guac_terminal_echo(guac_terminal* term, char c);
+int guac_terminal_escape(guac_terminal* term, char c);
+int guac_terminal_charset(guac_terminal* term, char c);
+int guac_terminal_csi(guac_terminal* term, char c);
+int guac_terminal_osc(guac_terminal* term, char c);
 
 #endif
 

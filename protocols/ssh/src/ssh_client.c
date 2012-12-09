@@ -47,7 +47,7 @@
 
 #include "ssh_client.h"
 #include "ssh_handlers.h"
-#include "ssh_terminal.h"
+#include "terminal.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -68,8 +68,8 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
         if (keysym >= 0x00 && keysym <= 0xFF) {
             /* Add to password */
             client_data->password[client_data->password_length++] = keysym;
-            ssh_guac_terminal_write(client_data->term, "*", 1);
-            ssh_guac_terminal_redraw_cursor(client_data->term);
+            guac_terminal_write(client_data->term, "*", 1);
+            guac_terminal_redraw_cursor(client_data->term);
             guac_socket_flush(client->socket);
         }
         else if (keysym == 0xFF08) {
@@ -78,8 +78,8 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
                 client_data->password_length--;
 
                 /* Backspace */
-                ssh_guac_terminal_write(client_data->term, "\x08\x1B[K", 4);
-                ssh_guac_terminal_redraw_cursor(client_data->term);
+                guac_terminal_write(client_data->term, "\x08\x1B[K", 4);
+                guac_terminal_redraw_cursor(client_data->term);
                 guac_socket_flush(client->socket);
             }
 
@@ -90,8 +90,8 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
             client_data->password[client_data->password_length] = '\0';
 
             /* Clear screen */
-            ssh_guac_terminal_write(client_data->term, "\x1B[2J\x1B[1;1H", 10);
-            ssh_guac_terminal_redraw_cursor(client_data->term);
+            guac_terminal_write(client_data->term, "\x1B[2J\x1B[1;1H", 10);
+            guac_terminal_redraw_cursor(client_data->term);
             guac_socket_flush(client->socket);
 
             return ssh_guac_client_auth(client, client_data->password);
@@ -109,7 +109,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_socket* socket = client->socket;
 
     ssh_guac_client_data* client_data = malloc(sizeof(ssh_guac_client_data));
-    ssh_guac_terminal* term = ssh_guac_terminal_create(client,
+    guac_terminal* term = guac_terminal_create(client,
             client->info.optimal_width, client->info.optimal_height);
 
     /* Init client data */
@@ -165,8 +165,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     else {
         
         client_data->password_length = 0;
-        ssh_guac_terminal_write(client_data->term, "Password: ", 10);
-        ssh_guac_terminal_redraw_cursor(client_data->term);
+        guac_terminal_write(client_data->term, "Password: ", 10);
+        guac_terminal_redraw_cursor(client_data->term);
         guac_socket_flush(client->socket);
 
         client->key_handler = ssh_guac_client_password_key_handler;
@@ -182,7 +182,7 @@ int ssh_guac_client_auth(guac_client* client, const char* password) {
 
     guac_socket* socket = client->socket;
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
-    ssh_guac_terminal* term = client_data->term;
+    guac_terminal* term = client_data->term;
 
     /* Authenticate */
     if (ssh_userauth_password(client_data->session, NULL, password) != SSH_AUTH_SUCCESS) {

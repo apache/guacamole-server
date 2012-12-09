@@ -37,10 +37,10 @@
 
 #include <stdlib.h>
 
-#include "ssh_terminal.h"
-#include "ssh_terminal_handlers.h"
+#include "terminal.h"
+#include "terminal_handlers.h"
 
-int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
+int guac_terminal_echo(guac_terminal* term, char c) {
 
     int foreground = term->foreground;
     int background = term->background;
@@ -71,14 +71,14 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
                 term->cursor_row = term->scroll_end;
 
                 /* Scroll up by one row */        
-                ssh_guac_terminal_scroll_up(term, term->scroll_start, term->scroll_end, 1);
+                guac_terminal_scroll_up(term, term->scroll_start, term->scroll_end, 1);
 
             }
             break;
 
         /* ESC */
         case 0x1B:
-            term->char_handler = ssh_guac_terminal_escape; 
+            term->char_handler = guac_terminal_escape; 
             break;
 
         /* Displayable chars */
@@ -95,7 +95,7 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
                 term->cursor_row = term->scroll_end;
 
                 /* Scroll up by one row */        
-                ssh_guac_terminal_scroll_up(term, term->scroll_start, term->scroll_end, 1);
+                guac_terminal_scroll_up(term, term->scroll_start, term->scroll_end, 1);
 
             }
 
@@ -110,10 +110,10 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
             if (term->bold && foreground <= 7)
                 foreground += 8;
 
-            ssh_guac_terminal_set_colors(term,
+            guac_terminal_set_colors(term,
                     foreground, background);
 
-            ssh_guac_terminal_set(term,
+            guac_terminal_set(term,
                     term->cursor_row,
                     term->cursor_col,
                     c);
@@ -127,25 +127,25 @@ int ssh_guac_terminal_echo(ssh_guac_terminal* term, char c) {
 
 }
 
-int ssh_guac_terminal_escape(ssh_guac_terminal* term, char c) {
+int guac_terminal_escape(guac_terminal* term, char c) {
 
     switch (c) {
 
         case '(':
-            term->char_handler = ssh_guac_terminal_charset; 
+            term->char_handler = guac_terminal_charset; 
             break;
 
         case ']':
-            term->char_handler = ssh_guac_terminal_osc; 
+            term->char_handler = guac_terminal_osc; 
             break;
 
         case '[':
-            term->char_handler = ssh_guac_terminal_csi; 
+            term->char_handler = guac_terminal_csi; 
             break;
 
         default:
             guac_client_log_info(term->client, "Unhandled ESC sequence: %c", c);
-            term->char_handler = ssh_guac_terminal_echo; 
+            term->char_handler = guac_terminal_echo; 
 
     }
 
@@ -153,12 +153,12 @@ int ssh_guac_terminal_escape(ssh_guac_terminal* term, char c) {
 
 }
 
-int ssh_guac_terminal_charset(ssh_guac_terminal* term, char c) {
-    term->char_handler = ssh_guac_terminal_echo; 
+int guac_terminal_charset(guac_terminal* term, char c) {
+    term->char_handler = guac_terminal_echo; 
     return 0;
 }
 
-int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
+int guac_terminal_csi(guac_terminal* term, char c) {
 
     /* CSI function arguments */
     static int argc = 0;
@@ -361,21 +361,21 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
  
                 /* Erase from cursor to end of display */
                 if (argv[0] == 0)
-                    ssh_guac_terminal_clear_range(term,
+                    guac_terminal_clear_range(term,
                             term->cursor_row, term->cursor_col,
                             term->term_height-1, term->term_width-1,
                             term->background);
                 
                 /* Erase from start to cursor */
                 else if (argv[0] == 1)
-                    ssh_guac_terminal_clear_range(term,
+                    guac_terminal_clear_range(term,
                             0, 0,
                             term->cursor_row, term->cursor_col,
                             term->background);
 
                 /* Entire screen */
                 else if (argv[0] == 2)
-                    ssh_guac_terminal_clear(term,
+                    guac_terminal_clear(term,
                             0, 0, term->term_height, term->term_width,
                             term->background);
 
@@ -386,7 +386,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 /* Erase from cursor to end of line */
                 if (argv[0] == 0)
-                    ssh_guac_terminal_clear(term,
+                    guac_terminal_clear(term,
                             term->cursor_row, term->cursor_col,
                             1, term->term_width - term->cursor_col,
                             term->background);
@@ -394,14 +394,14 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 /* Erase from start to cursor */
                 else if (argv[0] == 1)
-                    ssh_guac_terminal_clear(term,
+                    guac_terminal_clear(term,
                             term->cursor_row, 0,
                             1, term->cursor_col + 1,
                             term->background);
 
                 /* Erase line */
                 else if (argv[0] == 2)
-                    ssh_guac_terminal_clear(term,
+                    guac_terminal_clear(term,
                             term->cursor_row, 0,
                             1, term->term_width,
                             term->background);
@@ -414,7 +414,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 amount = argv[0];
                 if (amount == 0) amount = 1;
 
-                ssh_guac_terminal_scroll_down(term,
+                guac_terminal_scroll_down(term,
                         term->cursor_row, term->scroll_end, amount);
 
                 break;
@@ -425,7 +425,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
                 amount = argv[0];
                 if (amount == 0) amount = 1;
 
-                ssh_guac_terminal_scroll_up(term,
+                guac_terminal_scroll_up(term,
                         term->cursor_row, term->scroll_end, amount);
 
                 break;
@@ -438,14 +438,14 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 /* Scroll left by amount */
                 if (term->cursor_col + amount < term->term_width)
-                    ssh_guac_terminal_copy(term,
+                    guac_terminal_copy(term,
                             term->cursor_row, term->cursor_col + amount,
                             1,
                             term->term_width - term->cursor_col - amount, 
                             term->cursor_row, term->cursor_col);
 
                 /* Clear right */
-                ssh_guac_terminal_clear(term,
+                guac_terminal_clear(term,
                         term->cursor_row, term->term_width - amount,
                         1, amount,
                         term->background);
@@ -460,13 +460,13 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
                 /* Scroll right by amount */
                 if (term->cursor_col + amount < term->term_width)
-                    ssh_guac_terminal_copy(term,
+                    guac_terminal_copy(term,
                             term->cursor_row, term->cursor_col,
                             1, term->term_width - term->cursor_col - amount, 
                             term->cursor_row, term->cursor_col + amount);
 
                 /* Clear left */
-                ssh_guac_terminal_clear(term,
+                guac_terminal_clear(term,
                         term->cursor_row, term->cursor_col,
                         1, amount,
                         term->background);
@@ -482,7 +482,7 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
         /* If not a semicolon, end of CSI sequence */
         if (c != ';') {
-            term->char_handler = ssh_guac_terminal_echo;
+            term->char_handler = guac_terminal_echo;
 
             /* Reset parameters */
             for (i=0; i<argc; i++)
@@ -499,10 +499,10 @@ int ssh_guac_terminal_csi(ssh_guac_terminal* term, char c) {
 
 }
 
-int ssh_guac_terminal_osc(ssh_guac_terminal* term, char c) {
+int guac_terminal_osc(guac_terminal* term, char c) {
     /* TODO: Implement OSC */
     if (c == 0x9C || c == 0x5C || c == 0x07) /* ECMA-48 ST (String Terminator */
-       term->char_handler = ssh_guac_terminal_echo; 
+       term->char_handler = guac_terminal_echo; 
     return 0;
 }
 

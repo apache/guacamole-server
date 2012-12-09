@@ -45,14 +45,14 @@
 
 #include "ssh_client.h"
 #include "ssh_handlers.h"
-#include "ssh_terminal.h"
+#include "terminal.h"
 
 typedef struct ssh_guac_client_data {
 
     ssh_session session;
     ssh_channel term_channel;
 
-    ssh_guac_terminal* term;
+    guac_terminal* term;
     
     char * clipboard_data;
 

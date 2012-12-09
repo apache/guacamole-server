@@ -90,8 +90,8 @@ int ssh_guac_client_handle_messages(guac_client* client) {
                 && !channel_is_eof(client_data->term_channel)
                 && (bytes_read = channel_read_nonblocking(client_data->term_channel, buffer, sizeof(buffer), 0)) > 0) {
 
-            if (ssh_guac_terminal_write(client_data->term, buffer, bytes_read)
-                || ssh_guac_terminal_redraw_cursor(client_data->term)
+            if (guac_terminal_write(client_data->term, buffer, bytes_read)
+                || guac_terminal_redraw_cursor(client_data->term)
                 || guac_socket_flush(socket))
                 return 1;
 
@@ -206,7 +206,7 @@ int ssh_guac_client_free_handler(guac_client* client) {
     ssh_guac_client_data* guac_client_data = (ssh_guac_client_data*) client->data;
 
     /* Free terminal */
-    ssh_guac_terminal_free(guac_client_data->term);
+    guac_terminal_free(guac_client_data->term);
 
     /* Free clipboard data */
     free(guac_client_data->clipboard_data);
