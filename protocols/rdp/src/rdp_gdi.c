@@ -158,9 +158,6 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
     /* Layer for actual transfer */
     guac_layer* buffer;
 
-    /* Transfer function (if necessary) */
-    guac_transfer_function transfer;
-
     /*
      * Warn that rendering is a fallback, as the server should not be sending
      * this order.
@@ -186,7 +183,7 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
         case 0xAA:
             break;
 
-        /* If operation is just SRC, send background only */
+        /* If operation is just a copy, send foreground only */
         case 0xCC:
         case 0xF0:
             guac_protocol_send_rect(client->socket, current_layer,
@@ -195,9 +192,9 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
 
             guac_protocol_send_cfill(client->socket,
                     GUAC_COMP_OVER, current_layer,
-                    (patblt->backColor >> 16) & 0xFF,
-                    (patblt->backColor >> 8 ) & 0xFF,
-                    (patblt->backColor      ) & 0xFF,
+                    (patblt->foreColor >> 16) & 0xFF,
+                    (patblt->foreColor >> 8 ) & 0xFF,
+                    (patblt->foreColor      ) & 0xFF,
                     0xFF);
             break;
 
@@ -212,40 +209,19 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
                     0xFF, 0xFF, 0xFF, 0xFF);
             break;
 
-        /* Otherwise, use transfer */
+        /* Otherwise, invert entire rect */
         default:
 
             /* Allocate buffer for transfer */
             buffer = guac_client_alloc_buffer(client);
 
-            /* Get reasonable transfer function for ROP */
-            switch (patblt->bRop) {
-
-                /* PATINVERT */
-                case 0x5A:
-                    transfer = GUAC_TRANSFER_BINARY_XOR;
-                    break;
-
-                /* PATPAINT */
-                case 0xFB:
-                    transfer = GUAC_TRANSFER_BINARY_OR;
-                    break;
-
-                default: 
-                    transfer = guac_rdp_rop3_transfer_function(
-                                   client, patblt->bRop);
-            }
-
             /* Send rectangle stroke */
             guac_protocol_send_rect(client->socket, buffer,
                     0, 0, patblt->nWidth, patblt->nHeight);
 
-            /* Fill rectangle with back color only */
+            /* Fill rectangle with fore color only */
             guac_protocol_send_cfill(client->socket, GUAC_COMP_OVER, buffer,
-                    (patblt->backColor >> 16) & 0xFF,
-                    (patblt->backColor >> 8 ) & 0xFF,
-                    (patblt->backColor      ) & 0xFF,
-                    0xFF);
+                    0xFF, 0xFF, 0xFF, 0xFF);
 
             /* Transfer */
             guac_protocol_send_transfer(client->socket,
@@ -253,8 +229,8 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
                     /* ... from buffer */
                     buffer, 0, 0, patblt->nWidth, patblt->nHeight,
 
-                    /* ... using specified transfer function */
-                    transfer,
+                    /* ... inverting */
+                    GUAC_TRANSFER_BINARY_XOR,
 
                     /* ... to current layer */
                     current_layer, patblt->nLeftRect, patblt->nTopRect);
