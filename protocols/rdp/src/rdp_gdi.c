@@ -138,8 +138,113 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
 }
 
 void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
+
+    /*
+     * Note that this is not a full implementation of PATBLT. This is a
+     * fallback implementation which only renders a solid block of background
+     * color using the specified ROP3 operation, ignoring whatever brush
+     * was actually specified.
+     *
+     * As libguac-client-rdp explicitly tells the server not to send PATBLT,
+     * well-behaved RDP servers will not use this operation at all, while
+     * others will at least have a fallback.
+     */
+
+    /* Get client and current layer */
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_log_info(client, "guac_rdp_gdi_patblt()");
+    const guac_layer* current_layer =
+        ((rdp_guac_client_data*) client->data)->current_surface;
+
+    /* Layer for actual transfer */
+    guac_layer* buffer;
+
+    /*
+     * Warn that rendering is a fallback, as the server should not be sending
+     * this order.
+     */
+    guac_client_log_info(client, "Using fallback PATBLT (server is ignoring "
+            "negotiated client capabilities)");
+
+    /* Render rectangle based on ROP */
+    switch (patblt->bRop) {
+
+        /* If blackness, send black rectangle */
+        case 0x00:
+            guac_protocol_send_rect(client->socket, current_layer,
+                    patblt->nLeftRect, patblt->nTopRect,
+                    patblt->nWidth, patblt->nHeight);
+
+            guac_protocol_send_cfill(client->socket,
+                    GUAC_COMP_OVER, current_layer,
+                    0x00, 0x00, 0x00, 0xFF);
+            break;
+
+        /* If NOP, do nothing */
+        case 0xAA:
+            break;
+
+        /* If operation is just SRC, send background only */
+        case 0xCC:
+            guac_protocol_send_rect(client->socket, current_layer,
+                    patblt->nLeftRect, patblt->nTopRect,
+                    patblt->nWidth, patblt->nHeight);
+
+            guac_protocol_send_cfill(client->socket,
+                    GUAC_COMP_OVER, current_layer,
+                    0x00, 0x00, 0x00, 0xFF);
+            break;
+
+        /* If whiteness, send white rectangle */
+        case 0xFF:
+            guac_protocol_send_rect(client->socket, current_layer,
+                    patblt->nLeftRect, patblt->nTopRect,
+                    patblt->nWidth, patblt->nHeight);
+
+            guac_protocol_send_cfill(client->socket,
+                    GUAC_COMP_OVER, current_layer,
+                    (patblt->backColor >> 16) & 0xFF,
+                    (patblt->backColor >> 8 ) & 0xFF,
+                    (patblt->backColor      ) & 0xFF,
+                    0xFF);
+            break;
+
+        /* Otherwise, use transfer */
+        default:
+
+            /* Allocate buffer for transfer */
+            buffer = guac_client_alloc_buffer(client);
+
+            /* Get transfer function for ROP */
+
+            /* Send rectangle stroke */
+            guac_protocol_send_rect(client->socket, buffer,
+                    0, 0, patblt->nWidth, patblt->nHeight);
+
+            /* Fill rectangle with back color only */
+            guac_protocol_send_cfill(client->socket, GUAC_COMP_OVER, buffer,
+                    (patblt->backColor >> 16) & 0xFF,
+                    (patblt->backColor >> 8 ) & 0xFF,
+                    (patblt->backColor      ) & 0xFF,
+                    0xFF);
+
+            /* Transfer */
+            guac_protocol_send_transfer(client->socket,
+
+                    /* ... from buffer */
+                    buffer, 0, 0, patblt->nWidth, patblt->nHeight,
+
+                    /* ... using specified transfer function */
+                    guac_rdp_rop3_transfer_function(
+                       client, patblt->bRop),
+
+                    /* ... to current layer */
+                    current_layer, patblt->nLeftRect, patblt->nTopRect);
+
+            /* Done with buffer */
+            guac_client_free_buffer(client, buffer);
+
+    }
+
 }
 
 void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
