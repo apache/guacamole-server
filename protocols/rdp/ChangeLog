@@ -1,3 +1,7 @@
+2012-12-13 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Implement PATBLT fallback (fixes #238)
+
 2012-11-22 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Add disable-audio option (fixes #221)
