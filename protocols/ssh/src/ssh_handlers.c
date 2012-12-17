@@ -189,6 +189,9 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             else if (keysym == 0xFF53) { data = "\x1B\x5B""C"; length = 3; }
             else if (keysym == 0xFF51) { data = "\x1B\x5B""D"; length = 3; }
 
+            /* Ignore other keys */
+            else return 0;
+
             return channel_write(client_data->term_channel, data, length);
         }
 
