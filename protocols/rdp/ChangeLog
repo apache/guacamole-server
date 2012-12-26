@@ -1,3 +1,7 @@
+2012-12-25 Michael Jumper <zhangmaike@users.sourceforge.net>
+
+	* Console arguments (fixes #227)
+
 2012-12-13 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Implement PATBLT fallback (fixes #238)

@@ -92,6 +92,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "initial-program",
     "color-depth",
     "disable-audio",
+    "console",
+    "console-audio",
     NULL
 };
 
@@ -105,7 +107,9 @@ enum ARGS_IDX {
     IDX_HEIGHT,
     IDX_INITIAL_PROGRAM,
     IDX_COLOR_DEPTH,
-    IDX_DISABLE_AUDIO
+    IDX_DISABLE_AUDIO,
+    IDX_CONSOLE,
+    IDX_CONSOLE_AUDIO
 };
 
 int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, uint8* data, int size, int flags, int total_size) {
@@ -372,6 +376,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Set settings */
     settings = rdp_inst->settings;
+
+    /* Console */
+    settings->console_session = (strcmp(argv[IDX_CONSOLE], "true") != 0);
+    settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "true") != 0);
 
     /* --no-auth */
     settings->authentication = false;
