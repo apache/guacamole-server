@@ -378,8 +378,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings = rdp_inst->settings;
 
     /* Console */
-    settings->console_session = (strcmp(argv[IDX_CONSOLE], "true") != 0);
-    settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "true") != 0);
+    settings->console_session = (strcmp(argv[IDX_CONSOLE], "true") == 0);
+    settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "true") == 0);
 
     /* --no-auth */
     settings->authentication = false;
