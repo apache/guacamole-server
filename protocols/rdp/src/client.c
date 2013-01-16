@@ -94,10 +94,12 @@ const char* GUAC_CLIENT_ARGS[] = {
     "disable-audio",
     "console",
     "console-audio",
+    "layout",
     NULL
 };
 
-enum ARGS_IDX {
+enum RDP_ARGS_IDX {
+
     IDX_HOSTNAME,
     IDX_PORT,
     IDX_DOMAIN,
@@ -110,7 +112,7 @@ enum ARGS_IDX {
     IDX_DISABLE_AUDIO,
     IDX_CONSOLE,
     IDX_CONSOLE_AUDIO,
-
+    IDX_LAYOUT,
     RDP_ARGS_COUNT
 };
 
@@ -337,10 +339,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
      * Selected server-side keymap. Client will be assumed to also use this
      * keymap. Keys will be sent to server based on client input on a
      * best-effort basis.
-     *
-     * Currently hard-coded to en-us-qwerty.
      */
-    const guac_rdp_keymap* chosen_keymap = &guac_rdp_keymap_en_us;
+    const guac_rdp_keymap* chosen_keymap;
 
     if (argc < RDP_ARGS_COUNT) {
 
@@ -521,6 +521,21 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     client->data = guac_client_data;
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
+
+    /* Pick keymap based on argument */
+    if (argv[IDX_LAYOUT][0] != '\0') {
+
+        /* US English Qwerty */
+        if (strcmp("en-us-qwerty", argv[IDX_LAYOUT]) == 0)
+            chosen_keymap = &rdp_guac_keymap_en_us;
+
+        /* US English Qwerty */
+        if (strcmp("en-us-qwerty", argv[IDX_LAYOUT]) == 0)
+            chosen_keymap = &rdp_guac_keymap_en_us;
+
+        else
+            chosen_keymap = &rdp_guac_keymap_en_us;
+    }
 
     /* Load keymap into client */
     __guac_rdp_client_load_keymap(client, chosen_keymap);

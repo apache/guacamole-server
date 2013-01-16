@@ -54,6 +54,7 @@ libguac_client_rdp_la_SOURCES = \
 	src/rdp_glyph.c        \
 	src/rdp_keymap_base.c  \
 	src/rdp_keymap.c       \
+	src/rdp_keymap_de_de.c \
 	src/rdp_keymap_en_us.c \
 	src/rdp_pointer.c      \
 	src/wav_encoder.c

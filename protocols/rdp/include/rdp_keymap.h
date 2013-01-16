@@ -127,6 +127,11 @@ typedef int guac_rdp_keysym_state_map[256][256];
 extern const guac_rdp_keymap guac_rdp_keymap_en_us;
 
 /**
+ * Map of X11 keysyms to RDP scancodes (German).
+ */
+extern const guac_rdp_keymap guac_rdp_keymap_de_de;
+
+/**
  * Map of X11 keysyms to RDP scancodes (common non-printable keys).
  */
 extern const guac_rdp_keymap guac_rdp_keymap_base;
@@ -171,6 +176,11 @@ extern const int GUAC_KEYSYMS_ALL_ALT[];
  * Keysym string containing all modifier keys.
  */
 extern const int GUAC_KEYSYMS_ALL_MODIFIERS[];
+
+/**
+ * NULL-terminated array of all keymaps.
+ */
+extern const guac_rpd_keymap* GUAC_KEYMAPS[];
 
 #endif
 
