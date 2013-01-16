@@ -109,7 +109,9 @@ enum ARGS_IDX {
     IDX_COLOR_DEPTH,
     IDX_DISABLE_AUDIO,
     IDX_CONSOLE,
-    IDX_CONSOLE_AUDIO
+    IDX_CONSOLE_AUDIO,
+
+    RDP_ARGS_COUNT
 };
 
 int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, uint8* data, int size, int flags, int total_size) {
@@ -340,7 +342,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
      */
     const guac_rdp_keymap* chosen_keymap = &guac_rdp_keymap_en_us;
 
-    if (argc < 9) {
+    if (argc < RDP_ARGS_COUNT) {
 
         guac_protocol_send_error(client->socket,
                 "Wrong argument count received.");
