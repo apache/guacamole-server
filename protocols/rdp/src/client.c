@@ -407,6 +407,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                 argv[IDX_WIDTH], settings->width);
     }
 
+    /* Round width up to nearest multiple of 4 */
+    settings->width = (settings->width + 3) & ~0x3;
+
     /* Use optimal height unless overridden */
     settings->height = client->info.optimal_height;
     if (argv[IDX_HEIGHT][0] != '\0')
