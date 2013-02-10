@@ -251,6 +251,44 @@ char* guac_vnc_get_password(rfbClient* client) {
     return ((vnc_guac_client_data*) gc->data)->password;
 }
 
+void guac_vnc_set_pixel_format(rfbClient* client, int color_depth) {
+    switch(color_depth) {
+        case 8:
+            client->format.depth = 8;
+            client->format.bitsPerPixel = 8;
+            client->format.blueShift = 6;
+               client->format.redShift = 0;
+               client->format.greenShift = 3;
+               client->format.blueMax = 3;
+               client->format.redMax = 7;
+               client->format.greenMax = 7;
+        break;
+
+        case 16:
+                   client->format.depth = 16;
+            client->format.bitsPerPixel = 16;
+            client->format.blueShift = 0;
+            client->format.redShift = 11;
+            client->format.greenShift = 5;
+            client->format.blueMax = 0x1f;
+            client->format.redMax = 0x1f;
+            client->format.greenMax = 0x3f;
+        break;
+
+        case 24: 
+        case 32:
+        default:
+            client->format.depth = 24;
+            client->format.bitsPerPixel = 32;
+            client->format.blueShift = 0;
+            client->format.redShift = 16;
+            client->format.greenShift = 8;
+            client->format.blueMax = 0xff;
+            client->format.redMax = 0xff;
+            client->format.greenMax    = 0xff;
+     }
+}
+
 rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
 
     guac_client* gc = rfbClientGetClientData(rfb_client, __GUAC_CLIENT);

@@ -56,6 +56,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "encodings",
     "password",
     "swap-red-blue",
+    "color-depth",
     NULL
 };
 
@@ -75,7 +76,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /*** PARSE ARGUMENTS ***/
 
-    if (argc < 6) {
+    if (argc < 7) {
         guac_protocol_send_error(client->socket, "Wrong argument count received.");
         guac_socket_flush(client->socket);
         return 1;
@@ -117,6 +118,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Password */
     rfb_client->GetPassword = guac_vnc_get_password;
+
+    /* Depth */    
+    guac_vnc_set_pixel_format(rfb_client, atoi(argv[6]));
     
     /* Hook into allocation so we can handle resize. */
     guac_client_data->rfb_MallocFrameBuffer = rfb_client->MallocFrameBuffer;

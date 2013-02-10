@@ -48,6 +48,7 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client);
 void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen);
 void guac_vnc_client_log_info(const char* format, ...);
 void guac_vnc_client_log_error(const char* format, ...);
+void guac_vnc_set_pixel_format(rfbClient* client, int color_depth);
 
 #endif
 
