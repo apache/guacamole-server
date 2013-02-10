@@ -1,3 +1,7 @@
+2013-02-07 Saul Gio Perez <gio.perez@sv.cmu.edu>
+
+	* Implement color-depth parameter (fixes #272)
+
 2012-10-15 Michael Jumper <zhangmaike@users.sourceforge.net>
 
 	* Fix m4/ autoreconf error
