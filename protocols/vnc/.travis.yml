@@ -26,6 +26,7 @@ before_install:
   - make
   - sudo make install
   - sudo ldconfig
+  - cd ..
   - sudo apt-get install tomcat6
   - sudo apt-get install libvncserver0
   - sudo apt-get install libvncserver-dev
