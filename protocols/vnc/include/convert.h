@@ -40,7 +40,14 @@
 
 #include <iconv.h>
 
-char * convert (const char *from_charset, const char *to_charset, const char *input);
+/**
+ * Converts a string from one charset to another. Returns a newly allocated string.
+ * @param from_charset The string representing the character set to convert from.
+ * @param to_charset The string representing the character set to convert to.
+ * @return A newly allocated string that is the result of the conversion, or NULL
+ *         if an error has occured.
+ */
+char* convert (const char* from_charset, const char* to_charset, char* input);
 
 #endif
 
