@@ -41,78 +41,78 @@
 #include <errno.h>
 
 char* convert(const char* from_charset, const char* to_charset, char* input) {
-	size_t input_remaining;
+    size_t input_remaining;
     size_t output_remaining;
     size_t bytes_converted = 0;
-	char* output;
+    char* output;
     char* output_buffer;
     char* new_buffer;
-	char* input_buffer;
-	size_t output_length;
-	iconv_t cd;
+    char* input_buffer;
+    size_t output_length;
+    iconv_t cd;
  
-	cd = iconv_open(to_charset, from_charset);
+    cd = iconv_open(to_charset, from_charset);
     
     if(cd == (iconv_t) -1)
         /* Cannot convert due to invalid character set */
         return NULL;
  
-	input_remaining = strlen(input);
-	input_buffer = input;
+    input_remaining = strlen(input);
+    input_buffer = input;
  
-	/* Start the output buffer the same size as the input buffer */
-	output_length = input_remaining;
+    /* Start the output buffer the same size as the input buffer */
+    output_length = input_remaining;
  
-	/* Leave some space at the end for NULL terminator */
-	if (!(output = (char*) malloc(output_length + 4))) {
+    /* Leave some space at the end for NULL terminator */
+    if (!(output = (char*) malloc(output_length + 4))) {
         /* Cannot convert due to memory allocation error */
-		iconv_close(cd);
-		return NULL;
-	}
+        iconv_close(cd);
+        return NULL;
+    }
  
-	do {
-		output_buffer = output + bytes_converted;
-		output_remaining = output_length - bytes_converted;
+    do {
+        output_buffer = output + bytes_converted;
+        output_remaining = output_length - bytes_converted;
  
-		bytes_converted = iconv(cd, &input_buffer, 
+        bytes_converted = iconv(cd, &input_buffer, 
                 &input_remaining, &output_buffer, &output_remaining);
 
         if(bytes_converted == -1) {
             if(errno == E2BIG) {
-		        /* The output buffer is too small, so allocate more space */
-		        bytes_converted = output_buffer - output;
-		        output_length += input_remaining * 2 + 8;
+                /* The output buffer is too small, so allocate more space */
+                bytes_converted = output_buffer - output;
+                output_length += input_remaining * 2 + 8;
          
-		        if (!(new_buffer = (char*) realloc(output, output_length + 4))) {
+                if (!(new_buffer = (char*) realloc(output, output_length + 4))) {
                     /* Cannot convert due to memory allocation error */
-			        iconv_close(cd);
-			        free(output);
-			        return NULL;
-		        }
+                    iconv_close(cd);
+                    free(output);
+                    return NULL;
+                }
          
-		        output = new_buffer;
-		        output_buffer = output + bytes_converted;
+                output = new_buffer;
+                output_buffer = output + bytes_converted;
             } 
             else if (errno == EILSEQ) {
-			    /* Cannot convert because an invalid sequence was discovered */
-			    iconv_close(cd);
-			    free(output);
-			    return NULL;
-		    } 
+                /* Cannot convert because an invalid sequence was discovered */
+                iconv_close(cd);
+                free(output);
+                return NULL;
+            } 
             else if (errno == EINVAL) {
                 /* Incomplete sequence detected, can be ignored */
                 break;
             }
         }
-	} while (input_remaining);
+    } while (input_remaining);
  
-	/* Flush the iconv conversion */
-	iconv(cd, NULL, NULL, &output_buffer, &output_remaining);
-	iconv_close(cd);
+    /* Flush the iconv conversion */
+    iconv(cd, NULL, NULL, &output_buffer, &output_remaining);
+    iconv_close(cd);
  
-	/* Add the NULL terminator */
-	memset(output_buffer, 0, 4);
+    /* Add the NULL terminator */
+    memset(output_buffer, 0, 4);
  
-	return output;
+    return output;
 }
 
