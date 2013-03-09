@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <syslog.h>
+#include <iconv.h>
 
 #include <cairo/cairo.h>
 
@@ -48,6 +49,7 @@
 #include <guacamole/client.h>
 
 #include "client.h"
+#include "convert.h"
 
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
@@ -307,7 +309,12 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     guac_socket* socket = gc->socket;
 
-    guac_protocol_send_clipboard(socket, text);
+    /* Convert ASCII character data to UTF-8 */
+    char* utf8_text = convert("ISO_8859-1", "UTF-8", text);
+
+    guac_protocol_send_clipboard(socket, utf8_text);
+
+    free(utf8_text);
 
 }
 

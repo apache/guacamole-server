@@ -38,12 +38,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <iconv.h>
 
 #include <rfb/rfbclient.h>
 
 #include <guacamole/client.h>
 
 #include "client.h"
+#include "convert.h"
 
 int vnc_guac_client_handle_messages(guac_client* client) {
 
@@ -92,7 +94,12 @@ int vnc_guac_client_clipboard_handler(guac_client* client, char* data) {
 
     rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
 
-    SendClientCutText(rfb_client, data, strlen(data));
+    /* Convert UTF-8 character data to ISO_8859-1 */
+    char* iso_8559_1_data = convert("UTF-8", "ISO_8859-1", data);
+
+    SendClientCutText(rfb_client, iso_8559_1_data, strlen(iso_8559_1_data));
+
+    free(iso_8559_1_data);
 
     return 0;
 }
