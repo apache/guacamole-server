@@ -47,7 +47,7 @@
  * @return A newly allocated string that is the result of the conversion, or NULL
  *         if an error has occured.
  */
-char* convert (const char* from_charset, const char* to_charset, char* input);
+char* convert (const char* from_charset, const char* to_charset, const char* input);
 
 #endif
 

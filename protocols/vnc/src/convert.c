@@ -40,7 +40,7 @@
 #include <iconv.h>
 #include <errno.h>
 
-char* convert(const char* from_charset, const char* to_charset, char* input) {
+char* convert(const char* from_charset, const char* to_charset, const char* input) {
     size_t input_remaining;
     size_t output_remaining;
     size_t bytes_converted = 0;
@@ -58,7 +58,7 @@ char* convert(const char* from_charset, const char* to_charset, char* input) {
         return NULL;
  
     input_remaining = strlen(input);
-    input_buffer = input;
+    input_buffer = (char*) input;
  
     /* Start the output buffer the same size as the input buffer */
     output_length = input_remaining;
