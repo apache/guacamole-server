@@ -38,6 +38,8 @@
 #ifndef _SSH_GUAC_TERMINAL_H
 #define _SSH_GUAC_TERMINAL_H
 
+#include <stdbool.h>
+
 #include <pango/pangocairo.h>
 
 #include <guacamole/client.h>
@@ -52,6 +54,67 @@ typedef struct guac_terminal guac_terminal;
 typedef int guac_terminal_char_handler(guac_terminal* term, char c);
 
 /**
+ * An RGB color, where each component ranges from 0 to 255.
+ */
+typedef struct guac_terminal_color {
+
+    /**
+     * The red component of this color.
+     */
+    int red;
+
+    /**
+     * The green component of this color.
+     */
+    int green;
+
+    /**
+     * The blue component of this color.
+     */
+    int blue;
+
+} guac_terminal_color;
+
+/**
+ * Terminal attributes, as can be applied to a single character.
+ */
+typedef struct guac_terminal_attributes {
+
+    /**
+     * Whether the character should be rendered bold.
+     */
+    bool bold;
+
+    /**
+     * Whether the character should be rendered with reversed colors
+     * (background becomes foreground and vice-versa).
+     */
+    bool reverse;
+
+    /**
+     * Whether to render the character with underscore.
+     */
+    bool underscore;
+
+    /**
+     * The foreground color of this character, as a palette index.
+     */
+    int foreground;
+
+    /**
+     * The background color of this character, as a palette index.
+     */
+    int background;
+
+} guac_terminal_attributes;
+
+/**
+ * The available color palette. All integer colors within structures
+ * here are indices into this palette.
+ */
+extern const guac_terminal_color guac_terminal_palette[16];
+
+/**
  * Represents a single character for display in a terminal, including actual
  * character value, foreground color, and background color.
  */
@@ -63,14 +126,9 @@ typedef struct guac_terminal_char {
     char value;
 
     /**
-     * The foreground color of the character to display.
+     * The attributes of the character to display.
      */
-    int foreground;
-
-    /**
-     * The background color of the character to display.
-     */
-    int background;
+    guac_terminal_attributes attributes;
 
 } guac_terminal_char;
 
@@ -173,35 +231,41 @@ struct guac_terminal {
      */
     guac_layer* cursor_layer;
 
-    int foreground;
-    int background;
-    int reverse;
-    int bold;
-    int underscore;
+    /**
+     * The attributes which will be applied to future characters.
+     */
+    guac_terminal_attributes current_attributes;
 
-    int default_foreground;
-    int default_background;
+    /**
+     * The attributes which will be applied to characters by default, unless
+     * other attributes are explicitly specified.
+     */
+    guac_terminal_attributes default_attributes;
 
+    /**
+     * Handler which will receive all printed characters, updating the terminal
+     * accordingly.
+     */
     guac_terminal_char_handler* char_handler;
 
 };
 
-typedef struct guac_terminal_color {
-    int red;
-    int green;
-    int blue;
-} guac_terminal_color;
-
-extern const guac_terminal_color guac_terminal_palette[16];
-
+/**
+ * Creates a new guac_terminal, having the given width and height, and
+ * rendering to the given client.
+ */
 guac_terminal* guac_terminal_create(guac_client* client,
         int width, int height);
 
+/**
+ * Frees all resources associated with the given terminal.
+ */
 void guac_terminal_free(guac_terminal* term);
 
+/**
+ * Writes the given string of characters to the terminal.
+ */
 int guac_terminal_write(guac_terminal* term, const char* c, int size);
-
-int guac_terminal_redraw_cursor(guac_terminal* term);
 
 int guac_terminal_set_colors(guac_terminal* term,
         int foreground, int background);

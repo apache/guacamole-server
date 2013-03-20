@@ -91,7 +91,6 @@ int ssh_guac_client_handle_messages(guac_client* client) {
                 && (bytes_read = channel_read_nonblocking(client_data->term_channel, buffer, sizeof(buffer), 0)) > 0) {
 
             if (guac_terminal_write(client_data->term, buffer, bytes_read)
-                || guac_terminal_redraw_cursor(client_data->term)
                 || guac_socket_flush(socket))
                 return 1;
 

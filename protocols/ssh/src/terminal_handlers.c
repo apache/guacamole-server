@@ -42,8 +42,8 @@
 
 int guac_terminal_echo(guac_terminal* term, char c) {
 
-    int foreground = term->foreground;
-    int background = term->background;
+    int foreground = term->current_attributes.foreground;
+    int background = term->current_attributes.background;
 
     switch (c) {
 
@@ -100,14 +100,14 @@ int guac_terminal_echo(guac_terminal* term, char c) {
             }
 
             /* Handle reverse video */
-            if (term->reverse) {
+            if (term->current_attributes.reverse) {
                 int swap = background;
                 background = foreground;
                 foreground = swap;
             }
 
             /* Handle bold */
-            if (term->bold && foreground <= 7)
+            if (term->current_attributes.bold && foreground <= 7)
                 foreground += 8;
 
             guac_terminal_set_colors(term,
@@ -268,60 +268,59 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                     int value = argv[i];
 
                     /* Reset attributes */
-                    if (value == 0) {
-                        term->foreground = term->default_foreground;
-                        term->background = term->default_background;
-                        term->reverse = 0;
-                        term->underscore = 0;
-                        term->bold = 0;
-                    }
+                    if (value == 0)
+                        term->current_attributes = term->default_attributes;
 
                     /* Bold */
                     else if (value == 1)
-                        term->bold = 1;
+                        term->current_attributes.bold = true;
 
                     /* Underscore on */
                     else if (value == 4)
-                        term->underscore = 1;
+                        term->current_attributes.underscore = true;
 
                     /* Foreground */
                     else if (value >= 30 && value <= 37)
-                        term->foreground = value - 30;
+                        term->current_attributes.foreground = value - 30;
 
                     /* Background */
                     else if (value >= 40 && value <= 47)
-                        term->background = value - 40;
+                        term->current_attributes.background = value - 40;
 
                     /* Underscore on, default foreground */
                     else if (value == 38) {
-                        term->underscore = 1;
-                        term->foreground = term->default_foreground;
+                        term->current_attributes.underscore = true;
+                        term->current_attributes.foreground =
+                            term->default_attributes.foreground;
                     }
 
                     /* Underscore off, default foreground */
                     else if (value == 39) {
-                        term->underscore = 0;
-                        term->foreground = term->default_foreground;
+                        term->current_attributes.underscore = false;
+                        term->current_attributes.foreground =
+                            term->default_attributes.foreground;
                     }
 
                     /* Reset background */
                     else if (value == 49)
-                        term->background = term->default_background;
+                        term->current_attributes.background =
+                            term->default_attributes.background;
 
                     /* Reverse video */
                     else if (value == 7)
-                        term->reverse = 1;
+                        term->current_attributes.reverse = true;
 
                     /* Reset reverse video */
                     else if (value == 27)
-                        term->reverse = 0;
+                        term->current_attributes.reverse = false;
 
                     /* Reset intensity */
                     else if (value == 27)
-                        term->bold = 0;
+                        term->current_attributes.bold = false;
 
                     else
-                        guac_client_log_info(term->client, "Unhandled graphics rendition: %i", value);
+                        guac_client_log_info(term->client,
+                                "Unhandled graphics rendition: %i", value);
 
                 }
 
@@ -364,20 +363,20 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                     guac_terminal_clear_range(term,
                             term->cursor_row, term->cursor_col,
                             term->term_height-1, term->term_width-1,
-                            term->background);
+                            term->current_attributes.background);
                 
                 /* Erase from start to cursor */
                 else if (argv[0] == 1)
                     guac_terminal_clear_range(term,
                             0, 0,
                             term->cursor_row, term->cursor_col,
-                            term->background);
+                            term->current_attributes.background);
 
                 /* Entire screen */
                 else if (argv[0] == 2)
                     guac_terminal_clear(term,
                             0, 0, term->term_height, term->term_width,
-                            term->background);
+                            term->current_attributes.background);
 
                 break;
 
@@ -389,7 +388,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                     guac_terminal_clear(term,
                             term->cursor_row, term->cursor_col,
                             1, term->term_width - term->cursor_col,
-                            term->background);
+                            term->current_attributes.background);
 
 
                 /* Erase from start to cursor */
@@ -397,14 +396,14 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                     guac_terminal_clear(term,
                             term->cursor_row, 0,
                             1, term->cursor_col + 1,
-                            term->background);
+                            term->current_attributes.background);
 
                 /* Erase line */
                 else if (argv[0] == 2)
                     guac_terminal_clear(term,
                             term->cursor_row, 0,
                             1, term->term_width,
-                            term->background);
+                            term->current_attributes.background);
 
                 break;
 
@@ -448,7 +447,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 guac_terminal_clear(term,
                         term->cursor_row, term->term_width - amount,
                         1, amount,
-                        term->background);
+                        term->current_attributes.background);
 
                 break;
 
@@ -469,7 +468,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 guac_terminal_clear(term,
                         term->cursor_row, term->cursor_col,
                         1, amount,
-                        term->background);
+                        term->current_attributes.background);
 
                 break;
 

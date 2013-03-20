@@ -76,6 +76,14 @@ const guac_terminal_color guac_terminal_palette[16] = {
 guac_terminal* guac_terminal_create(guac_client* client,
         int width, int height) {
 
+    guac_terminal_attributes default_attributes = {
+        .foreground = 7,
+        .background = 0,
+        .bold       = false,
+        .reverse    = false,
+        .underscore = false
+    };
+
     int row, col;
 
     PangoFontMap* font_map;
@@ -86,11 +94,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
     guac_terminal* term = malloc(sizeof(guac_terminal));
     term->client = client;
 
-    term->glyph_foreground = term->foreground = term->default_foreground = 7; /* White */
-    term->glyph_background = term->background = term->default_background = 0; /* Black */
-    term->reverse = 0;    /* Normal video */
-    term->bold = 0;       /* Normal intensity */
-    term->underscore = 0; /* No underline */
+    term->current_attributes = 
+    term->default_attributes = default_attributes;
+    term->glyph_foreground = default_attributes.foreground;
+    term->glyph_background = default_attributes.background;
 
     memset(term->glyphs, 0, sizeof(term->glyphs));
     term->glyph_stroke = guac_client_alloc_buffer(client);
@@ -151,8 +158,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
             /* Empty character, default colors */
             current_row[col].value = '\0';
-            current_row[col].foreground = term->default_foreground;
-            current_row[col].background = term->default_background;
+            current_row[col].attributes = term->default_attributes;
 
         }
 
@@ -161,7 +167,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Clear with background color */
     guac_terminal_clear(term,
             0, 0, term->term_height, term->term_width,
-            term->background);
+            term->current_attributes.background);
 
     return term;
 
@@ -407,7 +413,7 @@ int guac_terminal_scroll_up(guac_terminal* term,
         /* Fill new rows with background */
         || guac_terminal_clear(term,
                 end_row - amount + 1, 0, amount, term->term_width,
-                term->background);
+                term->current_attributes.background);
 
 }
 
@@ -428,7 +434,7 @@ int guac_terminal_scroll_down(guac_terminal* term,
         /* Fill new rows with background */
         || guac_terminal_clear(term,
                 start_row, 0, amount, term->term_width,
-                term->background);
+                term->current_attributes.background);
 
 }
 
