@@ -164,6 +164,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     }
 
+    /* Init delta */
+    term->delta = guac_terminal_delta_alloc(width, height);
+
     /* Clear with background color */
     guac_terminal_clear(term,
             0, 0, term->term_height, term->term_width,
@@ -180,6 +183,10 @@ void guac_terminal_free(guac_terminal* term) {
         free(term->scrollback[row]);
 
     free(term->scrollback);
+
+    /* Free delta */
+    guac_terminal_delta_free(term->delta);
+
 }
 
 int __guac_terminal_get_glyph(guac_terminal* term, char c) {
@@ -484,12 +491,43 @@ int guac_terminal_clear_range(guac_terminal* term,
 }
 
 guac_terminal_delta* guac_terminal_delta_alloc(int width, int height) {
-    /* STUB */
-    return NULL;
+
+    guac_terminal_operation* current;
+    int x, y;
+
+    /* Allocate delta */
+    guac_terminal_delta* delta = malloc(sizeof(guac_terminal_delta));
+
+    /* Set width and height */
+    delta->width = width;
+    delta->height = height;
+
+    /* Alloc operations */
+    delta->operations = malloc(width * height *
+            sizeof(guac_terminal_operation));
+
+    /* Init each operation buffer row */
+    current = delta->operations;
+    for (y=0; y<height; y++) {
+
+        /* Init entire row to NOP */
+        for (x=0; x<width; x++)
+            (current++)->type = GUAC_CHAR_NOP;
+
+    }
+
+    return delta;
+
 }
 
 void guac_terminal_delta_free(guac_terminal_delta* delta) {
-    /* STUB */
+
+    /* Free operations buffer */
+    free(delta->operations);
+
+    /* Free delta */
+    free(delta);
+
 }
 
 void guac_terminal_delta_resize(guac_terminal_delta* delta,

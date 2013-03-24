@@ -323,6 +323,12 @@ struct guac_terminal {
      */
     guac_terminal_char_handler* char_handler;
 
+    /**
+     * The difference between the currently-rendered screen and the current
+     * state of the terminal.
+     */
+    guac_terminal_delta* delta;
+
 };
 
 /**
