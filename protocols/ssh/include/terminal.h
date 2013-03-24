@@ -348,27 +348,45 @@ void guac_terminal_free(guac_terminal* term);
  */
 int guac_terminal_write(guac_terminal* term, const char* c, int size);
 
-int guac_terminal_set_colors(guac_terminal* term,
-        int foreground, int background);
-
+/**
+ * Sets the character at the given row and column to the specified value.
+ */
 int guac_terminal_set(guac_terminal* term, int row, int col, char c);
 
+/**
+ * Copies a rectangular region of characters which may overlap with the
+ * destination.
+ */
 int guac_terminal_copy(guac_terminal* term,
         int src_row, int src_col, int rows, int cols,
         int dst_row, int dst_col);
 
+/**
+ * Clears a rectangular region of characters, replacing them with the
+ * given background color.
+ */
 int guac_terminal_clear(guac_terminal* term,
         int row, int col, int rows, int cols, int background_color);
 
-int guac_terminal_scroll_up(guac_terminal* term,
-        int start_row, int end_row, int amount);
-
-int guac_terminal_scroll_down(guac_terminal* term,
-        int start_row, int end_row, int amount);
-
+/**
+ * Clears the given region from right-to-left, top-to-bottom, replacing
+ * all characters with the given background color.
+ */
 int guac_terminal_clear_range(guac_terminal* term,
         int start_row, int start_col,
         int end_row, int end_col, int background_color);
+
+/**
+ * Scrolls the terminal's current scroll region up by one row.
+ */
+int guac_terminal_scroll_up(guac_terminal* term,
+        int start_row, int end_row, int amount);
+
+/**
+ * Scrolls the terminal's current scroll region down by one row.
+ */
+int guac_terminal_scroll_down(guac_terminal* term,
+        int start_row, int end_row, int amount);
 
 /**
  * Allocates a new guac_terminal_delta.

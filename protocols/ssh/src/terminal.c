@@ -189,6 +189,12 @@ void guac_terminal_free(guac_terminal* term) {
 
 }
 
+/**
+ * Returns the location of the given character in the glyph cache layer,
+ * sending it first if necessary. The location returned is in characters,
+ * and thus must be multiplied by the glyph width to obtain the actual
+ * location within the glyph cache layer.
+ */
 int __guac_terminal_get_glyph(guac_terminal* term, char c) {
 
     guac_socket* socket = term->client->socket;
@@ -264,11 +270,30 @@ int __guac_terminal_get_glyph(guac_terminal* term, char c) {
 
 }
 
-int guac_terminal_set_colors(guac_terminal* term,
-        int foreground, int background) {
+/**
+ * Sets the attributes of the glyph cache layer such that future copies from
+ * this layer will display as expected.
+ */
+int __guac_terminal_set_colors(guac_terminal* term,
+        guac_terminal_attributes* attributes) {
 
     guac_socket* socket = term->client->socket;
     const guac_terminal_color* background_color;
+    int background, foreground;
+
+    /* Handle reverse video */
+    if (attributes->reverse) {
+        background = attributes->foreground;
+        foreground = attributes->background;
+    }
+    else {
+        foreground = attributes->foreground;
+        background = attributes->background;
+    }
+
+    /* Handle bold */
+    if (attributes->bold && foreground <= 7)
+        foreground += 8;
 
     /* Get background color */
     background_color = &guac_terminal_palette[background];
@@ -294,7 +319,8 @@ int guac_terminal_set_colors(guac_terminal* term,
     }
 
     /* If any color change at all, update filled */
-    if (foreground != term->glyph_foreground || background != term->glyph_background) {
+    if (foreground != term->glyph_foreground
+            || background != term->glyph_background) {
 
         /* Set background */
         guac_protocol_send_rect(socket, term->filled_glyphs,
@@ -325,7 +351,12 @@ int guac_terminal_set_colors(guac_terminal* term,
 
 }
 
-int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
+/**
+ * Sends the given character to the terminal at the given row and column,
+ * rendering the charater immediately. This bypasses the guac_terminal_delta
+ * mechanism and is intended for flushing of updates only.
+ */
+int __guac_terminal_set(guac_terminal* term, int row, int col, char c) {
 
     guac_socket* socket = term->client->socket;
     int location = __guac_terminal_get_glyph(term, c); 
@@ -336,6 +367,19 @@ int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
         GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
         term->char_width * col,
         term->char_height * row);
+
+}
+
+int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
+
+    /* Build character with current attributes */
+    guac_terminal_char guac_char;
+    guac_char.value = c;
+    guac_char.attributes = term->current_attributes;
+
+    /* Set delta */
+    guac_terminal_delta_set(term->delta, row, col, &guac_char);
+    return 0;
 
 }
 
@@ -354,17 +398,13 @@ int guac_terminal_copy(guac_terminal* term,
         int src_row, int src_col, int rows, int cols,
         int dst_row, int dst_col) {
 
-    guac_socket* socket = term->client->socket;
+    /* Update delta */
+    guac_terminal_delta_copy(term->delta,
+        dst_row, dst_col,
+        src_row, src_col,
+        cols, rows);
 
-    /* Send copy instruction */
-    return guac_protocol_send_copy(socket,
-
-            GUAC_DEFAULT_LAYER,
-            src_col * term->char_width, src_row * term->char_height,
-            cols    * term->char_width, rows    * term->char_height,
-
-            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
-            dst_col * term->char_width, dst_row * term->char_height);
+    return 0;
 
 }
 

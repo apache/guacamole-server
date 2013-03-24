@@ -42,9 +42,6 @@
 
 int guac_terminal_echo(guac_terminal* term, char c) {
 
-    int foreground = term->current_attributes.foreground;
-    int background = term->current_attributes.background;
-
     switch (c) {
 
         /* Bell */
@@ -71,7 +68,8 @@ int guac_terminal_echo(guac_terminal* term, char c) {
                 term->cursor_row = term->scroll_end;
 
                 /* Scroll up by one row */        
-                guac_terminal_scroll_up(term, term->scroll_start, term->scroll_end, 1);
+                guac_terminal_scroll_up(term, term->scroll_start,
+                        term->scroll_end, 1);
 
             }
             break;
@@ -95,24 +93,12 @@ int guac_terminal_echo(guac_terminal* term, char c) {
                 term->cursor_row = term->scroll_end;
 
                 /* Scroll up by one row */        
-                guac_terminal_scroll_up(term, term->scroll_start, term->scroll_end, 1);
+                guac_terminal_scroll_up(term, term->scroll_start,
+                        term->scroll_end, 1);
 
             }
 
-            /* Handle reverse video */
-            if (term->current_attributes.reverse) {
-                int swap = background;
-                background = foreground;
-                foreground = swap;
-            }
-
-            /* Handle bold */
-            if (term->current_attributes.bold && foreground <= 7)
-                foreground += 8;
-
-            guac_terminal_set_colors(term,
-                    foreground, background);
-
+            /* Write character */
             guac_terminal_set(term,
                     term->cursor_row,
                     term->cursor_col,
