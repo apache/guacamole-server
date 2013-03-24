@@ -41,14 +41,12 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libguac-client-ssh.la
 
 libguac_client_ssh_la_SOURCES = \
-    src/delta.c                 \
     src/ssh_client.c            \
     src/ssh_handlers.c          \
     src/terminal.c              \
     src/terminal_handlers.c
 
 noinst_HEADERS =                \
-    include/delta.h             \
     include/ssh_client.h        \
     include/ssh_handlers.h      \
     include/terminal.h          \

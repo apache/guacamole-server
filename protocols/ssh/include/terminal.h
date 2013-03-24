@@ -133,6 +133,81 @@ typedef struct guac_terminal_char {
 } guac_terminal_char;
 
 /**
+ * All available terminal operations which affect character cells.
+ */
+typedef enum guac_terminal_operation_type {
+
+    /**
+     * Operation which does nothing.
+     */
+    GUAC_CHAR_NOP,
+
+    /**
+     * Operation which copies a character from a given row/column coordinate.
+     */
+    GUAC_CHAR_COPY,
+
+    /**
+     * Operation which sets the character and attributes.
+     */
+    GUAC_CHAR_SET
+
+} guac_terminal_operation_type;
+
+/**
+ * A pairing of a guac_terminal_operation_type and all parameters required by
+ * that operation type.
+ */
+typedef struct guac_terminal_operation {
+
+    /**
+     * The type of operation to perform.
+     */
+    guac_terminal_operation_type type;
+
+    /**
+     * The character (and attributes) to set the current location to. This is
+     * only applicable to GUAC_CHAR_SET.
+     */
+    guac_terminal_char character;
+
+    /**
+     * The row to copy a character from. This is only applicable to
+     * GUAC_CHAR_COPY.
+     */
+    int row;
+
+    /**
+     * The column to copy a character from. This is only applicable to
+     * GUAC_CHAR_COPY.
+     */
+    int column;
+
+} guac_terminal_operation;
+
+/**
+ * Set of all pending operations for the currently-visible screen area.
+ */
+typedef struct guac_terminal_delta {
+
+    /**
+     * Array of all operations pending for the visible screen area.
+     */
+    guac_terminal_operation* operations;
+
+    /**
+     * The width of the screen, in characters.
+     */
+    int width;
+
+    /**
+     * The height of the screen, in characters.
+     */
+    int height;
+
+} guac_terminal_delta;
+
+/**
  * Represents a terminal emulator which uses a given Guacamole client to
  * render itself.
  */
@@ -288,6 +363,44 @@ int guac_terminal_scroll_down(guac_terminal* term,
 int guac_terminal_clear_range(guac_terminal* term,
         int start_row, int start_col,
         int end_row, int end_col, int background_color);
+
+/**
+ * Allocates a new guac_terminal_delta.
+ */
+guac_terminal_delta* guac_terminal_delta_alloc(int width, int height);
+
+/**
+ * Frees the given guac_terminal_delta.
+ */
+void guac_terminal_delta_free(guac_terminal_delta* delta);
+
+/**
+ * Resizes the given guac_terminal_delta to the given dimensions.
+ */
+void guac_terminal_delta_resize(guac_terminal_delta* delta,
+    int width, int height);
+
+/**
+ * Stores a set operation at the given location.
+ */
+void guac_terminal_delta_set(guac_terminal_delta* delta, int r, int c,
+        guac_terminal_char* character);
+
+/**
+ * Stores a rectangle of copy operations, copying existing operations as
+ * necessary.
+ */
+void guac_terminal_delta_copy(guac_terminal_delta* delta,
+        int dst_row, int dst_column,
+        int src_row, int src_column,
+        int w, int h);
+
+/**
+ * Flushes all pending operations within the given guac_client_delta to the
+ * given guac_terminal.
+ */
+void guac_terminal_delta_flush(guac_terminal_delta* delta,
+        guac_terminal* terminal);
 
 #endif
 

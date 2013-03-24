@@ -483,3 +483,34 @@ int guac_terminal_clear_range(guac_terminal* term,
 
 }
 
+guac_terminal_delta* guac_terminal_delta_alloc(int width, int height) {
+    /* STUB */
+    return NULL;
+}
+
+void guac_terminal_delta_free(guac_terminal_delta* delta) {
+    /* STUB */
+}
+
+void guac_terminal_delta_resize(guac_terminal_delta* delta,
+    int width, int height) {
+    /* STUB */
+}
+
+void guac_terminal_delta_set(guac_terminal_delta* delta, int r, int c,
+        guac_terminal_char* character) {
+    /* STUB */
+}
+
+void guac_terminal_delta_copy(guac_terminal_delta* delta,
+        int dst_row, int dst_column,
+        int src_row, int src_column,
+        int w, int h) {
+    /* STUB */
+}
+
+void guac_terminal_delta_flush(guac_terminal_delta* delta,
+        guac_terminal* terminal) {
+    /* STUB */
+}
+
