@@ -264,22 +264,6 @@ int __guac_terminal_get_glyph(guac_terminal* term, char c) {
 
 }
 
-int guac_terminal_redraw_cursor(guac_terminal* term) {
-
-    guac_socket* socket = term->client->socket;
-
-    /* Erase old cursor */
-    return
-        guac_protocol_send_move(socket,
-            term->cursor_layer,
-
-            GUAC_DEFAULT_LAYER,
-            term->char_width * term->cursor_col,
-            term->char_height * term->cursor_row,
-            1);
-
-}
-
 int guac_terminal_set_colors(guac_terminal* term,
         int foreground, int background) {
 
