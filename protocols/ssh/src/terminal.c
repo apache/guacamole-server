@@ -165,7 +165,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     }
 
     /* Init delta */
-    term->delta = guac_terminal_delta_alloc(width, height);
+    term->delta = guac_terminal_delta_alloc(term->term_width,
+            term->term_height);
 
     /* Clear with background color */
     guac_terminal_clear(term,
@@ -583,7 +584,133 @@ void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
     /* STUB */
 }
 
-void guac_terminal_delta_flush(guac_terminal_delta* delta,
+void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
+        guac_terminal* terminal) {
+    /* COPY */
+}
+
+void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
+        guac_terminal* terminal) {
+
+    guac_terminal_operation* current = delta->operations;
+    int row, col;
+
+    /* For each operation */
+    for (row=0; row<delta->height; row++) {
+        for (col=0; col<delta->width; col++) {
+
+            /* If operation is a cler operation (set to space) */
+            if (current->type == GUAC_CHAR_SET &&
+                    current->character.value == ' ') {
+
+                /* The determined bounds of the rectangle of contiguous
+                 * operations */
+                int detected_right = -1;
+                int detected_bottom = row;
+
+                /* The current row or column within a rectangle */
+                int rect_row, rect_col;
+
+                /* The dimensions of the rectangle as determined */
+                int rect_width, rect_height;
+
+                /* Color of the rectangle to draw */
+                int color = current->character.attributes.background;
+                const guac_terminal_color* guac_color =
+                    &guac_terminal_palette[color];
+
+                /* Current row within a subrect */
+                guac_terminal_operation* rect_current_row;
+
+                /* Determine bounds of rectangle */
+                rect_current_row = current;
+                for (rect_row=row; rect_row<delta->height; rect_row++) {
+
+                    guac_terminal_operation* rect_current = rect_current_row;
+
+                    /* Find width */
+                    for (rect_col=col; rect_col<delta->width; rect_col++) {
+
+                        /* If not identical operation, stop */
+                        if (rect_current->type != GUAC_CHAR_SET
+                                || rect_current->character.value != ' '
+                                || rect_current->character.attributes.background != color)
+                            break;
+
+                        /* Next column */
+                        rect_current++;
+
+                    }
+
+                    /* If too small, cannot append row */
+                    if (rect_col-1 < detected_right)
+                        break;
+
+                    /* As row has been accepted, update rect_row of rect */
+                    detected_bottom = rect_row;
+
+                    /* For now, only set rect_col bound if uninitialized */
+                    if (detected_right == -1)
+                        detected_right = rect_col - 1;
+
+                    /* Next row */
+                    rect_current_row += delta->width;
+
+                }
+
+                /* Calculate dimensions */
+                rect_width  = detected_right  - col + 1;
+                rect_height = detected_bottom - row + 1;
+
+                /* Mark rect as NOP (as it has been handled) */
+                rect_current_row = current;
+                for (rect_row=0; rect_row<rect_height; rect_row++) {
+                    
+                    guac_terminal_operation* rect_current = rect_current_row;
+
+                    for (rect_col=0; rect_col<rect_width; rect_col++) {
+
+                        /* Mark clear operations as NOP */
+                        if (rect_current->type == GUAC_CHAR_SET
+                                && rect_current->character.value == ' '
+                                && rect_current->character.attributes.background == color)
+                            rect_current->type = GUAC_CHAR_NOP;
+
+                        /* Next column */
+                        rect_current++;
+
+                    }
+
+                    /* Next row */
+                    rect_current_row += delta->width;
+
+                }
+
+                /* Send rect */
+                guac_protocol_send_rect(terminal->client->socket,
+                        GUAC_DEFAULT_LAYER,
+                        col * terminal->char_width,
+                        row * terminal->char_height,
+                        rect_width * terminal->char_width,
+                        rect_height * terminal->char_height);
+
+                guac_protocol_send_cfill(terminal->client->socket,
+                        GUAC_COMP_OVER,
+                        GUAC_DEFAULT_LAYER,
+                        guac_color->red, guac_color->green, guac_color->blue,
+                        0xFF);
+
+            }
+
+            /* Next operation */
+            current++;
+
+        }
+    }
+
+}
+
+void __guac_terminal_delta_flush_set(guac_terminal_delta* delta,
         guac_terminal* terminal) {
 
     guac_terminal_operation* current = delta->operations;
@@ -596,6 +723,11 @@ void guac_terminal_delta_flush(guac_terminal_delta* delta,
             /* Perform given operation */
             if (current->type == GUAC_CHAR_SET) {
 
+                /* Set attributes */
+                __guac_terminal_set_colors(terminal,
+                        &(current->character.attributes));
+
+                /* Send character */
                 __guac_terminal_set(terminal, row, col,
                         current->character.value);
 
@@ -609,6 +741,20 @@ void guac_terminal_delta_flush(guac_terminal_delta* delta,
 
         }
     }
+
+}
+
+void guac_terminal_delta_flush(guac_terminal_delta* delta,
+        guac_terminal* terminal) {
+
+    /* Flush copy operations first */
+    __guac_terminal_delta_flush_copy(delta, terminal);
+
+    /* Flush clear operations (as they're just rects) */
+    __guac_terminal_delta_flush_clear(delta, terminal);
+
+    /* Flush set operations (the only operations remaining) */
+    __guac_terminal_delta_flush_set(delta, terminal);
 
 }
 
