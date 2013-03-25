@@ -134,7 +134,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     term->cursor_row = 0;
     term->cursor_col = 0;
-    term->cursor_layer = guac_client_alloc_layer(client);
 
     term->term_width = width / term->char_width;
     term->term_height = height / term->char_height;

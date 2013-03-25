@@ -302,11 +302,6 @@ struct guac_terminal {
     int cursor_col;
 
     /**
-     * Simple cursor layer until scrollback, etc. is implemented.
-     */
-    guac_layer* cursor_layer;
-
-    /**
      * The attributes which will be applied to future characters.
      */
     guac_terminal_attributes current_attributes;
