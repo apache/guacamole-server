@@ -575,7 +575,51 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
         int dst_row, int dst_column,
         int src_row, int src_column,
         int w, int h) {
-    /* STUB */
+
+    int row, column;
+
+    /* FIXME: Handle intersections between src and dst rects */
+
+    guac_terminal_operation* current_row =
+        &(delta->operations[dst_row*delta->width + dst_column]);
+
+    guac_terminal_operation* src_current_row =
+        &(delta->operations[src_row*delta->width + src_column]);
+
+    /* Set rectangle to copy operations */
+    for (row=0; row<h; row++) {
+
+        guac_terminal_operation* current = current_row;
+        guac_terminal_operation* src_current = src_current_row;
+
+        for (column=0; column<w; column++) {
+
+            /* If copying existing delta operation, just copy that rather
+             * than create a new copy op */
+            if (src_current->type != GUAC_CHAR_NOP)
+                *current = *src_current;
+
+            /* Store operation */
+            else {
+                current->type = GUAC_CHAR_COPY;
+                current->row = src_row + row;
+                current->column = src_column + column;
+            }
+
+            /* Next column */
+            current++;
+            src_current++;
+
+        }
+
+        /* Next row */
+        current_row += delta->width;
+        src_current_row += delta->width;
+
+    }
+
+
+
 }
 
 void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
@@ -610,7 +654,130 @@ void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
 
 void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
         guac_terminal* terminal) {
-    /* COPY */
+
+    guac_terminal_operation* current = delta->operations;
+    int row, col;
+
+    /* For each operation */
+    for (row=0; row<delta->height; row++) {
+        for (col=0; col<delta->width; col++) {
+
+            /* If operation is a copy operation */
+            if (current->type == GUAC_CHAR_COPY) {
+
+                /* The determined bounds of the rectangle of contiguous
+                 * operations */
+                int detected_right = -1;
+                int detected_bottom = row;
+
+                /* The current row or column within a rectangle */
+                int rect_row, rect_col;
+
+                /* The dimensions of the rectangle as determined */
+                int rect_width, rect_height;
+
+                /* The expected row and column source for the next copy
+                 * operation (if adjacent to current) */
+                int expected_row, expected_col;
+
+                /* Current row within a subrect */
+                guac_terminal_operation* rect_current_row;
+
+                /* Determine bounds of rectangle */
+                rect_current_row = current;
+                expected_row = current->row;
+                for (rect_row=row; rect_row<delta->height; rect_row++) {
+
+                    guac_terminal_operation* rect_current = rect_current_row;
+                    expected_col = current->column;
+
+                    /* Find width */
+                    for (rect_col=col; rect_col<delta->width; rect_col++) {
+
+                        /* If not identical operation, stop */
+                        if (rect_current->type != GUAC_CHAR_COPY
+                                || rect_current->row != expected_row
+                                || rect_current->column != expected_col)
+                            break;
+
+                        /* Next column */
+                        rect_current++;
+                        expected_col++;
+
+                    }
+
+                    /* If too small, cannot append row */
+                    if (rect_col-1 < detected_right)
+                        break;
+
+                    /* As row has been accepted, update rect_row of rect */
+                    detected_bottom = rect_row;
+
+                    /* For now, only set rect_col bound if uninitialized */
+                    if (detected_right == -1)
+                        detected_right = rect_col - 1;
+
+                    /* Next row */
+                    rect_current_row += delta->width;
+                    expected_row++;
+
+                }
+
+                /* Calculate dimensions */
+                rect_width  = detected_right  - col + 1;
+                rect_height = detected_bottom - row + 1;
+
+                /* Mark rect as NOP (as it has been handled) */
+                rect_current_row = current;
+                expected_row = current->row;
+                for (rect_row=0; rect_row<rect_height; rect_row++) {
+                    
+                    guac_terminal_operation* rect_current = rect_current_row;
+                    expected_col = current->column;
+
+                    for (rect_col=0; rect_col<rect_width; rect_col++) {
+
+                        /* Mark copy operations as NOP */
+                        if (rect_current->type == GUAC_CHAR_COPY
+                                && rect_current->row == expected_row
+                                && rect_current->column == expected_col)
+                            rect_current->type = GUAC_CHAR_NOP;
+
+                        /* Next column */
+                        rect_current++;
+                        expected_col++;
+
+                    }
+
+                    /* Next row */
+                    rect_current_row += delta->width;
+                    expected_row++;
+
+                }
+
+                /* Send copy */
+                guac_protocol_send_copy(terminal->client->socket,
+
+                        GUAC_DEFAULT_LAYER,
+                        current->column * terminal->char_width,
+                        current->row * terminal->char_height,
+                        rect_width * terminal->char_width,
+                        rect_height * terminal->char_height,
+
+                        GUAC_COMP_OVER,
+                        GUAC_DEFAULT_LAYER,
+                        col * terminal->char_width,
+                        row * terminal->char_height);
+
+
+            } /* end if copy operation */
+
+            /* Next operation */
+            current++;
+
+        }
+    }
+
 }
 
 void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
