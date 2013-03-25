@@ -560,7 +560,14 @@ void guac_terminal_delta_resize(guac_terminal_delta* delta,
 
 void guac_terminal_delta_set(guac_terminal_delta* delta, int r, int c,
         guac_terminal_char* character) {
-    /* STUB */
+
+    /* Get operation at coordinate */
+    guac_terminal_operation* op = &(delta->operations[r*delta->width + c]);
+
+    /* Store operation */
+    op->type = GUAC_CHAR_SET;
+    op->character = *character;
+
 }
 
 void guac_terminal_delta_copy(guac_terminal_delta* delta,
