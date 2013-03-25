@@ -581,7 +581,31 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
 void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
         int row, int column, int w, int h,
         guac_terminal_char* character) {
-    /* STUB */
+
+    guac_terminal_operation* current_row =
+        &(delta->operations[row*delta->width + column]);
+
+    /* Set rectangle contents to given character */
+    for (row=0; row<h; row++) {
+
+        guac_terminal_operation* current = current_row;
+
+        for (column=0; column<w; column++) {
+
+            /* Store operation */
+            current->type = GUAC_CHAR_SET;
+            current->character = *character;
+
+            /* Next column */
+            current++;
+
+        }
+
+        /* Next row */
+        current_row += delta->width;
+
+    }
+
 }
 
 void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
@@ -615,7 +639,12 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
                 int rect_width, rect_height;
 
                 /* Color of the rectangle to draw */
-                int color = current->character.attributes.background;
+                int color;
+                if (current->character.attributes.reverse)
+                   color = current->character.attributes.foreground;
+                else
+                   color = current->character.attributes.background;
+
                 const guac_terminal_color* guac_color =
                     &guac_terminal_palette[color];
 
@@ -631,10 +660,16 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
                     /* Find width */
                     for (rect_col=col; rect_col<delta->width; rect_col++) {
 
+                        int joining_color;
+                        if (rect_current->character.attributes.reverse)
+                           joining_color = current->character.attributes.foreground;
+                        else
+                           joining_color = current->character.attributes.background;
+
                         /* If not identical operation, stop */
                         if (rect_current->type != GUAC_CHAR_SET
                                 || rect_current->character.value != ' '
-                                || rect_current->character.attributes.background != color)
+                                || joining_color != color)
                             break;
 
                         /* Next column */
@@ -670,10 +705,16 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
 
                     for (rect_col=0; rect_col<rect_width; rect_col++) {
 
+                        int joining_color;
+                        if (rect_current->character.attributes.reverse)
+                           joining_color = current->character.attributes.foreground;
+                        else
+                           joining_color = current->character.attributes.background;
+
                         /* Mark clear operations as NOP */
                         if (rect_current->type == GUAC_CHAR_SET
                                 && rect_current->character.value == ' '
-                                && rect_current->character.attributes.background == color)
+                                && joining_color == color)
                             rect_current->type = GUAC_CHAR_NOP;
 
                         /* Next column */
@@ -700,7 +741,7 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
                         guac_color->red, guac_color->green, guac_color->blue,
                         0xFF);
 
-            }
+            } /* end if clear operation */
 
             /* Next operation */
             current++;
