@@ -107,7 +107,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->font_desc = pango_font_description_new();
     pango_font_description_set_family(term->font_desc, "monospace");
     pango_font_description_set_weight(term->font_desc, PANGO_WEIGHT_NORMAL);
-    pango_font_description_set_size(term->font_desc, 10*PANGO_SCALE);
+    pango_font_description_set_size(term->font_desc, 12*PANGO_SCALE);
 
     font_map = pango_cairo_font_map_get_default();
     context = pango_font_map_create_context(font_map);
