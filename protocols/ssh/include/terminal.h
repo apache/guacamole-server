@@ -420,6 +420,13 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
         int w, int h);
 
 /**
+ * Sets a rectangle of character data to the given character value.
+ */
+void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
+        int row, int column, int w, int h,
+        guac_terminal_char* character);
+
+/**
  * Flushes all pending operations within the given guac_client_delta to the
  * given guac_terminal.
  */

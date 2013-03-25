@@ -412,18 +412,17 @@ int guac_terminal_copy(guac_terminal* term,
 int guac_terminal_clear(guac_terminal* term,
         int row, int col, int rows, int cols, int background_color) {
 
-    guac_socket* socket = term->client->socket;
-    const guac_terminal_color* color =
-        &guac_terminal_palette[background_color];
+    /* Build space */
+    guac_terminal_char character;
+    character.value = ' ';
+    character.attributes.reverse = false;
+    character.attributes.background = background_color;
 
     /* Fill with color */
-    return
-        guac_protocol_send_rect(socket, GUAC_DEFAULT_LAYER,
-            col  * term->char_width, row  * term->char_height,
-            cols * term->char_width, rows * term->char_height)
+    guac_terminal_delta_set_rect(term->delta,
+        row, col, cols, rows, &character);
 
-     || guac_protocol_send_cfill(socket, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
-            color->red, color->green, color->blue, 255);
+    return 0;
 
 }
 
@@ -568,6 +567,12 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
         int dst_row, int dst_column,
         int src_row, int src_column,
         int w, int h) {
+    /* STUB */
+}
+
+void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
+        int row, int column, int w, int h,
+        guac_terminal_char* character) {
     /* STUB */
 }
 
