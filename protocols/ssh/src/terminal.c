@@ -585,6 +585,30 @@ void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
 
 void guac_terminal_delta_flush(guac_terminal_delta* delta,
         guac_terminal* terminal) {
-    /* STUB */
+
+    guac_terminal_operation* current = delta->operations;
+    int row, col;
+
+    /* For each operation */
+    for (row=0; row<delta->height; row++) {
+        for (col=0; col<delta->width; col++) {
+
+            /* Perform given operation */
+            if (current->type == GUAC_CHAR_SET) {
+
+                __guac_terminal_set(terminal, row, col,
+                        current->character.value);
+
+                /* Mark operation as handled */
+                current->type = GUAC_CHAR_NOP;
+
+            }
+
+            /* Next operation */
+            current++;
+
+        }
+    }
+
 }
 

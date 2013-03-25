@@ -104,6 +104,8 @@ int ssh_guac_client_handle_messages(guac_client* client) {
         }
     }
 
+    /* Flush terminal delta */
+    guac_terminal_delta_flush(client_data->term->delta, client_data->term);
     return 0;
 
 }
