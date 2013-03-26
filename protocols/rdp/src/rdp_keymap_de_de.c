@@ -55,12 +55,12 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* quotedbl */
-    { .keysym = 0x0022, .scancode = 0x28,
+    { .keysym = 0x0022, .scancode = 0x03,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
-
+	
     /* numbersign */
-    { .keysym = 0x0023, .scancode = 0x04,
-        .set_keysyms = GUAC_KEYSYMS_SHIFT },
+    { .keysym = 0x0023, .scancode = 0x2b,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* dollar */
     { .keysym = 0x0024, .scancode = 0x05,
@@ -71,34 +71,35 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* ampersand */
-    { .keysym = 0x0026, .scancode = 0x08,
+    { .keysym = 0x0026, .scancode = 0x07,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* quoteright */
-    { .keysym = 0x0027, .scancode = 0x28 },
+   
+    { .keysym = 0x0027, .scancode = 0x2b },
 
     /* parenleft */
-    { .keysym = 0x0028, .scancode = 0x0A,
+    { .keysym = 0x0028, .scancode = 0x09,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* parenright */
-    { .keysym = 0x0029, .scancode = 0x0B,
+    { .keysym = 0x0029, .scancode = 0x0A,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* asterisk */
-    { .keysym = 0x002a, .scancode = 0x09,
+    { .keysym = 0x002a, .scancode = 0x1b,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* plus */
-    { .keysym = 0x002b, .scancode = 0x0D,
-        .set_keysyms = GUAC_KEYSYMS_SHIFT },
+    { .keysym = 0x002b, .scancode = 0x1b,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT  },
 
     /* comma */
     { .keysym = 0x002c, .scancode = 0x33,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* minus */
-    { .keysym = 0x002d, .scancode = 0x0C,
+    { .keysym = 0x002d, .scancode = 0x35,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* period */
@@ -106,8 +107,8 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* slash */
-    { .keysym = 0x002f, .scancode = 0x35,
-        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
+    { .keysym = 0x002f, .scancode = 0x08,
+        .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* 0 */
     { .keysym = 0x0030, .scancode = 0x0B,
@@ -150,27 +151,27 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* colon */
-    { .keysym = 0x003a, .scancode = 0x27,
+    { .keysym = 0x003a, .scancode = 0x34,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* semicolon */
-    { .keysym = 0x003b, .scancode = 0x27,
-        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
-
-    /* less */
-    { .keysym = 0x003c, .scancode = 0x33,
+    { .keysym = 0x003b, .scancode = 0x33,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
-    /* equal */
-    { .keysym = 0x003d, .scancode = 0x0D,
+    /* less ??*/
+    { .keysym = 0x003c, .scancode = 0x56,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
-    /* greater */
-    { .keysym = 0x003e, .scancode = 0x34,
+    /* equal */
+    { .keysym = 0x003d, .scancode = 0x0B,
+        .set_keysyms = GUAC_KEYSYMS_SHIFT  },
+
+    /* greater ??*/
+    { .keysym = 0x003e, .scancode = 0x56,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* question */
-    { .keysym = 0x003f, .scancode = 0x35,
+    { .keysym = 0x003f, .scancode = 0x0c,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* at */
@@ -274,35 +275,35 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* Y */
-    { .keysym = 0x0059, .scancode = 0x15,
+    { .keysym = 0x0059, .scancode = 0x2c,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* Z */
-    { .keysym = 0x005a, .scancode = 0x2C,
+    { .keysym = 0x005a, .scancode = 0x15,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* bracketleft */
-    { .keysym = 0x005b, .scancode = 0x1A,
+    { .keysym = 0x005b, .scancode = 0x09,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* backslash */
-    { .keysym = 0x005c, .scancode = 0x2B,
+    { .keysym = 0x005c, .scancode = 0x0c,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* bracketright */
-    { .keysym = 0x005d, .scancode = 0x1B,
+    { .keysym = 0x005d, .scancode = 0x0a,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* asciicircum */
-    { .keysym = 0x005e, .scancode = 0x07,
+    { .keysym = 0x005e, .scancode = 0x29,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* underscore */
-    { .keysym = 0x005f, .scancode = 0x0C,
+    { .keysym = 0x005f, .scancode = 0x35,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* quoteleft */
-    { .keysym = 0x0060, .scancode = 0x29,
+    { .keysym = 0x0060, .scancode = 0x2f,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* a */
@@ -402,27 +403,57 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* y */
-    { .keysym = 0x0079, .scancode = 0x15,
+    { .keysym = 0x0079, .scancode = 0x2c,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* z */
-    { .keysym = 0x007a, .scancode = 0x2C,
+    { .keysym = 0x007a, .scancode = 0x15,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
+ /* german umlauts ä*/
+
+    { .keysym = 0x00e4, .scancode = 0x28,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
+
+    { .keysym = 0x00c4, .scancode = 0x28,
+        .set_keysyms = GUAC_KEYSYMS_SHIFT },
+
+    /* ö */
+    { .keysym = 0x00f6, .scancode = 0x27,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
+
+    { .keysym = 0x00d6, .scancode = 0x27,
+        .set_keysyms = GUAC_KEYSYMS_SHIFT },
+
+   /* ü */
+    { .keysym = 0x00fc, .scancode = 0x1a,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
+
+    { .keysym = 0x00dc, .scancode = 0x1a,
+        .set_keysyms = GUAC_KEYSYMS_SHIFT },
+
+    /* ß */
+    { .keysym = 0x00df, .scancode = 0x0c,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
+
+
+
     /* braceleft */
-    { .keysym = 0x007b, .scancode = 0x1A,
+    { .keysym = 0x007b, .scancode = 0x08,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* bar */
     { .keysym = 0x007c, .scancode = 0x2B,
-        .set_keysyms = GUAC_KEYSYMS_SHIFT },
+        .set_keysyms = GUAC_KEYSYMS_SHIFT }, 
+
+
 
     /* braceright */
-    { .keysym = 0x007d, .scancode = 0x1B,
+    { .keysym = 0x007d, .scancode = 0x0b,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* asciitilde */
-    { .keysym = 0x007e, .scancode = 0x29,
+    { .keysym = 0x007e, .scancode = 0x1b,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     {0}
