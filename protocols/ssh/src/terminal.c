@@ -578,7 +578,8 @@ void guac_terminal_display_set(guac_terminal_display* display, int r, int c,
 
     /* Store operation */
     disp_char->next.type = GUAC_CHAR_SET;
-    disp_char->next.character = *character;
+    disp_char->next.character = 
+    disp_char->current        = *character;
 
 }
 
@@ -617,6 +618,9 @@ void guac_terminal_display_copy(guac_terminal_display* display,
                 current->next.column = src_column + column;
             }
 
+            /* Copy character data */
+            current->current = src_current->current;
+
             /* Next column */
             current++;
             src_current++;
@@ -649,7 +653,8 @@ void guac_terminal_display_set_rect(guac_terminal_display* display,
 
             /* Store operation */
             current->next.type = GUAC_CHAR_SET;
-            current->next.character = *character;
+            current->next.character =
+            current->current        = *character;
 
             /* Next column */
             current++;
