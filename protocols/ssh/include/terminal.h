@@ -451,5 +451,10 @@ void guac_terminal_display_set_rect(guac_terminal_display* display,
 void guac_terminal_display_flush(guac_terminal_display* display,
         guac_terminal* terminal);
 
+/**
+ * Update the cursor position and contents.
+ */
+int guac_terminal_redraw_cursor(guac_terminal* term);
+
 #endif
 

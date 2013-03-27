@@ -106,6 +106,10 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
     /* Flush terminal display */
     guac_terminal_display_flush(client_data->term->display, client_data->term);
+
+    /* Update cursor */
+    guac_terminal_redraw_cursor(client_data->term);
+
     return 0;
 
 }
