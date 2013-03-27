@@ -163,8 +163,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     }
 
-    /* Init delta */
-    term->delta = guac_terminal_delta_alloc(term->term_width,
+    /* Init display */
+    term->display = guac_terminal_display_alloc(term->term_width,
             term->term_height);
 
     /* Clear with background color */
@@ -184,8 +184,8 @@ void guac_terminal_free(guac_terminal* term) {
 
     free(term->scrollback);
 
-    /* Free delta */
-    guac_terminal_delta_free(term->delta);
+    /* Free display */
+    guac_terminal_display_free(term->display);
 
 }
 
@@ -353,7 +353,7 @@ int __guac_terminal_set_colors(guac_terminal* term,
 
 /**
  * Sends the given character to the terminal at the given row and column,
- * rendering the charater immediately. This bypasses the guac_terminal_delta
+ * rendering the charater immediately. This bypasses the guac_terminal_display
  * mechanism and is intended for flushing of updates only.
  */
 int __guac_terminal_set(guac_terminal* term, int row, int col, char c) {
@@ -377,8 +377,8 @@ int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
     guac_char.value = c;
     guac_char.attributes = term->current_attributes;
 
-    /* Set delta */
-    guac_terminal_delta_set(term->delta, row, col, &guac_char);
+    /* Set display */
+    guac_terminal_display_set(term->display, row, col, &guac_char);
     return 0;
 
 }
@@ -398,8 +398,8 @@ int guac_terminal_copy(guac_terminal* term,
         int src_row, int src_col, int rows, int cols,
         int dst_row, int dst_col) {
 
-    /* Update delta */
-    guac_terminal_delta_copy(term->delta,
+    /* Update display */
+    guac_terminal_display_copy(term->display,
         dst_row, dst_col,
         src_row, src_col,
         cols, rows);
@@ -419,7 +419,7 @@ int guac_terminal_clear(guac_terminal* term,
     character.attributes.background = background_color;
 
     /* Fill with color */
-    guac_terminal_delta_set_rect(term->delta,
+    guac_terminal_display_set_rect(term->display,
         row, col, cols, rows, &character);
 
     return 0;
@@ -513,64 +513,76 @@ int guac_terminal_clear_range(guac_terminal* term,
 
 }
 
-guac_terminal_delta* guac_terminal_delta_alloc(int width, int height) {
+guac_terminal_display* guac_terminal_display_alloc(int width, int height) {
 
-    guac_terminal_operation* current;
+    guac_terminal_display_char* current;
     int x, y;
 
-    /* Allocate delta */
-    guac_terminal_delta* delta = malloc(sizeof(guac_terminal_delta));
+    /* Allocate display */
+    guac_terminal_display* display = malloc(sizeof(guac_terminal_display));
+
+    /* Initial value of all characters in the display */
+    guac_terminal_char blank = {
+        .value = ' ',
+        .attributes = {
+            .background = 0
+        }
+    };
 
     /* Set width and height */
-    delta->width = width;
-    delta->height = height;
+    display->width = width;
+    display->height = height;
 
-    /* Alloc operations */
-    delta->operations = malloc(width * height *
-            sizeof(guac_terminal_operation));
+    /* Alloc display */
+    display->characters = malloc(width * height *
+            sizeof(guac_terminal_display_char));
 
-    /* Init each operation buffer row */
-    current = delta->operations;
+    /* Init each display buffer row */
+    current = display->characters;
     for (y=0; y<height; y++) {
 
         /* Init entire row to NOP */
-        for (x=0; x<width; x++)
-            (current++)->type = GUAC_CHAR_NOP;
+        for (x=0; x<width; x++) {
+            current->current   = blank;
+            current->next.type = GUAC_CHAR_NOP;
+            current++;
+        }
 
     }
 
-    return delta;
+    return display;
 
 }
 
-void guac_terminal_delta_free(guac_terminal_delta* delta) {
+void guac_terminal_display_free(guac_terminal_display* display) {
 
-    /* Free operations buffer */
-    free(delta->operations);
+    /* Free characters buffer */
+    free(display->characters);
 
-    /* Free delta */
-    free(delta);
+    /* Free display */
+    free(display);
 
 }
 
-void guac_terminal_delta_resize(guac_terminal_delta* delta,
+void guac_terminal_display_resize(guac_terminal_display* display,
     int width, int height) {
     /* STUB */
 }
 
-void guac_terminal_delta_set(guac_terminal_delta* delta, int r, int c,
+void guac_terminal_display_set(guac_terminal_display* display, int r, int c,
         guac_terminal_char* character) {
 
     /* Get operation at coordinate */
-    guac_terminal_operation* op = &(delta->operations[r*delta->width + c]);
+    guac_terminal_display_char* disp_char =
+        &(display->characters[r*display->width + c]);
 
     /* Store operation */
-    op->type = GUAC_CHAR_SET;
-    op->character = *character;
+    disp_char->next.type = GUAC_CHAR_SET;
+    disp_char->next.character = *character;
 
 }
 
-void guac_terminal_delta_copy(guac_terminal_delta* delta,
+void guac_terminal_display_copy(guac_terminal_display* display,
         int dst_row, int dst_column,
         int src_row, int src_column,
         int w, int h) {
@@ -579,30 +591,30 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
 
     /* FIXME: Handle intersections between src and dst rects */
 
-    guac_terminal_operation* current_row =
-        &(delta->operations[dst_row*delta->width + dst_column]);
+    guac_terminal_display_char* current_row =
+        &(display->characters[dst_row*display->width + dst_column]);
 
-    guac_terminal_operation* src_current_row =
-        &(delta->operations[src_row*delta->width + src_column]);
+    guac_terminal_display_char* src_current_row =
+        &(display->characters[src_row*display->width + src_column]);
 
     /* Set rectangle to copy operations */
     for (row=0; row<h; row++) {
 
-        guac_terminal_operation* current = current_row;
-        guac_terminal_operation* src_current = src_current_row;
+        guac_terminal_display_char* current = current_row;
+        guac_terminal_display_char* src_current = src_current_row;
 
         for (column=0; column<w; column++) {
 
-            /* If copying existing delta operation, just copy that rather
+            /* If copying existing display operation, just copy that rather
              * than create a new copy op */
-            if (src_current->type != GUAC_CHAR_NOP)
-                *current = *src_current;
+            if (src_current->next.type != GUAC_CHAR_NOP)
+                current->next = src_current->next;
 
             /* Store operation */
             else {
-                current->type = GUAC_CHAR_COPY;
-                current->row = src_row + row;
-                current->column = src_column + column;
+                current->next.type = GUAC_CHAR_COPY;
+                current->next.row = src_row + row;
+                current->next.column = src_column + column;
             }
 
             /* Next column */
@@ -612,8 +624,8 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
         }
 
         /* Next row */
-        current_row += delta->width;
-        src_current_row += delta->width;
+        current_row += display->width;
+        src_current_row += display->width;
 
     }
 
@@ -621,23 +633,23 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
 
 }
 
-void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
+void guac_terminal_display_set_rect(guac_terminal_display* display,
         int row, int column, int w, int h,
         guac_terminal_char* character) {
 
-    guac_terminal_operation* current_row =
-        &(delta->operations[row*delta->width + column]);
+    guac_terminal_display_char* current_row =
+        &(display->characters[row*display->width + column]);
 
     /* Set rectangle contents to given character */
     for (row=0; row<h; row++) {
 
-        guac_terminal_operation* current = current_row;
+        guac_terminal_display_char* current = current_row;
 
         for (column=0; column<w; column++) {
 
             /* Store operation */
-            current->type = GUAC_CHAR_SET;
-            current->character = *character;
+            current->next.type = GUAC_CHAR_SET;
+            current->next.character = *character;
 
             /* Next column */
             current++;
@@ -645,24 +657,24 @@ void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
         }
 
         /* Next row */
-        current_row += delta->width;
+        current_row += display->width;
 
     }
 
 }
 
-void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
+void __guac_terminal_display_flush_copy(guac_terminal_display* display,
         guac_terminal* terminal) {
 
-    guac_terminal_operation* current = delta->operations;
+    guac_terminal_display_char* current = display->characters;
     int row, col;
 
     /* For each operation */
-    for (row=0; row<delta->height; row++) {
-        for (col=0; col<delta->width; col++) {
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
 
             /* If operation is a copy operation */
-            if (current->type == GUAC_CHAR_COPY) {
+            if (current->next.type == GUAC_CHAR_COPY) {
 
                 /* The determined bounds of the rectangle of contiguous
                  * operations */
@@ -680,23 +692,23 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
                 int expected_row, expected_col;
 
                 /* Current row within a subrect */
-                guac_terminal_operation* rect_current_row;
+                guac_terminal_display_char* rect_current_row;
 
                 /* Determine bounds of rectangle */
                 rect_current_row = current;
-                expected_row = current->row;
-                for (rect_row=row; rect_row<delta->height; rect_row++) {
+                expected_row = current->next.row;
+                for (rect_row=row; rect_row<display->height; rect_row++) {
 
-                    guac_terminal_operation* rect_current = rect_current_row;
-                    expected_col = current->column;
+                    guac_terminal_display_char* rect_current = rect_current_row;
+                    expected_col = current->next.column;
 
                     /* Find width */
-                    for (rect_col=col; rect_col<delta->width; rect_col++) {
+                    for (rect_col=col; rect_col<display->width; rect_col++) {
 
                         /* If not identical operation, stop */
-                        if (rect_current->type != GUAC_CHAR_COPY
-                                || rect_current->row != expected_row
-                                || rect_current->column != expected_col)
+                        if (rect_current->next.type != GUAC_CHAR_COPY
+                                || rect_current->next.row != expected_row
+                                || rect_current->next.column != expected_col)
                             break;
 
                         /* Next column */
@@ -717,7 +729,7 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
                         detected_right = rect_col - 1;
 
                     /* Next row */
-                    rect_current_row += delta->width;
+                    rect_current_row += display->width;
                     expected_row++;
 
                 }
@@ -728,19 +740,19 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
 
                 /* Mark rect as NOP (as it has been handled) */
                 rect_current_row = current;
-                expected_row = current->row;
+                expected_row = current->next.row;
                 for (rect_row=0; rect_row<rect_height; rect_row++) {
                     
-                    guac_terminal_operation* rect_current = rect_current_row;
-                    expected_col = current->column;
+                    guac_terminal_display_char* rect_current = rect_current_row;
+                    expected_col = current->next.column;
 
                     for (rect_col=0; rect_col<rect_width; rect_col++) {
 
                         /* Mark copy operations as NOP */
-                        if (rect_current->type == GUAC_CHAR_COPY
-                                && rect_current->row == expected_row
-                                && rect_current->column == expected_col)
-                            rect_current->type = GUAC_CHAR_NOP;
+                        if (rect_current->next.type == GUAC_CHAR_COPY
+                                && rect_current->next.row == expected_row
+                                && rect_current->next.column == expected_col)
+                            rect_current->next.type = GUAC_CHAR_NOP;
 
                         /* Next column */
                         rect_current++;
@@ -749,7 +761,7 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
                     }
 
                     /* Next row */
-                    rect_current_row += delta->width;
+                    rect_current_row += display->width;
                     expected_row++;
 
                 }
@@ -758,8 +770,8 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
                 guac_protocol_send_copy(terminal->client->socket,
 
                         GUAC_DEFAULT_LAYER,
-                        current->column * terminal->char_width,
-                        current->row * terminal->char_height,
+                        current->next.column * terminal->char_width,
+                        current->next.row * terminal->char_height,
                         rect_width * terminal->char_width,
                         rect_height * terminal->char_height,
 
@@ -779,19 +791,19 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta,
 
 }
 
-void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
+void __guac_terminal_display_flush_clear(guac_terminal_display* display,
         guac_terminal* terminal) {
 
-    guac_terminal_operation* current = delta->operations;
+    guac_terminal_display_char* current = display->characters;
     int row, col;
 
     /* For each operation */
-    for (row=0; row<delta->height; row++) {
-        for (col=0; col<delta->width; col++) {
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
 
             /* If operation is a cler operation (set to space) */
-            if (current->type == GUAC_CHAR_SET &&
-                    current->character.value == ' ') {
+            if (current->next.type == GUAC_CHAR_SET &&
+                    current->next.character.value == ' ') {
 
                 /* The determined bounds of the rectangle of contiguous
                  * operations */
@@ -806,35 +818,37 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
 
                 /* Color of the rectangle to draw */
                 int color;
-                if (current->character.attributes.reverse)
-                   color = current->character.attributes.foreground;
+                if (current->next.character.attributes.reverse)
+                   color = current->next.character.attributes.foreground;
                 else
-                   color = current->character.attributes.background;
+                   color = current->next.character.attributes.background;
 
                 const guac_terminal_color* guac_color =
                     &guac_terminal_palette[color];
 
                 /* Current row within a subrect */
-                guac_terminal_operation* rect_current_row;
+                guac_terminal_display_char* rect_current_row;
 
                 /* Determine bounds of rectangle */
                 rect_current_row = current;
-                for (rect_row=row; rect_row<delta->height; rect_row++) {
+                for (rect_row=row; rect_row<display->height; rect_row++) {
 
-                    guac_terminal_operation* rect_current = rect_current_row;
+                    guac_terminal_display_char* rect_current = rect_current_row;
 
                     /* Find width */
-                    for (rect_col=col; rect_col<delta->width; rect_col++) {
+                    for (rect_col=col; rect_col<display->width; rect_col++) {
 
                         int joining_color;
-                        if (rect_current->character.attributes.reverse)
-                           joining_color = current->character.attributes.foreground;
+                        if (rect_current->next.character.attributes.reverse)
+                           joining_color =
+                               current->next.character.attributes.foreground;
                         else
-                           joining_color = current->character.attributes.background;
+                           joining_color =
+                               current->next.character.attributes.background;
 
                         /* If not identical operation, stop */
-                        if (rect_current->type != GUAC_CHAR_SET
-                                || rect_current->character.value != ' '
+                        if (rect_current->next.type != GUAC_CHAR_SET
+                                || rect_current->next.character.value != ' '
                                 || joining_color != color)
                             break;
 
@@ -855,7 +869,7 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
                         detected_right = rect_col - 1;
 
                     /* Next row */
-                    rect_current_row += delta->width;
+                    rect_current_row += display->width;
 
                 }
 
@@ -867,21 +881,23 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
                 rect_current_row = current;
                 for (rect_row=0; rect_row<rect_height; rect_row++) {
                     
-                    guac_terminal_operation* rect_current = rect_current_row;
+                    guac_terminal_display_char* rect_current = rect_current_row;
 
                     for (rect_col=0; rect_col<rect_width; rect_col++) {
 
                         int joining_color;
-                        if (rect_current->character.attributes.reverse)
-                           joining_color = current->character.attributes.foreground;
+                        if (rect_current->next.character.attributes.reverse)
+                           joining_color =
+                               current->next.character.attributes.foreground;
                         else
-                           joining_color = current->character.attributes.background;
+                           joining_color =
+                               current->next.character.attributes.background;
 
                         /* Mark clear operations as NOP */
-                        if (rect_current->type == GUAC_CHAR_SET
-                                && rect_current->character.value == ' '
+                        if (rect_current->next.type == GUAC_CHAR_SET
+                                && rect_current->next.character.value == ' '
                                 && joining_color == color)
-                            rect_current->type = GUAC_CHAR_NOP;
+                            rect_current->next.type = GUAC_CHAR_NOP;
 
                         /* Next column */
                         rect_current++;
@@ -889,7 +905,7 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
                     }
 
                     /* Next row */
-                    rect_current_row += delta->width;
+                    rect_current_row += display->width;
 
                 }
 
@@ -917,29 +933,29 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
 
 }
 
-void __guac_terminal_delta_flush_set(guac_terminal_delta* delta,
+void __guac_terminal_display_flush_set(guac_terminal_display* display,
         guac_terminal* terminal) {
 
-    guac_terminal_operation* current = delta->operations;
+    guac_terminal_display_char* current = display->characters;
     int row, col;
 
     /* For each operation */
-    for (row=0; row<delta->height; row++) {
-        for (col=0; col<delta->width; col++) {
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
 
             /* Perform given operation */
-            if (current->type == GUAC_CHAR_SET) {
+            if (current->next.type == GUAC_CHAR_SET) {
 
                 /* Set attributes */
                 __guac_terminal_set_colors(terminal,
-                        &(current->character.attributes));
+                        &(current->next.character.attributes));
 
                 /* Send character */
                 __guac_terminal_set(terminal, row, col,
-                        current->character.value);
+                        current->next.character.value);
 
                 /* Mark operation as handled */
-                current->type = GUAC_CHAR_NOP;
+                current->next.type = GUAC_CHAR_NOP;
 
             }
 
@@ -951,17 +967,17 @@ void __guac_terminal_delta_flush_set(guac_terminal_delta* delta,
 
 }
 
-void guac_terminal_delta_flush(guac_terminal_delta* delta,
+void guac_terminal_display_flush(guac_terminal_display* display,
         guac_terminal* terminal) {
 
     /* Flush copy operations first */
-    __guac_terminal_delta_flush_copy(delta, terminal);
+    __guac_terminal_display_flush_copy(display, terminal);
 
     /* Flush clear operations (as they're just rects) */
-    __guac_terminal_delta_flush_clear(delta, terminal);
+    __guac_terminal_display_flush_clear(display, terminal);
 
     /* Flush set operations (the only operations remaining) */
-    __guac_terminal_delta_flush_set(delta, terminal);
+    __guac_terminal_display_flush_set(display, terminal);
 
 }
 
