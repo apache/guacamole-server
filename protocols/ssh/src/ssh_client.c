@@ -122,6 +122,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             term->char_width  * term->term_width,
             term->char_height * term->term_height);
 
+    /* Cursor layer need only be one char */
+    guac_protocol_send_size(socket, term->cursor_layer, term->char_width, term->char_height);
+
+    /* Draw cursor */
+    guac_protocol_send_rect(socket, term->cursor_layer,
+        0, 0, term->char_width, term->char_height);
+
+    guac_protocol_send_cfill(socket,
+        GUAC_COMP_OVER, term->cursor_layer,
+        0x40, 0xFF, 0x80, 0x80);
+
     guac_socket_flush(socket);
 
     /* Open SSH session */
