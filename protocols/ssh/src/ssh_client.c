@@ -48,6 +48,7 @@
 #include "ssh_client.h"
 #include "ssh_handlers.h"
 #include "terminal.h"
+#include "ibar.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -121,6 +122,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             GUAC_DEFAULT_LAYER,
             term->char_width  * term->term_width,
             term->char_height * term->term_height);
+
+    /* Send I-bar pointer */
+    guac_ssh_set_ibar(client);
 
     guac_socket_flush(socket);
 
