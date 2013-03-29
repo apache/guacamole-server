@@ -348,21 +348,18 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 if (argv[0] == 0)
                     guac_terminal_clear_range(term,
                             term->cursor_row, term->cursor_col,
-                            term->term_height-1, term->term_width-1,
-                            term->current_attributes.background);
+                            term->term_height-1, term->term_width-1);
                 
                 /* Erase from start to cursor */
                 else if (argv[0] == 1)
                     guac_terminal_clear_range(term,
                             0, 0,
-                            term->cursor_row, term->cursor_col,
-                            term->current_attributes.background);
+                            term->cursor_row, term->cursor_col);
 
                 /* Entire screen */
                 else if (argv[0] == 2)
                     guac_terminal_clear(term,
-                            0, 0, term->term_height, term->term_width,
-                            term->current_attributes.background);
+                            0, 0, term->term_height, term->term_width);
 
                 break;
 
@@ -373,23 +370,20 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 if (argv[0] == 0)
                     guac_terminal_clear(term,
                             term->cursor_row, term->cursor_col,
-                            1, term->term_width - term->cursor_col,
-                            term->current_attributes.background);
+                            1, term->term_width - term->cursor_col);
 
 
                 /* Erase from start to cursor */
                 else if (argv[0] == 1)
                     guac_terminal_clear(term,
                             term->cursor_row, 0,
-                            1, term->cursor_col + 1,
-                            term->current_attributes.background);
+                            1, term->cursor_col + 1);
 
                 /* Erase line */
                 else if (argv[0] == 2)
                     guac_terminal_clear(term,
                             term->cursor_row, 0,
-                            1, term->term_width,
-                            term->current_attributes.background);
+                            1, term->term_width);
 
                 break;
 
@@ -432,8 +426,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 /* Clear right */
                 guac_terminal_clear(term,
                         term->cursor_row, term->term_width - amount,
-                        1, amount,
-                        term->current_attributes.background);
+                        1, amount);
 
                 break;
 
@@ -453,8 +446,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 /* Clear left */
                 guac_terminal_clear(term,
                         term->cursor_row, term->cursor_col,
-                        1, amount,
-                        term->current_attributes.background);
+                        1, amount);
 
                 break;
 

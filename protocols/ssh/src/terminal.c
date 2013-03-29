@@ -134,7 +134,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     term->cursor_row = 0;
     term->cursor_col = 0;
-    term->cursor_layer = guac_client_alloc_layer(client);
 
     term->term_width = width / term->char_width;
     term->term_height = height / term->char_height;
@@ -174,8 +173,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Clear with background color */
     guac_terminal_clear(term,
-            0, 0, term->term_height, term->term_width,
-            term->current_attributes.background);
+            0, 0, term->term_height, term->term_width);
 
     return term;
 
@@ -395,6 +393,22 @@ int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
 
 }
 
+int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col) {
+
+    /* Get character from buffer */
+    guac_terminal_char* guac_char =
+        &(term->buffer->characters[row*term->buffer->width + col]);
+
+    /* Toggle reverse */
+    guac_char->attributes.reverse = !(guac_char->attributes.reverse);
+
+    /* Set delta */
+    guac_terminal_delta_set(term->delta, row, col, guac_char);
+
+    return 0;
+
+}
+
 int guac_terminal_write(guac_terminal* term, const char* c, int size) {
 
     while (size > 0) {
@@ -428,13 +442,12 @@ int guac_terminal_copy(guac_terminal* term,
 
 
 int guac_terminal_clear(guac_terminal* term,
-        int row, int col, int rows, int cols, int background_color) {
+        int row, int col, int rows, int cols) {
 
     /* Build space */
     guac_terminal_char character;
     character.value = ' ';
-    character.attributes.reverse = false;
-    character.attributes.background = background_color;
+    character.attributes = term->current_attributes;
 
     /* Fill with color */
     guac_terminal_delta_set_rect(term->delta,
@@ -463,8 +476,7 @@ int guac_terminal_scroll_up(guac_terminal* term,
 
         /* Fill new rows with background */
         || guac_terminal_clear(term,
-                end_row - amount + 1, 0, amount, term->term_width,
-                term->current_attributes.background);
+                end_row - amount + 1, 0, amount, term->term_width);
 
 }
 
@@ -484,22 +496,20 @@ int guac_terminal_scroll_down(guac_terminal* term,
 
         /* Fill new rows with background */
         || guac_terminal_clear(term,
-                start_row, 0, amount, term->term_width,
-                term->current_attributes.background);
+                start_row, 0, amount, term->term_width);
 
 }
 
 int guac_terminal_clear_range(guac_terminal* term,
         int start_row, int start_col,
-        int end_row, int end_col, int background_color) {
+        int end_row, int end_col) {
 
     /* If not at far left, must clear sub-region to far right */
     if (start_col > 0) {
 
         /* Clear from start_col to far right */
         if (guac_terminal_clear(term,
-                start_row, start_col, 1, term->term_width - start_col,
-                background_color))
+                start_row, start_col, 1, term->term_width - start_col))
             return 1;
 
         /* One less row to clear */
@@ -511,8 +521,7 @@ int guac_terminal_clear_range(guac_terminal* term,
 
         /* Clear from far left to end_col */
         if (guac_terminal_clear(term,
-                end_row, 0, 1, end_col + 1,
-                background_color))
+                end_row, 0, 1, end_col + 1))
             return 1;
 
         /* One less row to clear */
@@ -524,8 +533,7 @@ int guac_terminal_clear_range(guac_terminal* term,
     if (start_row <= end_row) {
 
         if (guac_terminal_clear(term,
-                start_row, 0, end_row - start_row + 1, term->term_width,
-                background_color))
+                start_row, 0, end_row - start_row + 1, term->term_width))
             return 1;
 
     }
@@ -983,22 +991,6 @@ void guac_terminal_delta_flush(guac_terminal_delta* delta,
 
     /* Flush set operations (the only operations remaining) */
     __guac_terminal_delta_flush_set(delta, terminal);
-
-}
-
-int guac_terminal_redraw_cursor(guac_terminal* term) {
-
-    guac_socket* socket = term->client->socket;
-
-    /* Erase old cursor */
-    return
-        guac_protocol_send_move(socket,
-            term->cursor_layer,
-
-            GUAC_DEFAULT_LAYER,
-            term->char_width * term->cursor_col,
-            term->char_height * term->cursor_row,
-            1);
 
 }
 

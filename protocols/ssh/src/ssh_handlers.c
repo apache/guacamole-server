@@ -85,6 +85,11 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
         int bytes_read = 0;
 
+        /* Clear cursor */
+        guac_terminal_toggle_reverse(client_data->term,
+                client_data->term->cursor_row,
+                client_data->term->cursor_col);
+
         /* While data available, write to terminal */
         while (channel_is_open(client_data->term_channel)
                 && !channel_is_eof(client_data->term_channel)
@@ -102,13 +107,16 @@ int ssh_guac_client_handle_messages(guac_client* client) {
             guac_socket_flush(socket);
             return 1;
         }
+
+        /* Draw cursor */
+        guac_terminal_toggle_reverse(client_data->term,
+                client_data->term->cursor_row,
+                client_data->term->cursor_col);
+
+        /* Flush terminal delta */
+        guac_terminal_delta_flush(client_data->term->delta, client_data->term);
+
     }
-
-    /* Flush terminal delta */
-    guac_terminal_delta_flush(client_data->term->delta, client_data->term);
-
-    /* Update cursor */
-    guac_terminal_redraw_cursor(client_data->term);
 
     return 0;
 

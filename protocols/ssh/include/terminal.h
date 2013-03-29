@@ -324,11 +324,6 @@ struct guac_terminal {
     int cursor_col;
 
     /**
-     * Simple cursor layer until scrollback, etc. is implemented.
-     */
-    guac_layer* cursor_layer;
-
-    /**
      * The attributes which will be applied to future characters.
      */
     guac_terminal_attributes current_attributes;
@@ -392,18 +387,18 @@ int guac_terminal_copy(guac_terminal* term,
 
 /**
  * Clears a rectangular region of characters, replacing them with the
- * given background color.
+ * current background color and attributes.
  */
 int guac_terminal_clear(guac_terminal* term,
-        int row, int col, int rows, int cols, int background_color);
+        int row, int col, int rows, int cols);
 
 /**
  * Clears the given region from right-to-left, top-to-bottom, replacing
- * all characters with the given background color.
+ * all characters with the current background color and attributes.
  */
 int guac_terminal_clear_range(guac_terminal* term,
         int start_row, int start_col,
-        int end_row, int end_col, int background_color);
+        int end_row, int end_col);
 
 /**
  * Scrolls the terminal's current scroll region up by one row.
@@ -416,6 +411,11 @@ int guac_terminal_scroll_up(guac_terminal* term,
  */
 int guac_terminal_scroll_down(guac_terminal* term,
         int start_row, int end_row, int amount);
+
+/**
+ * Toggles the reverse attribute of the character at the given location.
+ */
+int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col);
 
 /**
  * Allocates a new guac_terminal_delta.
@@ -461,11 +461,6 @@ void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
  */
 void guac_terminal_delta_flush(guac_terminal_delta* delta,
         guac_terminal* terminal);
-
-/**
- * Update the cursor position and contents.
- */
-int guac_terminal_redraw_cursor(guac_terminal* term);
 
 /**
  * Allocates a new character buffer having the given dimensions.
