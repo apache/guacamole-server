@@ -94,7 +94,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "disable-audio",
     "console",
     "console-audio",
-    "layout",
+    "server-layout",
     NULL
 };
 
@@ -112,7 +112,7 @@ enum RDP_ARGS_IDX {
     IDX_DISABLE_AUDIO,
     IDX_CONSOLE,
     IDX_CONSOLE_AUDIO,
-    IDX_LAYOUT,
+    IDX_SERVER_LAYOUT,
     RDP_ARGS_COUNT
 };
 
@@ -523,22 +523,22 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
 
     /* Pick keymap based on argument */
-    if (argv[IDX_LAYOUT][0] != '\0') {
+    if (argv[IDX_SERVER_LAYOUT][0] != '\0') {
 
         /* US English Qwerty */
-        if (strcmp("en-us-qwerty", argv[IDX_LAYOUT]) == 0)
+        if (strcmp("en-us-qwerty", argv[IDX_SERVER_LAYOUT]) == 0)
             chosen_keymap = &guac_rdp_keymap_en_us;
 
         /* German Qwertz */
-        else if (strcmp("de-de-qwertz", argv[IDX_LAYOUT]) == 0)
+        else if (strcmp("de-de-qwertz", argv[IDX_SERVER_LAYOUT]) == 0)
             chosen_keymap = &guac_rdp_keymap_de_de;
 
         /* French Azerty */
-        else if (strcmp("fr-fr-azerty", argv[IDX_LAYOUT]) == 0)
+        else if (strcmp("fr-fr-azerty", argv[IDX_SERVER_LAYOUT]) == 0)
             chosen_keymap = &guac_rdp_keymap_fr_fr;
 
         /* Failsafe (Unicode) keymap */
-        else if (strcmp("failsafe", argv[IDX_LAYOUT]) == 0)
+        else if (strcmp("failsafe", argv[IDX_SERVER_LAYOUT]) == 0)
             chosen_keymap = &guac_rdp_keymap_failsafe;
 
         /* If keymap unknown, resort to failsafe */
@@ -546,7 +546,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
             guac_client_log_error(client,
                 "Unknown layout \"%s\". Using the failsafe layout instead.",
-                argv[IDX_LAYOUT]);
+                argv[IDX_SERVER_LAYOUT]);
 
             chosen_keymap = &guac_rdp_keymap_failsafe;
 
