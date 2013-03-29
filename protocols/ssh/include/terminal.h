@@ -208,6 +208,28 @@ typedef struct guac_terminal_delta {
 } guac_terminal_delta;
 
 /**
+ * Dynamically-resizable character buffer.
+ */
+typedef struct guac_terminal_buffer {
+
+    /**
+     * Array of characters.
+     */
+    guac_terminal_char* characters;
+
+    /**
+     * The width of this buffer in characters.
+     */
+    int width;
+
+    /**
+     * The height of this buffer in characters.
+     */
+    int height;
+
+} guac_terminal_buffer;
+
+/**
  * Represents a terminal emulator which uses a given Guacamole client to
  * render itself.
  */
@@ -329,6 +351,13 @@ struct guac_terminal {
      */
     guac_terminal_delta* delta;
 
+    /**
+     * Current terminal display state. All characters present on the screen
+     * are within this buffer. This has nothing to do with the delta, which
+     * facilitates transfer of a set of changes to the remote display.
+     */
+    guac_terminal_buffer* buffer;
+
 };
 
 /**
@@ -437,6 +466,45 @@ void guac_terminal_delta_flush(guac_terminal_delta* delta,
  * Update the cursor position and contents.
  */
 int guac_terminal_redraw_cursor(guac_terminal* term);
+
+/**
+ * Allocates a new character buffer having the given dimensions.
+ */
+guac_terminal_buffer* guac_terminal_buffer_alloc(int width, int height);
+
+/**
+ * Resizes the given character buffer to the given dimensions.
+ */
+void guac_terminal_buffer_resize(guac_terminal_buffer* buffer, 
+        int width, int height);
+
+/**
+ * Sets the character at the given location within the buffer to the given
+ * value.
+ */
+void guac_terminal_buffer_set(guac_terminal_buffer* buffer, int r, int c,
+        guac_terminal_char* character);
+
+/**
+ * Copies a rectangle of character data within the buffer. The source and
+ * destination may overlap.
+ */
+void guac_terminal_buffer_copy(guac_terminal_buffer* buffer,
+        int dst_row, int dst_column,
+        int src_row, int src_column,
+        int w, int h);
+
+/**
+ * Sets a rectangle of character data to the given character value.
+ */
+void guac_terminal_buffer_set_rect(guac_terminal_buffer* buffer,
+        int row, int column, int w, int h,
+        guac_terminal_char* character);
+
+/**
+ * Frees the given character buffer.
+ */
+void guac_terminal_buffer_free(guac_terminal_buffer* buffer);
 
 #endif
 

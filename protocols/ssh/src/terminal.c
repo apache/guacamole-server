@@ -168,6 +168,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->delta = guac_terminal_delta_alloc(term->term_width,
             term->term_height);
 
+    /* Init buffer */
+    term->buffer = guac_terminal_buffer_alloc(term->term_width,
+            term->term_height);
+
     /* Clear with background color */
     guac_terminal_clear(term,
             0, 0, term->term_height, term->term_width,
@@ -187,6 +191,9 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Free delta */
     guac_terminal_delta_free(term->delta);
+
+    /* Free buffer */
+    guac_terminal_buffer_free(term->buffer);
 
 }
 
@@ -380,6 +387,10 @@ int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
 
     /* Set delta */
     guac_terminal_delta_set(term->delta, row, col, &guac_char);
+
+    /* Set buffer */
+    guac_terminal_buffer_set(term->buffer, row, col, &guac_char);
+
     return 0;
 
 }
@@ -405,6 +416,12 @@ int guac_terminal_copy(guac_terminal* term,
         src_row, src_col,
         cols, rows);
 
+    /* Update buffer */
+    guac_terminal_buffer_copy(term->buffer,
+        dst_row, dst_col,
+        src_row, src_col,
+        cols, rows);
+
     return 0;
 
 }
@@ -421,6 +438,9 @@ int guac_terminal_clear(guac_terminal* term,
 
     /* Fill with color */
     guac_terminal_delta_set_rect(term->delta,
+        row, col, cols, rows, &character);
+
+    guac_terminal_buffer_set_rect(term->buffer,
         row, col, cols, rows, &character);
 
     return 0;
@@ -981,3 +1001,73 @@ int guac_terminal_redraw_cursor(guac_terminal* term) {
             1);
 
 }
+
+guac_terminal_buffer* guac_terminal_buffer_alloc(int width, int height) {
+
+    /* Allocate buffer */
+    guac_terminal_buffer* buffer = malloc(sizeof(guac_terminal_buffer));
+
+    /* Set width and height */
+    buffer->width = width;
+    buffer->height = height;
+
+    /* Alloc characters */
+    buffer->characters = malloc(width * height *
+            sizeof(guac_terminal_char));
+
+    return buffer;
+
+}
+
+void guac_terminal_buffer_resize(guac_terminal_buffer* buffer, 
+        int width, int height) {
+    /* STUB */
+}
+
+void guac_terminal_buffer_free(guac_terminal_buffer* buffer) {
+
+    /* Free characters */
+    free(buffer->characters);
+
+    /* Free buffer*/
+    free(buffer);
+
+}
+
+void guac_terminal_buffer_set(guac_terminal_buffer* buffer, int r, int c,
+        guac_terminal_char* character) {
+
+    /* Store character */
+    buffer->characters[r * buffer->width + c] = *character;
+
+}
+
+void guac_terminal_buffer_copy(guac_terminal_buffer* buffer,
+        int dst_row, int dst_column,
+        int src_row, int src_column,
+        int w, int h) {
+    /* STUB */
+}
+
+void guac_terminal_buffer_set_rect(guac_terminal_buffer* buffer,
+        int row, int column, int w, int h,
+        guac_terminal_char* character) {
+
+    guac_terminal_char* current_row =
+        &(buffer->characters[row*buffer->width + column]);
+
+    /* Set rectangle contents to given character */
+    for (row=0; row<h; row++) {
+
+        /* Copy character throughout row */
+        guac_terminal_char* current = current_row;
+        for (column=0; column<w; column++)
+            *(current++) = *character;
+
+        /* Next row */
+        current_row += buffer->width;
+
+    }
+
+}
+
