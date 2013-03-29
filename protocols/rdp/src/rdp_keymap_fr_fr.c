@@ -20,7 +20,6 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Matt Hortman
  * Alexandre Devely
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -429,19 +428,19 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     { .keysym = 0x007e, .scancode = 0x03,
         .set_keysyms = GUAC_KEYSYMS_CTRL_ALT },
 
-    /* pound;  */
+    /* pound */
     { .keysym = 0x00a3, .scancode = 0x1b,
         .set_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
-    /* curren;  */
+    /* currency */
     { .keysym = 0x00a4, .scancode = 0x1b,
         .set_keysyms = GUAC_KEYSYMS_CTRL_ALT },
 
-    /* sect;  */
+    /* section */
     { .keysym = 0x00a7, .scancode = 0x35,
         .set_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
-    /* deg */
+    /* degree */
     { .keysym = 0x00b0, .scancode = 0x0c,
         .set_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
@@ -449,11 +448,11 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     { .keysym = 0x00b5, .scancode = 0x2b,
         .set_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
-    /* agrave */
+    /* a + grave */
     { .keysym = 0x00e0, .scancode = 0x0b,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
-    /* auml */
+    /* a + umlaut */
     { .keysym = 0x00e4, .scancode = 0x1a,
         .set_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
@@ -461,17 +460,17 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     { .keysym = 0x00e7, .scancode = 0x0a,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
-    /* egrave */
+    /* e + grave */
     { .keysym = 0x00e8, .scancode = 0x08,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
-    /* eacute */
+    /* e + acute */
     { .keysym = 0x00e9, .scancode = 0x03,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
-    /* ugrave */
+    /* u + grave */
     { .keysym = 0x00f9, .scancode = 0x28,
-    .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* euro */
     { .keysym = 0x10020ac, .scancode = 0x12,
