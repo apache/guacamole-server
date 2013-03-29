@@ -42,36 +42,37 @@
 
 /* Macros for prettying up the embedded image. */
 #define X 0x00,0x00,0x00,0xFF
+#define U 0x80,0x80,0x80,0xFF
 #define O 0xFF,0xFF,0xFF,0xFF
 #define _ 0x00,0x00,0x00,0x00
 
 /* Dimensions */
-const int guac_ssh_ibar_width  = 11;
+const int guac_ssh_ibar_width  = 7;
 const int guac_ssh_ibar_height = 16;
 
 /* Format */
 const cairo_format_t guac_ssh_ibar_format = CAIRO_FORMAT_ARGB32;
-const int guac_ssh_ibar_stride = 44;
+const int guac_ssh_ibar_stride = 28;
 
 /* Embedded pointer graphic */
 unsigned char guac_ssh_ibar[] = {
 
-        X,X,X,X,X,_,X,X,X,X,X,
-        X,O,O,O,O,X,O,O,O,O,X,
-        X,X,X,X,O,O,O,X,X,X,X,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        _,_,_,_,X,O,X,_,_,_,_,
-        X,X,X,X,O,O,O,X,X,X,X,
-        X,O,O,O,O,X,O,O,O,O,X,
-        X,X,X,X,X,_,X,X,X,X,X
+        X,X,X,X,X,X,X,
+        X,O,O,U,O,O,X,
+        X,X,X,O,X,X,X,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        X,X,X,O,X,X,X,
+        X,O,O,U,O,O,X,
+        X,X,X,X,X,X,X
 
 };
 
