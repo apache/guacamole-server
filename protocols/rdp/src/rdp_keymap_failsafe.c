@@ -35,23 +35,29 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <freerdp/input.h>
+
+#ifdef HAVE_FREERDP_LOCALE_KEYBOARD_H
+#include <freerdp/locale/keyboard.h>
+#else
+#include <freerdp/kbd/layouts.h>
+#endif
+
 #include "rdp_keymap.h"
 
-const int GUAC_KEYSYMS_SHIFT[] = {0xFFE1, 0};
-const int GUAC_KEYSYMS_ALL_SHIFT[] = {0xFFE1, 0xFFE2, 0};
+static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
-const int GUAC_KEYSYMS_CTRL[] = {0xFFE3, 0};
-const int GUAC_KEYSYMS_ALL_CTRL[] = {0xFFE3, 0xFFE4, 0};
+    {0}
 
-const int GUAC_KEYSYMS_ALT[] = {0xFFE9, 0};
-const int GUAC_KEYSYMS_ALL_ALT[] = {0xFFE9, 0xFFEA, 0};
+};
 
-const int GUAC_KEYSYMS_CTRL_ALT[] = {0xFFE3, 0xFFE9, 0};
+const guac_rdp_keymap guac_rdp_keymap_failsafe = {
 
-const int GUAC_KEYSYMS_ALL_MODIFIERS[] = {
-    0xFFE1, 0xFFE2, /* Left and right shift */
-    0xFFE3, 0xFFE4, /* Left and right control */
-    0xFFE9, 0xFFEA, /* Left and right alt */
-    0
+    .name = "failsafe",
+
+    .parent = &guac_rdp_keymap_base,
+    .mapping = __guac_rdp_keymap_mapping,
+    .freerdp_keyboard_layout = KBD_US
+
 };
 

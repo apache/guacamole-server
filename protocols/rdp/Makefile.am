@@ -43,20 +43,22 @@ lib_LTLIBRARIES = libguac-client-rdp.la
 freerdp_LTLIBRARIES = guac_rdpsnd.la
 
 libguac_client_rdp_la_SOURCES = \
-    $(OGG_SOURCES)         \
-	src/audio.c            \
-	src/client.c           \
-	src/default_pointer.c  \
-	src/guac_handlers.c    \
-	src/rdp_bitmap.c       \
-	src/rdp_cliprdr.c      \
-	src/rdp_gdi.c          \
-	src/rdp_glyph.c        \
-	src/rdp_keymap_base.c  \
-	src/rdp_keymap.c       \
-	src/rdp_keymap_de_de.c \
-	src/rdp_keymap_en_us.c \
-	src/rdp_pointer.c      \
+    $(OGG_SOURCES)            \
+	src/audio.c               \
+	src/client.c              \
+	src/default_pointer.c     \
+	src/guac_handlers.c       \
+	src/rdp_bitmap.c          \
+	src/rdp_cliprdr.c         \
+	src/rdp_gdi.c             \
+	src/rdp_glyph.c           \
+	src/rdp_keymap_base.c     \
+	src/rdp_keymap.c          \
+	src/rdp_keymap_de_de.c    \
+	src/rdp_keymap_failsafe.c \
+	src/rdp_keymap_fr_fr.c    \
+	src/rdp_keymap_en_us.c    \
+	src/rdp_pointer.c         \
 	src/wav_encoder.c
 
 guac_rdpsnd_la_SOURCES =   \

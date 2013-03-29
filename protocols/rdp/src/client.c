@@ -527,15 +527,36 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         /* US English Qwerty */
         if (strcmp("en-us-qwerty", argv[IDX_LAYOUT]) == 0)
-            chosen_keymap = &rdp_guac_keymap_en_us;
+            chosen_keymap = &guac_rdp_keymap_en_us;
 
-        /* US English Qwerty */
-        if (strcmp("en-us-qwerty", argv[IDX_LAYOUT]) == 0)
-            chosen_keymap = &rdp_guac_keymap_en_us;
+        /* German Qwertz */
+        else if (strcmp("de-de-qwertz", argv[IDX_LAYOUT]) == 0)
+            chosen_keymap = &guac_rdp_keymap_de_de;
 
-        else
-            chosen_keymap = &rdp_guac_keymap_en_us;
+        /* French Azerty */
+        else if (strcmp("fr-fr-azerty", argv[IDX_LAYOUT]) == 0)
+            chosen_keymap = &guac_rdp_keymap_fr_fr;
+
+        /* Failsafe (Unicode) keymap */
+        else if (strcmp("failsafe", argv[IDX_LAYOUT]) == 0)
+            chosen_keymap = &guac_rdp_keymap_failsafe;
+
+        /* If keymap unknown, resort to failsafe */
+        else {
+
+            guac_client_log_error(client,
+                "Unknown layout \"%s\". Using the failsafe layout instead.",
+                argv[IDX_LAYOUT]);
+
+            chosen_keymap = &guac_rdp_keymap_failsafe;
+
+        }
+
     }
+
+    /* If no keymap requested, assume US */
+    else
+        chosen_keymap = &guac_rdp_keymap_en_us;
 
     /* Load keymap into client */
     __guac_rdp_client_load_keymap(client, chosen_keymap);

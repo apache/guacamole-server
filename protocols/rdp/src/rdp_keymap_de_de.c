@@ -57,7 +57,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     /* quotedbl */
     { .keysym = 0x0022, .scancode = 0x03,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
-	
+
     /* numbersign */
     { .keysym = 0x0023, .scancode = 0x2b,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },

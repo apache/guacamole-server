@@ -48,12 +48,6 @@
 #include "rdp_keymap.h"
 
 
-/* 
- 	This array is order by .keysym
-	the .keysym is the ASCII value
-	the .scancode the key scancode
-
-*/
 static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* space */
@@ -85,7 +79,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* quoteright */
     { .keysym = 0x0027, .scancode = 0x05,
-	.clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
+    .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* parenleft */
     { .keysym = 0x0028, .scancode = 0x06,
@@ -477,7 +471,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* ugrave */
     { .keysym = 0x00f9, .scancode = 0x28,
-	.clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
+    .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* euro */
     { .keysym = 0x10020ac, .scancode = 0x12,
@@ -487,7 +481,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
 };
 
-guac_rdp_keymap guac_rdp_keymap_fr_fr = {
+const guac_rdp_keymap guac_rdp_keymap_fr_fr = {
 
     .name = "fr-fr-azerty",
 
