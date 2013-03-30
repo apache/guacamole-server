@@ -361,9 +361,6 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
             return 0;
         }
 
-        guac_client_log_info(client, "Translated keysym 0x%x to U+%04X",
-                keysym, codepoint);
-
         pthread_mutex_lock(&(guac_client_data->rdp_lock));
 
         /* Send Unicode event */
@@ -375,9 +372,6 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
     }
     
-    else
-        guac_client_log_info(client, "Ignoring key release (Unicode event)");
-
     return 0;
 }
 
