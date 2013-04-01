@@ -466,6 +466,28 @@ int guac_terminal_scroll_up(guac_terminal* term,
     /* Calculate height of scroll region */
     int height = end_row - start_row + 1;
     
+    /* If scroll region is entire screen, push rows into scrollback */
+    if (start_row == 0 && end_row == term->term_height-1) {
+
+        /* STUB: Test, for sake of logging */
+        char test_str[1024];
+        int column;
+
+        /* Generate test string */
+        guac_terminal_char* current = term->buffer->characters;
+        for (column=0; column < term->buffer->width; column++) {
+            test_str[column] = current->value;
+            current++;
+        }
+        test_str[column] = 0;
+
+        /* Log string version of row that WOULD have been scrolled into the
+         * scrollback */
+        guac_client_log_info(term->client,
+                "scroll: %s", test_str);
+
+    }
+
     return 
 
         /* Move rows within scroll region up by the given amount */
@@ -1038,7 +1060,39 @@ void guac_terminal_buffer_copy(guac_terminal_buffer* buffer,
         int dst_row, int dst_column,
         int src_row, int src_column,
         int w, int h) {
-    /* STUB */
+
+    int row, column;
+
+    /* FIXME: Handle intersections between src and dst rects */
+
+    guac_terminal_char* current_row =
+        &(buffer->characters[dst_row*buffer->width + dst_column]);
+
+    guac_terminal_char* src_current_row =
+        &(buffer->characters[src_row*buffer->width + src_column]);
+
+    /* Set rectangle to copy operations */
+    for (row=0; row<h; row++) {
+
+        guac_terminal_char* current = current_row;
+        guac_terminal_char* src_current = src_current_row;
+
+        for (column=0; column<w; column++) {
+
+            *current = *src_current;
+
+            /* Next column */
+            current++;
+            src_current++;
+
+        }
+
+        /* Next row */
+        current_row += buffer->width;
+        src_current_row += buffer->width;
+
+    }
+
 }
 
 void guac_terminal_buffer_set_rect(guac_terminal_buffer* buffer,
