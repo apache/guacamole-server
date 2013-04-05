@@ -356,13 +356,16 @@ int __guac_terminal_set(guac_terminal* term, int row, int col, char c) {
 
 int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
 
+    int scrolled_row = row + term->scroll_offset;
+
     /* Build character with current attributes */
     guac_terminal_char guac_char;
     guac_char.value = c;
     guac_char.attributes = term->current_attributes;
 
     /* Set delta */
-    guac_terminal_delta_set(term->delta, row, col, &guac_char);
+    if (scrolled_row < term->delta->height)
+        guac_terminal_delta_set(term->delta, scrolled_row, col, &guac_char);
 
     /* Set buffer */
     guac_terminal_buffer_set(term->buffer, row, col, &guac_char);
@@ -373,6 +376,8 @@ int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
 
 int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col) {
 
+    int scrolled_row = row + term->scroll_offset;
+
     /* Get character from buffer */
     guac_terminal_char* guac_char =
         &(term->buffer->characters[row*term->buffer->width + col]);
@@ -381,7 +386,8 @@ int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col) {
     guac_char->attributes.reverse = !(guac_char->attributes.reverse);
 
     /* Set delta */
-    guac_terminal_delta_set(term->delta, row, col, guac_char);
+    if (scrolled_row < term->delta->height)
+        guac_terminal_delta_set(term->delta, scrolled_row, col, guac_char);
 
     return 0;
 
@@ -402,10 +408,27 @@ int guac_terminal_copy(guac_terminal* term,
         int src_row, int src_col, int rows, int cols,
         int dst_row, int dst_col) {
 
+    int scrolled_src_row = src_row + term->scroll_offset;
+    int scrolled_dst_row = dst_row + term->scroll_offset;
+
+    int scrolled_rows = rows;
+
+    /* Adjust delta rect height if scrolled out of view */
+    if (scrolled_src_row + scrolled_rows > term->delta->height)
+        scrolled_rows = term->delta->height - scrolled_src_row;
+
+    if (scrolled_dst_row + scrolled_rows > term->delta->height)
+        scrolled_rows = term->delta->height - scrolled_dst_row;
+
+    /* FIXME: If source (but not dest) is partially scrolled out of view, then
+     *        the delta will not be updated properly. We need to pull the data
+     *        from the buffer in such a case.
+     */
+
     /* Update delta */
     guac_terminal_delta_copy(term->delta,
-        dst_row, dst_col,
-        src_row, src_col,
+        scrolled_dst_row, dst_col,
+        scrolled_src_row, src_col,
         cols, rows);
 
     /* Update buffer */
@@ -422,6 +445,13 @@ int guac_terminal_copy(guac_terminal* term,
 int guac_terminal_clear(guac_terminal* term,
         int row, int col, int rows, int cols) {
 
+    int scrolled_row = row + term->scroll_offset;
+    int scrolled_rows = rows;
+
+    /* Adjust delta rect height if scrolled out of view */
+    if (scrolled_row + scrolled_rows > term->delta->height)
+        scrolled_rows = term->delta->height - scrolled_row;
+
     /* Build space */
     guac_terminal_char character;
     character.value = ' ';
@@ -429,7 +459,7 @@ int guac_terminal_clear(guac_terminal* term,
 
     /* Fill with color */
     guac_terminal_delta_set_rect(term->delta,
-        row, col, cols, rows, &character);
+        scrolled_row, col, cols, scrolled_rows, &character);
 
     guac_terminal_buffer_set_rect(term->buffer,
         row, col, cols, rows, &character);
