@@ -138,6 +138,7 @@ int ssh_guac_client_clipboard_handler(guac_client* client, char* data) {
 int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    guac_terminal* term = client_data->term;
 
     /* Determine which buttons were just released */
     int released_mask = client_data->mouse_mask & ~mask;
@@ -156,14 +157,12 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
     /* Scroll up if wheel moved up */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_UP) {
-        /* STUB */
-        guac_client_log_info(client, "stub: scroll up");
+        guac_terminal_scroll_display_up(term);
     }
 
     /* Scroll down if wheel moved down */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_DOWN) {
-        /* STUB */
-        guac_client_log_info(client, "stub: scroll down");
+        guac_terminal_scroll_display_down(term);
     }
 
     return 0;

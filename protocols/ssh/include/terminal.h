@@ -208,6 +208,63 @@ typedef struct guac_terminal_delta {
 } guac_terminal_delta;
 
 /**
+ * A single variable-length row of terminal data.
+ */
+typedef struct guac_terminal_scrollback_row {
+
+    /**
+     * Array of guac_terminal_char representing the contents of the row.
+     */
+    guac_terminal_char* characters;
+
+    /**
+     * The length of this row in characters. This is the number of initialized
+     * characters in the buffer, usually equal to the number of characters
+     * in the screen width at the time this row was created.
+     */
+    int length;
+
+    /**
+     * The number of elements in the characters array. After the length
+     * equals this value, the array must be resized.
+     */
+    int available;
+
+} guac_terminal_scrollback_row;
+
+/**
+ * A scrollback buffer containing a constant number of arbitrary-length rows.
+ * New rows can be appended to the buffer, with the oldest row replaced with
+ * the new row.
+ */
+typedef struct guac_terminal_scrollback_buffer {
+
+    /**
+     * Array of scrollback buffer rows. This array functions as a ring buffer.
+     * When a new row needs to be appended, the top reference is moved down
+     * and the old top row is replaced.
+     */
+    guac_terminal_scrollback_row* scrollback;
+
+    /**
+     * The number of rows in the scrollback buffer. This is the total capacity
+     * of the buffer.
+     */
+    int rows;
+
+    /**
+     * The row to replace when adding a new row to the scrollback.
+     */
+    int top;
+
+    /**
+     * The number of rows currently stored in the scrollback buffer.
+     */
+    int length;
+
+} guac_terminal_scrollback_buffer;
+
+/**
  * Dynamically-resizable character buffer.
  */
 typedef struct guac_terminal_buffer {
@@ -278,10 +335,16 @@ struct guac_terminal {
     guac_layer* filled_glyphs;
 
     /**
-     * Array of scrollback buffer rows, where each row is an array of 
-     * characters.
+     * The scrollback buffer.
      */
-    guac_terminal_char** scrollback;
+    guac_terminal_scrollback_buffer* scrollback;
+
+    /**
+     * The relative offset of the display. A positive value indicates that
+     * many rows have been scrolled into view, zero indicates that no
+     * scrolling has occurred. Negative values are illegal.
+     */
+    int scroll_offset;
 
     /**
      * The width of each character, in pixels.
@@ -500,6 +563,38 @@ void guac_terminal_buffer_set_rect(guac_terminal_buffer* buffer,
  * Frees the given character buffer.
  */
 void guac_terminal_buffer_free(guac_terminal_buffer* buffer);
+
+/**
+ * Allocates a new scrollback buffer having the given number of rows.
+ */
+guac_terminal_scrollback_buffer*
+    guac_terminal_scrollback_buffer_alloc(int rows);
+
+/**
+ * Frees the given scrollback buffer.
+ */
+void guac_terminal_scrollback_buffer_free(
+    guac_terminal_scrollback_buffer* buffer);
+
+/**
+ * Pushes the given number of rows into the scrollback, maintaining display
+ * position within the scrollback as possible.
+ */
+void guac_terminal_scrollback_buffer_append(
+    guac_terminal_scrollback_buffer* buffer,
+    guac_terminal* terminal, int rows);
+
+/**
+ * Scroll down the display by one row, replacing the new space with data from
+ * the scrollback.
+ */
+void guac_terminal_scroll_display_down(guac_terminal* terminal);
+
+/**
+ * Scroll up the display by one row, replacing the new space with data from
+ * either the scrollback or the terminal buffer.
+ */
+void guac_terminal_scroll_display_up(guac_terminal* terminal);
 
 #endif
 
