@@ -585,6 +585,14 @@ void guac_terminal_scrollback_buffer_append(
     guac_terminal* terminal, int rows);
 
 /**
+ * Returns the row within the scrollback at the given location. The index
+ * of the row given is a negative number, denoting the number of rows into
+ * the past to look.
+ */
+guac_terminal_scrollback_row* guac_terminal_scrollback_buffer_get_row(
+    guac_terminal_scrollback_buffer* buffer, int row);
+
+/**
  * Scroll down the display by one row, replacing the new space with data from
  * the scrollback.
  */

@@ -1185,10 +1185,9 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal) {
 
     int scroll_amount = 3;
 
+    int start_row, end_row;
+    int dest_row;
     int row, column;
-
-    int scrollback_row_index;
-    guac_terminal_scrollback_row* scrollback_row;
 
     /* Limit scroll amount by size of scrollback buffer */
     if (scroll_amount > terminal->scroll_offset)
@@ -1207,34 +1206,32 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal) {
 
     /* Advance by scroll amount */
     terminal->scroll_offset -= scroll_amount;
-    guac_client_log_info(terminal->client, "scrolling to %i", terminal->scroll_offset);
 
-    /* Get corresponding scrollback row */
-    scrollback_row_index = terminal->scrollback->top - terminal->scroll_offset + terminal->term_height - 1;
-    scrollback_row = &(terminal->scrollback->scrollback[scrollback_row_index]);
+    /* Get row range */
+    end_row   = terminal->term_height - terminal->scroll_offset - 1;
+    start_row = end_row - scroll_amount + 1;
+    dest_row  = terminal->term_height - scroll_amount;
+
+    guac_client_log_info(terminal->client,
+            "Scrolling rows %i through %i into view (scroll down)",
+            start_row, end_row);
 
     /* Draw new rows from scrollback */
-    for (row=terminal->term_height - scroll_amount; row < terminal->term_height; row++) {
+    for (row=start_row; row<=end_row; row++) {
 
-        /* FIXME: Clear row first */
+        /* Get row from scrollback */
+        guac_terminal_scrollback_row* scrollback_row = 
+            guac_terminal_scrollback_buffer_get_row(terminal->scrollback, row);
 
         /* Draw row */
+        /* FIXME: Clear row first */
         guac_terminal_char* current = scrollback_row->characters;
         for (column=0; column<scrollback_row->length; column++)
-            guac_terminal_delta_set(terminal->delta, row, column, current++);
+            guac_terminal_delta_set(terminal->delta, dest_row, column,
+                    current++);
 
         /* Next row */
-        scrollback_row_index++;
-
-        /* Wrap if at end of scrollback */
-        if (scrollback_row_index == terminal->scrollback->rows) {
-            scrollback_row_index = 0;
-            scrollback_row = terminal->scrollback->scrollback;
-        }
-
-        /* Otherwise, just advance to next row */
-        else
-            scrollback_row++;
+        dest_row++;
 
     }
 
@@ -1248,10 +1245,10 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal) {
 
     int scroll_amount = 3;
 
+    int start_row, end_row;
+    int dest_row;
     int row, column;
 
-    int scrollback_row_index;
-    guac_terminal_scrollback_row* scrollback_row;
 
     /* Limit scroll amount by size of scrollback buffer */
     if (terminal->scroll_offset + scroll_amount > terminal->scrollback->length)
@@ -1270,40 +1267,50 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal) {
 
     /* Advance by scroll amount */
     terminal->scroll_offset += scroll_amount;
-    guac_client_log_info(terminal->client, "scrolling to %i", terminal->scroll_offset);
 
-    /* Get corresponding scrollback row */
-    scrollback_row_index = terminal->scrollback->top - terminal->scroll_offset;
-    scrollback_row = &(terminal->scrollback->scrollback[scrollback_row_index]);
+    /* Get row range */
+    start_row = -terminal->scroll_offset;
+    end_row   = start_row + scroll_amount - 1;
+    dest_row  = 0;
+
+    guac_client_log_info(terminal->client,
+            "Scrolling rows %i through %i into view (scroll up)",
+            start_row, end_row);
 
     /* Draw new rows from scrollback */
-    for (row=0; row < scroll_amount; row++) {
+    for (row=start_row; row<=end_row; row++) {
 
-        /* FIXME: Clear row first */
+        /* Get row from scrollback */
+        guac_terminal_scrollback_row* scrollback_row = 
+            guac_terminal_scrollback_buffer_get_row(terminal->scrollback, row);
 
         /* Draw row */
+        /* FIXME: Clear row first */
         guac_terminal_char* current = scrollback_row->characters;
         for (column=0; column<scrollback_row->length; column++)
-            guac_terminal_delta_set(terminal->delta, row, column, current++);
+            guac_terminal_delta_set(terminal->delta, dest_row, column,
+                    current++);
 
         /* Next row */
-        scrollback_row_index++;
-
-        /* Wrap if at end of scrollback */
-        if (scrollback_row_index == terminal->scrollback->rows) {
-            scrollback_row_index = 0;
-            scrollback_row = terminal->scrollback->scrollback;
-        }
-
-        /* Otherwise, just advance to next row */
-        else
-            scrollback_row++;
+        dest_row++;
 
     }
 
     /* FIXME: Should flush somewhere more sensible */
     guac_terminal_delta_flush(terminal->delta, terminal);
     guac_socket_flush(terminal->client->socket);
+
+}
+
+guac_terminal_scrollback_row* guac_terminal_scrollback_buffer_get_row(
+    guac_terminal_scrollback_buffer* buffer, int row) {
+
+    /* Calculate scrollback row index */
+    int index = buffer->top + row;
+    if (index < 0) index += buffer->rows;
+
+    /* Return found row */
+    return &(buffer->scrollback[index]);
 
 }
 
