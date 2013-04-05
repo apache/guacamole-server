@@ -580,14 +580,18 @@ guac_terminal_delta* guac_terminal_delta_alloc(int width, int height) {
 
     }
 
+    /* Alloc scratch area */
+    delta->scratch = malloc(width * height * sizeof(guac_terminal_operation));
+
     return delta;
 
 }
 
 void guac_terminal_delta_free(guac_terminal_delta* delta) {
 
-    /* Free operations buffer */
+    /* Free operations buffers */
     free(delta->operations);
+    free(delta->scratch);
 
     /* Free delta */
     free(delta);
@@ -620,16 +624,14 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
 
     /* FIXME: Handle intersections between src and dst rects */
 
-    guac_terminal_operation* src_copy = malloc(
-            sizeof(guac_terminal_operation) * delta->width * delta->height);
-    memcpy(src_copy, delta->operations, 
+    memcpy(delta->scratch, delta->operations, 
             sizeof(guac_terminal_operation) * delta->width * delta->height);
 
     guac_terminal_operation* current_row =
         &(delta->operations[dst_row*delta->width + dst_column]);
 
     guac_terminal_operation* src_current_row =
-        &(src_copy[src_row*delta->width + src_column]);
+        &(delta->scratch[src_row*delta->width + src_column]);
 
     /* Set rectangle to copy operations */
     for (row=0; row<h; row++) {

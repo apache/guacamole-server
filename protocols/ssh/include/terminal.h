@@ -196,6 +196,12 @@ typedef struct guac_terminal_delta {
     guac_terminal_operation* operations;
 
     /**
+     * Scratch area of same size as the operations buffer, facilitating copies
+     * of overlapping regions.
+     */
+    guac_terminal_operation* scratch;
+
+    /**
      * The width of the screen, in characters.
      */
     int width;
