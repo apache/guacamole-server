@@ -38,6 +38,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include <cairo/cairo.h>
 #include <pango/pangocairo.h>
@@ -155,6 +156,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Clear with background color */
     guac_terminal_clear(term,
             0, 0, term->term_height, term->term_width);
+
+    /* Init terminal lock */
+    pthread_mutex_init(&(term->lock), NULL);
 
     return term;
 

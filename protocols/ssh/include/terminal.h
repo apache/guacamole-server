@@ -39,6 +39,7 @@
 #define _SSH_GUAC_TERMINAL_H
 
 #include <stdbool.h>
+#include <pthread.h>
 
 #include <pango/pangocairo.h>
 
@@ -302,6 +303,12 @@ struct guac_terminal {
      * The Guacamole client this terminal emulator will use for rendering.
      */
     guac_client* client;
+
+    /**
+     * Lock which restricts simultaneous access to this terminal via the root
+     * guac_terminal_* functions.
+     */
+    pthread_mutex_t lock;
 
     /**
      * The description of the font to use for rendering.

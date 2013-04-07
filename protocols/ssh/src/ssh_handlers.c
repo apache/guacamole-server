@@ -85,6 +85,9 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
         int bytes_read = 0;
 
+        /* Lock terminal access */
+        pthread_mutex_lock(&(client_data->term->lock));
+
         /* Clear cursor */
         guac_terminal_toggle_reverse(client_data->term,
                 client_data->term->cursor_row,
@@ -115,6 +118,9 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
         /* Flush terminal delta */
         guac_terminal_delta_flush(client_data->term->delta, client_data->term);
+
+        /* Unlock terminal access */
+        pthread_mutex_unlock(&(client_data->term->lock));
 
     }
 
@@ -157,12 +163,16 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
     /* Scroll up if wheel moved up */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_UP) {
+        pthread_mutex_lock(&(term->lock));
         guac_terminal_scroll_display_up(term);
+        pthread_mutex_unlock(&(term->lock));
     }
 
     /* Scroll down if wheel moved down */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_DOWN) {
+        pthread_mutex_lock(&(term->lock));
         guac_terminal_scroll_display_down(term);
+        pthread_mutex_unlock(&(term->lock));
     }
 
     return 0;
