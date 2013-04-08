@@ -243,9 +243,6 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
-
-
-
             /* m: Set graphics rendition */
             case 'm':
 
@@ -430,6 +427,19 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
+            /* X: Erase characters (no scroll) */
+            case 'X':
+
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Clear characters */
+                guac_terminal_clear(term,
+                        term->cursor_row, term->cursor_col,
+                        1, amount);
+
+                break;
+
             /* @: Insert characters (scroll right) */
             case '@':
 
@@ -452,8 +462,16 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
             /* Warn of unhandled codes */
             default:
-                if (c != ';')
-                    guac_client_log_info(term->client, "Unhandled CSI sequence: %c", c);
+                if (c != ';') {
+
+                    guac_client_log_info(term->client,
+                            "Unhandled CSI sequence: %c", c);
+
+                    for (i=0; i<argc; i++)
+                        guac_client_log_info(term->client,
+                                " -> argv[%i] = %i", i, argv[i]);
+
+                }
 
         }
 
