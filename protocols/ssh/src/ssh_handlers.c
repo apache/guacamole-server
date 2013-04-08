@@ -164,14 +164,14 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     /* Scroll up if wheel moved up */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_UP) {
         pthread_mutex_lock(&(term->lock));
-        guac_terminal_scroll_display_up(term);
+        guac_terminal_scroll_display_up(term, GUAC_SSH_WHEEL_SCROLL_AMOUNT);
         pthread_mutex_unlock(&(term->lock));
     }
 
     /* Scroll down if wheel moved down */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_DOWN) {
         pthread_mutex_lock(&(term->lock));
-        guac_terminal_scroll_display_down(term);
+        guac_terminal_scroll_display_down(term, GUAC_SSH_WHEEL_SCROLL_AMOUNT);
         pthread_mutex_unlock(&(term->lock));
     }
 
@@ -182,6 +182,7 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    guac_terminal* term = client_data->term;
 
     /* Track modifiers */
     if (keysym == 0xFFE3) {
@@ -190,6 +191,13 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
         
     /* If key pressed */
     else if (pressed) {
+
+        /* Reset scroll */
+        if (term->scroll_offset != 0) {
+            pthread_mutex_lock(&(term->lock));
+            guac_terminal_scroll_display_down(term, term->scroll_offset);
+            pthread_mutex_unlock(&(term->lock));
+        }
 
         /* If simple ASCII key */
         if (keysym >= 0x00 && keysym <= 0xFF) {

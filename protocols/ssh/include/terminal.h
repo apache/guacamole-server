@@ -45,6 +45,8 @@
 
 #include <guacamole/client.h>
 
+#define GUAC_SSH_WHEEL_SCROLL_AMOUNT 3
+
 typedef struct guac_terminal guac_terminal;
 
 /**
@@ -606,16 +608,18 @@ guac_terminal_scrollback_row* guac_terminal_scrollback_buffer_get_row(
     guac_terminal_scrollback_buffer* buffer, int row);
 
 /**
- * Scroll down the display by one row, replacing the new space with data from
- * the scrollback.
+ * Scroll down the display by the given amount, replacing the new space with
+ * data from the scrollback. If not enough data is available, the maximum
+ * amount will be scrolled.
  */
-void guac_terminal_scroll_display_down(guac_terminal* terminal);
+void guac_terminal_scroll_display_down(guac_terminal* terminal, int amount);
 
 /**
- * Scroll up the display by one row, replacing the new space with data from
- * either the scrollback or the terminal buffer.
+ * Scroll up the display by the given amount, replacing the new space with data
+ * from either the scrollback or the terminal buffer.  If not enough data is
+ * available, the maximum amount will be scrolled.
  */
-void guac_terminal_scroll_display_up(guac_terminal* terminal);
+void guac_terminal_scroll_display_up(guac_terminal* terminal, int amount);
 
 #endif
 

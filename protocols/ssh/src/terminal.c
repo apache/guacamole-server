@@ -1219,16 +1219,10 @@ void guac_terminal_scrollback_buffer_append(
     if (buffer->length > buffer->rows)
         buffer->length = buffer->rows;
 
-    /* Log string version of row that WOULD have been scrolled into the
-     * scrollback */
-    guac_client_log_info(terminal->client,
-            "scrollback->top=%i (length=%i/%i)", buffer->top, buffer->length, buffer->rows);
-
 }
 
-void guac_terminal_scroll_display_down(guac_terminal* terminal) {
-
-    int scroll_amount = 3;
+void guac_terminal_scroll_display_down(guac_terminal* terminal,
+        int scroll_amount) {
 
     int start_row, end_row;
     int dest_row;
@@ -1256,10 +1250,6 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal) {
     end_row   = terminal->term_height - terminal->scroll_offset - 1;
     start_row = end_row - scroll_amount + 1;
     dest_row  = terminal->term_height - scroll_amount;
-
-    guac_client_log_info(terminal->client,
-            "Scrolling rows %i through %i into view (scroll down)",
-            start_row, end_row);
 
     /* Draw new rows from scrollback */
     for (row=start_row; row<=end_row; row++) {
@@ -1304,9 +1294,8 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal) {
 
 }
 
-void guac_terminal_scroll_display_up(guac_terminal* terminal) {
-
-    int scroll_amount = 3;
+void guac_terminal_scroll_display_up(guac_terminal* terminal,
+        int scroll_amount) {
 
     int start_row, end_row;
     int dest_row;
@@ -1335,10 +1324,6 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal) {
     start_row = -terminal->scroll_offset;
     end_row   = start_row + scroll_amount - 1;
     dest_row  = 0;
-
-    guac_client_log_info(terminal->client,
-            "Scrolling rows %i through %i into view (scroll up)",
-            start_row, end_row);
 
     /* Draw new rows from scrollback */
     for (row=start_row; row<=end_row; row++) {
