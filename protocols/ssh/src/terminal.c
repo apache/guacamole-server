@@ -417,23 +417,28 @@ int guac_terminal_copy(guac_terminal* term,
 
     int scrolled_rows = rows;
 
-    /* Adjust delta rect height if scrolled out of view */
-    if (scrolled_src_row + scrolled_rows > term->delta->height)
-        scrolled_rows = term->delta->height - scrolled_src_row;
-
-    if (scrolled_dst_row + scrolled_rows > term->delta->height)
-        scrolled_rows = term->delta->height - scrolled_dst_row;
-
     /* FIXME: If source (but not dest) is partially scrolled out of view, then
      *        the delta will not be updated properly. We need to pull the data
      *        from the buffer in such a case.
      */
 
-    /* Update delta */
-    guac_terminal_delta_copy(term->delta,
-        scrolled_dst_row, dst_col,
-        scrolled_src_row, src_col,
-        cols, rows);
+    if (scrolled_src_row < term->delta->height &&
+            scrolled_dst_row < term->delta->height) {
+
+        /* Adjust delta rect height if scrolled out of view */
+        if (scrolled_src_row + scrolled_rows > term->delta->height)
+            scrolled_rows = term->delta->height - scrolled_src_row;
+
+        if (scrolled_dst_row + scrolled_rows > term->delta->height)
+            scrolled_rows = term->delta->height - scrolled_dst_row;
+
+        /* Update delta */
+        guac_terminal_delta_copy(term->delta,
+            scrolled_dst_row, dst_col,
+            scrolled_src_row, src_col,
+            cols, rows);
+
+    }
 
     /* Update buffer */
     guac_terminal_buffer_copy(term->buffer,
@@ -452,18 +457,22 @@ int guac_terminal_clear(guac_terminal* term,
     int scrolled_row = row + term->scroll_offset;
     int scrolled_rows = rows;
 
-    /* Adjust delta rect height if scrolled out of view */
-    if (scrolled_row + scrolled_rows > term->delta->height)
-        scrolled_rows = term->delta->height - scrolled_row;
-
     /* Build space */
     guac_terminal_char character;
     character.value = ' ';
     character.attributes = term->current_attributes;
 
-    /* Fill with color */
-    guac_terminal_delta_set_rect(term->delta,
-        scrolled_row, col, cols, scrolled_rows, &character);
+    if (scrolled_row < term->delta->height) {
+
+        /* Adjust delta rect height if scrolled out of view */
+        if (scrolled_row + scrolled_rows > term->delta->height)
+            scrolled_rows = term->delta->height - scrolled_row;
+
+        /* Fill with color */
+        guac_terminal_delta_set_rect(term->delta,
+            scrolled_row, col, cols, scrolled_rows, &character);
+
+    }
 
     guac_terminal_buffer_set_rect(term->buffer,
         row, col, cols, rows, &character);
