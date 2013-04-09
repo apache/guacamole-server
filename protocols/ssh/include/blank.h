@@ -20,7 +20,6 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,51 +35,18 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _SSH_GUAC_CLIENT_H
-#define _SSH_GUAC_CLIENT_H
+#ifndef _GUAC_SSH_BLANK_H
+#define _GUAC_SSH_BLANK_H
 
-#include <libssh/libssh.h>
-
+#include <cairo/cairo.h>
 #include <guacamole/client.h>
 
-#include "ssh_client.h"
-#include "ssh_handlers.h"
-#include "terminal.h"
-#include "cursor.h"
-
-typedef struct ssh_guac_client_data {
-
-    ssh_session session;
-    ssh_channel term_channel;
-
-    guac_terminal* term;
-    
-    char * clipboard_data;
-
-    char password[1024];
-    int password_length;
-
-    int mod_ctrl;
-    int mouse_mask;
-
-    /**
-     * The cached I-bar cursor.
-     */
-    guac_ssh_cursor* ibar_cursor;
-
-    /**
-     * The cached invisible (blank) cursor.
-     */
-    guac_ssh_cursor* blank_cursor;
-
-    /**
-     * The current cursor, used to avoid re-setting the cursor.
-     */
-    guac_ssh_cursor* current_cursor;
-
-} ssh_guac_client_data;
-
-int ssh_guac_client_auth(guac_client* client, const char* password);
+/**
+ * Creates a new blank cursor, returning the corresponding cursor object.
+ *
+ * @param client The guac_client to send the cursor to.
+ * @return A new cursor which must be free'd via guac_ssh_cursor_free()/
+ */
+guac_ssh_cursor* guac_ssh_create_blank(guac_client* client);
 
 #endif
-

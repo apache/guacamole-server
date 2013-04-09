@@ -256,6 +256,7 @@ int ssh_guac_client_free_handler(guac_client* client) {
 
     /* Free cursors */
     guac_ssh_cursor_free(client, guac_client_data->ibar_cursor);
+    guac_ssh_cursor_free(client, guac_client_data->blank_cursor);
 
     /* Free generic data struct */
     free(client->data);

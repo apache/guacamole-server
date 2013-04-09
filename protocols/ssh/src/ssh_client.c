@@ -48,6 +48,7 @@
 #include "ssh_client.h"
 #include "ssh_handlers.h"
 #include "terminal.h"
+#include "blank.h"
 #include "ibar.h"
 
 /* Client plugin arguments */
@@ -116,9 +117,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->mod_ctrl = 0;
     client_data->clipboard_data = NULL;
 
-    /* Setup I-bar pointer */
+    /* Set up I-bar pointer */
     client_data->current_cursor =
     client_data->ibar_cursor    = guac_ssh_create_ibar(client);
+
+    /* Set up blank pointer */
+    client_data->blank_cursor = guac_ssh_create_blank(client);
 
     /* Send name and dimensions */
     guac_protocol_send_name(socket, "SSH TEST");

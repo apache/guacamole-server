@@ -20,7 +20,6 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,51 +35,30 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _SSH_GUAC_CLIENT_H
-#define _SSH_GUAC_CLIENT_H
-
-#include <libssh/libssh.h>
-
+#include <cairo/cairo.h>
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
-#include "ssh_client.h"
-#include "ssh_handlers.h"
-#include "terminal.h"
 #include "cursor.h"
 
-typedef struct ssh_guac_client_data {
+guac_ssh_cursor* guac_ssh_create_blank(guac_client* client) {
 
-    ssh_session session;
-    ssh_channel term_channel;
+    guac_socket* socket = client->socket;
+    guac_ssh_cursor* cursor = guac_ssh_cursor_alloc(client);
 
-    guac_terminal* term;
-    
-    char * clipboard_data;
+    /* Set buffer to a single 1x1 transparent rectangle */
+    guac_protocol_send_rect(socket, cursor->buffer, 0, 0, 1, 1);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, cursor->buffer,
+            0x00, 0x00, 0x00, 0x00);
 
-    char password[1024];
-    int password_length;
+    /* Initialize cursor properties */
+    cursor->width  = 1;
+    cursor->height = 1;
+    cursor->hotspot_x = 0;
+    cursor->hotspot_y = 0;
 
-    int mod_ctrl;
-    int mouse_mask;
+    return cursor;
 
-    /**
-     * The cached I-bar cursor.
-     */
-    guac_ssh_cursor* ibar_cursor;
-
-    /**
-     * The cached invisible (blank) cursor.
-     */
-    guac_ssh_cursor* blank_cursor;
-
-    /**
-     * The current cursor, used to avoid re-setting the cursor.
-     */
-    guac_ssh_cursor* current_cursor;
-
-} ssh_guac_client_data;
-
-int ssh_guac_client_auth(guac_client* client, const char* password);
-
-#endif
+}
 
