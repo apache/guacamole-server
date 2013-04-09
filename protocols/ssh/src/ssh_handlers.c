@@ -151,6 +151,17 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     int released_mask = client_data->mouse_mask & ~mask;
     client_data->mouse_mask = mask;
 
+    /* Show mouse cursor if not already shown */
+    if (client_data->current_cursor != client_data->ibar_cursor) {
+        pthread_mutex_lock(&(term->lock));
+
+        client_data->current_cursor = client_data->ibar_cursor;
+        guac_ssh_set_cursor(client, client_data->ibar_cursor);
+        guac_socket_flush(client->socket);
+
+        pthread_mutex_unlock(&(term->lock));
+    }
+
     /* Paste contents of clipboard on right mouse button up */
     if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT)
             && client_data->clipboard_data != NULL) {
@@ -184,6 +195,17 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     guac_terminal* term = client_data->term;
+
+    /* Hide mouse cursor if not already hidden */
+    if (client_data->current_cursor != client_data->blank_cursor) {
+        pthread_mutex_lock(&(term->lock));
+
+        client_data->current_cursor = client_data->blank_cursor;
+        guac_ssh_set_cursor(client, client_data->blank_cursor);
+        guac_socket_flush(client->socket);
+
+        pthread_mutex_unlock(&(term->lock));
+    }
 
     /* Track modifiers */
     if (keysym == 0xFFE3) {
