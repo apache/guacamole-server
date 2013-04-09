@@ -52,6 +52,7 @@
 
 #include "ssh_handlers.h"
 #include "ssh_client.h"
+#include "cursor.h"
 
 int ssh_guac_client_handle_messages(guac_client* client) {
 
@@ -252,6 +253,9 @@ int ssh_guac_client_free_handler(guac_client* client) {
 
     /* Free clipboard data */
     free(guac_client_data->clipboard_data);
+
+    /* Free cursors */
+    guac_ssh_cursor_free(client, guac_client_data->ibar_cursor);
 
     /* Free generic data struct */
     free(client->data);
