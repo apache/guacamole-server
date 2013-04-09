@@ -40,6 +40,8 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
+#include "cursor.h"
+
 /* Macros for prettying up the embedded image. */
 #define X 0x00,0x00,0x00,0xFF
 #define U 0x80,0x80,0x80,0xFF
@@ -77,13 +79,12 @@ unsigned char guac_ssh_ibar[] = {
 };
 
 
-void guac_ssh_set_ibar(guac_client* client) {
+guac_ssh_cursor* guac_ssh_create_ibar(guac_client* client) {
 
     guac_socket* socket = client->socket;
+    guac_ssh_cursor* cursor = guac_ssh_cursor_alloc(client);
 
     /* Draw to buffer */
-    guac_layer* cursor = guac_client_alloc_buffer(client);
-
     cairo_surface_t* graphic = cairo_image_surface_create_for_data(
             guac_ssh_ibar,
             guac_ssh_ibar_format,
@@ -91,20 +92,17 @@ void guac_ssh_set_ibar(guac_client* client) {
             guac_ssh_ibar_height,
             guac_ssh_ibar_stride);
 
-    guac_protocol_send_png(socket, GUAC_COMP_SRC, cursor, 0, 0, graphic);
+    guac_protocol_send_png(socket, GUAC_COMP_SRC, cursor->buffer,
+            0, 0, graphic);
     cairo_surface_destroy(graphic);
 
-    /* Set cursor */
-    guac_protocol_send_cursor(socket,
-            guac_ssh_ibar_width / 2,
-            guac_ssh_ibar_height / 2,
-            cursor,
-            0, 0,
-            guac_ssh_ibar_width,
-            guac_ssh_ibar_height);
+    /* Initialize cursor properties */
+    cursor->width = guac_ssh_ibar_width;
+    cursor->height = guac_ssh_ibar_height;
+    cursor->hotspot_x = guac_ssh_ibar_width / 2;
+    cursor->hotspot_y = guac_ssh_ibar_height / 2;
 
-    /* Free buffer */
-    guac_client_free_buffer(client, cursor);
+    return cursor;
 
 }
 

@@ -35,43 +35,55 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_SSH_IBAR_H
-#define _GUAC_SSH_IBAR_H
+#ifndef _GUAC_SSH_CURSOR_H
+#define _GUAC_SSH_CURSOR_H
 
-#include <cairo/cairo.h>
 #include <guacamole/client.h>
 
-/**
- * Width of the embedded mouse cursor graphic.
- */
-extern const int guac_ssh_ibar_width;
+typedef struct guac_ssh_cursor {
+
+    /**
+     * A buffer allocated with guac_client_alloc_buffer() that contains the
+     * cursor image.
+     */
+    guac_layer* buffer;
+
+    /**
+     * The width of the cursor in pixels.
+     */
+    int width;
+
+    /**
+     * The height of the cursor in pixels.
+     */
+    int height;
+
+    /**
+     * The X coordinate of the cursor hotspot.
+     */
+    int hotspot_x;
+
+    /**
+     * The Y coordinate of the cursor hotspot.
+     */
+    int hotspot_y;
+
+} guac_ssh_cursor;
 
 /**
- * Height of the embedded mouse cursor graphic.
+ * Allocates a new cursor, pre-populating the cursor with a newly-allocated
+ * buffer.
  */
-extern const int guac_ssh_ibar_height;
+guac_ssh_cursor* guac_ssh_cursor_alloc(guac_client* client);
 
 /**
- * Number of bytes in each row of the embedded mouse cursor graphic.
+ * Frees the buffer associated with this cursor as well as the cursor itself.
  */
-extern const int guac_ssh_ibar_stride;
+void guac_ssh_cursor_free(guac_client* client, guac_ssh_cursor* cursor);
 
 /**
- * The Cairo grapic format of the mouse cursor graphic.
+ * Set the remote cursor.
  */
-extern const cairo_format_t guac_ssh_ibar_format;
-
-/**
- * Embedded mouse cursor graphic.
- */
-extern unsigned char guac_ssh_ibar[];
-
-/**
- * Creates a new I-bar cursor, returning the corresponding cursor object.
- *
- * @param client The guac_client to send the cursor to.
- * @return A new cursor which must be free'd via guac_ssh_cursor_free()/
- */
-guac_ssh_cursor* guac_ssh_create_ibar(guac_client* client);
+void guac_ssh_set_cursor(guac_client* client, guac_ssh_cursor* cursor);
 
 #endif

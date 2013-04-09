@@ -46,6 +46,7 @@
 #include "ssh_client.h"
 #include "ssh_handlers.h"
 #include "terminal.h"
+#include "cursor.h"
 
 typedef struct ssh_guac_client_data {
 
@@ -61,6 +62,16 @@ typedef struct ssh_guac_client_data {
 
     int mod_ctrl;
     int mouse_mask;
+
+    /**
+     * The cached I-bar cursor.
+     */
+    guac_ssh_cursor* ibar_cursor;
+
+    /**
+     * The current cursor, used to avoid re-setting the cursor.
+     */
+    guac_ssh_cursor* current_cursor;
 
 } ssh_guac_client_data;
 

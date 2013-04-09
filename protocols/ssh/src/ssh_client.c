@@ -116,6 +116,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->mod_ctrl = 0;
     client_data->clipboard_data = NULL;
 
+    /* Setup I-bar pointer */
+    client_data->current_cursor =
+    client_data->ibar_cursor    = guac_ssh_create_ibar(client);
+
     /* Send name and dimensions */
     guac_protocol_send_name(socket, "SSH TEST");
     guac_protocol_send_size(socket,
@@ -124,7 +128,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             term->char_height * term->term_height);
 
     /* Send I-bar pointer */
-    guac_ssh_set_ibar(client);
+    guac_ssh_set_cursor(client, client_data->ibar_cursor);
 
     guac_socket_flush(socket);
 
