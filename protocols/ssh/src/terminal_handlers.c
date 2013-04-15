@@ -42,7 +42,48 @@
 
 int guac_terminal_echo(guac_terminal* term, char c) {
 
-    switch (c) {
+    static int bytes_remaining = 0;
+    static int codepoint = 0;
+
+    /* 1-byte UTF-8 codepoint */
+    if ((c & 0x80) == 0x00) {    /* 0xxxxxxx */
+        codepoint = c & 0x7F;
+        bytes_remaining = 0;
+    }
+
+    /* 2-byte UTF-8 codepoint */
+    else if ((c & 0xE0) == 0xC0) { /* 110xxxxx */
+        codepoint = c & 0x1F;
+        bytes_remaining = 1;
+    }
+
+    /* 3-byte UTF-8 codepoint */
+    else if ((c & 0xF0) == 0xE0) { /* 1110xxxx */
+        codepoint = c & 0x0F;
+        bytes_remaining = 2;
+    }
+
+    /* 4-byte UTF-8 codepoint */
+    else if ((c & 0xF8) == 0xF0) { /* 11110xxx */
+        codepoint = c & 0x07;
+        bytes_remaining = 3;
+    }
+
+    /* Continuation of UTF-8 codepoint */
+    else if ((c & 0xC0) == 0x80) { /* 10xxxxxx */
+        codepoint = (codepoint << 6) | (c & 0x3F);
+        bytes_remaining--;
+    }
+
+    else {
+        /* FIXME: Handle */
+    }
+
+    /* If we need more bytes, wait for more bytes */
+    if (bytes_remaining != 0)
+        return 0;
+
+    switch (codepoint) {
 
         /* Bell */
         case 0x07:
@@ -98,11 +139,15 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
             }
 
+            /* For now, render all but basic latin as '?' */
+            if (codepoint > 0x7F)
+                codepoint = '?';
+
             /* Write character */
             guac_terminal_set(term,
                     term->cursor_row,
                     term->cursor_col,
-                    c);
+                    (char) codepoint);
 
             /* Advance cursor */
             term->cursor_col++;
