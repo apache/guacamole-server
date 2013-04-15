@@ -95,6 +95,11 @@ typedef struct guac_terminal_attributes {
     bool reverse;
 
     /**
+     * Whether the associated character is selected.
+     */
+    bool selected;
+
+    /**
      * Whether to render the character with underscore.
      */
     bool underscore;
@@ -431,6 +436,31 @@ struct guac_terminal {
      */
     guac_terminal_buffer* buffer;
 
+    /**
+     * Whether text is being selected.
+     */
+    bool text_selected;
+
+    /**
+     * The row that the selection starts at.
+     */
+    int selection_start_row;
+
+    /**
+     * The column that the selection starts at.
+     */
+    int selection_start_column;
+
+    /**
+     * The row that the selection ends at.
+     */
+    int selection_end_row;
+
+    /**
+     * The column that the selection ends at.
+     */
+    int selection_end_column;
+
 };
 
 /**
@@ -620,6 +650,27 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal, int amount);
  * available, the maximum amount will be scrolled.
  */
 void guac_terminal_scroll_display_up(guac_terminal* terminal, int amount);
+
+/**
+ * Marks the start of text selection at the given row and column.
+ */
+void guac_terminal_select_start(guac_terminal* terminal, int row, int column);
+
+/**
+ * Updates the end of text selection at the given row and column.
+ */
+void guac_terminal_select_update(guac_terminal* terminal, int row, int column);
+
+/**
+ * Ends text selection, removing any highlight.
+ */
+void guac_terminal_select_end(guac_terminal* terminal);
+
+/**
+ * Returns a row of character data, whether that data be from the scrollback buffer or the main backing buffer. The length
+ * parameter given here is a pointer to the int variable that should receive the length of the character array returned.
+ */
+guac_terminal_char* guac_terminal_get_row(guac_terminal* terminal, int row, int* length);
 
 #endif
 

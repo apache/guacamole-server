@@ -147,8 +147,10 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
-    /* Determine which buttons were just released */
-    int released_mask = client_data->mouse_mask & ~mask;
+    /* Determine which buttons were just released and pressed */
+    int released_mask =  client_data->mouse_mask & ~mask;
+    int pressed_mask  = ~client_data->mouse_mask &  mask;
+
     client_data->mouse_mask = mask;
 
     /* Show mouse cursor if not already shown */
@@ -171,6 +173,34 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
             return channel_write(client_data->term_channel,
                     client_data->clipboard_data, length);
 
+    }
+
+    /* If text selected, change state based on left mouse mouse button */
+    if (term->text_selected) {
+        pthread_mutex_lock(&(term->lock));
+
+        /* If mouse button released, stop selection */
+        if (released_mask & GUAC_CLIENT_MOUSE_LEFT)
+            guac_terminal_select_end(term);
+
+        /* Otherwise, just update */
+        else
+            guac_terminal_select_update(term,
+                    y / term->char_height - term->scroll_offset,
+                    x / term->char_width);
+
+        pthread_mutex_unlock(&(term->lock));
+    }
+
+    /* Otherwise, if mouse button pressed, start selection */
+    else if (pressed_mask & GUAC_CLIENT_MOUSE_LEFT) {
+        pthread_mutex_lock(&(term->lock));
+
+        guac_terminal_select_start(term,
+                y / term->char_height - term->scroll_offset,
+                x / term->char_width);
+
+        pthread_mutex_unlock(&(term->lock));
     }
 
     /* Scroll up if wheel moved up */

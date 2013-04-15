@@ -141,6 +141,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->scroll_start = 0;
     term->scroll_end = term->term_height - 1;
 
+    term->text_selected = false;
+
     /* Init scrollback buffer */
     term->scrollback = guac_terminal_scrollback_buffer_alloc(1000);
     term->scroll_offset = 0;
@@ -270,7 +272,7 @@ int __guac_terminal_set_colors(guac_terminal* term,
     int background, foreground;
 
     /* Handle reverse video */
-    if (attributes->reverse) {
+    if (attributes->reverse != attributes->selected) {
         background = attributes->foreground;
         foreground = attributes->background;
     }
@@ -867,7 +869,7 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta,
 
                 /* Color of the rectangle to draw */
                 int color;
-                if (current->character.attributes.reverse)
+                if (current->character.attributes.reverse != current->character.attributes.selected)
                    color = current->character.attributes.foreground;
                 else
                    color = current->character.attributes.background;
@@ -1221,6 +1223,22 @@ void guac_terminal_scrollback_buffer_append(
 
 }
 
+guac_terminal_char* guac_terminal_get_row(guac_terminal* terminal, int row, int* length) {
+
+    /* If row in past, pull from scrollback */
+    if (row < 0) {
+        guac_terminal_scrollback_row* scrollback_row = 
+            guac_terminal_scrollback_buffer_get_row(terminal->scrollback, row);
+
+        *length = scrollback_row->length;
+        return scrollback_row->characters;
+    }
+
+    *length = terminal->buffer->width;
+    return &(terminal->buffer->characters[terminal->buffer->width * row]); 
+
+}
+
 void guac_terminal_scroll_display_down(guac_terminal* terminal,
         int scroll_amount) {
 
@@ -1254,34 +1272,12 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
     /* Draw new rows from scrollback */
     for (row=start_row; row<=end_row; row++) {
 
-        /* If row in past, pull from scrollback */
-        if (row < 0) {
+        int length;
+        guac_terminal_char* current = guac_terminal_get_row(terminal, row, &length);
 
-            /* Get row from scrollback */
-            guac_terminal_scrollback_row* scrollback_row = 
-                guac_terminal_scrollback_buffer_get_row(terminal->scrollback,
-                        row);
-
-            /* Draw row */
-            /* FIXME: Clear row first */
-            guac_terminal_char* current = scrollback_row->characters;
-            for (column=0; column<scrollback_row->length; column++)
-                guac_terminal_delta_set(terminal->delta, dest_row, column,
-                        current++);
-
-        }
-
-        /* Otherwise, pull from buffer */
-        else {
-
-            guac_terminal_char* current = &(terminal->buffer->characters[
-                terminal->buffer->width * row]);
-
-            for (column=0; column<terminal->buffer->width; column++)
-                guac_terminal_delta_set(terminal->delta, dest_row, column,
-                        current++);
-
-        }
+        for (column=0; column<length; column++)
+            guac_terminal_delta_set(terminal->delta, dest_row, column,
+                    current++);
 
         /* Next row */
         dest_row++;
@@ -1359,6 +1355,176 @@ guac_terminal_scrollback_row* guac_terminal_scrollback_buffer_get_row(
 
     /* Return found row */
     return &(buffer->scrollback[index]);
+
+}
+
+void guac_terminal_select_start(guac_terminal* terminal, int row, int column) {
+
+    guac_terminal_char* guac_char;
+    guac_terminal_operation* guac_operation;
+
+    /* Update selection coordinates */
+    terminal->selection_start_row =
+    terminal->selection_end_row   = row;
+    terminal->selection_start_column =
+    terminal->selection_end_column   = column;
+    terminal->text_selected = true;
+
+    /* Get char and operation */
+    guac_char = &(terminal->buffer->characters[terminal->buffer->width * row + column]);
+    guac_operation = &(terminal->delta->operations[terminal->delta->width * row + column]);
+
+    /* Set character as selected */
+    guac_char->attributes.selected = true;
+    guac_operation->type = GUAC_CHAR_SET;
+    guac_operation->character = *guac_char;
+
+    guac_terminal_delta_flush(terminal->delta, terminal);
+    guac_socket_flush(terminal->client->socket);
+
+}
+
+void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
+
+    int start_index = terminal->selection_start_row * terminal->buffer->width
+                    + terminal->selection_start_column;
+
+    int old_end_index = terminal->selection_end_row * terminal->buffer->width
+                      + terminal->selection_end_column;
+
+    int new_end_index = row * terminal->buffer->width + column;
+
+    int old_index_a, old_index_b;
+    int new_index_a, new_index_b;
+
+    int search_index_a, search_index_b;
+
+    int i;
+    guac_terminal_char* guac_char;
+    guac_terminal_operation* guac_operation;
+
+    /* If unchanged, do nothing */
+    if (old_end_index == new_end_index) return;
+
+    /* Calculate old selection range */
+    if (start_index < old_end_index) {
+        old_index_a = start_index;
+        old_index_b = old_end_index;
+    }
+    else {
+        old_index_a = old_end_index;
+        old_index_b = start_index;
+    }
+
+    /* Calculate new selection range */
+    if (start_index < new_end_index) {
+        new_index_a = start_index;
+        new_index_b = new_end_index;
+    }
+    else {
+        new_index_a = new_end_index;
+        new_index_b = start_index;
+    }
+
+    if (new_index_a < old_index_a)
+        search_index_a = new_index_a;
+    else
+        search_index_a = old_index_a;
+
+    if (new_index_b > old_index_b)
+        search_index_b = new_index_b;
+    else
+        search_index_b = old_index_b;
+
+    /* Get first character */
+    guac_char = &(terminal->buffer->characters[search_index_a]);
+    guac_operation = &(terminal->delta->operations[search_index_a]);
+
+    /* Invert modified area */
+    for (i=search_index_a; i<=search_index_b; i++) {
+
+        /* If now selected, mark as such */
+        if (i >= new_index_a && i <= new_index_b &&
+                (i < old_index_a || i > old_index_b)) {
+
+            guac_char->attributes.selected = true;
+            guac_operation->type = GUAC_CHAR_SET;
+            guac_operation->character = *guac_char;
+
+        }
+
+        /* If now unselected, mark as such */
+        else if (i >= old_index_a && i <= old_index_b &&
+                (i < new_index_a || i > new_index_b)) {
+
+            guac_char->attributes.selected = false;
+            guac_operation->type = GUAC_CHAR_SET;
+            guac_operation->character = *guac_char;
+
+        }
+
+        /* Next char */
+        guac_char++;
+        guac_operation++;
+
+    }
+
+    terminal->selection_end_row = row;
+    terminal->selection_end_column = column;
+
+    guac_terminal_delta_flush(terminal->delta, terminal);
+    guac_socket_flush(terminal->client->socket);
+
+}
+
+void guac_terminal_select_end(guac_terminal* terminal) {
+
+    int index_a = terminal->selection_end_row * terminal->buffer->width
+        + terminal->selection_end_column;
+
+    int index_b = terminal->selection_start_row * terminal->buffer->width
+        + terminal->selection_start_column;
+
+    int i;
+    guac_terminal_char* guac_char;
+    guac_terminal_operation* guac_operation;
+
+    /* The start and end indices of all characters in selection */
+    int start_index;
+    int end_index;
+
+    /* Order indices such that end is after start */
+    if (index_a > index_b) {
+        start_index = index_b;
+        end_index   = index_a;
+    }
+    else {
+        start_index = index_a;
+        end_index   = index_b;
+    }
+
+    /* Get first character */
+    guac_char = &(terminal->buffer->characters[start_index]);
+    guac_operation = &(terminal->delta->operations[start_index]);
+
+    /* Restore state from buffer */
+    for (i=start_index; i<=end_index; i++) {
+
+        /* Restore state */
+        guac_char->attributes.selected = false;
+        guac_operation->type = GUAC_CHAR_SET;
+        guac_operation->character = *guac_char;
+
+        /* Next char */
+        guac_char++;
+        guac_operation++;
+
+    }
+
+    terminal->text_selected = false;
+
+    guac_terminal_delta_flush(terminal->delta, terminal);
+    guac_socket_flush(terminal->client->socket);
 
 }
 
