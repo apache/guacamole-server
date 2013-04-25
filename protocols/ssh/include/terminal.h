@@ -41,9 +41,11 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-#include <pango/pangocairo.h>
-
 #include <guacamole/client.h>
+
+#include "types.h"
+#include "delta.h"
+#include "buffer.h"
 
 #define GUAC_SSH_WHEEL_SCROLL_AMOUNT 3
 
@@ -55,250 +57,6 @@ typedef struct guac_terminal guac_terminal;
  * character.
  */
 typedef int guac_terminal_char_handler(guac_terminal* term, char c);
-
-/**
- * An RGB color, where each component ranges from 0 to 255.
- */
-typedef struct guac_terminal_color {
-
-    /**
-     * The red component of this color.
-     */
-    int red;
-
-    /**
-     * The green component of this color.
-     */
-    int green;
-
-    /**
-     * The blue component of this color.
-     */
-    int blue;
-
-} guac_terminal_color;
-
-/**
- * Terminal attributes, as can be applied to a single character.
- */
-typedef struct guac_terminal_attributes {
-
-    /**
-     * Whether the character should be rendered bold.
-     */
-    bool bold;
-
-    /**
-     * Whether the character should be rendered with reversed colors
-     * (background becomes foreground and vice-versa).
-     */
-    bool reverse;
-
-    /**
-     * Whether the associated character is selected.
-     */
-    bool selected;
-
-    /**
-     * Whether to render the character with underscore.
-     */
-    bool underscore;
-
-    /**
-     * The foreground color of this character, as a palette index.
-     */
-    int foreground;
-
-    /**
-     * The background color of this character, as a palette index.
-     */
-    int background;
-
-} guac_terminal_attributes;
-
-/**
- * The available color palette. All integer colors within structures
- * here are indices into this palette.
- */
-extern const guac_terminal_color guac_terminal_palette[16];
-
-/**
- * Represents a single character for display in a terminal, including actual
- * character value, foreground color, and background color.
- */
-typedef struct guac_terminal_char {
-
-    /**
-     * The character value of the character to display.
-     */
-    char value;
-
-    /**
-     * The attributes of the character to display.
-     */
-    guac_terminal_attributes attributes;
-
-} guac_terminal_char;
-
-/**
- * All available terminal operations which affect character cells.
- */
-typedef enum guac_terminal_operation_type {
-
-    /**
-     * Operation which does nothing.
-     */
-    GUAC_CHAR_NOP,
-
-    /**
-     * Operation which copies a character from a given row/column coordinate.
-     */
-    GUAC_CHAR_COPY,
-
-    /**
-     * Operation which sets the character and attributes.
-     */
-    GUAC_CHAR_SET
-
-} guac_terminal_operation_type;
-
-/**
- * A pairing of a guac_terminal_operation_type and all parameters required by
- * that operation type.
- */
-typedef struct guac_terminal_operation {
-
-    /**
-     * The type of operation to perform.
-     */
-    guac_terminal_operation_type type;
-
-    /**
-     * The character (and attributes) to set the current location to. This is
-     * only applicable to GUAC_CHAR_SET.
-     */
-    guac_terminal_char character;
-
-    /**
-     * The row to copy a character from. This is only applicable to
-     * GUAC_CHAR_COPY.
-     */
-    int row;
-
-    /**
-     * The column to copy a character from. This is only applicable to
-     * GUAC_CHAR_COPY.
-     */
-    int column;
-
-} guac_terminal_operation;
-
-/**
- * Set of all pending operations for the currently-visible screen area.
- */
-typedef struct guac_terminal_delta {
-
-    /**
-     * Array of all operations pending for the visible screen area.
-     */
-    guac_terminal_operation* operations;
-
-    /**
-     * Scratch area of same size as the operations buffer, facilitating copies
-     * of overlapping regions.
-     */
-    guac_terminal_operation* scratch;
-
-    /**
-     * The width of the screen, in characters.
-     */
-    int width;
-
-    /**
-     * The height of the screen, in characters.
-     */
-    int height;
-
-} guac_terminal_delta;
-
-/**
- * A single variable-length row of terminal data.
- */
-typedef struct guac_terminal_scrollback_row {
-
-    /**
-     * Array of guac_terminal_char representing the contents of the row.
-     */
-    guac_terminal_char* characters;
-
-    /**
-     * The length of this row in characters. This is the number of initialized
-     * characters in the buffer, usually equal to the number of characters
-     * in the screen width at the time this row was created.
-     */
-    int length;
-
-    /**
-     * The number of elements in the characters array. After the length
-     * equals this value, the array must be resized.
-     */
-    int available;
-
-} guac_terminal_scrollback_row;
-
-/**
- * A scrollback buffer containing a constant number of arbitrary-length rows.
- * New rows can be appended to the buffer, with the oldest row replaced with
- * the new row.
- */
-typedef struct guac_terminal_scrollback_buffer {
-
-    /**
-     * Array of scrollback buffer rows. This array functions as a ring buffer.
-     * When a new row needs to be appended, the top reference is moved down
-     * and the old top row is replaced.
-     */
-    guac_terminal_scrollback_row* scrollback;
-
-    /**
-     * The number of rows in the scrollback buffer. This is the total capacity
-     * of the buffer.
-     */
-    int rows;
-
-    /**
-     * The row to replace when adding a new row to the scrollback.
-     */
-    int top;
-
-    /**
-     * The number of rows currently stored in the scrollback buffer.
-     */
-    int length;
-
-} guac_terminal_scrollback_buffer;
-
-/**
- * Dynamically-resizable character buffer.
- */
-typedef struct guac_terminal_buffer {
-
-    /**
-     * Array of characters.
-     */
-    guac_terminal_char* characters;
-
-    /**
-     * The width of this buffer in characters.
-     */
-    int width;
-
-    /**
-     * The height of this buffer in characters.
-     */
-    int height;
-
-} guac_terminal_buffer;
 
 /**
  * Represents a terminal emulator which uses a given Guacamole client to
@@ -318,63 +76,11 @@ struct guac_terminal {
     pthread_mutex_t lock;
 
     /**
-     * The description of the font to use for rendering.
-     */
-    PangoFontDescription* font_desc;
-
-    /**
-     * Index of next glyph to create
-     */
-    int next_glyph;
-
-    /**
-     * Index of locations for each glyph in the stroke and fill layers.
-     */
-    int glyphs[256];
-
-    /**
-     * Color of glyphs in copy buffer
-     */
-    int glyph_foreground;
-
-    /**
-     * Color of glyphs in copy buffer
-     */
-    int glyph_background;
-
-    /**
-     * A single wide layer holding each glyph, with each glyph only
-     * colored with foreground color (background remains transparent).
-     */
-    guac_layer* glyph_stroke;
-
-    /**
-     * A single wide layer holding each glyph, with each glyph properly
-     * colored with foreground and background color (no transparency at all).
-     */
-    guac_layer* filled_glyphs;
-
-    /**
-     * The scrollback buffer.
-     */
-    guac_terminal_scrollback_buffer* scrollback;
-
-    /**
      * The relative offset of the display. A positive value indicates that
      * many rows have been scrolled into view, zero indicates that no
      * scrolling has occurred. Negative values are illegal.
      */
     int scroll_offset;
-
-    /**
-     * The width of each character, in pixels.
-     */
-    int char_width;
-
-    /**
-     * The height of each character, in pixels.
-     */
-    int char_height;
 
     /**
      * The width of the terminal, in characters.
@@ -486,14 +192,6 @@ int guac_terminal_write(guac_terminal* term, const char* c, int size);
 int guac_terminal_set(guac_terminal* term, int row, int col, char c);
 
 /**
- * Copies a rectangular region of characters which may overlap with the
- * destination.
- */
-int guac_terminal_copy(guac_terminal* term,
-        int src_row, int src_col, int rows, int cols,
-        int dst_row, int dst_col);
-
-/**
  * Clears a rectangular region of characters, replacing them with the
  * current background color and attributes.
  */
@@ -526,127 +224,15 @@ int guac_terminal_scroll_down(guac_terminal* term,
 int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col);
 
 /**
- * Allocates a new guac_terminal_delta.
- */
-guac_terminal_delta* guac_terminal_delta_alloc(int width, int height);
-
-/**
- * Frees the given guac_terminal_delta.
- */
-void guac_terminal_delta_free(guac_terminal_delta* delta);
-
-/**
- * Resizes the given guac_terminal_delta to the given dimensions.
- */
-void guac_terminal_delta_resize(guac_terminal_delta* delta,
-    int width, int height);
-
-/**
- * Stores a set operation at the given location.
- */
-void guac_terminal_delta_set(guac_terminal_delta* delta, int r, int c,
-        guac_terminal_char* character);
-
-/**
- * Stores a rectangle of copy operations, copying existing operations as
- * necessary.
- */
-void guac_terminal_delta_copy(guac_terminal_delta* delta,
-        int dst_row, int dst_column,
-        int src_row, int src_column,
-        int w, int h);
-
-/**
- * Sets a rectangle of character data to the given character value.
- */
-void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
-        int row, int column, int w, int h,
-        guac_terminal_char* character);
-
-/**
- * Flushes all pending operations within the given guac_client_delta to the
- * given guac_terminal.
- */
-void guac_terminal_delta_flush(guac_terminal_delta* delta,
-        guac_terminal* terminal);
-
-/**
- * Allocates a new character buffer having the given dimensions.
- */
-guac_terminal_buffer* guac_terminal_buffer_alloc(int width, int height);
-
-/**
- * Resizes the given character buffer to the given dimensions.
- */
-void guac_terminal_buffer_resize(guac_terminal_buffer* buffer, 
-        int width, int height);
-
-/**
- * Sets the character at the given location within the buffer to the given
- * value.
- */
-void guac_terminal_buffer_set(guac_terminal_buffer* buffer, int r, int c,
-        guac_terminal_char* character);
-
-/**
- * Copies a rectangle of character data within the buffer. The source and
- * destination may overlap.
- */
-void guac_terminal_buffer_copy(guac_terminal_buffer* buffer,
-        int dst_row, int dst_column,
-        int src_row, int src_column,
-        int w, int h);
-
-/**
- * Sets a rectangle of character data to the given character value.
- */
-void guac_terminal_buffer_set_rect(guac_terminal_buffer* buffer,
-        int row, int column, int w, int h,
-        guac_terminal_char* character);
-
-/**
- * Frees the given character buffer.
- */
-void guac_terminal_buffer_free(guac_terminal_buffer* buffer);
-
-/**
- * Allocates a new scrollback buffer having the given number of rows.
- */
-guac_terminal_scrollback_buffer*
-    guac_terminal_scrollback_buffer_alloc(int rows);
-
-/**
- * Frees the given scrollback buffer.
- */
-void guac_terminal_scrollback_buffer_free(
-    guac_terminal_scrollback_buffer* buffer);
-
-/**
- * Pushes the given number of rows into the scrollback, maintaining display
- * position within the scrollback as possible.
- */
-void guac_terminal_scrollback_buffer_append(
-    guac_terminal_scrollback_buffer* buffer,
-    guac_terminal* terminal, int rows);
-
-/**
- * Returns the row within the scrollback at the given location. The index
- * of the row given is a negative number, denoting the number of rows into
- * the past to look.
- */
-guac_terminal_scrollback_row* guac_terminal_scrollback_buffer_get_row(
-    guac_terminal_scrollback_buffer* buffer, int row);
-
-/**
  * Scroll down the display by the given amount, replacing the new space with
- * data from the scrollback. If not enough data is available, the maximum
+ * data from the buffer. If not enough data is available, the maximum
  * amount will be scrolled.
  */
 void guac_terminal_scroll_display_down(guac_terminal* terminal, int amount);
 
 /**
  * Scroll up the display by the given amount, replacing the new space with data
- * from either the scrollback or the terminal buffer.  If not enough data is
+ * from either the buffer or the terminal buffer.  If not enough data is
  * available, the maximum amount will be scrolled.
  */
 void guac_terminal_scroll_display_up(guac_terminal* terminal, int amount);
@@ -666,11 +252,38 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column);
  */
 void guac_terminal_select_end(guac_terminal* terminal);
 
+/* LOW-LEVEL TERMINAL OPERATIONS */
+
 /**
- * Returns a row of character data, whether that data be from the scrollback buffer or the main backing buffer. The length
- * parameter given here is a pointer to the int variable that should receive the length of the character array returned.
+ * Copies the given range of columns to a new location, offset from
+ * the original by the given number of columns.
  */
-guac_terminal_char* guac_terminal_get_row(guac_terminal* terminal, int row, int* length);
+void guac_terminal_copy_columns(guac_terminal* terminal, int row,
+        int start_column, int end_column, int offset);
+
+/**
+ * Copies the given range of rows to a new location, offset from the
+ * original by the given number of rows.
+ */
+void guac_terminal_copy_rows(guac_terminal* terminal, int src_row, int rows,
+        int start_row, int end_row, int offset);
+
+/**
+ * Sets the given range of columns within the given row to the given
+ * character.
+ */
+void guac_terminal_set_columns(guac_terminal* terminal, int row,
+        int start_column, int end_column, guac_terminal_char* character);
+
+/**
+ * Resize the terminal to the given dimensions.
+ */
+void guac_terminal_resize(guac_terminal* term, int rows, int cols);
+
+/**
+ * Flushes all pending operations within the given guac_terminal.
+ */
+void guac_terminal_flush(guac_terminal* terminal);
 
 #endif
 
