@@ -108,6 +108,11 @@ guac_terminal_buffer* guac_terminal_buffer_alloc(int rows);
 void guac_terminal_buffer_free(guac_terminal_buffer* buffer);
 
 /**
+ * Returns the row at the given location.
+ */
+guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buffer, int row);
+
+/**
  * Copies the given range of columns to a new location, offset from
  * the original by the given number of columns.
  */

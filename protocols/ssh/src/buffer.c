@@ -90,6 +90,18 @@ void guac_terminal_buffer_free(guac_terminal_buffer* buffer) {
 
 }
 
+guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buffer, int row) {
+
+    /* Calculate scrollback row index */
+    int index = buffer->top + row;
+    if (index < 0) index += buffer->available;
+
+    /* Return found row */
+    return &(buffer->rows[index]);
+
+}
+
+
 void guac_terminal_buffer_copy_columns(guac_terminal_buffer* buffer, int row,
         int start_column, int end_column, int offset) {
     /* STUB */

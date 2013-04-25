@@ -420,63 +420,6 @@ void guac_terminal_display_set_rect(guac_terminal_display* display,
 
 }
 
-void guac_terminal_scrollback_buffer_append(
-    guac_terminal_scrollback_buffer* buffer,
-    guac_terminal* terminal, int rows) {
-
-    int row, column;
-
-    /* Copy data into scrollback */
-    guac_terminal_scrollback_row* scrollback_row =
-        &(buffer->scrollback[buffer->top]);
-    guac_terminal_char* current = terminal->buffer->characters;
-
-    for (row=0; row<rows; row++) {
-
-        /* FIXME: Assumes scrollback row large enough */
-
-        /* Copy character data for row */
-        guac_terminal_char* dest = scrollback_row->characters;
-        for (column=0; column < terminal->buffer->width; column++)
-            *(dest++) = *(current++);
-
-        scrollback_row->length = terminal->buffer->width;
-
-        /* Next scrollback row */
-        scrollback_row++;
-        buffer->top++;
-
-        /* Wrap around when bottom reached */
-        if (buffer->top == buffer->rows) {
-            buffer->top = 0;
-            scrollback_row = buffer->scrollback;
-        }
-
-    } /* end for each row */
-
-    /* Increment row count */
-    buffer->length += rows;
-    if (buffer->length > buffer->rows)
-        buffer->length = buffer->rows;
-
-}
-
-guac_terminal_char* guac_terminal_get_row(guac_terminal* terminal, int row, int* length) {
-
-    /* If row in past, pull from scrollback */
-    if (row < 0) {
-        guac_terminal_scrollback_row* scrollback_row = 
-            guac_terminal_scrollback_buffer_get_row(terminal->scrollback, row);
-
-        *length = scrollback_row->length;
-        return scrollback_row->characters;
-    }
-
-    *length = terminal->buffer->width;
-    return &(terminal->buffer->characters[terminal->buffer->width * row]); 
-
-}
-
 void guac_terminal_scroll_display_down(guac_terminal* terminal,
         int scroll_amount) {
 
@@ -510,10 +453,14 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
     /* Draw new rows from scrollback */
     for (row=start_row; row<=end_row; row++) {
 
-        int length;
-        guac_terminal_char* current = guac_terminal_get_row(terminal, row, &length);
+        /* Get row from scrollback */
+        guac_terminal_buffer_row* buffer_row =
+            guac_terminal_buffer_get_row(terminal, row);
 
-        for (column=0; column<length; column++)
+        /* Draw row */
+        /* FIXME: Clear row first */
+        guac_terminal_char* current = buffer_row->characters;
+        for (column=0; column<buffer_row->length; column++)
             guac_terminal_display_set(terminal->display, dest_row, column,
                     current++);
 
@@ -563,13 +510,13 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
     for (row=start_row; row<=end_row; row++) {
 
         /* Get row from scrollback */
-        guac_terminal_scrollback_row* scrollback_row = 
-            guac_terminal_scrollback_buffer_get_row(terminal->scrollback, row);
+        guac_terminal_buffer_row* buffer_row = 
+            guac_terminal_buffer_get_row(terminal->buffer, row);
 
         /* Draw row */
         /* FIXME: Clear row first */
-        guac_terminal_char* current = scrollback_row->characters;
-        for (column=0; column<scrollback_row->length; column++)
+        guac_terminal_char* current = buffer_row->characters;
+        for (column=0; column<buffer_row->length; column++)
             guac_terminal_display_set(terminal->display, dest_row, column,
                     current++);
 
@@ -581,18 +528,6 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
     /* FIXME: Should flush somewhere more sensible */
     guac_terminal_display_flush(terminal->display, terminal);
     guac_socket_flush(terminal->client->socket);
-
-}
-
-guac_terminal_scrollback_row* guac_terminal_scrollback_buffer_get_row(
-    guac_terminal_scrollback_buffer* buffer, int row) {
-
-    /* Calculate scrollback row index */
-    int index = buffer->top + row;
-    if (index < 0) index += buffer->rows;
-
-    /* Return found row */
-    return &(buffer->scrollback[index]);
 
 }
 
