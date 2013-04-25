@@ -44,7 +44,7 @@ libguac_client_ssh_la_SOURCES = \
     src/blank.c                 \
     src/buffer.c                \
     src/cursor.c                \
-    src/delta.c                 \
+    src/display.c               \
     src/ibar.c                  \
     src/ssh_client.c            \
     src/ssh_handlers.c          \
@@ -55,7 +55,7 @@ noinst_HEADERS =                \
     include/blank.h             \
     include/buffer.h            \
     include/cursor.h            \
-    include/delta.h             \
+    include/display.h           \
     include/ibar.h              \
     include/ssh_client.h        \
     include/ssh_handlers.h      \

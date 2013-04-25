@@ -44,7 +44,7 @@
 #include <guacamole/client.h>
 
 #include "types.h"
-#include "delta.h"
+#include "display.h"
 #include "buffer.h"
 
 #define GUAC_SSH_WHEEL_SCROLL_AMOUNT 3
@@ -133,11 +133,11 @@ struct guac_terminal {
      * The difference between the currently-rendered screen and the current
      * state of the terminal.
      */
-    guac_terminal_delta* delta;
+    guac_terminal_display* display;
 
     /**
      * Current terminal display state. All characters present on the screen
-     * are within this buffer. This has nothing to do with the delta, which
+     * are within this buffer. This has nothing to do with the display, which
      * facilitates transfer of a set of changes to the remote display.
      */
     guac_terminal_buffer* buffer;

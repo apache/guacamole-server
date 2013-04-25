@@ -49,7 +49,7 @@
 
 #include "types.h"
 #include "buffer.h"
-#include "delta.h"
+#include "display.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
 
@@ -71,8 +71,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->buffer = guac_terminal_buffer_alloc(1000);
     term->scroll_offset = 0;
 
-    /* Init delta */
-    term->delta = guac_terminal_delta_alloc(client,
+    /* Init display */
+    term->display = guac_terminal_display_alloc(client,
             term->term_width, term->term_height,
             default_attributes.foreground,
             default_attributes.background);
@@ -84,8 +84,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->cursor_row = 0;
     term->cursor_col = 0;
 
-    term->term_width   = width  / term->delta->char_width;
-    term->term_height  = height / term->delta->char_height;
+    term->term_width   = width  / term->display->char_width;
+    term->term_height  = height / term->display->char_height;
     term->char_handler = guac_terminal_echo; 
 
     term->scroll_start = 0;
@@ -106,8 +106,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
 void guac_terminal_free(guac_terminal* term) {
     
-    /* Free delta */
-    guac_terminal_delta_free(term->delta);
+    /* Free display */
+    guac_terminal_display_free(term->display);
 
     /* Free buffer */
     guac_terminal_buffer_free(term->buffer);
@@ -123,9 +123,9 @@ int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
     guac_char.value = c;
     guac_char.attributes = term->current_attributes;
 
-    /* Set delta */
-    if (scrolled_row < term->delta->height)
-        guac_terminal_delta_set_columns(term->delta, scrolled_row, col, col, &guac_char);
+    /* Set display */
+    if (scrolled_row < term->display->height)
+        guac_terminal_display_set_columns(term->display, scrolled_row, col, col, &guac_char);
 
     /* Set buffer */
     guac_terminal_buffer_set_columns(term->buffer, row, col, col, &guac_char);
@@ -145,9 +145,9 @@ int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col) {
     /* Toggle reverse */
     guac_char->attributes.reverse = !(guac_char->attributes.reverse);
 
-    /* Set delta */
-    if (scrolled_row < term->delta->height)
-        guac_terminal_delta_set(term->delta, scrolled_row, col, guac_char);
+    /* Set display */
+    if (scrolled_row < term->display->height)
+        guac_terminal_display_set(term->display, scrolled_row, col, guac_char);
 
     return 0;
 
@@ -174,22 +174,22 @@ int guac_terminal_copy(guac_terminal* term,
     int scrolled_rows = rows;
 
     /* FIXME: If source (but not dest) is partially scrolled out of view, then
-     *        the delta will not be updated properly. We need to pull the data
+     *        the display will not be updated properly. We need to pull the data
      *        from the buffer in such a case.
      */
 
-    if (scrolled_src_row < term->delta->height &&
-            scrolled_dst_row < term->delta->height) {
+    if (scrolled_src_row < term->display->height &&
+            scrolled_dst_row < term->display->height) {
 
-        /* Adjust delta rect height if scrolled out of view */
-        if (scrolled_src_row + scrolled_rows > term->delta->height)
-            scrolled_rows = term->delta->height - scrolled_src_row;
+        /* Adjust display rect height if scrolled out of view */
+        if (scrolled_src_row + scrolled_rows > term->display->height)
+            scrolled_rows = term->display->height - scrolled_src_row;
 
-        if (scrolled_dst_row + scrolled_rows > term->delta->height)
-            scrolled_rows = term->delta->height - scrolled_dst_row;
+        if (scrolled_dst_row + scrolled_rows > term->display->height)
+            scrolled_rows = term->display->height - scrolled_dst_row;
 
-        /* Update delta */
-        guac_terminal_delta_copy(term->delta,
+        /* Update display */
+        guac_terminal_display_copy(term->display,
             scrolled_dst_row, dst_col,
             scrolled_src_row, src_col,
             cols, rows);
@@ -218,14 +218,14 @@ int guac_terminal_clear(guac_terminal* term,
     character.value = ' ';
     character.attributes = term->current_attributes;
 
-    if (scrolled_row < term->delta->height) {
+    if (scrolled_row < term->display->height) {
 
-        /* Adjust delta rect height if scrolled out of view */
-        if (scrolled_row + scrolled_rows > term->delta->height)
-            scrolled_rows = term->delta->height - scrolled_row;
+        /* Adjust display rect height if scrolled out of view */
+        if (scrolled_row + scrolled_rows > term->display->height)
+            scrolled_rows = term->display->height - scrolled_row;
 
         /* Fill with color */
-        guac_terminal_delta_set_rect(term->delta,
+        guac_terminal_display_set_rect(term->display,
             scrolled_row, col, cols, scrolled_rows, &character);
 
     }
@@ -324,11 +324,11 @@ int guac_terminal_clear_range(guac_terminal* term,
 }
 
 
-void guac_terminal_delta_set(guac_terminal_delta* delta, int r, int c,
+void guac_terminal_display_set(guac_terminal_display* display, int r, int c,
         guac_terminal_char* character) {
 
     /* Get operation at coordinate */
-    guac_terminal_operation* op = &(delta->operations[r*delta->width + c]);
+    guac_terminal_operation* op = &(display->operations[r*display->width + c]);
 
     /* Store operation */
     op->type = GUAC_CHAR_SET;
@@ -336,7 +336,7 @@ void guac_terminal_delta_set(guac_terminal_delta* delta, int r, int c,
 
 }
 
-void guac_terminal_delta_copy(guac_terminal_delta* delta,
+void guac_terminal_display_copy(guac_terminal_display* display,
         int dst_row, int dst_column,
         int src_row, int src_column,
         int w, int h) {
@@ -345,14 +345,14 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
 
     /* FIXME: Handle intersections between src and dst rects */
 
-    memcpy(delta->scratch, delta->operations, 
-            sizeof(guac_terminal_operation) * delta->width * delta->height);
+    memcpy(display->scratch, display->operations, 
+            sizeof(guac_terminal_operation) * display->width * display->height);
 
     guac_terminal_operation* current_row =
-        &(delta->operations[dst_row*delta->width + dst_column]);
+        &(display->operations[dst_row*display->width + dst_column]);
 
     guac_terminal_operation* src_current_row =
-        &(delta->scratch[src_row*delta->width + src_column]);
+        &(display->scratch[src_row*display->width + src_column]);
 
     /* Set rectangle to copy operations */
     for (row=0; row<h; row++) {
@@ -362,7 +362,7 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
 
         for (column=0; column<w; column++) {
 
-            /* If copying existing delta operation, just copy that rather
+            /* If copying existing display operation, just copy that rather
              * than create a new copy op */
             if (src_current->type != GUAC_CHAR_NOP)
                 *current = *src_current;
@@ -381,8 +381,8 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
         }
 
         /* Next row */
-        current_row += delta->width;
-        src_current_row += delta->width;
+        current_row += display->width;
+        src_current_row += display->width;
 
     }
 
@@ -390,12 +390,12 @@ void guac_terminal_delta_copy(guac_terminal_delta* delta,
 
 }
 
-void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
+void guac_terminal_display_set_rect(guac_terminal_display* display,
         int row, int column, int w, int h,
         guac_terminal_char* character) {
 
     guac_terminal_operation* current_row =
-        &(delta->operations[row*delta->width + column]);
+        &(display->operations[row*display->width + column]);
 
     /* Set rectangle contents to given character */
     for (row=0; row<h; row++) {
@@ -414,7 +414,7 @@ void guac_terminal_delta_set_rect(guac_terminal_delta* delta,
         }
 
         /* Next row */
-        current_row += delta->width;
+        current_row += display->width;
 
     }
 
@@ -494,7 +494,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
     /* Shift screen up */
     if (terminal->term_height > scroll_amount)
-        guac_terminal_delta_copy(terminal->delta,
+        guac_terminal_display_copy(terminal->display,
                 0,             0, /* Destination row, col */
                 scroll_amount, 0, /* source row,col */
                 terminal->term_width, terminal->term_height - scroll_amount);
@@ -514,7 +514,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
         guac_terminal_char* current = guac_terminal_get_row(terminal, row, &length);
 
         for (column=0; column<length; column++)
-            guac_terminal_delta_set(terminal->delta, dest_row, column,
+            guac_terminal_display_set(terminal->display, dest_row, column,
                     current++);
 
         /* Next row */
@@ -523,7 +523,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
     }
 
     /* FIXME: Should flush somewhere more sensible */
-    guac_terminal_delta_flush(terminal->delta, terminal);
+    guac_terminal_display_flush(terminal->display, terminal);
     guac_socket_flush(terminal->client->socket);
 
 }
@@ -546,7 +546,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
     /* Shift screen down */
     if (terminal->term_height > scroll_amount)
-        guac_terminal_delta_copy(terminal->delta,
+        guac_terminal_display_copy(terminal->display,
                 scroll_amount, 0, /* Destination row,col */
                 0,             0, /* Source row, col */
                 terminal->term_width, terminal->term_height - scroll_amount);
@@ -570,7 +570,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
         /* FIXME: Clear row first */
         guac_terminal_char* current = scrollback_row->characters;
         for (column=0; column<scrollback_row->length; column++)
-            guac_terminal_delta_set(terminal->delta, dest_row, column,
+            guac_terminal_display_set(terminal->display, dest_row, column,
                     current++);
 
         /* Next row */
@@ -579,7 +579,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
     }
 
     /* FIXME: Should flush somewhere more sensible */
-    guac_terminal_delta_flush(terminal->delta, terminal);
+    guac_terminal_display_flush(terminal->display, terminal);
     guac_socket_flush(terminal->client->socket);
 
 }
@@ -610,14 +610,14 @@ void guac_terminal_select_start(guac_terminal* terminal, int row, int column) {
 
     /* Get char and operation */
     guac_char = &(terminal->buffer->characters[terminal->buffer->width * row + column]);
-    guac_operation = &(terminal->delta->operations[terminal->delta->width * row + column]);
+    guac_operation = &(terminal->display->operations[terminal->display->width * row + column]);
 
     /* Set character as selected */
     guac_char->attributes.selected = true;
     guac_operation->type = GUAC_CHAR_SET;
     guac_operation->character = *guac_char;
 
-    guac_terminal_delta_flush(terminal->delta, terminal);
+    guac_terminal_display_flush(terminal->display, terminal);
     guac_socket_flush(terminal->client->socket);
 
 }
@@ -676,7 +676,7 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
 
     /* Get first character */
     guac_char = &(terminal->buffer->characters[search_index_a]);
-    guac_operation = &(terminal->delta->operations[search_index_a]);
+    guac_operation = &(terminal->display->operations[search_index_a]);
 
     /* Invert modified area */
     for (i=search_index_a; i<=search_index_b; i++) {
@@ -710,7 +710,7 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
     terminal->selection_end_row = row;
     terminal->selection_end_column = column;
 
-    guac_terminal_delta_flush(terminal->delta, terminal);
+    guac_terminal_display_flush(terminal->display, terminal);
     guac_socket_flush(terminal->client->socket);
 
 }
@@ -743,7 +743,7 @@ void guac_terminal_select_end(guac_terminal* terminal) {
 
     /* Get first character */
     guac_char = &(terminal->buffer->characters[start_index]);
-    guac_operation = &(terminal->delta->operations[start_index]);
+    guac_operation = &(terminal->display->operations[start_index]);
 
     /* Restore state from buffer */
     for (i=start_index; i<=end_index; i++) {
@@ -761,7 +761,7 @@ void guac_terminal_select_end(guac_terminal* terminal) {
 
     terminal->text_selected = false;
 
-    guac_terminal_delta_flush(terminal->delta, terminal);
+    guac_terminal_display_flush(terminal->display, terminal);
     guac_socket_flush(terminal->client->socket);
 
 }

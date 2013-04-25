@@ -35,8 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _SSH_GUAC_DELTA_H
-#define _SSH_GUAC_DELTA_H
+#ifndef _SSH_GUAC_DISPLAY_H
+#define _SSH_GUAC_DISPLAY_H
 
 #include <pango/pangocairo.h>
 #include <guacamole/client.h>
@@ -105,10 +105,10 @@ typedef struct guac_terminal_operation {
 /**
  * Set of all pending operations for the currently-visible screen area.
  */
-typedef struct guac_terminal_delta {
+typedef struct guac_terminal_display {
 
     /**
-     * The Guacamole client this delta will use for rendering.
+     * The Guacamole client this display will use for rendering.
      */
     guac_client* client;
 
@@ -180,49 +180,49 @@ typedef struct guac_terminal_delta {
      */
     guac_layer* filled_glyphs;
 
-} guac_terminal_delta;
+} guac_terminal_display;
 
 /**
- * Allocates a new delta having the given dimensions.
+ * Allocates a new display having the given dimensions.
  */
-guac_terminal_delta* guac_terminal_delta_alloc(guac_client* client, int width, int height,
+guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int width, int height,
         int foreground, int background);
 
 /**
- * Frees the given delta.
+ * Frees the given display.
  */
-void guac_terminal_delta_free(guac_terminal_delta* delta);
+void guac_terminal_display_free(guac_terminal_display* display);
 
 /**
  * Copies the given range of columns to a new location, offset from
  * the original by the given number of columns.
  */
-void guac_terminal_delta_copy_columns(guac_terminal_delta* delta, int row,
+void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, int offset);
 
 /**
  * Copies the given range of rows to a new location, offset from the
  * original by the given number of rows.
  */
-void guac_terminal_delta_copy_rows(guac_terminal_delta* delta, int src_row, int rows,
+void guac_terminal_display_copy_rows(guac_terminal_display* display, int src_row, int rows,
         int start_row, int end_row, int offset);
 
 /**
  * Sets the given range of columns within the given row to the given
  * character.
  */
-void guac_terminal_delta_set_columns(guac_terminal_delta* delta, int row,
+void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, guac_terminal_char* character);
 
 /**
  * Resize the terminal to the given dimensions.
  */
-void guac_terminal_delta_resize(guac_terminal_delta* delta, int rows, int cols);
+void guac_terminal_display_resize(guac_terminal_display* display, int rows, int cols);
 
 /**
- * Flushes all pending operations within the given guac_terminal_delta.
+ * Flushes all pending operations within the given guac_terminal_display.
  */
-void guac_terminal_delta_flush(guac_terminal_delta* delta);
+void guac_terminal_display_flush(guac_terminal_display* display);
 
 #endif
 

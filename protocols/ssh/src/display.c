@@ -41,7 +41,7 @@
 #include <guacamole/protocol.h>
 
 #include "types.h"
-#include "delta.h"
+#include "display.h"
 
 const guac_terminal_color guac_terminal_palette[16] = {
 
@@ -73,18 +73,18 @@ const guac_terminal_color guac_terminal_palette[16] = {
  * and thus must be multiplied by the glyph width to obtain the actual
  * location within the glyph cache layer.
  */
-int __guac_terminal_get_glyph(guac_terminal_delta* delta, char c) {
+int __guac_terminal_get_glyph(guac_terminal_display* display, char c) {
 
-    guac_socket* socket = delta->client->socket;
+    guac_socket* socket = display->client->socket;
     int location;
     
     /* Use foreground color */
     const guac_terminal_color* color =
-        &guac_terminal_palette[delta->glyph_foreground];
+        &guac_terminal_palette[display->glyph_foreground];
 
     /* Use background color */
     const guac_terminal_color* background =
-        &guac_terminal_palette[delta->glyph_background];
+        &guac_terminal_palette[display->glyph_background];
 
     cairo_surface_t* surface;
     cairo_t* cairo;
@@ -92,20 +92,20 @@ int __guac_terminal_get_glyph(guac_terminal_delta* delta, char c) {
     PangoLayout* layout;
 
     /* Return glyph if exists */
-    if (delta->glyphs[(int) c])
-        return delta->glyphs[(int) c] - 1;
+    if (display->glyphs[(int) c])
+        return display->glyphs[(int) c] - 1;
 
-    location = delta->next_glyph++;
+    location = display->next_glyph++;
 
     /* Otherwise, draw glyph */
     surface = cairo_image_surface_create(
             CAIRO_FORMAT_ARGB32,
-            delta->char_width, delta->char_height);
+            display->char_width, display->char_height);
     cairo = cairo_create(surface);
 
     /* Get layout */
     layout = pango_cairo_create_layout(cairo);
-    pango_layout_set_font_description(layout, delta->font_desc);
+    pango_layout_set_font_description(layout, display->font_desc);
     pango_layout_set_text(layout, &c, 1);
 
     /* Draw */
@@ -123,23 +123,23 @@ int __guac_terminal_get_glyph(guac_terminal_delta* delta, char c) {
     cairo_destroy(cairo);
 
     /* Send glyph and update filled flyphs */
-    guac_protocol_send_png(socket, GUAC_COMP_OVER, delta->glyph_stroke, location * delta->char_width, 0, surface);
+    guac_protocol_send_png(socket, GUAC_COMP_OVER, display->glyph_stroke, location * display->char_width, 0, surface);
 
-    guac_protocol_send_rect(socket, delta->filled_glyphs,
-            location * delta->char_width, 0,
-            delta->char_width, delta->char_height);
+    guac_protocol_send_rect(socket, display->filled_glyphs,
+            location * display->char_width, 0,
+            display->char_width, display->char_height);
 
-    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, delta->filled_glyphs,
+    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, display->filled_glyphs,
             background->red,
             background->green,
             background->blue,
             0xFF);
 
-    guac_protocol_send_copy(socket, delta->glyph_stroke,
-            location * delta->char_width, 0, delta->char_width, delta->char_height,
-            GUAC_COMP_OVER, delta->filled_glyphs, location * delta->char_width, 0);
+    guac_protocol_send_copy(socket, display->glyph_stroke,
+            location * display->char_width, 0, display->char_width, display->char_height,
+            GUAC_COMP_OVER, display->filled_glyphs, location * display->char_width, 0);
 
-    delta->glyphs[(int) c] = location+1;
+    display->glyphs[(int) c] = location+1;
 
     cairo_surface_destroy(surface);
 
@@ -152,10 +152,10 @@ int __guac_terminal_get_glyph(guac_terminal_delta* delta, char c) {
  * Sets the attributes of the glyph cache layer such that future copies from
  * this layer will display as expected.
  */
-int __guac_terminal_set_colors(guac_terminal_delta* delta,
+int __guac_terminal_set_colors(guac_terminal_display* display,
         guac_terminal_attributes* attributes) {
 
-    guac_socket* socket = delta->client->socket;
+    guac_socket* socket = display->client->socket;
     const guac_terminal_color* background_color;
     int background, foreground;
 
@@ -177,18 +177,18 @@ int __guac_terminal_set_colors(guac_terminal_delta* delta,
     background_color = &guac_terminal_palette[background];
 
     /* If foreground different from current, colorize */
-    if (foreground != delta->glyph_foreground) {
+    if (foreground != display->glyph_foreground) {
 
         /* Get color */
         const guac_terminal_color* color =
             &guac_terminal_palette[foreground];
 
         /* Colorize letter */
-        guac_protocol_send_rect(socket, delta->glyph_stroke,
+        guac_protocol_send_rect(socket, display->glyph_stroke,
             0, 0,
-            delta->char_width * delta->next_glyph, delta->char_height);
+            display->char_width * display->next_glyph, display->char_height);
 
-        guac_protocol_send_cfill(socket, GUAC_COMP_ATOP, delta->glyph_stroke,
+        guac_protocol_send_cfill(socket, GUAC_COMP_ATOP, display->glyph_stroke,
             color->red,
             color->green,
             color->blue,
@@ -197,33 +197,33 @@ int __guac_terminal_set_colors(guac_terminal_delta* delta,
     }
 
     /* If any color change at all, update filled */
-    if (foreground != delta->glyph_foreground
-            || background != delta->glyph_background) {
+    if (foreground != display->glyph_foreground
+            || background != display->glyph_background) {
 
         /* Set background */
-        guac_protocol_send_rect(socket, delta->filled_glyphs,
+        guac_protocol_send_rect(socket, display->filled_glyphs,
             0, 0,
-            delta->char_width * delta->next_glyph, delta->char_height);
+            display->char_width * display->next_glyph, display->char_height);
 
-        guac_protocol_send_cfill(socket, GUAC_COMP_OVER, delta->filled_glyphs,
+        guac_protocol_send_cfill(socket, GUAC_COMP_OVER, display->filled_glyphs,
             background_color->red,
             background_color->green,
             background_color->blue,
             255);
 
         /* Copy stroke */
-        guac_protocol_send_copy(socket, delta->glyph_stroke,
+        guac_protocol_send_copy(socket, display->glyph_stroke,
 
             0, 0,
-            delta->char_width * delta->next_glyph, delta->char_height,
+            display->char_width * display->next_glyph, display->char_height,
 
-            GUAC_COMP_OVER, delta->filled_glyphs,
+            GUAC_COMP_OVER, display->filled_glyphs,
             0, 0);
 
     }
 
-    delta->glyph_foreground = foreground;
-    delta->glyph_background = background;
+    display->glyph_foreground = foreground;
+    display->glyph_background = background;
 
     return 0;
 
@@ -231,25 +231,25 @@ int __guac_terminal_set_colors(guac_terminal_delta* delta,
 
 /**
  * Sends the given character to the terminal at the given row and column,
- * rendering the charater immediately. This bypasses the guac_terminal_delta
+ * rendering the charater immediately. This bypasses the guac_terminal_display
  * mechanism and is intended for flushing of updates only.
  */
-int __guac_terminal_set(guac_terminal_delta* delta, int row, int col, char c) {
+int __guac_terminal_set(guac_terminal_display* display, int row, int col, char c) {
 
-    guac_socket* socket = delta->client->socket;
-    int location = __guac_terminal_get_glyph(delta, c); 
+    guac_socket* socket = display->client->socket;
+    int location = __guac_terminal_get_glyph(display, c); 
 
     return guac_protocol_send_copy(socket,
-        delta->filled_glyphs,
-        location * delta->char_width, 0, delta->char_width, delta->char_height,
+        display->filled_glyphs,
+        location * display->char_width, 0, display->char_width, display->char_height,
         GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
-        delta->char_width * col,
-        delta->char_height * row);
+        display->char_width * col,
+        display->char_height * row);
 
 }
 
 
-guac_terminal_delta* guac_terminal_delta_alloc(guac_client* client, int width, int height,
+guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int width, int height,
         int foreground, int background) {
 
     guac_terminal_operation* current;
@@ -260,55 +260,55 @@ guac_terminal_delta* guac_terminal_delta_alloc(guac_client* client, int width, i
     PangoFontMetrics* metrics;
     PangoContext* context;
 
-    /* Allocate delta */
-    guac_terminal_delta* delta = malloc(sizeof(guac_terminal_delta));
-    delta->client = client;
+    /* Allocate display */
+    guac_terminal_display* display = malloc(sizeof(guac_terminal_display));
+    display->client = client;
 
-    memset(delta->glyphs, 0, sizeof(delta->glyphs));
-    delta->glyph_stroke = guac_client_alloc_buffer(client);
-    delta->filled_glyphs = guac_client_alloc_buffer(client);
+    memset(display->glyphs, 0, sizeof(display->glyphs));
+    display->glyph_stroke = guac_client_alloc_buffer(client);
+    display->filled_glyphs = guac_client_alloc_buffer(client);
 
     /* Get font */
-    delta->font_desc = pango_font_description_new();
-    pango_font_description_set_family(delta->font_desc, "monospace");
-    pango_font_description_set_weight(delta->font_desc, PANGO_WEIGHT_NORMAL);
-    pango_font_description_set_size(delta->font_desc, 12*PANGO_SCALE);
+    display->font_desc = pango_font_description_new();
+    pango_font_description_set_family(display->font_desc, "monospace");
+    pango_font_description_set_weight(display->font_desc, PANGO_WEIGHT_NORMAL);
+    pango_font_description_set_size(display->font_desc, 12*PANGO_SCALE);
 
     font_map = pango_cairo_font_map_get_default();
     context = pango_font_map_create_context(font_map);
 
-    font = pango_font_map_load_font(font_map, context, delta->font_desc);
+    font = pango_font_map_load_font(font_map, context, display->font_desc);
     if (font == NULL) {
-        guac_client_log_error(delta->client, "Unable to get font.");
+        guac_client_log_error(display->client, "Unable to get font.");
         return NULL;
     }
 
     metrics = pango_font_get_metrics(font, NULL);
     if (metrics == NULL) {
-        guac_client_log_error(delta->client, "Unable to get font metrics.");
+        guac_client_log_error(display->client, "Unable to get font metrics.");
         return NULL;
     }
 
-    delta->glyph_foreground = foreground;
-    delta->glyph_background = background;
+    display->glyph_foreground = foreground;
+    display->glyph_background = background;
 
     /* Calculate character dimensions */
-    delta->char_width =
+    display->char_width =
         pango_font_metrics_get_approximate_digit_width(metrics) / PANGO_SCALE;
-    delta->char_height =
+    display->char_height =
         (pango_font_metrics_get_descent(metrics)
             + pango_font_metrics_get_ascent(metrics)) / PANGO_SCALE;
 
     /* Set width and height */
-    delta->width = width;
-    delta->height = height;
+    display->width = width;
+    display->height = height;
 
     /* Alloc operations */
-    delta->operations = malloc(width * height *
+    display->operations = malloc(width * height *
             sizeof(guac_terminal_operation));
 
     /* Init each operation buffer row */
-    current = delta->operations;
+    current = display->operations;
     for (y=0; y<height; y++) {
 
         /* Init entire row to NOP */
@@ -318,56 +318,56 @@ guac_terminal_delta* guac_terminal_delta_alloc(guac_client* client, int width, i
     }
 
     /* Alloc scratch area */
-    delta->scratch = malloc(width * height * sizeof(guac_terminal_operation));
+    display->scratch = malloc(width * height * sizeof(guac_terminal_operation));
 
     /* Send initial display size */
     guac_protocol_send_size(client->socket,
             GUAC_DEFAULT_LAYER,
-            delta->char_width  * width,
-            delta->char_height * height);
+            display->char_width  * width,
+            display->char_height * height);
 
-    return delta;
+    return display;
 
 }
 
-void guac_terminal_delta_free(guac_terminal_delta* delta) {
+void guac_terminal_display_free(guac_terminal_display* display) {
 
     /* Free operations buffers */
-    free(delta->operations);
-    free(delta->scratch);
+    free(display->operations);
+    free(display->scratch);
 
-    /* Free delta */
-    free(delta);
+    /* Free display */
+    free(display);
 
 }
 
-void guac_terminal_delta_copy_columns(guac_terminal_delta* delta, int row,
+void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, int offset) {
     /* STUB */
 }
 
-void guac_terminal_delta_copy_rows(guac_terminal_delta* delta, int src_row, int rows,
+void guac_terminal_display_copy_rows(guac_terminal_display* display, int src_row, int rows,
         int start_row, int end_row, int offset) {
     /* STUB */
 }
 
-void guac_terminal_delta_set_columns(guac_terminal_delta* delta, int row,
+void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, guac_terminal_char* character) {
     /* STUB */
 }
 
-void guac_terminal_delta_resize(guac_terminal_delta* delta, int rows, int cols) {
+void guac_terminal_display_resize(guac_terminal_display* display, int rows, int cols) {
     /* STUB */
 }
 
-void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta) {
+void __guac_terminal_display_flush_copy(guac_terminal_display* display) {
 
-    guac_terminal_operation* current = delta->operations;
+    guac_terminal_operation* current = display->operations;
     int row, col;
 
     /* For each operation */
-    for (row=0; row<delta->height; row++) {
-        for (col=0; col<delta->width; col++) {
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
 
             /* If operation is a copy operation */
             if (current->type == GUAC_CHAR_COPY) {
@@ -393,13 +393,13 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta) {
                 /* Determine bounds of rectangle */
                 rect_current_row = current;
                 expected_row = current->row;
-                for (rect_row=row; rect_row<delta->height; rect_row++) {
+                for (rect_row=row; rect_row<display->height; rect_row++) {
 
                     guac_terminal_operation* rect_current = rect_current_row;
                     expected_col = current->column;
 
                     /* Find width */
-                    for (rect_col=col; rect_col<delta->width; rect_col++) {
+                    for (rect_col=col; rect_col<display->width; rect_col++) {
 
                         /* If not identical operation, stop */
                         if (rect_current->type != GUAC_CHAR_COPY
@@ -425,7 +425,7 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta) {
                         detected_right = rect_col - 1;
 
                     /* Next row */
-                    rect_current_row += delta->width;
+                    rect_current_row += display->width;
                     expected_row++;
 
                 }
@@ -457,24 +457,24 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta) {
                     }
 
                     /* Next row */
-                    rect_current_row += delta->width;
+                    rect_current_row += display->width;
                     expected_row++;
 
                 }
 
                 /* Send copy */
-                guac_protocol_send_copy(delta->client->socket,
+                guac_protocol_send_copy(display->client->socket,
 
                         GUAC_DEFAULT_LAYER,
-                        current->column * delta->char_width,
-                        current->row * delta->char_height,
-                        rect_width * delta->char_width,
-                        rect_height * delta->char_height,
+                        current->column * display->char_width,
+                        current->row * display->char_height,
+                        rect_width * display->char_width,
+                        rect_height * display->char_height,
 
                         GUAC_COMP_OVER,
                         GUAC_DEFAULT_LAYER,
-                        col * delta->char_width,
-                        row * delta->char_height);
+                        col * display->char_width,
+                        row * display->char_height);
 
             } /* end if copy operation */
 
@@ -486,14 +486,14 @@ void __guac_terminal_delta_flush_copy(guac_terminal_delta* delta) {
 
 }
 
-void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta) {
+void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
 
-    guac_terminal_operation* current = delta->operations;
+    guac_terminal_operation* current = display->operations;
     int row, col;
 
     /* For each operation */
-    for (row=0; row<delta->height; row++) {
-        for (col=0; col<delta->width; col++) {
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
 
             /* If operation is a cler operation (set to space) */
             if (current->type == GUAC_CHAR_SET &&
@@ -525,12 +525,12 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta) {
 
                 /* Determine bounds of rectangle */
                 rect_current_row = current;
-                for (rect_row=row; rect_row<delta->height; rect_row++) {
+                for (rect_row=row; rect_row<display->height; rect_row++) {
 
                     guac_terminal_operation* rect_current = rect_current_row;
 
                     /* Find width */
-                    for (rect_col=col; rect_col<delta->width; rect_col++) {
+                    for (rect_col=col; rect_col<display->width; rect_col++) {
 
                         int joining_color;
                         if (rect_current->character.attributes.reverse)
@@ -561,7 +561,7 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta) {
                         detected_right = rect_col - 1;
 
                     /* Next row */
-                    rect_current_row += delta->width;
+                    rect_current_row += display->width;
 
                 }
 
@@ -595,19 +595,19 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta) {
                     }
 
                     /* Next row */
-                    rect_current_row += delta->width;
+                    rect_current_row += display->width;
 
                 }
 
                 /* Send rect */
-                guac_protocol_send_rect(delta->client->socket,
+                guac_protocol_send_rect(display->client->socket,
                         GUAC_DEFAULT_LAYER,
-                        col * delta->char_width,
-                        row * delta->char_height,
-                        rect_width * delta->char_width,
-                        rect_height * delta->char_height);
+                        col * display->char_width,
+                        row * display->char_height,
+                        rect_width * display->char_width,
+                        rect_height * display->char_height);
 
-                guac_protocol_send_cfill(delta->client->socket,
+                guac_protocol_send_cfill(display->client->socket,
                         GUAC_COMP_OVER,
                         GUAC_DEFAULT_LAYER,
                         guac_color->red, guac_color->green, guac_color->blue,
@@ -623,24 +623,24 @@ void __guac_terminal_delta_flush_clear(guac_terminal_delta* delta) {
 
 }
 
-void __guac_terminal_delta_flush_set(guac_terminal_delta* delta) {
+void __guac_terminal_display_flush_set(guac_terminal_display* display) {
 
-    guac_terminal_operation* current = delta->operations;
+    guac_terminal_operation* current = display->operations;
     int row, col;
 
     /* For each operation */
-    for (row=0; row<delta->height; row++) {
-        for (col=0; col<delta->width; col++) {
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
 
             /* Perform given operation */
             if (current->type == GUAC_CHAR_SET) {
 
                 /* Set attributes */
-                __guac_terminal_set_colors(delta,
+                __guac_terminal_set_colors(display,
                         &(current->character.attributes));
 
                 /* Send character */
-                __guac_terminal_set(delta, row, col,
+                __guac_terminal_set(display, row, col,
                         current->character.value);
 
                 /* Mark operation as handled */
@@ -656,12 +656,12 @@ void __guac_terminal_delta_flush_set(guac_terminal_delta* delta) {
 
 }
 
-void guac_terminal_delta_flush(guac_terminal_delta* delta) {
+void guac_terminal_display_flush(guac_terminal_display* display) {
 
     /* Flush operations, copies first, then clears, then sets. */
-    __guac_terminal_delta_flush_copy(delta);
-    __guac_terminal_delta_flush_clear(delta);
-    __guac_terminal_delta_flush_set(delta);
+    __guac_terminal_display_flush_copy(display);
+    __guac_terminal_display_flush_clear(display);
+    __guac_terminal_display_flush_set(display);
 
 }
 
