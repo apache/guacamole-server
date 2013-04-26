@@ -317,9 +317,6 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int widt
 
     }
 
-    /* Alloc scratch area */
-    display->scratch = malloc(width * height * sizeof(guac_terminal_operation));
-
     /* Send initial display size */
     guac_protocol_send_size(client->socket,
             GUAC_DEFAULT_LAYER,
@@ -334,7 +331,6 @@ void guac_terminal_display_free(guac_terminal_display* display) {
 
     /* Free operations buffers */
     free(display->operations);
-    free(display->scratch);
 
     /* Free display */
     free(display);
@@ -343,18 +339,73 @@ void guac_terminal_display_free(guac_terminal_display* display) {
 
 void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, int offset) {
-    /* STUB */
-    guac_client_log_info(display->client,
-            "display_copy_columns: row=%i, start=%i, end=%i, offset=%i",
-            row, start_column, end_column, offset);
+
+    int i;
+    guac_terminal_operation* src_current =
+        &(display->operations[row * display->width + start_column]);
+
+    guac_terminal_operation* current =
+        &(display->operations[row * display->width + start_column + offset]);
+
+    /* Move data */
+    memmove(current, src_current,
+        (end_column - start_column + 1) * sizeof(guac_terminal_operation));
+
+    /* Update operations */
+    for (i=start_column; i<=end_column; i++) {
+
+        /* If no operation here, set as copy */
+        if (current->type == GUAC_CHAR_NOP) {
+            current->type = GUAC_CHAR_COPY;
+            current->row = row;
+            current->column = i;
+        }
+
+        /* Next column */
+        current++;
+
+    }
+
 }
 
 void guac_terminal_display_copy_rows(guac_terminal_display* display,
         int start_row, int end_row, int offset) {
-    /* STUB */
-    guac_client_log_info(display->client,
-            "display_copy_rows: start=%i, end=%i, offset=%i",
-            start_row, end_row, offset);
+
+    int row, col;
+
+    guac_terminal_operation* src_current_row =
+        &(display->operations[start_row * display->width]);
+
+    guac_terminal_operation* current_row =
+        &(display->operations[(start_row + offset) * display->width]);
+
+    /* Move data */
+    memmove(current_row, src_current_row,
+        (end_row - start_row + 1) * sizeof(guac_terminal_operation) * display->width);
+
+    /* Update operations */
+    for (row=start_row; row<=end_row; row++) {
+
+        guac_terminal_operation* current = current_row;
+        for (col=0; col<display->width; col++) {
+
+            /* If no operation here, set as copy */
+            if (current->type == GUAC_CHAR_NOP) {
+                current->type = GUAC_CHAR_COPY;
+                current->row = row;
+                current->column = col;
+            }
+
+            /* Next column */
+            current++;
+
+        }
+
+        /* Next row */
+        current_row += display->width;
+
+    }
+
 }
 
 void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
