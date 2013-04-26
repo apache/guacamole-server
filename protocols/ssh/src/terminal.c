@@ -86,8 +86,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->cursor_row = 0;
     term->cursor_col = 0;
 
-    term->term_width   = width  / term->display->char_width;
-    term->term_height  = height / term->display->char_height;
+    term->term_width   = 80; /*width  / term->display->char_width;*/
+    term->term_height  = 24; /*height / term->display->char_height;*/
     term->char_handler = guac_terminal_echo; 
 
     term->scroll_start = 0;
@@ -158,7 +158,15 @@ int guac_terminal_write(guac_terminal* term, const char* c, int size) {
 
 int guac_terminal_scroll_up(guac_terminal* term,
         int start_row, int end_row, int amount) {
-    /* STUB */
+
+    /* Copy row data upwards */
+    guac_terminal_copy_rows(term, start_row + amount, end_row, -amount);
+
+    /* Clear new area */
+    guac_terminal_clear_range(term,
+            end_row - amount + 1, 0,
+            end_row, term->term_width - 1);
+
     return 0;
 }
 
@@ -244,10 +252,9 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
     /* Shift screen up */
     if (terminal->term_height > scroll_amount)
-        guac_terminal_display_copy(terminal->display,
-                0,             0, /* Destination row, col */
-                scroll_amount, 0, /* source row,col */
-                terminal->term_width, terminal->term_height - scroll_amount);
+        guac_terminal_display_copy_rows(terminal->display,
+                scroll_amount, terminal->term_height - 1,
+                -scroll_amount);
 
     /* Advance by scroll amount */
     terminal->scroll_offset -= scroll_amount;
@@ -268,8 +275,8 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
         /* FIXME: Clear row first */
         guac_terminal_char* current = buffer_row->characters;
         for (column=0; column<buffer_row->length; column++)
-            guac_terminal_display_set(terminal->display, dest_row, column,
-                    current++);
+            guac_terminal_display_set_columns(terminal->display,
+                    dest_row, column, column, current++);
 
         /* Next row */
         dest_row++;
@@ -300,10 +307,9 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
     /* Shift screen down */
     if (terminal->term_height > scroll_amount)
-        guac_terminal_display_copy(terminal->display,
-                scroll_amount, 0, /* Destination row,col */
-                0,             0, /* Source row, col */
-                terminal->term_width, terminal->term_height - scroll_amount);
+        guac_terminal_display_copy_rows(terminal->display,
+                0, terminal->term_height - scroll_amount - 1,
+                scroll_amount);
 
     /* Advance by scroll amount */
     terminal->scroll_offset += scroll_amount;
@@ -324,8 +330,8 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
         /* FIXME: Clear row first */
         guac_terminal_char* current = buffer_row->characters;
         for (column=0; column<buffer_row->length; column++)
-            guac_terminal_display_set(terminal->display, dest_row, column,
-                    current++);
+            guac_terminal_display_set_columns(terminal->display,
+                    dest_row, column, column, current++);
 
         /* Next row */
         dest_row++;
@@ -353,17 +359,25 @@ void guac_terminal_select_end(guac_terminal* terminal) {
 void guac_terminal_copy_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, int offset) {
     /* STUB */
-    guac_client_log_info(terminal->client,
-            "terminal_copy_columns: row=%i, start=%i, end=%i, offset=%i",
-            row, start_column, end_column, offset);
+
+    guac_terminal_display_copy_columns(terminal->display, row,
+            start_column, end_column, offset);
+
+    guac_terminal_buffer_copy_columns(terminal->buffer, row,
+            start_column, end_column, offset);
+
 }
 
 void guac_terminal_copy_rows(guac_terminal* terminal,
         int start_row, int end_row, int offset) {
     /* STUB */
-    guac_client_log_info(terminal->client,
-            "terminal_copy_rows: start=%i, end=%i, offset=%i",
+
+    guac_terminal_display_copy_rows(terminal->display,
             start_row, end_row, offset);
+
+    guac_terminal_buffer_copy_rows(terminal->buffer,
+            start_row, end_row, offset);
+
 }
 
 void guac_terminal_set_columns(guac_terminal* terminal, int row,
