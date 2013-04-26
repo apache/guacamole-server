@@ -75,7 +75,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Init display */
     term->display = guac_terminal_display_alloc(client,
-            80, 24, /*term->term_width, term->term_height,*/
             default_char.attributes.foreground,
             default_char.attributes.background);
 
@@ -86,14 +85,18 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->cursor_row = 0;
     term->cursor_col = 0;
 
-    term->term_width   = 80; /*width  / term->display->char_width;*/
-    term->term_height  = 24; /*height / term->display->char_height;*/
+    term->term_width   = width  / term->display->char_width;
+    term->term_height  = height / term->display->char_height;
     term->char_handler = guac_terminal_echo; 
 
     term->scroll_start = 0;
     term->scroll_end = term->term_height - 1;
 
     term->text_selected = false;
+
+    /* Size display */
+    guac_terminal_display_resize(term->display,
+            term->term_width, term->term_height);
 
     /* Init terminal lock */
     pthread_mutex_init(&(term->lock), NULL);

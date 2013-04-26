@@ -249,11 +249,7 @@ int __guac_terminal_set(guac_terminal_display* display, int row, int col, char c
 }
 
 
-guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int width, int height,
-        int foreground, int background) {
-
-    guac_terminal_operation* current;
-    int x, y;
+guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int foreground, int background) {
 
     PangoFontMap* font_map;
     PangoFont* font;
@@ -299,29 +295,10 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int widt
         (pango_font_metrics_get_descent(metrics)
             + pango_font_metrics_get_ascent(metrics)) / PANGO_SCALE;
 
-    /* Set width and height */
-    display->width = width;
-    display->height = height;
-
-    /* Alloc operations */
-    display->operations = malloc(width * height *
-            sizeof(guac_terminal_operation));
-
-    /* Init each operation buffer row */
-    current = display->operations;
-    for (y=0; y<height; y++) {
-
-        /* Init entire row to NOP */
-        for (x=0; x<width; x++)
-            (current++)->type = GUAC_CHAR_NOP;
-
-    }
-
-    /* Send initial display size */
-    guac_protocol_send_size(client->socket,
-            GUAC_DEFAULT_LAYER,
-            display->char_width  * width,
-            display->char_height * height);
+    /* Initially empty */
+    display->width = 0;
+    display->height = 0;
+    display->operations = NULL;
 
     return display;
 
@@ -428,8 +405,41 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
 
 }
 
-void guac_terminal_display_resize(guac_terminal_display* display, int rows, int cols) {
-    /* STUB */
+void guac_terminal_display_resize(guac_terminal_display* display, int width, int height) {
+
+    guac_terminal_operation* current;
+    int x, y;
+
+    /* Set width and height */
+    display->width = width;
+    display->height = height;
+
+    /* Free old operations buffer */
+    if (display->operations != NULL)
+        free(display->operations);
+
+    /* Alloc operations */
+    display->operations = malloc(width * height *
+            sizeof(guac_terminal_operation));
+
+    /* Init each operation buffer row */
+    current = display->operations;
+    for (y=0; y<height; y++) {
+
+        /* Init entire row to NOP */
+        for (x=0; x<width; x++)
+            (current++)->type = GUAC_CHAR_NOP;
+
+    }
+
+    /* Send initial display size */
+    guac_protocol_send_size(display->client->socket,
+            GUAC_DEFAULT_LAYER,
+            display->char_width  * width,
+            display->char_height * height);
+
+
+
 }
 
 void __guac_terminal_display_flush_copy(guac_terminal_display* display) {

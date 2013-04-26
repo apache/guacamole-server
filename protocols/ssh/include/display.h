@@ -177,10 +177,10 @@ typedef struct guac_terminal_display {
 } guac_terminal_display;
 
 /**
- * Allocates a new display having the given dimensions.
+ * Allocates a new display having the given default foreground and background
+ * colors.
  */
-guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int width, int height,
-        int foreground, int background);
+guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int foreground, int background);
 
 /**
  * Frees the given display.
@@ -211,7 +211,7 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
 /**
  * Resize the terminal to the given dimensions.
  */
-void guac_terminal_display_resize(guac_terminal_display* display, int rows, int cols);
+void guac_terminal_display_resize(guac_terminal_display* display, int width, int height);
 
 /**
  * Flushes all pending operations within the given guac_terminal_display.

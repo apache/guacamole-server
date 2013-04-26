@@ -278,7 +278,7 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
 /**
  * Resize the terminal to the given dimensions.
  */
-void guac_terminal_resize(guac_terminal* term, int rows, int cols);
+void guac_terminal_resize(guac_terminal* term, int width, int height);
 
 /**
  * Flushes all pending operations within the given guac_terminal.
