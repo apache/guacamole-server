@@ -118,10 +118,11 @@ struct guac_terminal {
     guac_terminal_attributes current_attributes;
 
     /**
-     * The attributes which will be applied to characters by default, unless
-     * other attributes are explicitly specified.
+     * The character whose attributes dictate the default attributes
+     * of all characters. When new screen space is allocated, this
+     * character fills the gaps.
      */
-    guac_terminal_attributes default_attributes;
+    guac_terminal_char default_char;
 
     /**
      * Handler which will receive all printed characters, updating the terminal
@@ -192,11 +193,10 @@ int guac_terminal_write(guac_terminal* term, const char* c, int size);
 int guac_terminal_set(guac_terminal* term, int row, int col, char c);
 
 /**
- * Clears a rectangular region of characters, replacing them with the
- * current background color and attributes.
+ * Clears the given region within a single row.
  */
-int guac_terminal_clear(guac_terminal* term,
-        int row, int col, int rows, int cols);
+int guac_terminal_clear_columns(guac_terminal* term,
+        int row, int start_col, int end_col);
 
 /**
  * Clears the given region from right-to-left, top-to-bottom, replacing
@@ -265,7 +265,7 @@ void guac_terminal_copy_columns(guac_terminal* terminal, int row,
  * Copies the given range of rows to a new location, offset from the
  * original by the given number of rows.
  */
-void guac_terminal_copy_rows(guac_terminal* terminal, int src_row, int rows,
+void guac_terminal_copy_rows(guac_terminal* terminal,
         int start_row, int end_row, int offset);
 
 /**

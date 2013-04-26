@@ -297,7 +297,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                     /* Reset attributes */
                     if (value == 0)
-                        term->current_attributes = term->default_attributes;
+                        term->current_attributes = term->default_char.attributes;
 
                     /* Bold */
                     else if (value == 1)
@@ -319,20 +319,20 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                     else if (value == 38) {
                         term->current_attributes.underscore = true;
                         term->current_attributes.foreground =
-                            term->default_attributes.foreground;
+                            term->default_char.attributes.foreground;
                     }
 
                     /* Underscore off, default foreground */
                     else if (value == 39) {
                         term->current_attributes.underscore = false;
                         term->current_attributes.foreground =
-                            term->default_attributes.foreground;
+                            term->default_char.attributes.foreground;
                     }
 
                     /* Reset background */
                     else if (value == 49)
                         term->current_attributes.background =
-                            term->default_attributes.background;
+                            term->default_char.attributes.background;
 
                     /* Reverse video */
                     else if (value == 7)
@@ -400,8 +400,8 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 /* Entire screen */
                 else if (argv[0] == 2)
-                    guac_terminal_clear(term,
-                            0, 0, term->term_height, term->term_width);
+                    guac_terminal_clear_range(term,
+                            0, 0, term->term_height - 1, term->term_width - 1);
 
                 break;
 
@@ -410,22 +410,18 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 /* Erase from cursor to end of line */
                 if (argv[0] == 0)
-                    guac_terminal_clear(term,
-                            term->cursor_row, term->cursor_col,
-                            1, term->term_width - term->cursor_col);
-
+                    guac_terminal_clear_columns(term, term->cursor_row,
+                            term->cursor_col, term->term_width - 1);
 
                 /* Erase from start to cursor */
                 else if (argv[0] == 1)
-                    guac_terminal_clear(term,
-                            term->cursor_row, 0,
-                            1, term->cursor_col + 1);
+                    guac_terminal_clear_columns(term, term->cursor_row,
+                            0, term->cursor_col);
 
                 /* Erase line */
                 else if (argv[0] == 2)
-                    guac_terminal_clear(term,
-                            term->cursor_row, 0,
-                            1, term->term_width);
+                    guac_terminal_clear_columns(term, term->cursor_row,
+                            0, term->term_width - 1);
 
                 break;
 
@@ -459,16 +455,13 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 /* Scroll left by amount */
                 if (term->cursor_col + amount < term->term_width)
-                    guac_terminal_copy(term,
-                            term->cursor_row, term->cursor_col + amount,
-                            1,
-                            term->term_width - term->cursor_col - amount, 
-                            term->cursor_row, term->cursor_col);
+                    guac_terminal_copy_columns(term, term->cursor_row,
+                            term->cursor_col + amount, term->term_width - 1,
+                            -amount);
 
                 /* Clear right */
-                guac_terminal_clear(term,
-                        term->cursor_row, term->term_width - amount,
-                        1, amount);
+                guac_terminal_clear_columns(term, term->cursor_row,
+                        term->term_width - amount, term->term_width - 1);
 
                 break;
 
@@ -479,9 +472,8 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 if (amount == 0) amount = 1;
 
                 /* Clear characters */
-                guac_terminal_clear(term,
-                        term->cursor_row, term->cursor_col,
-                        1, amount);
+                guac_terminal_clear_columns(term, term->cursor_row,
+                        term->cursor_col, term->cursor_col + amount - 1);
 
                 break;
 
@@ -493,15 +485,13 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 /* Scroll right by amount */
                 if (term->cursor_col + amount < term->term_width)
-                    guac_terminal_copy(term,
-                            term->cursor_row, term->cursor_col,
-                            1, term->term_width - term->cursor_col - amount, 
-                            term->cursor_row, term->cursor_col + amount);
+                    guac_terminal_copy_columns(term, term->cursor_row,
+                            term->cursor_col, term->term_width - amount - 1,
+                            amount);
 
                 /* Clear left */
-                guac_terminal_clear(term,
-                        term->cursor_row, term->cursor_col,
-                        1, amount);
+                guac_terminal_clear_columns(term, term->cursor_row,
+                        term->cursor_col, term->cursor_col + amount - 1);
 
                 break;
 

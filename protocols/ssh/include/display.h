@@ -204,7 +204,7 @@ void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
  * Copies the given range of rows to a new location, offset from the
  * original by the given number of rows.
  */
-void guac_terminal_display_copy_rows(guac_terminal_display* display, int src_row, int rows,
+void guac_terminal_display_copy_rows(guac_terminal_display* display,
         int start_row, int end_row, int offset);
 
 /**

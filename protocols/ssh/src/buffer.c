@@ -101,13 +101,36 @@ guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buf
 
 }
 
+void guac_terminal_buffer_prepare_row(guac_terminal_buffer_row* row, int width, guac_terminal_char* fill) {
+
+    int i;
+    guac_terminal_char* first;
+
+    /* If already wide enough, nothing to do. */
+    if (width < row->length)
+        return;
+
+    /* Expand if necessary */
+    if (width > row->available) {
+        row->available = width*2;
+        row->characters = realloc(row->characters, sizeof(guac_terminal_char) * row->available);
+    }
+
+    /* Initialize new part of row */
+    first = &(row->characters[row->length]);
+    for (i=row->length; i<width; i++)
+        *(first++) = *fill;
+
+    row->length = width;
+
+}
 
 void guac_terminal_buffer_copy_columns(guac_terminal_buffer* buffer, int row,
         int start_column, int end_column, int offset) {
     /* STUB */
 }
 
-void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer, int src_row, int rows,
+void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
         int start_row, int end_row, int offset) {
     /* STUB */
 }

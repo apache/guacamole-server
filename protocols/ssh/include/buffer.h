@@ -113,6 +113,12 @@ void guac_terminal_buffer_free(guac_terminal_buffer* buffer);
 guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buffer, int row);
 
 /**
+ * Ensures the given row has at least the given number of character spaces available. If new characters
+ * must be added, they are initialized with the given fill character.
+ */
+void guac_terminal_buffer_prepare_row(guac_terminal_buffer_row* row, int width, guac_terminal_char* fill);
+
+/**
  * Copies the given range of columns to a new location, offset from
  * the original by the given number of columns.
  */
@@ -123,7 +129,7 @@ void guac_terminal_buffer_copy_columns(guac_terminal_buffer* buffer, int row,
  * Copies the given range of rows to a new location, offset from the
  * original by the given number of rows.
  */
-void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer, int src_row, int rows,
+void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
         int start_row, int end_row, int offset);
 
 /**

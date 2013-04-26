@@ -344,16 +344,25 @@ void guac_terminal_display_free(guac_terminal_display* display) {
 void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, int offset) {
     /* STUB */
+    guac_client_log_info(display->client,
+            "display_copy_columns: row=%i, start=%i, end=%i, offset=%i",
+            row, start_column, end_column, offset);
 }
 
-void guac_terminal_display_copy_rows(guac_terminal_display* display, int src_row, int rows,
+void guac_terminal_display_copy_rows(guac_terminal_display* display,
         int start_row, int end_row, int offset) {
     /* STUB */
+    guac_client_log_info(display->client,
+            "display_copy_rows: start=%i, end=%i, offset=%i",
+            start_row, end_row, offset);
 }
 
 void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, guac_terminal_char* character) {
     /* STUB */
+    guac_client_log_info(display->client,
+            "display_set_columns: row=%i, start=%i, end=%i, char='%c'",
+            row, start_column, end_column, character->value);
 }
 
 void guac_terminal_display_resize(guac_terminal_display* display, int rows, int cols) {
