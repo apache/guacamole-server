@@ -73,6 +73,11 @@ typedef struct guac_terminal_buffer_row {
 typedef struct guac_terminal_buffer {
 
     /**
+     * The character to assign to newly-allocated cells.
+     */
+    guac_terminal_char default_character;
+
+    /**
      * Array of buffer rows. This array functions as a ring buffer.
      * When a new row needs to be appended, the top reference is moved down
      * and the old top row is replaced.
@@ -98,9 +103,10 @@ typedef struct guac_terminal_buffer {
 } guac_terminal_buffer;
 
 /**
- * Allocates a new buffer having the given maximum number of rows.
+ * Allocates a new buffer having the given maximum number of rows. New character cells will
+ * be initialized to the given character.
  */
-guac_terminal_buffer* guac_terminal_buffer_alloc(int rows);
+guac_terminal_buffer* guac_terminal_buffer_alloc(int rows, guac_terminal_char* default_character);
 
 /**
  * Frees the given buffer.
@@ -108,15 +114,10 @@ guac_terminal_buffer* guac_terminal_buffer_alloc(int rows);
 void guac_terminal_buffer_free(guac_terminal_buffer* buffer);
 
 /**
- * Returns the row at the given location.
+ * Returns the row at the given location. The row returned is guaranteed to be at least the given
+ * width.
  */
-guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buffer, int row);
-
-/**
- * Ensures the given row has at least the given number of character spaces available. If new characters
- * must be added, they are initialized with the given fill character.
- */
-void guac_terminal_buffer_prepare_row(guac_terminal_buffer_row* row, int width, guac_terminal_char* fill);
+guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buffer, int row, int width);
 
 /**
  * Copies the given range of columns to a new location, offset from

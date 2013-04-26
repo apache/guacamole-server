@@ -70,12 +70,12 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->client = client;
 
     /* Init buffer */
-    term->buffer = guac_terminal_buffer_alloc(1000);
+    term->buffer = guac_terminal_buffer_alloc(1000, &default_char);
     term->scroll_offset = 0;
 
     /* Init display */
     term->display = guac_terminal_display_alloc(client,
-            term->term_width, term->term_height,
+            80, 24, /*term->term_width, term->term_height,*/
             default_char.attributes.foreground,
             default_char.attributes.background);
 
@@ -131,8 +131,7 @@ int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col) {
     int scrolled_row = row + term->scroll_offset;
 
     /* Get character from buffer */
-    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(term->buffer, row);
-    guac_terminal_buffer_prepare_row(buffer_row, col+1, &term->default_char);
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(term->buffer, row, col+1);
 
     /* Toggle reverse */
     guac_char = &(buffer_row->characters[col]);
@@ -360,7 +359,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
         /* Get row from scrollback */
         guac_terminal_buffer_row* buffer_row =
-            guac_terminal_buffer_get_row(terminal->buffer, row);
+            guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
         /* Draw row */
         /* FIXME: Clear row first */
@@ -416,7 +415,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
         /* Get row from scrollback */
         guac_terminal_buffer_row* buffer_row = 
-            guac_terminal_buffer_get_row(terminal->buffer, row);
+            guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
         /* Draw row */
         /* FIXME: Clear row first */
@@ -467,8 +466,12 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
 void guac_terminal_set_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, guac_terminal_char* character) {
     /* STUB */
-    guac_client_log_info(terminal->client,
-            "terminal_set_columns: row=%i, start=%i, end=%i, char='%c'",
-            row, start_column, end_column, character->value);
+
+    guac_terminal_display_set_columns(terminal->display, row,
+            start_column, end_column, character);
+
+    guac_terminal_buffer_set_columns(terminal->buffer, row,
+            start_column, end_column, character);
+
 }
 

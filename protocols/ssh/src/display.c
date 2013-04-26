@@ -359,10 +359,22 @@ void guac_terminal_display_copy_rows(guac_terminal_display* display,
 
 void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, guac_terminal_char* character) {
-    /* STUB */
-    guac_client_log_info(display->client,
-            "display_set_columns: row=%i, start=%i, end=%i, char='%c'",
-            row, start_column, end_column, character->value);
+
+    int i;
+    guac_terminal_operation* current =
+        &(display->operations[row * display->width + start_column]);
+
+    /* For each column in range */
+    for (i=start_column; i<=end_column; i++) {
+
+        /* Set operation */
+        current->type      = GUAC_CHAR_SET;
+        current->character = *character;
+
+        /* Next column */
+        current++;
+    }
+
 }
 
 void guac_terminal_display_resize(guac_terminal_display* display, int rows, int cols) {

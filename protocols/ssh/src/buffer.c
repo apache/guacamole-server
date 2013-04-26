@@ -39,7 +39,7 @@
 
 #include "buffer.h"
 
-guac_terminal_buffer* guac_terminal_buffer_alloc(int rows) {
+guac_terminal_buffer* guac_terminal_buffer_alloc(int rows, guac_terminal_char* default_character) {
 
     /* Allocate scrollback */
     guac_terminal_buffer* buffer =
@@ -49,6 +49,7 @@ guac_terminal_buffer* guac_terminal_buffer_alloc(int rows) {
     guac_terminal_buffer_row* row;
 
     /* Init scrollback data */
+    buffer->default_character = *default_character;
     buffer->available = rows;
     buffer->top = 0;
     buffer->length = 0;
@@ -90,38 +91,39 @@ void guac_terminal_buffer_free(guac_terminal_buffer* buffer) {
 
 }
 
-guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buffer, int row) {
+guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buffer, int row, int width) {
+
+    int i;
+    guac_terminal_char* first;
+    guac_terminal_buffer_row* buffer_row;
 
     /* Calculate scrollback row index */
     int index = buffer->top + row;
     if (index < 0) index += buffer->available;
 
-    /* Return found row */
-    return &(buffer->rows[index]);
+    /* Get row */
+    buffer_row = &(buffer->rows[index]);
 
-}
+    /* If resizing is needed */
+    if (width >= buffer_row->length) {
 
-void guac_terminal_buffer_prepare_row(guac_terminal_buffer_row* row, int width, guac_terminal_char* fill) {
+        /* Expand if necessary */
+        if (width > buffer_row->available) {
+            buffer_row->available = width*2;
+            buffer_row->characters = realloc(buffer_row->characters, sizeof(guac_terminal_char) * buffer_row->available);
+        }
 
-    int i;
-    guac_terminal_char* first;
+        /* Initialize new part of row */
+        first = &(buffer_row->characters[buffer_row->length]);
+        for (i=buffer_row->length; i<width; i++)
+            *(first++) = buffer->default_character;
 
-    /* If already wide enough, nothing to do. */
-    if (width < row->length)
-        return;
+        buffer_row->length = width;
 
-    /* Expand if necessary */
-    if (width > row->available) {
-        row->available = width*2;
-        row->characters = realloc(row->characters, sizeof(guac_terminal_char) * row->available);
     }
 
-    /* Initialize new part of row */
-    first = &(row->characters[row->length]);
-    for (i=row->length; i<width; i++)
-        *(first++) = *fill;
-
-    row->length = width;
+    /* Return found row */
+    return buffer_row;
 
 }
 
@@ -137,6 +139,17 @@ void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
 
 void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
         int start_column, int end_column, guac_terminal_char* character) {
-    /* STUB */
+
+    int i;
+    guac_terminal_char* current;
+
+    /* Get and expand row */
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(buffer, row, end_column+1);
+
+    /* Set values */
+    current = &(buffer_row->characters[start_column]);
+    for (i=start_column; i<=end_column; i++)
+        *(current++) = *character;
+
 }
 
