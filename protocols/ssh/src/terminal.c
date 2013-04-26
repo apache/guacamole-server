@@ -162,8 +162,21 @@ int guac_terminal_write(guac_terminal* term, const char* c, int size) {
 int guac_terminal_scroll_up(guac_terminal* term,
         int start_row, int end_row, int amount) {
 
-    /* Copy row data upwards */
-    guac_terminal_copy_rows(term, start_row + amount, end_row, -amount);
+    /* If scrolling entire display, update scroll offset */
+    if (start_row == 0 && end_row == term->term_height - 1) {
+
+        /* Scroll up visibly */
+        guac_terminal_display_copy_rows(term->display, start_row + amount, end_row, -amount);
+
+        /* Advance by scroll amount */
+        term->buffer->top += amount;
+        term->buffer->length += amount;
+
+    }
+
+    /* Otherwise, just copy row data upwards */
+    else
+        guac_terminal_copy_rows(term, start_row + amount, end_row, -amount);
 
     /* Clear new area */
     guac_terminal_clear_range(term,
@@ -274,8 +287,11 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
         guac_terminal_buffer_row* buffer_row =
             guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
+        /* Clear row */
+        guac_terminal_display_set_columns(terminal->display,
+                dest_row, 0, terminal->display->width, &(terminal->default_char));
+
         /* Draw row */
-        /* FIXME: Clear row first */
         guac_terminal_char* current = buffer_row->characters;
         for (column=0; column<buffer_row->length; column++)
             guac_terminal_display_set_columns(terminal->display,
@@ -329,8 +345,11 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
         guac_terminal_buffer_row* buffer_row = 
             guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
+        /* Clear row */
+        guac_terminal_display_set_columns(terminal->display,
+                dest_row, 0, terminal->display->width, &(terminal->default_char));
+
         /* Draw row */
-        /* FIXME: Clear row first */
         guac_terminal_char* current = buffer_row->characters;
         for (column=0; column<buffer_row->length; column++)
             guac_terminal_display_set_columns(terminal->display,

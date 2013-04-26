@@ -410,9 +410,14 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
     guac_terminal_operation* current;
     int x, y;
 
-    /* Set width and height */
-    display->width = width;
-    display->height = height;
+    /* Fill with background color (index 0) */
+    guac_terminal_char fill = {
+        .value = ' ',
+        .attributes = {
+            .foreground = 0,
+            .background = 0
+        }
+    };
 
     /* Free old operations buffer */
     if (display->operations != NULL)
@@ -427,18 +432,33 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
     for (y=0; y<height; y++) {
 
         /* Init entire row to NOP */
-        for (x=0; x<width; x++)
-            (current++)->type = GUAC_CHAR_NOP;
+        for (x=0; x<width; x++) {
+
+            /* If on old part of screen, do not clear */
+            if (x < display->width && y < display->height)
+                current->type = GUAC_CHAR_NOP;
+
+            /* Otherwise, clear contents first */
+            else {
+                current->type = GUAC_CHAR_SET;
+                current->character  = fill;
+            }
+
+            current++;
+
+        }
 
     }
+
+    /* Set width and height */
+    display->width = width;
+    display->height = height;
 
     /* Send initial display size */
     guac_protocol_send_size(display->client->socket,
             GUAC_DEFAULT_LAYER,
             display->char_width  * width,
             display->char_height * height);
-
-
 
 }
 
