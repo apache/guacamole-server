@@ -124,7 +124,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->blank_cursor = guac_ssh_create_blank(client);
 
     /* Send name and dimensions */
-    guac_protocol_send_name(socket, "SSH TEST");
+    guac_protocol_send_name(socket, "Terminal");
 
     /* Initialize pointer */
     client_data->current_cursor = client_data->blank_cursor;
