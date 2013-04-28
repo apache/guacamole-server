@@ -151,5 +151,9 @@ void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
     for (i=start_column; i<=end_column; i++)
         *(current++) = *character;
 
+    /* Update length depending on row written */
+    if (row >= buffer->length) 
+        buffer->length = row+1;
+
 }
 

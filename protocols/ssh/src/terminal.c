@@ -170,7 +170,12 @@ int guac_terminal_scroll_up(guac_terminal* term,
 
         /* Advance by scroll amount */
         term->buffer->top += amount;
+        if (term->buffer->top >= term->buffer->available)
+            term->buffer->top -= term->buffer->available;
+
         term->buffer->length += amount;
+        if (term->buffer->length > term->buffer->available)
+            term->buffer->length = term->buffer->available;
 
     }
 
@@ -263,7 +268,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
         scroll_amount = terminal->scroll_offset;
 
     /* If not scrolling at all, don't bother trying */
-    if (scroll_amount == 0)
+    if (scroll_amount <= 0)
         return;
 
     /* Shift screen up */
@@ -317,11 +322,11 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
 
     /* Limit scroll amount by size of scrollback buffer */
-    if (terminal->scroll_offset + scroll_amount > terminal->buffer->length)
-        scroll_amount = terminal->buffer->length - terminal->scroll_offset;
+    if (terminal->scroll_offset + scroll_amount > terminal->buffer->length - terminal->term_height)
+        scroll_amount = terminal->buffer->length - terminal->scroll_offset - terminal->term_height;
 
     /* If not scrolling at all, don't bother trying */
-    if (scroll_amount == 0)
+    if (scroll_amount <= 0)
         return;
 
     /* Shift screen down */
