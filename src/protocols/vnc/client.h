@@ -38,7 +38,11 @@
 #ifndef __GUAC_VNC_CLIENT_H
 #define __GUAC_VNC_CLIENT_H
 
+#include <guacamole/client.h>
+#include <guacamole/audio.h>
 #include <rfb/rfbclient.h>
+
+#include "buffer.h"
 
 extern char* __GUAC_CLIENT;
 
@@ -53,8 +57,32 @@ typedef struct vnc_guac_client_data {
     int swap_red_blue;
 
     guac_layer* cursor;
+    
+    /**
+     * Whether audio is enabled.
+     */
+    int audio_enabled;
+    
+    /**
+     * Audio output, if any.
+     */
+    audio_stream* audio;
+    
+    /**
+     * Audio buffer, if any.
+     */
+    buffer* audio_buffer;
+    
+    /**
+     * Handle to the audio read thread.
+     */
+    pthread_t* audio_read_thread;
+    
+    /**
+     * Handle to the audio send thread.
+     */
+    pthread_t* audio_send_thread;
 
 } vnc_guac_client_data;
 
 #endif
-
