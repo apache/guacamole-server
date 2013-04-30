@@ -64,4 +64,3 @@ endif
 
 EXTRA_DIST = LICENSE doc/Doxyfile
 
-
