@@ -43,6 +43,7 @@ lib_LTLIBRARIES = libguac-client-ssh.la
 libguac_client_ssh_la_SOURCES = \
     src/blank.c                 \
     src/buffer.c                \
+    src/common.c                \
     src/cursor.c                \
     src/display.c               \
     src/ibar.c                  \
@@ -54,6 +55,7 @@ libguac_client_ssh_la_SOURCES = \
 noinst_HEADERS =                \
     include/blank.h             \
     include/buffer.h            \
+    include/common.h            \
     include/cursor.h            \
     include/display.h           \
     include/ibar.h              \

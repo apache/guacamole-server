@@ -131,7 +131,6 @@ int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
 int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col) {
 
     guac_terminal_char* guac_char;
-    int scrolled_row = row + term->scroll_offset;
 
     /* Get character from buffer */
     guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(term->buffer, row, col+1);
@@ -141,8 +140,7 @@ int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col) {
     guac_char->attributes.reverse = !(guac_char->attributes.reverse);
 
     /* Set display */
-    if (scrolled_row < term->display->height)
-        guac_terminal_display_set_columns(term->display, scrolled_row, col, col, guac_char);
+    guac_terminal_display_set_columns(term->display, row + term->scroll_offset, col, col, guac_char);
 
     return 0;
 
@@ -387,7 +385,7 @@ void guac_terminal_copy_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, int offset) {
     /* STUB */
 
-    guac_terminal_display_copy_columns(terminal->display, row,
+    guac_terminal_display_copy_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, offset);
 
     guac_terminal_buffer_copy_columns(terminal->buffer, row,
@@ -400,7 +398,7 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
     /* STUB */
 
     guac_terminal_display_copy_rows(terminal->display,
-            start_row, end_row, offset);
+            start_row + terminal->scroll_offset, end_row + terminal->scroll_offset, offset);
 
     guac_terminal_buffer_copy_rows(terminal->buffer,
             start_row, end_row, offset);
@@ -411,7 +409,7 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, guac_terminal_char* character) {
     /* STUB */
 
-    guac_terminal_display_set_columns(terminal->display, row,
+    guac_terminal_display_set_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, character);
 
     guac_terminal_buffer_set_columns(terminal->buffer, row,

@@ -40,6 +40,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 
+#include "common.h"
 #include "types.h"
 #include "display.h"
 
@@ -318,11 +319,21 @@ void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, int offset) {
 
     int i;
-    guac_terminal_operation* src_current =
-        &(display->operations[row * display->width + start_column]);
+    guac_terminal_operation* src_current;
+    guac_terminal_operation* current;
 
-    guac_terminal_operation* current =
-        &(display->operations[row * display->width + start_column + offset]);
+    /* Ignore operations outside display bounds */
+    if (row < 0 || row >= display->height)
+        return;
+
+    /* Fit range within bounds */
+    start_column = guac_terminal_fit_to_range(start_column,          0, display->width - 1);
+    end_column   = guac_terminal_fit_to_range(end_column,            0, display->width - 1);
+    start_column = guac_terminal_fit_to_range(start_column + offset, 0, display->width - 1) - offset;
+    end_column   = guac_terminal_fit_to_range(end_column   + offset, 0, display->width - 1) - offset;
+
+    src_current = &(display->operations[row * display->width + start_column]);
+    current = &(display->operations[row * display->width + start_column + offset]);
 
     /* Move data */
     memmove(current, src_current,
@@ -349,12 +360,17 @@ void guac_terminal_display_copy_rows(guac_terminal_display* display,
         int start_row, int end_row, int offset) {
 
     int row, col;
+    guac_terminal_operation* src_current_row;
+    guac_terminal_operation* current_row;
 
-    guac_terminal_operation* src_current_row =
-        &(display->operations[start_row * display->width]);
+    /* Fit range within bounds */
+    start_row = guac_terminal_fit_to_range(start_row,          0, display->height - 1);
+    end_row   = guac_terminal_fit_to_range(end_row,            0, display->height - 1);
+    start_row = guac_terminal_fit_to_range(start_row + offset, 0, display->height - 1) - offset;
+    end_row   = guac_terminal_fit_to_range(end_row   + offset, 0, display->height - 1) - offset;
 
-    guac_terminal_operation* current_row =
-        &(display->operations[(start_row + offset) * display->width]);
+    src_current_row = &(display->operations[start_row * display->width]);
+    current_row = &(display->operations[(start_row + offset) * display->width]);
 
     /* Move data */
     memmove(current_row, src_current_row,
@@ -389,8 +405,17 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         int start_column, int end_column, guac_terminal_char* character) {
 
     int i;
-    guac_terminal_operation* current =
-        &(display->operations[row * display->width + start_column]);
+    guac_terminal_operation* current;
+
+    /* Ignore operations outside display bounds */
+    if (row < 0 || row >= display->height)
+        return;
+
+    /* Fit range within bounds */
+    start_column = guac_terminal_fit_to_range(start_column, 0, display->width - 1);
+    end_column   = guac_terminal_fit_to_range(end_column,   0, display->width - 1);
+
+    current = &(display->operations[row * display->width + start_column]);
 
     /* For each column in range */
     for (i=start_column; i<=end_column; i++) {
