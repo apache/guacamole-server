@@ -10,14 +10,15 @@ env:
 language: c
 compiler: gcc
 
-# only build branches on whitelist
-#branches:
-#  only:
-#    - setup-ci
-#    - master
-
 # install all vnc-related dependencies
 before_install:
+  - sudo apt-get install tomcat6
+  - sudo apt-get install libvncserver0
+  - sudo apt-get install libvncserver-dev
+  - sudo apt-get install libfreerdp1
+  - sudo apt-get install libvorbis-dev
+  - sudo apt-get install libvorbisenc2
+  - sudo apt-get install libpulse-dev
   - sudo apt-get install libcairo2-dev
   - git clone git://github.com/cmujedi/libguac.git
   - cd libguac
@@ -27,11 +28,6 @@ before_install:
   - sudo make install
   - sudo ldconfig
   - cd ..
-  - sudo apt-get install tomcat6
-  - sudo apt-get install libvncserver0
-  - sudo apt-get install libvncserver-dev
-  - sudo apt-get install libfreerdp1
-  - sudo apt-get install libvorbisenc2
 
 # before build script, run autoreconf
 before_script: autoreconf -i
@@ -56,4 +52,3 @@ notifications:
       - cmujedi@west.cmu.edu
   webhooks:
     - secure: "eNufz0915oMHd4cNbvo+YysNgJSP3IFrsWPFkVtg2S/L3hCv9+sTto/yuX00\nHvaJ1lcvak2DkiQmslJubcjpGNOysjp6rjhY92YodZs+wZwsrevjoanj9qWH\nwHz2eM1N6fvebMmzNS9fwwFmY3DiCDwBoTssz8aLs0etg+2xVBw="
-
