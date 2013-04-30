@@ -86,3 +86,4 @@ typedef struct vnc_guac_client_data {
 } vnc_guac_client_data;
 
 #endif
+
