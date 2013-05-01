@@ -417,3 +417,15 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
 
 }
 
+void guac_terminal_resize(guac_terminal* term, int width, int height) {
+
+    /* Resize display */
+    guac_terminal_display_flush(term->display);
+    guac_terminal_display_resize(term->display, width, height);
+
+    /* Commit new dimensions */
+    term->term_width = width;
+    term->term_height = height;
+
+}
+

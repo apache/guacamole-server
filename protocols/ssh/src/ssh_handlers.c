@@ -296,6 +296,36 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
 }
 
+int ssh_guac_client_size_handler(guac_client* client, int width, int height) {
+
+    /* Get terminal */
+    ssh_guac_client_data* guac_client_data = (ssh_guac_client_data*) client->data;
+    guac_terminal* terminal = guac_client_data->term;
+
+    /* Calculate dimensions */
+    int rows    = height / terminal->display->char_height;
+    int columns = width  / terminal->display->char_width;
+
+    pthread_mutex_lock(&(terminal->lock));
+
+    /* If size has changed */
+    if (columns != terminal->term_width || rows != terminal->term_height) {
+
+        /* Resize terminal */
+        guac_terminal_resize(terminal, columns, rows);
+        channel_change_pty_size(guac_client_data->term_channel,
+                terminal->term_width, terminal->term_height);
+
+        /* Reset scroll region */
+        terminal->scroll_end = rows - 1;
+
+    }
+
+    pthread_mutex_unlock(&(terminal->lock));
+
+    return 0;
+}
+
 int ssh_guac_client_free_handler(guac_client* client) {
 
     ssh_guac_client_data* guac_client_data = (ssh_guac_client_data*) client->data;

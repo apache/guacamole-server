@@ -228,6 +228,7 @@ int ssh_guac_client_auth(guac_client* client, const char* password) {
     client->mouse_handler = ssh_guac_client_mouse_handler;
     client->key_handler = ssh_guac_client_key_handler;
     client->clipboard_handler = ssh_guac_client_clipboard_handler;
+    client->size_handler = ssh_guac_client_size_handler;
 
 
     /* Success */
