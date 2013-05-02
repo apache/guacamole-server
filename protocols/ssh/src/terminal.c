@@ -414,9 +414,76 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
 
 void guac_terminal_resize(guac_terminal* term, int width, int height) {
 
+    /* If height is decreasing, shift display up */
+    if (height < term->term_height) {
+
+        int shift_amount;
+
+        /* Get number of rows actually occupying terminal space */
+        int used_height = term->buffer->length;
+        if (used_height > term->term_height)
+            used_height = term->term_height;
+
+        shift_amount = used_height - height;
+
+        /* If the new terminal bottom covers N rows, shift up N rows */
+        if (shift_amount > 0) {
+
+            guac_terminal_display_copy_rows(term->display,
+                    shift_amount, term->display->height - 1, -shift_amount);
+
+            /* Update buffer top and cursor row based on shift */
+            term->buffer->top += shift_amount;
+            term->cursor_row  -= shift_amount;
+
+        }
+
+    }
+
     /* Resize display */
     guac_terminal_display_flush(term->display);
     guac_terminal_display_resize(term->display, width, height);
+
+    /* If height is increasing, shift display down */
+    if (height > term->term_height) {
+
+        /* If undisplayed rows exist in the buffer, shift them into view */
+        if (term->term_height < term->buffer->length) {
+
+            /* If the new terminal bottom reveals N rows, shift down N rows */
+            int shift_amount = height - term->term_height;
+
+            /* The maximum amount we can shift is the number of undisplayed rows */
+            int max_shift = term->buffer->length - term->term_height;
+
+            if (shift_amount > max_shift)
+                shift_amount = max_shift;
+
+            /* Update buffer top and cursor row based on shift */
+            term->buffer->top -= shift_amount;
+            term->cursor_row  += shift_amount;
+
+            /* If scrolled enough, use scroll to fulfill entire resize */
+            if (term->scroll_offset >= shift_amount)
+                term->scroll_offset -= shift_amount;
+
+            /* Otherwise, fulfill with as much scroll as possible */
+            else {
+
+                /* Attempt to fulfill part with scroll */
+                shift_amount -= term->scroll_offset;
+                term->scroll_offset = 0;
+
+                /* If anything remains, move screen as necessary */
+                if (shift_amount > 0)
+                    guac_terminal_display_copy_rows(term->display,
+                            0, term->display->height - shift_amount - 1, shift_amount);
+
+            }
+
+        } /* end if undisplayed rows exist */
+
+    }
 
     /* Commit new dimensions */
     term->term_width = width;
