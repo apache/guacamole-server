@@ -106,13 +106,11 @@ int __guac_terminal_encode_utf8(int codepoint, char* utf8) {
     /* Otherwise, invalid codepoint */
     else {
         *(utf8++) = '?';
-        *(utf8++) = 0;
         return 1;
     }
 
     /* Offset buffer by size */
-    utf8 += bytes;
-    *(utf8--) = 0;
+    utf8 += bytes - 1;
 
     /* Add trailing bytes, if any */
     for (i=1; i<bytes; i++) {
@@ -139,7 +137,8 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
     guac_socket* socket = display->client->socket;
     int location;
 
-    char utf8[5];
+    int bytes;
+    char utf8[4];
 
     /* Use foreground color */
     const guac_terminal_color* color =
@@ -174,7 +173,7 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
         location = display->next_glyph++;
 
     /* Convert to UTF-8 */
-    __guac_terminal_encode_utf8(codepoint, utf8);
+    bytes = __guac_terminal_encode_utf8(codepoint, utf8);
 
     /* Prepare surface */
     surface = cairo_image_surface_create(
@@ -185,7 +184,7 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
     /* Get layout */
     layout = pango_cairo_create_layout(cairo);
     pango_layout_set_font_description(layout, display->font_desc);
-    pango_layout_set_text(layout, utf8, 1);
+    pango_layout_set_text(layout, utf8, bytes);
 
     /* Draw */
     cairo_set_source_rgba(cairo,
