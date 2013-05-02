@@ -190,7 +190,7 @@ int guac_terminal_write(guac_terminal* term, const char* c, int size);
 /**
  * Sets the character at the given row and column to the specified value.
  */
-int guac_terminal_set(guac_terminal* term, int row, int col, char c);
+int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint);
 
 /**
  * Clears the given region within a single row.

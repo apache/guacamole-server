@@ -115,11 +115,11 @@ void guac_terminal_free(guac_terminal* term) {
 
 }
 
-int guac_terminal_set(guac_terminal* term, int row, int col, char c) {
+int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint) {
 
     /* Build character with current attributes */
     guac_terminal_char guac_char;
-    guac_char.value = c;
+    guac_char.value = codepoint;
     guac_char.attributes = term->current_attributes;
 
     guac_terminal_set_columns(term, row, col, col, &guac_char);

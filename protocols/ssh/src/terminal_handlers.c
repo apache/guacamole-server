@@ -139,15 +139,11 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
             }
 
-            /* For now, render all but basic latin as '?' */
-            if (codepoint > 0x7F)
-                codepoint = '?';
-
             /* Write character */
             guac_terminal_set(term,
                     term->cursor_row,
                     term->cursor_col,
-                    (char) codepoint);
+                    codepoint);
 
             /* Advance cursor */
             term->cursor_col++;

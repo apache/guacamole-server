@@ -68,17 +68,79 @@ const guac_terminal_color guac_terminal_palette[16] = {
 
 };
 
+/* Maps any codepoint onto a number between 0 and 511 inclusive */
+int __guac_terminal_hash_codepoint(int codepoint) {
+
+    /* If within one byte, just return codepoint */
+    if (codepoint <= 0xFF)
+        return codepoint;
+
+    /* Otherwise, map to next 256 values */
+    return (codepoint & 0xFF) + 0x100;
+
+}
+
+int __guac_terminal_encode_utf8(int codepoint, char* utf8) {
+
+    int i;
+    int mask, bytes;
+
+    /* Determine size and initial byte mask */
+    if (codepoint <= 0x007F) {
+        mask  = 0x00;
+        bytes = 1;
+    }
+    else if (codepoint <= 0x7FF) {
+        mask  = 0xC0;
+        bytes = 2;
+    }
+    else if (codepoint <= 0xFFFF) {
+        mask  = 0xE0;
+        bytes = 3;
+    }
+    else if (codepoint <= 0x1FFFFF) {
+        mask  = 0xF0;
+        bytes = 4;
+    }
+
+    /* Otherwise, invalid codepoint */
+    else {
+        *(utf8++) = '?';
+        *(utf8++) = 0;
+        return 1;
+    }
+
+    /* Offset buffer by size */
+    utf8 += bytes;
+    *(utf8--) = 0;
+
+    /* Add trailing bytes, if any */
+    for (i=1; i<bytes; i++) {
+        *(utf8--) = 0x80 | (codepoint & 0x3F);
+        codepoint >>= 6;
+    }
+
+    /* Set initial byte */
+    *utf8 = mask | codepoint;
+
+    /* Done */
+    return bytes;
+
+}
+
 /**
  * Returns the location of the given character in the glyph cache layer,
  * sending it first if necessary. The location returned is in characters,
  * and thus must be multiplied by the glyph width to obtain the actual
  * location within the glyph cache layer.
  */
-int __guac_terminal_get_glyph(guac_terminal_display* display, char c) {
+int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
 
     guac_socket* socket = display->client->socket;
     int location;
-    
+
+    char utf8[5];
+
     /* Use foreground color */
     const guac_terminal_color* color =
         &guac_terminal_palette[display->glyph_foreground];
@@ -92,13 +154,29 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, char c) {
    
     PangoLayout* layout;
 
-    /* Return glyph if exists */
-    if (display->glyphs[(int) c])
-        return display->glyphs[(int) c] - 1;
+    /* Get codepoint hash */
+    int hashcode = __guac_terminal_hash_codepoint(codepoint);
 
-    location = display->next_glyph++;
+    /* If something already stored here, either same codepoint or collision */
+    if (display->glyphs[hashcode].location) {
 
-    /* Otherwise, draw glyph */
+        /* If match, return match. */
+        if (display->glyphs[hashcode].codepoint == codepoint)
+            return display->glyphs[hashcode].location - 1;
+
+        /* Otherwise, reuse location */
+        location = display->glyphs[hashcode].location;
+
+    }
+
+    /* If no collision, allocate new glyph location */
+    else
+        location = display->next_glyph++;
+
+    /* Convert to UTF-8 */
+    __guac_terminal_encode_utf8(codepoint, utf8);
+
+    /* Prepare surface */
     surface = cairo_image_surface_create(
             CAIRO_FORMAT_ARGB32,
             display->char_width, display->char_height);
@@ -107,7 +185,7 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, char c) {
     /* Get layout */
     layout = pango_cairo_create_layout(cairo);
     pango_layout_set_font_description(layout, display->font_desc);
-    pango_layout_set_text(layout, &c, 1);
+    pango_layout_set_text(layout, utf8, 1);
 
     /* Draw */
     cairo_set_source_rgba(cairo,
@@ -140,7 +218,8 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, char c) {
             location * display->char_width, 0, display->char_width, display->char_height,
             GUAC_COMP_OVER, display->filled_glyphs, location * display->char_width, 0);
 
-    display->glyphs[(int) c] = location+1;
+    display->glyphs[hashcode].location = location+1;
+    display->glyphs[hashcode].codepoint = codepoint;
 
     cairo_surface_destroy(surface);
 
@@ -235,10 +314,10 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
  * rendering the charater immediately. This bypasses the guac_terminal_display
  * mechanism and is intended for flushing of updates only.
  */
-int __guac_terminal_set(guac_terminal_display* display, int row, int col, char c) {
+int __guac_terminal_set(guac_terminal_display* display, int row, int col, int codepoint) {
 
     guac_socket* socket = display->client->socket;
-    int location = __guac_terminal_get_glyph(display, c); 
+    int location = __guac_terminal_get_glyph(display, codepoint); 
 
     return guac_protocol_send_copy(socket,
         display->filled_glyphs,

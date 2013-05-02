@@ -107,9 +107,9 @@ typedef struct guac_terminal_attributes {
 typedef struct guac_terminal_char {
 
     /**
-     * The character value of the character to display.
+     * The Unicode codepoint of the character to display.
      */
-    char value;
+    int value;
 
     /**
      * The attributes of the character to display.

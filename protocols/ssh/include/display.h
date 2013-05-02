@@ -102,6 +102,25 @@ typedef struct guac_terminal_operation {
 
 } guac_terminal_operation;
 
+
+/**
+ * A cached glyph.
+ */
+typedef struct guac_terminal_glyph {
+
+    /**
+     * The location within the glyph layer that this glyph can be found.
+     */
+    int location;
+
+    /**
+     * The codepoint currently stored at that location.
+     */
+    int codepoint;
+
+} guac_terminal_glyph;
+
+
 /**
  * Set of all pending operations for the currently-visible screen area.
  */
@@ -150,7 +169,7 @@ typedef struct guac_terminal_display {
     /**
      * Index of locations for each glyph in the stroke and fill layers.
      */
-    int glyphs[256];
+    guac_terminal_glyph glyphs[512];
 
     /**
      * Color of glyphs in copy buffer
