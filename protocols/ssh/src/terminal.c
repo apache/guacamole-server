@@ -395,7 +395,6 @@ void guac_terminal_copy_columns(guac_terminal* terminal, int row,
 
 void guac_terminal_copy_rows(guac_terminal* terminal,
         int start_row, int end_row, int offset) {
-    /* STUB */
 
     guac_terminal_display_copy_rows(terminal->display,
             start_row + terminal->scroll_offset, end_row + terminal->scroll_offset, offset);
@@ -407,7 +406,6 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
 
 void guac_terminal_set_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, guac_terminal_char* character) {
-    /* STUB */
 
     guac_terminal_display_set_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, character);
