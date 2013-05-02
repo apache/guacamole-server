@@ -99,7 +99,10 @@ guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buf
 
     /* Calculate scrollback row index */
     int index = buffer->top + row;
-    if (index < 0) index += buffer->available;
+    if (index < 0)
+        index += buffer->available;
+    else if (index >= buffer->available)
+        index -= buffer->available;
 
     /* Get row */
     buffer_row = &(buffer->rows[index]);

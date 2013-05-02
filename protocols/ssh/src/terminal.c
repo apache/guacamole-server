@@ -412,6 +412,29 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
 
 }
 
+static void __guac_terminal_redraw_rect(guac_terminal* term, int start_row, int start_col, int end_row, int end_col) {
+
+    int row, col;
+
+    /* Redraw region */
+    for (row=start_row; row<=end_row; row++) {
+
+        guac_terminal_buffer_row* buffer_row =
+            guac_terminal_buffer_get_row(term->buffer, row - term->scroll_offset, 0);
+
+        /* Clear row */
+        guac_terminal_display_set_columns(term->display,
+                row, start_col, end_col, &(term->default_char));
+
+        /* Copy characters */
+        for (col=start_col; col <= end_col && col < buffer_row->length; col++)
+            guac_terminal_display_set_columns(term->display, row, col, col,
+                    &(buffer_row->characters[col]));
+
+    }
+
+}
+
 void guac_terminal_resize(guac_terminal* term, int width, int height) {
 
     /* If height is decreasing, shift display up */
@@ -436,6 +459,9 @@ void guac_terminal_resize(guac_terminal* term, int width, int height) {
             term->buffer->top += shift_amount;
             term->cursor_row  -= shift_amount;
 
+            /* Redraw characters within old region */
+            __guac_terminal_redraw_rect(term, height - shift_amount, 0, height-1, width-1);
+
         }
 
     }
@@ -443,6 +469,10 @@ void guac_terminal_resize(guac_terminal* term, int width, int height) {
     /* Resize display */
     guac_terminal_display_flush(term->display);
     guac_terminal_display_resize(term->display, width, height);
+
+    /* Reraw any characters on right if widening */
+    if (width > term->term_width)
+        __guac_terminal_redraw_rect(term, 0, term->term_width-1, height-1, width-1);
 
     /* If height is increasing, shift display down */
     if (height > term->term_height) {
@@ -464,20 +494,35 @@ void guac_terminal_resize(guac_terminal* term, int width, int height) {
             term->cursor_row  += shift_amount;
 
             /* If scrolled enough, use scroll to fulfill entire resize */
-            if (term->scroll_offset >= shift_amount)
+            if (term->scroll_offset >= shift_amount) {
+
                 term->scroll_offset -= shift_amount;
+
+                /* Draw characters from scroll at bottom */
+                __guac_terminal_redraw_rect(term, term->term_height, 0, term->term_height + shift_amount - 1, width-1);
+
+            }
 
             /* Otherwise, fulfill with as much scroll as possible */
             else {
 
-                /* Attempt to fulfill part with scroll */
+                /* Draw characters from scroll at bottom */
+                __guac_terminal_redraw_rect(term, term->term_height, 0, term->term_height + term->scroll_offset - 1, width-1);
+
+                /* Update shift_amount and scroll based on new rows */
                 shift_amount -= term->scroll_offset;
                 term->scroll_offset = 0;
 
                 /* If anything remains, move screen as necessary */
-                if (shift_amount > 0)
+                if (shift_amount > 0) {
+
                     guac_terminal_display_copy_rows(term->display,
                             0, term->display->height - shift_amount - 1, shift_amount);
+
+                    /* Draw characters at top from scroll */
+                    __guac_terminal_redraw_rect(term, 0, 0, shift_amount - 1, width-1);
+
+                }
 
             }
 
