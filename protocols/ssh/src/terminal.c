@@ -305,7 +305,6 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
     }
 
-    /* FIXME: Should flush somewhere more sensible */
     guac_terminal_display_flush(terminal->display);
     guac_socket_flush(terminal->client->socket);
 
@@ -363,7 +362,6 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
     }
 
-    /* FIXME: Should flush somewhere more sensible */
     guac_terminal_display_flush(terminal->display);
     guac_socket_flush(terminal->client->socket);
 
@@ -383,7 +381,6 @@ void guac_terminal_select_end(guac_terminal* terminal) {
 
 void guac_terminal_copy_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, int offset) {
-    /* STUB */
 
     guac_terminal_display_copy_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, offset);
