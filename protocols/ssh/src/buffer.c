@@ -159,38 +159,34 @@ void guac_terminal_buffer_copy_columns(guac_terminal_buffer* buffer, int row,
 void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
         int start_row, int end_row, int offset) {
 
-    int row;
+    int i, current_row;
     int step;
 
     /* If shifting down, copy in reverse */
     if (offset > 0) {
-
-        /* Swap start/end */
-        int temp = end_row;
-        end_row = start_row;
-        start_row = temp;
-
-        /* Iterate backwards */
+        current_row = end_row;
         step = -1;
-
     }
 
     /* Otherwise, copy forwards */
-    else
+    else {
+        current_row = start_row;
         step = 1;
+    }
 
-    /* Copy each row individually */
-    for (row = start_row; row <= end_row; row += step) {
-
-        guac_terminal_buffer_row* src_row;
-        guac_terminal_buffer_row* dst_row;
+    /* Copy each current_row individually */
+    for (i = start_row; i <= end_row; i++) {
 
         /* Get source and destination rows */
-        src_row = guac_terminal_buffer_get_row(buffer, row, 0);
-        dst_row = guac_terminal_buffer_get_row(buffer, row + offset, src_row->length);
+        guac_terminal_buffer_row* src_row = guac_terminal_buffer_get_row(buffer, current_row, 0);
+        guac_terminal_buffer_row* dst_row = guac_terminal_buffer_get_row(buffer, current_row + offset, src_row->length);
 
         /* Copy data */
         memcpy(dst_row->characters, src_row->characters, sizeof(guac_terminal_char) * src_row->length);
+        dst_row->length = src_row->length;
+
+        /* Next current_row */
+        current_row += step;
 
     }
 
