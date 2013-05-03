@@ -36,8 +36,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "buffer.h"
+#include "common.h"
 
 guac_terminal_buffer* guac_terminal_buffer_alloc(int rows, guac_terminal_char* default_character) {
 
@@ -132,12 +134,66 @@ guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buf
 
 void guac_terminal_buffer_copy_columns(guac_terminal_buffer* buffer, int row,
         int start_column, int end_column, int offset) {
-    /* STUB */
+
+    guac_terminal_char* src;
+    guac_terminal_char* dst;
+
+    /* Get row */
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(buffer, row, end_column + offset + 1);
+
+    /* Fit range within bounds */
+    start_column = guac_terminal_fit_to_range(start_column,          0, buffer_row->length - 1);
+    end_column   = guac_terminal_fit_to_range(end_column,            0, buffer_row->length - 1);
+    start_column = guac_terminal_fit_to_range(start_column + offset, 0, buffer_row->length - 1) - offset;
+    end_column   = guac_terminal_fit_to_range(end_column   + offset, 0, buffer_row->length - 1) - offset;
+
+    /* Determine source and destination locations */
+    src = &(buffer_row->characters[start_column]);
+    dst = &(buffer_row->characters[start_column + offset]);
+
+    /* Copy data */
+    memmove(dst, src, sizeof(guac_terminal_char) * (end_column - start_column + 1));
+
 }
 
 void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
         int start_row, int end_row, int offset) {
-    /* STUB */
+
+    int row;
+    int step;
+
+    /* If shifting down, copy in reverse */
+    if (offset > 0) {
+
+        /* Swap start/end */
+        int temp = end_row;
+        end_row = start_row;
+        start_row = temp;
+
+        /* Iterate backwards */
+        step = -1;
+
+    }
+
+    /* Otherwise, copy forwards */
+    else
+        step = 1;
+
+    /* Copy each row individually */
+    for (row = start_row; row <= end_row; row += step) {
+
+        guac_terminal_buffer_row* src_row;
+        guac_terminal_buffer_row* dst_row;
+
+        /* Get source and destination rows */
+        src_row = guac_terminal_buffer_get_row(buffer, row, 0);
+        dst_row = guac_terminal_buffer_get_row(buffer, row + offset, src_row->length);
+
+        /* Copy data */
+        memcpy(dst_row->characters, src_row->characters, sizeof(guac_terminal_char) * src_row->length);
+
+    }
+
 }
 
 void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,

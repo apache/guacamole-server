@@ -75,8 +75,10 @@ int guac_terminal_echo(guac_terminal* term, char c) {
         bytes_remaining--;
     }
 
+    /* Unrecognized prefix */
     else {
-        /* FIXME: Handle */
+        codepoint = '?';
+        bytes_remaining = 0;
     }
 
     /* If we need more bytes, wait for more bytes */
@@ -168,6 +170,23 @@ int guac_terminal_escape(guac_terminal* term, char c) {
 
         case '[':
             term->char_handler = guac_terminal_csi; 
+            break;
+
+        case 'M': /* Reverse Linefeed */
+
+            term->cursor_row--;
+
+            /* Scroll down if necessary */
+            if (term->cursor_row < term->scroll_start) {
+                term->cursor_row = term->scroll_start;
+
+                /* Scroll down by one row */        
+                guac_terminal_scroll_down(term, term->scroll_start,
+                        term->scroll_end, 1);
+
+            }
+
+            term->char_handler = guac_terminal_echo; 
             break;
 
         default:
@@ -334,13 +353,13 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                     else if (value == 7)
                         term->current_attributes.reverse = true;
 
+                    /* Reset underscore */
+                    else if (value == 24)
+                        term->current_attributes.underscore = false;
+
                     /* Reset reverse video */
                     else if (value == 27)
                         term->current_attributes.reverse = false;
-
-                    /* Reset intensity */
-                    else if (value == 27)
-                        term->current_attributes.bold = false;
 
                     else
                         guac_client_log_info(term->client,
