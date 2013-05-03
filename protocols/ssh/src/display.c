@@ -200,9 +200,18 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
     g_object_unref(layout);
     cairo_destroy(cairo);
 
-    /* Send glyph and update filled flyphs */
+    /* Clear existing glyph (if any) */
+    guac_protocol_send_rect(socket, display->glyph_stroke,
+            location * display->char_width, 0,
+            display->char_width, display->char_height);
+
+    guac_protocol_send_cfill(socket, GUAC_COMP_ROUT, display->glyph_stroke,
+            0x00, 0x00, 0x00, 0xFF);
+
+    /* Send glyph */
     guac_protocol_send_png(socket, GUAC_COMP_OVER, display->glyph_stroke, location * display->char_width, 0, surface);
 
+    /* Update filled glyphs */
     guac_protocol_send_rect(socket, display->filled_glyphs,
             location * display->char_width, 0,
             display->char_width, display->char_height);
