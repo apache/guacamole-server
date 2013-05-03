@@ -191,7 +191,14 @@ int guac_terminal_scroll_up(guac_terminal* term,
 
 int guac_terminal_scroll_down(guac_terminal* term,
         int start_row, int end_row, int amount) {
-    /* STUB */
+
+    guac_terminal_copy_rows(term, start_row, end_row - amount, amount);
+
+    /* Clear new area */
+    guac_terminal_clear_range(term,
+            start_row, 0,
+            start_row + amount - 1, term->term_width - 1);
+
     return 0;
 }
 
