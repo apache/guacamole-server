@@ -214,7 +214,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
     static int argv_length = 0;
     static char argv_buffer[256];
 
-    /* FIXME: "The sequence of parameters may be preceded by a single question mark. */
+    /* "The sequence of parameters may be preceded by a single question mark." */
     if (c == '?')
         return 0;
 
