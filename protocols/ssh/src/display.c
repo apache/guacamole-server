@@ -159,12 +159,13 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
     /* If something already stored here, either same codepoint or collision */
     if (display->glyphs[hashcode].location) {
 
+        location = display->glyphs[hashcode].location - 1;
+
         /* If match, return match. */
         if (display->glyphs[hashcode].codepoint == codepoint)
-            return display->glyphs[hashcode].location - 1;
+            return location;
 
         /* Otherwise, reuse location */
-        location = display->glyphs[hashcode].location;
 
     }
 
