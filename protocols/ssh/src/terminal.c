@@ -374,16 +374,44 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
 }
 
+void guac_terminal_select_redraw(guac_terminal* terminal) {
+
+    guac_terminal_display_select(terminal->display,
+            terminal->selection_start_row + terminal->scroll_offset,
+            terminal->selection_start_column,
+            terminal->selection_end_row + terminal->scroll_offset,
+            terminal->selection_end_column);
+
+}
+
 void guac_terminal_select_start(guac_terminal* terminal, int row, int column) {
-    /* STUB */
+
+    terminal->selection_start_row = 
+    terminal->selection_end_row   = row;
+
+    terminal->selection_start_column = 
+    terminal->selection_end_column   = column;
+
+    terminal->text_selected = true;
+
+    guac_terminal_select_redraw(terminal);
+
 }
 
 void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
-    /* STUB */
+
+    if (row != terminal->selection_end_row || column != terminal->selection_end_column) {
+        terminal->selection_end_row   = row;
+        terminal->selection_end_column   = column;
+
+        guac_terminal_select_redraw(terminal);
+    }
+
 }
 
 void guac_terminal_select_end(guac_terminal* terminal) {
     /* STUB */
+    terminal->text_selected = false;
 }
 
 void guac_terminal_copy_columns(guac_terminal* terminal, int row,

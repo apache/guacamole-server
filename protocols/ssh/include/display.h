@@ -182,6 +182,11 @@ typedef struct guac_terminal_display {
     int glyph_background;
 
     /**
+     * Layer above default layer which highlights selected text.
+     */
+    guac_layer* select_layer;
+
+    /**
      * A single wide layer holding each glyph, with each glyph only
      * colored with foreground color (background remains transparent).
      */
@@ -236,6 +241,12 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
  * Flushes all pending operations within the given guac_terminal_display.
  */
 void guac_terminal_display_flush(guac_terminal_display* display);
+
+/**
+ * Draws the text selection rectangle from the given coordinates to the given end coordinates.
+ */
+void guac_terminal_display_select(guac_terminal_display* display,
+        int start_row, int start_col, int end_row, int end_col);
 
 #endif
 

@@ -353,6 +353,8 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int fore
     display->glyph_stroke = guac_client_alloc_buffer(client);
     display->filled_glyphs = guac_client_alloc_buffer(client);
 
+    display->select_layer = guac_client_alloc_layer(client);
+
     /* Get font */
     display->font_desc = pango_font_description_new();
     pango_font_description_set_family(display->font_desc, "monospace");
@@ -570,6 +572,11 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
     /* Send initial display size */
     guac_protocol_send_size(display->client->socket,
             GUAC_DEFAULT_LAYER,
+            display->char_width  * width,
+            display->char_height * height);
+
+    guac_protocol_send_size(display->client->socket,
+            display->select_layer,
             display->char_width  * width,
             display->char_height * height);
 
@@ -877,6 +884,90 @@ void guac_terminal_display_flush(guac_terminal_display* display) {
     __guac_terminal_display_flush_copy(display);
     __guac_terminal_display_flush_clear(display);
     __guac_terminal_display_flush_set(display);
+
+}
+
+void guac_terminal_display_select(guac_terminal_display* display,
+        int start_row, int start_col, int end_row, int end_col) {
+
+    guac_socket* socket = display->client->socket;
+    guac_layer* select_layer = display->select_layer;
+
+    guac_client_log_info(display->client, "START_COL=%i", start_col);
+
+    /* If single row, just need one rectangle */
+    if (start_row == end_row) {
+
+        /* Ensure proper ordering of columns */
+        if (start_col > end_col) {
+            int temp = start_col;
+            start_col = end_col;
+            end_col = temp;
+        }
+
+        /* Select characters between columns */
+        guac_protocol_send_rect(socket, select_layer,
+
+                start_col * display->char_width,
+                start_row * display->char_height,
+
+                (end_col - start_col + 1) * display->char_width,
+                display->char_height);
+
+    }
+
+    /* Otherwise, need three */
+    else {
+
+        /* Ensure proper ordering of start and end coords */
+        if (start_row > end_row) {
+
+            int temp;
+
+            temp = start_row;
+            start_row = end_row;
+            end_row = temp;
+
+            temp = start_col;
+            start_col = end_col;
+            end_col = temp;
+
+        }
+
+        /* First row */
+        guac_protocol_send_rect(socket, select_layer,
+
+                start_col * display->char_width,
+                start_row * display->char_height,
+
+                display->width * display->char_width,
+                display->char_height);
+
+        /* Middle */
+        guac_protocol_send_rect(socket, select_layer,
+
+                0,
+                (start_row + 1) * display->char_height,
+
+                display->width * display->char_width,
+                (end_row - start_row - 1) * display->char_height);
+
+        /* Last row */
+        guac_protocol_send_rect(socket, select_layer,
+
+                0,
+                end_row * display->char_height,
+
+                (end_col + 1) * display->char_width,
+                display->char_height);
+
+    }
+
+    /* Draw new selection, erasing old */
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
+            0x00, 0xFF, 0x00, 0x80);
+
+    guac_socket_flush(socket);
 
 }
 
