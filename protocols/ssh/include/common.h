@@ -44,5 +44,11 @@
  */
 int guac_terminal_fit_to_range(int value, int min, int max);
 
+/**
+ * Encodes the given codepoint as UTF-8, storing the result within the
+ * provided buffer, and returning the number of bytes stored.
+ */
+int guac_terminal_encode_utf8(int codepoint, char* utf8);
+
 #endif
 

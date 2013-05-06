@@ -44,3 +44,49 @@ int guac_terminal_fit_to_range(int value, int min, int max) {
 
 }
 
+int guac_terminal_encode_utf8(int codepoint, char* utf8) {
+
+    int i;
+    int mask, bytes;
+
+    /* Determine size and initial byte mask */
+    if (codepoint <= 0x007F) {
+        mask  = 0x00;
+        bytes = 1;
+    }
+    else if (codepoint <= 0x7FF) {
+        mask  = 0xC0;
+        bytes = 2;
+    }
+    else if (codepoint <= 0xFFFF) {
+        mask  = 0xE0;
+        bytes = 3;
+    }
+    else if (codepoint <= 0x1FFFFF) {
+        mask  = 0xF0;
+        bytes = 4;
+    }
+
+    /* Otherwise, invalid codepoint */
+    else {
+        *(utf8++) = '?';
+        return 1;
+    }
+
+    /* Offset buffer by size */
+    utf8 += bytes - 1;
+
+    /* Add trailing bytes, if any */
+    for (i=1; i<bytes; i++) {
+        *(utf8--) = 0x80 | (codepoint & 0x3F);
+        codepoint >>= 6;
+    }
+
+    /* Set initial byte */
+    *utf8 = mask | codepoint;
+
+    /* Done */
+    return bytes;
+
+}
+

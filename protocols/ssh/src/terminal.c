@@ -49,6 +49,7 @@
 
 #include "types.h"
 #include "buffer.h"
+#include "common.h"
 #include "display.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
@@ -414,8 +415,9 @@ int __guac_terminal_buffer_string(guac_terminal_buffer_row* row, int start, int 
     int length = 0;
     int i;
     for (i=start; i<=end; i++) {
-        *(string++) = (char) row->characters[i].value;
-        length++;
+        int bytes = guac_terminal_encode_utf8(row->characters[i].value, string);
+        string += bytes;
+        length += bytes;
     }
 
     return length;
@@ -477,6 +479,8 @@ void guac_terminal_select_end(guac_terminal* terminal, char* string) {
         buffer_row = guac_terminal_buffer_get_row(terminal->buffer, end_row, 0);
         if (buffer_row->length - 1 < end_col)
             end_col = buffer_row->length - 1;
+
+        *(string++) = '\n';
         string += __guac_terminal_buffer_string(buffer_row, 0, end_col, string);
 
     }
