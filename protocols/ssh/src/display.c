@@ -887,13 +887,24 @@ void guac_terminal_display_flush(guac_terminal_display* display) {
 
 }
 
+void guac_terminal_display_clear_select(guac_terminal_display* display) {
+
+    guac_socket* socket = display->client->socket;
+    guac_layer* select_layer = display->select_layer;
+
+    guac_protocol_send_rect(socket, select_layer, 0, 0, 1, 1);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
+            0x00, 0x00, 0x00, 0x00);
+
+    guac_socket_flush(socket);
+
+}
+
 void guac_terminal_display_select(guac_terminal_display* display,
         int start_row, int start_col, int end_row, int end_col) {
 
     guac_socket* socket = display->client->socket;
     guac_layer* select_layer = display->select_layer;
-
-    guac_client_log_info(display->client, "START_COL=%i", start_col);
 
     /* If single row, just need one rectangle */
     if (start_row == end_row) {
@@ -965,7 +976,7 @@ void guac_terminal_display_select(guac_terminal_display* display,
 
     /* Draw new selection, erasing old */
     guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
-            0x00, 0xFF, 0x00, 0x80);
+            0x00, 0x80, 0xFF, 0x60);
 
     guac_socket_flush(socket);
 

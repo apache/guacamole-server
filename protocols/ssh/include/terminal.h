@@ -248,9 +248,10 @@ void guac_terminal_select_start(guac_terminal* terminal, int row, int column);
 void guac_terminal_select_update(guac_terminal* terminal, int row, int column);
 
 /**
- * Ends text selection, removing any highlight.
+ * Ends text selection, removing any highlight. Character data is stored in the
+ * string buffer provided.
  */
-void guac_terminal_select_end(guac_terminal* terminal);
+void guac_terminal_select_end(guac_terminal* terminal, char* string);
 
 /* LOW-LEVEL TERMINAL OPERATIONS */
 

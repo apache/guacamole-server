@@ -180,8 +180,21 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
         pthread_mutex_lock(&(term->lock));
 
         /* If mouse button released, stop selection */
-        if (released_mask & GUAC_CLIENT_MOUSE_LEFT)
-            guac_terminal_select_end(term);
+        if (released_mask & GUAC_CLIENT_MOUSE_LEFT) {
+
+            /* End selection and get selected text */
+            char* string = malloc(term->term_width * term->term_height * sizeof(char));
+            guac_terminal_select_end(term, string);
+
+            /* Store new data */
+            free(client_data->clipboard_data);
+            client_data->clipboard_data = string;
+
+            /* Send data */
+            guac_protocol_send_clipboard(client->socket, string);
+            guac_socket_flush(client->socket);
+
+        }
 
         /* Otherwise, just update */
         else

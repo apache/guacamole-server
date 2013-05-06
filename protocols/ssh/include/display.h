@@ -248,5 +248,10 @@ void guac_terminal_display_flush(guac_terminal_display* display);
 void guac_terminal_display_select(guac_terminal_display* display,
         int start_row, int start_col, int end_row, int end_col);
 
+/**
+ * Clears the select rectangle.
+ */
+void guac_terminal_display_clear_select(guac_terminal_display* display);
+
 #endif
 
