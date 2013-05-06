@@ -71,6 +71,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
             /* Add to password */
             client_data->password[client_data->password_length++] = keysym;
             guac_terminal_write(client_data->term, "*", 1);
+            guac_terminal_display_flush(client_data->term->display);
             guac_socket_flush(client->socket);
         }
         else if (keysym == 0xFF08) {
@@ -80,6 +81,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
 
                 /* Backspace */
                 guac_terminal_write(client_data->term, "\x08\x1B[K", 4);
+                guac_terminal_display_flush(client_data->term->display);
                 guac_socket_flush(client->socket);
             }
 
@@ -91,6 +93,7 @@ int ssh_guac_client_password_key_handler(guac_client* client, int keysym, int pr
 
             /* Clear screen */
             guac_terminal_write(client_data->term, "\x1B[2J\x1B[1;1H", 10);
+            guac_terminal_display_flush(client_data->term->display);
             guac_socket_flush(client->socket);
 
             return ssh_guac_client_auth(client, client_data->password);
@@ -151,6 +154,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return 1;
     }
 
+    /* Set basic handlers */
+    client->free_handler = ssh_guac_client_free_handler;
+    client->size_handler = ssh_guac_client_size_handler;
+
     /* If password provided, authenticate now */
     if (argv[2][0] != '\0')
         return ssh_guac_client_auth(client, argv[2]);
@@ -160,6 +167,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         
         client_data->password_length = 0;
         guac_terminal_write(client_data->term, "Password: ", 10);
+        guac_terminal_display_flush(client_data->term->display);
         guac_socket_flush(client->socket);
 
         client->key_handler = ssh_guac_client_password_key_handler;
@@ -224,12 +232,9 @@ int ssh_guac_client_auth(guac_client* client, const char* password) {
 
     /* Set handlers */
     client->handle_messages = ssh_guac_client_handle_messages;
-    client->free_handler = ssh_guac_client_free_handler;
     client->mouse_handler = ssh_guac_client_mouse_handler;
     client->key_handler = ssh_guac_client_key_handler;
     client->clipboard_handler = ssh_guac_client_clipboard_handler;
-    client->size_handler = ssh_guac_client_size_handler;
-
 
     /* Success */
     return 0;
