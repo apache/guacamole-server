@@ -51,7 +51,7 @@ const int GUAC_KEYSYMS_CTRL_ALT[] = {0xFFE3, 0xFFE9, 0};
 const int GUAC_KEYSYMS_ALL_MODIFIERS[] = {
     0xFFE1, 0xFFE2, /* Left and right shift */
     0xFFE3, 0xFFE4, /* Left and right control */
-    0xFFE9, 0xFFEA, /* Left and right alt */
+    0xFFE9, 0xFFEA, /* Left and right alt (AltGr) */
     0
 };
 

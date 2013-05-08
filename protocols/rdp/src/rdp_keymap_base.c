@@ -176,7 +176,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     { .keysym = 0xffe3, .scancode = 0x1D },
 
     /* Control_R */
-    { .keysym = 0xffe4, .scancode = 0x1D },
+    { .keysym = 0xffe4, .scancode = 0x9D },
 
     /* Caps_Lock */
     { .keysym = 0xffe5, .scancode = 0x3A,
@@ -186,7 +186,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     { .keysym = 0xffe9, .scancode = 0x38 },
 
     /* Alt_R */
-    { .keysym = 0xffea, .scancode = 0x38 },
+    { .keysym = 0xffea, .scancode = 0xB8 },
 
     /* Super_L */
     { .keysym = 0xffeb, .scancode = 0x5B,
