@@ -212,7 +212,6 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* E */
     { .keysym = 0x0045, .scancode = 0x12,
-        .clear_keysyms = GUAC_KEYSYMS_CTRL_ALT,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* F */
@@ -245,7 +244,6 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* M */
     { .keysym = 0x004d, .scancode = 0x32,
-        .clear_keysyms = GUAC_KEYSYMS_CTRL_ALT,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* N */
@@ -262,7 +260,6 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* Q */
     { .keysym = 0x0051, .scancode = 0x10,
-        .clear_keysyms = GUAC_KEYSYMS_CTRL_ALT,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
     /* R */
@@ -355,7 +352,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* e */
     { .keysym = 0x0065, .scancode = 0x12,
-        .clear_keysyms = GUAC_KEYSYMS_ALL_MODIFIERS },
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* f */
     { .keysym = 0x0066, .scancode = 0x21,
@@ -387,7 +384,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* m */
     { .keysym = 0x006d, .scancode = 0x32,
-        .clear_keysyms = GUAC_KEYSYMS_ALL_MODIFIERS },
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* n */
     { .keysym = 0x006e, .scancode = 0x31,
@@ -403,7 +400,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 
     /* q */
     { .keysym = 0x0071, .scancode = 0x10,
-        .clear_keysyms = GUAC_KEYSYMS_ALL_MODIFIERS },
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT },
 
     /* r */
     { .keysym = 0x0072, .scancode = 0x13,
