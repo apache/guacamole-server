@@ -475,7 +475,7 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .set_keysyms = GUAC_KEYSYMS_CTRL_ALT },
 
     /* bar */
-    { .keysym = 0x007c, .scancode = 0x2B,
+    { .keysym = 0x007c, .scancode = 0x56,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT,
         .set_keysyms = GUAC_KEYSYMS_CTRL_ALT },
 
