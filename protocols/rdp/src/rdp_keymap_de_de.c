@@ -480,6 +480,16 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT,
         .set_keysyms = GUAC_KEYSYMS_CTRL_ALT },
 
+    /* two superior */
+    { .keysym = 0x00b2, .scancode = 0x03,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT,
+        .set_keysyms = GUAC_KEYSYMS_CTRL_ALT },
+
+    /* three superior */
+    { .keysym = 0x00b3, .scancode = 0x04,
+        .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT,
+        .set_keysyms = GUAC_KEYSYMS_CTRL_ALT },
+
     {0}
 
 };
