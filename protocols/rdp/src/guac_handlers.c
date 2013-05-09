@@ -301,7 +301,7 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
     freerdp* rdp_inst = guac_client_data->rdp_inst;
 
     /* If keysym can be in lookup table */
-    if (keysym <= 0xFFFF) {
+    if (GUAC_RDP_KEYSYM_STORABLE(keysym)) {
 
         /* Look up scancode mapping */
         const guac_rdp_keysym_desc* keysym_desc =
@@ -402,7 +402,8 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
 
     /* Update keysym state */
-    GUAC_RDP_KEYSYM_LOOKUP(guac_client_data->keysym_state, keysym) = pressed;
+    if (GUAC_RDP_KEYSYM_STORABLE(keysym))
+        GUAC_RDP_KEYSYM_LOOKUP(guac_client_data->keysym_state, keysym) = pressed;
 
     return __guac_rdp_send_keysym(client, keysym, pressed);
 

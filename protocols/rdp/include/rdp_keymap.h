@@ -114,12 +114,12 @@ struct guac_rdp_keymap {
 /**
  * Static mapping from keysyms to scancodes.
  */
-typedef guac_rdp_keysym_desc guac_rdp_static_keymap[256][256];
+typedef guac_rdp_keysym_desc guac_rdp_static_keymap[0x200][0x100];
 
 /**
  * Mapping from keysym to current state
  */
-typedef int guac_rdp_keysym_state_map[256][256];
+typedef int guac_rdp_keysym_state_map[0x200][0x100];
 
 /**
  * US English keymap.
@@ -147,10 +147,22 @@ extern const guac_rdp_keymap guac_rdp_keymap_failsafe;
 extern const guac_rdp_keymap guac_rdp_keymap_base;
 
 /**
- * Simple macro for referencing the mapped value of a scancode for a given
- * keysym.
+ * Simple macro for determing whether a keysym can be stored (or retrieved)
+ * from any keymap.
  */
-#define GUAC_RDP_KEYSYM_LOOKUP(keysym_mapping, keysym) ((keysym_mapping)[((keysym) & 0xFF00) >> 8][(keysym) & 0xFF])
+#define GUAC_RDP_KEYSYM_STORABLE(keysym) ((keysym) <= 0xFFFF || ((keysym) & 0xFFFF0000) == 0x01000000)
+
+/**
+ * Simple macro for referencing the mapped value of a scancode for a given
+ * keysym. The idea here is that a keysym of the form 0xABCD will map to
+ * mapping[0xAB][0xCD] while a keysym of the form 0x100ABCD will map to
+ * mapping[0x1AB][0xCD].
+ */
+#define GUAC_RDP_KEYSYM_LOOKUP(keysym_mapping, keysym) (          \
+            (keysym_mapping)                                      \
+            [(((keysym) & 0xFF00) >> 8) | ((keysym) >> 16)]       \
+            [(keysym) & 0xFF]                                     \
+        )
 
 /**
  * Keysym string containing only the left "shift" key.

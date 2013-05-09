@@ -186,7 +186,8 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
     { .keysym = 0xffe9, .scancode = 0x38 },
 
     /* Alt_R */
-    { .keysym = 0xffea, .scancode = 0xB8 },
+    { .keysym = 0xffea, .scancode = 0x38,
+        .set_keysyms = GUAC_KEYSYMS_CTRL },
 
     /* Super_L */
     { .keysym = 0xffeb, .scancode = 0x5B,
