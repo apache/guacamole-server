@@ -40,6 +40,10 @@
 const int GUAC_KEYSYMS_SHIFT[] = {0xFFE1, 0};
 const int GUAC_KEYSYMS_ALL_SHIFT[] = {0xFFE1, 0xFFE2, 0};
 
+const int GUAC_KEYSYMS_ALTGR[] = {0xFFEA, 0};
+const int GUAC_KEYSYMS_SHIFT_ALTGR[] = {0xFFE1, 0xFFEA, 0};
+const int GUAC_KEYSYMS_ALL_SHIFT_ALTGR[] = {0xFFE1, 0xFFE2, 0xFFEA, 0};
+
 const int GUAC_KEYSYMS_CTRL[] = {0xFFE3, 0};
 const int GUAC_KEYSYMS_ALL_CTRL[] = {0xFFE3, 0xFFE4, 0};
 

@@ -175,6 +175,23 @@ extern const int GUAC_KEYSYMS_SHIFT[];
 extern const int GUAC_KEYSYMS_ALL_SHIFT[];
 
 /**
+ * Keysym string containing only the right "alt" key (AltGr).
+ */
+extern const int GUAC_KEYSYMS_ALTGR[];
+
+/**
+ * Keysym string containing the right "alt" key (AltGr) and
+ * left shift.
+ */
+extern const int GUAC_KEYSYMS_SHIFT_ALTGR[];
+
+/**
+ * Keysym string containing the right "alt" key (AltGr) and
+ * both shift keys.
+ */
+extern const int GUAC_KEYSYMS_ALL_SHIFT_ALTGR[];
+
+/**
  * Keysym string containing only the left "ctrl" key.
  */
 extern const int GUAC_KEYSYMS_CTRL[];
@@ -188,11 +205,6 @@ extern const int GUAC_KEYSYMS_ALL_CTRL[];
  * Keysym string containing only the left "alt" key.
  */
 extern const int GUAC_KEYSYMS_ALT[];
-
-/**
- * Keysym string containing both "alt" keys.
- */
-extern const int GUAC_KEYSYMS_ALL_ALT[];
 
 /**
  * Keysym string containing both "alt" keys.
