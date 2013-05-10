@@ -54,7 +54,7 @@
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
-    "user",
+    "username",
     "password",
     NULL
 };
