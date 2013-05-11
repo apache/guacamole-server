@@ -43,9 +43,9 @@
 #include "buffer.h"
 #include "queue.h"
  
-void buffer_init(buffer* buf, int size_of_data) {
+void buffer_init(buffer* buf, int size_of_buffer, int size_of_data) {
     
-    queue_init(&(buf->data_queue), size_of_data);
+    queue_init(&(buf->data_queue), size_of_buffer, size_of_data);
     
 }
 
@@ -61,26 +61,26 @@ void buffer_close(buffer* buf) {
     
 }
 
-void buffer_insert(buffer* buf, void* data, int size_of_data) {
+void buffer_insert(buffer* buf, void* data) {
     
     pthread_mutex_lock(&(buf->update_lock));
-    enqueue(&(buf->data_queue), data, size_of_data);
+    queue_enqueue(&(buf->data_queue), data);
     pthread_mutex_unlock(&(buf->update_lock));
     pthread_cond_signal(&(buf->cond));
     
 }
 
-void buffer_remove(buffer* buf, void* data, int size_of_data, guac_client* client) {
-
+void buffer_remove(buffer* buf, void* data) {
+    
     pthread_mutex_lock(&(buf->update_lock));
-    if((buf->data_queue).count <= 0) 
+    if((buf->data_queue).num_elements <= 0) 
         pthread_cond_wait(&(buf->cond), &(buf->update_lock));
     
     /* If the thread was signaled during a close, 
     the queue might still be empty */
-    if((buf->data_queue).count > 0)
-        dequeue(&(buf->data_queue), data, size_of_data);
+    if((buf->data_queue).num_elements > 0)
+        queue_dequeue(&(buf->data_queue), data);
     
     pthread_mutex_unlock(&(buf->update_lock));
-
+    
 }

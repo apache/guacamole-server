@@ -54,7 +54,7 @@
 buffer* guac_pa_buffer_alloc() {
     
     buffer* audio_buffer = malloc(sizeof(buffer));   
-    buffer_init(audio_buffer, sizeof(unsigned char) * BUF_DATA_SIZE);
+    buffer_init(audio_buffer, BUF_LENGTH * 2, sizeof(unsigned char) * BUF_DATA_SIZE);
 
     return audio_buffer;
 
@@ -104,7 +104,7 @@ void* guac_pa_read_audio(void* data) {
             goto finish;
         }
         
-        buffer_insert(audio_buffer, (void*) buffer_data, sizeof(unsigned char) * BUF_DATA_SIZE);
+        buffer_insert(audio_buffer, (void*) buffer_data);
         
     }
 
@@ -140,7 +140,7 @@ void* guac_pa_send_audio(void* data) {
         counter = 0;
         while (counter < BUF_LENGTH) {
             
-            buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUF_DATA_SIZE, client);
+            buffer_remove(audio_buffer, (void *) buffer_data);
             audio_stream_write_pcm(audio, buffer_data, BUF_DATA_SIZE);  
             counter++;
           

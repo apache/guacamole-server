@@ -51,14 +51,14 @@ typedef struct {
     pthread_cond_t cond;
 } buffer;
 
-void buffer_init(buffer* buf, int size_of_data);
+void buffer_init(buffer* buf, int size_of_buffer, int size_of_data);
 
 void buffer_free(buffer* buf);
 
 void buffer_close(buffer* buf);
 
-void buffer_insert(buffer* buf, void* data, int size_of_data);
+void buffer_insert(buffer* buf, void* data);
  
-void buffer_remove(buffer* buf, void* data, int size_of_data, guac_client* client);
+void buffer_remove(buffer* buf, void* data);
 
 #endif
