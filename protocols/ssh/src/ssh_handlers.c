@@ -52,6 +52,7 @@
 
 #include "ssh_handlers.h"
 #include "ssh_client.h"
+#include "common.h"
 #include "cursor.h"
 
 int ssh_guac_client_handle_messages(guac_client* client) {
@@ -265,19 +266,33 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             pthread_mutex_unlock(&(term->lock));
         }
 
-        /* If simple ASCII key */
-        if (keysym >= 0x00 && keysym <= 0xFF) {
-            char data = (char) keysym;
+        /* Translate Ctrl+letter to control code */ 
+        if (client_data->mod_ctrl) {
 
-            /* Handle Ctrl modifier */
-            if (client_data->mod_ctrl) {
-                if (keysym >= 'A' && keysym <= 'Z')
-                    data = (char) (keysym - 'A' + 1);
-                else if (keysym >= 'a' && keysym <= 'z')
-                    data = (char) (keysym - 'a' + 1);
-            }
+            char data;
+
+            /* If valid control code, send it */
+            if (keysym >= 'A' && keysym <= 'Z')
+                data = (char) (keysym - 'A' + 1);
+            else if (keysym >= 'a' && keysym <= 'z')
+                data = (char) (keysym - 'a' + 1);
+
+            /* Otherwise ignore */
+            else
+                return 0;
 
             return channel_write(client_data->term_channel, &data, 1);
+
+        }
+
+        /* Translate Unicode to UTF-8 */
+        else if ((keysym >= 0x00 && keysym <= 0xFF) || ((keysym & 0xFFFF0000) == 0x01000000)) {
+
+            int length;
+            char data[5];
+
+            length = guac_terminal_encode_utf8(keysym & 0xFFFF, data);
+            return channel_write(client_data->term_channel, data, length);
 
         }
 
