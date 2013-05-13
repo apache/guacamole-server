@@ -55,19 +55,19 @@ static void __guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int
         int clipped_bottom = clipped_top  + *h - 1;
 
         /* Clip left */
-        if      (clipped_left < data->bounds_left) clipped_left = data->bounds_left;
-        else if (clipped_left > data->bounds_left) clipped_left = data->bounds_left;
+        if      (clipped_left < data->bounds_left)  clipped_left = data->bounds_left;
+        else if (clipped_left > data->bounds_right) clipped_left = data->bounds_right;
 
         /* Clip right */
-        if      (clipped_right < data->bounds_right) clipped_right = data->bounds_right;
+        if      (clipped_right < data->bounds_left)  clipped_right = data->bounds_left;
         else if (clipped_right > data->bounds_right) clipped_right = data->bounds_right;
 
         /* Clip top */
-        if      (clipped_top < data->bounds_top) clipped_top = data->bounds_top;
-        else if (clipped_top > data->bounds_top) clipped_top = data->bounds_top;
+        if      (clipped_top < data->bounds_top)    clipped_top = data->bounds_top;
+        else if (clipped_top > data->bounds_bottom) clipped_top = data->bounds_bottom;
 
         /* Clip bottom */
-        if      (clipped_bottom < data->bounds_bottom) clipped_bottom = data->bounds_bottom;
+        if      (clipped_bottom < data->bounds_top)    clipped_bottom = data->bounds_top;
         else if (clipped_bottom > data->bounds_bottom) clipped_bottom = data->bounds_bottom;
 
         /* Store new rect dimensions */
