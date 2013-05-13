@@ -72,7 +72,7 @@ static void __guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int
 
         /* Store new rect dimensions */
         *x = clipped_left;
-        *y = clipped_right;
+        *y = clipped_top;
         *w = clipped_right  - clipped_left + 1;
         *h = clipped_bottom - clipped_top  + 1;
 
