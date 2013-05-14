@@ -160,9 +160,7 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
         case 0:
 
             /* Send black rectangle */
-            guac_protocol_send_rect(client->socket, current_layer,
-                    x, y,
-                    w, h);
+            guac_protocol_send_rect(client->socket, current_layer, x, y, w, h);
 
             guac_protocol_send_cfill(client->socket,
                     GUAC_COMP_OVER, current_layer,
@@ -224,9 +222,7 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
 
         /* If blackness, send black rectangle */
         case 0x00:
-            guac_protocol_send_rect(client->socket, current_layer,
-                    x, y,
-                    w, h);
+            guac_protocol_send_rect(client->socket, current_layer, x, y, w, h);
 
             guac_protocol_send_cfill(client->socket,
                     GUAC_COMP_OVER, current_layer,
@@ -240,9 +236,7 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
         /* If operation is just a copy, send foreground only */
         case 0xCC:
         case 0xF0:
-            guac_protocol_send_rect(client->socket, current_layer,
-                    x, y,
-                    w, h);
+            guac_protocol_send_rect(client->socket, current_layer, x, y, w, h);
 
             guac_protocol_send_cfill(client->socket,
                     GUAC_COMP_OVER, current_layer,
@@ -254,9 +248,7 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
 
         /* If whiteness, send white rectangle */
         case 0xFF:
-            guac_protocol_send_rect(client->socket, current_layer,
-                    x, y,
-                    w, h);
+            guac_protocol_send_rect(client->socket, current_layer, x, y, w, h);
 
             guac_protocol_send_cfill(client->socket,
                     GUAC_COMP_OVER, current_layer,
@@ -306,18 +298,23 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
     int w = scrblt->nWidth;
     int h = scrblt->nHeight;
 
+    int x_src = scrblt->nXSrc;
+    int y_src = scrblt->nYSrc;
+
     rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
     pthread_mutex_lock(&(data->update_lock));
 
     /* Clip operation to bounds */
     __guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
+    /* Update source coordinates */
+    x_src += x - scrblt->nLeftRect;
+    y_src += y - scrblt->nTopRect;
+
     /* Copy screen rect to current surface */
     guac_protocol_send_copy(client->socket,
-            GUAC_DEFAULT_LAYER,
-            scrblt->nXSrc, scrblt->nYSrc, w, h,
-            GUAC_COMP_OVER, current_layer,
-            x, y);
+            GUAC_DEFAULT_LAYER, x_src, y_src, w, h,
+            GUAC_COMP_OVER, current_layer, x, y);
 
     pthread_mutex_unlock(&(data->update_lock));
 
@@ -335,19 +332,24 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     int w = memblt->nWidth;
     int h = memblt->nHeight;
 
+    int x_src = memblt->nXSrc;
+    int y_src = memblt->nYSrc;
+
     rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
     pthread_mutex_lock(&(data->update_lock));
 
     /* Clip operation to bounds */
     __guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
+    /* Update source coordinates */
+    x_src += x - memblt->nLeftRect;
+    y_src += y - memblt->nTopRect;
+
     switch (memblt->bRop) {
 
         /* If blackness, send black rectangle */
         case 0x00:
-            guac_protocol_send_rect(client->socket, current_layer,
-                    x, y,
-                    w, h);
+            guac_protocol_send_rect(client->socket, current_layer, x, y, w, h);
 
             guac_protocol_send_cfill(client->socket,
                     GUAC_COMP_OVER, current_layer,
@@ -372,10 +374,8 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
                     /* Create surface from image data */
                     cairo_surface_t* surface = cairo_image_surface_create_for_data(
-                        memblt->bitmap->data + 4*(memblt->nXSrc + memblt->nYSrc*memblt->bitmap->width),
-                        CAIRO_FORMAT_RGB24,
-                        w, h,
-                        4*memblt->bitmap->width);
+                        memblt->bitmap->data + 4*(x_src + y_src*memblt->bitmap->width),
+                        CAIRO_FORMAT_RGB24, w, h, 4*memblt->bitmap->width);
 
                     /* Send surface to buffer */
                     guac_protocol_send_png(socket,
@@ -391,11 +391,8 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
             /* Otherwise, copy */
             else
                 guac_protocol_send_copy(socket,
-                        bitmap->layer,
-                        memblt->nXSrc, memblt->nYSrc,
-                        w, h,
-                        GUAC_COMP_OVER,
-                        current_layer, x, y);
+                        bitmap->layer, x_src, y_src, w, h,
+                        GUAC_COMP_OVER, current_layer, x, y);
 
             /* Increment usage counter */
             ((guac_rdp_bitmap*) bitmap)->used++;
@@ -404,9 +401,7 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
         /* If whiteness, send white rectangle */
         case 0xFF:
-            guac_protocol_send_rect(client->socket, current_layer,
-                    x, y,
-                    w, h);
+            guac_protocol_send_rect(client->socket, current_layer, x, y, w, h);
 
             guac_protocol_send_cfill(client->socket,
                     GUAC_COMP_OVER, current_layer,
@@ -421,9 +416,7 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
                 guac_rdp_cache_bitmap(context, memblt->bitmap);
 
             guac_protocol_send_transfer(socket,
-                    bitmap->layer,
-                    memblt->nXSrc, memblt->nYSrc,
-                    w, h,
+                    bitmap->layer, x_src, y_src, w, h,
                     guac_rdp_rop3_transfer_function(client, memblt->bRop),
                     current_layer, x, y);
 
