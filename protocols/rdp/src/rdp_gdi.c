@@ -168,16 +168,41 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
 
             break;
 
+        /* DSTINVERT */
+        case 0x55:
+
+            /* Invert */
+            guac_protocol_send_transfer(client->socket,
+                    current_layer, x, y, w, h,
+                    GUAC_TRANSFER_BINARY_NDEST,
+                    current_layer, x, y);
+
+            break;
+
+        /* NOP */
+        case 0xAA:
+            break;
+
+        /* Whiteness */
+        case 0xFF:
+            guac_protocol_send_rect(client->socket, current_layer, x, y, w, h);
+
+            guac_protocol_send_cfill(client->socket,
+                    GUAC_COMP_OVER, current_layer,
+                    0xFF, 0xFF, 0xFF, 0xFF);
+            break;
+
         /* Unsupported ROP3 */
         default:
             guac_client_log_info(client,
-                    "guac_rdp_gdi_dstblt(rop3=%i)", dstblt->bRop);
+                    "guac_rdp_gdi_dstblt(rop3=0x%x)", dstblt->bRop);
 
     }
 
     pthread_mutex_unlock(&(data->update_lock));
 
 }
+
 
 void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
 
