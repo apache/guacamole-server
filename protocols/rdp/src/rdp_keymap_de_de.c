@@ -343,12 +343,12 @@ static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
         .clear_keysyms = GUAC_KEYSYMS_ALTGR,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
-    /* dead grave (WRONG) */
+    /* dead grave */
     { .keysym = 0xfe50, .scancode = 0x0d,
         .clear_keysyms = GUAC_KEYSYMS_ALTGR,
         .set_keysyms = GUAC_KEYSYMS_SHIFT },
 
-    /* dead acute (WRONG) */
+    /* dead acute */
     { .keysym = 0xfe51, .scancode = 0x0d,
         .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT_ALTGR },
 
