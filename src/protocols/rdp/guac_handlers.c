@@ -125,14 +125,14 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         .tv_usec = 250000
     };
 
-    /* get rdp fds */
+    /* Get RDP fds */
     if (!freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
         guac_error = GUAC_STATUS_BAD_STATE;
         guac_error_message = "Unable to read RDP file descriptors";
         return 1;
     }
 
-    /* get channel fds */
+    /* Get channel fds */
     if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
         guac_error = GUAC_STATUS_BAD_STATE;
         guac_error_message = "Unable to read RDP channel file descriptors";
@@ -179,51 +179,76 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         }
     }
 
-    pthread_mutex_lock(&(guac_client_data->rdp_lock));
+    do {
 
-    /* Check the libfreerdp fds */
-    if (!freerdp_check_fds(rdp_inst)) {
-        guac_error = GUAC_STATUS_BAD_STATE;
-        guac_error_message = "Error handling RDP file descriptors";
-        return 1;
-    }
+        pthread_mutex_lock(&(guac_client_data->rdp_lock));
 
-    /* Check channel fds */
-    if (!freerdp_channels_check_fds(channels, rdp_inst)) {
-        guac_error = GUAC_STATUS_BAD_STATE;
-        guac_error_message = "Error handling RDP channel file descriptors";
-        return 1;
-    }
+        /* Check the libfreerdp fds */
+        if (!freerdp_check_fds(rdp_inst)) {
+            guac_error = GUAC_STATUS_BAD_STATE;
+            guac_error_message = "Error handling RDP file descriptors";
+            return 1;
+        }
 
-    /* Check for channel events */
-    event = freerdp_channels_pop_event(channels);
-    if (event) {
+        /* Check channel fds */
+        if (!freerdp_channels_check_fds(channels, rdp_inst)) {
+            guac_error = GUAC_STATUS_BAD_STATE;
+            guac_error_message = "Error handling RDP channel file descriptors";
+            return 1;
+        }
 
-        /* Handle clipboard events */
+        /* Check for channel events */
+        event = freerdp_channels_pop_event(channels);
+        if (event) {
+
+            /* Handle clipboard events */
 #ifdef LEGACY_EVENT
-        if (event->event_class == CliprdrChannel_Class)
-            guac_rdp_process_cliprdr_event(client, event);
+            if (event->event_class == CliprdrChannel_Class)
+                guac_rdp_process_cliprdr_event(client, event);
 #else
-        if (GetMessageClass(event->id) == CliprdrChannel_Class)
-            guac_rdp_process_cliprdr_event(client, event);
+            if (GetMessageClass(event->id) == CliprdrChannel_Class)
+                guac_rdp_process_cliprdr_event(client, event);
 #endif
 
-        freerdp_event_free(event);
+            freerdp_event_free(event);
 
-    }
+        }
 
-    /* Handle RDP disconnect */
-    if (freerdp_shall_disconnect(rdp_inst)) {
-        guac_error = GUAC_STATUS_NO_INPUT;
-        guac_error_message = "RDP server closed connection";
-        return 1;
-    }
+        /* Handle RDP disconnect */
+        if (freerdp_shall_disconnect(rdp_inst)) {
+            guac_error = GUAC_STATUS_NO_INPUT;
+            guac_error_message = "RDP server closed connection";
+            return 1;
+        }
 
-    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+        /* Flush any audio */
+        if (guac_client_data->audio != NULL)
+            guac_socket_flush(guac_client_data->audio->stream->socket);
 
-    /* Flush any audio */
-    if (guac_client_data->audio != NULL)
-        guac_socket_flush(guac_client_data->audio->stream->socket);
+        /* Reset timeout to 0 seconds */
+        timeout.tv_sec  = 0;
+        timeout.tv_usec = 0;
+
+        /* Construct read fd_set */
+        max_fd = 0;
+        FD_ZERO(&rfds);
+        for (index = 0; index < read_count; index++) {
+            fd = (int)(long) (read_fds[index]);
+            if (fd > max_fd)
+                max_fd = fd;
+            FD_SET(fd, &rfds);
+        }
+
+        /* Construct write fd_set */
+        FD_ZERO(&wfds);
+        for (index = 0; index < write_count; index++) {
+            fd = (int)(long) (write_fds[index]);
+            if (fd > max_fd)
+                max_fd = fd;
+            FD_SET(fd, &wfds);
+        }
+
+    } while (select(max_fd + 1, &rfds, &wfds, NULL, &timeout) > 0);
 
     /* Success */
     return 0;

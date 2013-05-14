@@ -491,7 +491,6 @@ void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
 }
 
 void guac_rdp_gdi_end_paint(rdpContext* context) {
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_socket_flush(client->socket);
+    /* IGNORE */
 }
 
