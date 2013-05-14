@@ -428,7 +428,7 @@ void guac_terminal_select_end(guac_terminal* terminal, char* string) {
 
     /* Deselect */
     terminal->text_selected = false;
-    guac_terminal_display_clear_select(terminal->display);
+    guac_terminal_display_commit_select(terminal->display);
 
     guac_terminal_buffer_row* buffer_row;
 

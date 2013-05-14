@@ -68,6 +68,35 @@ const guac_terminal_color guac_terminal_palette[16] = {
 
 };
 
+/**
+ * Clears the currently-selected region, removing the highlight.
+ */
+static void __guac_terminal_display_clear_select(guac_terminal_display* display) {
+
+    guac_socket* socket = display->client->socket;
+    guac_layer* select_layer = display->select_layer;
+
+    guac_protocol_send_rect(socket, select_layer, 0, 0, 1, 1);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
+            0x00, 0x00, 0x00, 0x00);
+
+    guac_socket_flush(socket);
+
+    /* Text is no longer selected */
+    display->text_selected =
+    display->selection_committed = false;
+
+}
+
+/**
+ * Returns whether at least one character within the given range is selected.
+ */
+static bool __guac_terminal_display_contains_selected(guac_terminal_display* display,
+        int start_row, int start_column, int end_row, int end_column) {
+    /* STUB */
+    return false;
+}
+
 /* Maps any codepoint onto a number between 0 and 511 inclusive */
 int __guac_terminal_hash_codepoint(int codepoint) {
 
@@ -345,6 +374,10 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int fore
     display->height = 0;
     display->operations = NULL;
 
+    /* Initially nothing selected */
+    display->text_selected =
+    display->selection_committed = false;
+
     return display;
 
 }
@@ -398,6 +431,11 @@ void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
 
     }
 
+    /* If selection visible and committed, clear if update touches selection */
+    if (display->text_selected && display->selection_committed &&
+        __guac_terminal_display_contains_selected(display, row, row, start_column, end_column))
+            __guac_terminal_display_clear_select(display);
+
 }
 
 void guac_terminal_display_copy_rows(guac_terminal_display* display,
@@ -443,6 +481,11 @@ void guac_terminal_display_copy_rows(guac_terminal_display* display,
 
     }
 
+    /* If selection visible and committed, clear if update touches selection */
+    if (display->text_selected && display->selection_committed &&
+        __guac_terminal_display_contains_selected(display, start_row, end_row, 0, display->width - 1))
+            __guac_terminal_display_clear_select(display);
+
 }
 
 void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
@@ -471,6 +514,11 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         /* Next column */
         current++;
     }
+
+    /* If selection visible and committed, clear if update touches selection */
+    if (display->text_selected && display->selection_committed &&
+        __guac_terminal_display_contains_selected(display, row, row, start_column, end_column))
+            __guac_terminal_display_clear_select(display);
 
 }
 
@@ -533,6 +581,10 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
             display->select_layer,
             display->char_width  * width,
             display->char_height * height);
+
+    /* If selection visible and committed, clear */
+    if (display->text_selected && display->selection_committed)
+        __guac_terminal_display_clear_select(display);
 
 }
 
@@ -841,17 +893,8 @@ void guac_terminal_display_flush(guac_terminal_display* display) {
 
 }
 
-void guac_terminal_display_clear_select(guac_terminal_display* display) {
-
-    guac_socket* socket = display->client->socket;
-    guac_layer* select_layer = display->select_layer;
-
-    guac_protocol_send_rect(socket, select_layer, 0, 0, 1, 1);
-    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
-            0x00, 0x00, 0x00, 0x00);
-
-    guac_socket_flush(socket);
-
+void guac_terminal_display_commit_select(guac_terminal_display* display) {
+    display->selection_committed = true;
 }
 
 void guac_terminal_display_select(guac_terminal_display* display,
@@ -859,6 +902,9 @@ void guac_terminal_display_select(guac_terminal_display* display,
 
     guac_socket* socket = display->client->socket;
     guac_layer* select_layer = display->select_layer;
+
+    /* Text is now selected */
+    display->text_selected = true;
 
     /* If single row, just need one rectangle */
     if (start_row == end_row) {
