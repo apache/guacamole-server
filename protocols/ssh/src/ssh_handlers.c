@@ -206,8 +206,9 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
         pthread_mutex_unlock(&(term->lock));
     }
 
-    /* Otherwise, if mouse button pressed, start selection */
-    else if (pressed_mask & GUAC_CLIENT_MOUSE_LEFT) {
+    /* Otherwise, if mouse button pressed AND moved, start selection */
+    else if (!(pressed_mask & GUAC_CLIENT_MOUSE_LEFT) &&
+               mask         & GUAC_CLIENT_MOUSE_LEFT) {
         pthread_mutex_lock(&(term->lock));
 
         guac_terminal_select_start(term,
