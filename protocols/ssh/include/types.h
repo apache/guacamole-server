@@ -79,9 +79,9 @@ typedef struct guac_terminal_attributes {
     bool reverse;
 
     /**
-     * Whether the associated character is selected.
+     * Whether the associated character is highlighted by the cursor.
      */
-    bool selected;
+    bool cursor;
 
     /**
      * Whether to render the character with underscore.

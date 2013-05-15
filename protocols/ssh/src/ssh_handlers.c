@@ -90,11 +90,6 @@ int ssh_guac_client_handle_messages(guac_client* client) {
         /* Lock terminal access */
         pthread_mutex_lock(&(client_data->term->lock));
 
-        /* Clear cursor */
-        guac_terminal_toggle_reverse(client_data->term,
-                client_data->term->cursor_row,
-                client_data->term->cursor_col);
-
         /* While data available, write to terminal */
         while (channel_is_open(client_data->term_channel)
                 && !channel_is_eof(client_data->term_channel)
@@ -113,10 +108,8 @@ int ssh_guac_client_handle_messages(guac_client* client) {
             return 1;
         }
 
-        /* Draw cursor */
-        guac_terminal_toggle_reverse(client_data->term,
-                client_data->term->cursor_row,
-                client_data->term->cursor_col);
+        /* Update cursor */
+        guac_terminal_commit_cursor(client_data->term);
 
         /* Flush terminal display */
         guac_terminal_display_flush(client_data->term->display);

@@ -83,8 +83,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
 
-    term->cursor_row = 0;
-    term->cursor_col = 0;
+    term->cursor_row = term->visible_cursor_row = 0;
+    term->cursor_col = term->visible_cursor_col = 0;
 
     term->term_width   = width  / term->display->char_width;
     term->term_height  = height / term->display->char_height;
@@ -129,21 +129,37 @@ int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint) {
 
 }
 
-int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col) {
+void guac_terminal_commit_cursor(guac_terminal* term) {
 
     guac_terminal_char* guac_char;
 
-    /* Get character from buffer */
-    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(term->buffer, row, col+1);
+    guac_terminal_buffer_row* old_row;
+    guac_terminal_buffer_row* new_row;
 
-    /* Toggle reverse */
-    guac_char = &(buffer_row->characters[col]);
-    guac_char->attributes.reverse = !(guac_char->attributes.reverse);
+    /* If no change, done */
+    if (term->visible_cursor_row == term->cursor_row && term->visible_cursor_col == term->cursor_col)
+        return;
 
-    /* Set display */
-    guac_terminal_display_set_columns(term->display, row + term->scroll_offset, col, col, guac_char);
+    /* Get old and new rows with cursor */
+    new_row = guac_terminal_buffer_get_row(term->buffer, term->cursor_row, term->cursor_col+1);
+    old_row = guac_terminal_buffer_get_row(term->buffer, term->visible_cursor_row, term->visible_cursor_col+1);
 
-    return 0;
+    /* Clear cursor */
+    guac_char = &(old_row->characters[term->visible_cursor_col]);
+    guac_char->attributes.cursor = false;
+    guac_terminal_display_set_columns(term->display, term->visible_cursor_row + term->scroll_offset,
+            term->visible_cursor_col, term->visible_cursor_col, guac_char);
+
+    /* Set cursor */
+    guac_char = &(new_row->characters[term->cursor_col]);
+    guac_char->attributes.cursor = true;
+    guac_terminal_display_set_columns(term->display, term->cursor_row + term->scroll_offset,
+            term->cursor_col, term->cursor_col, guac_char);
+
+    term->visible_cursor_row = term->cursor_row;
+    term->visible_cursor_col = term->cursor_col;
+
+    return;
 
 }
 
@@ -506,6 +522,12 @@ void guac_terminal_copy_columns(guac_terminal* terminal, int row,
     guac_terminal_buffer_copy_columns(terminal->buffer, row,
             start_column, end_column, offset);
 
+    /* Update cursor location if within region */
+    if (row == terminal->visible_cursor_row &&
+            terminal->visible_cursor_col >= start_column &&
+            terminal->visible_cursor_col <= end_column)
+        terminal->visible_cursor_col += offset;
+
 }
 
 void guac_terminal_copy_rows(guac_terminal* terminal,
@@ -516,6 +538,11 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
 
     guac_terminal_buffer_copy_rows(terminal->buffer,
             start_row, end_row, offset);
+
+    /* Update cursor location if within region */
+    if (terminal->visible_cursor_row >= start_row &&
+        terminal->visible_cursor_row <= end_row)
+        terminal->visible_cursor_row += offset;
 
 }
 

@@ -113,6 +113,16 @@ struct guac_terminal {
     int cursor_col;
 
     /**
+     * The row of the rendered cursor.
+     */
+    int visible_cursor_row;
+
+    /**
+     * The column of the rendered cursor.
+     */
+    int visible_cursor_col;
+
+    /**
      * The attributes which will be applied to future characters.
      */
     guac_terminal_attributes current_attributes;
@@ -219,9 +229,10 @@ int guac_terminal_scroll_down(guac_terminal* term,
         int start_row, int end_row, int amount);
 
 /**
- * Toggles the reverse attribute of the character at the given location.
+ * Commits the current cursor location, updating the visible cursor
+ * on the screen.
  */
-int guac_terminal_toggle_reverse(guac_terminal* term, int row, int col);
+void guac_terminal_commit_cursor(guac_terminal* term);
 
 /**
  * Scroll down the display by the given amount, replacing the new space with

@@ -250,7 +250,7 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
     int background, foreground;
 
     /* Handle reverse video */
-    if (attributes->reverse != attributes->selected) {
+    if (attributes->reverse != attributes->cursor) {
         background = attributes->foreground;
         foreground = attributes->background;
     }
@@ -758,7 +758,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
 
                 /* Color of the rectangle to draw */
                 int color;
-                if (current->character.attributes.reverse != current->character.attributes.selected)
+                if (current->character.attributes.reverse != current->character.attributes.cursor)
                    color = current->character.attributes.foreground;
                 else
                    color = current->character.attributes.background;
@@ -824,7 +824,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                     for (rect_col=0; rect_col<rect_width; rect_col++) {
 
                         int joining_color;
-                        if (rect_current->character.attributes.reverse)
+                        if (rect_current->character.attributes.reverse != rect_current->character.attributes.cursor)
                            joining_color = current->character.attributes.foreground;
                         else
                            joining_color = current->character.attributes.background;
