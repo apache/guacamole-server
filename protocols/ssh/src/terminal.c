@@ -192,6 +192,11 @@ int guac_terminal_scroll_up(guac_terminal* term,
         if (term->buffer->length > term->buffer->available)
             term->buffer->length = term->buffer->available;
 
+        /* Update cursor location if within region */
+        if (term->visible_cursor_row >= start_row &&
+            term->visible_cursor_row <= end_row)
+            term->visible_cursor_row -= amount;
+
     }
 
     /* Otherwise, just copy row data upwards */
