@@ -91,10 +91,28 @@ static void __guac_terminal_display_clear_select(guac_terminal_display* display)
 /**
  * Returns whether at least one character within the given range is selected.
  */
-static bool __guac_terminal_display_contains_selected(guac_terminal_display* display,
+static bool __guac_terminal_display_selected_contains(guac_terminal_display* display,
         int start_row, int start_column, int end_row, int end_column) {
-    /* STUB */
-    return false;
+
+    /* If test range starts after highlight ends, does not intersect */
+    if (start_row > display->selection_end_row)
+        return false;
+
+    if (start_row == display->selection_end_row
+            && start_column > display->selection_end_column)
+        return false;
+
+    /* If test range ends before highlight starts, does not intersect */
+    if (end_row < display->selection_start_row)
+        return false;
+
+    if (end_row == display->selection_start_row
+            && end_column < display->selection_start_column)
+        return false;
+
+    /* Otherwise, does intersect */
+    return true;
+
 }
 
 /* Maps any codepoint onto a number between 0 and 511 inclusive */
@@ -433,7 +451,7 @@ void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
 
     /* If selection visible and committed, clear if update touches selection */
     if (display->text_selected && display->selection_committed &&
-        __guac_terminal_display_contains_selected(display, row, row, start_column, end_column))
+        __guac_terminal_display_selected_contains(display, row, start_column, row, end_column))
             __guac_terminal_display_clear_select(display);
 
 }
@@ -483,7 +501,7 @@ void guac_terminal_display_copy_rows(guac_terminal_display* display,
 
     /* If selection visible and committed, clear if update touches selection */
     if (display->text_selected && display->selection_committed &&
-        __guac_terminal_display_contains_selected(display, start_row, end_row, 0, display->width - 1))
+        __guac_terminal_display_selected_contains(display, start_row, 0, end_row, display->width - 1))
             __guac_terminal_display_clear_select(display);
 
 }
@@ -517,7 +535,7 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
 
     /* If selection visible and committed, clear if update touches selection */
     if (display->text_selected && display->selection_committed &&
-        __guac_terminal_display_contains_selected(display, row, row, start_column, end_column))
+        __guac_terminal_display_selected_contains(display, row, start_column, row, end_column))
             __guac_terminal_display_clear_select(display);
 
 }
@@ -905,6 +923,12 @@ void guac_terminal_display_select(guac_terminal_display* display,
 
     /* Text is now selected */
     display->text_selected = true;
+
+    display->selection_start_row = start_row;
+    display->selection_start_column = start_col;
+    display->selection_end_row = end_row;
+    display->selection_end_column = end_col;
+
 
     /* If single row, just need one rectangle */
     if (start_row == end_row) {
