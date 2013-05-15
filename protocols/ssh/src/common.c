@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <stdbool.h>
+
 int guac_terminal_fit_to_range(int value, int min, int max) {
 
     if (value < min) return min;
@@ -88,5 +90,11 @@ int guac_terminal_encode_utf8(int codepoint, char* utf8) {
     /* Done */
     return bytes;
 
+}
+
+bool guac_terminal_has_glyph(int codepoint) {
+    return
+           codepoint != 0
+        && codepoint != ' ';
 }
 

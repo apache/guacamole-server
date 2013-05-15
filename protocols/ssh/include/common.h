@@ -38,6 +38,8 @@
 #ifndef _SSH_GUAC_COMMON_H
 #define _SSH_GUAC_COMMON_H
 
+#include <stdbool.h>
+
 /**
  * Returns the closest value to the value given that is also
  * within the given range.
@@ -49,6 +51,12 @@ int guac_terminal_fit_to_range(int value, int min, int max);
  * provided buffer, and returning the number of bytes stored.
  */
 int guac_terminal_encode_utf8(int codepoint, char* utf8);
+
+/**
+ * Returns whether a codepoint has a corresponding glyph, or is rendered
+ * as a blank space.
+ */
+bool guac_terminal_has_glyph(int codepoint);
 
 #endif
 

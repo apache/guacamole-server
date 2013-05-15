@@ -547,7 +547,7 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
 
     /* Fill with background color (index 0) */
     guac_terminal_char fill = {
-        .value = ' ',
+        .value = 0,
         .attributes = {
             .foreground = 0,
             .background = 0
@@ -743,7 +743,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
 
             /* If operation is a cler operation (set to space) */
             if (current->type == GUAC_CHAR_SET &&
-                    current->character.value == ' ') {
+                    !guac_terminal_has_glyph(current->character.value)) {
 
                 /* The determined bounds of the rectangle of contiguous
                  * operations */
@@ -786,7 +786,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
 
                         /* If not identical operation, stop */
                         if (rect_current->type != GUAC_CHAR_SET
-                                || rect_current->character.value != ' '
+                                || guac_terminal_has_glyph(rect_current->character.value)
                                 || joining_color != color)
                             break;
 
@@ -831,7 +831,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
 
                         /* Mark clear operations as NOP */
                         if (rect_current->type == GUAC_CHAR_SET
-                                && rect_current->character.value == ' '
+                                && !guac_terminal_has_glyph(rect_current->character.value)
                                 && joining_color == color)
                             rect_current->type = GUAC_CHAR_NOP;
 

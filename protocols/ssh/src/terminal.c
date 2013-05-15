@@ -58,7 +58,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
         int width, int height) {
 
     guac_terminal_char default_char = {
-        .value = ' ',
+        .value = 0,
         .attributes = {
             .foreground = 7,
             .background = 0,
@@ -208,7 +208,7 @@ int guac_terminal_clear_columns(guac_terminal* term,
 
     /* Build space */
     guac_terminal_char blank;
-    blank.value = ' ';
+    blank.value = 0;
     blank.attributes = term->current_attributes;
 
     /* Clear */
@@ -415,9 +415,16 @@ int __guac_terminal_buffer_string(guac_terminal_buffer_row* row, int start, int 
     int length = 0;
     int i;
     for (i=start; i<=end; i++) {
-        int bytes = guac_terminal_encode_utf8(row->characters[i].value, string);
-        string += bytes;
-        length += bytes;
+
+        int codepoint = row->characters[i].value;
+
+        /* If not null (blank), add to string */
+        if (codepoint != 0) {
+            int bytes = guac_terminal_encode_utf8(codepoint, string);
+            string += bytes;
+            length += bytes;
+        }
+
     }
 
     return length;
