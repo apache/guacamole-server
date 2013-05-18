@@ -49,6 +49,7 @@ libguac_client_ssh_la_SOURCES = \
     src/display.c               \
     src/guac_handlers.c         \
     src/ibar.c                  \
+    src/ssh_client.c            \
     src/terminal.c              \
     src/terminal_handlers.c
 
@@ -61,6 +62,7 @@ noinst_HEADERS =                \
     include/display.h           \
     include/guac_handlers.h     \
     include/ibar.h              \
+    include/ssh_client.h        \
     include/terminal.h          \
     include/terminal_handlers.h \
     include/types.h

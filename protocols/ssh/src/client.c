@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
@@ -50,6 +51,7 @@
 #include "terminal.h"
 #include "blank.h"
 #include "ibar.h"
+#include "ssh_client.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -123,6 +125,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->mouse_handler     = ssh_guac_client_mouse_handler;
     client->size_handler      = ssh_guac_client_size_handler;
     client->free_handler      = ssh_guac_client_free_handler;
+
+    /* Start client thread */
+    if (pthread_create(&(client_data->client_thread), NULL, ssh_client_thread, (void*) client)) {
+        guac_client_log_error(client, "Unable to SSH client thread");
+        return -1;
+    }
 
     /* Success */
     return 0;

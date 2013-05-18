@@ -20,7 +20,6 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,71 +35,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _SSH_GUAC_CLIENT_H
-#define _SSH_GUAC_CLIENT_H
+#ifndef __SSH_CLIENT_H
+#define __SSH_CLIENT_H
 
-#include <pthread.h>
-#include <libssh/libssh.h>
-
-#include "terminal.h"
-#include "cursor.h"
+#include <guacamole/client.h>
 
 /**
- * SSH-specific client data.
+ * Main SSH client thread, handling transfer of SSH output to STDOUT.
  */
-typedef struct ssh_guac_client_data {
-
-    pthread_t client_thread;
-
-    ssh_session session;
-    ssh_channel term_channel;
-
-    /**
-     * The terminal which will render all output from the SSH client.
-     */
-    guac_terminal* term;
-   
-    /**
-     * The current contents of the clipboard.
-     */
-    char* clipboard_data;
-
-    /**
-     * Whether the control key is currently being held down.
-     */
-    int mod_ctrl;
-
-    /**
-     * The current mouse button state.
-     */
-    int mouse_mask;
-
-    /**
-     * Pipe which will be used to provide STDOUT to the SSH client.
-     */
-    int stdout_pipe_fd[2];
-
-    /**
-     * Pipe which will be used to provide STDIN to the SSH client.
-     */
-    int stdin_pipe_fd[2];
-
-    /**
-     * The cached I-bar cursor.
-     */
-    guac_ssh_cursor* ibar_cursor;
-
-    /**
-     * The cached invisible (blank) cursor.
-     */
-    guac_ssh_cursor* blank_cursor;
-
-    /**
-     * The current cursor, used to avoid re-setting the cursor.
-     */
-    guac_ssh_cursor* current_cursor;
-
-} ssh_guac_client_data;
+void* ssh_client_thread(void* data);
 
 #endif
 

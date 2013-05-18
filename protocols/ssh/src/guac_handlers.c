@@ -349,6 +349,11 @@ int ssh_guac_client_free_handler(guac_client* client) {
 
     ssh_guac_client_data* guac_client_data = (ssh_guac_client_data*) client->data;
 
+    /* Close SSH client */
+    close(STDOUT_FILENO);
+    close(STDIN_FILENO);
+    pthread_join(guac_client_data->client_thread, NULL);
+
     /* Free terminal */
     guac_terminal_free(guac_client_data->term);
 
