@@ -37,16 +37,56 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdio.h>
+#include <string.h>
 
 #include <guacamole/client.h>
 
 #include "client.h"
 
+/**
+ * Similar to fgets(), reads a single line from STDIN. Unlike fgets(), this
+ * function does not include the trailing newline character, although the
+ * character is removed from the input stream.
+ *
+ * @param title The title of the prompt to display.
+ * @param str The buffer to read the result into.
+ * @param size The number of bytes available in the buffer.
+ * @return str, or NULL if the prompt failed.
+ */
+static char* prompt(const char* title, char* str, int size) {
+
+    /* Print title */
+    printf("%s", title);
+    fflush(stdout);
+
+    /* Read input */
+    str = fgets(str, size, stdin);
+
+    /* Remove trailing newline, if any */
+    if (str != NULL) {
+        int length = strlen(str);
+        if (str[length-1] == '\n')
+            str[length-1] = 0;
+    }
+
+    return str;
+
+}
+
 void* ssh_client_thread(void* data) {
 
-    /* STUB */
-    printf("--- STUB! ---\n");
-    fflush(stdout);
+    char username[1024];
+    char password[1024];
+
+    /* Get username */
+    if (prompt("Login as: ", username, sizeof(username)) == NULL)
+        return NULL;
+
+    /* Get password */
+    if (prompt("Password: ", password, sizeof(password)) == NULL)
+        return NULL;
+
+    guac_client_log_info((guac_client*) data, "got: %s ... %s", username, password);
 
     return NULL;
 
