@@ -126,15 +126,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->size_handler      = ssh_guac_client_size_handler;
     client->free_handler      = ssh_guac_client_free_handler;
 
-    /* Start client output thread */
-    if (pthread_create(&(client_data->output_thread), NULL, ssh_client_output_thread, (void*) client)) {
-        guac_client_log_error(client, "Unable to start SSH client output thread");
-        return -1;
-    }
-
-    /* Start client input thread */
-    if (pthread_create(&(client_data->input_thread), NULL, ssh_client_input_thread, (void*) client)) {
-        guac_client_log_error(client, "Unable to start SSH client input thread");
+    /* Start client thread */
+    if (pthread_create(&(client_data->client_thread), NULL, ssh_client_thread, (void*) client)) {
+        guac_client_log_error(client, "Unable to SSH client thread");
         return -1;
     }
 

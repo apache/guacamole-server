@@ -50,15 +50,7 @@
  */
 typedef struct ssh_guac_client_data {
 
-    /**
-     * SSH client output thread.
-     */
-    pthread_t output_thread;
-
-    /**
-     * SSH client input thread.
-     */
-    pthread_t input_thread;
+    pthread_t client_thread;
 
     ssh_session session;
     ssh_channel term_channel;
