@@ -34,8 +34,8 @@
 #
 # ***** END LICENSE BLOCK *****
 
-AC_INIT(src/ssh_client.c)
-AM_INIT_AUTOMAKE([libguac-client-ssh], 0.6.0)
+AC_INIT(src/client.c)
+AM_INIT_AUTOMAKE([libguac-client-ssh], 0.8.0)
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.

@@ -49,8 +49,8 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 
-#include "ssh_handlers.h"
-#include "ssh_client.h"
+#include "guac_handlers.h"
+#include "client.h"
 #include "common.h"
 #include "cursor.h"
 

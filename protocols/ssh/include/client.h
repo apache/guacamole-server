@@ -41,10 +41,6 @@
 
 #include <libssh/libssh.h>
 
-#include <guacamole/client.h>
-
-#include "ssh_client.h"
-#include "ssh_handlers.h"
 #include "terminal.h"
 #include "cursor.h"
 
