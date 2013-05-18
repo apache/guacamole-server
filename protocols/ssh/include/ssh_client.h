@@ -43,7 +43,12 @@
 /**
  * Main SSH client thread, handling transfer of SSH output to STDOUT.
  */
-void* ssh_client_thread(void* data);
+void* ssh_client_output_thread(void* data);
+
+/**
+ * Secondary SSH client thread, handling transfer of STDIN to SSH input.
+ */
+void* ssh_client_input_thread(void* data);
 
 #endif
 

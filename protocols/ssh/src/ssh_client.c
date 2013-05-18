@@ -42,7 +42,7 @@
 
 #include "client.h"
 
-void* ssh_client_thread(void* data) {
+void* ssh_client_output_thread(void* data) {
 
     /* STUB */
     printf("--- STUB! ---\n");
@@ -50,5 +50,10 @@ void* ssh_client_thread(void* data) {
 
     return NULL;
 
+}
+
+void* ssh_client_input_thread(void* data) {
+    /* STUB */
+    return NULL;
 }
 
