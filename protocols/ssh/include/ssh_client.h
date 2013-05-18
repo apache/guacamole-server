@@ -48,20 +48,43 @@
 #include "terminal.h"
 #include "cursor.h"
 
+/**
+ * SSH-specific client data.
+ */
 typedef struct ssh_guac_client_data {
 
     ssh_session session;
     ssh_channel term_channel;
 
+    /**
+     * The terminal which will render all output from the SSH client.
+     */
     guac_terminal* term;
-    
-    char * clipboard_data;
+   
+    /**
+     * The current contents of the clipboard.
+     */
+    char* clipboard_data;
 
-    char password[1024];
-    int password_length;
-
+    /**
+     * Whether the control key is currently being held down.
+     */
     int mod_ctrl;
+
+    /**
+     * The current mouse button state.
+     */
     int mouse_mask;
+
+    /**
+     * Pipe which will be used to provide STDOUT to the SSH client.
+     */
+    int stdout_pipe_fd[2];
+
+    /**
+     * Pipe which will be used to provide STDIN to the SSH client.
+     */
+    int stdin_pipe_fd[2];
 
     /**
      * The cached I-bar cursor.
@@ -79,8 +102,6 @@ typedef struct ssh_guac_client_data {
     guac_ssh_cursor* current_cursor;
 
 } ssh_guac_client_data;
-
-int ssh_guac_client_auth(guac_client* client, const char* password);
 
 #endif
 

@@ -41,14 +41,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <libssh/libssh.h>
-
 #include <cairo/cairo.h>
 #include <pango/pangocairo.h>
 
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 
 #include "ssh_handlers.h"
 #include "ssh_client.h"
@@ -61,42 +60,32 @@ int ssh_guac_client_handle_messages(guac_client* client) {
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     char buffer[8192];
 
-    ssh_channel channels[2], out_channels[2];
+    int ret_val;
+    int fd = client_data->stdout_pipe_fd[0];
     struct timeval timeout;
     fd_set fds;
-    int ssh_fd;
-
-    /* Channels to read */
-    channels[0] = client_data->term_channel;
-    channels[1] = NULL;
-
-    /* Get SSH file descriptor */
-    ssh_fd = ssh_get_fd(client_data->session);
 
     /* Build fd_set */
     FD_ZERO(&fds);
-    FD_SET(ssh_fd, &fds);
+    FD_SET(fd, &fds);
 
     /* Time to wait */
     timeout.tv_sec =  1;
     timeout.tv_usec = 0;
 
     /* Wait for data to be available */
-    if (ssh_select(channels, out_channels, ssh_fd+1, &fds, &timeout)
-            == SSH_OK) {
+    ret_val = select(fd+1, &fds, NULL, NULL, &timeout);
+    if (ret_val > 0) {
 
         int bytes_read = 0;
 
         /* Lock terminal access */
         pthread_mutex_lock(&(client_data->term->lock));
 
-        /* While data available, write to terminal */
-        while (channel_is_open(client_data->term_channel)
-                && !channel_is_eof(client_data->term_channel)
-                && (bytes_read = channel_read_nonblocking(client_data->term_channel, buffer, sizeof(buffer), 0)) > 0) {
+        /* Read data, write to terminal */
+        if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
 
-            if (guac_terminal_write(client_data->term, buffer, bytes_read)
-                || guac_socket_flush(socket))
+            if (guac_terminal_write(client_data->term, buffer, bytes_read))
                 return 1;
 
         }
@@ -117,6 +106,11 @@ int ssh_guac_client_handle_messages(guac_client* client) {
         /* Unlock terminal access */
         pthread_mutex_unlock(&(client_data->term->lock));
 
+    }
+    else if (ret_val < 0) {
+        guac_error_message = "Error waiting for pipe";
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        return 1;
     }
 
     return 0;
@@ -164,7 +158,7 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
         int length = strlen(client_data->clipboard_data);
         if (length)
-            return channel_write(client_data->term_channel,
+            return write(client_data->stdin_pipe_fd[1],
                     client_data->clipboard_data, length);
 
     }
@@ -234,6 +228,9 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
+    /* Get write end of STDIN pipe */
+    int fd = client_data->stdin_pipe_fd[1];
+
     /* Hide mouse cursor if not already hidden */
     if (client_data->current_cursor != client_data->blank_cursor) {
         pthread_mutex_lock(&(term->lock));
@@ -275,7 +272,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             else
                 return 0;
 
-            return channel_write(client_data->term_channel, &data, 1);
+            return write(fd, &data, 1);
 
         }
 
@@ -286,7 +283,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             char data[5];
 
             length = guac_terminal_encode_utf8(keysym & 0xFFFF, data);
-            return channel_write(client_data->term_channel, data, length);
+            return write(fd, data, length);
 
         }
 
@@ -309,7 +306,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             /* Ignore other keys */
             else return 0;
 
-            return channel_write(client_data->term_channel, data, length);
+            return write(fd, data, length);
         }
 
     }
@@ -335,8 +332,8 @@ int ssh_guac_client_size_handler(guac_client* client, int width, int height) {
 
         /* Resize terminal */
         guac_terminal_resize(terminal, columns, rows);
-        channel_change_pty_size(guac_client_data->term_channel,
-                terminal->term_width, terminal->term_height);
+
+        /* FIXME: Make resize call to SSH thread */
 
         /* Reset scroll region */
         terminal->scroll_end = rows - 1;
