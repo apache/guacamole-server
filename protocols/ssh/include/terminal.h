@@ -76,6 +76,14 @@ struct guac_terminal {
     pthread_mutex_t lock;
 
     /**
+     * Whether input should be echoed when keys are pressed. Normally, the
+     * terminal on the side of the SSH server will handle this automatically,
+     * and this flag will need to be cleared. When SSH is not yet connected,
+     * this flag would need to be set for input to be visible.
+     */
+    bool echo;
+
+    /**
      * The relative offset of the display. A positive value indicates that
      * many rows have been scrolled into view, zero indicates that no
      * scrolling has occurred. Negative values are illegal.

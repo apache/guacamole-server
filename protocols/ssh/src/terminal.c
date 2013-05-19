@@ -94,6 +94,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->scroll_end = term->term_height - 1;
 
     term->text_selected = false;
+    term->echo = true;
 
     /* Size display */
     guac_terminal_display_resize(term->display,
