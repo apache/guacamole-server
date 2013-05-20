@@ -154,7 +154,7 @@ void* ssh_client_thread(void* data) {
 
     guac_socket* socket = client->socket;
     char buffer[8192];
-    int bytes_read;
+    int bytes_read = -1234;
 
     int stdout_fd = client_data->stdout_pipe_fd[1];
 
@@ -244,11 +244,14 @@ void* ssh_client_thread(void* data) {
 
     /* While data available, write to terminal */
     while (channel_is_open(client_data->term_channel)
-            && !channel_is_eof(client_data->term_channel)
-            && (bytes_read = channel_read(client_data->term_channel, buffer, sizeof(buffer), 0)) > 0) {
+            && !channel_is_eof(client_data->term_channel)) {
 
-        if (__write_all(stdout_fd, buffer, bytes_read) <= 0)
-            return NULL;
+        /* Repeat read if necessary */
+        if ((bytes_read = channel_read(client_data->term_channel, buffer, sizeof(buffer), 0)) == SSH_AGAIN)
+            continue;
+
+        if (bytes_read > 0)
+            __write_all(stdout_fd, buffer, bytes_read);
 
     }
 
