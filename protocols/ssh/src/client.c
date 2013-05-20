@@ -74,6 +74,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->term = term;
     client_data->mod_ctrl = 0;
     client_data->clipboard_data = NULL;
+    client_data->term_channel = NULL;
 
     if (argc != 3) {
         guac_client_log_error(client, "Wrong number of arguments");

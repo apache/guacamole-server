@@ -608,6 +608,7 @@ void guac_terminal_resize(guac_terminal* term, int width, int height) {
             /* Update buffer top and cursor row based on shift */
             term->buffer->top += shift_amount;
             term->cursor_row  -= shift_amount;
+            term->visible_cursor_row  -= shift_amount;
 
             /* Redraw characters within old region */
             __guac_terminal_redraw_rect(term, height - shift_amount, 0, height-1, width-1);
@@ -642,6 +643,7 @@ void guac_terminal_resize(guac_terminal* term, int width, int height) {
             /* Update buffer top and cursor row based on shift */
             term->buffer->top -= shift_amount;
             term->cursor_row  += shift_amount;
+            term->visible_cursor_row  += shift_amount;
 
             /* If scrolled enough, use scroll to fulfill entire resize */
             if (term->scroll_offset >= shift_amount) {

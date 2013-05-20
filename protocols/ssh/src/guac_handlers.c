@@ -333,11 +333,16 @@ int ssh_guac_client_size_handler(guac_client* client, int width, int height) {
         /* Resize terminal */
         guac_terminal_resize(terminal, columns, rows);
 
-        /* FIXME: Make resize call to SSH thread */
+        /* Update SSH pty size if connected */
+        if (guac_client_data->term_channel != NULL)
+            channel_change_pty_size(guac_client_data->term_channel,
+                    terminal->term_width, terminal->term_height);
 
         /* Reset scroll region */
         terminal->scroll_end = rows - 1;
 
+        guac_terminal_display_flush(terminal->display);
+        guac_socket_flush(terminal->client->socket);
     }
 
     pthread_mutex_unlock(&(terminal->lock));
