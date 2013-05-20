@@ -354,9 +354,14 @@ int ssh_guac_client_free_handler(guac_client* client) {
 
     ssh_guac_client_data* guac_client_data = (ssh_guac_client_data*) client->data;
 
-    /* Close SSH client */
-    close(STDOUT_FILENO);
-    close(STDIN_FILENO);
+    /* Close terminal output pipe */
+    close(guac_client_data->stdout_pipe_fd[1]);
+    close(guac_client_data->stdout_pipe_fd[0]);
+
+    /* Close user input pipe */
+    close(guac_client_data->stdin_pipe_fd[1]);
+    close(guac_client_data->stdin_pipe_fd[0]);
+
     pthread_join(guac_client_data->client_thread, NULL);
 
     /* Free terminal */

@@ -108,24 +108,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return 1;
     }
 
-    /* Redirect STDOUT to pipe */
-    if (dup2(client_data->stdout_pipe_fd[1], STDOUT_FILENO) < 0) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Unable redirect STDOUT";
-        return 1;
-    }
-
     /* Open STDIN pipe */
     if (pipe(client_data->stdin_pipe_fd)) {
         guac_error = GUAC_STATUS_SEE_ERRNO;
         guac_error_message = "Unable to open pipe for STDIN";
-        return 1;
-    }
-
-    /* Redirect STDIN to pipe */
-    if (dup2(client_data->stdin_pipe_fd[0], STDIN_FILENO) < 0) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Unable redirect STDIN";
         return 1;
     }
 

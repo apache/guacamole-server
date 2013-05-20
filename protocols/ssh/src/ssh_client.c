@@ -262,6 +262,9 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
+    /* Wait for input thread to die */
+    pthread_join(input_thread, NULL);
+
     guac_client_log_info(client, "SSH connection ended.");
     return NULL;
 
