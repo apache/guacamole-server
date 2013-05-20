@@ -38,8 +38,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #include "client.h"
 
@@ -126,23 +129,137 @@ static char* prompt(guac_client* client, const char* title, char* str, int size,
 
 }
 
+void* ssh_input_thread(void* data) {
+
+    guac_client* client = (guac_client*) data;
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
+    char buffer[8192];
+    int bytes_read;
+
+    int stdin_fd = client_data->stdin_pipe_fd[0];
+
+    /* Write all data read */
+    while ((bytes_read = read(stdin_fd, buffer, sizeof(buffer))) > 0)
+        channel_write(client_data->term_channel, buffer, bytes_read);
+
+    return NULL;
+
+}
+
 void* ssh_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
 
-    char username[1024];
-    char password[1024];
+    guac_socket* socket = client->socket;
+    char buffer[8192];
+    int bytes_read;
+
+    int stdout_fd = client_data->stdout_pipe_fd[1];
+
+    pthread_t input_thread;
 
     /* Get username */
-    if (prompt(client, "Login as: ", username, sizeof(username), true) == NULL)
+    if (client_data->username[0] == 0 &&
+            prompt(client, "Login as: ", client_data->username, sizeof(client_data->username), true) == NULL)
         return NULL;
 
     /* Get password */
-    if (prompt(client, "Password: ", password, sizeof(password), false) == NULL)
+    if (client_data->password[0] == 0 &&
+            prompt(client, "Password: ", client_data->password, sizeof(client_data->password), false) == NULL)
         return NULL;
 
-    guac_client_log_info((guac_client*) data, "got: %s ... %s", username, password);
+    /* Open SSH session */
+    client_data->session = ssh_new();
+    if (client_data->session == NULL) {
+        guac_protocol_send_error(socket, "Unable to create SSH session.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
 
+    /* Set session options */
+    ssh_options_set(client_data->session, SSH_OPTIONS_HOST, client_data->hostname);
+    ssh_options_set(client_data->session, SSH_OPTIONS_USER, client_data->username);
+
+    /* Connect */
+    if (ssh_connect(client_data->session) != SSH_OK) {
+        guac_protocol_send_error(socket, "Unable to connect via SSH.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
+
+    /* Authenticate */
+    if (ssh_userauth_password(client_data->session, NULL, client_data->password) != SSH_AUTH_SUCCESS) {
+        guac_protocol_send_error(socket, "SSH auth failed.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
+
+    /* Open channel for terminal */
+    client_data->term_channel = channel_new(client_data->session);
+    if (client_data->term_channel == NULL) {
+        guac_protocol_send_error(socket, "Unable to open channel.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
+
+    /* Open session for channel */
+    if (channel_open_session(client_data->term_channel) != SSH_OK) {
+        guac_protocol_send_error(socket, "Unable to open channel session.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
+
+    /* Request PTY */
+    if (channel_request_pty(client_data->term_channel) != SSH_OK) {
+        guac_protocol_send_error(socket, "Unable to allocate PTY for channel.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
+
+    /* Request PTY size */
+    if (channel_change_pty_size(client_data->term_channel,
+                client_data->term->term_width, client_data->term->term_height) != SSH_OK) {
+        guac_protocol_send_error(socket, "Unable to change PTY size.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
+
+    /* Request shell */
+    if (channel_request_shell(client_data->term_channel) != SSH_OK) {
+        guac_protocol_send_error(socket, "Unable to associate shell with PTY.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
+
+    /* Logged in */
+    guac_client_log_info(client, "SSH connection successful.");
+
+    /* Start input thread */
+    if (pthread_create(&(input_thread), NULL, ssh_input_thread, (void*) client)) {
+        guac_client_log_error(client, "Unable to start SSH input thread");
+        return NULL;
+    }
+
+    /* While data available, write to terminal */
+    while (channel_is_open(client_data->term_channel)
+            && !channel_is_eof(client_data->term_channel)
+            && (bytes_read = channel_read(client_data->term_channel, buffer, sizeof(buffer), 0)) > 0) {
+
+        if (__write_all(stdout_fd, buffer, bytes_read) <= 0)
+            return NULL;
+
+    }
+
+    /* Notify on error */
+    if (bytes_read < 0) {
+        guac_protocol_send_error(socket, "Error reading data.");
+        guac_socket_flush(socket);
+        return NULL;
+    }
+
+    guac_client_log_info(client, "SSH connection ended.");
     return NULL;
 
 }

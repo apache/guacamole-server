@@ -75,6 +75,16 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->mod_ctrl = 0;
     client_data->clipboard_data = NULL;
 
+    if (argc != 3) {
+        guac_client_log_error(client, "Wrong number of arguments");
+        return -1;
+    }
+
+    /* Read parameters */
+    strcpy(client_data->hostname, argv[0]);
+    strcpy(client_data->username, argv[1]);
+    strcpy(client_data->password, argv[2]);
+
     /* Set up I-bar pointer */
     client_data->ibar_cursor = guac_ssh_create_ibar(client);
 
