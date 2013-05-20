@@ -44,46 +44,101 @@
 #include "client.h"
 
 /**
- * Similar to fgets(), reads a single line from STDIN. Unlike fgets(), this
- * function does not include the trailing newline character, although the
- * character is removed from the input stream.
- *
- * @param title The title of the prompt to display.
- * @param str The buffer to read the result into.
- * @param size The number of bytes available in the buffer.
- * @return str, or NULL if the prompt failed.
+ * Similar to write, but automatically retries the write operation until
+ * an error occurs.
  */
-static char* prompt(const char* title, char* str, int size) {
+static int __write_all(int fd, const char* buffer, int size) {
 
-    /* Print title */
-    printf("%s", title);
-    fflush(stdout);
+    int remaining = size;
+    while (remaining > 0) {
 
-    /* Read input */
-    str = fgets(str, size, stdin);
+        /* Attempt to write data */
+        int ret_val = write(fd, buffer, remaining);
+        if (ret_val <= 0)
+            return -1;
 
-    /* Remove trailing newline, if any */
-    if (str != NULL) {
-        int length = strlen(str);
-        if (str[length-1] == '\n')
-            str[length-1] = 0;
+        /* If successful, contine with what data remains (if any) */
+        remaining -= ret_val;
+        buffer += ret_val;
+
     }
 
+    return size;
+
+}
+
+/**
+ * Reads a single line from STDIN.
+ */
+static char* prompt(guac_client* client, const char* title, char* str, int size, bool echo) {
+
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
+    int pos;
+    char in_byte;
+
+    /* Get STDIN and STDOUT */
+    int stdin_fd  = client_data->stdin_pipe_fd[0];
+    int stdout_fd = client_data->stdout_pipe_fd[1];
+
+    /* Print title */
+    __write_all(stdout_fd, title, strlen(title));
+
+    /* Make room for null terminator */
+    size--;
+
+    /* Read bytes until newline */
+    pos = 0;
+    while (pos < size && read(stdin_fd, &in_byte, 1) == 1) {
+
+        /* Backspace */
+        if (in_byte == 0x08) {
+
+            if (pos > 0) {
+                __write_all(stdout_fd, "\b \b", 3);
+                pos--;
+            }
+        }
+
+        /* Newline (end of input */
+        else if (in_byte == 0x0A) {
+            __write_all(stdout_fd, "\r\n", 2);
+            break;
+        }
+
+        else {
+
+            /* Store character, update buffers */
+            str[pos++] = in_byte;
+
+            /* Print character if echoing */
+            if (echo)
+                __write_all(stdout_fd, &in_byte, 1);
+            else
+                __write_all(stdout_fd, "*", 1);
+
+        }
+
+    }
+
+    str[pos] = 0;
     return str;
 
 }
 
 void* ssh_client_thread(void* data) {
 
+    guac_client* client = (guac_client*) data;
+
     char username[1024];
     char password[1024];
 
     /* Get username */
-    if (prompt("Login as: ", username, sizeof(username)) == NULL)
+    if (prompt(client, "Login as: ", username, sizeof(username), true) == NULL)
         return NULL;
 
     /* Get password */
-    if (prompt("Password: ", password, sizeof(password)) == NULL)
+    if (prompt(client, "Password: ", password, sizeof(password), false) == NULL)
         return NULL;
 
     guac_client_log_info((guac_client*) data, "got: %s ... %s", username, password);
