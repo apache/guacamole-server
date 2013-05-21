@@ -104,8 +104,8 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
         /* Line feed / VT / FF */
         case '\n':
-        case '0x0B': /* VT */
-        case '0x0C': /* FF */
+        case 0x0B: /* VT */
+        case 0x0C: /* FF */
             term->cursor_row++;
 
             /* Scroll up if necessary */
@@ -122,6 +122,15 @@ int guac_terminal_echo(guac_terminal* term, char c) {
         /* ESC */
         case 0x1B:
             term->char_handler = guac_terminal_escape; 
+            break;
+
+        /* CSI */
+        case 0x9B:
+            term->char_handler = guac_terminal_csi; 
+            break;
+
+        /* DEL (ignored) */
+        case 0x7F:
             break;
 
         /* Displayable chars */
