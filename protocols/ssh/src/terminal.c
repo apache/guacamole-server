@@ -83,8 +83,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
 
-    term->cursor_row = term->visible_cursor_row = 0;
-    term->cursor_col = term->visible_cursor_col = 0;
+    term->cursor_row = term->visible_cursor_row = term->saved_cursor_row = 0;
+    term->cursor_col = term->visible_cursor_col = term->saved_cursor_col = 0;
 
     term->term_width   = width  / term->display->char_width;
     term->term_height  = height / term->display->char_height;

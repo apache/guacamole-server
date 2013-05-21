@@ -172,6 +172,23 @@ int guac_terminal_escape(guac_terminal* term, char c) {
             term->char_handler = guac_terminal_csi; 
             break;
 
+        case '7': /* Save Cursor (DECSC) */
+            term->saved_cursor_row = term->cursor_row;
+            term->saved_cursor_col = term->cursor_col;
+            break;
+
+        case '8': /* Restore Cursor (DECRC) */
+
+            term->cursor_row = term->saved_cursor_row;
+            if (term->cursor_row >= term->term_height)
+                term->cursor_row = term->term_height - 1;
+
+            term->cursor_col = term->saved_cursor_col;
+            if (term->cursor_col >= term->term_width)
+                term->cursor_col = term->term_width - 1;
+
+            break;
+
         case 'M': /* Reverse Linefeed */
 
             term->cursor_row--;

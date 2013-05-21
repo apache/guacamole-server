@@ -123,6 +123,16 @@ struct guac_terminal {
     int visible_cursor_col;
 
     /**
+     * The row of the saved cursor (ESC 7).
+     */
+    int saved_cursor_row;
+
+    /**
+     * The column of the saved cursor (ESC 7).
+     */
+    int saved_cursor_col;
+
+    /**
      * The attributes which will be applied to future characters.
      */
     guac_terminal_attributes current_attributes;
