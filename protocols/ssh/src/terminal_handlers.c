@@ -379,6 +379,12 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
+            /* G: Move cursor, current row */
+            case 'G':
+                col = argv[0]; if (col != 0) col--;
+                term->cursor_col = col;
+                break;
+
             /* H: Move cursor */
             case 'H':
 
@@ -386,12 +392,6 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 col = argv[1]; if (col != 0) col--;
 
                 term->cursor_row = row;
-                term->cursor_col = col;
-                break;
-
-            /* G: Move cursor, current row */
-            case 'G':
-                col = argv[0]; if (col != 0) col--;
                 term->cursor_col = col;
                 break;
 
