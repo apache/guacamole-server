@@ -172,12 +172,16 @@ int guac_terminal_escape(guac_terminal* term, char c) {
             term->char_handler = guac_terminal_csi; 
             break;
 
-        case '7': /* Save Cursor (DECSC) */
+        /* Save Cursor (DECSC) */
+        case '7':
             term->saved_cursor_row = term->cursor_row;
             term->saved_cursor_col = term->cursor_col;
+
+            term->char_handler = guac_terminal_echo; 
             break;
 
-        case '8': /* Restore Cursor (DECRC) */
+        /* Restore Cursor (DECRC) */
+        case '8':
 
             term->cursor_row = term->saved_cursor_row;
             if (term->cursor_row >= term->term_height)
@@ -187,9 +191,46 @@ int guac_terminal_escape(guac_terminal* term, char c) {
             if (term->cursor_col >= term->term_width)
                 term->cursor_col = term->term_width - 1;
 
+            term->char_handler = guac_terminal_echo; 
             break;
 
-        case 'M': /* Reverse Linefeed */
+        /* Index (IND) */
+        case 'D':
+            term->cursor_row++;
+
+            /* Scroll up if necessary */
+            if (term->cursor_row > term->scroll_end) {
+                term->cursor_row = term->scroll_end;
+
+                /* Scroll up by one row */        
+                guac_terminal_scroll_up(term, term->scroll_start,
+                        term->scroll_end, 1);
+
+            }
+
+            term->char_handler = guac_terminal_echo; 
+            break;
+
+        /* Next Line (NEL) */
+        case 'E':
+            term->cursor_col = 0;
+            term->cursor_row++;
+
+            /* Scroll up if necessary */
+            if (term->cursor_row > term->scroll_end) {
+                term->cursor_row = term->scroll_end;
+
+                /* Scroll up by one row */        
+                guac_terminal_scroll_up(term, term->scroll_start,
+                        term->scroll_end, 1);
+
+            }
+
+            term->char_handler = guac_terminal_echo; 
+            break;
+
+        /* Reverse Linefeed */
+        case 'M':
 
             term->cursor_row--;
 
