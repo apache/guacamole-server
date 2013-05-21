@@ -102,8 +102,10 @@ int guac_terminal_echo(guac_terminal* term, char c) {
             term->cursor_col = 0;
             break;
 
-        /* Line feed */
+        /* Line feed / VT / FF */
         case '\n':
+        case '0x0B': /* VT */
+        case '0x0C': /* FF */
             term->cursor_row++;
 
             /* Scroll up if necessary */
