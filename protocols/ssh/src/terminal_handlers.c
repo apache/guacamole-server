@@ -305,6 +305,24 @@ int guac_terminal_csi(guac_terminal* term, char c) {
         /* Handle CSI functions */ 
         switch (c) {
 
+            /* @: Insert characters (scroll right) */
+            case '@':
+
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Scroll right by amount */
+                if (term->cursor_col + amount < term->term_width)
+                    guac_terminal_copy_columns(term, term->cursor_row,
+                            term->cursor_col, term->term_width - amount - 1,
+                            amount);
+
+                /* Clear left */
+                guac_terminal_clear_columns(term, term->cursor_row,
+                        term->cursor_col, term->cursor_col + amount - 1);
+
+                break;
+
             /* A: Move up */
             case 'A':
 
@@ -333,20 +351,6 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
-            /* D: Move left */
-            case 'D':
-
-                /* Get move amount */
-                amount = argv[0];
-                if (amount == 0) amount = 1;
-
-                /* Move cursor */
-                term->cursor_col -= amount;
-                if (term->cursor_col < 0)
-                    term->cursor_col = 0;
-
-                break;
-
             /* C: Move right */
             case 'C':
 
@@ -361,76 +365,18 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
-            /* m: Set graphics rendition */
-            case 'm':
+            /* D: Move left */
+            case 'D':
 
-                for (i=0; i<argc; i++) {
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
 
-                    int value = argv[i];
+                /* Move cursor */
+                term->cursor_col -= amount;
+                if (term->cursor_col < 0)
+                    term->cursor_col = 0;
 
-                    /* Reset attributes */
-                    if (value == 0)
-                        term->current_attributes = term->default_char.attributes;
-
-                    /* Bold */
-                    else if (value == 1)
-                        term->current_attributes.bold = true;
-
-                    /* Underscore on */
-                    else if (value == 4)
-                        term->current_attributes.underscore = true;
-
-                    /* Foreground */
-                    else if (value >= 30 && value <= 37)
-                        term->current_attributes.foreground = value - 30;
-
-                    /* Background */
-                    else if (value >= 40 && value <= 47)
-                        term->current_attributes.background = value - 40;
-
-                    /* Underscore on, default foreground */
-                    else if (value == 38) {
-                        term->current_attributes.underscore = true;
-                        term->current_attributes.foreground =
-                            term->default_char.attributes.foreground;
-                    }
-
-                    /* Underscore off, default foreground */
-                    else if (value == 39) {
-                        term->current_attributes.underscore = false;
-                        term->current_attributes.foreground =
-                            term->default_char.attributes.foreground;
-                    }
-
-                    /* Reset background */
-                    else if (value == 49)
-                        term->current_attributes.background =
-                            term->default_char.attributes.background;
-
-                    /* Reverse video */
-                    else if (value == 7)
-                        term->current_attributes.reverse = true;
-
-                    /* Reset underscore */
-                    else if (value == 24)
-                        term->current_attributes.underscore = false;
-
-                    /* Reset reverse video */
-                    else if (value == 27)
-                        term->current_attributes.reverse = false;
-
-                    else
-                        guac_client_log_info(term->client,
-                                "Unhandled graphics rendition: %i", value);
-
-                }
-
-                break;
-
-            /* r: Set scrolling region */
-            case 'r':
-                term->scroll_start = argv[0]-1;
-                term->scroll_end   = argv[1]-1;
                 break;
 
             /* H: Move cursor */
@@ -448,13 +394,6 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 col = argv[0]; if (col != 0) col--;
                 term->cursor_col = col;
                 break;
-
-            /* d: Move cursor, current col */
-            case 'd':
-                row = argv[0]; if (row != 0) row--;
-                term->cursor_row = row;
-                break;
-
 
             /* J: Erase display */
             case 'J':
@@ -550,22 +489,83 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
-            /* @: Insert characters (scroll right) */
-            case '@':
 
-                amount = argv[0];
-                if (amount == 0) amount = 1;
+            /* d: Move cursor, current col */
+            case 'd':
+                row = argv[0]; if (row != 0) row--;
+                term->cursor_row = row;
+                break;
 
-                /* Scroll right by amount */
-                if (term->cursor_col + amount < term->term_width)
-                    guac_terminal_copy_columns(term, term->cursor_row,
-                            term->cursor_col, term->term_width - amount - 1,
-                            amount);
+            /* m: Set graphics rendition */
+            case 'm':
 
-                /* Clear left */
-                guac_terminal_clear_columns(term, term->cursor_row,
-                        term->cursor_col, term->cursor_col + amount - 1);
+                for (i=0; i<argc; i++) {
 
+                    int value = argv[i];
+
+                    /* Reset attributes */
+                    if (value == 0)
+                        term->current_attributes = term->default_char.attributes;
+
+                    /* Bold */
+                    else if (value == 1)
+                        term->current_attributes.bold = true;
+
+                    /* Underscore on */
+                    else if (value == 4)
+                        term->current_attributes.underscore = true;
+
+                    /* Foreground */
+                    else if (value >= 30 && value <= 37)
+                        term->current_attributes.foreground = value - 30;
+
+                    /* Background */
+                    else if (value >= 40 && value <= 47)
+                        term->current_attributes.background = value - 40;
+
+                    /* Underscore on, default foreground */
+                    else if (value == 38) {
+                        term->current_attributes.underscore = true;
+                        term->current_attributes.foreground =
+                            term->default_char.attributes.foreground;
+                    }
+
+                    /* Underscore off, default foreground */
+                    else if (value == 39) {
+                        term->current_attributes.underscore = false;
+                        term->current_attributes.foreground =
+                            term->default_char.attributes.foreground;
+                    }
+
+                    /* Reset background */
+                    else if (value == 49)
+                        term->current_attributes.background =
+                            term->default_char.attributes.background;
+
+                    /* Reverse video */
+                    else if (value == 7)
+                        term->current_attributes.reverse = true;
+
+                    /* Reset underscore */
+                    else if (value == 24)
+                        term->current_attributes.underscore = false;
+
+                    /* Reset reverse video */
+                    else if (value == 27)
+                        term->current_attributes.reverse = false;
+
+                    else
+                        guac_client_log_info(term->client,
+                                "Unhandled graphics rendition: %i", value);
+
+                }
+
+                break;
+
+            /* r: Set scrolling region */
+            case 'r':
+                term->scroll_start = argv[0]-1;
+                term->scroll_end   = argv[1]-1;
                 break;
 
             /* Warn of unhandled codes */
