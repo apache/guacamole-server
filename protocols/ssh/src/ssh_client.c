@@ -147,6 +147,9 @@ void* ssh_client_thread(void* data) {
             prompt(client, "Password: ", client_data->password, sizeof(client_data->password), false) == NULL)
         return NULL;
 
+    /* Clear screen */
+    guac_terminal_write_all(stdout_fd, "\x1B[H\x1B[J", 6);
+
     /* Open SSH session */
     client_data->session = ssh_new();
     if (client_data->session == NULL) {
