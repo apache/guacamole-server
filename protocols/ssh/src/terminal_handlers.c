@@ -284,6 +284,9 @@ int guac_terminal_csi(guac_terminal* term, char c) {
     static int argc = 0;
     static int argv[16] = {0};
 
+    /* Whether the sequence started with a question mark */
+    static bool initial_question_mark = false;
+
     /* Argument building counter and buffer */
     static int argv_length = 0;
     static char argv_buffer[256];
@@ -553,6 +556,34 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 term->cursor_row = row;
                 break;
 
+            /* h: Set Mode */
+            case 'h':
+               
+                /* DECCKM */ 
+                if (argv[0] == 1)
+                    term->application_cursor_keys = true;
+
+                else
+                    guac_client_log_info(term->client,
+                            "Unhandled mode set: mode=%i, initial_question_mark=%i",
+                            argv[0], initial_question_mark);
+
+                break;
+
+            /* l: Reset Mode */
+            case 'l':
+               
+                /* DECCKM */ 
+                if (argv[0] == 1)
+                    term->application_cursor_keys = false;
+
+                else
+                    guac_client_log_info(term->client,
+                            "Unhandled mode reset: mode=%i, initial_question_mark=%i",
+                            argv[0], initial_question_mark);
+
+                break;
+
             /* m: Set graphics rendition */
             case 'm':
 
@@ -658,6 +689,9 @@ int guac_terminal_csi(guac_terminal* term, char c) {
             /* Reset parameters */
             for (i=0; i<argc; i++)
                 argv[i] = 0;
+
+            /* Reset mark flag */
+            initial_question_mark = false;
 
             /* Reset argument counters */
             argc = 0;

@@ -204,6 +204,12 @@ struct guac_terminal {
      */
     int selection_end_column;
 
+    /**
+     * Whether the cursor (arrow) keys should send cursor sequences
+     * or application sequences (DECCKM).
+     */
+    bool application_cursor_keys;
+
 };
 
 /**

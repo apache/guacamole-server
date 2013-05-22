@@ -95,6 +95,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->scroll_end = term->term_height - 1;
 
     term->text_selected = false;
+    term->application_cursor_keys = false;
 
     /* Open STDOUT pipe */
     if (pipe(term->stdout_pipe_fd)) {

@@ -298,10 +298,30 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             else if (keysym == 0xFF1B) { data = "\x1B"; length = 1; }
 
             /* Arrow keys */
-            else if (keysym == 0xFF52) { data = "\x1B\x5B""A"; length = 3; }
-            else if (keysym == 0xFF54) { data = "\x1B\x5B""B"; length = 3; }
-            else if (keysym == 0xFF53) { data = "\x1B\x5B""C"; length = 3; }
-            else if (keysym == 0xFF51) { data = "\x1B\x5B""D"; length = 3; }
+            else if (keysym == 0xFF52) {
+                if (term->application_cursor_keys) data = "\x1BOA";
+                else                               data = "\x1B[A";
+                length = 3;
+            }
+
+            else if (keysym == 0xFF54) {
+                if (term->application_cursor_keys) data = "\x1BOB";
+                else                               data = "\x1B[B";
+                length = 3;
+            }
+
+            else if (keysym == 0xFF53) {
+                if (term->application_cursor_keys) data = "\x1BOC";
+                else                               data = "\x1B[C";
+                length = 3;
+            }
+
+            else if (keysym == 0xFF51) {
+                if (term->application_cursor_keys) data = "\x1BOD";
+                else                               data = "\x1B[D";
+                length = 3;
+            }
+
 
             /* Ignore other keys */
             else return 0;
