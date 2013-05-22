@@ -369,6 +369,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 break;
 
             /* C: Move right */
+            case 'a':
             case 'C':
 
                 /* Get move amount */
