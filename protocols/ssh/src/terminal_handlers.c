@@ -284,16 +284,12 @@ int guac_terminal_csi(guac_terminal* term, char c) {
     static int argc = 0;
     static int argv[16] = {0};
 
-    /* Whether the sequence started with a question mark */
-    static bool initial_question_mark = false;
+    /* Sequence prefix, if any */
+    static char private_mode_character = 0;
 
     /* Argument building counter and buffer */
     static int argv_length = 0;
     static char argv_buffer[256];
-
-    /* "The sequence of parameters may be preceded by a single question mark." */
-    if (c == '?')
-        return 0;
 
     /* Digits get concatenated into argv */
     if (c >= '0' && c <= '9') {
@@ -304,8 +300,8 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
     }
 
-    /* Any non-digit stops the parameter, and possibly the sequence */
-    else {
+    /* Specific non-digits stop the parameter, and possibly the sequence */
+    else if ((c >= 0x40 && c <= 0x7E) || c == ';') {
 
         int i, row, col, amount;
 
@@ -560,13 +556,13 @@ int guac_terminal_csi(guac_terminal* term, char c) {
             case 'h':
                
                 /* DECCKM */ 
-                if (argv[0] == 1)
+                if (argv[0] == 1 && private_mode_character == '?')
                     term->application_cursor_keys = true;
 
                 else
                     guac_client_log_info(term->client,
-                            "Unhandled mode set: mode=%i, initial_question_mark=%i",
-                            argv[0], initial_question_mark);
+                            "Unhandled mode set: mode=%i, private_mode_character=0x%0x",
+                            argv[0], private_mode_character);
 
                 break;
 
@@ -574,13 +570,13 @@ int guac_terminal_csi(guac_terminal* term, char c) {
             case 'l':
                
                 /* DECCKM */ 
-                if (argv[0] == 1)
+                if (argv[0] == 1 && private_mode_character == '?')
                     term->application_cursor_keys = false;
 
                 else
                     guac_client_log_info(term->client,
-                            "Unhandled mode reset: mode=%i, initial_question_mark=%i",
-                            argv[0], initial_question_mark);
+                            "Unhandled mode reset: mode=%i, private_mode_character=0x%0x",
+                            argv[0], private_mode_character);
 
                 break;
 
@@ -690,8 +686,8 @@ int guac_terminal_csi(guac_terminal* term, char c) {
             for (i=0; i<argc; i++)
                 argv[i] = 0;
 
-            /* Reset mark flag */
-            initial_question_mark = false;
+            /* Reset private mode character */
+            private_mode_character = 0;
 
             /* Reset argument counters */
             argc = 0;
@@ -699,6 +695,10 @@ int guac_terminal_csi(guac_terminal* term, char c) {
         }
 
     }
+
+    /* Set private mode character if given and unset */
+    else if (c >= 0x3A && c <= 0x3F && private_mode_character == 0)
+        private_mode_character = c;
 
     return 0;
 
