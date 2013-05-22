@@ -350,6 +350,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 break;
 
             /* B: Move down */
+            case 'e':
             case 'B':
 
                 /* Get move amount */
@@ -432,6 +433,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 break;
 
             /* H: Move cursor */
+            case 'f':
             case 'H':
 
                 row = argv[0]; if (row != 0) row--;
