@@ -45,6 +45,7 @@ int guac_terminal_escape(guac_terminal* term, char c);
 int guac_terminal_charset(guac_terminal* term, char c);
 int guac_terminal_csi(guac_terminal* term, char c);
 int guac_terminal_osc(guac_terminal* term, char c);
+int guac_terminal_ctrl_func(guac_terminal* term, char c);
 
 #endif
 

@@ -184,6 +184,10 @@ int guac_terminal_escape(guac_terminal* term, char c) {
             term->char_handler = guac_terminal_csi; 
             break;
 
+        case '#':
+            term->char_handler = guac_terminal_ctrl_func; 
+            break;
+
         /* Save Cursor (DECSC) */
         case '7':
             term->saved_cursor_row = term->cursor_row;
@@ -670,5 +674,32 @@ int guac_terminal_osc(guac_terminal* term, char c) {
     if (c == 0x9C || c == 0x5C || c == 0x07) /* ECMA-48 ST (String Terminator */
        term->char_handler = guac_terminal_echo; 
     return 0;
+}
+
+int guac_terminal_ctrl_func(guac_terminal* term, char c) {
+
+    int row;
+
+    /* Build character with current attributes */
+    guac_terminal_char guac_char;
+    guac_char.value = 'E';
+    guac_char.attributes = term->current_attributes;
+
+    switch (c) {
+
+        /* Alignment test (fill screen with E's) */
+        case '8':
+
+            for (row=0; row<term->term_height; row++)
+                guac_terminal_set_columns(term, row, 0, term->term_width-1, &guac_char);
+
+            break;
+
+    }
+
+    term->char_handler = guac_terminal_echo; 
+
+    return 0;
+
 }
 
