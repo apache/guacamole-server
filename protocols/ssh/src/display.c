@@ -779,10 +779,10 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                     for (rect_col=col; rect_col<display->width; rect_col++) {
 
                         int joining_color;
-                        if (rect_current->character.attributes.reverse)
-                           joining_color = current->character.attributes.foreground;
+                        if (rect_current->character.attributes.reverse != rect_current->character.attributes.cursor)
+                           joining_color = rect_current->character.attributes.foreground;
                         else
-                           joining_color = current->character.attributes.background;
+                           joining_color = rect_current->character.attributes.background;
 
                         /* If not identical operation, stop */
                         if (rect_current->type != GUAC_CHAR_SET
@@ -825,9 +825,9 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
 
                         int joining_color;
                         if (rect_current->character.attributes.reverse != rect_current->character.attributes.cursor)
-                           joining_color = current->character.attributes.foreground;
+                           joining_color = rect_current->character.attributes.foreground;
                         else
-                           joining_color = current->character.attributes.background;
+                           joining_color = rect_current->character.attributes.background;
 
                         /* Mark clear operations as NOP */
                         if (rect_current->type == GUAC_CHAR_SET
