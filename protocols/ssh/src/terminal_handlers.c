@@ -37,6 +37,7 @@
 
 #include <stdlib.h>
 
+#include "common.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
 
@@ -500,6 +501,10 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
+            /* c: Identify */
+            case 'c':
+                guac_terminal_write_all(term->stdin_pipe_fd[1], "\x1B[?6c", 5);
+                break;
 
             /* d: Move cursor, current col */
             case 'd':
@@ -575,8 +580,19 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
             /* r: Set scrolling region */
             case 'r':
-                term->scroll_start = argv[0]-1;
-                term->scroll_end   = argv[1]-1;
+
+                /* If parameters given, set region */
+                if (argc == 2) {
+                    term->scroll_start = argv[0]-1;
+                    term->scroll_end   = argv[1]-1;
+                }
+
+                /* Otherwise, reset scrolling region */
+                else {
+                    term->scroll_start = 0;
+                    term->scroll_end = term->term_height - 1;
+                }
+
                 break;
 
             /* Warn of unhandled codes */
