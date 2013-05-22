@@ -586,6 +586,23 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
     guac_terminal_buffer_set_columns(terminal->buffer, row,
             start_column, end_column, character);
 
+    /* If visible cursor in current row, preserve state */
+    if (row == terminal->visible_cursor_row
+            && terminal->visible_cursor_col >= start_column
+            && terminal->visible_cursor_col <= end_column) {
+
+        /* Create copy of character with cursor attribute set */
+        guac_terminal_char cursor_character = *character;
+        cursor_character.attributes.cursor = true;
+
+        guac_terminal_display_set_columns(terminal->display, row + terminal->scroll_offset,
+                terminal->visible_cursor_col, terminal->visible_cursor_col, &cursor_character);
+
+        guac_terminal_buffer_set_columns(terminal->buffer, row,
+                terminal->visible_cursor_col, terminal->visible_cursor_col, &cursor_character);
+
+    }
+
 }
 
 static void __guac_terminal_redraw_rect(guac_terminal* term, int start_row, int start_col, int end_row, int end_col) {
