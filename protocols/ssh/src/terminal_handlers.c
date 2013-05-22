@@ -391,6 +391,40 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
+            /* E: Move cursor down given number rows, column 1 */
+            case 'E':
+
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Move cursor */
+                term->cursor_row += amount;
+                if (term->cursor_row >= term->term_height)
+                    term->cursor_row = term->term_height - 1;
+
+                /* Reset to column 1 */
+                term->cursor_col = 0;
+
+                break;
+
+            /* F: Move cursor up given number rows, column 1 */
+            case 'F':
+
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Move cursor */
+                term->cursor_row -= amount;
+                if (term->cursor_row < 0)
+                    term->cursor_row = 0;
+
+                /* Reset to column 1 */
+                term->cursor_col = 0;
+
+                break;
+
             /* G: Move cursor, current row */
             case 'G':
                 col = argv[0]; if (col != 0) col--;
