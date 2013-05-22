@@ -46,6 +46,7 @@
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
+#include <guacamole/error.h>
 
 #include "types.h"
 #include "buffer.h"
@@ -95,6 +96,22 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     term->text_selected = false;
 
+    /* Open STDOUT pipe */
+    if (pipe(term->stdout_pipe_fd)) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Unable to open pipe for STDOUT";
+        free(term);
+        return NULL;
+    }
+
+    /* Open STDIN pipe */
+    if (pipe(term->stdin_pipe_fd)) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Unable to open pipe for STDIN";
+        free(term);
+        return NULL;
+    }
+
     /* Size display */
     guac_terminal_display_resize(term->display,
             term->term_width, term->term_height);
@@ -108,6 +125,14 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
 void guac_terminal_free(guac_terminal* term) {
     
+    /* Close terminal output pipe */
+    close(term->stdout_pipe_fd[1]);
+    close(term->stdout_pipe_fd[0]);
+
+    /* Close user input pipe */
+    close(term->stdin_pipe_fd[1]);
+    close(term->stdin_pipe_fd[0]);
+
     /* Free display */
     guac_terminal_display_free(term->display);
 

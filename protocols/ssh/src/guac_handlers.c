@@ -61,7 +61,7 @@ int ssh_guac_client_handle_messages(guac_client* client) {
     char buffer[8192];
 
     int ret_val;
-    int fd = client_data->stdout_pipe_fd[0];
+    int fd = client_data->term->stdout_pipe_fd[0];
     struct timeval timeout;
     fd_set fds;
 
@@ -158,7 +158,7 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
         int length = strlen(client_data->clipboard_data);
         if (length)
-            return write(client_data->stdin_pipe_fd[1],
+            return write(term->stdin_pipe_fd[1],
                     client_data->clipboard_data, length);
 
     }
@@ -229,7 +229,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     guac_terminal* term = client_data->term;
 
     /* Get write end of STDIN pipe */
-    int fd = client_data->stdin_pipe_fd[1];
+    int fd = term->stdin_pipe_fd[1];
 
     /* Hide mouse cursor if not already hidden */
     if (client_data->current_cursor != client_data->blank_cursor) {
@@ -354,18 +354,9 @@ int ssh_guac_client_free_handler(guac_client* client) {
 
     ssh_guac_client_data* guac_client_data = (ssh_guac_client_data*) client->data;
 
-    /* Close terminal output pipe */
-    close(guac_client_data->stdout_pipe_fd[1]);
-    close(guac_client_data->stdout_pipe_fd[0]);
-
-    /* Close user input pipe */
-    close(guac_client_data->stdin_pipe_fd[1]);
-    close(guac_client_data->stdin_pipe_fd[0]);
-
-    pthread_join(guac_client_data->client_thread, NULL);
-
     /* Free terminal */
     guac_terminal_free(guac_client_data->term);
+    pthread_join(guac_client_data->client_thread, NULL);
 
     /* Free clipboard data */
     free(guac_client_data->clipboard_data);

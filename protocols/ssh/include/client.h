@@ -80,16 +80,6 @@ typedef struct ssh_guac_client_data {
     int mouse_mask;
 
     /**
-     * Pipe which will be used to provide STDOUT to the SSH client.
-     */
-    int stdout_pipe_fd[2];
-
-    /**
-     * Pipe which will be used to provide STDIN to the SSH client.
-     */
-    int stdin_pipe_fd[2];
-
-    /**
      * The cached I-bar cursor.
      */
     guac_ssh_cursor* ibar_cursor;

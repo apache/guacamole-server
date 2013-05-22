@@ -101,20 +101,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     guac_socket_flush(socket);
 
-    /* Open STDOUT pipe */
-    if (pipe(client_data->stdout_pipe_fd)) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Unable to open pipe for STDOUT";
-        return 1;
-    }
-
-    /* Open STDIN pipe */
-    if (pipe(client_data->stdin_pipe_fd)) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Unable to open pipe for STDIN";
-        return 1;
-    }
-
     /* Set basic handlers */
     client->handle_messages   = ssh_guac_client_handle_messages;
     client->clipboard_handler = ssh_guac_client_clipboard_handler;

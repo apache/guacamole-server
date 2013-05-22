@@ -76,6 +76,22 @@ struct guac_terminal {
     pthread_mutex_t lock;
 
     /**
+     * Pipe which should be written to (and read from) to provide output to
+     * this terminal. Another thread should read from this pipe when writing
+     * data to the terminal. It would make sense for the terminal to provide
+     * this thread, but for simplicity, that logic is left to the guac
+     * message handler (to give the message handler something to block with).
+     */
+    int stdout_pipe_fd[2];
+
+    /**
+     * Pipe which will be the source of user input. When a terminal code
+     * generates synthesized user input, that data will be written to
+     * this pipe.
+     */
+    int stdin_pipe_fd[2];
+
+    /**
      * The relative offset of the display. A positive value indicates that
      * many rows have been scrolled into view, zero indicates that no
      * scrolling has occurred. Negative values are illegal.

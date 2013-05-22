@@ -81,8 +81,8 @@ static char* prompt(guac_client* client, const char* title, char* str, int size,
     char in_byte;
 
     /* Get STDIN and STDOUT */
-    int stdin_fd  = client_data->stdin_pipe_fd[0];
-    int stdout_fd = client_data->stdout_pipe_fd[1];
+    int stdin_fd  = client_data->term->stdin_pipe_fd[0];
+    int stdout_fd = client_data->term->stdout_pipe_fd[1];
 
     /* Print title */
     __write_all(stdout_fd, title, strlen(title));
@@ -137,7 +137,7 @@ void* ssh_input_thread(void* data) {
     char buffer[8192];
     int bytes_read;
 
-    int stdin_fd = client_data->stdin_pipe_fd[0];
+    int stdin_fd = client_data->term->stdin_pipe_fd[0];
 
     /* Write all data read */
     while ((bytes_read = read(stdin_fd, buffer, sizeof(buffer))) > 0)
@@ -156,7 +156,7 @@ void* ssh_client_thread(void* data) {
     char buffer[8192];
     int bytes_read = -1234;
 
-    int stdout_fd = client_data->stdout_pipe_fd[1];
+    int stdout_fd = client_data->term->stdout_pipe_fd[1];
 
     pthread_t input_thread;
 
