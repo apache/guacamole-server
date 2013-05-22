@@ -58,5 +58,11 @@ int guac_terminal_encode_utf8(int codepoint, char* utf8);
  */
 bool guac_terminal_has_glyph(int codepoint);
 
+/**
+ * Similar to write, but automatically retries the write operation until
+ * an error occurs.
+ */
+int guac_terminal_write_all(int fd, const char* buffer, int size);
+
 #endif
 

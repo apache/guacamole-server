@@ -45,30 +45,7 @@
 #include <guacamole/socket.h>
 
 #include "client.h"
-
-/**
- * Similar to write, but automatically retries the write operation until
- * an error occurs.
- */
-static int __write_all(int fd, const char* buffer, int size) {
-
-    int remaining = size;
-    while (remaining > 0) {
-
-        /* Attempt to write data */
-        int ret_val = write(fd, buffer, remaining);
-        if (ret_val <= 0)
-            return -1;
-
-        /* If successful, contine with what data remains (if any) */
-        remaining -= ret_val;
-        buffer += ret_val;
-
-    }
-
-    return size;
-
-}
+#include "common.h"
 
 /**
  * Reads a single line from STDIN.
@@ -85,7 +62,7 @@ static char* prompt(guac_client* client, const char* title, char* str, int size,
     int stdout_fd = client_data->term->stdout_pipe_fd[1];
 
     /* Print title */
-    __write_all(stdout_fd, title, strlen(title));
+    guac_terminal_write_all(stdout_fd, title, strlen(title));
 
     /* Make room for null terminator */
     size--;
@@ -98,14 +75,14 @@ static char* prompt(guac_client* client, const char* title, char* str, int size,
         if (in_byte == 0x08) {
 
             if (pos > 0) {
-                __write_all(stdout_fd, "\b \b", 3);
+                guac_terminal_write_all(stdout_fd, "\b \b", 3);
                 pos--;
             }
         }
 
         /* Newline (end of input */
         else if (in_byte == 0x0A) {
-            __write_all(stdout_fd, "\r\n", 2);
+            guac_terminal_write_all(stdout_fd, "\r\n", 2);
             break;
         }
 
@@ -116,9 +93,9 @@ static char* prompt(guac_client* client, const char* title, char* str, int size,
 
             /* Print character if echoing */
             if (echo)
-                __write_all(stdout_fd, &in_byte, 1);
+                guac_terminal_write_all(stdout_fd, &in_byte, 1);
             else
-                __write_all(stdout_fd, "*", 1);
+                guac_terminal_write_all(stdout_fd, "*", 1);
 
         }
 
@@ -251,7 +228,7 @@ void* ssh_client_thread(void* data) {
             continue;
 
         if (bytes_read > 0)
-            __write_all(stdout_fd, buffer, bytes_read);
+            guac_terminal_write_all(stdout_fd, buffer, bytes_read);
 
     }
 
