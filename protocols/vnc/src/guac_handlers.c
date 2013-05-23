@@ -106,7 +106,8 @@ int vnc_guac_client_clipboard_handler(guac_client* client, char* data) {
         SendClientCutText(rfb_client, iso_8559_1_data, strlen(iso_8559_1_data));
         free(iso_8559_1_data);
     /* Otherwise, just send an empty string. */
-    } else
+    } 
+    else
         SendClientCutText(rfb_client, "", 0);
 
     return 0;
