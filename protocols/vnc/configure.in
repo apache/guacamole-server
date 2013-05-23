@@ -46,10 +46,9 @@ AC_PROG_LIBTOOL
 AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))
 AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
 AC_CHECK_LIB([vncclient], [rfbInitClient],, AC_MSG_ERROR("libvncclient is required"))
-#AC_CHECK_LIB([iconv], [iconv],, AC_MSG_ERROR("libiconv is required"))
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdlib.h string.h syslog.h guacamole/client.h guacamole/socket.h guacamole/protocol.h])
+AC_CHECK_HEADERS([stdlib.h string.h syslog.h guacamole/client.h guacamole/socket.h guacamole/protocol.h iconv.h])
 
 # Checks for library functions.
 AC_FUNC_MALLOC

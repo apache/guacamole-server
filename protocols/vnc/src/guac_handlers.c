@@ -95,11 +95,19 @@ int vnc_guac_client_clipboard_handler(guac_client* client, char* data) {
     rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
 
     /* Convert UTF-8 character data to ISO_8859-1 */
+    # if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2) || __GLIBC__ > 2 || _LIBICONV_VERSION >= 0x0105
+    char* iso_8559_1_data = convert("UTF-8", "ISO_8859-1//TRANSLIT", data);
+    #else
     char* iso_8559_1_data = convert("UTF-8", "ISO_8859-1", data);
+    #endif
 
-    SendClientCutText(rfb_client, iso_8559_1_data, strlen(iso_8559_1_data));
-
-    free(iso_8559_1_data);
+    /* If the conversion was successful, send the converted character data. */
+    if(iso_8559_1_data) {
+        SendClientCutText(rfb_client, iso_8559_1_data, strlen(iso_8559_1_data));
+        free(iso_8559_1_data);
+    /* Otherwise, just send an empty string. */
+    } else
+        SendClientCutText(rfb_client, "", 0);
 
     return 0;
 }

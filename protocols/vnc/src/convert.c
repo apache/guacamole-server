@@ -94,10 +94,8 @@ char* convert(const char* from_charset, const char* to_charset, const char* inpu
                 output_buffer = output + bytes_converted;
             } 
             else if (errno == EILSEQ) {
-                /* Cannot convert because an invalid sequence was discovered */
-                iconv_close(cd);
-                free(output);
-                return NULL;
+                /* Invalid sequence detected, return what's been converted so far */
+                break;
             } 
             else if (errno == EINVAL) {
                 /* Incomplete sequence detected, can be ignored */
