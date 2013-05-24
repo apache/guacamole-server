@@ -210,6 +210,11 @@ struct guac_terminal {
      */
     bool application_cursor_keys;
 
+    /**
+     * Whether a CR should automatically follow a LF, VT, or FF.
+     */
+    bool automatic_carriage_return;
+
 };
 
 /**

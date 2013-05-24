@@ -98,11 +98,6 @@ int guac_terminal_echo(guac_terminal* term, char c) {
                 term->cursor_col--;
             break;
 
-        /* Carriage return */
-        case '\r':
-            term->cursor_col = 0;
-            break;
-
         /* Line feed / VT / FF */
         case '\n':
         case 0x0B: /* VT */
@@ -118,6 +113,14 @@ int guac_terminal_echo(guac_terminal* term, char c) {
                         term->scroll_end, 1);
 
             }
+
+            /* If automatic carriage return, fall through to CR handler */
+            if (!term->automatic_carriage_return)
+                break;
+
+        /* Carriage return */
+        case '\r':
+            term->cursor_col = 0;
             break;
 
         /* ESC */
@@ -330,6 +333,12 @@ static bool* __guac_terminal_get_flag(guac_terminal* term, int num, char private
     if (private_mode == '?') {
         switch (num) {
             case 1:  return &(term->application_cursor_keys); /* DECCKM */
+        }
+    }
+
+    else if (private_mode == 0) {
+        switch (num) {
+            case 20: return &(term->automatic_carriage_return); /* LF/NL */
         }
     }
 

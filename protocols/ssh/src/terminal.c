@@ -96,6 +96,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     term->text_selected = false;
     term->application_cursor_keys = false;
+    term->automatic_carriage_return = false;
 
     /* Open STDOUT pipe */
     if (pipe(term->stdout_pipe_fd)) {
