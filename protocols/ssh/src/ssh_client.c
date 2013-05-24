@@ -192,16 +192,9 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Request PTY */
-    if (channel_request_pty(client_data->term_channel) != SSH_OK) {
+    if (channel_request_pty_size(client_data->term_channel, "linux",
+            client_data->term->term_width, client_data->term->term_height) != SSH_OK) {
         guac_protocol_send_error(socket, "Unable to allocate PTY for channel.");
-        guac_socket_flush(socket);
-        return NULL;
-    }
-
-    /* Request PTY size */
-    if (channel_change_pty_size(client_data->term_channel,
-                client_data->term->term_width, client_data->term->term_height) != SSH_OK) {
-        guac_protocol_send_error(socket, "Unable to change PTY size.");
         guac_socket_flush(socket);
         return NULL;
     }
