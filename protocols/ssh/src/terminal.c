@@ -55,6 +55,35 @@
 #include "terminal.h"
 #include "terminal_handlers.h"
 
+void guac_terminal_reset(guac_terminal* term) {
+
+    int row;
+
+    /* Set current state */
+    term->char_handler = guac_terminal_echo; 
+
+    /* Reset cursor location */
+    term->cursor_row = term->visible_cursor_row = term->saved_cursor_row = 0;
+    term->cursor_col = term->visible_cursor_col = term->saved_cursor_col = 0;
+
+    /* Clear scrollback, buffer, and scoll region */
+    term->buffer->top = 0;
+    term->buffer->length = 0;
+    term->scroll_start = 0;
+    term->scroll_end = term->term_height - 1;
+    term->scroll_offset = 0;
+
+    /* Reset flags */
+    term->text_selected = false;
+    term->application_cursor_keys = false;
+    term->automatic_carriage_return = false;
+
+    /* Clear terminal */
+    for (row=0; row<term->term_height; row++)
+        guac_terminal_set_columns(term, row, 0, term->term_width, &(term->default_char));
+
+}
+
 guac_terminal* guac_terminal_create(guac_client* client,
         int width, int height) {
 
@@ -73,7 +102,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Init buffer */
     term->buffer = guac_terminal_buffer_alloc(1000, &default_char);
-    term->scroll_offset = 0;
 
     /* Init display */
     term->display = guac_terminal_display_alloc(client,
@@ -84,19 +112,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
 
-    term->cursor_row = term->visible_cursor_row = term->saved_cursor_row = 0;
-    term->cursor_col = term->visible_cursor_col = term->saved_cursor_col = 0;
-
     term->term_width   = width  / term->display->char_width;
     term->term_height  = height / term->display->char_height;
-    term->char_handler = guac_terminal_echo; 
-
-    term->scroll_start = 0;
-    term->scroll_end = term->term_height - 1;
-
-    term->text_selected = false;
-    term->application_cursor_keys = false;
-    term->automatic_carriage_return = false;
 
     /* Open STDOUT pipe */
     if (pipe(term->stdout_pipe_fd)) {
@@ -114,12 +131,15 @@ guac_terminal* guac_terminal_create(guac_client* client,
         return NULL;
     }
 
+    /* Init terminal lock */
+    pthread_mutex_init(&(term->lock), NULL);
+
     /* Size display */
     guac_terminal_display_resize(term->display,
             term->term_width, term->term_height);
 
-    /* Init terminal lock */
-    pthread_mutex_init(&(term->lock), NULL);
+    /* Init terminal */
+    guac_terminal_reset(term);
 
     return term;
 

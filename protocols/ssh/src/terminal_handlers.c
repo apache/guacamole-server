@@ -278,6 +278,17 @@ int guac_terminal_escape(guac_terminal* term, char c) {
             term->char_handler = guac_terminal_echo; 
             break;
 
+        /* DEC Identify */
+        case 'Z':
+            guac_terminal_write_all(term->stdin_pipe_fd[1], "\x1B[?6c", 5);
+            term->char_handler = guac_terminal_echo; 
+            break;
+
+        /* Reset */
+        case 'c':
+            guac_terminal_reset(term);
+            break;
+
         default:
             guac_client_log_info(term->client, "Unhandled ESC sequence: %c", c);
             term->char_handler = guac_terminal_echo; 

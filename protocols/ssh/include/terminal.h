@@ -225,6 +225,11 @@ guac_terminal* guac_terminal_create(guac_client* client,
         int width, int height);
 
 /**
+ * Resets the state of the given terminal, as if it were just allocated.
+ */
+void guac_terminal_reset(guac_terminal* term);
+
+/**
  * Frees all resources associated with the given terminal.
  */
 void guac_terminal_free(guac_terminal* term);
