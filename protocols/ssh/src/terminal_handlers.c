@@ -534,7 +534,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                             term->cursor_row, term->cursor_col);
 
                 /* Entire screen */
-                else if (argv[0] == 2)
+                else if (argv[0] == 2 || argv[0] == 3)
                     guac_terminal_clear_range(term,
                             0, 0, term->term_height - 1, term->term_width - 1);
 
