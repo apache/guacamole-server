@@ -502,6 +502,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 break;
 
             /* G: Move cursor, current row */
+            case '`':
             case 'G':
                 col = argv[0]; if (col != 0) col--;
                 term->cursor_col = col;
@@ -612,6 +613,11 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 break;
 
+            /* ]: Linux Private CSI */
+            case ']':
+                /* Explicitly ignored */
+                break;
+
             /* c: Identify */
             case 'c':
                 guac_terminal_write_all(term->stdin_pipe_fd[1], "\x1B[?6c", 5);
@@ -672,13 +678,25 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                     else if (value == 4)
                         term->current_attributes.underscore = true;
 
+                    /* Reverse video */
+                    else if (value == 7)
+                        term->current_attributes.reverse = true;
+
+                    /* Normal intensity (not bold) */
+                    else if (value == 21 || value == 22)
+                        term->current_attributes.bold = false;
+
+                    /* Reset underscore */
+                    else if (value == 24)
+                        term->current_attributes.underscore = false;
+
+                    /* Reset reverse video */
+                    else if (value == 27)
+                        term->current_attributes.reverse = false;
+
                     /* Foreground */
                     else if (value >= 30 && value <= 37)
                         term->current_attributes.foreground = value - 30;
-
-                    /* Background */
-                    else if (value >= 40 && value <= 47)
-                        term->current_attributes.background = value - 40;
 
                     /* Underscore on, default foreground */
                     else if (value == 38) {
@@ -694,22 +712,14 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                             term->default_char.attributes.foreground;
                     }
 
+                    /* Background */
+                    else if (value >= 40 && value <= 47)
+                        term->current_attributes.background = value - 40;
+
                     /* Reset background */
                     else if (value == 49)
                         term->current_attributes.background =
                             term->default_char.attributes.background;
-
-                    /* Reverse video */
-                    else if (value == 7)
-                        term->current_attributes.reverse = true;
-
-                    /* Reset underscore */
-                    else if (value == 24)
-                        term->current_attributes.underscore = false;
-
-                    /* Reset reverse video */
-                    else if (value == 27)
-                        term->current_attributes.reverse = false;
 
                     else
                         guac_client_log_info(term->client,
@@ -717,6 +727,11 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 }
 
+                break;
+
+            /* q: Set keyboard LEDs */
+            case 'q':
+                /* Explicitly ignored */
                 break;
 
             /* r: Set scrolling region */
@@ -735,6 +750,26 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 }
 
                 break;
+
+            /* Save Cursor */
+            case 's':
+                term->saved_cursor_row = term->cursor_row;
+                term->saved_cursor_col = term->cursor_col;
+                break;
+
+            /* Restore Cursor */
+            case 'u':
+
+                term->cursor_row = term->saved_cursor_row;
+                if (term->cursor_row >= term->term_height)
+                    term->cursor_row = term->term_height - 1;
+
+                term->cursor_col = term->saved_cursor_col;
+                if (term->cursor_col >= term->term_width)
+                    term->cursor_col = term->term_width - 1;
+
+                break;
+
 
             /* Warn of unhandled codes */
             default:
