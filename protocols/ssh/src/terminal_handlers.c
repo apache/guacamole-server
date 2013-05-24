@@ -173,7 +173,19 @@ int guac_terminal_escape(guac_terminal* term, char c) {
     switch (c) {
 
         case '(':
-            term->char_handler = guac_terminal_charset; 
+            term->char_handler = guac_terminal_g0_charset; 
+            break;
+
+        case ')':
+            term->char_handler = guac_terminal_g1_charset; 
+            break;
+
+        case '*':
+            term->char_handler = guac_terminal_g2_charset; 
+            break;
+
+        case '+':
+            term->char_handler = guac_terminal_g3_charset; 
             break;
 
         case ']':
@@ -273,9 +285,58 @@ int guac_terminal_escape(guac_terminal* term, char c) {
 
 }
 
-int guac_terminal_charset(guac_terminal* term, char c) {
+int guac_terminal_g0_charset(guac_terminal* term, char c) {
+
+    /* STUB */
+    guac_client_log_info(term->client, "Ignoring G0 charset: 0x%02x", c);
     term->char_handler = guac_terminal_echo; 
     return 0;
+
+}
+
+int guac_terminal_g1_charset(guac_terminal* term, char c) {
+
+    /* STUB */
+    guac_client_log_info(term->client, "Ignoring G1 charset: 0x%02x", c);
+    term->char_handler = guac_terminal_echo; 
+    return 0;
+
+}
+
+int guac_terminal_g2_charset(guac_terminal* term, char c) {
+
+    /* STUB */
+    guac_client_log_info(term->client, "Ignoring G2 charset: 0x%02x", c);
+    term->char_handler = guac_terminal_echo; 
+    return 0;
+
+}
+
+int guac_terminal_g3_charset(guac_terminal* term, char c) {
+
+    /* STUB */
+    guac_client_log_info(term->client, "Ignoring G3 charset: 0x%02x", c);
+    term->char_handler = guac_terminal_echo; 
+    return 0;
+
+}
+
+/**
+ * Looks up the flag specified by the given number and mode. Used by the Set/Reset Mode
+ * functions of the terminal.
+ */
+static bool* __guac_terminal_get_flag(guac_terminal* term, int num, char private_mode) {
+
+    if (private_mode == '?') {
+        switch (num) {
+            case 1:  return &(term->application_cursor_keys); /* DECCKM */
+        }
+    }
+
+
+    /* Unknown flag */
+    return NULL;
+
 }
 
 int guac_terminal_csi(guac_terminal* term, char c) {
@@ -304,6 +365,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
     else if ((c >= 0x40 && c <= 0x7E) || c == ';') {
 
         int i, row, col, amount;
+        bool* flag;
 
         /* At most 16 parameters */
         if (argc < 16) {
@@ -554,10 +616,11 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
             /* h: Set Mode */
             case 'h':
-               
-                /* DECCKM */ 
-                if (argv[0] == 1 && private_mode_character == '?')
-                    term->application_cursor_keys = true;
+             
+                /* Look up flag and set */ 
+                flag = __guac_terminal_get_flag(term, argv[0], private_mode_character);
+                if (flag != NULL)
+                    *flag = true;
 
                 else
                     guac_client_log_info(term->client,
@@ -568,10 +631,11 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
             /* l: Reset Mode */
             case 'l':
-               
-                /* DECCKM */ 
-                if (argv[0] == 1 && private_mode_character == '?')
-                    term->application_cursor_keys = false;
+              
+                /* Look up flag and clear */ 
+                flag = __guac_terminal_get_flag(term, argv[0], private_mode_character);
+                if (flag != NULL)
+                    *flag = false;
 
                 else
                     guac_client_log_info(term->client,
