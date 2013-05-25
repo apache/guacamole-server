@@ -645,7 +645,8 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
             /* c: Identify */
             case 'c':
-                guac_terminal_write_all(term->stdin_pipe_fd[1], "\x1B[?6c", 5);
+                if (argv[0] == 0)
+                    guac_terminal_write_all(term->stdin_pipe_fd[1], "\x1B[?6c", 5);
                 break;
 
             /* d: Move cursor, current col */
