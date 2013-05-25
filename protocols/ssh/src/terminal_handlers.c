@@ -40,6 +40,7 @@
 #include "common.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
+#include "char_mappings.h"
 
 int guac_terminal_echo(guac_terminal* term, char c) {
 
@@ -131,6 +132,16 @@ int guac_terminal_echo(guac_terminal* term, char c) {
             term->cursor_col = 0;
             break;
 
+        /* SO (activates character set G1) */
+        case 0x0E:
+            term->active_char_set = 1;
+            break;
+
+        /* SI (activates character set G0) */
+        case 0x0F:
+            term->active_char_set = 0;
+            break;
+
         /* ESC */
         case 0x1B:
             term->char_handler = guac_terminal_escape; 
@@ -193,14 +204,6 @@ int guac_terminal_escape(guac_terminal* term, char c) {
 
         case ')':
             term->char_handler = guac_terminal_g1_charset; 
-            break;
-
-        case '*':
-            term->char_handler = guac_terminal_g2_charset; 
-            break;
-
-        case '+':
-            term->char_handler = guac_terminal_g3_charset; 
             break;
 
         case ']':
@@ -311,10 +314,28 @@ int guac_terminal_escape(guac_terminal* term, char c) {
 
 }
 
+/**
+ * Given a character mapping specifier (such as B, 0, U, or K),
+ * returns the corresponding character mapping.
+ */
+static const int* __guac_terminal_get_char_mapping(char c) {
+
+    /* Translate character specifier to actual mapping */
+    switch (c) {
+        case 'B': return NULL;
+        case '0': return vt100_map;
+        case 'U': return null_map;
+        case 'K': return user_map;
+    }
+
+    /* Default to Unicode */
+    return NULL;
+
+}
+
 int guac_terminal_g0_charset(guac_terminal* term, char c) {
 
-    /* STUB */
-    guac_client_log_info(term->client, "Ignoring G0 charset: 0x%02x", c);
+    term->char_mapping[0] = __guac_terminal_get_char_mapping(c);
     term->char_handler = guac_terminal_echo; 
     return 0;
 
@@ -322,26 +343,7 @@ int guac_terminal_g0_charset(guac_terminal* term, char c) {
 
 int guac_terminal_g1_charset(guac_terminal* term, char c) {
 
-    /* STUB */
-    guac_client_log_info(term->client, "Ignoring G1 charset: 0x%02x", c);
-    term->char_handler = guac_terminal_echo; 
-    return 0;
-
-}
-
-int guac_terminal_g2_charset(guac_terminal* term, char c) {
-
-    /* STUB */
-    guac_client_log_info(term->client, "Ignoring G2 charset: 0x%02x", c);
-    term->char_handler = guac_terminal_echo; 
-    return 0;
-
-}
-
-int guac_terminal_g3_charset(guac_terminal* term, char c) {
-
-    /* STUB */
-    guac_client_log_info(term->client, "Ignoring G3 charset: 0x%02x", c);
+    term->char_mapping[1] = __guac_terminal_get_char_mapping(c);
     term->char_handler = guac_terminal_echo; 
     return 0;
 

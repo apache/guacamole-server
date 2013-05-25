@@ -54,7 +54,6 @@
 #include "display.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
-#include "char_mappings.h"
 
 void guac_terminal_reset(guac_terminal* term) {
 
