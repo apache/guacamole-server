@@ -294,7 +294,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
                  if (keysym == 0xFF08) { data = "\x08"; length = 1; }
             else if (keysym == 0xFF09) { data = "\x09"; length = 1; }
-            else if (keysym == 0xFF0D) { data = "\x0A"; length = 1; }
+            else if (keysym == 0xFF0D) { data = "\x0D"; length = 1; }
             else if (keysym == 0xFF1B) { data = "\x1B"; length = 1; }
 
             /* Arrow keys */
