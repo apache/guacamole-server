@@ -97,6 +97,11 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
     switch (codepoint) {
 
+        /* Enquiry */
+        case 0x05:
+            guac_terminal_write_all(term->stdin_pipe_fd[1], "GUACAMOLE", 9);
+            break;
+
         /* Bell */
         case 0x07:
             break;
@@ -158,6 +163,10 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
         /* Displayable chars */
         default:
+
+            /* Don't bother handling control chars if unknown */
+            if (codepoint < 0x20)
+                break;
 
             /* Translate mappable codepoints to whatever codepoint is mapped */
             if (codepoint >= 0x20 && codepoint <= 0xFF && char_mapping != NULL)
