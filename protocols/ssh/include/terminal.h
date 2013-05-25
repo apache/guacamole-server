@@ -180,6 +180,19 @@ struct guac_terminal {
     guac_terminal_buffer* buffer;
 
     /**
+     * Array of arrays of mapped characters, where the character N is located at the N-32
+     * position within the array. Each element in a contained array is the corresponding Unicode
+     * codepoint. If NULL, a direct mapping from Unicode is used. The entries of the main array
+     * correspond to the character set in use (G0, G1, etc.)
+     */
+    const int* char_mapping[2];
+
+    /**
+     * The active character set. For example, 0 for G0, 1 for G1, etc.
+     */
+    int active_char_set;
+
+    /**
      * Whether text is being selected.
      */
     bool text_selected;

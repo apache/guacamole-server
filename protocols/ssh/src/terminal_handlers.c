@@ -46,8 +46,16 @@ int guac_terminal_echo(guac_terminal* term, char c) {
     static int bytes_remaining = 0;
     static int codepoint = 0;
 
+    const int* char_mapping = term->char_mapping[term->active_char_set];
+
+    /* If using non-Unicode mapping, just map straight bytes */
+    if (char_mapping != NULL) {
+        codepoint = c;
+        bytes_remaining = 0;
+    }
+
     /* 1-byte UTF-8 codepoint */
-    if ((c & 0x80) == 0x00) {    /* 0xxxxxxx */
+    else if ((c & 0x80) == 0x00) {    /* 0xxxxxxx */
         codepoint = c & 0x7F;
         bytes_remaining = 0;
     }
@@ -139,6 +147,10 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
         /* Displayable chars */
         default:
+
+            /* Translate mappable codepoints to whatever codepoint is mapped */
+            if (codepoint >= 0x20 && codepoint <= 0xFF && char_mapping != NULL)
+                codepoint = char_mapping[codepoint - 0x20];
 
             /* Wrap if necessary */
             if (term->cursor_col >= term->term_width) {

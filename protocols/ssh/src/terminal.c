@@ -54,6 +54,7 @@
 #include "display.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
+#include "char_mappings.h"
 
 void guac_terminal_reset(guac_terminal* term) {
 
@@ -61,6 +62,9 @@ void guac_terminal_reset(guac_terminal* term) {
 
     /* Set current state */
     term->char_handler = guac_terminal_echo; 
+    term->active_char_set = 0;
+    term->char_mapping[0] =
+    term->char_mapping[1] = NULL;
 
     /* Reset cursor location */
     term->cursor_row = term->visible_cursor_row = term->saved_cursor_row = 0;
