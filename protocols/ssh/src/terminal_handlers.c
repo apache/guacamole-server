@@ -716,11 +716,6 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 if (flag != NULL)
                     *flag = true;
 
-                else
-                    guac_client_log_info(term->client,
-                            "Unhandled mode set: mode=%i, private_mode_character=0x%0x",
-                            argv[0], private_mode_character);
-
                 break;
 
             /* l: Reset Mode */
@@ -730,11 +725,6 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                 flag = __guac_terminal_get_flag(term, argv[0], private_mode_character);
                 if (flag != NULL)
                     *flag = false;
-
-                else
-                    guac_client_log_info(term->client,
-                            "Unhandled mode reset: mode=%i, private_mode_character=0x%0x",
-                            argv[0], private_mode_character);
 
                 break;
 
@@ -799,10 +789,6 @@ int guac_terminal_csi(guac_terminal* term, char c) {
                     else if (value == 49)
                         term->current_attributes.background =
                             term->default_char.attributes.background;
-
-                    else
-                        guac_client_log_info(term->client,
-                                "Unhandled graphics rendition: %i", value);
 
                 }
 
