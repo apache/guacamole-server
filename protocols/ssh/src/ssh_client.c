@@ -74,7 +74,7 @@ static char* prompt(guac_client* client, const char* title, char* str, int size,
     while (pos < size && read(stdin_fd, &in_byte, 1) == 1) {
 
         /* Backspace */
-        if (in_byte == 0x08) {
+        if (in_byte == 0x7F) {
 
             if (pos > 0) {
                 guac_terminal_write_all(stdout_fd, "\b \b", 3);
@@ -82,8 +82,8 @@ static char* prompt(guac_client* client, const char* title, char* str, int size,
             }
         }
 
-        /* Newline (end of input */
-        else if (in_byte == 0x0A) {
+        /* CR (end of input */
+        else if (in_byte == 0x0D) {
             guac_terminal_write_all(stdout_fd, "\r\n", 2);
             break;
         }
@@ -131,6 +131,8 @@ void* ssh_client_thread(void* data) {
     guac_client* client = (guac_client*) data;
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
 
+    char name[1024];
+
     guac_socket* socket = client->socket;
     char buffer[8192];
     int bytes_read = -1234;
@@ -144,10 +146,15 @@ void* ssh_client_thread(void* data) {
             prompt(client, "Login as: ", client_data->username, sizeof(client_data->username), true) == NULL)
         return NULL;
 
+    /* Send new name */
+    snprintf(name, sizeof(name)-1, "%s@%s", client_data->username, client_data->hostname);
+    guac_protocol_send_name(socket, name);
+
     /* Get password */
     if (client_data->password[0] == 0 &&
             prompt(client, "Password: ", client_data->password, sizeof(client_data->password), false) == NULL)
         return NULL;
+
 
     /* Clear screen */
     guac_terminal_write_all(stdout_fd, "\x1B[H\x1B[J", 6);

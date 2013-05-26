@@ -56,9 +56,18 @@
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
+    "port",
     "username",
     "password",
     NULL
+};
+
+enum __SSH_ARGS_IDX {
+    IDX_HOSTNAME,
+    IDX_PORT,
+    IDX_USERNAME,
+    IDX_PASSWORD,
+    SSH_ARGS_COUNT
 };
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
@@ -77,15 +86,15 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->clipboard_data = NULL;
     client_data->term_channel = NULL;
 
-    if (argc != 3) {
+    if (argc != SSH_ARGS_COUNT) {
         guac_client_log_error(client, "Wrong number of arguments");
         return -1;
     }
 
     /* Read parameters */
-    strcpy(client_data->hostname, argv[0]);
-    strcpy(client_data->username, argv[1]);
-    strcpy(client_data->password, argv[2]);
+    strcpy(client_data->hostname, argv[IDX_HOSTNAME]);
+    strcpy(client_data->username, argv[IDX_USERNAME]);
+    strcpy(client_data->password, argv[IDX_PASSWORD]);
 
     /* Set up I-bar pointer */
     client_data->ibar_cursor = guac_ssh_create_ibar(client);
@@ -93,8 +102,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set up blank pointer */
     client_data->blank_cursor = guac_ssh_create_blank(client);
 
-    /* Send name and dimensions */
-    guac_protocol_send_name(socket, "Terminal");
+    /* Send initial name */
+    guac_protocol_send_name(socket, client_data->hostname);
 
     /* Initialize pointer */
     client_data->current_cursor = client_data->blank_cursor;
