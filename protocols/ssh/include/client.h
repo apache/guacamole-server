@@ -50,17 +50,49 @@
  */
 typedef struct ssh_guac_client_data {
 
+    /**
+     * The hostname of the SSH server to connect to.
+     */
     char hostname[1024];
+
+    /**
+     * The port of the SSH server to connect to.
+     */
     int port;
+
+    /**
+     * The name of the user to login as.
+     */
     char username[1024];
+
+    /**
+     * The password to give when authenticating.
+     */
     char password[1024];
 
+    /**
+     * The name of the font to use for display rendering.
+     */
     char font_name[1024];
+
+    /**
+     * The size of the font to use, in points.
+     */
     int font_size;
 
+    /**
+     * The SSH client thread.
+     */
     pthread_t client_thread;
 
+    /**
+     * SSH session, used by the SSH client thread.
+     */
     ssh_session session;
+
+    /**
+     * SSH terminal channel, used by the SSH client thread.
+     */
     ssh_channel term_channel;
 
     /**
