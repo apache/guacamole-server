@@ -154,15 +154,12 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
         pthread_mutex_unlock(&(term->lock));
     }
 
-    /* Paste contents of clipboard on right mouse button up */
-    if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT)
-            && client_data->clipboard_data != NULL) {
-
-        int length = strlen(client_data->clipboard_data);
-        if (length)
-            return guac_terminal_send_data(term,
-                    client_data->clipboard_data, length);
-
+    /* Paste contents of clipboard on right or middle mouse button up */
+    if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE)) {
+        if (client_data->clipboard_data != NULL)
+            return guac_terminal_send_string(term, client_data->clipboard_data);
+        else
+            return 0;
     }
 
     /* If text selected, change state based on left mouse mouse button */
@@ -246,9 +243,40 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
         client_data->mod_ctrl = pressed;
     else if (keysym == 0xFFE9)
         client_data->mod_alt = pressed;
+    else if (keysym == 0xFFE1)
+        client_data->mod_shift = pressed;
         
     /* If key pressed */
     else if (pressed) {
+
+        /* Ctrl+Shift+V shortcut for paste */
+        if (keysym == 'V' && client_data->mod_ctrl) {
+            if (client_data->clipboard_data != NULL)
+                return guac_terminal_send_string(term, client_data->clipboard_data);
+            else
+                return 0;
+        }
+
+        /* Shift+PgUp / Shift+PgDown shortcuts for scrolling */
+        if (client_data->mod_shift) {
+
+            /* Page up */
+            if (keysym == 0xFF55) {
+                pthread_mutex_lock(&(term->lock));
+                guac_terminal_scroll_display_up(term, term->term_height);
+                pthread_mutex_unlock(&(term->lock));
+                return 0;
+            }
+
+            /* Page down */
+            if (keysym == 0xFF56) {
+                pthread_mutex_lock(&(term->lock));
+                guac_terminal_scroll_display_down(term, term->term_height);
+                pthread_mutex_unlock(&(term->lock));
+                return 0;
+            }
+
+        }
 
         /* Reset scroll */
         if (term->scroll_offset != 0) {

@@ -111,8 +111,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Init client data */
     client->data = client_data;
-    client_data->mod_alt = 0;
-    client_data->mod_ctrl = 0;
+    client_data->mod_alt   =
+    client_data->mod_ctrl  =
+    client_data->mod_shift = 0;
     client_data->clipboard_data = NULL;
     client_data->term_channel = NULL;
 

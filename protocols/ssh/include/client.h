@@ -116,6 +116,11 @@ typedef struct ssh_guac_client_data {
     int mod_ctrl;
 
     /**
+     * Whether the shift key is currently being held down.
+     */
+    int mod_shift;
+
+    /**
      * The current mouse button state.
      */
     int mouse_mask;
