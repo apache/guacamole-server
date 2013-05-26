@@ -237,7 +237,9 @@ typedef struct guac_terminal_display {
  * Allocates a new display having the given default foreground and background
  * colors.
  */
-guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int foreground, int background);
+guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
+        const char* font_name, int font_size,
+        int foreground, int background);
 
 /**
  * Frees the given display.

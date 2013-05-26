@@ -51,8 +51,12 @@
 typedef struct ssh_guac_client_data {
 
     char hostname[1024];
+    int port;
     char username[1024];
     char password[1024];
+
+    char font_name[1024];
+    int font_size;
 
     pthread_t client_thread;
 

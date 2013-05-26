@@ -90,6 +90,7 @@ void guac_terminal_reset(guac_terminal* term) {
 }
 
 guac_terminal* guac_terminal_create(guac_client* client,
+        const char* font_name, int font_size,
         int width, int height) {
 
     guac_terminal_char default_char = {
@@ -110,6 +111,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Init display */
     term->display = guac_terminal_display_alloc(client,
+            font_name, font_size,
             default_char.attributes.foreground,
             default_char.attributes.background);
 

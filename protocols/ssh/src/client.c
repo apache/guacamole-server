@@ -53,20 +53,53 @@
 #include "ibar.h"
 #include "ssh_client.h"
 
+#define GUAC_SSH_DEFAULT_FONT_NAME "monospace" 
+#define GUAC_SSH_DEFAULT_FONT_SIZE 12
+#define GUAC_SSH_DEFAULT_PORT      22
+
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
     "username",
     "password",
+    "font-name",
+    "font-size",
     NULL
 };
 
 enum __SSH_ARGS_IDX {
+
+    /**
+     * The hostname to connect to. Required.
+     */
     IDX_HOSTNAME,
+
+    /**
+     * The port to connect to. Optional.
+     */
     IDX_PORT,
+
+    /**
+     * The name of the user to login as. Optional.
+     */
     IDX_USERNAME,
+
+    /**
+     * The password to use when logging in. Optional.
+     */
     IDX_PASSWORD,
+
+    /**
+     * The name of the font to use within the terminal.
+     */
+    IDX_FONT_NAME,
+
+    /**
+     * The size of the font to use within the terminal, in points.
+     */
+    IDX_FONT_SIZE,
+
     SSH_ARGS_COUNT
 };
 
@@ -75,12 +108,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_socket* socket = client->socket;
 
     ssh_guac_client_data* client_data = malloc(sizeof(ssh_guac_client_data));
-    guac_terminal* term = guac_terminal_create(client,
-            client->info.optimal_width, client->info.optimal_height);
 
     /* Init client data */
     client->data = client_data;
-    client_data->term = term;
     client_data->mod_alt = 0;
     client_data->mod_ctrl = 0;
     client_data->clipboard_data = NULL;
@@ -92,9 +122,32 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
 
     /* Read parameters */
-    strcpy(client_data->hostname, argv[IDX_HOSTNAME]);
-    strcpy(client_data->username, argv[IDX_USERNAME]);
-    strcpy(client_data->password, argv[IDX_PASSWORD]);
+    strcpy(client_data->hostname,  argv[IDX_HOSTNAME]);
+    strcpy(client_data->username,  argv[IDX_USERNAME]);
+    strcpy(client_data->password,  argv[IDX_PASSWORD]);
+
+    /* Read font name */
+    if (argv[IDX_FONT_NAME][0] != 0)
+        strcpy(client_data->font_name, argv[IDX_FONT_NAME]);
+    else
+        strcpy(client_data->font_name, GUAC_SSH_DEFAULT_FONT_NAME );
+
+    /* Read font size */
+    if (argv[IDX_FONT_SIZE][0] != 0)
+        client_data->font_size = atoi(argv[IDX_FONT_SIZE]);
+    else
+        client_data->font_size = GUAC_SSH_DEFAULT_FONT_SIZE;
+
+    /* Read port */
+    if (argv[IDX_PORT][0] != 0)
+        client_data->port = atoi(argv[IDX_PORT]);
+    else
+        client_data->port = GUAC_SSH_DEFAULT_PORT;
+
+    /* Create terminal */
+    client_data->term = guac_terminal_create(client,
+            client_data->font_name, client_data->font_size,
+            client->info.optimal_width, client->info.optimal_height);
 
     /* Set up I-bar pointer */
     client_data->ibar_cursor = guac_ssh_create_ibar(client);

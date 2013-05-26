@@ -339,7 +339,9 @@ int __guac_terminal_set(guac_terminal_display* display, int row, int col, int co
 }
 
 
-guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int foreground, int background) {
+guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
+        const char* font_name, int font_size,
+        int foreground, int background) {
 
     PangoFontMap* font_map;
     PangoFont* font;
@@ -358,22 +360,22 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client, int fore
 
     /* Get font */
     display->font_desc = pango_font_description_new();
-    pango_font_description_set_family(display->font_desc, "monospace");
+    pango_font_description_set_family(display->font_desc, font_name);
     pango_font_description_set_weight(display->font_desc, PANGO_WEIGHT_NORMAL);
-    pango_font_description_set_size(display->font_desc, 12*PANGO_SCALE);
+    pango_font_description_set_size(display->font_desc, font_size*PANGO_SCALE);
 
     font_map = pango_cairo_font_map_get_default();
     context = pango_font_map_create_context(font_map);
 
     font = pango_font_map_load_font(font_map, context, display->font_desc);
     if (font == NULL) {
-        guac_client_log_error(display->client, "Unable to get font.");
+        guac_client_log_error(display->client, "Unable to get font \"%s\"", font_name);
         return NULL;
     }
 
     metrics = pango_font_get_metrics(font, NULL);
     if (metrics == NULL) {
-        guac_client_log_error(display->client, "Unable to get font metrics.");
+        guac_client_log_error(display->client, "Unable to get font metrics for font \"%s\"", font_name);
         return NULL;
     }
 

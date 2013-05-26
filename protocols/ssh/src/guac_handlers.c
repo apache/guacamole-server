@@ -386,8 +386,10 @@ int ssh_guac_client_free_handler(guac_client* client) {
     ssh_guac_client_data* guac_client_data = (ssh_guac_client_data*) client->data;
 
     /* Close SSH channel */
-    ssh_channel_close(guac_client_data->term_channel);
-    ssh_channel_send_eof(guac_client_data->term_channel);
+    if (guac_client_data->term_channel != NULL) {
+        ssh_channel_close(guac_client_data->term_channel);
+        ssh_channel_send_eof(guac_client_data->term_channel);
+    }
 
     /* Free terminal */
     guac_terminal_free(guac_client_data->term);

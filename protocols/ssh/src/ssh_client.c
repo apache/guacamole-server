@@ -169,6 +169,7 @@ void* ssh_client_thread(void* data) {
 
     /* Set session options */
     ssh_options_set(client_data->session, SSH_OPTIONS_HOST, client_data->hostname);
+    ssh_options_set(client_data->session, SSH_OPTIONS_PORT, &(client_data->port));
     ssh_options_set(client_data->session, SSH_OPTIONS_USER, client_data->username);
 
     /* Connect */
