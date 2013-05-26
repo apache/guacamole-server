@@ -36,7 +36,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
-#include <stdarg.h>
 
 #include "common.h"
 #include "terminal.h"
@@ -57,31 +56,6 @@
  * Response which indicates the terminal is alive.
  */
 #define GUAC_TERMINAL_OK          "\x1B[0n"
-
-
-/**
- * Sends data through STDIN as if typed by the user, using the format
- * string given and any args (similar to printf).
- */
-static int guac_terminal_respond(guac_terminal* term, const char* format, ...) {
-
-    int written;
-
-    va_list ap;
-    char buffer[1024];
-
-    /* Print to buffer */
-    va_start(ap, format);
-    written = vsnprintf(buffer, sizeof(buffer)-1, format, ap);
-    va_end(ap);
-
-    if (written < 0)
-        return written;
-
-    /* Write to STDIN */
-    return guac_terminal_write_all(term->stdin_pipe_fd[1], buffer, written);
-
-}
 
 int guac_terminal_echo(guac_terminal* term, char c) {
 
@@ -140,7 +114,7 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
         /* Enquiry */
         case 0x05:
-            guac_terminal_respond(term, "%s", GUAC_TERMINAL_ANSWERBACK);
+            guac_terminal_send_string(term, GUAC_TERMINAL_ANSWERBACK);
             break;
 
         /* Bell */
@@ -345,7 +319,7 @@ int guac_terminal_escape(guac_terminal* term, char c) {
 
         /* DEC Identify */
         case 'Z':
-            guac_terminal_respond(term, "%s", GUAC_TERMINAL_VT102_ID);
+            guac_terminal_send_string(term, GUAC_TERMINAL_VT102_ID);
             term->char_handler = guac_terminal_echo; 
             break;
 
@@ -413,6 +387,7 @@ static bool* __guac_terminal_get_flag(guac_terminal* term, int num, char private
 
     else if (private_mode == 0) {
         switch (num) {
+            case 4:  return &(term->insert_mode); /* DECIM */
             case 20: return &(term->automatic_carriage_return); /* LF/NL */
         }
     }
@@ -696,7 +671,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
             /* c: Identify */
             case 'c':
                 if (argv[0] == 0 && private_mode_character == 0)
-                    guac_terminal_respond(term, "%s", GUAC_TERMINAL_VT102_ID);
+                    guac_terminal_send_string(term, GUAC_TERMINAL_VT102_ID);
                 break;
 
             /* d: Move cursor, current col */
@@ -810,11 +785,11 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
                 /* Device status report */
                 if (argv[0] == 5 && private_mode_character == 0)
-                    guac_terminal_respond(term, "%s", GUAC_TERMINAL_OK);
+                    guac_terminal_send_string(term, GUAC_TERMINAL_OK);
 
                 /* Cursor position report */
                 else if (argv[0] == 6 && private_mode_character == 0)
-                    guac_terminal_respond(term, "\x1B[%i;%iR", term->cursor_row+1, term->cursor_col+1);
+                    guac_terminal_sendf(term, "\x1B[%i;%iR", term->cursor_row+1, term->cursor_col+1);
 
                 break;
 

@@ -70,6 +70,11 @@ typedef struct ssh_guac_client_data {
     char* clipboard_data;
 
     /**
+     * Whether the alt key is currently being held down.
+     */
+    int mod_alt;
+
+    /**
      * Whether the control key is currently being held down.
      */
     int mod_ctrl;

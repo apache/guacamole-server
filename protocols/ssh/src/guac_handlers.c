@@ -158,7 +158,7 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
         int length = strlen(client_data->clipboard_data);
         if (length)
-            return write(term->stdin_pipe_fd[1],
+            return guac_terminal_send_data(term,
                     client_data->clipboard_data, length);
 
     }
@@ -228,9 +228,6 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
-    /* Get write end of STDIN pipe */
-    int fd = term->stdin_pipe_fd[1];
-
     /* Hide mouse cursor if not already hidden */
     if (client_data->current_cursor != client_data->blank_cursor) {
         pthread_mutex_lock(&(term->lock));
@@ -243,9 +240,10 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     }
 
     /* Track modifiers */
-    if (keysym == 0xFFE3) {
+    if (keysym == 0xFFE3)
         client_data->mod_ctrl = pressed;
-    }
+    else if (keysym == 0xFFE9)
+        client_data->mod_alt = pressed;
         
     /* If key pressed */
     else if (pressed) {
@@ -256,6 +254,10 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             guac_terminal_scroll_display_down(term, term->scroll_offset);
             pthread_mutex_unlock(&(term->lock));
         }
+
+        /* If alt being held, also send escape character */
+        if (client_data->mod_alt)
+            return guac_terminal_send_string(term, "\x1B");
 
         /* Translate Ctrl+letter to control code */ 
         if (client_data->mod_ctrl) {
@@ -272,7 +274,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             else
                 return 0;
 
-            return write(fd, &data, 1);
+            return guac_terminal_send_data(term, &data, 1);
 
         }
 
@@ -283,50 +285,57 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             char data[5];
 
             length = guac_terminal_encode_utf8(keysym & 0xFFFF, data);
-            return write(fd, data, length);
+            return guac_terminal_send_data(term, data, length);
 
         }
 
+        /* Non-printable keys */
         else {
 
-            int length = 0;
-            const char* data = NULL;
+            if (keysym == 0xFF08) return guac_terminal_send_string(term, "\x7F"); /* Backspace */
+            if (keysym == 0xFF09) return guac_terminal_send_string(term, "\x09"); /* Tab */
+            if (keysym == 0xFF0D) return guac_terminal_send_string(term, "\x0D"); /* Enter */
+            if (keysym == 0xFF1B) return guac_terminal_send_string(term, "\x1B"); /* Esc */
 
-                 if (keysym == 0xFF08) { data = "\x08"; length = 1; }
-            else if (keysym == 0xFF09) { data = "\x09"; length = 1; }
-            else if (keysym == 0xFF0D) { data = "\x0D"; length = 1; }
-            else if (keysym == 0xFF1B) { data = "\x1B"; length = 1; }
+            if (keysym == 0xFF50) return guac_terminal_send_string(term, "\x1BOH"); /* Home */
 
-            /* Arrow keys */
-            else if (keysym == 0xFF52) {
-                if (term->application_cursor_keys) data = "\x1BOA";
-                else                               data = "\x1B[A";
-                length = 3;
+            /* Arrow keys w/ application cursor */
+            if (term->application_cursor_keys) {
+                if (keysym == 0xFF51) return guac_terminal_send_string(term, "\x1BOD"); /* Left */
+                if (keysym == 0xFF52) return guac_terminal_send_string(term, "\x1BOA"); /* Up */
+                if (keysym == 0xFF53) return guac_terminal_send_string(term, "\x1BOC"); /* Right */
+                if (keysym == 0xFF54) return guac_terminal_send_string(term, "\x1BOB"); /* Down */
+            }
+            else {
+                if (keysym == 0xFF51) return guac_terminal_send_string(term, "\x1B[D"); /* Left */
+                if (keysym == 0xFF52) return guac_terminal_send_string(term, "\x1B[A"); /* Up */
+                if (keysym == 0xFF53) return guac_terminal_send_string(term, "\x1B[C"); /* Right */
+                if (keysym == 0xFF54) return guac_terminal_send_string(term, "\x1B[B"); /* Down */
             }
 
-            else if (keysym == 0xFF54) {
-                if (term->application_cursor_keys) data = "\x1BOB";
-                else                               data = "\x1B[B";
-                length = 3;
-            }
+            if (keysym == 0xFF55) return guac_terminal_send_string(term, "\x1B[5;3~"); /* Page up */
+            if (keysym == 0xFF56) return guac_terminal_send_string(term, "\x1B[6;3~"); /* Page down */
+            if (keysym == 0xFF57) return guac_terminal_send_string(term, "\x1BOF");    /* End */
 
-            else if (keysym == 0xFF53) {
-                if (term->application_cursor_keys) data = "\x1BOC";
-                else                               data = "\x1B[C";
-                length = 3;
-            }
+            if (keysym == 0xFF63) return guac_terminal_send_string(term, "\x1B[2~"); /* Insert */
 
-            else if (keysym == 0xFF51) {
-                if (term->application_cursor_keys) data = "\x1BOD";
-                else                               data = "\x1B[D";
-                length = 3;
-            }
+            if (keysym == 0xFFBE) return guac_terminal_send_string(term, "\x1BOP"); /* F1  */
+            if (keysym == 0xFFBF) return guac_terminal_send_string(term, "\x1BOQ"); /* F2  */
+            if (keysym == 0xFFC0) return guac_terminal_send_string(term, "\x1BOR"); /* F3  */
+            if (keysym == 0xFFC1) return guac_terminal_send_string(term, "\x1BOS"); /* F4  */
 
+            if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[15~"); /* F5  */
+            if (keysym == 0xFFC3) return guac_terminal_send_string(term, "\x1B[17~"); /* F6  */
+            if (keysym == 0xFFC4) return guac_terminal_send_string(term, "\x1B[18~"); /* F7  */
+            if (keysym == 0xFFC5) return guac_terminal_send_string(term, "\x1B[19~"); /* F8  */
+            if (keysym == 0xFFC6) return guac_terminal_send_string(term, "\x1B[20~"); /* F9  */
+            if (keysym == 0xFFC7) return guac_terminal_send_string(term, "\x1B[21~"); /* F10 */
+            if (keysym == 0xFFC8) return guac_terminal_send_string(term, "\x1B[22~"); /* F11 */
+            if (keysym == 0xFFC9) return guac_terminal_send_string(term, "\x1B[23~"); /* F12 */
 
-            /* Ignore other keys */
-            else return 0;
+            if (keysym == 0xFFFF) return guac_terminal_send_string(term, "\x1B[3~"); /* Delete */
 
-            return write(fd, data, length);
+            /* Ignore unknown keys */
         }
 
     }

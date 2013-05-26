@@ -37,6 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <pthread.h>
 
@@ -80,6 +81,7 @@ void guac_terminal_reset(guac_terminal* term) {
     term->text_selected = false;
     term->application_cursor_keys = false;
     term->automatic_carriage_return = false;
+    term->insert_mode = false;
 
     /* Clear terminal */
     for (row=0; row<term->term_height; row++)
@@ -754,4 +756,33 @@ void guac_terminal_resize(guac_terminal* term, int width, int height) {
     term->term_height = height;
 
 }
+
+int guac_terminal_send_data(guac_terminal* term, const char* data, int length) {
+    return guac_terminal_write_all(term->stdin_pipe_fd[1], data, length);
+}
+
+int guac_terminal_send_string(guac_terminal* term, const char* data) {
+    return guac_terminal_write_all(term->stdin_pipe_fd[1], data, strlen(data));
+}
+
+int guac_terminal_sendf(guac_terminal* term, const char* format, ...) {
+
+    int written;
+
+    va_list ap;
+    char buffer[1024];
+
+    /* Print to buffer */
+    va_start(ap, format);
+    written = vsnprintf(buffer, sizeof(buffer)-1, format, ap);
+    va_end(ap);
+
+    if (written < 0)
+        return written;
+
+    /* Write to STDIN */
+    return guac_terminal_write_all(term->stdin_pipe_fd[1], buffer, written);
+
+}
+
 

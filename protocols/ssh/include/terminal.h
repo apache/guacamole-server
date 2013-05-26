@@ -228,6 +228,11 @@ struct guac_terminal {
      */
     bool automatic_carriage_return;
 
+    /**
+     * Whether insert mode is enabled (DECIM).
+     */
+    bool insert_mode;
+
 };
 
 /**
@@ -351,6 +356,22 @@ void guac_terminal_resize(guac_terminal* term, int width, int height);
  * Flushes all pending operations within the given guac_terminal.
  */
 void guac_terminal_flush(guac_terminal* terminal);
+
+/**
+ * Sends the given string as if typed by the user. 
+ */
+int guac_terminal_send_data(guac_terminal* term, const char* data, int length);
+
+/**
+ * Sends the given string as if typed by the user. 
+ */
+int guac_terminal_send_string(guac_terminal* term, const char* data);
+
+/**
+ * Sends data through STDIN as if typed by the user, using the format
+ * string given and any args (similar to printf).
+ */
+int guac_terminal_sendf(guac_terminal* term, const char* format, ...);
 
 #endif
 
