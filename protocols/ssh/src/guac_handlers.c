@@ -327,7 +327,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
             if (keysym == 0xFF0D) return guac_terminal_send_string(term, "\x0D"); /* Enter */
             if (keysym == 0xFF1B) return guac_terminal_send_string(term, "\x1B"); /* Esc */
 
-            if (keysym == 0xFF50) return guac_terminal_send_string(term, "\x1BOH"); /* Home */
+            if (keysym == 0xFF50) return guac_terminal_send_string(term, "\x1B[1~"); /* Home */
 
             /* Arrow keys w/ application cursor */
             if (term->application_cursor_keys) {
@@ -343,18 +343,18 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
                 if (keysym == 0xFF54) return guac_terminal_send_string(term, "\x1B[B"); /* Down */
             }
 
-            if (keysym == 0xFF55) return guac_terminal_send_string(term, "\x1B[5;3~"); /* Page up */
-            if (keysym == 0xFF56) return guac_terminal_send_string(term, "\x1B[6;3~"); /* Page down */
-            if (keysym == 0xFF57) return guac_terminal_send_string(term, "\x1BOF");    /* End */
+            if (keysym == 0xFF55) return guac_terminal_send_string(term, "\x1B[5~"); /* Page up */
+            if (keysym == 0xFF56) return guac_terminal_send_string(term, "\x1B[6~"); /* Page down */
+            if (keysym == 0xFF57) return guac_terminal_send_string(term, "\x1B[4~"); /* End */
 
             if (keysym == 0xFF63) return guac_terminal_send_string(term, "\x1B[2~"); /* Insert */
 
-            if (keysym == 0xFFBE) return guac_terminal_send_string(term, "\x1BOP"); /* F1  */
-            if (keysym == 0xFFBF) return guac_terminal_send_string(term, "\x1BOQ"); /* F2  */
-            if (keysym == 0xFFC0) return guac_terminal_send_string(term, "\x1BOR"); /* F3  */
-            if (keysym == 0xFFC1) return guac_terminal_send_string(term, "\x1BOS"); /* F4  */
+            if (keysym == 0xFFBE) return guac_terminal_send_string(term, "\x1B[[A"); /* F1  */
+            if (keysym == 0xFFBF) return guac_terminal_send_string(term, "\x1B[[B"); /* F2  */
+            if (keysym == 0xFFC0) return guac_terminal_send_string(term, "\x1B[[C"); /* F3  */
+            if (keysym == 0xFFC1) return guac_terminal_send_string(term, "\x1B[[D"); /* F4  */
+            if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[[E"); /* F5  */
 
-            if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[15~"); /* F5  */
             if (keysym == 0xFFC3) return guac_terminal_send_string(term, "\x1B[17~"); /* F6  */
             if (keysym == 0xFFC4) return guac_terminal_send_string(term, "\x1B[18~"); /* F7  */
             if (keysym == 0xFFC5) return guac_terminal_send_string(term, "\x1B[19~"); /* F8  */
