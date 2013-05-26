@@ -203,6 +203,11 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
             }
 
+            /* If insert mode, shift other characters right by 1 */
+            if (term->insert_mode)
+                guac_terminal_copy_columns(term, term->cursor_row,
+                        term->cursor_col, term->term_width-2, 1);
+
             /* Write character */
             guac_terminal_set(term,
                     term->cursor_row,
