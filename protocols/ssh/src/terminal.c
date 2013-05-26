@@ -83,6 +83,10 @@ void guac_terminal_reset(guac_terminal* term) {
     term->automatic_carriage_return = false;
     term->insert_mode = false;
 
+    /* Reset tabs */
+    term->tab_interval = 8;
+    memset(term->custom_tabs, 0, sizeof(term->custom_tabs));
+
     /* Clear terminal */
     for (row=0; row<term->term_height; row++)
         guac_terminal_set_columns(term, row, 0, term->term_width, &(term->default_char));
@@ -785,6 +789,68 @@ int guac_terminal_sendf(guac_terminal* term, const char* format, ...) {
     /* Write to STDIN */
     return guac_terminal_write_all(term->stdin_pipe_fd[1], buffer, written);
 
+}
+
+void guac_terminal_set_tab(guac_terminal* term, int column) {
+
+    int i;
+
+    /* Search for available space, set if available */
+    for (i=0; i<GUAC_TERMINAL_MAX_TABS; i++) {
+
+        /* Set tab if space free */
+        if (term->custom_tabs[i] == 0) {
+            term->custom_tabs[i] = column+1;
+            break;
+        }
+
+    }
+
+}
+
+void guac_terminal_unset_tab(guac_terminal* term, int column) {
+
+    int i;
+
+    /* Search for given tab, unset if found */
+    for (i=0; i<GUAC_TERMINAL_MAX_TABS; i++) {
+
+        /* Unset tab if found */
+        if (term->custom_tabs[i] == column+1) {
+            term->custom_tabs[i] = 0;
+            break;
+        }
+
+    }
+
+}
+
+void guac_terminal_clear_tabs(guac_terminal* term) {
+    term->tab_interval = 0;
+    memset(term->custom_tabs, 0, sizeof(term->custom_tabs));
+}
+
+int guac_terminal_next_tab(guac_terminal* term, int column) {
+
+    int i;
+
+    /* Determine tab stop from interval */
+    int tabstop;
+    if (term->tab_interval != 0)
+        tabstop = (column / term->tab_interval + 1) * term->tab_interval;
+    else
+        tabstop = term->term_width - 1;
+
+    /* Walk custom tabs, trying to find an earlier occurrence */
+    for (i=0; i<GUAC_TERMINAL_MAX_TABS; i++) {
+
+        int custom_tabstop = term->custom_tabs[i] - 1;
+        if (custom_tabstop != -1 && custom_tabstop > column && custom_tabstop < tabstop)
+            tabstop = custom_tabstop;
+
+    }
+
+    return tabstop;
 }
 
 

@@ -47,6 +47,14 @@
 #include "display.h"
 #include "buffer.h"
 
+/**
+ * The maximum number of custom tab stops.
+ */
+#define GUAC_TERMINAL_MAX_TABS       16
+
+/**
+ * The number of rows to scroll per scroll wheel event.
+ */
 #define GUAC_SSH_WHEEL_SCROLL_AMOUNT 3
 
 typedef struct guac_terminal guac_terminal;
@@ -178,6 +186,18 @@ struct guac_terminal {
      * facilitates transfer of a set of changes to the remote display.
      */
     guac_terminal_buffer* buffer;
+
+    /**
+     * Automatically place a tabstop every N characters. If zero, then no
+     * tabstops exist automatically.
+     */
+    int tab_interval;
+
+    /**
+     * Array of all tabs set. Each entry is the column number of a tab + 1,
+     * or 0 if that tab cell is unset.
+     */
+    int custom_tabs[GUAC_TERMINAL_MAX_TABS];
 
     /**
      * Array of arrays of mapped characters, where the character N is located at the N-32
@@ -373,6 +393,27 @@ int guac_terminal_send_string(guac_terminal* term, const char* data);
  * string given and any args (similar to printf).
  */
 int guac_terminal_sendf(guac_terminal* term, const char* format, ...);
+
+/**
+ * Sets a tabstop in the given column.
+ */
+void guac_terminal_set_tab(guac_terminal* term, int column);
+
+/**
+ * Removes the tabstop at the given column.
+ */
+void guac_terminal_unset_tab(guac_terminal* term, int column);
+
+/**
+ * Removes all tabstops.
+ */
+void guac_terminal_clear_tabs(guac_terminal* term);
+
+/**
+ * Given a column within the given terminal, returns the location of the
+ * next tabstop (or the rightmost character, if no more tabstops exist).
+ */
+int guac_terminal_next_tab(guac_terminal* term, int column);
 
 #endif
 

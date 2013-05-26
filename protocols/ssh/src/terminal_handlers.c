@@ -127,6 +127,11 @@ int guac_terminal_echo(guac_terminal* term, char c) {
                 term->cursor_col--;
             break;
 
+        /* Tab */
+        case 0x09:
+            term->cursor_col = guac_terminal_next_tab(term, term->cursor_col);
+            break;
+
         /* Line feed / VT / FF */
         case '\n':
         case 0x0B: /* VT */
@@ -302,6 +307,11 @@ int guac_terminal_escape(guac_terminal* term, char c) {
             }
 
             term->char_handler = guac_terminal_echo; 
+            break;
+
+        /* Set Tab (HTS) */
+        case 'H':
+            guac_terminal_set_tab(term, term->cursor_col);
             break;
 
         /* Reverse Linefeed */
@@ -683,6 +693,19 @@ int guac_terminal_csi(guac_terminal* term, char c) {
             case 'd':
                 row = argv[0]; if (row != 0) row--;
                 term->cursor_row = row;
+                break;
+
+            /* g: Clear tab */
+            case 'g':
+
+                /* Clear tab at current location */
+                if (argv[0] == 0)
+                    guac_terminal_unset_tab(term, term->cursor_col);
+
+                /* Clear all tabs */
+                else if (argv[0] == 3)
+                    guac_terminal_clear_tabs(term);
+
                 break;
 
             /* h: Set Mode */
