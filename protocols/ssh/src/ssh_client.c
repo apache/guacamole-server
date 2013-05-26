@@ -44,6 +44,8 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
+#include <libssh/libssh.h>
+
 #include "client.h"
 #include "common.h"
 
@@ -223,16 +225,13 @@ void* ssh_client_thread(void* data) {
         if ((bytes_read = channel_read(client_data->term_channel, buffer, sizeof(buffer), 0)) == SSH_AGAIN)
             continue;
 
-        if (bytes_read > 0)
-            guac_terminal_write_all(stdout_fd, buffer, bytes_read);
+        /* Attempt to write data received. Exit on failure. */
+        if (bytes_read > 0) {
+            int written = guac_terminal_write_all(stdout_fd, buffer, bytes_read);
+            if (written < 0)
+                break;
+        }
 
-    }
-
-    /* Notify on error */
-    if (bytes_read < 0) {
-        guac_protocol_send_error(socket, "Error reading data.");
-        guac_socket_flush(socket);
-        return NULL;
     }
 
     /* Wait for input thread to die */
