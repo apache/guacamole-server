@@ -1,3 +1,7 @@
+2013-05-23 James Muehlner <james.muehlner@guac-dev.org>
+
+	* convert() should return NULL only on malloc failure (fixes #313)
+
 2013-02-07 Saul Gio Perez <gio.perez@sv.cmu.edu>
 
 	* Implement color-depth parameter (fixes #272)
