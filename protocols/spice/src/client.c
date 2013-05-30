@@ -35,6 +35,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <stdlib.h>
+
+#include <guacamole/client.h>
+
+#include "guac_handlers.h"
+
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
     NULL
@@ -53,6 +59,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return -1;
     }
 
+    /* Set handlers */
+    client->handle_messages   = spice_guac_client_handle_messages;
+    client->clipboard_handler = spice_guac_client_clipboard_handler;
+    client->key_handler       = spice_guac_client_key_handler;
+    client->mouse_handler     = spice_guac_client_mouse_handler;
+    client->size_handler      = spice_guac_client_size_handler;
+    client->free_handler      = spice_guac_client_free_handler;
 
     return 0;
 }

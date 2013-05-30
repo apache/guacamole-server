@@ -35,6 +35,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <guacamole/client.h>
+
+
 int spice_guac_client_handle_messages(guac_client* client) {
     /* STUB */
     return 0;
@@ -55,7 +58,7 @@ int spice_guac_client_clipboard_handler(guac_client* client, char* data) {
     return 0;
 }
 
-int spice_guac_client_size_handler(guac_client* client, int width, int height);
+int spice_guac_client_size_handler(guac_client* client, int width, int height) {
     /* STUB */
     return 0;
 }
