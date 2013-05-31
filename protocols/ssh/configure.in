@@ -51,6 +51,11 @@ AC_CHECK_LIB([pthread], [pthread_create])
 PKG_CHECK_MODULES([PANGO], pango);
 PKG_CHECK_MODULES([PANGOCAIRO], pangocairo);
 
+# Check for SSH functions
+AC_CHECK_FUNC(ssh_channel_close,    AC_DEFINE(HAVE_SSH_CHANNEL_CLOSE))
+AC_CHECK_FUNC(ssh_channel_send_eof, AC_DEFINE(HAVE_SSH_CHANNEL_SEND_EOF))
+AC_CHECK_FUNC(ssh_channel_free,     AC_DEFINE(HAVE_SSH_CHANNEL_FREE))
+
 # Checks for header files.
 AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h])
 

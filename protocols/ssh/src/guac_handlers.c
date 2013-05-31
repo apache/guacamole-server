@@ -50,6 +50,7 @@
 #include <guacamole/error.h>
 
 #include <libssh/libssh.h>
+#include "libssh_compat.h"
 
 #include "guac_handlers.h"
 #include "client.h"

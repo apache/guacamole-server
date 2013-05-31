@@ -64,6 +64,7 @@ noinst_HEADERS =                \
     include/display.h           \
     include/guac_handlers.h     \
     include/ibar.h              \
+    include/libssh_compat.h     \
     include/ssh_client.h        \
     include/terminal.h          \
     include/terminal_handlers.h \
