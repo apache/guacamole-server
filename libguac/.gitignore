@@ -1,0 +1,48 @@
+
+# Object code
+*.o
+*.so
+*.lo
+*.la
+
+# Test binaries
+tests/test_*
+!tests/test_*.[ch]
+
+# gcov files
+*.gcda
+*.gcov
+*.gcno
+
+# Backup files
+*~
+
+# Release files
+*.tar.gz
+
+# Files currently being edited by vim or vi
+*.swp
+
+# automake/autoconf
+.deps/
+.libs/
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+m4/*
+!README
+config.guess
+config.log
+config.status
+config.sub
+configure
+depcomp
+install-sh
+libtool
+ltmain.sh
+missing
+
+# Generated docs
+doc/doxygen-output
+
