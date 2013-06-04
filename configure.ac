@@ -11,7 +11,7 @@
 # for the specific language governing rights and limitations under the
 # License.
 #
-# The Original Code is guacd.
+# The Original Code is guacamole-server.
 #
 # The Initial Developer of the Original Code is
 # Michael Jumper.
@@ -34,30 +34,16 @@
 #
 # ***** END LICENSE BLOCK *****
 
-AC_INIT(src/daemon.c)
-AM_INIT_AUTOMAKE(guacd, 0.7.0)
 
-# Checks for programs.
-AC_PROG_CC
-AC_PROG_CC_C99
+AC_PREREQ([2.61])
+AC_INIT([guacamole-server], [0.8.0])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
-# Checks for libraries.
-AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))
-AC_CHECK_LIB([pthread], [pthread_create])
+LT_PREREQ([2.2])
+LT_INIT([dlopen])
 
-# Checks for header files.
-AC_CHECK_HEADERS([netinet/in.h stdlib.h string.h sys/socket.h syslog.h unistd.h guacamole/client.h])
-
-# Checks for library functions.
-AC_FUNC_MALLOC
-AC_CHECK_FUNCS([memset socket strerror fork])
-
-# Options
-AC_ARG_WITH(init_dir,
-            [AS_HELP_STRING([--with-init-dir=<path>],
-                            [install an init script to the given directory])
-            ],init_dir=$withval)
-AC_SUBST(init_dir)
-
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SUBDIRS([libguac guacd])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
