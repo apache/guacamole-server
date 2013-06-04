@@ -1,0 +1,49 @@
+2013-05-09 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Merge contributed keymaps for French and German.
+
+2012-12-25 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Console arguments (fixes #227)
+
+2012-12-13 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Implement PATBLT fallback (fixes #238)
+
+2012-11-22 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Add disable-audio option (fixes #221)
+
+2012-11-02 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Added sound support (fixes #32)
+
+2012-10-22 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Use guac_client_info to choose optimal size if size not overridden
+
+2012-08-31 Laurent Meunier <laurent@deltalima.net>
+
+	* Use configured color depth
+
+2012-08-11 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Fix m4/ autoreconf error
+
+2012-05-23 David Pham-Van <d.pham-van@ulteo.com>
+
+	* Add SetNull and SetDefault handlers (fixes #148)
+
+2012-05-04 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Removed Alt-code fallback mode
+	* Added embedded default mouse pointer 
+
+2012-05-15 Jocelyn Delalande <j.delalande@ulteo.com>
+
+	* Unicode keyboard events
+
+2012-05-04 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Initial release
+
