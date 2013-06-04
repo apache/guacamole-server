@@ -43,7 +43,6 @@ LT_INIT([dlopen])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/protocol.c])
-AC_CONFIG_HEADERS([include/protocol.h])
 
 # Programs
 AC_PROG_CC
@@ -52,6 +51,10 @@ AC_PROG_LIBTOOL
 
 # Headers
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h pngstruct.h])
+
+# Source characteristics
+AC_DEFINE([_POSIX_C_SOURCE], [199309L], [Uses POSIX APIs])
+AC_DEFINE([_BSD_SOURCE], [], [Uses BSD APIs])
 
 # Libraries
 AC_CHECK_LIB([dl], [dlopen],, AC_MSG_ERROR("libdl is required for loading client plugins"))
@@ -72,10 +75,6 @@ AC_TYPE_SSIZE_T
 # Unit tests
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
 AC_SUBST(CUNIT_LIBS)
-
-# Defines
-AC_DEFINE(_POSIX_C_SOURCE, 199309L)
-AC_DEFINE(_BSD_SOURCE)
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
