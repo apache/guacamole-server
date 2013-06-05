@@ -43,63 +43,106 @@ LT_PREREQ([2.2])
 LT_INIT([dlopen])
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SUBDIRS([libguac guacd])
+
+# Programs
+AC_PROG_CC
+AC_PROG_CC_C99
+AC_PROG_LIBTOOL
+
+# Headers
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h pngstruct.h])
+
+# Source characteristics
+AC_DEFINE([_POSIX_C_SOURCE], [199309L], [Uses POSIX APIs])
+AC_DEFINE([_BSD_SOURCE],     [],        [Uses BSD APIs])
+
+# Libraries
+AC_CHECK_LIB([dl],      [dlopen],,        AC_MSG_ERROR("libdl is required for loading client plugins"))
+AC_CHECK_LIB([png],     [png_write_png],, AC_MSG_ERROR("libpng is required for writing png messages"))
+AC_CHECK_LIB([cairo],   [cairo_create],,  AC_MSG_ERROR("cairo is required for drawing instructions"))
+AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread])
+AC_CHECK_LIB([cunit],   [CU_run_test],    [CUNIT_LIBS=-lcunit])
+AC_CHECK_LIB([wsock32], [main])
+
+AC_SUBST(PTHREAD_LIBS)
+AC_SUBST(CUNIT_LIBS)
+
+# Library functions
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup png_get_io_ptr nanosleep])
+
+# Typedefs
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
 
 #
-# Protocol support options
+# Ogg Vorbis
 #
 
-AC_ARG_ENABLE([vnc],
-  [AS_HELP_STRING([--disable-vnc],
-     [do not build VNC support])],
-  [],
-  [enable_vnc=yes])
+have_vorbisenc=yes
+VORBIS_LIBS=
 
-AC_ARG_ENABLE([rdp],
-  [AS_HELP_STRING([--disable-rdp],
-     [do not build support for Windows Remote Desktop (RDP)])],
-  [],
-  [enable_rdp=yes])
+AC_CHECK_HEADER(vorbis/vorbisenc.h,, [have_vorbisenc=no])
+AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbisenc"], [have_vorbisenc=no])
+AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbisenc}" = "xyes"])
 
-AC_ARG_ENABLE([ssh],
-  [AS_HELP_STRING([--disable-ssh],
-     [do not build SSH support])],
-  [],
-  [enable_ssh=yes])
+#
+# libVNCServer
+#
 
-AC_ARG_ENABLE([spice],
-  [AS_HELP_STRING([--disable-spice],
-     [do not build SPICE support])],
-  [],
-  [enable_spice=yes])
+have_libvncserver=yes
+VNC_LIBS=
 
-PROTOCOL_DIRS=
+AC_CHECK_LIB([vncclient], [rfbInitClient], [VNC_LIBS="$VNC_LIBS -lvncclient"], [have_libvncserver=no])
+AM_CONDITIONAL([ENABLE_VNC], [test "x${have_libvncserver}" = "xyes"])
 
-# VNC
-if test "x$enable_vnc" = xyes; then
-    PROTOCOL_DIRS="$PROTOCOL_DIRS protocols/vnc"
-    AC_CONFIG_SUBDIRS([protocols/vnc])
-fi
+#
+# FreeRDP
+#
 
-# RDP 
-if test "x$enable_rdp" = xyes; then
-    PROTOCOL_DIRS="$PROTOCOL_DIRS protocols/rdp"
-    AC_CONFIG_SUBDIRS([protocols/rdp])
-fi
+have_freerdp=yes
+RDP_LIBS=
 
-# SSH
-if test "x$enable_ssh" = xyes; then
-    PROTOCOL_DIRS="$PROTOCOL_DIRS protocols/ssh"
-    AC_CONFIG_SUBDIRS([protocols/ssh])
-fi
+AC_CHECK_LIB([freerdp-cache],    [glyph_cache_register_callbacks], [RDP_LIBS="$RDP_LIBS -lfreerdp-cache"], [have_freerdp=no])
+AC_CHECK_LIB([freerdp-core],     [freerdp_new], [RDP_LIBS="$RDP_LIBS -lfreerdp-core"], [have_freerdp=no])
+AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new], [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"], [have_freerdp=no])
+AC_CHECK_LIB([freerdp-utils],    [xzalloc], [RDP_LIBS="$RDP_LIBS -lfreerdp-utils"], [have_freerdp=no])
+AC_CHECK_LIB([freerdp-codec],    [freerdp_image_convert], [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"], [have_freerdp=no])
+AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp}" = "xyes"])
 
-# SPICE 
-if test "x$enable_spice" = xyes; then
-    PROTOCOL_DIRS="$PROTOCOL_DIRS protocols/spice"
-    AC_CONFIG_SUBDIRS([protocols/spice])
-fi
+#
+# libssh
+#
 
-AC_SUBST([PROTOCOL_DIRS])
+have_libssh=yes
+SSH_LIBS=
+
+AC_CHECK_LIB([ssh], [ssh_new], [SSH_LIBS="$SSH_LIBS -lssh"], [have_libssh=no])
+PKG_CHECK_MODULES([PANGO], pango);
+PKG_CHECK_MODULES([PANGOCAIRO], pangocairo);
+AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh}" = "xyes"])
+
+#
+# SPICE
+#
+
+have_spice=yes
+PKG_CHECK_MODULES([SPICE_CLIENT_GLIB], [spice-client-glib-2.0],, [have_spice=no])
+PKG_CHECK_MODULES([GLIB], [glib-2.0],,                           [have_spice=no])
+AM_CONDITIONAL([ENABLE_SPICE], [test "x${have_spice}" = "xyes"])
+
+echo "
+$PACKAGE_NAME version $PACKAGE_VERSION:
+
+   Protocol support:
+      VNC....... ${have_libvncserver}
+      RDP....... ${have_freerdp}
+      SSH....... ${have_libssh}
+      SPICE..... ${have_spice}
+
+"
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
