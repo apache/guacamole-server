@@ -66,3 +66,6 @@ if ENABLE_SPICE
     SUBDIRS += src/protocols/spice
 endif
 
+EXTRA_DIST = LICENSE
+
+

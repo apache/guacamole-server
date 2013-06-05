@@ -5,10 +5,6 @@
 *.lo
 *.la
 
-# Test binaries
-tests/test_*
-!tests/test_*.[ch]
-
 # gcov files
 *.gcda
 *.gcov
@@ -42,7 +38,4 @@ install-sh
 libtool
 ltmain.sh
 missing
-
-# Generated docs
-doc/doxygen-output
 

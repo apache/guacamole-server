@@ -1,0 +1,120 @@
+
+------------------------------------------------------------
+ About this README
+------------------------------------------------------------
+
+This README is intended to provide quick and to-the-point documentation for
+technical users intending to compile parts of Guacamole themselves.
+
+Distribution-specific packages are available from the files section of the main
+project page:
+ 
+    http://sourceforge.net/projects/guacamole/files/
+
+Distribution-specific documentation is provided on the Guacamole wiki:
+
+    http://guac-dev.org/
+
+
+------------------------------------------------------------
+ What is guacd?
+------------------------------------------------------------
+
+guacd is the Guacamole proxy daemon used by the Guacamole web application and
+framework. As JavaScript cannot handle binary protocols (like VNC and remote
+desktop) efficiently, a new test-based protocol was developed which would
+contain a common superset of the operations needed for efficient remote
+desktop access, but would be easy for JavaScript programs to process. guacd
+is the proxy which translates between arbitrary protocols and the Guacamole
+protocol.
+
+
+------------------------------------------------------------
+ Compiling and installing guacd 
+------------------------------------------------------------
+
+Please note that distribution-specific pre-compiled packages are available from
+the files section of the main project site:
+
+    http://sourceforge.net/projects/guacamole/files/
+
+guacd is built using the popular GNU Automake, and thus provides the standard
+configure script. Before compiling, you need to have compiled and installed
+libguac, the core Guacamole library. This is available from the main Guacamole
+site at http://guac-dev.org/.
+
+1) Run configure
+
+    $ ./configure
+
+    Assuming all dependencies have been installed, this should succeed without
+    errors. If you wish to install the init script as well, you need to specify
+    the location where your system init scripts are located (typically
+    /etc/init.d):
+
+    $ ./configure --with-init-dir=/etc/init.d
+
+    Running configure in this manner will cause the "make install" step to
+    install an init script to the specified directory, which you can then
+    activate using the service management mechanism provided by your
+    distribution).
+
+2) Run make
+
+    $ make
+
+    guacd will now compile.
+
+3) Install (as root)
+
+    # make install
+
+    guacd will install to your /usr/local/sbin directory by default. You can
+    change the install location by using the --prefix option for configure.
+
+
+------------------------------------------------------------
+ Running guacd 
+------------------------------------------------------------
+
+If you installed the init script during compile and install, you should be
+able to start guacd through the service management utilities provided by
+your distribution (if any) or by running the init script directly (as root):
+
+    # /etc/init.d/guacd start
+
+Root access is needed to write the pidfile /var/run/guacd.pid. You can also run
+guacd itself directly without the init script (as any user):
+
+    $ guacd
+
+guacd currently takes four command-line options:
+
+    -b HOST 
+
+        Changes the host or address that guacd listens on.
+
+    -l PORT
+
+        Changes the port that guacd listens on (the default is port 4822).
+
+    -p PIDFILE
+
+        Causes guacd to write the PID of the daemon process to the specified
+        file. This is useful for init scripts and is used by the provided init
+        script.
+
+    -f
+        Causes guacd to run in the foreground, rather than automatically
+        forking into the background. 
+
+
+------------------------------------------------------------
+ Reporting problems
+------------------------------------------------------------
+
+Please report any bugs encountered by opening a new ticket at the Trac system
+hosted at:
+    
+    http://guac-dev.rg/trac/
+
