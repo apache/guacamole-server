@@ -36,42 +36,42 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic -I../include
+AM_CFLAGS = -Werror -Wall -pedantic -I../include/guacamole -I../include/_private
 
 libguacincdir = $(includedir)/guacamole
-libguacinc_HEADERS =          \
-    ../include/client.h       \
-    ../include/error.h        \
-	../include/hash.h         \
-    ../include/instruction.h  \
-    ../include/layer.h        \
-    ../include/plugin.h       \
-    ../include/pool.h         \
-    ../include/protocol.h     \
-    ../include/socket.h       \
-    ../include/stream.h       \
-    ../include/timestamp.h
+libguacinc_HEADERS =                    \
+    ../include/guacamole/client.h       \
+    ../include/guacamole/error.h        \
+    ../include/guacamole/hash.h         \
+    ../include/guacamole/instruction.h  \
+    ../include/guacamole/layer.h        \
+    ../include/guacamole/plugin.h       \
+    ../include/guacamole/pool.h         \
+    ../include/guacamole/protocol.h     \
+    ../include/guacamole/socket.h       \
+    ../include/guacamole/stream.h       \
+    ../include/guacamole/timestamp.h
 
-noinst_HEADERS =                 \
-    ../include/client-handlers.h \
-    ../include/palette.h         \
-	../include/unicode.h
+noinst_HEADERS =                          \
+    ../include/_private/client-handlers.h \
+    ../include/_private/palette.h         \
+    ../include/_private/unicode.h
 
 libguac_la_SOURCES =  \
     client.c          \
-	client-handlers.c \
-	error.c           \
-	hash.c            \
-	instruction.c     \
-	palette.c         \
-	plugin.c          \
-	pool.c            \
-	protocol.c        \
-	socket.c          \
-	socket-fd.c       \
-	socket-nest.c     \
-	timestamp.c       \
-	unicode.c
+    client-handlers.c \
+    error.c           \
+    hash.c            \
+    instruction.c     \
+    palette.c         \
+    plugin.c          \
+    pool.c            \
+    protocol.c        \
+    socket.c          \
+    socket-fd.c       \
+    socket-nest.c     \
+    timestamp.c       \
+    unicode.c
 
 lib_LTLIBRARIES = libguac.la
 libguac_la_LDFLAGS = -version-info 4:0:0

@@ -38,6 +38,9 @@ AC_PREREQ([2.61])
 AC_INIT([guacd], [0.7.0])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
+LT_PREREQ([2.2])
+LT_INIT([dlopen])
+
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/client.c])
 
@@ -47,6 +50,15 @@ AC_PROG_CC_C99
 
 # Libraries
 AC_CHECK_LIB([pthread], [pthread_create])
+
+# If bundled copy of libguac found, use that
+if test -d "$srcdir/../libguac"
+then
+    AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/../libguac/src/libguac.la')
+    AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/../libguac/include')
+else
+    AC_CHECK_LIB([guac], [guac_client_plugin_open])
+fi
 
 # Functions
 AC_FUNC_MALLOC
