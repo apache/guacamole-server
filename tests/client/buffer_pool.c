@@ -37,7 +37,7 @@
 
 #include <CUnit/Basic.h>
 
-#include "client.h"
+#include <guacamole/client.h>
 #include "client_suite.h"
 
 void test_buffer_pool() {

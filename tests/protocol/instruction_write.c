@@ -40,10 +40,10 @@
 #include <stdlib.h>
 #include <CUnit/Basic.h>
 
-#include "error.h"
-#include "instruction.h"
-#include "protocol.h"
-#include "socket.h"
+#include <guacamole/error.h>
+#include <guacamole/instruction.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #include "suite.h"
 

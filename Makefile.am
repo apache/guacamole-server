@@ -46,6 +46,7 @@ DIST_SUBDIRS =           \
 	src/protocols/spice
 
 SUBDIRS =       \
+    tests       \
     src/libguac \
 	src/guacd
 

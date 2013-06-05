@@ -37,7 +37,7 @@
 
 #include <CUnit/Basic.h>
 
-#include "pool.h"
+#include <guacamole/pool.h>
 #include "util_suite.h"
 
 #define UNSEEN          0 

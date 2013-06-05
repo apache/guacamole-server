@@ -150,6 +150,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION:
 "
 
 AC_CONFIG_FILES([Makefile
+                 tests/Makefile
                  src/libguac/Makefile
                  src/guacd/Makefile
                  src/protocols/rdp/Makefile
