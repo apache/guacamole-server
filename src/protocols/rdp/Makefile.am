@@ -94,5 +94,5 @@ guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared
 libguac_client_rdp_la_LIBADD = $(LIBGUAC_LTLIB)
 guac_rdpsnd_la_LIBADD = $(LIBGUAC_LTLIB)
 
-freerdpdir = ${libdir}/freerdp/
+freerdpdir = ${libdir}/freerdp
 
