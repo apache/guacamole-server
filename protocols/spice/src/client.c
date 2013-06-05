@@ -36,17 +36,23 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include <guacamole/client.h>
+#include <spice-session.h>
 
 #include "guac_handlers.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
+    "hostname",
+    "port",
     NULL
 };
 
 enum __SPICE_ARGS_IDX {
+    SPICE_ARGS_HOSTNAME,
+    SPICE_ARGS_PORT,
     SPICE_ARGS_COUNT
 };
 
@@ -54,9 +60,34 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* STUB */
 
+    GMainLoop* mainloop;
+    SpiceSession* session;
+
     if (argc != SPICE_ARGS_COUNT) {
         guac_client_log_error(client, "Wrong number of arguments");
         return -1;
+    }
+
+    /* Init GLIB */
+    guac_client_log_info(client, "Init GLIB-2.0...");
+    g_type_init();
+    mainloop = g_main_loop_new(NULL, false);
+
+    /* Create session */
+    guac_client_log_info(client, "Creating SPICE session...");
+
+    session = spice_session_new();
+
+    /* Init session parameters */
+    guac_client_log_info(client, "Setting parameters...");
+    g_object_set(session, "host", argv[SPICE_ARGS_HOSTNAME], NULL);
+    g_object_set(session, "port", argv[SPICE_ARGS_PORT], NULL);
+
+    /* Connect */
+    guac_client_log_info(client, "Connecting...");
+    if (!spice_session_connect(session)) {
+        guac_client_log_error(client, "SPICE connection failed");
+        return 1;
     }
 
     /* Set handlers */
@@ -67,6 +98,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->size_handler      = spice_guac_client_size_handler;
     client->free_handler      = spice_guac_client_free_handler;
 
+    g_main_loop_run(mainloop);
     return 0;
 }
 

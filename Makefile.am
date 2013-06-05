@@ -37,5 +37,5 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Subprojects
-SUBDIRS = libguac guacd protocols/vnc protocols/rdp
+SUBDIRS = libguac guacd $(PROTOCOL_DIRS)
 

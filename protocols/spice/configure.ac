@@ -34,25 +34,40 @@
 #
 # ***** END LICENSE BLOCK *****
 
-AC_INIT(src/client.c)
-AM_INIT_AUTOMAKE([libguac-client-spice], 0.8.0)
-AC_CONFIG_MACRO_DIR([m4])
+AC_PREREQ([2.61])
+AC_INIT([libguac-client-spice], [0.8.0])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
-# Checks for programs.
+LT_PREREQ([2.2])
+LT_INIT([dlopen])
+
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SRCDIR([src/client.c])
+
+# Programs
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
-# Checks for libraries.
-AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))
-AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
+# Libraries
 AC_CHECK_LIB([pthread], [pthread_create])
+AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
+PKG_CHECK_MODULES([SPICE_CLIENT_GLIB], [spice-client-glib-2.0])
+PKG_CHECK_MODULES([GLIB], [glib-2.0])
 
-# Checks for header files.
-AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h])
+# If bundled copy of libguac found, use that
+if test -d "$srcdir/../../libguac"
+then
+    AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/../../libguac/src/libguac.la')
+    AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/../../libguac/include')
+else
+    AC_CHECK_LIB([guac], [guac_client_plugin_open])
+fi
 
-# Checks for library functions.
+# Functions
 AC_FUNC_MALLOC
 
+# Done
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+

@@ -48,7 +48,8 @@ noinst_HEADERS =                \
     include/client.h            \
     include/guac_handlers.h
 
-libguac_client_spice_la_CFLAGS = -Werror -Wall -pedantic -Iinclude
+libguac_client_spice_la_CFLAGS = -Werror -Wall -pedantic -Iinclude @SPICE_CLIENT_GLIB_CFLAGS@ @GLIB_CFLAGS@ $(LIBGUAC_INCLUDE)
+libguac_client_spice_la_LIBADD = @SPICE_CLIENT_GLIB_LIBS@ @GLIB_LIBS@ $(LIBGUAC_LTLIB)
 libguac_client_spice_la_LDFLAGS = -version-info 0:0:0
 
 EXTRA_DIST = LICENSE

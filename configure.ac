@@ -43,7 +43,63 @@ LT_PREREQ([2.2])
 LT_INIT([dlopen])
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SUBDIRS([libguac guacd protocols/vnc protocols/rdp])
+AC_CONFIG_SUBDIRS([libguac guacd])
+
+#
+# Protocol support options
+#
+
+AC_ARG_ENABLE([vnc],
+  [AS_HELP_STRING([--disable-vnc],
+     [do not build VNC support])],
+  [],
+  [enable_vnc=yes])
+
+AC_ARG_ENABLE([rdp],
+  [AS_HELP_STRING([--disable-rdp],
+     [do not build support for Windows Remote Desktop (RDP)])],
+  [],
+  [enable_rdp=yes])
+
+AC_ARG_ENABLE([ssh],
+  [AS_HELP_STRING([--disable-ssh],
+     [do not build SSH support])],
+  [],
+  [enable_ssh=yes])
+
+AC_ARG_ENABLE([spice],
+  [AS_HELP_STRING([--disable-spice],
+     [do not build SPICE support])],
+  [],
+  [enable_spice=yes])
+
+PROTOCOL_DIRS=
+
+# VNC
+if test "x$enable_vnc" = xyes; then
+    PROTOCOL_DIRS="$PROTOCOL_DIRS protocols/vnc"
+    AC_CONFIG_SUBDIRS([protocols/vnc])
+fi
+
+# RDP 
+if test "x$enable_rdp" = xyes; then
+    PROTOCOL_DIRS="$PROTOCOL_DIRS protocols/rdp"
+    AC_CONFIG_SUBDIRS([protocols/rdp])
+fi
+
+# SSH
+if test "x$enable_ssh" = xyes; then
+    PROTOCOL_DIRS="$PROTOCOL_DIRS protocols/ssh"
+    AC_CONFIG_SUBDIRS([protocols/ssh])
+fi
+
+# SPICE 
+if test "x$enable_spice" = xyes; then
+    PROTOCOL_DIRS="$PROTOCOL_DIRS protocols/spice"
+    AC_CONFIG_SUBDIRS([protocols/spice])
+fi
+
+AC_SUBST([PROTOCOL_DIRS])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 

@@ -34,33 +34,45 @@
 #
 # ***** END LICENSE BLOCK *****
 
-AC_INIT(src/client.c)
-AM_INIT_AUTOMAKE([libguac-client-ssh], 0.8.0)
-AC_CONFIG_MACRO_DIR([m4])
+AC_PREREQ([2.61])
+AC_INIT([libguac-client-ssh], [0.8.0])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
-# Checks for programs.
+LT_PREREQ([2.2])
+LT_INIT([dlopen])
+
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SRCDIR([src/client.c])
+
+# Programs
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
-# Checks for libraries.
-AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))
+# Libraries
+AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
 AC_CHECK_LIB([ssh], [ssh_new],, AC_MSG_ERROR("libssh is required"))
-AC_CHECK_LIB([pthread], [pthread_create])
 PKG_CHECK_MODULES([PANGO], pango);
 PKG_CHECK_MODULES([PANGOCAIRO], pangocairo);
 
-# Check for SSH functions
+# If bundled copy of libguac found, use that
+if test -d "$srcdir/../../libguac"
+then
+    AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/../../libguac/src/libguac.la')
+    AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/../../libguac/include')
+else
+    AC_CHECK_LIB([guac], [guac_client_plugin_open])
+fi
+
+# Functions
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset socket strerror fork])
 AC_CHECK_FUNC(ssh_channel_close,    AC_DEFINE(HAVE_SSH_CHANNEL_CLOSE))
 AC_CHECK_FUNC(ssh_channel_send_eof, AC_DEFINE(HAVE_SSH_CHANNEL_SEND_EOF))
 AC_CHECK_FUNC(ssh_channel_free,     AC_DEFINE(HAVE_SSH_CHANNEL_FREE))
 
-# Checks for header files.
-AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h])
-
-# Checks for library functions.
-AC_FUNC_MALLOC
-
+# Done
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
