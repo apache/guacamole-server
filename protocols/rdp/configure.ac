@@ -34,26 +34,39 @@
 #
 # ***** END LICENSE BLOCK *****
 
-AC_INIT(src/client.c)
-AM_INIT_AUTOMAKE([libguac-client-rdp], 0.7.4)
-AC_CONFIG_MACRO_DIR([m4])
+AC_PREREQ([2.61])
+AC_INIT([libguac-client-rdp], [0.7.4])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
-# Checks for programs.
+LT_PREREQ([2.2])
+LT_INIT([dlopen])
+
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SRCDIR([src/client.c])
+
+# Programs
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
-# Checks for libraries.
-AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))
+# Libraries
+AC_CHECK_LIB([pthread], [pthread_mutex_init],, AC_MSG_ERROR("libpthread is required"))
 AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
 AC_CHECK_LIB([freerdp-cache], [glyph_cache_register_callbacks],, AC_MSG_ERROR("libfreerdp-cache is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-core], [freerdp_new],, AC_MSG_ERROR("libfreerdp-core is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],, AC_MSG_ERROR("libfreerdp-channels is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-utils], [xzalloc],, AC_MSG_ERROR("libfreerdp-utils is required (part of FreeRDP)"))
 AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],, AC_MSG_ERROR("libfreerdp-codec is required (part of FreeRDP)"))
-AC_CHECK_LIB([pthread], [pthread_mutex_init],, AC_MSG_ERROR("libpthread is required"))
 
-# Check for libvorbisenc
+
+# If bundled copy of libguac found, use that
+if test -d "$srcdir/../../libguac"
+then
+    AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/../../libguac/src/libguac.la')
+    AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/../../libguac/include')
+else
+    AC_CHECK_LIB([guac], [guac_client_plugin_open])
+fi
 
 have_vorbisenc=yes
 AC_CHECK_HEADER(vorbis/vorbisenc.h,, [have_vorbisenc=no])
@@ -71,16 +84,19 @@ else
     AC_DEFINE([ENABLE_OGG])
 fi
 
-# Checks for header files.
-AC_CHECK_HEADERS([guacamole/client.h guacamole/guacio.h guacamole/protocol.h freerdp/locale/keyboard.h freerdp/kbd/layouts.h])
+# Functions
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset socket strerror fork])
+
+# Headers
+AC_CHECK_HEADERS([freerdp/locale/keyboard.h freerdp/kbd/layouts.h])
 
 # Check for FreeRDP version-specific features
 AC_CHECK_MEMBERS([rdpPointer.SetDefault, rdpPointer.SetNull],
                 [], [],
                 [[#include <freerdp/freerdp.h>]])
 
-# Checks for library functions.
-AC_FUNC_MALLOC
-
+# Done
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+

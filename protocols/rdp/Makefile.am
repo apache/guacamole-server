@@ -37,7 +37,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -Iinclude
+AM_CFLAGS = -Werror -Wall -Iinclude $(LIBGUAC_INCLUDE)
 
 lib_LTLIBRARIES = libguac-client-rdp.la
 freerdp_LTLIBRARIES = guac_rdpsnd.la
@@ -92,6 +92,9 @@ endif
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0
 guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared
+
+libguac_client_rdp_la_LIBADD = $(LIBGUAC_LTLIB)
+guac_rdpsnd_la_LIBADD = $(LIBGUAC_LTLIB)
 
 freerdpdir = ${libdir}/freerdp/
 

@@ -34,24 +34,43 @@
 #
 # ***** END LICENSE BLOCK *****
 
-AC_INIT(src/client.c)
-AM_INIT_AUTOMAKE([libguac-client-vnc], 0.7.2)
-AC_CONFIG_MACRO_DIR([m4])
+AC_PREREQ([2.61])
+AC_INIT([libguac-client-vnc], [0.7.2])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
-# Checks for programs.
+LT_PREREQ([2.2])
+LT_INIT([dlopen])
+
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SRCDIR([src/client.c])
+
+# Programs
 AC_PROG_CC
+AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
-# Checks for libraries.
-AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))
+# Libraries
+AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
 AC_CHECK_LIB([vncclient], [rfbInitClient],, AC_MSG_ERROR("libvncclient is required"))
 
-# Checks for header files.
-AC_CHECK_HEADERS([stdlib.h string.h syslog.h guacamole/client.h guacamole/socket.h guacamole/protocol.h iconv.h])
+# If bundled copy of libguac found, use that
+if test -d "$srcdir/../../libguac"
+then
+    AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/../../libguac/src/libguac.la')
+    AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/../../libguac/include')
+else
+    AC_CHECK_LIB([guac], [guac_client_plugin_open])
+fi
 
-# Checks for library functions.
+# Functions
 AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset socket strerror fork])
 
+# Headers
+AC_CHECK_HEADERS([stdlib.h string.h syslog.h iconv.h])
+
+# Done
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
