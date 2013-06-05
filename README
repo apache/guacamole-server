@@ -17,20 +17,23 @@ Distribution-specific documentation is provided on the Guacamole wiki:
 
 
 ------------------------------------------------------------
- What is guacd?
+ What is guacamole-server?
 ------------------------------------------------------------
+
+The guacamole-server package is a set of software which forms the basis of the
+Guacamole stack. It consists of guacd, libguac, and several protocol support
+libraries.
 
 guacd is the Guacamole proxy daemon used by the Guacamole web application and
 framework. As JavaScript cannot handle binary protocols (like VNC and remote
 desktop) efficiently, a new test-based protocol was developed which would
-contain a common superset of the operations needed for efficient remote
-desktop access, but would be easy for JavaScript programs to process. guacd
-is the proxy which translates between arbitrary protocols and the Guacamole
-protocol.
+contain a common superset of the operations needed for efficient remote desktop
+access, but would be easy for JavaScript programs to process. guacd is the
+proxy which translates between arbitrary protocols and the Guacamole protocol.
 
 
 ------------------------------------------------------------
- Compiling and installing guacd 
+ Compiling and installing guacd, libguac, etc.
 ------------------------------------------------------------
 
 Please note that distribution-specific pre-compiled packages are available from
@@ -38,10 +41,10 @@ the files section of the main project site:
 
     http://sourceforge.net/projects/guacamole/files/
 
-guacd is built using the popular GNU Automake, and thus provides the standard
-configure script. Before compiling, you need to have compiled and installed
-libguac, the core Guacamole library. This is available from the main Guacamole
-site at http://guac-dev.org/.
+All software within guacamole-server is built using the popular GNU Automake,
+and thus provides the standard configure script. Before compiling, you need to
+have compiled and installed libguac, the core Guacamole library. This is
+available from the main Guacamole site at http://guac-dev.org/.
 
 1) Run configure
 
@@ -63,11 +66,15 @@ site at http://guac-dev.org/.
 
     $ make
 
-    guacd will now compile.
+    guacd, libguac, and any available protocol support libraries will now
+    compile.
 
 3) Install (as root)
 
     # make install
+
+    All software that was just built, including documentation, will be
+    installed.
 
     guacd will install to your /usr/local/sbin directory by default. You can
     change the install location by using the --prefix option for configure.
