@@ -37,5 +37,31 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Subprojects
-SUBDIRS = src/libguac src/guacd
+DIST_SUBDIRS =           \
+    src/libguac          \
+	src/guacd            \
+	src/protocols/vnc    \
+	src/protocols/rdp    \
+	src/protocols/ssh    \
+	src/protocols/spice
+
+SUBDIRS =       \
+    src/libguac \
+	src/guacd
+
+if ENABLE_VNC
+    SUBDIRS += src/protocols/vnc
+endif
+
+if ENABLE_RDP
+    SUBDIRS += src/protocols/rdp
+endif
+
+if ENABLE_SSH
+    SUBDIRS += src/protocols/ssh
+endif
+
+if ENABLE_SPICE
+    SUBDIRS += src/protocols/spice
+endif
 

@@ -38,57 +38,55 @@ AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Werror -Wall -Iinclude $(LIBGUAC_INCLUDE)
+AM_LDFLAGS = $(RDP_LIBS) $(VORBIS_LIBS) $(PTHREAD_LIBS)
 
 lib_LTLIBRARIES = libguac-client-rdp.la
 freerdp_LTLIBRARIES = guac_rdpsnd.la
 
 libguac_client_rdp_la_SOURCES = \
-    $(OGG_SOURCES)            \
-	src/audio.c               \
-	src/client.c              \
-	src/default_pointer.c     \
-	src/guac_handlers.c       \
-	src/rdp_bitmap.c          \
-	src/rdp_cliprdr.c         \
-	src/rdp_gdi.c             \
-	src/rdp_glyph.c           \
-	src/rdp_keymap_base.c     \
-	src/rdp_keymap.c          \
-	src/rdp_keymap_de_de.c    \
-	src/rdp_keymap_failsafe.c \
-	src/rdp_keymap_fr_fr.c    \
-	src/rdp_keymap_en_us.c    \
-	src/rdp_pointer.c         \
-	src/wav_encoder.c
+	audio.c                     \
+	client.c                    \
+	default_pointer.c           \
+	guac_handlers.c             \
+	rdp_bitmap.c                \
+	rdp_cliprdr.c               \
+	rdp_gdi.c                   \
+	rdp_glyph.c                 \
+	rdp_keymap_base.c           \
+	rdp_keymap.c                \
+	rdp_keymap_de_de.c          \
+	rdp_keymap_failsafe.c       \
+	rdp_keymap_fr_fr.c          \
+	rdp_keymap_en_us.c          \
+	rdp_pointer.c               \
+	wav_encoder.c
 
 guac_rdpsnd_la_SOURCES =   \
 	guac_rdpsnd/messages.c \
 	guac_rdpsnd/service.c  \
-	src/audio.c
+	audio.c
 
 noinst_HEADERS =              \
-    $(OGG_HEADERS)            \
 	guac_rdpsnd/messages.h    \
 	guac_rdpsnd/service.h     \
-	include/audio.h           \
-	include/client.h          \
-	include/config.h          \
-	include/default_pointer.h \
-	include/guac_handlers.h   \
-	include/rdp_bitmap.h      \
-	include/rdp_cliprdr.h     \
-	include/rdp_gdi.h         \
-	include/rdp_glyph.h       \
-	include/rdp_keymap.h      \
-	include/rdp_pointer.h     \
-	include/wav_encoder.h
+	audio.h                   \
+	client.h                  \
+	config.h                  \
+	default_pointer.h         \
+	guac_handlers.h           \
+	rdp_bitmap.h              \
+	rdp_cliprdr.h             \
+	rdp_gdi.h                 \
+	rdp_glyph.h               \
+	rdp_keymap.h              \
+	rdp_pointer.h             \
+	wav_encoder.h
 
 # Compile OGG support if available
 if ENABLE_OGG
-    libguac_client_rdp_la_SOURCES += src/ogg_encoder.c
-    noinst_HEADERS += include/ogg_encoder.h
+    libguac_client_rdp_la_SOURCES += ogg_encoder.c
+    noinst_HEADERS += ogg_encoder.h
 endif
-
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0
 guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared
@@ -97,6 +95,4 @@ libguac_client_rdp_la_LIBADD = $(LIBGUAC_LTLIB)
 guac_rdpsnd_la_LIBADD = $(LIBGUAC_LTLIB)
 
 freerdpdir = ${libdir}/freerdp/
-
-EXTRA_DIST = LICENSE
 

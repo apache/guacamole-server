@@ -37,20 +37,19 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
+AM_LDFLAGS = $(SPICE_LIBS) $(PTHREAD_LIBS)
 
 lib_LTLIBRARIES = libguac-client-spice.la
 
 libguac_client_spice_la_SOURCES = \
-    src/client.c                \
-    src/guac_handlers.c
+    client.c                      \
+    guac_handlers.c
 
 noinst_HEADERS =                \
-    include/client.h            \
-    include/guac_handlers.h
+    client.h                    \
+    guac_handlers.h
 
 libguac_client_spice_la_CFLAGS = -Werror -Wall -pedantic -Iinclude @SPICE_CLIENT_GLIB_CFLAGS@ @GLIB_CFLAGS@ $(LIBGUAC_INCLUDE)
 libguac_client_spice_la_LIBADD = @SPICE_CLIENT_GLIB_LIBS@ @GLIB_LIBS@ $(LIBGUAC_LTLIB)
 libguac_client_spice_la_LDFLAGS = -version-info 0:0:0
-
-EXTRA_DIST = LICENSE
 

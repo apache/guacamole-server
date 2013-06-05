@@ -37,42 +37,41 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
+AM_LDFLAGS = $(SSH_LIBS) $(PTHREAD_LIBS)
 
 lib_LTLIBRARIES = libguac-client-ssh.la
 
 libguac_client_ssh_la_SOURCES = \
-    src/blank.c                 \
-    src/buffer.c                \
-    src/char_mappings.c         \
-    src/client.c                \
-    src/common.c                \
-    src/cursor.c                \
-    src/display.c               \
-    src/guac_handlers.c         \
-    src/ibar.c                  \
-    src/ssh_client.c            \
-    src/terminal.c              \
-    src/terminal_handlers.c
+    blank.c                     \
+    buffer.c                    \
+    char_mappings.c             \
+    client.c                    \
+    common.c                    \
+    cursor.c                    \
+    display.c                   \
+    guac_handlers.c             \
+    ibar.c                      \
+    ssh_client.c                \
+    terminal.c                  \
+    terminal_handlers.c
 
 noinst_HEADERS =                \
-    include/blank.h             \
-    include/buffer.h            \
-    include/char_mappings.h     \
-    include/client.h            \
-    include/common.h            \
-    include/cursor.h            \
-    include/display.h           \
-    include/guac_handlers.h     \
-    include/ibar.h              \
-    include/libssh_compat.h     \
-    include/ssh_client.h        \
-    include/terminal.h          \
-    include/terminal_handlers.h \
-    include/types.h
+    blank.h                     \
+    buffer.h                    \
+    char_mappings.h             \
+    client.h                    \
+    common.h                    \
+    cursor.h                    \
+    display.h                   \
+    guac_handlers.h             \
+    ibar.h                      \
+    libssh_compat.h             \
+    ssh_client.h                \
+    terminal.h                  \
+    terminal_handlers.h         \
+    types.h
 
 libguac_client_ssh_la_CFLAGS = -Werror -Wall -pedantic -Iinclude @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ $(LIBGUAC_INCLUDE)
 libguac_client_ssh_la_LIBADD = @PANGO_LIBS@ @PANGOCAIRO_LIBS@ $(LIBGUAC_LTLIB)
 libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0
-
-EXTRA_DIST = LICENSE
 

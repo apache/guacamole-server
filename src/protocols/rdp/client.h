@@ -38,6 +38,8 @@
 #ifndef _GUAC_RDP_CLIENT_H
 #define _GUAC_RDP_CLIENT_H
 
+#include <pthread.h>
+
 #include <cairo/cairo.h>
 
 #include <freerdp/freerdp.h>

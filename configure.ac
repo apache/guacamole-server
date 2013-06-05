@@ -142,15 +142,19 @@ echo "
 $PACKAGE_NAME version $PACKAGE_VERSION:
 
    Protocol support:
-      VNC....... ${have_libvncserver}
       RDP....... ${have_freerdp}
-      SSH....... ${have_libssh}
       SPICE..... ${have_spice}
+      SSH....... ${have_libssh}
+      VNC....... ${have_libvncserver}
 
 "
 
 AC_CONFIG_FILES([Makefile
                  src/libguac/Makefile
-                 src/guacd/Makefile])
+                 src/guacd/Makefile
+                 src/protocols/rdp/Makefile
+                 src/protocols/spice/Makefile
+                 src/protocols/ssh/Makefile
+                 src/protocols/vnc/Makefile])
 AC_OUTPUT
 

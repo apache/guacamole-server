@@ -47,7 +47,7 @@ noinst_HEADERS = client.h log.h
 guacd_SOURCES  = daemon.c client.c log.c
 guacd_LDADD    = $(LIBGUAC_LTLIB)
 
-EXTRA_DIST = init.d/guacd.in man/guacd.8 LICENSE
+EXTRA_DIST = init.d/guacd.in man/guacd.8
 CLEANFILES = $(init_SCRIPTS)
 
 init.d/guacd: init.d/guacd.in
