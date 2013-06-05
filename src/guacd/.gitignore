@@ -1,4 +1,7 @@
 
+# Compiled init script
+init.d/guacd
+
 # Compiled proxy
 guacd
 guacd.exe

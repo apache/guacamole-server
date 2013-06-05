@@ -36,8 +36,43 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
+AM_CFLAGS = -Werror -Wall -pedantic -Iguacamole
 
-SUBDIRS = src . tests
+libguacincdir = $(includedir)/guacamole
+libguacinc_HEADERS =         \
+    guacamole/client.h       \
+    guacamole/error.h        \
+    guacamole/hash.h         \
+    guacamole/instruction.h  \
+    guacamole/layer.h        \
+    guacamole/plugin.h       \
+    guacamole/pool.h         \
+    guacamole/protocol.h     \
+    guacamole/socket.h       \
+    guacamole/stream.h       \
+    guacamole/timestamp.h
 
-EXTRA_DIST = LICENSE doc/Doxyfile
+noinst_HEADERS =      \
+    client-handlers.h \
+    palette.h         \
+    unicode.h
+
+libguac_la_SOURCES =  \
+    client.c          \
+    client-handlers.c \
+    error.c           \
+    hash.c            \
+    instruction.c     \
+    palette.c         \
+    plugin.c          \
+    pool.c            \
+    protocol.c        \
+    socket.c          \
+    socket-fd.c       \
+    socket-nest.c     \
+    timestamp.c       \
+    unicode.c
+
+lib_LTLIBRARIES = libguac.la
+libguac_la_LDFLAGS = -version-info 4:0:0
 

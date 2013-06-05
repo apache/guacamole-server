@@ -60,7 +60,9 @@ AC_DEFINE([_BSD_SOURCE],     [],        [Uses BSD APIs])
 AC_CHECK_LIB([dl],      [dlopen],,        AC_MSG_ERROR("libdl is required for loading client plugins"))
 AC_CHECK_LIB([png],     [png_write_png],, AC_MSG_ERROR("libpng is required for writing png messages"))
 AC_CHECK_LIB([cairo],   [cairo_create],,  AC_MSG_ERROR("cairo is required for drawing instructions"))
-AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread])
+AC_CHECK_LIB([pthread], [pthread_create],
+             [PTHREAD_LIBS=-lpthread
+              AC_DEFINE([HAVE_LIBPTHREAD])])
 AC_CHECK_LIB([cunit],   [CU_run_test],    [CUNIT_LIBS=-lcunit])
 AC_CHECK_LIB([wsock32], [main])
 
@@ -75,6 +77,10 @@ AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup png_get_
 # Typedefs
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
+
+# Bundled libguac
+AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/src/libguac/libguac.la')
+AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/src/libguac')
 
 #
 # Ogg Vorbis
@@ -143,6 +149,8 @@ $PACKAGE_NAME version $PACKAGE_VERSION:
 
 "
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+                 src/libguac/Makefile
+                 src/guacd/Makefile])
 AC_OUTPUT
 
