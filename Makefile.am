@@ -41,7 +41,6 @@ DIST_SUBDIRS =           \
     src/libguac          \
 	src/guacd            \
 	src/protocols/rdp    \
-	src/protocols/spice  \
 	src/protocols/ssh    \
 	src/protocols/vnc    \
     tests
@@ -53,10 +52,6 @@ SUBDIRS =       \
 
 if ENABLE_RDP
     SUBDIRS += src/protocols/rdp
-endif
-
-if ENABLE_SPICE
-    SUBDIRS += src/protocols/spice
 endif
 
 if ENABLE_SSH

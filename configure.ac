@@ -129,21 +129,11 @@ PKG_CHECK_MODULES([PANGO], pango);
 PKG_CHECK_MODULES([PANGOCAIRO], pangocairo);
 AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh}" = "xyes"])
 
-#
-# SPICE
-#
-
-have_spice=yes
-PKG_CHECK_MODULES([SPICE_CLIENT_GLIB], [spice-client-glib-2.0],, [have_spice=no])
-PKG_CHECK_MODULES([GLIB], [glib-2.0],,                           [have_spice=no])
-AM_CONDITIONAL([ENABLE_SPICE], [test "x${have_spice}" = "xyes"])
-
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
                  src/libguac/Makefile
                  src/guacd/Makefile
                  src/protocols/rdp/Makefile
-                 src/protocols/spice/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
@@ -156,7 +146,6 @@ $PACKAGE_NAME version $PACKAGE_VERSION
    Protocol support:
 
       RDP ....... ${have_freerdp}
-      SPICE ..... ${have_spice}
       SSH ....... ${have_libssh}
       VNC ....... ${have_libvncserver}
 
