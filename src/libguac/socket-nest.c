@@ -69,7 +69,7 @@ typedef struct __guac_socket_nest_data {
 } __guac_socket_nest_data;
 
 ssize_t __guac_socket_nest_write_handler(guac_socket* socket,
-        void* buf, size_t count) {
+        const void* buf, size_t count) {
 
     __guac_socket_nest_data* data = (__guac_socket_nest_data*) socket->data;
     unsigned char* source = (unsigned char*) buf;

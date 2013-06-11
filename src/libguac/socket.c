@@ -64,8 +64,8 @@ char __guac_socket_BASE64_CHARACTERS[64] = {
     '8', '9', '+', '/'
 };
 
-ssize_t __guac_socket_write(guac_socket* socket,
-        void* buf, size_t count) {
+static ssize_t __guac_socket_write(guac_socket* socket,
+        const void* buf, size_t count) {
 
     /* If handler defined, call it. */
     if (socket->write_handler)
@@ -76,7 +76,28 @@ ssize_t __guac_socket_write(guac_socket* socket,
 
 }
 
-/* TODO: Implement guac_socket_write (buffered write) */
+ssize_t guac_socket_write(guac_socket* socket,
+        const void* buf, size_t count) {
+
+    const char* buffer = buf;
+
+    /* Write until completely written */
+    while (count > 0) {
+
+        /* Attempt to write, return on error */
+        int written = __guac_socket_write(socket, buffer, count);
+        if (written == -1)
+            return 1;
+
+        /* Advance buffer as data written */
+        buffer += written;
+        count  -= written;
+
+    }
+
+    return 0;
+
+}
 
 ssize_t guac_socket_read(guac_socket* socket, void* buf, size_t count) {
 

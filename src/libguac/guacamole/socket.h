@@ -73,7 +73,7 @@ typedef ssize_t guac_socket_read_handler(guac_socket* socket,
  * @return The number of bytes written, or -1 if an error occurs.
  */
 typedef ssize_t guac_socket_write_handler(guac_socket* socket,
-        void* buf, size_t count);
+        const void* buf, size_t count);
 
 /**
  * Generic handler for socket select operations, similar to the POSIX select()
@@ -284,8 +284,8 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str);
 ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t count);
 
 /**
- * Writes the given data to the specified socket. The data written may be
- * buffered until the buffer is flushed automatically or manually.
+ * Writes the given data to the specified socket. The data written is not
+ * buffered, and will be sent immediately.
  *
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
