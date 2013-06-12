@@ -37,7 +37,7 @@
 AUTOMAKE_OPTIONS = foreign 
 initdir = @init_dir@
 
-AM_CFLAGS = -Werror -Wall -pedantic $(LIBGUAC_INCLUDE)
+AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@
 
 sbin_PROGRAMS = guacd
 init_SCRIPTS = init.d/guacd
@@ -45,7 +45,7 @@ man_MANS = man/guacd.8
 
 noinst_HEADERS = client.h log.h
 guacd_SOURCES  = daemon.c client.c log.c
-guacd_LDADD    = $(LIBGUAC_LTLIB)
+guacd_LDADD    = @LIBGUAC_LTLIB@
 
 EXTRA_DIST = init.d/guacd.in man/guacd.8
 CLEANFILES = $(init_SCRIPTS)

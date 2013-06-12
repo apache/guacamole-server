@@ -36,7 +36,7 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic $(LIBGUAC_INCLUDE)
+AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@
 
 TESTS = test_libguac
 check_PROGRAMS = test_libguac
@@ -58,5 +58,5 @@ test_libguac_SOURCES =           \
 	util/util_suite.c            \
 	util/guac_pool.c
 
-test_libguac_LDADD = $(LIBGUAC_LTLIB) @CUNIT_LIBS@
+test_libguac_LDADD = @LIBGUAC_LTLIB@ @CUNIT_LIBS@
 

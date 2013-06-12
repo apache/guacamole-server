@@ -37,7 +37,6 @@
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Werror -Wall -pedantic -Iguacamole
-AM_LDFLAGS = $(RDP_LIBS) $(VORBIS_LIBS) $(PTHREAD_LIBS)
 
 libguacincdir = $(includedir)/guacamole
 libguacinc_HEADERS =         \
@@ -75,5 +74,5 @@ libguac_la_SOURCES =  \
     unicode.c
 
 lib_LTLIBRARIES = libguac.la
-libguac_la_LDFLAGS = -version-info 4:0:0
+libguac_la_LDFLAGS = -version-info 4:0:0 @PTHREAD_LIBS@
 

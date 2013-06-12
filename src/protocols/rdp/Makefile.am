@@ -37,8 +37,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -Iinclude $(LIBGUAC_INCLUDE)
-AM_LDFLAGS = $(RDP_LIBS) $(VORBIS_LIBS) $(PTHREAD_LIBS)
+AM_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@
 
 lib_LTLIBRARIES = libguac-client-rdp.la
 freerdp_LTLIBRARIES = guac_rdpsnd.la
@@ -88,11 +87,11 @@ if ENABLE_OGG
     noinst_HEADERS += ogg_encoder.h
 endif
 
-libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0
-guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared
+libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
+guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
 
-libguac_client_rdp_la_LIBADD = $(LIBGUAC_LTLIB)
-guac_rdpsnd_la_LIBADD = $(LIBGUAC_LTLIB)
+libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@
+guac_rdpsnd_la_LIBADD = @LIBGUAC_LTLIB@
 
 freerdpdir = ${libdir}/freerdp
 

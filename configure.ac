@@ -93,6 +93,8 @@ AC_CHECK_HEADER(vorbis/vorbisenc.h,, [have_vorbisenc=no])
 AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbisenc"], [have_vorbisenc=no])
 AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbisenc}" = "xyes"])
 
+AC_SUBST(VORBIS_LIBS)
+
 #
 # libVNCServer
 #
@@ -102,6 +104,8 @@ VNC_LIBS=
 
 AC_CHECK_LIB([vncclient], [rfbInitClient], [VNC_LIBS="$VNC_LIBS -lvncclient"], [have_libvncserver=no])
 AM_CONDITIONAL([ENABLE_VNC], [test "x${have_libvncserver}" = "xyes"])
+
+AC_SUBST(VNC_LIBS)
 
 #
 # FreeRDP
@@ -117,6 +121,8 @@ AC_CHECK_LIB([freerdp-utils],    [xzalloc], [RDP_LIBS="$RDP_LIBS -lfreerdp-utils
 AC_CHECK_LIB([freerdp-codec],    [freerdp_image_convert], [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"], [have_freerdp=no])
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp}" = "xyes"])
 
+AC_SUBST(RDP_LIBS)
+
 #
 # libssh
 #
@@ -128,6 +134,8 @@ AC_CHECK_LIB([ssh], [ssh_new], [SSH_LIBS="$SSH_LIBS -lssh"], [have_libssh=no])
 PKG_CHECK_MODULES([PANGO], pango);
 PKG_CHECK_MODULES([PANGOCAIRO], pangocairo);
 AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh}" = "xyes"])
+
+AC_SUBST(SSH_LIBS)
 
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
