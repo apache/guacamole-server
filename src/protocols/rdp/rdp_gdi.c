@@ -361,6 +361,13 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     int y_src = memblt->nYSrc;
 
     rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+
+    /* Make sure that the recieved bitmap is not NULL before processing */
+    if (bitmap == NULL) {
+        guac_client_log_info(client, "NULL bitmap found in memblt instruction.");
+        return;
+    }
+
     pthread_mutex_lock(&(data->update_lock));
 
     /* Clip operation to bounds */
