@@ -96,6 +96,14 @@ AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbisenc}" = "xyes"])
 AC_SUBST(VORBIS_LIBS)
 
 #
+# PANGO
+#
+
+have_pango=yes
+PKG_CHECK_MODULES([PANGO], [pango],, [have_pango=no]);
+PKG_CHECK_MODULES([PANGOCAIRO], [pangocairo],, [have_pango=no]);
+
+#
 # libVNCServer
 #
 
@@ -131,9 +139,7 @@ have_libssh=yes
 SSH_LIBS=
 
 AC_CHECK_LIB([ssh], [ssh_new], [SSH_LIBS="$SSH_LIBS -lssh"], [have_libssh=no])
-PKG_CHECK_MODULES([PANGO], pango);
-PKG_CHECK_MODULES([PANGOCAIRO], pangocairo);
-AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh}" = "xyes"])
+AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh}" = "xyes" -a "x${have_pango}" = "xyes"])
 
 AC_SUBST(SSH_LIBS)
 
@@ -146,16 +152,28 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
 
+AM_COND_IF([ENABLE_RDP], [build_rdp=yes], [build_rdp=no])
+AM_COND_IF([ENABLE_SSH], [build_ssh=yes], [build_ssh=no])
+AM_COND_IF([ENABLE_VNC], [build_vnc=yes], [build_vnc=no])
+
 echo "
 ------------------------------------------------
 $PACKAGE_NAME version $PACKAGE_VERSION
 ------------------------------------------------
 
+   Library status:
+
+     freerdp ............. ${have_freerdp}
+     pango ............... ${have_pango}
+     libssh .............. ${have_libssh}
+     libVNCServer ........ ${have_libvncserver}
+     libvorbisenc ........ ${have_vorbisenc}
+
    Protocol support:
 
-      RDP ....... ${have_freerdp}
-      SSH ....... ${have_libssh}
-      VNC ....... ${have_libvncserver}
+      RDP ....... ${build_rdp}
+      SSH ....... ${build_ssh}
+      VNC ....... ${build_vnc}
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
