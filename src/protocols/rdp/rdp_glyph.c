@@ -218,6 +218,9 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
     if (width > max_width) width = max_width;
     if (height > max_height) height = max_height;
 
+    /* Clip operation to clipping region, if any */
+    guac_rdp_clip_rect(guac_client_data, &x, &y, &width, &height);
+
     /* Ensure data is ready */
     cairo_surface_flush(glyph_surface);
 

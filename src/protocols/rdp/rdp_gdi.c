@@ -44,41 +44,6 @@
 #include "client.h"
 #include "rdp_bitmap.h"
 
-static void __guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int* w, int* h) {
-
-    if (data->bounded) {
-
-        /* Get rect coordinates */
-        int clipped_left   = *x;
-        int clipped_top    = *y;
-        int clipped_right  = clipped_left + *w - 1;
-        int clipped_bottom = clipped_top  + *h - 1;
-
-        /* Clip left */
-        if      (clipped_left < data->bounds_left)  clipped_left = data->bounds_left;
-        else if (clipped_left > data->bounds_right) clipped_left = data->bounds_right;
-
-        /* Clip right */
-        if      (clipped_right < data->bounds_left)  clipped_right = data->bounds_left;
-        else if (clipped_right > data->bounds_right) clipped_right = data->bounds_right;
-
-        /* Clip top */
-        if      (clipped_top < data->bounds_top)    clipped_top = data->bounds_top;
-        else if (clipped_top > data->bounds_bottom) clipped_top = data->bounds_bottom;
-
-        /* Clip bottom */
-        if      (clipped_bottom < data->bounds_top)    clipped_bottom = data->bounds_top;
-        else if (clipped_bottom > data->bounds_bottom) clipped_bottom = data->bounds_bottom;
-
-        /* Store new rect dimensions */
-        *x = clipped_left;
-        *y = clipped_top;
-        *w = clipped_right  - clipped_left + 1;
-        *h = clipped_bottom - clipped_top  + 1;
-
-    }
-
-}
 
 guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
         int rop3) {
@@ -152,7 +117,7 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
     pthread_mutex_lock(&(data->update_lock));
 
     /* Clip operation to bounds */
-    __guac_rdp_clip_rect(data, &x, &y, &w, &h);
+    guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
     switch (dstblt->bRop) {
 
@@ -240,7 +205,7 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
             "negotiated client capabilities)");
 
     /* Clip operation to bounds */
-    __guac_rdp_clip_rect(data, &x, &y, &w, &h);
+    guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
     /* Render rectangle based on ROP */
     switch (patblt->bRop) {
@@ -330,7 +295,7 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
     pthread_mutex_lock(&(data->update_lock));
 
     /* Clip operation to bounds */
-    __guac_rdp_clip_rect(data, &x, &y, &w, &h);
+    guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
     /* Update source coordinates */
     x_src += x - scrblt->nLeftRect;
@@ -371,7 +336,7 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     pthread_mutex_lock(&(data->update_lock));
 
     /* Clip operation to bounds */
-    __guac_rdp_clip_rect(data, &x, &y, &w, &h);
+    guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
     /* Update source coordinates */
     x_src += x - memblt->nLeftRect;
@@ -479,7 +444,7 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
     int h = opaque_rect->nHeight;
 
     /* Clip operation to bounds */
-    __guac_rdp_clip_rect(data, &x, &y, &w, &h);
+    guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
     guac_protocol_send_rect(client->socket, current_layer, x, y, w, h);
 
