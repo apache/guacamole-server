@@ -177,6 +177,11 @@ typedef struct rdp_guac_client_data {
     int audio_enabled;
 
     /**
+     * Whether printing is enabled.
+     */
+    int printing_enabled;
+
+    /**
      * Audio output, if any.
      */
     audio_stream* audio;

@@ -47,8 +47,8 @@
 #include <guacamole/client.h>
 
 #include "audio.h"
-#include "service.h"
-#include "messages.h"
+#include "rdpsnd_service.h"
+#include "rdpsnd_messages.h"
 
 
 /* Define service, associate with "rdpsnd" channel */

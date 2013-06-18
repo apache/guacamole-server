@@ -40,7 +40,7 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@
 
 lib_LTLIBRARIES = libguac-client-rdp.la
-freerdp_LTLIBRARIES = guac_rdpsnd.la
+freerdp_LTLIBRARIES = guac_rdpsnd.la guac_rdpdr.la
 
 libguac_client_rdp_la_SOURCES = \
 	audio.c                     \
@@ -60,25 +60,31 @@ libguac_client_rdp_la_SOURCES = \
 	rdp_pointer.c               \
 	wav_encoder.c
 
-guac_rdpsnd_la_SOURCES =   \
-	guac_rdpsnd/messages.c \
-	guac_rdpsnd/service.c  \
+guac_rdpsnd_la_SOURCES =          \
+	guac_rdpsnd/rdpsnd_messages.c \
+	guac_rdpsnd/rdpsnd_service.c  \
 	audio.c
 
-noinst_HEADERS =              \
-	guac_rdpsnd/messages.h    \
-	guac_rdpsnd/service.h     \
-	audio.h                   \
-	client.h                  \
-	config.h                  \
-	default_pointer.h         \
-	guac_handlers.h           \
-	rdp_bitmap.h              \
-	rdp_cliprdr.h             \
-	rdp_gdi.h                 \
-	rdp_glyph.h               \
-	rdp_keymap.h              \
-	rdp_pointer.h             \
+guac_rdpdr_la_SOURCES =         \
+	guac_rdpdr/rdpdr_messages.c \
+	guac_rdpdr/rdpdr_service.c
+
+noinst_HEADERS =                     \
+	guac_rdpdr/rdpdr_messages.h      \
+	guac_rdpdr/rdpdr_service.h       \
+	guac_rdpsnd/rdpsnd_messages.h    \
+	guac_rdpsnd/rdpsnd_service.h     \
+	audio.h                          \
+	client.h                         \
+	config.h                         \
+	default_pointer.h                \
+	guac_handlers.h                  \
+	rdp_bitmap.h                     \
+	rdp_cliprdr.h                    \
+	rdp_gdi.h                        \
+	rdp_glyph.h                      \
+	rdp_keymap.h                     \
+	rdp_pointer.h                    \
 	wav_encoder.h
 
 # Compile OGG support if available
@@ -89,9 +95,11 @@ endif
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
 guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
+guac_rdpdr_la_LDFLAGS = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 
 libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@
 guac_rdpsnd_la_LIBADD = @LIBGUAC_LTLIB@
+guac_rdpdr_la_LIBADD = @LIBGUAC_LTLIB@
 
 freerdpdir = ${libdir}/freerdp
 

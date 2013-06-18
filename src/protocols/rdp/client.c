@@ -92,6 +92,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "initial-program",
     "color-depth",
     "disable-audio",
+    "disable-printing",
     "console",
     "console-audio",
     "server-layout",
@@ -110,6 +111,7 @@ enum RDP_ARGS_IDX {
     IDX_INITIAL_PROGRAM,
     IDX_COLOR_DEPTH,
     IDX_DISABLE_AUDIO,
+    IDX_DISABLE_PRINTING,
     IDX_CONSOLE,
     IDX_CONSOLE_AUDIO,
     IDX_SERVER_LAYOUT,
@@ -183,6 +185,17 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
                     "No available audio encoding. Sound disabled.");
 
     } /* end if audio enabled */
+
+    /* If printing enabled, load rdpdr */
+    if (guac_client_data->printing_enabled) {
+
+        /* Load RDPDR plugin */
+        if (freerdp_channels_load_plugin(channels, instance->settings,
+                    "guac_rdpdr", NULL))
+            guac_client_log_error(client,
+                    "Failed to load guac_rdpdr plugin.");
+
+    } /* end if printing enabled */
 
     /* Init color conversion structure */
     clrconv = xnew(CLRCONV);
@@ -462,6 +475,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Audio enable/disable */
     guac_client_data->audio_enabled =
         (strcmp(argv[IDX_DISABLE_AUDIO], "true") != 0);
+
+    /* Printing enable/disable */
+    guac_client_data->printing_enabled =
+        (strcmp(argv[IDX_DISABLE_PRINTING], "true") != 0);
 
     /* Order support */
     bitmap_cache = settings->bitmap_cache;
