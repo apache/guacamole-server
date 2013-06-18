@@ -62,7 +62,18 @@ DEFINE_SVC_PLUGIN(guac_rdpdr, "rdpdr",
 
 void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
 
-    /* STUB - init */
+    /* Get RDPDR plugin */
+    guac_rdpdrPlugin* rdpdr = (guac_rdpdrPlugin*) plugin;
+
+    /* Get client from plugin */
+    guac_client* client = (guac_client*)
+        plugin->channel_entry_points.pExtendedData;
+
+    /* Init plugin */
+    rdpdr->client = client;
+
+    /* Log that printing, etc. has been loaded */
+    guac_client_log_info(client, "guac_rdpdr connected.");
 
 }
 
@@ -77,9 +88,10 @@ void guac_rdpdr_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event) {
 void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
         STREAM* input_stream) {
 
-    /*guac_rdpdrPlugin* rdpdr = (guac_rdpdrPlugin*) plugin;*/
+    guac_rdpdrPlugin* rdpdr = (guac_rdpdrPlugin*) plugin;
 
     /* STUB - read packet type, dispatch based on type */
+    guac_client_log_info(rdpdr->client, "STUB - RDPDR data received.");
 
 }
 

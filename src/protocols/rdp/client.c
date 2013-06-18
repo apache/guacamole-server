@@ -191,7 +191,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
 
         /* Load RDPDR plugin */
         if (freerdp_channels_load_plugin(channels, instance->settings,
-                    "guac_rdpdr", NULL))
+                    "guac_rdpdr", client))
             guac_client_log_error(client,
                     "Failed to load guac_rdpdr plugin.");
 

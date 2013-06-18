@@ -51,6 +51,11 @@ typedef struct guac_rdpdrPlugin {
      */
     rdpSvcPlugin plugin;
 
+    /**
+     * Reference to the client owning this instance of the RDPDR plugin.
+     */
+    guac_client* client;
+
     /* STUB */
 
 } guac_rdpdrPlugin;
