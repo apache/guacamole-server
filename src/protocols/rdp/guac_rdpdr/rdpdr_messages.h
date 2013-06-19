@@ -38,7 +38,35 @@
 #ifndef __GUAC_RDPDR_MESSAGES_H
 #define __GUAC_RDPDR_MESSAGES_H
 
-/* STUB */
+/**
+ * Identifies the "core" component of RDPDR as the destination of the received
+ * packet.
+ */
+#define RDPDR_CTYP_CORE 0x4472
+
+/**
+ * Identifies the printing component of RDPDR as the destination of the
+ * received packet.
+ */
+#define RDPDR_CTYP_PRN 0x5052
+
+/*
+ * Packet IDs as required by the RDP spec (see: [MS-RDPEFS].pdf)
+ */
+
+#define PAKID_CORE_SERVER_ANNOUNCE     0x496E
+#define PAKID_CORE_CLIENTID_CONFIRM    0x4343
+#define PAKID_CORE_CLIENT_NAME         0x434E
+#define PAKID_CORE_DEVICELIST_ANNOUNCE 0x4441
+#define PAKID_CORE_DEVICE_REPLY        0x6472
+#define PAKID_CORE_DEVICE_IOREQUEST    0x4952
+#define PAKID_CORE_DEVICE_IOCOMPLETION 0x4943
+#define PAKID_CORE_SERVER_CAPABILITY   0x5350
+#define PAKID_CORE_CLIENT_CAPABILITY   0x4350
+#define PAKID_CORE_DEVICELIST_REMOVE   0x444D
+#define PAKID_PRN_CACHE_DATA           0x5043
+#define PAKID_CORE_USER_LOGGEDON       0x554C
+#define PAKID_PRN_USING_XPS            0x5543
 
 #endif
 

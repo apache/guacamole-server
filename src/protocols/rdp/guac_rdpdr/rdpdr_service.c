@@ -85,13 +85,87 @@ void guac_rdpdr_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event) {
     freerdp_event_free(event);
 }
 
+static void _guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
+        STREAM* input_stream) {
+
+    int major, minor, client_id;
+
+    stream_read_uint16(input_stream, major);
+    stream_read_uint16(input_stream, minor);
+    stream_read_uint32(input_stream, client_id);
+
+    guac_client_log_info(rdpdr->client, "Connected to RDPDR %i.%i as client %i", major, minor, client_id);
+
+}
+
 void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
         STREAM* input_stream) {
 
     guac_rdpdrPlugin* rdpdr = (guac_rdpdrPlugin*) plugin;
 
-    /* STUB - read packet type, dispatch based on type */
-    guac_client_log_info(rdpdr->client, "STUB - RDPDR data received.");
+    int component;
+    int packet_id;
+
+    /* Read header */
+    stream_read_uint16(input_stream, component);
+    stream_read_uint16(input_stream, packet_id);
+
+    /* Core component */
+    if (component == RDPDR_CTYP_CORE) {
+
+        /* Dispatch handlers based on packet ID */
+        switch (packet_id) {
+
+            case PAKID_CORE_SERVER_ANNOUNCE:
+                _guac_rdpdr_process_server_announce(rdpdr, input_stream);
+                break;
+
+            case PAKID_CORE_CLIENTID_CONFIRM:
+                break;
+
+            case PAKID_CORE_DEVICE_REPLY:
+                break;
+
+            case PAKID_CORE_DEVICE_IOREQUEST:
+                break;
+
+            case PAKID_CORE_DEVICE_IOCOMPLETION:
+                break;
+
+            case PAKID_CORE_SERVER_CAPABILITY:
+                break;
+
+            case PAKID_CORE_USER_LOGGEDON:
+                break;
+
+            default:
+                guac_client_log_info(rdpdr->client, "Ignoring RDPDR core packet with unexpected ID: 0x%04x", packet_id);
+
+        }
+
+    } /* end if core */
+
+    /* Printer component */
+    else if (component == RDPDR_CTYP_PRN) {
+
+        /* Dispatch handlers based on packet ID */
+        switch (packet_id) {
+
+            case PAKID_PRN_CACHE_DATA:
+                break;
+
+            case PAKID_PRN_USING_XPS:
+                break;
+
+            default:
+                guac_client_log_info(rdpdr->client, "Ignoring RDPDR printer packet with unexpected ID: 0x%04x", packet_id);
+
+        }
+
+    } /* end if printer */
+
+    else
+        guac_client_log_info(rdpdr->client, "Ignoring packet for unknown RDPDR component: 0x%04x", component);
 
 }
 
