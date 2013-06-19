@@ -68,5 +68,11 @@
 #define PAKID_CORE_USER_LOGGEDON       0x554C
 #define PAKID_PRN_USING_XPS            0x5543
 
+/*
+ * Message handlers.
+ */
+
+void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr, STREAM* input_stream);
+
 #endif
 

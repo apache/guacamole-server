@@ -85,19 +85,6 @@ void guac_rdpdr_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event) {
     freerdp_event_free(event);
 }
 
-static void _guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
-        STREAM* input_stream) {
-
-    int major, minor, client_id;
-
-    stream_read_uint16(input_stream, major);
-    stream_read_uint16(input_stream, minor);
-    stream_read_uint32(input_stream, client_id);
-
-    guac_client_log_info(rdpdr->client, "Connected to RDPDR %i.%i as client %i", major, minor, client_id);
-
-}
-
 void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
         STREAM* input_stream) {
 
@@ -117,7 +104,7 @@ void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
         switch (packet_id) {
 
             case PAKID_CORE_SERVER_ANNOUNCE:
-                _guac_rdpdr_process_server_announce(rdpdr, input_stream);
+                guac_rdpdr_process_server_announce(rdpdr, input_stream);
                 break;
 
             case PAKID_CORE_CLIENTID_CONFIRM:

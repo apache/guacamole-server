@@ -50,5 +50,16 @@
 #include "rdpdr_messages.h"
 #include "client.h"
 
-/* STUB - message handlers */
+void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
+        STREAM* input_stream) {
+
+    int major, minor, client_id;
+
+    stream_read_uint16(input_stream, major);
+    stream_read_uint16(input_stream, minor);
+    stream_read_uint32(input_stream, client_id);
+
+    guac_client_log_info(rdpdr->client, "Connected to RDPDR %i.%i as client %i", major, minor, client_id);
+
+}
 
