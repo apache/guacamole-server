@@ -108,21 +108,27 @@ void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
                 break;
 
             case PAKID_CORE_CLIENTID_CONFIRM:
+                guac_rdpdr_process_clientid_confirm(rdpdr, input_stream);
                 break;
 
             case PAKID_CORE_DEVICE_REPLY:
+                guac_rdpdr_process_device_reply(rdpdr, input_stream);
                 break;
 
             case PAKID_CORE_DEVICE_IOREQUEST:
+                guac_rdpdr_process_device_iorequest(rdpdr, input_stream);
                 break;
 
             case PAKID_CORE_DEVICE_IOCOMPLETION:
+                guac_rdpdr_process_device_iocompletion(rdpdr, input_stream);
                 break;
 
             case PAKID_CORE_SERVER_CAPABILITY:
+                guac_rdpdr_process_server_capability(rdpdr, input_stream);
                 break;
 
             case PAKID_CORE_USER_LOGGEDON:
+                guac_rdpdr_process_user_loggedon(rdpdr, input_stream);
                 break;
 
             default:
@@ -139,9 +145,11 @@ void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
         switch (packet_id) {
 
             case PAKID_PRN_CACHE_DATA:
+                guac_rdpdr_process_prn_cache_data(rdpdr, input_stream);
                 break;
 
             case PAKID_PRN_USING_XPS:
+                guac_rdpdr_process_prn_using_xps(rdpdr, input_stream);
                 break;
 
             default:

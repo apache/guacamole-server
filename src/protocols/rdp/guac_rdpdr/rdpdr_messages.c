@@ -50,16 +50,94 @@
 #include "rdpdr_messages.h"
 #include "client.h"
 
+
+static void guac_rdpdr_send_client_announce_reply(guac_rdpdrPlugin* rdpdr,
+        unsigned int major, unsigned int minor, unsigned int client_id) {
+
+    STREAM* output_stream = stream_new(12);
+
+    /* Write header */
+    stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
+    stream_write_uint16(output_stream, PAKID_CORE_CLIENTID_CONFIRM);
+
+    /* Write content */
+    stream_write_uint16(output_stream, major);
+    stream_write_uint16(output_stream, minor);
+    stream_write_uint32(output_stream, client_id);
+
+    svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
+
+}
+
 void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
         STREAM* input_stream) {
 
-    int major, minor, client_id;
+    unsigned int major, minor, client_id;
 
     stream_read_uint16(input_stream, major);
     stream_read_uint16(input_stream, minor);
     stream_read_uint32(input_stream, client_id);
 
-    guac_client_log_info(rdpdr->client, "Connected to RDPDR %i.%i as client %i", major, minor, client_id);
+    guac_client_log_info(rdpdr->client, "Connected to RDPDR %u.%u as client 0x%04x", major, minor, client_id);
+
+    /* Respond to announce */
+    guac_rdpdr_send_client_announce_reply(rdpdr, major, minor, client_id);
+
+}
+
+void guac_rdpdr_process_clientid_confirm(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+
+    /* STUB */
+    guac_client_log_info(rdpdr->client, "STUB: clientid_confirm");
+
+}
+
+void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+
+    /* STUB */
+    guac_client_log_info(rdpdr->client, "STUB: device_reply");
+
+}
+
+void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+
+    /* STUB */
+    guac_client_log_info(rdpdr->client, "STUB: device_iorequest");
+
+}
+
+void guac_rdpdr_process_device_iocompletion(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+
+    /* STUB */
+    guac_client_log_info(rdpdr->client, "STUB: device_iocompletion");
+
+}
+
+void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+
+    /* STUB */
+    guac_client_log_info(rdpdr->client, "STUB: server_capability");
+
+}
+
+void guac_rdpdr_process_user_loggedon(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+
+    /* STUB */
+    guac_client_log_info(rdpdr->client, "STUB: user_loggedon");
+
+}
+
+void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+
+    /* STUB */
+    guac_client_log_info(rdpdr->client, "STUB: prn_cache_data");
+
+}
+
+void guac_rdpdr_process_prn_using_xps(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+
+    /* STUB */
+    guac_client_log_info(rdpdr->client, "STUB: prn_using_xps");
 
 }
 
