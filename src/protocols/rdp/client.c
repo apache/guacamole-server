@@ -376,6 +376,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Allocate client data */
     guac_client_data = malloc(sizeof(rdp_guac_client_data));
 
+    /* Init random number generator */
+    srandom(time(NULL));
+
     /* Init client */
     freerdp_channels_global_init();
     rdp_inst = freerdp_new();
