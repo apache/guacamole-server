@@ -69,6 +69,65 @@ static void guac_rdpdr_send_client_announce_reply(guac_rdpdrPlugin* rdpdr,
 
 }
 
+static void guac_rdpdr_send_client_name_request(guac_rdpdrPlugin* rdpdr, const char* name) {
+
+    int name_bytes = strlen(name) + 1;
+    STREAM* output_stream = stream_new(16 + name_bytes);
+
+    /* Write header */
+    stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
+    stream_write_uint16(output_stream, PAKID_CORE_CLIENT_NAME);
+
+    /* Write content */
+    stream_write_uint32(output_stream, 0); /* ASCII */
+    stream_write_uint32(output_stream, 0); /* 0 required by RDPDR spec */
+    stream_write_uint32(output_stream, name_bytes);
+    stream_write(output_stream, name, name_bytes);
+
+    svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
+
+}
+
+static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
+
+    STREAM* output_stream = stream_new(256);
+    guac_client_log_info(rdpdr->client, "Sending capabilities...");
+
+    /* Write header */
+    stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
+    stream_write_uint16(output_stream, PAKID_CORE_CLIENT_CAPABILITY);
+
+    /* Write content */
+    stream_write_uint16(output_stream, 2);
+    stream_write_uint16(output_stream, 0); /* Padding */
+
+    /* General capability */
+    stream_write_uint16(output_stream, 1 /* CAP_GENERAL_TYPE */);
+    stream_write_uint16(output_stream, 44);
+    stream_write_uint32(output_stream, 2 /* GENERAL_CAPABILITY_VERSION_02 */);
+
+    stream_write_uint32(output_stream, *((uint32_t*) "GUAC")); /* osType - required to be ignored */
+    stream_write_uint32(output_stream, 0);                     /* osVersion */
+    stream_write_uint16(output_stream, 1);                     /* protocolMajor */
+    stream_write_uint16(output_stream, 0xA);                   /* protocolMinor */
+    stream_write_uint32(output_stream, 0xFFFF);                /* ioCode1 */
+    stream_write_uint32(output_stream, 0);                     /* ioCode2 */
+    stream_write_uint32(output_stream, 7);                     /* extendedPDU */
+    stream_write_uint32(output_stream, 0);                     /* extraFlags1 */
+    stream_write_uint32(output_stream, 0);                     /* extraFlags2 */
+    stream_write_uint32(output_stream, 0);                     /* SpecialTypeDeviceCap */
+
+    /* Printer support */
+    stream_write_uint16(output_stream, 2 /* CAP_PRINTER_TYPE */);
+    stream_write_uint16(output_stream, 8);
+    stream_write_uint32(output_stream, 1 /* PRINT_CAPABILITY_VERSION_01 */);
+
+    svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
+    guac_client_log_info(rdpdr->client, "Capabilities sent.");
+
+}
+
+
 void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
         STREAM* input_stream) {
 
@@ -82,6 +141,9 @@ void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
 
     /* Respond to announce */
     guac_rdpdr_send_client_announce_reply(rdpdr, major, minor, client_id);
+
+    /* Name request */
+    guac_rdpdr_send_client_name_request(rdpdr, "Guacamole");
 
 }
 
@@ -115,8 +177,30 @@ void guac_rdpdr_process_device_iocompletion(guac_rdpdrPlugin* rdpdr, STREAM* inp
 
 void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
 
-    /* STUB */
-    guac_client_log_info(rdpdr->client, "STUB: server_capability");
+    int count;
+    int i;
+
+    /* Read header */
+    stream_read_uint16(input_stream, count);
+    stream_seek(input_stream, 2);
+
+    /* Parse capabilities */
+    for (i=0; i<count; i++) {
+
+        int type;
+        int length;
+
+        stream_read_uint16(input_stream, type);
+        stream_read_uint16(input_stream, length);
+
+        /* Ignore all for now */
+        guac_client_log_info(rdpdr->client, "Ignoring server capability set type=0x%04x, length=%i", type, length);
+        stream_seek(input_stream, length - 4);
+
+    }
+
+    /* Send own capabilities */
+    guac_rdpdr_send_client_capability(rdpdr);
 
 }
 
