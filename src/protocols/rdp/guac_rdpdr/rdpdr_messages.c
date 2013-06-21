@@ -204,11 +204,11 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, STREAM* input_stre
     stream_read_uint32(input_stream, device_id);
     stream_read_uint32(input_stream, ntstatus);
 
-    severity = ntstatus & 0xC0000000;
-    c        = ntstatus & 0x20000000;
-    n        = ntstatus & 0x10000000;
-    facility = ntstatus & 0x0FFF0000;
-    code     = ntstatus & 0x0000FFFF;
+    severity = (ntstatus & 0xC0000000) >> 30;
+    c        = (ntstatus & 0x20000000) >> 29;
+    n        = (ntstatus & 0x10000000) >> 28;
+    facility = (ntstatus & 0x0FFF0000) >> 16;
+    code     =  ntstatus & 0x0000FFFF;
 
     /* Log error / information */
     if (device_id == GUAC_PRINTER_DEVICE_ID) {
