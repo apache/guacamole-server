@@ -68,6 +68,59 @@
 #define PAKID_CORE_USER_LOGGEDON       0x554C
 #define PAKID_PRN_USING_XPS            0x5543
 
+/**
+ * A 32-bit arbitrary value for the osType field of certain requests. As this
+ * value is defined as completely arbitrary and required to be ignored by the
+ * server, we send "GUAC" as an integer.
+ */
+#define GUAC_OS_TYPE (*((uint32_t*) "GUAC"))
+
+/*
+ * Capability types
+ */
+
+#define CAP_GENERAL_TYPE    1
+#define CAP_PRINTER_TYPE    2
+#define CAP_PORT_TYPE       3
+#define CAP_DRIVE_TYPE      4
+#define CAP_SMARTCARD_TYPE  5
+
+/*
+ * General capability header versions.
+ */
+
+#define GENERAL_CAPABILITY_VERSION_01 1
+#define GENERAL_CAPABILITY_VERSION_02 2
+
+/*
+ * Print capability header versions.
+ */
+
+#define PRINT_CAPABILITY_VERSION_01   1
+
+/*
+ * Legal client major version numbers.
+ */
+
+#define RDP_CLIENT_MAJOR_ALL 1
+
+/*
+ * Legal client minor version numbers.
+ */
+
+#define RDP_CLIENT_MINOR_6_1 0xC
+#define RDP_CLIENT_MINOR_5_2 0xA
+#define RDP_CLIENT_MINOR_5_1 0x5
+#define RDP_CLIENT_MINOR_5_0 0x2
+
+/*
+ * PDU flags used by the extendedPDU field.
+ */
+
+#define RDPDR_DEVICE_REMOVE_PDUS  0x1
+#define RDPDR_CLIENT_DISPLAY_NAME 0x2
+#define RDPDR_USER_LOGGEDON_PDU   0x4
+
 /*
  * Message handlers.
  */

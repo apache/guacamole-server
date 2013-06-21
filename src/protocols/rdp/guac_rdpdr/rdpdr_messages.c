@@ -97,30 +97,34 @@ static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
     stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
     stream_write_uint16(output_stream, PAKID_CORE_CLIENT_CAPABILITY);
 
-    /* Write content */
+    /* Capability count + padding */
     stream_write_uint16(output_stream, 2);
     stream_write_uint16(output_stream, 0); /* Padding */
 
-    /* General capability */
-    stream_write_uint16(output_stream, 1 /* CAP_GENERAL_TYPE */);
+    /* General capability header */
+    stream_write_uint16(output_stream, CAP_GENERAL_TYPE);
     stream_write_uint16(output_stream, 44);
-    stream_write_uint32(output_stream, 2 /* GENERAL_CAPABILITY_VERSION_02 */);
+    stream_write_uint32(output_stream, GENERAL_CAPABILITY_VERSION_02);
 
-    stream_write_uint32(output_stream, *((uint32_t*) "GUAC")); /* osType - required to be ignored */
+    /* General capability data */
+    stream_write_uint32(output_stream, GUAC_OS_TYPE);          /* osType - required to be ignored */
     stream_write_uint32(output_stream, 0);                     /* osVersion */
-    stream_write_uint16(output_stream, 1);                     /* protocolMajor */
-    stream_write_uint16(output_stream, 0xA);                   /* protocolMinor */
+    stream_write_uint16(output_stream, RDP_CLIENT_MAJOR_ALL);  /* protocolMajor */
+    stream_write_uint16(output_stream, RDP_CLIENT_MINOR_5_2);  /* protocolMinor */
     stream_write_uint32(output_stream, 0xFFFF);                /* ioCode1 */
     stream_write_uint32(output_stream, 0);                     /* ioCode2 */
-    stream_write_uint32(output_stream, 7);                     /* extendedPDU */
-    stream_write_uint32(output_stream, 0);                     /* extraFlags1 */
-    stream_write_uint32(output_stream, 0);                     /* extraFlags2 */
-    stream_write_uint32(output_stream, 0);                     /* SpecialTypeDeviceCap */
+    stream_write_uint32(output_stream,
+                                      RDPDR_DEVICE_REMOVE_PDUS
+                                    | RDPDR_CLIENT_DISPLAY_NAME
+                                    | RDPDR_USER_LOGGEDON_PDU); /* extendedPDU */
+    stream_write_uint32(output_stream, 0);                      /* extraFlags1 */
+    stream_write_uint32(output_stream, 0);                      /* extraFlags2 */
+    stream_write_uint32(output_stream, 0);                      /* SpecialTypeDeviceCap */
 
-    /* Printer support */
-    stream_write_uint16(output_stream, 2 /* CAP_PRINTER_TYPE */);
+    /* Printer support header */
+    stream_write_uint16(output_stream, CAP_PRINTER_TYPE);
     stream_write_uint16(output_stream, 8);
-    stream_write_uint32(output_stream, 1 /* PRINT_CAPABILITY_VERSION_01 */);
+    stream_write_uint32(output_stream, PRINT_CAPABILITY_VERSION_01);
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
     guac_client_log_info(rdpdr->client, "Capabilities sent.");
