@@ -193,10 +193,7 @@ void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
 }
 
 void guac_rdpdr_process_clientid_confirm(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
-
     guac_client_log_info(rdpdr->client, "Client ID confirmed");
-    guac_rdpdr_send_client_device_list_announce_request(rdpdr);
-
 }
 
 void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
