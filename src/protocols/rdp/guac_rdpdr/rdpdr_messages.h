@@ -75,6 +75,23 @@
  */
 #define GUAC_OS_TYPE (*((uint32_t*) "GUAC"))
 
+/**
+ * Arbitray 32-bit unique integer representing the printer device.
+ */
+#define GUAC_PRINTER_DEVICE_ID (*((uint32_t*) "GPR1"))
+
+/**
+ * Name of the printer driver that should be used on the server.
+ */
+#define GUAC_PRINTER_DRIVER        "MS Publisher Imagesetter"
+#define GUAC_PRINTER_DRIVER_LENGTH (strlen(GUAC_PRINTER_DRIVER)+1)
+
+/**
+ * Name of the printer itself.
+ */
+#define GUAC_PRINTER_NAME          "\0G\0u\0a\0c\0a\0m\0o\0l\0e\0\0"
+#define GUAC_PRINTER_NAME_LENGTH   20
+
 /*
  * Capability types
  */
@@ -120,6 +137,26 @@
 #define RDPDR_DEVICE_REMOVE_PDUS  0x1
 #define RDPDR_CLIENT_DISPLAY_NAME 0x2
 #define RDPDR_USER_LOGGEDON_PDU   0x4
+
+/*
+ * Device types.
+ */
+
+#define RDPDR_DTYP_SERIAL     0x00000001
+#define RDPDR_DTYP_PARALLEL   0x00000002
+#define RDPDR_DTYP_PRINT      0x00000004
+#define RDPDR_DTYP_FILESYSTEM 0x00000008
+#define RDPDR_DTYP_SMARTCARD  0x00000020
+
+/*
+ * Printer flags.
+ */
+
+#define RDPDR_PRINTER_ANNOUNCE_FLAG_ASCII          0x00000001
+#define RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER 0x00000002
+#define RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER 0x00000004
+#define RDPDR_PRINTER_ANNOUNCE_FLAG_TSPRINTER      0x00000008
+#define RDPDR_PRINTER_ANNOUNCE_FLAG_XPSFORMAT      0x00000010
 
 /*
  * Message handlers.
