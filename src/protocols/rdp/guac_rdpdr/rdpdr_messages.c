@@ -151,8 +151,7 @@ static void guac_rdpdr_send_client_device_list_announce_request(guac_rdpdrPlugin
     /* Printer data */
     stream_write_uint32(output_stream, 24 + GUAC_PRINTER_DRIVER_LENGTH + GUAC_PRINTER_NAME_LENGTH);
     stream_write_uint32(output_stream,
-              RDPDR_PRINTER_ANNOUNCE_FLAG_ASCII
-            | RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER
+              RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER
             | RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER);
     stream_write_uint32(output_stream, 0); /* reserved - must be 0 */
     stream_write_uint32(output_stream, 0); /* PnPName length (PnPName is ultimately ignored) */
@@ -188,7 +187,7 @@ void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
     guac_rdpdr_send_client_announce_reply(rdpdr, major, minor, client_id);
 
     /* Name request */
-    guac_rdpdr_send_client_name_request(rdpdr, "Guacamole");
+    guac_rdpdr_send_client_name_request(rdpdr, "Guacamole RDP");
 
 }
 
