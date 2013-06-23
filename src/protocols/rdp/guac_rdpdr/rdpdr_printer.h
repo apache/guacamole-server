@@ -35,55 +35,19 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __GUAC_RDPDR_SERVICE_H
-#define __GUAC_RDPDR_SERVICE_H
+#ifndef __GUAC_RDPDR_PRINTER_H
+#define __GUAC_RDPDR_PRINTER_H
 
-#include <guacamole/client.h>
+#include <freerdp/utils/stream.h>
+#include <freerdp/utils/svc_plugin.h>
 
-/**
- * Structure representing the current state of the Guacamole RDPDR plugin for
- * FreeRDP.
+/*
+ * Message handlers.
  */
-typedef struct guac_rdpdrPlugin {
 
-    /**
-     * The FreeRDP parts of this plugin. This absolutely MUST be first.
-     * FreeRDP depends on accessing this structure as if it were an instance
-     * of rdpSvcPlugin.
-     */
-    rdpSvcPlugin plugin;
-
-    /**
-     * Reference to the client owning this instance of the RDPDR plugin.
-     */
-    guac_client* client;
-
-    /* STUB */
-
-} guac_rdpdrPlugin;
-
-
-/**
- * Handler called when this plugin is loaded by FreeRDP.
- */
-void guac_rdpdr_process_connect(rdpSvcPlugin* plugin);
-
-/**
- * Handler called when this plugin receives data along its designated channel.
- */
-void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
-        STREAM* input_stream);
-
-/**
- * Handler called when this plugin is being unloaded.
- */
-void guac_rdpdr_process_terminate(rdpSvcPlugin* plugin);
-
-/**
- * Handler called when this plugin receives an event. For the sake of RDPDR,
- * all events will be ignored and simply free'd.
- */
-void guac_rdpdr_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event);
+void guac_rdpdr_process_print_job_create(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id);
+void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id);
+void guac_rdpdr_process_print_job_close(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id);
 
 #endif
 

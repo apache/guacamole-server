@@ -48,6 +48,7 @@
 
 #include "rdpdr_service.h"
 #include "rdpdr_messages.h"
+#include "rdpdr_printer.h"
 #include "client.h"
 
 
@@ -229,15 +230,46 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, STREAM* input_stre
 
 void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
 
-    /* STUB */
-    guac_client_log_info(rdpdr->client, "STUB: device_iorequest");
+    int device_id, completion_id, major_func, minor_func;
 
-}
+    /* Read header */
+    stream_read_uint32(input_stream, device_id);
+    stream_seek(input_stream, 4); /* file_id - currently skipped (not used in printer) */
+    stream_read_uint32(input_stream, completion_id);
+    stream_read_uint32(input_stream, major_func);
+    stream_read_uint32(input_stream, minor_func);
 
-void guac_rdpdr_process_device_iocompletion(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+    /* If printer, run printer handlers */
+    if (device_id == GUAC_PRINTER_DEVICE_ID) {
 
-    /* STUB */
-    guac_client_log_info(rdpdr->client, "STUB: device_iocompletion");
+        switch (major_func) {
+
+            /* Print job create */
+            case IRP_MJ_CREATE:
+                guac_rdpdr_process_print_job_create(rdpdr, input_stream, completion_id);
+                break;
+
+            /* Printer job write */
+            case IRP_MJ_WRITE:
+                guac_rdpdr_process_print_job_write(rdpdr, input_stream, completion_id);
+                break;
+
+            /* Printer job close */
+            case IRP_MJ_CLOSE:
+                guac_rdpdr_process_print_job_close(rdpdr, input_stream, completion_id);
+                break;
+
+            /* Log unknown */
+            default:
+                guac_client_log_error(rdpdr->client, "Unknown printer I/O request function: 0x%x/0x%x",
+                        major_func, minor_func);
+
+        }
+
+    }
+
+    else
+        guac_client_log_error(rdpdr->client, "Unknown device ID: 0x%08x", device_id);
 
 }
 
@@ -278,16 +310,10 @@ void guac_rdpdr_process_user_loggedon(guac_rdpdrPlugin* rdpdr, STREAM* input_str
 }
 
 void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
-
-    /* STUB */
-    guac_client_log_info(rdpdr->client, "STUB: prn_cache_data");
-
+    guac_client_log_info(rdpdr->client, "Ignoring printer cached configuration data");
 }
 
 void guac_rdpdr_process_prn_using_xps(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
-
-    /* STUB */
-    guac_client_log_info(rdpdr->client, "STUB: prn_using_xps");
-
+    guac_client_log_info(rdpdr->client, "Printer unexpectedly switched to XPS mode");
 }
 

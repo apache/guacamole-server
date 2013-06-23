@@ -119,10 +119,6 @@ void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
                 guac_rdpdr_process_device_iorequest(rdpdr, input_stream);
                 break;
 
-            case PAKID_CORE_DEVICE_IOCOMPLETION:
-                guac_rdpdr_process_device_iocompletion(rdpdr, input_stream);
-                break;
-
             case PAKID_CORE_SERVER_CAPABILITY:
                 guac_rdpdr_process_server_capability(rdpdr, input_stream);
                 break;

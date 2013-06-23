@@ -67,10 +67,12 @@ guac_rdpsnd_la_SOURCES =          \
 
 guac_rdpdr_la_SOURCES =         \
 	guac_rdpdr/rdpdr_messages.c \
+	guac_rdpdr/rdpdr_printer.c  \
 	guac_rdpdr/rdpdr_service.c
 
 noinst_HEADERS =                     \
 	guac_rdpdr/rdpdr_messages.h      \
+	guac_rdpdr/rdpdr_printer.h       \
 	guac_rdpdr/rdpdr_service.h       \
 	guac_rdpsnd/rdpsnd_messages.h    \
 	guac_rdpsnd/rdpsnd_service.h     \

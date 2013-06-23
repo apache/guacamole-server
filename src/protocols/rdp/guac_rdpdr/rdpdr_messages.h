@@ -38,6 +38,8 @@
 #ifndef __GUAC_RDPDR_MESSAGES_H
 #define __GUAC_RDPDR_MESSAGES_H
 
+#include "rdpdr_service.h"
+
 /**
  * Identifies the "core" component of RDPDR as the destination of the received
  * packet.
@@ -159,6 +161,25 @@
 #define RDPDR_PRINTER_ANNOUNCE_FLAG_XPSFORMAT      0x00000010
 
 /*
+ * I/O requests.
+ */
+
+#define IRP_MJ_CREATE                   0x00000000
+#define IRP_MJ_CLOSE                    0x00000002
+#define IRP_MJ_READ                     0x00000003
+#define IRP_MJ_WRITE                    0x00000004
+#define IRP_MJ_DEVICE_CONTROL           0x0000000E
+#define IRP_MJ_QUERY_VOLUME_INFORMATION 0x0000000A
+#define IRP_MJ_SET_VOLUME_INFORMATION   0x0000000B
+#define IRP_MJ_QUERY_INFORMATION        0x00000005
+#define IRP_MJ_SET_INFORMATION          0x00000006
+#define IRP_MJ_DIRECTORY_CONTROL        0x0000000C
+#define IRP_MJ_LOCK_CONTROL             0x00000011
+
+#define IRP_MN_QUERY_DIRECTORY         0x00000001
+#define IRP_MN_NOTIFY_CHANGE_DIRECTORY 0x00000002
+
+/*
  * Message handlers.
  */
 
@@ -166,7 +187,6 @@ void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr, STREAM* input_s
 void guac_rdpdr_process_clientid_confirm(guac_rdpdrPlugin* rdpdr, STREAM* input_stream);
 void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, STREAM* input_stream);
 void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, STREAM* input_stream);
-void guac_rdpdr_process_device_iocompletion(guac_rdpdrPlugin* rdpdr, STREAM* input_stream);
 void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, STREAM* input_stream);
 void guac_rdpdr_process_user_loggedon(guac_rdpdrPlugin* rdpdr, STREAM* input_stream);
 void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, STREAM* input_stream);
