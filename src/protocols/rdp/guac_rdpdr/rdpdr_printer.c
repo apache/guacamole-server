@@ -18,7 +18,7 @@ void guac_rdpdr_process_print_job_create(guac_rdpdrPlugin* rdpdr, STREAM* input_
     guac_client_log_info(rdpdr->client, "Print job created");
     pthread_mutex_lock(&(client_data->update_lock));
     guac_protocol_send_file(rdpdr->client->socket,
-            GUAC_RDPDR_PRINTER_BLOB, "print.ps", "application/postscript");
+            GUAC_RDPDR_PRINTER_BLOB, "application/postscript", "print.ps");
     pthread_mutex_unlock(&(client_data->update_lock));
 
     /* Write header */
