@@ -356,59 +356,30 @@ int guac_protocol_send_audio_end(guac_socket* socket);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
+ * @param index The index of the blob that will contain the contents
+ *              of this file.
  * @param name A name describing the file being sent.
  * @param mimetype The mimetype of the data being sent.
- * @param data The file data to be sent.
- * @param size The number of bytes of file data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_file(guac_socket* socket, const char* name,
-        const char* mimetype, void* data, int size);
+int guac_protocol_send_file(guac_socket* socket, int index,
+        const char* name, const char* mimetype);
 
 /**
- * Begins a file instruction over the given guac_socket connection. Only the
- * initial non-data part of the instruction and the length of the data part
- * of the instruction are sent. The actual contents of the data must be
- * sent with guac_protocol_send_file_data(), and the instruction must be
- * completed with guac_protocol_send_file_end().
- *
- * Note that the size of the file to be sent MUST be known ahead of time,
- * even though the data of the file may be sent in chunks.
- *
- * No further instruction data may be sent along the givven guac_socket
- * except via guac_protocol_send_file_data() until the file instruction
- * is completed with guac_protocol_send_file_end().
+ * Writes a block of data to the currently in-progress blob which was already
+ * created.
  *
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param name A name describing the file being sent.
- * @param mimetype The mimetype of the data being sent.
- * @param size The number of bytes of file data to send.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_file_header(guac_socket* socket, const char* name,
-        const char* mimetype, int size);
-
-/**
- * Writes a block of file data to the currently in-progress file instruction
- * which was started with guac_protocol_send_file_header(). Exactly the
- * number of requested bytes are written unless an error occurs. This function
- * may be called multiple times per file instruction for each chunk of file
- * data being written, allowing the potentially huge file instruction to be
- * split across multiple writes.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
+ * @param index The index of the blob to append data to.
  * @param data The file data to write.
  * @param count The number of bytes within the given buffer of file data
  *              that must be written.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_file_data(guac_socket* socket, void* data, int count);
+int guac_protocol_send_blob(guac_socket* socket, int index, void* data, int count);
 
 /**
  * Completes the file instruction which was started with
@@ -419,9 +390,10 @@ int guac_protocol_send_file_data(guac_socket* socket, void* data, int count);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
+ * @param index The index of the blob which is now complete.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_file_end(guac_socket* socket);
+int guac_protocol_send_end(guac_socket* socket, int index);
 
 /**
  * Sends a video instruction over the given guac_socket connection.
