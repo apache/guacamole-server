@@ -41,6 +41,11 @@
 #include <freerdp/utils/stream.h>
 #include <freerdp/utils/svc_plugin.h>
 
+/**
+ * The index of the blob to use when sending printed files.
+ */
+#define GUAC_RDPDR_PRINTER_BLOB 0
+
 /*
  * Message handlers.
  */
