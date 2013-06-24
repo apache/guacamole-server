@@ -691,15 +691,15 @@ int guac_protocol_send_error(guac_socket* socket, const char* error) {
 }
 
 
-int guac_protocol_send_file(guac_socket* socket, int index, const char* name, const char* mimetype) {
+int guac_protocol_send_file(guac_socket* socket, int index, const char* mimetype, const char* name) {
 
     return
            guac_socket_write_string(socket, "4.file,")
         || __guac_socket_write_length_int(socket, index)
         || guac_socket_write_string(socket, ",")
-        || __guac_socket_write_length_string(socket, name)
-        || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
         || guac_socket_write_string(socket, ";");
 
 }

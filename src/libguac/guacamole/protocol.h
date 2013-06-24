@@ -358,12 +358,11 @@ int guac_protocol_send_audio_end(guac_socket* socket);
  * @param socket The guac_socket connection to use.
  * @param index The index of the blob that will contain the contents
  *              of this file.
- * @param name A name describing the file being sent.
  * @param mimetype The mimetype of the data being sent.
+ * @param name A name describing the file being sent.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_file(guac_socket* socket, int index,
-        const char* name, const char* mimetype);
+int guac_protocol_send_file(guac_socket* socket, int index, const char* mimetype, const char* name);
 
 /**
  * Writes a block of data to the currently in-progress blob which was already
