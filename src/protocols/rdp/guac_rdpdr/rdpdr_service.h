@@ -58,7 +58,10 @@ typedef struct guac_rdpdrPlugin {
      */
     guac_client* client;
 
-    /* STUB */
+    /**
+     * The number of bytes received in the current print job.
+     */
+    int bytes_received;
 
 } guac_rdpdrPlugin;
 

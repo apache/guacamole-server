@@ -11,15 +11,10 @@
 
 void guac_rdpdr_process_print_job_create(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id) {
 
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) rdpdr->client->data;
     STREAM* output_stream = stream_new(24);
 
-    /* Open file */
-    guac_client_log_info(rdpdr->client, "Print job created");
-    pthread_mutex_lock(&(client_data->update_lock));
-    guac_protocol_send_file(rdpdr->client->socket,
-            GUAC_RDPDR_PRINTER_BLOB, "application/postscript", "print.ps");
-    pthread_mutex_unlock(&(client_data->update_lock));
+    /* No bytes received yet */
+    rdpdr->bytes_received = 0;
 
     /* Write header */
     stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
@@ -50,6 +45,55 @@ void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, STREAM* input_s
 
     /* Send data */
     pthread_mutex_lock(&(client_data->update_lock));
+
+    /* Create print job, if not yet created */
+    if (rdpdr->bytes_received == 0) {
+
+        char filename[1024] = "guacamole-print.ps";
+        unsigned char* search = buffer;
+        int i;
+
+        /* Search for filename within buffer */
+        for (i=0; i<length-9 && i < 2048; i++) {
+
+            /* If title. use as filename */
+            if (memcmp(search, "%%Title: ", 9) == 0) {
+
+                /* Skip past "%%Title: " */
+                search += 9;
+
+                /* Copy as much of title as reasonable */
+                int j;
+                for (j=0; j<sizeof(filename) - 4 /* sizeof(".ps") + 1 */ && i<length; i++, j++) {
+
+                    /* Get character, stop at EOL */
+                    char c = *(search++);
+                    if (c == '\r' || c == '\n')
+                        break;
+
+                    /* Copy to filename */
+                    filename[j] = c;
+
+                }
+
+                /* Append filename with extension */
+                strcpy(&(filename[j]), ".ps");
+                break;
+            }
+
+            /* Next character */
+            search++;
+
+        }
+
+        guac_client_log_info(rdpdr->client, "Print job created");
+        guac_protocol_send_file(rdpdr->client->socket,
+                GUAC_RDPDR_PRINTER_BLOB, "application/postscript", filename);
+
+    }
+
+    rdpdr->bytes_received += length;
+
     guac_protocol_send_blob(rdpdr->client->socket,
             GUAC_RDPDR_PRINTER_BLOB, buffer, length);
     pthread_mutex_unlock(&(client_data->update_lock));
