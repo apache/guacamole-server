@@ -40,54 +40,46 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@
 
 lib_LTLIBRARIES = libguac-client-rdp.la
-freerdp_LTLIBRARIES = guac_rdpsnd.la guac_rdpdr.la
+freerdp_LTLIBRARIES = guac_rdpsnd.la
 
 libguac_client_rdp_la_SOURCES = \
-	audio.c                     \
-	client.c                    \
-	default_pointer.c           \
-	guac_handlers.c             \
-	rdp_bitmap.c                \
-	rdp_cliprdr.c               \
-	rdp_gdi.c                   \
-	rdp_glyph.c                 \
-	rdp_keymap_base.c           \
-	rdp_keymap.c                \
-	rdp_keymap_de_de.c          \
-	rdp_keymap_failsafe.c       \
-	rdp_keymap_fr_fr.c          \
-	rdp_keymap_en_us.c          \
-	rdp_pointer.c               \
-	wav_encoder.c
+    audio.c                     \
+    client.c                    \
+    default_pointer.c           \
+    guac_handlers.c             \
+    rdp_bitmap.c                \
+    rdp_cliprdr.c               \
+    rdp_gdi.c                   \
+    rdp_glyph.c                 \
+    rdp_keymap_base.c           \
+    rdp_keymap.c                \
+    rdp_keymap_de_de.c          \
+    rdp_keymap_failsafe.c       \
+    rdp_keymap_fr_fr.c          \
+    rdp_keymap_en_us.c          \
+    rdp_pointer.c               \
+    wav_encoder.c
 
 guac_rdpsnd_la_SOURCES =          \
-	guac_rdpsnd/rdpsnd_messages.c \
-	guac_rdpsnd/rdpsnd_service.c  \
-	audio.c
-
-guac_rdpdr_la_SOURCES =         \
-	guac_rdpdr/rdpdr_messages.c \
-	guac_rdpdr/rdpdr_printer.c  \
-	guac_rdpdr/rdpdr_service.c
+    guac_rdpsnd/rdpsnd_messages.c \
+    guac_rdpsnd/rdpsnd_service.c  \
+    audio.c
 
 noinst_HEADERS =                     \
-	guac_rdpdr/rdpdr_messages.h      \
-	guac_rdpdr/rdpdr_printer.h       \
-	guac_rdpdr/rdpdr_service.h       \
-	guac_rdpsnd/rdpsnd_messages.h    \
-	guac_rdpsnd/rdpsnd_service.h     \
-	audio.h                          \
-	client.h                         \
-	config.h                         \
-	default_pointer.h                \
-	guac_handlers.h                  \
-	rdp_bitmap.h                     \
-	rdp_cliprdr.h                    \
-	rdp_gdi.h                        \
-	rdp_glyph.h                      \
-	rdp_keymap.h                     \
-	rdp_pointer.h                    \
-	wav_encoder.h
+    guac_rdpsnd/rdpsnd_messages.h    \
+    guac_rdpsnd/rdpsnd_service.h     \
+    audio.h                          \
+    client.h                         \
+    config.h                         \
+    default_pointer.h                \
+    guac_handlers.h                  \
+    rdp_bitmap.h                     \
+    rdp_cliprdr.h                    \
+    rdp_gdi.h                        \
+    rdp_glyph.h                      \
+    rdp_keymap.h                     \
+    rdp_pointer.h                    \
+    wav_encoder.h
 
 # Compile OGG support if available
 if ENABLE_OGG
@@ -95,13 +87,32 @@ if ENABLE_OGG
     noinst_HEADERS += ogg_encoder.h
 endif
 
+# Compile guac_rdpdr if PDF support available
+if ENABLE_GS
+
+    freerdp_LTLIBRARIES += guac_rdpdr.la
+
+    guac_rdpdr_la_SOURCES =         \
+        guac_rdpdr/rdpdr_messages.c \
+        guac_rdpdr/rdpdr_printer.c  \
+        guac_rdpdr/rdpdr_service.c
+
+
+    noinst_HEADERS +=                    \
+        guac_rdpdr/rdpdr_messages.h      \
+        guac_rdpdr/rdpdr_printer.h       \
+        guac_rdpdr/rdpdr_service.h
+
+    guac_rdpdr_la_LDFLAGS = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
+    guac_rdpdr_la_LIBADD = @LIBGUAC_LTLIB@
+
+endif
+
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
 guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
-guac_rdpdr_la_LDFLAGS = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 
 libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@
 guac_rdpsnd_la_LIBADD = @LIBGUAC_LTLIB@
-guac_rdpdr_la_LIBADD = @LIBGUAC_LTLIB@
 
 freerdpdir = ${libdir}/freerdp
 
