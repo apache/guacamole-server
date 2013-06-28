@@ -104,18 +104,6 @@ PKG_CHECK_MODULES([PANGO], [pango],, [have_pango=no]);
 PKG_CHECK_MODULES([PANGOCAIRO], [pangocairo],, [have_pango=no]);
 
 #
-# GhostScript
-#
-
-have_libgs=yes
-GS_LIBS=
-
-AC_CHECK_LIB([gs], [gsapi_new_instance], [GS_LIBS="$GS_LIBS -lgs"], [have_libgs=no])
-AM_CONDITIONAL([ENABLE_GS], [test "x${have_libgs}" = "xyes"])
-
-AC_SUBST(GS_LIBS)
-
-#
 # libVNCServer
 #
 
@@ -177,7 +165,6 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
      freerdp ............. ${have_freerdp}
      pango ............... ${have_pango}
-     libgs ............... ${have_libgs}
      libssh .............. ${have_libssh}
      libVNCServer ........ ${have_libvncserver}
      libvorbisenc ........ ${have_vorbisenc}
