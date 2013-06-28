@@ -157,7 +157,7 @@ guac_socket* guac_socket_alloc() {
 
 
     /* Default to unsafe threading */
-    socket->__threadsafe_instructions = false;
+    socket->__threadsafe_instructions = 0;
     pthread_mutex_init(&(socket->__instruction_write_lock), NULL);
     
     /* No handlers yet */
@@ -171,7 +171,7 @@ guac_socket* guac_socket_alloc() {
 }
 
 void guac_socket_require_threadsafe(guac_socket* socket) {
-    socket->__threadsafe_instructions = true;
+    socket->__threadsafe_instructions = 1;
 }
 
 void guac_socket_instruction_begin(guac_socket* socket) {

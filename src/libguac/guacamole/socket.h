@@ -39,7 +39,6 @@
 #define _GUAC_SOCKET_H
 
 #include <pthread.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -193,7 +192,7 @@ struct guac_socket {
      * Whether instructions should be guaranteed atomic across threads using
      * locks. By default, thread safety is disabled on sockets.
      */
-    bool __threadsafe_instructions;
+    int __threadsafe_instructions;
 
     /**
      * Lock which is acquired when an instruction is being written, and
