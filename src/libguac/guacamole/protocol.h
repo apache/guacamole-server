@@ -304,6 +304,10 @@ int guac_protocol_send_audio(guac_socket* socket, int channel,
  * except via guac_protocol_send_audio_data() until the audio instruction
  * is completed with guac_protocol_send_audio_end().
  *
+ * Note that if you send this instruction over a threadsafe socket, you
+ * MUST also call guac_protocol_send_audio_end() or the socket will be
+ * left in an unsafe state.
+ *
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
@@ -381,9 +385,7 @@ int guac_protocol_send_file(guac_socket* socket, int index, const char* mimetype
 int guac_protocol_send_blob(guac_socket* socket, int index, void* data, int count);
 
 /**
- * Completes the file instruction which was started with
- * guac_protocol_send_file_header(), and whose data has been written with
- * guac_protocol_send_file_data().
+ * Sends an end instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
@@ -424,6 +426,10 @@ int guac_protocol_send_video(guac_socket* socket, const guac_layer* layer,
  * No further instruction data may be sent along the givven guac_socket
  * except via guac_protocol_send_video_data() until the video instruction
  * is completed with guac_protocol_send_video_end().
+ *
+ * Note that if you send this instruction over a threadsafe socket, you
+ * MUST also call guac_protocol_send_video_end() or the socket will be
+ * left in an unsafe state.
  *
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
