@@ -38,6 +38,8 @@
 #ifndef _GUAC_SOCKET_H
 #define _GUAC_SOCKET_H
 
+#include <pthread.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -187,6 +189,18 @@ struct guac_socket {
      */
     char* __instructionbuf_elementv[64];
 
+    /**
+     * Whether instructions should be guaranteed atomic across threads using
+     * locks. By default, thread safety is disabled on sockets.
+     */
+    bool __threadsafe_instructions;
+
+    /**
+     * Lock which is acquired when an instruction is being written, and
+     * released when the instruction is finished being written.
+     */
+    pthread_mutex_t __instruction_write_lock;
+
 };
 
 /**
@@ -204,6 +218,35 @@ guac_socket* guac_socket_alloc();
  * @param socket The guac_socket to free.
  */
 void guac_socket_free(guac_socket* socket);
+
+/**
+ * Declares that the given socket must behave in a threadsafe way. Calling
+ * this function on a socket guarantees that the socket will send instructions
+ * atomically. Without automatic threadsafe sockets, multiple threads writing
+ * to the same socket must ensure that instructions will not potentially
+ * overlap.
+ *
+ * @param socket The guac_socket to declare as threadsafe.
+ */
+void guac_socket_require_threadsafe(guac_socket* socket);
+
+/**
+ * Marks the beginning of a Guacamole protocol instruction. If threadsafety
+ * is enabled on the socket, other instructions will be blocked from sending
+ * until this instruction is complete.
+ *
+ * @param socket The guac_socket beginning an instruction.
+ */
+void guac_socket_instruction_begin(guac_socket* socket);
+
+/**
+ * Marks the end of a Guacamole protocol instruction. If threadsafety
+ * is enabled on the socket, other instructions will be allowed to send.
+ *
+ * @param socket The guac_socket ending an instruction.
+ */
+void guac_socket_instruction_end(guac_socket* socket);
+
 
 /**
  * Allocates and initializes a new guac_socket object with the given open

@@ -36,13 +36,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <fcntl.h>
+#include <inttypes.h>
+#include <pthread.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
 
 #ifdef __MINGW32__
 #include <winsock2.h>
@@ -154,6 +155,11 @@ guac_socket* guac_socket_alloc() {
     socket->__instructionbuf_parse_start = 0;
     socket->__instructionbuf_elementc = 0;
 
+
+    /* Default to unsafe threading */
+    socket->__threadsafe_instructions = false;
+    pthread_mutex_init(&(socket->__instruction_write_lock), NULL);
+    
     /* No handlers yet */
     socket->read_handler   = NULL;
     socket->write_handler  = NULL;
@@ -164,6 +170,26 @@ guac_socket* guac_socket_alloc() {
 
 }
 
+void guac_socket_require_threadsafe(guac_socket* socket) {
+    socket->__threadsafe_instructions = true;
+}
+
+void guac_socket_instruction_begin(guac_socket* socket) {
+
+    /* Lock writes if threadsafety enabled */
+    if (socket->__threadsafe_instructions)
+        pthread_mutex_lock(&(socket->__instruction_write_lock));
+
+}
+
+void guac_socket_instruction_end(guac_socket* socket) {
+
+    /* Lock writes if threadsafety enabled */
+    if (socket->__threadsafe_instructions)
+        pthread_mutex_unlock(&(socket->__instruction_write_lock));
+
+}
+
 void guac_socket_free(guac_socket* socket) {
 
     /* Call free handler if defined */
@@ -171,6 +197,7 @@ void guac_socket_free(guac_socket* socket) {
         socket->free_handler(socket);
 
     guac_socket_flush(socket);
+    pthread_mutex_destroy(&(socket->__instruction_write_lock));
     free(socket->__instructionbuf);
     free(socket);
 }
