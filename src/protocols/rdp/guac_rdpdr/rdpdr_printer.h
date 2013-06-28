@@ -54,5 +54,12 @@ void guac_rdpdr_process_print_job_create(guac_rdpdrPlugin* rdpdr, STREAM* input_
 void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id);
 void guac_rdpdr_process_print_job_close(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id);
 
+/**
+ * The command to run when filtering postscript to produce PDF. This must be
+ * a NULL-terminated array of arguments, where the first argument is the name
+ * of the file to run.
+ */
+extern char* const guac_rdpdr_pdf_filter_command[];
+
 #endif
 

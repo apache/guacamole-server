@@ -38,6 +38,8 @@
 #ifndef __GUAC_RDPDR_SERVICE_H
 #define __GUAC_RDPDR_SERVICE_H
 
+#include <pthread.h>
+
 #include <guacamole/client.h>
 
 /**
@@ -57,6 +59,23 @@ typedef struct guac_rdpdrPlugin {
      * Reference to the client owning this instance of the RDPDR plugin.
      */
     guac_client* client;
+
+    /**
+     * File descriptor that should be written to when sending documents to the
+     * printer.
+     */
+    int printer_input;
+
+    /**
+     * File descriptor that should be read from when receiving output from the
+     * printer.
+     */
+    int printer_output;
+
+    /**
+     * Thread which transfers data from the printer to the Guacamole client.
+     */
+    pthread_t printer_output_thread;
 
     /**
      * The number of bytes received in the current print job.
