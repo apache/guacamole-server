@@ -92,7 +92,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "initial-program",
     "color-depth",
     "disable-audio",
-    "disable-printing",
+    "enable-printing",
+    "print-format",
     "console",
     "console-audio",
     "server-layout",
@@ -111,7 +112,8 @@ enum RDP_ARGS_IDX {
     IDX_INITIAL_PROGRAM,
     IDX_COLOR_DEPTH,
     IDX_DISABLE_AUDIO,
-    IDX_DISABLE_PRINTING,
+    IDX_ENABLE_PRINTING,
+    IDX_PRINT_FORMAT,
     IDX_CONSOLE,
     IDX_CONSOLE_AUDIO,
     IDX_SERVER_LAYOUT,
@@ -481,7 +483,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Printing enable/disable */
     guac_client_data->printing_enabled =
-        (strcmp(argv[IDX_DISABLE_PRINTING], "true") != 0);
+        (strcmp(argv[IDX_ENABLE_PRINTING], "true") == 0);
 
     /* Order support */
     bitmap_cache = settings->bitmap_cache;
