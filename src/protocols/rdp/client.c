@@ -522,14 +522,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->clipboard = NULL;
     guac_client_data->audio = NULL;
 
+    /* Main socket needs to be threadsafe */
+    guac_socket_require_threadsafe(client->socket);
+
     /* Recursive attribute for locks */
     pthread_mutexattr_init(&(guac_client_data->attributes));
     pthread_mutexattr_settype(&(guac_client_data->attributes),
             PTHREAD_MUTEX_RECURSIVE);
-
-    /* Init update lock */
-    pthread_mutex_init(&(guac_client_data->update_lock),
-           &(guac_client_data->attributes));
 
     /* Init RDP lock */
     pthread_mutex_init(&(guac_client_data->rdp_lock),

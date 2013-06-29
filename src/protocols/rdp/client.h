@@ -187,11 +187,6 @@ typedef struct rdp_guac_client_data {
     audio_stream* audio;
 
     /**
-     * Lock which is locked and unlocked for each update.
-     */
-    pthread_mutex_t update_lock;
-
-    /**
      * Lock which is locked and unlocked for each RDP message.
      */
     pthread_mutex_t rdp_lock;

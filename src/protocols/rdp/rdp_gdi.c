@@ -113,10 +113,8 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
     int w = dstblt->nWidth;
     int h = dstblt->nHeight;
 
-    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
-    pthread_mutex_lock(&(data->update_lock));
-
     /* Clip operation to bounds */
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
     guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
     switch (dstblt->bRop) {
@@ -163,8 +161,6 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
                     "guac_rdp_gdi_dstblt(rop3=0x%x)", dstblt->bRop);
 
     }
-
-    pthread_mutex_unlock(&(data->update_lock));
 
 }
 
@@ -291,10 +287,8 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
     int x_src = scrblt->nXSrc;
     int y_src = scrblt->nYSrc;
 
-    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
-    pthread_mutex_lock(&(data->update_lock));
-
     /* Clip operation to bounds */
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
     guac_rdp_clip_rect(data, &x, &y, &w, &h);
 
     /* Update source coordinates */
@@ -305,8 +299,6 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
     guac_protocol_send_copy(client->socket,
             GUAC_DEFAULT_LAYER, x_src, y_src, w, h,
             GUAC_COMP_OVER, current_layer, x, y);
-
-    pthread_mutex_unlock(&(data->update_lock));
 
 }
 
@@ -332,8 +324,6 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
         guac_client_log_info(client, "NULL bitmap found in memblt instruction.");
         return;
     }
-
-    pthread_mutex_lock(&(data->update_lock));
 
     /* Clip operation to bounds */
     guac_rdp_clip_rect(data, &x, &y, &w, &h);
@@ -422,8 +412,6 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
     }
 
-    pthread_mutex_unlock(&(data->update_lock));
-
 }
 
 void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect) {
@@ -436,7 +424,6 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
 
     rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
-    pthread_mutex_lock(&(data->update_lock));
 
     int x = opaque_rect->nLeftRect;
     int y = opaque_rect->nTopRect;
@@ -454,8 +441,6 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
             (color >> 8 ) & 0xFF,
             (color      ) & 0xFF,
             255);
-
-    pthread_mutex_unlock(&(data->update_lock));
 
 }
 

@@ -206,11 +206,8 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 
     /* Flush any audio */
-    if (guac_client_data->audio != NULL) {
-        pthread_mutex_lock(&(guac_client_data->update_lock));
+    if (guac_client_data->audio != NULL)
         guac_socket_flush(guac_client_data->audio->stream->socket);
-        pthread_mutex_unlock(&(guac_client_data->update_lock));
-    }
 
     /* Success */
     return 0;

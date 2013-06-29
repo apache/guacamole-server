@@ -31,18 +31,14 @@ char* const guac_rdpdr_pdf_filter_command[] = {
 static void* guac_rdpdr_print_filter_output_thread(void* data) {
 
     guac_rdpdrPlugin* rdpdr = (guac_rdpdrPlugin*) data;
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) rdpdr->client->data;
 
     int length;
     char buffer[8192];
 
     /* Write all output as blobs */
-    while ((length = read(rdpdr->printer_output, buffer, sizeof(buffer))) > 0) {
-        pthread_mutex_lock(&(client_data->update_lock));
+    while ((length = read(rdpdr->printer_output, buffer, sizeof(buffer))) > 0)
         guac_protocol_send_blob(rdpdr->client->socket,
                 GUAC_RDPDR_PRINTER_BLOB, buffer, length);
-        pthread_mutex_unlock(&(client_data->update_lock));
-    }
 
     /* Log any error */
     if (length < 0)
@@ -158,16 +154,12 @@ void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, STREAM* input_s
     int status=0, length;
     unsigned char* buffer;
 
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) rdpdr->client->data;
     STREAM* output_stream = stream_new(24);
 
     stream_read_uint32(input_stream, length);
     stream_seek(input_stream, 8);  /* Offset */
     stream_seek(input_stream, 20); /* Padding */
     buffer = stream_get_tail(input_stream);
-
-    /* Send data */
-    pthread_mutex_lock(&(client_data->update_lock));
 
     /* Create print job, if not yet created */
     if (rdpdr->bytes_received == 0) {
@@ -224,8 +216,6 @@ void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, STREAM* input_s
 
     rdpdr->bytes_received += length;
 
-    pthread_mutex_unlock(&(client_data->update_lock));
-
     /* If not yet failed, write received data */
     if (status == 0) {
 
@@ -256,7 +246,6 @@ void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, STREAM* input_s
 
 void guac_rdpdr_process_print_job_close(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id) {
 
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) rdpdr->client->data;
     STREAM* output_stream = stream_new(24);
 
     /* Close input and wait for output thread to finish */
@@ -268,9 +257,7 @@ void guac_rdpdr_process_print_job_close(guac_rdpdrPlugin* rdpdr, STREAM* input_s
 
     /* Close file */
     guac_client_log_info(rdpdr->client, "Print job closed");
-    pthread_mutex_lock(&(client_data->update_lock));
     guac_protocol_send_end(rdpdr->client->socket, GUAC_RDPDR_PRINTER_BLOB);
-    pthread_mutex_unlock(&(client_data->update_lock));
 
     /* Write header */
     stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
