@@ -48,6 +48,11 @@
  * @file socket.h
  */
 
+/**
+ * The number of bytes to buffer within each socket before flushing.
+ */
+#define GUAC_SOCKET_OUTPUT_BUFFER_SIZE 8192
+
 typedef struct guac_socket guac_socket;
 
 /**
@@ -153,7 +158,7 @@ struct guac_socket {
      * The main write buffer. Bytes written go here before being flushed
      * to the open file descriptor.
      */
-    char __out_buf[8192];
+    char __out_buf[GUAC_SOCKET_OUTPUT_BUFFER_SIZE];
 
     /**
      * The current location of parsing within the instruction buffer.

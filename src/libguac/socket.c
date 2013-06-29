@@ -214,19 +214,17 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str) {
 
     char* __out_buf = socket->__out_buf;
 
-    int retval;
-
     for (; *str != '\0'; str++) {
 
         __out_buf[socket->__written++] = *str; 
 
-        /* Flush when necessary, return on error */
-        if (socket->__written > 8188 /* sizeof(__out_buf) - 4 */) {
+        /* Flush when necessary, return on error. Note that we must flush within 4 bytes of boundary because
+         * __guac_socket_write_base64_triplet ALWAYS writes four bytes, and would otherwise potentially overflow
+         * the buffer. */
+        if (socket->__written >= GUAC_SOCKET_OUTPUT_BUFFER_SIZE - 4) {
 
-            retval = __guac_socket_write(socket, __out_buf, socket->__written);
-
-            if (retval < 0)
-                return retval;
+            if (guac_socket_write(socket, __out_buf, socket->__written))
+                return 1;
 
             socket->__written = 0;
 
@@ -241,8 +239,6 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str) {
 ssize_t __guac_socket_write_base64_triplet(guac_socket* socket, int a, int b, int c) {
 
     char* __out_buf = socket->__out_buf;
-
-    int retval;
 
     /* Byte 1 */
     __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[(a & 0xFC) >> 2]; /* [AAAAAA]AABBBB BBBBCC CCCCCC */
@@ -268,10 +264,10 @@ ssize_t __guac_socket_write_base64_triplet(guac_socket* socket, int a, int b, in
     /* At this point, 4 bytes have been socket->__written */
 
     /* Flush when necessary, return on error */
-    if (socket->__written > 8188 /* sizeof(__out_buf) - 4 */) {
-        retval = __guac_socket_write(socket, __out_buf, socket->__written);
-        if (retval < 0)
-            return retval;
+    if (socket->__written >= GUAC_SOCKET_OUTPUT_BUFFER_SIZE - 4) {
+
+        if (guac_socket_write(socket, __out_buf, socket->__written))
+            return -1;
 
         socket->__written = 0;
     }
@@ -327,14 +323,11 @@ ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t co
 
 ssize_t guac_socket_flush(guac_socket* socket) {
 
-    int retval;
-
     /* Flush remaining bytes in buffer */
     if (socket->__written > 0) {
-        retval = __guac_socket_write(socket, 
-                socket->__out_buf, socket->__written);
-        if (retval < 0)
-            return retval;
+
+        if (guac_socket_write(socket, socket->__out_buf, socket->__written))
+            return 1;
 
         socket->__written = 0;
     }
