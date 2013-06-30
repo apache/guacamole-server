@@ -205,6 +205,11 @@ struct guac_socket {
      */
     pthread_mutex_t __instruction_write_lock;
 
+    /**
+     * Lock which is acquired when the buffer is being modified or flushed.
+     */
+    pthread_mutex_t __buffer_lock;
+
 };
 
 /**
@@ -251,6 +256,23 @@ void guac_socket_instruction_begin(guac_socket* socket);
  */
 void guac_socket_instruction_end(guac_socket* socket);
 
+/**
+ * Marks the beginning of a socket's buffer modification. If threadsafety is
+ * enabled on the socket, other functions which modify the buffer will be
+ * blocked until this modification is complete.
+ *
+ * @param socket The guac_socket whose buffer is being updated.
+ */
+void guac_socket_update_buffer_begin(guac_socket* socket);
+
+/**
+ * Marks the end of a socket's buffer modification. If threadsafety is enabled
+ * on the socket, other functions which modify the buffer will now be allowed
+ * to continue.
+ *
+ * @param socket The guac_socket whose buffer is done being updated.
+ */
+void guac_socket_update_buffer_end(guac_socket* socket);
 
 /**
  * Allocates and initializes a new guac_socket object with the given open
