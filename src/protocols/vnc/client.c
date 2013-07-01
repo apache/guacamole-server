@@ -57,6 +57,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "password",
     "swap-red-blue",
     "color-depth",
+    "dest-host",
+    "dest-port",
     NULL
 };
 
@@ -76,7 +78,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /*** PARSE ARGUMENTS ***/
 
-    if (argc < 7) {
+    if (argc < 9) {
         guac_protocol_send_error(client->socket, "Wrong argument count received.");
         guac_socket_flush(client->socket);
         return 1;
@@ -130,6 +132,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set hostname and port */
     rfb_client->serverHost = strdup(argv[0]);
     rfb_client->serverPort = atoi(argv[1]);
+
+    /* Set repeater parameters if specified */
+    if(argv[7][0] != '\0')
+        rfb_client->destHost = strdup(argv[7]);
+
+    if(argv[8][0] != '\0')
+        rfb_client->destPort = atoi(argv[8]);
 
     /* Set encodings if specified */
     if (argv[3][0] != '\0')
