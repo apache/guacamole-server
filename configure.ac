@@ -93,6 +93,17 @@ AC_CHECK_HEADER(vorbis/vorbisenc.h,, [have_vorbisenc=no])
 AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbisenc"], [have_vorbisenc=no])
 AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbisenc}" = "xyes"])
 
+if test "x${have_vorbisenc}" = "xno"
+then
+    AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libvorbisenc.
+   Sound will not be encoded with Ogg Vorbis.
+  --------------------------------------------])
+else
+    AC_DEFINE([ENABLE_OGG])
+fi
+
 AC_SUBST(VORBIS_LIBS)
 
 #
