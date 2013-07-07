@@ -66,6 +66,9 @@ audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
     audio->encoder = encoder;
     audio->stream = guac_client_alloc_stream(client);
 
+    /* Ensure socket within new stream is threadsafe */
+    guac_socket_require_threadsafe(audio->stream->socket);
+
     return audio;
 }
 
