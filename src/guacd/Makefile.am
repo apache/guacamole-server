@@ -35,12 +35,10 @@
 # ***** END LICENSE BLOCK *****
 
 AUTOMAKE_OPTIONS = foreign 
-initdir = @init_dir@
 
 AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@
 
 sbin_PROGRAMS = guacd
-init_SCRIPTS = init.d/guacd
 man_MANS = man/guacd.8
 
 noinst_HEADERS = client.h log.h
@@ -51,7 +49,13 @@ guacd_LDFLAGS  = @PTHREAD_LIBS@
 EXTRA_DIST = init.d/guacd.in man/guacd.8
 CLEANFILES = $(init_SCRIPTS)
 
+# Init script
+if ENABLE_INIT
+initdir = @init_dir@
+init_SCRIPTS = init.d/guacd
+
 init.d/guacd: init.d/guacd.in
 	sed -e 's,[@]sbindir[@],$(sbindir),g' < init.d/guacd.in > init.d/guacd
 	chmod +x init.d/guacd
+endif
 

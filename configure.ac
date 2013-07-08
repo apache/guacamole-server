@@ -82,6 +82,14 @@ AC_TYPE_SSIZE_T
 AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/src/libguac/libguac.la')
 AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/src/libguac')
 
+# Options
+AC_ARG_WITH(init_dir,
+            [AS_HELP_STRING([--with-init-dir=<path>],
+                            [install init scripts to the given directory])
+            ],init_dir=$withval)
+AM_CONDITIONAL([ENABLE_INIT], [test "x${init_dir}" != "x"])
+AC_SUBST(init_dir)
+
 #
 # Ogg Vorbis
 #
@@ -163,9 +171,11 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
 
-AM_COND_IF([ENABLE_RDP], [build_rdp=yes], [build_rdp=no])
-AM_COND_IF([ENABLE_SSH], [build_ssh=yes], [build_ssh=no])
-AM_COND_IF([ENABLE_VNC], [build_vnc=yes], [build_vnc=no])
+AM_COND_IF([ENABLE_RDP],  [build_rdp=yes], [build_rdp=no])
+AM_COND_IF([ENABLE_SSH],  [build_ssh=yes], [build_ssh=no])
+AM_COND_IF([ENABLE_VNC],  [build_vnc=yes], [build_vnc=no])
+
+AM_COND_IF([ENABLE_INIT], [build_init="${init_dir}"], [build_init=no])
 
 echo "
 ------------------------------------------------
@@ -185,6 +195,8 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       RDP ....... ${build_rdp}
       SSH ....... ${build_ssh}
       VNC ....... ${build_vnc}
+
+   Init scripts: ${build_init}
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
