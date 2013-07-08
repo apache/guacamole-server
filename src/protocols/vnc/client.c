@@ -57,10 +57,29 @@ const char* GUAC_CLIENT_ARGS[] = {
     "password",
     "swap-red-blue",
     "color-depth",
+#ifdef ENABLE_VNC_REPEATER
     "dest-host",
     "dest-port",
+#endif
     NULL
 };
+
+enum VNC_ARGS_IDX {
+
+    IDX_HOSTNAME,
+    IDX_PORT,
+    IDX_READ_ONLY,
+    IDX_ENCODINGS,
+    IDX_PASSWORD,
+    IDX_SWAP_RED_BLUE,
+    IDX_COLOR_DEPTH,
+#ifdef ENABLE_VNC_REPEATER
+    IDX_DEST_HOST,
+    IDX_DEST_PORT,
+#endif
+    VNC_ARGS_COUNT
+};
+
 
 char* __GUAC_CLIENT = "GUAC_CLIENT";
 
@@ -78,7 +97,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /*** PARSE ARGUMENTS ***/
 
-    if (argc < 9) {
+    if (argc != VNC_ARGS_COUNT) {
         guac_protocol_send_error(client->socket, "Wrong argument count received.");
         guac_socket_flush(client->socket);
         return 1;
@@ -89,13 +108,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->data = guac_client_data;
 
     /* Set read-only flag */
-    read_only = (strcmp(argv[2], "true") == 0);
+    read_only = (strcmp(argv[IDX_READ_ONLY], "true") == 0);
 
     /* Set red/blue swap flag */
-    guac_client_data->swap_red_blue = (strcmp(argv[5], "true") == 0);
+    guac_client_data->swap_red_blue = (strcmp(argv[IDX_SWAP_RED_BLUE], "true") == 0);
 
     /* Freed after use by libvncclient */
-    guac_client_data->password = strdup(argv[4]);
+    guac_client_data->password = strdup(argv[IDX_PASSWORD]);
 
     /*** INIT RFB CLIENT ***/
 
@@ -133,16 +152,19 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rfb_client->serverHost = strdup(argv[0]);
     rfb_client->serverPort = atoi(argv[1]);
 
+#ifdef ENABLE_VNC_REPEATER
     /* Set repeater parameters if specified */
-    if(argv[7][0] != '\0')
-        rfb_client->destHost = strdup(argv[7]);
+    if(argv[IDX_DEST_HOST][0] != '\0')
+        rfb_client->destHost = strdup(argv[IDX_DEST_HOST]);
 
-    if(argv[8][0] != '\0')
-        rfb_client->destPort = atoi(argv[8]);
+    if(argv[IDX_DEST_PORT][0] != '\0')
+        rfb_client->destPort = atoi(argv[IDX_DEST_PORT]);
+#endif
 
     /* Set encodings if specified */
-    if (argv[3][0] != '\0')
-        rfb_client->appData.encodingsString = guac_client_data->encodings = strdup(argv[3]);
+    if (argv[IDX_ENCODINGS][0] != '\0')
+        rfb_client->appData.encodingsString = guac_client_data->encodings
+            = strdup(argv[IDX_ENCODINGS]);
     else
         guac_client_data->encodings = NULL;
 

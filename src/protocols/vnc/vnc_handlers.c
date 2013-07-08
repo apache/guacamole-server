@@ -51,6 +51,11 @@
 #include "client.h"
 #include "convert.h"
 
+/* Define cairo_format_stride_for_width() if missing */
+#ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH
+#define cairo_format_stride_for_width(format, width) (width*4)
+#endif
+
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);

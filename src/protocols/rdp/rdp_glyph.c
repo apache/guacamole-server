@@ -45,6 +45,11 @@
 #include "client.h"
 #include "rdp_glyph.h"
 
+/* Define cairo_format_stride_for_width() if missing */
+#ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH
+#define cairo_format_stride_for_width(format, width) (width*4)
+#endif
+
 void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph) {
 
     int x, y, i;

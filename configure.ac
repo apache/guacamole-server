@@ -72,7 +72,8 @@ AC_SUBST(CUNIT_LIBS)
 # Library functions
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup png_get_io_ptr nanosleep])
+AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup png_get_io_ptr \
+                cairo_format_stride_for_width nanosleep])
 
 # Typedefs
 AC_TYPE_SIZE_T
@@ -133,6 +134,31 @@ AC_CHECK_LIB([vncclient], [rfbInitClient], [VNC_LIBS="$VNC_LIBS -lvncclient"], [
 AM_CONDITIONAL([ENABLE_VNC], [test "x${have_libvncserver}" = "xyes"])
 
 AC_SUBST(VNC_LIBS)
+
+#
+# Repeater support within libVNCServer
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_repeater=yes
+    AC_CHECK_MEMBERS([rfbClient.destHost, rfbClient.destPort],
+                     [], [have_vnc_repeater=no],
+                     [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_repeater}" = "xno"
+    then
+        AC_MSG_WARN([
+      --------------------------------------------
+       No repeater support found in libvncclient.
+       Support for VNC repeaters will not be built.
+      --------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_VNC_REPEATER])
+    fi
+
+fi
 
 #
 # FreeRDP
