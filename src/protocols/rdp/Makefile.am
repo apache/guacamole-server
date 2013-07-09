@@ -95,7 +95,7 @@ if ENABLE_OGG
     noinst_HEADERS += ogg_encoder.h
 endif
 
-libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
+libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@ @CAIRO_LIBS@
 guac_rdpsnd_la_LDFLAGS = -module -avoid-version -shared @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
 guac_rdpdr_la_LDFLAGS = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 

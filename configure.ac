@@ -56,16 +56,31 @@ AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslo
 AC_DEFINE([_POSIX_C_SOURCE], [199309L], [Uses POSIX APIs])
 AC_DEFINE([_BSD_SOURCE],     [],        [Uses BSD APIs])
 
-# Libraries
-AC_CHECK_LIB([dl],      [dlopen],,        AC_MSG_ERROR("libdl is required for loading client plugins"))
-AC_CHECK_LIB([png],     [png_write_png],, AC_MSG_ERROR("libpng is required for writing png messages"))
-AC_CHECK_LIB([cairo],   [cairo_create],,  AC_MSG_ERROR("cairo is required for drawing instructions"))
-AC_CHECK_LIB([pthread], [pthread_create],
-             [PTHREAD_LIBS=-lpthread
+# libdl
+AC_CHECK_LIB([dl], [dlopen], [DL_LIBS=-lpng],
+             AC_MSG_ERROR("libdl is required for loading client plugins"))
+
+# libpng
+AC_CHECK_LIB([png], [png_write_png], [PNG_LIBS=-lpng],
+             AC_MSG_ERROR("libpng is required for writing png messages"))
+
+# Cairo
+AC_CHECK_LIB([cairo], [cairo_create], [CAIRO_LIBS=-lcairo],
+             AC_MSG_ERROR("Cairo is required for drawing instructions"))
+
+# libpthread
+AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
               AC_DEFINE([HAVE_LIBPTHREAD])])
-AC_CHECK_LIB([cunit],   [CU_run_test],    [CUNIT_LIBS=-lcunit])
+
+# cunit
+AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
+
+# WinSock
 AC_CHECK_LIB([wsock32], [main])
 
+AC_SUBST(DL_LIBS)
+AC_SUBST(PNG_LIBS)
+AC_SUBST(CAIRO_LIBS)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(CUNIT_LIBS)
 

@@ -71,6 +71,6 @@ noinst_HEADERS =                \
     types.h
 
 libguac_client_ssh_la_CFLAGS = -Werror -Wall -pedantic -Iinclude @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ @LIBGUAC_INCLUDE@
-libguac_client_ssh_la_LIBADD = @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @LIBGUAC_LTLIB@
-libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0 @SSH_LIBS@ @PTHREAD_LIBS@
+libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@
+libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0 @SSH_LIBS@ @PTHREAD_LIBS@ @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @CAIRO_LIBS@
 

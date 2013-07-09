@@ -74,5 +74,5 @@ libguac_la_SOURCES =  \
     unicode.c
 
 lib_LTLIBRARIES = libguac.la
-libguac_la_LDFLAGS = -version-info 5:0:0 @PTHREAD_LIBS@
+libguac_la_LDFLAGS = -version-info 5:0:0 @PTHREAD_LIBS@ @CAIRO_LIBS@ @PNG_LIBS@
 
