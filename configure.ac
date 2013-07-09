@@ -57,7 +57,7 @@ AC_DEFINE([_POSIX_C_SOURCE], [199309L], [Uses POSIX APIs])
 AC_DEFINE([_BSD_SOURCE],     [],        [Uses BSD APIs])
 
 # libdl
-AC_CHECK_LIB([dl], [dlopen], [DL_LIBS=-lpng],
+AC_CHECK_LIB([dl], [dlopen], [DL_LIBS=-ldl],
              AC_MSG_ERROR("libdl is required for loading client plugins"))
 
 # libpng
