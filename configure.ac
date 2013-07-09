@@ -110,18 +110,19 @@ AC_SUBST(init_dir)
 # Ogg Vorbis
 #
 
-have_vorbisenc=yes
+have_vorbis=yes
 VORBIS_LIBS=
 
-AC_CHECK_HEADER(vorbis/vorbisenc.h,, [have_vorbisenc=no])
-AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbisenc"], [have_vorbisenc=no])
-AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbisenc}" = "xyes"])
+AC_CHECK_HEADER(vorbis/vorbisenc.h,, [have_vorbis=no])
+AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbisenc"], [have_vorbis=no])
+AC_CHECK_LIB([vorbis], [vorbis_block_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbis"], [have_vorbis=no])
+AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbis}" = "xyes"])
 
-if test "x${have_vorbisenc}" = "xno"
+if test "x${have_vorbis}" = "xno"
 then
     AC_MSG_WARN([
   --------------------------------------------
-   Unable to find libvorbisenc.
+   Unable to find libvorbis / libvorbisenc.
    Sound will not be encoded with Ogg Vorbis.
   --------------------------------------------])
 else
@@ -229,7 +230,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      pango ............... ${have_pango}
      libssh .............. ${have_libssh}
      libVNCServer ........ ${have_libvncserver}
-     libvorbisenc ........ ${have_vorbisenc}
+     libvorbis ........... ${have_vorbis}
 
    Protocol support:
 
