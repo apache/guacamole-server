@@ -114,15 +114,16 @@ have_vorbis=yes
 VORBIS_LIBS=
 
 AC_CHECK_HEADER(vorbis/vorbisenc.h,, [have_vorbis=no])
-AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbisenc"], [have_vorbis=no])
+AC_CHECK_LIB([ogg], [ogg_stream_init], [VORBIS_LIBS="$VORBIS_LIBS -logg"], [have_vorbis=no])
 AC_CHECK_LIB([vorbis], [vorbis_block_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbis"], [have_vorbis=no])
+AC_CHECK_LIB([vorbisenc], [vorbis_encode_init], [VORBIS_LIBS="$VORBIS_LIBS -lvorbisenc"], [have_vorbis=no])
 AM_CONDITIONAL([ENABLE_OGG], [test "x${have_vorbis}" = "xyes"])
 
 if test "x${have_vorbis}" = "xno"
 then
     AC_MSG_WARN([
   --------------------------------------------
-   Unable to find libvorbis / libvorbisenc.
+   Unable to find libogg / libvorbis / libvorbisenc.
    Sound will not be encoded with Ogg Vorbis.
   --------------------------------------------])
 else
