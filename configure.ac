@@ -87,8 +87,15 @@ AC_SUBST(CUNIT_LIBS)
 # Library functions
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup png_get_io_ptr \
-                cairo_format_stride_for_width nanosleep])
+AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
+
+AC_CHECK_DECL([png_get_io_ptr],
+	[AC_DEFINE([HAVE_PNG_GET_IO_PTR])],,
+	[#include <png.h>])
+
+AC_CHECK_DECL([cairo_format_stride_for_width],
+	[AC_DEFINE([HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH])],,
+	[#include <cairo/cairo.h>])
 
 # Typedefs
 AC_TYPE_SIZE_T
