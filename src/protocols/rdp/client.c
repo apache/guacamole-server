@@ -197,18 +197,18 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     } /* end if printing enabled */
 
     /* Init color conversion structure */
-    clrconv = xnew(CLRCONV);
+    clrconv = calloc(1, sizeof(CLRCONV));
     clrconv->alpha = 1;
     clrconv->invert = 0;
     clrconv->rgb555 = 0;
-    clrconv->palette = xnew(rdpPalette);
+    clrconv->palette = calloc(1, sizeof(rdpPalette));
     ((rdp_freerdp_context*) context)->clrconv = clrconv;
 
     /* Init FreeRDP cache */
     instance->context->cache = cache_new(instance->settings);
 
     /* Set up bitmap handling */
-    bitmap = xnew(rdpBitmap);
+    bitmap = calloc(1, sizeof(rdpBitmap));
     bitmap->size = sizeof(guac_rdp_bitmap);
     bitmap->New = guac_rdp_bitmap_new;
     bitmap->Free = guac_rdp_bitmap_free;
@@ -219,7 +219,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     free(bitmap);
 
     /* Set up glyph handling */
-    glyph = xnew(rdpGlyph);
+    glyph = calloc(1, sizeof(rdpGlyph));
     glyph->size = sizeof(guac_rdp_glyph);
     glyph->New = guac_rdp_glyph_new;
     glyph->Free = guac_rdp_glyph_free;
@@ -230,7 +230,7 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     free(glyph);
 
     /* Set up pointer handling */
-    pointer = xnew(rdpPointer);
+    pointer = calloc(1, sizeof(rdpPointer));
     pointer->size = sizeof(guac_rdp_pointer);
     pointer->New = guac_rdp_pointer_new;
     pointer->Free = guac_rdp_pointer_free;
