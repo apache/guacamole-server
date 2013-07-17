@@ -92,8 +92,10 @@ void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin) {
     audio_stream* audio = (audio_stream*)
         plugin->channel_entry_points.pExtendedData;
 
+#ifdef RDPSVCPLUGIN_INTERVAL_MS
     /* Update every 10 ms */
     plugin->interval_ms = 10;
+#endif
 
     /* Log that sound has been loaded */
     guac_client_log_info(audio->client, "guacsnd connected.");

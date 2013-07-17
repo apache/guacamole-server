@@ -244,6 +244,10 @@ AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"],
              [have_freerdp=no])
 
+# FreeRDP-specific structure members
+AC_CHECK_MEMBERS([rdpSvcPlugin.interval_ms],
+                 [[#include <freerdp/utils/svc_plugin.h>]])
+
 # FreeRDP-specific headers
 AC_CHECK_HEADERS([freerdp/locale/keyboard.h])
 
