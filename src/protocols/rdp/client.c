@@ -174,9 +174,9 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
 
             /* Load sound plugin */
             if (freerdp_channels_load_plugin(channels, instance->settings,
-                        "guac_rdpsnd", guac_client_data->audio))
+                        "guacsnd", guac_client_data->audio))
                 guac_client_log_error(client,
-                        "Failed to load guac_rdpsnd plugin.");
+                        "Failed to load guacsnd plugin.");
 
         }
         else

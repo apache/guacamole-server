@@ -56,12 +56,31 @@
 #include "rdpsnd_service.h"
 #include "rdpsnd_messages.h"
 
+/**
+ * Entry point for RDPSND virtual channel.
+ */
+int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
 
-/* Define service, associate with "rdpsnd" channel */
+    /* Allocate plugin */
+    guac_rdpsndPlugin* rdpsnd =
+        (guac_rdpsndPlugin*) calloc(1, sizeof(guac_rdpsndPlugin));
 
-DEFINE_SVC_PLUGIN(guac_rdpsnd, "rdpsnd",
-    CHANNEL_OPTION_INITIALIZED | CHANNEL_OPTION_ENCRYPT_RDP)
+    /* Init channel def */
+    strcpy(rdpsnd->plugin.channel_def.name, "guacsnd");
+    rdpsnd->plugin.channel_def.options = 
+        CHANNEL_OPTION_INITIALIZED | CHANNEL_OPTION_ENCRYPT_RDP;
 
+    /* Set callbacks */
+    rdpsnd->plugin.connect_callback   = guac_rdpsnd_process_connect;
+    rdpsnd->plugin.receive_callback   = guac_rdpsnd_process_receive;
+    rdpsnd->plugin.event_callback     = guac_rdpsnd_process_event;
+    rdpsnd->plugin.terminate_callback = guac_rdpsnd_process_terminate;
+
+    /* Finish init */
+    svc_plugin_init((rdpSvcPlugin*) rdpsnd, pEntryPoints);
+    return 1;
+
+}
 
 /* 
  * Service Handlers
@@ -77,7 +96,7 @@ void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin) {
     plugin->interval_ms = 10;
 
     /* Log that sound has been loaded */
-    guac_client_log_info(audio->client, "guac_rdpsnd connected.");
+    guac_client_log_info(audio->client, "guacsnd connected.");
 
 }
 
