@@ -39,6 +39,7 @@
 
 #include <freerdp/types.h>
 
+typedef uint8   BYTE;
 typedef uint8   UINT8;
 typedef uint16  UINT16;
 typedef uint32  UINT32;
