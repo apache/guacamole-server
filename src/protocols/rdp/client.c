@@ -136,6 +136,9 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) client->data;
 
+    /* Init FreeRDP add-in provider */
+    freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
+
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
                 "cliprdr", NULL))
