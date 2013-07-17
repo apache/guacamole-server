@@ -40,6 +40,12 @@
 
 #include <pthread.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/stream.h>
+#else
+#include "compat/winpr-stream.h"
+#endif
+
 #include <guacamole/client.h>
 
 /**
@@ -94,7 +100,7 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin);
  * Handler called when this plugin receives data along its designated channel.
  */
 void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
-        STREAM* input_stream);
+        wStream* input_stream);
 
 /**
  * Handler called when this plugin is being unloaded.
@@ -105,7 +111,7 @@ void guac_rdpdr_process_terminate(rdpSvcPlugin* plugin);
  * Handler called when this plugin receives an event. For the sake of RDPDR,
  * all events will be ignored and simply free'd.
  */
-void guac_rdpdr_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event);
+void guac_rdpdr_process_event(rdpSvcPlugin* plugin, wMessage* event);
 
 #endif
 

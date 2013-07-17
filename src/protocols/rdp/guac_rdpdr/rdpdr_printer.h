@@ -38,7 +38,12 @@
 #ifndef __GUAC_RDPDR_PRINTER_H
 #define __GUAC_RDPDR_PRINTER_H
 
-#include <freerdp/utils/stream.h>
+#ifdef ENABLE_WINPR
+#include <winpr/stream.h>
+#else
+#include "compat/winpr-stream.h"
+#endif
+
 #include <freerdp/utils/svc_plugin.h>
 
 /**
@@ -50,9 +55,9 @@
  * Message handlers.
  */
 
-void guac_rdpdr_process_print_job_create(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id);
-void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id);
-void guac_rdpdr_process_print_job_close(guac_rdpdrPlugin* rdpdr, STREAM* input_stream, int completion_id);
+void guac_rdpdr_process_print_job_create(guac_rdpdrPlugin* rdpdr, wStream* input_stream, int completion_id);
+void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, wStream* input_stream, int completion_id);
+void guac_rdpdr_process_print_job_close(guac_rdpdrPlugin* rdpdr, wStream* input_stream, int completion_id);
 
 /**
  * The command to run when filtering postscript to produce PDF. This must be

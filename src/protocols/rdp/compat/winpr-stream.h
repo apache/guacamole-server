@@ -62,6 +62,7 @@
 #define Stream_SetPosition             stream_set_pos
 #define Stream_SetPointer              stream_set_mark
 #define Stream_Buffer                  stream_get_head
+#define Stream_Pointer                 stream_get_tail
 
 #define wStream                        STREAM
 #define wMessage                       RDP_EVENT

@@ -39,9 +39,15 @@
 #include <string.h>
 
 #include <freerdp/constants.h>
-#include <freerdp/types.h>
-#include <freerdp/utils/stream.h>
 #include <freerdp/utils/svc_plugin.h>
+
+#ifdef ENABLE_WINPR
+#include <winpr/stream.h>
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-stream.h"
+#include "compat/winpr-wtypes.h"
+#endif
 
 #include <guacamole/client.h>
 
@@ -49,11 +55,31 @@
 #include "rdpdr_messages.h"
 
 
-/* Define service, associate with "rdpdr" channel */
+/**
+ * Entry point for RDPDR virtual channel.
+ */
+int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
 
-DEFINE_SVC_PLUGIN(guac_rdpdr, "rdpdr",
-    CHANNEL_OPTION_INITIALIZED | CHANNEL_OPTION_ENCRYPT_RDP | CHANNEL_OPTION_COMPRESS_RDP)
+    /* Allocate plugin */
+    guac_rdpdrPlugin* rdpdr =
+        (guac_rdpdrPlugin*) calloc(1, sizeof(guac_rdpdrPlugin));
 
+    /* Init channel def */
+    strcpy(rdpdr->plugin.channel_def.name, "guacdr");
+    rdpdr->plugin.channel_def.options = 
+        CHANNEL_OPTION_INITIALIZED | CHANNEL_OPTION_ENCRYPT_RDP | CHANNEL_OPTION_COMPRESS_RDP;
+
+    /* Set callbacks */
+    rdpdr->plugin.connect_callback   = guac_rdpdr_process_connect;
+    rdpdr->plugin.receive_callback   = guac_rdpdr_process_receive;
+    rdpdr->plugin.event_callback     = guac_rdpdr_process_event;
+    rdpdr->plugin.terminate_callback = guac_rdpdr_process_terminate;
+
+    /* Finish init */
+    svc_plugin_init((rdpSvcPlugin*) rdpdr, pEntryPoints);
+    return 1;
+
+}
 
 /* 
  * Service Handlers
@@ -72,7 +98,7 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
     rdpdr->client = client;
 
     /* Log that printing, etc. has been loaded */
-    guac_client_log_info(client, "guac_rdpdr connected.");
+    guac_client_log_info(client, "guacdr connected.");
 
 }
 
@@ -80,12 +106,12 @@ void guac_rdpdr_process_terminate(rdpSvcPlugin* plugin) {
     free(plugin);
 }
 
-void guac_rdpdr_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event) {
+void guac_rdpdr_process_event(rdpSvcPlugin* plugin, wMessage* event) {
     freerdp_event_free(event);
 }
 
 void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
-        STREAM* input_stream) {
+        wStream* input_stream) {
 
     guac_rdpdrPlugin* rdpdr = (guac_rdpdrPlugin*) plugin;
 
@@ -93,8 +119,8 @@ void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
     int packet_id;
 
     /* Read header */
-    stream_read_uint16(input_stream, component);
-    stream_read_uint16(input_stream, packet_id);
+    Stream_Read_UINT16(input_stream, component);
+    Stream_Read_UINT16(input_stream, packet_id);
 
     /* Core component */
     if (component == RDPDR_CTYP_CORE) {

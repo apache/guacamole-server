@@ -39,9 +39,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <freerdp/constants.h>
-#include <freerdp/types.h>
-#include <freerdp/utils/stream.h>
 #include <freerdp/utils/svc_plugin.h>
+
+#ifdef ENABLE_WINPR
+#include <winpr/stream.h>
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-stream.h"
+#include "compat/winpr-wtypes.h"
+#endif
 
 #include <guacamole/client.h>
 
@@ -54,16 +60,16 @@
 static void guac_rdpdr_send_client_announce_reply(guac_rdpdrPlugin* rdpdr,
         unsigned int major, unsigned int minor, unsigned int client_id) {
 
-    STREAM* output_stream = stream_new(12);
+    wStream* output_stream = Stream_New(NULL, 12);
 
     /* Write header */
-    stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
-    stream_write_uint16(output_stream, PAKID_CORE_CLIENTID_CONFIRM);
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_CLIENTID_CONFIRM);
 
     /* Write content */
-    stream_write_uint16(output_stream, major);
-    stream_write_uint16(output_stream, minor);
-    stream_write_uint32(output_stream, client_id);
+    Stream_Write_UINT16(output_stream, major);
+    Stream_Write_UINT16(output_stream, minor);
+    Stream_Write_UINT32(output_stream, client_id);
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
 
@@ -72,17 +78,17 @@ static void guac_rdpdr_send_client_announce_reply(guac_rdpdrPlugin* rdpdr,
 static void guac_rdpdr_send_client_name_request(guac_rdpdrPlugin* rdpdr, const char* name) {
 
     int name_bytes = strlen(name) + 1;
-    STREAM* output_stream = stream_new(16 + name_bytes);
+    wStream* output_stream = Stream_New(NULL, 16 + name_bytes);
 
     /* Write header */
-    stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
-    stream_write_uint16(output_stream, PAKID_CORE_CLIENT_NAME);
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_CLIENT_NAME);
 
     /* Write content */
-    stream_write_uint32(output_stream, 0); /* ASCII */
-    stream_write_uint32(output_stream, 0); /* 0 required by RDPDR spec */
-    stream_write_uint32(output_stream, name_bytes);
-    stream_write(output_stream, name, name_bytes);
+    Stream_Write_UINT32(output_stream, 0); /* ASCII */
+    Stream_Write_UINT32(output_stream, 0); /* 0 required by RDPDR spec */
+    Stream_Write_UINT32(output_stream, name_bytes);
+    Stream_Write(output_stream, name, name_bytes);
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
 
@@ -90,41 +96,41 @@ static void guac_rdpdr_send_client_name_request(guac_rdpdrPlugin* rdpdr, const c
 
 static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
 
-    STREAM* output_stream = stream_new(256);
+    wStream* output_stream = Stream_New(NULL, 256);
     guac_client_log_info(rdpdr->client, "Sending capabilities...");
 
     /* Write header */
-    stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
-    stream_write_uint16(output_stream, PAKID_CORE_CLIENT_CAPABILITY);
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_CLIENT_CAPABILITY);
 
     /* Capability count + padding */
-    stream_write_uint16(output_stream, 2);
-    stream_write_uint16(output_stream, 0); /* Padding */
+    Stream_Write_UINT16(output_stream, 2);
+    Stream_Write_UINT16(output_stream, 0); /* Padding */
 
     /* General capability header */
-    stream_write_uint16(output_stream, CAP_GENERAL_TYPE);
-    stream_write_uint16(output_stream, 44);
-    stream_write_uint32(output_stream, GENERAL_CAPABILITY_VERSION_02);
+    Stream_Write_UINT16(output_stream, CAP_GENERAL_TYPE);
+    Stream_Write_UINT16(output_stream, 44);
+    Stream_Write_UINT32(output_stream, GENERAL_CAPABILITY_VERSION_02);
 
     /* General capability data */
-    stream_write_uint32(output_stream, GUAC_OS_TYPE);          /* osType - required to be ignored */
-    stream_write_uint32(output_stream, 0);                     /* osVersion */
-    stream_write_uint16(output_stream, RDP_CLIENT_MAJOR_ALL);  /* protocolMajor */
-    stream_write_uint16(output_stream, RDP_CLIENT_MINOR_5_2);  /* protocolMinor */
-    stream_write_uint32(output_stream, 0xFFFF);                /* ioCode1 */
-    stream_write_uint32(output_stream, 0);                     /* ioCode2 */
-    stream_write_uint32(output_stream,
+    Stream_Write_UINT32(output_stream, GUAC_OS_TYPE);          /* osType - required to be ignored */
+    Stream_Write_UINT32(output_stream, 0);                     /* osVersion */
+    Stream_Write_UINT16(output_stream, RDP_CLIENT_MAJOR_ALL);  /* protocolMajor */
+    Stream_Write_UINT16(output_stream, RDP_CLIENT_MINOR_5_2);  /* protocolMinor */
+    Stream_Write_UINT32(output_stream, 0xFFFF);                /* ioCode1 */
+    Stream_Write_UINT32(output_stream, 0);                     /* ioCode2 */
+    Stream_Write_UINT32(output_stream,
                                       RDPDR_DEVICE_REMOVE_PDUS
                                     | RDPDR_CLIENT_DISPLAY_NAME
                                     | RDPDR_USER_LOGGEDON_PDU); /* extendedPDU */
-    stream_write_uint32(output_stream, 0);                      /* extraFlags1 */
-    stream_write_uint32(output_stream, 0);                      /* extraFlags2 */
-    stream_write_uint32(output_stream, 0);                      /* SpecialTypeDeviceCap */
+    Stream_Write_UINT32(output_stream, 0);                      /* extraFlags1 */
+    Stream_Write_UINT32(output_stream, 0);                      /* extraFlags2 */
+    Stream_Write_UINT32(output_stream, 0);                      /* SpecialTypeDeviceCap */
 
     /* Printer support header */
-    stream_write_uint16(output_stream, CAP_PRINTER_TYPE);
-    stream_write_uint16(output_stream, 8);
-    stream_write_uint32(output_stream, PRINT_CAPABILITY_VERSION_01);
+    Stream_Write_UINT16(output_stream, CAP_PRINTER_TYPE);
+    Stream_Write_UINT16(output_stream, 8);
+    Stream_Write_UINT32(output_stream, PRINT_CAPABILITY_VERSION_01);
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
     guac_client_log_info(rdpdr->client, "Capabilities sent.");
@@ -133,34 +139,34 @@ static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
 
 static void guac_rdpdr_send_client_device_list_announce_request(guac_rdpdrPlugin* rdpdr) {
 
-    STREAM* output_stream = stream_new(256);
+    wStream* output_stream = Stream_New(NULL, 256);
 
     /* Write header */
-    stream_write_uint16(output_stream, RDPDR_CTYP_CORE);
-    stream_write_uint16(output_stream, PAKID_CORE_DEVICELIST_ANNOUNCE);
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICELIST_ANNOUNCE);
 
     /* Only one device for now */
-    stream_write_uint32(output_stream, 1);
+    Stream_Write_UINT32(output_stream, 1);
 
     /* Printer header */
     guac_client_log_info(rdpdr->client, "Sending printer");
-    stream_write_uint32(output_stream, RDPDR_DTYP_PRINT);
-    stream_write_uint32(output_stream, GUAC_PRINTER_DEVICE_ID);
-    stream_write(output_stream, "PRN1\0\0\0\0", 8); /* DOS name */
+    Stream_Write_UINT32(output_stream, RDPDR_DTYP_PRINT);
+    Stream_Write_UINT32(output_stream, GUAC_PRINTER_DEVICE_ID);
+    Stream_Write(output_stream, "PRN1\0\0\0\0", 8); /* DOS name */
 
     /* Printer data */
-    stream_write_uint32(output_stream, 24 + GUAC_PRINTER_DRIVER_LENGTH + GUAC_PRINTER_NAME_LENGTH);
-    stream_write_uint32(output_stream,
+    Stream_Write_UINT32(output_stream, 24 + GUAC_PRINTER_DRIVER_LENGTH + GUAC_PRINTER_NAME_LENGTH);
+    Stream_Write_UINT32(output_stream,
               RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER
             | RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER);
-    stream_write_uint32(output_stream, 0); /* reserved - must be 0 */
-    stream_write_uint32(output_stream, 0); /* PnPName length (PnPName is ultimately ignored) */
-    stream_write_uint32(output_stream, GUAC_PRINTER_DRIVER_LENGTH); /* DriverName length */
-    stream_write_uint32(output_stream, GUAC_PRINTER_NAME_LENGTH);   /* PrinterName length */
-    stream_write_uint32(output_stream, 0);                          /* CachedFields length */
+    Stream_Write_UINT32(output_stream, 0); /* reserved - must be 0 */
+    Stream_Write_UINT32(output_stream, 0); /* PnPName length (PnPName is ultimately ignored) */
+    Stream_Write_UINT32(output_stream, GUAC_PRINTER_DRIVER_LENGTH); /* DriverName length */
+    Stream_Write_UINT32(output_stream, GUAC_PRINTER_NAME_LENGTH);   /* PrinterName length */
+    Stream_Write_UINT32(output_stream, 0);                          /* CachedFields length */
 
-    stream_write(output_stream, GUAC_PRINTER_DRIVER, GUAC_PRINTER_DRIVER_LENGTH);
-    stream_write(output_stream, GUAC_PRINTER_NAME,   GUAC_PRINTER_NAME_LENGTH);
+    Stream_Write(output_stream, GUAC_PRINTER_DRIVER, GUAC_PRINTER_DRIVER_LENGTH);
+    Stream_Write(output_stream, GUAC_PRINTER_NAME,   GUAC_PRINTER_NAME_LENGTH);
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
     guac_client_log_info(rdpdr->client, "All supported devices sent.");
@@ -169,13 +175,13 @@ static void guac_rdpdr_send_client_device_list_announce_request(guac_rdpdrPlugin
 
 
 void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
-        STREAM* input_stream) {
+        wStream* input_stream) {
 
     unsigned int major, minor, client_id;
 
-    stream_read_uint16(input_stream, major);
-    stream_read_uint16(input_stream, minor);
-    stream_read_uint32(input_stream, client_id);
+    Stream_Read_UINT16(input_stream, major);
+    Stream_Read_UINT16(input_stream, minor);
+    Stream_Read_UINT32(input_stream, client_id);
 
     /* Must choose own client ID if minor not >= 12 */
     if (minor < 12)
@@ -191,17 +197,17 @@ void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
 
 }
 
-void guac_rdpdr_process_clientid_confirm(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+void guac_rdpdr_process_clientid_confirm(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
     guac_client_log_info(rdpdr->client, "Client ID confirmed");
 }
 
-void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
 
     unsigned int device_id, ntstatus;
     int severity, c, n, facility, code;
 
-    stream_read_uint32(input_stream, device_id);
-    stream_read_uint32(input_stream, ntstatus);
+    Stream_Read_UINT32(input_stream, device_id);
+    Stream_Read_UINT32(input_stream, ntstatus);
 
     severity = (ntstatus & 0xC0000000) >> 30;
     c        = (ntstatus & 0x20000000) >> 29;
@@ -227,16 +233,16 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, STREAM* input_stre
 
 }
 
-void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
 
     int device_id, completion_id, major_func, minor_func;
 
     /* Read header */
-    stream_read_uint32(input_stream, device_id);
-    stream_seek(input_stream, 4); /* file_id - currently skipped (not used in printer) */
-    stream_read_uint32(input_stream, completion_id);
-    stream_read_uint32(input_stream, major_func);
-    stream_read_uint32(input_stream, minor_func);
+    Stream_Read_UINT32(input_stream, device_id);
+    Stream_Seek(input_stream, 4); /* file_id - currently skipped (not used in printer) */
+    Stream_Read_UINT32(input_stream, completion_id);
+    Stream_Read_UINT32(input_stream, major_func);
+    Stream_Read_UINT32(input_stream, minor_func);
 
     /* If printer, run printer handlers */
     if (device_id == GUAC_PRINTER_DEVICE_ID) {
@@ -272,14 +278,14 @@ void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, STREAM* input_
 
 }
 
-void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
 
     int count;
     int i;
 
     /* Read header */
-    stream_read_uint16(input_stream, count);
-    stream_seek(input_stream, 2);
+    Stream_Read_UINT16(input_stream, count);
+    Stream_Seek(input_stream, 2);
 
     /* Parse capabilities */
     for (i=0; i<count; i++) {
@@ -287,12 +293,12 @@ void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, STREAM* input
         int type;
         int length;
 
-        stream_read_uint16(input_stream, type);
-        stream_read_uint16(input_stream, length);
+        Stream_Read_UINT16(input_stream, type);
+        Stream_Read_UINT16(input_stream, length);
 
         /* Ignore all for now */
         guac_client_log_info(rdpdr->client, "Ignoring server capability set type=0x%04x, length=%i", type, length);
-        stream_seek(input_stream, length - 4);
+        Stream_Seek(input_stream, length - 4);
 
     }
 
@@ -301,18 +307,18 @@ void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, STREAM* input
 
 }
 
-void guac_rdpdr_process_user_loggedon(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+void guac_rdpdr_process_user_loggedon(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
 
     guac_client_log_info(rdpdr->client, "User logged on");
     guac_rdpdr_send_client_device_list_announce_request(rdpdr);
 
 }
 
-void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
     guac_client_log_info(rdpdr->client, "Ignoring printer cached configuration data");
 }
 
-void guac_rdpdr_process_prn_using_xps(guac_rdpdrPlugin* rdpdr, STREAM* input_stream) {
+void guac_rdpdr_process_prn_using_xps(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
     guac_client_log_info(rdpdr->client, "Printer unexpectedly switched to XPS mode");
 }
 
