@@ -58,14 +58,14 @@
 /* MESSAGE HANDLERS */
 
 void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream, 
+        audio_stream* audio, wStream* input_stream, 
         guac_rdpsnd_pdu_header* header) {
 
     int server_format_count;
     int server_version;
     int i;
 
-    STREAM* output_stream;
+    wStream* output_stream;
     int output_body_size;
     unsigned char* output_stream_end;
 
@@ -208,11 +208,11 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
 
 /* server is getting a feel of the round trip time */
 void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
     int data_size;
-    STREAM* output_stream;
+    wStream* output_stream;
 
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) audio->client->data;
@@ -236,7 +236,7 @@ void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
     unsigned char buffer[4];
@@ -271,7 +271,7 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
     rdpSvcPlugin* plugin = (rdpSvcPlugin*)rdpsnd;
@@ -280,7 +280,7 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
         (rdp_guac_client_data*) audio->client->data;
 
     /* Wave Confirmation PDU */
-    STREAM* output_stream = stream_new(8);
+    wStream* output_stream = stream_new(8);
 
     /* Get wave data */
     unsigned char* buffer = stream_get_head(input_stream) + 4;
@@ -308,7 +308,7 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
     /* STUB: Do nothing for now */

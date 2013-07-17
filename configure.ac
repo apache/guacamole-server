@@ -244,6 +244,9 @@ AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"],
              [have_freerdp=no])
 
+# FreeRDP-specific headers
+AC_CHECK_HEADERS([freerdp/locale/keyboard.h])
+
 # Check for stream support via WinPR
 AC_CHECK_HEADER(winpr/stream.h,,                                      # <-- stable-1.1
                 [have_winpr=no,

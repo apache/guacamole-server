@@ -41,6 +41,7 @@
 
 #define Stream_Write_UINT8             stream_write_uint8
 #define wStream                        STREAM
+#define wMessage                       RDP_EVENT
 
 #endif
 

@@ -78,12 +78,12 @@ void guac_rdpsnd_process_terminate(rdpSvcPlugin* plugin) {
     free(plugin);
 }
 
-void guac_rdpsnd_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event) {
+void guac_rdpsnd_process_event(rdpSvcPlugin* plugin, wMessage* event) {
     freerdp_event_free(event);
 }
 
 void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
-        STREAM* input_stream) {
+        wStream* input_stream) {
 
     guac_rdpsndPlugin* rdpsnd = (guac_rdpsndPlugin*) plugin;
     guac_rdpsnd_pdu_header header;

@@ -140,7 +140,7 @@ void guac_rdpsnd_process_terminate(rdpSvcPlugin* plugin);
  * Handler called when this plugin receives an event. For the sake of RDPSND,
  * all events will be ignored and simply free'd.
  */
-void guac_rdpsnd_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event);
+void guac_rdpsnd_process_event(rdpSvcPlugin* plugin, wMessage* event);
 
 #endif
 
