@@ -404,8 +404,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings = rdp_inst->settings;
 
     /* Console */
-    settings->console_session = (strcmp(argv[IDX_CONSOLE], "TRUE") == 0);
-    settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "TRUE") == 0);
+    settings->console_session = (strcmp(argv[IDX_CONSOLE], "true") == 0);
+    settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "true") == 0);
 
     /* --no-auth */
     settings->authentication = FALSE;
@@ -485,11 +485,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Audio enable/disable */
     guac_client_data->audio_enabled =
-        (strcmp(argv[IDX_DISABLE_AUDIO], "TRUE") != 0);
+        (strcmp(argv[IDX_DISABLE_AUDIO], "true") != 0);
 
     /* Printing enable/disable */
     guac_client_data->printing_enabled =
-        (strcmp(argv[IDX_ENABLE_PRINTING], "TRUE") == 0);
+        (strcmp(argv[IDX_ENABLE_PRINTING], "true") == 0);
 
     /* Order support */
     bitmap_cache = settings->bitmap_cache;
