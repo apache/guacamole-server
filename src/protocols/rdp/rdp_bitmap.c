@@ -196,9 +196,9 @@ void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, uint8* d
     int size = width * height * (bpp + 7) / 8;
 
     if (bitmap->data == NULL)
-        bitmap->data = (uint8*) xmalloc(size);
+        bitmap->data = (uint8*) malloc(size);
     else
-        bitmap->data = (uint8*) xrealloc(bitmap->data, size);
+        bitmap->data = (uint8*) realloc(bitmap->data, size);
 
     if (compressed)
         bitmap_decompress(data, bitmap->data, width, height, length, bpp, bpp);
