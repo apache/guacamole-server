@@ -216,11 +216,33 @@ fi
 have_freerdp=yes
 RDP_LIBS=
 
-AC_CHECK_LIB([freerdp-cache],    [glyph_cache_register_callbacks], [RDP_LIBS="$RDP_LIBS -lfreerdp-cache"], [have_freerdp=no])
-AC_CHECK_LIB([freerdp-core],     [freerdp_new], [RDP_LIBS="$RDP_LIBS -lfreerdp-core"], [have_freerdp=no])
-AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new], [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"], [have_freerdp=no])
-AC_CHECK_LIB([freerdp-utils],    [xzalloc], [RDP_LIBS="$RDP_LIBS -lfreerdp-utils"], [have_freerdp=no])
-AC_CHECK_LIB([freerdp-codec],    [freerdp_image_convert], [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"], [have_freerdp=no])
+# libfreerdp-cache
+AC_CHECK_LIB([freerdp-cache], [glyph_cache_register_callbacks],
+             [RDP_LIBS="$RDP_LIBS -lfreerdp-cache"],
+             [have_freerdp=no])
+
+# libfreerdp-core
+AC_CHECK_LIB([freerdp-core], [freerdp_new],
+             [RDP_LIBS="$RDP_LIBS -lfreerdp-core"],
+             [have_freerdp=no])
+
+# libfreerdp-channels (1.0) / libfreerdp-client (1.1+)
+AC_CHECK_LIB([freerdp-client], [freerdp_channels_new],
+             [RDP_LIBS="$RDP_LIBS -lfreerdp-client"],
+             [AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],
+                           [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"],
+                           [have_freerdp=no])])
+
+# libfreerdp-utils
+AC_CHECK_LIB([freerdp-utils], [svc_plugin_init],
+             [RDP_LIBS="$RDP_LIBS -lfreerdp-utils"],
+             [have_freerdp=no])
+
+# libfreerdp-codec
+AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
+             [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"],
+             [have_freerdp=no])
+
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp}" = "xyes"])
 
 AC_SUBST(RDP_LIBS)
