@@ -39,6 +39,12 @@
 #include <pthread.h>
 #include <freerdp/freerdp.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
 #include <guacamole/client.h>
 
 #include "client.h"
@@ -421,7 +427,7 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    uint32 color = freerdp_color_convert_var(opaque_rect->color,
+    UINT32 color = freerdp_color_convert_var(opaque_rect->color,
             context->instance->settings->color_depth, 32,
             ((rdp_freerdp_context*) context)->clrconv);
 
@@ -464,11 +470,11 @@ void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
 
     /* If no bounds given, clear bounding rect */
     if (bounds == NULL)
-        data->bounded = false;
+        data->bounded = FALSE;
 
     /* Otherwise, set bounding rectangle */
     else {
-        data->bounded = true;
+        data->bounded = TRUE;
         data->bounds_left   = bounds->left;
         data->bounds_top    = bounds->top;
         data->bounds_right  = bounds->right;

@@ -40,6 +40,12 @@
 
 #include <freerdp/freerdp.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
 #include <guacamole/protocol.h>
 
 typedef struct guac_rdp_bitmap {
@@ -63,9 +69,9 @@ typedef struct guac_rdp_bitmap {
 
 void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap);
 void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);
-void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, uint8* data, int width, int height, int bpp, int length, boolean compressed);
+void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* data, int width, int height, int bpp, int length, BOOL compressed);
 void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap);
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap);
-void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean primary);
+void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL primary);
 
 #endif

@@ -54,6 +54,12 @@
 #include <freerdp/utils/event.h>
 #include <freerdp/plugins/cliprdr.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
@@ -424,7 +430,7 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
     ((rdp_guac_client_data*) client->data)->clipboard = strdup(data);
 
     /* Notify server that text data is now available */
-    format_list->formats = (uint32*) malloc(sizeof(uint32));
+    format_list->formats = (UINT32*) malloc(sizeof(UINT32));
     format_list->formats[0] = CB_FORMAT_TEXT;
     format_list->num_formats = 1;
 

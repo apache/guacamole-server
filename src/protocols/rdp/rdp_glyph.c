@@ -39,6 +39,12 @@
 #include <pthread.h>
 #include <freerdp/freerdp.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 
@@ -131,7 +137,7 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph) {
 }
 
 void guac_rdp_glyph_begindraw(rdpContext* context,
-        int x, int y, int width, int height, uint32 fgcolor, uint32 bgcolor) {
+        int x, int y, int width, int height, UINT32 fgcolor, UINT32 bgcolor) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data =
@@ -203,7 +209,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
 }
 
 void guac_rdp_glyph_enddraw(rdpContext* context,
-        int x, int y, int width, int height, uint32 fgcolor, uint32 bgcolor) {
+        int x, int y, int width, int height, UINT32 fgcolor, UINT32 bgcolor) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;

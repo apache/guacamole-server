@@ -50,6 +50,12 @@
 #include <freerdp/codec/color.h>
 #include <freerdp/codec/bitmap.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
 #include "client.h"
 #include "rdp_bitmap.h"
 
@@ -165,7 +171,7 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
 
 }
 
-void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean primary) {
+void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL primary) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
     if (primary)
@@ -191,21 +197,21 @@ void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, boolean 
 
 }
 
-void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, uint8* data, int width, int height, int bpp, int length, boolean compressed) {
+void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* data, int width, int height, int bpp, int length, BOOL compressed) {
 
     int size = width * height * (bpp + 7) / 8;
 
     if (bitmap->data == NULL)
-        bitmap->data = (uint8*) malloc(size);
+        bitmap->data = (UINT8*) malloc(size);
     else
-        bitmap->data = (uint8*) realloc(bitmap->data, size);
+        bitmap->data = (UINT8*) realloc(bitmap->data, size);
 
     if (compressed)
         bitmap_decompress(data, bitmap->data, width, height, length, bpp, bpp);
     else
         freerdp_image_flip(data, bitmap->data, width, height, bpp);
 
-    bitmap->compressed = false;
+    bitmap->compressed = FALSE;
     bitmap->length = size;
     bitmap->bpp = bpp;
 

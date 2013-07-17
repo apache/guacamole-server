@@ -58,6 +58,12 @@
 #include <freerdp/input.h>
 #include <freerdp/constants.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
@@ -117,11 +123,11 @@ enum RDP_ARGS_IDX {
     RDP_ARGS_COUNT
 };
 
-int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, uint8* data, int size, int flags, int total_size) {
+int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, UINT8* data, int size, int flags, int total_size) {
     return freerdp_channels_data(rdp_inst, channelId, data, size, flags, total_size);
 }
 
-boolean rdp_freerdp_pre_connect(freerdp* instance) {
+BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -270,14 +276,14 @@ boolean rdp_freerdp_pre_connect(freerdp* instance) {
     if (freerdp_channels_pre_connect(channels, instance)) {
         guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
         guac_socket_flush(client->socket);
-        return false;
+        return FALSE;
     }
 
-    return true;
+    return TRUE;
 
 }
 
-boolean rdp_freerdp_post_connect(freerdp* instance) {
+BOOL rdp_freerdp_post_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -287,7 +293,7 @@ boolean rdp_freerdp_post_connect(freerdp* instance) {
     if (freerdp_channels_post_connect(channels, instance)) {
         guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
         guac_socket_flush(client->socket);
-        return false;
+        return FALSE;
     }
 
     /* Client handlers */
@@ -297,7 +303,7 @@ boolean rdp_freerdp_post_connect(freerdp* instance) {
     client->key_handler = rdp_guac_client_key_handler;
     client->clipboard_handler = rdp_guac_client_clipboard_handler;
 
-    return true;
+    return TRUE;
 
 }
 
@@ -348,7 +354,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     char* hostname;
     int port = RDP_DEFAULT_PORT;
-    boolean bitmap_cache;
+    BOOL bitmap_cache;
 
     /**
      * Selected server-side keymap. Client will be assumed to also use this
@@ -398,17 +404,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings = rdp_inst->settings;
 
     /* Console */
-    settings->console_session = (strcmp(argv[IDX_CONSOLE], "true") == 0);
-    settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "true") == 0);
+    settings->console_session = (strcmp(argv[IDX_CONSOLE], "TRUE") == 0);
+    settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "TRUE") == 0);
 
     /* --no-auth */
-    settings->authentication = false;
+    settings->authentication = FALSE;
 
     /* --sec rdp */
-    settings->rdp_security = true;
-    settings->tls_security = false;
-    settings->nla_security = false;
-    settings->encryption = true;
+    settings->rdp_security = TRUE;
+    settings->tls_security = FALSE;
+    settings->nla_security = FALSE;
+    settings->encryption = TRUE;
     settings->encryption_method = ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
     settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
 
@@ -479,44 +485,44 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Audio enable/disable */
     guac_client_data->audio_enabled =
-        (strcmp(argv[IDX_DISABLE_AUDIO], "true") != 0);
+        (strcmp(argv[IDX_DISABLE_AUDIO], "TRUE") != 0);
 
     /* Printing enable/disable */
     guac_client_data->printing_enabled =
-        (strcmp(argv[IDX_ENABLE_PRINTING], "true") == 0);
+        (strcmp(argv[IDX_ENABLE_PRINTING], "TRUE") == 0);
 
     /* Order support */
     bitmap_cache = settings->bitmap_cache;
     settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
     settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
-    settings->order_support[NEG_DSTBLT_INDEX] = true;
-    settings->order_support[NEG_PATBLT_INDEX] = false; /* PATBLT not yet supported */
-    settings->order_support[NEG_SCRBLT_INDEX] = true;
-    settings->order_support[NEG_OPAQUE_RECT_INDEX] = true;
-    settings->order_support[NEG_DRAWNINEGRID_INDEX] = false;
-    settings->order_support[NEG_MULTIDSTBLT_INDEX] = false;
-    settings->order_support[NEG_MULTIPATBLT_INDEX] = false;
-    settings->order_support[NEG_MULTISCRBLT_INDEX] = false;
-    settings->order_support[NEG_MULTIOPAQUERECT_INDEX] = false;
-    settings->order_support[NEG_MULTI_DRAWNINEGRID_INDEX] = false;
-    settings->order_support[NEG_LINETO_INDEX] = false;
-    settings->order_support[NEG_POLYLINE_INDEX] = false;
+    settings->order_support[NEG_DSTBLT_INDEX] = TRUE;
+    settings->order_support[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
+    settings->order_support[NEG_SCRBLT_INDEX] = TRUE;
+    settings->order_support[NEG_OPAQUE_RECT_INDEX] = TRUE;
+    settings->order_support[NEG_DRAWNINEGRID_INDEX] = FALSE;
+    settings->order_support[NEG_MULTIDSTBLT_INDEX] = FALSE;
+    settings->order_support[NEG_MULTIPATBLT_INDEX] = FALSE;
+    settings->order_support[NEG_MULTISCRBLT_INDEX] = FALSE;
+    settings->order_support[NEG_MULTIOPAQUERECT_INDEX] = FALSE;
+    settings->order_support[NEG_MULTI_DRAWNINEGRID_INDEX] = FALSE;
+    settings->order_support[NEG_LINETO_INDEX] = FALSE;
+    settings->order_support[NEG_POLYLINE_INDEX] = FALSE;
     settings->order_support[NEG_MEMBLT_INDEX] = bitmap_cache;
-    settings->order_support[NEG_MEM3BLT_INDEX] = false;
+    settings->order_support[NEG_MEM3BLT_INDEX] = FALSE;
     settings->order_support[NEG_MEMBLT_V2_INDEX] = bitmap_cache;
-    settings->order_support[NEG_MEM3BLT_V2_INDEX] = false;
-    settings->order_support[NEG_SAVEBITMAP_INDEX] = false;
-    settings->order_support[NEG_GLYPH_INDEX_INDEX] = true;
-    settings->order_support[NEG_FAST_INDEX_INDEX] = true;
-    settings->order_support[NEG_FAST_GLYPH_INDEX] = true;
-    settings->order_support[NEG_POLYGON_SC_INDEX] = false;
-    settings->order_support[NEG_POLYGON_CB_INDEX] = false;
-    settings->order_support[NEG_ELLIPSE_SC_INDEX] = false;
-    settings->order_support[NEG_ELLIPSE_CB_INDEX] = false;
+    settings->order_support[NEG_MEM3BLT_V2_INDEX] = FALSE;
+    settings->order_support[NEG_SAVEBITMAP_INDEX] = FALSE;
+    settings->order_support[NEG_GLYPH_INDEX_INDEX] = TRUE;
+    settings->order_support[NEG_FAST_INDEX_INDEX] = TRUE;
+    settings->order_support[NEG_FAST_GLYPH_INDEX] = TRUE;
+    settings->order_support[NEG_POLYGON_SC_INDEX] = FALSE;
+    settings->order_support[NEG_POLYGON_CB_INDEX] = FALSE;
+    settings->order_support[NEG_ELLIPSE_SC_INDEX] = FALSE;
+    settings->order_support[NEG_ELLIPSE_CB_INDEX] = FALSE;
 
     /* Store client data */
     guac_client_data->rdp_inst = rdp_inst;
-    guac_client_data->bounded = false;
+    guac_client_data->bounded = FALSE;
     guac_client_data->mouse_button_mask = 0;
     guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
     guac_client_data->clipboard = NULL;
