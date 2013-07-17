@@ -48,7 +48,6 @@
 #include <errno.h>
 
 #include <freerdp/freerdp.h>
-#include <freerdp/utils/memory.h>
 #include <freerdp/cache/bitmap.h>
 #include <freerdp/cache/brush.h>
 #include <freerdp/cache/glyph.h>

@@ -47,7 +47,6 @@
 #include <guacamole/protocol.h>
 
 #include <freerdp/freerdp.h>
-#include <freerdp/utils/memory.h>
 #include <freerdp/codec/color.h>
 #include <freerdp/codec/bitmap.h>
 
