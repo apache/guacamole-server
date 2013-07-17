@@ -77,7 +77,7 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
 }
 
 void guac_rdpdr_process_terminate(rdpSvcPlugin* plugin) {
-    xfree(plugin);
+    free(plugin);
 }
 
 void guac_rdpdr_process_event(rdpSvcPlugin* plugin, RDP_EVENT* event) {
