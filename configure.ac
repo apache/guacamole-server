@@ -215,6 +215,7 @@ fi
 
 have_winpr=yes
 have_freerdp=yes
+legacy_freerdp_extensions=no
 RDP_LIBS=
 
 # libfreerdp-cache
@@ -231,7 +232,8 @@ AC_CHECK_LIB([freerdp-core], [freerdp_new],
 AC_CHECK_LIB([freerdp-client], [freerdp_channels_new],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-client"],
              [AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],
-                           [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"],
+                           [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"
+                            legacy_freerdp_extensions=yes],
                            [have_freerdp=no])])
 
 # libfreerdp-utils
@@ -269,6 +271,7 @@ then
 fi
 
 
+AM_CONDITIONAL([LEGACY_FREERDP_EXTENSIONS], [test "x${legacy_freerdp_extensions}" = "xyes"])
 AM_CONDITIONAL([ENABLE_WINPR], [test "x${have_winpr}"   = "xyes"])
 AM_CONDITIONAL([ENABLE_RDP],   [test "x${have_freerdp}" = "xyes"])
 
