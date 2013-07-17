@@ -127,35 +127,35 @@ typedef struct guac_rdpsnd_pdu_header {
  * Handler for the SNDC_FORMATS (Server Audio Formats and Version) PDU.
  */
 void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header);
 
 /**
  * Handler for the SNDC_TRAINING (Training) PDU.
  */
 void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header);
 
 /**
  * Handler for the SNDC_WAVE (WaveInfo) PDU.
  */
 void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header);
 
 /**
  * Handler for the SNDWAV (Wave) PDU which follows any WaveInfo PDU.
  */
 void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header);
 
 /**
  * Handler for the SNDC_CLOSE (Close) PDU.
  */
 void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, STREAM* input_stream,
+        audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header);
 
 #endif

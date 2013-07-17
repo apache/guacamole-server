@@ -129,7 +129,7 @@ void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin);
  * Handler called when this plugin receives data along its designated channel.
  */
 void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
-        STREAM* input_stream);
+        wStream* input_stream);
 
 /**
  * Handler called when this plugin is being unloaded.

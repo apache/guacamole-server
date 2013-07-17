@@ -89,6 +89,11 @@ noinst_HEADERS =                     \
 	rdp_pointer.h                    \
 	wav_encoder.h
 
+# Add compatibility layer for WinPR if not available
+if ! ENABLE_WINPR
+	noinst_HEADERS += winpr-compat/stream.h
+endif
+
 # Compile OGG support if available
 if ENABLE_OGG
     libguac_client_rdp_la_SOURCES += ogg_encoder.c

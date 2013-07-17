@@ -40,8 +40,13 @@
 #include <string.h>
 #include <freerdp/constants.h>
 #include <freerdp/types.h>
-#include <freerdp/utils/stream.h>
 #include <freerdp/utils/svc_plugin.h>
+
+#ifdef ENABLE_WINPR
+#include <winpr/stream.h>
+#else
+#include "winpr-compat/stream.h"
+#endif
 
 #include <guacamole/client.h>
 
