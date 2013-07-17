@@ -213,6 +213,7 @@ fi
 # FreeRDP
 #
 
+have_winpr=yes
 have_freerdp=yes
 RDP_LIBS=
 
@@ -244,11 +245,19 @@ AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
              [have_freerdp=no])
 
 # Check for stream support via WinPR
-AC_CHECK_HEADER(winpr/stream.h,,                                     # <-- stable-1.1
-                AC_CHECK_LIB([freerdp-utils], [stream_write_uint8],, # <-- stable-1.0
-                             [have_freerdp=no]))
+AC_CHECK_HEADER(winpr/stream.h,,                                      # <-- stable-1.1
+                [have_winpr=no,
+                 AC_CHECK_LIB([freerdp-utils], [stream_write_uint8],, # <-- stable-1.0
+                              [have_freerdp=no])])
 
-AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp}" = "xyes"])
+if test "x${have_winpr}" = "xyes"
+then
+    AC_DEFINE([ENABLE_WINPR])
+fi
+
+
+AM_CONDITIONAL([ENABLE_WINPR], [test "x${have_winpr}"   = "xyes"])
+AM_CONDITIONAL([ENABLE_RDP],   [test "x${have_freerdp}" = "xyes"])
 
 AC_SUBST(RDP_LIBS)
 
