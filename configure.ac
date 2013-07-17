@@ -253,6 +253,12 @@ AC_CHECK_HEADER(winpr/stream.h,,                                      # <-- stab
                  AC_CHECK_LIB([freerdp-utils], [stream_write_uint8],, # <-- stable-1.0
                               [have_freerdp=no])])
 
+# Check for types in WinPR
+AC_CHECK_HEADER(winpr/wtypes.h,,                   # <-- stable-1.1
+                [have_winpr=no,
+                 AC_CHECK_HEADER(freerdp/types.h,, # <-- stable-1.0
+                                 [have_freerdp=no])])
+
 if test "x${have_winpr}" = "xyes"
 then
     AC_DEFINE([ENABLE_WINPR])

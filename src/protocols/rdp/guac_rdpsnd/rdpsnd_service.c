@@ -40,8 +40,15 @@
 
 #include <freerdp/constants.h>
 #include <freerdp/types.h>
-#include <freerdp/utils/stream.h>
 #include <freerdp/utils/svc_plugin.h>
+
+#ifdef ENABLE_WINPR
+#include <winpr/stream.h>
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-stream.h"
+#include "compat/winpr-wtypes.h"
+#endif
 
 #include <guacamole/client.h>
 
@@ -93,9 +100,9 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
         plugin->channel_entry_points.pExtendedData;
 
     /* Read RDPSND PDU header */
-    stream_read_uint8(input_stream, header.message_type);
-    stream_seek_uint8(input_stream);
-    stream_read_uint16(input_stream, header.body_size);
+    Stream_Read_UINT8(input_stream, header.message_type);
+    Stream_Seek_UINT8(input_stream);
+    Stream_Read_UINT16(input_stream, header.body_size);
 
     /* 
      * If next PDU is SNDWAVE (due to receiving WaveInfo PDU previously),

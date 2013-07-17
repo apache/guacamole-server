@@ -44,6 +44,12 @@
 #include <freerdp/kbd/layouts.h>
 #endif
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
 /**
  * Represents a keysym-to-scancode mapping for RDP, with extra information
  * about the state of prerequisite keysyms.
@@ -107,7 +113,7 @@ struct guac_rdp_keymap {
      * keymap. If this keymap is selected, this layout
      * will be requested from the server.
      */
-    const uint32 freerdp_keyboard_layout;
+    const UINT32 freerdp_keyboard_layout;
 
 };
 
