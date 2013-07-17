@@ -243,6 +243,11 @@ AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"],
              [have_freerdp=no])
 
+# Check for stream support via WinPR
+AC_CHECK_HEADER(winpr/stream.h,,                                     # <-- stable-1.1
+                AC_CHECK_LIB([freerdp-utils], [stream_write_uint8],, # <-- stable-1.0
+                             [have_freerdp=no]))
+
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp}" = "xyes"])
 
 AC_SUBST(RDP_LIBS)
