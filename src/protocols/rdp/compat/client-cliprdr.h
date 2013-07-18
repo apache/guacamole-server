@@ -39,8 +39,11 @@
 
 #include <freerdp/plugins/cliprdr.h>
 
-#define CliprdrChannel_Class      RDP_EVENT_CLASS_CLIPRDR
-#define CliprdrChannel_FormatList RDP_EVENT_TYPE_CB_FORMAT_LIST
+#define CliprdrChannel_Class        RDP_EVENT_CLASS_CLIPRDR
+#define CliprdrChannel_FormatList   RDP_EVENT_TYPE_CB_FORMAT_LIST
+#define CliprdrChannel_MonitorReady RDP_EVENT_TYPE_CB_MONITOR_READY
+#define CliprdrChannel_DataRequest  RDP_EVENT_TYPE_CB_DATA_REQUEST
+#define CliprdrChannel_DataResponse RDP_EVENT_TYPE_CB_DATA_RESPONSE
 
 #endif
 

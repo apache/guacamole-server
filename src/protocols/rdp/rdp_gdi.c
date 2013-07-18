@@ -426,9 +426,12 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
 void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect) {
 
+    /* Get client data */
     guac_client* client = ((rdp_freerdp_context*) context)->client;
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+
     UINT32 color = freerdp_color_convert_var(opaque_rect->color,
-            context->instance->settings->color_depth, 32,
+            client_data->settings.color_depth, 32,
             ((rdp_freerdp_context*) context)->clrconv);
 
     const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
