@@ -95,10 +95,14 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
     /* Convert image data if present */
     if (bitmap->data != NULL) {
 
+        /* Get client data */
+        guac_client* client = ((rdp_freerdp_context*) context)->client;
+        rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+
         /* Convert image data to 32-bit RGB */
         unsigned char* image_buffer = freerdp_image_convert(bitmap->data, NULL,
                 bitmap->width, bitmap->height,
-                context->instance->settings->color_depth,
+                client_data->settings.color_depth,
                 32, ((rdp_freerdp_context*) context)->clrconv);
 
         /* Free existing image, if any */

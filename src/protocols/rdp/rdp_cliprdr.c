@@ -39,7 +39,12 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/utils/event.h>
-#include <freerdp/plugins/cliprdr.h>
+
+#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
+#include <freerdp/client/cliprdr.h>
+#else
+#include "compat/client-cliprdr.h"
+#endif
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -53,7 +58,7 @@
 #include "client.h"
 #include "rdp_cliprdr.h"
 
-void guac_rdp_process_cliprdr_event(guac_client* client, RDP_EVENT* event) {
+void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event) {
 
         switch (event->event_type) {
 
@@ -84,7 +89,7 @@ void guac_rdp_process_cliprdr_event(guac_client* client, RDP_EVENT* event) {
 
 }
 
-void guac_rdp_process_cb_monitor_ready(guac_client* client, RDP_EVENT* event) {
+void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event) {
 
     rdpChannels* channels = 
         ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
@@ -102,7 +107,7 @@ void guac_rdp_process_cb_monitor_ready(guac_client* client, RDP_EVENT* event) {
     format_list->formats[0] = CB_FORMAT_TEXT;
     format_list->num_formats = 1;
 
-    freerdp_channels_send_event(channels, (RDP_EVENT*) format_list);
+    freerdp_channels_send_event(channels, (wMessage*) format_list);
 
 }
 
@@ -131,7 +136,7 @@ void guac_rdp_process_cb_format_list(guac_client* client,
             data_request->format = CB_FORMAT_TEXT;
 
             /* Send request */
-            freerdp_channels_send_event(channels, (RDP_EVENT*) data_request);
+            freerdp_channels_send_event(channels, (wMessage*) data_request);
             return;
 
         }
@@ -174,7 +179,7 @@ void guac_rdp_process_cb_data_request(guac_client* client,
         }
 
         /* Send response */
-        freerdp_channels_send_event(channels, (RDP_EVENT*) data_response);
+        freerdp_channels_send_event(channels, (wMessage*) data_response);
 
     }
 

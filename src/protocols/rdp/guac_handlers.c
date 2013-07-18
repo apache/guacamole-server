@@ -56,7 +56,7 @@
 #ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
 #include <freerdp/client/cliprdr.h>
 #else
-#include <freerdp/plugins/cliprdr.h>
+#include "compat/client-cliprdr.h"
 #endif
 
 #ifdef ENABLE_WINPR
@@ -201,7 +201,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
         /* Handle clipboard events */
 #ifdef LEGACY_EVENT
-        if (event->event_class == RDP_EVENT_CLASS_CLIPRDR)
+        if (event->event_class == CliprdrChannel_Class)
             guac_rdp_process_cliprdr_event(client, event);
 #else
         if (GetMessageClass(event->id) == CliprdrChannel_Class)
@@ -427,19 +427,11 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
     rdpChannels* channels = 
         ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
 
-#ifdef LEGACY_EVENT
-    RDP_CB_FORMAT_LIST_EVENT* format_list =
-        (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
-            RDP_EVENT_CLASS_CLIPRDR,
-            RDP_EVENT_TYPE_CB_FORMAT_LIST,
-            NULL, NULL);
-#else
     RDP_CB_FORMAT_LIST_EVENT* format_list =
         (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
             CliprdrChannel_Class,
             CliprdrChannel_FormatList,
             NULL, NULL);
-#endif
 
     /* Free existing data */
     free(((rdp_guac_client_data*) client->data)->clipboard);
