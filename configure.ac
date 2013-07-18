@@ -218,6 +218,7 @@ have_freerdp=yes
 legacy_freerdp_extensions=no
 rdpsettings_interface=unknown
 freerdp_interface=unknown
+event_interface=unknown
 RDP_LIBS=
 
 # libfreerdp-cache
@@ -361,6 +362,31 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
                                                       int codec_id);
                                     rdpBitmap b = { .Decompress = __decompress };]])],,
                   [AC_DEFINE([LEGACY_RDPBITMAP])])
+
+#
+# FreeRDP: wMessage / RDP_EVENT
+#
+
+# Check for current (as of 1.1) wMessage interface
+AC_CHECK_MEMBERS([wMessage.id],
+                 [event_interface=stable],,
+                 [[#include <winpr/collections.h>]])
+
+# If not current, check for legacy (RDP_EVENT) interface
+if test "x${event_interface}" = "xunknown"
+then
+    AC_CHECK_MEMBERS([RDP_EVENT.event_class],
+                     [event_interface=legacy],,
+                     [[#include <freerdp/types.h>]])
+fi
+
+# Set defines based on interface type, warn if unknown
+if test "x${event_interface}" = "xlegacy"; then
+    AC_DEFINE([LEGACY_EVENT])
+elif test "x${event_interface}" = "xunknown"; then
+    have_freerdp=no
+fi
+
 
 AM_CONDITIONAL([LEGACY_FREERDP_EXTENSIONS], [test "x${legacy_freerdp_extensions}" = "xyes"])
 AM_CONDITIONAL([ENABLE_WINPR], [test "x${have_winpr}"   = "xyes"])

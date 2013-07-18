@@ -118,7 +118,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     int read_count = 0;
     int write_count = 0;
     fd_set rfds, wfds;
-    RDP_EVENT* event;
+    wMessage* event;
 
     struct timeval timeout = {
         .tv_sec = 0,
@@ -200,8 +200,13 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     if (event) {
 
         /* Handle clipboard events */
+#ifdef LEGACY_EVENT
         if (event->event_class == RDP_EVENT_CLASS_CLIPRDR)
             guac_rdp_process_cliprdr_event(client, event);
+#else
+        if (GetMessageClass(event->id) == CliprdrChannel_Class)
+            guac_rdp_process_cliprdr_event(client, event);
+#endif
 
         freerdp_event_free(event);
 
@@ -422,11 +427,19 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
     rdpChannels* channels = 
         ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
 
+#ifdef LEGACY_EVENT
     RDP_CB_FORMAT_LIST_EVENT* format_list =
         (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
             RDP_EVENT_CLASS_CLIPRDR,
             RDP_EVENT_TYPE_CB_FORMAT_LIST,
             NULL, NULL);
+#else
+    RDP_CB_FORMAT_LIST_EVENT* format_list =
+        (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
+            CliprdrChannel_Class,
+            CliprdrChannel_FormatList,
+            NULL, NULL);
+#endif
 
     /* Free existing data */
     free(((rdp_guac_client_data*) client->data)->clipboard);
@@ -439,7 +452,7 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
     format_list->formats[0] = CB_FORMAT_TEXT;
     format_list->num_formats = 1;
 
-    freerdp_channels_send_event(channels, (RDP_EVENT*) format_list);
+    freerdp_channels_send_event(channels, (wMessage*) format_list);
 
     return 0;
 

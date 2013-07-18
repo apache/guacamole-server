@@ -38,10 +38,16 @@
 #ifndef __GUAC_RDP_RDP_CLIPRDR_H
 #define __GUAC_RDP_RDP_CLIPRDR_H
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
 #include <freerdp/freerdp.h>
 
-void guac_rdp_process_cliprdr_event(guac_client* client, RDP_EVENT* event);
-void guac_rdp_process_cb_monitor_ready(guac_client* client, RDP_EVENT* event);
+void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event);
+void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event);
 
 void guac_rdp_process_cb_format_list(guac_client* client,
         RDP_CB_FORMAT_LIST_EVENT* event);
