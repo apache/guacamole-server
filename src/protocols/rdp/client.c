@@ -151,7 +151,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_client_log_error(client, "Failed to load cliprdr plugin.");
 
     /* If audio enabled, choose an encoder */
-    if (guac_client_data->audio_enabled) {
+    if (guac_client_data->settings.audio_enabled) {
 
         /* Choose an encoding */
         for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
@@ -195,7 +195,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     } /* end if audio enabled */
 
     /* If printing enabled, load rdpdr */
-    if (guac_client_data->printing_enabled) {
+    if (guac_client_data->settings.printing_enabled) {
 
         /* Load RDPDR plugin */
         if (freerdp_channels_load_plugin(channels, instance->settings,
@@ -348,22 +348,12 @@ void __guac_rdp_client_load_keymap(guac_client* client,
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
     rdp_guac_client_data* guac_client_data;
+    guac_rdp_settings* settings;
 
     freerdp* rdp_inst;
-    rdpSettings* settings;
 
-    char* hostname;
-    int port = RDP_DEFAULT_PORT;
-    BOOL bitmap_cache;
-
-    /**
-     * Selected server-side keymap. Client will be assumed to also use this
-     * keymap. Keys will be sent to server based on client input on a
-     * best-effort basis.
-     */
-    const guac_rdp_keymap* chosen_keymap;
-
-    if (argc < RDP_ARGS_COUNT) {
+    /* Validate number of arguments received */
+    if (argc != RDP_ARGS_COUNT) {
 
         guac_protocol_send_error(client->socket,
                 "Wrong argument count received.");
@@ -374,12 +364,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         return 1;
     }
-
-    /* If port specified, use it */
-    if (argv[IDX_PORT][0] != '\0')
-        port = atoi(argv[IDX_PORT]);
-
-    hostname = argv[IDX_HOSTNAME];
 
     /* Allocate client data */
     guac_client_data = malloc(sizeof(rdp_guac_client_data));
@@ -401,22 +385,19 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     freerdp_context_new(rdp_inst);
 
     /* Set settings */
-    settings = rdp_inst->settings;
+    settings = &(guac_client_data->settings);
 
     /* Console */
-    settings->console_session = (strcmp(argv[IDX_CONSOLE], "true") == 0);
+    settings->console         = (strcmp(argv[IDX_CONSOLE], "true") == 0);
     settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "true") == 0);
 
-    /* --no-auth */
-    settings->authentication = FALSE;
+    /* Set hostname */
+    settings->hostname = strdup(argv[IDX_HOSTNAME]);
 
-    /* --sec rdp */
-    settings->rdp_security = TRUE;
-    settings->tls_security = FALSE;
-    settings->nla_security = FALSE;
-    settings->encryption = TRUE;
-    settings->encryption_method = ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
-    settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
+    /* If port specified, use it */
+    settings->port = RDP_DEFAULT_PORT;
+    if (argv[IDX_PORT][0] != '\0')
+        settings->port = atoi(argv[IDX_PORT]);
 
     /* Use optimal width unless overridden */
     settings->width = client->info.optimal_width;
@@ -447,28 +428,25 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                 argv[IDX_WIDTH], settings->height);
     }
 
-    /* Set hostname */
-    settings->hostname = strdup(hostname);
-    settings->port = port;
-    settings->window_title = strdup(hostname);
-
     /* Domain */
+    settings->domain = NULL;
     if (argv[IDX_DOMAIN][0] != '\0')
         settings->domain = strdup(argv[IDX_DOMAIN]);
 
     /* Username */
+    settings->username = NULL;
     if (argv[IDX_USERNAME][0] != '\0')
         settings->username = strdup(argv[IDX_USERNAME]);
 
     /* Password */
-    if (argv[IDX_PASSWORD][0] != '\0') {
+    settings->password = NULL;
+    if (argv[IDX_PASSWORD][0] != '\0')
         settings->password = strdup(argv[IDX_PASSWORD]);
-        settings->autologon = 1;
-    }
 
     /* Initial program */
+    settings->initial_program = NULL;
     if (argv[IDX_INITIAL_PROGRAM][0] != '\0')
-        settings->shell = strdup(argv[IDX_INITIAL_PROGRAM]);
+        settings->initial_program = strdup(argv[IDX_INITIAL_PROGRAM]);
 
     /* Session color depth */
     settings->color_depth = RDP_DEFAULT_DEPTH;
@@ -484,41 +462,15 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
 
     /* Audio enable/disable */
-    guac_client_data->audio_enabled =
+    guac_client_data->settings.audio_enabled =
         (strcmp(argv[IDX_DISABLE_AUDIO], "true") != 0);
 
     /* Printing enable/disable */
-    guac_client_data->printing_enabled =
+    guac_client_data->settings.printing_enabled =
         (strcmp(argv[IDX_ENABLE_PRINTING], "true") == 0);
 
-    /* Order support */
-    bitmap_cache = settings->bitmap_cache;
-    settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
-    settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
-    settings->order_support[NEG_DSTBLT_INDEX] = TRUE;
-    settings->order_support[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
-    settings->order_support[NEG_SCRBLT_INDEX] = TRUE;
-    settings->order_support[NEG_OPAQUE_RECT_INDEX] = TRUE;
-    settings->order_support[NEG_DRAWNINEGRID_INDEX] = FALSE;
-    settings->order_support[NEG_MULTIDSTBLT_INDEX] = FALSE;
-    settings->order_support[NEG_MULTIPATBLT_INDEX] = FALSE;
-    settings->order_support[NEG_MULTISCRBLT_INDEX] = FALSE;
-    settings->order_support[NEG_MULTIOPAQUERECT_INDEX] = FALSE;
-    settings->order_support[NEG_MULTI_DRAWNINEGRID_INDEX] = FALSE;
-    settings->order_support[NEG_LINETO_INDEX] = FALSE;
-    settings->order_support[NEG_POLYLINE_INDEX] = FALSE;
-    settings->order_support[NEG_MEMBLT_INDEX] = bitmap_cache;
-    settings->order_support[NEG_MEM3BLT_INDEX] = FALSE;
-    settings->order_support[NEG_MEMBLT_V2_INDEX] = bitmap_cache;
-    settings->order_support[NEG_MEM3BLT_V2_INDEX] = FALSE;
-    settings->order_support[NEG_SAVEBITMAP_INDEX] = FALSE;
-    settings->order_support[NEG_GLYPH_INDEX_INDEX] = TRUE;
-    settings->order_support[NEG_FAST_INDEX_INDEX] = TRUE;
-    settings->order_support[NEG_FAST_GLYPH_INDEX] = TRUE;
-    settings->order_support[NEG_POLYGON_SC_INDEX] = FALSE;
-    settings->order_support[NEG_POLYGON_CB_INDEX] = FALSE;
-    settings->order_support[NEG_ELLIPSE_SC_INDEX] = FALSE;
-    settings->order_support[NEG_ELLIPSE_CB_INDEX] = FALSE;
+    /* Commit settings */
+    guac_rdp_commit_settings(settings, rdp_inst->settings);
 
     /* Store client data */
     guac_client_data->rdp_inst = rdp_inst;
@@ -555,19 +507,19 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         /* US English Qwerty */
         if (strcmp("en-us-qwerty", argv[IDX_SERVER_LAYOUT]) == 0)
-            chosen_keymap = &guac_rdp_keymap_en_us;
+            settings->server_layout = &guac_rdp_keymap_en_us;
 
         /* German Qwertz */
         else if (strcmp("de-de-qwertz", argv[IDX_SERVER_LAYOUT]) == 0)
-            chosen_keymap = &guac_rdp_keymap_de_de;
+            settings->server_layout = &guac_rdp_keymap_de_de;
 
         /* French Azerty */
         else if (strcmp("fr-fr-azerty", argv[IDX_SERVER_LAYOUT]) == 0)
-            chosen_keymap = &guac_rdp_keymap_fr_fr;
+            settings->server_layout = &guac_rdp_keymap_fr_fr;
 
         /* Failsafe (Unicode) keymap */
         else if (strcmp("failsafe", argv[IDX_SERVER_LAYOUT]) == 0)
-            chosen_keymap = &guac_rdp_keymap_failsafe;
+            settings->server_layout = &guac_rdp_keymap_failsafe;
 
         /* If keymap unknown, resort to failsafe */
         else {
@@ -576,7 +528,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                 "Unknown layout \"%s\". Using the failsafe layout instead.",
                 argv[IDX_SERVER_LAYOUT]);
 
-            chosen_keymap = &guac_rdp_keymap_failsafe;
+            settings->server_layout = &guac_rdp_keymap_failsafe;
 
         }
 
@@ -584,13 +536,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* If no keymap requested, assume US */
     else
-        chosen_keymap = &guac_rdp_keymap_en_us;
+        settings->server_layout = &guac_rdp_keymap_en_us;
 
     /* Load keymap into client */
-    __guac_rdp_client_load_keymap(client, chosen_keymap);
-
-    /* Set server-side keymap */
-    settings->kbd_layout = chosen_keymap->freerdp_keyboard_layout; 
+    __guac_rdp_client_load_keymap(client, settings->server_layout);
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
@@ -606,7 +555,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
 
     /* Send connection name */
-    guac_protocol_send_name(client->socket, settings->window_title);
+    guac_protocol_send_name(client->socket, settings->hostname);
 
     /* Send size */
     guac_protocol_send_size(client->socket, GUAC_DEFAULT_LAYER,

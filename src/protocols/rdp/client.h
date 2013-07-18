@@ -49,26 +49,8 @@
 
 #include "audio.h"
 #include "rdp_keymap.h"
+#include "rdp_settings.h"
 
-/**
- * The default RDP port.
- */
-#define RDP_DEFAULT_PORT 3389
-
-/**
- * Default screen width, in pixels.
- */
-#define RDP_DEFAULT_WIDTH  1024
-
-/**
- * Default screen height, in pixels.
- */
-#define RDP_DEFAULT_HEIGHT 768 
-
-/**
- * Default color depth, in bits.
- */
-#define RDP_DEFAULT_DEPTH  16 
 
 /**
  * Client data that will remain accessible through the guac_client.
@@ -82,10 +64,9 @@ typedef struct rdp_guac_client_data {
     freerdp* rdp_inst;
 
     /**
-     * The settings structure associated with the FreeRDP client instance
-     * handling the current connection.
+     * All settings associated with the current or pending RDP connection.
      */
-    rdpSettings* settings;
+    guac_rdp_settings settings;
 
     /**
      * Button mask containing the OR'd value of all currently pressed buttons.
@@ -170,16 +151,6 @@ typedef struct rdp_guac_client_data {
      * The current text (NOT Unicode) clipboard contents.
      */
     char* clipboard;
-
-    /**
-     * Whether audio is enabled.
-     */
-    int audio_enabled;
-
-    /**
-     * Whether printing is enabled.
-     */
-    int printing_enabled;
 
     /**
      * Audio output, if any.

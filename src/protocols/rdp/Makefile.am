@@ -57,6 +57,7 @@ libguac_client_rdp_la_SOURCES = \
 	rdp_keymap_fr_fr.c          \
 	rdp_keymap_en_us.c          \
 	rdp_pointer.c               \
+	rdp_settings.c              \
 	wav_encoder.c
 
 guacsnd_sources =                 \
@@ -86,6 +87,7 @@ noinst_HEADERS =                     \
 	rdp_glyph.h                      \
 	rdp_keymap.h                     \
 	rdp_pointer.h                    \
+	rdp_settings.h                   \
 	wav_encoder.h
 
 # Add compatibility layer for WinPR if not available

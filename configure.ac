@@ -216,6 +216,7 @@ fi
 have_winpr=yes
 have_freerdp=yes
 legacy_freerdp_extensions=no
+rdpsettings_interface=unknown
 RDP_LIBS=
 
 # libfreerdp-cache
@@ -246,23 +247,29 @@ AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"],
              [have_freerdp=no])
 
-# FreeRDP-specific structure members
+# Check for interval polling in plugins
 AC_CHECK_MEMBERS([rdpSvcPlugin.interval_ms],
                  [[#include <freerdp/utils/svc_plugin.h>]])
 
 # FreeRDP-specific headers
-AC_CHECK_HEADERS([freerdp/locale/keyboard.h])
+AC_CHECK_HEADERS([freerdp/locale/keyboard.h],,
+                  AC_CHECK_HEADERS([freerdp/kbd/layouts.h],,
+                                   [have_freerdp=no]))
+
+#
+# FreeRDP: WinPR
+#
 
 # Check for stream support via WinPR
-AC_CHECK_HEADER(winpr/stream.h,,                                      # <-- stable-1.1
+AC_CHECK_HEADER(winpr/stream.h,,
                 [have_winpr=no,
-                 AC_CHECK_LIB([freerdp-utils], [stream_write_uint8],, # <-- stable-1.0
+                 AC_CHECK_LIB([freerdp-utils], [stream_write_uint8],,
                               [have_freerdp=no])])
 
 # Check for types in WinPR
-AC_CHECK_HEADER(winpr/wtypes.h,,                   # <-- stable-1.1
+AC_CHECK_HEADER(winpr/wtypes.h,,
                 [have_winpr=no,
-                 AC_CHECK_HEADER(freerdp/types.h,, # <-- stable-1.0
+                 AC_CHECK_HEADER(freerdp/types.h,,
                                  [have_freerdp=no])])
 
 if test "x${have_winpr}" = "xyes"
@@ -270,6 +277,33 @@ then
     AC_DEFINE([ENABLE_WINPR])
 fi
 
+#
+# FreeRDP: rdpSettings
+#
+
+# Check for current (as of 1.1) rdpSettings interface
+AC_CHECK_MEMBERS([rdpSettings.Width,
+                  rdpSettings.Height,
+                  rdpSettings.OrderSupport],
+                 [rdpsettings_interface=stable],,
+                 [[#include <freerdp/freerdp.h>]])
+
+# If not current, check for legacy interface
+if test "x${rdpsettings_interface}" = "xunknown"
+then
+    AC_CHECK_MEMBERS([rdpSettings.width,
+                      rdpSettings.height,
+                      rdpSettings.order_support],
+                     [rdpsettings_interface=legacy],,
+                     [[#include <freerdp/freerdp.h>]])
+fi
+
+# Set defines based on interface type, warn if unknown
+if test "x${rdpsettings_interface}" = "xlegacy"; then
+    AC_DEFINE([LEGACY_RDPSETTINGS])
+elif test "x${rdpsettings_interface}" = "xunknown"; then
+    have_freerdp=no
+fi
 
 AM_CONDITIONAL([LEGACY_FREERDP_EXTENSIONS], [test "x${legacy_freerdp_extensions}" = "xyes"])
 AM_CONDITIONAL([ENABLE_WINPR], [test "x${have_winpr}"   = "xyes"])
