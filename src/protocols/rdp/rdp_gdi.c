@@ -462,7 +462,11 @@ void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette) {
 
     CLRCONV* clrconv = ((rdp_freerdp_context*) context)->clrconv;
     clrconv->palette->count = palette->number;
+#ifdef LEGACY_RDPPALETTE
     clrconv->palette->entries = palette->entries;
+#else
+    memcpy(clrconv->palette->entries, palette->entries, sizeof(palette->entries));
+#endif
 
 }
 

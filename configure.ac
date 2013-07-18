@@ -364,6 +364,15 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
                   [AC_DEFINE([LEGACY_RDPBITMAP])])
 
 #
+# FreeRDP: rdpPalette
+#
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <freerdp/update.h>
+                                    rdpPalette p;
+                                    PALETTE_ENTRY* foo = p.entries;]])],,
+                  [AC_DEFINE([LEGACY_RDPPALETTE])])
+
+#
 # FreeRDP: wMessage / RDP_EVENT
 #
 

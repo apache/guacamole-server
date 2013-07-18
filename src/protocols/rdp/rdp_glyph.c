@@ -145,7 +145,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
 
     /* Convert foreground color */
     fgcolor = freerdp_color_convert_var(fgcolor,
-            context->instance->settings->color_depth, 32,
+            guac_client_data->settings.color_depth, 32,
             ((rdp_freerdp_context*) context)->clrconv);
 
     /* Fill background with color if specified */
@@ -161,7 +161,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
 
         /* Convert background color */
         bgcolor = freerdp_color_convert_var(bgcolor,
-                context->instance->settings->color_depth, 32,
+                guac_client_data->settings.color_depth, 32,
                 ((rdp_freerdp_context*) context)->clrconv);
 
         /* Fill background */
