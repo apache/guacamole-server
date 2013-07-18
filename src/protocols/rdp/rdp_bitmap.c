@@ -197,7 +197,13 @@ void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL pri
 
 }
 
-void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* data, int width, int height, int bpp, int length, BOOL compressed) {
+#ifdef LEGACY_RDPBITMAP
+void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* data,
+        int width, int height, int bpp, int length, BOOL compressed) {
+#else
+void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* data,
+        int width, int height, int bpp, int length, BOOL compressed, int codec_id) {
+#endif
 
     int size = width * height * (bpp + 7) / 8;
 

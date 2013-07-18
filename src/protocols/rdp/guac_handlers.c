@@ -52,7 +52,12 @@
 #include <freerdp/codec/color.h>
 #include <freerdp/cache/cache.h>
 #include <freerdp/utils/event.h>
+
+#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
+#include <freerdp/client/cliprdr.h>
+#else
 #include <freerdp/plugins/cliprdr.h>
+#endif
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>

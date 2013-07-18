@@ -389,7 +389,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rdp_inst->ReceiveChannelData = __guac_receive_channel_data;
 
     /* Allocate FreeRDP context */
+#ifdef LEGACY_FREERDP
     rdp_inst->context_size = sizeof(rdp_freerdp_context);
+#else
+    rdp_inst->ContextSize = sizeof(rdp_freerdp_context);
+#endif
     rdp_inst->ContextNew  = (pContextNew) rdp_freerdp_context_new;
     rdp_inst->ContextFree = (pContextFree) rdp_freerdp_context_free;
     freerdp_context_new(rdp_inst);

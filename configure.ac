@@ -194,7 +194,7 @@ then
     have_vnc_repeater=yes
     AC_CHECK_MEMBERS([rfbClient.destHost, rfbClient.destPort],
                      [], [have_vnc_repeater=no],
-                     [[#include <rfb/rfbclient.h>]])
+                      [[#include <rfb/rfbclient.h>]])
 
     if test "x${have_vnc_repeater}" = "xno"
     then
@@ -217,6 +217,7 @@ have_winpr=yes
 have_freerdp=yes
 legacy_freerdp_extensions=no
 rdpsettings_interface=unknown
+freerdp_interface=unknown
 RDP_LIBS=
 
 # libfreerdp-cache
@@ -251,12 +252,20 @@ AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
 AC_CHECK_MEMBERS([rdpSvcPlugin.interval_ms],
                  [[#include <freerdp/utils/svc_plugin.h>]])
 
-# FreeRDP-specific headers
+# Keyboard layout header
 AC_CHECK_HEADERS([freerdp/locale/keyboard.h],,
                   AC_CHECK_HEADERS([freerdp/kbd/layouts.h],,
                                    [have_freerdp=no]))
 
+# New headers defining addins
 AC_CHECK_HEADERS([freerdp/addin.h freerdp/client/channels.h])
+
+# Header defining cliprdr
+AC_CHECK_HEADERS([freerdp/client/cliprdr.h],,
+                  AC_CHECK_HEADERS([freerdp/plugins/cliprdr.h],,
+                                   [have_freerdp=no]),
+                 [#include <winpr/wtypes.h>
+                  #include <winpr/collections.h>])
 
 AC_CHECK_DECL([freerdp_register_addin_provider],
 	[AC_DEFINE([HAVE_FREERDP_REGISTER_ADDIN_PROVIDER])],,
@@ -281,6 +290,30 @@ AC_CHECK_HEADER(winpr/wtypes.h,,
 if test "x${have_winpr}" = "xyes"
 then
     AC_DEFINE([ENABLE_WINPR])
+fi
+
+#
+# FreeRDP: freerdp 
+#
+
+# Check for current (as of 1.1) freerdp interface
+AC_CHECK_MEMBERS([freerdp.ContextSize],
+                 [freerdp_interface=stable],,
+                 [[#include <freerdp/freerdp.h>]])
+
+# If not current, check for legacy interface
+if test "x${freerdp_interface}" = "xunknown"
+then
+    AC_CHECK_MEMBERS([freerdp.context_size],
+                     [freerdp_interface=legacy],,
+                     [[#include <freerdp/freerdp.h>]])
+fi
+
+# Set defines based on interface type, warn if unknown
+if test "x${freerdp_interface}" = "xlegacy"; then
+    AC_DEFINE([LEGACY_FREERDP])
+elif test "x${freerdp_interface}" = "xunknown"; then
+    have_freerdp=no
 fi
 
 #
@@ -310,6 +343,24 @@ if test "x${rdpsettings_interface}" = "xlegacy"; then
 elif test "x${rdpsettings_interface}" = "xunknown"; then
     have_freerdp=no
 fi
+
+#
+# FreeRDP: rdpBitmap
+#
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
+                                    #include <freerdp/freerdp.h>
+                                    void __decompress(rdpContext* context,
+                                                      rdpBitmap* bitmap,
+                                                      UINT8* data,
+                                                      int width,
+                                                      int height,
+                                                      int bpp,
+                                                      int length,
+                                                      BOOL compressed,
+                                                      int codec_id);
+                                    rdpBitmap b = { .Decompress = __decompress };]])],,
+                  [AC_DEFINE([LEGACY_RDPBITMAP])])
 
 AM_CONDITIONAL([LEGACY_FREERDP_EXTENSIONS], [test "x${legacy_freerdp_extensions}" = "xyes"])
 AM_CONDITIONAL([ENABLE_WINPR], [test "x${have_winpr}"   = "xyes"])
