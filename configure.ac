@@ -256,6 +256,12 @@ AC_CHECK_HEADERS([freerdp/locale/keyboard.h],,
                   AC_CHECK_HEADERS([freerdp/kbd/layouts.h],,
                                    [have_freerdp=no]))
 
+AC_CHECK_HEADERS([freerdp/addin.h freerdp/client/channels.h])
+
+AC_CHECK_DECL([freerdp_register_addin_provider],
+	[AC_DEFINE([HAVE_FREERDP_REGISTER_ADDIN_PROVIDER])],,
+	[#include <freerdp/addin.h>])
+
 #
 # FreeRDP: WinPR
 #

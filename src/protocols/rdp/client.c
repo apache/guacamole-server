@@ -54,9 +54,17 @@
 #include <freerdp/cache/palette.h>
 #include <freerdp/cache/pointer.h>
 #include <freerdp/cache/offscreen.h>
-#include <freerdp/channels/channels.h>
+#include <freerdp/client/channels.h>
 #include <freerdp/input.h>
 #include <freerdp/constants.h>
+
+#ifdef HAVE_FREERDP_CHANNELS_CHANNELS_H
+#include <freerdp/channels/channels.h>
+#endif
+
+#ifdef HAVE_FREERDP_ADDIN_H
+#include <freerdp/addin.h>
+#endif
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -142,8 +150,10 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) client->data;
 
+#ifdef HAVE_FREERDP_REGISTER_ADDIN_PROVIDER
     /* Init FreeRDP add-in provider */
     freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
+#endif
 
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
