@@ -483,9 +483,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->settings.printing_enabled =
         (strcmp(argv[IDX_ENABLE_PRINTING], "true") == 0);
 
-    /* Commit settings */
-    guac_rdp_commit_settings(settings, rdp_inst->settings);
-
     /* Store client data */
     guac_client_data->rdp_inst = rdp_inst;
     guac_client_data->bounded = FALSE;
@@ -554,6 +551,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Load keymap into client */
     __guac_rdp_client_load_keymap(client, settings->server_layout);
+
+    /* Commit settings */
+    guac_rdp_commit_settings(settings, rdp_inst->settings);
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
