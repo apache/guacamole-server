@@ -406,6 +406,7 @@ fi
 # FreeRDP: rdpBitmap
 #
 
+AC_MSG_CHECKING([whether rdpBitmap.Decompress() requires the codec_id])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
                                     #include <freerdp/freerdp.h>
                                     void __decompress(rdpContext* context,
@@ -417,17 +418,22 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
                                                       int length,
                                                       BOOL compressed,
                                                       int codec_id);
-                                    rdpBitmap b = { .Decompress = __decompress };]])],,
-                  [AC_DEFINE([LEGACY_RDPBITMAP])])
+                                    rdpBitmap b = { .Decompress = __decompress };]])],
+                  [AC_MSG_RESULT([yes])],
+                  [AC_MSG_RESULT([no])
+                   AC_DEFINE([LEGACY_RDPBITMAP])])
 
 #
 # FreeRDP: rdpPalette
 #
 
+AC_MSG_CHECKING([whether rdpPalette.entries is static])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <freerdp/update.h>
                                     rdpPalette p;
-                                    PALETTE_ENTRY* foo = p.entries;]])],,
-                  [AC_DEFINE([LEGACY_RDPPALETTE])])
+                                    PALETTE_ENTRY* foo = p.entries;]])],
+                  [AC_MSG_RESULT([yes])],
+                  [AC_MSG_RESULT([no])
+                   AC_DEFINE([LEGACY_RDPPALETTE])])
 
 #
 # FreeRDP: wMessage / RDP_EVENT
