@@ -300,7 +300,7 @@ AC_CHECK_HEADERS([freerdp/client/cliprdr.h],,
    RDP will be disabled.
   --------------------------------------------])
                                     have_freerdp=no],
-                                   [#include <freerdp/types.h>])
+                                   [#include <freerdp/types.h>]),
                  [#include <winpr/wtypes.h>
                   #include <winpr/collections.h>])
 
