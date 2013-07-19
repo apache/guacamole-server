@@ -46,7 +46,7 @@ typedef uint32  UINT32;
 typedef boolean BOOL;
 
 #define TRUE  true
-#define FALSE true
+#define FALSE false
 
 #endif
 
