@@ -39,9 +39,9 @@
 #define __GUAC_RDP_RDP_CLIPRDR_H
 
 #ifdef ENABLE_WINPR
-#include <winpr/wtypes.h>
+#include <winpr/stream.h>
 #else
-#include "compat/winpr-wtypes.h"
+#include "compat/winpr-stream.h"
 #endif
 
 #include <freerdp/freerdp.h>

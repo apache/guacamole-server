@@ -54,12 +54,12 @@
 #include <freerdp/cache/palette.h>
 #include <freerdp/cache/pointer.h>
 #include <freerdp/cache/offscreen.h>
-#include <freerdp/client/channels.h>
+#include <freerdp/channels/channels.h>
 #include <freerdp/input.h>
 #include <freerdp/constants.h>
 
-#ifdef HAVE_FREERDP_CHANNELS_CHANNELS_H
-#include <freerdp/channels/channels.h>
+#ifdef HAVE_FREERDP_CLIENT_CHANNELS_H
+#include <freerdp/client/channels.h>
 #endif
 
 #ifdef HAVE_FREERDP_ADDIN_H

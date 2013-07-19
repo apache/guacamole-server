@@ -37,9 +37,10 @@
 #ifndef __GUAC_WINPR_STREAM_COMPAT_H
 #define __GUAC_WINPR_STREAM_COMPAT_H
 
-/* FreeRDP 1.0 streams */
+#include <freerdp/utils/stream.h>
+#include "winpr-wtypes.h"
 
-#define Stream_New                     stream_new
+/* FreeRDP 1.0 streams */
 
 #define Stream_Write                   stream_write
 #define Stream_Write_UINT8             stream_write_uint8
@@ -59,6 +60,7 @@
 #define Stream_GetPointer              stream_get_mark
 #define Stream_EnsureRemainingCapacity stream_check_size
 #define Stream_Write                   stream_write
+#define Stream_GetPosition             stream_get_pos
 #define Stream_SetPosition             stream_set_pos
 #define Stream_SetPointer              stream_set_mark
 #define Stream_Buffer                  stream_get_head

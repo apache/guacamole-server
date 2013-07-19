@@ -58,7 +58,7 @@ void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp
     rdp_settings->width = guac_settings->width;
     rdp_settings->height = guac_settings->height;
     rdp_settings->shell = guac_settings->initial_program;
-    rdp_settiongs->kbd_layout = guac_settings->server_layout->freerdp_keyboard_layout;
+    rdp_settings->kbd_layout = guac_settings->server_layout->freerdp_keyboard_layout;
 
     /* Console */
     rdp_settings->console_session = guac_settings->console;

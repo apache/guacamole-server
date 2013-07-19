@@ -45,5 +45,3 @@ void Stream_Free(wStream* s, BOOL bFreeBuffer) {
     /* STUB */
 }
 
-#endif
-
