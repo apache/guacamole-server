@@ -116,7 +116,6 @@ if LEGACY_FREERDP_EXTENSIONS
 
 # FreeRDP 1.0-style extensions
 freerdp_LTLIBRARIES = guacsnd.la guacdr.la
-freerdpdir = ${libdir}/freerdp
 
 guacsnd_la_SOURCES = ${guacsnd_sources}
 guacsnd_la_LDFLAGS = ${guacsnd_ldflags}
@@ -130,7 +129,6 @@ else
 
 # FreeRDP 1.1 (and hopefully onward) extensions
 freerdp_LTLIBRARIES = guacsnd-client.la guacdr-client.la
-freerdpdir = ${libdir}/freerdp/extensions
 
 guacsnd_client_la_SOURCES = ${guacsnd_sources}
 guacsnd_client_la_LDFLAGS = ${guacsnd_ldflags}
@@ -141,4 +139,6 @@ guacdr_client_la_LDFLAGS = ${guacdr_ldflags}
 guacdr_client_la_LIBADD  = ${guacdr_libadd}
 
 endif
+
+freerdpdir = ${libdir}/freerdp
 
