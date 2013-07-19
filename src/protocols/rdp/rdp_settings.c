@@ -35,92 +35,146 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <freerdp/constants.h>
 #include "rdp_settings.h"
 
 #ifdef LEGACY_RDPSETTINGS
 
 void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp_settings) {
-    /* STUB */
-
-    /*
-    settings->authentication
-    settings->autologon
-    settings->bitmap_cache
-    settings->color_depth
-    settings->console_audio
-    settings->console_session
-    settings->domain
-    settings->encryption
-    settings->encryption_level
-    settings->encryption_method
-    settings->height
-    settings->hostname
-    settings->kbd_layout
-    settings->nla_security
-    settings->order_support
-    settings->os_major_type
-    settings->os_minor_type
-    settings->password
-    settings->port
-    settings->rdp_security
-    settings->shell
-    settings->tls_security
-    settings->username
-    settings->width
-    settings->window_title
-    */
-
-#if 0
 
     BOOL bitmap_cache;
 
+    /* Authentication */
+    rdp_settings->domain = guac_settings->domain;
+    rdp_settings->username = guac_settings->username;
+    rdp_settings->password = guac_settings->password;
+
+    /* Connection */
+    rdp_settings->hostname = guac_settings->hostname;
+    rdp_settings->port = guac_settings->port;
+
+    /* Session */
+    rdp_settings->color_depth = guac_settings->color_depth;
+    rdp_settings->width = guac_settings->width;
+    rdp_settings->height = guac_settings->height;
+    rdp_settings->shell = guac_settings->initial_program;
+    rdp_settiongs->kbd_layout = guac_settings->server_layout->freerdp_keyboard_layout;
+
+    /* Console */
+    rdp_settings->console_session = guac_settings->console;
+    rdp_settings->console_audio = guac_settings->console_audio;
+
     /* --no-auth */
-    settings->authentication = FALSE;
+    rdp_settings->authentication = FALSE;
 
     /* --sec rdp */
-    settings->rdp_security = TRUE;
-    settings->tls_security = FALSE;
-    settings->nla_security = FALSE;
-    settings->encryption = TRUE;
-    settings->encryption_method = ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
-    settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
+    rdp_settings->rdp_security = TRUE;
+    rdp_settings->tls_security = FALSE;
+    rdp_settings->nla_security = FALSE;
+    rdp_settings->encryption = TRUE;
+    rdp_settings->encryption_method =
+        ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
+    rdp_settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
 
     /* Order support */
-    bitmap_cache = settings->bitmap_cache;
-    settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
-    settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
-    settings->order_support[NEG_DSTBLT_INDEX] = TRUE;
-    settings->order_support[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
-    settings->order_support[NEG_SCRBLT_INDEX] = TRUE;
-    settings->order_support[NEG_OPAQUE_RECT_INDEX] = TRUE;
-    settings->order_support[NEG_DRAWNINEGRID_INDEX] = FALSE;
-    settings->order_support[NEG_MULTIDSTBLT_INDEX] = FALSE;
-    settings->order_support[NEG_MULTIPATBLT_INDEX] = FALSE;
-    settings->order_support[NEG_MULTISCRBLT_INDEX] = FALSE;
-    settings->order_support[NEG_MULTIOPAQUERECT_INDEX] = FALSE;
-    settings->order_support[NEG_MULTI_DRAWNINEGRID_INDEX] = FALSE;
-    settings->order_support[NEG_LINETO_INDEX] = FALSE;
-    settings->order_support[NEG_POLYLINE_INDEX] = FALSE;
-    settings->order_support[NEG_MEMBLT_INDEX] = bitmap_cache;
-    settings->order_support[NEG_MEM3BLT_INDEX] = FALSE;
-    settings->order_support[NEG_MEMBLT_V2_INDEX] = bitmap_cache;
-    settings->order_support[NEG_MEM3BLT_V2_INDEX] = FALSE;
-    settings->order_support[NEG_SAVEBITMAP_INDEX] = FALSE;
-    settings->order_support[NEG_GLYPH_INDEX_INDEX] = TRUE;
-    settings->order_support[NEG_FAST_INDEX_INDEX] = TRUE;
-    settings->order_support[NEG_FAST_GLYPH_INDEX] = TRUE;
-    settings->order_support[NEG_POLYGON_SC_INDEX] = FALSE;
-    settings->order_support[NEG_POLYGON_CB_INDEX] = FALSE;
-    settings->order_support[NEG_ELLIPSE_SC_INDEX] = FALSE;
-    settings->order_support[NEG_ELLIPSE_CB_INDEX] = FALSE;
-#endif
+    bitmap_cache = rdp_settings->bitmap_cache;
+    rdp_settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
+    rdp_settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
+    rdp_settings->order_support[NEG_DSTBLT_INDEX] = TRUE;
+    rdp_settings->order_support[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
+    rdp_settings->order_support[NEG_SCRBLT_INDEX] = TRUE;
+    rdp_settings->order_support[NEG_OPAQUE_RECT_INDEX] = TRUE;
+    rdp_settings->order_support[NEG_DRAWNINEGRID_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_MULTIDSTBLT_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_MULTIPATBLT_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_MULTISCRBLT_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_MULTIOPAQUERECT_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_MULTI_DRAWNINEGRID_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_LINETO_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_POLYLINE_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_MEMBLT_INDEX] = bitmap_cache;
+    rdp_settings->order_support[NEG_MEM3BLT_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_MEMBLT_V2_INDEX] = bitmap_cache;
+    rdp_settings->order_support[NEG_MEM3BLT_V2_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_SAVEBITMAP_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_GLYPH_INDEX_INDEX] = TRUE;
+    rdp_settings->order_support[NEG_FAST_INDEX_INDEX] = TRUE;
+    rdp_settings->order_support[NEG_FAST_GLYPH_INDEX] = TRUE;
+    rdp_settings->order_support[NEG_POLYGON_SC_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_POLYGON_CB_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_ELLIPSE_SC_INDEX] = FALSE;
+    rdp_settings->order_support[NEG_ELLIPSE_CB_INDEX] = FALSE;
+
 
 }
 
 #else
 
 void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp_settings) {
-    /* STUB */
+
+    BOOL bitmap_cache;
+
+    /* Authentication */
+    rdp_settings->Domain = guac_settings->domain;
+    rdp_settings->Username = guac_settings->username;
+    rdp_settings->Password = guac_settings->password;
+
+    /* Connection */
+    rdp_settings->ServerHostname = guac_settings->hostname;
+    rdp_settings->ServerPort = guac_settings->port;
+
+    /* Session */
+    rdp_settings->ColorDepth = guac_settings->color_depth;
+    rdp_settings->DesktopWidth = guac_settings->width;
+    rdp_settings->DesktopHeight = guac_settings->height;
+    rdp_settings->AlternateShell = guac_settings->initial_program;
+    rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
+
+    /* Console */
+    rdp_settings->ConsoleSession = guac_settings->console;
+    rdp_settings->RemoteConsoleAudio = guac_settings->console_audio;
+
+    /* --no-auth */
+    rdp_settings->Authentication = FALSE;
+
+    /* --sec rdp */
+    rdp_settings->RdpSecurity = TRUE;
+    rdp_settings->TlsSecurity = FALSE;
+    rdp_settings->NlaSecurity = FALSE;
+    rdp_settings->DisableEncryption = FALSE;
+    rdp_settings->EncryptionMethods =
+        ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
+    rdp_settings->EncryptionLevel = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
+
+    /* Order support */
+    bitmap_cache = rdp_settings->BitmapCacheEnabled;
+    rdp_settings->OsMajorType = OSMAJORTYPE_UNSPECIFIED;
+    rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
+    rdp_settings->OrderSupport[NEG_DSTBLT_INDEX] = TRUE;
+    rdp_settings->OrderSupport[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
+    rdp_settings->OrderSupport[NEG_SCRBLT_INDEX] = TRUE;
+    rdp_settings->OrderSupport[NEG_OPAQUE_RECT_INDEX] = TRUE;
+    rdp_settings->OrderSupport[NEG_DRAWNINEGRID_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_MULTIDSTBLT_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_MULTIPATBLT_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_MULTISCRBLT_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_MULTIOPAQUERECT_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_MULTI_DRAWNINEGRID_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_LINETO_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_POLYLINE_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_MEMBLT_INDEX] = bitmap_cache;
+    rdp_settings->OrderSupport[NEG_MEM3BLT_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_MEMBLT_V2_INDEX] = bitmap_cache;
+    rdp_settings->OrderSupport[NEG_MEM3BLT_V2_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_SAVEBITMAP_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_GLYPH_INDEX_INDEX] = TRUE;
+    rdp_settings->OrderSupport[NEG_FAST_INDEX_INDEX] = TRUE;
+    rdp_settings->OrderSupport[NEG_FAST_GLYPH_INDEX] = TRUE;
+    rdp_settings->OrderSupport[NEG_POLYGON_SC_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_POLYGON_CB_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_ELLIPSE_SC_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_ELLIPSE_CB_INDEX] = FALSE;
+
 }
 
 #endif
