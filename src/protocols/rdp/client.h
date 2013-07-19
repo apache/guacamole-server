@@ -222,8 +222,11 @@ typedef struct rdp_freerdp_context {
 /**
  * Given the coordinates and dimensions of a rectangle, clips the rectangle to be
  * within the clipping bounds of the client data, if clipping is active.
+ *
+ * Returns 0 if the rectangle given is visible at all, and 1 if the entire
+ * rectangls is outside the clipping rectangle and this invisible.
  */
-void guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int* w, int* h);
+int guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int* w, int* h);
 
 #endif
 

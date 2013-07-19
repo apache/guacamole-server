@@ -222,24 +222,26 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
     if (height > max_height) height = max_height;
 
     /* Clip operation to clipping region, if any */
-    guac_rdp_clip_rect(guac_client_data, &x, &y, &width, &height);
+    if (!guac_rdp_clip_rect(guac_client_data, &x, &y, &width, &height)) {
 
-    /* Ensure data is ready */
-    cairo_surface_flush(glyph_surface);
+        /* Ensure data is ready */
+        cairo_surface_flush(glyph_surface);
 
-    /* Create surface for subsection with text */
-    cairo_surface_t* surface = cairo_image_surface_create_for_data(
-            cairo_image_surface_get_data(glyph_surface) + 4*x + y*stride,
-            cairo_image_surface_get_format(glyph_surface),
-            width, height, stride);
+        /* Create surface for subsection with text */
+        cairo_surface_t* surface = cairo_image_surface_create_for_data(
+                cairo_image_surface_get_data(glyph_surface) + 4*x + y*stride,
+                cairo_image_surface_get_format(glyph_surface),
+                width, height, stride);
 
-    /* Send surface with all glyphs to layer */
-    guac_protocol_send_png(client->socket,
-            GUAC_COMP_OVER, current_layer, x, y,
-            surface);
+        /* Send surface with all glyphs to layer */
+        guac_protocol_send_png(client->socket,
+                GUAC_COMP_OVER, current_layer, x, y,
+                surface);
 
-    /* Destroy surface */
-    cairo_surface_destroy(surface);
+        /* Destroy surface */
+        cairo_surface_destroy(surface);
+
+    }
 
     /* Destroy cairo instance */
     cairo_destroy(guac_client_data->glyph_cairo);

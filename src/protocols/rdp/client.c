@@ -619,7 +619,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
 }
 
-void guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int* w, int* h) {
+int guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int* w, int* h) {
 
     if (data->bounded) {
 
@@ -631,18 +631,18 @@ void guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int* w, int*
 
         /* Clip left */
         if      (clipped_left < data->bounds_left)  clipped_left = data->bounds_left;
-        else if (clipped_left > data->bounds_right) clipped_left = data->bounds_right;
+        else if (clipped_left > data->bounds_right) return 1;
 
         /* Clip right */
-        if      (clipped_right < data->bounds_left)  clipped_right = data->bounds_left;
+        if      (clipped_right < data->bounds_left)  return 1;
         else if (clipped_right > data->bounds_right) clipped_right = data->bounds_right;
 
         /* Clip top */
         if      (clipped_top < data->bounds_top)    clipped_top = data->bounds_top;
-        else if (clipped_top > data->bounds_bottom) clipped_top = data->bounds_bottom;
+        else if (clipped_top > data->bounds_bottom) return 1;
 
         /* Clip bottom */
-        if      (clipped_bottom < data->bounds_top)    clipped_bottom = data->bounds_top;
+        if      (clipped_bottom < data->bounds_top)    return 1;
         else if (clipped_bottom > data->bounds_bottom) clipped_bottom = data->bounds_bottom;
 
         /* Store new rect dimensions */
@@ -652,6 +652,8 @@ void guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int* w, int*
         *h = clipped_bottom - clipped_top  + 1;
 
     }
+
+    return 0;
 
 }
 
