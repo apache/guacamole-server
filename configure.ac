@@ -224,12 +224,22 @@ RDP_LIBS=
 # libfreerdp-cache
 AC_CHECK_LIB([freerdp-cache], [glyph_cache_register_callbacks],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-cache"],
-             [have_freerdp=no])
+             [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libfreerdp-cache
+   RDP will be disabled.
+  --------------------------------------------])
+              have_freerdp=no])
 
 # libfreerdp-core
 AC_CHECK_LIB([freerdp-core], [freerdp_new],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-core"],
-             [have_freerdp=no])
+             [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libfreerdp-core
+   RDP will be disabled.
+  --------------------------------------------])
+              have_freerdp=no])
 
 # libfreerdp-channels (1.0) / libfreerdp-client (1.1+)
 AC_CHECK_LIB([freerdp-client], [freerdp_channels_new],
@@ -237,26 +247,46 @@ AC_CHECK_LIB([freerdp-client], [freerdp_channels_new],
              [AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],
                            [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"
                             legacy_freerdp_extensions=yes],
-                           [have_freerdp=no])])
+                           [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libfreerdp-client / libfreerdp-channels
+   RDP will be disabled.
+  --------------------------------------------])
+                            have_freerdp=no])])
 
 # libfreerdp-utils
 AC_CHECK_LIB([freerdp-utils], [svc_plugin_init],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-utils"],
-             [have_freerdp=no])
+             [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libfreerdp-utils
+   RDP will be disabled.
+  --------------------------------------------])
+              have_freerdp=no])
 
 # libfreerdp-codec
 AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
              [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"],
-             [have_freerdp=no])
+             [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libfreerdp-codec
+   RDP will be disabled.
+  --------------------------------------------])
+              have_freerdp=no])
 
 # Check for interval polling in plugins
-AC_CHECK_MEMBERS([rdpSvcPlugin.interval_ms],
+AC_CHECK_MEMBERS([rdpSvcPlugin.interval_ms],,,
                  [[#include <freerdp/utils/svc_plugin.h>]])
 
 # Keyboard layout header
 AC_CHECK_HEADERS([freerdp/locale/keyboard.h],,
                   AC_CHECK_HEADERS([freerdp/kbd/layouts.h],,
-                                   [have_freerdp=no]))
+                                   [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find keyboard layout headers
+   RDP will be disabled.
+  --------------------------------------------])
+                                    have_freerdp=no]))
 
 # New headers defining addins
 AC_CHECK_HEADERS([freerdp/addin.h freerdp/client/channels.h])
@@ -264,7 +294,13 @@ AC_CHECK_HEADERS([freerdp/addin.h freerdp/client/channels.h])
 # Header defining cliprdr
 AC_CHECK_HEADERS([freerdp/client/cliprdr.h],,
                   AC_CHECK_HEADERS([freerdp/plugins/cliprdr.h],,
-                                   [have_freerdp=no]),
+                                   [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find cliprdr headers
+   RDP will be disabled.
+  --------------------------------------------])
+                                    have_freerdp=no],
+                                   [#include <freerdp/types.h>])
                  [#include <winpr/wtypes.h>
                   #include <winpr/collections.h>])
 
@@ -279,14 +315,25 @@ AC_CHECK_DECL([freerdp_register_addin_provider],
 # Check for stream support via WinPR
 AC_CHECK_HEADER(winpr/stream.h,,
                 [have_winpr=no,
-                 AC_CHECK_LIB([freerdp-utils], [stream_write_uint8],,
-                              [have_freerdp=no])])
+                 AC_CHECK_DECL([stream_write_uint8],,
+                              [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find stream support
+   RDP will be disabled.
+  --------------------------------------------])
+                               have_freerdp=no],
+                              [#include <freerdp/utils/stream.h>])])
 
 # Check for types in WinPR
 AC_CHECK_HEADER(winpr/wtypes.h,,
                 [have_winpr=no,
                  AC_CHECK_HEADER(freerdp/types.h,,
-                                 [have_freerdp=no])])
+                                 [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find type definitions
+   RDP will be disabled.
+  --------------------------------------------])
+                                  have_freerdp=no])])
 
 if test "x${have_winpr}" = "xyes"
 then
@@ -314,6 +361,11 @@ fi
 if test "x${freerdp_interface}" = "xlegacy"; then
     AC_DEFINE([LEGACY_FREERDP])
 elif test "x${freerdp_interface}" = "xunknown"; then
+    AC_MSG_WARN([
+  --------------------------------------------
+   Unknown FreeRDP interface
+   RDP will be disabled.
+  --------------------------------------------])
     have_freerdp=no
 fi
 
@@ -342,6 +394,11 @@ fi
 if test "x${rdpsettings_interface}" = "xlegacy"; then
     AC_DEFINE([LEGACY_RDPSETTINGS])
 elif test "x${rdpsettings_interface}" = "xunknown"; then
+    AC_MSG_WARN([
+  --------------------------------------------
+   Unknown rdpSettings interface
+   RDP will be disabled.
+  --------------------------------------------]) 
     have_freerdp=no
 fi
 
@@ -393,6 +450,11 @@ fi
 if test "x${event_interface}" = "xlegacy"; then
     AC_DEFINE([LEGACY_EVENT])
 elif test "x${event_interface}" = "xunknown"; then
+    AC_MSG_WARN([
+  --------------------------------------------
+   Unknown event interface
+   RDP will be disabled.
+  --------------------------------------------])
     have_freerdp=no
 fi
 
