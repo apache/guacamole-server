@@ -142,9 +142,15 @@ typedef struct guac_rdp_settings {
 
 
 /**
- * Save all given settings to the given rdpSettings object.
+ * Save all given settings to the given freerdp instance.
  */
-void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp_settings);
+void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp);
+
+/**
+ * Pull all settings from the given freerdp instance into the client
+ * stored settings.
+ */
+void guac_rdp_pull_settings(freerdp* rdp, guac_rdp_settings* guac_settings);
 
 #endif
 

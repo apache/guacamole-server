@@ -38,36 +38,80 @@
 #include <freerdp/constants.h>
 #include "rdp_settings.h"
 
-#ifdef LEGACY_RDPSETTINGS
+void guac_rdp_pull_settings(freerdp* rdp, guac_rdp_settings* guac_settings) {
 
-void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp_settings) {
+    rdpSettings* rdp_settings = rdp->settings;
+
+#ifdef LEGACY_RDPSETTINGS
+    guac_settings->color_depth = rdp_settings->color_depth;
+    guac_settings->width       = rdp_settings->width;
+    guac_settings->height      = rdp_settings->height;
+#else
+    guac_settings->color_depth = rdp_settings->ColorDepth;
+    guac_settings->width       = rdp_settings->DesktopWidth;
+    guac_settings->height      = rdp_settings->DesktopHeight;
+#endif
+
+}
+
+void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     BOOL bitmap_cache;
+    rdpSettings* rdp_settings = rdp->settings;
 
     /* Authentication */
+#ifdef LEGACY_RDPSETTINGS
     rdp_settings->domain = guac_settings->domain;
     rdp_settings->username = guac_settings->username;
     rdp_settings->password = guac_settings->password;
+#else
+    rdp_settings->Domain = guac_settings->domain;
+    rdp_settings->Username = guac_settings->username;
+    rdp_settings->Password = guac_settings->password;
+#endif
 
     /* Connection */
+#ifdef LEGACY_RDPSETTINGS
     rdp_settings->hostname = guac_settings->hostname;
     rdp_settings->port = guac_settings->port;
+#else
+    rdp_settings->ServerHostname = guac_settings->hostname;
+    rdp_settings->ServerPort = guac_settings->port;
+#endif
 
     /* Session */
+#ifdef LEGACY_RDPSETTINGS
     rdp_settings->color_depth = guac_settings->color_depth;
     rdp_settings->width = guac_settings->width;
     rdp_settings->height = guac_settings->height;
     rdp_settings->shell = guac_settings->initial_program;
     rdp_settings->kbd_layout = guac_settings->server_layout->freerdp_keyboard_layout;
+#else
+    rdp_settings->ColorDepth = guac_settings->color_depth;
+    rdp_settings->DesktopWidth = guac_settings->width;
+    rdp_settings->DesktopHeight = guac_settings->height;
+    rdp_settings->AlternateShell = guac_settings->initial_program;
+    rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
+#endif
 
     /* Console */
+#ifdef LEGACY_RDPSETTINGS
     rdp_settings->console_session = guac_settings->console;
     rdp_settings->console_audio = guac_settings->console_audio;
+#else
+    rdp_settings->ConsoleSession = guac_settings->console;
+    rdp_settings->RemoteConsoleAudio = guac_settings->console_audio;
+#endif
 
     /* --no-auth */
+#ifdef LEGACY_RDPSETTINGS
     rdp_settings->authentication = FALSE;
+#else
+    rdp_settings->Authentication = FALSE;
+#endif
 
     /* --sec rdp */
+#ifdef LEGACY_RDPSETTINGS
     rdp_settings->rdp_security = TRUE;
     rdp_settings->tls_security = FALSE;
     rdp_settings->nla_security = FALSE;
@@ -75,8 +119,18 @@ void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp
     rdp_settings->encryption_method =
         ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
     rdp_settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
+#else
+    rdp_settings->RdpSecurity = TRUE;
+    rdp_settings->TlsSecurity = FALSE;
+    rdp_settings->NlaSecurity = FALSE;
+    rdp_settings->DisableEncryption = FALSE;
+    rdp_settings->EncryptionMethods =
+        ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
+    rdp_settings->EncryptionLevel = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
+#endif
 
     /* Order support */
+#ifdef LEGACY_RDPSETTINGS
     bitmap_cache = rdp_settings->bitmap_cache;
     rdp_settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
@@ -104,49 +158,7 @@ void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp
     rdp_settings->order_support[NEG_POLYGON_CB_INDEX] = FALSE;
     rdp_settings->order_support[NEG_ELLIPSE_SC_INDEX] = FALSE;
     rdp_settings->order_support[NEG_ELLIPSE_CB_INDEX] = FALSE;
-
-
-}
-
 #else
-
-void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp_settings) {
-
-    BOOL bitmap_cache;
-
-    /* Authentication */
-    rdp_settings->Domain = guac_settings->domain;
-    rdp_settings->Username = guac_settings->username;
-    rdp_settings->Password = guac_settings->password;
-
-    /* Connection */
-    rdp_settings->ServerHostname = guac_settings->hostname;
-    rdp_settings->ServerPort = guac_settings->port;
-
-    /* Session */
-    rdp_settings->ColorDepth = guac_settings->color_depth;
-    rdp_settings->DesktopWidth = guac_settings->width;
-    rdp_settings->DesktopHeight = guac_settings->height;
-    rdp_settings->AlternateShell = guac_settings->initial_program;
-    rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
-
-    /* Console */
-    rdp_settings->ConsoleSession = guac_settings->console;
-    rdp_settings->RemoteConsoleAudio = guac_settings->console_audio;
-
-    /* --no-auth */
-    rdp_settings->Authentication = FALSE;
-
-    /* --sec rdp */
-    rdp_settings->RdpSecurity = TRUE;
-    rdp_settings->TlsSecurity = FALSE;
-    rdp_settings->NlaSecurity = FALSE;
-    rdp_settings->DisableEncryption = FALSE;
-    rdp_settings->EncryptionMethods =
-        ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
-    rdp_settings->EncryptionLevel = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
-
-    /* Order support */
     bitmap_cache = rdp_settings->BitmapCacheEnabled;
     rdp_settings->OsMajorType = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
@@ -174,8 +186,7 @@ void guac_rdp_commit_settings(guac_rdp_settings* guac_settings, rdpSettings* rdp
     rdp_settings->OrderSupport[NEG_POLYGON_CB_INDEX] = FALSE;
     rdp_settings->OrderSupport[NEG_ELLIPSE_SC_INDEX] = FALSE;
     rdp_settings->OrderSupport[NEG_ELLIPSE_CB_INDEX] = FALSE;
+#endif
 
 }
-
-#endif
 

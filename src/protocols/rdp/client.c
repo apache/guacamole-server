@@ -552,8 +552,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Load keymap into client */
     __guac_rdp_client_load_keymap(client, settings->server_layout);
 
-    /* Commit settings */
-    guac_rdp_commit_settings(settings, rdp_inst->settings);
+    /* Push desired settings to FreeRDP */
+    guac_rdp_push_settings(settings, rdp_inst);
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
@@ -567,6 +567,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         return 1;
     }
+
+    /* Pull actual settings back from FreeRDP */
+    guac_rdp_pull_settings(rdp_inst, settings);
 
     /* Send connection name */
     guac_protocol_send_name(client->socket, settings->hostname);
