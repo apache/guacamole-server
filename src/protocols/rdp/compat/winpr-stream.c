@@ -36,12 +36,17 @@
 
 #include "winpr-stream.h"
 
+/*
+ * NOTE: Because the old API did not support local allocation of the buffer
+ *       for each stream, these compatibility implementations ignore
+ *       the parameters of Stream_New() and Stream_Free() that provide them.
+ */
+
 wStream* Stream_New(BYTE* buffer, size_t size) {
-    /* STUB */
     return stream_new(size);
 }
 
 void Stream_Free(wStream* s, BOOL bFreeBuffer) {
-    /* STUB */
+    stream_free(s);
 }
 
