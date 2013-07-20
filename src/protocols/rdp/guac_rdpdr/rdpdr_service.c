@@ -65,7 +65,7 @@ int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
         (guac_rdpdrPlugin*) calloc(1, sizeof(guac_rdpdrPlugin));
 
     /* Init channel def */
-    strcpy(rdpdr->plugin.channel_def.name, "guacdr");
+    strcpy(rdpdr->plugin.channel_def.name, "rdpdr");
     rdpdr->plugin.channel_def.options = 
         CHANNEL_OPTION_INITIALIZED | CHANNEL_OPTION_ENCRYPT_RDP | CHANNEL_OPTION_COMPRESS_RDP;
 

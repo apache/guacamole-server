@@ -66,7 +66,7 @@ int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
         (guac_rdpsndPlugin*) calloc(1, sizeof(guac_rdpsndPlugin));
 
     /* Init channel def */
-    strcpy(rdpsnd->plugin.channel_def.name, "guacsnd");
+    strcpy(rdpsnd->plugin.channel_def.name, "rdpsnd");
     rdpsnd->plugin.channel_def.options = 
         CHANNEL_OPTION_INITIALIZED | CHANNEL_OPTION_ENCRYPT_RDP;
 
