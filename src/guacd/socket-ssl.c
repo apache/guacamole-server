@@ -47,9 +47,12 @@
 static ssize_t __guac_socket_ssl_read_handler(guac_socket* socket,
         void* buf, size_t count) {
 
+#if 0
     /* Read from socket */
     guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
-    int retval = 0; /* STUB */
+    int retval;
+
+    /* STUB */
 
     /* Record errors in guac_error */
     if (retval < 0) {
@@ -58,15 +61,21 @@ static ssize_t __guac_socket_ssl_read_handler(guac_socket* socket,
     }
 
     return retval;
+#endif
+
+    return 0;
 
 }
 
 static ssize_t __guac_socket_ssl_write_handler(guac_socket* socket,
         const void* buf, size_t count) {
 
+#if 0
     /* Write data to socket */
     guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
-    int retval = 0; /* STUB */
+    int retval;
+
+    /* STUB */
 
     /* Record errors in guac_error */
     if (retval < 0) {
@@ -75,6 +84,10 @@ static ssize_t __guac_socket_ssl_write_handler(guac_socket* socket,
     }
 
     return retval;
+#endif
+
+    return count;
+
 }
 
 static int __guac_socket_ssl_select_handler(guac_socket* socket, int usec_timeout) {

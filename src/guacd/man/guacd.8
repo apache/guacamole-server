@@ -1,4 +1,4 @@
-.TH guacd 8 "6 May 2012" "version 0.6.2" "Guacamole"
+.TH guacd 8 "22 Jul 2013" "version 0.8.2" "Guacamole"
 .
 .SH NAME
 guacd \- Guacamole proxy daemon
@@ -7,7 +7,9 @@ guacd \- Guacamole proxy daemon
 .B guacd
 [\fB-b\fR \fIHOST\fR]
 [\fB-l\fR \fIPORT\fR]
-[\fB-p\fR \fIFILE\fR]
+[\fB-p\fR \fIPID FILE\fR]
+[\fB-C\fR \fICERTIFICATE FILE\fR]
+[\fB-A\fR \fICIPHER1:CIPHER2:...\fR]
 [\fB-f\fR]
 .
 .SH DESCRIPTION
@@ -46,5 +48,27 @@ Causes
 to run in the foreground, rather than automatically forking into the
 background.
 .
+.SH SSL/TLS OPTIONS
+If libssl was present at the time
+.B guacd
+was compiled, it will contain SSL/TLS support, and connections between the
+web application and
+.B guacd
+can be encrypted if a certificate file is given.
+.TP
+\fB-C\fR \fICERTIFICATE FILE\fR
+Enables SSL/TLS using the given cerficiate file. Future connections to
+this instance of
+.B guacd
+will require SSL/TLS enabled in the client (the web application). If
+this option is not given, communication with guacd must be unencrypted.
+[\fB-A\fR \fICIPHER1:CIPHER2:...\fR]
+.TP
+\fB-a\fR \fICIPHER1:CIPHER2:...\fR
+Given a colon-delimited list of ciphers, this option selects which
+ciphers will be available for SSL/TLS connections. If this option is
+not given, and encryption is enabled, all ciphers will be available
+for use.
+.
 .SH AUTHOR
-Written by Michael Jumper <zhangmaike@users.sourceforge.net>
+Written by Michael Jumper <mike.jumper@guac-dev.org>
