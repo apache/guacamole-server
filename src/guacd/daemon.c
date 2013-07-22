@@ -367,6 +367,7 @@ int main(int argc, char* argv[]) {
 #ifdef ENABLE_SSL
     /* SSL */
     char* cert_file = NULL;
+    char* key_file = NULL;
     SSL_CTX* ssl_context = NULL;
 #endif
 
@@ -374,7 +375,7 @@ int main(int argc, char* argv[]) {
     int retval;
 
     /* Parse arguments */
-    while ((opt = getopt(argc, argv, "l:b:p:C:A:f")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:C:K:A:f")) != -1) {
         if (opt == 'l') {
             listen_port = strdup(optarg);
         }
@@ -391,12 +392,15 @@ int main(int argc, char* argv[]) {
         else if (opt == 'C') {
             cert_file = strdup(optarg);
         }
+        else if (opt == 'K') {
+            key_file = strdup(optarg);
+        }
         else if (opt == 'A') {
             fprintf(stderr, "The -a option is not yet implemented.\n");
             exit(EXIT_FAILURE);
         }
 #else
-        else if (opt == 'C' || opt == 'A') {
+        else if (opt == 'C' || opt == 'K' || opt == 'A') {
             fprintf(stderr,
                     "This %s does not have SSL/TLS support compiled in.\n"
                     "If you wish to enable support for the -%c option, please install libssl and "
@@ -413,6 +417,7 @@ int main(int argc, char* argv[]) {
                     " [-p PIDFILE]"
 #ifdef ENABLE_SSL
                     " [-C CERTIFICATE_FILE]"
+                    " [-K PEM_FILE]"
                     " [-A CIPHER1:CIPHER2:...]"
 #endif
                     " [-f]\n", argv[0]);
@@ -500,15 +505,29 @@ int main(int argc, char* argv[]) {
 
 #ifdef ENABLE_SSL
     /* Init SSL if enabled */
-    if (cert_file != NULL) {
+    if (key_file != NULL) {
 
-        guacd_log_info("Using certificate file %s", cert_file);
+        /* Init SSL */
         guacd_log_info("Communication will be encrypted with SSL/TLS.");
-
         SSL_library_init();
         SSL_load_error_strings();
-
         ssl_context = SSL_CTX_new(SSLv23_server_method());
+
+        /* Load key */
+        guacd_log_info("Using PEM keyfile %s", key_file);
+        if (!SSL_CTX_use_PrivateKey_file(ssl_context, key_file, SSL_FILETYPE_PEM)) {
+            guacd_log_error("Unable to load keyfile.");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Load cert file if specified */
+        if (cert_file != NULL) {
+            guacd_log_info("Using certificate file %s", cert_file);
+            if (!SSL_CTX_use_certificate_file(ssl_context, cert_file, SSL_FILETYPE_PEM)) {
+                guacd_log_error("Unable to load certificate.");
+                exit(EXIT_FAILURE);
+            }
+        }
 
     }
 #endif
@@ -605,8 +624,13 @@ int main(int argc, char* argv[]) {
 #ifdef ENABLE_SSL
 
             /* If SSL chosen, use it */
-            if (ssl_context != NULL)
+            if (ssl_context != NULL) {
                 socket = guac_socket_open_secure(ssl_context, connected_socket_fd);
+                if (socket == NULL) {
+                    guacd_log_error("Error opening secure connection");
+                    return 0;
+                }
+            }
             else
                 socket = guac_socket_open(connected_socket_fd);
 #else
