@@ -44,10 +44,16 @@ man_MANS = man/guacd.8
 noinst_HEADERS = client.h log.h
 guacd_SOURCES  = daemon.c client.c log.c
 guacd_LDADD    = @LIBGUAC_LTLIB@
-guacd_LDFLAGS  = @PTHREAD_LIBS@
+guacd_LDFLAGS  = @PTHREAD_LIBS@ @SSL_LIBS@
 
 EXTRA_DIST = init.d/guacd.in man/guacd.8
 CLEANFILES = $(init_SCRIPTS)
+
+# SSL support
+if ENABLE_SSL
+noinst_HEADERS += socket-ssl.h
+guacd_SOURCES  += socket-ssl.c
+endif
 
 # Init script
 if ENABLE_INIT
