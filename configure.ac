@@ -80,6 +80,7 @@ AC_CHECK_LIB([wsock32], [main])
 
 AC_SUBST(DL_LIBS)
 AC_SUBST(PNG_LIBS)
+AC_SUBST(SSL_LIBS)
 AC_SUBST(CAIRO_LIBS)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(CUNIT_LIBS)
@@ -112,6 +113,31 @@ AC_ARG_WITH(init_dir,
             ],init_dir=$withval)
 AM_CONDITIONAL([ENABLE_INIT], [test "x${init_dir}" != "x"])
 AC_SUBST(init_dir)
+
+#
+# libssl
+#
+
+have_ssl=yes
+SSL_LIBS=
+
+AC_CHECK_HEADER(openssl/ssl.h,, [have_ssl=no])
+AC_CHECK_LIB([ssl], [SSL_CTX_new], [SSL_LIBS="$SSL_LIBS -lssl"], [have_ssl=no])
+AM_CONDITIONAL([ENABLE_SSL], [test "x${have_ssl}" = "xyes"])
+
+if test "x${have_ssl}" = "xno"
+then
+    AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libssl.
+   guacd will not support SSL connections.
+  --------------------------------------------])
+else
+    AC_DEFINE([ENABLE_SSL])
+fi
+
+AC_SUBST(SSL_LIBS)
+
 
 #
 # Ogg Vorbis
@@ -237,6 +263,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      freerdp ............. ${have_freerdp}
      pango ............... ${have_pango}
      libssh .............. ${have_libssh}
+     libssl .............. ${have_ssl}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
 
