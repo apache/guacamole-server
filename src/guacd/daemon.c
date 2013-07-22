@@ -375,7 +375,7 @@ int main(int argc, char* argv[]) {
     int retval;
 
     /* Parse arguments */
-    while ((opt = getopt(argc, argv, "l:b:p:C:K:A:f")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:C:K:f")) != -1) {
         if (opt == 'l') {
             listen_port = strdup(optarg);
         }
@@ -395,12 +395,8 @@ int main(int argc, char* argv[]) {
         else if (opt == 'K') {
             key_file = strdup(optarg);
         }
-        else if (opt == 'A') {
-            fprintf(stderr, "The -a option is not yet implemented.\n");
-            exit(EXIT_FAILURE);
-        }
 #else
-        else if (opt == 'C' || opt == 'K' || opt == 'A') {
+        else if (opt == 'C' || opt == 'K') {
             fprintf(stderr,
                     "This %s does not have SSL/TLS support compiled in.\n"
                     "If you wish to enable support for the -%c option, please install libssl and "
@@ -418,7 +414,6 @@ int main(int argc, char* argv[]) {
 #ifdef ENABLE_SSL
                     " [-C CERTIFICATE_FILE]"
                     " [-K PEM_FILE]"
-                    " [-A CIPHER1:CIPHER2:...]"
 #endif
                     " [-f]\n", argv[0]);
 

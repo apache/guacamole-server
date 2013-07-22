@@ -10,7 +10,6 @@ guacd \- Guacamole proxy daemon
 [\fB-p\fR \fIPID FILE\fR]
 [\fB-C\fR \fICERTIFICATE FILE\fR]
 [\fB-K\fR \fIKEY FILE\fR]
-[\fB-A\fR \fICIPHER1:CIPHER2:...\fR]
 [\fB-f\fR]
 .
 .SH DESCRIPTION
@@ -70,12 +69,6 @@ this instance of
 .B guacd
 will require SSL/TLS enabled in the client (the web application). If
 this option is not given, communication with guacd must be unencrypted.
-.TP
-\fB-A\fR \fICIPHER1:CIPHER2:...\fR
-Given a colon-delimited list of ciphers, this option selects which
-ciphers will be available for SSL/TLS connections. If this option is
-not given, and encryption is enabled, all ciphers will be available
-for use.
 .
 .SH AUTHOR
 Written by Michael Jumper <mike.jumper@guac-dev.org>
