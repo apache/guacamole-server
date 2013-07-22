@@ -411,8 +411,8 @@ int main(int argc, char* argv[]) {
                     " [-b LISTENADDRESS]"
                     " [-p PIDFILE]"
 #ifdef ENABLE_SSL
-                    " [-c CERTIFICATE_FILE]"
-                    " [-a CIPHER1:CIPHER2:...]"
+                    " [-C CERTIFICATE_FILE]"
+                    " [-A CIPHER1:CIPHER2:...]"
 #endif
                     " [-f]\n", argv[0]);
 
