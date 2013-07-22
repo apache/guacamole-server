@@ -38,6 +38,9 @@
 #ifndef __GUACD_SOCKET_SSL_H
 #define __GUACD_SOCKET_SSL_H
 
+#include <openssl/ssl.h>
+#include <guacamole/socket.h>
+
 /**
  * SSL socket-specific data.
  */
@@ -49,12 +52,23 @@ typedef struct guac_socket_ssl_data {
      */
     int fd;
 
+    /**
+     * The current SSL context.
+     */
+    SSL_CTX* context;
+
+    /**
+     * The SSL connection, created automatically via
+     * guac_socket_open_secure().
+     */
+    SSL* ssl;
+
 } guac_socket_ssl_data;
 
 /**
  * Creates a new guac_socket which will use SSL for all communication.
  */
-guac_socket* guac_socket_open_secure(int fd);
+guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd);
 
 #endif
 

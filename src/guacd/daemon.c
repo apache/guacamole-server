@@ -57,6 +57,7 @@
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
+#include "socket-ssl.h"
 #endif
 
 #include <guacamole/client.h>
@@ -605,9 +606,9 @@ int main(int argc, char* argv[]) {
 
             /* If SSL chosen, use it */
             if (ssl_context != NULL)
-                guacd_log_info("STUB: SSL ENABLED - would have used SSL here.");
-
-            socket = guac_socket_open(connected_socket_fd);
+                socket = guac_socket_open_secure(ssl_context, connected_socket_fd);
+            else
+                socket = guac_socket_open(connected_socket_fd);
 #else
             /* Open guac_socket */
             socket = guac_socket_open(connected_socket_fd);

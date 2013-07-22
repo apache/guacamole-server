@@ -38,6 +38,8 @@
 #include <stdlib.h>
 #include <sys/select.h>
 
+#include <openssl/ssl.h>
+
 #include <guacamole/socket.h>
 #include <guacamole/error.h>
 
@@ -47,46 +49,38 @@
 static ssize_t __guac_socket_ssl_read_handler(guac_socket* socket,
         void* buf, size_t count) {
 
-#if 0
     /* Read from socket */
     guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
     int retval;
 
-    /* STUB */
+    retval = SSL_read(data->ssl, buf, count);
 
     /* Record errors in guac_error */
-    if (retval < 0) {
+    if (retval <= 0) {
         guac_error = GUAC_STATUS_SEE_ERRNO;
         guac_error_message = "Error reading data from secure socket";
     }
 
     return retval;
-#endif
-
-    return 0;
 
 }
 
 static ssize_t __guac_socket_ssl_write_handler(guac_socket* socket,
         const void* buf, size_t count) {
 
-#if 0
     /* Write data to socket */
     guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
     int retval;
 
-    /* STUB */
+    retval = SSL_write(data->ssl, buf, count);
 
     /* Record errors in guac_error */
-    if (retval < 0) {
+    if (retval <= 0) {
         guac_error = GUAC_STATUS_SEE_ERRNO;
         guac_error_message = "Error writing data to secure socket";
     }
 
     return retval;
-#endif
-
-    return count;
 
 }
 
@@ -129,15 +123,36 @@ static int __guac_socket_ssl_select_handler(guac_socket* socket, int usec_timeou
 }
 
 static int __guac_socket_ssl_free_handler(guac_socket* socket) {
-    free(socket->data);
+
+    /* Shutdown SSL */
+    guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
+    SSL_shutdown(data->ssl);
+
+    free(data);
     return 0;
 }
 
-guac_socket* guac_socket_open_secure(int fd) {
+guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
     guac_socket_ssl_data* data = malloc(sizeof(guac_socket_ssl_data));
+
+    /* Init SSL */
+    data->context = context;
+    data->ssl = SSL_new(context);
+    SSL_set_fd(data->ssl, fd);
+
+    /* Accept SSL connection, handle errors */
+    if (SSL_accept(data->ssl) <= 0) {
+
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "SSL accept failed";
+
+        free(data);
+        guac_socket_free(socket);
+        return NULL;
+    }
 
     /* Store file descriptor as socket data */
     data->fd = fd;
