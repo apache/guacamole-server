@@ -398,10 +398,11 @@ int main(int argc, char* argv[]) {
 #else
         else if (opt == 'C' || opt == 'K') {
             fprintf(stderr,
-                    "This %s does not have SSL/TLS support compiled in.\n"
-                    "If you wish to enable support for the -%c option, please install libssl and "
-                    "recompile %s.\n",
-                    argv[0], opt, argv[0]);
+                    "This guacd does not have SSL/TLS support compiled in.\n\n"
+
+                    "If you wish to enable support for the -%c option, please install libssl and\n"
+                    "recompile guacd.\n",
+                    opt);
             exit(EXIT_FAILURE);
         }
 #endif
