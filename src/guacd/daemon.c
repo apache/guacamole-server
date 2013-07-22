@@ -505,20 +505,24 @@ int main(int argc, char* argv[]) {
 
 #ifdef ENABLE_SSL
     /* Init SSL if enabled */
-    if (key_file != NULL) {
+    if (key_file != NULL || cert_file != NULL) {
 
         /* Init SSL */
-        guacd_log_info("Communication will be encrypted with SSL/TLS.");
+        guacd_log_info("Communication will require SSL/TLS.");
         SSL_library_init();
         SSL_load_error_strings();
         ssl_context = SSL_CTX_new(SSLv23_server_method());
 
         /* Load key */
-        guacd_log_info("Using PEM keyfile %s", key_file);
-        if (!SSL_CTX_use_PrivateKey_file(ssl_context, key_file, SSL_FILETYPE_PEM)) {
-            guacd_log_error("Unable to load keyfile.");
-            exit(EXIT_FAILURE);
+        if (key_file != NULL) {
+            guacd_log_info("Using PEM keyfile %s", key_file);
+            if (!SSL_CTX_use_PrivateKey_file(ssl_context, key_file, SSL_FILETYPE_PEM)) {
+                guacd_log_error("Unable to load keyfile.");
+                exit(EXIT_FAILURE);
+            }
         }
+        else
+            guacd_log_info("No PEM keyfile given - SSL/TLS may not work.");
 
         /* Load cert file if specified */
         if (cert_file != NULL) {
@@ -528,6 +532,8 @@ int main(int argc, char* argv[]) {
                 exit(EXIT_FAILURE);
             }
         }
+        else
+            guacd_log_info("No certificate file given - SSL/TLS may not work.");
 
     }
 #endif
@@ -627,7 +633,7 @@ int main(int argc, char* argv[]) {
             if (ssl_context != NULL) {
                 socket = guac_socket_open_secure(ssl_context, connected_socket_fd);
                 if (socket == NULL) {
-                    guacd_log_error("Error opening secure connection");
+                    guacd_log_guac_error("Error opening secure connection");
                     return 0;
                 }
             }
