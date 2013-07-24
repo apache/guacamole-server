@@ -148,6 +148,9 @@ static void guac_rdpdr_send_client_device_list_announce_request(guac_rdpdrPlugin
     /* Only one device for now */
     Stream_Write_UINT32(output_stream, 1);
 
+    /* TODO: Actually register proper device with devices array */
+    /* TODO: Init devices-registered count */
+
     /* Printer header */
     guac_client_log_info(rdpdr->client, "Sending printer");
     Stream_Write_UINT32(output_stream, RDPDR_DTYP_PRINT);
@@ -235,41 +238,22 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_str
 
 void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
 
-    int device_id, completion_id, major_func, minor_func;
+    int device_id, file_id, completion_id, major_func, minor_func;
 
     /* Read header */
     Stream_Read_UINT32(input_stream, device_id);
-    Stream_Seek(input_stream, 4); /* file_id - currently skipped (not used in printer) */
+    Stream_Read_UINT32(input_stream, file_id);
     Stream_Read_UINT32(input_stream, completion_id);
     Stream_Read_UINT32(input_stream, major_func);
     Stream_Read_UINT32(input_stream, minor_func);
 
     /* If printer, run printer handlers */
-    if (device_id == GUAC_PRINTER_DEVICE_ID) {
+    if (device_id >= 0 && device_id < rdpdr->devices_registered) {
 
-        switch (major_func) {
-
-            /* Print job create */
-            case IRP_MJ_CREATE:
-                guac_rdpdr_process_print_job_create(rdpdr, input_stream, completion_id);
-                break;
-
-            /* Printer job write */
-            case IRP_MJ_WRITE:
-                guac_rdpdr_process_print_job_write(rdpdr, input_stream, completion_id);
-                break;
-
-            /* Printer job close */
-            case IRP_MJ_CLOSE:
-                guac_rdpdr_process_print_job_close(rdpdr, input_stream, completion_id);
-                break;
-
-            /* Log unknown */
-            default:
-                guac_client_log_error(rdpdr->client, "Unknown printer I/O request function: 0x%x/0x%x",
-                        major_func, minor_func);
-
-        }
+        /* Call handler on device */
+        guac_rdpdr_device* device = &(rdpdr->devices[device_id]);
+        device->iorequest_handler(device, input_stream,
+                file_id, completion_id, major_func, minor_func);
 
     }
 

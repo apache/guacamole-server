@@ -51,13 +51,40 @@
  */
 #define GUAC_RDPDR_PRINTER_BLOB 0
 
-/*
- * Message handlers.
+/**
+ * Data specific to an instance of the printer device.
  */
+typedef struct guac_rdpdr_printer_data {
 
-void guac_rdpdr_process_print_job_create(guac_rdpdrPlugin* rdpdr, wStream* input_stream, int completion_id);
-void guac_rdpdr_process_print_job_write(guac_rdpdrPlugin* rdpdr, wStream* input_stream, int completion_id);
-void guac_rdpdr_process_print_job_close(guac_rdpdrPlugin* rdpdr, wStream* input_stream, int completion_id);
+    /**
+     * File descriptor that should be written to when sending documents to the
+     * printer.
+     */
+    int printer_input;
+
+    /**
+     * File descriptor that should be read from when receiving output from the
+     * printer.
+     */
+    int printer_output;
+
+    /**
+     * Thread which transfers data from the printer to the Guacamole client.
+     */
+    pthread_t printer_output_thread;
+
+    /**
+     * The number of bytes received in the current print job.
+     */
+    int bytes_received;
+
+} guac_rdpdr_printer_data;
+
+/**
+ * Registers a new printer device within the RDPDR plugin. This must be done
+ * before RDPDR connection finishes.
+ */
+void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr);
 
 /**
  * The command to run when filtering postscript to produce PDF. This must be

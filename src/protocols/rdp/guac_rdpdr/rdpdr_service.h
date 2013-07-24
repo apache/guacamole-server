@@ -48,11 +48,58 @@
 
 #include <guacamole/client.h>
 
+typedef struct guac_rdpdrPlugin guac_rdpdrPlugin;
+typedef struct guac_rdpdr_device guac_rdpdr_device;
+
+/**
+ * Handler for device I/O requests.
+ */
+typedef void guac_rdpdr_device_iorequest_handler(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id, int major_func, int minor_func);
+
+/**
+ * Handler for cleaning up the dynamically-allocated portions of a device.
+ */
+typedef void guac_rdpdr_device_free_handler(guac_rdpdr_device* device);
+
+/**
+ * Arbitrary device forwarded over the RDPDR channel.
+ */
+struct guac_rdpdr_device {
+
+    /**
+     * The RDPDR plugin owning this device.
+     */
+    guac_rdpdrPlugin* rdpdr;
+
+    /**
+     * An arbitrary device name, used for logging purposes only.
+     */
+    const char* device_name;
+
+    /**
+     * Handler which should be called for every I/O request received.
+     */
+    guac_rdpdr_device_iorequest_handler* iorequest_handler;
+
+    /**
+     * Handlel which should be called when the device is being free'd.
+     */
+    guac_rdpdr_device_free_handler* free_handler;
+
+    /**
+     * Arbitrary data, used internally by the handlers for this device.
+     */
+    void* data;
+
+};
+
+
 /**
  * Structure representing the current state of the Guacamole RDPDR plugin for
  * FreeRDP.
  */
-typedef struct guac_rdpdrPlugin {
+struct guac_rdpdrPlugin {
 
     /**
      * The FreeRDP parts of this plugin. This absolutely MUST be first.
@@ -67,28 +114,16 @@ typedef struct guac_rdpdrPlugin {
     guac_client* client;
 
     /**
-     * File descriptor that should be written to when sending documents to the
-     * printer.
+     * The number of devices registered within the devices array.
      */
-    int printer_input;
+    int devices_registered;
 
     /**
-     * File descriptor that should be read from when receiving output from the
-     * printer.
+     * Array of registered devices.
      */
-    int printer_output;
+    guac_rdpdr_device devices[8];
 
-    /**
-     * Thread which transfers data from the printer to the Guacamole client.
-     */
-    pthread_t printer_output_thread;
-
-    /**
-     * The number of bytes received in the current print job.
-     */
-    int bytes_received;
-
-} guac_rdpdrPlugin;
+};
 
 
 /**
