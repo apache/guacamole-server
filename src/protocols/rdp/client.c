@@ -100,6 +100,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "color-depth",
     "disable-audio",
     "enable-printing",
+    "enable-drive",
     "console",
     "console-audio",
     "server-layout",
@@ -122,6 +123,7 @@ enum RDP_ARGS_IDX {
     IDX_COLOR_DEPTH,
     IDX_DISABLE_AUDIO,
     IDX_ENABLE_PRINTING,
+    IDX_ENABLE_DRIVE,
     IDX_CONSOLE,
     IDX_CONSOLE_AUDIO,
     IDX_SERVER_LAYOUT,
@@ -180,8 +182,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     } /* end if audio enabled */
 
-    /* If printing enabled, load rdpdr */
-    if (guac_client_data->settings.printing_enabled) {
+    /* If RDPDR required, load it */
+    if (guac_client_data->settings.printing_enabled
+        || guac_client_data->settings.drive_enabled) {
 
         /* Load RDPDR plugin */
         if (freerdp_channels_load_plugin(channels, instance->settings,
@@ -189,7 +192,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             guac_client_log_error(client,
                     "Failed to load guacdr plugin.");
 
-    } /* end if printing enabled */
+    }
 
     /* Init color conversion structure */
     clrconv = calloc(1, sizeof(CLRCONV));
@@ -531,6 +534,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Printing enable/disable */
     guac_client_data->settings.printing_enabled =
         (strcmp(argv[IDX_ENABLE_PRINTING], "true") == 0);
+
+    /* Drive enable/disable */
+    guac_client_data->settings.drive_enabled =
+        (strcmp(argv[IDX_ENABLE_DRIVE], "true") == 0);
 
     /* Store client data */
     guac_client_data->rdp_inst = rdp_inst;

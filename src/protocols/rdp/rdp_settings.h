@@ -146,6 +146,11 @@ typedef struct guac_rdp_settings {
     int printing_enabled;
 
     /**
+     * Whether the virtual drive is enabled.
+     */
+    int drive_enabled;
+
+    /**
      * Whether this session is a console session.
      */
     int console;

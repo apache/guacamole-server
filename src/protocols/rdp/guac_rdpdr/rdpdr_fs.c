@@ -66,9 +66,64 @@ static void guac_rdpdr_device_fs_announce_handler(guac_rdpdr_device* device,
 static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id, int major_func, int minor_func) {
 
-    guac_client_log_error(device->rdpdr->client,
-            "Unknown filesystem I/O request function: 0x%x/0x%x",
-            major_func, minor_func);
+    switch (major_func) {
+
+        /* File open */
+        case IRP_MJ_CREATE:
+            break;
+
+        /* File close */
+        case IRP_MJ_CLOSE:
+            break;
+
+        /* File read */
+        case IRP_MJ_READ:
+            break;
+
+        /* File write */
+        case IRP_MJ_WRITE:
+            break;
+
+        case IRP_MJ_DEVICE_CONTROL:
+            guac_client_log_error(device->rdpdr->client,
+                    "IRP_MJ_DEVICE_CONTROL unsupported");
+            break;
+
+        case IRP_MJ_QUERY_VOLUME_INFORMATION:
+            guac_client_log_error(device->rdpdr->client,
+                    "IRP_MJ_QUERY_VOLUME_INFORMATION unsupported");
+            break;
+
+        case IRP_MJ_SET_VOLUME_INFORMATION:
+            guac_client_log_error(device->rdpdr->client,
+                    "IRP_MJ_SET_VOLUME_INFORMATION unsupported");
+            break;
+
+        case IRP_MJ_QUERY_INFORMATION:
+            guac_client_log_error(device->rdpdr->client,
+                    "IRP_MJ_QUERY_INFORMATION unsupported");
+            break;
+
+        case IRP_MJ_SET_INFORMATION:
+            guac_client_log_error(device->rdpdr->client,
+                    "IRP_MJ_SET_INFORMATION unsupported");
+            break;
+
+        case IRP_MJ_DIRECTORY_CONTROL:
+            guac_client_log_error(device->rdpdr->client,
+                    "IRP_MJ_DIRECTORY_CONTROL unsupported");
+            break;
+
+        case IRP_MJ_LOCK_CONTROL:
+            guac_client_log_error(device->rdpdr->client,
+                    "IRP_MJ_LOCK_CONTROL unsupported");
+            break;
+
+        default:
+            guac_client_log_error(device->rdpdr->client,
+                    "Unknown filesystem I/O request function: 0x%x/0x%x",
+                    major_func, minor_func);
+    }
 
 }
 
