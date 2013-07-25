@@ -104,7 +104,7 @@ static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
     Stream_Write_UINT16(output_stream, PAKID_CORE_CLIENT_CAPABILITY);
 
     /* Capability count + padding */
-    Stream_Write_UINT16(output_stream, 2);
+    Stream_Write_UINT16(output_stream, 3);
     Stream_Write_UINT16(output_stream, 0); /* Padding */
 
     /* General capability header */
@@ -131,6 +131,11 @@ static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
     Stream_Write_UINT16(output_stream, CAP_PRINTER_TYPE);
     Stream_Write_UINT16(output_stream, 8);
     Stream_Write_UINT32(output_stream, PRINT_CAPABILITY_VERSION_01);
+
+    /* Drive support header */
+    Stream_Write_UINT16(output_stream, CAP_DRIVE_TYPE);
+    Stream_Write_UINT16(output_stream, 8);
+    Stream_Write_UINT32(output_stream, DRIVE_CAPABILITY_VERSION_02);
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
     guac_client_log_info(rdpdr->client, "Capabilities sent.");

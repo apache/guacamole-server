@@ -125,6 +125,12 @@
 #define PRINT_CAPABILITY_VERSION_01   1
 
 /*
+ * Drive capability header versions.
+ */
+#define DRIVE_CAPABILITY_VERSION_01   1
+#define DRIVE_CAPABILITY_VERSION_02   2
+
+/*
  * Legal client major version numbers.
  */
 
