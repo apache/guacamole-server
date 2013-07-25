@@ -102,6 +102,7 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
 
     /* Init plugin */
     rdpdr->client = client;
+    rdpdr->devices_registered = 0;
 
     /* Register printer if enabled */
     if (client_data->settings.printing_enabled)
