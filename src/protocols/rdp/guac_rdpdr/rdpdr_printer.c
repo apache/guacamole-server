@@ -153,7 +153,7 @@ void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
     Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
 
     /* Write content */
-    Stream_Write_UINT32(output_stream, GUAC_PRINTER_DEVICE_ID);
+    Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
     Stream_Write_UINT32(output_stream, 0); /* Success */
     Stream_Write_UINT32(output_stream, 0); /* fileId */
@@ -249,7 +249,7 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
     Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
 
     /* Write content */
-    Stream_Write_UINT32(output_stream, GUAC_PRINTER_DEVICE_ID);
+    Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
     Stream_Write_UINT32(output_stream, status);
     Stream_Write_UINT32(output_stream, length);
@@ -281,7 +281,7 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
     Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
 
     /* Write content */
-    Stream_Write_UINT32(output_stream, GUAC_PRINTER_DEVICE_ID);
+    Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
     Stream_Write_UINT32(output_stream, 0); /* NTSTATUS - success */
     Stream_Write_UINT32(output_stream, 0); /* padding*/
@@ -351,11 +351,17 @@ static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
 
 void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
 
+    int id = rdpdr->devices_registered++;
+
     /* Get new device */
-    guac_rdpdr_device* device = &(rdpdr->devices[rdpdr->devices_registered++]);
+    guac_rdpdr_device* device = &(rdpdr->devices[id]);
 
     /* Init device */
-    device->rdpdr = rdpdr;
+    device->rdpdr       = rdpdr;
+    device->device_id   = id;
+    device->device_name = "Guacamole Printer";
+
+    /* Set handlers */
     device->announce_handler  = guac_rdpdr_device_printer_announce_handler;
     device->iorequest_handler = guac_rdpdr_device_printer_iorequest_handler;
     device->free_handler      = guac_rdpdr_device_printer_free_handler;

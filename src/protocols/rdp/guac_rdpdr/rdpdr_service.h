@@ -80,6 +80,11 @@ struct guac_rdpdr_device {
     guac_rdpdrPlugin* rdpdr;
 
     /**
+     * The ID assigned to this device by the RDPDR plugin.
+     */
+    int device_id;
+
+    /**
      * An arbitrary device name, used for logging purposes only.
      */
     const char* device_name;

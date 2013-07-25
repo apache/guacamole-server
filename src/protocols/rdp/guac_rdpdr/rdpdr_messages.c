@@ -151,7 +151,8 @@ static void guac_rdpdr_send_client_device_list_announce_request(guac_rdpdrPlugin
     for (i=0; i<rdpdr->devices_registered; i++) {
         guac_rdpdr_device* device = &(rdpdr->devices[i]);
         device->announce_handler(device, output_stream, i);
-        guac_client_log_info(rdpdr->client, "Registered device %i", i);
+        guac_client_log_info(rdpdr->client, "Registered device %i (%s)",
+                device->device_id, device->device_name);
     }
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
@@ -205,11 +206,13 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_str
     if (device_id >= 0 && device_id < rdpdr->devices_registered) {
 
         if (severity == 0x0)
-            guac_client_log_info(rdpdr->client, "Device %i connected successfully");
+            guac_client_log_info(rdpdr->client, "Device %i (%s) connected successfully",
+                    device_id, rdpdr->devices[device_id].device_name);
 
         else
-            guac_client_log_error(rdpdr->client, "Problem connecting device %i: "
+            guac_client_log_error(rdpdr->client, "Problem connecting device %i (%s): "
                     "severity=0x%x, c=0x%x, n=0x%x, facility=0x%x, code=0x%x",
+                     device_id, rdpdr->devices[device_id].device_name,
                      severity,      c,      n,      facility,      code);
 
     }

@@ -53,6 +53,7 @@
 
 #include "rdpdr_service.h"
 #include "rdpdr_messages.h"
+#include "rdpdr_printer.h"
 
 
 /**
