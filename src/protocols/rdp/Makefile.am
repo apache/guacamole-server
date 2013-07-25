@@ -63,12 +63,14 @@ guacsnd_sources =                 \
 	guac_rdpsnd/rdpsnd_service.c
 
 guacdr_sources =                \
+	guac_rdpdr/rdpdr_fs.c       \
 	guac_rdpdr/rdpdr_messages.c \
 	guac_rdpdr/rdpdr_printer.c  \
 	guac_rdpdr/rdpdr_service.c
 
 noinst_HEADERS =                     \
 	compat/client-cliprdr.h          \
+	guac_rdpdr/rdpdr_fs.h            \
 	guac_rdpdr/rdpdr_messages.h      \
 	guac_rdpdr/rdpdr_printer.h       \
 	guac_rdpdr/rdpdr_service.h       \

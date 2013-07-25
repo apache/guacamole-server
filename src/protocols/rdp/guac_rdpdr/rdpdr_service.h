@@ -47,6 +47,7 @@
 #endif
 
 #include <guacamole/client.h>
+#include <freerdp/utils/svc_plugin.h>
 
 typedef struct guac_rdpdrPlugin guac_rdpdrPlugin;
 typedef struct guac_rdpdr_device guac_rdpdr_device;

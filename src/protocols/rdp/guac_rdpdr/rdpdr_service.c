@@ -54,6 +54,7 @@
 #include "rdpdr_service.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"
+#include "rdpdr_fs.h"
 
 #include "client.h"
 
@@ -111,6 +112,8 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
     /* Register printer if enabled */
     if (client_data->settings.printing_enabled)
         guac_rdpdr_register_printer(rdpdr);
+
+    guac_rdpdr_register_fs(rdpdr);
 
     /* Log that printing, etc. has been loaded */
     guac_client_log_info(client, "guacdr connected.");
