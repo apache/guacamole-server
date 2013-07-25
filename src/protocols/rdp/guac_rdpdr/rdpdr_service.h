@@ -52,6 +52,13 @@ typedef struct guac_rdpdrPlugin guac_rdpdrPlugin;
 typedef struct guac_rdpdr_device guac_rdpdr_device;
 
 /**
+ * Handler for client device list announce. Each implementing device must write
+ * its announcement header and data to the given output stream.
+ */
+typedef void guac_rdpdr_device_announce_handler(guac_rdpdr_device* device, wStream* output_stream,
+        int device_id);
+
+/**
  * Handler for device I/O requests.
  */
 typedef void guac_rdpdr_device_iorequest_handler(guac_rdpdr_device* device,
@@ -76,6 +83,12 @@ struct guac_rdpdr_device {
      * An arbitrary device name, used for logging purposes only.
      */
     const char* device_name;
+
+    /**
+     * Handler which will be called when the RDPDR plugin is forming the client
+     * device announce list.
+     */
+    guac_rdpdr_device_announce_handler* announce_handler;
 
     /**
      * Handler which should be called for every I/O request received.

@@ -290,6 +290,31 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
 
 }
 
+static void guac_rdpdr_device_printer_announce_handler(guac_rdpdr_device* device,
+        wStream* output_stream, int device_id) {
+
+    /* Printer header */
+    guac_client_log_info(device->rdpdr->client, "Sending printer");
+    Stream_Write_UINT32(output_stream, RDPDR_DTYP_PRINT);
+    Stream_Write_UINT32(output_stream, device_id);
+    Stream_Write(output_stream, "PRN1\0\0\0\0", 8); /* DOS name */
+
+    /* Printer data */
+    Stream_Write_UINT32(output_stream, 24 + GUAC_PRINTER_DRIVER_LENGTH + GUAC_PRINTER_NAME_LENGTH);
+    Stream_Write_UINT32(output_stream,
+              RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER
+            | RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER);
+    Stream_Write_UINT32(output_stream, 0); /* reserved - must be 0 */
+    Stream_Write_UINT32(output_stream, 0); /* PnPName length (PnPName is ultimately ignored) */
+    Stream_Write_UINT32(output_stream, GUAC_PRINTER_DRIVER_LENGTH); /* DriverName length */
+    Stream_Write_UINT32(output_stream, GUAC_PRINTER_NAME_LENGTH);   /* PrinterName length */
+    Stream_Write_UINT32(output_stream, 0);                          /* CachedFields length */
+
+    Stream_Write(output_stream, GUAC_PRINTER_DRIVER, GUAC_PRINTER_DRIVER_LENGTH);
+    Stream_Write(output_stream, GUAC_PRINTER_NAME,   GUAC_PRINTER_NAME_LENGTH);
+
+}
+
 static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id, int major_func, int minor_func) {
 
@@ -331,6 +356,7 @@ void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
 
     /* Init device */
     device->rdpdr = rdpdr;
+    device->announce_handler  = guac_rdpdr_device_printer_announce_handler;
     device->iorequest_handler = guac_rdpdr_device_printer_iorequest_handler;
     device->free_handler      = guac_rdpdr_device_printer_free_handler;
 

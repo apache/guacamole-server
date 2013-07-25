@@ -97,6 +97,9 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
     /* Init plugin */
     rdpdr->client = client;
 
+    /* For now, always register the printer */
+    guac_rdpdr_register_printer(rdpdr);
+
     /* Log that printing, etc. has been loaded */
     guac_client_log_info(client, "guacdr connected.");
 

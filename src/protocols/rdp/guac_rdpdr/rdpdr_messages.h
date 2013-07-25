@@ -84,11 +84,6 @@
 #define GUAC_OS_TYPE (*((uint32_t*) "GUAC"))
 
 /**
- * Arbitray 32-bit unique integer representing the printer device.
- */
-#define GUAC_PRINTER_DEVICE_ID (*((uint32_t*) "GPR1"))
-
-/**
  * Name of the printer driver that should be used on the server.
  */
 #define GUAC_PRINTER_DRIVER        "M\0S\0 \0P\0u\0b\0l\0i\0s\0h\0e\0r\0 \0I\0m\0a\0g\0e\0s\0e\0t\0t\0e\0r\0\0\0"

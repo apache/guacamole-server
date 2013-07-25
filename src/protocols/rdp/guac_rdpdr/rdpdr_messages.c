@@ -139,37 +139,20 @@ static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
 
 static void guac_rdpdr_send_client_device_list_announce_request(guac_rdpdrPlugin* rdpdr) {
 
+    int i;
     wStream* output_stream = Stream_New(NULL, 256);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
     Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICELIST_ANNOUNCE);
 
-    /* Only one device for now */
-    Stream_Write_UINT32(output_stream, 1);
-
-    /* TODO: Actually register proper device with devices array */
-    /* TODO: Init devices-registered count */
-
-    /* Printer header */
-    guac_client_log_info(rdpdr->client, "Sending printer");
-    Stream_Write_UINT32(output_stream, RDPDR_DTYP_PRINT);
-    Stream_Write_UINT32(output_stream, GUAC_PRINTER_DEVICE_ID);
-    Stream_Write(output_stream, "PRN1\0\0\0\0", 8); /* DOS name */
-
-    /* Printer data */
-    Stream_Write_UINT32(output_stream, 24 + GUAC_PRINTER_DRIVER_LENGTH + GUAC_PRINTER_NAME_LENGTH);
-    Stream_Write_UINT32(output_stream,
-              RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER
-            | RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER);
-    Stream_Write_UINT32(output_stream, 0); /* reserved - must be 0 */
-    Stream_Write_UINT32(output_stream, 0); /* PnPName length (PnPName is ultimately ignored) */
-    Stream_Write_UINT32(output_stream, GUAC_PRINTER_DRIVER_LENGTH); /* DriverName length */
-    Stream_Write_UINT32(output_stream, GUAC_PRINTER_NAME_LENGTH);   /* PrinterName length */
-    Stream_Write_UINT32(output_stream, 0);                          /* CachedFields length */
-
-    Stream_Write(output_stream, GUAC_PRINTER_DRIVER, GUAC_PRINTER_DRIVER_LENGTH);
-    Stream_Write(output_stream, GUAC_PRINTER_NAME,   GUAC_PRINTER_NAME_LENGTH);
+    /* List devices */
+    Stream_Write_UINT32(output_stream, rdpdr->devices_registered);
+    for (i=0; i<rdpdr->devices_registered; i++) {
+        guac_rdpdr_device* device = &(rdpdr->devices[i]);
+        device->announce_handler(device, output_stream, i);
+        guac_client_log_info(rdpdr->client, "Registered device %i", i);
+    }
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
     guac_client_log_info(rdpdr->client, "All supported devices sent.");
@@ -219,13 +202,13 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_str
     code     =  ntstatus & 0x0000FFFF;
 
     /* Log error / information */
-    if (device_id == GUAC_PRINTER_DEVICE_ID) {
+    if (device_id >= 0 && device_id < rdpdr->devices_registered) {
 
         if (severity == 0x0)
-            guac_client_log_info(rdpdr->client, "Printer connected successfully");
+            guac_client_log_info(rdpdr->client, "Device %i connected successfully");
 
         else
-            guac_client_log_error(rdpdr->client, "Problem connecting printer: "
+            guac_client_log_error(rdpdr->client, "Problem connecting device %i: "
                     "severity=0x%x, c=0x%x, n=0x%x, facility=0x%x, code=0x%x",
                      severity,      c,      n,      facility,      code);
 
