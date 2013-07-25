@@ -55,6 +55,8 @@
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"
 
+#include "client.h"
+
 
 /**
  * Entry point for RDPDR virtual channel.
@@ -95,11 +97,15 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
     guac_client* client = (guac_client*)
         plugin->channel_entry_points.pExtendedData;
 
+    /* Get data from client */
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+
     /* Init plugin */
     rdpdr->client = client;
 
-    /* For now, always register the printer */
-    guac_rdpdr_register_printer(rdpdr);
+    /* Register printer if enabled */
+    if (client_data->settings.printing_enabled)
+        guac_rdpdr_register_printer(rdpdr);
 
     /* Log that printing, etc. has been loaded */
     guac_client_log_info(client, "guacdr connected.");
@@ -107,6 +113,17 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
 }
 
 void guac_rdpdr_process_terminate(rdpSvcPlugin* plugin) {
+
+    guac_rdpdrPlugin* rdpdr = (guac_rdpdrPlugin*) plugin;
+    int i;
+
+    for (i=0; i<rdpdr->devices_registered; i++) {
+        guac_rdpdr_device* device = &(rdpdr->devices[i]);
+        guac_client_log_info(rdpdr->client, "Unloading device %i (%s)",
+                device->device_id, device->device_name);
+        device->free_handler(device);
+    }
+
     free(plugin);
 }
 
