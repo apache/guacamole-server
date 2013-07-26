@@ -46,16 +46,19 @@
 #define Stream_Write_UINT8             stream_write_uint8
 #define Stream_Write_UINT16            stream_write_uint16
 #define Stream_Write_UINT32            stream_write_uint32
+#define Stream_Write_UINT64            stream_write_uint64
 
 #define Stream_Read                    stream_read
 #define Stream_Read_UINT8              stream_read_uint8
 #define Stream_Read_UINT16             stream_read_uint16
 #define Stream_Read_UINT32             stream_read_uint32
+#define Stream_Read_UINT64             stream_read_uint64
 
 #define Stream_Seek                    stream_seek
 #define Stream_Seek_UINT8              stream_seek_uint8
 #define Stream_Seek_UINT16             stream_seek_uint16
 #define Stream_Seek_UINT32             stream_seek_uint32
+#define Stream_Seek_UINT64             stream_seek_uint64
 
 #define Stream_GetPointer              stream_get_mark
 #define Stream_EnsureRemainingCapacity stream_check_size
