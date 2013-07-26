@@ -47,25 +47,42 @@
 #include "rdpdr_fs.h"
 #include "rdpdr_service.h"
 #include "client.h"
+#include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
+
 
 static void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {
 
     wStream* output_stream = Stream_New(NULL, 21);
+    int file_id;
 
-    /*
-    uint64_t allocation_size;
     int desired_access, file_attributes, shared_access;
     int create_disposition, create_options, path_length;
-    char* path;
-    */
+    char path[1024];
 
-    int file_id = guac_rdpdr_fs_open(device);
+    /* Read "create" information */
+    Stream_Read_UINT32(input_stream, desired_access);
+    Stream_Seek_UINT64(input_stream); /* allocation size */
+    Stream_Read_UINT32(input_stream, file_attributes);
+    Stream_Read_UINT32(input_stream, shared_access);
+    Stream_Read_UINT32(input_stream, create_disposition);
+    Stream_Read_UINT32(input_stream, create_options);
+    Stream_Read_UINT32(input_stream, path_length);
+
+    guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), path, path_length/2 - 1);
+    path[path_length-1] = 0;
+
+    /* Open file */
+    file_id = guac_rdpdr_fs_open(device);
 
     /* FIXME: Assuming file IDs are available */
-    guac_client_log_info(device->rdpdr->client, "open: %i", file_id);
+    guac_client_log_info(device->rdpdr->client, "Opened file %s ... new id=%i", path, file_id);
+    guac_client_log_info(device->rdpdr->client,
+            "des=%i, attrib=%i, shared=%i, disp=%i, opt=%i",
+            desired_access, file_attributes, shared_access, create_disposition,
+            create_options);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -99,8 +116,8 @@ static void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
 
     wStream* output_stream = Stream_New(NULL, 21);
 
-    /* STUB */
-    guac_client_log_info(device->rdpdr->client, "close: %i", file_id);
+    /* Close file */
+    guac_client_log_info(device->rdpdr->client, "Closing file id=%i", file_id);
     guac_rdpdr_fs_close(device, file_id);
 
     /* Write header */

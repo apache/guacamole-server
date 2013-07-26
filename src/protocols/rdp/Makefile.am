@@ -56,7 +56,8 @@ libguac_client_rdp_la_SOURCES = \
 	rdp_keymap_fr_fr.c          \
 	rdp_keymap_en_us.c          \
 	rdp_pointer.c               \
-	rdp_settings.c
+	rdp_settings.c              \
+	unicode.c
 
 guacsnd_sources =                 \
 	guac_rdpsnd/rdpsnd_messages.c \
@@ -66,7 +67,8 @@ guacdr_sources =                \
 	guac_rdpdr/rdpdr_fs.c       \
 	guac_rdpdr/rdpdr_messages.c \
 	guac_rdpdr/rdpdr_printer.c  \
-	guac_rdpdr/rdpdr_service.c
+	guac_rdpdr/rdpdr_service.c  \
+	unicode.c
 
 noinst_HEADERS =                     \
 	compat/client-cliprdr.h          \
@@ -86,7 +88,8 @@ noinst_HEADERS =                     \
 	rdp_glyph.h                      \
 	rdp_keymap.h                     \
 	rdp_pointer.h                    \
-	rdp_settings.h
+	rdp_settings.h                   \
+	unicode.h
 
 # Add compatibility layer for WinPR if not available
 if ! ENABLE_WINPR
