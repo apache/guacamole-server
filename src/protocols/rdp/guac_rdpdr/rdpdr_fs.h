@@ -44,6 +44,8 @@
 #include "compat/winpr-stream.h"
 #endif
 
+#include <guacamole/pool.h>
+
 #include <freerdp/utils/svc_plugin.h>
 
 /**
@@ -51,22 +53,51 @@
  */
 #define GUAC_RDPDR_FS_BLOB 1
 
-#if 0
+/**
+ * The maximum number of file IDs to provide.
+ */
+#define GUAC_RDPDR_FS_MAX_FILES 128
+
+/*
+ * Information constants.
+ */
+
+#define FILE_SUPERSEDED   0x00000000
+#define FILE_OPENED       0x00000001
+#define FILE_OVERWRITTEN  0x00000003
+
 /**
  * Data specific to an instance of the printer device.
  */
 typedef struct guac_rdpdr_fs_data {
 
-    /* STUB */
+    /**
+     * The number of currently open files.
+     */
+    int open_files;
+
+    /**
+     * Pool of file IDs.
+     */
+    guac_pool* file_id_pool;
 
 } guac_rdpdr_fs_data;
-#endif
 
 /**
  * Registers a new filesystem device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
  */
 void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr);
+
+/**
+ * Returns the next available file ID, or -1 if none available.
+ */
+int guac_rdpdr_fs_open(guac_rdpdr_device* device);
+
+/**
+ * Frees the given file ID, allowing future open operations to reuse it.
+ */
+void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id);
 
 #endif
 

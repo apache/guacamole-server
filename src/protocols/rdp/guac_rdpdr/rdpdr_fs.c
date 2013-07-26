@@ -41,12 +41,81 @@
 #include "compat/winpr-stream.h"
 #endif
 
+#include <guacamole/pool.h>
+
 #include "rdpdr_messages.h"
 #include "rdpdr_fs.h"
 #include "rdpdr_service.h"
 #include "client.h"
 
 #include <freerdp/utils/svc_plugin.h>
+
+static void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
+        wStream* input_stream, int completion_id) {
+
+    wStream* output_stream = Stream_New(NULL, 21);
+
+    /*
+    uint64_t allocation_size;
+    int desired_access, file_attributes, shared_access;
+    int create_disposition, create_options, path_length;
+    char* path;
+    */
+
+    int file_id = guac_rdpdr_fs_open(device);
+
+    /* FIXME: Assuming file IDs are available */
+    guac_client_log_info(device->rdpdr->client, "open: %i", file_id);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, 0);       /* Success */
+    Stream_Write_UINT32(output_stream, file_id); /* fileId */
+    Stream_Write_UINT8(output_stream, FILE_OPENED);
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
+}
+
+static void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client, "read: %i", file_id);
+}
+
+static void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client, "write: %i", file_id);
+}
+
+static void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+
+    wStream* output_stream = Stream_New(NULL, 21);
+
+    /* STUB */
+    guac_client_log_info(device->rdpdr->client, "close: %i", file_id);
+    guac_rdpdr_fs_close(device, file_id);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, 0);        /* Success */
+    Stream_Write(output_stream, "\0\0\0\0\0", 5); /* Padding */
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
+}
 
 static void guac_rdpdr_device_fs_announce_handler(guac_rdpdr_device* device,
         wStream* output_stream, int device_id) {
@@ -70,18 +139,22 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
 
         /* File open */
         case IRP_MJ_CREATE:
+            guac_rdpdr_fs_process_create(device, input_stream, completion_id);
             break;
 
         /* File close */
         case IRP_MJ_CLOSE:
+            guac_rdpdr_fs_process_close(device, input_stream, file_id, completion_id);
             break;
 
         /* File read */
         case IRP_MJ_READ:
+            guac_rdpdr_fs_process_read(device, input_stream, file_id, completion_id);
             break;
 
         /* File write */
         case IRP_MJ_WRITE:
+            guac_rdpdr_fs_process_write(device, input_stream, file_id, completion_id);
             break;
 
         case IRP_MJ_DEVICE_CONTROL:
@@ -128,11 +201,14 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
 }
 
 static void guac_rdpdr_device_fs_free_handler(guac_rdpdr_device* device) {
-    /* STUB */
+    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    guac_pool_free(data->file_id_pool);
+    free(data);
 }
 
 void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
 
+    guac_rdpdr_fs_data* data;
     int id = rdpdr->devices_registered++;
 
     /* Get new device */
@@ -149,7 +225,33 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
     device->free_handler      = guac_rdpdr_device_fs_free_handler;
 
     /* Init data */
-    /*device->data = malloc(sizeof(guac_rdpdr_fs_data));*/
+    data = device->data = malloc(sizeof(guac_rdpdr_fs_data));
+    data->file_id_pool  = guac_pool_alloc(0);
+    data->open_files    = 0;
 
+}
+
+int guac_rdpdr_fs_open(guac_rdpdr_device* device) {
+
+    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    if (data->open_files < GUAC_RDPDR_FS_MAX_FILES) {
+
+        /* Get file ID */
+        int file_id = guac_pool_next_int(data->file_id_pool);
+        data->open_files++;
+        
+        return file_id;
+
+    }
+
+    /* Otherwise, no file IDs available */
+    return -1;
+
+}
+
+void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
+    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    guac_pool_free_int(data->file_id_pool, file_id);
+    data->open_files--;
 }
 
