@@ -218,6 +218,13 @@
 #define FileFsAttributeInformation 0x00000005 
 #define FileFsFullSizeInformation  0x00000007 
 
+/*
+ * File information constants.
+ */
+
+#define FileBasicInformation        0x00000004
+#define FileStandardInformation     0x00000005
+#define FileAttributeTagInformation 0x00000023 
 
 /*
  * Message handlers.

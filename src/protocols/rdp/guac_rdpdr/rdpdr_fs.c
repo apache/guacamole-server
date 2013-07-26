@@ -145,6 +145,181 @@ static void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
 
 }
 
+static void guac_rdpdr_fs_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id) {
+
+    wStream* output_stream = Stream_New(NULL, 38 + GUAC_FILESYSTEM_NAME_LENGTH);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+
+    Stream_Write_UINT32(output_stream, 18 + GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0)); /* VolumeCreationTime */
+    Stream_Write(output_stream, "GUAC", 4);              /* VolumeSerialNumber */
+    Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT8(output_stream, FALSE); /* SupportsObjects */
+    Stream_Write_UINT8(output_stream, 0);     /* Reserved */
+    Stream_Write(output_stream, GUAC_FILESYSTEM_NAME, GUAC_FILESYSTEM_NAME_LENGTH);
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
+}
+
+static void guac_rdpdr_fs_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: guac_rdpdr_fs_query_size_info");
+}
+
+static void guac_rdpdr_fs_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: guac_rdpdr_fs_query_devive_info");
+}
+
+static void guac_rdpdr_fs_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: guac_rdpdr_fs_query_attribute_info");
+}
+
+static void guac_rdpdr_fs_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: guac_rdpdr_fs_query_full_size_info");
+}
+
+static void guac_rdpdr_fs_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id) {
+
+    int fs_information_class, length;
+
+    /* NOTE: Assuming file is open and a volume */
+
+    Stream_Read_UINT32(input_stream, fs_information_class);
+    Stream_Read_UINT32(input_stream, length);
+    Stream_Seek(input_stream, 24); /* Padding */
+
+    guac_client_log_info(device->rdpdr->client,
+            "Received volume query - class=0x%x, length=%i", fs_information_class, length);
+
+    /* Dispatch to appropriate class-specific handler */
+    switch (fs_information_class) {
+
+        case FileFsVolumeInformation:
+            guac_rdpdr_fs_query_volume_info(device, input_stream, completion_id);
+            break;
+
+        case FileFsSizeInformation:
+            guac_rdpdr_fs_query_size_info(device, input_stream, completion_id);
+            break;
+
+        case FileFsDeviceInformation:
+            guac_rdpdr_fs_query_device_info(device, input_stream, completion_id);
+            break;
+
+        case FileFsAttributeInformation:
+            guac_rdpdr_fs_query_attribute_info(device, input_stream, completion_id);
+            break;
+
+        case FileFsFullSizeInformation:
+            guac_rdpdr_fs_query_full_size_info(device, input_stream, completion_id);
+            break;
+
+        default:
+            guac_client_log_info(device->rdpdr->client,
+                    "Unknown volume information class: 0x%x", fs_information_class);
+    }
+
+}
+
+static void guac_rdpdr_fs_query_basic_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+
+    wStream* output_stream = Stream_New(NULL, 60);
+    /*guac_rdpdr_fs_file* file = device->files[file_id];*/
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+
+    Stream_Write_UINT32(output_stream, 18 + GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0));       /* CreationTime   */
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0));       /* LastAccessTime */
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0));       /* LastWriteTime  */
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0));       /* ChangeTime     */
+    Stream_Write_UINT32(output_stream, FILE_ATTRIBUTE_NORMAL); /* FileAttributes */
+    Stream_Write_UINT32(output_stream, 0);                     /* Reserved */
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
+}
+
+static void guac_rdpdr_fs_query_standard_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: guac_rdpdr_fs_query_standard_info");
+}
+
+static void guac_rdpdr_fs_query_attribute_tag_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: guac_rdpdr_fs_query_attribute_tag_info");
+}
+
+static void guac_rdpdr_fs_file_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+
+    int fs_information_class, length;
+
+    /* NOTE: Assuming file is open and a volume */
+
+    Stream_Read_UINT32(input_stream, fs_information_class);
+    Stream_Read_UINT32(input_stream, length);
+    Stream_Seek(input_stream, 24); /* Padding */
+
+    guac_client_log_info(device->rdpdr->client,
+            "Received file query - class=0x%x, length=%i", fs_information_class, length);
+
+    /* Dispatch to appropriate class-specific handler */
+    switch (fs_information_class) {
+
+        case FileBasicInformation:
+            guac_rdpdr_fs_query_basic_info(device, input_stream, file_id, completion_id);
+            break;
+
+        case FileStandardInformation:
+            guac_rdpdr_fs_query_standard_info(device, input_stream, file_id, completion_id);
+            break;
+
+        case FileAttributeTagInformation:
+            guac_rdpdr_fs_query_attribute_tag_info(device, input_stream, file_id, completion_id);
+            break;
+
+        default:
+            guac_client_log_info(device->rdpdr->client,
+                    "Unknown file information class: 0x%x", fs_information_class);
+    }
+
+}
+
 static void guac_rdpdr_device_fs_announce_handler(guac_rdpdr_device* device,
         wStream* output_stream, int device_id) {
 
@@ -191,8 +366,7 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
             break;
 
         case IRP_MJ_QUERY_VOLUME_INFORMATION:
-            guac_client_log_error(device->rdpdr->client,
-                    "IRP_MJ_QUERY_VOLUME_INFORMATION unsupported");
+            guac_rdpdr_fs_volume_info(device, input_stream, completion_id);
             break;
 
         case IRP_MJ_SET_VOLUME_INFORMATION:
@@ -201,8 +375,7 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
             break;
 
         case IRP_MJ_QUERY_INFORMATION:
-            guac_client_log_error(device->rdpdr->client,
-                    "IRP_MJ_QUERY_INFORMATION unsupported");
+            guac_rdpdr_fs_file_info(device, input_stream, file_id, completion_id);
             break;
 
         case IRP_MJ_SET_INFORMATION:

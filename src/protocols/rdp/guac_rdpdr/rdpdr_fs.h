@@ -64,7 +64,31 @@
 
 #define FILE_SUPERSEDED   0x00000000
 #define FILE_OPENED       0x00000001
-#define FILE_OVERWRITTEN  0x00000003
+#define FILE_OVERWRITTEN  0x00000003a
+
+/*
+ * File attributes.
+ */
+
+#define FILE_ATTRIBUTE_READONLY  0x00000001 
+#define FILE_ATTRIBUTE_DIRECTORY 0x00000010
+#define FILE_ATTRIBUTE_NORMAL    0x00000080
+
+#define SEC_TO_UNIX_EPOCH 11644473600
+
+/**
+ * Converts a Windows timestamp (100 nanosecond intervals since Jan 1, 1601
+ * UTC) to UNIX timestamp (seconds since Jan 1, 1970 UTC).
+ *
+ * This conversion is lossy.
+ */
+#define UNIX_TIME(t)    ((time_t) ((t / 10000000 + ((uint64_t) 11644473600))))
+
+/**
+ * Converts a UNIX timestamp (seconds since Jan 1, 1970 UTC) to Windows
+ * timestamp (100 nanosecond intervals since Jan 1, 1601 UTC).
+ */
+#define WINDOWS_TIME(t) ((t - ((uint64_t) 11644473600)) * 10000000)
 
 /**
  * Enumeration of all supported file types.
