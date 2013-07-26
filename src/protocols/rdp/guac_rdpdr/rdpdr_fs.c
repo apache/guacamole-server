@@ -71,18 +71,11 @@ static void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
     Stream_Read_UINT32(input_stream, create_options);
     Stream_Read_UINT32(input_stream, path_length);
 
+    /* Convert path to UTF-8 */
     guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), path, path_length/2 - 1);
-    path[path_length-1] = 0;
 
     /* Open file */
-    file_id = guac_rdpdr_fs_open(device);
-
-    /* FIXME: Assuming file IDs are available */
-    guac_client_log_info(device->rdpdr->client, "Opened file %s ... new id=%i", path, file_id);
-    guac_client_log_info(device->rdpdr->client,
-            "des=%i, attrib=%i, shared=%i, disp=%i, opt=%i",
-            desired_access, file_attributes, shared_access, create_disposition,
-            create_options);
+    file_id = guac_rdpdr_fs_open(device, path);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -91,9 +84,27 @@ static void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
     /* Write content */
     Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, 0);       /* Success */
-    Stream_Write_UINT32(output_stream, file_id); /* fileId */
-    Stream_Write_UINT8(output_stream, FILE_OPENED);
+
+    /* If no file IDs available, notify server */
+    if (file_id == -1) {
+        guac_client_log_error(device->rdpdr->client, "File open refused - too many open files");
+        Stream_Write_UINT32(output_stream, STATUS_TOO_MANY_OPENED_FILES);
+        Stream_Write_UINT32(output_stream, 0); /* fileId */
+        Stream_Write_UINT8(output_stream,  0); /* information */
+    }
+    else {
+
+        guac_client_log_info(device->rdpdr->client, "Opened file \"%s\" ... new id=%i", path, file_id);
+        guac_client_log_info(device->rdpdr->client,
+                "des=%i, attrib=%i, shared=%i, disp=%i, opt=%i",
+                desired_access, file_attributes, shared_access, create_disposition,
+                create_options);
+
+        Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+        Stream_Write_UINT32(output_stream, file_id);    /* fileId */
+        Stream_Write_UINT8(output_stream,  FILE_OPENED); /* information */
+
+    }
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
@@ -127,7 +138,7 @@ static void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
     /* Write content */
     Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, 0);        /* Success */
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
     Stream_Write(output_stream, "\0\0\0\0\0", 5); /* Padding */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
@@ -248,15 +259,31 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
 
 }
 
-int guac_rdpdr_fs_open(guac_rdpdr_device* device) {
+int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path) {
 
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+
+    /* If files available, allocate a new file ID */
     if (data->open_files < GUAC_RDPDR_FS_MAX_FILES) {
 
         /* Get file ID */
         int file_id = guac_pool_next_int(data->file_id_pool);
+        guac_rdpdr_fs_file* file = &(data->files[file_id]);
+
         data->open_files++;
-        
+
+        /* If path is empty, it refers to the volume itself */
+        if (path[0] == '\0')
+            file->type = GUAC_RDPDR_FS_VOLUME;
+
+        /* Otherwise, parse path */
+        else {
+
+            file->type = GUAC_RDPDR_FS_FILE;
+            /* STUB */
+
+        }
+
         return file_id;
 
     }
@@ -267,8 +294,14 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device) {
 }
 
 void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
+
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_pool_free_int(data->file_id_pool, file_id);
-    data->open_files--;
+
+    /* Only close if file ID is valid */
+    if (file_id >= 0 && file_id <= GUAC_RDPDR_FS_MAX_FILES-1) {
+        guac_pool_free_int(data->file_id_pool, file_id);
+        data->open_files--;
+    }
+
 }
 

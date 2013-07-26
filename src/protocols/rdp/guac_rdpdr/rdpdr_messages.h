@@ -193,6 +193,33 @@
 #define IRP_MN_NOTIFY_CHANGE_DIRECTORY 0x00000002
 
 /*
+ * Status constants.
+ */
+#define STATUS_SUCCESS                  0x00000000
+#define STATUS_DEVICE_OFF_LINE          0x80000010
+#define STATUS_NO_SUCH_FILE             0xC000000F
+#define STATUS_END_OF_FILE              0xC0000011
+#define STATUS_FILE_INVALID             0xC0000098  
+#define STATUS_FILE_IS_A_DIRECTORY      0xC00000BA
+#define STATUS_TOO_MANY_OPENED_FILES    0xC000011F
+#define STATUS_CANNOT_DELETE            0xC0000121
+#define STATUS_FILE_DELETED             0xC0000123
+#define STATUS_FILE_CLOSED              0xC0000128
+#define STATUS_FILE_SYSTEM_LIMITATION   0xC0000427
+#define STATUS_FILE_TOO_LARGE           0xC0000904
+
+/*
+ * Volume information constants.
+ */
+
+#define FileFsVolumeInformation    0x00000001
+#define FileFsSizeInformation      0x00000003
+#define FileFsDeviceInformation    0x00000004 
+#define FileFsAttributeInformation 0x00000005 
+#define FileFsFullSizeInformation  0x00000007 
+
+
+/*
  * Message handlers.
  */
 

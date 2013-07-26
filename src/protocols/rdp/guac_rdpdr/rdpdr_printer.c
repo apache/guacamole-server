@@ -155,7 +155,7 @@ void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
     /* Write content */
     Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, 0); /* Success */
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
     Stream_Write_UINT32(output_stream, 0); /* fileId */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
@@ -223,7 +223,7 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
 
         /* Start print process */
         if (guac_rdpdr_create_print_process(device) != 0) {
-            status = 0x80000010;
+            status = STATUS_DEVICE_OFF_LINE;
             length = 0;
         }
 
@@ -238,7 +238,7 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
         length = write(printer_data->printer_input, buffer, length);
         if (length == -1) {
             guac_client_log_error(device->rdpdr->client, "Error writing to printer: %s", strerror(errno));
-            status = 0x80000010;
+            status = STATUS_DEVICE_OFF_LINE;
             length = 0;
         }
 
@@ -283,7 +283,7 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
     /* Write content */
     Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, 0); /* NTSTATUS - success */
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
     Stream_Write_UINT32(output_stream, 0); /* padding*/
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);

@@ -67,6 +67,43 @@
 #define FILE_OVERWRITTEN  0x00000003
 
 /**
+ * Enumeration of all supported file types.
+ */
+typedef enum guac_rdpdr_fs_file_type {
+
+    /**
+     * A regular file - either a file or directory.
+     */
+    GUAC_RDPDR_FS_FILE,
+
+    /**
+     * A disk device - here, this is always virtual, and always the containing
+     * volume (the Guacamole drive).
+     */
+    GUAC_RDPDR_FS_VOLUME,
+
+} guac_rdpdr_fs_file_type;
+
+/**
+ * An arbitrary file on the virtual filesystem of the Guacamole drive.
+ */
+typedef struct guac_rdpdr_fs_file {
+
+    /**
+     * The type of this file - either a FILE (file or directory) or a
+     * VOLUME (virtual file, represents the virtual device represented by
+     * the Guacamole drive).
+     */
+    guac_rdpdr_fs_file_type type;
+
+    /**
+     * Associated local file descriptor.
+     */
+    int fd;
+
+} guac_rdpdr_fs_file;
+
+/**
  * Data specific to an instance of the printer device.
  */
 typedef struct guac_rdpdr_fs_data {
@@ -81,6 +118,11 @@ typedef struct guac_rdpdr_fs_data {
      */
     guac_pool* file_id_pool;
 
+    /**
+     * All available file structures.
+     */
+    guac_rdpdr_fs_file files[GUAC_RDPDR_FS_MAX_FILES];
+
 } guac_rdpdr_fs_data;
 
 /**
@@ -92,7 +134,7 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr);
 /**
  * Returns the next available file ID, or -1 if none available.
  */
-int guac_rdpdr_fs_open(guac_rdpdr_device* device);
+int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path);
 
 /**
  * Frees the given file ID, allowing future open operations to reuse it.
