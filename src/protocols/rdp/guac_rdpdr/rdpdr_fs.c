@@ -92,6 +92,13 @@ static void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
         Stream_Write_UINT32(output_stream, 0); /* fileId */
         Stream_Write_UINT8(output_stream,  0); /* information */
     }
+    else if (file_id == -2) {
+        guac_client_log_error(device->rdpdr->client,
+                "File open refused - does not exist: \"%s\"", path);
+        Stream_Write_UINT32(output_stream, STATUS_NO_SUCH_FILE);
+        Stream_Write_UINT32(output_stream, 0); /* fileId */
+        Stream_Write_UINT8(output_stream,  0); /* information */
+    }
     else {
 
         guac_client_log_info(device->rdpdr->client, "Opened file \"%s\" ... new id=%i", path, file_id);
@@ -447,7 +454,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path) {
 
         /* If path is empty, it refers to the volume itself */
         if (path[0] == '\0')
-            file->type = GUAC_RDPDR_FS_VOLUME;
+            return -2;
 
         /* Otherwise, parse path */
         else {
