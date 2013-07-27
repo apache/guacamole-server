@@ -51,49 +51,18 @@
 
 #include <freerdp/utils/svc_plugin.h>
 
-int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path) {
+void guac_rdpdr_fs_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id);
 
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+void guac_rdpdr_fs_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id);
 
-    /* If files available, allocate a new file ID */
-    if (data->open_files < GUAC_RDPDR_FS_MAX_FILES) {
+void guac_rdpdr_fs_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id);
 
-        /* Get file ID */
-        int file_id = guac_pool_next_int(data->file_id_pool);
-        guac_rdpdr_fs_file* file = &(data->files[file_id]);
+void guac_rdpdr_fs_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id);
 
-        data->open_files++;
-
-        /* If path is empty, it refers to the volume itself */
-        if (path[0] == '\0')
-            return -2;
-
-        /* Otherwise, parse path */
-        else {
-
-            file->type = GUAC_RDPDR_FS_FILE;
-            /* STUB */
-
-        }
-
-        return file_id;
-
-    }
-
-    /* Otherwise, no file IDs available */
-    return -1;
-
-}
-
-void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
-
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-
-    /* Only close if file ID is valid */
-    if (file_id >= 0 && file_id <= GUAC_RDPDR_FS_MAX_FILES-1) {
-        guac_pool_free_int(data->file_id_pool, file_id);
-        data->open_files--;
-    }
-
-}
+void guac_rdpdr_fs_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id);
 

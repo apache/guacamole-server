@@ -46,6 +46,8 @@
 
 #include <guacamole/pool.h>
 
+#include "rdpdr_service.h"
+
 #include <freerdp/utils/svc_plugin.h>
 
 /**

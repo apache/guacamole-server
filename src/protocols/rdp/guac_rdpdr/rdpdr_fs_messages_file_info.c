@@ -51,49 +51,45 @@
 
 #include <freerdp/utils/svc_plugin.h>
 
-int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path) {
 
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+void guac_rdpdr_fs_query_basic_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
 
-    /* If files available, allocate a new file ID */
-    if (data->open_files < GUAC_RDPDR_FS_MAX_FILES) {
+    wStream* output_stream = Stream_New(NULL, 60);
+    /*guac_rdpdr_fs_file* file = device->files[file_id];*/
 
-        /* Get file ID */
-        int file_id = guac_pool_next_int(data->file_id_pool);
-        guac_rdpdr_fs_file* file = &(data->files[file_id]);
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
 
-        data->open_files++;
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
 
-        /* If path is empty, it refers to the volume itself */
-        if (path[0] == '\0')
-            return -2;
+    Stream_Write_UINT32(output_stream, 18 + GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0));       /* CreationTime   */
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0));       /* LastAccessTime */
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0));       /* LastWriteTime  */
+    Stream_Write_UINT64(output_stream, WINDOWS_TIME(0));       /* ChangeTime     */
+    Stream_Write_UINT32(output_stream, FILE_ATTRIBUTE_NORMAL); /* FileAttributes */
+    Stream_Write_UINT32(output_stream, 0);                     /* Reserved */
 
-        /* Otherwise, parse path */
-        else {
-
-            file->type = GUAC_RDPDR_FS_FILE;
-            /* STUB */
-
-        }
-
-        return file_id;
-
-    }
-
-    /* Otherwise, no file IDs available */
-    return -1;
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
 }
 
-void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
+void guac_rdpdr_fs_query_standard_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: guac_rdpdr_fs_query_standard_info");
+}
 
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-
-    /* Only close if file ID is valid */
-    if (file_id >= 0 && file_id <= GUAC_RDPDR_FS_MAX_FILES-1) {
-        guac_pool_free_int(data->file_id_pool, file_id);
-        data->open_files--;
-    }
-
+void guac_rdpdr_fs_query_attribute_tag_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: guac_rdpdr_fs_query_attribute_tag_info");
 }
 
