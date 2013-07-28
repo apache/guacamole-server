@@ -105,12 +105,13 @@ int rdp_guac_client_free_handler(guac_client* client) {
 
 }
 
-int rdp_guac_client_handle_messages(guac_client* client) {
+static int rdp_guac_client_wait_for_messages(guac_client* client, int timeout_usecs) {
 
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
     freerdp* rdp_inst = guac_client_data->rdp_inst;
     rdpChannels* channels = rdp_inst->context->channels;
 
+    int result;
     int index;
     int max_fd, fd;
     void* read_fds[32];
@@ -118,25 +119,25 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     int read_count = 0;
     int write_count = 0;
     fd_set rfds, wfds;
-    wMessage* event;
 
     struct timeval timeout = {
-        .tv_sec = 0,
-        .tv_usec = 250000
+        .tv_sec  = 0,
+        .tv_usec = timeout_usecs
     };
 
     /* Get RDP fds */
     if (!freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
         guac_error = GUAC_STATUS_BAD_STATE;
         guac_error_message = "Unable to read RDP file descriptors";
-        return 1;
+        return -1;
     }
 
     /* Get channel fds */
-    if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
+    if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds,
+                &write_count)) {
         guac_error = GUAC_STATUS_BAD_STATE;
         guac_error_message = "Unable to read RDP channel file descriptors";
-        return 1;
+        return -1;
     }
 
     /* Construct read fd_set */
@@ -162,24 +163,42 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     if (max_fd == 0) {
         guac_error = GUAC_STATUS_BAD_STATE;
         guac_error_message = "No file descriptors";
-        return 1;
+        return -1;
     }
 
-    /* Otherwise, wait for file descriptors given */
-    if (select(max_fd + 1, &rfds, &wfds, NULL, &timeout) == -1) {
-        /* these are not really errors */
-        if (!((errno == EAGAIN) ||
-            (errno == EWOULDBLOCK) ||
-            (errno == EINPROGRESS) ||
-            (errno == EINTR))) /* signal occurred */
-        {
-            guac_error = GUAC_STATUS_SEE_ERRNO;
-            guac_error_message = "Error waiting for file descriptor";
-            return 1;
-        }
+    /* Wait for all RDP file descriptors */
+    result = select(max_fd + 1, &rfds, &wfds, NULL, &timeout);
+    if (result < 0) {
+
+        /* If error ignorable, pretend timout occurred */
+        if (errno == EAGAIN
+            || errno == EWOULDBLOCK
+            || errno == EINPROGRESS
+            || errno == EINTR)
+            return 0;
+
+        /* Otherwise, return as error */
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Error waiting for file descriptor";
+        return -1;
+
     }
 
-    do {
+    /* Return wait result */
+    return result;
+
+}
+
+int rdp_guac_client_handle_messages(guac_client* client) {
+
+    rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
+    freerdp* rdp_inst = guac_client_data->rdp_inst;
+    rdpChannels* channels = rdp_inst->context->channels;
+    wMessage* event;
+
+    /* Wait for messages */
+    int wait_result = rdp_guac_client_wait_for_messages(client, 250000);
+    while (wait_result > 0) {
 
         pthread_mutex_lock(&(guac_client_data->rdp_lock));
 
@@ -228,32 +247,15 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         if (guac_client_data->audio != NULL)
             guac_socket_flush(guac_client_data->audio->stream->socket);
 
-        /* Reset timeout to 0 seconds */
-        timeout.tv_sec  = 0;
-        timeout.tv_usec = 0;
-
-        /* Construct read fd_set */
-        max_fd = 0;
-        FD_ZERO(&rfds);
-        for (index = 0; index < read_count; index++) {
-            fd = (int)(long) (read_fds[index]);
-            if (fd > max_fd)
-                max_fd = fd;
-            FD_SET(fd, &rfds);
-        }
-
-        /* Construct write fd_set */
-        FD_ZERO(&wfds);
-        for (index = 0; index < write_count; index++) {
-            fd = (int)(long) (write_fds[index]);
-            if (fd > max_fd)
-                max_fd = fd;
-            FD_SET(fd, &wfds);
-        }
-
+        /* Wait again */
         pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+        wait_result = rdp_guac_client_wait_for_messages(client, 0);
 
-    } while (select(max_fd + 1, &rfds, &wfds, NULL, &timeout) > 0);
+    }
+
+    /* If an error occurred, fail */
+    if (wait_result < 0)
+        return 1;
 
     /* Success */
     return 0;
