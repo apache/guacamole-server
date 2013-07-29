@@ -116,8 +116,15 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
             break;
 
         case IRP_MJ_DIRECTORY_CONTROL:
-            guac_client_log_error(device->rdpdr->client,
-                    "IRP_MJ_DIRECTORY_CONTROL unsupported");
+
+            if (minor_func == IRP_MN_QUERY_DIRECTORY)
+                guac_client_log_error(device->rdpdr->client,
+                        "IRP_MN_QUERY_DIRECTORY unsupported");
+
+            else if (minor_func == IRP_MN_NOTIFY_CHANGE_DIRECTORY)
+                guac_client_log_error(device->rdpdr->client,
+                        "IRP_MN_NOTIFY_CHANGE_DIRECTORY unsupported");
+
             break;
 
         case IRP_MJ_LOCK_CONTROL:
