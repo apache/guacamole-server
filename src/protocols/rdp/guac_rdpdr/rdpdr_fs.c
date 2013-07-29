@@ -60,11 +60,11 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path) {
 
     /* If no files available, return too many open */
     if (data->open_files >= GUAC_RDPDR_FS_MAX_FILES)
-        return -1;
+        return GUAC_RDPDR_FS_ENFILE;
 
     /* If path is empty, the file does not exist */
     if (path[0] == '\0')
-        return -2;
+        return GUAC_RDPDR_FS_ENOENT;
 
     file->type = GUAC_RDPDR_FS_FILE;
     /* STUB */

@@ -60,6 +60,16 @@
  */
 #define GUAC_RDPDR_FS_MAX_FILES 128
 
+/**
+ * Error code returned when no more file IDs can be allocated.
+ */
+#define GUAC_RDPDR_FS_ENFILE -1
+
+/**
+ * Error code returned with no such file exists.
+ */
+#define GUAC_RDPDR_FS_ENOENT -2
+
 /*
  * Information constants.
  */

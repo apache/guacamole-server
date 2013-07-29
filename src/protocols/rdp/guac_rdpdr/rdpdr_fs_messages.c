@@ -89,19 +89,23 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, completion_id);
 
     /* If no file IDs available, notify server */
-    if (file_id == -1) {
+    if (file_id == GUAC_RDPDR_FS_ENFILE) {
         guac_client_log_error(device->rdpdr->client, "File open refused - too many open files");
         Stream_Write_UINT32(output_stream, STATUS_TOO_MANY_OPENED_FILES);
         Stream_Write_UINT32(output_stream, 0); /* fileId */
         Stream_Write_UINT8(output_stream,  0); /* information */
     }
-    else if (file_id == -2) {
+
+    /* If file does not exist, notify server */
+    else if (file_id == GUAC_RDPDR_FS_ENOENT) {
         guac_client_log_error(device->rdpdr->client,
                 "File open refused - does not exist: \"%s\"", path);
         Stream_Write_UINT32(output_stream, STATUS_NO_SUCH_FILE);
         Stream_Write_UINT32(output_stream, 0); /* fileId */
         Stream_Write_UINT8(output_stream,  0); /* information */
     }
+
+    /* Otherwise, open succeeded */
     else {
 
         guac_client_log_info(device->rdpdr->client, "Opened file \"%s\" ... new id=%i", path, file_id);
