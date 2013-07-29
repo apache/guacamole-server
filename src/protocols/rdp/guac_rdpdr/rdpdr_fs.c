@@ -55,33 +55,27 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path) {
 
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
 
-    /* If files available, allocate a new file ID */
-    if (data->open_files < GUAC_RDPDR_FS_MAX_FILES) {
+    int file_id;
+    guac_rdpdr_fs_file* file;
 
-        /* Get file ID */
-        int file_id = guac_pool_next_int(data->file_id_pool);
-        guac_rdpdr_fs_file* file = &(data->files[file_id]);
+    /* If no files available, return too many open */
+    if (data->open_files >= GUAC_RDPDR_FS_MAX_FILES)
+        return -1;
 
-        data->open_files++;
+    /* If path is empty, the file does not exist */
+    if (path[0] == '\0')
+        return -2;
 
-        /* If path is empty, it refers to the volume itself */
-        if (path[0] == '\0')
-            return -2;
+    file->type = GUAC_RDPDR_FS_FILE;
+    /* STUB */
 
-        /* Otherwise, parse path */
-        else {
+    /* Get file ID */
+    file_id = guac_pool_next_int(data->file_id_pool);
+    file = &(data->files[file_id]);
 
-            file->type = GUAC_RDPDR_FS_FILE;
-            /* STUB */
+    data->open_files++;
 
-        }
-
-        return file_id;
-
-    }
-
-    /* Otherwise, no file IDs available */
-    return -1;
+    return file_id;
 
 }
 
