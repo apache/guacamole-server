@@ -101,6 +101,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "disable-audio",
     "enable-printing",
     "enable-drive",
+    "drive-path",
     "console",
     "console-audio",
     "server-layout",
@@ -124,6 +125,7 @@ enum RDP_ARGS_IDX {
     IDX_DISABLE_AUDIO,
     IDX_ENABLE_PRINTING,
     IDX_ENABLE_DRIVE,
+    IDX_DRIVE_PATH,
     IDX_CONSOLE,
     IDX_CONSOLE_AUDIO,
     IDX_SERVER_LAYOUT,
@@ -538,6 +540,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Drive enable/disable */
     guac_client_data->settings.drive_enabled =
         (strcmp(argv[IDX_ENABLE_DRIVE], "true") == 0);
+
+    /* Drive enable/disable */
+    guac_client_data->settings.drive_path = strdup(argv[IDX_DRIVE_PATH]);
 
     /* Store client data */
     guac_client_data->rdp_inst = rdp_inst;

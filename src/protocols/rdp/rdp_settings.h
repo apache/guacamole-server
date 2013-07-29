@@ -151,6 +151,12 @@ typedef struct guac_rdp_settings {
     int drive_enabled;
 
     /**
+     * The local system path which will be used to persist the
+     * virtual drive.
+     */
+    char* drive_path;
+
+    /**
      * Whether this session is a console session.
      */
     int console;
