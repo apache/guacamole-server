@@ -71,9 +71,13 @@ static char* __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
     /* Start with path from settings */
     for (i=0; i<GUAC_RDPDR_FS_MAX_PATH-1; i++) {
 
-        /* Copy character, break on end-of-string */
-        if ((*(path_buffer++) = *(drive_path++)) == 0)
+        /* Break on end-of-string */
+        char c = *(drive_path++);
+        if (c == 0)
             break;
+
+        /* Copy character */
+        *(path_buffer++) = c;
 
     }
 
@@ -94,7 +98,7 @@ static char* __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
             c = '/';
 
         /* Store in real path buffer */
-        path_buffer[i] = c;
+        *(path_buffer++)= c;
 
         /* Next path character */
         path++;
@@ -102,7 +106,7 @@ static char* __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
     }
 
     /* Null terminator */
-    path_buffer[i] = 0;
+    *(path_buffer++)= 0;
     return path_buffer;
 
 }
@@ -186,7 +190,8 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     if (__guac_rdpdr_fs_translate_path(device, path, path_buffer) == NULL)
         return GUAC_RDPDR_FS_ENOENT;
 
-    guac_client_log_info(device->rdpdr->client, "Path translated to \"%s\"", path_buffer);
+    guac_client_log_info(device->rdpdr->client, "Path \"%s\" translated to \"%s\"",
+            path, path_buffer);
 
     /* Open file */
     fd = open(path_buffer, flags, mode);
