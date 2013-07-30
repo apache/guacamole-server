@@ -67,6 +67,24 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
 void guac_rdpdr_fs_volume_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 
+void guac_rdpdr_fs_set_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id);
+
 void guac_rdpdr_fs_file_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id);
+
+void guac_rdpdr_fs_set_file_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id);
+
+void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id);
+
+void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id);
+
+void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id);
+
+void guac_rdpdr_fs_process_lock_control(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id);
 

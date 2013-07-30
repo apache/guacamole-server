@@ -92,44 +92,47 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
             guac_rdpdr_fs_process_write(device, input_stream, file_id, completion_id);
             break;
 
+        /* Device control request (Windows FSCTL_ control codes) */
         case IRP_MJ_DEVICE_CONTROL:
-            guac_client_log_error(device->rdpdr->client,
-                    "IRP_MJ_DEVICE_CONTROL unsupported");
+            guac_rdpdr_fs_process_device_control(device, input_stream, file_id, completion_id);
             break;
 
+        /* Query volume (drive) information */
         case IRP_MJ_QUERY_VOLUME_INFORMATION:
             guac_rdpdr_fs_volume_info(device, input_stream, completion_id);
             break;
 
+        /* Set volume (drive) information */
         case IRP_MJ_SET_VOLUME_INFORMATION:
-            guac_client_log_error(device->rdpdr->client,
-                    "IRP_MJ_SET_VOLUME_INFORMATION unsupported");
+            guac_rdpdr_fs_set_volume_info(device, input_stream, file_id, completion_id);
             break;
 
+        /* Query file information */
         case IRP_MJ_QUERY_INFORMATION:
             guac_rdpdr_fs_file_info(device, input_stream, file_id, completion_id);
             break;
 
+        /* Set file information */
         case IRP_MJ_SET_INFORMATION:
-            guac_client_log_error(device->rdpdr->client,
-                    "IRP_MJ_SET_INFORMATION unsupported");
+            guac_rdpdr_fs_set_file_info(device, input_stream, file_id, completion_id);
             break;
 
         case IRP_MJ_DIRECTORY_CONTROL:
 
+            /* Enumerate directory contents */
             if (minor_func == IRP_MN_QUERY_DIRECTORY)
-                guac_client_log_error(device->rdpdr->client,
-                        "IRP_MN_QUERY_DIRECTORY unsupported");
+                guac_rdpdr_fs_process_query_directory(device, input_stream, file_id, completion_id);
 
+            /* Request notification of changes to directory */
             else if (minor_func == IRP_MN_NOTIFY_CHANGE_DIRECTORY)
-                guac_client_log_error(device->rdpdr->client,
-                        "IRP_MN_NOTIFY_CHANGE_DIRECTORY unsupported");
+                guac_rdpdr_fs_process_notify_change_directory(device, input_stream,
+                        file_id, completion_id);
 
             break;
 
+        /* Lock/unlock portions of a file */
         case IRP_MJ_LOCK_CONTROL:
-            guac_client_log_error(device->rdpdr->client,
-                    "IRP_MJ_LOCK_CONTROL unsupported");
+            guac_rdpdr_fs_process_lock_control(device, input_stream, file_id, completion_id);
             break;
 
         default:

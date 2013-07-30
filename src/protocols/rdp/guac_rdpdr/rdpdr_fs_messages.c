@@ -239,3 +239,39 @@ void guac_rdpdr_fs_file_info(guac_rdpdr_device* device, wStream* input_stream,
 
 }
 
+void guac_rdpdr_fs_set_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+}
+
+void guac_rdpdr_fs_set_file_info(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+}
+
+void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+}
+
+void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+}
+
+void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+}
+
+void guac_rdpdr_fs_process_lock_control(guac_rdpdr_device* device, wStream* input_stream,
+        int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+}
+
