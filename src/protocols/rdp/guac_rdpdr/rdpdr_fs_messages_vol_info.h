@@ -51,18 +51,18 @@
 
 #include <freerdp/utils/svc_plugin.h>
 
-void guac_rdpdr_fs_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 
-void guac_rdpdr_fs_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 
-void guac_rdpdr_fs_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 
-void guac_rdpdr_fs_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 
-void guac_rdpdr_fs_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 

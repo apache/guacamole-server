@@ -159,7 +159,7 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
 
 }
 
-void guac_rdpdr_fs_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_volume_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id) {
 
     int fs_information_class, length;
@@ -177,23 +177,23 @@ void guac_rdpdr_fs_volume_info(guac_rdpdr_device* device, wStream* input_stream,
     switch (fs_information_class) {
 
         case FileFsVolumeInformation:
-            guac_rdpdr_fs_query_volume_info(device, input_stream, completion_id);
+            guac_rdpdr_fs_process_query_volume_info(device, input_stream, completion_id);
             break;
 
         case FileFsSizeInformation:
-            guac_rdpdr_fs_query_size_info(device, input_stream, completion_id);
+            guac_rdpdr_fs_process_query_size_info(device, input_stream, completion_id);
             break;
 
         case FileFsDeviceInformation:
-            guac_rdpdr_fs_query_device_info(device, input_stream, completion_id);
+            guac_rdpdr_fs_process_query_device_info(device, input_stream, completion_id);
             break;
 
         case FileFsAttributeInformation:
-            guac_rdpdr_fs_query_attribute_info(device, input_stream, completion_id);
+            guac_rdpdr_fs_process_query_attribute_info(device, input_stream, completion_id);
             break;
 
         case FileFsFullSizeInformation:
-            guac_rdpdr_fs_query_full_size_info(device, input_stream, completion_id);
+            guac_rdpdr_fs_process_query_full_size_info(device, input_stream, completion_id);
             break;
 
         default:
@@ -203,7 +203,7 @@ void guac_rdpdr_fs_volume_info(guac_rdpdr_device* device, wStream* input_stream,
 
 }
 
-void guac_rdpdr_fs_file_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_file_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
     int fs_information_class, length;
@@ -221,15 +221,18 @@ void guac_rdpdr_fs_file_info(guac_rdpdr_device* device, wStream* input_stream,
     switch (fs_information_class) {
 
         case FileBasicInformation:
-            guac_rdpdr_fs_query_basic_info(device, input_stream, file_id, completion_id);
+            guac_rdpdr_fs_process_query_basic_info(device, input_stream,
+                    file_id, completion_id);
             break;
 
         case FileStandardInformation:
-            guac_rdpdr_fs_query_standard_info(device, input_stream, file_id, completion_id);
+            guac_rdpdr_fs_process_query_standard_info(device, input_stream,
+                    file_id, completion_id);
             break;
 
         case FileAttributeTagInformation:
-            guac_rdpdr_fs_query_attribute_tag_info(device, input_stream, file_id, completion_id);
+            guac_rdpdr_fs_process_query_attribute_tag_info(device, input_stream,
+                    file_id, completion_id);
             break;
 
         default:
@@ -239,13 +242,13 @@ void guac_rdpdr_fs_file_info(guac_rdpdr_device* device, wStream* input_stream,
 
 }
 
-void guac_rdpdr_fs_set_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_set_volume_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
     /* STUB */
     guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
 }
 
-void guac_rdpdr_fs_set_file_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_set_file_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
     /* STUB */
     guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);

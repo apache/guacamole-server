@@ -99,22 +99,22 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
 
         /* Query volume (drive) information */
         case IRP_MJ_QUERY_VOLUME_INFORMATION:
-            guac_rdpdr_fs_volume_info(device, input_stream, completion_id);
+            guac_rdpdr_fs_process_volume_info(device, input_stream, completion_id);
             break;
 
         /* Set volume (drive) information */
         case IRP_MJ_SET_VOLUME_INFORMATION:
-            guac_rdpdr_fs_set_volume_info(device, input_stream, file_id, completion_id);
+            guac_rdpdr_fs_process_set_volume_info(device, input_stream, file_id, completion_id);
             break;
 
         /* Query file information */
         case IRP_MJ_QUERY_INFORMATION:
-            guac_rdpdr_fs_file_info(device, input_stream, file_id, completion_id);
+            guac_rdpdr_fs_process_file_info(device, input_stream, file_id, completion_id);
             break;
 
         /* Set file information */
         case IRP_MJ_SET_INFORMATION:
-            guac_rdpdr_fs_set_file_info(device, input_stream, file_id, completion_id);
+            guac_rdpdr_fs_process_set_file_info(device, input_stream, file_id, completion_id);
             break;
 
         case IRP_MJ_DIRECTORY_CONTROL:

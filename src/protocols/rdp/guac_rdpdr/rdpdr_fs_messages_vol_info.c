@@ -51,7 +51,7 @@
 
 #include <freerdp/utils/svc_plugin.h>
 
-void guac_rdpdr_fs_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id) {
 
     wStream* output_stream = Stream_New(NULL, 38 + GUAC_FILESYSTEM_NAME_LENGTH);
@@ -77,28 +77,28 @@ void guac_rdpdr_fs_query_volume_info(guac_rdpdr_device* device, wStream* input_s
 
 }
 
-void guac_rdpdr_fs_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,
             "Unimplemented stub: guac_rdpdr_fs_query_size_info");
 }
 
-void guac_rdpdr_fs_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,
             "Unimplemented stub: guac_rdpdr_fs_query_devive_info");
 }
 
-void guac_rdpdr_fs_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,
             "Unimplemented stub: guac_rdpdr_fs_query_attribute_info");
 }
 
-void guac_rdpdr_fs_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,

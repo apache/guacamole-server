@@ -52,7 +52,7 @@
 #include <freerdp/utils/svc_plugin.h>
 
 
-void guac_rdpdr_fs_query_basic_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
     wStream* output_stream = Stream_New(NULL, 60);
@@ -79,14 +79,14 @@ void guac_rdpdr_fs_query_basic_info(guac_rdpdr_device* device, wStream* input_st
 
 }
 
-void guac_rdpdr_fs_query_standard_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,
             "Unimplemented stub: guac_rdpdr_fs_query_standard_info");
 }
 
-void guac_rdpdr_fs_query_attribute_tag_info(guac_rdpdr_device* device, wStream* input_stream,
+void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,
