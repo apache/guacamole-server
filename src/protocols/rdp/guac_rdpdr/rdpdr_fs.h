@@ -61,6 +61,11 @@
 #define GUAC_RDPDR_FS_MAX_FILES 128
 
 /**
+ * The maximum number of bytes in a path string.
+ */
+#define GUAC_RDPDR_FS_MAX_PATH 4096
+
+/**
  * Error code returned when no more file IDs can be allocated.
  */
 #define GUAC_RDPDR_FS_ENFILE -1
@@ -69,6 +74,25 @@
  * Error code returned with no such file exists.
  */
 #define GUAC_RDPDR_FS_ENOENT -2
+
+/*
+ * Access constants.
+ */
+#define ACCESS_FILE_READ_DATA    0x00000001
+#define ACCESS_FILE_WRITE_DATA   0x00000002
+#define ACCESS_FILE_APPEND_DATA  0x00000004
+#define ACCESS_DELETE            0x00010000
+
+/*
+ * Create disposition constants.
+ */
+
+#define DISP_FILE_SUPERSEDE    0x00000000
+#define DISP_FILE_OPEN         0x00000001
+#define DISP_FILE_CREATE       0x00000002
+#define DISP_FILE_OPEN_IF      0x00000003
+#define DISP_FILE_OVERWRITE    0x00000004
+#define DISP_FILE_OVERWRITE_IF 0x00000005
 
 /*
  * Information constants.
@@ -103,34 +127,9 @@
 #define WINDOWS_TIME(t) ((t - ((uint64_t) 11644473600)) * 10000000)
 
 /**
- * Enumeration of all supported file types.
- */
-typedef enum guac_rdpdr_fs_file_type {
-
-    /**
-     * A regular file - either a file or directory.
-     */
-    GUAC_RDPDR_FS_FILE,
-
-    /**
-     * A disk device - here, this is always virtual, and always the containing
-     * volume (the Guacamole drive).
-     */
-    GUAC_RDPDR_FS_VOLUME,
-
-} guac_rdpdr_fs_file_type;
-
-/**
  * An arbitrary file on the virtual filesystem of the Guacamole drive.
  */
 typedef struct guac_rdpdr_fs_file {
-
-    /**
-     * The type of this file - either a FILE (file or directory) or a
-     * VOLUME (virtual file, represents the virtual device represented by
-     * the Guacamole drive).
-     */
-    guac_rdpdr_fs_file_type type;
 
     /**
      * Associated local file descriptor.
@@ -170,7 +169,8 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr);
 /**
  * Returns the next available file ID, or -1 if none available.
  */
-int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path);
+int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
+        int access, int create_disposition);
 
 /**
  * Frees the given file ID, allowing future open operations to reuse it.

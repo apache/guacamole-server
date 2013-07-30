@@ -78,7 +78,7 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
     guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), path, path_length/2 - 1);
 
     /* Open file */
-    file_id = guac_rdpdr_fs_open(device, path);
+    file_id = guac_rdpdr_fs_open(device, path, desired_access, create_disposition);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
