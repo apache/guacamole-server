@@ -35,28 +35,45 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef __GUAC_RDPDR_FS_MESSAGES_FILE_INFO_H
+#define __GUAC_RDPDR_FS_MESSAGES_FILE_INFO_H
+
+/**
+ * Handlers for file queries received over the RDPDR channel via the
+ * IRP_MJ_QUERY_INFORMATION major function.
+ *
+ * @file rdpdr_fs_messages_file_info.h
+ */
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
 
-#include <guacamole/pool.h>
-
-#include "rdpdr_messages.h"
-#include "rdpdr_fs.h"
 #include "rdpdr_service.h"
-#include "client.h"
-#include "unicode.h"
 
-#include <freerdp/utils/svc_plugin.h>
-
+/**
+ * Processes a query for FileBasicInformation. From the documentation, this is
+ * "used to query a file for the times of creation, last access, last write,
+ * and change, in addition to file attribute information."
+ */
 void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id);
 
+/**
+ * Processes a query for FileStandardInformation. From the documentation, this
+ * is "used to query for file information such as allocation size, end-of-file
+ * position, and number of links."
+ */
 void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id);
 
+/**
+ * Processes a query for FileAttributeTagInformation. From the documentation
+ * this is "used to query for file attribute and reparse tag information."
+ */
 void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id);
 
+#endif

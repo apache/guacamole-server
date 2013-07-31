@@ -38,6 +38,17 @@
 #ifndef __GUAC_RDPDR_FS_H
 #define __GUAC_RDPDR_FS_H
 
+/**
+ * Functions and macros specific to filesystem handling and initialization
+ * independent of RDP.  The functions here may deal with the RDPDR device
+ * directly, but their semantics must not deal with RDP protocol messaging.
+ * Functions here represent a virtual Windows-style filesystem on top of UNIX
+ * system calls and structures, using the guac_rdpdr_device structure as a home
+ * for common data.
+ *
+ * @file rdpdr_fs.h 
+ */
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
@@ -47,8 +58,6 @@
 #include <guacamole/pool.h>
 
 #include "rdpdr_service.h"
-
-#include <freerdp/utils/svc_plugin.h>
 
 /**
  * The index of the blob to use when sending files.
@@ -167,7 +176,8 @@ typedef struct guac_rdpdr_fs_data {
 void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr);
 
 /**
- * Returns the next available file ID, or -1 if none available.
+ * Returns the next available file ID, or an error code less than zero
+ * if an error occurs.
  */
 int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         int access, int create_disposition);

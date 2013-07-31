@@ -35,34 +35,56 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef __GUAC_RDPDR_FS_MESSAGES_VOL_INFO_H
+#define __GUAC_RDPDR_FS_MESSAGES_VOL_INFO_H
+
+/**
+ * Handlers for directory queries received over the RDPDR channel via the
+ * IRP_MJ_DIRECTORY_CONTROL major function and the IRP_MN_QUERY_DIRECTORY minor
+ * function.
+ *
+ * @file rdpdr_fs_messages_vol_info.h
+ */
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
 
-#include <guacamole/pool.h>
-
-#include "rdpdr_messages.h"
-#include "rdpdr_fs.h"
 #include "rdpdr_service.h"
-#include "client.h"
-#include "unicode.h"
 
-#include <freerdp/utils/svc_plugin.h>
-
+/**
+ * Processes a query request for FileFsVolumeInformation. According to the
+ * documentation, this is "used to query information for a volume on which a
+ * file system is mounted."
+ */
 void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 
+/**
+ * Processes a query request for FileFsSizeInformation.
+ */
 void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 
-void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
-        int completion_id);
-
+/**
+ * Processes a query request for FileFsAttributeInformation.
+ */
 void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
 
+/**
+ * Processes a query request for FileFsFullSizeInformation.
+ */
 void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int completion_id);
+
+/**
+ * Processes a query request for FileFsDeviceInformation.
+ */
+void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
+        int completion_id);
+
+#endif
 
