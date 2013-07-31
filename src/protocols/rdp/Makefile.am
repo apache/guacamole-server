@@ -66,6 +66,7 @@ guacsnd_sources =                 \
 guacdr_sources =                             \
 	guac_rdpdr/rdpdr_fs.c                    \
 	guac_rdpdr/rdpdr_fs_messages.c           \
+	guac_rdpdr/rdpdr_fs_messages_dir_info.c  \
 	guac_rdpdr/rdpdr_fs_messages_file_info.c \
 	guac_rdpdr/rdpdr_fs_messages_vol_info.c  \
 	guac_rdpdr/rdpdr_fs_service.c            \
@@ -78,6 +79,7 @@ noinst_HEADERS =                             \
 	compat/client-cliprdr.h                  \
 	guac_rdpdr/rdpdr_fs.h                    \
 	guac_rdpdr/rdpdr_fs_messages.h           \
+	guac_rdpdr/rdpdr_fs_messages_dir_info.h  \
 	guac_rdpdr/rdpdr_fs_messages_file_info.h \
 	guac_rdpdr/rdpdr_fs_messages_vol_info.h  \
 	guac_rdpdr/rdpdr_fs_service.h            \

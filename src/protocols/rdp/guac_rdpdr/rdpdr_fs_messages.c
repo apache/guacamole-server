@@ -47,6 +47,7 @@
 #include "rdpdr_fs_messages.h"
 #include "rdpdr_fs_messages_vol_info.h"
 #include "rdpdr_fs_messages_file_info.h"
+#include "rdpdr_fs_messages_dir_info.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_service.h"
 #include "client.h"
@@ -268,8 +269,54 @@ void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
 
 void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+
+    int fs_information_class, initial_query;
+    int path_length;
+
+    /* Read main header */
+    Stream_Read_UINT32(input_stream, fs_information_class);
+    Stream_Read_UINT8(input_stream,  initial_query);
+    Stream_Read_UINT32(input_stream, path_length);
+
+    /* If this is the first query, the path is included after padding */
+    if (initial_query) {
+        Stream_Seek(input_stream, 23); /* Padding */
+        /* Path here */
+    }
+
+    guac_client_log_info(device->rdpdr->client,
+            "Received dir query - class=0x%x, path_length=%i",
+            fs_information_class, path_length);
+
+    /* Dispatch to appropriate class-specific handler */
+    switch (fs_information_class) {
+
+        case FileDirectoryInformation:
+            guac_rdpdr_fs_process_query_directory_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        case FileFullDirectoryInformation:
+            guac_rdpdr_fs_process_query_full_directory_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        case FileBothDirectoryInformation:
+            guac_rdpdr_fs_process_query_both_directory_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        case FileNamesInformation:
+            guac_rdpdr_fs_process_query_names_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        default:
+            guac_client_log_info(device->rdpdr->client,
+                    "Unknown dir information class: 0x%x", fs_information_class);
+    }
+
+
 }
 
 void guac_rdpdr_fs_process_lock_control(guac_rdpdr_device* device, wStream* input_stream,

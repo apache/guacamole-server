@@ -227,6 +227,15 @@
 #define FileAttributeTagInformation 0x00000023 
 
 /*
+ * Directory information constants.
+ */
+
+#define FileDirectoryInformation     0x00000001
+#define FileFullDirectoryInformation 0x00000002
+#define FileBothDirectoryInformation 0x00000003
+#define FileNamesInformation         0x0000000C
+
+/*
  * Message handlers.
  */
 
