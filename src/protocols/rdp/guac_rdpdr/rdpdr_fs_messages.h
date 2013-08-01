@@ -95,7 +95,7 @@ void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device, wStream* in
  * separate file.
  */
 void guac_rdpdr_fs_process_volume_info(guac_rdpdr_device* device, wStream* input_stream,
-        int completion_id);
+        int file_id, int completion_id);
 
 /**
  * Handles a Server Drive Set Volume Information Request. Currently, this

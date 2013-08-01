@@ -99,7 +99,7 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
 
         /* Query volume (drive) information */
         case IRP_MJ_QUERY_VOLUME_INFORMATION:
-            guac_rdpdr_fs_process_volume_info(device, input_stream, completion_id);
+            guac_rdpdr_fs_process_volume_info(device, input_stream, file_id, completion_id);
             break;
 
         /* Set volume (drive) information */

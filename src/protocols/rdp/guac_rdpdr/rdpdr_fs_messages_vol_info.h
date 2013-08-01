@@ -60,31 +60,31 @@
  * file system is mounted."
  */
 void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
-        int completion_id);
+        int file_id, int completion_id);
 
 /**
  * Processes a query request for FileFsSizeInformation.
  */
 void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
-        int completion_id);
+        int file_id, int completion_id);
 
 /**
  * Processes a query request for FileFsAttributeInformation.
  */
 void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
-        int completion_id);
+        int file_id, int completion_id);
 
 /**
  * Processes a query request for FileFsFullSizeInformation.
  */
 void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
-        int completion_id);
+        int file_id, int completion_id);
 
 /**
  * Processes a query request for FileFsDeviceInformation.
  */
 void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
-        int completion_id);
+        int file_id, int completion_id);
 
 #endif
 
