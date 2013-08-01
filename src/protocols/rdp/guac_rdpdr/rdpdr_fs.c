@@ -45,6 +45,10 @@
 #include "compat/winpr-stream.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <guacamole/pool.h>
 
 #include "rdpdr_messages.h"
@@ -117,6 +121,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
     char path_buffer[GUAC_RDPDR_FS_MAX_PATH];
 
+    struct stat file_stat;
     int fd;
     int file_id;
     guac_rdpdr_fs_file* file;
@@ -202,6 +207,29 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     file_id = guac_pool_next_int(data->file_id_pool);
     file = &(data->files[file_id]);
     file->fd = fd;
+
+    /* Attempt to pull file information */
+    if (fstat(fd, &file_stat) == 0) {
+        file->size  = file_stat.st_size;
+        file->ctime = file_stat.st_ctime;
+        file->mtime = file_stat.st_mtime;
+        file->atime = file_stat.st_atime;
+    }
+
+    /* If information cannot be retrieved, fake it */
+    else {
+
+        guac_client_log_info(device->rdpdr->client, "Unable to read information for \"%s\"",
+                path_buffer);
+
+        /* Init information to 0, lacking any alternative */
+        file->size  = 0;
+        file->ctime = 0;
+        file->mtime = 0;
+        file->atime = 0;
+
+    }
+
 
     data->open_files++;
 

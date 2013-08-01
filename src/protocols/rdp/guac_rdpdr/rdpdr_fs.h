@@ -55,6 +55,9 @@
 #include "compat/winpr-stream.h"
 #endif
 
+#include <sys/types.h>
+#include <dirent.h>
+
 #include <guacamole/pool.h>
 
 #include "rdpdr_service.h"
@@ -144,6 +147,32 @@ typedef struct guac_rdpdr_fs_file {
      * Associated local file descriptor.
      */
     int fd;
+
+    /**
+     * Associated directory stream, if any. This field only applies
+     * if the file is being used as a directory.
+     */
+    DIR* dir;
+
+    /**
+     * The size of this file, in bytes.
+     */
+    off_t size;
+
+    /**
+     * The time this file was created, as a UNIX timestamp.
+     */
+    time_t ctime;
+
+    /**
+     * The time this file was last modified, as a UNIX timestamp.
+     */
+    time_t mtime;
+
+    /**
+     * The time this file was last accessed, as a UNIX timestamp.
+     */
+    time_t atime;
 
 } guac_rdpdr_fs_file;
 
