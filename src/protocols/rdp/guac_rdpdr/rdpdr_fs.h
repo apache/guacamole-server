@@ -139,9 +139,31 @@
 #define WINDOWS_TIME(t) ((t - ((uint64_t) 11644473600)) * 10000000)
 
 /**
+ * Enumeration of all supported file types.
+ */
+typedef enum guac_rdpdr_fs_file_type {
+
+    /**
+     * A regular file.
+     */
+    GUAC_RDPDR_FS_FILE,
+
+    /**
+     * A directory.
+     */
+    GUAC_RDPDR_FS_DIRECTORY
+
+} guac_rdpdr_fs_file_type;
+
+/**
  * An arbitrary file on the virtual filesystem of the Guacamole drive.
  */
 typedef struct guac_rdpdr_fs_file {
+
+    /**
+     * The type of this file.
+     */
+    guac_rdpdr_fs_file_type type;
 
     /**
      * Associated local file descriptor.

@@ -210,10 +210,19 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
     /* Attempt to pull file information */
     if (fstat(fd, &file_stat) == 0) {
+
+        /* Load size and times */
         file->size  = file_stat.st_size;
         file->ctime = file_stat.st_ctime;
         file->mtime = file_stat.st_mtime;
         file->atime = file_stat.st_atime;
+
+        /* Set type */
+        if (S_ISDIR(file_stat.st_mode))
+            file->type  = GUAC_RDPDR_FS_DIRECTORY;
+        else
+            file->type  = GUAC_RDPDR_FS_FILE;
+
     }
 
     /* If information cannot be retrieved, fake it */
@@ -227,6 +236,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         file->ctime = 0;
         file->mtime = 0;
         file->atime = 0;
+        file->type  = GUAC_RDPDR_FS_FILE;
 
     }
 
