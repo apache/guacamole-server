@@ -206,7 +206,8 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     /* Get file ID, init file */
     file_id = guac_pool_next_int(data->file_id_pool);
     file = &(data->files[file_id]);
-    file->fd = fd;
+    file->fd  = fd;
+    file->dir = NULL;
 
     /* Attempt to pull file information */
     if (fstat(fd, &file_stat) == 0) {
@@ -253,8 +254,20 @@ void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
 
     /* Only close if file ID is valid */
     if (file_id >= 0 && file_id <= GUAC_RDPDR_FS_MAX_FILES-1) {
+
+        guac_rdpdr_fs_file* file = &(data->files[file_id]);
+
+        /* Close directory, if open */
+        if (file->dir != NULL)
+            closedir(file->dir);
+
+        /* Close file */
+        close(file->fd);
+
+        /* Free ID back to pool */
         guac_pool_free_int(data->file_id_pool, file_id);
         data->open_files--;
+
     }
 
 }
