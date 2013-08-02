@@ -275,6 +275,8 @@ void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
+    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    guac_rdpdr_fs_file* file = &(data->files[file_id]);
     int fs_information_class, initial_query;
     int path_length;
 
@@ -307,7 +309,13 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
     entry_name = guac_rdpdr_fs_read_dir(device, file_id);
     if (entry_name != NULL) {
 
-        guac_client_log_info(device->rdpdr->client, "NAME: %s", entry_name);
+        /* Convert to absolute path */
+        char entry_path[GUAC_RDPDR_FS_MAX_PATH];
+        if (guac_rdpdr_fs_convert_path(file->absolute_path, entry_name, entry_path))
+            guac_client_log_info(device->rdpdr->client, "Conversion failed"); /* FIXME: Return ENOENT */
+
+        guac_client_log_info(device->rdpdr->client, "parent=\"%s\", name=\"%s\", path=\"%s\"",
+                file->absolute_path, entry_name, entry_path);
 
         /* Dispatch to appropriate class-specific handler */
         switch (fs_information_class) {

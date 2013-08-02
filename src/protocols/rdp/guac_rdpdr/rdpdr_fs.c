@@ -207,7 +207,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     file = &(data->files[file_id]);
     file->fd  = fd;
     file->dir = NULL;
-    file->absolute_path = strdup(path);
+    file->absolute_path = strdup(normalized_path);
 
     /* Attempt to pull file information */
     if (fstat(fd, &file_stat) == 0) {
@@ -341,7 +341,8 @@ int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path) {
             }
 
             /* Otherwise, if component not current directory, add to list */
-            else if (strcmp(current_path_component_data, ".") != 0)
+            else if (strcmp(current_path_component_data,   ".") != 0
+                     && strcmp(current_path_component_data, "") != 0)
                 path_components[path_depth++] = current_path_component_data;
 
             /* If end of string, stop */
@@ -355,9 +356,11 @@ int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path) {
 
     } /* end for each character */
 
-    /* If no components, the path could not be parsed */
-    if (path_depth == 0)
-        return 1;
+    /* If no components, the path is simply root */
+    if (path_depth == 0) {
+        strcpy(abs_path, "\\");
+        return 0;
+    }
 
     /* Ensure last component is null-terminated */
     path_component_data[i] = 0;
@@ -383,7 +386,30 @@ int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path) {
 }
 
 int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* abs_path) {
-    /* STUB */
-    return 0;
+
+    int i;
+    char combined_path[GUAC_RDPDR_FS_MAX_PATH];
+    char* current = combined_path;
+
+    /* Copy parent path */
+    for (i=0; i<GUAC_RDPDR_FS_MAX_PATH; i++) {
+
+        char c = *(parent++);
+        if (c == 0)
+            break;
+
+        *(current++) = c;
+
+    }
+
+    /* Add trailing slash */
+    *(current++) = '\\';
+
+    /* Copy remaining path */
+    strncpy(current, rel_path, GUAC_RDPDR_FS_MAX_PATH-i);
+
+    /* Normalize into provided buffer */
+    return guac_rdpdr_fs_normalize_path(combined_path, abs_path);
+
 }
 
