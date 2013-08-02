@@ -61,11 +61,12 @@
 #include <freerdp/utils/svc_plugin.h>
 
 /**
- * Translates an absolute Windows path to an absolute path which is within the "drive path"
- * specified in the connection settings.
+ * Translates an absolute Windows virtual_path to an absolute virtual_path
+ * which is within the "drive virtual_path" specified in the connection
+ * settings.
  */
-static char* __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
-        const char* path, char* path_buffer) {
+static void __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
+        const char* virtual_path, char* real_path) {
 
     /* Get drive path */
     rdp_guac_client_data* client_data = (rdp_guac_client_data*) device->rdpdr->client->data;
@@ -82,7 +83,7 @@ static char* __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
             break;
 
         /* Copy character */
-        *(path_buffer++) = c;
+        *(real_path++) = c;
 
     }
 
@@ -90,29 +91,21 @@ static char* __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
     for (; i<GUAC_RDPDR_FS_MAX_PATH-1; i++) {
 
         /* Stop at end of string */
-        char c = *path;
+        char c = *(virtual_path++);
         if (c == 0)
             break;
-
-        /* Disallow ".." */
-        if (c == '.' && *(path-1) == '.')
-            return NULL;
 
         /* Translate backslashes to forward slashes */
         if (c == '\\')
             c = '/';
 
         /* Store in real path buffer */
-        *(path_buffer++)= c;
-
-        /* Next path character */
-        path++;
+        *(real_path++)= c;
 
     }
 
     /* Null terminator */
-    *(path_buffer++)= 0;
-    return path_buffer;
+    *real_path = 0;
 
 }
 
@@ -120,7 +113,8 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         int access, int create_disposition) {
 
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    char path_buffer[GUAC_RDPDR_FS_MAX_PATH];
+    char real_path[GUAC_RDPDR_FS_MAX_PATH];
+    char normalized_path[GUAC_RDPDR_FS_MAX_PATH];
 
     struct stat file_stat;
     int fd;
@@ -192,15 +186,19 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
     }
 
-    /* If path invalid, return no such file */
-    if (__guac_rdpdr_fs_translate_path(device, path, path_buffer) == NULL)
+    /* Normalize path, return no-such-file if invalid  */
+    if (guac_rdpdr_fs_normalize_path(path, normalized_path))
         return GUAC_RDPDR_FS_ENOENT;
 
-    guac_client_log_info(device->rdpdr->client, "Path \"%s\" translated to \"%s\"",
-            path, path_buffer);
+    /* Translate normalized path to real path */
+    __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
+
+    guac_client_log_info(device->rdpdr->client,
+            "Path virtual=\"%s\" -> normalized=\"%s\", real=\"%s\"",
+            path, normalized_path, real_path);
 
     /* Open file */
-    fd = open(path_buffer, flags, mode);
+    fd = open(real_path, flags, mode);
     if (fd == -1)
         return GUAC_RDPDR_FS_ENOENT;
 
@@ -209,6 +207,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     file = &(data->files[file_id]);
     file->fd  = fd;
     file->dir = NULL;
+    file->absolute_path = strdup(path);
 
     /* Attempt to pull file information */
     if (fstat(fd, &file_stat) == 0) {
@@ -231,7 +230,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     else {
 
         guac_client_log_info(device->rdpdr->client, "Unable to read information for \"%s\"",
-                path_buffer);
+                real_path);
 
         /* Init information to 0, lacking any alternative */
         file->size  = 0;
@@ -267,6 +266,9 @@ void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
     /* Close file */
     close(file->fd);
 
+    /* Free name */
+    free(file->absolute_path);
+
     /* Free ID back to pool */
     guac_pool_free_int(data->file_id_pool, file_id);
     data->open_files--;
@@ -300,5 +302,88 @@ const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id) {
     /* Return filename */
     return file->__dirent.d_name;
 
+}
+
+int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path) {
+
+    int i;
+    int path_depth = 0;
+    char path_component_data[GUAC_RDPDR_FS_MAX_PATH];
+    const char* path_components[64];
+
+    const char** current_path_component      = &(path_components[0]);
+    const char*  current_path_component_data = &(path_component_data[0]);
+
+    /* If original path is not absolute, normalization fails */
+    if (path[0] != '\\' && path[0] != '/')
+        return 1;
+
+    /* Skip past leading slash */
+    path++;
+
+    /* Copy path into component data for parsing */
+    strncpy(path_component_data, path, GUAC_RDPDR_FS_MAX_PATH-1);
+
+    /* Find path components within path */
+    for (i=0; i<GUAC_RDPDR_FS_MAX_PATH; i++) {
+
+        /* If current character is a path separator, parse as component */
+        char c = path_component_data[i];
+        if (c == '/' || c == '\\' || c == 0) {
+
+            /* Terminate current component */
+            path_component_data[i] = 0;
+
+            /* If component refers to parent, just move up in depth */
+            if (strcmp(current_path_component_data, "..") == 0) {
+                if (path_depth > 0)
+                    path_depth--;
+            }
+
+            /* Otherwise, if component not current directory, add to list */
+            else if (strcmp(current_path_component_data, ".") != 0)
+                path_components[path_depth++] = current_path_component_data;
+
+            /* If end of string, stop */
+            if (c == 0)
+                break;
+
+            /* Update start of next component */
+            current_path_component_data = &(path_component_data[i+1]);
+
+        } /* end if separator */
+
+    } /* end for each character */
+
+    /* If no components, the path could not be parsed */
+    if (path_depth == 0)
+        return 1;
+
+    /* Ensure last component is null-terminated */
+    path_component_data[i] = 0;
+
+    /* Convert components back into path */
+    for (; path_depth > 0; path_depth--) {
+
+        const char* filename = *(current_path_component++);
+
+        /* Add separator */
+        *(abs_path++) = '\\';
+
+        /* Copy string */
+        while (*filename != 0)
+            *(abs_path++) = *(filename++);
+
+    }
+
+    /* Terminate absolute path */
+    *(abs_path++) = 0;
+    return 0;
+
+}
+
+int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* abs_path) {
+    /* STUB */
+    return 0;
 }
 

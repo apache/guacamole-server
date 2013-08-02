@@ -275,11 +275,10 @@ void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
-    /*guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_rdpdr_fs_file* file = &(data->files[file_id]);*/
-
     int fs_information_class, initial_query;
     int path_length;
+
+    const char* entry_name;
 
     /* Read main header */
     Stream_Read_UINT32(input_stream, fs_information_class);
@@ -298,45 +297,51 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
                 "Received initial dir query - class=0x%x, path_length=%i, path=%s",
                 fs_information_class, path_length, path);
 
-        /* Open directory */
-        /*file->dir = fdopendir(file->fd);*/
-
-        /* FIXME: Handle error */
-
     }
     else
         guac_client_log_info(device->rdpdr->client,
                 "Received continued dir query - class=0x%x",
                 fs_information_class);
 
-    /* Dispatch to appropriate class-specific handler */
-    switch (fs_information_class) {
+    /* If entry exists, call appriate handler to send data */
+    entry_name = guac_rdpdr_fs_read_dir(device, file_id);
+    if (entry_name != NULL) {
 
-        case FileDirectoryInformation:
-            guac_rdpdr_fs_process_query_directory_info(device, input_stream,
-                    file_id, completion_id);
-            break;
+        guac_client_log_info(device->rdpdr->client, "NAME: %s", entry_name);
 
-        case FileFullDirectoryInformation:
-            guac_rdpdr_fs_process_query_full_directory_info(device, input_stream,
-                    file_id, completion_id);
-            break;
+        /* Dispatch to appropriate class-specific handler */
+        switch (fs_information_class) {
 
-        case FileBothDirectoryInformation:
-            guac_rdpdr_fs_process_query_both_directory_info(device, input_stream,
-                    file_id, completion_id);
-            break;
+            case FileDirectoryInformation:
+                guac_rdpdr_fs_process_query_directory_info(device, input_stream,
+                        file_id, completion_id);
+                break;
 
-        case FileNamesInformation:
-            guac_rdpdr_fs_process_query_names_info(device, input_stream,
-                    file_id, completion_id);
-            break;
+            case FileFullDirectoryInformation:
+                guac_rdpdr_fs_process_query_full_directory_info(device, input_stream,
+                        file_id, completion_id);
+                break;
 
-        default:
-            guac_client_log_info(device->rdpdr->client,
-                    "Unknown dir information class: 0x%x", fs_information_class);
+            case FileBothDirectoryInformation:
+                guac_rdpdr_fs_process_query_both_directory_info(device, input_stream,
+                        file_id, completion_id);
+                break;
+
+            case FileNamesInformation:
+                guac_rdpdr_fs_process_query_names_info(device, input_stream,
+                        file_id, completion_id);
+                break;
+
+            default:
+                guac_client_log_info(device->rdpdr->client,
+                        "Unknown dir information class: 0x%x", fs_information_class);
+        }
+
     }
 
+    /* Otherwise, send STATUS_NO_MORE_FILES */
+    else {
+    }
 
 }
 

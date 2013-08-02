@@ -161,6 +161,11 @@ typedef enum guac_rdpdr_fs_file_type {
 typedef struct guac_rdpdr_fs_file {
 
     /**
+     * The absolute path, including filename, of this file.
+     */
+    char* absolute_path;
+
+    /**
      * The type of this file.
      */
     guac_rdpdr_fs_file_type type;
@@ -233,6 +238,12 @@ typedef struct guac_rdpdr_fs_data {
 void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr);
 
 /**
+ * Converts the given relative path to an absolute path based on the given
+ * parent path. If the path cannot be converted, non-zero is returned.
+ */
+int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* abs_path);
+
+/**
  * Returns the next available file ID, or an error code less than zero
  * if an error occurs.
  */
@@ -243,6 +254,17 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
  * Frees the given file ID, allowing future open operations to reuse it.
  */
 void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id);
+
+/**
+ * Given an arbitrary path, which may contain ".." and ".", creates an
+ * absolute path which does NOT contain ".." or ".".
+ */
+int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path);
+
+/**
+ * Given a parent path and a relative path, produces a normalized absolute path.
+ */
+int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* abs_path);
 
 /**
  * Returns the next filename within the directory having the given file ID,
