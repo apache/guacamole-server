@@ -37,6 +37,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <fcntl.h>
 
 #ifdef ENABLE_WINPR
@@ -251,24 +252,53 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
 
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    guac_rdpdr_fs_file* file;
 
     /* Only close if file ID is valid */
-    if (file_id >= 0 && file_id <= GUAC_RDPDR_FS_MAX_FILES-1) {
+    if (file_id < 0 || file_id >= GUAC_RDPDR_FS_MAX_FILES)
+        return;
 
-        guac_rdpdr_fs_file* file = &(data->files[file_id]);
+    file = &(data->files[file_id]);
 
-        /* Close directory, if open */
-        if (file->dir != NULL)
-            closedir(file->dir);
+    /* Close directory, if open */
+    if (file->dir != NULL)
+        closedir(file->dir);
 
-        /* Close file */
-        close(file->fd);
+    /* Close file */
+    close(file->fd);
 
-        /* Free ID back to pool */
-        guac_pool_free_int(data->file_id_pool, file_id);
-        data->open_files--;
+    /* Free ID back to pool */
+    guac_pool_free_int(data->file_id_pool, file_id);
+    data->open_files--;
 
+}
+
+const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id) {
+
+    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    guac_rdpdr_fs_file* file;
+
+    struct dirent* result;
+
+    /* Only read if file ID is valid */
+    if (file_id < 0 || file_id >= GUAC_RDPDR_FS_MAX_FILES)
+        return NULL;
+
+    file = &(data->files[file_id]);
+
+    /* Open directory if not yet open, stop if error */
+    if (file->dir == NULL) {
+        file->dir = fdopendir(file->fd);
+        if (file->dir == NULL)
+            return NULL;
     }
+
+    /* Read next entry, stop if error */
+    if (readdir_r(file->dir, &(file->__dirent), &result))
+        return NULL;
+
+    /* Return filename */
+    return file->__dirent.d_name;
 
 }
 

@@ -177,6 +177,12 @@ typedef struct guac_rdpdr_fs_file {
     DIR* dir;
 
     /**
+     * The last read dirent structure. This is used if traversing the contents
+     * of a directory.
+     */
+    struct dirent __dirent;
+
+    /**
      * The size of this file, in bytes.
      */
     off_t size;
@@ -237,6 +243,12 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
  * Frees the given file ID, allowing future open operations to reuse it.
  */
 void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id);
+
+/**
+ * Returns the next filename within the directory having the given file ID,
+ * or NULL if no more files.
+ */
+const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id);
 
 #endif
 

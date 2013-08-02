@@ -275,6 +275,9 @@ void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
+    /*guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    guac_rdpdr_fs_file* file = &(data->files[file_id]);*/
+
     int fs_information_class, initial_query;
     int path_length;
 
@@ -285,13 +288,26 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
 
     /* If this is the first query, the path is included after padding */
     if (initial_query) {
-        Stream_Seek(input_stream, 23); /* Padding */
-        /* Path here */
-    }
 
-    guac_client_log_info(device->rdpdr->client,
-            "Received dir query - class=0x%x, path_length=%i",
-            fs_information_class, path_length);
+        unsigned char* path;
+
+        Stream_Seek(input_stream, 23);       /* Padding */
+        path = Stream_Pointer(input_stream); /* Path */
+
+        guac_client_log_info(device->rdpdr->client,
+                "Received initial dir query - class=0x%x, path_length=%i, path=%s",
+                fs_information_class, path_length, path);
+
+        /* Open directory */
+        /*file->dir = fdopendir(file->fd);*/
+
+        /* FIXME: Handle error */
+
+    }
+    else
+        guac_client_log_info(device->rdpdr->client,
+                "Received continued dir query - class=0x%x",
+                fs_information_class);
 
     /* Dispatch to appropriate class-specific handler */
     switch (fs_information_class) {
