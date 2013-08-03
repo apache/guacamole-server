@@ -139,36 +139,20 @@
 #define WINDOWS_TIME(t) ((t - ((uint64_t) 11644473600)) * 10000000)
 
 /**
- * Enumeration of all supported file types.
- */
-typedef enum guac_rdpdr_fs_file_type {
-
-    /**
-     * A regular file.
-     */
-    GUAC_RDPDR_FS_FILE,
-
-    /**
-     * A directory.
-     */
-    GUAC_RDPDR_FS_DIRECTORY
-
-} guac_rdpdr_fs_file_type;
-
-/**
  * An arbitrary file on the virtual filesystem of the Guacamole drive.
  */
 typedef struct guac_rdpdr_fs_file {
 
     /**
+     * The filename of this file. The data of this name is actually stored
+     * within the absolute_path.
+     */
+    char* name;
+
+    /**
      * The absolute path, including filename, of this file.
      */
     char* absolute_path;
-
-    /**
-     * The type of this file.
-     */
-    guac_rdpdr_fs_file_type type;
 
     /**
      * Associated local file descriptor.
@@ -188,24 +172,29 @@ typedef struct guac_rdpdr_fs_file {
     struct dirent __dirent;
 
     /**
+     * Bitwise OR of all associated Windows file attributes.
+     */
+    int attributes;
+
+    /**
      * The size of this file, in bytes.
      */
-    off_t size;
+    int size;
 
     /**
-     * The time this file was created, as a UNIX timestamp.
+     * The time this file was created, as a Windows timestamp.
      */
-    time_t ctime;
+    uint64_t ctime;
 
     /**
-     * The time this file was last modified, as a UNIX timestamp.
+     * The time this file was last modified, as a Windows timestamp.
      */
-    time_t mtime;
+    uint64_t mtime;
 
     /**
-     * The time this file was last accessed, as a UNIX timestamp.
+     * The time this file was last accessed, as a Windows timestamp.
      */
-    time_t atime;
+    uint64_t atime;
 
 } guac_rdpdr_fs_file;
 

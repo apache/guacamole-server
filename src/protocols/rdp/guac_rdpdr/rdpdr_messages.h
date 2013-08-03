@@ -196,6 +196,7 @@
  * Status constants.
  */
 #define STATUS_SUCCESS                  0x00000000
+#define STATUS_NO_MORE_FILES            0x80000006
 #define STATUS_DEVICE_OFF_LINE          0x80000010
 #define STATUS_NO_SUCH_FILE             0xC000000F
 #define STATUS_END_OF_FILE              0xC0000011

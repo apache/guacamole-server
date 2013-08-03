@@ -68,8 +68,8 @@ void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream*
     Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
 
     Stream_Write_UINT32(output_stream, 18 + GUAC_FILESYSTEM_NAME_LENGTH);
-    Stream_Write_UINT64(output_stream, WINDOWS_TIME(file->ctime)); /* VolumeCreationTime */
-    Stream_Write(output_stream, "GUAC", 4);                        /* VolumeSerialNumber */
+    Stream_Write_UINT64(output_stream, file->ctime); /* VolumeCreationTime */
+    Stream_Write(output_stream, "GUAC", 4);          /* VolumeSerialNumber */
     Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_NAME_LENGTH);
     Stream_Write_UINT8(output_stream, FALSE); /* SupportsObjects */
     Stream_Write_UINT8(output_stream, 0);     /* Reserved */

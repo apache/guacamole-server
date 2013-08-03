@@ -115,6 +115,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
     char real_path[GUAC_RDPDR_FS_MAX_PATH];
     char normalized_path[GUAC_RDPDR_FS_MAX_PATH];
+    char* filename;
 
     struct stat file_stat;
     int fd;
@@ -193,14 +194,17 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     /* Translate normalized path to real path */
     __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
 
-    guac_client_log_info(device->rdpdr->client,
-            "Path virtual=\"%s\" -> normalized=\"%s\", real=\"%s\"",
-            path, normalized_path, real_path);
-
     /* Open file */
     fd = open(real_path, flags, mode);
-    if (fd == -1)
+    if (fd == -1) {
+        guac_client_log_error(device->rdpdr->client,
+                "Open of real file failed: \"%s\"", real_path);
         return GUAC_RDPDR_FS_ENOENT;
+    }
+    else
+        guac_client_log_info(device->rdpdr->client,
+                "Opened real file: \"%s\"", real_path);
+
 
     /* Get file ID, init file */
     file_id = guac_pool_next_int(data->file_id_pool);
@@ -209,20 +213,27 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     file->dir = NULL;
     file->absolute_path = strdup(normalized_path);
 
+    /* Parse out filename */
+    filename = file->absolute_path;
+    while (*filename != '\\' && *filename != '/' && *filename != 0)
+        filename++;
+
+    file->name = filename;
+
     /* Attempt to pull file information */
     if (fstat(fd, &file_stat) == 0) {
 
         /* Load size and times */
         file->size  = file_stat.st_size;
-        file->ctime = file_stat.st_ctime;
-        file->mtime = file_stat.st_mtime;
-        file->atime = file_stat.st_atime;
+        file->ctime = WINDOWS_TIME(file_stat.st_ctime);
+        file->mtime = WINDOWS_TIME(file_stat.st_mtime);
+        file->atime = WINDOWS_TIME(file_stat.st_atime);
 
         /* Set type */
         if (S_ISDIR(file_stat.st_mode))
-            file->type  = GUAC_RDPDR_FS_DIRECTORY;
+            file->attributes = FILE_ATTRIBUTE_DIRECTORY;
         else
-            file->type  = GUAC_RDPDR_FS_FILE;
+            file->attributes = FILE_ATTRIBUTE_NORMAL;
 
     }
 
@@ -237,7 +248,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         file->ctime = 0;
         file->mtime = 0;
         file->atime = 0;
-        file->type  = GUAC_RDPDR_FS_FILE;
+        file->attributes = FILE_ATTRIBUTE_NORMAL;
 
     }
 

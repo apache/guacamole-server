@@ -69,16 +69,11 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
     Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
 
     Stream_Write_UINT32(output_stream, 18 + GUAC_FILESYSTEM_NAME_LENGTH);
-    Stream_Write_UINT64(output_stream, WINDOWS_TIME(file->ctime)); /* CreationTime   */
-    Stream_Write_UINT64(output_stream, WINDOWS_TIME(file->atime)); /* LastAccessTime */
-    Stream_Write_UINT64(output_stream, WINDOWS_TIME(file->mtime)); /* LastWriteTime  */
-    Stream_Write_UINT64(output_stream, WINDOWS_TIME(file->mtime)); /* ChangeTime     */
-
-    /* FileAttributes */
-    if (file->type == GUAC_RDPDR_FS_DIRECTORY)
-        Stream_Write_UINT32(output_stream, FILE_ATTRIBUTE_DIRECTORY);
-    else
-        Stream_Write_UINT32(output_stream, FILE_ATTRIBUTE_NORMAL);     /* FileAttributes */
+    Stream_Write_UINT64(output_stream, file->ctime);      /* CreationTime   */
+    Stream_Write_UINT64(output_stream, file->atime);      /* LastAccessTime */
+    Stream_Write_UINT64(output_stream, file->mtime);      /* LastWriteTime  */
+    Stream_Write_UINT64(output_stream, file->mtime);      /* ChangeTime     */
+    Stream_Write_UINT32(output_stream, file->attributes); /* FileAttributes */
 
     /* Reserved */
     Stream_Write_UINT32(output_stream, 0);
