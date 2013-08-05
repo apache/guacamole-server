@@ -64,5 +64,33 @@ size_t guac_utf8_charsize(unsigned char c);
  */
 size_t guac_utf8_strlen(const char* str);
 
+/**
+ * Given destination buffer and its length, writes the given codepoint as UTF-8
+ * to the buffer, returning the number of bytes written. If there is not enough
+ * space in the buffer to write the character, no bytes are written at all.
+ *
+ * @param codepoint The Unicode codepoint to write to the buffer.
+ * @param utf8 The buffer to write to.
+ * @param length The length of the buffer, in bytes.
+ * @return The number of bytes written, which may be zero if there is not
+ *         enough space in the buffer to write the UTF-8 character.
+ */
+int guac_utf8_write(int codepoint, char* utf8, int length);
+
+/**
+ * Given a buffer containing UTF-8 characters, reads the first codepoint in the
+ * buffer, returning the length of the codepoint in bytes. If no codepoint
+ * could be read, zero is returned.
+ *
+ * @param utf8 A buffer containing UTF-8 characters.
+ * @param length The length of the buffer, in bytes.
+ * @param codepoint A pointer to an integer which will contain the codepoint
+ *                  read, if any. If no character can be read, the integer
+ *                  will be left untouched.
+ * @return The number of bytes read, which may be zero if there is not enough
+ *         space in the buffer to read a character.
+ */
+int guac_utf8_read(const char* utf8, int length, int* codepoint);
+
 #endif
 
