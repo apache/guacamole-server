@@ -56,7 +56,8 @@ test_libguac_SOURCES =           \
 	protocol/instruction_write.c \
 	protocol/nest_write.c        \
 	util/util_suite.c            \
-	util/guac_pool.c
+	util/guac_pool.c             \
+	util/guac_unicode.c
 
 test_libguac_LDADD = @LIBGUAC_LTLIB@ @CUNIT_LIBS@
 

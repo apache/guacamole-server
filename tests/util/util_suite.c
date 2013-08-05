@@ -59,7 +59,8 @@ int register_util_suite() {
 
     /* Add tests */
     if (
-        CU_add_test(suite, "guac-pool", test_guac_pool) == NULL
+           CU_add_test(suite, "guac-pool",    test_guac_pool)    == NULL
+        || CU_add_test(suite, "guac-unicode", test_guac_unicode) == NULL
        ) {
         CU_cleanup_registry();
         return CU_get_error();

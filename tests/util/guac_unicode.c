@@ -35,13 +35,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_TEST_UTIL_SUITE_H
-#define _GUAC_TEST_UTIL_SUITE_H
+#include <CUnit/Basic.h>
 
-int register_util_suite();
+#include "util_suite.h"
 
-void test_guac_pool();
-void test_guac_unicode();
-
-#endif
+void test_guac_unicode() {
+    /* STUB */
+}
 
