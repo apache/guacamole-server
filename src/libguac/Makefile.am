@@ -50,12 +50,12 @@ libguacinc_HEADERS =         \
     guacamole/protocol.h     \
     guacamole/socket.h       \
     guacamole/stream.h       \
-    guacamole/timestamp.h
+    guacamole/timestamp.h    \
+    guacamole/unicode.h
 
 noinst_HEADERS =      \
     client-handlers.h \
-    palette.h         \
-    unicode.h
+    palette.h
 
 libguac_la_SOURCES =  \
     client.c          \
