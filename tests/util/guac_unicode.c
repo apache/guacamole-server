@@ -43,20 +43,22 @@
 void test_guac_unicode() {
 
     /* Test character length */
-    CU_ASSERT_EQUAL(1, guac_utf8_charsize(UTF8_1[1]));
-    CU_ASSERT_EQUAL(2, guac_utf8_charsize(UTF8_2[1]));
-    CU_ASSERT_EQUAL(3, guac_utf8_charsize(UTF8_3[1]));
-    CU_ASSERT_EQUAL(4, guac_utf8_charsize(UTF8_4[1]));
+    CU_ASSERT_EQUAL(1, guac_utf8_charsize(UTF8_1b[0]));
+    CU_ASSERT_EQUAL(2, guac_utf8_charsize(UTF8_2b[0]));
+    CU_ASSERT_EQUAL(3, guac_utf8_charsize(UTF8_3b[0]));
+    CU_ASSERT_EQUAL(4, guac_utf8_charsize(UTF8_4b[0]));
 
     /* Test string length */
-    CU_ASSERT_EQUAL(0,  guac_utf8_strlen(""));
-    CU_ASSERT_EQUAL(4,  guac_utf8_strlen(UTF8_4));
-    CU_ASSERT_EQUAL(5,  guac_utf8_strlen(UTF8_1 UTF8_3 UTF8_1));
-    CU_ASSERT_EQUAL(5,  guac_utf8_strlen("hello"));
-    CU_ASSERT_EQUAL(6,  guac_utf8_strlen(UTF8_2 UTF8_1 UTF8_3));
-    CU_ASSERT_EQUAL(8,  guac_utf8_strlen(UTF8_8));
-    CU_ASSERT_EQUAL(9,  guac_utf8_strlen("guacamole"));
-    CU_ASSERT_EQUAL(11, guac_utf8_strlen(UTF8_2 UTF8_1 UTF8_8));
+    CU_ASSERT_EQUAL(0, guac_utf8_strlen(""));
+    CU_ASSERT_EQUAL(1, guac_utf8_strlen(UTF8_4b));
+    CU_ASSERT_EQUAL(2, guac_utf8_strlen(UTF8_4b UTF8_1b));
+    CU_ASSERT_EQUAL(2, guac_utf8_strlen(UTF8_2b UTF8_3b));
+    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_1b UTF8_3b UTF8_4b));
+    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_2b UTF8_1b UTF8_3b));
+    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_4b UTF8_2b UTF8_1b));
+    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_3b UTF8_4b UTF8_2b));
+    CU_ASSERT_EQUAL(5, guac_utf8_strlen("hello"));
+    CU_ASSERT_EQUAL(9, guac_utf8_strlen("guacamole"));
 
     /*int guac_utf8_write(int codepoint, char* utf8, int length);
     int guac_utf8_read(const char* utf8, int length, int* codepoint);*/

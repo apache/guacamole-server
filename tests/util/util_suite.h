@@ -40,11 +40,10 @@
 
 /* Unicode (UTF-8) strings */
 
-#define UTF8_1 "\xe7\x8a\xac"            /* One character    */
-#define UTF8_2 UTF8_1 "\xf0\x90\xac\x80" /* Two characters   */
-#define UTF8_3 UTF8_2 "z"                /* Three characters */
-#define UTF8_4 UTF8_3 "\xc3\xa1"         /* Four characters  */
-#define UTF8_8 UTF8_4 UTF8_4             /* Eight characters */
+#define UTF8_1b "g"                /* One byte    */
+#define UTF8_2b "\xc4\xa3"         /* Two bytes   */
+#define UTF8_3b "\xe7\x8a\xac"     /* Three bytes */
+#define UTF8_4b "\xf0\x90\x84\xa3" /* Four bytes  */
 
 int register_util_suite();
 
