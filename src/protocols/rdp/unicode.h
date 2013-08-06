@@ -36,12 +36,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 /**
- * Writes the given codepoint as UTF-8 to the given buffer, returning the
- * number of bytes written.
- */
-int guac_rdp_encode_utf8(int codepoint, char* utf8);
-
-/**
  * Convert the given number of UTF-16 characters to UTF-8 characters.
  */
 void guac_rdp_utf16_to_utf8(const unsigned char* utf16, char* utf8, int length);

@@ -37,51 +37,7 @@
 
 #include <stdint.h>
 
-int guac_rdp_encode_utf8(int codepoint, char* utf8) {
-
-    int i;
-    int mask, bytes;
-
-    /* Determine size and initial byte mask */
-    if (codepoint <= 0x007F) {
-        mask  = 0x00;
-        bytes = 1;
-    }
-    else if (codepoint <= 0x7FF) {
-        mask  = 0xC0;
-        bytes = 2;
-    }
-    else if (codepoint <= 0xFFFF) {
-        mask  = 0xE0;
-        bytes = 3;
-    }
-    else if (codepoint <= 0x1FFFFF) {
-        mask  = 0xF0;
-        bytes = 4;
-    }
-
-    /* Otherwise, invalid codepoint */
-    else {
-        *(utf8++) = '?';
-        return 1;
-    }
-
-    /* Offset buffer by size */
-    utf8 += bytes - 1;
-
-    /* Add trailing bytes, if any */
-    for (i=1; i<bytes; i++) {
-        *(utf8--) = 0x80 | (codepoint & 0x3F);
-        codepoint >>= 6;
-    }
-
-    /* Set initial byte */
-    *utf8 = mask | codepoint;
-
-    /* Done */
-    return bytes;
-
-}
+#include <guacamole/unicode.h>
 
 void guac_rdp_utf16_to_utf8(const unsigned char* utf16, char* utf8, int length) {
 
@@ -95,7 +51,7 @@ void guac_rdp_utf16_to_utf8(const unsigned char* utf16, char* utf8, int length) 
         uint16_t codepoint = *(in_codepoint++);
 
         /* Save codepoint as UTF-8 */
-        utf8 += guac_rdp_encode_utf8(codepoint, utf8);
+        utf8 += guac_utf8_write(codepoint, utf8, 4);
 
     }
 
