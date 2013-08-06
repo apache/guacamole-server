@@ -60,3 +60,22 @@ void guac_rdp_utf16_to_utf8(const unsigned char* utf16, char* utf8, int length) 
 
 }
 
+void guac_rdp_utf8_to_utf16(const unsigned char* utf8, char* utf16, int length) {
+
+    int i;
+    uint16_t* out_codepoint = (uint16_t*) utf16;
+
+    /* For each UTF-8 character */
+    for (i=0; i<length; i++) {
+
+        /* Get next codepoint */
+        int codepoint;
+        utf8 += guac_utf8_read((const char*) utf8, 4, &codepoint);
+
+        /* Save codepoint as UTF-16 */
+        *(out_codepoint++) = codepoint;
+
+    }
+
+}
+
