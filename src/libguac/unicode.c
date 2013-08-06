@@ -140,7 +140,7 @@ int guac_utf8_write(int codepoint, char* utf8, int length) {
 
 int guac_utf8_read(const char* utf8, int length, int* codepoint) {
 
-    char initial;
+    unsigned char initial;
     int bytes;
     int result;
 
@@ -149,7 +149,7 @@ int guac_utf8_read(const char* utf8, int length, int* codepoint) {
         return 0;
 
     /* Read initial byte */
-    initial = *(utf8++);
+    initial = (unsigned char) *(utf8++);
 
     /* 0xxxxxxx */
     if ((initial | 0x7F) == 0x7F) {
