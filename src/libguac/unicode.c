@@ -143,6 +143,7 @@ int guac_utf8_read(const char* utf8, int length, int* codepoint) {
     unsigned char initial;
     int bytes;
     int result;
+    int i;
 
     /* If not even one byte, cannot read */
     if (length <= 0)
@@ -185,7 +186,11 @@ int guac_utf8_read(const char* utf8, int length, int* codepoint) {
     if (bytes > length)
         return 0;
 
-    /* STUB: Read. */
+    /* Read trailing bytes, if any */
+    for (i=1; i<bytes; i++) {
+        result <<= 6;
+        result |= *(utf8++) & 0x3F;
+    }
 
     *codepoint = result;
     return bytes;
