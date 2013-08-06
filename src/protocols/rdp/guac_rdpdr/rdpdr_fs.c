@@ -115,7 +115,6 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
     char real_path[GUAC_RDPDR_FS_MAX_PATH];
     char normalized_path[GUAC_RDPDR_FS_MAX_PATH];
-    char* filename;
 
     struct stat file_stat;
     int fd;
@@ -213,13 +212,6 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     file->dir = NULL;
     file->absolute_path = strdup(normalized_path);
 
-    /* Parse out filename */
-    filename = file->absolute_path;
-    while (*filename != '\\' && *filename != '/' && *filename != 0)
-        filename++;
-
-    file->name = filename;
-
     /* Attempt to pull file information */
     if (fstat(fd, &file_stat) == 0) {
 
@@ -308,6 +300,10 @@ const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id) {
 
     /* Read next entry, stop if error */
     if (readdir_r(file->dir, &(file->__dirent), &result))
+        return NULL;
+
+    /* If no more entries, return NULL */
+    if (result == NULL)
         return NULL;
 
     /* Return filename */

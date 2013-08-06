@@ -144,12 +144,6 @@
 typedef struct guac_rdpdr_fs_file {
 
     /**
-     * The filename of this file. The data of this name is actually stored
-     * within the absolute_path.
-     */
-    char* name;
-
-    /**
      * The absolute path, including filename, of this file.
      */
     char* absolute_path;

@@ -60,7 +60,7 @@
  * attributes."
  */
 void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        const char* entry_name, int file_id, int completion_id);
 
 /**
  * Processes a query request for FileFullDirectoryInformation. From the
@@ -68,7 +68,7 @@ void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
  * attribute size."
  */
 void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        const char* entry_name, int file_id, int completion_id);
 
 /**
  * Processes a query request for FileBothDirectoryInformation. From the
@@ -76,14 +76,14 @@ void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
  * extended attribute size and short name about a file or directory."
  */
 void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        const char* entry_name, int file_id, int completion_id);
 
 /**
  * Processes a query request for FileNamesInformation. From the documentation,
  * this is "detailed information on the names of files in a directory."
  */
 void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        const char* entry_name, int file_id, int completion_id);
 
 #endif
 

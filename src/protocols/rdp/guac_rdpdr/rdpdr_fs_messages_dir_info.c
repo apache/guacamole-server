@@ -41,28 +41,78 @@
 #include "compat/winpr-stream.h"
 #endif
 
+#include <guacamole/unicode.h>
+
 #include "rdpdr_service.h"
+#include "rdpdr_messages.h"
+#include "rdpdr_fs.h"
+#include "unicode.h"
 
 void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
+        const char* entry_name, int file_id, int completion_id) {
     /* STUB */
     guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
 }
 
 void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
+        const char* entry_name, int file_id, int completion_id) {
     /* STUB */
     guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
 }
 
 void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+        const char* entry_name, int file_id, int completion_id) {
+
+    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    guac_rdpdr_fs_file* file = &(data->files[file_id]);
+
+    wStream* output_stream = Stream_New(NULL, 256);
+    int length = guac_utf8_strlen(entry_name);
+    int utf16_length = length*2;
+
+    unsigned char utf16_entry_name[256];
+    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, (char*) utf16_entry_name, length);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+
+    Stream_Write_UINT32(output_stream,
+            69 + 24 + utf16_length); /* Length */
+
+    Stream_Write_UINT32(output_stream, 0); /* NextEntryOffset */
+    Stream_Write_UINT32(output_stream, 0); /* FileIndex */
+    Stream_Write_UINT64(output_stream, file->ctime); /* CreationTime */
+    Stream_Write_UINT64(output_stream, file->atime); /* LastAccessTime */
+    Stream_Write_UINT64(output_stream, file->mtime); /* LastWriteTime */
+    Stream_Write_UINT64(output_stream, file->mtime); /* ChangeTime */
+    Stream_Write_UINT64(output_stream, file->size);  /* EndOfFile */
+    Stream_Write_UINT64(output_stream, file->size);  /* AllocationSize */
+    Stream_Write_UINT32(output_stream, file->attributes);   /* FileAttributes */
+    Stream_Write_UINT32(output_stream, utf16_length); /* FileNameLength*/
+    Stream_Write_UINT32(output_stream, 0); /* EaSize */
+    Stream_Write_UINT8(output_stream,  0); /* ShortNameLength */
+
+    /* Apparently, the reserved byte here must be skipped ... */
+
+    Stream_Seek(output_stream, 24); /* ShortName */
+    Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    guac_client_log_info(device->rdpdr->client, "Sent directory entry: \"%s\"",
+            entry_name);
+    guac_client_log_info(device->rdpdr->client, "Attrib: 0x%x", file->attributes);
+    guac_client_log_info(device->rdpdr->client, "Size: %i", file->size);
+
 }
 
 void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
+        const char* entry_name, int file_id, int completion_id) {
     /* STUB */
     guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
 }
