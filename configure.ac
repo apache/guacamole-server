@@ -171,14 +171,14 @@ AC_SUBST(VORBIS_LIBS)
 have_pulse=yes
 PULSE_LIBS=
 
-AC_CHECK_LIB([pulse-simple], [pa_simple_new], [PULSE_LIBS="$PULSE_LIBS -lpulse-simple"], [have_pulse=no])
+AC_CHECK_LIB([pulse], [pa_context_new], [PULSE_LIBS="$PULSE_LIBS -lpulse"], [have_pulse=no])
 AM_CONDITIONAL([ENABLE_PULSE], [test "x${have_pulse}" = "xyes"])
 
 if test "x${have_pulse}" = "xno"
 then
     AC_MSG_WARN([
   --------------------------------------------
-   Unable to find libpulse-simple
+   Unable to find libpulse
    Sound support for VNC will be disabled
   --------------------------------------------])
 else
@@ -534,7 +534,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libssl .............. ${have_ssl}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
-     libpulse-simple ..... ${have_pulse}
+     libpulse ............ ${have_pulse}
 
    Protocol support:
 
