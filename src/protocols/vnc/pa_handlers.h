@@ -74,18 +74,6 @@
 #define SEND_INTERVAL 500
 
 /**
- * Allocates a new audio buffer that can be shared between the 
- * read and send threads
- */
-buffer* guac_pa_buffer_alloc();
-
-/**
- * Frees up allocated resources for reading and sending audio data 
- * read and send threads
- */
-void guac_pa_buffer_free(buffer* audio_buffer);
-
-/**
  * Reads audio data from Pulse Audio and inserts it into the
  * audio buffer
  *
