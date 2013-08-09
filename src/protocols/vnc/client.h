@@ -66,7 +66,7 @@ typedef struct vnc_guac_client_data {
     /**
      * Audio output, if any.
      */
-    audio_stream* audio;
+    guac_audio_stream* audio;
     
     /**
      * Audio buffer, if any.
