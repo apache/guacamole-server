@@ -153,7 +153,7 @@ void guac_audio_stream_free(guac_audio_stream* audio) {
 }
 
 void guac_audio_stream_write_pcm(guac_audio_stream* audio, 
-        unsigned char* data, int length) {
+        const unsigned char* data, int length) {
 
     /* Update counter */
     audio->pcm_bytes_written += length;
@@ -194,7 +194,7 @@ void guac_audio_stream_flush(guac_audio_stream* audio) {
 }
 
 void guac_audio_stream_write_encoded(guac_audio_stream* audio,
-        unsigned char* data, int length) {
+        const unsigned char* data, int length) {
 
     /* Resize audio buffer if necessary */
     if (audio->encoded_data_used + length > audio->encoded_data_length) {

@@ -167,7 +167,7 @@ void wav_encoder_end_handler(guac_audio_stream* audio) {
 }
 
 void wav_encoder_write_handler(guac_audio_stream* audio, 
-        unsigned char* pcm_data, int length) {
+        const unsigned char* pcm_data, int length) {
 
     /* Get state */
     wav_encoder_state* state = (wav_encoder_state*) audio->data;

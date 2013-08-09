@@ -63,7 +63,7 @@ typedef void guac_audio_encoder_end_handler(guac_audio_stream* audio);
  * Handler which is called when the audio stream is flushed.
  */
 typedef void guac_audio_encoder_write_handler(guac_audio_stream* audio,
-        unsigned char* pcm_data, int length);
+        const unsigned char* pcm_data, int length);
 
 /**
  * Arbitrary audio codec encoder.
@@ -231,7 +231,7 @@ void guac_audio_stream_end(guac_audio_stream* stream);
  * @param length The number of bytes of PCM data provided.
  */
 void guac_audio_stream_write_pcm(guac_audio_stream* stream,
-        unsigned char* data, int length);
+        const unsigned char* data, int length);
 
 /**
  * Flushes the given audio stream.
@@ -251,7 +251,7 @@ void guac_audio_stream_flush(guac_audio_stream* stream);
  * @param length The number of bytes of data provided.
  */
 void guac_audio_stream_write_encoded(guac_audio_stream* audio,
-        unsigned char* data, int length);
+        const unsigned char* data, int length);
 
 #endif
 
