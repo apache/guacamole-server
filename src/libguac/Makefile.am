@@ -74,7 +74,8 @@ libguac_la_SOURCES =  \
     socket-fd.c       \
     socket-nest.c     \
     timestamp.c       \
-    unicode.c
+    unicode.c         \
+    wav_encoder.c
 
 # Compile OGG support if available
 if ENABLE_OGG
