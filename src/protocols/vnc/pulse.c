@@ -109,12 +109,11 @@ static void __context_get_sink_info_callback(pa_context* context,
 
     /* Set format */
     spec.format   = PA_SAMPLE_S16LE;
-    spec.rate     = info->sample_spec.rate;
-    spec.channels = info->sample_spec.channels;
+    spec.rate     = 44100;
+    spec.channels = 2;
 
     /* Create stream */
-    stream = pa_stream_new(context, "Guacamole Audio", &spec,
-            &(info->channel_map));
+    stream = pa_stream_new(context, "Guacamole Audio", &spec, NULL);
 
     /* Set stream callbacks */
     pa_stream_set_state_callback(stream, __stream_state_callback, client);
@@ -122,7 +121,7 @@ static void __context_get_sink_info_callback(pa_context* context,
 
     /* Start stream */
     pa_stream_connect_record(stream, info->monitor_source_name, NULL,
-            0 /* FIXME: PA_STREAM_DONT_INHIBIT_AUTO_SUSPEND */);
+            PA_STREAM_DONT_INHIBIT_AUTO_SUSPEND);
 
 }
 
