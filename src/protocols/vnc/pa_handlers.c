@@ -43,7 +43,6 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 
-#include "buffer.h"
 #include "client.h"
 
 #include <pulse/simple.h>
@@ -51,27 +50,10 @@
 #include <pulse/introspect.h>
 #include "pa_handlers.h"
 
-buffer* guac_pa_buffer_alloc() {
-    
-    buffer* audio_buffer = malloc(sizeof(buffer));   
-    buffer_init(audio_buffer, BUF_LENGTH * 2, sizeof(unsigned char) * BUF_DATA_SIZE);
-
-    return audio_buffer;
-
-}
-
-void guac_pa_buffer_free(buffer* audio_buffer) {
-
-    buffer_free(audio_buffer);
-    free(audio_buffer);
-
-}
-
 void* guac_pa_read_audio(void* data) {
     
-    audio_args* args = (audio_args*) data;
-    buffer* audio_buffer = args->audio_buffer;
-    guac_client* client = args->audio->client;
+    vnc_guac_client_data* client_data = (vnc_guac_client_data*) data;
+    guac_client* client = client_data->audio->client;
     pa_simple* s_in;
     int error;
     pa_usec_t latency;
@@ -124,9 +106,8 @@ finish:
 
 void* guac_pa_send_audio(void* data) {
 
-    audio_args* args = (audio_args*) data;
-    guac_audio_stream* audio = args->audio; 
-    buffer* audio_buffer = args->audio_buffer;
+    vnc_guac_client_data* client_data = (vnc_guac_client_data*) data;
+    guac_audio_stream* audio = client_data->audio; 
     guac_client* client = audio->client;
     unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUF_DATA_SIZE);
     int counter;

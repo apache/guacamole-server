@@ -139,9 +139,6 @@ int vnc_guac_client_free_handler(guac_client* client) {
         if (guac_client_data->audio_send_thread)
             pthread_join(*(guac_client_data->audio_send_thread), NULL);
        
-        /* Free up buffer allocated for audio stream */
-        if(guac_client_data->audio_buffer)
-            guac_pa_buffer_free(guac_client_data->audio_buffer);
     }
 #endif
 
