@@ -40,6 +40,7 @@ AM_CFLAGS = -Werror -Wall -pedantic -Iguacamole
 
 libguacincdir = $(includedir)/guacamole
 libguacinc_HEADERS =         \
+    guacamole/audio.h        \
     guacamole/client.h       \
     guacamole/error.h        \
     guacamole/hash.h         \
@@ -55,9 +56,11 @@ libguacinc_HEADERS =         \
 
 noinst_HEADERS =      \
     client-handlers.h \
-    palette.h
+    palette.h         \
+    wav_encoder.h
 
 libguac_la_SOURCES =  \
+    audio.c           \
     client.c          \
     client-handlers.c \
     error.c           \
@@ -73,6 +76,12 @@ libguac_la_SOURCES =  \
     timestamp.c       \
     unicode.c
 
+# Compile OGG support if available
+if ENABLE_OGG
+libguac_la_SOURCES += ogg_encoder.c
+noinst_HEADERS += ogg_encoder.h
+endif
+
 lib_LTLIBRARIES = libguac.la
-libguac_la_LDFLAGS = -version-info 5:0:0 @PTHREAD_LIBS@ @CAIRO_LIBS@ @PNG_LIBS@ @DL_LIBS@
+libguac_la_LDFLAGS = -version-info 5:0:0 @PTHREAD_LIBS@ @CAIRO_LIBS@ @PNG_LIBS@ @DL_LIBS@ @VORBIS_LIBS@
 
