@@ -40,6 +40,8 @@
 #ifndef __GUAC_VNC_PA_HANDLERS_H
 #define __GUAC_VNC_PA_HANDLERS_H
 
+#include <guacamole/audio.h>
+
 /**
  * The size of each data element in the audio buffer.
  */
@@ -75,7 +77,7 @@
  * Arguments for the read and send threads
  */
 typedef struct audio_args {
-    audio_stream* audio;
+    guac_audio_stream* audio;
     buffer* audio_buffer;
 } audio_args;
 

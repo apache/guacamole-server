@@ -125,7 +125,7 @@ finish:
 void* guac_pa_send_audio(void* data) {
 
     audio_args* args = (audio_args*) data;
-    audio_stream* audio = args->audio; 
+    guac_audio_stream* audio = args->audio; 
     buffer* audio_buffer = args->audio_buffer;
     guac_client* client = audio->client;
     unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUF_DATA_SIZE);
@@ -135,13 +135,13 @@ void* guac_pa_send_audio(void* data) {
 
     while (client->state == GUAC_CLIENT_RUNNING) {
         
-        audio_stream_begin(audio, SAMPLE_RATE, CHANNELS, BPS);
+        guac_audio_stream_begin(audio, SAMPLE_RATE, CHANNELS, BPS);
         
         counter = 0;
         while (counter < BUF_LENGTH) {
             
             buffer_remove(audio_buffer, (void *) buffer_data);
-            audio_stream_write_pcm(audio, buffer_data, BUF_DATA_SIZE);  
+            guac_audio_stream_write_pcm(audio, buffer_data, BUF_DATA_SIZE);  
             counter++;
           
             if (client->state != GUAC_CLIENT_RUNNING)
@@ -149,7 +149,7 @@ void* guac_pa_send_audio(void* data) {
             
         }
 
-        audio_stream_end(audio); 
+        guac_audio_stream_end(audio); 
 
         guac_pa_sleep(SEND_INTERVAL);              
     }
