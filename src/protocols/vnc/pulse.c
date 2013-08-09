@@ -41,6 +41,44 @@
 
 #include "client.h"
 
+static void __context_get_sink_info_callback(pa_context* context,
+        const pa_sink_info* info, int is_last, void* data) {
+
+    guac_client* client = (guac_client*) data;
+
+    /* If information retrieval failed, stop */
+    if (is_last < 0) {
+        guac_client_log_error(client, "Unable to retrieve sink information");
+        return;
+    }
+
+    /* Start stream */
+    guac_client_log_info(client, "Starting stream (STUB)");
+
+}
+
+static void __context_get_server_info_callback(pa_context* context,
+        const pa_server_info* info, void* data) {
+
+    guac_client* client = (guac_client*) data;
+
+    /* If no default sink, cannot continue */
+    if (info->default_sink_name == NULL) {
+        guac_client_log_error(client, "No default sink. Cannot stream audio.");
+        return;
+    }
+
+    guac_client_log_info(client, "Will use default sink: \"%s\"",
+            info->default_sink_name);
+
+    /* Wait for default sink information */
+    pa_operation_unref(
+            pa_context_get_sink_info_by_name(context,
+                info->default_sink_name, __context_get_sink_info_callback,
+                client));
+
+}
+
 static void __context_state_callback(pa_context* context, void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -67,6 +105,8 @@ static void __context_state_callback(pa_context* context, void* data) {
 
         case PA_CONTEXT_READY:
             guac_client_log_info(client, "PulseAudio now ready");
+            pa_operation_unref(pa_context_get_server_info(context,
+                        __context_get_server_info_callback, client));
             break;
 
         case PA_CONTEXT_FAILED:
