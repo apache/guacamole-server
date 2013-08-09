@@ -54,7 +54,10 @@
 #include "client.h"
 #include "vnc_handlers.h"
 #include "guac_handlers.h"
+
+#ifdef ENABLE_PULSE
 #include "pa_handlers.h"
+#endif
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -65,11 +68,16 @@ const char* GUAC_CLIENT_ARGS[] = {
     "password",
     "swap-red-blue",
     "color-depth",
+
 #ifdef ENABLE_VNC_REPEATER
     "dest-host",
     "dest-port",
 #endif
+
+#ifdef ENABLE_PULSE
     "disable-audio",
+#endif
+
     NULL
 };
 
@@ -82,10 +90,16 @@ enum VNC_ARGS_IDX {
     IDX_PASSWORD,
     IDX_SWAP_RED_BLUE,
     IDX_COLOR_DEPTH,
+
 #ifdef ENABLE_VNC_REPEATER
     IDX_DEST_HOST,
     IDX_DEST_PORT,
 #endif
+
+#ifdef ENABLE_PULSE
+    IDX_DISABLE_AUDIO,
+#endif
+
     VNC_ARGS_COUNT
 };
 
@@ -155,12 +169,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rfb_client->GetPassword = guac_vnc_get_password;
 
     /* Depth */
-    guac_vnc_set_pixel_format(rfb_client, atoi(argv[6]));
+    guac_vnc_set_pixel_format(rfb_client, atoi(argv[IDX_COLOR_DEPTH]));
 
-    guac_client_data->audio_enabled = (strcmp(argv[7], "true") != 0);
+#ifdef ENABLE_PULSE
+    guac_client_data->audio_enabled = (strcmp(argv[IDX_DISABLE_AUDIO], "true") != 0);
     
-   /* If audio enabled, choose an encoder */
-    if (guac_client_data->audio_enabled) {       
+    /* If audio enabled, choose an encoder */
+    if (guac_client_data->audio_enabled) {
  
         /* Choose an encoding */
         for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
@@ -217,6 +232,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             guac_client_log_info(client, "No available audio encoding. Sound disabled.");
  
     } /* end if audio enabled */
+#endif
 
     /* Hook into allocation so we can handle resize. */
     guac_client_data->rfb_MallocFrameBuffer = rfb_client->MallocFrameBuffer;
