@@ -37,7 +37,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
 #include <rfb/rfbclient.h>
 
@@ -106,10 +105,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rfbClient* rfb_client;
 
     vnc_guac_client_data* guac_client_data;
-
-#ifdef ENABLE_PULSE    
-    pthread_t pa_read_thread;
-#endif
 
     int read_only;
 
@@ -180,16 +175,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                     "Audio will be encoded as %s",
                     guac_client_data->audio->encoder->mimetype);
 
-            /* Create a thread to read audio data */
-            if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio,
-                        (void*) client)) {
-                guac_protocol_send_error(client->socket,
-                        "Error initializing PulseAudio read thread");
-                guac_socket_flush(client->socket);
-                return 1;
-            }
-            
-            guac_client_data->audio_read_thread = &pa_read_thread;
+            /* Require threadsafe sockets if audio enabled */
+            guac_socket_require_threadsafe(client->socket);
+
+            /* Start audio stream */
+            guac_pa_start_stream(client);
             
         }
 
@@ -197,9 +187,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         else
             guac_client_log_info(client,
                     "No available audio encoding. Sound disabled.");
-
-        /* Require threadsafe sockets if audio enabled */
-        guac_socket_require_threadsafe(client->socket);
 
     } /* end if audio enabled */
 #endif

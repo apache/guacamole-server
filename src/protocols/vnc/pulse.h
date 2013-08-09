@@ -39,12 +39,18 @@
 #define __GUAC_VNC_PULSE_H
 
 /**
- * Read thread which transfers PCM data read from PulseAudio to the audio
- * encoder in use.
+ * Starts streaming audio from PulseAudio to the given Guacamole client.
  *
- * @param data Pointer to the active guac_client.
+ * @param client The client to stream data to.
  */
-void* guac_pa_read_audio(void* data);
+void guac_pa_start_stream(guac_client* client);
+
+/**
+ * Stops streaming audio from PulseAudio to the given Guacamole client.
+ *
+ * @param client The client to stream data to.
+ */
+void guac_pa_stop_stream(guac_client* client);
 
 #endif
 

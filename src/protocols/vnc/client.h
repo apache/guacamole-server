@@ -42,6 +42,8 @@
 #include <guacamole/audio.h>
 #include <rfb/rfbclient.h>
 
+#include <pulse/pulseaudio.h>
+
 extern char* __GUAC_CLIENT;
 
 typedef struct vnc_guac_client_data {
@@ -67,9 +69,9 @@ typedef struct vnc_guac_client_data {
     guac_audio_stream* audio;
     
     /**
-     * PulseAudio read thread.
+     * PulseAudio event loop.
      */
-    pthread_t* audio_read_thread;
+    pa_threaded_mainloop* pa_mainloop;
     
 } vnc_guac_client_data;
 

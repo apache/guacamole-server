@@ -39,7 +39,6 @@
 #include <string.h>
 #include <time.h>
 #include <iconv.h>
-#include <pthread.h>
 
 #include <rfb/rfbclient.h>
 
@@ -130,13 +129,9 @@ int vnc_guac_client_free_handler(guac_client* client) {
     rfbClient* rfb_client = guac_client_data->rfb_client;
 
 #ifdef ENABLE_PULSE
-    if (guac_client_data->audio_enabled) {
-    
-        /* Wait for audio read thread to join */
-        if (guac_client_data->audio_read_thread)
-            pthread_join(*(guac_client_data->audio_read_thread), NULL);
-        
-    }
+    /* If audio enabled, stop streaming */
+    if (guac_client_data->audio_enabled)
+        guac_pa_stop_stream(client);
 #endif
 
     /* Free encodings string, if used */
