@@ -45,7 +45,7 @@
 
 #include "ogg_encoder.h"
 
-void ogg_encoder_begin_handler(audio_stream* audio) {
+void ogg_encoder_begin_handler(guac_audio_stream* audio) {
 
     /* Allocate stream state */
     ogg_encoder_state* state = (ogg_encoder_state*)
@@ -82,12 +82,12 @@ void ogg_encoder_begin_handler(audio_stream* audio) {
         while (ogg_stream_flush(&(state->ogg_state), &(state->ogg_page)) != 0) {
 
             /* Write packet header */
-            audio_stream_write_encoded(audio,
+            guac_audio_stream_write_encoded(audio,
                     state->ogg_page.header,
                     state->ogg_page.header_len);
 
             /* Write packet body */
-            audio_stream_write_encoded(audio,
+            guac_audio_stream_write_encoded(audio,
                     state->ogg_page.body,
                     state->ogg_page.body_len);
         }
@@ -98,7 +98,7 @@ void ogg_encoder_begin_handler(audio_stream* audio) {
 
 }
 
-void ogg_encoder_write_blocks(audio_stream* audio) {
+void ogg_encoder_write_blocks(guac_audio_stream* audio) {
 
     /* Get state */
     ogg_encoder_state* state = (ogg_encoder_state*) audio->data;
@@ -122,12 +122,12 @@ void ogg_encoder_write_blocks(audio_stream* audio) {
                         &(state->ogg_page)) != 0) {
 
                 /* Write packet header */
-                audio_stream_write_encoded(audio,
+                guac_audio_stream_write_encoded(audio,
                         state->ogg_page.header,
                         state->ogg_page.header_len);
 
                 /* Write packet body */
-                audio_stream_write_encoded(audio,
+                guac_audio_stream_write_encoded(audio,
                         state->ogg_page.body,
                         state->ogg_page.body_len);
 
@@ -142,7 +142,7 @@ void ogg_encoder_write_blocks(audio_stream* audio) {
 
 }
 
-void ogg_encoder_end_handler(audio_stream* audio) {
+void ogg_encoder_end_handler(guac_audio_stream* audio) {
 
     /* Get state */
     ogg_encoder_state* state = (ogg_encoder_state*) audio->data;
@@ -163,7 +163,7 @@ void ogg_encoder_end_handler(audio_stream* audio) {
 
 }
 
-void ogg_encoder_write_handler(audio_stream* audio, 
+void ogg_encoder_write_handler(guac_audio_stream* audio, 
         unsigned char* pcm_data, int length) {
 
     /* Get state */
@@ -199,7 +199,7 @@ void ogg_encoder_write_handler(audio_stream* audio,
 }
 
 /* Encoder handlers */
-audio_encoder _ogg_encoder = {
+guac_audio_encoder _ogg_encoder = {
     .mimetype      = "audio/ogg",
     .begin_handler = ogg_encoder_begin_handler,
     .write_handler = ogg_encoder_write_handler,
@@ -207,5 +207,5 @@ audio_encoder _ogg_encoder = {
 };
 
 /* Actual encoder */
-audio_encoder* ogg_encoder = &_ogg_encoder;
+guac_audio_encoder* ogg_encoder = &_ogg_encoder;
 

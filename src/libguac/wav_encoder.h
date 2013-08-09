@@ -138,7 +138,7 @@ typedef struct wav_encoder_data_header {
 
 } wav_encoder_data_header;
 
-extern audio_encoder* wav_encoder;
+extern guac_audio_encoder* wav_encoder;
 
 #endif
 

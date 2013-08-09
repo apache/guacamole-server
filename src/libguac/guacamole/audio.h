@@ -41,28 +41,34 @@
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 
-typedef struct audio_stream audio_stream;
+/**
+ * Provides functions and structures used for providing simple streaming audio.
+ *
+ * @file audio.h
+ */
+
+typedef struct guac_audio_stream guac_audio_stream;
 
 /**
  * Handler which is called when the audio stream is opened.
  */
-typedef void audio_encoder_begin_handler(audio_stream* audio);
+typedef void guac_audio_encoder_begin_handler(guac_audio_stream* audio);
 
 /**
  * Handler which is called when the audio stream is closed.
  */
-typedef void audio_encoder_end_handler(audio_stream* audio);
+typedef void guac_audio_encoder_end_handler(guac_audio_stream* audio);
 
 /**
  * Handler which is called when the audio stream is flushed.
  */
-typedef void audio_encoder_write_handler(audio_stream* audio,
+typedef void guac_audio_encoder_write_handler(guac_audio_stream* audio,
         unsigned char* pcm_data, int length);
 
 /**
  * Arbitrary audio codec encoder.
  */
-typedef struct audio_encoder {
+typedef struct guac_audio_encoder {
 
     /**
      * The mimetype of the audio data encoded by this audio
@@ -73,26 +79,26 @@ typedef struct audio_encoder {
     /**
      * Handler which will be called when the audio stream is opened.
      */
-    audio_encoder_begin_handler* begin_handler;
+    guac_audio_encoder_begin_handler* begin_handler;
 
     /**
      * Handler which will be called when the audio stream is flushed.
      */
-    audio_encoder_write_handler* write_handler;
+    guac_audio_encoder_write_handler* write_handler;
 
     /**
      * Handler which will be called when the audio stream is closed.
      */
-    audio_encoder_end_handler* end_handler;
+    guac_audio_encoder_end_handler* end_handler;
 
-} audio_encoder;
+} guac_audio_encoder;
 
 /**
  * Basic audio stream. PCM data is added to the stream. When the stream is
  * flushed, a write handler receives PCM data packets and, presumably, streams
  * them to the guac_stream provided.
  */
-struct audio_stream {
+struct guac_audio_stream {
 
     /**
      * PCM data buffer, 16-bit samples, 2-channel, 44100 Hz.
@@ -128,7 +134,7 @@ struct audio_stream {
      * Arbitrary codec encoder. When the PCM buffer is flushed, PCM data will
      * be sent to this encoder.
      */
-    audio_encoder* encoder;
+    guac_audio_encoder* encoder;
 
     /**
      * The client associated with this audio stream.
@@ -170,42 +176,81 @@ struct audio_stream {
 };
 
 /**
- * Allocates a new audio stream.
+ * Allocates a new audio stream which encodes audio data using the given
+ * encoder. If NULL is specified for the encoder, an appropriate encoder
+ * will be selected based on the encoders built into libguac and the level
+ * of client support.
+ *
+ * @param client The guac_client for which this audio stream is being
+ *               allocated.
+ * @param encoder The guac_audio_encoder to use when encoding audio, or
+ *                NULL if libguac should select an appropriate built-in
+ *                encoder on its own.
+ * @return The newly allocated guac_audio_stream, or NULL if no audio
+ *         stream could be allocated due to lack of client support.
  */
-audio_stream* audio_stream_alloc(guac_client* client,
-        audio_encoder* encoder);
+guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
+        guac_audio_encoder* encoder);
 
 /**
  * Frees the given audio stream.
+ *
+ * @param stream The guac_audio_stream to free.
  */
-void audio_stream_free(audio_stream* stream);
+void guac_audio_stream_free(guac_audio_stream* stream);
 
 /**
- * Begins a new audio stream.
+ * Begins a new audio packet within the given audio stream. This packet will be
+ * built up with repeated writes of PCM data, finally being sent when complete
+ * via guac_audio_stream_end().
+ *
+ * @param stream The guac_audio_stream which should start a new audio packet.
+ * @param rate The audio rate of the packet, in Hz.
+ * @param channels The number of audio channels.
+ * @param bps The number of bits per audio sample.
  */
-void audio_stream_begin(audio_stream* stream, int rate, int channels, int bps);
+void guac_audio_stream_begin(guac_audio_stream* stream, int rate, int channels, int bps);
 
 /**
- * Ends the current audio stream.
+ * Ends the current audio packet, writing the finished packet as an audio
+ * instruction.
+ *
+ * @param stream The guac_audio_stream whose current audio packet should be
+ *               completed and sent.
  */
-void audio_stream_end(audio_stream* stream);
+void guac_audio_stream_end(guac_audio_stream* stream);
 
 /**
- * Writes PCM data to the given audio stream.
+ * Writes PCM data to the given audio stream. This PCM data will be
+ * automatically encoded by the audio encoder associated with this stream. This
+ * function must only be called after an audio packet has been started with
+ * guac_audio_stream_begin().
+ *
+ * @param stream The guac_audio_stream to write PCM data through.
+ * @param data The PCM data to write.
+ * @param length The number of bytes of PCM data provided.
  */
-void audio_stream_write_pcm(audio_stream* stream,
+void guac_audio_stream_write_pcm(guac_audio_stream* stream,
         unsigned char* data, int length);
 
 /**
  * Flushes the given audio stream.
+ *
+ * @param stream The guac_audio_stream to flush.
  */
-void audio_stream_flush(audio_stream* stream);
+void guac_audio_stream_flush(guac_audio_stream* stream);
 
 /**
- * Appends arbitrarily-encoded data to the encoded_data buffer
- * within the given audio stream.
+ * Appends arbitrarily-encoded data to the encoded_data buffer within the given
+ * audio stream. This data must be encoded in the output format of the encoder
+ * used by the stream. This function is mainly for use by encoder
+ * implementations.
+ *
+ * @param audio The guac_audio_stream to write data through.
+ * @param data Arbitrary encoded data to write through the audio stream.
+ * @param length The number of bytes of data provided.
  */
-void audio_stream_write_encoded(audio_stream* audio,
+void guac_audio_stream_write_encoded(guac_audio_stream* audio,
         unsigned char* data, int length);
 
 #endif

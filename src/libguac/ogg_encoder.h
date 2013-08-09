@@ -61,7 +61,7 @@ typedef struct ogg_encoder_state {
 
 } ogg_encoder_state;
 
-extern audio_encoder* ogg_encoder;
+extern guac_audio_encoder* ogg_encoder;
 
 #endif
 

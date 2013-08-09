@@ -46,7 +46,7 @@
 
 #include "wav_encoder.h"
 
-void wav_encoder_begin_handler(audio_stream* audio) {
+void wav_encoder_begin_handler(guac_audio_stream* audio) {
 
     /* Allocate stream state */
     wav_encoder_state* state = (wav_encoder_state*)
@@ -79,7 +79,7 @@ void _wav_encoder_write_le(unsigned char* buffer, int value, int length) {
 
 }
 
-void wav_encoder_end_handler(audio_stream* audio) {
+void wav_encoder_end_handler(guac_audio_stream* audio) {
 
     /*
      * Static header init
@@ -112,7 +112,7 @@ void wav_encoder_end_handler(audio_stream* audio) {
             4 + sizeof(fmt_header) + sizeof(data_header) + state->used,
             sizeof(riff_header.chunk_size));
 
-    audio_stream_write_encoded(audio,
+    guac_audio_stream_write_encoded(audio,
             (unsigned char*) &riff_header,
             sizeof(riff_header));
 
@@ -142,7 +142,7 @@ void wav_encoder_end_handler(audio_stream* audio) {
     _wav_encoder_write_le(fmt_header.subchunk_bps,
             audio->bps, sizeof(fmt_header.subchunk_bps));
 
-    audio_stream_write_encoded(audio,
+    guac_audio_stream_write_encoded(audio,
             (unsigned char*) &fmt_header,
             sizeof(fmt_header));
 
@@ -154,19 +154,19 @@ void wav_encoder_end_handler(audio_stream* audio) {
     _wav_encoder_write_le(data_header.subchunk_size,
             state->used, sizeof(data_header.subchunk_size));
 
-    audio_stream_write_encoded(audio,
+    guac_audio_stream_write_encoded(audio,
             (unsigned char*) &data_header,
             sizeof(data_header));
 
     /* Write .wav data */
-    audio_stream_write_encoded(audio, state->data_buffer, state->used);
+    guac_audio_stream_write_encoded(audio, state->data_buffer, state->used);
 
     /* Free stream state */
     free(state);
 
 }
 
-void wav_encoder_write_handler(audio_stream* audio, 
+void wav_encoder_write_handler(guac_audio_stream* audio, 
         unsigned char* pcm_data, int length) {
 
     /* Get state */
@@ -189,7 +189,7 @@ void wav_encoder_write_handler(audio_stream* audio,
 }
 
 /* Encoder handlers */
-audio_encoder _wav_encoder = {
+guac_audio_encoder _wav_encoder = {
     .mimetype      = "audio/wav",
     .begin_handler = wav_encoder_begin_handler,
     .write_handler = wav_encoder_write_handler,
@@ -197,5 +197,5 @@ audio_encoder _wav_encoder = {
 };
 
 /* Actual encoder */
-audio_encoder* wav_encoder = &_wav_encoder;
+guac_audio_encoder* wav_encoder = &_wav_encoder;
 

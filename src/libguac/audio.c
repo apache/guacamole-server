@@ -49,9 +49,9 @@
 
 #include "wav_encoder.h"
 
-audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
+guac_audio_stream* guac_audio_stream_alloc(guac_client* client, guac_audio_encoder* encoder) {
 
-    audio_stream* audio;
+    guac_audio_stream* audio;
 
     /* Choose an encoding if not specified */
     if (encoder == NULL) {
@@ -79,10 +79,14 @@ audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
 
         } /* end for each mimetype */
 
+        /* If still no encoder could be found, fail */
+        if (encoder == NULL)
+            return NULL;
+
     }
 
     /* Allocate stream */
-    audio = (audio_stream*) malloc(sizeof(audio_stream));
+    audio = (guac_audio_stream*) malloc(sizeof(guac_audio_stream));
     audio->client = client;
 
     /* Reset buffer stats */
@@ -106,7 +110,7 @@ audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
     return audio;
 }
 
-void audio_stream_begin(audio_stream* audio, int rate, int channels, int bps) {
+void guac_audio_stream_begin(guac_audio_stream* audio, int rate, int channels, int bps) {
 
     /* Load PCM properties */
     audio->rate = rate;
@@ -121,12 +125,12 @@ void audio_stream_begin(audio_stream* audio, int rate, int channels, int bps) {
 
 }
 
-void audio_stream_end(audio_stream* audio) {
+void guac_audio_stream_end(guac_audio_stream* audio) {
 
     double duration;
 
     /* Flush stream and finish encoding */
-    audio_stream_flush(audio);
+    guac_audio_stream_flush(audio);
     audio->encoder->end_handler(audio);
 
     /* Calculate duration of PCM data */
@@ -143,12 +147,12 @@ void audio_stream_end(audio_stream* audio) {
 
 }
 
-void audio_stream_free(audio_stream* audio) {
+void guac_audio_stream_free(guac_audio_stream* audio) {
     free(audio->pcm_data);
     free(audio);
 }
 
-void audio_stream_write_pcm(audio_stream* audio, 
+void guac_audio_stream_write_pcm(guac_audio_stream* audio, 
         unsigned char* data, int length) {
 
     /* Update counter */
@@ -165,7 +169,7 @@ void audio_stream_write_pcm(audio_stream* audio,
 
     /* Flush if necessary */
     if (audio->used + length > audio->length)
-        audio_stream_flush(audio);
+        guac_audio_stream_flush(audio);
 
     /* Append to buffer */
     memcpy(&(audio->pcm_data[audio->used]), data, length);
@@ -173,7 +177,7 @@ void audio_stream_write_pcm(audio_stream* audio,
 
 }
 
-void audio_stream_flush(audio_stream* audio) {
+void guac_audio_stream_flush(guac_audio_stream* audio) {
 
     /* If data in buffer */
     if (audio->used != 0) {
@@ -189,7 +193,7 @@ void audio_stream_flush(audio_stream* audio) {
 
 }
 
-void audio_stream_write_encoded(audio_stream* audio,
+void guac_audio_stream_write_encoded(guac_audio_stream* audio,
         unsigned char* data, int length) {
 
     /* Resize audio buffer if necessary */
