@@ -43,10 +43,46 @@
 #include <guacamole/stream.h>
 #include <guacamole/audio.h>
 
+#ifdef ENABLE_OGG
+#include "ogg_encoder.h"
+#endif
+
+#include "wav_encoder.h"
+
 audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
 
+    audio_stream* audio;
+
+    /* Choose an encoding if not specified */
+    if (encoder == NULL) {
+
+        int i;
+
+        /* For each supported mimetype, check for an associated encoder */
+        for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
+
+            const char* mimetype = client->info.audio_mimetypes[i];
+
+#ifdef ENABLE_OGG
+            /* If Ogg is supported, done. */
+            if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
+                encoder = ogg_encoder;
+                break;
+            }
+#endif
+
+            /* If wav is supported, done. */
+            if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
+                encoder = wav_encoder;
+                break;
+            }
+
+        } /* end for each mimetype */
+
+    }
+
     /* Allocate stream */
-    audio_stream* audio = (audio_stream*) malloc(sizeof(audio_stream));
+    audio = (audio_stream*) malloc(sizeof(audio_stream));
     audio->client = client;
 
     /* Reset buffer stats */
