@@ -42,19 +42,15 @@ AM_CFLAGS = -Werror -Wall -pedantic -Iinclude @LIBGUAC_INCLUDE@
 lib_LTLIBRARIES = libguac-client-vnc.la
 
 libguac_client_vnc_la_SOURCES = \
-    buffer.c                    \
     client.c                    \
     convert.c                   \
     guac_handlers.c             \
-    queue.c                     \
     vnc_handlers.c
     
 noinst_HEADERS =    \
-    buffer.h        \
     client.h        \
     convert.h       \
     guac_handlers.h \
-    queue.h         \
     vnc_handlers.h
 
 # Optional PulseAudio support
