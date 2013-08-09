@@ -49,7 +49,7 @@
 #include "convert.h"
 
 #ifdef ENABLE_PULSE
-#include "pa_handlers.h"
+#include "pulse.h"
 #endif
 
 int vnc_guac_client_handle_messages(guac_client* client) {
@@ -132,13 +132,10 @@ int vnc_guac_client_free_handler(guac_client* client) {
 #ifdef ENABLE_PULSE
     if (guac_client_data->audio_enabled) {
     
-        /* Wait for audio read and send threads to join */
+        /* Wait for audio read thread to join */
         if (guac_client_data->audio_read_thread)
             pthread_join(*(guac_client_data->audio_read_thread), NULL);
         
-        if (guac_client_data->audio_send_thread)
-            pthread_join(*(guac_client_data->audio_send_thread), NULL);
-       
     }
 #endif
 

@@ -35,43 +35,16 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __GUAC_VNC_CLIENT_H
-#define __GUAC_VNC_CLIENT_H
+#ifndef __GUAC_VNC_PULSE_H
+#define __GUAC_VNC_PULSE_H
 
-#include <guacamole/client.h>
-#include <guacamole/audio.h>
-#include <rfb/rfbclient.h>
-
-extern char* __GUAC_CLIENT;
-
-typedef struct vnc_guac_client_data {
-    
-    rfbClient* rfb_client;
-    MallocFrameBufferProc rfb_MallocFrameBuffer;
-
-    int copy_rect_used;
-    char* password;
-    char* encodings;
-    int swap_red_blue;
-
-    guac_layer* cursor;
-    
-    /**
-     * Whether audio is enabled.
-     */
-    int audio_enabled;
-    
-    /**
-     * Audio output, if any.
-     */
-    guac_audio_stream* audio;
-    
-    /**
-     * PulseAudio read thread.
-     */
-    pthread_t* audio_read_thread;
-    
-} vnc_guac_client_data;
+/**
+ * Read thread which transfers PCM data read from PulseAudio to the audio
+ * encoder in use.
+ *
+ * @param data Pointer to the active guac_client.
+ */
+void* guac_pa_read_audio(void* data);
 
 #endif
 

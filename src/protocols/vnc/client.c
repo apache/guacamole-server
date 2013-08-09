@@ -51,7 +51,7 @@
 #include "guac_handlers.h"
 
 #ifdef ENABLE_PULSE
-#include "pa_handlers.h"
+#include "pulse.h"
 #endif
 
 /* Client plugin arguments */
@@ -108,7 +108,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     vnc_guac_client_data* guac_client_data;
 
 #ifdef ENABLE_PULSE    
-    pthread_t pa_read_thread, pa_send_thread;
+    pthread_t pa_read_thread;
 #endif
 
     int read_only;
@@ -182,25 +182,15 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
             /* Create a thread to read audio data */
             if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio,
-                        (void*) guac_client_data)) {
+                        (void*) client)) {
                 guac_protocol_send_error(client->socket,
-                        "Error initializing PulseAudio thread");
+                        "Error initializing PulseAudio read thread");
                 guac_socket_flush(client->socket);
                 return 1;
             }
             
             guac_client_data->audio_read_thread = &pa_read_thread;
             
-            /* Create a thread to send audio data */
-            if (pthread_create(&pa_send_thread, NULL, guac_pa_send_audio,
-                        (void*) guac_client_data)) {
-                guac_protocol_send_error(client->socket,
-                        "Error initializing PulseAudio thread");
-                guac_socket_flush(client->socket);
-                return 1;
-            }
-            
-            guac_client_data->audio_send_thread = &pa_send_thread;
         }
 
         /* Otherwise, audio loading failed */

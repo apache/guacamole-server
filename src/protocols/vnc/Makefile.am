@@ -55,8 +55,8 @@ noinst_HEADERS =    \
 
 # Optional PulseAudio support
 if ENABLE_PULSE
-libguac_client_vnc_la_SOURCES += pa_handlers.c
-noinst_HEADERS += pa_handlers.h
+libguac_client_vnc_la_SOURCES += pulse.c
+noinst_HEADERS += pulse.h
 endif
 
 libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0 @VNC_LIBS@ @CAIRO_LIBS@ @PULSE_LIBS@
