@@ -108,7 +108,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     vnc_guac_client_data* guac_client_data;
 
 #ifdef ENABLE_PULSE    
-    audio_args* args;
     pthread_t pa_read_thread, pa_send_thread;
 #endif
 
@@ -181,15 +180,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                     "Audio will be encoded as %s",
                     guac_client_data->audio->encoder->mimetype);
 
-            guac_client_data->audio_buffer = guac_pa_buffer_alloc();
-            
-            args = malloc(sizeof(audio_args));
-            args->audio = guac_client_data->audio;
-            args->audio_buffer = guac_client_data->audio_buffer;         
-            
             /* Create a thread to read audio data */
             if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio,
-                        (void*) args)) {
+                        (void*) guac_client_data)) {
                 guac_protocol_send_error(client->socket,
                         "Error initializing PulseAudio thread");
                 guac_socket_flush(client->socket);
@@ -200,7 +193,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             
             /* Create a thread to send audio data */
             if (pthread_create(&pa_send_thread, NULL, guac_pa_send_audio,
-                        (void*) args)) {
+                        (void*) guac_client_data)) {
                 guac_protocol_send_error(client->socket,
                         "Error initializing PulseAudio thread");
                 guac_socket_flush(client->socket);

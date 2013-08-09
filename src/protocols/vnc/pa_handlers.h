@@ -74,14 +74,6 @@
 #define SEND_INTERVAL 500
 
 /**
- * Arguments for the read and send threads
- */
-typedef struct audio_args {
-    guac_audio_stream* audio;
-    buffer* audio_buffer;
-} audio_args;
-
-/**
  * Allocates a new audio buffer that can be shared between the 
  * read and send threads
  */
