@@ -128,8 +128,8 @@ static void __context_get_sink_info_callback(pa_context* context,
     spec.rate     = GUAC_VNC_AUDIO_RATE;
     spec.channels = GUAC_VNC_AUDIO_CHANNELS;
 
-    attr.maxlength = GUAC_VNC_AUDIO_BUFFER_SIZE;
-    attr.fragsize  = attr.maxlength;
+    attr.maxlength = -1;
+    attr.fragsize  = GUAC_VNC_AUDIO_FRAGMENT_SIZE;
 
     /* Create stream */
     stream = pa_stream_new(context, "Guacamole Audio", &spec, NULL);

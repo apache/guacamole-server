@@ -39,15 +39,16 @@
 #define __GUAC_VNC_PULSE_H
 
 /**
- * The number of bytes to request for the PulseAudio buffers.
+ * The number of bytes to request for the audio fragments received from
+ * PulseAudio.
  */
-#define GUAC_VNC_AUDIO_BUFFER_SIZE 10240
+#define GUAC_VNC_AUDIO_FRAGMENT_SIZE 8192
 
 /**
  * The minimum number of PCM bytes to wait for before flushing an audio
- * packet. The current value is 24K, which works out to be around 140ms.
+ * packet. The current value is 48K, which works out to be around 280ms.
  */
-#define GUAC_VNC_PCM_WRITE_RATE 24576
+#define GUAC_VNC_PCM_WRITE_RATE 49152
 
 /**
  * Rate of audio to stream, in Hz.
