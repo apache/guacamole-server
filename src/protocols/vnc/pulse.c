@@ -35,6 +35,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <guacamole/audio.h>
 #include <guacamole/client.h>
 
 #include <pulse/pulseaudio.h>
@@ -45,12 +46,22 @@ static void __stream_read_callback(pa_stream* stream, size_t length,
         void* data) {
 
     guac_client* client = (guac_client*) data;
+    vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
+    guac_audio_stream* audio = client_data->audio;
+
     const void* buffer;
 
     /* Read data */
     pa_stream_peek(stream, &buffer, &length);
 
-    guac_client_log_info(client, "STUB: Received %i bytes", length);
+    /* Write data */
+    guac_audio_stream_write_pcm(audio, buffer, length);
+
+    /* Flush occasionally */
+    if (audio->pcm_bytes_written > 10000) {
+        guac_audio_stream_end(audio);
+        guac_audio_stream_begin(client_data->audio, 44100, 2, 16);
+    }
 
     /* Advance buffer */
     pa_stream_drop(stream);
@@ -121,7 +132,7 @@ static void __context_get_sink_info_callback(pa_context* context,
 
     /* Start stream */
     pa_stream_connect_record(stream, info->monitor_source_name, NULL,
-            PA_STREAM_DONT_INHIBIT_AUTO_SUSPEND);
+              PA_STREAM_DONT_INHIBIT_AUTO_SUSPEND);
 
 }
 
@@ -200,6 +211,7 @@ void guac_pa_start_stream(guac_client* client) {
     pa_context* context;
 
     guac_client_log_info(client, "Starting audio stream");
+    guac_audio_stream_begin(client_data->audio, 44100, 2, 16);
 
     /* Init main loop */
     client_data->pa_mainloop = pa_threaded_mainloop_new();
