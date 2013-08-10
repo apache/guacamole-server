@@ -39,6 +39,32 @@
 #define __GUAC_VNC_PULSE_H
 
 /**
+ * The number of bytes to request for the PulseAudio buffers.
+ */
+#define GUAC_VNC_AUDIO_BUFFER_SIZE 10240
+
+/**
+ * The minimum number of PCM bytes to wait for before flushing an audio
+ * packet.
+ */
+#define GUAC_VNC_PCM_WRITE_RATE 10240
+
+/**
+ * Rate of audio to stream, in Hz.
+ */
+#define GUAC_VNC_AUDIO_RATE     44100
+
+/**
+ * The number of channels to stream.
+ */
+#define GUAC_VNC_AUDIO_CHANNELS 2
+
+/**
+ * The number of bits per sample.
+ */
+#define GUAC_VNC_AUDIO_BPS      16
+
+/**
  * Starts streaming audio from PulseAudio to the given Guacamole client.
  *
  * @param client The client to stream data to.

@@ -69,7 +69,8 @@ const char* GUAC_CLIENT_ARGS[] = {
 #endif
 
 #ifdef ENABLE_PULSE
-    "disable-audio",
+    "enable-audio",
+    "audio-servername",
 #endif
 
     NULL
@@ -91,7 +92,8 @@ enum VNC_ARGS_IDX {
 #endif
 
 #ifdef ENABLE_PULSE
-    IDX_DISABLE_AUDIO,
+    IDX_ENABLE_AUDIO,
+    IDX_AUDIO_SERVERNAME,
 #endif
 
     VNC_ARGS_COUNT
@@ -161,12 +163,20 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_vnc_set_pixel_format(rfb_client, atoi(argv[IDX_COLOR_DEPTH]));
 
 #ifdef ENABLE_PULSE
-    guac_client_data->audio_enabled = (strcmp(argv[IDX_DISABLE_AUDIO], "true") != 0);
+    guac_client_data->audio_enabled =
+        (strcmp(argv[IDX_ENABLE_AUDIO], "true") == 0);
 
     /* If an encoding is available, load an audio stream */
     if (guac_client_data->audio_enabled) {    
 
         guac_client_data->audio = guac_audio_stream_alloc(client, NULL);
+
+        /* Load servername if specified */
+        if (argv[IDX_AUDIO_SERVERNAME][0] != '\0')
+            guac_client_data->pa_servername =
+                strdup(argv[IDX_AUDIO_SERVERNAME]);
+        else
+            guac_client_data->pa_servername = NULL;
 
         /* If successful, init audio system */
         if (guac_client_data->audio != NULL) {

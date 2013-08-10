@@ -41,6 +41,7 @@
 #include <pulse/pulseaudio.h>
 
 #include "client.h"
+#include "pulse.h"
 
 static void __stream_read_callback(pa_stream* stream, size_t length,
         void* data) {
@@ -58,9 +59,12 @@ static void __stream_read_callback(pa_stream* stream, size_t length,
     guac_audio_stream_write_pcm(audio, buffer, length);
 
     /* Flush occasionally */
-    if (audio->pcm_bytes_written > 10000) {
+    if (audio->pcm_bytes_written > GUAC_VNC_PCM_WRITE_RATE) {
         guac_audio_stream_end(audio);
-        guac_audio_stream_begin(client_data->audio, 44100, 2, 16);
+        guac_audio_stream_begin(client_data->audio,
+                GUAC_VNC_AUDIO_RATE,
+                GUAC_VNC_AUDIO_CHANNELS,
+                GUAC_VNC_AUDIO_BPS);
     }
 
     /* Advance buffer */
@@ -110,6 +114,7 @@ static void __context_get_sink_info_callback(pa_context* context,
     guac_client* client = (guac_client*) data;
     pa_stream* stream;
     pa_sample_spec spec;
+    pa_buffer_attr attr;
 
     /* Stop if end of list reached */
     if (is_last)
@@ -120,8 +125,11 @@ static void __context_get_sink_info_callback(pa_context* context,
 
     /* Set format */
     spec.format   = PA_SAMPLE_S16LE;
-    spec.rate     = 44100;
-    spec.channels = 2;
+    spec.rate     = GUAC_VNC_AUDIO_RATE;
+    spec.channels = GUAC_VNC_AUDIO_CHANNELS;
+
+    attr.maxlength = GUAC_VNC_AUDIO_BUFFER_SIZE;
+    attr.fragsize  = attr.maxlength;
 
     /* Create stream */
     stream = pa_stream_new(context, "Guacamole Audio", &spec, NULL);
@@ -131,8 +139,9 @@ static void __context_get_sink_info_callback(pa_context* context,
     pa_stream_set_read_callback(stream, __stream_read_callback, client);
 
     /* Start stream */
-    pa_stream_connect_record(stream, info->monitor_source_name, NULL,
-              PA_STREAM_DONT_INHIBIT_AUTO_SUSPEND);
+    pa_stream_connect_record(stream, info->monitor_source_name, &attr,
+                PA_STREAM_DONT_INHIBIT_AUTO_SUSPEND
+              | PA_STREAM_ADJUST_LATENCY);
 
 }
 
@@ -211,7 +220,10 @@ void guac_pa_start_stream(guac_client* client) {
     pa_context* context;
 
     guac_client_log_info(client, "Starting audio stream");
-    guac_audio_stream_begin(client_data->audio, 44100, 2, 16);
+    guac_audio_stream_begin(client_data->audio,
+                GUAC_VNC_AUDIO_RATE,
+                GUAC_VNC_AUDIO_CHANNELS,
+                GUAC_VNC_AUDIO_BPS);
 
     /* Init main loop */
     client_data->pa_mainloop = pa_threaded_mainloop_new();
@@ -223,7 +235,8 @@ void guac_pa_start_stream(guac_client* client) {
 
     /* Set up context */
     pa_context_set_state_callback(context, __context_state_callback, client);
-    pa_context_connect(context, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL);
+    pa_context_connect(context, client_data->pa_servername,
+            PA_CONTEXT_NOAUTOSPAWN, NULL);
 
     /* Start loop */
     pa_threaded_mainloop_start(client_data->pa_mainloop);

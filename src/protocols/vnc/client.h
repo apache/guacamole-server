@@ -69,6 +69,11 @@ typedef struct vnc_guac_client_data {
     guac_audio_stream* audio;
     
     /**
+     * The name of the PulseAudio server to connect to.
+     */
+    char* pa_servername;
+
+    /**
      * PulseAudio event loop.
      */
     pa_threaded_mainloop* pa_mainloop;
