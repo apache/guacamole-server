@@ -45,9 +45,9 @@
 
 /**
  * The minimum number of PCM bytes to wait for before flushing an audio
- * packet.
+ * packet. The current value is 24K, which works out to be around 140ms.
  */
-#define GUAC_VNC_PCM_WRITE_RATE 10240
+#define GUAC_VNC_PCM_WRITE_RATE 24576
 
 /**
  * Rate of audio to stream, in Hz.
