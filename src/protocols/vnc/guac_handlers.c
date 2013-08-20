@@ -53,12 +53,15 @@
 
 int vnc_guac_client_handle_messages(guac_client* client) {
 
-    int wait_result;
     rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
 
     /* Initially wait for messages */
-    wait_result = WaitForMessage(rfb_client, 1000000);
+    int wait_result = WaitForMessage(rfb_client, 1000000);
+    guac_timestamp frame_start = guac_timestamp_current();
     while (wait_result > 0) {
+
+        guac_timestamp frame_end;
+        int frame_remaining;
 
         /* Handle any message received */
         if (!HandleRFBServerMessage(rfb_client)) {
@@ -66,8 +69,15 @@ int vnc_guac_client_handle_messages(guac_client* client) {
             return 1;
         }
 
-        /* Check for additional messages */
-        wait_result = WaitForMessage(rfb_client, 0);
+        /* Calculate time remaining in frame */
+        frame_end = guac_timestamp_current();
+        frame_remaining = frame_start + GUAC_VNC_FRAME_DURATION - frame_end;
+
+        /* Wait again if frame remaining */
+        if (frame_remaining > 0)
+            wait_result = WaitForMessage(rfb_client, frame_remaining*1000);
+        else
+            break;
 
     }
 

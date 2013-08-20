@@ -44,6 +44,11 @@
 
 #include <pulse/pulseaudio.h>
 
+/**
+ * The maximum duration of a frame in milliseconds.
+ */
+#define GUAC_VNC_FRAME_DURATION 30
+
 extern char* __GUAC_CLIENT;
 
 typedef struct vnc_guac_client_data {

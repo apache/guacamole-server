@@ -198,7 +198,11 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
     /* Wait for messages */
     int wait_result = rdp_guac_client_wait_for_messages(client, 250000);
+    guac_timestamp frame_start = guac_timestamp_current();
     while (wait_result > 0) {
+
+        guac_timestamp frame_end;
+        int frame_remaining;
 
         pthread_mutex_lock(&(guac_client_data->rdp_lock));
 
@@ -247,9 +251,18 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         if (guac_client_data->audio != NULL)
             guac_socket_flush(guac_client_data->audio->stream->socket);
 
-        /* Wait again */
         pthread_mutex_unlock(&(guac_client_data->rdp_lock));
-        wait_result = rdp_guac_client_wait_for_messages(client, 0);
+
+        /* Calculate time remaining in frame */
+        frame_end = guac_timestamp_current();
+        frame_remaining = frame_start + GUAC_RDP_FRAME_DURATION - frame_end;
+
+        /* Wait again if frame remaining */
+        if (frame_remaining > 0)
+            wait_result = rdp_guac_client_wait_for_messages(client,
+                    frame_remaining*1000);
+        else
+            break;
 
     }
 

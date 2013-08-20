@@ -51,6 +51,10 @@
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
 
+/**
+ * The maximum duration of a frame in milliseconds.
+ */
+#define GUAC_RDP_FRAME_DURATION 30
 
 /**
  * Client data that will remain accessible through the guac_client.
