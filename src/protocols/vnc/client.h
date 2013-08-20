@@ -47,7 +47,7 @@
 /**
  * The maximum duration of a frame in milliseconds.
  */
-#define GUAC_VNC_FRAME_DURATION 30
+#define GUAC_VNC_FRAME_DURATION 80
 
 extern char* __GUAC_CLIENT;
 

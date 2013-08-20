@@ -54,7 +54,7 @@
 /**
  * The maximum duration of a frame in milliseconds.
  */
-#define GUAC_RDP_FRAME_DURATION 30
+#define GUAC_RDP_FRAME_DURATION 80
 
 /**
  * Client data that will remain accessible through the guac_client.
