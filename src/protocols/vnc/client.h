@@ -47,7 +47,14 @@
 /**
  * The maximum duration of a frame in milliseconds.
  */
-#define GUAC_VNC_FRAME_DURATION 80
+#define GUAC_VNC_FRAME_DURATION 40
+
+/**
+ * The amount of time to allow per message read within a frame, in
+ * milliseconds. If the server is silent for at least this amount of time, the
+ * frame will be considered finished.
+ */
+#define GUAC_VNC_FRAME_TIMEOUT 15
 
 extern char* __GUAC_CLIENT;
 

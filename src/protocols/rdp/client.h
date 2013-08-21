@@ -54,7 +54,14 @@
 /**
  * The maximum duration of a frame in milliseconds.
  */
-#define GUAC_RDP_FRAME_DURATION 80
+#define GUAC_RDP_FRAME_DURATION 40
+
+/**
+ * The amount of time to allow per message read within a frame, in
+ * milliseconds. If the server is silent for at least this amount of time, the
+ * frame will be considered finished.
+ */
+#define GUAC_RDP_FRAME_TIMEOUT 15
 
 /**
  * Client data that will remain accessible through the guac_client.
