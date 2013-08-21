@@ -65,6 +65,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "swap-red-blue",
     "color-depth",
     "cursor",
+    "autoretry",
+
 #ifdef ENABLE_VNC_REPEATER
     "dest-host",
     "dest-port",
@@ -88,6 +90,8 @@ enum VNC_ARGS_IDX {
     IDX_SWAP_RED_BLUE,
     IDX_COLOR_DEPTH,
     IDX_CURSOR,
+    IDX_AUTORETRY,
+
 #ifdef ENABLE_VNC_REPEATER
     IDX_DEST_HOST,
     IDX_DEST_PORT,
@@ -104,14 +108,79 @@ enum VNC_ARGS_IDX {
 
 char* __GUAC_CLIENT = "GUAC_CLIENT";
 
+/**
+ * Allocates a new rfbClient instance given the parameters stored within the
+ * client, returning NULL on failure.
+ */
+static rfbClient* __guac_vnc_get_client(guac_client* client) {
+
+    rfbClient* rfb_client = rfbGetClient(8, 3, 4); /* 32-bpp client */
+    vnc_guac_client_data* guac_client_data =
+        (vnc_guac_client_data*) client->data;
+
+    /* Store Guac client in rfb client */
+    rfbClientSetClientData(rfb_client, __GUAC_CLIENT, client);
+
+    /* Framebuffer update handler */
+    rfb_client->GotFrameBufferUpdate = guac_vnc_update;
+    rfb_client->GotCopyRect = guac_vnc_copyrect;
+
+    /* Do not handle clipboard and local cursor if read-only */
+    if (guac_client_data->read_only == 0) {
+
+        /* Clipboard */
+        rfb_client->GotXCutText = guac_vnc_cut_text;
+
+        /* Set remote cursor */
+        if (guac_client_data->remote_cursor)
+            rfb_client->appData.useRemoteCursor = FALSE;
+
+        else {
+            /* Enable client-side cursor */
+            rfb_client->appData.useRemoteCursor = TRUE;
+            rfb_client->GotCursorShape = guac_vnc_cursor;
+        }
+    }
+
+    /* Password */
+    rfb_client->GetPassword = guac_vnc_get_password;
+
+    /* Depth */
+    guac_vnc_set_pixel_format(rfb_client, guac_client_data->color_depth);
+
+    /* Hook into allocation so we can handle resize. */
+    guac_client_data->rfb_MallocFrameBuffer = rfb_client->MallocFrameBuffer;
+    rfb_client->MallocFrameBuffer = guac_vnc_malloc_framebuffer;
+    rfb_client->canHandleNewFBSize = 1;
+
+    /* Set hostname and port */
+    rfb_client->serverHost = strdup(guac_client_data->hostname);
+    rfb_client->serverPort = guac_client_data->port;
+
+#ifdef ENABLE_VNC_REPEATER
+    /* Set repeater parameters if specified */
+    if (guac_client_data->dest_host) {
+        rfb_client->destHost = strdup(guac_client_data->dest_host);
+        rfb_client->destPort = guac_client_data->dest_port;
+    }
+#endif
+
+    /* Connect */
+    if (rfbInitClient(rfb_client, NULL, NULL))
+        return rfb_client;
+
+    /* If connection fails, return NULL */
+    return NULL;
+
+}
+
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
     rfbClient* rfb_client;
 
     vnc_guac_client_data* guac_client_data;
 
-    int read_only;
-    int remote_cursor;
+    int retries_remaining;
 
     /* Set up libvncclient logging */
     rfbClientLog = guac_vnc_client_log_info;
@@ -129,52 +198,68 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data = malloc(sizeof(vnc_guac_client_data));
     client->data = guac_client_data;
 
-    /* Set read-only flag */
-    read_only = (strcmp(argv[IDX_READ_ONLY], "true") == 0);
+    guac_client_data->hostname = strdup(argv[IDX_HOSTNAME]);
+    guac_client_data->port = atoi(argv[IDX_PORT]);
 
     /* Set remote cursor flag */
-    remote_cursor = (strcmp(argv[IDX_CURSOR], "remote") == 0);
+    guac_client_data->remote_cursor = (strcmp(argv[IDX_CURSOR], "remote") == 0);
 
     /* Set red/blue swap flag */
     guac_client_data->swap_red_blue = (strcmp(argv[IDX_SWAP_RED_BLUE], "true") == 0);
 
+    /* Set read-only flag */
+    guac_client_data->read_only = (strcmp(argv[IDX_READ_ONLY], "true") == 0);
+
     /* Freed after use by libvncclient */
     guac_client_data->password = strdup(argv[IDX_PASSWORD]);
 
-    /*** INIT RFB CLIENT ***/
+#ifdef ENABLE_VNC_REPEATER
+    /* Set repeater parameters if specified */
+    if (argv[IDX_DEST_HOST][0] != '\0')
+        guac_client_data->dest_host = strdup(argv[IDX_DEST_HOST]);
+    else
+        guac_client_data->dest_host = NULL;
 
-    rfb_client = rfbGetClient(8, 3, 4); /* 32-bpp client */
+    if (argv[IDX_DEST_PORT][0] != '\0')
+        guac_client_data->dest_port = atoi(argv[IDX_DEST_PORT]);
+#endif
 
-    /* Store Guac client in rfb client */
-    rfbClientSetClientData(rfb_client, __GUAC_CLIENT, client);
+    /* Set encodings if specified */
+    if (argv[IDX_ENCODINGS][0] != '\0')
+        guac_client_data->encodings = strdup(argv[IDX_ENCODINGS]);
+    else
+        guac_client_data->encodings = NULL;
 
-    /* Framebuffer update handler */
-    rfb_client->GotFrameBufferUpdate = guac_vnc_update;
-    rfb_client->GotCopyRect = guac_vnc_copyrect;
+    /* Parse autoretry */
+    if (argv[IDX_AUTORETRY][0] != '\0')
+        retries_remaining = atoi(argv[IDX_AUTORETRY]);
+    else
+        retries_remaining = 0; 
 
-    /* Do not handle clipboard and local cursor if read-only */
-    if (read_only == 0) {
+    /* Attempt connection */
+    rfb_client = __guac_vnc_get_client(client);
 
-        /* Clipboard */
-        rfb_client->GotXCutText = guac_vnc_cut_text;
+    /* If unsuccessful, retry as many times as specified */
+    while (!rfb_client && retries_remaining > 0) {
 
-        /* Set remote cursor */
-        if(remote_cursor) {
-            rfb_client->appData.useRemoteCursor = FALSE;
-            guac_vnc_set_default_pointer(client);
-        }
-        else {
-            /* Enable client-side cursor */
-            rfb_client->appData.useRemoteCursor = TRUE;
-            rfb_client->GotCursorShape = guac_vnc_cursor;
-        }
+        guac_client_log_info(client,
+                "Connect failed. Waiting %ims before retrying...",
+                GUAC_VNC_CONNECT_INTERVAL);
+
+        /* Wait for given interval then retry */
+        usleep(GUAC_VNC_CONNECT_INTERVAL*1000);
+        rfb_client = __guac_vnc_get_client(client);
+        retries_remaining--;
+
     }
 
-    /* Password */
-    rfb_client->GetPassword = guac_vnc_get_password;
-
-    /* Depth */
-    guac_vnc_set_pixel_format(rfb_client, atoi(argv[IDX_COLOR_DEPTH]));
+    /* If the final connect attempt fails, return error */
+    if (!rfb_client) {
+        guac_protocol_send_error(client->socket,
+                "Error initializing VNC client");
+        guac_socket_flush(client->socket);
+        return 1;
+    }
 
 #ifdef ENABLE_PULSE
     guac_client_data->audio_enabled =
@@ -215,38 +300,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     } /* end if audio enabled */
 #endif
 
-    /* Hook into allocation so we can handle resize. */
-    guac_client_data->rfb_MallocFrameBuffer = rfb_client->MallocFrameBuffer;
-    rfb_client->MallocFrameBuffer = guac_vnc_malloc_framebuffer;
-    rfb_client->canHandleNewFBSize = 1;
-
-    /* Set hostname and port */
-    rfb_client->serverHost = strdup(argv[0]);
-    rfb_client->serverPort = atoi(argv[1]);
-
-#ifdef ENABLE_VNC_REPEATER
-    /* Set repeater parameters if specified */
-    if(argv[IDX_DEST_HOST][0] != '\0')
-        rfb_client->destHost = strdup(argv[IDX_DEST_HOST]);
-
-    if(argv[IDX_DEST_PORT][0] != '\0')
-        rfb_client->destPort = atoi(argv[IDX_DEST_PORT]);
-#endif
-
-    /* Set encodings if specified */
-    if (argv[IDX_ENCODINGS][0] != '\0')
-        rfb_client->appData.encodingsString = guac_client_data->encodings
-            = strdup(argv[IDX_ENCODINGS]);
-    else
-        guac_client_data->encodings = NULL;
-
-    /* Connect */
-    if (!rfbInitClient(rfb_client, NULL, NULL)) {
-        guac_protocol_send_error(client->socket, "Error initializing VNC client");
-        guac_socket_flush(client->socket);
-        return 1;
-    }
-
     /* Set remaining client data */
     guac_client_data->rfb_client = rfb_client;
     guac_client_data->copy_rect_used = 0;
@@ -255,11 +308,19 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set handlers */
     client->handle_messages = vnc_guac_client_handle_messages;
     client->free_handler = vnc_guac_client_free_handler;
-    if (read_only == 0) {
-        /* Do not handle mouse/keyboard/clipboard if read-only */
+
+    /* If not read-only, set input handlers and pointer */
+    if (guac_client_data->read_only == 0) {
+
+        /* Only handle mouse/keyboard/clipboard if not read-only */
         client->mouse_handler = vnc_guac_client_mouse_handler;
         client->key_handler = vnc_guac_client_key_handler;
         client->clipboard_handler = vnc_guac_client_clipboard_handler;
+
+        /* If not read-only but cursor is remote, set a default pointer */
+        if (guac_client_data->remote_cursor)
+            guac_vnc_set_default_pointer(client);
+
     }
 
     /* Send name */

@@ -58,18 +58,91 @@
  */
 #define GUAC_VNC_FRAME_TIMEOUT 0
 
+/**
+ * The number of milliseconds to wait between connection attempts.
+ */
+#define GUAC_VNC_CONNECT_INTERVAL 1000
+
 extern char* __GUAC_CLIENT;
 
+/**
+ * VNC-specific client data.
+ */
 typedef struct vnc_guac_client_data {
-    
+
+    /**
+     * The underlying VNC client.
+     */
     rfbClient* rfb_client;
+
+    /**
+     * The original framebuffer malloc procedure provided by the initialized
+     * rfbClient.
+     */
     MallocFrameBufferProc rfb_MallocFrameBuffer;
 
+    /**
+     * Whether copyrect  was used to produce the latest update received
+     * by the VNC server.
+     */
     int copy_rect_used;
+
+    /**
+     * The hostname of the VNC server (or repeater) to connect to.
+     */
+    char* hostname;
+
+    /**
+     * The port of the VNC server (or repeater) to connect to.
+     */
+    int port;
+
+    /**
+     * The password given in the arguments.
+     */
     char* password;
+
+    /**
+     * Space-separated list of encodings to use within the VNC session.
+     */
     char* encodings;
+
+    /**
+     * Whether the red and blue components of each color should be swapped.
+     * This is mainly used for VNC servers that do not properly handle
+     * colors.
+     */
     int swap_red_blue;
 
+    /**
+     * The color depth to request, in bits.
+     */
+    int color_depth;
+
+    /**
+     * Whether this connection is read-only, and user input should be dropped.
+     */
+    int read_only;
+
+    /**
+     * The VNC host to connect to, if using a repeater.
+     */
+    char* dest_host;
+
+    /**
+     * The VNC port to connect to, if using a repeater.
+     */
+    int dest_port;
+
+    /**
+     * Whether the cursor should be rendered on the server (remote) or on the
+     * client (local).
+     */
+    int remote_cursor;
+
+    /**
+     * The layer holding the cursor image.
+     */
     guac_layer* cursor;
     
     /**
