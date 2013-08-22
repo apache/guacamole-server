@@ -80,6 +80,7 @@ static void __guac_terminal_display_clear_select(guac_terminal_display* display)
     guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
             0x00, 0x00, 0x00, 0x00);
 
+    guac_protocol_send_sync(socket, display->client->last_sent_timestamp);
     guac_socket_flush(socket);
 
     /* Text is no longer selected */
@@ -1004,6 +1005,7 @@ void guac_terminal_display_select(guac_terminal_display* display,
     guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
             0x00, 0x80, 0xFF, 0x60);
 
+    guac_protocol_send_sync(socket, display->client->last_sent_timestamp);
     guac_socket_flush(socket);
 
 }

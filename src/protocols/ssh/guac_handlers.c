@@ -402,6 +402,8 @@ int ssh_guac_client_size_handler(guac_client* client, int width, int height) {
         terminal->scroll_end = rows - 1;
 
         guac_terminal_display_flush(terminal->display);
+        guac_protocol_send_sync(terminal->client->socket,
+                client->last_sent_timestamp);
         guac_socket_flush(terminal->client->socket);
     }
 

@@ -393,6 +393,8 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
     }
 
     guac_terminal_display_flush(terminal->display);
+    guac_protocol_send_sync(terminal->client->socket,
+            terminal->client->last_sent_timestamp);
     guac_socket_flush(terminal->client->socket);
 
 }
@@ -450,6 +452,8 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
     }
 
     guac_terminal_display_flush(terminal->display);
+    guac_protocol_send_sync(terminal->client->socket,
+            terminal->client->last_sent_timestamp);
     guac_socket_flush(terminal->client->socket);
 
 }
