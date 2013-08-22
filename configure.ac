@@ -85,8 +85,6 @@ AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(CUNIT_LIBS)
 
 # Library functions
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
 
 AC_CHECK_DECL([png_get_io_ptr],
