@@ -61,7 +61,7 @@
  * milliseconds. If the server is silent for at least this amount of time, the
  * frame will be considered finished.
  */
-#define GUAC_RDP_FRAME_TIMEOUT 15
+#define GUAC_RDP_FRAME_TIMEOUT 0
 
 /**
  * Client data that will remain accessible through the guac_client.

@@ -54,7 +54,7 @@
  * milliseconds. If the server is silent for at least this amount of time, the
  * frame will be considered finished.
  */
-#define GUAC_VNC_FRAME_TIMEOUT 15
+#define GUAC_VNC_FRAME_TIMEOUT 0
 
 extern char* __GUAC_CLIENT;
 
