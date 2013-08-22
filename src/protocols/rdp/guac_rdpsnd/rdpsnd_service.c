@@ -88,9 +88,15 @@ int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
 
 void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin) {
 
-    /* Get audio stream from plugin */
-    audio_stream* audio = (audio_stream*)
-        plugin->channel_entry_points.pExtendedData;
+    guac_rdpsndPlugin* rdpsnd = (guac_rdpsndPlugin*) plugin;
+
+    /* Get audio stream from plugin parameters */
+    audio_stream* audio = rdpsnd->audio =
+        (audio_stream*) plugin->channel_entry_points.pExtendedData;
+
+    /* NULL out pExtendedData so we don't lose our audio_stream due to an
+     * automatic free() within libfreerdp */
+    plugin->channel_entry_points.pExtendedData = NULL;
 
 #ifdef RDPSVCPLUGIN_INTERVAL_MS
     /* Update every 10 ms */
@@ -117,8 +123,7 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
     guac_rdpsnd_pdu_header header;
 
     /* Get audio stream from plugin */
-    audio_stream* audio = (audio_stream*)
-        plugin->channel_entry_points.pExtendedData;
+    audio_stream* audio = rdpsnd->audio;
 
     /* Read RDPSND PDU header */
     Stream_Read_UINT8(input_stream, header.message_type);

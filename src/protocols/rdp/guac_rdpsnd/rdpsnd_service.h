@@ -85,6 +85,11 @@ typedef struct guac_rdpsndPlugin {
     rdpSvcPlugin plugin;
 
     /**
+     * The current audio stream.
+     */
+    audio_stream* audio;
+
+    /**
      * The block number of the last SNDC_WAVE (WaveInfo) PDU received.
      */
     int waveinfo_block_number;

@@ -93,9 +93,13 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
     /* Get RDPDR plugin */
     guac_rdpdrPlugin* rdpdr = (guac_rdpdrPlugin*) plugin;
 
-    /* Get client from plugin */
+    /* Get client from plugin parameters */
     guac_client* client = (guac_client*)
         plugin->channel_entry_points.pExtendedData;
+
+    /* NULL out pExtendedData so we don't lose our guac_client due to an
+     * automatic free() within libfreerdp */
+    plugin->channel_entry_points.pExtendedData = NULL;
 
     /* Get data from client */
     rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
