@@ -150,6 +150,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             client_data->font_name, client_data->font_size,
             client->info.optimal_width, client->info.optimal_height);
 
+    /* Fail if terminal init failed */
+    if (client_data->term == NULL) {
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Terminal initialization failed";
+        return -1;
+    }
+
     /* Set up I-bar pointer */
     client_data->ibar_cursor = guac_ssh_create_ibar(client);
 

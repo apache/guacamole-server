@@ -119,6 +119,14 @@ guac_terminal* guac_terminal_create(guac_client* client,
             default_char.attributes.foreground,
             default_char.attributes.background);
 
+    /* Fail if display init failed */
+    if (term->display == NULL) {
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Display initialization failed";
+        free(term);
+        return NULL;
+    }
+
     /* Init terminal state */
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
