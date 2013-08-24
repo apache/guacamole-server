@@ -411,19 +411,33 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->console         = (strcmp(argv[IDX_CONSOLE], "true") == 0);
     settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "true") == 0);
 
-    /* Security */
+    /* Certificate and auth */
     settings->ignore_certificate = (strcmp(argv[IDX_IGNORE_CERT], "true") == 0);
     settings->enable_authentication = (strcmp(argv[IDX_ENABLE_AUTH], "true") == 0);
 
-    /* Parse security mode */
-    if (strcmp(argv[IDX_SECURITY], "nla") == 0)
+    /* NLA security */
+    if (strcmp(argv[IDX_SECURITY], "nla") == 0) {
+        guac_client_log_info(client, "Security mode: NLA");
         settings->security_mode = GUAC_SECURITY_NLA;
-    else if (strcmp(argv[IDX_SECURITY], "tls") == 0)
+    }
+
+    /* TLS security */
+    else if (strcmp(argv[IDX_SECURITY], "tls") == 0) {
+        guac_client_log_info(client, "Security mode: TLS");
         settings->security_mode = GUAC_SECURITY_TLS;
-    else if (strcmp(argv[IDX_SECURITY], "any") == 0)
+    }
+
+    /* ANY security (do not choose) */
+    else if (strcmp(argv[IDX_SECURITY], "any") == 0) {
+        guac_client_log_info(client, "Security mode: ANY");
         settings->security_mode = GUAC_SECURITY_ANY;
-    else
+    }
+
+    /* RDP security (default) */
+    else {
+        guac_client_log_info(client, "Security mode: RDP");
         settings->security_mode = GUAC_SECURITY_RDP;
+    }
 
     /* Set hostname */
     settings->hostname = strdup(argv[IDX_HOSTNAME]);
