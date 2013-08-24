@@ -109,10 +109,9 @@ const char* GUAC_CLIENT_ARGS[] = {
     "console",
     "console-audio",
     "server-layout",
-    "enable-nla",
-    "enable-tls",
-    "ignore-certificate",
-    "enable-authentication",
+    "security",
+    "ignore-cert",
+    "enable-auth",
     NULL
 };
 
@@ -132,8 +131,7 @@ enum RDP_ARGS_IDX {
     IDX_CONSOLE,
     IDX_CONSOLE_AUDIO,
     IDX_SERVER_LAYOUT,
-    IDX_ENABLE_NLA,
-    IDX_ENABLE_TLS,
+    IDX_SECURITY,
     IDX_IGNORE_CERT,
     IDX_ENABLE_AUTH,
     RDP_ARGS_COUNT
@@ -414,10 +412,18 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->console_audio   = (strcmp(argv[IDX_CONSOLE_AUDIO], "true") == 0);
 
     /* Security */
-    settings->enable_nla_security = (strcmp(argv[IDX_ENABLE_NLA], "true") == 0);
-    settings->enable_tls_security = (strcmp(argv[IDX_ENABLE_TLS], "true") == 0);
     settings->ignore_certificate = (strcmp(argv[IDX_IGNORE_CERT], "true") == 0);
     settings->enable_authentication = (strcmp(argv[IDX_ENABLE_AUTH], "true") == 0);
+
+    /* Parse security mode */
+    if (strcmp(argv[IDX_SECURITY], "nla") == 0)
+        settings->security_mode = GUAC_SECURITY_NLA;
+    else if (strcmp(argv[IDX_SECURITY], "tls") == 0)
+        settings->security_mode = GUAC_SECURITY_TLS;
+    else if (strcmp(argv[IDX_SECURITY], "any") == 0)
+        settings->security_mode = GUAC_SECURITY_ANY;
+    else
+        settings->security_mode = GUAC_SECURITY_RDP;
 
     /* Set hostname */
     settings->hostname = strdup(argv[IDX_HOSTNAME]);

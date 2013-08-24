@@ -64,6 +64,33 @@
 #define RDP_DEFAULT_DEPTH  16 
 
 /**
+ * All supported combinations of security types.
+ */
+typedef enum guac_rdp_security {
+
+    /**
+     * Standard RDP encryption.
+     */
+    GUAC_SECURITY_RDP,
+
+    /**
+     * TLS encryption.
+     */
+    GUAC_SECURITY_TLS,
+
+    /**
+     * Network level authentication.
+     */
+    GUAC_SECURITY_NLA,
+
+    /**
+     * Any method supported by the server.
+     */
+    GUAC_SECURITY_ANY
+
+} guac_rdp_security;
+
+/**
  * All settings supported by the Guacamole RDP client.
  */
 typedef struct guac_rdp_settings {
@@ -139,14 +166,9 @@ typedef struct guac_rdp_settings {
     char* initial_program;
 
     /**
-     * Whether NLA security is enabled.
+     * The type of security to use for the connection.
      */
-    int enable_nla_security;
-
-    /**
-     * Whether TLS security is enabled.
-     */
-    int enable_tls_security;
+    guac_rdp_security security_mode;
 
     /**
      * Whether bad server certificates should be ignored.
