@@ -103,30 +103,31 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->RemoteConsoleAudio = guac_settings->console_audio;
 #endif
 
-    /* --no-auth */
+    /* Security */
 #ifdef LEGACY_RDPSETTINGS
-    rdp_settings->authentication = FALSE;
-#else
-    rdp_settings->Authentication = FALSE;
-#endif
-
-    /* --sec rdp */
-#ifdef LEGACY_RDPSETTINGS
+    rdp_settings->authentication = guac_settings->enable_authentication;
     rdp_settings->rdp_security = TRUE;
-    rdp_settings->tls_security = FALSE;
-    rdp_settings->nla_security = FALSE;
+    rdp_settings->tls_security = guac_settings->enable_tls_security;
+    rdp_settings->nla_security = guac_settings->enable_nla_security;
+    rdp_settings->ignore_certificate = guac_settings->ignore_certificate;
     rdp_settings->encryption = TRUE;
-    rdp_settings->encryption_method =
-        ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
     rdp_settings->encryption_level = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
+    rdp_settings->encryption_method =
+          ENCRYPTION_METHOD_40BIT
+        | ENCRYPTION_METHOD_128BIT
+        | ENCRYPTION_METHOD_FIPS;
 #else
+    rdp_settings->Authentication = guac_settings->enable_authentication;
     rdp_settings->RdpSecurity = TRUE;
-    rdp_settings->TlsSecurity = FALSE;
-    rdp_settings->NlaSecurity = FALSE;
+    rdp_settings->TlsSecurity = guac_settings->enable_tls_security;
+    rdp_settings->NlaSecurity = guac_settings->enable_nla_security;
+    rdp_settings->IgnoreCertificate = guac_settings->ignore_certificate;
     rdp_settings->DisableEncryption = FALSE;
-    rdp_settings->EncryptionMethods =
-        ENCRYPTION_METHOD_40BIT | ENCRYPTION_METHOD_128BIT | ENCRYPTION_METHOD_FIPS;
     rdp_settings->EncryptionLevel = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
+    rdp_settings->EncryptionMethods =
+          ENCRYPTION_METHOD_40BIT
+        | ENCRYPTION_METHOD_128BIT 
+        | ENCRYPTION_METHOD_FIPS;
 #endif
 
     /* Order support */

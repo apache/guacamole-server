@@ -138,6 +138,28 @@ typedef struct guac_rdp_settings {
      */
     char* initial_program;
 
+    /**
+     * Whether NLA security is enabled.
+     */
+    int enable_nla_security;
+
+    /**
+     * Whether TLS security is enabled.
+     */
+    int enable_tls_security;
+
+    /**
+     * Whether bad server certificates should be ignored.
+     */
+    int ignore_certificate;
+
+    /**
+     * Whether authentication should be enabled. This is different from the
+     * authentication that takes place when a user provides their username
+     * and password.
+     */
+    int enable_authentication;
+
 } guac_rdp_settings;
 
 
