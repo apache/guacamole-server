@@ -172,11 +172,11 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     /* Authentication */
 #ifdef LEGACY_RDPSETTINGS
-    rdp_settings->authentication = guac_settings->enable_authentication;
+    rdp_settings->authentication = !guac_settings->disable_authentication;
     rdp_settings->ignore_certificate = guac_settings->ignore_certificate;
     rdp_settings->encryption = TRUE;
 #else
-    rdp_settings->Authentication = guac_settings->enable_authentication;
+    rdp_settings->Authentication = !guac_settings->disable_authentication;
     rdp_settings->IgnoreCertificate = guac_settings->ignore_certificate;
     rdp_settings->DisableEncryption = FALSE;
 #endif

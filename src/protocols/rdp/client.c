@@ -111,7 +111,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "server-layout",
     "security",
     "ignore-cert",
-    "enable-auth",
+    "disable-auth",
     NULL
 };
 
@@ -133,7 +133,7 @@ enum RDP_ARGS_IDX {
     IDX_SERVER_LAYOUT,
     IDX_SECURITY,
     IDX_IGNORE_CERT,
-    IDX_ENABLE_AUTH,
+    IDX_DISABLE_AUTH,
     RDP_ARGS_COUNT
 };
 
@@ -323,6 +323,38 @@ BOOL rdp_freerdp_post_connect(freerdp* instance) {
 
 }
 
+BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
+        char** password, char** domain) {
+
+    rdpContext* context = instance->context;
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+
+    /* Warn if connection is likely to fail due to lack of credentials */
+    guac_client_log_info(client,
+            "Authentication requested but username or password not given");
+    return TRUE;
+
+}
+
+BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
+        char* issuer, char* fingerprint) {
+
+    rdpContext* context = instance->context;
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) client->data;
+
+    /* Bypass validation if ignore_certificate given */
+    if (guac_client_data->settings.ignore_certificate) {
+        guac_client_log_info(client, "Certificate validation bypassed");
+        return TRUE;
+    }
+
+    guac_client_log_info(client, "Certificate validation failed");
+    return FALSE;
+
+}
+
 void rdp_freerdp_context_new(freerdp* instance, rdpContext* context) {
     context->channels = freerdp_channels_new();
 }
@@ -392,6 +424,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rdp_inst = freerdp_new();
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->PostConnect = rdp_freerdp_post_connect;
+    rdp_inst->Authenticate = rdp_freerdp_authenticate;
+    rdp_inst->VerifyCertificate = rdp_freerdp_verify_certificate;
     rdp_inst->ReceiveChannelData = __guac_receive_channel_data;
 
     /* Allocate FreeRDP context */
@@ -413,7 +447,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Certificate and auth */
     settings->ignore_certificate = (strcmp(argv[IDX_IGNORE_CERT], "true") == 0);
-    settings->enable_authentication = (strcmp(argv[IDX_ENABLE_AUTH], "true") == 0);
+    settings->disable_authentication = (strcmp(argv[IDX_DISABLE_AUTH], "true") == 0);
 
     /* NLA security */
     if (strcmp(argv[IDX_SECURITY], "nla") == 0) {
@@ -427,16 +461,16 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         settings->security_mode = GUAC_SECURITY_TLS;
     }
 
-    /* ANY security (do not choose) */
-    else if (strcmp(argv[IDX_SECURITY], "any") == 0) {
-        guac_client_log_info(client, "Security mode: ANY");
-        settings->security_mode = GUAC_SECURITY_ANY;
-    }
-
-    /* RDP security (default) */
-    else {
+    /* RDP security */
+    else if (strcmp(argv[IDX_SECURITY], "rdp") == 0) {
         guac_client_log_info(client, "Security mode: RDP");
         settings->security_mode = GUAC_SECURITY_RDP;
+    }
+
+    /* ANY security (allow server to choose) */
+    else {
+        guac_client_log_info(client, "Security mode: ANY");
+        settings->security_mode = GUAC_SECURITY_ANY;
     }
 
     /* Set hostname */

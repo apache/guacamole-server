@@ -176,11 +176,11 @@ typedef struct guac_rdp_settings {
     int ignore_certificate;
 
     /**
-     * Whether authentication should be enabled. This is different from the
+     * Whether authentication should be disabled. This is different from the
      * authentication that takes place when a user provides their username
-     * and password.
+     * and password. Authentication is required by definition for NLA.
      */
-    int enable_authentication;
+    int disable_authentication;
 
 } guac_rdp_settings;
 
