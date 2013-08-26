@@ -1,3 +1,11 @@
+2013-08-26 Michael Jumper <mike.jumper@guac-dev.org>
+
+	* Experimental sound support for VNC (ticket #369)
+	* Improved handling of frame flush (ticket #380)
+	* SSL transport for guacd (ticket #371)
+	* Fix segfault in RDP disconnect (ticket #385)
+	* Add security options to RDP (ticket #190)
+
 2013-07-02 Michael Jumper <mike.jumper@guac-dev.org>
 
 	* Optional threadsafety in guac_socket
