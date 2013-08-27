@@ -41,20 +41,26 @@
 #include <guacamole/socket.h>
 
 /* Macros for prettying up the embedded image. */
+#define X 0x00,0x00,0x00,0xFF
 #define O 0xFF,0xFF,0xFF,0xFF
+#define _ 0x00,0x00,0x00,0x00
 
 /* Dimensions */
-const int guac_vnc_default_pointer_width  = 1;
-const int guac_vnc_default_pointer_height = 1;
+const int guac_vnc_default_pointer_width  = 5;
+const int guac_vnc_default_pointer_height = 5;
 
 /* Format */
 const cairo_format_t guac_vnc_default_pointer_format = CAIRO_FORMAT_ARGB32;
-const int guac_vnc_default_pointer_stride = 44;
+const int guac_vnc_default_pointer_stride = 20;
 
 /* Embedded pointer graphic */
 unsigned char guac_vnc_default_pointer[] = {
 
-        O
+        _,O,O,O,_,
+        O,X,X,X,O,
+        O,X,X,X,O,
+        O,X,X,X,O,
+        _,O,O,O,_
 
 };
 
@@ -77,7 +83,7 @@ void guac_vnc_set_default_pointer(guac_client* client) {
     cairo_surface_destroy(graphic);
 
     /* Set cursor */
-    guac_protocol_send_cursor(socket, 0, 0, cursor,
+    guac_protocol_send_cursor(socket, 2, 2, cursor,
             0, 0,
             guac_vnc_default_pointer_width,
             guac_vnc_default_pointer_height);

@@ -153,18 +153,20 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Do not handle clipboard and local cursor if read-only */
     if (read_only == 0) {
-        /* Enable client-side cursor */
-        rfb_client->GotCursorShape = guac_vnc_cursor;
-        rfb_client->appData.useRemoteCursor = TRUE;
 
         /* Clipboard */
         rfb_client->GotXCutText = guac_vnc_cut_text;
-    }
 
-    /* Set remote cursor */
-    if(remote_cursor) {
-        rfb_client->appData.useRemoteCursor = TRUE;
-        guac_vnc_set_default_pointer(client);
+        /* Set remote cursor */
+        if(remote_cursor) {
+            rfb_client->appData.useRemoteCursor = FALSE;
+            guac_vnc_set_default_pointer(client);
+        }
+        else {
+            /* Enable client-side cursor */
+            rfb_client->appData.useRemoteCursor = TRUE;
+            rfb_client->GotCursorShape = guac_vnc_cursor;
+        }
     }
 
     /* Password */
