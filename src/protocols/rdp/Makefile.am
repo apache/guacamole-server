@@ -93,9 +93,9 @@ noinst_HEADERS =                     \
 
 # Add compatibility layer for WinPR if not available
 if ! ENABLE_WINPR
-    noinst_HEADERS += compat/winpr-stream.h
+    noinst_HEADERS  += compat/winpr-stream.h compat/winpr-wtypes.h
     guacsnd_sources += compat/winpr-stream.c
-    guacdr_sources += compat/winpr-stream.c
+    guacdr_sources  += compat/winpr-stream.c
 endif
 
 # Compile OGG support if available
