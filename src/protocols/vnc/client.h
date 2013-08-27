@@ -42,7 +42,9 @@
 #include <guacamole/audio.h>
 #include <rfb/rfbclient.h>
 
+#ifdef ENABLE_PULSE
 #include <pulse/pulseaudio.h>
+#endif
 
 /**
  * The maximum duration of a frame in milliseconds.
@@ -79,7 +81,8 @@ typedef struct vnc_guac_client_data {
      * Audio output, if any.
      */
     guac_audio_stream* audio;
-    
+
+#ifdef ENABLE_PULSE
     /**
      * The name of the PulseAudio server to connect to.
      */
@@ -89,6 +92,7 @@ typedef struct vnc_guac_client_data {
      * PulseAudio event loop.
      */
     pa_threaded_mainloop* pa_mainloop;
+#endif
     
 } vnc_guac_client_data;
 
