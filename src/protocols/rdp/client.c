@@ -468,9 +468,15 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
 
     /* ANY security (allow server to choose) */
-    else {
+    else if (strcmp(argv[IDX_SECURITY], "any") == 0) {
         guac_client_log_info(client, "Security mode: ANY");
         settings->security_mode = GUAC_SECURITY_ANY;
+    }
+
+    /* If nothing given, default to RDP */
+    else {
+        guac_client_log_info(client, "No security mode specified. Defaulting to RDP.");
+        settings->security_mode = GUAC_SECURITY_RDP;
     }
 
     /* Set hostname */
