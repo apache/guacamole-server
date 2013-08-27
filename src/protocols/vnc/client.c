@@ -19,7 +19,7 @@
  * Portions created by the Initial Developer are Copyright (C) 2010
  * the Initial Developer. All Rights Reserved.
  *
- * Contributor(s):
+ * Contributor(s): James Muehlner
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -48,6 +48,7 @@
 #include "client.h"
 #include "vnc_handlers.h"
 #include "guac_handlers.h"
+#include "default_pointer.h"
 
 #ifdef ENABLE_PULSE
 #include "pulse.h"
@@ -62,7 +63,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "password",
     "swap-red-blue",
     "color-depth",
-
+    "cursor",
 #ifdef ENABLE_VNC_REPEATER
     "dest-host",
     "dest-port",
@@ -85,7 +86,7 @@ enum VNC_ARGS_IDX {
     IDX_PASSWORD,
     IDX_SWAP_RED_BLUE,
     IDX_COLOR_DEPTH,
-
+    IDX_CURSOR,
 #ifdef ENABLE_VNC_REPEATER
     IDX_DEST_HOST,
     IDX_DEST_PORT,
@@ -109,6 +110,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     vnc_guac_client_data* guac_client_data;
 
     int read_only;
+    int remote_cursor;
 
     /* Set up libvncclient logging */
     rfbClientLog = guac_vnc_client_log_info;
@@ -128,6 +130,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Set read-only flag */
     read_only = (strcmp(argv[IDX_READ_ONLY], "true") == 0);
+
+    /* Set remote cursor flag */
+    remote_cursor = (strcmp(argv[IDX_CURSOR], "remote") == 0);
 
     /* Set red/blue swap flag */
     guac_client_data->swap_red_blue = (strcmp(argv[IDX_SWAP_RED_BLUE], "true") == 0);
@@ -154,6 +159,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         /* Clipboard */
         rfb_client->GotXCutText = guac_vnc_cut_text;
+    }
+
+    /* Set remote cursor */
+    if(remote_cursor) {
+        rfb_client->appData.useRemoteCursor = TRUE;
+        guac_vnc_set_default_pointer(client);
     }
 
     /* Password */
