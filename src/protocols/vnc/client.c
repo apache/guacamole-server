@@ -213,6 +213,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Freed after use by libvncclient */
     guac_client_data->password = strdup(argv[IDX_PASSWORD]);
 
+    /* Parse color depth */
+    guac_client_data->color_depth = atoi(argv[IDX_COLOR_DEPTH]);
+
 #ifdef ENABLE_VNC_REPEATER
     /* Set repeater parameters if specified */
     if (argv[IDX_DEST_HOST][0] != '\0')
