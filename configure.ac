@@ -301,27 +301,27 @@ AC_CHECK_MEMBERS([rdpSvcPlugin.interval_ms],,,
 
 # Keyboard layout header
 AC_CHECK_HEADERS([freerdp/locale/keyboard.h],,
-                  AC_CHECK_HEADERS([freerdp/kbd/layouts.h],,
+                  [AC_CHECK_HEADERS([freerdp/kbd/layouts.h],,
                                    [AC_MSG_WARN([
   --------------------------------------------
    Unable to find keyboard layout headers
    RDP will be disabled.
   --------------------------------------------])
-                                    have_freerdp=no]))
+                                    have_freerdp=no])])
 
 # New headers defining addins
 AC_CHECK_HEADERS([freerdp/addin.h freerdp/client/channels.h])
 
 # Header defining cliprdr
 AC_CHECK_HEADERS([freerdp/client/cliprdr.h],,
-                  AC_CHECK_HEADERS([freerdp/plugins/cliprdr.h],,
+                 [AC_CHECK_HEADERS([freerdp/plugins/cliprdr.h],,
                                    [AC_MSG_WARN([
   --------------------------------------------
    Unable to find cliprdr headers
    RDP will be disabled.
   --------------------------------------------])
                                     have_freerdp=no],
-                                   [#include <freerdp/types.h>]),
+                                   [#include <freerdp/types.h>])],
                  [#include <winpr/wtypes.h>
                   #include <winpr/collections.h>])
 
