@@ -413,7 +413,7 @@ int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* a
     *(current++) = '\\';
 
     /* Copy remaining path */
-    strncpy(current, rel_path, GUAC_RDPDR_FS_MAX_PATH-i);
+    strncpy(current, rel_path, GUAC_RDPDR_FS_MAX_PATH-i-2);
 
     /* Normalize into provided buffer */
     return guac_rdpdr_fs_normalize_path(combined_path, abs_path);
