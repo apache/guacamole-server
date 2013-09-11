@@ -83,9 +83,37 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
 
 void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: guac_rdpdr_fs_query_standard_info");
+
+    wStream* output_stream = Stream_New(NULL, 60);
+    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    guac_rdpdr_fs_file* file = &(data->files[file_id]);
+
+    BOOL is_directory = FALSE;
+    if (file->attributes & FILE_ATTRIBUTE_DIRECTORY)
+        is_directory = TRUE;
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+
+    Stream_Write_UINT32(output_stream, 22);
+    Stream_Write_UINT64(output_stream, file->size);   /* AllocationSize */
+    Stream_Write_UINT64(output_stream, file->size);   /* EndOfFile      */
+    Stream_Write_UINT32(output_stream, 1);            /* NumberOfLinks  */
+    Stream_Write_UINT8(output_stream,  0);            /* DeletePending  */
+    Stream_Write_UINT8(output_stream,  is_directory); /* Directory      */
+
+    /* Reserved field must not be sent */
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
+
+
 }
 
 void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device, wStream* input_stream,
