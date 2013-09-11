@@ -112,8 +112,6 @@ void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStrea
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
-
-
 }
 
 void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device, wStream* input_stream,

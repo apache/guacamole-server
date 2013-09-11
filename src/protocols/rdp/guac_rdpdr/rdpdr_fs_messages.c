@@ -262,8 +262,23 @@ void guac_rdpdr_fs_process_set_file_info(guac_rdpdr_device* device, wStream* inp
 
 void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+
+    wStream* output_stream = Stream_New(NULL, 60);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+
+    /* No content for now */
+    Stream_Write_UINT32(output_stream, 0);
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
 }
 
 void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
