@@ -128,21 +128,23 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     if (data->open_files >= GUAC_RDPDR_FS_MAX_FILES)
         return GUAC_RDPDR_FS_ENFILE;
 
-    /* If path is empty or relative, the file does not exist */
-    if (path[0] != '\\')
+    /* If path empty, transform to root path */
+    if (path[0] == '\0')
+        path = "\\";
+
+    /* If path is relative, the file does not exist */
+    else if (path[0] != '\\')
         return GUAC_RDPDR_FS_ENOENT;
 
     /* Translate access into mode */
-    if (access & ACCESS_FILE_READ_DATA) {
-        if (access & (ACCESS_FILE_WRITE_DATA | ACCESS_FILE_APPEND_DATA))
-            mode = O_RDWR;
-        else
-            mode = O_RDONLY;
-    }
-    else if (access & (ACCESS_FILE_WRITE_DATA | ACCESS_FILE_APPEND_DATA))
+    if (access & ACCESS_GENERIC_ALL)
+        mode = O_RDWR;
+    else if (access & (ACCESS_GENERIC_WRITE | ACCESS_GENERIC_READ))
+        mode = O_RDWR;
+    else if (access & ACCESS_GENERIC_WRITE)
         mode = O_WRONLY;
     else
-        return GUAC_RDPDR_FS_ENOENT; /* FIXME: Replace with real return value */
+        mode = O_RDONLY;
 
     /* If append access requested, add appropriate option */
     if (access & ACCESS_FILE_APPEND_DATA)
