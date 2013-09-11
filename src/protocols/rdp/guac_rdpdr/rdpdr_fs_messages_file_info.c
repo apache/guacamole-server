@@ -68,15 +68,14 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
     Stream_Write_UINT32(output_stream, completion_id);
     Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
 
-    Stream_Write_UINT32(output_stream, 18 + GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT32(output_stream, 36);
     Stream_Write_UINT64(output_stream, file->ctime);      /* CreationTime   */
     Stream_Write_UINT64(output_stream, file->atime);      /* LastAccessTime */
     Stream_Write_UINT64(output_stream, file->mtime);      /* LastWriteTime  */
     Stream_Write_UINT64(output_stream, file->mtime);      /* ChangeTime     */
     Stream_Write_UINT32(output_stream, file->attributes); /* FileAttributes */
 
-    /* Reserved */
-    Stream_Write_UINT32(output_stream, 0);
+    /* Reserved field must not be sent */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
