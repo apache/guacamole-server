@@ -117,7 +117,7 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
         Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
         Stream_Write_UINT32(output_stream, file_id);    /* fileId */
-        Stream_Write_UINT8(output_stream,  FILE_OPENED); /* information */
+        Stream_Write_UINT8(output_stream,  0);          /* information */
 
     }
 
