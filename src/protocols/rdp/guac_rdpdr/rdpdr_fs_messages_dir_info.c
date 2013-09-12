@@ -100,7 +100,7 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
 
     /* Apparently, the reserved byte here must be skipped ... */
 
-    Stream_Seek(output_stream, 24); /* ShortName */
+    Stream_Zero(output_stream, 24); /* FileName */
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);

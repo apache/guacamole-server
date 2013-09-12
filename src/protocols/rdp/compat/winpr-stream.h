@@ -63,6 +63,8 @@
 #define Stream_GetPointer              stream_get_mark
 #define Stream_EnsureRemainingCapacity stream_check_size
 #define Stream_Write                   stream_write
+#define Stream_Zero                    stream_write_zero
+#define Stream_Fill                    stream_set_byte
 #define Stream_GetPosition             stream_get_pos
 #define Stream_SetPosition             stream_set_pos
 #define Stream_SetPointer              stream_set_mark
