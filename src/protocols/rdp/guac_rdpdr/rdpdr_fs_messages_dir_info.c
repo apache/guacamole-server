@@ -83,7 +83,7 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
 
     Stream_Write_UINT32(output_stream,
-            69 + 24 + utf16_length); /* Length */
+            69 + 24 + utf16_length + 2); /* Length */
 
     Stream_Write_UINT32(output_stream, 0); /* NextEntryOffset */
     Stream_Write_UINT32(output_stream, 0); /* FileIndex */
@@ -94,7 +94,7 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     Stream_Write_UINT64(output_stream, file->size);  /* EndOfFile */
     Stream_Write_UINT64(output_stream, file->size);  /* AllocationSize */
     Stream_Write_UINT32(output_stream, file->attributes);   /* FileAttributes */
-    Stream_Write_UINT32(output_stream, utf16_length); /* FileNameLength*/
+    Stream_Write_UINT32(output_stream, utf16_length+2); /* FileNameLength*/
     Stream_Write_UINT32(output_stream, 0); /* EaSize */
     Stream_Write_UINT8(output_stream,  0); /* ShortNameLength */
 
@@ -102,6 +102,7 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
 
     Stream_Zero(output_stream, 24); /* FileName */
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
+    Stream_Write(output_stream, "\0\0", 2);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
     guac_client_log_info(device->rdpdr->client, "Sent directory entry: \"%s\"",

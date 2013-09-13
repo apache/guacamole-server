@@ -101,6 +101,12 @@
 #define GUAC_FILESYSTEM_NAME          "G\0u\0a\0c\0a\0m\0o\0l\0e\0\0\0"
 #define GUAC_FILESYSTEM_NAME_LENGTH   20
 
+/**
+ * Label of the filesystem.
+ */
+#define GUAC_FILESYSTEM_LABEL          "G\0U\0A\0C\0F\0I\0L\0E\0"
+#define GUAC_FILESYSTEM_LABEL_LENGTH   16
+
 /*
  * Capability types
  */
@@ -198,6 +204,7 @@
 #define STATUS_SUCCESS                  0x00000000
 #define STATUS_NO_MORE_FILES            0x80000006
 #define STATUS_DEVICE_OFF_LINE          0x80000010
+#define STATUS_INVALID_PARAMETER        0xC000000D
 #define STATUS_NO_SUCH_FILE             0xC000000F
 #define STATUS_END_OF_FILE              0xC0000011
 #define STATUS_FILE_INVALID             0xC0000098  

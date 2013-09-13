@@ -55,8 +55,6 @@ void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream*
         int file_id, int completion_id) {
 
     wStream* output_stream = Stream_New(NULL, 38 + GUAC_FILESYSTEM_NAME_LENGTH);
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_rdpdr_fs_file* file = &(data->files[file_id]);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -67,13 +65,13 @@ void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream*
     Stream_Write_UINT32(output_stream, completion_id);
     Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
 
-    Stream_Write_UINT32(output_stream, 17 + GUAC_FILESYSTEM_NAME_LENGTH);
-    Stream_Write_UINT64(output_stream, file->ctime); /* VolumeCreationTime */
-    Stream_Write(output_stream, "GUAC", 4);          /* VolumeSerialNumber */
-    Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT32(output_stream, 17 + GUAC_FILESYSTEM_LABEL_LENGTH);
+    Stream_Write_UINT64(output_stream, 0); /* VolumeCreationTime */
+    Stream_Write_UINT32(output_stream, 0); /* VolumeSerialNumber */
+    Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_LABEL_LENGTH);
     Stream_Write_UINT8(output_stream, FALSE); /* SupportsObjects */
     /* Reserved field must not be sent */
-    Stream_Write(output_stream, GUAC_FILESYSTEM_NAME, GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write(output_stream, GUAC_FILESYSTEM_LABEL, GUAC_FILESYSTEM_LABEL_LENGTH);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 

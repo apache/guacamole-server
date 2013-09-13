@@ -140,7 +140,7 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {
 
-    wStream* output_stream = Stream_New(NULL, 21);
+    wStream* output_stream = Stream_New(NULL, 20);
 
     /* Close file */
     guac_client_log_info(device->rdpdr->client, "Closing file id=%i", file_id);
@@ -154,7 +154,7 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
     Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
-    Stream_Write(output_stream, "\0\0\0\0\0", 5); /* Padding */
+    Stream_Write(output_stream, "\0\0\0\0", 4); /* Padding */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
@@ -272,7 +272,7 @@ void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device, wStream* in
     /* Write content */
     Stream_Write_UINT32(output_stream, device->device_id);
     Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+    Stream_Write_UINT32(output_stream, STATUS_INVALID_PARAMETER);
 
     /* No content for now */
     Stream_Write_UINT32(output_stream, 0);
