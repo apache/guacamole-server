@@ -382,7 +382,7 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
      * Handle errors as a lack of files.
      */
 
-    output_stream = Stream_New(NULL, 20);
+    output_stream = Stream_New(NULL, 21);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -393,6 +393,7 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
     Stream_Write_UINT32(output_stream, completion_id);
     Stream_Write_UINT32(output_stream, STATUS_NO_MORE_FILES);
     Stream_Write_UINT32(output_stream, 0);
+    Stream_Write_UINT8(output_stream, 0);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
     guac_client_log_info(device->rdpdr->client, "Sent STATUS_NO_MORE_FILES");
