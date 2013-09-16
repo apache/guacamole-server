@@ -130,6 +130,8 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
 
     UINT32 length;
     UINT64 offset;
+    char buffer[4096];
+
     wStream* output_stream;
     guac_rdpdr_fs_file* file;
 
@@ -142,7 +144,7 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
     Stream_Read_UINT32(input_stream, length);
     Stream_Read_UINT64(input_stream, offset);
 
-    output_stream = Stream_New(NULL, 21);
+    output_stream = Stream_New(NULL, 20 + sizeof(buffer));
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -163,7 +165,6 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
     /* Otherwise, perform read */
     else {
 
-        char buffer[4096];
         int bytes_read;
 
         /* Read no more than size of buffer */
