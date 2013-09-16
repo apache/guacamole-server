@@ -62,24 +62,38 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
     wStream* output_stream = Stream_New(NULL, 21);
     int file_id;
 
-    int desired_access, file_attributes, shared_access;
+    int desired_access, file_attributes;
     int create_disposition, create_options, path_length;
-    char path[1024];
+    char path[GUAC_RDPDR_FS_MAX_PATH];
 
     /* Read "create" information */
     Stream_Read_UINT32(input_stream, desired_access);
     Stream_Seek_UINT64(input_stream); /* allocation size */
     Stream_Read_UINT32(input_stream, file_attributes);
-    Stream_Read_UINT32(input_stream, shared_access);
+    Stream_Seek_UINT32(input_stream); /* shared access */
     Stream_Read_UINT32(input_stream, create_disposition);
     Stream_Read_UINT32(input_stream, create_options);
     Stream_Read_UINT32(input_stream, path_length);
 
+    /* FIXME: Validate path length */
+
+    /* STUB: create_options */
+    guac_client_log_info(device->rdpdr->client,
+            "%s: STUB: Unused variable: create_options (%i)", __func__,
+            create_options);
+
+    /* STUB: file_attributes */
+    guac_client_log_info(device->rdpdr->client,
+            "%s: STUB: Unused variable: file_attributes (%i)", __func__,
+            file_attributes);
+
     /* Convert path to UTF-8 */
-    guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), path, path_length/2 - 1);
+    guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream),
+            path, path_length/2 - 1);
 
     /* Open file */
-    file_id = guac_rdpdr_fs_open(device, path, desired_access, create_disposition);
+    file_id = guac_rdpdr_fs_open(device, path, desired_access,
+            create_disposition);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -91,7 +105,8 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
     /* If no file IDs available, notify server */
     if (file_id == GUAC_RDPDR_FS_ENFILE) {
-        guac_client_log_error(device->rdpdr->client, "File open refused - too many open files");
+        guac_client_log_error(device->rdpdr->client,
+                "File open refused - too many open files");
         Stream_Write_UINT32(output_stream, STATUS_TOO_MANY_OPENED_FILES);
         Stream_Write_UINT32(output_stream, 0); /* fileId */
         Stream_Write_UINT8(output_stream,  0); /* information */
@@ -108,17 +123,9 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
     /* Otherwise, open succeeded */
     else {
-
-        guac_client_log_info(device->rdpdr->client, "Opened file \"%s\" ... new id=%i", path, file_id);
-        guac_client_log_info(device->rdpdr->client,
-                "des=%i, attrib=%i, shared=%i, disp=%i, opt=%i",
-                desired_access, file_attributes, shared_access, create_disposition,
-                create_options);
-
         Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
         Stream_Write_UINT32(output_stream, file_id);    /* fileId */
         Stream_Write_UINT8(output_stream,  0);          /* information */
-
     }
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
@@ -156,8 +163,8 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
 
     /* If file is a directory, fail */
     if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
-        guac_client_log_info(device->rdpdr->client,
-                "Attempt to read directory as a file");
+        guac_client_log_error(device->rdpdr->client,
+                "Refusing to read directory as a file");
         Stream_Write_UINT32(output_stream, STATUS_FILE_IS_A_DIRECTORY);
         Stream_Write_UINT32(output_stream, 0); /* Length */
     }
@@ -206,7 +213,6 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
     wStream* output_stream = Stream_New(NULL, 20);
 
     /* Close file */
-    guac_client_log_info(device->rdpdr->client, "Closing file id=%i", file_id);
     guac_rdpdr_fs_close(device, file_id);
 
     /* Write header */
@@ -226,16 +232,9 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_volume_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
-    int fs_information_class, length;
-
-    /* NOTE: Assuming file is open and a volume */
+    int fs_information_class;
 
     Stream_Read_UINT32(input_stream, fs_information_class);
-    Stream_Read_UINT32(input_stream, length);
-    Stream_Seek(input_stream, 24); /* Padding */
-
-    guac_client_log_info(device->rdpdr->client,
-            "Received volume query - class=0x%x, length=%i", fs_information_class, length);
 
     /* Dispatch to appropriate class-specific handler */
     switch (fs_information_class) {
@@ -275,16 +274,9 @@ void guac_rdpdr_fs_process_volume_info(guac_rdpdr_device* device, wStream* input
 void guac_rdpdr_fs_process_file_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
-    int fs_information_class, length;
-
-    /* NOTE: Assuming file is open and a volume */
+    int fs_information_class;
 
     Stream_Read_UINT32(input_stream, fs_information_class);
-    Stream_Read_UINT32(input_stream, length);
-    Stream_Seek(input_stream, 24); /* Padding */
-
-    guac_client_log_info(device->rdpdr->client,
-            "Received file query - class=0x%x, length=%i", fs_information_class, length);
 
     /* Dispatch to appropriate class-specific handler */
     switch (fs_information_class) {
@@ -374,20 +366,22 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
     /* If this is the first query, the path is included after padding */
     if (initial_query) {
 
-        unsigned char* path;
+        char path[GUAC_RDPDR_FS_MAX_PATH];
 
         Stream_Seek(input_stream, 23);       /* Padding */
-        path = Stream_Pointer(input_stream); /* Path */
 
+        /* FIXME: Validate path length */
+
+        /* Convert path to UTF-8 */
+        guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream),
+                path, path_length/2 - 1);
+
+        /* STUB: path */
         guac_client_log_info(device->rdpdr->client,
-                "Received initial dir query - class=0x%x, path_length=%i, path=%s",
-                fs_information_class, path_length, path);
+                "%s: STUB: Unused variable: path (%s)", __func__,
+                path);
 
     }
-    else
-        guac_client_log_info(device->rdpdr->client,
-                "Received continued dir query - class=0x%x",
-                fs_information_class);
 
     /* If entry exists, call appriate handler to send data */
     entry_name = guac_rdpdr_fs_read_dir(device, file_id);
@@ -435,7 +429,8 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
 
                     default:
                         guac_client_log_info(device->rdpdr->client,
-                                "Unknown dir information class: 0x%x", fs_information_class);
+                                "Unknown dir information class: 0x%x",
+                                fs_information_class);
                 }
 
                 guac_rdpdr_fs_close(device, entry_file_id);

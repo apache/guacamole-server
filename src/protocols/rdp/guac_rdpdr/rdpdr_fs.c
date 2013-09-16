@@ -197,15 +197,8 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
     /* Open file */
     fd = open(real_path, flags, mode);
-    if (fd == -1) {
-        guac_client_log_error(device->rdpdr->client,
-                "Open of real file failed: \"%s\"", real_path);
+    if (fd == -1)
         return GUAC_RDPDR_FS_ENOENT;
-    }
-    else
-        guac_client_log_info(device->rdpdr->client,
-                "Opened real file: \"%s\"", real_path);
-
 
     /* Get file ID, init file */
     file_id = guac_pool_next_int(data->file_id_pool);
@@ -234,7 +227,8 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     /* If information cannot be retrieved, fake it */
     else {
 
-        guac_client_log_info(device->rdpdr->client, "Unable to read information for \"%s\"",
+        guac_client_log_info(device->rdpdr->client,
+                "Unable to read information for \"%s\"",
                 real_path);
 
         /* Init information to 0, lacking any alternative */

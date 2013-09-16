@@ -109,10 +109,6 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, "\0\0", 2);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
-    guac_client_log_info(device->rdpdr->client, "Sent directory entry: \"%s\"",
-            entry_name);
-    guac_client_log_info(device->rdpdr->client, "Attrib: 0x%x", file->attributes);
-    guac_client_log_info(device->rdpdr->client, "Size: %i", file->size);
 
 }
 
