@@ -292,12 +292,16 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
 
     wStream* output_stream;
 
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_rdpdr_fs_file* file = &(data->files[file_id]);
+    guac_rdpdr_fs_file* file;
     int fs_information_class, initial_query;
     int path_length;
 
     const char* entry_name;
+
+    /* Get file */
+    file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL)
+        return;
 
     /* Read main header */
     Stream_Read_UINT32(input_stream, fs_information_class);

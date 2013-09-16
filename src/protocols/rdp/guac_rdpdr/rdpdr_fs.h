@@ -258,5 +258,11 @@ int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* a
  */
 const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id);
 
+/**
+ * Returns the file having the given ID, or NULL if no such file exists.
+ */
+guac_rdpdr_fs_file* guac_rdpdr_fs_get_file(guac_rdpdr_device* device,
+        int file_id);
+
 #endif
 

@@ -63,8 +63,7 @@ void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
         const char* entry_name, int file_id, int completion_id) {
 
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_rdpdr_fs_file* file = &(data->files[file_id]);
+    guac_rdpdr_fs_file* file;
 
     wStream* output_stream = Stream_New(NULL, 256);
     int length = guac_utf8_strlen(entry_name);
@@ -72,6 +71,11 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
 
     unsigned char utf16_entry_name[256];
     guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, (char*) utf16_entry_name, length);
+
+    /* Get file */
+    file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL)
+        return;
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);

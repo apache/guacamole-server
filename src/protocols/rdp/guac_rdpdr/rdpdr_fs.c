@@ -422,3 +422,16 @@ int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* a
 
 }
 
+guac_rdpdr_fs_file* guac_rdpdr_fs_get_file(guac_rdpdr_device* device,
+        int file_id) {
+
+    /* Validate ID */
+    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
+    if (file_id < 0 || file_id >= GUAC_RDPDR_FS_MAX_FILES)
+        return NULL;
+
+    /* Return file at given ID */
+    return &(data->files[file_id]);
+
+}
+

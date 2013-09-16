@@ -56,8 +56,12 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
         int file_id, int completion_id) {
 
     wStream* output_stream = Stream_New(NULL, 60);
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_rdpdr_fs_file* file = &(data->files[file_id]);
+    guac_rdpdr_fs_file* file;
+
+    /* Get file */
+    file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL)
+        return;
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -85,10 +89,14 @@ void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStrea
         int file_id, int completion_id) {
 
     wStream* output_stream = Stream_New(NULL, 60);
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_rdpdr_fs_file* file = &(data->files[file_id]);
-
+    guac_rdpdr_fs_file* file;
     BOOL is_directory = FALSE;
+
+    /* Get file */
+    file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL)
+        return;
+
     if (file->attributes & FILE_ATTRIBUTE_DIRECTORY)
         is_directory = TRUE;
 
