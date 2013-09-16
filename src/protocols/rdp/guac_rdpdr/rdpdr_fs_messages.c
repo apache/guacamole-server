@@ -458,7 +458,6 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
     Stream_Write_UINT8(output_stream, 0);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
-    guac_client_log_info(device->rdpdr->client, "Sent STATUS_NO_MORE_FILES");
 
 }
 
