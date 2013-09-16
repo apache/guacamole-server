@@ -127,8 +127,70 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
 void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client, "read: %i", file_id);
+
+    UINT32 length;
+    UINT64 offset;
+    wStream* output_stream;
+    guac_rdpdr_fs_file* file;
+
+    /* Get file */
+    file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL)
+        return;
+
+    /* Read packet */
+    Stream_Read_UINT32(input_stream, length);
+    Stream_Read_UINT64(input_stream, offset);
+
+    output_stream = Stream_New(NULL, 21);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+
+    /* If file is a directory, fail */
+    if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
+        guac_client_log_info(device->rdpdr->client,
+                "Attempt to read directory as a file");
+        Stream_Write_UINT32(output_stream, STATUS_FILE_IS_A_DIRECTORY);
+        Stream_Write_UINT32(output_stream, 0); /* Length */
+    }
+
+    /* Otherwise, perform read */
+    else {
+
+        char buffer[4096];
+        int bytes_read;
+
+        /* Read no more than size of buffer */
+        if (length > sizeof(buffer))
+            length = sizeof(buffer);
+
+        /* Attempt read */
+        lseek(file->fd, offset, SEEK_SET);
+        bytes_read = read(file->fd, buffer, length);
+
+        /* If error, return invalid parameter */
+        if (bytes_read < 0) {
+            Stream_Write_UINT32(output_stream, STATUS_INVALID_PARAMETER);
+            Stream_Write_UINT32(output_stream, 0); /* Length */
+        }
+
+        /* Otherwise, send bytes read */
+        else {
+            Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+            Stream_Write_UINT32(output_stream, bytes_read);  /* Length */
+            Stream_Write(output_stream, buffer, bytes_read); /* ReadData */
+        }
+
+    }
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
 }
 
 void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
