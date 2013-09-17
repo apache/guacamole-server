@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -109,8 +110,8 @@ static void __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
 
 }
 
-int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
-        int access, int create_disposition) {
+int guac_rdpdr_fs_open(guac_rdpdr_device* device,
+        const char* path, int access, int create_disposition) {
 
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
     char real_path[GUAC_RDPDR_FS_MAX_PATH];
@@ -205,6 +206,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     file = &(data->files[file_id]);
     file->fd  = fd;
     file->dir = NULL;
+    file->dir_pattern[0] = '\0';
     file->absolute_path = strdup(normalized_path);
 
     /* Attempt to pull file information */
@@ -239,7 +241,6 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         file->attributes = FILE_ATTRIBUTE_NORMAL;
 
     }
-
 
     data->open_files++;
 
@@ -427,5 +428,9 @@ guac_rdpdr_fs_file* guac_rdpdr_fs_get_file(guac_rdpdr_device* device,
     /* Return file at given ID */
     return &(data->files[file_id]);
 
+}
+
+int guac_rdpdr_fs_matches(const char* filename, const char* pattern) {
+    return fnmatch(pattern, filename, FNM_NOESCAPE) != 0;
 }
 

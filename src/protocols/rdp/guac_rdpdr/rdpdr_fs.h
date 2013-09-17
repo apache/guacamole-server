@@ -169,6 +169,11 @@ typedef struct guac_rdpdr_fs_file {
     struct dirent __dirent;
 
     /**
+     * The pattern the check directory contents against, if any.
+     */
+    char dir_pattern[GUAC_RDPDR_FS_MAX_PATH];
+
+    /**
      * Bitwise OR of all associated Windows file attributes.
      */
     int attributes;
@@ -263,6 +268,11 @@ const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id);
  */
 guac_rdpdr_fs_file* guac_rdpdr_fs_get_file(guac_rdpdr_device* device,
         int file_id);
+
+/**
+ * Returns whether the given filename matches the given pattern.
+ */
+int guac_rdpdr_fs_matches(const char* filename, const char* pattern);
 
 #endif
 

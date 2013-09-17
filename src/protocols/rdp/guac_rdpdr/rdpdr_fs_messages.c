@@ -366,37 +366,29 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
     /* If this is the first query, the path is included after padding */
     if (initial_query) {
 
-        char path[GUAC_RDPDR_FS_MAX_PATH];
-
         Stream_Seek(input_stream, 23);       /* Padding */
 
         /* FIXME: Validate path length */
 
         /* Convert path to UTF-8 */
         guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream),
-                path, path_length/2 - 1);
-
-        /* STUB: path */
-        guac_client_log_info(device->rdpdr->client,
-                "%s: STUB: Unused variable: path (%s)", __func__,
-                path);
+                file->dir_pattern, path_length/2 - 1);
 
     }
 
-    /* If entry exists, call appriate handler to send data */
-    entry_name = guac_rdpdr_fs_read_dir(device, file_id);
-    if (entry_name != NULL) {
-
-        int entry_file_id;
+    /* Find first matching entry in directory */
+    while ((entry_name = guac_rdpdr_fs_read_dir(device, file_id)) != NULL) {
 
         /* Convert to absolute path */
         char entry_path[GUAC_RDPDR_FS_MAX_PATH];
-        if (guac_rdpdr_fs_convert_path(file->absolute_path, entry_name, entry_path))
-            guac_client_log_info(device->rdpdr->client,
-                    "Conversion failed: parent=\"%s\", name=\"%s\"",
-                    file->absolute_path, entry_name); /* FIXME: Return no-more-files */
+        if (guac_rdpdr_fs_convert_path(file->absolute_path,
+                    entry_name, entry_path) == 0) {
 
-        else {
+            int entry_file_id;
+
+            /* Pattern defined and match fails, continue with next file */
+            if (guac_rdpdr_fs_matches(entry_path, file->dir_pattern))
+                continue;
 
             /* Open directory entry */
             entry_file_id = guac_rdpdr_fs_open(device, entry_path,
