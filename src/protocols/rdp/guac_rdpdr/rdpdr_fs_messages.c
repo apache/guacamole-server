@@ -42,6 +42,7 @@
 #endif
 
 #include <guacamole/pool.h>
+#include <errno.h>
 
 #include "rdpdr_fs.h"
 #include "rdpdr_fs_messages.h"
@@ -184,6 +185,8 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
 
         /* If error, return invalid parameter */
         if (bytes_read < 0) {
+            guac_client_log_error(device->rdpdr->client,
+                    "Unable to read from file: %s", strerror(errno));
             Stream_Write_UINT32(output_stream, STATUS_INVALID_PARAMETER);
             Stream_Write_UINT32(output_stream, 0); /* Length */
         }
@@ -249,7 +252,10 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
 
         /* If error, return invalid parameter */
         if (bytes_written < 0) {
-            Stream_Write_UINT32(output_stream, STATUS_INVALID_PARAMETER);
+            guac_client_log_error(device->rdpdr->client,
+                    "Unable to write to file %i: %s", file->fd,
+                    strerror(errno));
+            Stream_Write_UINT32(output_stream, STATUS_ACCESS_DENIED);
             Stream_Write_UINT32(output_stream, 0); /* Length */
         }
 

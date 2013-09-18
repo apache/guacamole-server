@@ -140,9 +140,10 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device,
     /* Translate access into mode */
     if (access & ACCESS_GENERIC_ALL)
         mode = O_RDWR;
-    else if (access & (ACCESS_GENERIC_WRITE | ACCESS_GENERIC_READ))
+    else if ((access & (ACCESS_GENERIC_WRITE | ACCESS_FILE_WRITE_DATA))
+          && (access & (ACCESS_GENERIC_READ  | ACCESS_FILE_READ_DATA)))
         mode = O_RDWR;
-    else if (access & ACCESS_GENERIC_WRITE)
+    else if (access & (ACCESS_GENERIC_WRITE | ACCESS_FILE_WRITE_DATA))
         mode = O_WRONLY;
     else
         mode = O_RDONLY;
