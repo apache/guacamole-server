@@ -77,6 +77,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "audio-servername",
 #endif
 
+    "reverse-connect",
+    "listen-timeout",
     NULL
 };
 
@@ -102,6 +104,8 @@ enum VNC_ARGS_IDX {
     IDX_AUDIO_SERVERNAME,
 #endif
 
+    IDX_REVERSE_CONNECT,
+    IDX_LISTEN_TIMEOUT,
     VNC_ARGS_COUNT
 };
 
@@ -164,6 +168,20 @@ static rfbClient* __guac_vnc_get_client(guac_client* client) {
         rfb_client->destPort = guac_client_data->dest_port;
     }
 #endif
+
+    /* If reverse connection enabled, start listening */
+    if (guac_client_data->reverse_connect) {
+
+        guac_client_log_info(client, "Listening for connections on port %i",
+                guac_client_data->port);
+
+        /* Listen for connection from server */
+        rfb_client->listenPort = guac_client_data->port;
+        if (listenForIncomingConnectionsNoFork(rfb_client,
+                    guac_client_data->listen_timeout*1000) <= 0)
+            return NULL;
+
+    }
 
     /* Connect */
     if (rfbInitClient(rfb_client, NULL, NULL))
@@ -238,6 +256,16 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         retries_remaining = atoi(argv[IDX_AUTORETRY]);
     else
         retries_remaining = 0; 
+
+    /* Set reverse-connection flag */
+    guac_client_data->reverse_connect =
+        (strcmp(argv[IDX_REVERSE_CONNECT], "true") == 0);
+
+    /* Parse listen timeout */
+    if (argv[IDX_LISTEN_TIMEOUT][0] != '\0')
+        guac_client_data->listen_timeout = atoi(argv[IDX_LISTEN_TIMEOUT]);
+    else
+        guac_client_data->listen_timeout = 5000; 
 
     /* Attempt connection */
     rfb_client = __guac_vnc_get_client(client);
