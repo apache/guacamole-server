@@ -42,7 +42,6 @@ AM_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@
 lib_LTLIBRARIES = libguac-client-rdp.la
 
 libguac_client_rdp_la_SOURCES = \
-	audio.c                     \
 	client.c                    \
 	default_pointer.c           \
 	guac_handlers.c             \
@@ -57,13 +56,11 @@ libguac_client_rdp_la_SOURCES = \
 	rdp_keymap_fr_fr.c          \
 	rdp_keymap_en_us.c          \
 	rdp_pointer.c               \
-	rdp_settings.c              \
-	wav_encoder.c
+	rdp_settings.c
 
 guacsnd_sources =                 \
 	guac_rdpsnd/rdpsnd_messages.c \
-	guac_rdpsnd/rdpsnd_service.c  \
-	audio.c
+	guac_rdpsnd/rdpsnd_service.c
 
 guacdr_sources =                \
 	guac_rdpdr/rdpdr_messages.c \
@@ -77,7 +74,6 @@ noinst_HEADERS =                     \
 	guac_rdpdr/rdpdr_service.h       \
 	guac_rdpsnd/rdpsnd_messages.h    \
 	guac_rdpsnd/rdpsnd_service.h     \
-	audio.h                          \
 	client.h                         \
 	config.h                         \
 	default_pointer.h                \
@@ -88,8 +84,7 @@ noinst_HEADERS =                     \
 	rdp_glyph.h                      \
 	rdp_keymap.h                     \
 	rdp_pointer.h                    \
-	rdp_settings.h                   \
-	wav_encoder.h
+	rdp_settings.h
 
 # Add compatibility layer for WinPR if not available
 if ! ENABLE_WINPR
@@ -98,14 +93,8 @@ if ! ENABLE_WINPR
     guacdr_sources  += compat/winpr-stream.c
 endif
 
-# Compile OGG support if available
-if ENABLE_OGG
-    libguac_client_rdp_la_SOURCES += ogg_encoder.c
-    noinst_HEADERS += ogg_encoder.h
-endif
-
-libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@ @CAIRO_LIBS@
-guacsnd_ldflags = -module -avoid-version -shared @RDP_LIBS@ @VORBIS_LIBS@ @PTHREAD_LIBS@
+libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @PTHREAD_LIBS@ @CAIRO_LIBS@
+guacsnd_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 guacdr_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 
 libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@

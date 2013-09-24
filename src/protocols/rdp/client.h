@@ -46,8 +46,8 @@
 #include <freerdp/codec/color.h>
 
 #include <guacamole/client.h>
+#include <guacamole/audio.h>
 
-#include "audio.h"
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
 
@@ -166,7 +166,7 @@ typedef struct rdp_guac_client_data {
     /**
      * Audio output, if any.
      */
-    audio_stream* audio;
+    guac_audio_stream* audio;
 
     /**
      * Lock which is locked and unlocked for each RDP message.

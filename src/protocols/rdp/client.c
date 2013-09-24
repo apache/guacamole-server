@@ -75,14 +75,8 @@
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
+#include <guacamole/audio.h>
 #include <guacamole/error.h>
-
-#include "audio.h"
-#include "wav_encoder.h"
-
-#ifdef ENABLE_OGG
-#include "ogg_encoder.h"
-#endif
 
 #include "client.h"
 #include "guac_handlers.h"
@@ -151,7 +145,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     rdpPointer* pointer;
     rdpPrimaryUpdate* primary;
     CLRCONV* clrconv;
-    int i;
 
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) client->data;
@@ -169,30 +162,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* If audio enabled, choose an encoder */
     if (guac_client_data->settings.audio_enabled) {
 
-        /* Choose an encoding */
-        for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
-
-            const char* mimetype = client->info.audio_mimetypes[i];
-
-#ifdef ENABLE_OGG
-            /* If Ogg is supported, done. */
-            if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
-                guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
-                guac_client_data->audio = audio_stream_alloc(client,
-                        ogg_encoder);
-                break;
-            }
-#endif
-
-            /* If wav is supported, done. */
-            if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
-                guac_client_log_info(client, "Loading wav encoder.");
-                guac_client_data->audio = audio_stream_alloc(client,
-                        wav_encoder);
-                break;
-            }
-
-        }
+        guac_client_data->audio = guac_audio_stream_alloc(client, NULL);
 
         /* If an encoding is available, load the sound plugin */
         if (guac_client_data->audio != NULL) {

@@ -39,8 +39,7 @@
 #define _GUAC_STREAM_H
 
 /**
- * Provides functions and structures required for allocating and using nested
- * streams.
+ * Provides functions and structures required for allocating and using streams.
  *
  * @file stream.h
  */
@@ -48,19 +47,14 @@
 typedef struct guac_stream guac_stream;
 
 /**
- * Represents a single nested stream within the Guacamole protocol.
+ * Represents a single stream within the Guacamole protocol.
  */
 struct guac_stream {
 
     /**
-     * The index of this layer.
+     * The index of this stream.
      */
     int index;
-
-    /**
-     * A guac_socket which writes to this stream.
-     */
-    guac_socket* socket;
 
 };
 

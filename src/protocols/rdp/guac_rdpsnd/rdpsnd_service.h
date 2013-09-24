@@ -38,6 +38,8 @@
 #ifndef __GUAC_RDPSND_SERVICE_H
 #define __GUAC_RDPSND_SERVICE_H
 
+#include <guacamole/audio.h>
+
 /**
  * The maximum number of PCM formats to accept during the initial RDPSND
  * handshake with the RDP server.
@@ -87,7 +89,7 @@ typedef struct guac_rdpsndPlugin {
     /**
      * The current audio stream.
      */
-    audio_stream* audio;
+    guac_audio_stream* audio;
 
     /**
      * The block number of the last SNDC_WAVE (WaveInfo) PDU received.

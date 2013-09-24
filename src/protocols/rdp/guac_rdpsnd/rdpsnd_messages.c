@@ -49,9 +49,9 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
+#include <guacamole/audio.h>
 #include <guacamole/client.h>
 
-#include "audio.h"
 #include "rdpsnd_service.h"
 #include "rdpsnd_messages.h"
 #include "client.h"
@@ -59,7 +59,7 @@
 /* MESSAGE HANDLERS */
 
 void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, wStream* input_stream, 
+        guac_audio_stream* audio, wStream* input_stream, 
         guac_rdpsnd_pdu_header* header) {
 
     int server_format_count;
@@ -209,7 +209,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
 
 /* server is getting a feel of the round trip time */
 void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, wStream* input_stream,
+        guac_audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
     int data_size;
@@ -237,7 +237,7 @@ void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, wStream* input_stream,
+        guac_audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
     unsigned char buffer[4];
@@ -261,18 +261,18 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
     rdpsnd->next_pdu_is_wave = TRUE;
 
     /* Init stream with requested format */
-    audio_stream_begin(audio,
+    guac_audio_stream_begin(audio,
             rdpsnd->formats[format].rate,
             rdpsnd->formats[format].channels,
             rdpsnd->formats[format].bps);
 
     /* Write initial 4 bytes of data */
-    audio_stream_write_pcm(audio, buffer, 4);
+    guac_audio_stream_write_pcm(audio, buffer, 4);
 
 }
 
 void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, wStream* input_stream,
+        guac_audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
     rdpSvcPlugin* plugin = (rdpSvcPlugin*)rdpsnd;
@@ -287,8 +287,8 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
     unsigned char* buffer = Stream_Buffer(input_stream) + 4;
 
     /* Write rest of audio packet */
-    audio_stream_write_pcm(audio, buffer, rdpsnd->incoming_wave_size);
-    audio_stream_end(audio);
+    guac_audio_stream_write_pcm(audio, buffer, rdpsnd->incoming_wave_size);
+    guac_audio_stream_end(audio);
 
     /* Write Wave Confirmation PDU */
     Stream_Write_UINT8(output_stream, SNDC_WAVECONFIRM);
@@ -309,7 +309,7 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
-        audio_stream* audio, wStream* input_stream,
+        guac_audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
     /* STUB: Do nothing for now */

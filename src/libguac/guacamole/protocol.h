@@ -42,6 +42,7 @@
 
 #include "layer.h"
 #include "socket.h"
+#include "stream.h"
 #include "timestamp.h"
 
 /**
@@ -280,78 +281,13 @@ int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param channel The index of the audio channel the sound should play on.
+ * @param stream The stream to use.
  * @param mimetype The mimetype of the data being sent.
  * @param duration The duration of the sound being sent, in milliseconds.
- * @param data The audio data to be sent.
- * @param size The number of bytes of audio data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_audio(guac_socket* socket, int channel,
-        const char* mimetype, double duration, void* data, int size);
-
-/**
- * Begins a audio instruction over the given guac_socket connection. Only the
- * initial non-data part of the instruction and the length of the data part
- * of the instruction are sent. The actual contents of the data must be
- * sent with guac_protocol_send_audio_data(), and the instruction must be
- * completed with guac_protocol_send_audio_end().
- *
- * Note that the size of the audio to be sent MUST be known ahead of time,
- * even though the data of the audio may be sent in chunks.
- *
- * No further instruction data may be sent along the givven guac_socket
- * except via guac_protocol_send_audio_data() until the audio instruction
- * is completed with guac_protocol_send_audio_end().
- *
- * Note that if you send this instruction over a threadsafe socket, you
- * MUST also call guac_protocol_send_audio_end() or the socket will be
- * left in an unsafe state.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param channel The index of the audio channel the sound should play on.
- * @param mimetype The mimetype of the data being sent.
- * @param duration The duration of the audio being sent, in milliseconds.
- * @param size The number of bytes of audio data to send.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_audio_header(guac_socket* socket,
-        int channel, const char* mimetype, double duration, int size);
-
-/**
- * Writes a block of audio data to the currently in-progress audio instruction
- * which was started with guac_protocol_send_audio_header(). Exactly the
- * number of requested bytes are written unless an error occurs. This function
- * may be called multiple times per audio instruction for each chunk of audio
- * data being written, allowing the potentially huge audio instruction to be
- * split across multiple writes.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param data The audio data to write.
- * @param count The number of bytes within the given buffer of audio data
- *              that must be written.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_audio_data(guac_socket* socket, void* data, int count);
-
-/**
- * Completes the audio instruction which was started with
- * guac_protocol_send_audio_header(), and whose data has been written with
- * guac_protocol_send_audio_data().
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_audio_end(guac_socket* socket);
+int guac_protocol_send_audio(guac_socket* socket, const guac_stream* stream,
+        const char* mimetype, double duration);
 
 /**
  * Sends a file instruction over the given guac_socket connection.
@@ -360,13 +296,13 @@ int guac_protocol_send_audio_end(guac_socket* socket);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param index The index of the blob that will contain the contents
- *              of this file.
+ * @param stream The stream to use.
  * @param mimetype The mimetype of the data being sent.
  * @param name A name describing the file being sent.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_file(guac_socket* socket, int index, const char* mimetype, const char* name);
+int guac_protocol_send_file(guac_socket* socket, const guac_stream* stream,
+        const char* mimetype, const char* name);
 
 /**
  * Writes a block of data to the currently in-progress blob which was already
@@ -376,13 +312,14 @@ int guac_protocol_send_file(guac_socket* socket, int index, const char* mimetype
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param index The index of the blob to append data to.
+ * @param stream The stream to use.
  * @param data The file data to write.
  * @param count The number of bytes within the given buffer of file data
  *              that must be written.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_blob(guac_socket* socket, int index, void* data, int count);
+int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
+        void* data, int count);
 
 /**
  * Sends an end instruction over the given guac_socket connection.
@@ -391,10 +328,10 @@ int guac_protocol_send_blob(guac_socket* socket, int index, void* data, int coun
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param index The index of the blob which is now complete.
+ * @param stream The stream to use.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_end(guac_socket* socket, int index);
+int guac_protocol_send_end(guac_socket* socket, const guac_stream* stream);
 
 /**
  * Sends a video instruction over the given guac_socket connection.
@@ -403,78 +340,14 @@ int guac_protocol_send_end(guac_socket* socket, int index);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
+ * @param stream The stream to use.
  * @param layer The destination layer.
  * @param mimetype The mimetype of the data being sent.
  * @param duration The duration of the video being sent, in milliseconds.
- * @param data The video data to be sent.
- * @param size The number of bytes of video data to send.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_video(guac_socket* socket, const guac_layer* layer,
-        const char* mimetype, double duration, void* data, int size);
-
-/**
- * Begins a video instruction over the given guac_socket connection. Only the
- * initial non-data part of the instruction and the length of the data part
- * of the instruction are sent. The actual contents of the data must be
- * sent with guac_protocol_send_video_data(), and the instruction must be
- * completed with guac_protocol_send_video_end().
- *
- * Note that the size of the video to be sent MUST be known ahead of time,
- * even though the data of the video may be sent in chunks.
- *
- * No further instruction data may be sent along the givven guac_socket
- * except via guac_protocol_send_video_data() until the video instruction
- * is completed with guac_protocol_send_video_end().
- *
- * Note that if you send this instruction over a threadsafe socket, you
- * MUST also call guac_protocol_send_video_end() or the socket will be
- * left in an unsafe state.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param layer The destination layer.
- * @param mimetype The mimetype of the data being sent.
- * @param duration The duration of the video being sent, in milliseconds.
- * @param size The number of bytes of video data to send.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_video_header(guac_socket* socket,
-        const guac_layer* layer, const char* mimetype, double duration, int size);
-
-/**
- * Writes a block of video data to the currently in-progress video instruction
- * which was started with guac_protocol_send_video_header(). Exactly the
- * number of requested bytes are written unless an error occurs. This function
- * may be called multiple times per video instruction for each chunk of video
- * data being written, allowing the potentially huge video instruction to be
- * split across multiple writes.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param data The video data to write.
- * @param count The number of bytes within the given buffer of video data
- *              that must be written.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_video_data(guac_socket* socket, void* data, int count);
-
-/**
- * Completes the video instruction which was started with
- * guac_protocol_send_video_header(), and whose data has been written with
- * guac_protocol_send_video_data().
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_video_end(guac_socket* socket);
+int guac_protocol_send_video(guac_socket* socket, const guac_stream* stream,
+        const guac_layer* layer, const char* mimetype, double duration);
 
 /* DRAWING INSTRUCTIONS */
 

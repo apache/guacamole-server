@@ -101,12 +101,6 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
     guac_stream* allocd_stream = malloc(sizeof(guac_stream));
     allocd_stream->index = guac_pool_next_int(client->__stream_pool);
 
-    /* Nest socket */
-    allocd_stream->socket = guac_socket_nest(
-        client->socket,
-        allocd_stream->index
-    );
-
     return allocd_stream;
 
 }
@@ -116,9 +110,6 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream) {
     /* Release index to pool */
     guac_pool_free_int(client->__stream_pool, stream->index - 1);
     
-    /* Release socket */
-    guac_socket_free(stream->socket);
-
     /* Free stream */
     free(stream);
 

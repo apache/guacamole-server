@@ -51,8 +51,8 @@
 #endif
 
 #include <guacamole/client.h>
+#include <guacamole/audio.h>
 
-#include "audio.h"
 #include "rdpsnd_service.h"
 #include "rdpsnd_messages.h"
 
@@ -91,10 +91,10 @@ void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin) {
     guac_rdpsndPlugin* rdpsnd = (guac_rdpsndPlugin*) plugin;
 
     /* Get audio stream from plugin parameters */
-    audio_stream* audio = rdpsnd->audio =
-        (audio_stream*) plugin->channel_entry_points.pExtendedData;
+    guac_audio_stream* audio = rdpsnd->audio =
+        (guac_audio_stream*) plugin->channel_entry_points.pExtendedData;
 
-    /* NULL out pExtendedData so we don't lose our audio_stream due to an
+    /* NULL out pExtendedData so we don't lose our guac_audio_stream due to an
      * automatic free() within libfreerdp */
     plugin->channel_entry_points.pExtendedData = NULL;
 
@@ -123,7 +123,7 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
     guac_rdpsnd_pdu_header header;
 
     /* Get audio stream from plugin */
-    audio_stream* audio = rdpsnd->audio;
+    guac_audio_stream* audio = rdpsnd->audio;
 
     /* Read RDPSND PDU header */
     Stream_Read_UINT8(input_stream, header.message_type);
