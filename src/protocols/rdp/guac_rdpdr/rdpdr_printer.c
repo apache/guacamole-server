@@ -44,7 +44,7 @@ static void* guac_rdpdr_print_filter_output_thread(void* data) {
     /* Write all output as blobs */
     while ((length = read(printer_data->printer_output, buffer, sizeof(buffer))) > 0)
         guac_protocol_send_blob(device->rdpdr->client->socket,
-                GUAC_RDPDR_PRINTER_BLOB, buffer, length);
+                printer_data->stream, buffer, length);
 
     /* Log any error */
     if (length < 0)
@@ -219,7 +219,7 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
         /* Begin file */
         guac_client_log_info(device->rdpdr->client, "Print job created");
         guac_protocol_send_file(device->rdpdr->client->socket,
-                GUAC_RDPDR_PRINTER_BLOB, "application/pdf", filename);
+                printer_data->stream, "application/pdf", filename);
 
         /* Start print process */
         if (guac_rdpdr_create_print_process(device) != 0) {
@@ -274,7 +274,7 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
 
     /* Close file */
     guac_client_log_info(device->rdpdr->client, "Print job closed");
-    guac_protocol_send_end(device->rdpdr->client->socket, GUAC_RDPDR_PRINTER_BLOB);
+    guac_protocol_send_end(device->rdpdr->client->socket, printer_data->stream);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -346,6 +346,8 @@ static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* devic
 }
 
 static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
+    guac_rdpdr_printer_data* printer_data = (guac_rdpdr_printer_data*) device->data;
+    guac_client_free_stream(device->rdpdr->client, printer_data->stream);
     free(device->data);
 }
 
@@ -355,6 +357,7 @@ void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
 
     /* Get new device */
     guac_rdpdr_device* device = &(rdpdr->devices[id]);
+    guac_rdpdr_printer_data* printer_data;
 
     /* Init device */
     device->rdpdr       = rdpdr;
@@ -367,7 +370,9 @@ void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
     device->free_handler      = guac_rdpdr_device_printer_free_handler;
 
     /* Init data */
-    device->data = malloc(sizeof(guac_rdpdr_printer_data));
+    printer_data = malloc(sizeof(guac_rdpdr_printer_data));
+    printer_data->stream = guac_client_alloc_stream(rdpdr->client);
+    device->data = printer_data;
 
 }
 

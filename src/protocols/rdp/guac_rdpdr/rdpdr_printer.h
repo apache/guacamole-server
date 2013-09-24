@@ -47,14 +47,14 @@
 #include <freerdp/utils/svc_plugin.h>
 
 /**
- * The index of the blob to use when sending printed files.
- */
-#define GUAC_RDPDR_PRINTER_BLOB 0
-
-/**
  * Data specific to an instance of the printer device.
  */
 typedef struct guac_rdpdr_printer_data {
+
+    /**
+     * Stream for receiving printed files.
+     */
+    guac_stream* stream;
 
     /**
      * File descriptor that should be written to when sending documents to the
