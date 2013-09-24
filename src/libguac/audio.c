@@ -136,7 +136,7 @@ void guac_audio_stream_end(guac_audio_stream* audio) {
 
     /* Send audio */
     guac_protocol_send_audio(audio->client->socket, audio->stream,
-            audio->encoder->mimetype, duration);
+            audio->stream->index, audio->encoder->mimetype, duration);
 
     guac_protocol_send_blob(audio->client->socket, audio->stream,
             audio->encoded_data, audio->encoded_data_used);

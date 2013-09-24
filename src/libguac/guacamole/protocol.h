@@ -282,12 +282,13 @@ int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
  *
  * @param socket The guac_socket connection to use.
  * @param stream The stream to use.
+ * @param channel The index of the audio channel to use.
  * @param mimetype The mimetype of the data being sent.
  * @param duration The duration of the sound being sent, in milliseconds.
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_audio(guac_socket* socket, const guac_stream* stream,
-        const char* mimetype, double duration);
+        int channel, const char* mimetype, double duration);
 
 /**
  * Sends a file instruction over the given guac_socket connection.

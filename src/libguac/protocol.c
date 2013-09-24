@@ -417,7 +417,7 @@ int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
 }
 
 int guac_protocol_send_audio(guac_socket* socket, const guac_stream* stream,
-        const char* mimetype, double duration) {
+        int channel, const char* mimetype, double duration) {
 
     int ret_val;
 
@@ -425,6 +425,8 @@ int guac_protocol_send_audio(guac_socket* socket, const guac_stream* stream,
     ret_val = 
            guac_socket_write_string(socket, "5.audio,")
         || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, channel)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, mimetype)
         || guac_socket_write_string(socket, ",")
