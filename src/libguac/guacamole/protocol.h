@@ -800,5 +800,14 @@ int guac_protocol_send_clipboard(guac_socket* socket, const char* data);
  */
 int guac_protocol_send_name(guac_socket* socket, const char* name);
 
+/**
+ * Decodes the given base64-encoded string in-place. The base64 string must
+ * be NULL-terminated.
+ *
+ * @param base64 The base64-encoded string to decode.
+ * @return The number of bytes resulting from the decode operation.
+ */
+int guac_protocol_decode_base64(char* base64);
+
 #endif
 

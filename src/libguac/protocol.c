@@ -1248,3 +1248,62 @@ int guac_protocol_send_video(guac_socket* socket, const guac_stream* stream,
 
 }
 
+/**
+ * Returns the value of a single base64 character.
+ */
+static int __guac_base64_value(char c) {
+
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A';
+
+    if (c >= 'a' && c <= 'z')
+        return c - 'a' + 26;
+
+    if (c >= '0' && c <= '9')
+        return c - '0' + 52;
+
+    if (c == '+')
+        return 62;
+
+    if (c == '/')
+        return 63;
+
+    return 0;
+
+}
+
+int guac_protocol_decode_base64(char* base64) {
+
+    char* input = base64;
+    char* output = base64;
+
+    int length = 0;
+    int bits_read = 0;
+    int value = 0;
+    char current;
+
+    /* For all characters in string */
+    while ((current = *(input++)) != 0) {
+
+        /* If we've reached padding, then we're done */
+        if (current == '=')
+            break;
+
+        /* Otherwise, shift on the latest 6 bits */
+        value = (value << 6) | __guac_base64_value(current);
+        bits_read += 6;
+
+        /* If we have at least one byte, write out the latest whole byte */
+        if (bits_read >= 8) {
+            *(output++) = (value >> (bits_read % 8)) & 0xFF;
+            bits_read -= 8;
+            length++;
+        }
+
+    }
+
+    /* Return number of bytes written */
+    return length;
+
+}
+
