@@ -163,6 +163,8 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
 
     if (client->blob_handler) {
 
+        int length;
+
         /* Validate stream index */
         int stream_index = atoi(instruction->argv[0]);
         if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
@@ -170,13 +172,14 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
             return 0;
         }
 
-        /* TODO: Actually decode blob */
+        /* Decode base64 */
+        length = guac_protocol_decode_base64(instruction->argv[1]);
 
         return client->blob_handler(
             client,
             &(client->__streams[stream_index]),
-            "TODO",
-            4 
+            instruction->argv[1],
+            length
         );
 
     }
