@@ -51,6 +51,9 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"clipboard",  __guac_handle_clipboard},
    {"disconnect", __guac_handle_disconnect},
    {"size",       __guac_handle_size},
+   {"file",       __guac_handle_file},
+   {"blob",       __guac_handle_blob},
+   {"end",        __guac_handle_end},
    {NULL,         NULL}
 };
 
@@ -123,6 +126,24 @@ int __guac_handle_size(guac_client* client, guac_instruction* instruction) {
             atoi(instruction->argv[0]), /* width */
             atoi(instruction->argv[1])  /* height */
         );
+    return 0;
+}
+
+int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
+    /* STUB */
+    guac_client_log_info(client, "STUB: file");
+    return 0;
+}
+
+int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
+    /* STUB */
+    guac_client_log_info(client, "STUB: blob");
+    return 0;
+}
+
+int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
+    /* STUB */
+    guac_client_log_info(client, "STUB: end");
     return 0;
 }
 
