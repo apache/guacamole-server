@@ -35,23 +35,45 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _GUAC_TEST_PROTOCOL_SUITE_H
-#define _GUAC_TEST_PROTOCOL_SUITE_H
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <CUnit/Basic.h>
 
-/* Unicode (UTF-8) strings */
+#include <guacamole/protocol.h>
 
-#define UTF8_1 "\xe7\x8a\xac"            /* One character    */
-#define UTF8_2 UTF8_1 "\xf0\x90\xac\x80" /* Two characters   */
-#define UTF8_3 UTF8_2 "z"                /* Three characters */
-#define UTF8_4 UTF8_3 "\xc3\xa1"         /* Four characters  */
-#define UTF8_8 UTF8_4 UTF8_4             /* Eight characters */
+#include "suite.h"
 
-int register_protocol_suite();
 
-void test_base64_decode();
-void test_instruction_read();
-void test_instruction_write();
-void test_nest_write();
+void test_base64_decode() {
 
-#endif
+    /* Test strings */
+    char test_HELLO[]     = "SEVMTE8=";
+    char test_AVOCADO[]   = "QVZPQ0FETw==";
+    char test_GUACAMOLE[] = "R1VBQ0FNT0xF";
+
+    /* Invalid strings */
+    char invalid1[] = "====";
+    char invalid2[] = "";
+
+    /* Test one character of padding */
+    CU_ASSERT_EQUAL(guac_protocol_decode_base64(test_HELLO), 5);
+    CU_ASSERT_STRING_EQUAL(test_HELLO, "HELLO");
+
+    /* Test two characters of padding */
+    CU_ASSERT_EQUAL(guac_protocol_decode_base64(test_AVOCADO), 7);
+    CU_ASSERT_STRING_EQUAL(test_AVOCADO, "AVOCADO");
+
+    /* Test three characters of padding */
+    CU_ASSERT_EQUAL(guac_protocol_decode_base64(test_GUACAMOLE), 9);
+    CU_ASSERT_STRING_EQUAL(test_GUACAMOLE, "GUACAMOLE");
+
+    /* Verify invalid strings stop early as expected */
+    CU_ASSERT_EQUAL(guac_protocol_decode_base64(invalid1), 0);
+    CU_ASSERT_STRING_EQUAL(invalid1, "====");
+
+    CU_ASSERT_EQUAL(guac_protocol_decode_base64(invalid2), 0);
+    CU_ASSERT_STRING_EQUAL(invalid2, "");
+
+}
 

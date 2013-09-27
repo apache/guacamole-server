@@ -52,6 +52,7 @@ test_libguac_SOURCES =           \
 	client/buffer_pool.c         \
 	client/layer_pool.c          \
 	protocol/suite.c             \
+	protocol/base64_decode.c     \
 	protocol/instruction_read.c  \
 	protocol/instruction_write.c \
 	protocol/nest_write.c        \
