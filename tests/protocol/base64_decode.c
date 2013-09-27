@@ -58,22 +58,19 @@ void test_base64_decode() {
 
     /* Test one character of padding */
     CU_ASSERT_EQUAL(guac_protocol_decode_base64(test_HELLO), 5);
-    CU_ASSERT_STRING_EQUAL(test_HELLO, "HELLO");
+    CU_ASSERT_NSTRING_EQUAL(test_HELLO, "HELLO", 5);
 
     /* Test two characters of padding */
     CU_ASSERT_EQUAL(guac_protocol_decode_base64(test_AVOCADO), 7);
-    CU_ASSERT_STRING_EQUAL(test_AVOCADO, "AVOCADO");
+    CU_ASSERT_NSTRING_EQUAL(test_AVOCADO, "AVOCADO", 7);
 
     /* Test three characters of padding */
     CU_ASSERT_EQUAL(guac_protocol_decode_base64(test_GUACAMOLE), 9);
-    CU_ASSERT_STRING_EQUAL(test_GUACAMOLE, "GUACAMOLE");
+    CU_ASSERT_NSTRING_EQUAL(test_GUACAMOLE, "GUACAMOLE", 9);
 
     /* Verify invalid strings stop early as expected */
     CU_ASSERT_EQUAL(guac_protocol_decode_base64(invalid1), 0);
-    CU_ASSERT_STRING_EQUAL(invalid1, "====");
-
     CU_ASSERT_EQUAL(guac_protocol_decode_base64(invalid2), 0);
-    CU_ASSERT_STRING_EQUAL(invalid2, "");
 
 }
 
