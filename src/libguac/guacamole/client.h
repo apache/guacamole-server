@@ -54,6 +54,11 @@
  * @file client.h
  */
 
+/**
+ * The maximum number of inbound streams supported by any one guac_client.
+ */
+#define GUAC_CLIENT_MAX_STREAMS 64
+
 typedef struct guac_client guac_client;
 
 /**
@@ -82,6 +87,23 @@ typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
  */
 typedef int guac_client_size_handler(guac_client* client,
         int width, int height);
+
+/**
+ * Handler for Guacamole file transfer events.
+ */
+typedef int guac_client_file_handler(guac_client* client, guac_stream* stream,
+        char* mimetype, char* filename);
+
+/**
+ * Handler for Guacamole stream blob events.
+ */
+typedef int guac_client_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length);
+
+/**
+ * Handler for Guacamole stream end events.
+ */
+typedef int guac_client_end_handler(guac_client* client, guac_stream* stream);
 
 /**
  * Handler for Guacamole audio format events.
@@ -356,6 +378,62 @@ struct guac_client {
     guac_client_size_handler* size_handler;
 
     /**
+     * Handler for file events sent by the Guacamole web-client.
+     *
+     * The handler takes a guac_stream which contains the stream index and
+     * will persist through the duration of the transfer, the mimetype of
+     * the file being transferred, and the filename.
+     *
+     * Example:
+     * @code
+     *     int file_handler(guac_client* client, guac_stream* stream,
+     *             char* mimetype, char* filename);
+     *
+     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *         client->file_handler = file_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_file_handler* file_handler;
+
+    /**
+     * Handler for blob events sent by the Guacamole web-client.
+     *
+     * The handler takes a guac_stream which contains the stream index and
+     * will persist through the duration of the transfer, an arbitrary buffer
+     * containing the blob, and the length of the blob.
+     *
+     * Example:
+     * @code
+     *     int blob_handler(guac_client* client, guac_stream* stream,
+     *             void* data, int length);
+     *
+     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *         client->blob_handler = blob_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_blob_handler* blob_handler;
+
+    /**
+     * Handler for stream end events sent by the Guacamole web-client.
+     *
+     * The handler takes only a guac_stream which contains the stream index.
+     * This guac_stream will be disposed of immediately after this event is
+     * finished.
+     *
+     * Example:
+     * @code
+     *     int end_handler(guac_client* client, guac_stream* stream);
+     *
+     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *         client->end_handler = end_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_end_handler* end_handler;
+
+    /**
      * Handler for freeing data when the client is being unloaded.
      *
      * This handler will be called when the client needs to be unloaded
@@ -445,6 +523,11 @@ struct guac_client {
      * Pool of stream indices.
      */
     guac_pool* __stream_pool;
+
+    /**
+     * All available input streams (data coming from connected client).
+     */
+    guac_stream __streams[GUAC_CLIENT_MAX_STREAMS];
 
 };
 

@@ -130,20 +130,79 @@ int __guac_handle_size(guac_client* client, guac_instruction* instruction) {
 }
 
 int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
-    /* STUB */
-    guac_client_log_info(client, "STUB: file");
+
+    if (client->file_handler) {
+
+        /* Pull corresponding stream */
+        int stream_index = atoi(instruction->argv[0]);
+        guac_stream* stream;
+
+        /* Validate stream index */
+        if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
+            /* TODO: Return failing ack */
+            return 0;
+        }
+
+        /* Initialize stream */
+        stream = &(client->__streams[stream_index]);
+        stream->index = stream_index;
+
+        return client->file_handler(
+            client,
+            stream,
+            instruction->argv[1], /* mimetype */
+            instruction->argv[2]  /* filename */
+        );
+    }
+
+    /* TODO: Return failing ack */
     return 0;
 }
 
 int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
-    /* STUB */
-    guac_client_log_info(client, "STUB: blob");
+
+    if (client->blob_handler) {
+
+        /* Validate stream index */
+        int stream_index = atoi(instruction->argv[0]);
+        if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
+            /* TODO: Return failing ack */
+            return 0;
+        }
+
+        /* TODO: Actually decode blob */
+
+        return client->blob_handler(
+            client,
+            &(client->__streams[stream_index]),
+            "TODO",
+            4 
+        );
+
+    }
+
+    /* TODO: Return failing ack */
     return 0;
 }
 
 int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
-    /* STUB */
-    guac_client_log_info(client, "STUB: end");
+
+    if (client->end_handler) {
+
+        /* Pull corresponding stream */
+        int stream_index = atoi(instruction->argv[0]);
+
+        /* Validate stream index */
+        if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS)
+            return 0;
+
+        return client->end_handler(
+            client,
+            &(client->__streams[stream_index])
+        );
+
+    }
+
     return 0;
 }
 
