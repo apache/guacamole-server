@@ -56,6 +56,11 @@ struct guac_stream {
      */
     int index;
 
+    /**
+     * Arbitrary data associated with this stream.
+     */
+    void* data;
+
 };
 
 #endif

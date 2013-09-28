@@ -59,6 +59,11 @@
  */
 #define GUAC_CLIENT_MAX_STREAMS 64
 
+/**
+ * The index of a closed stream.
+ */
+#define GUAC_CLIENT_CLOSED_STREAM_INDEX -1
+
 typedef struct guac_client guac_client;
 
 /**

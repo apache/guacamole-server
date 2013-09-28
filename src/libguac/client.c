@@ -117,6 +117,8 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
 guac_client* guac_client_alloc() {
 
+    int i;
+
     /* Allocate new client */
     guac_client* client = malloc(sizeof(guac_client));
     if (client == NULL) {
@@ -139,6 +141,10 @@ guac_client* guac_client_alloc() {
 
     /* Allocate stream pool */
     client->__stream_pool = guac_pool_alloc(0);
+
+    /* Initialze streams */
+    for (i=0; i<GUAC_CLIENT_MAX_STREAMS; i++)
+        client->__streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
 
     return client;
 

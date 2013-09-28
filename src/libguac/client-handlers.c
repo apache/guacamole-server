@@ -149,6 +149,7 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
     /* Initialize stream */
     stream = &(client->__streams[stream_index]);
     stream->index = stream_index;
+    stream->data = NULL;
 
     /* If supported, call handler */
     if (client->file_handler)
@@ -167,6 +168,8 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
 
 int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
 
+    guac_stream* stream;
+
     /* Validate stream index */
     int stream_index = atoi(instruction->argv[0]);
     if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
@@ -179,28 +182,37 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
         return 0;
     }
 
+    stream = &(client->__streams[stream_index]);
+
+    /* Validate initialization of stream */
+    if (stream->index == GUAC_CLIENT_CLOSED_STREAM_INDEX) {
+
+        guac_stream dummy_stream;
+        dummy_stream.index = stream_index;
+
+        guac_protocol_send_abort(client->socket, &dummy_stream,
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+        return 0;
+    }
+
     if (client->blob_handler) {
 
-        int length;
-
         /* Decode base64 */
-        length = guac_protocol_decode_base64(instruction->argv[1]);
-
-        return client->blob_handler(
-            client,
-            &(client->__streams[stream_index]),
-            instruction->argv[1],
-            length
-        );
+        int length = guac_protocol_decode_base64(instruction->argv[1]);
+        return client->blob_handler(client, stream, instruction->argv[1],
+            length);
 
     }
 
-    guac_protocol_send_abort(client->socket, &(client->__streams[stream_index]),
+    guac_protocol_send_abort(client->socket, stream,
             "File transfer unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
     return 0;
 }
 
 int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
+
+    guac_stream* stream;
+    int result = 0;
 
     /* Pull corresponding stream */
     int stream_index = atoi(instruction->argv[0]);
@@ -217,13 +229,14 @@ int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
         return 0;
     }
 
-    if (client->end_handler)
-        return client->end_handler(
-            client,
-            &(client->__streams[stream_index])
-        );
+    stream = &(client->__streams[stream_index]);
 
-    return 0;
+    if (client->end_handler)
+        result = client->end_handler(client, stream);
+
+    /* Mark stream as closed */
+    stream->index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
+    return result;
 }
 
 int __guac_handle_disconnect(guac_client* client, guac_instruction* instruction) {
