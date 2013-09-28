@@ -54,6 +54,66 @@
  */
 
 /**
+ * Set of all possible status codes returned by protocol operations. These
+ * codes relate to Guacamole server/client communication, and not to internal
+ * communicatin of errors within libguac and linked software.
+ *
+ * In general:
+ *
+ *     0x0000 - 0x00FF: Successful operations
+ *     0x0100 - 0x01FF: Operations that failed due to implementation status 
+ *     0x0200 - 0x02FF: Operations that failed due to environmental errors
+ *     0x0300 - 0x03FF: Operations that failed due to user action
+ */
+typedef enum guac_protocol_status {
+
+    /**
+     * The operation succeeded.
+     */
+    GUAC_PROTOCOL_STATUS_SUCCESS = 0x0000,
+
+    /**
+     * The requested operation is unsupported.
+     */
+    GUAC_PROTOCOL_STATUS_UNSUPPORTED = 0x0100,
+
+    /**
+     * Permission was denied to perform the operation.
+     */
+    GUAC_PROTOCOL_STATUS_PERMISSION_DENIED = 0x0200,
+
+    /**
+     * The operation could not be performed due to an internal failure of a
+     * related resource or function.
+     */
+    GUAC_PROTOCOL_STATUS_INTERNAL_ERROR = 0x0201,
+
+    /**
+     * The operation could not be performed due to timeout of a related
+     * server-side resource.
+     */
+    GUAC_PROTOCOL_STATUS_SERVER_TIMEOUT = 0x0202,
+
+    /**
+     * The operation was canceled. The an operation may be canceled for any
+     * reason.
+     */
+    GUAC_PROTOCOL_STATUS_CANCELED = 0x0300,
+
+    /**
+     * The operation was unsuccessful due to faulty user input.
+     */
+    GUAC_PROTOCOL_STATUS_INVALID_PARAMETER = 0x0301,
+
+    /**
+     * The operation could not be performed due to timeout of a related
+     * client-side resource.
+     */
+    GUAC_PROTOCOL_STATUS_CLIENT_TIMEOUT = 0x0302
+
+} guac_protocol_status;
+
+/**
  * Composite modes used by Guacamole draw instructions. Each
  * composite mode maps to a unique channel mask integer.
  */
@@ -211,10 +271,12 @@ int guac_protocol_send_disconnect(guac_socket* socket);
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param error The description associated with the error.
+ * @param error The human-readable description associated with the error.
+ * @param status The status code related to the error.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_error(guac_socket* socket, const char* error);
+int guac_protocol_send_error(guac_socket* socket, const char* error,
+        guac_protocol_status status);
 
 /**
  * Sends a nest instruction over the given guac_socket connection.
@@ -333,6 +395,22 @@ int guac_protocol_send_file(guac_socket* socket, const guac_stream* stream,
  */
 int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
         void* data, int count);
+
+/**
+ * Sends an abort instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param stream The stream to use.
+ * @param reason The human-readable reason the stream is being aborted.
+ * @param status The status associated with the reason the stream being
+ *               aborted.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_abort(guac_socket* socket, const guac_stream* stream,
+        const char* reason, guac_protocol_status status);
 
 /**
  * Sends an end instruction over the given guac_socket connection.

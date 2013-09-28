@@ -260,7 +260,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Init channels (pre-connect) */
     if (freerdp_channels_pre_connect(channels, instance)) {
-        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
+        guac_protocol_send_error(client->socket,
+                "Error initializing RDP client channel manager",
+                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
         guac_socket_flush(client->socket);
         return FALSE;
     }
@@ -277,7 +279,9 @@ BOOL rdp_freerdp_post_connect(freerdp* instance) {
 
     /* Init channels (post-connect) */
     if (freerdp_channels_post_connect(channels, instance)) {
-        guac_protocol_send_error(client->socket, "Error initializing RDP client channel manager");
+        guac_protocol_send_error(client->socket,
+                "Error initializing RDP client channel manager",
+                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
         guac_socket_flush(client->socket);
         return FALSE;
     }
@@ -374,7 +378,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (argc != RDP_ARGS_COUNT) {
 
         guac_protocol_send_error(client->socket,
-                "Wrong argument count received.");
+                "Wrong argument count received.",
+                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
         guac_socket_flush(client->socket);
 
         guac_error = GUAC_STATUS_BAD_ARGUMENT;
@@ -603,7 +608,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (!freerdp_connect(rdp_inst)) {
 
         guac_protocol_send_error(client->socket,
-                "Error connecting to RDP server");
+                "Error connecting to RDP server",
+                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
         guac_socket_flush(client->socket);
 
         guac_error = GUAC_STATUS_BAD_STATE;
