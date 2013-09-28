@@ -131,46 +131,57 @@ int __guac_handle_size(guac_client* client, guac_instruction* instruction) {
 
 int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
 
-    if (client->file_handler) {
+    /* Pull corresponding stream */
+    int stream_index = atoi(instruction->argv[0]);
+    guac_stream* stream;
 
-        /* Pull corresponding stream */
-        int stream_index = atoi(instruction->argv[0]);
-        guac_stream* stream;
+    /* Validate stream index */
+    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
 
-        /* Validate stream index */
-        if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
-            /* TODO: Return failing ack */
-            return 0;
-        }
+        guac_stream dummy_stream;
+        dummy_stream.index = stream_index;
 
-        /* Initialize stream */
-        stream = &(client->__streams[stream_index]);
-        stream->index = stream_index;
+        guac_protocol_send_abort(client->socket, &dummy_stream,
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+        return 0;
+    }
 
+    /* Initialize stream */
+    stream = &(client->__streams[stream_index]);
+    stream->index = stream_index;
+
+    /* If supported, call handler */
+    if (client->file_handler)
         return client->file_handler(
             client,
             stream,
             instruction->argv[1], /* mimetype */
             instruction->argv[2]  /* filename */
         );
-    }
 
-    /* TODO: Return failing ack */
+    /* Otherwise, abort */
+    guac_protocol_send_abort(client->socket, stream,
+            "File transfer unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
     return 0;
 }
 
 int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
 
+    /* Validate stream index */
+    int stream_index = atoi(instruction->argv[0]);
+    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
+
+        guac_stream dummy_stream;
+        dummy_stream.index = stream_index;
+
+        guac_protocol_send_abort(client->socket, &dummy_stream,
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+        return 0;
+    }
+
     if (client->blob_handler) {
 
         int length;
-
-        /* Validate stream index */
-        int stream_index = atoi(instruction->argv[0]);
-        if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
-            /* TODO: Return failing ack */
-            return 0;
-        }
 
         /* Decode base64 */
         length = guac_protocol_decode_base64(instruction->argv[1]);
@@ -184,27 +195,33 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
 
     }
 
-    /* TODO: Return failing ack */
+    guac_protocol_send_abort(client->socket, &(client->__streams[stream_index]),
+            "File transfer unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
     return 0;
 }
 
 int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
 
-    if (client->end_handler) {
+    /* Pull corresponding stream */
+    int stream_index = atoi(instruction->argv[0]);
 
-        /* Pull corresponding stream */
-        int stream_index = atoi(instruction->argv[0]);
+    /* Validate stream index */
+    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
 
-        /* Validate stream index */
-        if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS)
-            return 0;
+        guac_stream dummy_stream;
+        dummy_stream.index = stream_index;
 
+        guac_protocol_send_abort(client->socket, &dummy_stream,
+                "Invalid stream index",
+                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+        return 0;
+    }
+
+    if (client->end_handler)
         return client->end_handler(
             client,
             &(client->__streams[stream_index])
         );
-
-    }
 
     return 0;
 }
