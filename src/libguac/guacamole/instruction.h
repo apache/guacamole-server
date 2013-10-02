@@ -117,9 +117,9 @@ typedef struct guac_instruction {
     guac_instruction_parse_state state;
 
     /**
-     * The remaining length of the current element, if known.
+     * The length of the current element, if known.
      */
-    int __element_remaining_length;
+    int __element_length;
 
     /**
      * The number of elements currently parsed.

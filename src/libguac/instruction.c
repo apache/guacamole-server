@@ -91,8 +91,7 @@ int guac_instruction_append(guac_instruction* instr,
 
             /* If period, switch to parsing content */
             else if (c == '.') {
-                instr->__elementv[instr->__elementc++] = char_buffer;
-                instr->__element_remaining_length = parsed_length;
+                instr->__element_length = parsed_length;
                 instr->state = GUAC_INSTRUCTION_PARSE_CONTENT;
                 break;
             }
@@ -111,12 +110,44 @@ int guac_instruction_append(guac_instruction* instr,
             return 0;
         }
 
-    }
+    } /* end parse length */
 
     /* Parse element content */
     if (instr->state == GUAC_INSTRUCTION_PARSE_CONTENT) {
-        /* STUB */
-    }
+
+        /* If enough data given, finish element */
+        if (length - bytes_parsed > instr->__element_length) {
+
+            /* Pull terminator */
+            char terminator = char_buffer[instr->__element_length];
+
+            /* Store reference to string within elementv */
+            instr->__elementv[instr->__elementc++] = char_buffer;
+            char_buffer[instr->__element_length] = '\0';
+
+            bytes_parsed += instr->__element_length+1;
+
+            /* If semicolon, store end-of-instruction */
+            if (terminator == ';') {
+                instr->state = GUAC_INSTRUCTION_PARSE_COMPLETE;
+                instr->opcode = instr->__elementv[0];
+                instr->argv = &(instr->__elementv[1]);
+                instr->argc = instr->__elementc - 1;
+            }
+
+            /* If comma, move on to next element */
+            else if (terminator == ',')
+                instr->state = GUAC_INSTRUCTION_PARSE_LENGTH;
+
+            /* Otherwise, parse error */
+            else {
+                instr->state = GUAC_INSTRUCTION_PARSE_ERROR;
+                return 0;
+            }
+
+        }
+
+    } /* end parse content */
 
     return bytes_parsed;
 
