@@ -56,7 +56,10 @@ guac_instruction* guac_instruction_alloc() {
     }
 
     /* Initialize state */
+    instruction->opcode = NULL;
+    instruction->argc = 0;
     instruction->state = GUAC_INSTRUCTION_PARSE_LENGTH;
+    instruction->__elementc = 0;
 
     return instruction;
 
