@@ -48,9 +48,9 @@
  */
 
 /**
- * The maximum number of bytes per instruction.
+ * The maximum number of characters per instruction.
  */
-#define GUAC_INSTRUCTION_MAX_LENGTH 32768
+#define GUAC_INSTRUCTION_MAX_LENGTH 8192
 
 /**
  * The maximum number of digits to allow per length prefix.
@@ -120,6 +120,16 @@ typedef struct guac_instruction {
      * The remaining length of the current element, if known.
      */
     int __element_remaining_length;
+
+    /**
+     * The number of elements currently parsed.
+     */
+    int __elementc;
+
+    /**
+     * All currently parsed elements.
+     */
+    char* __elementv[GUAC_INSTRUCTION_MAX_ELEMENTS];
 
 } guac_instruction;
 

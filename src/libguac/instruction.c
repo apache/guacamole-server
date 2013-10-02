@@ -62,18 +62,59 @@ guac_instruction* guac_instruction_alloc() {
 
 }
 
-int guac_instruction_append(guac_instruction* instruction,
+int guac_instruction_append(guac_instruction* instr,
         void* buffer, int length) {
 
+    char* char_buffer = (char*) buffer;
     int bytes_parsed = 0;
 
+    /* Do not exceed maximum number of elements */
+    if (instr->__elementc == GUAC_INSTRUCTION_MAX_ELEMENTS
+            && instr->state != GUAC_INSTRUCTION_PARSE_COMPLETE) {
+        instr->state = GUAC_INSTRUCTION_PARSE_ERROR;
+        return 0;
+    }
+
     /* Parse element length */
-    if (instruction->state == GUAC_INSTRUCTION_PARSE_LENGTH) {
-        /* STUB */
+    if (instr->state == GUAC_INSTRUCTION_PARSE_LENGTH) {
+
+        int parsed_length = 0;
+        while (bytes_parsed < length) {
+
+            /* Pull next character */
+            char c = *(char_buffer++);
+            bytes_parsed++;
+
+            /* If digit, add to length */
+            if (c >= '0' && c <= '9')
+                parsed_length = parsed_length*10 + c - '0';
+
+            /* If period, switch to parsing content */
+            else if (c == '.') {
+                instr->__elementv[instr->__elementc++] = char_buffer;
+                instr->__element_remaining_length = parsed_length;
+                instr->state = GUAC_INSTRUCTION_PARSE_CONTENT;
+                break;
+            }
+
+            /* If not digit, parse error */
+            else {
+                instr->state = GUAC_INSTRUCTION_PARSE_ERROR;
+                return 0;
+            }
+
+        }
+
+        /* If too long, parse error */
+        if (parsed_length > GUAC_INSTRUCTION_MAX_LENGTH) {
+            instr->state = GUAC_INSTRUCTION_PARSE_ERROR;
+            return 0;
+        }
+
     }
 
     /* Parse element content */
-    if (instruction->state == GUAC_INSTRUCTION_PARSE_CONTENT) {
+    if (instr->state == GUAC_INSTRUCTION_PARSE_CONTENT) {
         /* STUB */
     }
 
