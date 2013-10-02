@@ -55,20 +55,22 @@ void test_instruction_parse() {
     char buffer[] = "4.test,8.testdata,5.zxcvb,13.guacamoletest;XXXXXXXXXXXXXXXXXX";
     char* current = buffer;
 
-    /* First element */
-    CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 7), 7);
-    CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_LENGTH);
-    current += 7;
+    /* While data remains */
+    int remaining = sizeof(buffer)-1;
+    while (remaining > 18) {
 
-    /* Part of second */
-    CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 9), 9);
-    CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_CONTENT);
-    current += 9;
+        /* Parse more data */
+        int parsed = guac_instruction_append(instruction, current, remaining);
+        if (parsed == 0)
+            break;
 
-    /* Rest of instruction */
-    CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 45), 27);
+        current += parsed;
+        remaining -= parsed;
+
+    }
+
+    CU_ASSERT_EQUAL(remaining, 18);
     CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_COMPLETE);
-    current += 27;
 
     /* Parse is complete - no more data should be read */
     CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 18), 0);
