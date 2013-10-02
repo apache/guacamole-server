@@ -157,8 +157,10 @@ int guac_instruction_append(guac_instruction* instr,
 guac_instruction* guac_instruction_read(guac_socket* socket,
         int usec_timeout) {
 
-    char* buffer = socket->__instructionbuf_current;
-    int length = socket->__instructionbuf_available;
+    char* unparsed_end = socket->__instructionbuf_unparsed_end;
+    char* unparsed_start = socket->__instructionbuf_unparsed_start;
+    char* buffer_end = socket->__instructionbuf
+                            + sizeof(socket->__instructionbuf);
 
     guac_instruction* instruction = guac_instruction_alloc();
 
@@ -166,7 +168,8 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
         && instruction->state != GUAC_INSTRUCTION_PARSE_ERROR) {
 
         /* Add any available data to buffer */
-        int parsed = guac_instruction_append(instruction, buffer, length);
+        int parsed = guac_instruction_append(instruction, unparsed_start,
+                unparsed_end - unparsed_start);
 
         /* Read more data if not enough data to parse */
         if (parsed == 0) {
@@ -174,7 +177,7 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
             int retval;
 
             /* If no space left to read, fail */
-            if (length == 0) {
+            if (unparsed_end == buffer_end) {
                 guac_error = GUAC_STATUS_NO_MEMORY;
                 guac_error_message = "Instruction too long";
                 return NULL;
@@ -186,7 +189,8 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
                 return NULL;
            
             /* Attempt to fill buffer */
-            retval = guac_socket_read(socket, buffer, length);
+            retval = guac_socket_read(socket, unparsed_end,
+                    buffer_end - unparsed_end);
 
             /* Set guac_error if read unsuccessful */
             if (retval < 0) {
@@ -203,14 +207,14 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
                 return NULL;
             }
 
-            /* Update length of internal buffer */
-            length -= retval;
+            /* Update internal buffer */
+            unparsed_end += retval;
 
         }
 
         /* If data was parsed, advance buffer */
         else
-            buffer += parsed;
+            unparsed_start += parsed;
 
     } /* end while parsing data */
 
@@ -221,8 +225,8 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
         return NULL;
     }
 
-    socket->__instructionbuf_current = buffer;
-    socket->__instructionbuf_available = length;
+    socket->__instructionbuf_unparsed_start = unparsed_start;
+    socket->__instructionbuf_unparsed_end = unparsed_end;
     return instruction;
 
 }
@@ -263,7 +267,8 @@ void guac_instruction_free(guac_instruction* instruction) {
 
 int guac_instruction_waiting(guac_socket* socket, int usec_timeout) {
 
-    if (socket->__instructionbuf_available < sizeof(socket->__instructionbuf))
+    if (socket->__instructionbuf_unparsed_end >
+            socket->__instructionbuf_unparsed_start)
         return 1;
 
     return guac_socket_select(socket, usec_timeout);

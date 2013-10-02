@@ -161,14 +161,15 @@ struct guac_socket {
     char __out_buf[GUAC_SOCKET_OUTPUT_BUFFER_SIZE];
 
     /**
-     * The number of bytes currently available within the instruction buffer.
+     * Pointer to the first character of the current in-progress instruction
+     * within the buffer.
      */
-    int __instructionbuf_available;
+    char* __instructionbuf_unparsed_start;
 
     /**
      * Pointer to the first unused section of the instruction buffer.
      */
-    char* __instructionbuf_current;
+    char* __instructionbuf_unparsed_end;
 
     /**
      * The instruction buffer. This is essentially the input buffer,
