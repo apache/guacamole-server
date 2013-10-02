@@ -153,228 +153,77 @@ int guac_instruction_append(guac_instruction* instr,
 
 }
 
-int __guac_fill_instructionbuf(guac_socket* socket) {
-
-    int retval;
-    
-    /* Attempt to fill buffer */
-    retval = guac_socket_read(
-        socket,
-        socket->__instructionbuf + socket->__instructionbuf_used_length,
-        socket->__instructionbuf_size - socket->__instructionbuf_used_length
-    );
-
-    /* Set guac_error if recv() unsuccessful */
-    if (retval < 0) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Error filling instruction buffer";
-        return retval;
-    }
-
-    socket->__instructionbuf_used_length += retval;
-
-    /* Expand buffer if necessary */
-    if (socket->__instructionbuf_used_length >
-            socket->__instructionbuf_size / 2) {
-
-        socket->__instructionbuf_size *= 2;
-        socket->__instructionbuf = realloc(socket->__instructionbuf,
-                socket->__instructionbuf_size);
-    }
-
-    return retval;
-
-}
-
-
 /* Returns new instruction if one exists, or NULL if no more instructions. */
 guac_instruction* guac_instruction_read(guac_socket* socket,
         int usec_timeout) {
 
-    int retval;
-   
-    /* Loop until a instruction is read */
-    for (;;) {
+    char* buffer = socket->__instructionbuf_current;
+    int length = socket->__instructionbuf_available;
 
-        /* Length of element, in Unicode characters */
-        int element_length = 0;
+    guac_instruction* instruction = guac_instruction_alloc();
 
-        /* Length of element, in bytes */
-        int element_byte_length = 0;
+    while (instruction->state != GUAC_INSTRUCTION_PARSE_COMPLETE
+        && instruction->state != GUAC_INSTRUCTION_PARSE_ERROR) {
 
-        /* Current position within the element, in Unicode characters */
-        int current_unicode_length = 0;
+        /* Add any available data to buffer */
+        int parsed = guac_instruction_append(instruction, buffer, length);
 
-        /* Position within buffer */
-        int i = socket->__instructionbuf_parse_start;
+        /* Read more data if not enough data to parse */
+        if (parsed == 0) {
 
-        /* Parse instruction in buffer */
-        while (i < socket->__instructionbuf_used_length) {
+            int retval;
 
-            /* Read character from buffer */
-            char c = socket->__instructionbuf[i++];
-
-            /* If digit, calculate element length */
-            if (c >= '0' && c <= '9')
-                element_length = element_length * 10 + c - '0';
-
-            /* Otherwise, if end of length */
-            else if (c == '.') {
-
-                /* Calculate element byte length by walking buffer */
-                while (i + element_byte_length <
-                            socket->__instructionbuf_used_length
-                    && current_unicode_length < element_length) {
-
-                    /* Get next byte */
-                    c = socket->__instructionbuf[i + element_byte_length];
-
-                    /* Update byte and character lengths */
-                    element_byte_length += guac_utf8_charsize((unsigned) c);
-                    current_unicode_length++;
-
-                }
-
-                /* Verify element is fully read */
-                if (current_unicode_length == element_length) {
-
-                    /* Get element value */
-                    char* elementv = &(socket->__instructionbuf[i]);
-                   
-                    /* Get terminator, set null terminator of elementv */ 
-                    char terminator = elementv[element_byte_length];
-                    elementv[element_byte_length] = '\0';
-
-                    /* Move to char after terminator of element */
-                    i += element_byte_length+1;
-
-                    /* Reset element length */
-                    element_length =
-                    element_byte_length =
-                    current_unicode_length = 0;
-
-                    /* As element has been read successfully, update
-                     * parse start */
-                    socket->__instructionbuf_parse_start = i;
-
-                    /* Save element */
-                    socket->__instructionbuf_elementv[socket->__instructionbuf_elementc++] = elementv;
-
-                    /* Finish parse if terminator is a semicolon */
-                    if (terminator == ';') {
-
-                        guac_instruction* parsed_instruction;
-                        int j;
-
-                        /* Allocate instruction */
-                        parsed_instruction = malloc(sizeof(guac_instruction));
-                        if (parsed_instruction == NULL) {
-                            guac_error = GUAC_STATUS_NO_MEMORY;
-                            guac_error_message = "Could not allocate memory for parsed instruction";
-                            return NULL;
-                        }
-
-                        /* Init parsed instruction */
-                        parsed_instruction->argc = socket->__instructionbuf_elementc - 1;
-                        parsed_instruction->argv = malloc(sizeof(char*) * parsed_instruction->argc);
-
-                        /* Fail if memory could not be alloc'd for argv */
-                        if (parsed_instruction->argv == NULL) {
-                            guac_error = GUAC_STATUS_NO_MEMORY;
-                            guac_error_message = "Could not allocate memory for arguments of parsed instruction";
-                            free(parsed_instruction);
-                            return NULL;
-                        }
-
-                        /* Set opcode */
-                        parsed_instruction->opcode = strdup(socket->__instructionbuf_elementv[0]);
-
-                        /* Fail if memory could not be alloc'd for opcode */
-                        if (parsed_instruction->opcode == NULL) {
-                            guac_error = GUAC_STATUS_NO_MEMORY;
-                            guac_error_message = "Could not allocate memory for opcode of parsed instruction";
-                            free(parsed_instruction->argv);
-                            free(parsed_instruction);
-                            return NULL;
-                        }
-
-
-                        /* Copy element values to parsed instruction */
-                        for (j=0; j<parsed_instruction->argc; j++) {
-                            parsed_instruction->argv[j] = strdup(socket->__instructionbuf_elementv[j+1]);
-
-                            /* Free memory and fail if out of mem */
-                            if (parsed_instruction->argv[j] == NULL) {
-                                guac_error = GUAC_STATUS_NO_MEMORY;
-                                guac_error_message = "Could not allocate memory for single argument of parsed instruction";
-
-                                /* Free all alloc'd argv values */
-                                while (--j >= 0)
-                                    free(parsed_instruction->argv[j]);
-
-                                free(parsed_instruction->opcode);
-                                free(parsed_instruction->argv);
-                                free(parsed_instruction);
-                                return NULL;
-                            }
-
-                        }
-
-                        /* Reset buffer */
-                        memmove(socket->__instructionbuf, socket->__instructionbuf + i, socket->__instructionbuf_used_length - i);
-                        socket->__instructionbuf_used_length -= i;
-                        socket->__instructionbuf_parse_start = 0;
-                        socket->__instructionbuf_elementc = 0;
-
-                        /* Done */
-                        return parsed_instruction;
-
-                    } /* end if terminator */
-
-                    /* Error if expected comma is not present */
-                    else if (terminator != ',') {
-                        guac_error = GUAC_STATUS_BAD_ARGUMENT;
-                        guac_error_message = "Element terminator of instruction was not ';' nor ','";
-                        return NULL;
-                    }
-
-                } /* end if element fully read */
-
-                /* Otherwise, read more data */
-                else
-                    break;
-
-            }
-
-            /* Error if length is non-numeric or does not end in a period */
-            else {
-                guac_error = GUAC_STATUS_BAD_ARGUMENT;
-                guac_error_message = "Non-numeric character in element length";
+            /* If no space left to read, fail */
+            if (length == 0) {
+                guac_error = GUAC_STATUS_NO_MEMORY;
+                guac_error_message = "Instruction too long";
                 return NULL;
             }
 
+            /* No instruction yet? Get more data ... */
+            retval = guac_socket_select(socket, usec_timeout);
+            if (retval <= 0)
+                return NULL;
+           
+            /* Attempt to fill buffer */
+            retval = guac_socket_read(socket, buffer, length);
+
+            /* Set guac_error if read unsuccessful */
+            if (retval < 0) {
+                guac_error = GUAC_STATUS_SEE_ERRNO;
+                guac_error_message = "Error filling instruction buffer";
+                return NULL;
+            }
+
+            /* EOF */
+            if (retval == 0) {
+                guac_error = GUAC_STATUS_NO_INPUT;
+                guac_error_message = "End of stream reached while "
+                                     "reading instruction";
+                return NULL;
+            }
+
+            /* Update length of internal buffer */
+            length -= retval;
+
         }
 
-        /* No instruction yet? Get more data ... */
-        retval = guac_socket_select(socket, usec_timeout);
-        if (retval <= 0)
-            return NULL;
+        /* If data was parsed, advance buffer */
+        else
+            buffer += parsed;
 
-        /* If more data is available, fill into buffer */
-        retval = __guac_fill_instructionbuf(socket);
+    } /* end while parsing data */
 
-        /* Error, guac_error already set */
-        if (retval < 0)
-            return NULL;
-
-        /* EOF */
-        if (retval == 0) {
-            guac_error = GUAC_STATUS_NO_INPUT;
-            guac_error_message = "End of stream reached while reading instruction";
-            return NULL;
-        }
-
+    /* Fail on error */
+    if (instruction->state == GUAC_INSTRUCTION_PARSE_ERROR) {
+        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+        guac_error_message = "Instruction parse error";
+        return NULL;
     }
+
+    socket->__instructionbuf_current = buffer;
+    socket->__instructionbuf_available = length;
+    return instruction;
 
 }
 
@@ -408,33 +257,13 @@ guac_instruction* guac_instruction_expect(guac_socket* socket, int usec_timeout,
 
 
 void guac_instruction_free(guac_instruction* instruction) {
-
-    int argc = instruction->argc;
-
-    /* Free opcode */
-    free(instruction->opcode);
-
-    /* Free argv if set (may be NULL of argc is 0) */
-    if (instruction->argv) {
-
-        /* All argument values */
-        while (argc > 0)
-            free(instruction->argv[--argc]);
-
-        /* Free actual array */
-        free(instruction->argv);
-
-    }
-
-    /* Free instruction */
     free(instruction);
-
 }
 
 
 int guac_instruction_waiting(guac_socket* socket, int usec_timeout) {
 
-    if (socket->__instructionbuf_used_length > 0)
+    if (socket->__instructionbuf_available < sizeof(socket->__instructionbuf))
         return 1;
 
     return guac_socket_select(socket, usec_timeout);

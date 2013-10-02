@@ -161,37 +161,21 @@ struct guac_socket {
     char __out_buf[GUAC_SOCKET_OUTPUT_BUFFER_SIZE];
 
     /**
-     * The current location of parsing within the instruction buffer.
+     * The number of bytes currently available within the instruction buffer.
      */
-    int __instructionbuf_parse_start;
+    int __instructionbuf_available;
 
     /**
-     * The current size of the instruction buffer.
+     * Pointer to the first unused section of the instruction buffer.
      */
-    int __instructionbuf_size;
-
-    /**
-     * The number of bytes currently in the instruction buffer.
-     */
-    int __instructionbuf_used_length;
+    char* __instructionbuf_current;
 
     /**
      * The instruction buffer. This is essentially the input buffer,
      * provided as a convenience to be used to buffer instructions until
      * those instructions are complete and ready to be parsed.
      */
-    char* __instructionbuf;
-
-    /**
-     * The number of elements parsed so far.
-     */
-    int __instructionbuf_elementc;
-
-    /**
-     * Array of pointers into the instruction buffer, where each pointer
-     * points to the start of the corresponding element.
-     */
-    char* __instructionbuf_elementv[64];
+    char __instructionbuf[32768];
 
     /**
      * Whether instructions should be guaranteed atomic across threads using

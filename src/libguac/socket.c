@@ -139,22 +139,9 @@ guac_socket* guac_socket_alloc() {
     socket->__written = 0;
     socket->data = NULL;
 
-    /* Allocate instruction buffer */
-    socket->__instructionbuf_size = 1024;
-    socket->__instructionbuf = malloc(socket->__instructionbuf_size);
-
-    /* If no memory available, return with error */
-    if (socket->__instructionbuf == NULL) {
-        guac_error = GUAC_STATUS_NO_MEMORY;
-        guac_error_message = "Could not allocate memory for instruction buffer";
-        free(socket);
-        return NULL;
-    }
-
     /* Init members */
-    socket->__instructionbuf_used_length = 0;
-    socket->__instructionbuf_parse_start = 0;
-    socket->__instructionbuf_elementc = 0;
+    socket->__instructionbuf_current = socket->__instructionbuf;
+    socket->__instructionbuf_available = sizeof(socket->__instructionbuf);
 
     /* Default to unsafe threading */
     socket->__threadsafe_instructions = 0;
@@ -219,7 +206,6 @@ void guac_socket_free(guac_socket* socket) {
 
     guac_socket_flush(socket);
     pthread_mutex_destroy(&(socket->__instruction_write_lock));
-    free(socket->__instructionbuf);
     free(socket);
 }
 
