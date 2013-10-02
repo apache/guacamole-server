@@ -60,6 +60,7 @@ int register_protocol_suite() {
     /* Add tests */
     if (
         CU_add_test(suite, "base64-decode", test_base64_decode) == NULL
+     || CU_add_test(suite, "instruction-parse", test_instruction_parse) == NULL
      || CU_add_test(suite, "instruction-read", test_instruction_read) == NULL
      || CU_add_test(suite, "instruction-write", test_instruction_write) == NULL
      || CU_add_test(suite, "nest-write", test_nest_write) == NULL
