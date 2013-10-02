@@ -40,12 +40,52 @@
 #include <stdlib.h>
 #include <CUnit/Basic.h>
 
-#include <guacamole/protocol.h>
+#include <guacamole/instruction.h>
 
 #include "suite.h"
 
 
 void test_instruction_parse() {
-    /* STUB */
+
+    /* Allocate instruction space */
+    guac_instruction* instruction = guac_instruction_alloc();
+    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction);
+
+    /* Instruction input */
+    char buffer[] = "4.test,8.testdata,5.zxcvb,13.guacamoletest;XXXXXXXXXXXXXXXXXX";
+    char* current = buffer;
+
+    /* First element */
+    CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 7), 7);
+    CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_LENGTH);
+    current += 7;
+
+    /* Part of second */
+    CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 9), 9);
+    CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_CONTENT);
+    current += 9;
+
+    /* Rest of instruction */
+    CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 45), 27);
+    CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_COMPLETE);
+    current += 27;
+
+    /* Parse is complete - no more data should be read */
+    CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 18), 0);
+    CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_COMPLETE);
+
+    /* Validate resulting structure */
+    CU_ASSERT_EQUAL(instruction->argc, 3);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction->opcode);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction->argv[0]);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction->argv[1]);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction->argv[2]);
+
+    /* Validate resulting content */
+    CU_ASSERT_STRING_EQUAL(instruction->opcode,  "test");
+    CU_ASSERT_STRING_EQUAL(instruction->argv[0], "testdata");
+    CU_ASSERT_STRING_EQUAL(instruction->argv[1], "zxcvb");
+    CU_ASSERT_STRING_EQUAL(instruction->argv[2], "guacamoletest");
+
 }
 
