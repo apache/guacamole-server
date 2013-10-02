@@ -48,6 +48,50 @@
  */
 
 /**
+ * The maximum number of bytes per instruction.
+ */
+#define GUAC_INSTRUCTION_MAX_LENGTH 32768
+
+/**
+ * The maximum number of digits to allow per length prefix.
+ */
+#define GUAC_INSTRUCTION_MAX_DIGITS 5
+
+/**
+ * The maximum number of elements per instruction, including the opcode.
+ */
+#define GUAC_INSTRUCTION_MAX_ELEMENTS 64
+
+/**
+ * All possible states of the instruction parser.
+ */
+typedef enum guac_instruction_parse_state {
+
+    /**
+     * The parser is currently waiting for data to complete the length prefix
+     * of the current element of the instruction.
+     */
+    GUAC_INSTRUCTION_PARSE_LENGTH,
+
+    /**
+     * The parser has finished reading the length prefix and is currently
+     * waiting for data to complete the content of the instruction.
+     */
+    GUAC_INSTRUCTION_PARSE_CONTENT,
+
+    /**
+     * The instruction has been fully parsed.
+     */
+    GUAC_INSTRUCTION_PARSE_COMPLETE,
+
+    /**
+     * The instruction cannot be parsed because of a protocol error.
+     */
+    GUAC_INSTRUCTION_PARSE_ERROR
+
+} guac_instruction_parse_state;
+
+/**
  * Represents a single instruction within the Guacamole protocol.
  */
 typedef struct guac_instruction {
@@ -67,8 +111,43 @@ typedef struct guac_instruction {
      */
     char** argv;
 
+    /**
+     * The parse state of the instruction.
+     */
+    guac_instruction_parse_state state;
+
+    /**
+     * The remaining length of the current element, if known.
+     */
+    int __element_remaining_length;
+
 } guac_instruction;
 
+/**
+ * Allocates a new instruction. Each instruction contains within itself the
+ * necessary facilities to parse instruction data.
+ *
+ * @return The newly allocated instruction, or NULL if an error occurs during
+ *         allocation, in which case guac_error will be set appropriately.
+ */
+guac_instruction* guac_instruction_alloc();
+
+/**
+ * Appends data from the given buffer to the given instruction. The data will
+ * be appended, if possible, to this instruction as a reference and thus the
+ * buffer must remain valid throughout the life of the instruction. This
+ * function may modify the contents of the buffer when those contents are
+ * part of an element within the instruction being read.
+ *
+ * @param instruction The instruction to append data to.
+ * @param buffer A buffer containing data that should be appended to this
+ *               instruction.
+ * @param length The number of bytes available for appending within the buffer.
+ * @return The number of bytes appended to this instruction, which may be
+ *         zero if more data is needed.
+ */
+int guac_instruction_append(guac_instruction* instruction,
+        void* buffer, int length);
 
 /**
  * Frees all memory allocated to the given instruction.

@@ -45,6 +45,42 @@
 #include "socket.h"
 #include "unicode.h"
 
+guac_instruction* guac_instruction_alloc() {
+
+    /* Allocate space for instruction */
+    guac_instruction* instruction = malloc(sizeof(guac_instruction));
+    if (instruction == NULL) {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Insufficient memory to allocate instruction";
+        return NULL;
+    }
+
+    /* Initialize state */
+    instruction->state = GUAC_INSTRUCTION_PARSE_LENGTH;
+
+    return instruction;
+
+}
+
+int guac_instruction_append(guac_instruction* instruction,
+        void* buffer, int length) {
+
+    int bytes_parsed = 0;
+
+    /* Parse element length */
+    if (instruction->state == GUAC_INSTRUCTION_PARSE_LENGTH) {
+        /* STUB */
+    }
+
+    /* Parse element content */
+    if (instruction->state == GUAC_INSTRUCTION_PARSE_CONTENT) {
+        /* STUB */
+    }
+
+    return bytes_parsed;
+
+}
+
 int __guac_fill_instructionbuf(guac_socket* socket) {
 
     int retval;
