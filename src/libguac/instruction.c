@@ -55,14 +55,16 @@ guac_instruction* guac_instruction_alloc() {
         return NULL;
     }
 
-    /* Initialize state */
+    guac_instruction_reset(instruction);
+    return instruction;
+
+}
+
+void guac_instruction_reset(guac_instruction* instruction) {
     instruction->opcode = NULL;
     instruction->argc = 0;
     instruction->state = GUAC_INSTRUCTION_PARSE_LENGTH;
     instruction->__elementc = 0;
-
-    return instruction;
-
 }
 
 int guac_instruction_append(guac_instruction* instr,
@@ -178,6 +180,7 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
 
     char* unparsed_end = socket->__instructionbuf_unparsed_end;
     char* unparsed_start = socket->__instructionbuf_unparsed_start;
+    char* instr_start = socket->__instructionbuf_unparsed_start;
     char* buffer_end = socket->__instructionbuf
                             + sizeof(socket->__instructionbuf);
 
@@ -197,9 +200,23 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
 
             /* If no space left to read, fail */
             if (unparsed_end == buffer_end) {
-                guac_error = GUAC_STATUS_NO_MEMORY;
-                guac_error_message = "Instruction too long";
-                return NULL;
+
+                /* Shift backward if possible */
+                if (instr_start != socket->__instructionbuf) {
+                    memmove(socket->__instructionbuf, instr_start,
+                            unparsed_end - instr_start);
+                    unparsed_end   -= instr_start - socket->__instructionbuf;
+                    unparsed_start = instr_start = socket->__instructionbuf;
+                    guac_instruction_reset(instruction);
+                }
+
+                /* Otherwise, no memory to read */
+                else {
+                    guac_error = GUAC_STATUS_NO_MEMORY;
+                    guac_error_message = "Instruction too long";
+                    return NULL;
+                }
+
             }
 
             /* No instruction yet? Get more data ... */

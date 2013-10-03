@@ -143,6 +143,14 @@ typedef struct guac_instruction {
 guac_instruction* guac_instruction_alloc();
 
 /**
+ * Resets the parse state and contents of the given instruction, such that the
+ * memory of that instruction can be reused for another parse cycle.
+ *
+ * @param instruction The instruction to reset.
+ */
+void guac_instruction_reset(guac_instruction* instruction);
+
+/**
  * Appends data from the given buffer to the given instruction. The data will
  * be appended, if possible, to this instruction as a reference and thus the
  * buffer must remain valid throughout the life of the instruction. This
