@@ -168,9 +168,12 @@ int guac_instruction_append(guac_instruction* instr,
 
         }
 
+        return bytes_parsed;
+
     } /* end parse content */
 
-    return bytes_parsed;
+    /* If unable to move past reading length, parse failed */
+    return 0;
 
 }
 
