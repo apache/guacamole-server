@@ -206,11 +206,23 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
 
                 /* Shift backward if possible */
                 if (instr_start != socket->__instructionbuf) {
+
+                    int i;
+
+                    /* Shift buffer */
+                    int offset = instr_start - socket->__instructionbuf;
                     memmove(socket->__instructionbuf, instr_start,
                             unparsed_end - instr_start);
-                    unparsed_end   -= instr_start - socket->__instructionbuf;
-                    unparsed_start = instr_start = socket->__instructionbuf;
-                    guac_instruction_reset(instruction);
+
+                    /* Update tracking pointers */
+                    unparsed_end -= offset;
+                    unparsed_start -= offset;
+                    instr_start = socket->__instructionbuf;
+
+                    /* Update parsed elements, if any */
+                    for (i=0; i<instruction->__elementc; i++)
+                        instruction->__elementv[i] -= offset;
+
                 }
 
                 /* Otherwise, no memory to read */
