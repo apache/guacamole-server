@@ -65,6 +65,7 @@ void guac_instruction_reset(guac_instruction* instruction) {
     instruction->argc = 0;
     instruction->state = GUAC_INSTRUCTION_PARSE_LENGTH;
     instruction->__elementc = 0;
+    instruction->__element_length = 0;
 }
 
 int guac_instruction_append(guac_instruction* instr,
@@ -83,7 +84,7 @@ int guac_instruction_append(guac_instruction* instr,
     /* Parse element length */
     if (instr->state == GUAC_INSTRUCTION_PARSE_LENGTH) {
 
-        int parsed_length = 0;
+        int parsed_length = instr->__element_length;
         while (bytes_parsed < length) {
 
             /* Pull next character */
@@ -96,7 +97,6 @@ int guac_instruction_append(guac_instruction* instr,
 
             /* If period, switch to parsing content */
             else if (c == '.') {
-                instr->__element_length = parsed_length;
                 instr->__elementv[instr->__elementc++] = char_buffer;
                 instr->state = GUAC_INSTRUCTION_PARSE_CONTENT;
                 break;
@@ -115,6 +115,9 @@ int guac_instruction_append(guac_instruction* instr,
             instr->state = GUAC_INSTRUCTION_PARSE_ERROR;
             return 0;
         }
+
+        /* Save length */
+        instr->__element_length = parsed_length;
 
     } /* end parse length */
 
@@ -168,12 +171,9 @@ int guac_instruction_append(guac_instruction* instr,
 
         }
 
-        return bytes_parsed;
-
     } /* end parse content */
 
-    /* If unable to move past reading length, parse failed */
-    return 0;
+    return bytes_parsed;
 
 }
 
