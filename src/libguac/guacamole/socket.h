@@ -42,6 +42,8 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include "timestamp.h"
+
 /**
  * Defines the guac_socket object and functionss for using and manipulating it.
  *
@@ -52,6 +54,12 @@
  * The number of bytes to buffer within each socket before flushing.
  */
 #define GUAC_SOCKET_OUTPUT_BUFFER_SIZE 8192
+
+/**
+ * The number of milliseconds to wait between keep-alive pings on a socket
+ * with keep-alive enabled.
+ */
+#define GUAC_SOCKET_KEEP_ALIVE_INTERVAL 5000
 
 typedef struct guac_socket guac_socket;
 
@@ -105,6 +113,23 @@ typedef int guac_socket_select_handler(guac_socket* socket, int usec_timeout);
 typedef int guac_socket_free_handler(guac_socket* socket);
 
 /**
+ * Possible current states of a guac_socket.
+ */
+typedef enum guac_socket_state {
+
+    /**
+     * The socket is open and can be written to / read from.
+     */
+    GUAC_SOCKET_OPEN,
+
+    /**
+     * The socket is closed. Reads and writes will fail.
+     */
+    GUAC_SOCKET_CLOSED
+
+} guac_socket_state;
+
+/**
  * The core I/O object of Guacamole. guac_socket provides buffered input and
  * output as well as convenience methods for efficiently writing base64 data.
  */
@@ -137,7 +162,18 @@ struct guac_socket {
      * Handler which will be called when the socket is free'd (closed).
      */
     guac_socket_free_handler* free_handler;
-    
+
+    /**
+     * The current state of this guac_socket.
+     */
+    guac_socket_state state;
+
+    /**
+     * The timestamp associated with the time the last block of data was
+     * written to this guac_socket.
+     */
+    guac_timestamp last_write_timestamp;
+
     /**
      * The number of bytes present in the base64 "ready" buffer.
      */
@@ -195,6 +231,16 @@ struct guac_socket {
      */
     pthread_mutex_t __buffer_lock;
 
+    /**
+     * Whether automatic keep-alive is enabled.
+     */
+    int __keep_alive_enabled;
+
+    /**
+     * The keep-alive thread.
+     */
+    pthread_t __keep_alive_thread;
+
 };
 
 /**
@@ -223,6 +269,17 @@ void guac_socket_free(guac_socket* socket);
  * @param socket The guac_socket to declare as threadsafe.
  */
 void guac_socket_require_threadsafe(guac_socket* socket);
+
+/**
+ * Declares that the given socket must automatically send a keep-alive ping
+ * to ensure neither side of the socket times out while the socket is open.
+ * This ping will take the form of a "nop" instruction. Enabling keep-alive
+ * automatically enables threadsafety.
+ *
+ * @param socket The guac_socket to declare as requiring an automatic
+ *               keep-alive ping.
+ */
+void guac_socket_require_keep_alive(guac_socket* socket);
 
 /**
  * Marks the beginning of a Guacamole protocol instruction. If threadsafety

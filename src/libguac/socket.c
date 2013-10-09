@@ -55,6 +55,8 @@
 #include <sys/time.h>
 
 #include "socket.h"
+#include "protocol.h"
+#include "timestamp.h"
 #include "error.h"
 
 char __guac_socket_BASE64_CHARACTERS[64] = {
@@ -65,8 +67,43 @@ char __guac_socket_BASE64_CHARACTERS[64] = {
     '8', '9', '+', '/'
 };
 
+static void* __guac_socket_keep_alive_thread(void* data) {
+
+    /* Calculate sleep interval */
+    struct timespec interval;
+    interval.tv_sec  =  GUAC_SOCKET_KEEP_ALIVE_INTERVAL / 1000;
+    interval.tv_nsec = (GUAC_SOCKET_KEEP_ALIVE_INTERVAL % 1000) * 1000000L;
+
+    /* Socket keep-alive loop */
+    guac_socket* socket = (guac_socket*) data;
+    while (socket->state == GUAC_SOCKET_OPEN) {
+
+        /* Send NOP keep-alive if it's been a while since the last output */
+        guac_timestamp timestamp = guac_timestamp_current();
+        if (timestamp - socket->last_write_timestamp >
+                GUAC_SOCKET_KEEP_ALIVE_INTERVAL) {
+
+            /* Send NOP */
+            if (guac_protocol_send_nop(socket)
+                || guac_socket_flush(socket))
+                break;
+
+        }
+
+        /* Sleep until next keep-alive check */
+        nanosleep(&interval, NULL);
+
+    }
+
+    return NULL;
+
+}
+
 static ssize_t __guac_socket_write(guac_socket* socket,
         const void* buf, size_t count) {
+
+    /* Update timestamp of last write */
+    socket->last_write_timestamp = guac_timestamp_current();
 
     /* If handler defined, call it. */
     if (socket->write_handler)
@@ -138,6 +175,7 @@ guac_socket* guac_socket_alloc() {
     socket->__ready = 0;
     socket->__written = 0;
     socket->data = NULL;
+    socket->state = GUAC_SOCKET_OPEN;
 
     /* Init members */
     socket->__instructionbuf_unparsed_start = socket->__instructionbuf;
@@ -164,6 +202,18 @@ guac_socket* guac_socket_alloc() {
 
 void guac_socket_require_threadsafe(guac_socket* socket) {
     socket->__threadsafe_instructions = 1;
+}
+
+void guac_socket_require_keep_alive(guac_socket* socket) {
+
+    /* Keep-alive thread requires a threadsafe socket */
+    guac_socket_require_threadsafe(socket);
+
+    /* Start keep-alive thread */
+    socket->__keep_alive_enabled = 1;
+    pthread_create(&(socket->__keep_alive_thread), NULL,
+                __guac_socket_keep_alive_thread, (void*) socket);
+
 }
 
 void guac_socket_instruction_begin(guac_socket* socket) {
@@ -205,6 +255,14 @@ void guac_socket_free(guac_socket* socket) {
         socket->free_handler(socket);
 
     guac_socket_flush(socket);
+
+    /* Mark as closed */
+    socket->state = GUAC_SOCKET_CLOSED;
+
+    /* Wait for keep-alive, if enabled */
+    if (socket->__keep_alive_enabled)
+        pthread_join(socket->__keep_alive_thread, NULL);
+
     pthread_mutex_destroy(&(socket->__instruction_write_lock));
     free(socket);
 }
