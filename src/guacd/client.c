@@ -74,31 +74,6 @@ void* __guacd_client_output_thread(void* data) {
     /* Guacamole client output loop */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
-        /* Occasionally send client NOP keep-alive */
-        guac_timestamp timestamp = guac_timestamp_current();
-        if (timestamp - last_ping_timestamp > GUACD_SYNC_FREQUENCY) {
-
-            /* Record time of last synnc */
-            last_ping_timestamp = timestamp;
-
-            /* Send NOP */
-            if (guac_protocol_send_nop(socket)) {
-                guacd_client_log_guac_error(client,
-                        "Error sending \"nop\" keep-alive");
-                guac_client_stop(client);
-                return NULL;
-            }
-
-            /* Flush */
-            if (guac_socket_flush(socket)) {
-                guacd_client_log_guac_error(client,
-                        "Error flushing output");
-                guac_client_stop(client);
-                return NULL;
-            }
-
-        }
-
         /* Handle server messages */
         if (client->handle_messages) {
 
