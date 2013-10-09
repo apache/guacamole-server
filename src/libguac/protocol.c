@@ -951,6 +951,18 @@ int guac_protocol_send_nest(guac_socket* socket, int index,
 
 }
 
+int guac_protocol_send_nop(guac_socket* socket) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val = guac_socket_write_string(socket, "3.nop;");
+    guac_socket_instruction_end(socket);
+
+    return ret_val;
+
+}
+
 int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
         const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
 

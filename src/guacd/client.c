@@ -74,17 +74,17 @@ void* __guacd_client_output_thread(void* data) {
     /* Guacamole client output loop */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
-        /* Occasionally ping client with repeat of last sync */
+        /* Occasionally send client NOP keep-alive */
         guac_timestamp timestamp = guac_timestamp_current();
         if (timestamp - last_ping_timestamp > GUACD_SYNC_FREQUENCY) {
 
             /* Record time of last synnc */
             last_ping_timestamp = timestamp;
 
-            /* Send sync */
-            if (guac_protocol_send_sync(socket, client->last_sent_timestamp)) {
+            /* Send NOP */
+            if (guac_protocol_send_nop(socket)) {
                 guacd_client_log_guac_error(client,
-                        "Error sending \"sync\" instruction");
+                        "Error sending \"nop\" keep-alive");
                 guac_client_stop(client);
                 return NULL;
             }

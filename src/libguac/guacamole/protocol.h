@@ -233,6 +233,18 @@ int guac_protocol_send_nest(guac_socket* socket, int index,
         const char* data);
 
 /**
+ * Sends a nop instruction (null-operation) over the given guac_socket
+ * connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_nop(guac_socket* socket);
+
+/**
  * Sends a set instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
