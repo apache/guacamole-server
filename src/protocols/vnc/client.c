@@ -267,6 +267,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     else
         guac_client_data->listen_timeout = 5000; 
 
+    /* Ensure connection is kept alive during lengthy connects */
+    guac_socket_require_keep_alive(client->socket);
+
     /* Attempt connection */
     rfb_client = __guac_vnc_get_client(client);
 
