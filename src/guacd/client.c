@@ -69,8 +69,6 @@ void* __guacd_client_output_thread(void* data) {
     guac_client* client = (guac_client*) data;
     guac_socket* socket = client->socket;
 
-    guac_timestamp last_ping_timestamp = guac_timestamp_current();
-
     /* Guacamole client output loop */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
