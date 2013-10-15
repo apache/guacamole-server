@@ -141,7 +141,7 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
         guac_stream dummy_stream;
         dummy_stream.index = stream_index;
 
-        guac_protocol_send_abort(client->socket, &dummy_stream,
+        guac_protocol_send_ack(client->socket, &dummy_stream,
                 "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
         return 0;
     }
@@ -161,7 +161,7 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
         );
 
     /* Otherwise, abort */
-    guac_protocol_send_abort(client->socket, stream,
+    guac_protocol_send_ack(client->socket, stream,
             "File transfer unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
     return 0;
 }
@@ -177,7 +177,7 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
         guac_stream dummy_stream;
         dummy_stream.index = stream_index;
 
-        guac_protocol_send_abort(client->socket, &dummy_stream,
+        guac_protocol_send_ack(client->socket, &dummy_stream,
                 "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
         return 0;
     }
@@ -190,7 +190,7 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
         guac_stream dummy_stream;
         dummy_stream.index = stream_index;
 
-        guac_protocol_send_abort(client->socket, &dummy_stream,
+        guac_protocol_send_ack(client->socket, &dummy_stream,
                 "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
         return 0;
     }
@@ -204,7 +204,7 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
 
     }
 
-    guac_protocol_send_abort(client->socket, stream,
+    guac_protocol_send_ack(client->socket, stream,
             "File transfer unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
     return 0;
 }
@@ -223,7 +223,7 @@ int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
         guac_stream dummy_stream;
         dummy_stream.index = stream_index;
 
-        guac_protocol_send_abort(client->socket, &dummy_stream,
+        guac_protocol_send_ack(client->socket, &dummy_stream,
                 "Invalid stream index",
                 GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
         return 0;

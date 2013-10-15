@@ -355,17 +355,17 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
 
 /* Protocol functions */
 
-int guac_protocol_send_abort(guac_socket* socket, const guac_stream* stream,
-        const char* reason, guac_protocol_status status) {
+int guac_protocol_send_ack(guac_socket* socket, guac_stream* stream,
+        const char* error, guac_protocol_status status) {
 
     int ret_val;
 
     guac_socket_instruction_begin(socket);
     ret_val =
-           guac_socket_write_string(socket, "5.abort,")
+           guac_socket_write_string(socket, "3.ack,")
         || __guac_socket_write_length_int(socket, stream->index)
         || guac_socket_write_string(socket, ",")
-        || __guac_socket_write_length_string(socket, reason)
+        || __guac_socket_write_length_string(socket, error)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_int(socket, status)
         || guac_socket_write_string(socket, ";");

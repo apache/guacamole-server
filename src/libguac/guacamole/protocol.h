@@ -230,6 +230,23 @@ typedef enum guac_line_join_style {
 /* CONTROL INSTRUCTIONS */
 
 /**
+ * Sends an ack instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param stream The guac_stream associated with the operation this ack is
+ *               acknowledging.
+ * @param error The human-readable description associated with the error or
+ *              status update.
+ * @param status The status code related to the error or status.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_ack(guac_socket* socket, guac_stream* stream,
+        const char* error, guac_protocol_status status);
+
+/**
  * Sends an args instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -395,22 +412,6 @@ int guac_protocol_send_file(guac_socket* socket, const guac_stream* stream,
  */
 int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
         void* data, int count);
-
-/**
- * Sends an abort instruction over the given guac_socket connection.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param stream The stream to use.
- * @param reason The human-readable reason the stream is being aborted.
- * @param status The status associated with the reason the stream being
- *               aborted.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_abort(guac_socket* socket, const guac_stream* stream,
-        const char* reason, guac_protocol_status status);
 
 /**
  * Sends an end instruction over the given guac_socket connection.
