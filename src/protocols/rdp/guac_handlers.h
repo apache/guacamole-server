@@ -39,12 +39,21 @@
 #define _GUAC_RDP_GUAC_HANDLERS_H
 
 #include <guacamole/client.h>
+#include <guacamole/stream.h>
 
 int rdp_guac_client_free_handler(guac_client* client);
 int rdp_guac_client_handle_messages(guac_client* client);
 int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
 int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed);
 int rdp_guac_client_clipboard_handler(guac_client* client, char* data);
+
+int rdp_guac_client_file_handler(guac_client* client, guac_stream* stream,
+        char* mimetype, char* filename);
+
+int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length);
+
+int rdp_guac_client_end_handler(guac_client* client, guac_stream* stream);
 
 #endif
 

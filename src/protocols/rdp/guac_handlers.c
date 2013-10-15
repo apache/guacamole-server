@@ -491,3 +491,32 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
 
 }
 
+int rdp_guac_client_file_handler(guac_client* client, guac_stream* stream,
+        char* mimetype, char* filename) {
+    guac_client_log_info(client, "STUB: stream %i allocated for file %s (%s)",
+            stream->index, filename, mimetype);
+    guac_protocol_send_ack(client->socket, stream, "OK (STREAM BEGIN)",
+            GUAC_PROTOCOL_STATUS_SUCCESS);
+    guac_socket_flush(client->socket);
+    return 0;
+}
+
+int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length) {
+    guac_client_log_info(client, "STUB: stream %i received %i bytes",
+            stream->index, length);
+    guac_protocol_send_ack(client->socket, stream, "OK (DATA WRITTEN)",
+            GUAC_PROTOCOL_STATUS_SUCCESS);
+    guac_socket_flush(client->socket);
+    return 0;
+}
+
+int rdp_guac_client_end_handler(guac_client* client, guac_stream* stream) {
+    guac_client_log_info(client, "STUB: stream %i closed",
+            stream->index);
+    guac_protocol_send_ack(client->socket, stream, "OK (STREAM END)",
+            GUAC_PROTOCOL_STATUS_SUCCESS);
+    guac_socket_flush(client->socket);
+    return 0;
+}
+
