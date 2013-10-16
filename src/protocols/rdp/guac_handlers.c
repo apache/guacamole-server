@@ -503,8 +503,7 @@ int rdp_guac_client_file_handler(guac_client* client, guac_stream* stream,
 
 int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length) {
-    guac_client_log_info(client, "STUB: stream %i received %i bytes",
-            stream->index, length);
+    /* STUB */
     guac_protocol_send_ack(client->socket, stream, "OK (DATA WRITTEN)",
             GUAC_PROTOCOL_STATUS_SUCCESS);
     guac_socket_flush(client->socket);
