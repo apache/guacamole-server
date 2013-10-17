@@ -113,7 +113,9 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
     if (client_data->settings.printing_enabled)
         guac_rdpdr_register_printer(rdpdr);
 
-    guac_rdpdr_register_fs(rdpdr);
+    /* Register drive if enabled */
+    if (client_data->settings.drive_enabled)
+        guac_rdpdr_register_fs(rdpdr);
 
     /* Log that printing, etc. has been loaded */
     guac_client_log_info(client, "guacdr connected.");
