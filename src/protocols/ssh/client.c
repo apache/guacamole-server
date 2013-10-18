@@ -65,6 +65,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "password",
     "font-name",
     "font-size",
+    "enable-sftp",
     NULL
 };
 
@@ -99,6 +100,11 @@ enum __SSH_ARGS_IDX {
      * The size of the font to use within the terminal, in points.
      */
     IDX_FONT_SIZE,
+
+    /**
+     * Whether SFTP should be enabled.
+     */
+    IDX_ENABLE_SFTP,
 
     SSH_ARGS_COUNT
 };
@@ -138,6 +144,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         client_data->font_size = atoi(argv[IDX_FONT_SIZE]);
     else
         client_data->font_size = GUAC_SSH_DEFAULT_FONT_SIZE;
+
+    /* Parse SFTP enable */
+    client_data->enable_sftp = strcmp(argv[IDX_ENABLE_SFTP], "true") == 0;
+    client_data->sftp_session = NULL;
 
     /* Read port */
     if (argv[IDX_PORT][0] != 0)

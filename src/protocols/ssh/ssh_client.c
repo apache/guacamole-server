@@ -45,6 +45,7 @@
 #include <guacamole/socket.h>
 
 #include <libssh/libssh.h>
+#include <libssh/sftp.h>
 
 #include "client.h"
 #include "common.h"
@@ -204,6 +205,30 @@ void* ssh_client_thread(void* data) {
                 GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
         guac_socket_flush(socket);
         return NULL;
+    }
+
+    /* Start SFTP session as well, if enabled */
+    if (client_data->enable_sftp) {
+
+        /* Request SFTP */
+        client_data->sftp_session = sftp_new(client_data->session);
+        if (client_data->sftp_session == NULL) {
+            guac_protocol_send_error(socket, "Unable to start SFTP session..",
+                    GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+            guac_socket_flush(socket);
+            return NULL;
+        }
+
+        /* Init SFTP */
+        if (sftp_init(client_data->sftp_session) != SSH_OK) {
+            guac_protocol_send_error(socket, "Unable to initialize SFTP session.",
+                    GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+            guac_socket_flush(socket);
+            return NULL;
+        }
+
+        guac_client_log_info(client, "SFTP session initialized");
+
     }
 
     /* Request PTY */

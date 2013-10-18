@@ -41,6 +41,7 @@
 
 #include <pthread.h>
 #include <libssh/libssh.h>
+#include <libssh/sftp.h>
 
 #include "terminal.h"
 #include "cursor.h"
@@ -81,6 +82,11 @@ typedef struct ssh_guac_client_data {
     int font_size;
 
     /**
+     * Whether SFTP is enabled.
+     */
+    bool enable_sftp;
+
+    /**
      * The SSH client thread.
      */
     pthread_t client_thread;
@@ -89,6 +95,11 @@ typedef struct ssh_guac_client_data {
      * SSH session, used by the SSH client thread.
      */
     ssh_session session;
+
+    /**
+     * SFTP session, used for file transfers.
+     */
+    sftp_session sftp_session;
 
     /**
      * SSH terminal channel, used by the SSH client thread.

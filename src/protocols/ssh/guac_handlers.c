@@ -430,6 +430,10 @@ int ssh_guac_client_free_handler(guac_client* client) {
     /* Free channels */
     ssh_channel_free(guac_client_data->term_channel);
 
+    /* Clean up SFTP */
+    if (guac_client_data->sftp_session)
+        sftp_free(guac_client_data->sftp_session);
+
     /* Free session */
     ssh_free(guac_client_data->session);
 
