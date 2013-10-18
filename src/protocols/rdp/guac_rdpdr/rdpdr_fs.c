@@ -122,7 +122,6 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device,
     int file_id;
     guac_rdpdr_fs_file* file;
 
-    mode_t mode;
     int flags = 0;
 
     /* If no files available, return too many open */
@@ -137,16 +136,16 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device,
     else if (path[0] != '\\')
         return GUAC_RDPDR_FS_ENOENT;
 
-    /* Translate access into mode */
+    /* Translate access into flags */
     if (access & ACCESS_GENERIC_ALL)
-        mode = O_RDWR;
+        flags = O_RDWR;
     else if ((access & (ACCESS_GENERIC_WRITE | ACCESS_FILE_WRITE_DATA))
           && (access & (ACCESS_GENERIC_READ  | ACCESS_FILE_READ_DATA)))
-        mode = O_RDWR;
+        flags = O_RDWR;
     else if (access & (ACCESS_GENERIC_WRITE | ACCESS_FILE_WRITE_DATA))
-        mode = O_WRONLY;
+        flags = O_WRONLY;
     else
-        mode = O_RDONLY;
+        flags = O_RDONLY;
 
     /* If append access requested, add appropriate option */
     if (access & ACCESS_FILE_APPEND_DATA)
@@ -198,7 +197,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device,
     __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
 
     /* Open file */
-    fd = open(real_path, flags, mode);
+    fd = open(real_path, flags, 0600);
     if (fd == -1)
         return GUAC_RDPDR_FS_ENOENT;
 
