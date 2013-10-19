@@ -456,11 +456,48 @@ int ssh_guac_client_free_handler(guac_client* client) {
     return 0;
 }
 
+static bool __ssh_guac_valid_filename(char* filename) {
+
+    /* Disallow "." as a filename */
+    if (strcmp(filename, ".") == 0)
+        return false;
+
+    /* Disallow ".." as a filename */
+    if (strcmp(filename, "..") == 0)
+        return false;
+
+    /* Search for path separator characters */
+    for (;;) {
+
+        char c = *(filename++);
+        if (c == '\0')
+            break;
+
+        /* Replace slashes with underscores */
+        if (c == '\\' || c == '/')
+            return false;
+
+    }
+
+    /* If filename does not contain a path, it's ok */
+    return true;
+
+}
+
 int ssh_guac_client_file_handler(guac_client* client, guac_stream* stream,
         char* mimetype, char* filename) {
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     sftp_file file;
+
+    /* Ensure filename is a valid filename and not a path */
+    if (!__ssh_guac_valid_filename(filename)) {
+        guac_protocol_send_ack(client->socket, stream,
+                "SFTP: Illegal filename",
+                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+        guac_socket_flush(client->socket);
+        return 0;
+    }
 
     /* Open file via SFTP */
     file = sftp_open(client_data->sftp_session, filename,
@@ -468,14 +505,14 @@ int ssh_guac_client_file_handler(guac_client* client, guac_stream* stream,
 
     /* Inform of status */
     if (file != NULL) {
-        guac_protocol_send_ack(client->socket, stream, "SFTP - File opened",
+        guac_protocol_send_ack(client->socket, stream, "SFTP: File opened",
                 GUAC_PROTOCOL_STATUS_SUCCESS);
         guac_socket_flush(client->socket);
     }
     else {
         guac_client_log_error(client, "Unable to open file: %s",
                 ssh_get_error(client_data->session));
-        guac_protocol_send_ack(client->socket, stream, "SFTP - Open failed",
+        guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed",
                 GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
         guac_socket_flush(client->socket);
     }
@@ -495,7 +532,7 @@ int ssh_guac_client_blob_handler(guac_client* client, guac_stream* stream,
 
     /* Attempt write */
     if (sftp_write(file, data, length) == length) {
-        guac_protocol_send_ack(client->socket, stream, "SFTP - OK",
+        guac_protocol_send_ack(client->socket, stream, "SFTP: OK",
                 GUAC_PROTOCOL_STATUS_SUCCESS);
         guac_socket_flush(client->socket);
     }
@@ -504,7 +541,7 @@ int ssh_guac_client_blob_handler(guac_client* client, guac_stream* stream,
     else {
         guac_client_log_error(client, "Unable to write to file: %s",
                 ssh_get_error(client_data->session));
-        guac_protocol_send_ack(client->socket, stream, "SFTP - Write failed",
+        guac_protocol_send_ack(client->socket, stream, "SFTP: Write failed",
                 GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
         guac_socket_flush(client->socket);
     }
@@ -520,13 +557,13 @@ int ssh_guac_client_end_handler(guac_client* client, guac_stream* stream) {
 
     /* Attempt to close file */
     if (sftp_close(file) == SSH_OK) {
-        guac_protocol_send_ack(client->socket, stream, "SFTP - OK",
+        guac_protocol_send_ack(client->socket, stream, "SFTP: OK",
                 GUAC_PROTOCOL_STATUS_SUCCESS);
         guac_socket_flush(client->socket);
     }
     else {
         guac_client_log_error(client, "Unable to close file");
-        guac_protocol_send_ack(client->socket, stream, "SFTP - Close failed",
+        guac_protocol_send_ack(client->socket, stream, "SFTP: Close failed",
                 GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
         guac_socket_flush(client->socket);
     }
