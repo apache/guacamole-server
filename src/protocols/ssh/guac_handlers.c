@@ -464,7 +464,7 @@ int ssh_guac_client_file_handler(guac_client* client, guac_stream* stream,
 
     /* Open file via SFTP */
     file = sftp_open(client_data->sftp_session, filename,
-            O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
+            O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
     /* Inform of status */
     if (file != NULL) {
