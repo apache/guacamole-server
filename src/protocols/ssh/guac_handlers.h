@@ -47,6 +47,11 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
 int ssh_guac_client_clipboard_handler(guac_client* client, char* data);
 int ssh_guac_client_size_handler(guac_client* client, int width, int height);
 int ssh_guac_client_free_handler(guac_client* client);
+int ssh_guac_client_file_handler(guac_client* client, guac_stream* stream,
+        char* mimetype, char* filename);
+int ssh_guac_client_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length);
+int ssh_guac_client_end_handler(guac_client* client, guac_stream* stream);
 
 #endif
 
