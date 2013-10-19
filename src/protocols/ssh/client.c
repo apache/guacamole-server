@@ -148,6 +148,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Parse SFTP enable */
     client_data->enable_sftp = strcmp(argv[IDX_ENABLE_SFTP], "true") == 0;
     client_data->sftp_session = NULL;
+    client_data->sftp_ssh_session = NULL;
 
     /* Read port */
     if (argv[IDX_PORT][0] != 0)

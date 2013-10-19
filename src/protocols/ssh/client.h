@@ -97,6 +97,11 @@ typedef struct ssh_guac_client_data {
     ssh_session session;
 
     /**
+     * The distinct SSH session used for SFTP.
+     */
+    ssh_session sftp_ssh_session;
+
+    /**
      * SFTP session, used for file transfers.
      */
     sftp_session sftp_session;

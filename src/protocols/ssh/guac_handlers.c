@@ -437,6 +437,9 @@ int ssh_guac_client_free_handler(guac_client* client) {
     if (guac_client_data->sftp_session)
         sftp_free(guac_client_data->sftp_session);
 
+    if (guac_client_data->sftp_ssh_session)
+        ssh_free(guac_client_data->sftp_ssh_session);
+
     /* Free session */
     ssh_free(guac_client_data->session);
 

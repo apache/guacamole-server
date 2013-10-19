@@ -128,6 +128,42 @@ void* ssh_input_thread(void* data) {
 
 }
 
+static ssh_session __guac_ssh_create_session(guac_client* client) {
+
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
+    /* Open SSH session */
+    ssh_session session = ssh_new();
+    if (session == NULL) {
+        guac_client_log_error(client, "Session allocation failed",
+                ssh_get_error(session));
+        return NULL;
+    }
+
+    /* Set session options */
+    ssh_options_set(session, SSH_OPTIONS_HOST, client_data->hostname);
+    ssh_options_set(session, SSH_OPTIONS_PORT, &(client_data->port));
+    ssh_options_set(session, SSH_OPTIONS_USER, client_data->username);
+
+    /* Connect */
+    if (ssh_connect(session) != SSH_OK) {
+        guac_client_log_error(client, "Unable to connect via SSH: %s",
+                ssh_get_error(session));
+        return NULL;
+    }
+
+    /* Authenticate */
+    if (ssh_userauth_password(session, NULL, client_data->password)
+            != SSH_AUTH_SUCCESS) {
+        guac_client_log_error(client, "Authentication failed: %s",
+                ssh_get_error(session));
+        return NULL;
+    }
+
+    return session;
+
+}
+
 void* ssh_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -162,31 +198,10 @@ void* ssh_client_thread(void* data) {
     guac_terminal_write_all(stdout_fd, "\x1B[H\x1B[J", 6);
 
     /* Open SSH session */
-    client_data->session = ssh_new();
+    client_data->session = __guac_ssh_create_session(client);
     if (client_data->session == NULL) {
         guac_protocol_send_error(socket, "Unable to create SSH session.",
                 GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
-        guac_socket_flush(socket);
-        return NULL;
-    }
-
-    /* Set session options */
-    ssh_options_set(client_data->session, SSH_OPTIONS_HOST, client_data->hostname);
-    ssh_options_set(client_data->session, SSH_OPTIONS_PORT, &(client_data->port));
-    ssh_options_set(client_data->session, SSH_OPTIONS_USER, client_data->username);
-
-    /* Connect */
-    if (ssh_connect(client_data->session) != SSH_OK) {
-        guac_protocol_send_error(socket, "Unable to connect via SSH.",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
-        guac_socket_flush(socket);
-        return NULL;
-    }
-
-    /* Authenticate */
-    if (ssh_userauth_password(client_data->session, NULL, client_data->password) != SSH_AUTH_SUCCESS) {
-        guac_protocol_send_error(socket, "SSH auth failed.",
-                GUAC_PROTOCOL_STATUS_PERMISSION_DENIED);
         guac_socket_flush(socket);
         return NULL;
     }
@@ -211,8 +226,11 @@ void* ssh_client_thread(void* data) {
     /* Start SFTP session as well, if enabled */
     if (client_data->enable_sftp) {
 
+        /* Create SSH session specific for SFTP */
+        client_data->sftp_ssh_session = __guac_ssh_create_session(client);
+
         /* Request SFTP */
-        client_data->sftp_session = sftp_new(client_data->session);
+        client_data->sftp_session = sftp_new(client_data->sftp_ssh_session);
         if (client_data->sftp_session == NULL) {
             guac_protocol_send_error(socket, "Unable to start SFTP session..",
                     GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
