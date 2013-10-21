@@ -233,6 +233,10 @@
 
 #define FileBasicInformation        0x00000004
 #define FileStandardInformation     0x00000005
+#define FileRenameInformation       0x0000000A
+#define FileDispositionInformation  0x0000000D
+#define FileAllocationInformation   0x00000013
+#define FileEndOfFileInformation    0x00000014
 #define FileAttributeTagInformation 0x00000023 
 
 /*

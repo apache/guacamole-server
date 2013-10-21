@@ -129,3 +129,39 @@ void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device, w
             "Unimplemented stub: guac_rdpdr_fs_query_attribute_tag_info");
 }
 
+void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: %s", __func__);
+}
+
+void guac_rdpdr_fs_process_set_allocation_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: %s", __func__);
+}
+
+void guac_rdpdr_fs_process_set_disposition_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: %s", __func__);
+}
+
+void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: %s", __func__);
+}
+
+void guac_rdpdr_fs_process_set_basic_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+    /* STUB */
+    guac_client_log_error(device->rdpdr->client,
+            "Unimplemented stub: %s", __func__);
+}
+
+

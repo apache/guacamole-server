@@ -223,7 +223,7 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
     Stream_Read_UINT64(input_stream, offset);
     Stream_Seek(input_stream, 20); /* Padding */
 
-    output_stream = Stream_New(NULL, 20);
+    output_stream = Stream_New(NULL, 21);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -239,6 +239,7 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
                 "Refusing to write directory as a file");
         Stream_Write_UINT32(output_stream, STATUS_FILE_IS_A_DIRECTORY);
         Stream_Write_UINT32(output_stream, 0); /* Length */
+        Stream_Write_UINT8(output_stream, 0);  /* Padding */
     }
 
     /* Otherwise, perform write */
@@ -257,12 +258,14 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
                     strerror(errno));
             Stream_Write_UINT32(output_stream, STATUS_ACCESS_DENIED);
             Stream_Write_UINT32(output_stream, 0); /* Length */
+            Stream_Write_UINT8(output_stream, 0);  /* Padding */
         }
 
         /* Otherwise, send success */
         else {
             Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
             Stream_Write_UINT32(output_stream, bytes_written);  /* Length */
+            Stream_Write_UINT8(output_stream, 0);  /* Padding */
         }
 
     }
@@ -373,10 +376,49 @@ void guac_rdpdr_fs_process_set_volume_info(guac_rdpdr_device* device, wStream* i
     guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
 }
 
-void guac_rdpdr_fs_process_set_file_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+void guac_rdpdr_fs_process_set_file_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+
+    int fs_information_class;
+
+    Stream_Read_UINT32(input_stream, fs_information_class);
+    Stream_Seek(input_stream, 4);  /* Length */
+    Stream_Seek(input_stream, 24); /* Padding */
+
+    /* Dispatch to appropriate class-specific handler */
+    switch (fs_information_class) {
+
+        case FileBasicInformation:
+            guac_rdpdr_fs_process_set_basic_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        case FileEndOfFileInformation:
+            guac_rdpdr_fs_process_set_end_of_file_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        case FileDispositionInformation:
+            guac_rdpdr_fs_process_set_disposition_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        case FileRenameInformation:
+            guac_rdpdr_fs_process_set_rename_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        case FileAllocationInformation:
+            guac_rdpdr_fs_process_set_allocation_info(device, input_stream,
+                    file_id, completion_id);
+            break;
+
+        default:
+            guac_client_log_info(device->rdpdr->client,
+                    "Unknown file information class: 0x%x",
+                    fs_information_class);
+    }
+
 }
 
 void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device, wStream* input_stream,
