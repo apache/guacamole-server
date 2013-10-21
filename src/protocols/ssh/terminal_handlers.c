@@ -890,10 +890,76 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
 }
 
+int guac_terminal_guac_set_directory(guac_terminal* term, char c) {
+
+    static char filename[2048];
+    static int length = 0;
+
+    /* Stop on ECMA-48 ST (String Terminator */
+    if (c == 0x9C || c == 0x5C || c == 0x07) {
+        filename[length++] = '\0';
+        term->char_handler = guac_terminal_echo;
+        guac_client_log_info(term->client, "STUB: set: %s", filename);
+        length = 0;
+    }
+
+    /* Otherwise, store character */
+    else if (length < sizeof(filename)-1)
+        filename[length++] = c;
+
+    return 0;
+
+}
+
+int guac_terminal_guac_download(guac_terminal* term, char c) {
+
+    static char filename[2048];
+    static int length = 0;
+
+    /* Stop on ECMA-48 ST (String Terminator */
+    if (c == 0x9C || c == 0x5C || c == 0x07) {
+        filename[length++] = '\0';
+        term->char_handler = guac_terminal_echo;
+        guac_client_log_info(term->client, "STUB: get: %s", filename);
+        length = 0;
+    }
+
+    /* Otherwise, store character */
+    else if (length < sizeof(filename)-1)
+        filename[length++] = c;
+
+    return 0;
+
+}
+
 int guac_terminal_osc(guac_terminal* term, char c) {
-    /* TODO: Implement OSC */
-    if (c == 0x9C || c == 0x5C || c == 0x07) /* ECMA-48 ST (String Terminator */
-       term->char_handler = guac_terminal_echo; 
+
+    static int operation = 0;
+
+    /* If digit, append to operation */
+    if (c >= '0' && c <= '9')
+        operation = operation * 10 + c - '0';
+
+    /* If end of parameter, check value */
+    else if (c == ';') {
+
+        /* Download OSC */
+        if (operation == 482200)
+            term->char_handler = guac_terminal_guac_download;
+
+        /* Set upload directory OSC */
+        else if (operation == 482201)
+            term->char_handler = guac_terminal_guac_set_directory;
+
+        /* Reset parameter for next OSC */
+        operation = 0;
+
+    }
+
+    /* Stop on ECMA-48 ST (String Terminator */
+    else if (c == 0x9C || c == 0x5C || c == 0x07)
+        term->char_handler = guac_terminal_echo;
+
     return 0;
 }
 
