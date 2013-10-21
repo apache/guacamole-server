@@ -81,21 +81,21 @@ void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device,
  * this operation is used to rename a file.
  */
 void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        wStream* input_stream, int file_id, int completion_id, int length);
 
 /**
  * Process a set operation for FileAllocationInformation. From the
  * documentation, this operation is used to set a file's allocation size.
  */
 void guac_rdpdr_fs_process_set_allocation_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        wStream* input_stream, int file_id, int completion_id, int length);
 
 /**
  * Process a set operation for FileDispositionInformation. From the
  * documentation, this operation is used to mark a file for deletion.
  */
 void guac_rdpdr_fs_process_set_disposition_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        wStream* input_stream, int file_id, int completion_id, int length);
 
 /**
  * Process a set operation for FileEndOfFileInformation. From the
@@ -103,7 +103,7 @@ void guac_rdpdr_fs_process_set_disposition_info(guac_rdpdr_device* device,
  * a file."
  */
 void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        wStream* input_stream, int file_id, int completion_id, int length);
 
 /**
  * Process a set operation for FileBasicInformation. From the documentation,
@@ -111,6 +111,6 @@ void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdpdr_device* device,
  * access, last write, and change, in addition to file attributes."
  */
 void guac_rdpdr_fs_process_set_basic_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+        wStream* input_stream, int file_id, int completion_id, int length);
 
 #endif

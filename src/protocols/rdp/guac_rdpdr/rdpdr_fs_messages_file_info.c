@@ -130,35 +130,63 @@ void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device, w
 }
 
 void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
+        wStream* input_stream, int file_id, int completion_id, int length) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,
             "Unimplemented stub: %s", __func__);
 }
 
 void guac_rdpdr_fs_process_set_allocation_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: %s", __func__);
+        wStream* input_stream, int file_id, int completion_id, int length) {
+
+    wStream* output_stream = Stream_New(NULL, 60);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+
+    /* No content for now */
+    Stream_Write_UINT32(output_stream, length);
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
 }
 
 void guac_rdpdr_fs_process_set_disposition_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
+        wStream* input_stream, int file_id, int completion_id, int length) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,
             "Unimplemented stub: %s", __func__);
 }
 
 void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: %s", __func__);
+        wStream* input_stream, int file_id, int completion_id, int length) {
+
+    wStream* output_stream = Stream_New(NULL, 60);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+
+    /* No content for now */
+    Stream_Write_UINT32(output_stream, length);
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
 }
 
 void guac_rdpdr_fs_process_set_basic_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
+        wStream* input_stream, int file_id, int completion_id, int length) {
     /* STUB */
     guac_client_log_error(device->rdpdr->client,
             "Unimplemented stub: %s", __func__);

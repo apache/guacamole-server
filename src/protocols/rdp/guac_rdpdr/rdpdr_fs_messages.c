@@ -380,37 +380,38 @@ void guac_rdpdr_fs_process_set_file_info(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {
 
     int fs_information_class;
+    int length;
 
     Stream_Read_UINT32(input_stream, fs_information_class);
-    Stream_Seek(input_stream, 4);  /* Length */
-    Stream_Seek(input_stream, 24); /* Padding */
+    Stream_Read_UINT32(input_stream, length); /* Length */
+    Stream_Seek(input_stream, 24);            /* Padding */
 
     /* Dispatch to appropriate class-specific handler */
     switch (fs_information_class) {
 
         case FileBasicInformation:
             guac_rdpdr_fs_process_set_basic_info(device, input_stream,
-                    file_id, completion_id);
+                    file_id, completion_id, length);
             break;
 
         case FileEndOfFileInformation:
             guac_rdpdr_fs_process_set_end_of_file_info(device, input_stream,
-                    file_id, completion_id);
+                    file_id, completion_id, length);
             break;
 
         case FileDispositionInformation:
             guac_rdpdr_fs_process_set_disposition_info(device, input_stream,
-                    file_id, completion_id);
+                    file_id, completion_id, length);
             break;
 
         case FileRenameInformation:
             guac_rdpdr_fs_process_set_rename_info(device, input_stream,
-                    file_id, completion_id);
+                    file_id, completion_id, length);
             break;
 
         case FileAllocationInformation:
             guac_rdpdr_fs_process_set_allocation_info(device, input_stream,
-                    file_id, completion_id);
+                    file_id, completion_id, length);
             break;
 
         default:
