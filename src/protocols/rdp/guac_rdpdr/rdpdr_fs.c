@@ -111,8 +111,9 @@ static void __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
 
 }
 
-int guac_rdpdr_fs_open(guac_rdpdr_device* device,
-        const char* path, int access, int create_disposition) {
+int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
+        int access, int file_attributes, int create_disposition,
+        int create_options) {
 
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
     char real_path[GUAC_RDPDR_FS_MAX_PATH];

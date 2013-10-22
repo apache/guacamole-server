@@ -239,7 +239,8 @@ int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* a
  * if an error occurs.
  */
 int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
-        int access, int create_disposition);
+        int access, int file_attributes, int create_disposition,
+        int create_options);
 
 /**
  * Frees the given file ID, allowing future open operations to reuse it.

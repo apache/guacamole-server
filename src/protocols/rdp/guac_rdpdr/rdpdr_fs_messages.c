@@ -78,23 +78,13 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
     /* FIXME: Validate path length */
 
-    /* STUB: create_options */
-    guac_client_log_info(device->rdpdr->client,
-            "%s: STUB: Unused variable: create_options (%i)", __func__,
-            create_options);
-
-    /* STUB: file_attributes */
-    guac_client_log_info(device->rdpdr->client,
-            "%s: STUB: Unused variable: file_attributes (%i)", __func__,
-            file_attributes);
-
     /* Convert path to UTF-8 */
     guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream),
             path, path_length/2 - 1);
 
     /* Open file */
-    file_id = guac_rdpdr_fs_open(device, path, desired_access,
-            create_disposition);
+    file_id = guac_rdpdr_fs_open(device, path, desired_access, file_attributes,
+            create_disposition, create_options);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -499,7 +489,7 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
 
             /* Open directory entry */
             entry_file_id = guac_rdpdr_fs_open(device, entry_path,
-                    ACCESS_FILE_READ_DATA, DISP_FILE_OVERWRITE);
+                    ACCESS_FILE_READ_DATA, 0, DISP_FILE_OPEN, 0);
 
             if (entry_file_id >= 0) {
 
