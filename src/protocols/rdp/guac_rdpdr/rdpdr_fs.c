@@ -35,6 +35,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -151,36 +152,44 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device,
     if (access & ACCESS_FILE_APPEND_DATA)
         flags |= O_APPEND;
 
+    /* Normalize path, return no-such-file if invalid  */
+    if (guac_rdpdr_fs_normalize_path(path, normalized_path))
+        return GUAC_RDPDR_FS_ENOENT;
+
+    /* Translate normalized path to real path */
+    __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
+
     switch (create_disposition) {
 
-        /* Supersede (replace) if exists, otherwise create */
-        case DISP_FILE_SUPERSEDE:
-            flags |= O_TRUNC | O_CREAT;
+        /* Create if not exist, fail otherwise */
+        case DISP_FILE_CREATE:
+            flags |= O_CREAT | O_EXCL;
             break;
 
         /* Open file if exists and do not overwrite, fail otherwise */
         case DISP_FILE_OPEN:
-            flags |= O_APPEND;
-            break;
-
-        /* Create if not exist, fail otherwise */
-        case DISP_FILE_CREATE:
-            flags |= O_EXCL;
+            /* No flag necessary - default functionality of open */
             break;
 
         /* Open if exists, create otherwise */
         case DISP_FILE_OPEN_IF:
-            flags |= O_APPEND | O_CREAT;
+            flags |= O_CREAT;
             break;
 
         /* Overwrite if exists, fail otherwise */
         case DISP_FILE_OVERWRITE:
-            /* No flag necessary - default functionality of open */
+            flags |= O_TRUNC;
             break;
 
         /* Overwrite if exists, create otherwise */
         case DISP_FILE_OVERWRITE_IF:
-            flags |= O_CREAT;
+            flags |= O_CREAT | O_TRUNC;
+            break;
+
+        /* Supersede (replace) if exists, otherwise create */
+        case DISP_FILE_SUPERSEDE:
+            unlink(real_path);
+            flags |= O_CREAT | O_TRUNC;
             break;
 
         /* Unrecognised disposition */
@@ -188,13 +197,6 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device,
             return GUAC_RDPDR_FS_ENOENT; /* FIXME: Replace with real return value */
 
     }
-
-    /* Normalize path, return no-such-file if invalid  */
-    if (guac_rdpdr_fs_normalize_path(path, normalized_path))
-        return GUAC_RDPDR_FS_ENOENT;
-
-    /* Translate normalized path to real path */
-    __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
 
     /* Open file */
     fd = open(real_path, flags, 0600);
