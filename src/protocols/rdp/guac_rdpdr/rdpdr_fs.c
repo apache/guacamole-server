@@ -199,7 +199,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device,
     }
 
     /* Open file */
-    fd = open(real_path, flags, 0600);
+    fd = open(real_path, flags, S_IRUSR | S_IWUSR);
     if (fd == -1)
         return GUAC_RDPDR_FS_ENOENT;
 
