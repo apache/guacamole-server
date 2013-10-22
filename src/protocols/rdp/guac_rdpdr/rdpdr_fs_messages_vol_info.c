@@ -51,19 +51,11 @@
 
 #include <freerdp/utils/svc_plugin.h>
 
-void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
 
-    wStream* output_stream = Stream_New(NULL, 38 + GUAC_FILESYSTEM_NAME_LENGTH);
-
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_SUCCESS, 21 + GUAC_FILESYSTEM_LABEL_LENGTH);
 
     Stream_Write_UINT32(output_stream, 17 + GUAC_FILESYSTEM_LABEL_LENGTH);
     Stream_Write_UINT64(output_stream, 0); /* VolumeCreationTime */

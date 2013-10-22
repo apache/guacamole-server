@@ -167,5 +167,12 @@ void guac_rdpdr_process_terminate(rdpSvcPlugin* plugin);
  */
 void guac_rdpdr_process_event(rdpSvcPlugin* plugin, wMessage* event);
 
+/**
+ * Creates a new stream which contains the ommon DR_DEVICE_IOCOMPLETION header
+ * used for virtually all responses.
+ */
+wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
+        int completion_id, int status, int size);
+
 #endif
 

@@ -55,7 +55,7 @@
 void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
-    wStream* output_stream = Stream_New(NULL, 60);
+    wStream* output_stream;
     guac_rdpdr_fs_file* file;
 
     /* Get file */
@@ -63,14 +63,8 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
     if (file == NULL)
         return;
 
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+            STATUS_SUCCESS, 40);
 
     Stream_Write_UINT32(output_stream, 36);
     Stream_Write_UINT64(output_stream, file->ctime);      /* CreationTime   */
@@ -88,7 +82,7 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
 void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
-    wStream* output_stream = Stream_New(NULL, 60);
+    wStream* output_stream;
     guac_rdpdr_fs_file* file;
     BOOL is_directory = FALSE;
 
@@ -100,14 +94,8 @@ void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStrea
     if (file->attributes & FILE_ATTRIBUTE_DIRECTORY)
         is_directory = TRUE;
 
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+            STATUS_SUCCESS, 26);
 
     Stream_Write_UINT32(output_stream, 22);
     Stream_Write_UINT64(output_stream, file->size);   /* AllocationSize */
@@ -139,18 +127,10 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_set_allocation_info(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id, int length) {
 
-    wStream* output_stream = Stream_New(NULL, 60);
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_SUCCESS, 4);
 
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
-
-    /* No content for now */
+    /* Currently do nothing, just respond */
     Stream_Write_UINT32(output_stream, length);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
@@ -167,18 +147,10 @@ void guac_rdpdr_fs_process_set_disposition_info(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id, int length) {
 
-    wStream* output_stream = Stream_New(NULL, 60);
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_SUCCESS, 4);
 
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
-
-    /* No content for now */
+    /* Currently do nothing, just respond */
     Stream_Write_UINT32(output_stream, length);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);

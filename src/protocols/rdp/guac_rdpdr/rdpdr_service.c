@@ -216,3 +216,21 @@ void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
 
 }
 
+wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
+        int completion_id, int status, int size) {
+
+    wStream* output_stream = Stream_New(NULL, 16+size);
+
+    /* Write header */
+    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
+    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
+
+    /* Write content */
+    Stream_Write_UINT32(output_stream, device->device_id);
+    Stream_Write_UINT32(output_stream, completion_id);
+    Stream_Write_UINT32(output_stream, status);
+
+    return output_stream;
+
+}
+

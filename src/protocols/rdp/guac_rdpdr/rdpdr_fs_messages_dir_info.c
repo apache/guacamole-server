@@ -77,14 +77,8 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     if (file == NULL)
         return;
 
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+            STATUS_SUCCESS, 4 + 69 + 24 + utf16_length + 2);
 
     Stream_Write_UINT32(output_stream,
             69 + 24 + utf16_length + 2); /* Length */

@@ -60,7 +60,7 @@
 void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {
 
-    wStream* output_stream = Stream_New(NULL, 21);
+    wStream* output_stream;
     int file_id;
 
     int desired_access, file_attributes;
@@ -86,19 +86,13 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
     file_id = guac_rdpdr_fs_open(device, path, desired_access, file_attributes,
             create_disposition, create_options);
 
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-
     /* If no file IDs available, notify server */
     if (file_id == GUAC_RDPDR_FS_ENFILE) {
         guac_client_log_error(device->rdpdr->client,
                 "File open refused - too many open files");
-        Stream_Write_UINT32(output_stream, STATUS_TOO_MANY_OPENED_FILES);
+
+        output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                STATUS_TOO_MANY_OPENED_FILES, 5);
         Stream_Write_UINT32(output_stream, 0); /* fileId */
         Stream_Write_UINT8(output_stream,  0); /* information */
     }
@@ -107,14 +101,17 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
     else if (file_id == GUAC_RDPDR_FS_ENOENT) {
         guac_client_log_error(device->rdpdr->client,
                 "File open refused - does not exist: \"%s\"", path);
-        Stream_Write_UINT32(output_stream, STATUS_NO_SUCH_FILE);
+
+        output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                STATUS_NO_SUCH_FILE, 5);
         Stream_Write_UINT32(output_stream, 0); /* fileId */
         Stream_Write_UINT8(output_stream,  0); /* information */
     }
 
     /* Otherwise, open succeeded */
     else {
-        Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+        output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                STATUS_SUCCESS, 5);
         Stream_Write_UINT32(output_stream, file_id);    /* fileId */
         Stream_Write_UINT8(output_stream,  0);          /* information */
     }
@@ -142,21 +139,13 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
     Stream_Read_UINT32(input_stream, length);
     Stream_Read_UINT64(input_stream, offset);
 
-    output_stream = Stream_New(NULL, 20 + sizeof(buffer));
-
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-
     /* If file is a directory, fail */
     if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
         guac_client_log_error(device->rdpdr->client,
                 "Refusing to read directory as a file");
-        Stream_Write_UINT32(output_stream, STATUS_FILE_IS_A_DIRECTORY);
+
+        output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                STATUS_FILE_IS_A_DIRECTORY, 4);
         Stream_Write_UINT32(output_stream, 0); /* Length */
     }
 
@@ -177,13 +166,16 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
         if (bytes_read < 0) {
             guac_client_log_error(device->rdpdr->client,
                     "Unable to read from file: %s", strerror(errno));
-            Stream_Write_UINT32(output_stream, STATUS_INVALID_PARAMETER);
+
+            output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                    STATUS_INVALID_PARAMETER, 4);
             Stream_Write_UINT32(output_stream, 0); /* Length */
         }
 
         /* Otherwise, send bytes read */
         else {
-            Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+            output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                    STATUS_SUCCESS, 4+bytes_read);
             Stream_Write_UINT32(output_stream, bytes_read);  /* Length */
             Stream_Write(output_stream, buffer, bytes_read); /* ReadData */
         }
@@ -213,21 +205,13 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
     Stream_Read_UINT64(input_stream, offset);
     Stream_Seek(input_stream, 20); /* Padding */
 
-    output_stream = Stream_New(NULL, 21);
-
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-
     /* If file is a directory, fail */
     if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
         guac_client_log_error(device->rdpdr->client,
                 "Refusing to write directory as a file");
-        Stream_Write_UINT32(output_stream, STATUS_FILE_IS_A_DIRECTORY);
+
+        output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                STATUS_FILE_IS_A_DIRECTORY, 5);
         Stream_Write_UINT32(output_stream, 0); /* Length */
         Stream_Write_UINT8(output_stream, 0);  /* Padding */
     }
@@ -246,14 +230,17 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
             guac_client_log_error(device->rdpdr->client,
                     "Unable to write to file %i: %s", file->fd,
                     strerror(errno));
-            Stream_Write_UINT32(output_stream, STATUS_ACCESS_DENIED);
+
+            output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                    STATUS_ACCESS_DENIED, 5);
             Stream_Write_UINT32(output_stream, 0); /* Length */
             Stream_Write_UINT8(output_stream, 0);  /* Padding */
         }
 
         /* Otherwise, send success */
         else {
-            Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+            output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+                    STATUS_SUCCESS, 5);
             Stream_Write_UINT32(output_stream, bytes_written);  /* Length */
             Stream_Write_UINT8(output_stream, 0);  /* Padding */
         }
@@ -267,19 +254,13 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {
 
-    wStream* output_stream = Stream_New(NULL, 20);
+    wStream* output_stream;
 
     /* Close file */
     guac_rdpdr_fs_close(device, file_id);
 
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_SUCCESS);
+    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+            STATUS_SUCCESS, 4);
     Stream_Write(output_stream, "\0\0\0\0", 4); /* Padding */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
@@ -412,19 +393,11 @@ void guac_rdpdr_fs_process_set_file_info(guac_rdpdr_device* device,
 
 }
 
-void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
+void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
 
-    wStream* output_stream = Stream_New(NULL, 60);
-
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_INVALID_PARAMETER);
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_INVALID_PARAMETER, 4);
 
     /* No content for now */
     Stream_Write_UINT32(output_stream, 0);
@@ -533,18 +506,11 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
      * Handle errors as a lack of files.
      */
 
-    output_stream = Stream_New(NULL, 21);
+    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+            STATUS_NO_MORE_FILES, 5);
 
-    /* Write header */
-    Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
-    Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICE_IOCOMPLETION);
-
-    /* Write content */
-    Stream_Write_UINT32(output_stream, device->device_id);
-    Stream_Write_UINT32(output_stream, completion_id);
-    Stream_Write_UINT32(output_stream, STATUS_NO_MORE_FILES);
-    Stream_Write_UINT32(output_stream, 0);
-    Stream_Write_UINT8(output_stream, 0);
+    Stream_Write_UINT32(output_stream, 0); /* Length */
+    Stream_Write_UINT8(output_stream, 0);  /* Padding */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
