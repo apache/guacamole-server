@@ -85,9 +85,19 @@ void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream*
 
 void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: guac_rdpdr_fs_query_attribute_info");
+
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_SUCCESS, 16 + GUAC_FILESYSTEM_NAME_LENGTH);
+
+    Stream_Write_UINT32(output_stream, 12 + GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT32(output_stream, FILE_UNICODE_ON_DISK); /* FileSystemAttributes */
+    Stream_Write_UINT32(output_stream, GUAC_RDPDR_FS_MAX_PATH ); /* MaximumComponentNameLength */
+    Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write(output_stream, GUAC_FILESYSTEM_NAME,
+            GUAC_FILESYSTEM_NAME_LENGTH);
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
 }
 
 void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,

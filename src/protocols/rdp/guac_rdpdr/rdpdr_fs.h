@@ -125,6 +125,12 @@
 #define FILE_ATTRIBUTE_DIRECTORY 0x00000010
 #define FILE_ATTRIBUTE_NORMAL    0x00000080
 
+/*
+ * Filesystem attributes.
+ */
+
+#define FILE_UNICODE_ON_DISK 0x00000004
+
 #define SEC_TO_UNIX_EPOCH 11644473600
 
 /**
