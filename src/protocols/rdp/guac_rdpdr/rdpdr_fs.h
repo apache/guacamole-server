@@ -83,9 +83,53 @@
 #define GUAC_RDPDR_FS_ENFILE -1
 
 /**
- * Error code returned with no such file exists.
+ * Error code returned when no such file exists.
  */
 #define GUAC_RDPDR_FS_ENOENT -2
+
+/**
+ * Error code returned when the operation required a directory
+ * but the file was not a directory.
+ */
+#define GUAC_RDPDR_FS_ENOTDIR -3
+
+/**
+ * Error code returned when insufficient space exists to complete
+ * the operation.
+ */
+#define GUAC_RDPDR_FS_ENOSPC -4
+
+/**
+ * Error code returned when the operation requires a normal file but
+ * a directory was given.
+ */
+#define GUAC_RDPDR_FS_EISDIR -5
+
+/**
+ * Error code returned when permission is denied.
+ */
+#define GUAC_RDPDR_FS_EACCES -6
+
+/**
+ * Error code returned when the operation cannot be completed because the
+ * file already exists.
+ */
+#define GUAC_RDPDR_FS_EEXIST -7
+
+/**
+ * Error code returned when invalid parameters were given.
+ */
+#define GUAC_RDPDR_FS_EINVAL -8
+
+/**
+ * Error code returned when the operation is not implemented.
+ */
+#define GUAC_RDPDR_FS_ENOSYS -9
+
+/**
+ * Error code returned when the operation is not supported.
+ */
+#define GUAC_RDPDR_FS_ENOTSUP -10
 
 /*
  * Access constants.
@@ -239,6 +283,16 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr);
  * parent path. If the path cannot be converted, non-zero is returned.
  */
 int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* abs_path);
+
+/**
+ * Translates the given errno error code to a GUAC_RDPDR_FS error code.
+ */
+int guac_rdpdr_fs_get_errorcode(int err);
+
+/**
+ * Teanslates the given GUAC_RDPDR_FS error code to an RDPDR status code.
+ */
+int guac_rdpdr_fs_get_status(int err);
 
 /**
  * Returns the next available file ID, or an error code less than zero

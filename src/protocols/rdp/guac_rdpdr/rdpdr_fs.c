@@ -41,6 +41,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <fnmatch.h>
+#include <errno.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -108,6 +109,44 @@ static void __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
 
     /* Null terminator */
     *real_path = 0;
+
+}
+
+int guac_rdpdr_fs_get_errorcode(int err) {
+
+    /* Translate errno codes to GUAC_RDPDR_FS codes */
+    if (err == ENFILE)  return GUAC_RDPDR_FS_ENFILE;
+    if (err == ENOENT)  return GUAC_RDPDR_FS_ENOENT;
+    if (err == ENOTDIR) return GUAC_RDPDR_FS_ENOTDIR;
+    if (err == ENOSPC)  return GUAC_RDPDR_FS_ENOSPC;
+    if (err == EISDIR)  return GUAC_RDPDR_FS_EISDIR;
+    if (err == EACCES)  return GUAC_RDPDR_FS_EACCES;
+    if (err == EEXIST)  return GUAC_RDPDR_FS_EEXIST;
+    if (err == EINVAL)  return GUAC_RDPDR_FS_EINVAL;
+    if (err == ENOSYS)  return GUAC_RDPDR_FS_ENOSYS;
+    if (err == ENOTSUP) return GUAC_RDPDR_FS_ENOTSUP;
+
+    /* Default to invalid parameter */
+    return GUAC_RDPDR_FS_EINVAL;
+
+}
+
+int guac_rdpdr_fs_get_status(int err) {
+
+    /* Translate GUAC_RDPDR_FS error code to RDPDR status code */
+    if (err == GUAC_RDPDR_FS_ENFILE)  return STATUS_NO_MORE_FILES;
+    if (err == GUAC_RDPDR_FS_ENOENT)  return STATUS_NO_SUCH_FILE;
+    if (err == GUAC_RDPDR_FS_ENOTDIR) return STATUS_NOT_A_DIRECTORY;
+    if (err == GUAC_RDPDR_FS_ENOSPC)  return STATUS_DISK_FULL;
+    if (err == GUAC_RDPDR_FS_EISDIR)  return STATUS_FILE_IS_A_DIRECTORY;
+    if (err == GUAC_RDPDR_FS_EACCES)  return STATUS_ACCESS_DENIED;
+    if (err == GUAC_RDPDR_FS_EEXIST)  return STATUS_OBJECT_NAME_COLLISION;
+    if (err == GUAC_RDPDR_FS_EINVAL)  return STATUS_INVALID_PARAMETER;
+    if (err == GUAC_RDPDR_FS_ENOSYS)  return STATUS_NOT_IMPLEMENTED;
+    if (err == GUAC_RDPDR_FS_ENOTSUP) return STATUS_NOT_SUPPORTED;
+
+    /* Default to invalid parameter */
+    return STATUS_INVALID_PARAMETER;
 
 }
 
@@ -195,7 +234,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
         /* Unrecognised disposition */
         default:
-            return GUAC_RDPDR_FS_ENOENT; /* FIXME: Replace with real return value */
+            return GUAC_RDPDR_FS_ENOSYS;
 
     }
 
@@ -206,7 +245,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     /* Open file */
     fd = open(real_path, flags, S_IRUSR | S_IWUSR);
     if (fd == -1)
-        return GUAC_RDPDR_FS_ENOENT;
+        return guac_rdpdr_fs_get_errorcode(errno);
 
     /* Get file ID, init file */
     file_id = guac_pool_next_int(data->file_id_pool);
