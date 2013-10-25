@@ -89,6 +89,7 @@ noinst_HEADERS =                             \
 	guac_rdpsnd/rdpsnd_service.h             \
 	client.h                                 \
 	config.h                                 \
+	debug.h                                  \
 	default_pointer.h                        \
 	guac_handlers.h                          \
 	rdp_bitmap.h                             \
