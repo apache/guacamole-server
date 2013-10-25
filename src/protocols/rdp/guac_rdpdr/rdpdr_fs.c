@@ -283,6 +283,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     file->dir = NULL;
     file->dir_pattern[0] = '\0';
     file->absolute_path = strdup(normalized_path);
+    file->real_path = strdup(real_path);
 
     GUAC_RDP_DEBUG(2, "Opened \"%s\" as file_id=%i", normalized_path, file_id);
 
@@ -325,14 +326,47 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
 }
 
+int guac_rdpdr_fs_rename(guac_rdpdr_device* device, int file_id,
+        const char* new_path) {
+
+    char real_path[GUAC_RDPDR_FS_MAX_PATH];
+    char normalized_path[GUAC_RDPDR_FS_MAX_PATH];
+
+    guac_rdpdr_fs_file* file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL) {
+        GUAC_RDP_DEBUG(1, "Rename of bad file_id: %i", file_id);
+        return GUAC_RDPDR_FS_EINVAL;
+    }
+
+    /* Normalize path, return no-such-file if invalid  */
+    if (guac_rdpdr_fs_normalize_path(new_path, normalized_path)) {
+        GUAC_RDP_DEBUG(1, "Normalization of path \"%s\" failed.", new_path);
+        return GUAC_RDPDR_FS_ENOENT;
+    }
+
+    /* Translate normalized path to real path */
+    __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
+
+    GUAC_RDP_DEBUG(2, "Renaming \"%s\" -> \"%s\"", file->real_path, real_path);
+
+    /* Perform rename */
+    if (rename(file->real_path, real_path)) {
+        GUAC_RDP_DEBUG(1, "rename() failed: \"%s\" -> \"%s\"",
+                file->real_path, real_path);
+        return guac_rdpdr_fs_get_errorcode(errno);
+    }
+
+    return 0;
+
+}
+
 void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
 
     guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_rdpdr_fs_file* file;
 
-    /* Only close if file ID is valid */
-    if (file_id < 0 || file_id >= GUAC_RDPDR_FS_MAX_FILES) {
-        GUAC_RDP_DEBUG(2, "Ignoring close for out-of-range file_id: %i",
+    guac_rdpdr_fs_file* file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL) {
+        GUAC_RDP_DEBUG(2, "Ignoring close for bad file_id: %i",
                 file_id);
         return;
     }
@@ -351,6 +385,7 @@ void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
 
     /* Free name */
     free(file->absolute_path);
+    free(file->real_path);
 
     /* Free ID back to pool */
     guac_pool_free_int(data->file_id_pool, file_id);

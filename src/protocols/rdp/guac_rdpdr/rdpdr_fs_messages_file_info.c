@@ -143,9 +143,33 @@ void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device,
 
 void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id, int length) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: %s", __func__);
+
+    int result;
+    int filename_length;
+    wStream* output_stream;
+    char destination_path[GUAC_RDPDR_FS_MAX_PATH];
+
+    /* Read structure */
+    Stream_Seek_UINT8(input_stream); /* ReplaceIfExists */
+    Stream_Seek_UINT8(input_stream); /* RootDirectory */
+    Stream_Read_UINT32(input_stream, filename_length); /* FileNameLength */
+
+    /* Convert name to UTF-8 */
+    guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream),
+            destination_path, filename_length/2);
+
+    /* Perform rename */
+    result = guac_rdpdr_fs_rename(device, file_id, destination_path);
+    if (result < 0)
+        output_stream = guac_rdpdr_new_io_completion(device,
+                completion_id, guac_rdpdr_fs_get_status(result), 4);
+    else
+        output_stream = guac_rdpdr_new_io_completion(device,
+                completion_id, STATUS_SUCCESS, 4);
+
+    Stream_Write_UINT32(output_stream, length);
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
 }
 
 void guac_rdpdr_fs_process_set_allocation_info(guac_rdpdr_device* device,

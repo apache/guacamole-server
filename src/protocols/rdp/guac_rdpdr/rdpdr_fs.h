@@ -209,6 +209,11 @@ typedef struct guac_rdpdr_fs_file {
     char* absolute_path;
 
     /**
+     * The real path of this file on the local filesystem.
+     */
+    char* real_path;
+
+    /**
      * Associated local file descriptor.
      */
     int fd;
@@ -308,6 +313,13 @@ int guac_rdpdr_fs_get_status(int err);
 int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         int access, int file_attributes, int create_disposition,
         int create_options);
+
+/**
+ * Renames (moves) the file with the given ID to the new path specified.
+ * Returns zero on success, or an error code if an error occurs.
+ */
+int guac_rdpdr_fs_rename(guac_rdpdr_device* device, int file_id,
+        const char* new_path);
 
 /**
  * Frees the given file ID, allowing future open operations to reuse it.
