@@ -59,6 +59,7 @@
 #include "rdpdr_fs.h"
 #include "rdpdr_service.h"
 #include "client.h"
+#include "debug.h"
 #include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
@@ -165,17 +166,26 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
     int flags = 0;
 
+    GUAC_RDP_DEBUG(2, "path=\"%s\", access=0x%x, file_attributes=0x%x, "
+                      "create_disposition=0x%x, create_options=0x%x",
+                      path, access, file_attributes, create_disposition,
+                      create_options);
+
     /* If no files available, return too many open */
-    if (data->open_files >= GUAC_RDPDR_FS_MAX_FILES)
+    if (data->open_files >= GUAC_RDPDR_FS_MAX_FILES) {
+        GUAC_RDP_DEBUG(1, "%s", "Failure - too many open files.");
         return GUAC_RDPDR_FS_ENFILE;
+    }
 
     /* If path empty, transform to root path */
     if (path[0] == '\0')
         path = "\\";
 
     /* If path is relative, the file does not exist */
-    else if (path[0] != '\\')
+    else if (path[0] != '\\') {
+        GUAC_RDP_DEBUG(1, "Failure - path \"%s\" is relative.", path);
         return GUAC_RDPDR_FS_ENOENT;
+    }
 
     /* Translate access into flags */
     if (access & ACCESS_GENERIC_ALL)
@@ -193,11 +203,19 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         flags |= O_APPEND;
 
     /* Normalize path, return no-such-file if invalid  */
-    if (guac_rdpdr_fs_normalize_path(path, normalized_path))
+    if (guac_rdpdr_fs_normalize_path(path, normalized_path)) {
+        GUAC_RDP_DEBUG(1, "Normalization of path \"%s\" failed.", path);
         return GUAC_RDPDR_FS_ENOENT;
+    }
+
+    GUAC_RDP_DEBUG(2, "Normalized path \"%s\" to \"%s\".",
+            path, normalized_path);
 
     /* Translate normalized path to real path */
     __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
+
+    GUAC_RDP_DEBUG(2, "Translated path \"%s\" to \"%s\".",
+            normalized_path, real_path);
 
     switch (create_disposition) {
 
@@ -240,14 +258,18 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
     /* Create directory first, if necessary */
     if (file_attributes & FILE_ATTRIBUTE_DIRECTORY && (flags & O_CREAT)) {
-        if (mkdir(real_path, S_IRWXU))
+        if (mkdir(real_path, S_IRWXU)) {
+            GUAC_RDP_DEBUG(1, "mkdir() failed: %s", strerror(errno));
             return guac_rdpdr_fs_get_errorcode(errno);
+        }
     }
 
     /* Open file */
     fd = open(real_path, flags, S_IRUSR | S_IWUSR);
-    if (fd == -1)
+    if (fd == -1) {
+        GUAC_RDP_DEBUG(1, "open() failed: %s", strerror(errno));
         return guac_rdpdr_fs_get_errorcode(errno);
+    }
 
     /* Get file ID, init file */
     file_id = guac_pool_next_int(data->file_id_pool);
@@ -256,6 +278,8 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     file->dir = NULL;
     file->dir_pattern[0] = '\0';
     file->absolute_path = strdup(normalized_path);
+
+    GUAC_RDP_DEBUG(2, "Opened \"%s\" as file_id=%i", normalized_path, file_id);
 
     /* Attempt to pull file information */
     if (fstat(fd, &file_stat) == 0) {
@@ -302,10 +326,16 @@ void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
     guac_rdpdr_fs_file* file;
 
     /* Only close if file ID is valid */
-    if (file_id < 0 || file_id >= GUAC_RDPDR_FS_MAX_FILES)
+    if (file_id < 0 || file_id >= GUAC_RDPDR_FS_MAX_FILES) {
+        GUAC_RDP_DEBUG(2, "Ignoring close for out-of-range file_id: %i",
+                file_id);
         return;
+    }
 
     file = &(data->files[file_id]);
+
+    GUAC_RDP_DEBUG(2, "Closed \"%s\" (file_id=%i)",
+            file->absolute_path, file_id);
 
     /* Close directory, if open */
     if (file->dir != NULL)
