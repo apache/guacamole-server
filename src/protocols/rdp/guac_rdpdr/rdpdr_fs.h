@@ -315,6 +315,22 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         int create_options);
 
 /**
+ * Reads up to the given length of bytes from the given offset within the
+ * file having the given ID. Returns the number of bytes read, zero on EOF,
+ * and an error code if an error occurs.
+ */
+int guac_rdpdr_fs_read(guac_rdpdr_device* device, int file_id, int offset,
+        void* buffer, int length);
+
+/**
+ * Writes up to the given length of bytes from the given offset within the
+ * file having the given ID. Returns the number of bytes written, and an
+ * error code if an error occurs.
+ */
+int guac_rdpdr_fs_write(guac_rdpdr_device* device, int file_id, int offset,
+        void* buffer, int length);
+
+/**
  * Renames (moves) the file with the given ID to the new path specified.
  * Returns zero on success, or an error code if an error occurs.
  */

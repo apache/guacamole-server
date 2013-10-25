@@ -326,6 +326,52 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
 }
 
+int guac_rdpdr_fs_read(guac_rdpdr_device* device, int file_id, int offset,
+        void* buffer, int length) {
+
+    int bytes_read;
+
+    guac_rdpdr_fs_file* file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL) {
+        GUAC_RDP_DEBUG(1, "Read from bad file_id: %i", file_id);
+        return GUAC_RDPDR_FS_EINVAL;
+    }
+
+    /* Attempt read */
+    lseek(file->fd, offset, SEEK_SET);
+    bytes_read = read(file->fd, buffer, length);
+
+    /* Translate errno on error */
+    if (bytes_read < 0)
+        return guac_rdpdr_fs_get_errorcode(errno);
+
+    return bytes_read;
+
+}
+
+int guac_rdpdr_fs_write(guac_rdpdr_device* device, int file_id, int offset,
+        void* buffer, int length) {
+
+    int bytes_written;
+
+    guac_rdpdr_fs_file* file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL) {
+        GUAC_RDP_DEBUG(1, "Write to bad file_id: %i", file_id);
+        return GUAC_RDPDR_FS_EINVAL;
+    }
+
+    /* Attempt write */
+    lseek(file->fd, offset, SEEK_SET);
+    bytes_written = write(file->fd, buffer, length);
+
+    /* Translate errno on error */
+    if (bytes_written < 0)
+        return guac_rdpdr_fs_get_errorcode(errno);
+
+    return bytes_written;
+
+}
+
 int guac_rdpdr_fs_rename(guac_rdpdr_device* device, int file_id,
         const char* new_path) {
 
