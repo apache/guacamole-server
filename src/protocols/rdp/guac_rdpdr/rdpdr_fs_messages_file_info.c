@@ -47,6 +47,7 @@
 #include "rdpdr_fs.h"
 #include "rdpdr_service.h"
 #include "client.h"
+#include "debug.h"
 #include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
@@ -76,6 +77,8 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
     /* Reserved field must not be sent */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    GUAC_RDP_DEBUG(2, "Sent STATUS_SUCCESS for completion_id=%i",
+            completion_id);
 
 }
 
@@ -107,14 +110,35 @@ void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStrea
     /* Reserved field must not be sent */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    GUAC_RDP_DEBUG(2, "Sent STATUS_SUCCESS for completion_id=%i",
+            completion_id);
 
 }
 
-void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: guac_rdpdr_fs_query_attribute_tag_info");
+void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
+
+    wStream* output_stream;
+    guac_rdpdr_fs_file* file;
+
+    /* Get file */
+    file = guac_rdpdr_fs_get_file(device, file_id);
+    if (file == NULL)
+        return;
+
+    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
+            STATUS_SUCCESS, 12);
+
+    Stream_Write_UINT32(output_stream, 8);
+    Stream_Write_UINT32(output_stream, file->attributes); /* FileAttributes */
+    Stream_Write_UINT32(output_stream, 0);                /* ReparseTag */
+
+    /* Reserved field must not be sent */
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    GUAC_RDP_DEBUG(2, "Sent STATUS_SUCCESS for completion_id=%i",
+            completion_id);
+
 }
 
 void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
@@ -134,6 +158,8 @@ void guac_rdpdr_fs_process_set_allocation_info(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, length);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    GUAC_RDP_DEBUG(2, "Sent STATUS_SUCCESS for completion_id=%i",
+            completion_id);
 
 }
 
@@ -154,14 +180,24 @@ void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, length);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    GUAC_RDP_DEBUG(2, "Sent STATUS_SUCCESS for completion_id=%i",
+            completion_id);
 
 }
 
 void guac_rdpdr_fs_process_set_basic_info(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id, int length) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: %s", __func__);
+
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_SUCCESS, 4);
+
+    /* Currently do nothing, just respond */
+    Stream_Write_UINT32(output_stream, length);
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    GUAC_RDP_DEBUG(2, "Sent STATUS_SUCCESS for completion_id=%i",
+            completion_id);
+
 }
 
 
