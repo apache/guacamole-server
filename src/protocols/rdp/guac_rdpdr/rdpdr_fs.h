@@ -175,6 +175,13 @@
 
 #define FILE_UNICODE_ON_DISK 0x00000004
 
+/*
+ * File create options.
+ */
+
+#define FILE_DIRECTORY_FILE     0x00000001
+#define FILE_NON_DIRECTORY_FILE 0x00000040
+
 #define SEC_TO_UNIX_EPOCH 11644473600
 
 /**

@@ -257,11 +257,16 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     }
 
     /* Create directory first, if necessary */
-    if (file_attributes & FILE_ATTRIBUTE_DIRECTORY && (flags & O_CREAT)) {
+    if ((create_options & FILE_DIRECTORY_FILE) && (flags & O_CREAT)) {
+
         if (mkdir(real_path, S_IRWXU)) {
             GUAC_RDP_DEBUG(1, "mkdir() failed: %s", strerror(errno));
             return guac_rdpdr_fs_get_errorcode(errno);
         }
+
+        /* Unset O_CREAT and O_EXCL as directory must exist before open() */
+        flags &= ~(O_CREAT | O_EXCL);
+
     }
 
     /* Open file */
