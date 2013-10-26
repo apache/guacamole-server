@@ -50,6 +50,7 @@
 #include "client.h"
 #include "common.h"
 #include "guac_handlers.h"
+#include "sftp.h"
 
 /**
  * Reads a single line from STDIN.
@@ -247,9 +248,9 @@ void* ssh_client_thread(void* data) {
         }
 
         /* Set file handlers */
-        client->file_handler = ssh_guac_client_file_handler;
-        client->blob_handler = ssh_guac_client_blob_handler;
-        client->end_handler  = ssh_guac_client_end_handler;
+        client->file_handler = guac_sftp_file_handler;
+        client->blob_handler = guac_sftp_blob_handler;
+        client->end_handler  = guac_sftp_end_handler;
 
         guac_client_log_info(client, "SFTP session initialized");
 

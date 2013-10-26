@@ -50,6 +50,7 @@ libguac_client_ssh_la_SOURCES = \
     display.c                   \
     guac_handlers.c             \
     ibar.c                      \
+    sftp.c                      \
     ssh_client.c                \
     terminal.c                  \
     terminal_handlers.c
@@ -65,6 +66,7 @@ noinst_HEADERS =                \
     guac_handlers.h             \
     ibar.h                      \
     libssh_compat.h             \
+    sftp.h                      \
     ssh_client.h                \
     terminal.h                  \
     terminal_handlers.h         \

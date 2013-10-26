@@ -20,7 +20,6 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * James Muehlner <dagger10k@users.sourceforge.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,17 +35,33 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _SSH_GUAC_HANDLERS_H
-#define _SSH_GUAC_HANDLERS_H
+#ifndef _SSH_GUAC_SFTP_H
+#define _SSH_GUAC_SFTP_H
 
 #include <guacamole/client.h>
+#include <guacamole/stream.h>
 
-int ssh_guac_client_handle_messages(guac_client* client);
-int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int ssh_guac_client_clipboard_handler(guac_client* client, char* data);
-int ssh_guac_client_size_handler(guac_client* client, int width, int height);
-int ssh_guac_client_free_handler(guac_client* client);
+/**
+ * Handler for file messages which begins an SFTP data transfer (upload).
+ */
+int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
+        char* mimetype, char* filename);
+
+/**
+ * Handler for blob messages which continues an SFTP data transfer (upload).
+ */
+int guac_sftp_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length);
+
+/**
+ * Handler for end messages which ends an SFTP data transfer (upload).
+ */
+int guac_sftp_end_handler(guac_client* client, guac_stream* stream);
+
+/**
+ * Begins (and automatically continues) an SFTP file download to the user.
+ */
+guac_stream* guac_sftp_download_file(guac_client* client, const char* filename);
 
 #endif
 
