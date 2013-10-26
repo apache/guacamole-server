@@ -134,6 +134,7 @@ typedef struct vnc_guac_client_data {
      */
     int dest_port;
 
+#ifdef ENABLE_VNC_LISTEN
     /**
      * Whether not actually connecting to a VNC server, but rather listening
      * for a connection from the VNC server (reverse connection).
@@ -145,6 +146,7 @@ typedef struct vnc_guac_client_data {
      * milliseconds.
      */
     int listen_timeout;
+#endif
 
     /**
      * Whether the cursor should be rendered on the server (remote) or on the

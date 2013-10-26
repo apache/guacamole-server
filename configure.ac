@@ -231,6 +231,31 @@ then
 fi
 
 #
+# Listening support within libVNCServer
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_listen=yes
+    AC_CHECK_DECL([listenForIncomingConnectionsNoFork],
+                  [], [have_vnc_listen=no],
+                  [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_listen}" = "xno"
+    then
+        AC_MSG_WARN([
+      --------------------------------------------
+       No listening support found in libvncclient.
+       Support for listen-mode connections will not be built.
+      --------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_VNC_LISTEN])
+    fi
+
+fi
+
+#
 # FreeRDP
 #
 
