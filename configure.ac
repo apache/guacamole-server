@@ -37,7 +37,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT([guacamole-server], [0.8.3])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 LT_PREREQ([2.2])
 LT_INIT([dlopen])

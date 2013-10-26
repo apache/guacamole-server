@@ -21,6 +21,7 @@
 
 # automake/autoconf
 .deps/
+.dirstamp
 .libs/
 Makefile
 Makefile.in
