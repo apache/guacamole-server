@@ -183,6 +183,11 @@ static rfbClient* __guac_vnc_get_client(guac_client* client) {
 
     }
 
+    /* Set encodings if provided */
+    if (guac_client_data->encodings)
+        rfb_client->appData.encodingsString =
+            strdup(guac_client_data->encodings);
+
     /* Connect */
     if (rfbInitClient(rfb_client, NULL, NULL))
         return rfb_client;
