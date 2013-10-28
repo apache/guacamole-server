@@ -52,6 +52,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"disconnect", __guac_handle_disconnect},
    {"size",       __guac_handle_size},
    {"file",       __guac_handle_file},
+   {"ack",        __guac_handle_ack},
    {"blob",       __guac_handle_blob},
    {"end",        __guac_handle_end},
    {NULL,         NULL}
@@ -163,6 +164,29 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
     /* Otherwise, abort */
     guac_protocol_send_ack(client->socket, stream,
             "File transfer unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
+    return 0;
+}
+
+int __guac_handle_ack(guac_client* client, guac_instruction* instruction) {
+
+    guac_stream* stream;
+
+    /* Validate stream index */
+    int stream_index = atoi(instruction->argv[0]);
+    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS)
+        return 0;
+
+    stream = &(client->__streams[stream_index]);
+
+    /* Validate initialization of stream */
+    if (stream->index == GUAC_CLIENT_CLOSED_STREAM_INDEX)
+        return 0;
+
+    /* If handler defined, call it */
+    if (client->ack_handler)
+        return client->ack_handler(client, stream, instruction->argv[1],
+                atoi(instruction->argv[2]));
+
     return 0;
 }
 

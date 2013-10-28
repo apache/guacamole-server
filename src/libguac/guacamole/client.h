@@ -44,6 +44,7 @@
 #include "instruction.h"
 #include "layer.h"
 #include "pool.h"
+#include "protocol.h"
 #include "socket.h"
 #include "stream.h"
 #include "timestamp.h"
@@ -104,6 +105,12 @@ typedef int guac_client_file_handler(guac_client* client, guac_stream* stream,
  */
 typedef int guac_client_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length);
+
+/**
+ * Handler for Guacamole stream ack events.
+ */
+typedef int guac_client_ack_handler(guac_client* client, guac_stream* stream,
+        char* error, guac_protocol_status status);
 
 /**
  * Handler for Guacamole stream end events.
@@ -400,6 +407,25 @@ struct guac_client {
      * @endcode
      */
     guac_client_file_handler* file_handler;
+
+    /**
+     * Handler for ack events sent by the Guacamole web-client.
+     *
+     * The handler takes a guac_stream which contains the stream index and
+     * will persist through the duration of the transfer, a string containing
+     * the error or status message, and a status code.
+     *
+     * Example:
+     * @code
+     *     int ack_handler(guac_client* client, guac_stream* stream,
+     *             char* error, guac_protocol_status status);
+     *
+     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *         client->ack_handler = ack_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_ack_handler* ack_handler;
 
     /**
      * Handler for blob events sent by the Guacamole web-client.

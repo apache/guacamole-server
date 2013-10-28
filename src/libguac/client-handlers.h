@@ -107,6 +107,13 @@ int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction);
 int __guac_handle_file(guac_client* client, guac_instruction* instruction);
 
 /**
+ * Internal initial handler for the ack instruction. When a ack instruction
+ * is received, this handler will be called. The client's ack handler will
+ * be invoked if defined.
+ */
+int __guac_handle_ack(guac_client* client, guac_instruction* instruction);
+
+/**
  * Internal initial handler for the blob instruction. When a blob instruction
  * is received, this handler will be called. The client's blob handler will
  * be invoked if defined.
