@@ -67,7 +67,7 @@ int guac_sftp_ack_handler(guac_client* client, guac_stream* stream,
 /**
  * Begins (and automatically continues) an SFTP file download to the user.
  */
-guac_stream* guac_sftp_download_file(guac_client* client, const char* filename);
+guac_stream* guac_sftp_download_file(guac_client* client, char* filename);
 
 #endif
 
