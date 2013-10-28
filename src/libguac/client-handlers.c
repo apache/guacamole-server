@@ -148,7 +148,7 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
     }
 
     /* Initialize stream */
-    stream = &(client->__streams[stream_index]);
+    stream = &(client->__input_streams[stream_index]);
     stream->index = stream_index;
     stream->data = NULL;
 
@@ -176,7 +176,7 @@ int __guac_handle_ack(guac_client* client, guac_instruction* instruction) {
     if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS)
         return 0;
 
-    stream = &(client->__streams[stream_index]);
+    stream = &(client->__output_streams[stream_index]);
 
     /* Validate initialization of stream */
     if (stream->index == GUAC_CLIENT_CLOSED_STREAM_INDEX)
@@ -206,7 +206,7 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
         return 0;
     }
 
-    stream = &(client->__streams[stream_index]);
+    stream = &(client->__input_streams[stream_index]);
 
     /* Validate initialization of stream */
     if (stream->index == GUAC_CLIENT_CLOSED_STREAM_INDEX) {
@@ -253,7 +253,7 @@ int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
         return 0;
     }
 
-    stream = &(client->__streams[stream_index]);
+    stream = &(client->__input_streams[stream_index]);
 
     if (client->end_handler)
         result = client->end_handler(client, stream);

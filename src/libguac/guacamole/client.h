@@ -556,9 +556,14 @@ struct guac_client {
     guac_pool* __stream_pool;
 
     /**
+     * All available output streams (data going to connected client).
+     */
+    guac_stream __output_streams[GUAC_CLIENT_MAX_STREAMS];
+
+    /**
      * All available input streams (data coming from connected client).
      */
-    guac_stream __streams[GUAC_CLIENT_MAX_STREAMS];
+    guac_stream __input_streams[GUAC_CLIENT_MAX_STREAMS];
 
 };
 

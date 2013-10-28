@@ -50,6 +50,7 @@ guac_pool* guac_pool_alloc(int size) {
 
     /* Initialize empty pool */
     pool->min_size = size;
+    pool->active = 0;
     pool->__next_value = 0;
     pool->__head = NULL;
     pool->__tail = NULL;
@@ -79,7 +80,9 @@ int guac_pool_next_int(guac_pool* pool) {
 
     int value;
 
-    /* If more integers are needed, or we are out of integers, return a new one. */
+    pool->active++;
+
+    /* If more integers are needed, return a new one. */
     if (pool->__head == NULL || pool->__next_value < pool->min_size)
         return pool->__next_value++;
 
@@ -110,6 +113,8 @@ void guac_pool_free_int(guac_pool* pool, int value) {
     guac_pool_int* pool_int = malloc(sizeof(guac_pool_int));
     pool_int->value = value;
     pool_int->__next = NULL;
+
+    pool->active--;
 
     /* If pool empty, store as sole entry. */
     if (pool->__tail == NULL)

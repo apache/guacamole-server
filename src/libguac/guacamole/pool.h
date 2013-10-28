@@ -63,6 +63,11 @@ typedef struct guac_pool {
     int min_size;
 
     /**
+     * The number of integers currently in use.
+     */
+    int active;
+
+    /**
      * The next integer to be released (after no more integers remain in the
      * pool.
      */
@@ -102,8 +107,8 @@ struct guac_pool_int {
  * Allocates a new guac_pool having the given minimum size.
  *
  * @param size The minimum number of integers which must have been returned by
- *             guac_pool_next_int before freed integers (previously used integers)
- *             are allowed to be returned.
+ *             guac_pool_next_int before freed integers (previously used
+ *             integers) are allowed to be returned.
  * @return A new, empty guac_pool, having the given minimum size.
  */
 guac_pool* guac_pool_alloc(int size);
@@ -116,23 +121,23 @@ guac_pool* guac_pool_alloc(int size);
 void guac_pool_free(guac_pool* pool);
 
 /**
- * Returns the next available integer from the given guac_pool. All integers returned are
- * non-negative, and are returned in sequences, starting from 0.
+ * Returns the next available integer from the given guac_pool. All integers
+ * returned are non-negative, and are returned in sequences, starting from 0.
  *
  * @param pool The guac_pool to retrieve an integer from.
- * @return The next available integer, which may be either an integer not yet returned
- *         by a call to guac_pool_next_int, or an integer which was previosly returned,
- *         but has since been freed.
+ * @return The next available integer, which may be either an integer not yet
+ *         returned by a call to guac_pool_next_int, or an integer which was
+ *         previosly returned, but has since been freed.
  */
 int guac_pool_next_int(guac_pool* pool);
 
 /**
- * Frees the given integer back into the given guac_pool. The integer given will be
- * available for future calls to guac_pool_next_int.
+ * Frees the given integer back into the given guac_pool. The integer given
+ * will be available for future calls to guac_pool_next_int.
  *
  * @param pool The guac_pool to free the given integer into.
- * @param value The integer which should be readded to the given pool, such that it can
- *              be received by a future call to guac_pool_next_int.
+ * @param value The integer which should be returned to the given pool, such
+ *              that it can be received by a future call to guac_pool_next_int.
  */
 void guac_pool_free_int(guac_pool* pool, int value);
 

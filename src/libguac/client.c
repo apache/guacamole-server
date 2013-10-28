@@ -97,9 +97,20 @@ void guac_client_free_layer(guac_client* client, guac_layer* layer) {
 
 guac_stream* guac_client_alloc_stream(guac_client* client) {
 
-    /* Init new stream */
-    guac_stream* allocd_stream = malloc(sizeof(guac_stream));
-    allocd_stream->index = guac_pool_next_int(client->__stream_pool);
+    guac_stream* allocd_stream;
+    int stream_index;
+
+    /* Refuse to allocate beyond maximum */
+    if (client->__stream_pool->active == GUAC_CLIENT_MAX_STREAMS)
+        return NULL;
+
+    /* Allocate stream */
+    stream_index = guac_pool_next_int(client->__stream_pool);
+
+    /* Initialize stream */
+    allocd_stream = &(client->__output_streams[stream_index]);
+    allocd_stream->index = stream_index;
+    allocd_stream->data = NULL;
 
     return allocd_stream;
 
@@ -108,10 +119,10 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
 void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
     /* Release index to pool */
-    guac_pool_free_int(client->__stream_pool, stream->index - 1);
-    
-    /* Free stream */
-    free(stream);
+    guac_pool_free_int(client->__stream_pool, stream->index);
+
+    /* Mark stream as closed */
+    stream->index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
 
 }
 
@@ -143,8 +154,10 @@ guac_client* guac_client_alloc() {
     client->__stream_pool = guac_pool_alloc(0);
 
     /* Initialze streams */
-    for (i=0; i<GUAC_CLIENT_MAX_STREAMS; i++)
-        client->__streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
+    for (i=0; i<GUAC_CLIENT_MAX_STREAMS; i++) {
+        client->__input_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
+        client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
+    }
 
     return client;
 
