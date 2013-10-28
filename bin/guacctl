@@ -44,7 +44,14 @@
 #     * Downloading files
 #     * Setting the destination directory for uploads
 #
+# This script may also be run as "guacget", in which case the script accepts
+# no options and assumes anything given on the commandline is a file to be
+# downloaded.
+#
 
+
+# Given the name of a file, which may be a relative path, produce the full,
+# real, non-relative path for that same file.
 fullpath() {
     FILENAME="$1"
     DIR=`dirname "$FILENAME"`
@@ -52,31 +59,43 @@ fullpath() {
     (cd "$DIR" && echo "$PWD/$FILE")
 }
 
+# Sends the Guacamole-specific console code for initiating a download.
 send_download_file() {
     FILENAME="$1"
     printf "\033]482200;%s\007" "$FILENAME"
 }
 
+# Sends the Guacamole-specific console code for setting the upload directory.
 send_set_directory() {
     FILENAME="$1"
     printf "\033]482201;%s\007" "$FILENAME"
 }
 
+# Prints the given error text to STDERR.
 error() {
     echo "$NAME:" "$@" >&2
 }
 
+# Prints usage documentation for this script.
 usage() {
     cat >&2 <<END
-Usage:
+guacctl 0.8.0, Guacamole SSH session control utility.
+Usage: guacctl [OPTION] [FILE]...
 
-    guacctl --download FILENAME
-    guacctl --set-directory FILENAME
-
+    -d, --download         download each of the files listed.
+    -s, --set-directory    set the destination directory for future uploaded 
+                           files.
 END
 }
 
+# Initiates a download for each of the specified files
 download_files() {
+
+    # Validate arguments
+    if [ $# -lt 1 ]; then
+        error "No files specified."
+        return;
+    fi
 
     for FILENAME in "$@"; do
         if [ -e "$FILENAME" ]; then
@@ -88,10 +107,22 @@ download_files() {
 
 }
 
+# Changes the upload path for future uploads to the given directory
 set_directory() {
 
+    # Validate arguments
+    if [ $# -lt 1 ]; then
+        error "No destination directory specified."
+        return;
+    fi
+
+    if [ $# -gt 1 ]; then
+        error "Only one destination directory may be given."
+        return;
+    fi
+
     FILENAME="$1"
-    if [ -e "$FILENAME" ]; then
+    if [ -d "$FILENAME" ]; then
         send_set_directory `fullpath "$FILENAME"`
     else
         error "$FILENAME: File does not exist or is not a directory."
@@ -99,15 +130,16 @@ set_directory() {
 
 }
 
+# Get script name
 NAME=`basename "$0"`
 
 # Parse options
 if [ "x$NAME" = "xguacget" ]; then
     download_files "$@"
-elif [ "x$1" = "x--download" ]; then
+elif [ "x$1" = "x--download" -o "x$1" = "x-d" ]; then
     shift
     download_files "$@"
-elif [ "x$1" = "x--set-directory" ]; then
+elif [ "x$1" = "x--set-directory" -o "x$1" = "x-s" ]; then
     shift
     set_directory "$@"
 else
