@@ -84,7 +84,9 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
         char* mimetype, char* filename) {
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    char fullpath[GUAC_SFTP_MAX_PATH];
     sftp_file file;
+    int i;
 
     /* Ensure filename is a valid filename and not a path */
     if (!__ssh_guac_valid_filename(filename)) {
@@ -95,8 +97,39 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
         return 0;
     }
 
+    /* Copy upload path, append trailing slash */
+    for (i=0; i<GUAC_SFTP_MAX_PATH; i++) {
+        char c = client_data->sftp_upload_path[i];
+        if (c == '\0') {
+            fullpath[i++] = '/';
+            break;
+        }
+
+        fullpath[i] = c;
+    }
+
+    /* Append filename */
+    for (; i<GUAC_SFTP_MAX_PATH; i++) {
+        char c = *(filename++);
+        if (c == '\0')
+            break;
+
+        fullpath[i] = c;
+    }
+
+    /* If path + filename exceeds max length, abort */
+    if (i == GUAC_SFTP_MAX_PATH) {
+        guac_protocol_send_ack(client->socket, stream, "SFTP: Name too long",
+                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+        guac_socket_flush(client->socket);
+        return 0;
+    }
+
+    /* Terminate path string */
+    fullpath[i] = '\0';
+
     /* Open file via SFTP */
-    file = sftp_open(client_data->sftp_session, filename,
+    file = sftp_open(client_data->sftp_session, fullpath,
             O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
     /* Inform of status */
@@ -106,8 +139,8 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
         guac_socket_flush(client->socket);
     }
     else {
-        guac_client_log_error(client, "Unable to open file: %s",
-                ssh_get_error(client_data->sftp_ssh_session));
+        guac_client_log_error(client, "Unable to open file \"%s\": %s",
+                fullpath, ssh_get_error(client_data->sftp_ssh_session));
         guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed",
                 GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
         guac_socket_flush(client->socket);
@@ -237,6 +270,24 @@ guac_stream* guac_sftp_download_file(guac_client* client,
     guac_socket_flush(client->socket);
 
     return stream;
+
+}
+
+void guac_sftp_set_upload_path(guac_client* client, char* path) {
+
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    int length = strnlen(path, GUAC_SFTP_MAX_PATH);
+
+    /* Ignore requests which exceed maximum-allowed path */
+    if (length > GUAC_SFTP_MAX_PATH) {
+        guac_client_log_error(client,
+                "Submitted path exceeds limit of %i bytes",
+                GUAC_SFTP_MAX_PATH);
+        return;
+    }
+
+    /* Copy path */
+    memcpy(client_data->sftp_upload_path, path, length);
 
 }
 

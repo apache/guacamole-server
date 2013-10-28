@@ -900,7 +900,7 @@ int guac_terminal_guac_set_directory(guac_terminal* term, char c) {
     if (c == 0x9C || c == 0x5C || c == 0x07) {
         filename[length++] = '\0';
         term->char_handler = guac_terminal_echo;
-        guac_client_log_info(term->client, "STUB: set: %s", filename);
+        guac_sftp_set_upload_path(term->client, filename);
         length = 0;
     }
 

@@ -45,6 +45,7 @@
 
 #include "terminal.h"
 #include "cursor.h"
+#include "sftp.h"
 
 /**
  * SSH-specific client data.
@@ -105,6 +106,11 @@ typedef struct ssh_guac_client_data {
      * SFTP session, used for file transfers.
      */
     sftp_session sftp_session;
+
+    /**
+     * The path files will be sent to.
+     */
+    char sftp_upload_path[GUAC_SFTP_MAX_PATH];
 
     /**
      * SSH terminal channel, used by the SSH client thread.

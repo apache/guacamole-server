@@ -42,6 +42,11 @@
 #include <guacamole/stream.h>
 
 /**
+ * Maximum number of bytes per path.
+ */
+#define GUAC_SFTP_MAX_PATH 2048
+
+/**
  * Handler for file messages which begins an SFTP data transfer (upload).
  */
 int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
@@ -68,6 +73,11 @@ int guac_sftp_ack_handler(guac_client* client, guac_stream* stream,
  * Begins (and automatically continues) an SFTP file download to the user.
  */
 guac_stream* guac_sftp_download_file(guac_client* client, char* filename);
+
+/**
+ * Set the destination directory for future uploads.
+ */
+void guac_sftp_set_upload_path(guac_client* client, char* path);
 
 #endif
 
