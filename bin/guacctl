@@ -9,6 +9,13 @@
 #     * Setting the destination directory for uploads
 #
 
+fullpath() {
+    FILENAME="$1"
+    DIR=`dirname "$FILENAME"`
+    FILE=`basename "$FILENAME"`
+    (cd "$DIR" && echo "$PWD/$FILE")
+}
+
 send_download_file() {
     FILENAME="$1"
     printf "\033]482200;%s\007" "$FILENAME"
@@ -37,7 +44,7 @@ download_files() {
 
     for FILENAME in "$@"; do
         if [ -e "$FILENAME" ]; then
-            send_download_file $FILENAME
+            send_download_file `fullpath $FILENAME`
         else
             error "$FILENAME: File does not exist."
         fi
@@ -49,7 +56,7 @@ set_directory() {
 
     FILENAME="$1"
     if [ -e "$FILENAME" ]; then
-        send_set_directory "$FILENAME"
+        send_set_directory `fullpath "$FILENAME"`
     else
         error "$FILENAME: File does not exist or is not a directory."
     fi
