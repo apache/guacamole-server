@@ -167,7 +167,14 @@ int guac_sftp_end_handler(guac_client* client, guac_stream* stream) {
 
 }
 
-guac_stream* guac_sftp_download_file(guac_client* client, const char* filename) {
+int guac_sftp_ack_handler(guac_client* client, guac_stream* stream,
+        char* message, guac_protocol_status status) {
+    return 0;
+}
+
+guac_stream* guac_sftp_download_file(guac_client* client,
+        const char* filename) {
+
     /* STUB */
     return NULL;
 }

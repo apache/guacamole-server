@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "sftp.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
 #include "char_mappings.h"
@@ -920,7 +921,7 @@ int guac_terminal_guac_download(guac_terminal* term, char c) {
     if (c == 0x9C || c == 0x5C || c == 0x07) {
         filename[length++] = '\0';
         term->char_handler = guac_terminal_echo;
-        guac_client_log_info(term->client, "STUB: get: %s", filename);
+        guac_sftp_download_file(term->client, filename);
         length = 0;
     }
 

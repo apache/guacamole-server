@@ -248,6 +248,7 @@ void* ssh_client_thread(void* data) {
         }
 
         /* Set file handlers */
+        client->ack_handler  = guac_sftp_ack_handler;
         client->file_handler = guac_sftp_file_handler;
         client->blob_handler = guac_sftp_blob_handler;
         client->end_handler  = guac_sftp_end_handler;

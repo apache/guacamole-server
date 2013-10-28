@@ -59,6 +59,12 @@ int guac_sftp_blob_handler(guac_client* client, guac_stream* stream,
 int guac_sftp_end_handler(guac_client* client, guac_stream* stream);
 
 /**
+ * Handler for ack messages which continues an SFTP download.
+ */
+int guac_sftp_ack_handler(guac_client* client, guac_stream* stream,
+        char* message, guac_protocol_status status);
+
+/**
  * Begins (and automatically continues) an SFTP file download to the user.
  */
 guac_stream* guac_sftp_download_file(guac_client* client, const char* filename);
