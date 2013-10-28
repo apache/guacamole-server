@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# guacctl
+#
+# Utility for sending Guacamole-specific console codes for controlling the SSH
+# session, such as:
+#
+#     * Downloading files
+#     * Setting the destination directory for uploads
+#
+
+send_download_file() {
+    FILENAME="$1"
+    printf "\033]482200;%s\007" "$FILENAME"
+}
+
+send_set_directory() {
+    FILENAME="$1"
+    printf "\033]482201;%s\007" "$FILENAME"
+}
+
+error() {
+    echo "$NAME:" "$@" >&2
+}
+
+usage() {
+    cat >&2 <<END
+Usage:
+
+    guacctl --download FILENAME
+    guacctl --set-directory FILENAME
+
+END
+}
+
+download_files() {
+
+    for FILENAME in "$@"; do
+        if [ -e "$FILENAME" ]; then
+            send_download_file $FILENAME
+        else
+            error "$FILENAME: File does not exist."
+        fi
+    done
+
+}
+
+set_directory() {
+
+    FILENAME="$1"
+    if [ -e "$FILENAME" ]; then
+        send_set_directory "$FILENAME"
+    else
+        error "$FILENAME: File does not exist or is not a directory."
+    fi
+
+}
+
+NAME=`basename "$0"`
+
+# Parse options
+if [ "x$NAME" = "xguacget" ]; then
+    download_files "$@"
+elif [ "x$1" = "x--download" ]; then
+    shift
+    download_files "$@"
+elif [ "x$1" = "x--set-directory" ]; then
+    shift
+    set_directory "$@"
+else
+    usage
+    exit 1
+fi
+
