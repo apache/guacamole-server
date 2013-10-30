@@ -66,6 +66,10 @@ const char* GUAC_CLIENT_ARGS[] = {
     "font-name",
     "font-size",
     "enable-sftp",
+#ifdef ENABLE_SSH_PUBLIC_KEY
+    "private-key",
+    "passphrase",
+#endif
     NULL
 };
 
@@ -106,6 +110,18 @@ enum __SSH_ARGS_IDX {
      */
     IDX_ENABLE_SFTP,
 
+#ifdef ENABLE_SSH_PUBLIC_KEY
+    /**
+     * The private key to use for authentication, if any.
+     */
+    IDX_PRIVATE_KEY,
+
+    /**
+     * The passphrase required to decrypt the private key, if any.
+     */
+    IDX_PASSPHRASE,
+#endif
+
     SSH_ARGS_COUNT
 };
 
@@ -132,6 +148,29 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     strcpy(client_data->hostname,  argv[IDX_HOSTNAME]);
     strcpy(client_data->username,  argv[IDX_USERNAME]);
     strcpy(client_data->password,  argv[IDX_PASSWORD]);
+
+#ifdef ENABLE_SSH_PUBLIC_KEY
+
+    client_data->key = NULL;
+
+    /* Read private key, if given */
+    if (argv[IDX_PRIVATE_KEY][0] != 0) {
+
+        /* Pull parameters */
+        const char* private_key = argv[IDX_PRIVATE_KEY];
+        const char* passphrase = argv[IDX_PASSPHRASE];
+        if (passphrase[0] == 0)
+            passphrase = NULL;
+
+        /* Read key */
+        if (ssh_pki_import_privkey_base64(private_key, passphrase,
+                NULL, NULL, &client_data->key) == SSH_OK)
+            guac_client_log_info(client, "Auth key successfully imported.");
+        else
+            guac_client_log_error(client, "Auth key import failed.");
+
+    }
+#endif
 
     /* Read font name */
     if (argv[IDX_FONT_NAME][0] != 0)

@@ -72,6 +72,13 @@ typedef struct ssh_guac_client_data {
      */
     char password[1024];
 
+#ifdef ENABLE_SSH_PUBLIC_KEY
+    /**
+     * The private key to use for authentication, if any.
+     */
+    ssh_key key;
+#endif
+
     /**
      * The name of the font to use for display rendering.
      */

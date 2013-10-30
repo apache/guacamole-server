@@ -443,6 +443,12 @@ int ssh_guac_client_free_handler(guac_client* client) {
     /* Free session */
     ssh_free(guac_client_data->session);
 
+#ifdef ENABLE_SSH_PUBLIC_KEY
+    /* Free auth key */
+    if (guac_client_data->key != NULL)
+        ssh_key_free(guac_client_data->key);
+#endif
+
     /* Free clipboard data */
     free(guac_client_data->clipboard_data);
 
