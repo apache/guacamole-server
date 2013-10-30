@@ -529,6 +529,32 @@ AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh}" = "xyes" -a "x${have_pango}
 
 AC_SUBST(SSH_LIBS)
 
+#
+# Private key from string support within SSH
+#
+
+if test "x${have_libssh}" = "xyes"
+then
+
+    have_ssh_pubkey=yes
+    AC_CHECK_DECL([ssh_pki_import_privkey_base64],
+                  [], [have_ssh_pubkey=no],
+                  [[#include <libssh/libssh.h>]])
+
+    if test "x${have_ssh_pubkey}" = "xno"
+    then
+        AC_MSG_WARN([
+      --------------------------------------------
+       No support for in-memory public keys found in libssh.
+       Support for public key authentication will not be built.
+      --------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_SSH_PUBLIC_KEY])
+    fi
+
+fi
+
+
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
                  src/libguac/Makefile
