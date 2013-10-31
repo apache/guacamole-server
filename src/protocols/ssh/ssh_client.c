@@ -153,15 +153,31 @@ static ssh_session __guac_ssh_create_session(guac_client* client) {
         return NULL;
     }
 
-    /* Authenticate */
+#ifdef ENABLE_SSH_PUBLIC_KEY
+    /* Authenticate with key if available */
+    if (client_data->key != NULL) {
+        if (ssh_userauth_publickey(session, NULL, client_data->key)
+                == SSH_AUTH_SUCCESS)
+            return session;
+        else {
+            guac_client_log_error(client,
+                    "Public key authentication failed: %s",
+                    ssh_get_error(session));
+            return NULL;
+        }
+    }
+#endif
+
+    /* Authenticate with password */
     if (ssh_userauth_password(session, NULL, client_data->password)
-            != SSH_AUTH_SUCCESS) {
-        guac_client_log_error(client, "Authentication failed: %s",
+            == SSH_AUTH_SUCCESS)
+        return session;
+    else {
+        guac_client_log_error(client,
+                "Password authentication failed: %s",
                 ssh_get_error(session));
         return NULL;
     }
-
-    return session;
 
 }
 
@@ -189,11 +205,48 @@ void* ssh_client_thread(void* data) {
     snprintf(name, sizeof(name)-1, "%s@%s", client_data->username, client_data->hostname);
     guac_protocol_send_name(socket, name);
 
-    /* Get password */
-    if (client_data->password[0] == 0 &&
-            prompt(client, "Password: ", client_data->password, sizeof(client_data->password), false) == NULL)
-        return NULL;
+#ifdef ENABLE_SSH_PUBLIC_KEY
+    /* If key specified, import */
+    if (client_data->key_base64[0] != 0) {
 
+        /* Attempt to read key without passphrase */
+        if (ssh_pki_import_privkey_base64(client_data->key_base64, NULL,
+                NULL, NULL, &client_data->key) == SSH_OK)
+            guac_client_log_info(client, "Auth key successfully imported.");
+
+        /* On failure, attempt with passphrase */
+        else {
+
+            /* Prompt for passphrase if missing */
+            if (client_data->key_passphrase[0] == 0) {
+                if (prompt(client, "Key passphrase: ",
+                            client_data->key_passphrase,
+                            sizeof(client_data->key_passphrase), false) == NULL)
+                    return NULL;
+            }
+
+            /* Import key with passphrase */
+            if (ssh_pki_import_privkey_base64(client_data->key_base64,
+                    client_data->key_passphrase,
+                    NULL, NULL, &client_data->key) != SSH_OK) {
+                guac_client_log_error(client, "Auth key import failed.");
+                return NULL;
+            }
+
+        } /* end decrypt key with passphrase */
+
+    } /* end if key given */
+
+    /* Otherwise, get password if not provided */
+    else if (client_data->password[0] == 0) {
+#else
+    /* Get password if not provided */
+    if (client_data->password[0] == 0) {
+#endif
+        if (prompt(client, "Password: ", client_data->password,
+                sizeof(client_data->password), false) == NULL)
+            return NULL;
+    }
 
     /* Clear screen */
     guac_terminal_write_all(stdout_fd, "\x1B[H\x1B[J", 6);

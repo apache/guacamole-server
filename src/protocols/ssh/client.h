@@ -74,6 +74,16 @@ typedef struct ssh_guac_client_data {
 
 #ifdef ENABLE_SSH_PUBLIC_KEY
     /**
+     * The private key, encoded as base64.
+     */
+    char key_base64[4096];
+
+    /**
+     * The password to use to decrypt the given private key.
+     */
+    char key_passphrase[1024];
+
+    /**
      * The private key to use for authentication, if any.
      */
     ssh_key key;
