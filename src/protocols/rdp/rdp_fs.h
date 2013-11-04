@@ -192,6 +192,11 @@
 typedef struct guac_rdp_fs_file {
 
     /**
+     * The ID of this file.
+     */
+    int id;
+
+    /**
      * The absolute path, including filename, of this file.
      */
     char* absolute_path;
