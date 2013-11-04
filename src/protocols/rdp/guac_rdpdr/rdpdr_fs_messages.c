@@ -44,7 +44,8 @@
 #include <guacamole/pool.h>
 #include <errno.h>
 
-#include "rdpdr_fs.h"
+#include "rdp_fs.h"
+#include "rdp_status.h"
 #include "rdpdr_fs_messages.h"
 #include "rdpdr_fs_messages_vol_info.h"
 #include "rdpdr_fs_messages_file_info.h"
@@ -65,7 +66,7 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
     int desired_access, file_attributes;
     int create_disposition, create_options, path_length;
-    char path[GUAC_RDPDR_FS_MAX_PATH];
+    char path[GUAC_RDP_FS_MAX_PATH];
 
     /* Read "create" information */
     Stream_Read_UINT32(input_stream, desired_access);
@@ -83,7 +84,8 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
             path, path_length/2 - 1);
 
     /* Open file */
-    file_id = guac_rdpdr_fs_open(device, path, desired_access, file_attributes,
+    file_id = guac_rdp_fs_open((guac_rdp_fs*) device->data, path,
+            desired_access, file_attributes,
             create_disposition, create_options);
 
     /* If an error occurred, notify server */
@@ -92,7 +94,7 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
                 "File open refused (%i): \"%s\"", file_id, path);
 
         output_stream = guac_rdpdr_new_io_completion(device, completion_id,
-                guac_rdpdr_fs_get_status(file_id), 5);
+                guac_rdp_fs_get_status(file_id), 5);
         Stream_Write_UINT32(output_stream, 0); /* fileId */
         Stream_Write_UINT8(output_stream,  0); /* information */
     }
@@ -128,13 +130,13 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
         length = sizeof(buffer);
 
     /* Attempt read */
-    bytes_read = guac_rdpdr_fs_read(device, file_id, offset,
+    bytes_read = guac_rdp_fs_read((guac_rdp_fs*) device->data, file_id, offset,
             buffer, length);
 
     /* If error, return invalid parameter */
     if (bytes_read < 0) {
         output_stream = guac_rdpdr_new_io_completion(device, completion_id,
-                guac_rdpdr_fs_get_status(bytes_read), 4);
+                guac_rdp_fs_get_status(bytes_read), 4);
         Stream_Write_UINT32(output_stream, 0); /* Length */
     }
 
@@ -165,13 +167,13 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
     Stream_Seek(input_stream, 20); /* Padding */
 
     /* Attempt write */
-    bytes_written = guac_rdpdr_fs_write(device, file_id, offset,
-        Stream_Pointer(input_stream), length);
+    bytes_written = guac_rdp_fs_write((guac_rdp_fs*) device->data, file_id,
+            offset, Stream_Pointer(input_stream), length);
 
     /* If error, return invalid parameter */
     if (bytes_written < 0) {
         output_stream = guac_rdpdr_new_io_completion(device, completion_id,
-                guac_rdpdr_fs_get_status(bytes_written), 5);
+                guac_rdp_fs_get_status(bytes_written), 5);
         Stream_Write_UINT32(output_stream, 0); /* Length */
         Stream_Write_UINT8(output_stream, 0);  /* Padding */
     }
@@ -194,7 +196,7 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
     wStream* output_stream;
 
     /* Close file */
-    guac_rdpdr_fs_close(device, file_id);
+    guac_rdp_fs_close((guac_rdp_fs*) device->data, file_id);
 
     output_stream = guac_rdpdr_new_io_completion(device, completion_id,
             STATUS_SUCCESS, 4);
@@ -354,14 +356,14 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
 
     wStream* output_stream;
 
-    guac_rdpdr_fs_file* file;
+    guac_rdp_fs_file* file;
     int fs_information_class, initial_query;
     int path_length;
 
     const char* entry_name;
 
     /* Get file */
-    file = guac_rdpdr_fs_get_file(device, file_id);
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
     if (file == NULL)
         return;
 
@@ -384,22 +386,23 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
     }
 
     /* Find first matching entry in directory */
-    while ((entry_name = guac_rdpdr_fs_read_dir(device, file_id)) != NULL) {
+    while ((entry_name = guac_rdp_fs_read_dir((guac_rdp_fs*) device->data,
+                    file_id)) != NULL) {
 
         /* Convert to absolute path */
-        char entry_path[GUAC_RDPDR_FS_MAX_PATH];
-        if (guac_rdpdr_fs_convert_path(file->absolute_path,
+        char entry_path[GUAC_RDP_FS_MAX_PATH];
+        if (guac_rdp_fs_convert_path(file->absolute_path,
                     entry_name, entry_path) == 0) {
 
             int entry_file_id;
 
             /* Pattern defined and match fails, continue with next file */
-            if (guac_rdpdr_fs_matches(entry_path, file->dir_pattern))
+            if (guac_rdp_fs_matches(entry_path, file->dir_pattern))
                 continue;
 
             /* Open directory entry */
-            entry_file_id = guac_rdpdr_fs_open(device, entry_path,
-                    ACCESS_FILE_READ_DATA, 0, DISP_FILE_OPEN, 0);
+            entry_file_id = guac_rdp_fs_open((guac_rdp_fs*) device->data,
+                    entry_path, ACCESS_FILE_READ_DATA, 0, DISP_FILE_OPEN, 0);
 
             if (entry_file_id >= 0) {
 
@@ -432,7 +435,7 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
                                 fs_information_class);
                 }
 
-                guac_rdpdr_fs_close(device, entry_file_id);
+                guac_rdp_fs_close((guac_rdp_fs*) device->data, entry_file_id);
                 return;
 
             } /* end if file exists */

@@ -43,7 +43,7 @@
 
 #include <guacamole/pool.h>
 
-#include "rdpdr_fs.h"
+#include "rdp_fs.h"
 #include "rdpdr_fs_messages.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_service.h"
@@ -144,14 +144,11 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
 }
 
 static void guac_rdpdr_device_fs_free_handler(guac_rdpdr_device* device) {
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_pool_free(data->file_id_pool);
-    free(data);
 }
 
 void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
 
-    guac_rdpdr_fs_data* data;
+    rdp_guac_client_data* data = (rdp_guac_client_data*) rdpdr->client->data;
     int id = rdpdr->devices_registered++;
 
     /* Get new device */
@@ -168,9 +165,7 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
     device->free_handler      = guac_rdpdr_device_fs_free_handler;
 
     /* Init data */
-    data = device->data = malloc(sizeof(guac_rdpdr_fs_data));
-    data->file_id_pool  = guac_pool_alloc(0);
-    data->open_files    = 0;
+    device->data = data->filesystem;
 
 }
 

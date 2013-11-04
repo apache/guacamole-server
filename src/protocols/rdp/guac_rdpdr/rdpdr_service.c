@@ -54,7 +54,7 @@
 #include "rdpdr_service.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"
-#include "rdpdr_fs.h"
+#include "rdpdr_fs_service.h"
 
 #include "client.h"
 

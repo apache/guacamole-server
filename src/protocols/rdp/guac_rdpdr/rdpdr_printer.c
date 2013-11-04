@@ -11,6 +11,7 @@
 
 #include <guacamole/protocol.h>
 
+#include "rdp_status.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"
 #include "rdpdr_service.h"

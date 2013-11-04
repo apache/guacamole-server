@@ -95,6 +95,10 @@ int rdp_guac_client_free_handler(guac_client* client) {
     cache_free(rdp_inst->context->cache);
     freerdp_free(rdp_inst);
 
+    /* Clean up filesystem, if allocated */
+    if (guac_client_data->filesystem != NULL)
+        guac_rdp_fs_free(guac_client_data->filesystem);
+
     /* Free client data */
     cairo_surface_destroy(guac_client_data->opaque_glyph_surface);
     cairo_surface_destroy(guac_client_data->trans_glyph_surface);

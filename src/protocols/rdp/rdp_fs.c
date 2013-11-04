@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,43 +45,46 @@
 #include <fnmatch.h>
 #include <errno.h>
 
-#ifdef ENABLE_WINPR
-#include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include <guacamole/pool.h>
 
-#include "rdpdr_messages.h"
-#include "rdpdr_fs.h"
-#include "rdpdr_service.h"
-#include "client.h"
+#include "rdp_fs.h"
+#include "rdp_status.h"
 #include "debug.h"
 #include "unicode.h"
 
-#include <freerdp/utils/svc_plugin.h>
+guac_rdp_fs* guac_rdp_fs_alloc(const char* drive_path) {
+
+    guac_rdp_fs* fs = malloc(sizeof(guac_rdp_fs));
+
+    fs->drive_path = strdup(drive_path);
+    fs->file_id_pool = guac_pool_alloc(0);
+    fs->open_files = 0;
+
+    return fs;
+
+}
+
+void guac_rdp_fs_free(guac_rdp_fs* fs) {
+    guac_pool_free(fs->file_id_pool);
+    free(fs->drive_path);
+    free(fs);
+}
 
 /**
  * Translates an absolute Windows virtual_path to an absolute virtual_path
  * which is within the "drive virtual_path" specified in the connection
  * settings.
  */
-static void __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
+static void __guac_rdp_fs_translate_path(guac_rdp_fs* fs,
         const char* virtual_path, char* real_path) {
 
     /* Get drive path */
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) device->rdpdr->client->data;
-    char* drive_path = client_data->settings.drive_path;
+    char* drive_path = fs->drive_path;
 
     int i;
 
     /* Start with path from settings */
-    for (i=0; i<GUAC_RDPDR_FS_MAX_PATH-1; i++) {
+    for (i=0; i<GUAC_RDP_FS_MAX_PATH-1; i++) {
 
         /* Break on end-of-string */
         char c = *(drive_path++);
@@ -92,7 +97,7 @@ static void __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
     }
 
     /* Translate path */
-    for (; i<GUAC_RDPDR_FS_MAX_PATH-1; i++) {
+    for (; i<GUAC_RDP_FS_MAX_PATH-1; i++) {
 
         /* Stop at end of string */
         char c = *(virtual_path++);
@@ -113,56 +118,55 @@ static void __guac_rdpdr_fs_translate_path(guac_rdpdr_device* device,
 
 }
 
-int guac_rdpdr_fs_get_errorcode(int err) {
+int guac_rdp_fs_get_errorcode(int err) {
 
-    /* Translate errno codes to GUAC_RDPDR_FS codes */
-    if (err == ENFILE)  return GUAC_RDPDR_FS_ENFILE;
-    if (err == ENOENT)  return GUAC_RDPDR_FS_ENOENT;
-    if (err == ENOTDIR) return GUAC_RDPDR_FS_ENOTDIR;
-    if (err == ENOSPC)  return GUAC_RDPDR_FS_ENOSPC;
-    if (err == EISDIR)  return GUAC_RDPDR_FS_EISDIR;
-    if (err == EACCES)  return GUAC_RDPDR_FS_EACCES;
-    if (err == EEXIST)  return GUAC_RDPDR_FS_EEXIST;
-    if (err == EINVAL)  return GUAC_RDPDR_FS_EINVAL;
-    if (err == ENOSYS)  return GUAC_RDPDR_FS_ENOSYS;
-    if (err == ENOTSUP) return GUAC_RDPDR_FS_ENOTSUP;
+    /* Translate errno codes to GUAC_RDP_FS codes */
+    if (err == ENFILE)  return GUAC_RDP_FS_ENFILE;
+    if (err == ENOENT)  return GUAC_RDP_FS_ENOENT;
+    if (err == ENOTDIR) return GUAC_RDP_FS_ENOTDIR;
+    if (err == ENOSPC)  return GUAC_RDP_FS_ENOSPC;
+    if (err == EISDIR)  return GUAC_RDP_FS_EISDIR;
+    if (err == EACCES)  return GUAC_RDP_FS_EACCES;
+    if (err == EEXIST)  return GUAC_RDP_FS_EEXIST;
+    if (err == EINVAL)  return GUAC_RDP_FS_EINVAL;
+    if (err == ENOSYS)  return GUAC_RDP_FS_ENOSYS;
+    if (err == ENOTSUP) return GUAC_RDP_FS_ENOTSUP;
 
     /* Default to invalid parameter */
-    return GUAC_RDPDR_FS_EINVAL;
+    return GUAC_RDP_FS_EINVAL;
 
 }
 
-int guac_rdpdr_fs_get_status(int err) {
+int guac_rdp_fs_get_status(int err) {
 
-    /* Translate GUAC_RDPDR_FS error code to RDPDR status code */
-    if (err == GUAC_RDPDR_FS_ENFILE)  return STATUS_NO_MORE_FILES;
-    if (err == GUAC_RDPDR_FS_ENOENT)  return STATUS_NO_SUCH_FILE;
-    if (err == GUAC_RDPDR_FS_ENOTDIR) return STATUS_NOT_A_DIRECTORY;
-    if (err == GUAC_RDPDR_FS_ENOSPC)  return STATUS_DISK_FULL;
-    if (err == GUAC_RDPDR_FS_EISDIR)  return STATUS_FILE_IS_A_DIRECTORY;
-    if (err == GUAC_RDPDR_FS_EACCES)  return STATUS_ACCESS_DENIED;
-    if (err == GUAC_RDPDR_FS_EEXIST)  return STATUS_OBJECT_NAME_COLLISION;
-    if (err == GUAC_RDPDR_FS_EINVAL)  return STATUS_INVALID_PARAMETER;
-    if (err == GUAC_RDPDR_FS_ENOSYS)  return STATUS_NOT_IMPLEMENTED;
-    if (err == GUAC_RDPDR_FS_ENOTSUP) return STATUS_NOT_SUPPORTED;
+    /* Translate GUAC_RDP_FS error code to RDPDR status code */
+    if (err == GUAC_RDP_FS_ENFILE)  return STATUS_NO_MORE_FILES;
+    if (err == GUAC_RDP_FS_ENOENT)  return STATUS_NO_SUCH_FILE;
+    if (err == GUAC_RDP_FS_ENOTDIR) return STATUS_NOT_A_DIRECTORY;
+    if (err == GUAC_RDP_FS_ENOSPC)  return STATUS_DISK_FULL;
+    if (err == GUAC_RDP_FS_EISDIR)  return STATUS_FILE_IS_A_DIRECTORY;
+    if (err == GUAC_RDP_FS_EACCES)  return STATUS_ACCESS_DENIED;
+    if (err == GUAC_RDP_FS_EEXIST)  return STATUS_OBJECT_NAME_COLLISION;
+    if (err == GUAC_RDP_FS_EINVAL)  return STATUS_INVALID_PARAMETER;
+    if (err == GUAC_RDP_FS_ENOSYS)  return STATUS_NOT_IMPLEMENTED;
+    if (err == GUAC_RDP_FS_ENOTSUP) return STATUS_NOT_SUPPORTED;
 
     /* Default to invalid parameter */
     return STATUS_INVALID_PARAMETER;
 
 }
 
-int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
+int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
         int access, int file_attributes, int create_disposition,
         int create_options) {
 
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    char real_path[GUAC_RDPDR_FS_MAX_PATH];
-    char normalized_path[GUAC_RDPDR_FS_MAX_PATH];
+    char real_path[GUAC_RDP_FS_MAX_PATH];
+    char normalized_path[GUAC_RDP_FS_MAX_PATH];
 
     struct stat file_stat;
     int fd;
     int file_id;
-    guac_rdpdr_fs_file* file;
+    guac_rdp_fs_file* file;
 
     int flags = 0;
 
@@ -172,9 +176,9 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
                       create_options);
 
     /* If no files available, return too many open */
-    if (data->open_files >= GUAC_RDPDR_FS_MAX_FILES) {
+    if (fs->open_files >= GUAC_RDP_FS_MAX_FILES) {
         GUAC_RDP_DEBUG(1, "%s", "Failure - too many open files.");
-        return GUAC_RDPDR_FS_ENFILE;
+        return GUAC_RDP_FS_ENFILE;
     }
 
     /* If path empty, transform to root path */
@@ -184,7 +188,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     /* If path is relative, the file does not exist */
     else if (path[0] != '\\') {
         GUAC_RDP_DEBUG(1, "Failure - path \"%s\" is relative.", path);
-        return GUAC_RDPDR_FS_ENOENT;
+        return GUAC_RDP_FS_ENOENT;
     }
 
     /* Translate access into flags */
@@ -203,16 +207,16 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
         flags |= O_APPEND;
 
     /* Normalize path, return no-such-file if invalid  */
-    if (guac_rdpdr_fs_normalize_path(path, normalized_path)) {
+    if (guac_rdp_fs_normalize_path(path, normalized_path)) {
         GUAC_RDP_DEBUG(1, "Normalization of path \"%s\" failed.", path);
-        return GUAC_RDPDR_FS_ENOENT;
+        return GUAC_RDP_FS_ENOENT;
     }
 
     GUAC_RDP_DEBUG(2, "Normalized path \"%s\" to \"%s\".",
             path, normalized_path);
 
     /* Translate normalized path to real path */
-    __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
+    __guac_rdp_fs_translate_path(fs, normalized_path, real_path);
 
     GUAC_RDP_DEBUG(2, "Translated path \"%s\" to \"%s\".",
             normalized_path, real_path);
@@ -252,7 +256,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
         /* Unrecognised disposition */
         default:
-            return GUAC_RDPDR_FS_ENOSYS;
+            return GUAC_RDP_FS_ENOSYS;
 
     }
 
@@ -261,7 +265,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
         if (mkdir(real_path, S_IRWXU)) {
             GUAC_RDP_DEBUG(1, "mkdir() failed: %s", strerror(errno));
-            return guac_rdpdr_fs_get_errorcode(errno);
+            return guac_rdp_fs_get_errorcode(errno);
         }
 
         /* Unset O_CREAT and O_EXCL as directory must exist before open() */
@@ -273,12 +277,12 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     fd = open(real_path, flags, S_IRUSR | S_IWUSR);
     if (fd == -1) {
         GUAC_RDP_DEBUG(1, "open() failed: %s", strerror(errno));
-        return guac_rdpdr_fs_get_errorcode(errno);
+        return guac_rdp_fs_get_errorcode(errno);
     }
 
     /* Get file ID, init file */
-    file_id = guac_pool_next_int(data->file_id_pool);
-    file = &(data->files[file_id]);
+    file_id = guac_pool_next_int(fs->file_id_pool);
+    file = &(fs->files[file_id]);
     file->fd  = fd;
     file->dir = NULL;
     file->dir_pattern[0] = '\0';
@@ -307,10 +311,6 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
     /* If information cannot be retrieved, fake it */
     else {
 
-        guac_client_log_info(device->rdpdr->client,
-                "Unable to read information for \"%s\"",
-                real_path);
-
         /* Init information to 0, lacking any alternative */
         file->size  = 0;
         file->ctime = 0;
@@ -320,21 +320,21 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
 
     }
 
-    data->open_files++;
+    fs->open_files++;
 
     return file_id;
 
 }
 
-int guac_rdpdr_fs_read(guac_rdpdr_device* device, int file_id, int offset,
+int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
         void* buffer, int length) {
 
     int bytes_read;
 
-    guac_rdpdr_fs_file* file = guac_rdpdr_fs_get_file(device, file_id);
+    guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
         GUAC_RDP_DEBUG(1, "Read from bad file_id: %i", file_id);
-        return GUAC_RDPDR_FS_EINVAL;
+        return GUAC_RDP_FS_EINVAL;
     }
 
     /* Attempt read */
@@ -343,21 +343,21 @@ int guac_rdpdr_fs_read(guac_rdpdr_device* device, int file_id, int offset,
 
     /* Translate errno on error */
     if (bytes_read < 0)
-        return guac_rdpdr_fs_get_errorcode(errno);
+        return guac_rdp_fs_get_errorcode(errno);
 
     return bytes_read;
 
 }
 
-int guac_rdpdr_fs_write(guac_rdpdr_device* device, int file_id, int offset,
+int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, int offset,
         void* buffer, int length) {
 
     int bytes_written;
 
-    guac_rdpdr_fs_file* file = guac_rdpdr_fs_get_file(device, file_id);
+    guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
         GUAC_RDP_DEBUG(1, "Write to bad file_id: %i", file_id);
-        return GUAC_RDPDR_FS_EINVAL;
+        return GUAC_RDP_FS_EINVAL;
     }
 
     /* Attempt write */
@@ -366,32 +366,32 @@ int guac_rdpdr_fs_write(guac_rdpdr_device* device, int file_id, int offset,
 
     /* Translate errno on error */
     if (bytes_written < 0)
-        return guac_rdpdr_fs_get_errorcode(errno);
+        return guac_rdp_fs_get_errorcode(errno);
 
     return bytes_written;
 
 }
 
-int guac_rdpdr_fs_rename(guac_rdpdr_device* device, int file_id,
+int guac_rdp_fs_rename(guac_rdp_fs* fs, int file_id,
         const char* new_path) {
 
-    char real_path[GUAC_RDPDR_FS_MAX_PATH];
-    char normalized_path[GUAC_RDPDR_FS_MAX_PATH];
+    char real_path[GUAC_RDP_FS_MAX_PATH];
+    char normalized_path[GUAC_RDP_FS_MAX_PATH];
 
-    guac_rdpdr_fs_file* file = guac_rdpdr_fs_get_file(device, file_id);
+    guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
         GUAC_RDP_DEBUG(1, "Rename of bad file_id: %i", file_id);
-        return GUAC_RDPDR_FS_EINVAL;
+        return GUAC_RDP_FS_EINVAL;
     }
 
     /* Normalize path, return no-such-file if invalid  */
-    if (guac_rdpdr_fs_normalize_path(new_path, normalized_path)) {
+    if (guac_rdp_fs_normalize_path(new_path, normalized_path)) {
         GUAC_RDP_DEBUG(1, "Normalization of path \"%s\" failed.", new_path);
-        return GUAC_RDPDR_FS_ENOENT;
+        return GUAC_RDP_FS_ENOENT;
     }
 
     /* Translate normalized path to real path */
-    __guac_rdpdr_fs_translate_path(device, normalized_path, real_path);
+    __guac_rdp_fs_translate_path(fs, normalized_path, real_path);
 
     GUAC_RDP_DEBUG(2, "Renaming \"%s\" -> \"%s\"", file->real_path, real_path);
 
@@ -399,25 +399,23 @@ int guac_rdpdr_fs_rename(guac_rdpdr_device* device, int file_id,
     if (rename(file->real_path, real_path)) {
         GUAC_RDP_DEBUG(1, "rename() failed: \"%s\" -> \"%s\"",
                 file->real_path, real_path);
-        return guac_rdpdr_fs_get_errorcode(errno);
+        return guac_rdp_fs_get_errorcode(errno);
     }
 
     return 0;
 
 }
 
-void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
+void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id) {
 
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-
-    guac_rdpdr_fs_file* file = guac_rdpdr_fs_get_file(device, file_id);
+    guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
         GUAC_RDP_DEBUG(2, "Ignoring close for bad file_id: %i",
                 file_id);
         return;
     }
 
-    file = &(data->files[file_id]);
+    file = &(fs->files[file_id]);
 
     GUAC_RDP_DEBUG(2, "Closed \"%s\" (file_id=%i)",
             file->absolute_path, file_id);
@@ -434,23 +432,22 @@ void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id) {
     free(file->real_path);
 
     /* Free ID back to pool */
-    guac_pool_free_int(data->file_id_pool, file_id);
-    data->open_files--;
+    guac_pool_free_int(fs->file_id_pool, file_id);
+    fs->open_files--;
 
 }
 
-const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id) {
+const char* guac_rdp_fs_read_dir(guac_rdp_fs* fs, int file_id) {
 
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    guac_rdpdr_fs_file* file;
+    guac_rdp_fs_file* file;
 
     struct dirent* result;
 
     /* Only read if file ID is valid */
-    if (file_id < 0 || file_id >= GUAC_RDPDR_FS_MAX_FILES)
+    if (file_id < 0 || file_id >= GUAC_RDP_FS_MAX_FILES)
         return NULL;
 
-    file = &(data->files[file_id]);
+    file = &(fs->files[file_id]);
 
     /* Open directory if not yet open, stop if error */
     if (file->dir == NULL) {
@@ -472,11 +469,11 @@ const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id) {
 
 }
 
-int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path) {
+int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
 
     int i;
     int path_depth = 0;
-    char path_component_data[GUAC_RDPDR_FS_MAX_PATH];
+    char path_component_data[GUAC_RDP_FS_MAX_PATH];
     const char* path_components[64];
 
     const char** current_path_component      = &(path_components[0]);
@@ -490,10 +487,10 @@ int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path) {
     path++;
 
     /* Copy path into component data for parsing */
-    strncpy(path_component_data, path, GUAC_RDPDR_FS_MAX_PATH-1);
+    strncpy(path_component_data, path, GUAC_RDP_FS_MAX_PATH-1);
 
     /* Find path components within path */
-    for (i=0; i<GUAC_RDPDR_FS_MAX_PATH; i++) {
+    for (i=0; i<GUAC_RDP_FS_MAX_PATH; i++) {
 
         /* If current character is a path separator, parse as component */
         char c = path_component_data[i];
@@ -553,14 +550,14 @@ int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path) {
 
 }
 
-int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* abs_path) {
+int guac_rdp_fs_convert_path(const char* parent, const char* rel_path, char* abs_path) {
 
     int i;
-    char combined_path[GUAC_RDPDR_FS_MAX_PATH];
+    char combined_path[GUAC_RDP_FS_MAX_PATH];
     char* current = combined_path;
 
     /* Copy parent path */
-    for (i=0; i<GUAC_RDPDR_FS_MAX_PATH; i++) {
+    for (i=0; i<GUAC_RDP_FS_MAX_PATH; i++) {
 
         char c = *(parent++);
         if (c == 0)
@@ -574,27 +571,25 @@ int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* a
     *(current++) = '\\';
 
     /* Copy remaining path */
-    strncpy(current, rel_path, GUAC_RDPDR_FS_MAX_PATH-i-2);
+    strncpy(current, rel_path, GUAC_RDP_FS_MAX_PATH-i-2);
 
     /* Normalize into provided buffer */
-    return guac_rdpdr_fs_normalize_path(combined_path, abs_path);
+    return guac_rdp_fs_normalize_path(combined_path, abs_path);
 
 }
 
-guac_rdpdr_fs_file* guac_rdpdr_fs_get_file(guac_rdpdr_device* device,
-        int file_id) {
+guac_rdp_fs_file* guac_rdp_fs_get_file(guac_rdp_fs* fs, int file_id) {
 
     /* Validate ID */
-    guac_rdpdr_fs_data* data = (guac_rdpdr_fs_data*) device->data;
-    if (file_id < 0 || file_id >= GUAC_RDPDR_FS_MAX_FILES)
+    if (file_id < 0 || file_id >= GUAC_RDP_FS_MAX_FILES)
         return NULL;
 
     /* Return file at given ID */
-    return &(data->files[file_id]);
+    return &(fs->files[file_id]);
 
 }
 
-int guac_rdpdr_fs_matches(const char* filename, const char* pattern) {
+int guac_rdp_fs_matches(const char* filename, const char* pattern) {
     return fnmatch(pattern, filename, FNM_NOESCAPE) != 0;
 }
 

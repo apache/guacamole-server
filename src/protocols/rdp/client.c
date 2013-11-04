@@ -184,6 +184,12 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     } /* end if audio enabled */
 
+    /* Load filesystem if drive enabled */
+    if (guac_client_data->settings.drive_enabled) {
+        guac_client_data->filesystem =
+            guac_rdp_fs_alloc(guac_client_data->settings.drive_path);
+    }
+
     /* If RDPDR required, load it */
     if (guac_client_data->settings.printing_enabled
         || guac_client_data->settings.drive_enabled) {
@@ -546,7 +552,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->settings.drive_enabled =
         (strcmp(argv[IDX_ENABLE_DRIVE], "true") == 0);
 
-    /* Drive enable/disable */
     guac_client_data->settings.drive_path = strdup(argv[IDX_DRIVE_PATH]);
 
     /* Store client data */
@@ -556,6 +561,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
     guac_client_data->clipboard = NULL;
     guac_client_data->audio = NULL;
+    guac_client_data->filesystem = NULL;
 
     /* Main socket needs to be threadsafe */
     guac_socket_require_threadsafe(client->socket);

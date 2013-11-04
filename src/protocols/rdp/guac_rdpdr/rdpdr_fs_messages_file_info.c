@@ -44,7 +44,8 @@
 #include <guacamole/pool.h>
 
 #include "rdpdr_messages.h"
-#include "rdpdr_fs.h"
+#include "rdp_fs.h"
+#include "rdp_status.h"
 #include "rdpdr_service.h"
 #include "client.h"
 #include "debug.h"
@@ -57,10 +58,10 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
         int file_id, int completion_id) {
 
     wStream* output_stream;
-    guac_rdpdr_fs_file* file;
+    guac_rdp_fs_file* file;
 
     /* Get file */
-    file = guac_rdpdr_fs_get_file(device, file_id);
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
     if (file == NULL)
         return;
 
@@ -86,11 +87,11 @@ void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStrea
         int file_id, int completion_id) {
 
     wStream* output_stream;
-    guac_rdpdr_fs_file* file;
+    guac_rdp_fs_file* file;
     BOOL is_directory = FALSE;
 
     /* Get file */
-    file = guac_rdpdr_fs_get_file(device, file_id);
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
     if (file == NULL)
         return;
 
@@ -119,10 +120,10 @@ void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {
 
     wStream* output_stream;
-    guac_rdpdr_fs_file* file;
+    guac_rdp_fs_file* file;
 
     /* Get file */
-    file = guac_rdpdr_fs_get_file(device, file_id);
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
     if (file == NULL)
         return;
 
@@ -147,7 +148,7 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
     int result;
     int filename_length;
     wStream* output_stream;
-    char destination_path[GUAC_RDPDR_FS_MAX_PATH];
+    char destination_path[GUAC_RDP_FS_MAX_PATH];
 
     /* Read structure */
     Stream_Seek_UINT8(input_stream); /* ReplaceIfExists */
@@ -159,10 +160,11 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
             destination_path, filename_length/2);
 
     /* Perform rename */
-    result = guac_rdpdr_fs_rename(device, file_id, destination_path);
+    result = guac_rdp_fs_rename((guac_rdp_fs*) device->data, file_id,
+            destination_path);
     if (result < 0)
         output_stream = guac_rdpdr_new_io_completion(device,
-                completion_id, guac_rdpdr_fs_get_status(result), 4);
+                completion_id, guac_rdp_fs_get_status(result), 4);
     else
         output_stream = guac_rdpdr_new_io_completion(device,
                 completion_id, STATUS_SUCCESS, 4);

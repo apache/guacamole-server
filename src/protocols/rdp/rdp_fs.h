@@ -35,101 +35,89 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __GUAC_RDPDR_FS_H
-#define __GUAC_RDPDR_FS_H
+#ifndef __GUAC_RDP_FS_H
+#define __GUAC_RDP_FS_H
 
 /**
  * Functions and macros specific to filesystem handling and initialization
- * independent of RDP.  The functions here may deal with the RDPDR device
+ * independent of RDP.  The functions here may deal with the filesystem device
  * directly, but their semantics must not deal with RDP protocol messaging.
  * Functions here represent a virtual Windows-style filesystem on top of UNIX
- * system calls and structures, using the guac_rdpdr_device structure as a home
+ * system calls and structures, using the guac_rdp_fs structure as a home
  * for common data.
  *
- * @file rdpdr_fs.h 
+ * @file rdp_fs.h 
  */
 
-#ifdef ENABLE_WINPR
-#include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
-
 #include <sys/types.h>
+#include <stdint.h>
 #include <dirent.h>
 
 #include <guacamole/pool.h>
 
-#include "rdpdr_service.h"
-
-/**
- * The index of the blob to use when sending files.
- */
-#define GUAC_RDPDR_FS_BLOB 1
-
 /**
  * The maximum number of file IDs to provide.
  */
-#define GUAC_RDPDR_FS_MAX_FILES 128
+#define GUAC_RDP_FS_MAX_FILES 128
 
 /**
  * The maximum number of bytes in a path string.
  */
-#define GUAC_RDPDR_FS_MAX_PATH 4096
+#define GUAC_RDP_FS_MAX_PATH 4096
 
 /**
  * Error code returned when no more file IDs can be allocated.
  */
-#define GUAC_RDPDR_FS_ENFILE -1
+#define GUAC_RDP_FS_ENFILE -1
 
 /**
  * Error code returned when no such file exists.
  */
-#define GUAC_RDPDR_FS_ENOENT -2
+#define GUAC_RDP_FS_ENOENT -2
 
 /**
  * Error code returned when the operation required a directory
  * but the file was not a directory.
  */
-#define GUAC_RDPDR_FS_ENOTDIR -3
+#define GUAC_RDP_FS_ENOTDIR -3
 
 /**
  * Error code returned when insufficient space exists to complete
  * the operation.
  */
-#define GUAC_RDPDR_FS_ENOSPC -4
+#define GUAC_RDP_FS_ENOSPC -4
 
 /**
  * Error code returned when the operation requires a normal file but
  * a directory was given.
  */
-#define GUAC_RDPDR_FS_EISDIR -5
+#define GUAC_RDP_FS_EISDIR -5
 
 /**
  * Error code returned when permission is denied.
  */
-#define GUAC_RDPDR_FS_EACCES -6
+#define GUAC_RDP_FS_EACCES -6
 
 /**
  * Error code returned when the operation cannot be completed because the
  * file already exists.
  */
-#define GUAC_RDPDR_FS_EEXIST -7
+#define GUAC_RDP_FS_EEXIST -7
 
 /**
  * Error code returned when invalid parameters were given.
  */
-#define GUAC_RDPDR_FS_EINVAL -8
+#define GUAC_RDP_FS_EINVAL -8
 
 /**
  * Error code returned when the operation is not implemented.
  */
-#define GUAC_RDPDR_FS_ENOSYS -9
+#define GUAC_RDP_FS_ENOSYS -9
 
 /**
  * Error code returned when the operation is not supported.
  */
-#define GUAC_RDPDR_FS_ENOTSUP -10
+#define GUAC_RDP_FS_ENOTSUP -10
 
 /*
  * Access constants.
@@ -201,7 +189,7 @@
 /**
  * An arbitrary file on the virtual filesystem of the Guacamole drive.
  */
-typedef struct guac_rdpdr_fs_file {
+typedef struct guac_rdp_fs_file {
 
     /**
      * The absolute path, including filename, of this file.
@@ -233,7 +221,7 @@ typedef struct guac_rdpdr_fs_file {
     /**
      * The pattern the check directory contents against, if any.
      */
-    char dir_pattern[GUAC_RDPDR_FS_MAX_PATH];
+    char dir_pattern[GUAC_RDP_FS_MAX_PATH];
 
     /**
      * Bitwise OR of all associated Windows file attributes.
@@ -260,12 +248,17 @@ typedef struct guac_rdpdr_fs_file {
      */
     uint64_t atime;
 
-} guac_rdpdr_fs_file;
+} guac_rdp_fs_file;
 
 /**
- * Data specific to an instance of the printer device.
+ * A virtual filesystem implementing RDP-style operations.
  */
-typedef struct guac_rdpdr_fs_data {
+typedef struct guac_rdp_fs {
+
+    /**
+     * The root of the filesystem.
+     */
+    char* drive_path;
 
     /**
      * The number of currently open files.
@@ -280,37 +273,41 @@ typedef struct guac_rdpdr_fs_data {
     /**
      * All available file structures.
      */
-    guac_rdpdr_fs_file files[GUAC_RDPDR_FS_MAX_FILES];
+    guac_rdp_fs_file files[GUAC_RDP_FS_MAX_FILES];
 
-} guac_rdpdr_fs_data;
+} guac_rdp_fs;
 
 /**
- * Registers a new filesystem device within the RDPDR plugin. This must be done
- * before RDPDR connection finishes.
+ * Allocates a new filesystem given a root path.
  */
-void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr);
+guac_rdp_fs* guac_rdp_fs_alloc(const char* drive_path);
+
+/**
+ * Frees the given filesystem.
+ */
+void guac_rdp_fs_free(guac_rdp_fs* fs);
 
 /**
  * Converts the given relative path to an absolute path based on the given
  * parent path. If the path cannot be converted, non-zero is returned.
  */
-int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* abs_path);
+int guac_rdp_fs_convert_path(const char* parent, const char* rel_path, char* abs_path);
 
 /**
- * Translates the given errno error code to a GUAC_RDPDR_FS error code.
+ * Translates the given errno error code to a GUAC_RDP_FS error code.
  */
-int guac_rdpdr_fs_get_errorcode(int err);
+int guac_rdp_fs_get_errorcode(int err);
 
 /**
- * Teanslates the given GUAC_RDPDR_FS error code to an RDPDR status code.
+ * Teanslates the given GUAC_RDP_FS error code to an RDPDR status code.
  */
-int guac_rdpdr_fs_get_status(int err);
+int guac_rdp_fs_get_status(int err);
 
 /**
  * Returns the next available file ID, or an error code less than zero
  * if an error occurs.
  */
-int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
+int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
         int access, int file_attributes, int create_disposition,
         int create_options);
 
@@ -319,7 +316,7 @@ int guac_rdpdr_fs_open(guac_rdpdr_device* device, const char* path,
  * file having the given ID. Returns the number of bytes read, zero on EOF,
  * and an error code if an error occurs.
  */
-int guac_rdpdr_fs_read(guac_rdpdr_device* device, int file_id, int offset,
+int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
         void* buffer, int length);
 
 /**
@@ -327,48 +324,47 @@ int guac_rdpdr_fs_read(guac_rdpdr_device* device, int file_id, int offset,
  * file having the given ID. Returns the number of bytes written, and an
  * error code if an error occurs.
  */
-int guac_rdpdr_fs_write(guac_rdpdr_device* device, int file_id, int offset,
+int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, int offset,
         void* buffer, int length);
 
 /**
  * Renames (moves) the file with the given ID to the new path specified.
  * Returns zero on success, or an error code if an error occurs.
  */
-int guac_rdpdr_fs_rename(guac_rdpdr_device* device, int file_id,
+int guac_rdp_fs_rename(guac_rdp_fs* fs, int file_id,
         const char* new_path);
 
 /**
  * Frees the given file ID, allowing future open operations to reuse it.
  */
-void guac_rdpdr_fs_close(guac_rdpdr_device* device, int file_id);
+void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id);
 
 /**
  * Given an arbitrary path, which may contain ".." and ".", creates an
  * absolute path which does NOT contain ".." or ".".
  */
-int guac_rdpdr_fs_normalize_path(const char* path, char* abs_path);
+int guac_rdp_fs_normalize_path(const char* path, char* abs_path);
 
 /**
  * Given a parent path and a relative path, produces a normalized absolute path.
  */
-int guac_rdpdr_fs_convert_path(const char* parent, const char* rel_path, char* abs_path);
+int guac_rdp_fs_convert_path(const char* parent, const char* rel_path, char* abs_path);
 
 /**
  * Returns the next filename within the directory having the given file ID,
  * or NULL if no more files.
  */
-const char* guac_rdpdr_fs_read_dir(guac_rdpdr_device* device, int file_id);
+const char* guac_rdp_fs_read_dir(guac_rdp_fs* fs, int file_id);
 
 /**
  * Returns the file having the given ID, or NULL if no such file exists.
  */
-guac_rdpdr_fs_file* guac_rdpdr_fs_get_file(guac_rdpdr_device* device,
-        int file_id);
+guac_rdp_fs_file* guac_rdp_fs_get_file(guac_rdp_fs* fs, int file_id);
 
 /**
  * Returns whether the given filename matches the given pattern.
  */
-int guac_rdpdr_fs_matches(const char* filename, const char* pattern);
+int guac_rdp_fs_matches(const char* filename, const char* pattern);
 
 #endif
 

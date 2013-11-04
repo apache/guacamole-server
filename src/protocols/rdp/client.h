@@ -48,6 +48,7 @@
 #include <guacamole/client.h>
 #include <guacamole/audio.h>
 
+#include "rdp_fs.h"
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
 
@@ -167,6 +168,11 @@ typedef struct rdp_guac_client_data {
      * Audio output, if any.
      */
     guac_audio_stream* audio;
+
+    /**
+     * The filesystem being shared, if any.
+     */
+    guac_rdp_fs* filesystem;
 
     /**
      * Lock which is locked and unlocked for each RDP message.

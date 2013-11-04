@@ -44,7 +44,8 @@
 #include <guacamole/pool.h>
 
 #include "rdpdr_messages.h"
-#include "rdpdr_fs.h"
+#include "rdp_fs.h"
+#include "rdp_status.h"
 #include "rdpdr_service.h"
 #include "client.h"
 #include "unicode.h"
@@ -91,7 +92,7 @@ void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStre
 
     Stream_Write_UINT32(output_stream, 12 + GUAC_FILESYSTEM_NAME_LENGTH);
     Stream_Write_UINT32(output_stream, FILE_UNICODE_ON_DISK); /* FileSystemAttributes */
-    Stream_Write_UINT32(output_stream, GUAC_RDPDR_FS_MAX_PATH ); /* MaximumComponentNameLength */
+    Stream_Write_UINT32(output_stream, GUAC_RDP_FS_MAX_PATH ); /* MaximumComponentNameLength */
     Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_NAME_LENGTH);
     Stream_Write(output_stream, GUAC_FILESYSTEM_NAME,
             GUAC_FILESYSTEM_NAME_LENGTH);
