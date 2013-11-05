@@ -410,6 +410,25 @@ int guac_rdp_fs_rename(guac_rdp_fs* fs, int file_id,
 
 }
 
+int guac_rdp_fs_delete(guac_rdp_fs* fs, int file_id) {
+
+    /* Get file */
+    guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
+    if (file == NULL) {
+        GUAC_RDP_DEBUG(1, "Delete of bad file_id: %i", file_id);
+        return GUAC_RDP_FS_EINVAL;
+    }
+
+    /* Attempt deletion */
+    if (unlink(file->real_path)) {
+        GUAC_RDP_DEBUG(1, "unlink() failed: \"%s\"", file->real_path);
+        return guac_rdp_fs_get_errorcode(errno);
+    }
+
+    return 0;
+
+}
+
 void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id) {
 
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
