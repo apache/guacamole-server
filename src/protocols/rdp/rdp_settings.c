@@ -186,8 +186,10 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     bitmap_cache = rdp_settings->bitmap_cache;
     rdp_settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
+#ifdef HAVE_RDPSETTINGS_FASTPATH
     rdp_settings->fast_path_input = FALSE;
     rdp_settings->fast_path_output = FALSE;
+#endif
     rdp_settings->order_support[NEG_DSTBLT_INDEX] = TRUE;
     rdp_settings->order_support[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
     rdp_settings->order_support[NEG_SCRBLT_INDEX] = TRUE;
@@ -216,8 +218,10 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     bitmap_cache = rdp_settings->BitmapCacheEnabled;
     rdp_settings->OsMajorType = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
+#ifdef HAVE_RDPSETTINGS_FASTPATH
     rdp_settings->FastPathInput = FALSE;
     rdp_settings->FastPathOutput = FALSE;
+#endif
     rdp_settings->OrderSupport[NEG_DSTBLT_INDEX] = TRUE;
     rdp_settings->OrderSupport[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
     rdp_settings->OrderSupport[NEG_SCRBLT_INDEX] = TRUE;

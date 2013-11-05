@@ -263,6 +263,7 @@ have_winpr=yes
 have_freerdp=yes
 legacy_freerdp_extensions=no
 rdpsettings_interface=unknown
+rdpsettings_fastpath=yes
 freerdp_interface=unknown
 event_interface=unknown
 RDP_LIBS=
@@ -422,6 +423,8 @@ fi
 # Check for current (as of 1.1) rdpSettings interface
 AC_CHECK_MEMBERS([rdpSettings.Width,
                   rdpSettings.Height,
+                  rdpSettings.FastPathInput,
+                  rdpSettings.FastPathOutput,
                   rdpSettings.OrderSupport],
                  [rdpsettings_interface=stable],,
                  [[#include <freerdp/freerdp.h>]])
@@ -439,6 +442,13 @@ fi
 # Set defines based on interface type, warn if unknown
 if test "x${rdpsettings_interface}" = "xlegacy"; then
     AC_DEFINE([LEGACY_RDPSETTINGS])
+
+    # Legacy interface may not have FastPath settings
+    AC_CHECK_MEMBERS([rdpSettings.fast_path_input,
+                      rdpSettings.fast_path_output],,
+                     [rdpsettings_fastpath=no],
+                     [[#include <freerdp/freerdp.h>]])
+
 elif test "x${rdpsettings_interface}" = "xunknown"; then
     AC_MSG_WARN([
   --------------------------------------------
@@ -446,6 +456,11 @@ elif test "x${rdpsettings_interface}" = "xunknown"; then
    RDP will be disabled.
   --------------------------------------------]) 
     have_freerdp=no
+fi
+
+# Activate FastPath settings if present
+if test "x${rdpsettings_fastpath}" = "xyes"; then
+    AC_DEFINE([HAVE_RDPSETTINGS_FASTPATH])
 fi
 
 #
