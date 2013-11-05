@@ -273,6 +273,9 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
 
     }
 
+    GUAC_RDP_DEBUG(2, "native open: real_path=\"%s\", flags=0x%x",
+            real_path, flags);
+
     /* Open file */
     fd = open(real_path, flags, S_IRUSR | S_IWUSR);
     if (fd == -1) {

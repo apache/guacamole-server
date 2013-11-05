@@ -161,7 +161,9 @@
  * Filesystem attributes.
  */
 
-#define FILE_UNICODE_ON_DISK 0x00000004
+#define FILE_CASE_SENSITIVE_SEARCH 0x00000001
+#define FILE_CASE_PRESERVED_NAMES  0x00000002
+#define FILE_UNICODE_ON_DISK       0x00000004
 
 /*
  * File create options.

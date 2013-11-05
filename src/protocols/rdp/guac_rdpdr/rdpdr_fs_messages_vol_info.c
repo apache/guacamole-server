@@ -91,7 +91,10 @@ void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStre
             completion_id, STATUS_SUCCESS, 16 + GUAC_FILESYSTEM_NAME_LENGTH);
 
     Stream_Write_UINT32(output_stream, 12 + GUAC_FILESYSTEM_NAME_LENGTH);
-    Stream_Write_UINT32(output_stream, FILE_UNICODE_ON_DISK); /* FileSystemAttributes */
+    Stream_Write_UINT32(output_stream,
+              FILE_UNICODE_ON_DISK
+            | FILE_CASE_SENSITIVE_SEARCH
+            | FILE_CASE_PRESERVED_NAMES); /* FileSystemAttributes */
     Stream_Write_UINT32(output_stream, GUAC_RDP_FS_MAX_PATH ); /* MaximumComponentNameLength */
     Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_NAME_LENGTH);
     Stream_Write(output_stream, GUAC_FILESYSTEM_NAME,
