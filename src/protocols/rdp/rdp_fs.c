@@ -194,17 +194,17 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     /* Translate access into flags */
     if (access & ACCESS_GENERIC_ALL)
         flags = O_RDWR;
-    else if ((access & (ACCESS_GENERIC_WRITE | ACCESS_FILE_WRITE_DATA))
+    else if ((access & ( ACCESS_GENERIC_WRITE
+                       | ACCESS_FILE_WRITE_DATA
+                       | ACCESS_FILE_APPEND_DATA))
           && (access & (ACCESS_GENERIC_READ  | ACCESS_FILE_READ_DATA)))
         flags = O_RDWR;
-    else if (access & (ACCESS_GENERIC_WRITE | ACCESS_FILE_WRITE_DATA))
+    else if (access & ( ACCESS_GENERIC_WRITE
+                      | ACCESS_FILE_WRITE_DATA
+                      | ACCESS_FILE_APPEND_DATA))
         flags = O_WRONLY;
     else
         flags = O_RDONLY;
-
-    /* If append access requested, add appropriate option */
-    if (access & ACCESS_FILE_APPEND_DATA)
-        flags |= O_APPEND;
 
     /* Normalize path, return no-such-file if invalid  */
     if (guac_rdp_fs_normalize_path(path, normalized_path)) {
