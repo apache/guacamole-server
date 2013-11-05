@@ -482,6 +482,16 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <freerdp/update.h>
                    AC_DEFINE([LEGACY_RDPPALETTE])])
 
 #
+# FreeRDP: rdpPointer
+#
+
+# Check for SetDefault and SetNull members of rdpPointer
+AC_CHECK_MEMBERS([rdpPointer.SetDefault,
+                  rdpPointer.SetNull],
+                 ,,
+                 [[#include <freerdp/freerdp.h>]])
+
+#
 # FreeRDP: wMessage / RDP_EVENT
 #
 
