@@ -342,9 +342,15 @@ int guac_rdp_fs_rename(guac_rdp_fs* fs, int file_id,
         const char* new_path);
 
 /**
- * Deletes the gile with the given ID.
+ * Deletes the file with the given ID.
  */
 int guac_rdp_fs_delete(guac_rdp_fs* fs, int file_id);
+
+/**
+ * Truncates the file with the given ID to the given length (in bytes), which
+ * may be larger.
+ */
+int guac_rdp_fs_truncate(guac_rdp_fs* fs, int file_id, int length);
 
 /**
  * Frees the given file ID, allowing future open operations to reuse it.
