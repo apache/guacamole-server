@@ -215,6 +215,21 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     GUAC_RDP_DEBUG(2, "Normalized path \"%s\" to \"%s\".",
             path, normalized_path);
 
+    /* If creating file within Outbox, prepare for download */
+    if (strncmp(normalized_path, "\\Outbox\\", 8) == 0) {
+
+        /* Replace \Outbox\ with \Sent\ */
+        memcpy(normalized_path, "\\Sent\\", 6);
+
+        /* Shift everything after the original \Outbox\ back two bytes */
+        char* original_path = &(normalized_path[8]);
+        do {
+            *(original_path-2) = *original_path;
+        } while (*(original_path++) != '\0');
+
+        GUAC_RDP_DEBUG(2, "Rerouted to \"%s\"", normalized_path);
+    }
+
     /* Translate normalized path to real path */
     __guac_rdp_fs_translate_path(fs, normalized_path, real_path);
 
