@@ -218,6 +218,14 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     /* If creating file within Outbox, prepare for download */
     if (strncmp(normalized_path, "\\Outbox\\", 8) == 0) {
 
+        /* Ensure \Sent exists */
+        int sent_id = guac_rdp_fs_open(fs, "\\Sent", ACCESS_GENERIC_ALL, 0,
+                        DISP_FILE_OPEN_IF, FILE_DIRECTORY_FILE);
+        if (sent_id < 0)
+            return sent_id;
+
+        guac_rdp_fs_close(fs, sent_id);
+
         /* Replace \Outbox\ with \Sent\ */
         memcpy(normalized_path, "\\Sent\\", 6);
 
