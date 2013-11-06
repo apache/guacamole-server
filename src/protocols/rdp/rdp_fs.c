@@ -219,7 +219,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     if (strncmp(normalized_path, "\\Outbox\\", 8) == 0) {
 
         /* Ensure \Sent exists */
-        int sent_id = guac_rdp_fs_open(fs, "\\Sent", ACCESS_GENERIC_ALL, 0,
+        int sent_id = guac_rdp_fs_open(fs, "\\Sent", ACCESS_GENERIC_READ, 0,
                         DISP_FILE_OPEN_IF, FILE_DIRECTORY_FILE);
         if (sent_id < 0)
             return sent_id;
@@ -287,8 +287,10 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     if ((create_options & FILE_DIRECTORY_FILE) && (flags & O_CREAT)) {
 
         if (mkdir(real_path, S_IRWXU)) {
-            GUAC_RDP_DEBUG(1, "mkdir() failed: %s", strerror(errno));
-            return guac_rdp_fs_get_errorcode(errno);
+            if (errno != EEXIST || (flags & O_EXCL)) {
+                GUAC_RDP_DEBUG(1, "mkdir() failed: %s", strerror(errno));
+                return guac_rdp_fs_get_errorcode(errno);
+            }
         }
 
         /* Unset O_CREAT and O_EXCL as directory must exist before open() */
