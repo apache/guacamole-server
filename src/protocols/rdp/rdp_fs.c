@@ -216,29 +216,22 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     GUAC_RDP_DEBUG(2, "Normalized path \"%s\" to \"%s\".",
             path, normalized_path);
 
-    /* If creating file within Outbox, prepare for download */
-    if (strncmp(normalized_path, "\\Outbox\\", 8) == 0) {
+    /* Create \Download if it doesn't exist */
+    if (strcmp(normalized_path, "\\") == 0) {
 
-        /* Ensure \Sent exists */
-        int sent_id = guac_rdp_fs_open(fs, "\\Sent", ACCESS_GENERIC_READ, 0,
-                        DISP_FILE_OPEN_IF, FILE_DIRECTORY_FILE);
-        if (sent_id < 0)
-            return sent_id;
+        int download_id = guac_rdp_fs_open(fs, "\\Download",
+                ACCESS_GENERIC_READ, 0,
+                DISP_FILE_OPEN_IF, FILE_DIRECTORY_FILE);
 
-        guac_rdp_fs_close(fs, sent_id);
+        if (download_id < 0)
+            return download_id;
 
-        /* Replace \Outbox\ with \Sent\ */
-        memcpy(normalized_path, "\\Sent\\", 6);
+        guac_rdp_fs_close(fs, download_id);
+    }
 
-        /* Shift everything after the original \Outbox\ back two bytes */
-        char* original_path = &(normalized_path[8]);
-        do {
-            *(original_path-2) = *original_path;
-        } while (*(original_path++) != '\0');
-
-        /* Mark for download */
+    /* If creating file within Download, prepare for download */
+    else if (strncmp(normalized_path, "\\Download\\", 10) == 0) {
         download_requested = 1;
-        GUAC_RDP_DEBUG(2, "Rerouted to \"%s\"", normalized_path);
     }
 
     /* Translate normalized path to real path */
