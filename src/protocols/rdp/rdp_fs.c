@@ -215,19 +215,6 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     GUAC_RDP_DEBUG(2, "Normalized path \"%s\" to \"%s\".",
             path, normalized_path);
 
-    /* Create \Download if it doesn't exist */
-    if (strcmp(normalized_path, "\\") == 0) {
-
-        int download_id = guac_rdp_fs_open(fs, "\\Download",
-                ACCESS_GENERIC_READ, 0,
-                DISP_FILE_OPEN_IF, FILE_DIRECTORY_FILE);
-
-        if (download_id < 0)
-            return download_id;
-
-        guac_rdp_fs_close(fs, download_id);
-    }
-
     /* Translate normalized path to real path */
     __guac_rdp_fs_translate_path(fs, normalized_path, real_path);
 
@@ -476,12 +463,6 @@ void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id) {
     }
 
     file = &(fs->files[file_id]);
-
-    /* If file was written to, and it's in the \Download folder, start stream */
-    if (file->bytes_written > 0 &&
-            strncmp(file->absolute_path, "\\Download\\", 10) == 0) {
-        GUAC_RDP_DEBUG(2, "Will download \"%s\"", file->absolute_path);
-    }
 
     GUAC_RDP_DEBUG(2, "Closed \"%s\" (file_id=%i)",
             file->absolute_path, file_id);

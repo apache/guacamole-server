@@ -53,6 +53,7 @@
 #include "rdpdr_messages.h"
 #include "rdpdr_service.h"
 #include "client.h"
+#include "debug.h"
 #include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
@@ -101,10 +102,27 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
     /* Otherwise, open succeeded */
     else {
+
+        guac_rdp_fs_file* file;
+
         output_stream = guac_rdpdr_new_io_completion(device, completion_id,
                 STATUS_SUCCESS, 5);
         Stream_Write_UINT32(output_stream, file_id);    /* fileId */
         Stream_Write_UINT8(output_stream,  0);          /* information */
+
+        /* Create \Download if it doesn't exist */
+        file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
+        if (file != NULL && strcmp(file->absolute_path, "\\") == 0) {
+            int download_id =
+                guac_rdp_fs_open((guac_rdp_fs*) device->data, "\\Download",
+                    ACCESS_GENERIC_READ, 0,
+                    DISP_FILE_OPEN_IF, FILE_DIRECTORY_FILE);
+
+            if (download_id >= 0)
+                guac_rdp_fs_close((guac_rdp_fs*) device->data, download_id);
+        }
+
+
     }
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
@@ -194,6 +212,44 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {
 
     wStream* output_stream;
+    guac_rdp_fs_file* file;
+
+    /* Get file */
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
+    if (file == NULL)
+        return;
+
+    /* If file was written to, and it's in the \Download folder, start stream */
+    if (file->bytes_written > 0 &&
+            strncmp(file->absolute_path, "\\Download\\", 10) == 0) {
+
+        int i;
+        char c;
+
+        /* Get client */
+        guac_client* client = device->rdpdr->client;
+
+        /* Allocate stream */
+        guac_stream* stream = guac_client_alloc_stream(client);
+
+        /* Get basename from absolute path */
+        char* basename = file->absolute_path;
+        do {
+
+            c = file->absolute_path[i];
+            if (c == '/' || c == '\\')
+                basename = &(file->absolute_path[i+1]);
+
+            i++;
+
+        } while (c != '\0');
+
+        GUAC_RDP_DEBUG(2, "Initiating download of \"%s\"", file->absolute_path);
+        guac_protocol_send_file(client->socket, stream,
+                "application/octet-stream", basename);
+        guac_socket_flush(client->socket);
+
+    }
 
     /* Close file */
     guac_rdp_fs_close((guac_rdp_fs*) device->data, file_id);
