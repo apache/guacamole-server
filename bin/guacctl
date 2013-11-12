@@ -99,7 +99,7 @@ download_files() {
 
     for FILENAME in "$@"; do
         if [ -e "$FILENAME" ]; then
-            send_download_file `fullpath $FILENAME`
+            send_download_file "`fullpath "$FILENAME"`"
         else
             error "$FILENAME: File does not exist."
         fi
@@ -123,7 +123,7 @@ set_directory() {
 
     FILENAME="$1"
     if [ -d "$FILENAME" ]; then
-        send_set_directory `fullpath "$FILENAME"`
+        send_set_directory "`fullpath "$FILENAME"`"
     else
         error "$FILENAME: File does not exist or is not a directory."
     fi
