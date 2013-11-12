@@ -208,6 +208,23 @@ typedef struct rdp_freerdp_context {
 } rdp_freerdp_context;
 
 /**
+ * The transfer status of a file being downloaded.
+ */
+typedef struct guac_rdp_download_status {
+
+    /**
+     * The file ID of the file being downloaded.
+     */
+    int file_id;
+
+    /**
+     * The current position within the file.
+     */
+    uint64_t offset;
+
+} guac_rdp_download_status;
+
+/**
  * Given the coordinates and dimensions of a rectangle, clips the rectangle to be
  * within the clipping bounds of the client data, if clipping is active.
  *

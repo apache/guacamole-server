@@ -639,3 +639,60 @@ int rdp_guac_client_end_handler(guac_client* client, guac_stream* stream) {
     return 0;
 }
 
+int rdp_guac_client_ack_handler(guac_client* client, guac_stream* stream,
+        char* message, guac_protocol_status status) {
+
+    /* Get status */
+    guac_rdp_download_status* download =
+        (guac_rdp_download_status*) stream->data;
+
+    /* Get filesystem, return error if no filesystem */
+    guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
+    if (fs == NULL) {
+        guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
+                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+        guac_socket_flush(client->socket);
+        return 0;
+    }
+
+    /* If successful, read data */
+    if (status == GUAC_PROTOCOL_STATUS_SUCCESS) {
+
+        /* Attempt read into buffer */
+        char buffer[4096];
+        int bytes_read = guac_rdp_fs_read(fs, download->file_id,
+                download->offset, buffer, sizeof(buffer)); 
+
+        /* If bytes read, send as blob */
+        if (bytes_read > 0) {
+            download->offset += bytes_read;
+            guac_protocol_send_blob(client->socket, stream,
+                    buffer, bytes_read);
+        }
+
+        /* If EOF, send end */
+        else if (bytes_read == 0) {
+            guac_protocol_send_end(client->socket, stream);
+            guac_client_free_stream(client, stream);
+        }
+
+        /* Otherwise, fail stream */
+        else {
+            guac_client_log_error(client, "Error reading file for download");
+            guac_protocol_send_end(client->socket, stream);
+            guac_client_free_stream(client, stream);
+        }
+
+        guac_socket_flush(client->socket);
+
+    }
+
+    /* Otherwise, return stream to client */
+    else
+        guac_client_free_stream(client, stream);
+
+    return 0;
+
+
+}
+

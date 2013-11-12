@@ -226,30 +226,50 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
         int i;
         char c;
 
-        /* Get client */
+        /* Get client and stream */
         guac_client* client = device->rdpdr->client;
 
-        /* Allocate stream */
-        guac_stream* stream = guac_client_alloc_stream(client);
+        int file_id = guac_rdp_fs_open((guac_rdp_fs*) device->data,
+                file->absolute_path, ACCESS_FILE_READ_DATA, 0,
+                DISP_FILE_OPEN, 0);
 
-        /* Get basename from absolute path */
-        char* basename = file->absolute_path;
-        do {
+        /* If file opened successfully, start stream */
+        if (file_id >= 0) {
 
-            c = file->absolute_path[i];
-            if (c == '/' || c == '\\')
-                basename = &(file->absolute_path[i+1]);
+            guac_rdp_download_status* status;
 
-            i++;
+            /* Associate stream with transfer status */
+            guac_stream* stream = guac_client_alloc_stream(client);
+            stream->data = status = malloc(sizeof(guac_rdp_download_status));
+            status->file_id = file_id;
+            status->offset = 0;
 
-        } while (c != '\0');
+            /* Get basename from absolute path */
+            char* basename = file->absolute_path;
+            do {
 
-        GUAC_RDP_DEBUG(2, "Initiating download of \"%s\"", file->absolute_path);
-        guac_protocol_send_file(client->socket, stream,
-                "application/octet-stream", basename);
-        guac_socket_flush(client->socket);
+                c = file->absolute_path[i];
+                if (c == '/' || c == '\\')
+                    basename = &(file->absolute_path[i+1]);
 
-    }
+                i++;
+
+            } while (c != '\0');
+
+            GUAC_RDP_DEBUG(2, "Initiating download of \"%s\"",
+                    file->absolute_path);
+
+            /* Begin stream */
+            guac_protocol_send_file(client->socket, stream,
+                    "application/octet-stream", basename);
+            guac_socket_flush(client->socket);
+
+        }
+        else
+            guac_client_log_error(client, "Unable to download \"%s\"",
+                    file->absolute_path);
+
+    } /* end if download */
 
     /* Close file */
     guac_rdp_fs_close((guac_rdp_fs*) device->data, file_id);

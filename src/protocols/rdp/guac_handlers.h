@@ -73,5 +73,8 @@ int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
 
 int rdp_guac_client_end_handler(guac_client* client, guac_stream* stream);
 
+int rdp_guac_client_ack_handler(guac_client* client, guac_stream* stream,
+        char* message, guac_protocol_status status);
+
 #endif
 
