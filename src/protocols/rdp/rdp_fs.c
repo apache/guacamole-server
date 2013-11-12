@@ -477,6 +477,12 @@ void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id) {
 
     file = &(fs->files[file_id]);
 
+    /* If file was written to, and it's in the \Download folder, start stream */
+    if (file->bytes_written > 0 &&
+            strncmp(file->absolute_path, "\\Download\\", 10) == 0) {
+        GUAC_RDP_DEBUG(2, "Will download \"%s\"", file->absolute_path);
+    }
+
     GUAC_RDP_DEBUG(2, "Closed \"%s\" (file_id=%i)",
             file->absolute_path, file_id);
 
