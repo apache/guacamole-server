@@ -169,7 +169,6 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     guac_rdp_fs_file* file;
 
     int flags = 0;
-    int download_requested = 0;
 
     GUAC_RDP_DEBUG(2, "path=\"%s\", access=0x%x, file_attributes=0x%x, "
                       "create_disposition=0x%x, create_options=0x%x",
@@ -227,11 +226,6 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
             return download_id;
 
         guac_rdp_fs_close(fs, download_id);
-    }
-
-    /* If creating file within Download, prepare for download */
-    else if (strncmp(normalized_path, "\\Download\\", 10) == 0) {
-        download_requested = 1;
     }
 
     /* Translate normalized path to real path */
@@ -313,6 +307,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     file->dir_pattern[0] = '\0';
     file->absolute_path = strdup(normalized_path);
     file->real_path = strdup(real_path);
+    file->bytes_written = 0;
 
     GUAC_RDP_DEBUG(2, "Opened \"%s\" as file_id=%i", normalized_path, file_id);
 
@@ -346,12 +341,6 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     }
 
     fs->open_files++;
-
-    /* If download requested, start streaming */
-    if (download_requested) {
-        /* STUB */
-        GUAC_RDP_DEBUG(2, "Download starting: \"%s\"", real_path);
-    }
 
     return file_id;
 
@@ -399,6 +388,7 @@ int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, int offset,
     if (bytes_written < 0)
         return guac_rdp_fs_get_errorcode(errno);
 
+    file->bytes_written += bytes_written;
     return bytes_written;
 
 }

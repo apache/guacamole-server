@@ -255,6 +255,11 @@ typedef struct guac_rdp_fs_file {
      */
     uint64_t atime;
 
+    /**
+     * The number of bytes written to the file.
+     */
+    uint64_t bytes_written;
+
 } guac_rdp_fs_file;
 
 /**
