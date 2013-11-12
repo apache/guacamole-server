@@ -678,6 +678,7 @@ int rdp_guac_client_ack_handler(guac_client* client, guac_stream* stream,
         else if (bytes_read == 0) {
             guac_protocol_send_end(client->socket, stream);
             guac_client_free_stream(client, stream);
+            free(download);
         }
 
         /* Otherwise, fail stream */
@@ -685,6 +686,7 @@ int rdp_guac_client_ack_handler(guac_client* client, guac_stream* stream,
             guac_client_log_error(client, "Error reading file for download");
             guac_protocol_send_end(client->socket, stream);
             guac_client_free_stream(client, stream);
+            free(download);
         }
 
         guac_socket_flush(client->socket);

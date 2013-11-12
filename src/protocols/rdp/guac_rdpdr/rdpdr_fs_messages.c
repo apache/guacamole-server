@@ -237,6 +237,7 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
         if (file_id >= 0) {
 
             guac_rdp_download_status* status;
+            char* basename;
 
             /* Associate stream with transfer status */
             guac_stream* stream = guac_client_alloc_stream(client);
@@ -244,8 +245,11 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
             status->file_id = file_id;
             status->offset = 0;
 
+            /* Delete file after opened */
+            guac_rdp_fs_delete((guac_rdp_fs*) device->data, file_id);
+
             /* Get basename from absolute path */
-            char* basename = file->absolute_path;
+            basename = file->absolute_path;
             do {
 
                 c = file->absolute_path[i];
