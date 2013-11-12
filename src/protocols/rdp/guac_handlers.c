@@ -646,6 +646,10 @@ int rdp_guac_client_ack_handler(guac_client* client, guac_stream* stream,
     guac_rdp_download_status* download =
         (guac_rdp_download_status*) stream->data;
 
+    /* Ignore acks for non-download stream data */
+    if (download == NULL)
+        return 0;
+
     /* Get filesystem, return error if no filesystem */
     guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
     if (fs == NULL) {
