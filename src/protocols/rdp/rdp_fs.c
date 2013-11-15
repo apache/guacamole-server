@@ -40,6 +40,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <fnmatch.h>
@@ -638,5 +639,20 @@ guac_rdp_fs_file* guac_rdp_fs_get_file(guac_rdp_fs* fs, int file_id) {
 
 int guac_rdp_fs_matches(const char* filename, const char* pattern) {
     return fnmatch(pattern, filename, FNM_NOESCAPE) != 0;
+}
+
+int guac_rdp_fs_get_info(guac_rdp_fs* fs, guac_rdp_fs_info* info) {
+
+    /* Read FS information */
+    struct statvfs fs_stat;
+    if (statvfs(fs->drive_path, &fs_stat))
+        return guac_rdp_fs_get_status(errno);
+
+    /* Assign to structure */
+    info->blocks_available = fs_stat.f_bfree;
+    info->blocks_total = fs_stat.f_blocks;
+    info->block_size = fs_stat.f_bsize;
+    return 0;
+
 }
 

@@ -48,6 +48,7 @@
 #include "rdp_status.h"
 #include "rdpdr_service.h"
 #include "client.h"
+#include "debug.h"
 #include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
@@ -106,8 +107,21 @@ void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStre
 
 void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
-    /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: guac_rdpdr_fs_query_full_size_info");
+
+    guac_rdp_fs_info info = {0};
+    guac_rdp_fs_get_info((guac_rdp_fs*) device->data, &info);
+
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_SUCCESS, 16 + GUAC_FILESYSTEM_NAME_LENGTH);
+
+    Stream_Write_UINT64(output_stream, info.blocks_total);     /* TotalAllocationUnits */
+    Stream_Write_UINT64(output_stream, info.blocks_available); /* CallerAvailableAllocationUnits */
+    Stream_Write_UINT64(output_stream, info.blocks_available); /* ActualAvailableAllocationUnits */
+    Stream_Write_UINT64(output_stream, 1);                     /* SectorsPerAllocationUnit */
+    Stream_Write_UINT64(output_stream, info.block_size);       /* BytesPerSector */
+
+    GUAC_RDP_DEBUG(2, "total=%i, avail=%i, size=%i", info.blocks_total, info.blocks_available, info.block_size);
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+
 }
 

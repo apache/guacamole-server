@@ -290,6 +290,28 @@ typedef struct guac_rdp_fs {
 } guac_rdp_fs;
 
 /**
+ * Filesystem information structure.
+ */
+typedef struct guac_rdp_fs_info {
+
+    /**
+     * The number of free blocks available.
+     */
+    int blocks_available;
+
+    /**
+     * The number of blocks in the filesystem.
+     */
+    int blocks_total;
+
+    /**
+     * The number of bytes per block.
+     */
+    int block_size;
+
+} guac_rdp_fs_info;
+
+/**
  * Allocates a new filesystem given a root path.
  */
 guac_rdp_fs* guac_rdp_fs_alloc(const char* drive_path);
@@ -388,6 +410,12 @@ guac_rdp_fs_file* guac_rdp_fs_get_file(guac_rdp_fs* fs, int file_id);
  * Returns whether the given filename matches the given pattern.
  */
 int guac_rdp_fs_matches(const char* filename, const char* pattern);
+
+/**
+ * Populates the given structure with information about the filesystem,
+ * particularly the amount of space available.
+ */
+int guac_rdp_fs_get_info(guac_rdp_fs* fs, guac_rdp_fs_info* info);
 
 #endif
 
