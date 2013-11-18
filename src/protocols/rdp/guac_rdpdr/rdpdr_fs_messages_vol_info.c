@@ -59,6 +59,8 @@ void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device,
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 21 + GUAC_FILESYSTEM_LABEL_LENGTH);
 
+    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+
     Stream_Write_UINT32(output_stream, 17 + GUAC_FILESYSTEM_LABEL_LENGTH);
     Stream_Write_UINT64(output_stream, 0); /* VolumeCreationTime */
     Stream_Write_UINT32(output_stream, 0); /* VolumeSerialNumber */
@@ -73,16 +75,18 @@ void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device,
 
 void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
+
     /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: guac_rdpdr_fs_query_size_info");
+    GUAC_RDP_DEBUG(2, "[file_id=%i] STUB", file_id);
+
 }
 
 void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
+
     /* STUB */
-    guac_client_log_error(device->rdpdr->client,
-            "Unimplemented stub: guac_rdpdr_fs_query_devive_info");
+    GUAC_RDP_DEBUG(2, "[file_id=%i] STUB", file_id);
+
 }
 
 void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
@@ -90,6 +94,8 @@ void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStre
 
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 16 + GUAC_FILESYSTEM_NAME_LENGTH);
+
+    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
 
     Stream_Write_UINT32(output_stream, 12 + GUAC_FILESYSTEM_NAME_LENGTH);
     Stream_Write_UINT32(output_stream,
@@ -114,13 +120,14 @@ void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStre
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 16 + GUAC_FILESYSTEM_NAME_LENGTH);
 
+    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+
     Stream_Write_UINT64(output_stream, info.blocks_total);     /* TotalAllocationUnits */
     Stream_Write_UINT64(output_stream, info.blocks_available); /* CallerAvailableAllocationUnits */
     Stream_Write_UINT64(output_stream, info.blocks_available); /* ActualAvailableAllocationUnits */
     Stream_Write_UINT64(output_stream, 1);                     /* SectorsPerAllocationUnit */
     Stream_Write_UINT64(output_stream, info.block_size);       /* BytesPerSector */
 
-    GUAC_RDP_DEBUG(2, "total=%i, avail=%i, size=%i", info.blocks_total, info.blocks_available, info.block_size);
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
 }

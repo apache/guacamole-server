@@ -47,18 +47,23 @@
 #include "rdpdr_messages.h"
 #include "rdp_fs.h"
 #include "rdp_status.h"
+#include "debug.h"
 #include "unicode.h"
 
 void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
         const char* entry_name, int file_id, int completion_id) {
+
     /* STUB */
-    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+    GUAC_RDP_DEBUG(2, "[file_id=%i (entry_name=\"%s\")] STUB", file_id, entry_name);
+
 }
 
 void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
         const char* entry_name, int file_id, int completion_id) {
+
     /* STUB */
-    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+    GUAC_RDP_DEBUG(2, "[file_id=%i (entry_name=\"%s\")] STUB", file_id, entry_name);
+
 }
 
 void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
@@ -77,6 +82,8 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
     if (file == NULL)
         return;
+
+    GUAC_RDP_DEBUG(2, "[file_id=%i (entry_name=\"%s\")]", file_id, entry_name);
 
     output_stream = guac_rdpdr_new_io_completion(device, completion_id,
             STATUS_SUCCESS, 4 + 69 + 24 + utf16_length + 2);
@@ -109,7 +116,9 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
 
 void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
         const char* entry_name, int file_id, int completion_id) {
+
     /* STUB */
-    guac_client_log_info(device->rdpdr->client, "STUB: %s", __func__);
+    GUAC_RDP_DEBUG(2, "[file_id=%i (entry_name=\"%s\")] STUB", file_id, entry_name);
+
 }
 
