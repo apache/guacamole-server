@@ -44,8 +44,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
-#include <libssh/libssh.h>
-#include <libssh/sftp.h>
+#include <libssh2.h>
 
 #include "client.h"
 #include "common.h"
@@ -153,7 +152,6 @@ static ssh_session __guac_ssh_create_session(guac_client* client) {
         return NULL;
     }
 
-#ifdef ENABLE_SSH_PUBLIC_KEY
     /* Authenticate with key if available */
     if (client_data->key != NULL) {
         if (ssh_userauth_publickey(session, NULL, client_data->key)
@@ -166,7 +164,6 @@ static ssh_session __guac_ssh_create_session(guac_client* client) {
             return NULL;
         }
     }
-#endif
 
     /* Authenticate with password */
     if (ssh_userauth_password(session, NULL, client_data->password)
@@ -205,7 +202,6 @@ void* ssh_client_thread(void* data) {
     snprintf(name, sizeof(name)-1, "%s@%s", client_data->username, client_data->hostname);
     guac_protocol_send_name(socket, name);
 
-#ifdef ENABLE_SSH_PUBLIC_KEY
     /* If key specified, import */
     if (client_data->key_base64[0] != 0) {
 
@@ -239,10 +235,6 @@ void* ssh_client_thread(void* data) {
 
     /* Otherwise, get password if not provided */
     else if (client_data->password[0] == 0) {
-#else
-    /* Get password if not provided */
-    if (client_data->password[0] == 0) {
-#endif
         if (prompt(client, "Password: ", client_data->password,
                 sizeof(client_data->password), false) == NULL)
             return NULL;

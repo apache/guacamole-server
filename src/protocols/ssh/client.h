@@ -40,12 +40,13 @@
 #define _SSH_GUAC_CLIENT_H
 
 #include <pthread.h>
-#include <libssh/libssh.h>
-#include <libssh/sftp.h>
+#include <libssh2.h>
+#include <libssh2_sftp.h>
 
 #include "terminal.h"
 #include "cursor.h"
 #include "sftp.h"
+#include "ssh_key.h"
 
 /**
  * SSH-specific client data.
@@ -72,7 +73,6 @@ typedef struct ssh_guac_client_data {
      */
     char password[1024];
 
-#ifdef ENABLE_SSH_PUBLIC_KEY
     /**
      * The private key, encoded as base64.
      */
@@ -86,8 +86,7 @@ typedef struct ssh_guac_client_data {
     /**
      * The private key to use for authentication, if any.
      */
-    ssh_key key;
-#endif
+    ssh_key* key;
 
     /**
      * The name of the font to use for display rendering.
@@ -112,17 +111,17 @@ typedef struct ssh_guac_client_data {
     /**
      * SSH session, used by the SSH client thread.
      */
-    ssh_session session;
+    LIBSSH2_SESSION* session;
 
     /**
      * The distinct SSH session used for SFTP.
      */
-    ssh_session sftp_ssh_session;
+    LIBSSH2_SESSION* sftp_ssh_session;
 
     /**
      * SFTP session, used for file transfers.
      */
-    sftp_session sftp_session;
+    LIBSSH2_SFTP* sftp_session;
 
     /**
      * The path files will be sent to.
@@ -132,7 +131,7 @@ typedef struct ssh_guac_client_data {
     /**
      * SSH terminal channel, used by the SSH client thread.
      */
-    ssh_channel term_channel;
+    LIBSSH2_CHANNEL* term_channel;
 
     /**
      * The terminal which will render all output from the SSH client.

@@ -51,9 +51,7 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 
-#include <libssh/libssh.h>
-#include <libssh/sftp.h>
-#include "libssh_compat.h"
+#include <libssh2.h>
 
 #include "guac_handlers.h"
 #include "client.h"
@@ -399,7 +397,7 @@ int ssh_guac_client_size_handler(guac_client* client, int width, int height) {
 
         /* Update SSH pty size if connected */
         if (guac_client_data->term_channel != NULL)
-            channel_change_pty_size(guac_client_data->term_channel,
+            libssh2_channel_request_pty_size(guac_client_data->term_channel,
                     terminal->term_width, terminal->term_height);
 
         /* Reset scroll region */
@@ -422,8 +420,8 @@ int ssh_guac_client_free_handler(guac_client* client) {
 
     /* Close SSH channel */
     if (guac_client_data->term_channel != NULL) {
-        ssh_channel_close(guac_client_data->term_channel);
-        ssh_channel_send_eof(guac_client_data->term_channel);
+        libssh2_channel_send_eof(guac_client_data->term_channel);
+        libssh2_channel_close(guac_client_data->term_channel);
     }
 
     /* Free terminal */
@@ -431,23 +429,23 @@ int ssh_guac_client_free_handler(guac_client* client) {
     pthread_join(guac_client_data->client_thread, NULL);
 
     /* Free channels */
-    ssh_channel_free(guac_client_data->term_channel);
+    libssh2_channel_free(guac_client_data->term_channel);
 
     /* Clean up SFTP */
     if (guac_client_data->sftp_session)
-        sftp_free(guac_client_data->sftp_session);
+        libssh2_sftp_shutdown(guac_client_data->sftp_session);
 
-    if (guac_client_data->sftp_ssh_session)
-        ssh_free(guac_client_data->sftp_ssh_session);
+    if (guac_client_data->sftp_ssh_session) {
+        libssh2_session_disconnect(guac_client_data->sftp_ssh_session, "Bye");
+        libssh2_session_free(guac_client_data->sftp_ssh_session);
+    }
 
     /* Free session */
-    ssh_free(guac_client_data->session);
+    libssh2_session_free(guac_client_data->session);
 
-#ifdef ENABLE_SSH_PUBLIC_KEY
     /* Free auth key */
     if (guac_client_data->key != NULL)
         ssh_key_free(guac_client_data->key);
-#endif
 
     /* Free clipboard data */
     free(guac_client_data->clipboard_data);

@@ -66,10 +66,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "font-name",
     "font-size",
     "enable-sftp",
-#ifdef ENABLE_SSH_PUBLIC_KEY
     "private-key",
     "passphrase",
-#endif
     NULL
 };
 
@@ -110,7 +108,6 @@ enum __SSH_ARGS_IDX {
      */
     IDX_ENABLE_SFTP,
 
-#ifdef ENABLE_SSH_PUBLIC_KEY
     /**
      * The private key to use for authentication, if any.
      */
@@ -120,7 +117,6 @@ enum __SSH_ARGS_IDX {
      * The passphrase required to decrypt the private key, if any.
      */
     IDX_PASSPHRASE,
-#endif
 
     SSH_ARGS_COUNT
 };
@@ -149,12 +145,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     strcpy(client_data->username,  argv[IDX_USERNAME]);
     strcpy(client_data->password,  argv[IDX_PASSWORD]);
 
-#ifdef ENABLE_SSH_PUBLIC_KEY
     /* Init public key auth information */
     client_data->key = NULL;
     strcpy(client_data->key_base64,     argv[IDX_PRIVATE_KEY]);
     strcpy(client_data->key_passphrase, argv[IDX_PASSPHRASE]);
-#endif
 
     /* Read font name */
     if (argv[IDX_FONT_NAME][0] != 0)
