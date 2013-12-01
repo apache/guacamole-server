@@ -543,42 +543,20 @@ AM_CONDITIONAL([ENABLE_RDP],   [test "x${have_freerdp}" = "xyes"])
 AC_SUBST(RDP_LIBS)
 
 #
-# libssh
+# libssh2
 #
 
-have_libssh=yes
+have_libssh2=yes
 SSH_LIBS=
 
-AC_CHECK_LIB([ssh], [ssh_new], [SSH_LIBS="$SSH_LIBS -lssh"], [have_libssh=no])
-AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh}" = "xyes" -a "x${have_pango}" = "xyes"])
+AC_CHECK_LIB([ssh2], [libssh2_session_init_ex],
+                     [SSH_LIBS="$SSH_LIBS -lssh2"],
+                     [have_libssh2=no])
+AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh2}" = "xyes" \
+                                -a "x${have_pango}"   = "xyes" \
+                                -a "x${have_ssl}"     = "xyes"])
 
 AC_SUBST(SSH_LIBS)
-
-#
-# Private key from string support within SSH
-#
-
-if test "x${have_libssh}" = "xyes"
-then
-
-    have_ssh_pubkey=yes
-    AC_CHECK_DECL([ssh_pki_import_privkey_base64],
-                  [], [have_ssh_pubkey=no],
-                  [[#include <libssh/libssh.h>]])
-
-    if test "x${have_ssh_pubkey}" = "xno"
-    then
-        AC_MSG_WARN([
-      --------------------------------------------
-       No support for in-memory public keys found in libssh.
-       Support for public key authentication will not be built.
-      --------------------------------------------])
-    else
-        AC_DEFINE([ENABLE_SSH_PUBLIC_KEY])
-    fi
-
-fi
-
 
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
@@ -604,7 +582,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
      freerdp ............. ${have_freerdp}
      pango ............... ${have_pango}
-     libssh .............. ${have_libssh}
+     libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
