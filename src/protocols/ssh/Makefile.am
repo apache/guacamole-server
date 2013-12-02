@@ -75,6 +75,12 @@ noinst_HEADERS =                \
     terminal_handlers.h         \
     types.h
 
+# Add agent sources if enabled
+if ENABLE_SSH_AGENT
+libguac_client_ssh_la_SOURCES += ssh_agent.c
+noinst_HEADERS += ssh_agent.h
+endif
+
 libguac_client_ssh_la_CFLAGS = -Werror -Wall -pedantic -Iinclude @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ @LIBGUAC_INCLUDE@
 libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@
 libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0 @SSH_LIBS@ @SSL_LIBS@ @PTHREAD_LIBS@ @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @CAIRO_LIBS@

@@ -232,7 +232,8 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client) {
     }
 
     /* Open SSH session */
-    LIBSSH2_SESSION* session = libssh2_session_init();
+    LIBSSH2_SESSION* session = libssh2_session_init_ex(NULL, NULL,
+            NULL, client);
     if (session == NULL) {
         guac_client_log_error(client, "Session allocation failed");
         return NULL;

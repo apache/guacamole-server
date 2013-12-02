@@ -558,6 +558,34 @@ AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh2}" = "xyes" \
 
 AC_SUBST(SSH_LIBS)
 
+#
+# Agent forwarding support within libssh2
+#
+
+if test "x${have_libssh2}" = "xyes"
+then
+
+    have_ssh_agent=yes
+    AC_CHECK_DECL([libssh2_channel_request_auth_agent],
+                  [], [have_ssh_agent=no],
+                  [[#include <libssh2.h>]])
+
+    AM_CONDITIONAL([ENABLE_SSH_AGENT], [test "x${have_ssh_agent}" = "xyes"])
+
+    if test "x${have_ssh_agent}" = "xno"
+    then
+        AC_MSG_WARN([
+      --------------------------------------------
+       No agent forwarding found in libssh2.
+       Support for agent forwarding will not be built.
+      --------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_SSH_AGENT])
+    fi
+
+fi
+
+
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
                  src/libguac/Makefile
