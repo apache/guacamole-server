@@ -224,13 +224,6 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client) {
         return NULL;
     }
 
-    /* Set session options */
-#if 0
-    ssh_options_set(session, SSH_OPTIONS_HOST, client_data->hostname);
-    ssh_options_set(session, SSH_OPTIONS_PORT, &(client_data->port));
-    ssh_options_set(session, SSH_OPTIONS_USER, client_data->username);
-#endif
-
     /* Authenticate with key if available */
 #if 0
     if (client_data->key != NULL) {
