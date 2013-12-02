@@ -235,6 +235,9 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client) {
         return NULL;
     }
 
+    /* Free addrinfo */
+    freeaddrinfo(addresses);
+
     /* Open SSH session */
     LIBSSH2_SESSION* session = libssh2_session_init_ex(NULL, NULL,
             NULL, client);

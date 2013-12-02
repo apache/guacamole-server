@@ -127,19 +127,29 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
     }
 
     /* Otherwise, unsupported type */
-    else
+    else {
+        BIO_free(key_bio);
         return NULL;
+    }
 
     /* Copy private key to structure */
     key->private_key_length = length;
     key->private_key = malloc(length);
     memcpy(key->private_key, data, length);
 
+    BIO_free(key_bio);
     return key;
 
 }
 
 void ssh_key_free(ssh_key* key) {
+
+    /* Free key-specific data */
+    if (key->type == SSH_KEY_RSA)
+        RSA_free(key->rsa);
+    else if (key->type == SSH_KEY_DSA)
+        DSA_free(key->dsa);
+
     free(key->public_key);
     free(key);
 }

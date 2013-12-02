@@ -111,6 +111,11 @@ AC_ARG_WITH(init_dir,
 AM_CONDITIONAL([ENABLE_INIT], [test "x${init_dir}" != "x"])
 AC_SUBST(init_dir)
 
+AC_ARG_ENABLE(ssh_agent,
+              [AS_HELP_STRING([--enable-ssh-agent],
+                              [enable built-in ssh-agent])
+              ],enable_ssh_agent=yes)
+
 #
 # libssl
 #
@@ -570,17 +575,22 @@ then
                   [], [have_ssh_agent=no],
                   [[#include <libssh2.h>]])
 
-    AM_CONDITIONAL([ENABLE_SSH_AGENT], [test "x${have_ssh_agent}" = "xyes"])
+    AM_CONDITIONAL([ENABLE_SSH_AGENT],
+                   [test "x${have_ssh_agent}"   = "xyes" \
+                      -a "x${enable_ssh_agent}" = "xyes"])
 
-    if test "x${have_ssh_agent}" = "xno"
+    if test "x${enable_ssh_agent}" = "xyes"
     then
-        AC_MSG_WARN([
-      --------------------------------------------
-       No agent forwarding found in libssh2.
-       Support for agent forwarding will not be built.
-      --------------------------------------------])
-    else
-        AC_DEFINE([ENABLE_SSH_AGENT])
+        if test "x${have_ssh_agent}" = "xno"
+        then
+            AC_MSG_ERROR([
+          --------------------------------------------
+           Agent forwarding support was requested but no such support was found
+           in libssh2.
+          --------------------------------------------])
+        else
+            AC_DEFINE([ENABLE_SSH_AGENT])
+        fi
     fi
 
 fi
