@@ -57,6 +57,7 @@
 #include "common.h"
 #include "guac_handlers.h"
 #include "sftp.h"
+#include "ssh_key.h"
 
 /**
  * Reads a single line from STDIN.
@@ -289,6 +290,8 @@ void* ssh_client_thread(void* data) {
 
     pthread_t input_thread;
 
+    libssh2_init(0);
+
     /* Get username */
     if (client_data->username[0] == 0 &&
             prompt(client, "Login as: ", client_data->username, sizeof(client_data->username), true) == NULL)
@@ -298,17 +301,15 @@ void* ssh_client_thread(void* data) {
     snprintf(name, sizeof(name)-1, "%s@%s", client_data->username, client_data->hostname);
     guac_protocol_send_name(socket, name);
 
-#if 0
     /* If key specified, import */
     if (client_data->key_base64[0] != 0) {
 
         /* Attempt to read key without passphrase */
-        if (ssh_pki_import_privkey_base64(client_data->key_base64, NULL,
-                NULL, NULL, &client_data->key) == SSH_OK)
-            guac_client_log_info(client, "Auth key successfully imported.");
+        client_data->key = ssh_key_alloc(client_data->key_base64,
+                strlen(client_data->key_base64), "");
 
         /* On failure, attempt with passphrase */
-        else {
+        if (client_data->key == NULL) {
 
             /* Prompt for passphrase if missing */
             if (client_data->key_passphrase[0] == 0) {
@@ -319,14 +320,20 @@ void* ssh_client_thread(void* data) {
             }
 
             /* Import key with passphrase */
-            if (ssh_pki_import_privkey_base64(client_data->key_base64,
-                    client_data->key_passphrase,
-                    NULL, NULL, &client_data->key) != SSH_OK) {
+            client_data->key = ssh_key_alloc(client_data->key_base64,
+                    strlen(client_data->key_base64),
+                    client_data->key_passphrase);
+
+            /* If still failing, give up */
+            if (client_data->key == NULL) {
                 guac_client_log_error(client, "Auth key import failed.");
                 return NULL;
             }
 
         } /* end decrypt key with passphrase */
+
+        /* Success */
+        guac_client_log_info(client, "Auth key successfully imported.");
 
     } /* end if key given */
 
@@ -336,7 +343,6 @@ void* ssh_client_thread(void* data) {
                 sizeof(client_data->password), false) == NULL)
             return NULL;
     }
-#endif
 
     /* Clear screen */
     guac_terminal_write_all(stdout_fd, "\x1B[H\x1B[J", 6);
