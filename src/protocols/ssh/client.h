@@ -61,7 +61,7 @@ typedef struct ssh_guac_client_data {
     /**
      * The port of the SSH server to connect to.
      */
-    int port;
+    char port[64];
 
     /**
      * The name of the user to login as.

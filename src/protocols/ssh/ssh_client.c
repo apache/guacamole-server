@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <errno.h>
 #include <unistd.h>
 
@@ -136,23 +137,77 @@ void* ssh_input_thread(void* data) {
 
 static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client) {
 
+    int retval;
+
     int fd;
-    struct sockaddr_in addr;
+    struct addrinfo* addresses;
+    struct addrinfo* current_address;
+
+    char connected_address[1024];
+    char connected_port[64];
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
+    struct addrinfo hints = {
+        .ai_family   = AF_UNSPEC,
+        .ai_socktype = SOCK_STREAM,
+        .ai_protocol = IPPROTO_TCP
+    };
 
     /* Get socket */
     fd = socket(AF_INET, SOCK_STREAM, 0);
 
-    /* Connect to SSH server */
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(22);
-    addr.sin_addr.s_addr = htonl(0x0A0000C0); /* proto-test: 10.0.0.192 */
+    /* Get addresses connection */
+    if ((retval = getaddrinfo(client_data->hostname, client_data->port,
+                    &hints, &addresses))) {
 
-    /* Connect */
-    if (connect(fd, (struct sockaddr*)(&addr),
-                sizeof(struct sockaddr_in)) != 0) {
-        guac_client_log_error(client, "Connection failed: %s", strerror(errno));
+        guac_client_log_error(client,
+                "Error parsing given address or port: %s",
+                gai_strerror(retval));
+        return NULL;
+
+    }
+
+    /* Attempt connection to each address until success */
+    current_address = addresses;
+    while (current_address != NULL) {
+
+        int retval;
+
+        /* Resolve hostname */
+        if ((retval = getnameinfo(current_address->ai_addr,
+                current_address->ai_addrlen,
+                connected_address, sizeof(connected_address),
+                connected_port, sizeof(connected_port),
+                NI_NUMERICHOST | NI_NUMERICSERV)))
+            guac_client_log_error(client, "Unable to resolve host: %s",
+                    gai_strerror(retval));
+
+        /* Connect */
+        if (connect(fd, current_address->ai_addr,
+                        current_address->ai_addrlen) == 0) {
+
+            guac_client_log_info(client, "Successfully connected to "
+                    "host %s, port %s", connected_address, connected_port);
+
+            /* Done if successful connect */
+            break;
+
+        }
+
+        /* Otherwise log information regarding bind failure */
+        else
+            guac_client_log_info(client, "Unable to connect to "
+                    "host %s, port %s: %s",
+                    connected_address, connected_port, strerror(errno));
+
+        current_address = current_address->ai_next;
+
+    }
+
+    /* If unable to connect to anything, fail */
+    if (current_address == NULL) {
+        guac_client_log_error(client, "Unable to connect to any addresses.");
         return NULL;
     }
 

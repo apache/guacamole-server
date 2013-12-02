@@ -55,7 +55,7 @@
 
 #define GUAC_SSH_DEFAULT_FONT_NAME "monospace" 
 #define GUAC_SSH_DEFAULT_FONT_SIZE 12
-#define GUAC_SSH_DEFAULT_PORT      22
+#define GUAC_SSH_DEFAULT_PORT      "22"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -170,9 +170,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Read port */
     if (argv[IDX_PORT][0] != 0)
-        client_data->port = atoi(argv[IDX_PORT]);
+        strcpy(client_data->port, argv[IDX_PORT]);
     else
-        client_data->port = GUAC_SSH_DEFAULT_PORT;
+        strcpy(client_data->port, GUAC_SSH_DEFAULT_PORT);
 
     /* Create terminal */
     client_data->term = guac_terminal_create(client,
