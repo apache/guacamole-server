@@ -441,7 +441,8 @@ int ssh_guac_client_free_handler(guac_client* client) {
     }
 
     /* Free session */
-    libssh2_session_free(guac_client_data->session);
+    if (guac_client_data->session != NULL)
+        libssh2_session_free(guac_client_data->session);
 
     /* Free auth key */
     if (guac_client_data->key != NULL)
