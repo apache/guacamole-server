@@ -135,6 +135,25 @@ void* ssh_input_thread(void* data) {
 
 }
 
+static int __sign_callback(LIBSSH2_SESSION* session,
+        unsigned char** sig, size_t* sig_len,
+        const unsigned char* data, size_t data_len, void **abstract) {
+
+    ssh_key* key = (ssh_key*) abstract;
+
+    /* Allocate space for signature */
+    *sig = malloc(4096);
+
+    /* Sign with key */
+    *sig_len = ssh_key_sign(key, (const char*) data, data_len, *sig);
+    if (*sig_len < 0)
+        return 1;
+
+    return 0;
+
+}
+
+
 static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client) {
 
     int retval;
@@ -225,19 +244,20 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client) {
     }
 
     /* Authenticate with key if available */
-#if 0
     if (client_data->key != NULL) {
-        if (ssh_userauth_publickey(session, NULL, client_data->key)
-                == SSH_AUTH_SUCCESS)
+        if (!libssh2_userauth_publickey(session, client_data->username,
+                    (unsigned char*) client_data->key->public_key,
+                    client_data->key->public_key_length,
+                    __sign_callback, (void**) client_data->key))
             return session;
         else {
+            char* error_message;
+            libssh2_session_last_error(session, &error_message, NULL, 0);
             guac_client_log_error(client,
-                    "Public key authentication failed: %s",
-                    ssh_get_error(session));
+                    "Public key authentication failed: %s", error_message);
             return NULL;
         }
     }
-#endif
 
     /* Authenticate with password */
     if (!libssh2_userauth_password(session, client_data->username,
