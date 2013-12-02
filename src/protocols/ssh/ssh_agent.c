@@ -78,7 +78,7 @@ void ssh_auth_agent_sign(ssh_auth_agent* agent, char* data, int data_length) {
     if (key->type == SSH_KEY_RSA)
         buffer_write_string(&pos, "ssh-rsa", 7);
     else if (key->type == SSH_KEY_DSA)
-        buffer_write_string(&pos, "ssh-dsa", 7);
+        buffer_write_string(&pos, "ssh-dss", 7);
     else
         return;
 

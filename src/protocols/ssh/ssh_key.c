@@ -114,7 +114,7 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
         pos = public_key;
 
         /* Derive public key */
-        buffer_write_string(&pos, "ssh-dsa", sizeof("ssh-dsa")-1);
+        buffer_write_string(&pos, "ssh-dss", sizeof("ssh-dss")-1);
         buffer_write_bignum(&pos, dsa_key->p);
         buffer_write_bignum(&pos, dsa_key->q);
         buffer_write_bignum(&pos, dsa_key->g);
