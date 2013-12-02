@@ -59,6 +59,10 @@
 #include "sftp.h"
 #include "ssh_key.h"
 
+#ifdef ENABLE_SSH_AGENT
+#include "ssh_agent.h"
+#endif
+
 /**
  * Reads a single line from STDIN.
  */
@@ -366,6 +370,15 @@ void* ssh_client_thread(void* data) {
         guac_socket_flush(socket);
         return NULL;
     }
+
+#ifdef ENABLE_SSH_AGENT
+    libssh2_session_callback_set(client_data->session,
+            LIBSSH2_CALLBACK_AUTH_AGENT, (void*) ssh_auth_agent_callback);
+
+    /* Request agent forwarding */
+    if (libssh2_channel_request_auth_agent(client_data->term_channel))
+        guac_client_log_error(client, "Agent forwarding request failed");
+#endif
 
     /* Start SFTP session as well, if enabled */
     if (client_data->enable_sftp) {
