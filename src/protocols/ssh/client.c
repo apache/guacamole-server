@@ -68,6 +68,9 @@ const char* GUAC_CLIENT_ARGS[] = {
     "enable-sftp",
     "private-key",
     "passphrase",
+#ifdef ENABLE_SSH_AGENT
+    "enable-agent",
+#endif
     NULL
 };
 
@@ -118,6 +121,13 @@ enum __SSH_ARGS_IDX {
      */
     IDX_PASSPHRASE,
 
+#ifdef ENABLE_SSH_AGENT
+    /**
+     * Whether SSH agent forwarding support should be enabled.
+     */
+    IDX_ENABLE_AGENT,
+#endif
+
     SSH_ARGS_COUNT
 };
 
@@ -167,6 +177,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->sftp_session = NULL;
     client_data->sftp_ssh_session = NULL;
     strcpy(client_data->sftp_upload_path, ".");
+
+#ifdef ENABLE_SSH_AGENT
+    client_data->enable_agent = strcmp(argv[IDX_ENABLE_AGENT], "true") == 0;
+#endif
 
     /* Read port */
     if (argv[IDX_PORT][0] != 0)

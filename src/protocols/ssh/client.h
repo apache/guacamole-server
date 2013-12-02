@@ -103,6 +103,13 @@ typedef struct ssh_guac_client_data {
      */
     bool enable_sftp;
 
+#ifdef ENABLE_SSH_AGENT
+    /**
+     * Whether the SSH agent is enabled.
+     */
+    bool enable_agent;
+#endif
+
     /**
      * The SSH client thread.
      */

@@ -372,12 +372,17 @@ void* ssh_client_thread(void* data) {
     }
 
 #ifdef ENABLE_SSH_AGENT
-    libssh2_session_callback_set(client_data->session,
-            LIBSSH2_CALLBACK_AUTH_AGENT, (void*) ssh_auth_agent_callback);
+    /* Start SSH agent forwarding, if enabled */
+    if (client_data->enable_agent) {
+        libssh2_session_callback_set(client_data->session,
+                LIBSSH2_CALLBACK_AUTH_AGENT, (void*) ssh_auth_agent_callback);
 
-    /* Request agent forwarding */
-    if (libssh2_channel_request_auth_agent(client_data->term_channel))
-        guac_client_log_error(client, "Agent forwarding request failed");
+        /* Request agent forwarding */
+        if (libssh2_channel_request_auth_agent(client_data->term_channel))
+            guac_client_log_error(client, "Agent forwarding request failed");
+        else
+            guac_client_log_info(client, "Agent forwarding enabled.");
+    }
 #endif
 
     /* Start SFTP session as well, if enabled */
