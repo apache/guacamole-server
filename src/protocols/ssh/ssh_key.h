@@ -55,6 +55,16 @@
 #define SSH_DSA_KEY_HEADER "-----BEGIN DSA PRIVATE KEY-----"
 
 /**
+ * The size of single number within a DSA signature, in bytes.
+ */
+#define DSA_SIG_NUMBER_SIZE 20
+
+/**
+ * The size of a DSA signature, in bytes.
+ */
+#define DSA_SIG_SIZE DSA_SIG_NUMBER_SIZE*2 
+
+/**
  * The type of an SSH key.
  */
 typedef enum ssh_key_type {

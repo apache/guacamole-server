@@ -168,9 +168,36 @@ int ssh_key_sign(ssh_key* key, const char* data, int length, u_char* sig) {
             if (RSA_sign(NID_sha1, digest, dlen, sig, &len, key->rsa) == 1)
                 return len;
 
-        case SSH_KEY_DSA:
-            if (DSA_sign(NID_sha1, digest, dlen, sig, &len, key->dsa) == 1)
-                return len;
+        case SSH_KEY_DSA: {
+
+            DSA_SIG* dsa_sig = DSA_do_sign(digest, dlen, key->dsa);
+            if (dsa_sig != NULL) {
+
+                /* Compute size of each half of signature */
+                int rlen = BN_num_bytes(dsa_sig->r);
+                int slen = BN_num_bytes(dsa_sig->s);
+
+                /* Ensure each number is within the required size */
+                if (rlen > DSA_SIG_NUMBER_SIZE || slen > DSA_SIG_NUMBER_SIZE)
+                    return -1;
+
+                /* Init to all zeroes */
+                memset(sig, 0, DSA_SIG_SIZE);
+
+                /* Add R at the end of the first block of the signature */
+                BN_bn2bin(dsa_sig->r, sig + DSA_SIG_SIZE
+                                          - DSA_SIG_NUMBER_SIZE - rlen);
+
+                /* Add S at the end of the second block of the signature */
+                BN_bn2bin(dsa_sig->s, sig + DSA_SIG_SIZE - slen);
+
+                /* Done */
+                DSA_SIG_free(dsa_sig);
+                return DSA_SIG_SIZE;
+
+            }
+
+        }
 
     }
 
