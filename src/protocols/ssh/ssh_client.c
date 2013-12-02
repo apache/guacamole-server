@@ -392,6 +392,7 @@ void* ssh_client_thread(void* data) {
     if (client_data->enable_sftp) {
 
         /* Create SSH session specific for SFTP */
+        guac_client_log_info(client, "Reconnecting for SFTP...");
         client_data->sftp_ssh_session = __guac_ssh_create_session(client);
 
         /* Request SFTP */
