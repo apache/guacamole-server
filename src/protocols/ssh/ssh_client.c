@@ -159,7 +159,8 @@ static int __sign_callback(LIBSSH2_SESSION* session,
 }
 
 
-static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client) {
+static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
+        int* socket_fd) {
 
     int retval;
 
@@ -252,6 +253,10 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client) {
         return NULL;
     }
 
+    /* Save file descriptor */
+    if (socket_fd != NULL)
+        *socket_fd = fd;
+
     /* Authenticate with key if available */
     if (client_data->key != NULL) {
         if (!libssh2_userauth_publickey(session, client_data->username,
@@ -294,6 +299,7 @@ void* ssh_client_thread(void* data) {
     char buffer[8192];
     int bytes_read = -1234;
 
+    int socket_fd;
     int stdout_fd = client_data->term->stdout_pipe_fd[1];
 
     pthread_t input_thread;
@@ -356,7 +362,7 @@ void* ssh_client_thread(void* data) {
     guac_terminal_write_all(stdout_fd, "\x1B[H\x1B[J", 6);
 
     /* Open SSH session */
-    client_data->session = __guac_ssh_create_session(client);
+    client_data->session = __guac_ssh_create_session(client, &socket_fd);
     if (client_data->session == NULL) {
         guac_protocol_send_error(socket, "Unable to create SSH session.",
                 GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
@@ -386,6 +392,8 @@ void* ssh_client_thread(void* data) {
         else
             guac_client_log_info(client, "Agent forwarding enabled.");
     }
+
+    client_data->auth_agent = NULL;
 #endif
 
     /* Start SFTP session as well, if enabled */
@@ -393,7 +401,7 @@ void* ssh_client_thread(void* data) {
 
         /* Create SSH session specific for SFTP */
         guac_client_log_info(client, "Reconnecting for SFTP...");
-        client_data->sftp_ssh_session = __guac_ssh_create_session(client);
+        client_data->sftp_ssh_session = __guac_ssh_create_session(client, NULL);
 
         /* Request SFTP */
         client_data->sftp_session =
@@ -443,17 +451,51 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
+    /* Set non-blocking */
+    libssh2_session_set_blocking(client_data->session, 0);
+
     /* While data available, write to terminal */
+    bytes_read = 0;
     while (!libssh2_channel_eof(client_data->term_channel)) {
 
-        /* Repeat read if necessary */
-        if ((bytes_read = libssh2_channel_read(client_data->term_channel, buffer, sizeof(buffer))) == LIBSSH2_ERROR_EAGAIN)
-            continue;
+        /* Track total amount of data read */
+        int total_read = 0;
+
+        /* Read terminal data */
+        bytes_read = libssh2_channel_read(client_data->term_channel,
+                buffer, sizeof(buffer));
 
         /* Attempt to write data received. Exit on failure. */
         if (bytes_read > 0) {
             int written = guac_terminal_write_all(stdout_fd, buffer, bytes_read);
             if (written < 0)
+                break;
+
+            total_read += bytes_read;
+        }
+
+        /* If agent open, handle any agent packets */
+        if (client_data->auth_agent != NULL) {
+            bytes_read = ssh_auth_agent_read(client_data->auth_agent);
+            if (bytes_read > 0)
+                total_read += bytes_read;
+            else if (bytes_read < 0 && bytes_read != LIBSSH2_ERROR_EAGAIN)
+                client_data->auth_agent = NULL;
+        }
+
+        /* Wait for more data if reads turn up empty */
+        if (total_read == 0) {
+            fd_set fds;
+            struct timeval timeout;
+
+            FD_ZERO(&fds);
+            FD_SET(socket_fd, &fds);
+
+            /* Wait for one second */
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
+
+            if (select(socket_fd+1, &fds, NULL, NULL, &timeout) < 0)
                 break;
         }
 

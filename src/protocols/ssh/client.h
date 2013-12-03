@@ -48,6 +48,10 @@
 #include "sftp.h"
 #include "ssh_key.h"
 
+#ifdef ENABLE_SSH_AGENT
+#include "ssh_agent.h"
+#endif
+
 /**
  * SSH-specific client data.
  */
@@ -108,6 +112,11 @@ typedef struct ssh_guac_client_data {
      * Whether the SSH agent is enabled.
      */
     bool enable_agent;
+
+    /**
+     * The current agent, if any.
+     */
+    ssh_auth_agent* auth_agent;
 #endif
 
     /**

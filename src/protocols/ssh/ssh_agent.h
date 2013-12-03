@@ -85,6 +85,16 @@ typedef struct ssh_auth_agent {
      */
     ssh_key* identity;
 
+    /**
+     * Data read from the agent channel.
+     */
+    char buffer[4096];
+
+    /**
+     * The number of bytes of data currently stored in the buffer.
+     */
+    int buffer_length;
+
 } ssh_auth_agent;
 
 /**
@@ -105,9 +115,11 @@ void ssh_auth_agent_handle_packet(ssh_auth_agent* auth_agent,
         uint8_t type, char* data, int data_length);
 
 /**
- * Auth agent channel thread.
+ * Reads and handles a single packet from the SSH agent channel associated
+ * with the given ssh_auth_agent, returning the size of that packet, the size
+ * of the partial packet read, or a negative value if an error occurs.
  */
-void* auth_agent_read_thread(void* arg);
+int ssh_auth_agent_read(ssh_auth_agent* auth_agent);
 
 /**
  * Libssh2 callback, invoked when the auth agent channel is opened.

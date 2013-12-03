@@ -88,8 +88,6 @@ void ssh_auth_agent_sign(ssh_auth_agent* agent, char* data, int data_length) {
     libssh2_channel_write(channel, buffer, pos-buffer);
     libssh2_channel_flush(channel);
 
-    usleep(10000);
-
 }
 
 void ssh_auth_agent_list_identities(ssh_auth_agent* auth_agent) {
@@ -112,8 +110,6 @@ void ssh_auth_agent_list_identities(ssh_auth_agent* auth_agent) {
 
     libssh2_channel_write(channel, buffer, pos-buffer);
     libssh2_channel_flush(channel);
-
-    usleep(10000);
 
 }
 
@@ -154,70 +150,52 @@ void ssh_auth_agent_handle_packet(ssh_auth_agent* auth_agent, uint8_t type,
 
 }
 
-void* ssh_auth_agent_read_thread(void* arg) {
+int ssh_auth_agent_read(ssh_auth_agent* auth_agent) {
 
-    ssh_auth_agent* auth_agent = (ssh_auth_agent*) arg;
     LIBSSH2_CHANNEL* channel = auth_agent->channel;
 
     int bytes_read;
-    char buffer[4096];
-    int buffer_length = 0;
 
-    /* Wait for channel to settle */
-    usleep(10000);
+    if (libssh2_channel_eof(channel))
+        return -1;
 
-    do {
+    /* Read header if available */
+    if (auth_agent->buffer_length >= 5) {
 
-        /* Read data into buffer */
-        while ((bytes_read = libssh2_channel_read(channel, buffer+buffer_length,
-                        sizeof(buffer)-buffer_length)) >= 0
-                || bytes_read == LIBSSH2_ERROR_EAGAIN) {
+        uint32_t length =
+              (((unsigned char*) auth_agent->buffer)[0] << 24)
+            | (((unsigned char*) auth_agent->buffer)[1] << 16)
+            | (((unsigned char*) auth_agent->buffer)[2] <<  8)
+            |  ((unsigned char*) auth_agent->buffer)[3];
 
-            /* If re-read required, wait a bit and retry */
-            if (bytes_read == LIBSSH2_ERROR_EAGAIN) {
-                usleep(10000);
-                continue;
-            }
+        uint8_t type = ((unsigned char*) auth_agent->buffer)[4];
 
-            /* Update buffer length */
-            buffer_length += bytes_read;
+        /* If enough data read, call handler, shift data */
+        if (auth_agent->buffer_length >= length+4) {
 
-            /* Read length and type if given */
-            if (buffer_length >= 5) {
+            ssh_auth_agent_handle_packet(auth_agent, type,
+                    auth_agent->buffer+5, length-1);
 
-                /* Read length */
-                uint32_t length =
-                      (((unsigned char*) buffer)[0] << 24)
-                    | (((unsigned char*) buffer)[1] << 16)
-                    | (((unsigned char*) buffer)[2] <<  8)
-                    |  ((unsigned char*) buffer)[3];
+            auth_agent->buffer_length -= length+4;
+            memmove(auth_agent->buffer,
+                    auth_agent->buffer+length+4, auth_agent->buffer_length);
+            return length+4;
+        }
 
-                /* Read type */
-                uint8_t type = ((unsigned char*) buffer)[4];
+    }
 
-                /* If enough data read, call handler, shift data */
-                if (buffer_length >= length+4) {
+    /* Read data into buffer */
+    bytes_read = libssh2_channel_read(channel,
+            auth_agent->buffer+auth_agent->buffer_length,
+            sizeof(auth_agent->buffer)-auth_agent->buffer_length);
 
-                    ssh_auth_agent_handle_packet(auth_agent, type,
-                            buffer+5, length-1);
+    /* If unsuccessful, return error */
+    if (bytes_read < 0)
+        return bytes_read;
 
-                    buffer_length -= length+4;
-                    memmove(buffer, buffer+length+4, buffer_length);
-
-                }
-
-            } /* end if have length and type */
-
-            /* If EOF, stop now */
-            if (libssh2_channel_eof(channel))
-                break;
-
-        } /* end packet fill */
-
-    } while (bytes_read >= 0 && !libssh2_channel_eof(channel));
-
-    /* Done */
-    return NULL;
+    /* Update buffer length */
+    auth_agent->buffer_length += bytes_read;
+    return bytes_read;
 
 }
 
@@ -228,15 +206,14 @@ void ssh_auth_agent_callback(LIBSSH2_SESSION *session,
     guac_client* client = (guac_client*) *abstract;
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
 
-    /* Get base auth agent thread */
-    pthread_t read_thread;
+    /* Init auth agent */
     ssh_auth_agent* auth_agent = malloc(sizeof(ssh_auth_agent));
-
     auth_agent->channel = channel;
     auth_agent->identity = client_data->key;
+    auth_agent->buffer_length = 0;
 
-    /* Create thread */
-    pthread_create(&read_thread, NULL, ssh_auth_agent_read_thread, auth_agent);
+    /* Store auth agent */
+    client_data->auth_agent = auth_agent;
 
 }
 
