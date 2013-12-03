@@ -40,7 +40,6 @@
 #include <unistd.h>
 
 #include <libssh2.h>
-#include <pthread.h>
 
 #include <openssl/err.h>
 #include <openssl/evp.h>
