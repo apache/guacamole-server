@@ -71,7 +71,7 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
 
     guac_rdp_fs_file* file;
 
-    wStream* output_stream = Stream_New(NULL, 256);
+    wStream* output_stream;
     int length = guac_utf8_strlen(entry_name);
     int utf16_length = length*2;
 
