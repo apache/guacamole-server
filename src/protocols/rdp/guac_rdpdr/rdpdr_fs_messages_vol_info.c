@@ -76,8 +76,21 @@ void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
-    /* STUB */
-    GUAC_RDP_DEBUG(2, "[file_id=%i] STUB", file_id);
+    guac_rdp_fs_info info = {0};
+    guac_rdp_fs_get_info((guac_rdp_fs*) device->data, &info);
+
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_SUCCESS, 28);
+
+    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+
+    Stream_Write_UINT32(output_stream, 24);
+    Stream_Write_UINT64(output_stream, info.blocks_total);     /* TotalAllocationUnits */
+    Stream_Write_UINT64(output_stream, info.blocks_available); /* AvailableAllocationUnits */
+    Stream_Write_UINT32(output_stream, 1);                     /* SectorsPerAllocationUnit */
+    Stream_Write_UINT32(output_stream, info.block_size);       /* BytesPerSector */
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
 }
 
@@ -118,15 +131,16 @@ void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStre
     guac_rdp_fs_get_info((guac_rdp_fs*) device->data, &info);
 
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
-            completion_id, STATUS_SUCCESS, 16 + GUAC_FILESYSTEM_NAME_LENGTH);
+            completion_id, STATUS_SUCCESS, 36);
 
     GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
 
+    Stream_Write_UINT32(output_stream, 32);
     Stream_Write_UINT64(output_stream, info.blocks_total);     /* TotalAllocationUnits */
     Stream_Write_UINT64(output_stream, info.blocks_available); /* CallerAvailableAllocationUnits */
     Stream_Write_UINT64(output_stream, info.blocks_available); /* ActualAvailableAllocationUnits */
-    Stream_Write_UINT64(output_stream, 1);                     /* SectorsPerAllocationUnit */
-    Stream_Write_UINT64(output_stream, info.block_size);       /* BytesPerSector */
+    Stream_Write_UINT32(output_stream, 1);                     /* SectorsPerAllocationUnit */
+    Stream_Write_UINT32(output_stream, info.block_size);       /* BytesPerSector */
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
