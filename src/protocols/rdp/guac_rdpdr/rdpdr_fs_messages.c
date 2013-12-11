@@ -238,9 +238,6 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
     if (file->bytes_written > 0 &&
             strncmp(file->absolute_path, "\\Download\\", 10) == 0) {
 
-        int i;
-        char c;
-
         /* Get client and stream */
         guac_client* client = device->rdpdr->client;
 
@@ -254,6 +251,9 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
             guac_rdp_download_status* status;
             char* basename;
 
+            int i;
+            char c;
+
             /* Associate stream with transfer status */
             guac_stream* stream = guac_client_alloc_stream(client);
             stream->data = status = malloc(sizeof(guac_rdp_download_status));
@@ -264,6 +264,7 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
             guac_rdp_fs_delete((guac_rdp_fs*) device->data, file_id);
 
             /* Get basename from absolute path */
+            i=0;
             basename = file->absolute_path;
             do {
 
