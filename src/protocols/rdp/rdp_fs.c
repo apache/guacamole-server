@@ -424,8 +424,16 @@ int guac_rdp_fs_delete(guac_rdp_fs* fs, int file_id) {
         return GUAC_RDP_FS_EINVAL;
     }
 
-    /* Attempt deletion */
-    if (unlink(file->real_path)) {
+    /* If directory, attempt removal */
+    if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
+        if (rmdir(file->real_path)) {
+            GUAC_RDP_DEBUG(1, "rmdir() failed: \"%s\"", file->real_path);
+            return guac_rdp_fs_get_errorcode(errno);
+        }
+    }
+
+    /* Otherwise, attempt deletion */
+    else if (unlink(file->real_path)) {
         GUAC_RDP_DEBUG(1, "unlink() failed: \"%s\"", file->real_path);
         return guac_rdp_fs_get_errorcode(errno);
     }
