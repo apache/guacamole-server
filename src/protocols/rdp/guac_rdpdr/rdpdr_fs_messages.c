@@ -376,11 +376,15 @@ void guac_rdpdr_fs_process_file_info(guac_rdpdr_device* device, wStream* input_s
 
 }
 
-void guac_rdpdr_fs_process_set_volume_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
+void guac_rdpdr_fs_process_set_volume_info(guac_rdpdr_device* device,
+        wStream* input_stream, int file_id, int completion_id) {
 
-    /* STUB */
-    GUAC_RDP_DEBUG(2, "[file_id=%i] STUB", file_id);
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_NOT_SUPPORTED, 0);
+
+    GUAC_RDP_DEBUG(2, "[file_id=%i] Set volume info not supported", file_id);
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
 }
 
@@ -448,8 +452,7 @@ void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {
 
-    /* STUB */
-    GUAC_RDP_DEBUG(2, "[file_id=%i] STUB", file_id);
+    GUAC_RDP_DEBUG(2, "[file_id=%i] Not implemented", file_id);
 
 }
 
@@ -564,8 +567,14 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
 void guac_rdpdr_fs_process_lock_control(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
-    /* STUB */
-    GUAC_RDP_DEBUG(2, "[file_id=%i] STUB", file_id);
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_NOT_SUPPORTED, 5);
+
+    GUAC_RDP_DEBUG(2, "[file_id=%i] Lock not supported", file_id);
+
+    Stream_Zero(output_stream, 5); /* Padding */
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
 }
 
