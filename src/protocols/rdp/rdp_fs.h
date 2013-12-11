@@ -174,6 +174,12 @@
 #define FILE_DIRECTORY_FILE     0x00000001
 #define FILE_NON_DIRECTORY_FILE 0x00000040
 
+/*
+ * File device types.
+ */
+
+#define FILE_DEVICE_DISK 0x00000007
+
 #define SEC_TO_UNIX_EPOCH 11644473600
 
 /**

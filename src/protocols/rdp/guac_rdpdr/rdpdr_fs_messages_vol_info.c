@@ -97,8 +97,16 @@ void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* i
 void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
-    /* STUB */
-    GUAC_RDP_DEBUG(2, "[file_id=%i] STUB", file_id);
+    wStream* output_stream = guac_rdpdr_new_io_completion(device,
+            completion_id, STATUS_SUCCESS, 12);
+
+    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+
+    Stream_Write_UINT32(output_stream, 8);
+    Stream_Write_UINT32(output_stream, FILE_DEVICE_DISK); /* DeviceType */
+    Stream_Write_UINT32(output_stream, 0); /* Characteristics */
+
+    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
 }
 
