@@ -60,7 +60,8 @@ void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
     int utf16_length = length*2;
 
     unsigned char utf16_entry_name[256];
-    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, (char*) utf16_entry_name, length);
+    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, length,
+            (char*) utf16_entry_name, sizeof(utf16_entry_name));
 
     /* Get file */
     file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
@@ -103,7 +104,8 @@ void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
     int utf16_length = length*2;
 
     unsigned char utf16_entry_name[256];
-    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, (char*) utf16_entry_name, length);
+    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, length,
+            (char*) utf16_entry_name, sizeof(utf16_entry_name));
 
     /* Get file */
     file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
@@ -147,7 +149,8 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     int utf16_length = length*2;
 
     unsigned char utf16_entry_name[256];
-    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, (char*) utf16_entry_name, length);
+    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, length,
+            (char*) utf16_entry_name, sizeof(utf16_entry_name));
 
     /* Get file */
     file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
@@ -195,7 +198,8 @@ void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
     int utf16_length = length*2;
 
     unsigned char utf16_entry_name[256];
-    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, (char*) utf16_entry_name, length);
+    guac_rdp_utf8_to_utf16((const unsigned char*) entry_name, length,
+            (char*) utf16_entry_name, sizeof(utf16_entry_name));
 
     /* Get file */
     file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);

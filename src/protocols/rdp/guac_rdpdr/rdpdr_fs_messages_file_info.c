@@ -157,8 +157,8 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
     Stream_Read_UINT32(input_stream, filename_length); /* FileNameLength */
 
     /* Convert name to UTF-8 */
-    guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream),
-            destination_path, filename_length/2);
+    guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), filename_length/2,
+            destination_path, sizeof(destination_path));
 
     GUAC_RDP_DEBUG(2, "[file_id=%i] destination_path=\"%s\"", file_id, destination_path);
 

@@ -38,10 +38,12 @@
 /**
  * Convert the given number of UTF-16 characters to UTF-8 characters.
  */
-void guac_rdp_utf16_to_utf8(const unsigned char* utf16, char* utf8, int length);
+void guac_rdp_utf16_to_utf8(const unsigned char* utf16, int length,
+        char* utf8, int size);
 
 /**
  * Convert the given number of UTF-8 characters to UTF-16 characters.
  */
-void guac_rdp_utf8_to_utf16(const unsigned char* utf8, char* utf16, int length);
+void guac_rdp_utf8_to_utf16(const unsigned char* utf8, int length,
+        char* utf16, int size);
 

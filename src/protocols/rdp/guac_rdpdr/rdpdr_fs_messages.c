@@ -79,11 +79,9 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
     Stream_Read_UINT32(input_stream, create_options);
     Stream_Read_UINT32(input_stream, path_length);
 
-    /* FIXME: Validate path length */
-
     /* Convert path to UTF-8 */
-    guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream),
-            path, path_length/2 - 1);
+    guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), path_length/2 - 1,
+            path, sizeof(path));
 
     /* Open file */
     file_id = guac_rdp_fs_open((guac_rdp_fs*) device->data, path,
@@ -482,11 +480,9 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
 
         Stream_Seek(input_stream, 23);       /* Padding */
 
-        /* FIXME: Validate path length */
-
         /* Convert path to UTF-8 */
-        guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream),
-                file->dir_pattern, path_length/2 - 1);
+        guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), path_length/2 - 1,
+                file->dir_pattern, sizeof(file->dir_pattern));
 
     }
 

@@ -39,7 +39,8 @@
 
 #include <guacamole/unicode.h>
 
-void guac_rdp_utf16_to_utf8(const unsigned char* utf16, char* utf8, int length) {
+void guac_rdp_utf16_to_utf8(const unsigned char* utf16, int length,
+        char* utf8, int size) {
 
     int i;
     const uint16_t* in_codepoint = (const uint16_t*) utf16;
@@ -51,7 +52,9 @@ void guac_rdp_utf16_to_utf8(const unsigned char* utf16, char* utf8, int length) 
         uint16_t codepoint = *(in_codepoint++);
 
         /* Save codepoint as UTF-8 */
-        utf8 += guac_utf8_write(codepoint, utf8, 4);
+        int bytes_written = guac_utf8_write(codepoint, utf8, size);
+        size -= bytes_written;
+        utf8 += bytes_written;
 
     }
 
@@ -60,7 +63,8 @@ void guac_rdp_utf16_to_utf8(const unsigned char* utf16, char* utf8, int length) 
 
 }
 
-void guac_rdp_utf8_to_utf16(const unsigned char* utf8, char* utf16, int length) {
+void guac_rdp_utf8_to_utf16(const unsigned char* utf8, int length,
+        char* utf16, int size) {
 
     int i;
     uint16_t* out_codepoint = (uint16_t*) utf16;
@@ -74,6 +78,11 @@ void guac_rdp_utf8_to_utf16(const unsigned char* utf8, char* utf16, int length) 
 
         /* Save codepoint as UTF-16 */
         *(out_codepoint++) = codepoint;
+
+        /* Stop if buffer full */
+        size -= 2;
+        if (size < 2)
+            break;
 
     }
 
