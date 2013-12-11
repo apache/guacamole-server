@@ -264,6 +264,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     /* Create directory first, if necessary */
     if ((create_options & FILE_DIRECTORY_FILE) && (flags & O_CREAT)) {
 
+        /* Create directory */
         if (mkdir(real_path, S_IRWXU)) {
             if (errno != EEXIST || (flags & O_EXCL)) {
                 GUAC_RDP_DEBUG(1, "mkdir() failed: %s", strerror(errno));
@@ -281,6 +282,14 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
 
     /* Open file */
     fd = open(real_path, flags, S_IRUSR | S_IWUSR);
+
+    /* If file open failed as we're trying to write a dir, retry as read-only */
+    if (fd == -1 && errno == EISDIR) {
+        flags &= ~(O_WRONLY | O_RDWR);
+        flags |= O_RDONLY;
+        fd = open(real_path, flags, S_IRUSR | S_IWUSR);
+    }
+
     if (fd == -1) {
         GUAC_RDP_DEBUG(1, "open() failed: %s", strerror(errno));
         return guac_rdp_fs_get_errorcode(errno);
