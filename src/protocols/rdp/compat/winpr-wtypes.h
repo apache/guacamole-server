@@ -43,6 +43,7 @@ typedef uint8   BYTE;
 typedef uint8   UINT8;
 typedef uint16  UINT16;
 typedef uint32  UINT32;
+typedef uint64  UINT64;
 typedef boolean BOOL;
 
 #define TRUE  true

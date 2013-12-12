@@ -40,15 +40,15 @@
 
 #include <stdio.h>
 
-/* Ensure DEBUG is defined to a constant */
-#ifndef DEBUG
-#define DEBUG 0
+/* Ensure GUAC_RDP_DEBUG_LEVEL is defined to a constant */
+#ifndef GUAC_RDP_DEBUG_LEVEL
+#define GUAC_RDP_DEBUG_LEVEL 0
 #endif
 
 /**
  * Prints a message to STDERR using the given printf format string and
- * arguments. This will only do anything if the DEBUG macro is defined
- * and greater than the given log level.
+ * arguments. This will only do anything if the GUAC_RDP_DEBUG_LEVEL
+ * macro is defined and greater than the given log level.
  *
  * @param level The desired log level (an integer).
  * @param fmt The format to use when printing.
@@ -57,8 +57,8 @@
  */
 #define GUAC_RDP_DEBUG(level, fmt, ...)                           \
     do {                                                          \
-        if (DEBUG >= level)                                       \
-            fprintf(stderr, "%s:%d: %s(): " fmt "\n", \
+        if (GUAC_RDP_DEBUG_LEVEL >= level)                        \
+            fprintf(stderr, "%s:%d: %s(): " fmt "\n",             \
                     __FILE__, __LINE__, __func__, __VA_ARGS__);   \
     } while (0);
 
