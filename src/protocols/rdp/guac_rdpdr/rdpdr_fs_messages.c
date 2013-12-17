@@ -139,7 +139,7 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
 
     UINT32 length;
     UINT64 offset;
-    char buffer[4096];
+    char* buffer;
     int bytes_read;
 
     wStream* output_stream;
@@ -148,12 +148,11 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
     Stream_Read_UINT32(input_stream, length);
     Stream_Read_UINT64(input_stream, offset);
 
+    /* Allocate buffer */
+    buffer = malloc(length);
+
     GUAC_RDP_DEBUG(2, "[file_id=%i] length=%i, offset=%" PRIu64,
              file_id, length, (uint64_t) offset);
-
-    /* Read no more than size of buffer */
-    if (length > sizeof(buffer))
-        length = sizeof(buffer);
 
     /* Attempt read */
     bytes_read = guac_rdp_fs_read((guac_rdp_fs*) device->data, file_id, offset,
@@ -175,6 +174,7 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
     }
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    free(buffer);
 
 }
 
