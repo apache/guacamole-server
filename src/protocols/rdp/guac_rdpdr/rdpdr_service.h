@@ -49,6 +49,11 @@
 #include <guacamole/client.h>
 #include <freerdp/utils/svc_plugin.h>
 
+/**
+ * The maximum number of bytes to allow for a device read.
+ */
+#define GUAC_RDP_MAX_READ_BUFFER 4194304
+
 typedef struct guac_rdpdrPlugin guac_rdpdrPlugin;
 typedef struct guac_rdpdr_device guac_rdpdr_device;
 
