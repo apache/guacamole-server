@@ -179,5 +179,10 @@ void guac_rdpdr_process_event(rdpSvcPlugin* plugin, wMessage* event);
 wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
         int completion_id, int status, int size);
 
+/**
+ * Begins streaming the given file to the user via a Guacamole file stream.
+ */
+void guac_rdpdr_start_download(guac_rdpdr_device* device, const char* path);
+
 #endif
 

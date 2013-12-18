@@ -57,6 +57,7 @@
 #include "rdpdr_fs_service.h"
 
 #include "client.h"
+#include "debug.h"
 
 
 /**
@@ -231,6 +232,55 @@ wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, status);
 
     return output_stream;
+
+}
+
+void guac_rdpdr_start_download(guac_rdpdr_device* device, const char* path) {
+
+    /* Get client and stream */
+    guac_client* client = device->rdpdr->client;
+
+    int file_id = guac_rdp_fs_open((guac_rdp_fs*) device->data, path,
+            ACCESS_FILE_READ_DATA, 0, DISP_FILE_OPEN, 0);
+
+    /* If file opened successfully, start stream */
+    if (file_id >= 0) {
+
+        guac_rdp_download_status* status;
+        const char* basename;
+
+        int i;
+        char c;
+
+        /* Associate stream with transfer status */
+        guac_stream* stream = guac_client_alloc_stream(client);
+        stream->data = status = malloc(sizeof(guac_rdp_download_status));
+        status->file_id = file_id;
+        status->offset = 0;
+
+        /* Get basename from absolute path */
+        i=0;
+        basename = path;
+        do {
+
+            c = path[i];
+            if (c == '/' || c == '\\')
+                basename = &(path[i+1]);
+
+            i++;
+
+        } while (c != '\0');
+
+        GUAC_RDP_DEBUG(2, "Initiating download of \"%s\"", path);
+
+        /* Begin stream */
+        guac_protocol_send_file(client->socket, stream,
+                "application/octet-stream", basename);
+        guac_socket_flush(client->socket);
+
+    }
+    else
+        guac_client_log_error(client, "Unable to download \"%s\"", path);
 
 }
 
