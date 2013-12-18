@@ -162,15 +162,36 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
 
     GUAC_RDP_DEBUG(2, "[file_id=%i] destination_path=\"%s\"", file_id, destination_path);
 
-    /* Perform rename */
-    result = guac_rdp_fs_rename((guac_rdp_fs*) device->data, file_id,
-            destination_path);
-    if (result < 0)
-        output_stream = guac_rdpdr_new_io_completion(device,
-                completion_id, guac_rdp_fs_get_status(result), 4);
-    else
+    /* If file moving to \Download folder, start stream, do not move */
+    if (strncmp(destination_path, "\\Download\\", 10) == 0) {
+
+        guac_rdp_fs_file* file;
+
+        /* Get file */
+        file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
+        if (file == NULL)
+            return;
+
+        /* Initiate download, pretend move succeeded */
+        guac_rdpdr_start_download(device, file->absolute_path);
         output_stream = guac_rdpdr_new_io_completion(device,
                 completion_id, STATUS_SUCCESS, 4);
+
+    }
+
+    /* Otherwise, rename as requested */
+    else {
+
+        result = guac_rdp_fs_rename((guac_rdp_fs*) device->data, file_id,
+                destination_path);
+        if (result < 0)
+            output_stream = guac_rdpdr_new_io_completion(device,
+                    completion_id, guac_rdp_fs_get_status(result), 4);
+        else
+            output_stream = guac_rdpdr_new_io_completion(device,
+                    completion_id, STATUS_SUCCESS, 4);
+
+    }
 
     Stream_Write_UINT32(output_stream, length);
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
