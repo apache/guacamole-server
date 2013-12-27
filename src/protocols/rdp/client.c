@@ -480,7 +480,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         settings->port = atoi(argv[IDX_PORT]);
 
     /* Use optimal width unless overridden */
-    settings->width = client->info.optimal_width;
+    settings->width = client->info.optimal_width * 96 / client->info.optimal_resolution;
     if (argv[IDX_WIDTH][0] != '\0')
         settings->width = atoi(argv[IDX_WIDTH]);
 
@@ -496,7 +496,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->width = settings->width & ~0x3;
 
     /* Use optimal height unless overridden */
-    settings->height = client->info.optimal_height;
+    settings->height = client->info.optimal_height * 96 / client->info.optimal_resolution;
     if (argv[IDX_HEIGHT][0] != '\0')
         settings->height = atoi(argv[IDX_HEIGHT]);
 
