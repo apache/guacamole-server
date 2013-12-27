@@ -202,6 +202,14 @@ void guacd_handle_connection(guac_socket* socket) {
     client->info.optimal_width  = atoi(size->argv[0]);
     client->info.optimal_height = atoi(size->argv[1]);
 
+    /* If DPI given, set the client resolution */
+    if (size->argc >= 3)
+        client->info.optimal_resolution = atoi(size->argv[2]);
+
+    /* Otherwise, use a safe default for rough backwards compatibility */
+    else
+        client->info.optimal_resolution = 96;
+
     /* Store audio mimetypes */
     client->info.audio_mimetypes = malloc(sizeof(char*) * (audio->argc+1));
     memcpy(client->info.audio_mimetypes, audio->argv,

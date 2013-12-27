@@ -238,6 +238,15 @@ typedef struct guac_client_info {
      */
     const char** video_mimetypes;
 
+    /**
+     * The DPI of the physical remote display if configured for the optimal
+     * width/height combination described here. This need not be honored by
+     * a client plugin implementation, but if the underlying protocol of the
+     * client plugin supports dynamic sizing of the screen, honoring the
+     * stated resolution of the display size request is recommended.
+     */
+    int optimal_resolution;
+
 } guac_client_info;
 
 /**
