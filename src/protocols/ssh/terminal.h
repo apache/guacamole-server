@@ -260,7 +260,7 @@ struct guac_terminal {
  * rendering to the given client.
  */
 guac_terminal* guac_terminal_create(guac_client* client,
-        const char* font_name, int font_size,
+        const char* font_name, int font_size, int dpi,
         int width, int height);
 
 /**

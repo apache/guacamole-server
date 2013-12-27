@@ -238,7 +238,7 @@ typedef struct guac_terminal_display {
  * colors.
  */
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
-        const char* font_name, int font_size,
+        const char* font_name, int font_size, int dpi,
         int foreground, int background);
 
 /**

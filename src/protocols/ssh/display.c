@@ -341,7 +341,7 @@ int __guac_terminal_set(guac_terminal_display* display, int row, int col, int co
 
 
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
-        const char* font_name, int font_size,
+        const char* font_name, int font_size, int dpi,
         int foreground, int background) {
 
     PangoFontMap* font_map;
@@ -366,6 +366,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     pango_font_description_set_size(display->font_desc, font_size*PANGO_SCALE);
 
     font_map = pango_cairo_font_map_get_default();
+    pango_cairo_font_map_set_resolution((PangoCairoFontMap*) font_map, dpi);
     context = pango_font_map_create_context(font_map);
 
     font = pango_font_map_load_font(font_map, context, display->font_desc);
