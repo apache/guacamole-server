@@ -1,39 +1,25 @@
+/*
+ * Copyright (C) 2013 Glyptodon LLC
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is libguac.
- *
- * The Initial Developer of the Original Code is
- * Michael Jumper.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -70,7 +56,6 @@ ssize_t __guac_socket_write_length_string(guac_socket* socket, const char* str) 
 
 }
 
-
 ssize_t __guac_socket_write_length_int(guac_socket* socket, int64_t i) {
 
     char buffer[128];
@@ -79,7 +64,6 @@ ssize_t __guac_socket_write_length_int(guac_socket* socket, int64_t i) {
 
 }
 
-
 ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
 
     char buffer[128];
@@ -87,7 +71,6 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
     return __guac_socket_write_length_string(socket, buffer);
 
 }
-
 
 /* PNG output formatting */
 
@@ -130,7 +113,6 @@ cairo_status_t __guac_socket_write_png_cairo(void* closure, const unsigned char*
     return CAIRO_STATUS_SUCCESS;
 
 }
-
 
 int __guac_socket_write_length_png_cairo(guac_socket* socket, cairo_surface_t* surface) {
 
@@ -352,7 +334,6 @@ int __guac_socket_write_length_png(guac_socket* socket, cairo_surface_t* surface
 
 }
 
-
 /* Protocol functions */
 
 int guac_protocol_send_ack(guac_socket* socket, guac_stream* stream,
@@ -508,7 +489,6 @@ int guac_protocol_send_cfill(guac_socket* socket,
 
 }
 
-
 int guac_protocol_send_close(guac_socket* socket, const guac_layer* layer) {
 
     int ret_val;
@@ -523,7 +503,6 @@ int guac_protocol_send_close(guac_socket* socket, const guac_layer* layer) {
     return ret_val;
 
 }
-
 
 static int __guac_protocol_send_connect(guac_socket* socket, const char** args) {
 
@@ -572,7 +551,6 @@ int guac_protocol_send_clip(guac_socket* socket, const guac_layer* layer) {
 
 }
 
-
 int guac_protocol_send_clipboard(guac_socket* socket, const char* data) {
 
     int ret_val;
@@ -587,7 +565,6 @@ int guac_protocol_send_clipboard(guac_socket* socket, const char* data) {
     return ret_val;
 
 }
-
 
 int guac_protocol_send_copy(guac_socket* socket,
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
@@ -621,7 +598,6 @@ int guac_protocol_send_copy(guac_socket* socket,
     return ret_val;
 
 }
-
 
 int guac_protocol_send_cstroke(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
@@ -657,7 +633,6 @@ int guac_protocol_send_cstroke(guac_socket* socket,
 
 }
 
-
 int guac_protocol_send_cursor(guac_socket* socket, int x, int y,
         const guac_layer* srcl, int srcx, int srcy, int w, int h) {
     int ret_val;
@@ -684,7 +659,6 @@ int guac_protocol_send_cursor(guac_socket* socket, int x, int y,
     return ret_val;
 
 }
-
 
 int guac_protocol_send_curve(guac_socket* socket, const guac_layer* layer,
         int cp1x, int cp1y, int cp2x, int cp2y, int x, int y) {
@@ -714,7 +688,6 @@ int guac_protocol_send_curve(guac_socket* socket, const guac_layer* layer,
 
 }
 
-
 int guac_protocol_send_disconnect(guac_socket* socket) {
     int ret_val;
 
@@ -724,7 +697,6 @@ int guac_protocol_send_disconnect(guac_socket* socket) {
     return ret_val;
 
 }
-
 
 int guac_protocol_send_dispose(guac_socket* socket, const guac_layer* layer) {
 
@@ -740,7 +712,6 @@ int guac_protocol_send_dispose(guac_socket* socket, const guac_layer* layer) {
     return ret_val;
 
 }
-
 
 int guac_protocol_send_distort(guac_socket* socket, const guac_layer* layer,
         double a, double b, double c,
@@ -786,7 +757,6 @@ int guac_protocol_send_end(guac_socket* socket, const guac_stream* stream) {
 
 }
 
-
 int guac_protocol_send_error(guac_socket* socket, const char* error,
         guac_protocol_status status) {
 
@@ -804,7 +774,6 @@ int guac_protocol_send_error(guac_socket* socket, const char* error,
     return ret_val;
 
 }
-
 
 int guac_protocol_send_file(guac_socket* socket, const guac_stream* stream,
         const char* mimetype, const char* name) {
@@ -826,7 +795,6 @@ int guac_protocol_send_file(guac_socket* socket, const guac_stream* stream,
 
 }
 
-
 int guac_protocol_send_identity(guac_socket* socket, const guac_layer* layer) {
 
     int ret_val;
@@ -841,7 +809,6 @@ int guac_protocol_send_identity(guac_socket* socket, const guac_layer* layer) {
     return ret_val;
 
 }
-
 
 int guac_protocol_send_lfill(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
@@ -864,7 +831,6 @@ int guac_protocol_send_lfill(guac_socket* socket,
 
 }
 
-
 int guac_protocol_send_line(guac_socket* socket, const guac_layer* layer,
         int x, int y) {
 
@@ -884,7 +850,6 @@ int guac_protocol_send_line(guac_socket* socket, const guac_layer* layer,
     return ret_val;
 
 }
-
 
 int guac_protocol_send_lstroke(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
@@ -914,7 +879,6 @@ int guac_protocol_send_lstroke(guac_socket* socket,
 
 }
 
-
 int guac_protocol_send_move(guac_socket* socket, const guac_layer* layer,
         const guac_layer* parent, int x, int y, int z) {
 
@@ -938,7 +902,6 @@ int guac_protocol_send_move(guac_socket* socket, const guac_layer* layer,
     return ret_val;
 
 }
-
 
 int guac_protocol_send_name(guac_socket* socket, const char* name) {
 
@@ -1009,7 +972,6 @@ int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
 
 }
 
-
 int guac_protocol_send_pop(guac_socket* socket, const guac_layer* layer) {
 
     int ret_val;
@@ -1025,7 +987,6 @@ int guac_protocol_send_pop(guac_socket* socket, const guac_layer* layer) {
 
 }
 
-
 int guac_protocol_send_push(guac_socket* socket, const guac_layer* layer) {
 
     int ret_val;
@@ -1040,7 +1001,6 @@ int guac_protocol_send_push(guac_socket* socket, const guac_layer* layer) {
     return ret_val;
 
 }
-
 
 int guac_protocol_send_rect(guac_socket* socket,
         const guac_layer* layer, int x, int y, int width, int height) {
@@ -1066,7 +1026,6 @@ int guac_protocol_send_rect(guac_socket* socket,
 
 }
 
-
 int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer) {
 
     int ret_val;
@@ -1081,7 +1040,6 @@ int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer) {
     return ret_val;
 
 }
-
 
 int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
         const char* name, const char* value) {
@@ -1103,7 +1061,6 @@ int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
 
 }
 
-
 int guac_protocol_send_select(guac_socket* socket, const char* protocol) {
 
     int ret_val;
@@ -1118,7 +1075,6 @@ int guac_protocol_send_select(guac_socket* socket, const char* protocol) {
     return ret_val;
 
 }
-
 
 int guac_protocol_send_shade(guac_socket* socket, const guac_layer* layer,
         int a) {
@@ -1137,7 +1093,6 @@ int guac_protocol_send_shade(guac_socket* socket, const guac_layer* layer,
     return ret_val;
 
 }
-
 
 int guac_protocol_send_size(guac_socket* socket, const guac_layer* layer,
         int w, int h) {
@@ -1159,7 +1114,6 @@ int guac_protocol_send_size(guac_socket* socket, const guac_layer* layer,
 
 }
 
-
 int guac_protocol_send_start(guac_socket* socket, const guac_layer* layer,
         int x, int y) {
 
@@ -1180,7 +1134,6 @@ int guac_protocol_send_start(guac_socket* socket, const guac_layer* layer,
 
 }
 
-
 int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp) {
 
     int ret_val;
@@ -1195,7 +1148,6 @@ int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp) {
     return ret_val;
 
 }
-
 
 int guac_protocol_send_transfer(guac_socket* socket,
         const guac_layer* srcl, int srcx, int srcy, int w, int h,
@@ -1229,7 +1181,6 @@ int guac_protocol_send_transfer(guac_socket* socket,
     return ret_val;
 
 }
-
 
 int guac_protocol_send_transform(guac_socket* socket, const guac_layer* layer,
         double a, double b, double c,
