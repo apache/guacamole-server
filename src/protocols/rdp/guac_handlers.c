@@ -361,6 +361,8 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
     /* If keysym can be in lookup table */
     if (GUAC_RDP_KEYSYM_STORABLE(keysym)) {
 
+        int pressed_flags;
+
         /* Look up scancode mapping */
         const guac_rdp_keysym_desc* keysym_desc =
             &GUAC_RDP_KEYSYM_LOOKUP(guac_client_data->keymap, keysym);
@@ -378,11 +380,14 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
             if (keysym_desc->clear_keysyms != NULL)
                 __guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 0);
 
+            /* Determine proper event flag for pressed state */
+            if (pressed)
+                pressed_flags = KBD_FLAGS_DOWN;
+            else
+                pressed_flags = KBD_FLAGS_RELEASE;
+
             /* Send actual key */
-            rdp_inst->input->KeyboardEvent(
-                    rdp_inst->input,
-                    keysym_desc->flags
-                        | (pressed ? KBD_FLAGS_DOWN : KBD_FLAGS_RELEASE),
+            rdp_inst->input->KeyboardEvent(rdp_inst->input, keysym_desc->flags | pressed_flags,
                     keysym_desc->scancode);
 
             /* If defined, release any keys that were originally released */
