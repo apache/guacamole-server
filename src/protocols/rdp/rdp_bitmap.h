@@ -24,15 +24,16 @@
 #ifndef _GUAC_RDP_RDP_BITMAP_H
 #define _GUAC_RDP_RDP_BITMAP_H
 
+#include "config.h"
+
 #include <freerdp/freerdp.h>
+#include <guacamole/protocol.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
 #else
 #include "compat/winpr-wtypes.h"
 #endif
-
-#include <guacamole/protocol.h>
 
 typedef struct guac_rdp_bitmap {
 

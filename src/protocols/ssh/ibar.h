@@ -24,6 +24,8 @@
 #ifndef _GUAC_SSH_IBAR_H
 #define _GUAC_SSH_IBAR_H
 
+#include "config.h"
+
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
 

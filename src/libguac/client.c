@@ -20,10 +20,7 @@
  * THE SOFTWARE.
  */
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "config.h"
 
 #include "client.h"
 #include "client-handlers.h"
@@ -34,6 +31,10 @@
 #include "protocol.h"
 #include "socket.h"
 #include "time.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 guac_layer __GUAC_DEFAULT_LAYER = {
     .index = 0

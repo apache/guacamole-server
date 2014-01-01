@@ -24,6 +24,8 @@
 #ifndef __GUAC_WAV_ENCODER_H
 #define __GUAC_WAV_ENCODER_H
 
+#include "config.h"
+
 #include <guacamole/audio.h>
 
 typedef struct wav_encoder_riff_header {

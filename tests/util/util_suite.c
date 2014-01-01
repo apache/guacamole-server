@@ -20,10 +20,11 @@
  * THE SOFTWARE.
  */
 
-
-#include <CUnit/Basic.h>
+#include "config.h"
 
 #include "util_suite.h"
+
+#include <CUnit/Basic.h>
 
 int util_suite_init() {
     return 0;

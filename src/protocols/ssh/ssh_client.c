@@ -20,29 +20,28 @@
  * THE SOFTWARE.
  */
 
-
-#include <stdio.h>
-#include <string.h>
-#include <pthread.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <errno.h>
-#include <unistd.h>
-
-#include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-
-#include <libssh2.h>
+#include "config.h"
 
 #include "client.h"
 #include "common.h"
 #include "guac_handlers.h"
 #include "sftp.h"
 #include "ssh_key.h"
+
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <libssh2.h>
+#include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"

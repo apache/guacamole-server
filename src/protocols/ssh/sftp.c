@@ -20,21 +20,21 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <unistd.h>
+#include "client.h"
+
+#include <fcntl.h>
 #include <libgen.h>
-#include <sys/stat.h>
 #include <stdbool.h>
 #include <string.h>
-#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <libssh2.h>
-
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/stream.h>
-
-#include "client.h"
 
 static bool __ssh_guac_valid_filename(char* filename) {
 

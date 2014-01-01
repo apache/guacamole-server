@@ -24,13 +24,15 @@
 #ifndef __GUAC_RDPDR_MESSAGES_H
 #define __GUAC_RDPDR_MESSAGES_H
 
+#include "config.h"
+
+#include "rdpdr_service.h"
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include "rdpdr_service.h"
 
 /**
  * Identifies the "core" component of RDPDR as the destination of the received

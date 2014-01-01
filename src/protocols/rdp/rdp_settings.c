@@ -20,9 +20,11 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "rdp_settings.h"
 
 #include <freerdp/constants.h>
-#include "rdp_settings.h"
 
 void guac_rdp_pull_settings(freerdp* rdp, guac_rdp_settings* guac_settings) {
 

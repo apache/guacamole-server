@@ -20,26 +20,26 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <pthread.h>
-
-#include <cairo/cairo.h>
-#include <pango/pangocairo.h>
-
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
-#include <guacamole/client.h>
-#include <guacamole/error.h>
-
-#include "types.h"
 #include "buffer.h"
 #include "common.h"
 #include "display.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
+#include "types.h"
+
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <cairo/cairo.h>
+#include <guacamole/client.h>
+#include <guacamole/error.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+#include <pango/pangocairo.h>
 
 void guac_terminal_reset(guac_terminal* term) {
 

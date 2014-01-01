@@ -24,14 +24,14 @@
 #ifndef _GUAC_HASH_H
 #define _GUAC_HASH_H
 
-#include <cairo/cairo.h>
-
 /**
  * Provides functions and structures for producing likely-to-be-unique hash
  * values for images.
  *
  * @file hash.h
  */
+
+#include <cairo/cairo.h>
 
 /**
  * Produces a 24-bit hash value from all pixels of the given surface. The

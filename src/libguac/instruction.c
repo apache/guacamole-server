@@ -20,16 +20,17 @@
  * THE SOFTWARE.
  */
 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "config.h"
 
 #include "error.h"
 #include "instruction.h"
 #include "protocol.h"
 #include "socket.h"
 #include "unicode.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 guac_instruction* guac_instruction_alloc() {
 

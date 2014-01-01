@@ -20,12 +20,13 @@
  * THE SOFTWARE.
  */
 
-
-#include <stdlib.h>
-#include <string.h>
+#include "config.h"
 
 #include "buffer.h"
 #include "common.h"
+
+#include <stdlib.h>
+#include <string.h>
 
 guac_terminal_buffer* guac_terminal_buffer_alloc(int rows, guac_terminal_char* default_character) {
 

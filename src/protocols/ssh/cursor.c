@@ -20,13 +20,14 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "cursor.h"
 
 #include <stdlib.h>
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
-
-#include "cursor.h"
 
 guac_ssh_cursor* guac_ssh_cursor_alloc(guac_client* client) {
 

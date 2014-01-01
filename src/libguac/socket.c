@@ -20,6 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "error.h"
+#include "protocol.h"
+#include "socket.h"
+#include "timestamp.h"
 
 #include <fcntl.h>
 #include <inttypes.h>
@@ -28,6 +34,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #ifdef __MINGW32__
@@ -35,14 +43,6 @@
 #else
 #include <sys/select.h>
 #endif
-
-#include <time.h>
-#include <sys/time.h>
-
-#include "socket.h"
-#include "protocol.h"
-#include "timestamp.h"
-#include "error.h"
 
 char __guac_socket_BASE64_CHARACTERS[64] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',

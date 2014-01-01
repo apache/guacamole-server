@@ -24,6 +24,8 @@
 #ifndef _SSH_GUAC_SFTP_H
 #define _SSH_GUAC_SFTP_H
 
+#include "config.h"
+
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 

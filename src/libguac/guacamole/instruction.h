@@ -24,14 +24,14 @@
 #ifndef _GUAC_INSTRUCTION_H
 #define _GUAC_INSTRUCTION_H
 
-#include "socket.h"
-
 /**
  * Provides functions and structures for reading, writing, and manipulating
  * Guacamole instructions.
  *
  * @file instruction.h
  */
+
+#include "socket.h"
 
 /**
  * The maximum number of characters per instruction.

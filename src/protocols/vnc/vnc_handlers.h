@@ -24,6 +24,8 @@
 #ifndef __GUAC_VNC_VNC_HANDLERS_H
 #define __GUAC_VNC_VNC_HANDLERS_H
 
+#include "config.h"
+
 #include <rfb/rfbclient.h>
 
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp);

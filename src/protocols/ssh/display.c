@@ -20,15 +20,17 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "common.h"
+#include "display.h"
+#include "types.h"
 
 #include <stdlib.h>
 #include <string.h>
+
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
-
-#include "common.h"
-#include "types.h"
-#include "display.h"
 
 const guac_terminal_color guac_terminal_palette[16] = {
 

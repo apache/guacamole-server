@@ -20,23 +20,24 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "client.h"
+#include "rdpdr_messages.h"
+#include "rdpdr_printer.h"
+#include "rdpdr_service.h"
+#include "rdp_status.h"
+
 #include <errno.h>
+
+#include <freerdp/utils/svc_plugin.h>
+#include <guacamole/protocol.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include <freerdp/utils/svc_plugin.h>
-
-#include <guacamole/protocol.h>
-
-#include "rdp_status.h"
-#include "rdpdr_messages.h"
-#include "rdpdr_printer.h"
-#include "rdpdr_service.h"
-#include "client.h"
 
 /* Command to run GhostScript safely as a filter writing PDF */
 char* const guac_rdpdr_pdf_filter_command[] = {

@@ -24,14 +24,16 @@
 #ifndef _SSH_GUAC_TERMINAL_H
 #define _SSH_GUAC_TERMINAL_H
 
-#include <stdbool.h>
+#include "config.h"
+
+#include "buffer.h"
+#include "display.h"
+#include "types.h"
+
 #include <pthread.h>
+#include <stdbool.h>
 
 #include <guacamole/client.h>
-
-#include "types.h"
-#include "display.h"
-#include "buffer.h"
 
 /**
  * The maximum number of custom tab stops.

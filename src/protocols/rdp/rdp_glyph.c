@@ -20,21 +20,22 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "client.h"
+#include "rdp_glyph.h"
 
 #include <pthread.h>
+
 #include <freerdp/freerdp.h>
+#include <guacamole/client.h>
+#include <guacamole/error.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
 #else
 #include "compat/winpr-wtypes.h"
 #endif
-
-#include <guacamole/client.h>
-#include <guacamole/error.h>
-
-#include "client.h"
-#include "rdp_glyph.h"
 
 /* Define cairo_format_stride_for_width() if missing */
 #ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH

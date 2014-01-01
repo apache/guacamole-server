@@ -20,16 +20,16 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "ogg_encoder.h"
 
 #include <stdlib.h>
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
-
 #include <vorbis/vorbisenc.h>
-
-#include "ogg_encoder.h"
 
 void ogg_encoder_begin_handler(guac_audio_stream* audio) {
 

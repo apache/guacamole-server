@@ -24,9 +24,6 @@
 #ifndef _GUAC_CLIENT_HANDLERS__H
 #define _GUAC_CLIENT_HANDLERS__H
 
-#include "client.h"
-#include "instruction.h"
-
 /**
  * Provides initial handler functions and a lookup structure for automatically
  * handling client instructions. This is used only internally within libguac,
@@ -34,6 +31,11 @@
  *
  * @file client-handlers.h
  */
+
+#include "config.h"
+
+#include "client.h"
+#include "instruction.h"
 
 /**
  * Internal handler for Guacamole instructions.

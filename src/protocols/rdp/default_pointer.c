@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>

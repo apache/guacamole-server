@@ -24,6 +24,8 @@
 #ifndef _SSH_GUAC_HANDLERS_H
 #define _SSH_GUAC_HANDLERS_H
 
+#include "config.h"
+
 #include <guacamole/client.h>
 
 int ssh_guac_client_handle_messages(guac_client* client);

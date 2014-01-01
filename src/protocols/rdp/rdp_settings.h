@@ -24,10 +24,12 @@
 #ifndef __GUAC_RDP_SETTINGS_H
 #define __GUAC_RDP_SETTINGS_H
 
-#include <freerdp/freerdp.h>
-#include <guacamole/client.h>
+#include "config.h"
 
 #include "rdp_keymap.h"
+
+#include <freerdp/freerdp.h>
+#include <guacamole/client.h>
 
 /**
  * The default RDP port.

@@ -24,8 +24,9 @@
 #ifndef __GUAC_OGG_ENCODER_H
 #define __GUAC_OGG_ENCODER_H
 
-#include <guacamole/audio.h>
+#include "config.h"
 
+#include <guacamole/audio.h>
 #include <vorbis/vorbisenc.h>
 
 typedef struct ogg_encoder_state {

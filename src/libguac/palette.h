@@ -24,8 +24,8 @@
 #ifndef __GUAC_PALETTE_H
 #define __GUAC_PALETTE_H
 
-#include <png.h>
 #include <cairo/cairo.h>
+#include <png.h>
 
 typedef struct guac_palette_entry {
 

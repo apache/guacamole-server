@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "util_suite.h"
 
 #include <CUnit/Basic.h>
-
 #include <guacamole/pool.h>
-#include "util_suite.h"
 
 #define UNSEEN          0 
 #define SEEN_PHASE_1    1

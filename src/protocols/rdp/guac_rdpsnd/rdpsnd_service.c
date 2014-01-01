@@ -20,6 +20,10 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "rdpsnd_service.h"
+#include "rdpsnd_messages.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +31,8 @@
 #include <freerdp/constants.h>
 #include <freerdp/types.h>
 #include <freerdp/utils/svc_plugin.h>
+#include <guacamole/audio.h>
+#include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -35,12 +41,6 @@
 #include "compat/winpr-stream.h"
 #include "compat/winpr-wtypes.h"
 #endif
-
-#include <guacamole/client.h>
-#include <guacamole/audio.h>
-
-#include "rdpsnd_service.h"
-#include "rdpsnd_messages.h"
 
 /**
  * Entry point for RDPSND virtual channel.

@@ -24,6 +24,8 @@
 #ifndef _SSH_GUAC_TERMINAL_HANDLERS
 #define _SSH_GUAC_TERMINAL_HANDLERS
 
+#include "config.h"
+
 #include "terminal.h"
 
 int guac_terminal_echo(guac_terminal* term, char c);

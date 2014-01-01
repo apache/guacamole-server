@@ -24,7 +24,11 @@
 #ifndef _GUAC_CLIENT_H
 #define _GUAC_CLIENT_H
 
-#include <stdarg.h>
+/**
+ * Provides functions and structures required for defining (and handling) a proxy client.
+ *
+ * @file client.h
+ */
 
 #include "instruction.h"
 #include "layer.h"
@@ -34,11 +38,7 @@
 #include "stream.h"
 #include "timestamp.h"
 
-/**
- * Provides functions and structures required for defining (and handling) a proxy client.
- *
- * @file client.h
- */
+#include <stdarg.h>
 
 /**
  * The maximum number of inbound streams supported by any one guac_client.

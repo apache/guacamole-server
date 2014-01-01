@@ -24,6 +24,8 @@
 #ifndef __GUAC_CLIENT_CLIPRDR_COMPAT_H
 #define __GUAC_CLIENT_CLIPRDR_COMPAT_H
 
+#include "config.h"
+
 #include <freerdp/plugins/cliprdr.h>
 
 #define CliprdrChannel_Class        RDP_EVENT_CLASS_CLIPRDR

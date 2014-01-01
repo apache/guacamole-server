@@ -24,19 +24,19 @@
 #ifndef _GUAC_RDP_CLIENT_H
 #define _GUAC_RDP_CLIENT_H
 
-#include <pthread.h>
-
-#include <cairo/cairo.h>
-
-#include <freerdp/freerdp.h>
-#include <freerdp/codec/color.h>
-
-#include <guacamole/client.h>
-#include <guacamole/audio.h>
+#include "config.h"
 
 #include "rdp_fs.h"
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
+
+#include <pthread.h>
+
+#include <cairo/cairo.h>
+#include <freerdp/freerdp.h>
+#include <freerdp/codec/color.h>
+#include <guacamole/audio.h>
+#include <guacamole/client.h>
 
 /**
  * The maximum duration of a frame in milliseconds.

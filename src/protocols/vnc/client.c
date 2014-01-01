@@ -20,21 +20,21 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "client.h"
+#include "default_pointer.h"
+#include "guac_handlers.h"
+#include "vnc_handlers.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include <rfb/rfbclient.h>
-
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
-#include <guacamole/client.h>
 #include <guacamole/audio.h>
-
-#include "client.h"
-#include "vnc_handlers.h"
-#include "guac_handlers.h"
-#include "default_pointer.h"
+#include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #ifdef ENABLE_PULSE
 #include "pulse.h"

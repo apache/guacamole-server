@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "client_suite.h"
 
 #include <CUnit/Basic.h>
-
 #include <guacamole/client.h>
-#include "client_suite.h"
 
 void test_buffer_pool() {
 

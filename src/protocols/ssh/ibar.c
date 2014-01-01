@@ -20,13 +20,14 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "cursor.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
-
-#include "cursor.h"
 
 /* Macros for prettying up the embedded image. */
 #define X 0x00,0x00,0x00,0xFF

@@ -20,18 +20,18 @@
  * THE SOFTWARE.
  */
 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <inttypes.h>
-
-#include <cairo/cairo.h>
-
-#include <sys/types.h>
+#include "config.h"
 
 #include "palette.h"
+
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <cairo/cairo.h>
+#include <sys/types.h>
 
 guac_palette* guac_palette_alloc(cairo_surface_t* surface) {
 

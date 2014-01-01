@@ -20,29 +20,26 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "client.h"
+#include "log.h"
+
 #include <ctype.h>
-
-#include <sys/socket.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <libgen.h>
 #include <netdb.h>
 #include <netinet/in.h>
-
-#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
-#include <libgen.h>
-
-#ifdef ENABLE_SSL
-#include <openssl/ssl.h>
-#include "socket-ssl.h"
-#endif
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
@@ -50,8 +47,10 @@
 #include <guacamole/plugin.h>
 #include <guacamole/protocol.h>
 
-#include "client.h"
-#include "log.h"
+#ifdef ENABLE_SSL
+#include <openssl/ssl.h>
+#include "socket-ssl.h"
+#endif
 
 #define GUACD_DEV_NULL "/dev/null"
 #define GUACD_ROOT     "/"

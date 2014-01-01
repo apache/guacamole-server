@@ -30,6 +30,8 @@ autom4te.cache/
 m4/*
 !README
 config.guess
+config.h
+config.h.in
 config.log
 config.status
 config.sub
@@ -39,6 +41,7 @@ install-sh
 libtool
 ltmain.sh
 missing
+stamp-h1
 
 # Test binaries
 tests/test_*

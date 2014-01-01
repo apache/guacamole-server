@@ -24,13 +24,6 @@
 #ifndef _GUAC_PROTOCOL_H
 #define _GUAC_PROTOCOL_H
 
-#include <cairo/cairo.h>
-
-#include "layer.h"
-#include "socket.h"
-#include "stream.h"
-#include "timestamp.h"
-
 /**
  * Provides functions and structures required for communicating using the
  * Guacamole protocol over a guac_socket connection, such as that provided by
@@ -38,6 +31,13 @@
  *
  * @file protocol.h
  */
+
+#include "layer.h"
+#include "socket.h"
+#include "stream.h"
+#include "timestamp.h"
+
+#include <cairo/cairo.h>
 
 /**
  * Set of all possible status codes returned by protocol operations. These

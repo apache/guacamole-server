@@ -24,6 +24,10 @@
 #ifndef _GUAC_SSH_BLANK_H
 #define _GUAC_SSH_BLANK_H
 
+#include "config.h"
+
+#include "cursor.h"
+
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
 

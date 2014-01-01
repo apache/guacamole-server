@@ -20,16 +20,17 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_NANOSLEEP)
-#include <time.h>
-#endif
+#include "timestamp.h"
 
 #ifndef HAVE_CLOCK_GETTIME
 #include <sys/time.h>
 #endif
 
-#include "timestamp.h"
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_NANOSLEEP)
+#include <time.h>
+#endif
 
 guac_timestamp guac_timestamp_current() {
 

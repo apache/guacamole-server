@@ -24,10 +24,12 @@
 #ifndef _GUAC_SSH_KEY_H
 #define _GUAC_SSH_KEY_H
 
+#include "config.h"
+
+#include <openssl/dsa.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
-#include <openssl/dsa.h>
 #include <openssl/rsa.h>
 
 /**

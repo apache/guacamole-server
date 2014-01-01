@@ -24,17 +24,17 @@
 #ifndef _GUAC_SOCKET_H
 #define _GUAC_SOCKET_H
 
-#include <pthread.h>
-#include <stdint.h>
-#include <unistd.h>
-
-#include "timestamp.h"
-
 /**
  * Defines the guac_socket object and functionss for using and manipulating it.
  *
  * @file socket.h
  */
+
+#include "timestamp.h"
+
+#include <pthread.h>
+#include <stdint.h>
+#include <unistd.h>
 
 /**
  * The number of bytes to buffer within each socket before flushing.

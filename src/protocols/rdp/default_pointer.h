@@ -24,6 +24,8 @@
 #ifndef _GUAC_RDP_DEFAULT_POINTER_H
 #define _GUAC_RDP_DEFAULT_POINTER_H
 
+#include "config.h"
+
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
 

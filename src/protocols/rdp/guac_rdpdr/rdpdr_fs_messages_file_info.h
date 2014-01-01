@@ -31,13 +31,15 @@
  * @file rdpdr_fs_messages_file_info.h
  */
 
+#include "config.h"
+
+#include "rdpdr_service.h"
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include "rdpdr_service.h"
 
 /**
  * Processes a query for FileBasicInformation. From the documentation, this is

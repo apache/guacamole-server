@@ -20,26 +20,29 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
+#include "client.h"
+#include "guac_handlers.h"
+#include "rdp_cliprdr.h"
+#include "rdp_keymap.h"
+
+#include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <sys/select.h>
-#include <errno.h>
 
-#include <freerdp/freerdp.h>
-#include <freerdp/channels/channels.h>
-#include <freerdp/input.h>
-#include <freerdp/codec/color.h>
 #include <freerdp/cache/cache.h>
+#include <freerdp/channels/channels.h>
+#include <freerdp/codec/color.h>
+#include <freerdp/freerdp.h>
+#include <freerdp/input.h>
 #include <freerdp/utils/event.h>
-
-#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
-#include <freerdp/client/cliprdr.h>
-#else
-#include "compat/client-cliprdr.h"
-#endif
+#include <guacamole/client.h>
+#include <guacamole/error.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -47,15 +50,11 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
-#include <guacamole/client.h>
-#include <guacamole/error.h>
-
-#include "client.h"
-#include "rdp_keymap.h"
-#include "rdp_cliprdr.h"
-#include "guac_handlers.h"
+#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
+#include <freerdp/client/cliprdr.h>
+#else
+#include "compat/client-cliprdr.h"
+#endif
 
 void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, int from, int to);
 int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);

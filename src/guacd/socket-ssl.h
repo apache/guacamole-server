@@ -24,8 +24,10 @@
 #ifndef __GUACD_SOCKET_SSL_H
 #define __GUACD_SOCKET_SSL_H
 
-#include <openssl/ssl.h>
+#include "config.h"
+
 #include <guacamole/socket.h>
+#include <openssl/ssl.h>
 
 /**
  * SSL socket-specific data.

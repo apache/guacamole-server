@@ -20,10 +20,11 @@
  * THE SOFTWARE.
  */
 
-
-#include <CUnit/Basic.h>
+#include "config.h"
 
 #include "suite.h"
+
+#include <CUnit/Basic.h>
 
 int protocol_suite_init() {
     return 0;

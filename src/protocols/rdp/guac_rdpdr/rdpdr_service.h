@@ -24,16 +24,18 @@
 #ifndef __GUAC_RDPDR_SERVICE_H
 #define __GUAC_RDPDR_SERVICE_H
 
+#include "config.h"
+
 #include <pthread.h>
+
+#include <freerdp/utils/svc_plugin.h>
+#include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include <guacamole/client.h>
-#include <freerdp/utils/svc_plugin.h>
 
 /**
  * The maximum number of bytes to allow for a device read.

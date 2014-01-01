@@ -24,6 +24,8 @@
 #ifndef _GUAC_RDP_GUAC_HANDLERS_H
 #define _GUAC_RDP_GUAC_HANDLERS_H
 
+#include "config.h"
+
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 

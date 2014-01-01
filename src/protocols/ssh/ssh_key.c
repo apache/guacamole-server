@@ -20,6 +20,10 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "ssh_buffer.h"
+#include "ssh_key.h"
 
 #include <string.h>
 
@@ -27,9 +31,6 @@
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
-
-#include "ssh_buffer.h"
-#include "ssh_key.h"
 
 ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
 

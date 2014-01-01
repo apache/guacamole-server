@@ -21,6 +21,8 @@
  */
 
 
+#include "config.h"
+
 /**
  * Convert the given number of UTF-16 characters to UTF-8 characters.
  */

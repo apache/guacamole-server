@@ -20,14 +20,15 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <stdlib.h>
-
+#include "char_mappings.h"
 #include "common.h"
 #include "sftp.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
-#include "char_mappings.h"
+
+#include <stdlib.h>
 
 /**
  * Response string sent when identification is requested.

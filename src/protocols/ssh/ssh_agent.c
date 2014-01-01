@@ -20,23 +20,22 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "client.h"
+#include "ssh_agent.h"
+#include "ssh_buffer.h"
 
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
 
+#include <guacamole/client.h>
 #include <libssh2.h>
-
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
-
-#include <guacamole/client.h>
-
-#include "client.h"
-#include "ssh_agent.h"
-#include "ssh_buffer.h"
 
 void ssh_auth_agent_sign(ssh_auth_agent* agent, char* data, int data_length) {
 

@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
 #include "rdp_keymap.h"
 

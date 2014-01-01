@@ -20,18 +20,19 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <unistd.h>
+#include "suite.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <CUnit/Basic.h>
+#include <unistd.h>
 
+#include <CUnit/Basic.h>
 #include <guacamole/error.h>
 #include <guacamole/instruction.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
-
-#include "suite.h"
 
 void test_nest_write() {
 

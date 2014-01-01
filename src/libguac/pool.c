@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "pool.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-#include "pool.h"
 
 guac_pool* guac_pool_alloc(int size) {
 

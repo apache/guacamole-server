@@ -20,16 +20,17 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <stdlib.h>
+#include "error.h"
+
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #ifdef HAVE_LIBPTHREAD
 #include <pthread.h>
 #endif
-
-#include "error.h"
 
 /* Error strings */
 

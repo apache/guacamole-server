@@ -32,6 +32,8 @@
  * @file util_suite.h
  */
 
+#include "config.h"
+
 /**
  * A single Unicode character encoded as one byte with UTF-8.
  */

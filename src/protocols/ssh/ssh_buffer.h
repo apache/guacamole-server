@@ -24,8 +24,10 @@
 #ifndef _GUAC_SSH_BUFFER_H
 #define _GUAC_SSH_BUFFER_H
 
-#include <stdint.h>
+#include "config.h"
+
 #include <openssl/bn.h>
+#include <stdint.h>
 
 /**
  * Writes the given byte to the given buffer, advancing the buffer pointer by

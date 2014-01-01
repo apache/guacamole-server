@@ -35,9 +35,11 @@
  * @file rdp_fs.h 
  */
 
-#include <sys/types.h>
-#include <stdint.h>
+#include "config.h"
+
 #include <dirent.h>
+#include <stdint.h>
+#include <sys/types.h>
 
 #include <guacamole/pool.h>
 

@@ -35,9 +35,11 @@
  * @file rdpdr_fs.h 
  */
 
-#include <guacamole/pool.h>
+#include "config.h"
 
 #include "rdpdr_service.h"
+
+#include <guacamole/pool.h>
 
 /**
  * Registers a new filesystem device within the RDPDR plugin. This must be done

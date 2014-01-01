@@ -24,6 +24,8 @@
 #ifndef __GUAC_RDP_DEBUG_H
 #define __GUAC_RDP_DEBUG_H
 
+#include "config.h"
+
 #include <stdio.h>
 
 /* Ensure GUAC_RDP_DEBUG_LEVEL is defined to a constant */

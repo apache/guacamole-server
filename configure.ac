@@ -23,10 +23,12 @@
 AC_PREREQ([2.61])
 AC_INIT([guacamole-server], [0.8.3])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
+AM_SILENT_RULES([yes])
 
 LT_PREREQ([2.2])
 LT_INIT([dlopen])
 
+AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Programs
@@ -55,7 +57,8 @@ AC_CHECK_LIB([cairo], [cairo_create], [CAIRO_LIBS=-lcairo],
 
 # libpthread
 AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
-              AC_DEFINE([HAVE_LIBPTHREAD])])
+              AC_DEFINE([HAVE_LIBPTHREAD],,
+                        [Whether libpthread was found])])
 
 # cunit
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
@@ -73,11 +76,13 @@ AC_SUBST(CUNIT_LIBS)
 AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
 
 AC_CHECK_DECL([png_get_io_ptr],
-	[AC_DEFINE([HAVE_PNG_GET_IO_PTR])],,
+	[AC_DEFINE([HAVE_PNG_GET_IO_PTR],,
+               [Whether png_get_io_ptr() is defined])],,
 	[#include <png.h>])
 
 AC_CHECK_DECL([cairo_format_stride_for_width],
-	[AC_DEFINE([HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH])],,
+	[AC_DEFINE([HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH],,
+               [Whether cairo_format_stride_for_width() is defined])],,
 	[#include <cairo/cairo.h>])
 
 # Typedefs
@@ -120,7 +125,7 @@ then
    guacd will not support SSL connections.
   --------------------------------------------])
 else
-    AC_DEFINE([ENABLE_SSL])
+    AC_DEFINE([ENABLE_SSL],, [Whether SSL-related support is enabled])
 fi
 
 AC_SUBST(SSL_LIBS)
@@ -147,7 +152,8 @@ then
    Sound will not be encoded with Ogg Vorbis.
   --------------------------------------------])
 else
-    AC_DEFINE([ENABLE_OGG])
+    AC_DEFINE([ENABLE_OGG],,
+              [Whether support for Ogg Vorbis is enabled])
 fi
 
 AC_SUBST(VORBIS_LIBS)
@@ -170,7 +176,7 @@ then
    Sound support for VNC will be disabled
   --------------------------------------------])
 else
-    AC_DEFINE([ENABLE_PULSE])
+    AC_DEFINE([ENABLE_PULSE],, [Whether PulseAudio support is enabled])
 fi
 
 AC_SUBST(PULSE_LIBS)
@@ -215,7 +221,8 @@ then
        Support for VNC repeaters will not be built.
       --------------------------------------------])
     else
-        AC_DEFINE([ENABLE_VNC_REPEATER])
+        AC_DEFINE([ENABLE_VNC_REPEATER],,
+                  [Whether support for VNC repeaters is enabled.])
     fi
 
 fi
@@ -240,7 +247,8 @@ then
        Support for listen-mode connections will not be built.
       --------------------------------------------])
     else
-        AC_DEFINE([ENABLE_VNC_LISTEN])
+        AC_DEFINE([ENABLE_VNC_LISTEN],,
+                  [Whether support for listen-mode VNC connections is enabled.])
     fi
 
 fi
@@ -342,7 +350,8 @@ AC_CHECK_HEADERS([freerdp/client/cliprdr.h],,
                   #include <winpr/collections.h>])
 
 AC_CHECK_DECL([freerdp_register_addin_provider],
-	[AC_DEFINE([HAVE_FREERDP_REGISTER_ADDIN_PROVIDER])],,
+	[AC_DEFINE([HAVE_FREERDP_REGISTER_ADDIN_PROVIDER],,
+               [Whether freerdp_register_addin_provider() is defined])],,
 	[#include <freerdp/addin.h>])
 
 #
@@ -374,7 +383,8 @@ AC_CHECK_HEADER(winpr/wtypes.h,,
 
 if test "x${have_winpr}" = "xyes"
 then
-    AC_DEFINE([ENABLE_WINPR])
+    AC_DEFINE([ENABLE_WINPR],,
+              [Whether library support for WinPR types was found])
 fi
 
 #
@@ -396,7 +406,8 @@ fi
 
 # Set defines based on interface type, warn if unknown
 if test "x${freerdp_interface}" = "xlegacy"; then
-    AC_DEFINE([LEGACY_FREERDP])
+    AC_DEFINE([LEGACY_FREERDP],,
+              [Whether the older version of the FreeRDP API was found])
 elif test "x${freerdp_interface}" = "xunknown"; then
     AC_MSG_WARN([
   --------------------------------------------
@@ -431,7 +442,8 @@ fi
 
 # Set defines based on interface type, warn if unknown
 if test "x${rdpsettings_interface}" = "xlegacy"; then
-    AC_DEFINE([LEGACY_RDPSETTINGS])
+    AC_DEFINE([LEGACY_RDPSETTINGS],,
+              [Whether the legacy version of the rdpSettings API was found])
 
     # Legacy interface may not have FastPath settings
     AC_CHECK_MEMBERS([rdpSettings.fast_path_input,
@@ -450,7 +462,8 @@ fi
 
 # Activate FastPath settings if present
 if test "x${rdpsettings_fastpath}" = "xyes"; then
-    AC_DEFINE([HAVE_RDPSETTINGS_FASTPATH])
+    AC_DEFINE([HAVE_RDPSETTINGS_FASTPATH],,
+              [Whether the rdpSettings structure has FastPath settings])
 fi
 
 #
@@ -472,7 +485,8 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
                                     rdpBitmap b = { .Decompress = __decompress };]])],
                   [AC_MSG_RESULT([yes])],
                   [AC_MSG_RESULT([no])
-                   AC_DEFINE([LEGACY_RDPBITMAP])])
+                   AC_DEFINE([LEGACY_RDPBITMAP],,
+                             [Whether the legacy rdpBitmap API was found])])
 
 #
 # FreeRDP: rdpPalette
@@ -484,7 +498,8 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <freerdp/update.h>
                                     PALETTE_ENTRY* foo = p.entries;]])],
                   [AC_MSG_RESULT([yes])],
                   [AC_MSG_RESULT([no])
-                   AC_DEFINE([LEGACY_RDPPALETTE])])
+                   AC_DEFINE([LEGACY_RDPPALETTE],,
+                             [Whether the legacy rdpPalette API was found])])
 
 #
 # FreeRDP: rdpPointer
@@ -515,7 +530,8 @@ fi
 
 # Set defines based on interface type, warn if unknown
 if test "x${event_interface}" = "xlegacy"; then
-    AC_DEFINE([LEGACY_EVENT])
+    AC_DEFINE([LEGACY_EVENT],,
+              [Whether the legacy RDP_EVENT API was found])
 elif test "x${event_interface}" = "xunknown"; then
     AC_MSG_WARN([
   --------------------------------------------
@@ -574,7 +590,8 @@ then
            in libssh2.
           --------------------------------------------])
         else
-            AC_DEFINE([ENABLE_SSH_AGENT])
+            AC_DEFINE([ENABLE_SSH_AGENT],,
+                      [Whether agent forwarding support for SSH is enabled])
         fi
     fi
 

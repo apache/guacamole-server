@@ -24,13 +24,15 @@
 #ifndef __GUAC_RDPDR_PRINTER_H
 #define __GUAC_RDPDR_PRINTER_H
 
+#include "config.h"
+
+#include <freerdp/utils/svc_plugin.h>
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include <freerdp/utils/svc_plugin.h>
 
 /**
  * Data specific to an instance of the printer device.

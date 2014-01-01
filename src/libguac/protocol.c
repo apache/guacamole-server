@@ -20,23 +20,7 @@
  * THE SOFTWARE.
  */
 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <string.h>
-#include <errno.h>
-
-#ifdef HAVE_PNGSTRUCT_H
-#include <pngstruct.h>
-#endif
-
-#include <png.h>
-
-#include <cairo/cairo.h>
-
-#include <sys/types.h>
+#include "config.h"
 
 #include "error.h"
 #include "layer.h"
@@ -44,6 +28,21 @@
 #include "protocol.h"
 #include "socket.h"
 #include "unicode.h"
+
+#include <errno.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+
+#include <png.h>
+#include <cairo/cairo.h>
+
+#ifdef HAVE_PNGSTRUCT_H
+#include <pngstruct.h>
+#endif
 
 /* Output formatting functions */
 

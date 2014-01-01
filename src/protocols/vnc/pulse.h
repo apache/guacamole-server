@@ -24,6 +24,8 @@
 #ifndef __GUAC_VNC_PULSE_H
 #define __GUAC_VNC_PULSE_H
 
+#include "config.h"
+
 /**
  * The number of bytes to request for the audio fragments received from
  * PulseAudio.

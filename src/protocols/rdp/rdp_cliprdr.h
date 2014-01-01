@@ -24,13 +24,21 @@
 #ifndef __GUAC_RDP_RDP_CLIPRDR_H
 #define __GUAC_RDP_RDP_CLIPRDR_H
 
+#include "config.h"
+
+#include <freerdp/freerdp.h>
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
 
-#include <freerdp/freerdp.h>
+#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
+#include <freerdp/client/cliprdr.h>
+#else
+#include "compat/client-cliprdr.h"
+#endif
 
 void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event);
 void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event);

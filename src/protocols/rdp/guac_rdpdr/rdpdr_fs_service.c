@@ -21,22 +21,23 @@
  */
 
 
+#include "config.h"
+
+#include "client.h"
+#include "rdpdr_fs_messages.h"
+#include "rdpdr_messages.h"
+#include "rdpdr_service.h"
+#include "rdp_fs.h"
+#include "unicode.h"
+
+#include <freerdp/utils/svc_plugin.h>
+#include <guacamole/pool.h>
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include <guacamole/pool.h>
-
-#include "rdp_fs.h"
-#include "rdpdr_fs_messages.h"
-#include "rdpdr_messages.h"
-#include "rdpdr_service.h"
-#include "client.h"
-#include "unicode.h"
-
-#include <freerdp/utils/svc_plugin.h>
 
 static void guac_rdpdr_device_fs_announce_handler(guac_rdpdr_device* device,
         wStream* output_stream, int device_id) {

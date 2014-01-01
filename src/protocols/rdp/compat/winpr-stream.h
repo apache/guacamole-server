@@ -24,8 +24,11 @@
 #ifndef __GUAC_WINPR_STREAM_COMPAT_H
 #define __GUAC_WINPR_STREAM_COMPAT_H
 
-#include <freerdp/utils/stream.h>
+#include "config.h"
+
 #include "winpr-wtypes.h"
+
+#include <freerdp/utils/stream.h>
 
 /* FreeRDP 1.0 streams */
 

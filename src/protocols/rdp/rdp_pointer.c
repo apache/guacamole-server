@@ -20,15 +20,16 @@
  * THE SOFTWARE.
  */
 
-
-#include <pthread.h>
-#include <freerdp/freerdp.h>
-
-#include <guacamole/client.h>
+#include "config.h"
 
 #include "client.h"
-#include "rdp_pointer.h"
 #include "default_pointer.h"
+#include "rdp_pointer.h"
+
+#include <pthread.h>
+
+#include <freerdp/freerdp.h>
+#include <guacamole/client.h>
 
 void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 

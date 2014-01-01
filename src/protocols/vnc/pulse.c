@@ -20,14 +20,14 @@
  * THE SOFTWARE.
  */
 
-
-#include <guacamole/audio.h>
-#include <guacamole/client.h>
-
-#include <pulse/pulseaudio.h>
+#include "config.h"
 
 #include "client.h"
 #include "pulse.h"
+
+#include <guacamole/audio.h>
+#include <guacamole/client.h>
+#include <pulse/pulseaudio.h>
 
 static void __stream_read_callback(pa_stream* stream, size_t length,
         void* data) {

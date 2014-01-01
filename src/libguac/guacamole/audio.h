@@ -24,14 +24,14 @@
 #ifndef __GUAC_AUDIO_H
 #define __GUAC_AUDIO_H
 
-#include <guacamole/client.h>
-#include <guacamole/stream.h>
-
 /**
  * Provides functions and structures used for providing simple streaming audio.
  *
  * @file audio.h
  */
+
+#include <guacamole/client.h>
+#include <guacamole/stream.h>
 
 typedef struct guac_audio_stream guac_audio_stream;
 

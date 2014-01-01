@@ -24,6 +24,8 @@
 #ifndef _SSH_GUAC_COMMON_H
 #define _SSH_GUAC_COMMON_H
 
+#include "config.h"
+
 #include <stdbool.h>
 
 /**

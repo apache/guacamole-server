@@ -20,13 +20,14 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "cursor.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
-
-#include "cursor.h"
 
 guac_ssh_cursor* guac_ssh_create_blank(guac_client* client) {
 

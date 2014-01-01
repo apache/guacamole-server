@@ -24,6 +24,8 @@
 #ifndef _SSH_GUAC_BUFFER_H
 #define _SSH_GUAC_BUFFER_H
 
+#include "config.h"
+
 #include "types.h"
 
 /**

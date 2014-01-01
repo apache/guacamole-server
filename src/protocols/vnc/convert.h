@@ -24,6 +24,8 @@
 #ifndef __GUAC_VNC_VNC_CONVERT_H
 #define __GUAC_VNC_VNC_CONVERT_H
 
+#include "config.h"
+
 #include <iconv.h>
 
 /**

@@ -24,16 +24,18 @@
 #ifndef _GUAC_RDP_RDP_KEYMAP_H
 #define _GUAC_RDP_RDP_KEYMAP_H
 
-#ifdef HAVE_FREERDP_LOCALE_KEYBOARD_H
-#include <freerdp/locale/keyboard.h>
-#else
-#include <freerdp/kbd/layouts.h>
-#endif
+#include "config.h"
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
 #else
 #include "compat/winpr-wtypes.h"
+#endif
+
+#ifdef HAVE_FREERDP_LOCALE_KEYBOARD_H
+#include <freerdp/locale/keyboard.h>
+#else
+#include <freerdp/kbd/layouts.h>
 #endif
 
 /**

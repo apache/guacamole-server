@@ -24,6 +24,8 @@
 #ifndef __SSH_CLIENT_H
 #define __SSH_CLIENT_H
 
+#include "config.h"
+
 #include <guacamole/client.h>
 
 /**

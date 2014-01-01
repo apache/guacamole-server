@@ -20,34 +20,40 @@
  * THE SOFTWARE.
  */
 
-
 #define _XOPEN_SOURCE 500
 
+#include "config.h"
+
+#include "client.h"
+#include "default_pointer.h"
+#include "guac_handlers.h"
+#include "rdp_bitmap.h"
+#include "rdp_gdi.h"
+#include "rdp_glyph.h"
+#include "rdp_keymap.h"
+#include "rdp_pointer.h"
+
+#include <errno.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
-
 #include <sys/select.h>
-#include <errno.h>
 
-#include <freerdp/freerdp.h>
 #include <freerdp/cache/bitmap.h>
 #include <freerdp/cache/brush.h>
 #include <freerdp/cache/glyph.h>
+#include <freerdp/cache/offscreen.h>
 #include <freerdp/cache/palette.h>
 #include <freerdp/cache/pointer.h>
-#include <freerdp/cache/offscreen.h>
 #include <freerdp/channels/channels.h>
-#include <freerdp/input.h>
 #include <freerdp/constants.h>
-
-#ifdef HAVE_FREERDP_CLIENT_CHANNELS_H
-#include <freerdp/client/channels.h>
-#endif
-
-#ifdef HAVE_FREERDP_ADDIN_H
-#include <freerdp/addin.h>
-#endif
+#include <freerdp/freerdp.h>
+#include <freerdp/input.h>
+#include <guacamole/audio.h>
+#include <guacamole/client.h>
+#include <guacamole/error.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -55,20 +61,13 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
-#include <guacamole/client.h>
-#include <guacamole/audio.h>
-#include <guacamole/error.h>
+#ifdef HAVE_FREERDP_ADDIN_H
+#include <freerdp/addin.h>
+#endif
 
-#include "client.h"
-#include "guac_handlers.h"
-#include "rdp_keymap.h"
-#include "rdp_bitmap.h"
-#include "rdp_glyph.h"
-#include "rdp_pointer.h"
-#include "rdp_gdi.h"
-#include "default_pointer.h"
+#ifdef HAVE_FREERDP_CLIENT_CHANNELS_H
+#include <freerdp/client/channels.h>
+#endif
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {

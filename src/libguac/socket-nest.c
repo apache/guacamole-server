@@ -20,28 +20,28 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
+#include "error.h"
+#include "protocol.h"
+#include "socket.h"
+#include "unicode.h"
+
+#include <fcntl.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
 
 #ifdef __MINGW32__
 #include <winsock2.h>
 #else
 #include <sys/select.h>
 #endif
-
-#include <time.h>
-#include <sys/time.h>
-
-#include "socket.h"
-#include "protocol.h"
-#include "error.h"
-#include "unicode.h"
 
 #define GUAC_SOCKET_NEST_BUFFER_SIZE 8192
 

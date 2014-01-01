@@ -24,6 +24,8 @@
 #ifndef _GUAC_RDP_RDP_POINTER_H
 #define _GUAC_RDP_RDP_POINTER_H
 
+#include "config.h"
+
 #include <freerdp/freerdp.h>
 
 #include <guacamole/protocol.h>

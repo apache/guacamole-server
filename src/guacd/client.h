@@ -24,6 +24,10 @@
 #ifndef _GUACD_CLIENT_H
 #define _GUACD_CLIENT_H
 
+#include "config.h"
+
+#include <guacamole/client.h>
+
 /**
  * The time to allow between sync responses in milliseconds. If a sync
  * instruction is sent to the client and no response is received within this

@@ -20,10 +20,11 @@
  * THE SOFTWARE.
  */
 
-
-#include <freerdp/input.h>
+#include "config.h"
 
 #include "rdp_keymap.h"
+
+#include <freerdp/input.h>
 
 static guac_rdp_keysym_desc __guac_rdp_keymap_mapping[] = {
 

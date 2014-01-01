@@ -24,6 +24,8 @@
 #ifndef _GUAC_SSH_CHAR_MAPPINGS_H
 #define _GUAC_SSH_CHAR_MAPPINGS_H
 
+#include "config.h"
+
 /**
  * VT100 graphics mapping. Each entry is the corresponding Unicode codepoint
  * for the character N+32, where N is the index of the element in the array.

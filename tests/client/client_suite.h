@@ -24,6 +24,8 @@
 #ifndef _GUAC_TEST_CLIENT_SUITE_H
 #define _GUAC_TEST_CLIENT_SUITE_H
 
+#include "config.h"
+
 int register_client_suite();
 
 void test_layer_pool();

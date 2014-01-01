@@ -24,8 +24,10 @@
 #ifndef __GUAC_VNC_CLIENT_H
 #define __GUAC_VNC_CLIENT_H
 
-#include <guacamole/client.h>
+#include "config.h"
+
 #include <guacamole/audio.h>
+#include <guacamole/client.h>
 #include <rfb/rfbclient.h>
 
 #ifdef ENABLE_PULSE

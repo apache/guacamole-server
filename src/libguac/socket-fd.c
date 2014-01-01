@@ -20,26 +20,26 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
+#include "error.h"
+#include "socket.h"
+
+#include <fcntl.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
 
 #ifdef __MINGW32__
 #include <winsock2.h>
 #else
 #include <sys/select.h>
 #endif
-
-#include <time.h>
-#include <sys/time.h>
-
-#include "socket.h"
-#include "error.h"
 
 typedef struct __guac_socket_fd_data {
 

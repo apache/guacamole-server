@@ -20,12 +20,21 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "client.h"
+#include "debug.h"
+#include "rdpdr_fs_service.h"
+#include "rdpdr_messages.h"
+#include "rdpdr_printer.h"
+#include "rdpdr_service.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include <freerdp/constants.h>
 #include <freerdp/utils/svc_plugin.h>
+#include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -34,16 +43,6 @@
 #include "compat/winpr-stream.h"
 #include "compat/winpr-wtypes.h"
 #endif
-
-#include <guacamole/client.h>
-
-#include "rdpdr_service.h"
-#include "rdpdr_messages.h"
-#include "rdpdr_printer.h"
-#include "rdpdr_fs_service.h"
-
-#include "client.h"
-#include "debug.h"
 
 /**
  * Entry point for RDPDR virtual channel.

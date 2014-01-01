@@ -20,10 +20,11 @@
  * THE SOFTWARE.
  */
 
-
-#include <stddef.h>
+#include "config.h"
 
 #include "unicode.h"
+
+#include <stddef.h>
 
 size_t guac_utf8_charsize(unsigned char c) {
 

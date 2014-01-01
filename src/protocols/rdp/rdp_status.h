@@ -30,6 +30,8 @@
  * @file rdp_status.h 
  */
 
+#include "config.h"
+
 #define STATUS_SUCCESS                  0x00000000
 #define STATUS_NO_MORE_FILES            0x80000006
 #define STATUS_DEVICE_OFF_LINE          0x80000010

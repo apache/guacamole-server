@@ -20,29 +20,28 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
+#include "client.h"
+#include "rdp_bitmap.h"
+
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #include <cairo/cairo.h>
-
-#include <guacamole/socket.h>
+#include <freerdp/codec/bitmap.h>
+#include <freerdp/codec/color.h>
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
-
-#include <freerdp/freerdp.h>
-#include <freerdp/codec/color.h>
-#include <freerdp/codec/bitmap.h>
+#include <guacamole/socket.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
 #else
 #include "compat/winpr-wtypes.h"
 #endif
-
-#include "client.h"
-#include "rdp_bitmap.h"
 
 void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 

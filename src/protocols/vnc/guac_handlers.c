@@ -20,18 +20,18 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "client.h"
+#include "convert.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <iconv.h>
 
-#include <rfb/rfbclient.h>
-
 #include <guacamole/client.h>
-
-#include "client.h"
-#include "convert.h"
+#include <rfb/rfbclient.h>
 
 #ifdef ENABLE_PULSE
 #include "pulse.h"

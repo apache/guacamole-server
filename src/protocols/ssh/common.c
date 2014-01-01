@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
 #include <stdbool.h>
 #include <unistd.h>

@@ -20,15 +20,16 @@
  * THE SOFTWARE.
  */
 
-
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <CUnit/Basic.h>
-
-#include <guacamole/protocol.h>
+#include "config.h"
 
 #include "suite.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include <CUnit/Basic.h>
+#include <guacamole/protocol.h>
 
 void test_base64_decode() {
 

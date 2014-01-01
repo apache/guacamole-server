@@ -20,16 +20,16 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "socket-ssl.h"
 
 #include <stdlib.h>
 #include <sys/select.h>
 
-#include <openssl/ssl.h>
-
-#include <guacamole/socket.h>
 #include <guacamole/error.h>
-
-#include "socket-ssl.h"
+#include <guacamole/socket.h>
+#include <openssl/ssl.h>
 
 static ssize_t __guac_socket_ssl_read_handler(guac_socket* socket,
         void* buf, size_t count) {

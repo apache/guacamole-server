@@ -20,9 +20,11 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
 #include <stdint.h>
 #include <string.h>
+
 #include <cairo/cairo.h>
 
 /*

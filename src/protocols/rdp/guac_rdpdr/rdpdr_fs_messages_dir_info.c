@@ -20,21 +20,22 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "debug.h"
+#include "rdpdr_messages.h"
+#include "rdpdr_service.h"
+#include "rdp_fs.h"
+#include "rdp_status.h"
+#include "unicode.h"
+
+#include <guacamole/unicode.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include <guacamole/unicode.h>
-
-#include "rdpdr_service.h"
-#include "rdpdr_messages.h"
-#include "rdp_fs.h"
-#include "rdp_status.h"
-#include "debug.h"
-#include "unicode.h"
 
 void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
         const char* entry_name, int file_id, int completion_id) {

@@ -32,13 +32,15 @@
  * @file rdpdr_fs_messages_vol_info.h
  */
 
+#include "config.h"
+
+#include "rdpdr_service.h"
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include "rdpdr_service.h"
 
 /**
  * Processes a query request for FileFsVolumeInformation. According to the

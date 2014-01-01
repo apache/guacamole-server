@@ -24,8 +24,10 @@
 #ifndef _GUAC_RDP_RDP_GDI_H
 #define _GUAC_RDP_RDP_GDI_H
 
-#include <guacamole/protocol.h>
+#include "config.h"
+
 #include <freerdp/freerdp.h>
+#include <guacamole/protocol.h>
 
 guac_composite_mode guac_rdp_rop3_transfer_function(guac_client* client,
         int rop3);

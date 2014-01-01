@@ -20,22 +20,21 @@
  * THE SOFTWARE.
  */
 
-
-#include <stdlib.h>
-#include <time.h>
-#include <syslog.h>
-#include <iconv.h>
-
-#include <cairo/cairo.h>
-
-#include <rfb/rfbclient.h>
-
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
-#include <guacamole/client.h>
+#include "config.h"
 
 #include "client.h"
 #include "convert.h"
+
+#include <iconv.h>
+#include <stdlib.h>
+#include <syslog.h>
+#include <time.h>
+
+#include <cairo/cairo.h>
+#include <rfb/rfbclient.h>
+#include <guacamole/socket.h>
+#include <guacamole/protocol.h>
+#include <guacamole/client.h>
 
 /* Define cairo_format_stride_for_width() if missing */
 #ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH

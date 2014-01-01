@@ -20,13 +20,14 @@
  * THE SOFTWARE.
  */
 
-
-#include <stdlib.h>
-#include <stdio.h>
+#include "config.h"
 
 #include "client.h"
-#include "protocol.h"
 #include "client-handlers.h"
+#include "protocol.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Guacamole instruction handler map */
 

@@ -24,6 +24,8 @@
 #ifndef _GUAC_TEST_PROTOCOL_SUITE_H
 #define _GUAC_TEST_PROTOCOL_SUITE_H
 
+#include "config.h"
+
 /* Unicode (UTF-8) strings */
 
 #define UTF8_1 "\xe7\x8a\xac"            /* One character    */

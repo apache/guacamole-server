@@ -20,24 +20,25 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/statvfs.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <fnmatch.h>
-#include <errno.h>
-
-#include <guacamole/pool.h>
-
+#include "debug.h"
 #include "rdp_fs.h"
 #include "rdp_status.h"
-#include "debug.h"
 #include "unicode.h"
+
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <fnmatch.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <guacamole/pool.h>
 
 guac_rdp_fs* guac_rdp_fs_alloc(const char* drive_path) {
 

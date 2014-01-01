@@ -24,13 +24,13 @@
 #ifndef _GUAC_TIME_H
 #define _GUAC_TIME_H
 
-#include <stdint.h>
-
 /**
  * Provides functions and structures for creating timestamps.
  *
  * @file timestamp.h
  */
+
+#include <stdint.h>
 
 /**
  * An arbitrary timestamp denoting a relative time value in milliseconds.

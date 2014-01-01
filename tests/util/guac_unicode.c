@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "util_suite.h"
 
 #include <CUnit/Basic.h>
-
 #include <guacamole/unicode.h>
-#include "util_suite.h"
 
 void test_guac_unicode() {
 

@@ -20,16 +20,16 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <freerdp/freerdp.h>
+#include "client.h"
+#include "rdp_cliprdr.h"
+
 #include <freerdp/channels/channels.h>
+#include <freerdp/freerdp.h>
 #include <freerdp/utils/event.h>
-
-#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
-#include <freerdp/client/cliprdr.h>
-#else
-#include "compat/client-cliprdr.h"
-#endif
+#include <guacamole/client.h>
+#include <guacamole/protocol.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -37,11 +37,11 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
-#include <guacamole/client.h>
-#include <guacamole/protocol.h>
-
-#include "client.h"
-#include "rdp_cliprdr.h"
+#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
+#include <freerdp/client/cliprdr.h>
+#else
+#include "compat/client-cliprdr.h"
+#endif
 
 void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event) {
 

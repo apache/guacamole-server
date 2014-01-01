@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
+#include <errno.h>
+#include <iconv.h>
 #include <stdlib.h>
 #include <string.h>
-#include <iconv.h>
-#include <errno.h>
 
 char* convert(const char* from_charset, const char* to_charset, const char* input) {
     size_t input_remaining;

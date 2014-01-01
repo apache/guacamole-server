@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
 #include <errno.h>
-#include <syslog.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <syslog.h>
 #include <sys/types.h>
 #include <unistd.h>
 

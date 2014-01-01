@@ -32,15 +32,17 @@
  * @file rdpdr_fs_messages.h
  */
 
+#include "config.h"
+
+#include "rdpdr_service.h"
+
+#include <guacamole/pool.h>
+
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include <guacamole/pool.h>
-
-#include "rdpdr_service.h"
 
 /**
  * Handles a Server Create Drive Request. Despite its name, this request opens

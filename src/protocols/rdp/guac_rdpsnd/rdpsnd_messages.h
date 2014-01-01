@@ -24,6 +24,10 @@
 #ifndef __GUAC_RDPSND_MESSAGES_H
 #define __GUAC_RDPSND_MESSAGES_H
 
+#include "config.h"
+
+#include "rdpsnd_service.h"
+
 #include <guacamole/audio.h>
 
 /*

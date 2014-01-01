@@ -20,23 +20,24 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
+#include "blank.h"
+#include "client.h"
+#include "guac_handlers.h"
+#include "ibar.h"
+#include "ssh_client.h"
+#include "terminal.h"
+
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
 #include <guacamole/client.h>
 #include <guacamole/error.h>
-
-#include "client.h"
-#include "guac_handlers.h"
-#include "terminal.h"
-#include "blank.h"
-#include "ibar.h"
-#include "ssh_client.h"
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #define GUAC_SSH_DEFAULT_FONT_NAME "monospace" 
 #define GUAC_SSH_DEFAULT_FONT_SIZE 12

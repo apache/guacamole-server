@@ -20,28 +20,26 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#include <sys/select.h>
-#include <sys/stat.h>
+#include "client.h"
+#include "common.h"
+#include "cursor.h"
+#include "guac_handlers.h"
+
 #include <fcntl.h>
-
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
+#include <sys/stat.h>
 
 #include <cairo/cairo.h>
-#include <pango/pangocairo.h>
-
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 #include <guacamole/error.h>
-
 #include <libssh2.h>
-
-#include "guac_handlers.h"
-#include "client.h"
-#include "common.h"
-#include "cursor.h"
+#include <pango/pangocairo.h>
 
 int ssh_guac_client_handle_messages(guac_client* client) {
 

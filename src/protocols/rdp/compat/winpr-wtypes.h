@@ -24,6 +24,8 @@
 #ifndef __GUAC_WINPR_WTYPES_COMPAT_H
 #define __GUAC_WINPR_WTYPES_COMPAT_H
 
+#include "config.h"
+
 #include <freerdp/types.h>
 
 typedef uint8   BYTE;

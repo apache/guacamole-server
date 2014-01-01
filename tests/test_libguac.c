@@ -20,12 +20,13 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
+
+#include "client/client_suite.h"
+#include "protocol/suite.h"
+#include "util/util_suite.h"
 
 #include <CUnit/Basic.h>
-
-#include "protocol/suite.h"
-#include "client/client_suite.h"
-#include "util/util_suite.h"
 
 int main() {
 

@@ -20,11 +20,7 @@
  * THE SOFTWARE.
  */
 
-
-#include <dlfcn.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "config.h"
 
 #include "client.h"
 #include "client-handlers.h"
@@ -33,6 +29,11 @@
 #include "protocol.h"
 #include "socket.h"
 #include "time.h"
+
+#include <dlfcn.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 guac_client_plugin* guac_client_plugin_open(const char* protocol) {
 

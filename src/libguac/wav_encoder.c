@@ -20,8 +20,9 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 
-#define WAV_BUFFER_SIZE 0x4000
+#include "wav_encoder.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +31,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 
-#include "wav_encoder.h"
+#define WAV_BUFFER_SIZE 0x4000
 
 void wav_encoder_begin_handler(guac_audio_stream* audio) {
 

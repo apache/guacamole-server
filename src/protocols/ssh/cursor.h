@@ -24,6 +24,8 @@
 #ifndef _GUAC_SSH_CURSOR_H
 #define _GUAC_SSH_CURSOR_H
 
+#include "config.h"
+
 #include <guacamole/client.h>
 
 typedef struct guac_ssh_cursor {

@@ -24,14 +24,17 @@
 #ifndef _SSH_GUAC_CLIENT_H
 #define _SSH_GUAC_CLIENT_H
 
-#include <pthread.h>
-#include <libssh2.h>
-#include <libssh2_sftp.h>
+#include "config.h"
 
-#include "terminal.h"
 #include "cursor.h"
 #include "sftp.h"
 #include "ssh_key.h"
+#include "terminal.h"
+
+#include <pthread.h>
+
+#include <libssh2.h>
+#include <libssh2_sftp.h>
 
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"

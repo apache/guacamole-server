@@ -24,10 +24,12 @@
 #ifndef _SSH_GUAC_DISPLAY_H
 #define _SSH_GUAC_DISPLAY_H
 
-#include <pango/pangocairo.h>
-#include <guacamole/client.h>
+#include "config.h"
 
 #include "types.h"
+
+#include <guacamole/client.h>
+#include <pango/pangocairo.h>
 
 /**
  * The available color palette. All integer colors within structures
