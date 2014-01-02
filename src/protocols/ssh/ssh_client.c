@@ -457,6 +457,9 @@ void* ssh_client_thread(void* data) {
             total_read += bytes_read;
         }
 
+        else if (bytes_read < 0 && bytes_read != LIBSSH2_ERROR_EAGAIN)
+            break;
+
 #ifdef ENABLE_SSH_AGENT
         /* If agent open, handle any agent packets */
         if (client_data->auth_agent != NULL) {
@@ -486,7 +489,8 @@ void* ssh_client_thread(void* data) {
 
     }
 
-    /* Wait for input thread to die */
+    /* Kill client and Wait for input thread to die */
+    guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
     guac_client_log_info(client, "SSH connection ended.");
