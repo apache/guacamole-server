@@ -32,6 +32,7 @@ libguac_client_vnc_la_SOURCES = \
     convert.c                   \
     dot_cursor.c                \
     guac_handlers.c             \
+    pointer_cursor.c            \
     vnc_handlers.c              
     
 noinst_HEADERS =      \
@@ -39,6 +40,7 @@ noinst_HEADERS =      \
     convert.h         \
     dot_cursor.h      \
     guac_handlers.h   \
+    pointer_cursor.h  \
     vnc_handlers.h    
 
 # Optional PulseAudio support
