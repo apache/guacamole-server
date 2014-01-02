@@ -30,14 +30,14 @@ lib_LTLIBRARIES = libguac-client-vnc.la
 libguac_client_vnc_la_SOURCES = \
     client.c                    \
     convert.c                   \
-    default_pointer.c           \
+    dot_cursor.c                \
     guac_handlers.c             \
     vnc_handlers.c              
     
 noinst_HEADERS =      \
     client.h          \
     convert.h         \
-    default_pointer.h \
+    dot_cursor.h      \
     guac_handlers.h   \
     vnc_handlers.h    
 
