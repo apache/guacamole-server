@@ -34,6 +34,18 @@ sub keymap_symbol {
     return 'guac_rdp_keymap_' . $_;
 }
 
+sub keymap_file {
+    my $_ = shift;
+    s/-/_/g;
+    return 'rdp_keymap_' . $_;
+}
+
+@keymaps = ();
+
+#
+# rdp_keymap_*.c
+#
+
 for $filename (@ARGV) {
 
     # Header
@@ -235,11 +247,68 @@ for $filename (@ARGV) {
     $src .= '    .mapping = __keymap'                            . "\n"
           . '};'                                                 . "\n";
 
+    $keymaps[++$#keymaps] = $layout_name;
+    $filename = keymap_file($layout_name) . '.c';
+
     # Write output
-    open OUTPUT, ">", "$keymap_sym.c";
+    open OUTPUT, ">", "$filename";
     print OUTPUT "$src";
     close OUTPUT;
-    print STDERR "Generated \"$keymap_sym.c\".\n";
+    print STDERR "Generated \"$filename\".\n";
 
 }
 
+#
+# rdp_keymaps.h
+#
+
+print STDERR "Writing main keymap header... (\"rdp_keymaps.h\")\n";
+open OUTPUT, ">", "rdp_keymaps.h";
+
+# Header
+print OUTPUT
+      '#ifndef _GUAC_RDP_KEYMAPS'                         . "\n"
+    . '#define _GUAC_RDP_KEYMAPS'                         . "\n"
+    .                                                       "\n"
+    . '#include "rdp_keymap.h"'                           . "\n"
+    .                                                       "\n"
+    . 'extern const guac_rdp_keymap* guac_rdp_keymaps[];' . "\n";
+
+# Write list of keymaps
+foreach $keymap (@keymaps) {
+    $sym = keymap_symbol($keymap);
+    print OUTPUT "extern const guac_rdp_keymap $sym;\n";
+}
+
+# Footer
+print OUTPUT
+                                                            "\n"
+    . '#endif'                                            . "\n";
+
+close OUTPUT;
+
+#
+# rdp_keymaps.c
+#
+
+print STDERR "Writing main keymap source... (\"rdp_keymaps.c\")\n";
+open OUTPUT, ">", "rdp_keymaps.c";
+
+# Header
+print OUTPUT
+      '#include "rdp_keymaps.h"'                      . "\n"
+    .                                                   "\n"
+    . 'const guac_rdp_keymap* guac_rdp_keymaps[] = {' . "\n";
+
+# Write list of keymaps
+foreach $keymap (@keymaps) {
+    $sym = keymap_symbol($keymap);
+    print OUTPUT "    &$sym,\n";
+}
+
+# Footer
+print OUTPUT
+      '    NULL' . "\n"
+    . '};'       . "\n";
+
+close OUTPUT;
