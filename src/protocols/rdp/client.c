@@ -575,7 +575,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             guac_rdp_keymap_find(argv[IDX_SERVER_LAYOUT]);
 
     /* If no keymap requested, use default */
-    if (settings->server_layout == NULL);
+    if (settings->server_layout == NULL)
         settings->server_layout = guac_rdp_keymap_find(GUAC_DEFAULT_KEYMAP);
 
     /* Load keymap into client */
