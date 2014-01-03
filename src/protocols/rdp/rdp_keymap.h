@@ -134,6 +134,11 @@ typedef int guac_rdp_keysym_state_map[0x200][0x100];
         )
 
 /**
+ * The name of the default keymap, which MUST exist.
+ */
+#define GUAC_DEFAULT_KEYMAP "en-us-qwerty"
+
+/**
  * Keysym string containing only the left "shift" key.
  */
 extern const int GUAC_KEYSYMS_SHIFT[];
@@ -194,6 +199,11 @@ extern const int GUAC_KEYSYMS_ALL_MODIFIERS[];
  * NULL-terminated array of all keymaps.
  */
 extern const guac_rdp_keymap* GUAC_KEYMAPS[];
+
+/**
+ * Return the keymap having the given name, if any, or NULL otherwise.
+ */
+const guac_rdp_keymap* guac_rdp_keymap_find(const char* name);
 
 #endif
 

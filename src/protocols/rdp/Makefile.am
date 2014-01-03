@@ -37,12 +37,7 @@ libguac_client_rdp_la_SOURCES = \
 	rdp_fs.c                    \
 	rdp_gdi.c                   \
 	rdp_glyph.c                 \
-	rdp_keymap_base.c           \
 	rdp_keymap.c                \
-	rdp_keymap_de_de.c          \
-	rdp_keymap_failsafe.c       \
-	rdp_keymap_fr_fr.c          \
-	rdp_keymap_en_us.c          \
 	rdp_pointer.c               \
 	rdp_settings.c              \
 	unicode.c
