@@ -28,10 +28,10 @@ AM_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@
 lib_LTLIBRARIES = libguac-client-rdp.la
 
 libguac_client_rdp_la_SOURCES = \
+	_generated_keymaps.c        \
 	client.c                    \
 	default_pointer.c           \
 	guac_handlers.c             \
-	rdp_keymaps.c               \
 	rdp_bitmap.c                \
 	rdp_cliprdr.c               \
 	rdp_fs.c                    \
@@ -106,14 +106,14 @@ guacsnd_libadd = @LIBGUAC_LTLIB@
 guacdr_libadd = @LIBGUAC_LTLIB@
 
 # Autogenerate keymaps
-CLEANFILES = rdp_keymaps.c
-BUILT_SOURCES = rdp_keymaps.c
+CLEANFILES = _generated_keymaps.c
+BUILT_SOURCES = _generated_keymaps.c
 
 rdp_keymaps =                   \
     keymaps/base.keymap         \
     keymaps/en_us_qwerty.keymap
 
-rdp_keymaps.c: $(rdp_keymaps)
+_generated_keymaps.c: $(rdp_keymaps)
 	keymaps/generate.pl $(rdp_keymaps)
 
 if LEGACY_FREERDP_EXTENSIONS

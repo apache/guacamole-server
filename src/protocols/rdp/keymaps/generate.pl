@@ -35,12 +35,12 @@ sub keymap_symbol {
 }
 
 #
-# rdp_keymap.c
+# _generated_keymaps.c
 #
 
 @keymaps = ();
 
-open OUTPUT, ">", "rdp_keymaps.c";
+open OUTPUT, ">", "_generated_keymaps.c";
 print OUTPUT 
        '#include "config.h"'                                . "\n"
      . '#include "rdp_keymap.h"'                            . "\n"
@@ -252,7 +252,7 @@ for $filename (@ARGV) {
 }
 
 print OUTPUT                                                   "\n"
-      . 'const guac_rdp_keymap* guac_rdp_keymaps[] = {'      . "\n";
+      . 'const guac_rdp_keymap* GUAC_KEYMAPS[] = {'          . "\n";
 
 foreach $keymap (@keymaps) {
     print OUTPUT "    &$keymap,\n";
