@@ -116,31 +116,6 @@ typedef guac_rdp_keysym_desc guac_rdp_static_keymap[0x200][0x100];
 typedef int guac_rdp_keysym_state_map[0x200][0x100];
 
 /**
- * US English keymap.
- */
-extern const guac_rdp_keymap guac_rdp_keymap_en_us;
-
-/**
- * German keymap.
- */
-extern const guac_rdp_keymap guac_rdp_keymap_de_de;
-
-/**
- * French keymap.
- */
-extern const guac_rdp_keymap guac_rdp_keymap_fr_fr;
-
-/**
- * Failsafe (Unicode events for all printable characters) keymap.
- */
-extern const guac_rdp_keymap guac_rdp_keymap_failsafe;
-
-/**
- * Common, base keymap for non-printable keys.
- */
-extern const guac_rdp_keymap guac_rdp_keymap_base;
-
-/**
  * Simple macro for determing whether a keysym can be stored (or retrieved)
  * from any keymap.
  */
