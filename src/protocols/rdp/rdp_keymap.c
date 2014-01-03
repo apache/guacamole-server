@@ -50,7 +50,7 @@ const guac_rdp_keymap* guac_rdp_keymap_find(const char* name) {
 
     /* For each keymap */
     const guac_rdp_keymap** current = GUAC_KEYMAPS;
-    while (current != NULL) {
+    while (*current != NULL) {
 
         /* If name matches, done */
         if (strcmp((*current)->name, name) == 0)
