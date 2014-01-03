@@ -233,7 +233,7 @@ for $filename (@ARGV) {
 
     # Parent layout (if any)
     if ($parent) {
-        print OUTPUT "    .parent = $parent,\n";
+        print OUTPUT "    .parent = &$parent,\n";
     }
 
     # FreeRDP layout (if any)
@@ -252,10 +252,10 @@ for $filename (@ARGV) {
 }
 
 print OUTPUT                                                   "\n"
-      . 'const guac_rdp_keymap guac_rdp_keymaps[] = {'       . "\n";
+      . 'const guac_rdp_keymap* guac_rdp_keymaps[] = {'      . "\n";
 
 foreach $keymap (@keymaps) {
-    print OUTPUT "    $keymap,\n";
+    print OUTPUT "    &$keymap,\n";
 }
 print OUTPUT
         '    NULL'                                           . "\n"

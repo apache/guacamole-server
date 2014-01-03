@@ -31,6 +31,7 @@ libguac_client_rdp_la_SOURCES = \
 	client.c                    \
 	default_pointer.c           \
 	guac_handlers.c             \
+	rdp_keymaps.c               \
 	rdp_bitmap.c                \
 	rdp_cliprdr.c               \
 	rdp_fs.c                    \
@@ -103,6 +104,17 @@ guacdr_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@
 guacsnd_libadd = @LIBGUAC_LTLIB@
 guacdr_libadd = @LIBGUAC_LTLIB@
+
+# Autogenerate keymaps
+CLEANFILES = rdp_keymaps.c
+BUILT_SOURCES = rdp_keymaps.c
+
+rdp_keymaps =                   \
+    keymaps/base.keymap         \
+    keymaps/en_us_qwerty.keymap
+
+rdp_keymaps.c: $(rdp_keymaps)
+	keymaps/generate.pl $(rdp_keymaps)
 
 if LEGACY_FREERDP_EXTENSIONS
 
