@@ -106,6 +106,7 @@ BUILT_SOURCES = _generated_keymaps.c
 
 rdp_keymaps =                   \
     keymaps/base.keymap         \
+    keymaps/failsafe.keymap     \
     keymaps/en_us_qwerty.keymap
 
 _generated_keymaps.c: $(rdp_keymaps)
