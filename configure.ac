@@ -568,35 +568,31 @@ AC_SUBST(SSH_LIBS)
 # Agent forwarding support within libssh2
 #
 
-if test "x${have_libssh2}" = "xyes"
+have_ssh_agent=no
+if test "x${have_libssh2}" = "xyes" -a "x${enable_ssh_agent}" = "xyes"
 then
 
-    have_ssh_agent=yes
     AC_CHECK_DECL([libssh2_channel_request_auth_agent],
-                  [], [have_ssh_agent=no],
+                  [have_ssh_agent=yes], [],
                   [[#include <libssh2.h>]])
 
-    AM_CONDITIONAL([ENABLE_SSH_AGENT],
-                   [test "x${have_ssh_agent}"   = "xyes" \
-                      -a "x${enable_ssh_agent}" = "xyes"])
-
-    if test "x${enable_ssh_agent}" = "xyes"
+    if test "x${have_ssh_agent}" = "xno"
     then
-        if test "x${have_ssh_agent}" = "xno"
-        then
-            AC_MSG_ERROR([
-          --------------------------------------------
-           Agent forwarding support was requested but no such support was found
-           in libssh2.
-          --------------------------------------------])
-        else
-            AC_DEFINE([ENABLE_SSH_AGENT],,
-                      [Whether agent forwarding support for SSH is enabled])
-        fi
+        AC_MSG_ERROR([
+      --------------------------------------------
+       Agent forwarding support was requested but no such support was found
+       in libssh2.
+      --------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_SSH_AGENT],,
+                  [Whether agent forwarding support for SSH is enabled])
     fi
 
 fi
 
+AM_CONDITIONAL([ENABLE_SSH_AGENT],
+	   [test "x${have_ssh_agent}"   = "xyes" \
+	      -a "x${enable_ssh_agent}" = "xyes"])
 
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
