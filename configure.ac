@@ -596,6 +596,7 @@ AM_CONDITIONAL([ENABLE_SSH_AGENT],
 
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
+                 src/common/Makefile
                  src/libguac/Makefile
                  src/guacd/Makefile
                  src/protocols/rdp/Makefile

@@ -20,34 +20,17 @@
 # THE SOFTWARE.
 #
 
+AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
+AM_CFLAGS = -Werror -Wall -pedantic
 
-# Subprojects
-DIST_SUBDIRS =           \
-    src/libguac          \
-	src/guacd            \
-	src/protocols/rdp    \
-	src/protocols/ssh    \
-	src/protocols/vnc    \
-    tests
+noinst_LTLIBRARIES = libguac_common.la
 
-SUBDIRS =       \
-    src/common  \
-    src/libguac \
-	src/guacd   \
-    tests
+noinst_HEADERS = \
+    io.h         \
+    list.h
 
-if ENABLE_RDP
-    SUBDIRS += src/protocols/rdp
-endif
-
-if ENABLE_SSH
-    SUBDIRS += src/protocols/ssh
-endif
-
-if ENABLE_VNC
-    SUBDIRS += src/protocols/vnc
-endif
-
-EXTRA_DIST = LICENSE doc/Doxyfile
+libguac_common_la_SOURCES = \
+    io.c                    \
+    list.c
 
