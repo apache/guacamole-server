@@ -21,7 +21,7 @@
  */
 
 #include "config.h"
-#include "list.h"
+#include "guac_list.h"
 
 #include <stdlib.h>
 #include <pthread.h>

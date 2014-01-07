@@ -21,7 +21,7 @@
  */
 
 #include "config.h"
-#include "io.h"
+#include "guac_io.h"
 
 #include <unistd.h>
 

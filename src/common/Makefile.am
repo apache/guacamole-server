@@ -27,10 +27,10 @@ AM_CFLAGS = -Werror -Wall -pedantic
 noinst_LTLIBRARIES = libguac_common.la
 
 noinst_HEADERS = \
-    io.h         \
-    list.h
+    guac_io.h    \
+    guac_list.h
 
 libguac_common_la_SOURCES = \
-    io.c                    \
-    list.c
+    guac_io.c               \
+    guac_list.c
 
