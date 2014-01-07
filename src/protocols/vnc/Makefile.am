@@ -23,24 +23,22 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic -Iinclude @LIBGUAC_INCLUDE@
+AM_CFLAGS = -Werror -Wall -pedantic -Iinclude \
+			@COMMON_INCLUDE@                  \
+			@LIBGUAC_INCLUDE@
 
 lib_LTLIBRARIES = libguac-client-vnc.la
 
 libguac_client_vnc_la_SOURCES = \
     client.c                    \
     convert.c                   \
-    dot_cursor.c                \
     guac_handlers.c             \
-    pointer_cursor.c            \
     vnc_handlers.c              
     
 noinst_HEADERS =      \
     client.h          \
     convert.h         \
-    dot_cursor.h      \
     guac_handlers.h   \
-    pointer_cursor.h  \
     vnc_handlers.h    
 
 # Optional PulseAudio support
@@ -49,6 +47,10 @@ libguac_client_vnc_la_SOURCES += pulse.c
 noinst_HEADERS += pulse.h
 endif
 
-libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0 @VNC_LIBS@ @CAIRO_LIBS@ @PULSE_LIBS@
+libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0 \
+	@CAIRO_LIBS@                                    \
+	@PULSE_LIBS@                                    \
+	@VNC_LIBS@ 
+
 libguac_client_vnc_la_LIBADD  = @LIBGUAC_LTLIB@
 

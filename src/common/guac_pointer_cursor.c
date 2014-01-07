@@ -33,15 +33,15 @@
 #define _ 0x00,0x00,0x00,0x00
 
 /* Dimensions */
-const int guac_vnc_pointer_cursor_width  = 11;
-const int guac_vnc_pointer_cursor_height = 16;
+const int guac_common_pointer_cursor_width  = 11;
+const int guac_common_pointer_cursor_height = 16;
 
 /* Format */
-const cairo_format_t guac_vnc_pointer_cursor_format = CAIRO_FORMAT_ARGB32;
-const int guac_vnc_pointer_cursor_stride = 44;
+const cairo_format_t guac_common_pointer_cursor_format = CAIRO_FORMAT_ARGB32;
+const int guac_common_pointer_cursor_stride = 44;
 
 /* Embedded pointer graphic */
-unsigned char guac_vnc_pointer_cursor[] = {
+unsigned char guac_common_pointer_cursor[] = {
 
         O,_,_,_,_,_,_,_,_,_,_,
         O,O,_,_,_,_,_,_,_,_,_,
@@ -62,7 +62,7 @@ unsigned char guac_vnc_pointer_cursor[] = {
 
 };
 
-void guac_vnc_set_pointer_cursor(guac_client* client) {
+void guac_common_set_pointer_cursor(guac_client* client) {
 
     guac_socket* socket = client->socket;
 
@@ -70,11 +70,11 @@ void guac_vnc_set_pointer_cursor(guac_client* client) {
     guac_layer* cursor = guac_client_alloc_buffer(client);
 
     cairo_surface_t* graphic = cairo_image_surface_create_for_data(
-            guac_vnc_pointer_cursor,
-            guac_vnc_pointer_cursor_format,
-            guac_vnc_pointer_cursor_width,
-            guac_vnc_pointer_cursor_height,
-            guac_vnc_pointer_cursor_stride);
+            guac_common_pointer_cursor,
+            guac_common_pointer_cursor_format,
+            guac_common_pointer_cursor_width,
+            guac_common_pointer_cursor_height,
+            guac_common_pointer_cursor_stride);
 
     guac_protocol_send_png(socket, GUAC_COMP_SRC, cursor, 0, 0, graphic);
     cairo_surface_destroy(graphic);
@@ -82,8 +82,8 @@ void guac_vnc_set_pointer_cursor(guac_client* client) {
     /* Set cursor */
     guac_protocol_send_cursor(socket, 0, 0, cursor,
             0, 0,
-            guac_vnc_pointer_cursor_width,
-            guac_vnc_pointer_cursor_height);
+            guac_common_pointer_cursor_width,
+            guac_common_pointer_cursor_height);
 
     /* Free buffer */
     guac_client_free_buffer(client, cursor);

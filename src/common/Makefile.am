@@ -22,15 +22,21 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic
+AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@
 
 noinst_LTLIBRARIES = libguac_common.la
 
-noinst_HEADERS = \
-    guac_io.h    \
-    guac_list.h
+noinst_HEADERS =          \
+    guac_io.h             \
+    guac_dot_cursor.c     \
+    guac_list.h           \
+    guac_pointer_cursor.c
 
 libguac_common_la_SOURCES = \
     guac_io.c               \
-    guac_list.c
+    guac_dot_cursor.c       \
+    guac_list.c             \
+    guac_pointer_cursor.c
+
+libguac_common_la_LIBADD = @LIBGUAC_LTLIB@
 

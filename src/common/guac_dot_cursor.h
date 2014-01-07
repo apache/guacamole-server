@@ -21,8 +21,8 @@
  */
 
 
-#ifndef _GUAC_VNC_DOT_CURSOR_H
-#define _GUAC_VNC_DOT_CURSOR_H
+#ifndef _GUAC_COMMON_DOT_CURSOR_H
+#define _GUAC_COMMON_DOT_CURSOR_H
 
 #include "config.h"
 
@@ -32,33 +32,33 @@
 /**
  * Width of the embedded mouse cursor graphic.
  */
-extern const int guac_vnc_dot_cursor_width;
+extern const int guac_common_dot_cursor_width;
 
 /**
  * Height of the embedded mouse cursor graphic.
  */
-extern const int guac_vnc_dot_cursor_height;
+extern const int guac_common_dot_cursor_height;
 
 /**
  * Number of bytes in each row of the embedded mouse cursor graphic.
  */
-extern const int guac_vnc_dot_cursor_stride;
+extern const int guac_common_dot_cursor_stride;
 
 /**
  * The Cairo grapic format of the mouse cursor graphic.
  */
-extern const cairo_format_t guac_vnc_dot_cursor_format;
+extern const cairo_format_t guac_common_dot_cursor_format;
 
 /**
  * Embedded mouse cursor graphic.
  */
-extern unsigned char guac_vnc_dot_cursor[];
+extern unsigned char guac_common_dot_cursor[];
 
 /**
  * Set the cursor of the remote display to the embedded cursor graphic.
  *
  * @param client The guac_client to send the cursor to.
  */
-void guac_vnc_set_dot_cursor(guac_client* client);
+void guac_common_set_dot_cursor(guac_client* client);
 
 #endif

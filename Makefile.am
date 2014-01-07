@@ -32,8 +32,8 @@ DIST_SUBDIRS =           \
     tests
 
 SUBDIRS =       \
-    src/common  \
     src/libguac \
+    src/common  \
 	src/guacd   \
     tests
 

@@ -23,9 +23,9 @@
 #include "config.h"
 
 #include "client.h"
-#include "dot_cursor.h"
+#include "guac_dot_cursor.h"
 #include "guac_handlers.h"
-#include "pointer_cursor.h"
+#include "guac_pointer_cursor.h"
 #include "vnc_handlers.h"
 
 #include <stdlib.h>
@@ -356,11 +356,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         /* If not read-only but cursor is remote, set a dot cursor */
         if (guac_client_data->remote_cursor)
-            guac_vnc_set_dot_cursor(client);
+            guac_common_set_dot_cursor(client);
 
         /* Otherwise, set pointer until explicitly requested otherwise */
         else
-            guac_vnc_set_pointer_cursor(client);
+            guac_common_set_pointer_cursor(client);
 
     }
 
