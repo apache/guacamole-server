@@ -25,8 +25,8 @@
 #include "config.h"
 
 #include "client.h"
-#include "default_pointer.h"
 #include "guac_handlers.h"
+#include "guac_pointer_cursor.h"
 #include "rdp_bitmap.h"
 #include "rdp_gdi.h"
 #include "rdp_glyph.h"
@@ -616,7 +616,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             CAIRO_FORMAT_ARGB32, settings->width, settings->height);
 
     /* Set default pointer */
-    guac_rdp_set_default_pointer(client);
+    guac_common_set_pointer_cursor(client);
 
     /* Success */
     return 0;

@@ -23,7 +23,6 @@
 #include "config.h"
 
 #include "client.h"
-#include "default_pointer.h"
 #include "rdp_pointer.h"
 
 #include <pthread.h>

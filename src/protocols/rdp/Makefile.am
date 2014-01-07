@@ -23,14 +23,13 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@
+AM_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
 lib_LTLIBRARIES = libguac-client-rdp.la
 
 libguac_client_rdp_la_SOURCES = \
 	_generated_keymaps.c        \
 	client.c                    \
-	default_pointer.c           \
 	guac_handlers.c             \
 	rdp_bitmap.c                \
 	rdp_cliprdr.c               \
@@ -72,7 +71,6 @@ noinst_HEADERS =                             \
 	guac_rdpsnd/rdpsnd_service.h             \
 	client.h                                 \
 	debug.h                                  \
-	default_pointer.h                        \
 	guac_handlers.h                          \
 	rdp_bitmap.h                             \
 	rdp_cliprdr.h                            \
@@ -96,7 +94,7 @@ libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @PTHREAD_LIBS@ @C
 guacsnd_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 guacdr_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 
-libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@
+libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
 guacsnd_libadd = @LIBGUAC_LTLIB@
 guacdr_libadd = @LIBGUAC_LTLIB@
 
