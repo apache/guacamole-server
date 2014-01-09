@@ -52,5 +52,5 @@ libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0 \
 	@PULSE_LIBS@                                    \
 	@VNC_LIBS@ 
 
-libguac_client_vnc_la_LIBADD  = @LIBGUAC_LTLIB@
+libguac_client_vnc_la_LIBADD  = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
 
