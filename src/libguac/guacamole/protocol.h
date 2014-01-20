@@ -37,6 +37,8 @@
 #include "stream.h"
 #include "timestamp.h"
 
+#include <stdarg.h>
+
 #include <cairo/cairo.h>
 
 /**
@@ -279,6 +281,35 @@ int guac_protocol_send_disconnect(guac_socket* socket);
  */
 int guac_protocol_send_error(guac_socket* socket, const char* error,
         guac_protocol_status status);
+
+/**
+ * Sends a log instruction over the given guac_socket connection. This is
+ * mainly useful in debugging.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param format A printf-style format string to log.
+ * @param ... Arguments to use when filling the format string for printing.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_log(guac_socket* socket, const char* format, ...);
+
+/**
+ * Sends a log instruction over the given guac_socket connection. This is
+ * mainly useful in debugging.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param format A printf-style format string to log.
+ * @param ap The va_list containing the arguments to be used when filling the
+ *           format string for printing.
+ */
+int vguac_protocol_send_log(guac_socket* socket, const char* format,
+        va_list args);
 
 /**
  * Sends a nest instruction over the given guac_socket connection.

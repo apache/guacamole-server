@@ -31,6 +31,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -770,6 +771,40 @@ int guac_protocol_send_error(guac_socket* socket, const char* error,
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int vguac_protocol_send_log(guac_socket* socket, const char* format,
+        va_list args) {
+
+    int ret_val;
+
+    /* Copy log message into buffer */
+    char message[4096];
+    vsnprintf(message, sizeof(message), format, args);
+
+    /* Log to instruction */
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "3.log,")
+        || __guac_socket_write_length_string(socket, message)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_log(guac_socket* socket, const char* format, ...) {
+
+    int ret_val;
+
+    va_list args;
+    va_start(args, format);
+    ret_val = vguac_protocol_send_log(socket, format, args);
+    va_end(args);
+
     return ret_val;
 
 }
