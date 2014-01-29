@@ -181,6 +181,16 @@ typedef struct guac_rdp_settings {
      */
     int disable_authentication;
 
+    /**
+     * The name of the application to launch, if RemoteApp is in use.
+     */
+    char* remote_app_name;
+
+    /**
+     * The command to use to launch the application, if RemoteApp is in use.
+     */
+    char* remote_app_command;
+
 } guac_rdp_settings;
 
 /**

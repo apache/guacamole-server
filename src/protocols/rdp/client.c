@@ -90,6 +90,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "security",
     "ignore-cert",
     "disable-auth",
+    "remote-app-name",
+    "remote-app-command",
     NULL
 };
 
@@ -114,6 +116,8 @@ enum RDP_ARGS_IDX {
     IDX_SECURITY,
     IDX_IGNORE_CERT,
     IDX_DISABLE_AUTH,
+    IDX_REMOTE_APP_NAME,
+    IDX_REMOTE_APP_COMMAND,
     RDP_ARGS_COUNT
 };
 
@@ -509,6 +513,16 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->initial_program = NULL;
     if (argv[IDX_INITIAL_PROGRAM][0] != '\0')
         settings->initial_program = strdup(argv[IDX_INITIAL_PROGRAM]);
+
+    /* RemoteApp name */
+    settings->remote_app_name = NULL;
+    if (argv[IDX_REMOTE_APP_NAME][0] != '\0')
+        settings->remote_app_name = strdup(argv[IDX_REMOTE_APP_NAME]);
+
+    /* RemoteApp command */
+    settings->remote_app_command = NULL;
+    if (argv[IDX_REMOTE_APP_COMMAND][0] != '\0')
+        settings->remote_app_command = strdup(argv[IDX_REMOTE_APP_COMMAND]);
 
     /* Session color depth */
     settings->color_depth = RDP_DEFAULT_DEPTH;
