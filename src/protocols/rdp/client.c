@@ -197,8 +197,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
         plugin_data[0].size = sizeof(RDP_PLUGIN_DATA);
         plugin_data[0].data[0] = guac_client_data->settings.remote_app_name;
-        plugin_data[0].data[1] = guac_client_data->settings.remote_app_command; 
-        plugin_data[0].data[2] = NULL;
+        plugin_data[0].data[1] = NULL;
+        plugin_data[0].data[2] = guac_client_data->settings.remote_app_command; 
         plugin_data[0].data[3] = NULL;
 
         plugin_data[1].size = 0;
