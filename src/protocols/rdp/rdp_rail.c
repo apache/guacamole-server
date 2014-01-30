@@ -36,6 +36,10 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
+#ifdef LEGACY_FREERDP
+#include "compat/rail.h"
+#endif
+
 #include <freerdp/rail.h>
 
 void guac_rdp_process_rail_event(guac_client* client, wMessage* event) {

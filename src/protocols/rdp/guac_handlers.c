@@ -57,6 +57,10 @@
 #include "compat/client-cliprdr.h"
 #endif
 
+#ifdef LEGACY_FREERDP
+#include "compat/rail.h"
+#endif
+
 void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, int from, int to);
 int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);
 

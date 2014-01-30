@@ -60,6 +60,7 @@ guacdr_sources =                             \
 
 noinst_HEADERS =                             \
 	compat/client-cliprdr.h                  \
+	compat/rail.h                            \
 	guac_rdpdr/rdpdr_fs_messages.h           \
 	guac_rdpdr/rdpdr_fs_messages_dir_info.h  \
 	guac_rdpdr/rdpdr_fs_messages_file_info.h \
