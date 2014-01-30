@@ -38,6 +38,7 @@ libguac_client_rdp_la_SOURCES = \
 	rdp_glyph.c                 \
 	rdp_keymap.c                \
 	rdp_pointer.c               \
+	rdp_rail.c                  \
 	rdp_settings.c              \
 	unicode.c
 
@@ -79,6 +80,7 @@ noinst_HEADERS =                             \
 	rdp_glyph.h                              \
 	rdp_keymap.h                             \
 	rdp_pointer.h                            \
+	rdp_rail.h                               \
 	rdp_settings.h                           \
 	rdp_status.h                             \
 	unicode.h

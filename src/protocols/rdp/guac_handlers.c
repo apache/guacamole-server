@@ -26,6 +26,7 @@
 #include "guac_handlers.h"
 #include "rdp_cliprdr.h"
 #include "rdp_keymap.h"
+#include "rdp_rail.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -210,13 +211,17 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         event = freerdp_channels_pop_event(channels);
         if (event) {
 
-            /* Handle clipboard events */
+            /* Handle channel events (clipboard and RAIL) */
 #ifdef LEGACY_EVENT
             if (event->event_class == CliprdrChannel_Class)
                 guac_rdp_process_cliprdr_event(client, event);
+            else if (event->event_class == RailChannel_Class)
+                guac_rdp_process_rail_event(client, event);
 #else
             if (GetMessageClass(event->id) == CliprdrChannel_Class)
                 guac_rdp_process_cliprdr_event(client, event);
+            else if (GetMessageClass(event->id) == RailChannel_Class)
+                guac_rdp_process_rail_event(client, event);
 #endif
 
             freerdp_event_free(event);
