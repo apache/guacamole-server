@@ -170,8 +170,7 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 #endif
 
     /* RemoteApp */
-    if (guac_settings->remote_app_name != NULL
-            || guac_settings->remote_app_command != NULL) {
+    if (guac_settings->remote_app != NULL) {
 #ifdef LEGACY_RDPSETTINGS
         rdp_settings->workarea = TRUE;
         rdp_settings->remote_app = TRUE;
@@ -180,8 +179,9 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
         rdp_settings->Workarea = TRUE;
         rdp_settings->RemoteApplicationMode = TRUE;
         rdp_settings->RemoteAppLanguageBarSupported = TRUE;
-        rdp_settings->RemoteApplicationProgram = guac_settings->remote_app_name;
-        rdp_settings->RemoteApplicationCmdLine = guac_settings->remote_app_command;
+        rdp_settings->RemoteApplicationProgram = guac_settings->remote_app;
+        rdp_settings->ShellWorkingDirectory = guac_settings->remote_app_dir;
+        rdp_settings->RemoteApplicationCmdLine = guac_settings->remote_app_args;
 #endif
     }
 

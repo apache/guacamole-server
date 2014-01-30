@@ -90,8 +90,9 @@ const char* GUAC_CLIENT_ARGS[] = {
     "security",
     "ignore-cert",
     "disable-auth",
-    "remote-app-name",
-    "remote-app-command",
+    "remote-app",
+    "remote-app-dir",
+    "remote-app-args",
     NULL
 };
 
@@ -116,8 +117,9 @@ enum RDP_ARGS_IDX {
     IDX_SECURITY,
     IDX_IGNORE_CERT,
     IDX_DISABLE_AUTH,
-    IDX_REMOTE_APP_NAME,
-    IDX_REMOTE_APP_COMMAND,
+    IDX_REMOTE_APP,
+    IDX_REMOTE_APP_DIR,
+    IDX_REMOTE_APP_ARGS,
     RDP_ARGS_COUNT
 };
 
@@ -189,16 +191,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     }
 
     /* Load RAIL plugin if RemoteApp in use */
-    if (guac_client_data->settings.remote_app_name != NULL
-        || guac_client_data->settings.remote_app_command != NULL) {
+    if (guac_client_data->settings.remote_app != NULL) {
 
 #ifdef LEGACY_FREERDP
         RDP_PLUGIN_DATA* plugin_data = malloc(sizeof(RDP_PLUGIN_DATA) * 2);
 
         plugin_data[0].size = sizeof(RDP_PLUGIN_DATA);
-        plugin_data[0].data[0] = guac_client_data->settings.remote_app_name;
-        plugin_data[0].data[1] = NULL;
-        plugin_data[0].data[2] = guac_client_data->settings.remote_app_command; 
+        plugin_data[0].data[0] = guac_client_data->settings.remote_app;
+        plugin_data[0].data[1] = guac_client_data->settings.remote_app_dir;
+        plugin_data[0].data[2] = guac_client_data->settings.remote_app_args; 
         plugin_data[0].data[3] = NULL;
 
         plugin_data[1].size = 0;
@@ -542,15 +543,20 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (argv[IDX_INITIAL_PROGRAM][0] != '\0')
         settings->initial_program = strdup(argv[IDX_INITIAL_PROGRAM]);
 
-    /* RemoteApp name */
-    settings->remote_app_name = NULL;
-    if (argv[IDX_REMOTE_APP_NAME][0] != '\0')
-        settings->remote_app_name = strdup(argv[IDX_REMOTE_APP_NAME]);
+    /* RemoteApp program */
+    settings->remote_app = NULL;
+    if (argv[IDX_REMOTE_APP][0] != '\0')
+        settings->remote_app = strdup(argv[IDX_REMOTE_APP]);
 
-    /* RemoteApp command */
-    settings->remote_app_command = NULL;
-    if (argv[IDX_REMOTE_APP_COMMAND][0] != '\0')
-        settings->remote_app_command = strdup(argv[IDX_REMOTE_APP_COMMAND]);
+    /* RemoteApp working directory */
+    settings->remote_app_dir = NULL;
+    if (argv[IDX_REMOTE_APP_DIR][0] != '\0')
+        settings->remote_app_dir = strdup(argv[IDX_REMOTE_APP_DIR]);
+
+    /* RemoteApp arguments */
+    settings->remote_app_args = NULL;
+    if (argv[IDX_REMOTE_APP_ARGS][0] != '\0')
+        settings->remote_app_args = strdup(argv[IDX_REMOTE_APP_ARGS]);
 
     /* Session color depth */
     settings->color_depth = RDP_DEFAULT_DEPTH;
