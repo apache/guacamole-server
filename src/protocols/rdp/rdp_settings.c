@@ -169,6 +169,22 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->DisableEncryption = FALSE;
 #endif
 
+    /* RemoteApp */
+    if (guac_settings->remote_app_name != NULL
+            || guac_settings->remote_app_command != NULL) {
+#ifdef LEGACY_RDPSETTINGS
+        rdp_settings->workarea = TRUE;
+        rdp_settings->remote_app = TRUE;
+        rdp_settings->rail_langbar_supported = TRUE;
+#else
+        rdp_settings->Workarea = TRUE;
+        rdp_settings->RemoteApplicationMode = TRUE;
+        rdp_settings->RemoteAppLanguageBarSupported = TRUE;
+        rdp_settings->RemoteApplicationProgram = guac_settings->remote_app_name;
+        rdp_settings->RemoteApplicationCmdLine = guac_settings->remote_app_command;
+#endif
+    }
+
     /* Order support */
 #ifdef LEGACY_RDPSETTINGS
     bitmap_cache = rdp_settings->bitmap_cache;

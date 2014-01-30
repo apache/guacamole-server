@@ -188,6 +188,34 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     }
 
+    /* Load RAIL plugin if RemoteApp in use */
+    if (guac_client_data->settings.remote_app_name != NULL
+        || guac_client_data->settings.remote_app_command != NULL) {
+
+#ifdef LEGACY_FREERDP
+        RDP_PLUGIN_DATA* plugin_data = malloc(sizeof(RDP_PLUGIN_DATA) * 2);
+
+        plugin_data[0].size = sizeof(RDP_PLUGIN_DATA);
+        plugin_data[0].data[0] = guac_client_data->settings.remote_app_name;
+        plugin_data[0].data[1] = guac_client_data->settings.remote_app_command; 
+        plugin_data[0].data[2] = NULL;
+        plugin_data[0].data[3] = NULL;
+
+        plugin_data[1].size = 0;
+
+        /* Attempt to load rail */
+        if (freerdp_channels_load_plugin(channels, instance->settings,
+                    "rail", plugin_data))
+            guac_client_log_error(client, "Failed to load rail plugin.");
+#else
+        /* Attempt to load rail */
+        if (freerdp_channels_load_plugin(channels, instance->settings,
+                    "rail", instance->settings))
+            guac_client_log_error(client, "Failed to load rail plugin.");
+#endif
+
+    }
+
     /* Init color conversion structure */
     clrconv = calloc(1, sizeof(CLRCONV));
     clrconv->alpha = 1;
