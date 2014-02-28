@@ -982,6 +982,26 @@ int guac_protocol_send_nop(guac_socket* socket) {
 
 }
 
+int guac_protocol_send_pipe(guac_socket* socket, const guac_stream* stream,
+        const char* mimetype, const char* name) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "4.pipe,")
+        || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
         const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
 

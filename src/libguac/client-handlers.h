@@ -95,6 +95,13 @@ int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction);
 int __guac_handle_file(guac_client* client, guac_instruction* instruction);
 
 /**
+ * Internal initial handler for the pipe instruction. When a pipe instruction
+ * is received, this handler will be called. The client's pipe handler will
+ * be invoked if defined.
+ */
+int __guac_handle_pipe(guac_client* client, guac_instruction* instruction);
+
+/**
  * Internal initial handler for the ack instruction. When a ack instruction
  * is received, this handler will be called. The client's ack handler will
  * be invoked if defined.

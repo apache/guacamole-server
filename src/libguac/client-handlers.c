@@ -39,6 +39,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"disconnect", __guac_handle_disconnect},
    {"size",       __guac_handle_size},
    {"file",       __guac_handle_file},
+   {"pipe",       __guac_handle_pipe},
    {"ack",        __guac_handle_ack},
    {"blob",       __guac_handle_blob},
    {"end",        __guac_handle_end},
@@ -150,6 +151,43 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
     /* Otherwise, abort */
     guac_protocol_send_ack(client->socket, stream,
             "File transfer unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
+    return 0;
+}
+
+int __guac_handle_pipe(guac_client* client, guac_instruction* instruction) {
+
+    /* Pull corresponding stream */
+    int stream_index = atoi(instruction->argv[0]);
+    guac_stream* stream;
+
+    /* Validate stream index */
+    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
+
+        guac_stream dummy_stream;
+        dummy_stream.index = stream_index;
+
+        guac_protocol_send_ack(client->socket, &dummy_stream,
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+        return 0;
+    }
+
+    /* Initialize stream */
+    stream = &(client->__input_streams[stream_index]);
+    stream->index = stream_index;
+    stream->data = NULL;
+
+    /* If supported, call handler */
+    if (client->pipe_handler)
+        return client->pipe_handler(
+            client,
+            stream,
+            instruction->argv[1], /* mimetype */
+            instruction->argv[2]  /* name */
+        );
+
+    /* Otherwise, abort */
+    guac_protocol_send_ack(client->socket, stream,
+            "Named pipes unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
     return 0;
 }
 

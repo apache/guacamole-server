@@ -413,6 +413,21 @@ int guac_protocol_send_file(guac_socket* socket, const guac_stream* stream,
         const char* mimetype, const char* name);
 
 /**
+ * Sends a pipe instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param stream The stream to use.
+ * @param mimetype The mimetype of the data being sent.
+ * @param name An arbitrary name uniquely identifying this pipe.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_pipe(guac_socket* socket, const guac_stream* stream,
+        const char* mimetype, const char* name);
+
+/**
  * Writes a block of data to the currently in-progress blob which was already
  * created.
  *

@@ -86,6 +86,12 @@ typedef int guac_client_file_handler(guac_client* client, guac_stream* stream,
         char* mimetype, char* filename);
 
 /**
+ * Handler for Guacamole pipe events.
+ */
+typedef int guac_client_pipe_handler(guac_client* client, guac_stream* stream,
+        char* mimetype, char* name);
+
+/**
  * Handler for Guacamole stream blob events.
  */
 typedef int guac_client_blob_handler(guac_client* client, guac_stream* stream,
@@ -401,6 +407,25 @@ struct guac_client {
      * @endcode
      */
     guac_client_file_handler* file_handler;
+
+    /**
+     * Handler for pipe events sent by the Guacamole web-client.
+     *
+     * The handler takes a guac_stream which contains the stream index and
+     * will persist through the duration of the transfer, the mimetype of
+     * the data being transferred, and the pipe name.
+     *
+     * Example:
+     * @code
+     *     int pipe_handler(guac_client* client, guac_stream* stream,
+     *             char* mimetype, char* name);
+     *
+     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *         client->pipe_handler = pipe_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_pipe_handler* pipe_handler;
 
     /**
      * Handler for ack events sent by the Guacamole web-client.
