@@ -230,7 +230,7 @@ void guac_rdpdr_start_download(guac_rdpdr_device* device, const char* path) {
     /* If file opened successfully, start stream */
     if (file_id >= 0) {
 
-        guac_rdp_download_status* status;
+        guac_rdp_stream* rdp_stream;
         const char* basename;
 
         int i;
@@ -238,9 +238,10 @@ void guac_rdpdr_start_download(guac_rdpdr_device* device, const char* path) {
 
         /* Associate stream with transfer status */
         guac_stream* stream = guac_client_alloc_stream(client);
-        stream->data = status = malloc(sizeof(guac_rdp_download_status));
-        status->file_id = file_id;
-        status->offset = 0;
+        stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
+        rdp_stream->type = GUAC_RDP_DOWNLOAD_STREAM;
+        rdp_stream->download_status.file_id = file_id;
+        rdp_stream->download_status.offset = 0;
 
         /* Get basename from absolute path */
         i=0;

@@ -29,24 +29,6 @@
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 
-/**
- * Structure which represents the current state of an upload.
- */
-typedef struct guac_rdp_upload_stat {
-
-    /**
-     * The overall offset within the file that the next write should
-     * occur at.
-     */
-    int offset;
-
-    /**
-     * The ID of the file being written to.
-     */
-    int file_id;
-
-} guac_rdp_upload_stat;
-
 int rdp_guac_client_free_handler(guac_client* client);
 int rdp_guac_client_handle_messages(guac_client* client);
 int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
