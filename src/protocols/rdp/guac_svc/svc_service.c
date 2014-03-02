@@ -74,6 +74,9 @@ int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
     svc_plugin->plugin.event_callback     = guac_svc_process_event;
     svc_plugin->plugin.terminate_callback = guac_svc_process_terminate;
 
+    /* Store plugin reference in SVC */
+    svc->plugin = (rdpSvcPlugin*) svc_plugin;
+
     /* Finish init */
     svc_plugin_init((rdpSvcPlugin*) svc_plugin, pEntryPoints);
     return 1;

@@ -26,6 +26,7 @@
 #include "rdp_svc.h"
 
 #include <freerdp/freerdp.h>
+#include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
@@ -41,6 +42,7 @@ guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
     /* Init SVC */
     svc->client = client;
     svc->name = strdup(name);
+    svc->plugin = NULL;
     svc->input_pipe = NULL;
     svc->output_pipe = NULL;
 
@@ -116,6 +118,27 @@ guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, const char* name) {
 
     /* Return removed entry, if any */
     return found;
+
+}
+
+void guac_rdp_svc_write(guac_rdp_svc* svc, void* data, int length) {
+
+    wStream* output_stream;
+
+    /* Do not write of plugin not associated */
+    if (svc->plugin == NULL) {
+        guac_client_log_error(svc->client,
+                "Channel \"%s\" output dropped.",
+                svc->name);
+        return;
+    }
+
+    /* Build packet */
+    output_stream = Stream_New(NULL, length);
+    Stream_Write(output_stream, data, length);
+
+    /* Send packet */
+    svc_plugin_send(svc->plugin, output_stream);
 
 }
 

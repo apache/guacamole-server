@@ -26,6 +26,7 @@
 #include "config.h"
 
 #include <freerdp/freerdp.h>
+#include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
@@ -44,6 +45,11 @@ typedef struct guac_rdp_svc {
      * Reference to the client owning this static channel.
      */
     guac_client* client;
+
+    /**
+     * Reference to associated SVC plugin.
+     */
+    rdpSvcPlugin* plugin;
 
     /**
      * The name of the RDP channel in use, and the name to use for each pipe.
@@ -88,6 +94,11 @@ guac_rdp_svc* guac_rdp_get_svc(guac_client* client, const char* name);
  * Remove the SVC with the given name from the list stored in the client.
  */
 guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, const char* name);
+
+/**
+ * Write the given blob of data to the virtual channel.
+ */
+void guac_rdp_svc_write(guac_rdp_svc* svc, void* data, int length);
 
 #endif
 
