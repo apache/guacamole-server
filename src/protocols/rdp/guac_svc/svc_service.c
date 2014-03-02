@@ -115,6 +115,23 @@ void guac_svc_process_event(rdpSvcPlugin* plugin, wMessage* event) {
 
 void guac_svc_process_receive(rdpSvcPlugin* plugin,
         wStream* input_stream) {
-    /* STUB */
+
+    /* Get corresponding guac_rdp_svc */
+    guac_svcPlugin* svc_plugin = (guac_svcPlugin*) plugin;
+    guac_rdp_svc* svc = svc_plugin->svc;
+
+    /* Fail if output not created */
+    if (svc->output_pipe == NULL) {
+        guac_client_log_error(svc->client,
+                "Output for channel \"%s\" dropped.",
+                svc->name);
+        return;
+    }
+
+    /* Send blob */
+    guac_protocol_send_blob(svc->client->socket, svc->output_pipe,
+            Stream_Buffer(input_stream),
+            Stream_Length(input_stream));
+
 }
 
