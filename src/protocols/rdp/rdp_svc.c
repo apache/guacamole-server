@@ -90,3 +90,32 @@ guac_rdp_svc* guac_rdp_get_svc(guac_client* client, const char* name) {
 
 }
 
+guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, const char* name) {
+
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_common_list_element* current;
+    guac_rdp_svc* found = NULL;
+
+    /* For each available SVC */
+    guac_common_list_lock(client_data->available_svc);
+    current = client_data->available_svc->head;
+    while (current != NULL) {
+
+        /* If name matches, remove entry */
+        guac_rdp_svc* current_svc = (guac_rdp_svc*) current->data;
+        if (strcmp(current_svc->name, name) == 0) {
+            guac_common_list_remove(client_data->available_svc, current);
+            found = current_svc;
+            break;
+        }
+
+        current = current->next;
+
+    }
+    guac_common_list_unlock(client_data->available_svc);
+
+    /* Return removed entry, if any */
+    return found;
+
+}
+

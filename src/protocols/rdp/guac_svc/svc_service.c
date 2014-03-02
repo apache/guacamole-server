@@ -106,7 +106,18 @@ void guac_svc_process_connect(rdpSvcPlugin* plugin) {
 }
 
 void guac_svc_process_terminate(rdpSvcPlugin* plugin) {
+
+    /* Get corresponding guac_rdp_svc */
+    guac_svcPlugin* svc_plugin = (guac_svcPlugin*) plugin;
+    guac_rdp_svc* svc = svc_plugin->svc;
+
+    /* Remove and free SVC */
+    guac_client_log_info(svc->client, "Closing channel \"%s\"...", svc->name);
+    guac_rdp_remove_svc(svc->client, svc->name);
+    free(svc);
+
     free(plugin);
+
 }
 
 void guac_svc_process_event(rdpSvcPlugin* plugin, wMessage* event) {

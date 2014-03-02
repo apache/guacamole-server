@@ -84,5 +84,10 @@ void guac_rdp_add_svc(guac_client* client, guac_rdp_svc* svc);
  */
 guac_rdp_svc* guac_rdp_get_svc(guac_client* client, const char* name);
 
+/**
+ * Remove the SVC with the given name from the list stored in the client.
+ */
+guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, const char* name);
+
 #endif
 
