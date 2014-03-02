@@ -93,6 +93,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "remote-app",
     "remote-app-dir",
     "remote-app-args",
+    "static-channels",
     NULL
 };
 
@@ -120,6 +121,7 @@ enum RDP_ARGS_IDX {
     IDX_REMOTE_APP,
     IDX_REMOTE_APP_DIR,
     IDX_REMOTE_APP_ARGS,
+    IDX_STATIC_CHANNELS,
     RDP_ARGS_COUNT
 };
 

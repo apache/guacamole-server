@@ -196,6 +196,16 @@ typedef struct guac_rdp_settings {
      */
     char* remote_app_args;
 
+    /**
+     * The number of static virtual channels in use.
+     */
+    int svc_count;
+
+    /**
+     * The names of each static virtual channel.
+     */
+    char** svc_names;
+
 } guac_rdp_settings;
 
 /**
