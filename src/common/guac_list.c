@@ -66,7 +66,9 @@ void guac_common_list_remove(guac_common_list* list,
 
     /* Point previous (or head) to next */
     *(element->_ptr) = element->next;
-    element->next->_ptr = element->_ptr;
+
+    if (element->next != NULL)
+        element->next->_ptr = element->_ptr;
 
     free(element);
 
