@@ -32,6 +32,7 @@
 #include <freerdp/constants.h>
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -92,6 +93,11 @@ void guac_svc_process_connect(rdpSvcPlugin* plugin) {
     /* NULL out pExtendedData so we don't lose our guac_rdp_svc due to an
      * automatic free() within libfreerdp */
     plugin->channel_entry_points.pExtendedData = NULL;
+
+    /* Create pipe */
+    svc->output_pipe = guac_client_alloc_stream(svc->client);
+    guac_protocol_send_pipe(svc->client->socket, svc->output_pipe,
+            "application/octet-stream", svc->name);
 
     /* Log connection to static channel */
     guac_client_log_info(svc->client,
