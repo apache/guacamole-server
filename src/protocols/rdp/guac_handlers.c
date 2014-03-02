@@ -642,6 +642,13 @@ int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
 
     } /* end if upload stream */
 
+    /* Handle received SVC data */
+    else if (rdp_stream->type == GUAC_RDP_INBOUND_SVC_STREAM) {
+        guac_client_log_info(client,
+                "STUB: Received %i bytes on pipe for channel \"%s\".",
+                length, rdp_stream->svc->name);
+    }
+
     guac_protocol_send_ack(client->socket, stream, "OK (DATA RECEIVED)",
             GUAC_PROTOCOL_STATUS_SUCCESS);
     guac_socket_flush(client->socket);
