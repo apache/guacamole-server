@@ -38,6 +38,9 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data);
 int rdp_guac_client_file_handler(guac_client* client, guac_stream* stream,
         char* mimetype, char* filename);
 
+int rdp_guac_client_pipe_handler(guac_client* client, guac_stream* stream,
+        char* mimetype, char* name);
+
 int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length);
 

@@ -353,6 +353,7 @@ BOOL rdp_freerdp_post_connect(freerdp* instance) {
 
     /* File transfer handlers */
     client->file_handler = rdp_guac_client_file_handler;
+    client->pipe_handler = rdp_guac_client_pipe_handler;
     client->blob_handler = rdp_guac_client_blob_handler;
     client->end_handler = rdp_guac_client_end_handler;
     client->ack_handler = rdp_guac_client_ack_handler;

@@ -144,5 +144,7 @@ void guac_svc_process_receive(rdpSvcPlugin* plugin,
             Stream_Buffer(input_stream),
             Stream_Length(input_stream));
 
+    guac_socket_flush(svc->client->socket);
+
 }
 

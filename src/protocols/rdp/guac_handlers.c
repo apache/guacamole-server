@@ -566,6 +566,37 @@ int rdp_guac_client_file_handler(guac_client* client, guac_stream* stream,
 
 }
 
+int rdp_guac_client_pipe_handler(guac_client* client, guac_stream* stream,
+        char* mimetype, char* name) {
+
+    guac_rdp_stream* rdp_stream;
+    guac_rdp_svc* svc = guac_rdp_get_svc(client, name);
+
+    /* Fail if no such SVC */
+    if (svc == NULL) {
+        guac_client_log_error(client,
+                "Requested non-existent pipe: \"%s\".",
+                name);
+        guac_protocol_send_ack(client->socket, stream, "FAIL (NO SUCH PIPE)",
+                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+        guac_socket_flush(client->socket);
+        return 0;
+    }
+    else
+        guac_client_log_error(client,
+                "Inbound half of channel \"%s\" connected.",
+                name);
+
+    /* Init stream data */
+    stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
+    rdp_stream->type = GUAC_RDP_INBOUND_SVC_STREAM;
+    rdp_stream->svc = svc;
+    svc->input_pipe = stream;
+
+    return 0;
+
+}
+
 int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length) {
 
