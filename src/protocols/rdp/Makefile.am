@@ -42,6 +42,9 @@ libguac_client_rdp_la_SOURCES = \
 	rdp_settings.c              \
 	unicode.c
 
+guacsvc_sources =          \
+	guac_svc/svc_service.c
+
 guacsnd_sources =                 \
 	guac_rdpsnd/rdpsnd_messages.c \
 	guac_rdpsnd/rdpsnd_service.c
@@ -71,6 +74,7 @@ noinst_HEADERS =                             \
 	guac_rdpdr/rdpdr_service.h               \
 	guac_rdpsnd/rdpsnd_messages.h            \
 	guac_rdpsnd/rdpsnd_service.h             \
+	guac_svc/svc_service.h                   \
 	client.h                                 \
 	debug.h                                  \
 	guac_handlers.h                          \
@@ -89,15 +93,18 @@ noinst_HEADERS =                             \
 # Add compatibility layer for WinPR if not available
 if ! ENABLE_WINPR
     noinst_HEADERS  += compat/winpr-stream.h compat/winpr-wtypes.h
+    guacsvc_sources += compat/winpr-stream.c
     guacsnd_sources += compat/winpr-stream.c
     guacdr_sources  += compat/winpr-stream.c
 endif
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @PTHREAD_LIBS@ @CAIRO_LIBS@
+guacsvc_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 guacsnd_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 guacdr_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 
 libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
+guacsvc_libadd = @LIBGUAC_LTLIB@
 guacsnd_libadd = @LIBGUAC_LTLIB@
 guacdr_libadd = @LIBGUAC_LTLIB@
 
@@ -118,7 +125,11 @@ _generated_keymaps.c: $(rdp_keymaps)
 if LEGACY_FREERDP_EXTENSIONS
 
 # FreeRDP 1.0-style extensions
-freerdp_LTLIBRARIES = guacsnd.la guacdr.la
+freerdp_LTLIBRARIES = guacsvc.la guacsnd.la guacdr.la
+
+guacsvc_la_SOURCES = ${guacsvc_sources}
+guacsvc_la_LDFLAGS = ${guacsvc_ldflags}
+guacsvc_la_LIBADD  = ${guacsvc_libadd}
 
 guacsnd_la_SOURCES = ${guacsnd_sources}
 guacsnd_la_LDFLAGS = ${guacsnd_ldflags}
@@ -131,7 +142,11 @@ guacdr_la_LIBADD  = ${guacdr_libadd}
 else
 
 # FreeRDP 1.1 (and hopefully onward) extensions
-freerdp_LTLIBRARIES = guacsnd-client.la guacdr-client.la
+freerdp_LTLIBRARIES = guacsvc-client.la guacsnd-client.la guacdr-client.la
+
+guacsvc_client_la_SOURCES = ${guacsvc_sources}
+guacsvc_client_la_LDFLAGS = ${guacsvc_ldflags}
+guacsvc_client_la_LIBADD  = ${guacsvc_libadd}
 
 guacsnd_client_la_SOURCES = ${guacsnd_sources}
 guacsnd_client_la_LDFLAGS = ${guacsnd_ldflags}
