@@ -26,6 +26,7 @@
 
 #include "config.h"
 
+#include "guac_list.h"
 #include "rdp_fs.h"
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
@@ -161,10 +162,18 @@ typedef struct rdp_guac_client_data {
     guac_rdp_fs* filesystem;
 
     /**
+     * List of all available static virtual channels.
+     */
+    guac_common_list* available_svc;
+
+    /**
      * Lock which is locked and unlocked for each RDP message.
      */
     pthread_mutex_t rdp_lock;
 
+    /**
+     * Common attributes for locks.
+     */
     pthread_mutexattr_t attributes;
 
 } rdp_guac_client_data;

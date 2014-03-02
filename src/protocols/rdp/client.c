@@ -238,8 +238,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
                 guac_rdp_free_svc(svc);
             }
 
-            /* Log success */
+            /* Store and log on success */
             else {
+                guac_rdp_add_svc(client, svc);
                 guac_client_log_info(client, "Created static channel \"%s\"...",
                         svc->name);
             }
@@ -629,6 +630,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->clipboard = NULL;
     guac_client_data->audio = NULL;
     guac_client_data->filesystem = NULL;
+    guac_client_data->available_svc = guac_common_list_alloc();
 
     /* Main socket needs to be threadsafe */
     guac_socket_require_threadsafe(client->socket);

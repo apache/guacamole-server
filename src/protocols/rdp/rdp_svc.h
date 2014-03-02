@@ -65,8 +65,7 @@ typedef struct guac_rdp_svc {
 } guac_rdp_svc;
 
 /**
- * Allocate a new SVC with the given name. Not that this will NOT add the
- * SVC to the list stored in the client.
+ * Allocate a new SVC with the given name.
  */
 guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name);
 
@@ -76,7 +75,7 @@ guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name);
 void guac_rdp_free_svc(guac_rdp_svc* svc);
 
 /**
- * Add the given SVC to the list stored in the client.
+ * Add the given SVC to the list of all available SVCs.
  */
 void guac_rdp_add_svc(guac_client* client, guac_rdp_svc* svc);
 
@@ -84,11 +83,6 @@ void guac_rdp_add_svc(guac_client* client, guac_rdp_svc* svc);
  * Retrieve the SVC with the given name from the list stored in the client.
  */
 guac_rdp_svc* guac_rdp_get_svc(guac_client* client, char* name);
-
-/**
- * Remove the SVC with the given name from the list stored in the client.
- */
-guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, char* name);
 
 #endif
 

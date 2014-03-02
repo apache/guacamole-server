@@ -24,9 +24,11 @@
 
 #include "client.h"
 #include "guac_handlers.h"
+#include "guac_list.h"
 #include "rdp_cliprdr.h"
 #include "rdp_keymap.h"
 #include "rdp_rail.h"
+#include "rdp_svc.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -66,6 +68,8 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);
 
 int rdp_guac_client_free_handler(guac_client* client) {
 
+    guac_common_list_element* current;
+
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) client->data;
 
@@ -83,6 +87,20 @@ int rdp_guac_client_free_handler(guac_client* client) {
     /* Clean up filesystem, if allocated */
     if (guac_client_data->filesystem != NULL)
         guac_rdp_fs_free(guac_client_data->filesystem);
+
+    /* Free any allocated SVCs */
+    current = guac_client_data->available_svc->head;
+    while (current != NULL) {
+
+        guac_common_list_element* next = current->next;
+
+        guac_rdp_free_svc((guac_rdp_svc*) current->data);
+        guac_common_list_remove(guac_client_data->available_svc, current);
+
+        current = next;
+
+    }
+    guac_common_list_free(guac_client_data->available_svc);
 
     /* Free client data */
     cairo_surface_destroy(guac_client_data->opaque_glyph_surface);
