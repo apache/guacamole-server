@@ -33,6 +33,7 @@
 #include "rdp_glyph.h"
 #include "rdp_keymap.h"
 #include "rdp_pointer.h"
+#include "rdp_svc.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -226,10 +227,22 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         char** current = guac_client_data->settings.svc_names;
         do {
 
-            /* STUB */
-            guac_client_log_info(client,
-                    "STUB: Creating static channel \"%s\"...",
-                    *current);
+            guac_rdp_svc* svc = guac_rdp_alloc_svc(client, *current);
+
+            /* Attempt to load guacsvc plugin for new static channel */
+            if (freerdp_channels_load_plugin(channels, instance->settings,
+                        "guacsvc", svc)) {
+                guac_client_log_error(client,
+                        "Failed to load guacsvc plugin for channel \"%s\".",
+                        svc->name);
+                guac_rdp_free_svc(svc);
+            }
+
+            /* Log success */
+            else {
+                guac_client_log_info(client, "Created static channel \"%s\"...",
+                        svc->name);
+            }
 
         } while (*(++current) != NULL);
 

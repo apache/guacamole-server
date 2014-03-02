@@ -33,12 +33,20 @@
 #endif
 
 guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
-    /* STUB */
-    return NULL;
+
+    guac_rdp_svc* svc = malloc(sizeof(guac_rdp_svc));
+
+    svc->client = client;
+    svc->name = strdup(name);
+    svc->input_pipe = NULL;
+    svc->output_pipe = NULL;
+
+    return svc;
 }
 
 void guac_rdp_free_svc(guac_rdp_svc* svc) {
-    /* STUB */
+    free(svc->name);
+    free(svc);
 }
 
 void guac_rdp_add_svc(guac_client* client, guac_rdp_svc* svc) {

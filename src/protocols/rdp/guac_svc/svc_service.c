@@ -103,11 +103,11 @@ void guac_svc_process_terminate(rdpSvcPlugin* plugin) {
     free(plugin);
 }
 
-void guac_rdpdr_process_event(rdpSvcPlugin* plugin, wMessage* event) {
+void guac_svc_process_event(rdpSvcPlugin* plugin, wMessage* event) {
     freerdp_event_free(event);
 }
 
-void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
+void guac_svc_process_receive(rdpSvcPlugin* plugin,
         wStream* input_stream) {
     /* STUB */
 }
