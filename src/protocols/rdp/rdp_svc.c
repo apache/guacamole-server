@@ -20,15 +20,10 @@
  * THE SOFTWARE.
  */
 
-#ifndef __GUAC_SVC_SERVICE_H
-#define __GUAC_SVC_SERVICE_H
-
 #include "config.h"
 #include "rdp_svc.h"
 
-#include <pthread.h>
-
-#include <freerdp/utils/svc_plugin.h>
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
@@ -37,47 +32,26 @@
 #include "compat/winpr-stream.h"
 #endif
 
-/**
- * Structure representing the current state of an arbitrary static virtual
- * channel.
- */
-typedef struct guac_svcPlugin {
+guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
+    /* STUB */
+    return NULL;
+}
 
-    /**
-     * The FreeRDP parts of this plugin. This absolutely MUST be first.
-     * FreeRDP depends on accessing this structure as if it were an instance
-     * of rdpSvcPlugin.
-     */
-    rdpSvcPlugin plugin;
+void guac_rdp_free_svc(guac_rdp_svc* svc) {
+    /* STUB */
+}
 
-    /**
-     * The Guacamole-specific SVC structure describing the channel this
-     * instance represents.
-     */
-    guac_rdp_svc* svc;
+void guac_rdp_add_svc(guac_client* client, guac_rdp_svc* svc) {
+    /* STUB */
+}
 
-} guac_svcPlugin;
+guac_rdp_svc* guac_rdp_get_svc(guac_client* client, char* name) {
+    /* STUB */
+    return NULL;
+}
 
-/**
- * Handler called when this plugin is loaded by FreeRDP.
- */
-void guac_svc_process_connect(rdpSvcPlugin* plugin);
-
-/**
- * Handler called when this plugin receives data along its designated channel.
- */
-void guac_svc_process_receive(rdpSvcPlugin* plugin,
-        wStream* input_stream);
-
-/**
- * Handler called when this plugin is being unloaded.
- */
-void guac_svc_process_terminate(rdpSvcPlugin* plugin);
-
-/**
- * Handler called when this plugin receives an event.
- */
-void guac_svc_process_event(rdpSvcPlugin* plugin, wMessage* event);
-
-#endif
+guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, char* name) {
+    /* STUB */
+    return NULL;
+}
 

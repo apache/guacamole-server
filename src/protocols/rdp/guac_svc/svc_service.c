@@ -46,25 +46,35 @@
  */
 int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
 
+    /* Gain access to plugin data */
+    CHANNEL_ENTRY_POINTS_EX* entry_points_ex =
+        (CHANNEL_ENTRY_POINTS_EX*) pEntryPoints;
+
     /* Allocate plugin */
-    guac_svcPlugin* svc =
+    guac_svcPlugin* svc_plugin =
         (guac_svcPlugin*) calloc(1, sizeof(guac_svcPlugin));
 
+    /* Get SVC descriptor from plugin parameters */
+    guac_rdp_svc* svc = (guac_rdp_svc*) entry_points_ex->pExtendedData;
+
     /* Init channel def */
-    strcpy(svc->plugin.channel_def.name, "FIXME");
-    svc->plugin.channel_def.options = 
+    strcpy(svc_plugin->plugin.channel_def.name, svc->name);
+    svc_plugin->plugin.channel_def.options = 
           CHANNEL_OPTION_INITIALIZED
         | CHANNEL_OPTION_ENCRYPT_RDP
         | CHANNEL_OPTION_COMPRESS_RDP;
 
+    /* Init plugin */
+    svc_plugin->svc = svc;
+
     /* Set callbacks */
-    svc->plugin.connect_callback   = guac_svc_process_connect;
-    svc->plugin.receive_callback   = guac_svc_process_receive;
-    svc->plugin.event_callback     = guac_svc_process_event;
-    svc->plugin.terminate_callback = guac_svc_process_terminate;
+    svc_plugin->plugin.connect_callback   = guac_svc_process_connect;
+    svc_plugin->plugin.receive_callback   = guac_svc_process_receive;
+    svc_plugin->plugin.event_callback     = guac_svc_process_event;
+    svc_plugin->plugin.terminate_callback = guac_svc_process_terminate;
 
     /* Finish init */
-    svc_plugin_init((rdpSvcPlugin*) svc, pEntryPoints);
+    svc_plugin_init((rdpSvcPlugin*) svc_plugin, pEntryPoints);
     return 1;
 
 }
@@ -75,25 +85,17 @@ int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
 
 void guac_svc_process_connect(rdpSvcPlugin* plugin) {
 
-    /* Get SVC plugin */
-    guac_svcPlugin* svc = (guac_svcPlugin*) plugin;
+    /* Get corresponding guac_rdp_svc */
+    guac_svcPlugin* svc_plugin = (guac_svcPlugin*) plugin;
+    guac_rdp_svc* svc = svc_plugin->svc;
 
-    /* Get client from plugin parameters */
-    guac_client* client = (guac_client*)
-        plugin->channel_entry_points.pExtendedData;
-
-    /* NULL out pExtendedData so we don't lose our guac_client due to an
+    /* NULL out pExtendedData so we don't lose our guac_rdp_svc due to an
      * automatic free() within libfreerdp */
     plugin->channel_entry_points.pExtendedData = NULL;
 
-    /* Get data from client */
-    /*rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;*/
-
-    /* Init plugin */
-    svc->client = client;
-
-    /* Log that printing, etc. has been loaded */
-    guac_client_log_info(client, "guacsvc connected.");
+    /* Log connection to static channel */
+    guac_client_log_info(svc->client,
+            "Static channel \"%s\" connected.", svc->name);
 
 }
 

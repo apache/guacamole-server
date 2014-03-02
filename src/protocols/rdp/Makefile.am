@@ -40,6 +40,7 @@ libguac_client_rdp_la_SOURCES = \
 	rdp_pointer.c               \
 	rdp_rail.c                  \
 	rdp_settings.c              \
+	rdp_svc.c                   \
 	unicode.c
 
 guacsvc_sources =          \
@@ -88,6 +89,7 @@ noinst_HEADERS =                             \
 	rdp_rail.h                               \
 	rdp_settings.h                           \
 	rdp_status.h                             \
+	rdp_svc.h                                \
 	unicode.h
 
 # Add compatibility layer for WinPR if not available
