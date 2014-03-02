@@ -20,32 +20,29 @@
  * THE SOFTWARE.
  */
 
+
+#ifndef _GUAC_TEST_COMMON_SUITE_H
+#define _GUAC_TEST_COMMON_SUITE_H
+
+/**
+ * Test suite containing unit tests for the "common" utility library included
+ * for the sake of simplifying guacamole-server development, but not included
+ * as part of libguac.
+ *
+ * @file common_suite.h
+ */
+
 #include "config.h"
 
-#include "client/client_suite.h"
-#include "common/common_suite.h"
-#include "protocol/suite.h"
-#include "util/util_suite.h"
+/**
+ * Registers the common test suite with CUnit.
+ */
+int register_common_suite();
 
-#include <CUnit/Basic.h>
+/**
+ * Unit test for string utility functions.
+ */
+void test_guac_string();
 
-int main() {
-
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
-        return CU_get_error();
-
-    /* Register suites */
-    register_protocol_suite();
-    register_client_suite();
-    register_util_suite();
-    register_common_suite();
-
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
-
-}
+#endif
 

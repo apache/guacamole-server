@@ -22,30 +22,52 @@
 
 #include "config.h"
 
-#include "client/client_suite.h"
-#include "common/common_suite.h"
-#include "protocol/suite.h"
-#include "util/util_suite.h"
+#include "common_suite.h"
+#include "guac_string.h"
 
+#include <stdlib.h>
 #include <CUnit/Basic.h>
 
-int main() {
+void test_guac_string() {
 
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
-        return CU_get_error();
+    char** tokens;
 
-    /* Register suites */
-    register_protocol_suite();
-    register_client_suite();
-    register_util_suite();
-    register_common_suite();
+    /* Test occurrence counting */
+    CU_ASSERT_EQUAL(4, guac_count_occurrences("this is a test string", 's'));
+    CU_ASSERT_EQUAL(3, guac_count_occurrences("this is a test string", 'i'));
+    CU_ASSERT_EQUAL(0, guac_count_occurrences("", 's'));
 
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
+    /* Split test string */
+    tokens = guac_split("this is a test string", ' ');
+
+    CU_ASSERT_PTR_NOT_NULL(tokens);
+
+    /* Check resulting tokens */
+    CU_ASSERT_PTR_NOT_NULL_FATAL(tokens[0]);
+    CU_ASSERT_STRING_EQUAL("this", tokens[0]);
+
+    CU_ASSERT_PTR_NOT_NULL_FATAL(tokens[1]);
+    CU_ASSERT_STRING_EQUAL("is", tokens[1]);
+
+    CU_ASSERT_PTR_NOT_NULL_FATAL(tokens[2]);
+    CU_ASSERT_STRING_EQUAL("a", tokens[2]);
+
+    CU_ASSERT_PTR_NOT_NULL_FATAL(tokens[3]);
+    CU_ASSERT_STRING_EQUAL("test", tokens[3]);
+
+    CU_ASSERT_PTR_NOT_NULL_FATAL(tokens[4]);
+    CU_ASSERT_STRING_EQUAL("string", tokens[4]);
+
+    CU_ASSERT_PTR_NULL(tokens[5]);
+
+
+    /* Clean up */
+    free(tokens[0]);
+    free(tokens[1]);
+    free(tokens[2]);
+    free(tokens[3]);
+    free(tokens[4]);
+    free(tokens);
 
 }
 

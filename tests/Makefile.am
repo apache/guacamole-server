@@ -22,13 +22,14 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@
+AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
 TESTS = test_libguac
 check_PROGRAMS = test_libguac
 
 noinst_HEADERS =          \
 	client/client_suite.h \
+	common/common_suite.h \
 	protocol/suite.h      \
 	util/util_suite.h
 
@@ -37,6 +38,8 @@ test_libguac_SOURCES =           \
 	client/client_suite.c        \
 	client/buffer_pool.c         \
 	client/layer_pool.c          \
+	common/common_suite.c        \
+	common/guac_string.c         \
 	protocol/suite.c             \
 	protocol/base64_decode.c     \
 	protocol/instruction_parse.c \
@@ -47,5 +50,5 @@ test_libguac_SOURCES =           \
 	util/guac_pool.c             \
 	util/guac_unicode.c
 
-test_libguac_LDADD = @LIBGUAC_LTLIB@ @CUNIT_LIBS@
+test_libguac_LDADD = @LIBGUAC_LTLIB@ @CUNIT_LIBS@ @COMMON_LTLIB@
 

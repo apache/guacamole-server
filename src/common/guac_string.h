@@ -20,32 +20,31 @@
  * THE SOFTWARE.
  */
 
+#ifndef __GUAC_COMMON_STRING_H
+#define __GUAC_COMMON_STRING_H
+
 #include "config.h"
 
-#include "client/client_suite.h"
-#include "common/common_suite.h"
-#include "protocol/suite.h"
-#include "util/util_suite.h"
+/**
+ * Counts the number of occurrences of a given character in a string.
+ *
+ * @param string The string to count occurrences within.
+ * @param c The character to count occurrences of.
+ * @return The number of occurrences.
+ */
+int guac_count_occurrences(const char* string, char c);
 
-#include <CUnit/Basic.h>
+/**
+ * Splits a string into a newly-allocated array of strings. The array itself
+ * and each string within the array will eventually need to be freed. The array
+ * is NULL-terminated.
+ *
+ * @param string The string to split.
+ * @param delim The character which separates individual substrings within the
+ *              given string.
+ * @return A newly-allocated, NULL-terminated array of strings.
+ */
+char** guac_split(const char* string, char delim);
 
-int main() {
-
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
-        return CU_get_error();
-
-    /* Register suites */
-    register_protocol_suite();
-    register_client_suite();
-    register_util_suite();
-    register_common_suite();
-
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
-
-}
+#endif
 

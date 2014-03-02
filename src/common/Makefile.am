@@ -28,15 +28,17 @@ noinst_LTLIBRARIES = libguac_common.la
 
 noinst_HEADERS =          \
     guac_io.h             \
-    guac_dot_cursor.c     \
+    guac_dot_cursor.h     \
     guac_list.h           \
-    guac_pointer_cursor.c
+    guac_pointer_cursor.h \
+    guac_string.h
 
 libguac_common_la_SOURCES = \
     guac_io.c               \
     guac_dot_cursor.c       \
     guac_list.c             \
-    guac_pointer_cursor.c
+    guac_pointer_cursor.c   \
+    guac_string.c
 
 libguac_common_la_LIBADD = @LIBGUAC_LTLIB@
 

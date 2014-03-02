@@ -22,30 +22,35 @@
 
 #include "config.h"
 
-#include "client/client_suite.h"
-#include "common/common_suite.h"
-#include "protocol/suite.h"
-#include "util/util_suite.h"
+#include "common_suite.h"
 
 #include <CUnit/Basic.h>
 
-int main() {
+int common_suite_init() {
+    return 0;
+}
 
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
+int common_suite_cleanup() {
+    return 0;
+}
+
+int register_common_suite() {
+
+    /* Add common test suite */
+    CU_pSuite suite = CU_add_suite("common",
+            common_suite_init, common_suite_cleanup);
+    if (suite == NULL) {
+        CU_cleanup_registry();
         return CU_get_error();
+    }
 
-    /* Register suites */
-    register_protocol_suite();
-    register_client_suite();
-    register_util_suite();
-    register_common_suite();
+    /* Add tests */
+    if (CU_add_test(suite, "guac-string",    test_guac_string) == NULL) {
+        CU_cleanup_registry();
+        return CU_get_error();
+    }
 
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
+    return 0;
 
 }
 
