@@ -27,6 +27,7 @@
 #include "client.h"
 #include "guac_handlers.h"
 #include "guac_pointer_cursor.h"
+#include "guac_string.h"
 #include "rdp_bitmap.h"
 #include "rdp_gdi.h"
 #include "rdp_glyph.h"
@@ -216,6 +217,21 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
                     "rail", instance->settings))
             guac_client_log_error(client, "Failed to load rail plugin.");
 #endif
+
+    }
+
+    /* Load SVC plugin instances for all static channels */
+    if (guac_client_data->settings.svc_names != NULL) {
+
+        char** current = guac_client_data->settings.svc_names;
+        do {
+
+            /* STUB */
+            guac_client_log_info(client,
+                    "STUB: Creating static channel \"%s\"...",
+                    *current);
+
+        } while (*(++current) != NULL);
 
     }
 
@@ -559,6 +575,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->remote_app_args = NULL;
     if (argv[IDX_REMOTE_APP_ARGS][0] != '\0')
         settings->remote_app_args = strdup(argv[IDX_REMOTE_APP_ARGS]);
+
+    /* Static virtual channels */
+    settings->svc_names = NULL;
+    if (argv[IDX_STATIC_CHANNELS][0] != '\0')
+        settings->svc_names = guac_split(argv[IDX_STATIC_CHANNELS], ',');
 
     /* Session color depth */
     settings->color_depth = RDP_DEFAULT_DEPTH;
