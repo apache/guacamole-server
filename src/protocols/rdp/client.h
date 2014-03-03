@@ -281,7 +281,7 @@ typedef struct guac_rdp_stream {
     guac_rdp_download_status download_status;
 
     /**
-     * Associated SVC instance. Only valid for GUAC_RDP_SVC_STREAM.
+     * Associated SVC instance. Only valid for GUAC_RDP_INBOUND_SVC_STREAM.
      */
     guac_rdp_svc* svc;
 
