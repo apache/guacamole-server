@@ -28,7 +28,7 @@
 #include "rdp_cliprdr.h"
 #include "rdp_keymap.h"
 #include "rdp_rail.h"
-#include "rdp_svc.h"
+#include "rdp_stream.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -492,164 +492,48 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
 
 }
 
-/**
- * Writes the given filename to the given upload path, sanitizing the filename
- * and translating the filename to the root directory.
- */
-static void __generate_upload_path(const char* filename, char* path) {
-
-    int i;
-
-    /* Add initial backslash */
-    *(path++) = '\\';
-
-    for (i=1; i<GUAC_RDP_FS_MAX_PATH; i++) {
-
-        /* Get current, stop at end */
-        char c = *(filename++);
-        if (c == '\0')
-            break;
-
-        /* Replace special characters with underscores */
-        if (c == '/' || c == '\\')
-            c = '_';
-
-        *(path++) = c;
-
-    }
-
-    /* Terminate path */
-    *path = '\0';
-
-}
-
 int rdp_guac_client_file_handler(guac_client* client, guac_stream* stream,
         char* mimetype, char* filename) {
 
-    int file_id;
-    guac_rdp_stream* rdp_stream;
-    char file_path[GUAC_RDP_FS_MAX_PATH];
-
-    /* Get filesystem, return error if no filesystem */
-    guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
-    if (fs == NULL) {
-        guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
-        guac_socket_flush(client->socket);
-        return 0;
-    }
-
-    /* Translate name */
-    __generate_upload_path(filename, file_path);
-
-    /* Open file */
-    file_id = guac_rdp_fs_open(fs, file_path, ACCESS_GENERIC_WRITE, 0,
-            DISP_FILE_OVERWRITE_IF, 0);
-    if (file_id < 0) {
-        guac_protocol_send_ack(client->socket, stream, "FAIL (CANNOT OPEN)",
-                GUAC_PROTOCOL_STATUS_PERMISSION_DENIED);
-        guac_socket_flush(client->socket);
-        return 0;
-    }
-
-    /* Init upload status */
-    rdp_stream = malloc(sizeof(guac_rdp_stream));
-    rdp_stream->type = GUAC_RDP_UPLOAD_STREAM;
-    rdp_stream->upload_status.offset = 0;
-    rdp_stream->upload_status.file_id = file_id;
-    stream->data = rdp_stream;
-
-    guac_protocol_send_ack(client->socket, stream, "OK (STREAM BEGIN)",
-            GUAC_PROTOCOL_STATUS_SUCCESS);
-    guac_socket_flush(client->socket);
-    return 0;
+    /* All inbound files are file uploads */
+    return guac_rdp_upload_file_handler(client, stream, mimetype, filename);
 
 }
 
 int rdp_guac_client_pipe_handler(guac_client* client, guac_stream* stream,
         char* mimetype, char* name) {
 
-    guac_rdp_stream* rdp_stream;
-    guac_rdp_svc* svc = guac_rdp_get_svc(client, name);
-
-    /* Fail if no such SVC */
-    if (svc == NULL) {
-        guac_client_log_error(client,
-                "Requested non-existent pipe: \"%s\".",
-                name);
-        guac_protocol_send_ack(client->socket, stream, "FAIL (NO SUCH PIPE)",
-                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
-        guac_socket_flush(client->socket);
-        return 0;
-    }
-    else
-        guac_client_log_error(client,
-                "Inbound half of channel \"%s\" connected.",
-                name);
-
-    /* Init stream data */
-    stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
-    rdp_stream->type = GUAC_RDP_INBOUND_SVC_STREAM;
-    rdp_stream->svc = svc;
-    svc->input_pipe = stream;
-
-    return 0;
+    /* All inbound pipes are SVC-related */
+    return guac_rdp_svc_pipe_handler(client, stream, mimetype, name);
 
 }
 
 int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length) {
 
-    int bytes_written;
     guac_rdp_stream* rdp_stream = (guac_rdp_stream*) stream->data;
 
-    /* Write any received data if upload stream */
-    if (rdp_stream->type == GUAC_RDP_UPLOAD_STREAM) {
+    /* Handle based on stream type */
+    switch (rdp_stream->type) {
 
-        /* Get filesystem, return error if no filesystem 0*/
-        guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
-        if (fs == NULL) {
-            guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
-                    GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+        /* Inbound file stream */
+        case GUAC_RDP_UPLOAD_STREAM:
+            return guac_rdp_upload_blob_handler(client, stream, data, length);
+
+        /* SVC stream */
+        case GUAC_RDP_INBOUND_SVC_STREAM:
+            return guac_rdp_svc_blob_handler(client, stream, data, length);
+
+        /* Other streams do not accept blobs */
+        default:
+            guac_protocol_send_ack(client->socket, stream,
+                    "FAIL (BLOB NOT EXPECTED)",
+                    GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+
             guac_socket_flush(client->socket);
             return 0;
-        }
 
-        /* Write entire block */
-        while (length > 0) {
-
-            /* Attempt write */
-            bytes_written = guac_rdp_fs_write(fs,
-                    rdp_stream->upload_status.file_id,
-                    rdp_stream->upload_status.offset,
-                    data, length);
-
-            /* On error, abort */
-            if (bytes_written < 0) {
-                guac_protocol_send_ack(client->socket, stream,
-                        "FAIL (BAD WRITE)",
-                        GUAC_PROTOCOL_STATUS_PERMISSION_DENIED);
-                guac_socket_flush(client->socket);
-                return 0;
-            }
-
-            /* Update counters */
-            rdp_stream->upload_status.offset += bytes_written;
-            data += bytes_written;
-            length -= bytes_written;
-
-        }
-
-    } /* end if upload stream */
-
-    /* Handle received SVC data */
-    else if (rdp_stream->type == GUAC_RDP_INBOUND_SVC_STREAM)
-        guac_rdp_svc_write(rdp_stream->svc, data, length);
-
-    guac_protocol_send_ack(client->socket, stream, "OK (DATA RECEIVED)",
-            GUAC_PROTOCOL_STATUS_SUCCESS);
-    guac_socket_flush(client->socket);
-    return 0;
+    }
 
 }
 
@@ -657,30 +541,23 @@ int rdp_guac_client_end_handler(guac_client* client, guac_stream* stream) {
 
     guac_rdp_stream* rdp_stream = (guac_rdp_stream*) stream->data;
 
-    /* Close file for upload streams */
-    if (rdp_stream->type == GUAC_RDP_UPLOAD_STREAM) {
+    /* Handle based on stream type */
+    switch (rdp_stream->type) {
 
-        /* Get filesystem, return error if no filesystem */
-        guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
-        if (fs == NULL) {
-            guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
-                    GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+        /* Inbound file stream */
+        case GUAC_RDP_UPLOAD_STREAM:
+            return guac_rdp_upload_end_handler(client, stream);
+
+        /* Other streams do not accept explicit closure */
+        default:
+            guac_protocol_send_ack(client->socket, stream,
+                    "FAIL (END NOT EXPECTED)",
+                    GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+
             guac_socket_flush(client->socket);
             return 0;
-        }
-
-        /* Close file */
-        guac_rdp_fs_close(fs, rdp_stream->upload_status.file_id);
 
     }
-
-    /* Acknowledge stream end */
-    guac_protocol_send_ack(client->socket, stream, "OK (STREAM END)",
-            GUAC_PROTOCOL_STATUS_SUCCESS);
-    guac_socket_flush(client->socket);
-
-    free(rdp_stream);
-    return 0;
 
 }
 
@@ -693,61 +570,19 @@ int rdp_guac_client_ack_handler(guac_client* client, guac_stream* stream,
     if (rdp_stream == NULL)
         return 0;
 
-    /* Send more data when download blobs are acknowledged */
-    if (rdp_stream->type == GUAC_RDP_DOWNLOAD_STREAM) {
+    /* Handle other acks based on stream type */
+    switch (rdp_stream->type) {
 
-        /* Get filesystem, return error if no filesystem */
-        guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
-        if (fs == NULL) {
-            guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
-                    GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
-            guac_socket_flush(client->socket);
+        /* Inbound file stream */
+        case GUAC_RDP_DOWNLOAD_STREAM:
+            return guac_rdp_download_ack_handler(
+                    client, stream, message, status);
+
+        /* Ignore acks on all other streams */
+        default:
             return 0;
-        }
-
-        /* If successful, read data */
-        if (status == GUAC_PROTOCOL_STATUS_SUCCESS) {
-
-            /* Attempt read into buffer */
-            char buffer[4096];
-            int bytes_read = guac_rdp_fs_read(fs,
-                    rdp_stream->download_status.file_id,
-                    rdp_stream->download_status.offset, buffer, sizeof(buffer));
-
-            /* If bytes read, send as blob */
-            if (bytes_read > 0) {
-                rdp_stream->download_status.offset += bytes_read;
-                guac_protocol_send_blob(client->socket, stream,
-                        buffer, bytes_read);
-            }
-
-            /* If EOF, send end */
-            else if (bytes_read == 0) {
-                guac_protocol_send_end(client->socket, stream);
-                guac_client_free_stream(client, stream);
-                free(rdp_stream);
-            }
-
-            /* Otherwise, fail stream */
-            else {
-                guac_client_log_error(client,
-                        "Error reading file for download");
-                guac_protocol_send_end(client->socket, stream);
-                guac_client_free_stream(client, stream);
-                free(rdp_stream);
-            }
-
-            guac_socket_flush(client->socket);
-
-        }
-
-        /* Otherwise, return stream to client */
-        else
-            guac_client_free_stream(client, stream);
 
     }
-
-    return 0;
 
 }
 

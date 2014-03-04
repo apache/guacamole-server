@@ -24,6 +24,7 @@
 
 #include "client.h"
 #include "debug.h"
+#include "rdp_stream.h"
 #include "rdpdr_fs_service.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"

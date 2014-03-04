@@ -30,7 +30,6 @@
 #include "rdp_fs.h"
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
-#include "rdp_svc.h"
 
 #include <pthread.h>
 
@@ -202,90 +201,6 @@ typedef struct rdp_freerdp_context {
     CLRCONV* clrconv;
 
 } rdp_freerdp_context;
-
-/**
- * The transfer status of a file being downloaded.
- */
-typedef struct guac_rdp_download_status {
-
-    /**
-     * The file ID of the file being downloaded.
-     */
-    int file_id;
-
-    /**
-     * The current position within the file.
-     */
-    uint64_t offset;
-
-} guac_rdp_download_status;
-
-/**
- * Structure which represents the current state of an upload.
- */
-typedef struct guac_rdp_upload_status {
-
-    /**
-     * The overall offset within the file that the next write should
-     * occur at.
-     */
-    int offset;
-
-    /**
-     * The ID of the file being written to.
-     */
-    int file_id;
-
-} guac_rdp_upload_status;
-
-/**
- * All available stream types.
- */
-typedef enum guac_rdp_stream_type {
-
-    /**
-     * An in-progress file upload.
-     */
-    GUAC_RDP_UPLOAD_STREAM,
-
-    /**
-     * An in-progress file download.
-     */
-    GUAC_RDP_DOWNLOAD_STREAM,
-
-    /**
-     * The inbound half of a static virtual channel.
-     */
-    GUAC_RDP_INBOUND_SVC_STREAM
-
-} guac_rdp_stream_type;
-
-/**
- * Variable-typed stream data.
- */
-typedef struct guac_rdp_stream {
-
-    /**
-     * The type of this stream.
-     */
-    guac_rdp_stream_type type;
-
-    /**
-     * The file upload status. Only valid for GUAC_RDP_UPLOAD_STREAM.
-     */
-    guac_rdp_upload_status upload_status;
-
-    /**
-     * The file upload status. Only valid for GUAC_RDP_DOWNLOAD_STREAM.
-     */
-    guac_rdp_download_status download_status;
-
-    /**
-     * Associated SVC instance. Only valid for GUAC_RDP_INBOUND_SVC_STREAM.
-     */
-    guac_rdp_svc* svc;
-
-} guac_rdp_stream;
 
 /**
  * Given the coordinates and dimensions of a rectangle, clips the rectangle to be
