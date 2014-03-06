@@ -59,7 +59,8 @@ int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
     guac_rdp_svc* svc = (guac_rdp_svc*) entry_points_ex->pExtendedData;
 
     /* Init channel def */
-    strcpy(svc_plugin->plugin.channel_def.name, svc->name);
+    strncpy(svc_plugin->plugin.channel_def.name, svc->name,
+            GUAC_RDP_SVC_MAX_LENGTH);
     svc_plugin->plugin.channel_def.options = 
           CHANNEL_OPTION_INITIALIZED
         | CHANNEL_OPTION_ENCRYPT_RDP

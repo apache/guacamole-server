@@ -36,6 +36,11 @@
 #endif
 
 /**
+ * The maximum number of characters to allow for each channel name.
+ */
+#define GUAC_RDP_SVC_MAX_LENGTH 7
+
+/**
  * Structure describing a static virtual channel, and the corresponding
  * Guacamole pipes.
  */
@@ -54,7 +59,7 @@ typedef struct guac_rdp_svc {
     /**
      * The name of the RDP channel in use, and the name to use for each pipe.
      */
-    char* name;
+    char name[GUAC_RDP_SVC_MAX_LENGTH+1];
 
     /**
      * The pipe opened by the Guacamole client, if any. This should be

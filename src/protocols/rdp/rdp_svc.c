@@ -41,16 +41,25 @@ guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
 
     /* Init SVC */
     svc->client = client;
-    svc->name = strdup(name);
     svc->plugin = NULL;
     svc->input_pipe = NULL;
     svc->output_pipe = NULL;
+
+    /* Warn about name length */
+    if (strnlen(name, GUAC_RDP_SVC_MAX_LENGTH+1) > GUAC_RDP_SVC_MAX_LENGTH)
+        guac_client_log_info(client,
+                "Static channel name \"%s\" exceeds maximum of %i characters "
+                "and will be truncated",
+                name, GUAC_RDP_SVC_MAX_LENGTH);
+
+    /* Init name */
+    strncpy(svc->name, name, GUAC_RDP_SVC_MAX_LENGTH);
+    svc->name[GUAC_RDP_SVC_MAX_LENGTH] = '\0';
 
     return svc;
 }
 
 void guac_rdp_free_svc(guac_rdp_svc* svc) {
-    free(svc->name);
     free(svc);
 }
 
