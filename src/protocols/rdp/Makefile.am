@@ -96,10 +96,11 @@ noinst_HEADERS =                             \
 
 # Add compatibility layer for WinPR if not available
 if ! ENABLE_WINPR
-    noinst_HEADERS  += compat/winpr-stream.h compat/winpr-wtypes.h
-    guacsvc_sources += compat/winpr-stream.c
-    guacsnd_sources += compat/winpr-stream.c
-    guacdr_sources  += compat/winpr-stream.c
+noinst_HEADERS  += compat/winpr-stream.h compat/winpr-wtypes.h
+libguac_client_rdp_la_SOURCES += compat/winpr-stream.c
+guacsvc_sources += compat/winpr-stream.c
+guacsnd_sources += compat/winpr-stream.c
+guacdr_sources  += compat/winpr-stream.c
 endif
 
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @PTHREAD_LIBS@ @CAIRO_LIBS@
