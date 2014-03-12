@@ -60,7 +60,7 @@
 #define Stream_SetPointer              stream_set_mark
 #define Stream_Buffer                  stream_get_head
 #define Stream_Pointer                 stream_get_tail
-#define Stream_Length                  stream_get_length
+#define Stream_Length                  stream_get_size
 
 #define wStream                        STREAM
 #define wMessage                       RDP_EVENT
