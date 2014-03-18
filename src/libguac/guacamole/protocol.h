@@ -44,14 +44,17 @@
 /**
  * Set of all possible status codes returned by protocol operations. These
  * codes relate to Guacamole server/client communication, and not to internal
- * communicatin of errors within libguac and linked software.
+ * communication of errors within libguac and linked software.
  *
  * In general:
  *
- *     0x0000 - 0x00FF: Successful operations
- *     0x0100 - 0x01FF: Operations that failed due to implementation status 
- *     0x0200 - 0x02FF: Operations that failed due to environmental errors
- *     0x0300 - 0x03FF: Operations that failed due to user action
+ *     0x0000 - 0x00FF: Successful operations.
+ *     0x0100 - 0x01FF: Operations that failed due to implementation status.
+ *     0x0200 - 0x02FF: Operations that failed due to environmental.
+ *     0x0300 - 0x03FF: Operations that failed due to user action.
+ *
+ * There is a general correspondence of these status codes with HTTP response
+ * codes.
  */
 typedef enum guac_protocol_status {
 
@@ -66,38 +69,77 @@ typedef enum guac_protocol_status {
     GUAC_PROTOCOL_STATUS_UNSUPPORTED = 0x0100,
 
     /**
-     * Permission was denied to perform the operation.
+     * The operation could not be performed due to an internal failure.
      */
-    GUAC_PROTOCOL_STATUS_PERMISSION_DENIED = 0x0200,
+    GUAC_PROTOCOL_STATUS_SERVER_ERROR = 0x0200,
 
     /**
-     * The operation could not be performed due to an internal failure of a
-     * related resource or function.
+     * The operation could not be performed due as the server is busy.
      */
-    GUAC_PROTOCOL_STATUS_INTERNAL_ERROR = 0x0201,
+    GUAC_PROTOCOL_STATUS_SERVER_BUSY = 0x0201,
 
     /**
-     * The operation could not be performed due to timeout of a related
-     * server-side resource.
+     * The operation could not be performed because the upstream server
+     * is not responding.
      */
-    GUAC_PROTOCOL_STATUS_SERVER_TIMEOUT = 0x0202,
+    GUAC_PROTOCOL_STATUS_UPSTREAM_TIMEOUT = 0x202,
 
     /**
-     * The operation was canceled. The an operation may be canceled for any
-     * reason.
+     * The operation was unsuccessful due to an error or otherwise
+     * unexpected condition of the upstream server.
      */
-    GUAC_PROTOCOL_STATUS_CANCELED = 0x0300,
+    GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR = 0x203,
 
     /**
-     * The operation was unsuccessful due to faulty user input.
+     * The operation could not be performed as the requested resource
+     * does not exist.
      */
-    GUAC_PROTOCOL_STATUS_INVALID_PARAMETER = 0x0301,
+    GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND = 0x204,
 
     /**
-     * The operation could not be performed due to timeout of a related
-     * client-side resource.
+     * The operation could not be performed as the requested resource is
+     * already in use.
      */
-    GUAC_PROTOCOL_STATUS_CLIENT_TIMEOUT = 0x0302
+    GUAC_PROTOCOL_STATUS_RESOURCE_CONFLICT = 0x205,
+
+    /**
+     * The operation could not be performed because bad parameters were
+     * given.
+     */
+    GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST = 0x300,
+
+    /**
+     * Permission was denied to perform the operation, as the user is not
+     * yet authorized (not yet logged in, for example).
+     */
+    GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED = 0x0301,
+
+    /**
+     * Permission was denied to perform the operation, and this permission
+     * will not be granted even if the user is authorized.
+     */
+    GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN = 0x0303,
+
+    /**
+     * The client took too long to respond.
+     */
+    GUAC_PROTOCOL_STATUS_CLIENT_TIMEOUT = 0x308,
+
+    /**
+     * The client sent too much data.
+     */
+    GUAC_PROTOCOL_STATUS_CLIENT_OVERRUN = 0x30D,
+
+    /**
+     * The client sent data of an unsupported or unexpected type.
+     */
+    GUAC_PROTOCOL_STATUS_CLIENT_BAD_TYPE = 0x30F,
+
+    /**
+     * The operation failed because the current client is already
+     * using too many resources.
+     */
+    GUAC_PROTOCOL_STATUS_CLIENT_TOO_MANY = 0x31D
 
 } guac_protocol_status;
 
