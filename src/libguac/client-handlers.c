@@ -130,7 +130,7 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
         dummy_stream.index = stream_index;
 
         guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         return 0;
     }
 
@@ -167,7 +167,7 @@ int __guac_handle_pipe(guac_client* client, guac_instruction* instruction) {
         dummy_stream.index = stream_index;
 
         guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         return 0;
     }
 
@@ -226,7 +226,7 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
         dummy_stream.index = stream_index;
 
         guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         return 0;
     }
 
@@ -239,7 +239,7 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
         dummy_stream.index = stream_index;
 
         guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index", GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         return 0;
     }
 
@@ -273,7 +273,7 @@ int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
 
         guac_protocol_send_ack(client->socket, &dummy_stream,
                 "Invalid stream index",
-                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         return 0;
     }
 

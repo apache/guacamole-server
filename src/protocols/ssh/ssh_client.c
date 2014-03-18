@@ -348,7 +348,7 @@ void* ssh_client_thread(void* data) {
     client_data->session = __guac_ssh_create_session(client, &socket_fd);
     if (client_data->session == NULL) {
         guac_protocol_send_error(socket, "Unable to create SSH session.",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(socket);
         return NULL;
     }
@@ -358,7 +358,7 @@ void* ssh_client_thread(void* data) {
         libssh2_channel_open_session(client_data->session);
     if (client_data->term_channel == NULL) {
         guac_protocol_send_error(socket, "Unable to open channel.",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(socket);
         return NULL;
     }
@@ -391,7 +391,7 @@ void* ssh_client_thread(void* data) {
             libssh2_sftp_init(client_data->sftp_ssh_session);
         if (client_data->sftp_session == NULL) {
             guac_protocol_send_error(socket, "Unable to start SFTP session..",
-                    GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                    GUAC_PROTOCOL_STATUS_SERVER_ERROR);
             guac_socket_flush(socket);
             return NULL;
         }
@@ -412,7 +412,7 @@ void* ssh_client_thread(void* data) {
             client_data->term->term_width, client_data->term->term_height,
             0, 0)) {
         guac_protocol_send_error(socket, "Unable to allocate PTY for channel.",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(socket);
         return NULL;
     }
@@ -420,7 +420,7 @@ void* ssh_client_thread(void* data) {
     /* Request shell */
     if (libssh2_channel_shell(client_data->term_channel)) {
         guac_protocol_send_error(socket, "Unable to associate shell with PTY.",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(socket);
         return NULL;
     }

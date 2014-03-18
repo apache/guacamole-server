@@ -76,7 +76,7 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
     if (!__ssh_guac_valid_filename(filename)) {
         guac_protocol_send_ack(client->socket, stream,
                 "SFTP: Illegal filename",
-                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         guac_socket_flush(client->socket);
         return 0;
     }
@@ -104,7 +104,7 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
     /* If path + filename exceeds max length, abort */
     if (i == GUAC_SFTP_MAX_PATH) {
         guac_protocol_send_ack(client->socket, stream, "SFTP: Name too long",
-                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         guac_socket_flush(client->socket);
         return 0;
     }
@@ -127,7 +127,7 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
         guac_client_log_error(client, "Unable to open file \"%s\": %s",
                 fullpath, libssh2_sftp_last_error(client_data->sftp_session));
         guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
     }
 
@@ -156,7 +156,7 @@ int guac_sftp_blob_handler(guac_client* client, guac_stream* stream,
         guac_client_log_error(client, "Unable to write to file: %s",
                 libssh2_sftp_last_error(client_data->sftp_session));
         guac_protocol_send_ack(client->socket, stream, "SFTP: Write failed",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
     }
 
@@ -178,7 +178,7 @@ int guac_sftp_end_handler(guac_client* client, guac_stream* stream) {
     else {
         guac_client_log_error(client, "Unable to close file");
         guac_protocol_send_ack(client->socket, stream, "SFTP: Close failed",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
     }
 

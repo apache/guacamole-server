@@ -80,7 +80,7 @@ int guac_rdp_upload_file_handler(guac_client* client, guac_stream* stream,
     guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
     if (fs == NULL) {
         guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
         return 0;
     }
@@ -93,7 +93,7 @@ int guac_rdp_upload_file_handler(guac_client* client, guac_stream* stream,
             DISP_FILE_OVERWRITE_IF, 0);
     if (file_id < 0) {
         guac_protocol_send_ack(client->socket, stream, "FAIL (CANNOT OPEN)",
-                GUAC_PROTOCOL_STATUS_PERMISSION_DENIED);
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
         guac_socket_flush(client->socket);
         return 0;
     }
@@ -124,7 +124,7 @@ int guac_rdp_svc_pipe_handler(guac_client* client, guac_stream* stream,
                 "Requested non-existent pipe: \"%s\".",
                 name);
         guac_protocol_send_ack(client->socket, stream, "FAIL (NO SUCH PIPE)",
-                GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         guac_socket_flush(client->socket);
         return 0;
     }
@@ -153,7 +153,7 @@ int guac_rdp_upload_blob_handler(guac_client* client, guac_stream* stream,
     guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
     if (fs == NULL) {
         guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
         return 0;
     }
@@ -171,7 +171,7 @@ int guac_rdp_upload_blob_handler(guac_client* client, guac_stream* stream,
         if (bytes_written < 0) {
             guac_protocol_send_ack(client->socket, stream,
                     "FAIL (BAD WRITE)",
-                    GUAC_PROTOCOL_STATUS_PERMISSION_DENIED);
+                    GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
             guac_socket_flush(client->socket);
             return 0;
         }
@@ -213,7 +213,7 @@ int guac_rdp_upload_end_handler(guac_client* client, guac_stream* stream) {
     guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
     if (fs == NULL) {
         guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
         return 0;
     }
@@ -240,7 +240,7 @@ int guac_rdp_download_ack_handler(guac_client* client, guac_stream* stream,
     guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
     if (fs == NULL) {
         guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
         return 0;
     }

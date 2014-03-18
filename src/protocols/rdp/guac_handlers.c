@@ -528,7 +528,7 @@ int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
         default:
             guac_protocol_send_ack(client->socket, stream,
                     "FAIL (BLOB NOT EXPECTED)",
-                    GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                    GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
 
             guac_socket_flush(client->socket);
             return 0;
@@ -552,7 +552,7 @@ int rdp_guac_client_end_handler(guac_client* client, guac_stream* stream) {
         default:
             guac_protocol_send_ack(client->socket, stream,
                     "FAIL (END NOT EXPECTED)",
-                    GUAC_PROTOCOL_STATUS_INVALID_PARAMETER);
+                    GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
 
             guac_socket_flush(client->socket);
             return 0;

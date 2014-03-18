@@ -80,7 +80,7 @@ int ssh_guac_client_handle_messages(guac_client* client) {
         /* Notify on error */
         if (bytes_read < 0) {
             guac_protocol_send_error(socket, "Error reading data.",
-                GUAC_PROTOCOL_STATUS_INTERNAL_ERROR);
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
             guac_socket_flush(socket);
             return 1;
         }
