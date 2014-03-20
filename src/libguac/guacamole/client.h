@@ -672,6 +672,35 @@ void vguac_client_log_error(guac_client* client, const char* format, va_list ap)
 void guac_client_stop(guac_client* client);
 
 /**
+ * Signals the given client to stop gracefully, while also signalling via the
+ * Guacamole protocol that an error has occurred. Note that this is a completely
+ * cooperative signal, and can be ignored by the client or the hosting
+ * daemon. The message given will be logged to the system logs.
+ *
+ * @param client The proxy client to signal to stop.
+ * @param status The status to send over the Guacamole protocol.
+ * @param format A printf-style format string to log.
+ * @param ... Arguments to use when filling the format string for printing.
+ */
+void guac_client_abort(guac_client* client, guac_protocol_status status,
+        const char* format, ...);
+
+/**
+ * Signals the given client to stop gracefully, while also signalling via the
+ * Guacamole protocol that an error has occurred. Note that this is a completely
+ * cooperative signal, and can be ignored by the client or the hosting
+ * daemon. The message given will be logged to the system logs.
+ *
+ * @param client The proxy client to signal to stop.
+ * @param status The status to send over the Guacamole protocol.
+ * @param format A printf-style format string to log.
+ * @param ap The va_list containing the arguments to be used when filling the
+ *           format string for printing.
+ */
+void vguac_client_abort(guac_client* client, guac_protocol_status status,
+        const char* format, va_list ap);
+
+/**
  * Allocates a new buffer (invisible layer). An arbitrary index is
  * automatically assigned if no existing buffer is available for use.
  *

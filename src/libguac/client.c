@@ -231,3 +231,35 @@ void guac_client_stop(guac_client* client) {
     client->state = GUAC_CLIENT_STOPPING;
 }
 
+void vguac_client_abort(guac_client* client, guac_protocol_status status,
+        const char* format, va_list ap) {
+
+    /* Only relevant if client is running */
+    if (client->state == GUAC_CLIENT_RUNNING) {
+
+        /* Log detail of error */
+        vguac_client_log_error(client, format, ap);
+
+        /* Send error immediately, limit information given */
+        guac_protocol_send_error(client->socket, "Aborted. See logs.", status);
+        guac_socket_flush(client->socket);
+
+        /* Stop client */
+        guac_client_stop(client);
+
+    }
+
+}
+
+void guac_client_abort(guac_client* client, guac_protocol_status status,
+        const char* format, ...) {
+
+    va_list args;
+    va_start(args, format);
+
+    vguac_client_abort(client, status, format, args);
+
+    va_end(args);
+
+}
+
