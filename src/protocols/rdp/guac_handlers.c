@@ -261,8 +261,12 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* If an error occurred, fail */
-    if (wait_result < 0)
+    if (wait_result < 0) {
+        guac_protocol_send_error(client->socket, "Connection closed.",
+                GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR);
+        guac_socket_flush(client->socket);
         return 1;
+    }
 
     /* Success */
     return 0;

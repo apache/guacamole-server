@@ -676,7 +676,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         guac_protocol_send_error(client->socket,
                 "Error connecting to RDP server",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
+                GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR);
         guac_socket_flush(client->socket);
 
         guac_error = GUAC_STATUS_BAD_STATE;
