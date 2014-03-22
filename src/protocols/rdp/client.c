@@ -318,10 +318,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Init channels (pre-connect) */
     if (freerdp_channels_pre_connect(channels, instance)) {
-        guac_protocol_send_error(client->socket,
-                "Error initializing RDP client channel manager",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
-        guac_socket_flush(client->socket);
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error initializing RDP client channel manager");
         return FALSE;
     }
 
@@ -337,10 +334,7 @@ BOOL rdp_freerdp_post_connect(freerdp* instance) {
 
     /* Init channels (post-connect) */
     if (freerdp_channels_post_connect(channels, instance)) {
-        guac_protocol_send_error(client->socket,
-                "Error initializing RDP client channel manager",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
-        guac_socket_flush(client->socket);
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error initializing RDP client channel manager");
         return FALSE;
     }
 
@@ -441,15 +435,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Validate number of arguments received */
     if (argc != RDP_ARGS_COUNT) {
-
-        guac_protocol_send_error(client->socket,
-                "Wrong argument count received.",
-                GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
-        guac_socket_flush(client->socket);
-
-        guac_error = GUAC_STATUS_BAD_ARGUMENT;
-        guac_error_message = "Wrong argument count received";
-
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Wrong argument count received.");
         return 1;
     }
 
@@ -673,15 +659,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
-
-        guac_protocol_send_error(client->socket,
-                "Error connecting to RDP server",
-                GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR);
-        guac_socket_flush(client->socket);
-
-        guac_error = GUAC_STATUS_BAD_STATE;
-        guac_error_message = "Error connecting to RDP server";
-
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Error connecting to RDP server");
         return 1;
     }
 
