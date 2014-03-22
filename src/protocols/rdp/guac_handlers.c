@@ -121,16 +121,14 @@ static int rdp_guac_client_wait_for_messages(guac_client* client, int timeout_us
 
     /* Get RDP fds */
     if (!freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
-        guac_error = GUAC_STATUS_BAD_STATE;
-        guac_error_message = "Unable to read RDP file descriptors";
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to read RDP file descriptors.");
         return -1;
     }
 
     /* Get channel fds */
     if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds,
                 &write_count)) {
-        guac_error = GUAC_STATUS_BAD_STATE;
-        guac_error_message = "Unable to read RDP channel file descriptors";
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to read RDP channel file descriptors.");
         return -1;
     }
 
@@ -155,8 +153,7 @@ static int rdp_guac_client_wait_for_messages(guac_client* client, int timeout_us
 
     /* If no file descriptors, error */
     if (max_fd == 0) {
-        guac_error = GUAC_STATUS_BAD_STATE;
-        guac_error_message = "No file descriptors";
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "No file descriptors associated with RDP connection.");
         return -1;
     }
 
@@ -172,8 +169,7 @@ static int rdp_guac_client_wait_for_messages(guac_client* client, int timeout_us
             return 0;
 
         /* Otherwise, return as error */
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Error waiting for file descriptor";
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error waiting for file descriptor.");
         return -1;
 
     }
@@ -261,10 +257,8 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     }
 
     /* If an error occurred, fail */
-    if (wait_result < 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed.");
+    if (wait_result < 0)
         return 1;
-    }
 
     /* Success */
     return 0;
