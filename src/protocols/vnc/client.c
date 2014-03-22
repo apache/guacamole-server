@@ -205,10 +205,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /*** PARSE ARGUMENTS ***/
 
     if (argc != VNC_ARGS_COUNT) {
-        guac_protocol_send_error(client->socket,
-                "Wrong argument count received.",
-                GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
-        guac_socket_flush(client->socket);
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Wrong argument count received.");
         return 1;
     }
 
@@ -291,9 +288,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* If the final connect attempt fails, return error */
     if (!rfb_client) {
-        guac_protocol_send_error(client->socket,
-                "Error initializing VNC client",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to connect to VNC server.");
         guac_socket_flush(client->socket);
         return 1;
     }

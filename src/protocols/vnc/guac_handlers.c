@@ -51,7 +51,7 @@ int vnc_guac_client_handle_messages(guac_client* client) {
 
         /* Handle any message received */
         if (!HandleRFBServerMessage(rfb_client)) {
-            guac_client_log_error(client, "Error handling VNC server message\n");
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Error handling message from VNC server.");
             return 1;
         }
 
@@ -70,7 +70,7 @@ int vnc_guac_client_handle_messages(guac_client* client) {
 
     /* If an error occurs, log it and fail */
     if (wait_result < 0) {
-        guac_client_log_error(client, "Error waiting for VNC server message\n");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed.");
         return 1;
     }
 
