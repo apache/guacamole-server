@@ -35,7 +35,6 @@
 #include <unistd.h>
 
 #include <guacamole/client.h>
-#include <guacamole/error.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
@@ -132,7 +131,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->term_channel = NULL;
 
     if (argc != SSH_ARGS_COUNT) {
-        guac_client_log_error(client, "Wrong number of arguments");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Wrong number of arguments");
         return -1;
     }
 
@@ -182,8 +181,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Fail if terminal init failed */
     if (client_data->term == NULL) {
-        guac_error = GUAC_STATUS_BAD_STATE;
-        guac_error_message = "Terminal initialization failed";
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Terminal initialization failed");
         return -1;
     }
 
@@ -212,7 +210,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Start client thread */
     if (pthread_create(&(client_data->client_thread), NULL, ssh_client_thread, (void*) client)) {
-        guac_client_log_error(client, "Unable to SSH client thread");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start SSH client thread");
         return -1;
     }
 

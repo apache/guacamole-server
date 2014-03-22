@@ -168,9 +168,7 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
     /* Get addresses connection */
     if ((retval = getaddrinfo(client_data->hostname, client_data->port,
                     &hints, &addresses))) {
-
-        guac_client_log_error(client,
-                "Error parsing given address or port: %s",
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error parsing given address or port: %s",
                 gai_strerror(retval));
         return NULL;
 
@@ -188,8 +186,7 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
                 connected_address, sizeof(connected_address),
                 connected_port, sizeof(connected_port),
                 NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log_error(client, "Unable to resolve host: %s",
-                    gai_strerror(retval));
+            guac_client_log_info(client, "Unable to resolve host: %s", gai_strerror(retval));
 
         /* Connect */
         if (connect(fd, current_address->ai_addr,
@@ -215,7 +212,7 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
 
     /* If unable to connect to anything, fail */
     if (current_address == NULL) {
-        guac_client_log_error(client, "Unable to connect to any addresses.");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to connect to any addresses.");
         return NULL;
     }
 
@@ -226,13 +223,13 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
     LIBSSH2_SESSION* session = libssh2_session_init_ex(NULL, NULL,
             NULL, client);
     if (session == NULL) {
-        guac_client_log_error(client, "Session allocation failed");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Session allocation failed.");
         return NULL;
     }
 
     /* Perform handshake */
     if (libssh2_session_handshake(session, fd)) {
-        guac_client_log_error(client, "SSH handshake failed");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "SSH handshake failed.");
         return NULL;
     }
 
@@ -250,7 +247,7 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
         else {
             char* error_message;
             libssh2_session_last_error(session, &error_message, NULL, 0);
-            guac_client_log_error(client,
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
                     "Public key authentication failed: %s", error_message);
             return NULL;
         }
@@ -264,7 +261,7 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
     else {
         char* error_message;
         libssh2_session_last_error(session, &error_message, NULL, 0);
-        guac_client_log_error(client,
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
                 "Password authentication failed: %s", error_message);
         return NULL;
     }
@@ -290,9 +287,8 @@ void* ssh_client_thread(void* data) {
     libssh2_init(0);
 
     /* Get username */
-    if (client_data->username[0] == 0 &&
-            prompt(client, "Login as: ", client_data->username, sizeof(client_data->username), true) == NULL)
-        return NULL;
+    if (client_data->username[0] == 0)
+        prompt(client, "Login as: ", client_data->username, sizeof(client_data->username), true);
 
     /* Send new name */
     snprintf(name, sizeof(name)-1, "%s@%s", client_data->username, client_data->hostname);
@@ -309,12 +305,9 @@ void* ssh_client_thread(void* data) {
         if (client_data->key == NULL) {
 
             /* Prompt for passphrase if missing */
-            if (client_data->key_passphrase[0] == 0) {
-                if (prompt(client, "Key passphrase: ",
-                            client_data->key_passphrase,
-                            sizeof(client_data->key_passphrase), false) == NULL)
-                    return NULL;
-            }
+            if (client_data->key_passphrase[0] == 0)
+                prompt(client, "Key passphrase: ", client_data->key_passphrase,
+                        sizeof(client_data->key_passphrase), false);
 
             /* Import key with passphrase */
             client_data->key = ssh_key_alloc(client_data->key_base64,
@@ -335,11 +328,8 @@ void* ssh_client_thread(void* data) {
     } /* end if key given */
 
     /* Otherwise, get password if not provided */
-    else if (client_data->password[0] == 0) {
-        if (prompt(client, "Password: ", client_data->password,
-                sizeof(client_data->password), false) == NULL)
-            return NULL;
-    }
+    else if (client_data->password[0] == 0)
+        prompt(client, "Password: ", client_data->password, sizeof(client_data->password), false);
 
     /* Clear screen */
     guac_terminal_write_all(stdout_fd, "\x1B[H\x1B[J", 6);
@@ -347,19 +337,14 @@ void* ssh_client_thread(void* data) {
     /* Open SSH session */
     client_data->session = __guac_ssh_create_session(client, &socket_fd);
     if (client_data->session == NULL) {
-        guac_protocol_send_error(socket, "Unable to create SSH session.",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
-        guac_socket_flush(socket);
+        /* Already aborted within __guac_ssh_create_session() */
         return NULL;
     }
 
     /* Open channel for terminal */
-    client_data->term_channel =
-        libssh2_channel_open_session(client_data->session);
+    client_data->term_channel = libssh2_channel_open_session(client_data->session);
     if (client_data->term_channel == NULL) {
-        guac_protocol_send_error(socket, "Unable to open channel.",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
-        guac_socket_flush(socket);
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to open terminal channel.");
         return NULL;
     }
 
@@ -385,14 +370,15 @@ void* ssh_client_thread(void* data) {
         /* Create SSH session specific for SFTP */
         guac_client_log_info(client, "Reconnecting for SFTP...");
         client_data->sftp_ssh_session = __guac_ssh_create_session(client, NULL);
+        if (client_data->sftp_ssh_session == NULL) {
+            /* Already aborted within __guac_ssh_create_session() */
+            return NULL;
+        }
 
         /* Request SFTP */
-        client_data->sftp_session =
-            libssh2_sftp_init(client_data->sftp_ssh_session);
+        client_data->sftp_session = libssh2_sftp_init(client_data->sftp_ssh_session);
         if (client_data->sftp_session == NULL) {
-            guac_protocol_send_error(socket, "Unable to start SFTP session..",
-                    GUAC_PROTOCOL_STATUS_SERVER_ERROR);
-            guac_socket_flush(socket);
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to start SFTP session.");
             return NULL;
         }
 
@@ -407,21 +393,15 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Request PTY */
-    if (libssh2_channel_request_pty_ex(client_data->term_channel,
-            "linux", sizeof("linux")-1, NULL, 0,
-            client_data->term->term_width, client_data->term->term_height,
-            0, 0)) {
-        guac_protocol_send_error(socket, "Unable to allocate PTY for channel.",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
-        guac_socket_flush(socket);
+    if (libssh2_channel_request_pty_ex(client_data->term_channel, "linux", sizeof("linux")-1, NULL, 0,
+            client_data->term->term_width, client_data->term->term_height, 0, 0)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
     }
 
     /* Request shell */
     if (libssh2_channel_shell(client_data->term_channel)) {
-        guac_protocol_send_error(socket, "Unable to associate shell with PTY.",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
-        guac_socket_flush(socket);
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to associate shell with PTY.");
         return NULL;
     }
 
@@ -430,7 +410,7 @@ void* ssh_client_thread(void* data) {
 
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, ssh_input_thread, (void*) client)) {
-        guac_client_log_error(client, "Unable to start SSH input thread");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start input thread");
         return NULL;
     }
 

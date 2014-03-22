@@ -37,13 +37,11 @@
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
-#include <guacamole/error.h>
 #include <libssh2.h>
 #include <pango/pangocairo.h>
 
 int ssh_guac_client_handle_messages(guac_client* client) {
 
-    guac_socket* socket = client->socket;
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     char buffer[8192];
 
@@ -72,16 +70,16 @@ int ssh_guac_client_handle_messages(guac_client* client) {
         /* Read data, write to terminal */
         if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
 
-            if (guac_terminal_write(client_data->term, buffer, bytes_read))
+            if (guac_terminal_write(client_data->term, buffer, bytes_read)) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error writing data");
                 return 1;
+            }
 
         }
 
         /* Notify on error */
         if (bytes_read < 0) {
-            guac_protocol_send_error(socket, "Error reading data.",
-                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
-            guac_socket_flush(socket);
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error reading data");
             return 1;
         }
 
@@ -96,8 +94,7 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
     }
     else if (ret_val < 0) {
-        guac_error_message = "Error waiting for pipe";
-        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error waiting for data");
         return 1;
     }
 
