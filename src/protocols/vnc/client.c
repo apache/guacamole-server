@@ -289,7 +289,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* If the final connect attempt fails, return error */
     if (!rfb_client) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to connect to VNC server.");
-        guac_socket_flush(client->socket);
         return 1;
     }
 
