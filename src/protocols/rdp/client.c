@@ -426,6 +426,30 @@ void __guac_rdp_client_load_keymap(guac_client* client,
 
 }
 
+/**
+ * Reduces the resolution of the client to the given resolution in DPI if
+ * doing so is reasonable. This function returns non-zero if the resolution
+ * was successfully reduced to the given DPI, and zero if reduction failed.
+ */
+static int __guac_rdp_reduce_resolution(guac_client* client, int resolution) {
+
+    int width  = client->info.optimal_width  * resolution / client->info.optimal_resolution;
+    int height = client->info.optimal_height * resolution / client->info.optimal_resolution;
+
+    /* Reduced resolution if result is reasonably sized */
+    if (width*height >= GUAC_RDP_REASONABLE_AREA) {
+        client->info.optimal_width = width;
+        client->info.optimal_height = height;
+        client->info.optimal_resolution = resolution;
+        guac_client_log_info(client, "Reducing resolution to %ix%i at %i DPI", width, height, resolution);
+        return 1;
+    }
+
+    /* No reduction performed */
+    return 0;
+
+}
+
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
     rdp_guac_client_data* guac_client_data;
@@ -513,8 +537,19 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (argv[IDX_PORT][0] != '\0')
         settings->port = atoi(argv[IDX_PORT]);
 
+    guac_client_log_info(client, "Client resolution is %ix%i at %i DPI",
+            client->info.optimal_width,
+            client->info.optimal_height,
+            client->info.optimal_resolution);
+
+    /* Attempt to reduce resolution for high DPI */
+    if (client->info.optimal_resolution > GUAC_RDP_NATIVE_RESOLUTION
+            && !__guac_rdp_reduce_resolution(client, GUAC_RDP_NATIVE_RESOLUTION)
+            && !__guac_rdp_reduce_resolution(client, GUAC_RDP_HIGH_RESOLUTION))
+        guac_client_log_info(client, "No reasonable lower resolution");
+
     /* Use optimal width unless overridden */
-    settings->width = client->info.optimal_width * 96 / client->info.optimal_resolution;
+    settings->width = client->info.optimal_width;
     if (argv[IDX_WIDTH][0] != '\0')
         settings->width = atoi(argv[IDX_WIDTH]);
 
@@ -530,7 +565,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->width = settings->width & ~0x3;
 
     /* Use optimal height unless overridden */
-    settings->height = client->info.optimal_height * 96 / client->info.optimal_resolution;
+    settings->height = client->info.optimal_height;
     if (argv[IDX_HEIGHT][0] != '\0')
         settings->height = atoi(argv[IDX_HEIGHT]);
 

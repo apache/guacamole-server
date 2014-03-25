@@ -52,6 +52,25 @@
 #define GUAC_RDP_FRAME_TIMEOUT 0
 
 /**
+ * The native resolution of most RDP connections. As Windows and other systems
+ * rely heavily on forced 96 DPI, we must assume 96 DPI.
+ */
+#define GUAC_RDP_NATIVE_RESOLUTION 96
+
+/**
+ * The resolution of an RDP connection that would be considered high, but is
+ * tolerable in the case that the client display would be unreasonably small
+ * otherwise.
+ */
+#define GUAC_RDP_HIGH_RESOLUTION 120
+
+/**
+ * The smallest area, in pixels^2, that would be considered reasonable large
+ * screen DPI needs to be adjusted.
+ */
+#define GUAC_RDP_REASONABLE_AREA (800*600)
+
+/**
  * Client data that will remain accessible through the guac_client.
  * This should generally include data commonly used by Guacamole handlers.
  */
