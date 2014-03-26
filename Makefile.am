@@ -25,6 +25,7 @@ ACLOCAL_AMFLAGS = -I m4
 # Subprojects
 DIST_SUBDIRS =           \
     src/libguac          \
+    src/common           \
     src/guacd            \
     src/protocols/rdp    \
     src/protocols/ssh    \
