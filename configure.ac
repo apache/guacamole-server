@@ -93,7 +93,7 @@ AC_TYPE_SSIZE_T
 AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/src/libguac/libguac.la')
 AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/src/libguac')
 AC_SUBST([COMMON_LTLIB],    '$(top_builddir)/src/common/libguac_common.la')
-AC_SUBST([COMMON_INCLUDE],  '-I$(top_builddir)/src/common')
+AC_SUBST([COMMON_INCLUDE],  '-I$(top_srcdir)/src/common')
 
 # Options
 AC_ARG_WITH(init_dir,
