@@ -127,6 +127,8 @@ rdp_keymaps =                   \
 _generated_keymaps.c: $(rdp_keymaps)
 	keymaps/generate.pl $(rdp_keymaps)
 
+EXTRA_DIST = $(rdp_keymaps) keymaps/generate.pl
+
 if LEGACY_FREERDP_EXTENSIONS
 
 # FreeRDP 1.0-style extensions
