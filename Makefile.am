@@ -49,5 +49,5 @@ if ENABLE_VNC
     SUBDIRS += src/protocols/vnc
 endif
 
-EXTRA_DIST = LICENSE doc/Doxyfile
+EXTRA_DIST = LICENSE doc/Doxyfile bin/guacctl
 
