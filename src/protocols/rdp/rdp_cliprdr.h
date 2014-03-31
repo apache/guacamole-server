@@ -40,6 +40,16 @@
 #include "compat/client-cliprdr.h"
 #endif
 
+/**
+ * Clipboard format for text encoded in ISO-8859-1.
+ */
+#define GUAC_RDP_CLIPBOARD_FORMAT_ISO8859_1  1
+
+/**
+ * Clipboard format for text encoded in UTF-16.
+ */
+#define GUAC_RDP_CLIPBOARD_FORMAT_UTF16 2
+
 void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event);
 void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event);
 

@@ -57,6 +57,12 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
+#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
+#include <freerdp/client/cliprdr.h>
+#else
+#include "compat/client-cliprdr.h"
+#endif
+
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
 #else
@@ -650,6 +656,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->mouse_button_mask = 0;
     guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
     guac_client_data->clipboard = NULL;
+    guac_client_data->requested_clipboard_format = CB_FORMAT_TEXT;
     guac_client_data->audio = NULL;
     guac_client_data->filesystem = NULL;
     guac_client_data->available_svc = guac_common_list_alloc();

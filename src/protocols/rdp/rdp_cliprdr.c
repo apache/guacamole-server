@@ -99,19 +99,43 @@ void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event) {
     /* Received notification of clipboard support. */
 
     /* Respond with supported format list */
-    format_list->formats = (UINT32*) malloc(sizeof(UINT32));
+    format_list->formats = (UINT32*) malloc(sizeof(UINT32)*2);
     format_list->formats[0] = CB_FORMAT_TEXT;
-    format_list->num_formats = 1;
+    format_list->formats[1] = CB_FORMAT_UNICODETEXT;
+    format_list->num_formats = 2;
 
     freerdp_channels_send_event(channels, (wMessage*) format_list);
+
+}
+
+/**
+ * Sends a clipboard data request for the given format.
+ */
+static void __guac_rdp_cb_request_format(guac_client* client, int format) {
+
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    rdpChannels* channels = client_data->rdp_inst->context->channels;
+
+    /* Create new data request */
+    RDP_CB_DATA_REQUEST_EVENT* data_request =
+        (RDP_CB_DATA_REQUEST_EVENT*) freerdp_event_new(
+                CliprdrChannel_Class,
+                CliprdrChannel_DataRequest,
+                NULL, NULL);
+
+    /* Set to requested format */
+    client_data->requested_clipboard_format = format;
+    data_request->format = format;
+
+    /* Send request */
+    freerdp_channels_send_event(channels, (wMessage*) data_request);
 
 }
 
 void guac_rdp_process_cb_format_list(guac_client* client,
         RDP_CB_FORMAT_LIST_EVENT* event) {
 
-    rdpChannels* channels = 
-        ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
+    int formats = 0;
 
     /* Received notification of available data */
 
@@ -119,27 +143,28 @@ void guac_rdp_process_cb_format_list(guac_client* client,
     for (i=0; i<event->num_formats; i++) {
 
         /* If plain text available, request it */
-        if (event->formats[i] == CB_FORMAT_TEXT) {
-
-            /* Create new data request */
-            RDP_CB_DATA_REQUEST_EVENT* data_request =
-                (RDP_CB_DATA_REQUEST_EVENT*) freerdp_event_new(
-                        CliprdrChannel_Class,
-                        CliprdrChannel_DataRequest,
-                        NULL, NULL);
-
-            /* We want plain text */
-            data_request->format = CB_FORMAT_TEXT;
-
-            /* Send request */
-            freerdp_channels_send_event(channels, (wMessage*) data_request);
-            return;
-
-        }
+        if (event->formats[i] == CB_FORMAT_TEXT)
+            formats |= GUAC_RDP_CLIPBOARD_FORMAT_ISO8859_1;
+        else if (event->formats[i] == CB_FORMAT_UNICODETEXT)
+            formats |= GUAC_RDP_CLIPBOARD_FORMAT_UTF16;
 
     }
 
-    /* Otherwise, no supported data available */
+    /* Prefer Unicode to plain text */
+    if (formats & GUAC_RDP_CLIPBOARD_FORMAT_UTF16) {
+        guac_client_log_info(client, "Requesting unicode text");
+        __guac_rdp_cb_request_format(client, CB_FORMAT_UNICODETEXT);
+        return;
+    }
+
+    /* Use plain text if Unicode unavailable */
+    if (formats & GUAC_RDP_CLIPBOARD_FORMAT_ISO8859_1) {
+        guac_client_log_info(client, "Requesting plain text");
+        __guac_rdp_cb_request_format(client, CB_FORMAT_TEXT);
+        return;
+    }
+
+    /* Ignore if no supported format available */
     guac_client_log_info(client, "Ignoring unsupported clipboard data");
 
 }
@@ -147,8 +172,8 @@ void guac_rdp_process_cb_format_list(guac_client* client,
 void guac_rdp_process_cb_data_request(guac_client* client,
         RDP_CB_DATA_REQUEST_EVENT* event) {
 
-    rdpChannels* channels = 
-        ((rdp_guac_client_data*) client->data)->rdp_inst->context->channels;
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    rdpChannels* channels = client_data->rdp_inst->context->channels;
 
     /* If text requested, send clipboard text contents */
     if (event->format == CB_FORMAT_TEXT) {
@@ -189,8 +214,31 @@ void guac_rdp_process_cb_data_request(guac_client* client,
 void guac_rdp_process_cb_data_response(guac_client* client,
         RDP_CB_DATA_RESPONSE_EVENT* event) {
 
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+
     /* Received clipboard data */
     if (event->data[event->size - 1] == '\0') {
+
+        /* Convert to UTF-8 based on format */
+        switch (client_data->requested_clipboard_format) {
+
+            /* Non-Unicode */
+            case CB_FORMAT_TEXT:
+                guac_client_log_info(client, "STUB: Copy non-unicode");
+                break;
+
+            /* Unicode (UTF-16) */
+            case CB_FORMAT_UNICODETEXT:
+                guac_client_log_info(client, "STUB: Copy unicode");
+                break;
+
+            default:
+                guac_client_log_error(client, "Requested clipboard data in "
+                        "unsupported format %i",
+                        client_data->requested_clipboard_format);
+                return;
+
+        }
 
         /* Free existing data */
         free(((rdp_guac_client_data*) client->data)->clipboard);

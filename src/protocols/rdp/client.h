@@ -171,6 +171,14 @@ typedef struct rdp_guac_client_data {
     char* clipboard;
 
     /**
+     * The format of the clipboard which was requested. Data received from
+     * the RDP server should conform to this format. This will be one of
+     * several legal clipboard format values defined within FreeRDP, such as
+     * CB_FORMAT_TEXT.
+     */
+    int requested_clipboard_format;
+
+    /**
      * Audio output, if any.
      */
     guac_audio_stream* audio;
