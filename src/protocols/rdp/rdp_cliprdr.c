@@ -24,6 +24,7 @@
 
 #include "client.h"
 #include "rdp_cliprdr.h"
+#include "unicode.h"
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
@@ -211,49 +212,85 @@ void guac_rdp_process_cb_data_request(guac_client* client,
 
 }
 
+static void __guac_rdp_clipboard_send_iso8859_1(guac_client* client,
+        RDP_CB_DATA_RESPONSE_EVENT* event) {
+
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+
+    /* Ensure data is large enough and has null terminator */
+    if (event->size < 1 || event->data[event->size - 1] != '\0') {
+        guac_client_log_error(client,
+                "Clipboard data missing null terminator");
+        return;
+    }
+
+    /* Free existing data */
+    free(client_data->clipboard);
+
+    /* Store clipboard data */
+    client_data->clipboard = strdup((char*) event->data);
+
+    /* Send clipboard data */
+    guac_protocol_send_clipboard(client->socket, client_data->clipboard);
+
+}
+
+static void __guac_rdp_clipboard_send_utf16(guac_client* client,
+        RDP_CB_DATA_RESPONSE_EVENT* event) {
+
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    int output_length;
+
+    /* Ensure data is large enough and has null terminator */
+    if (event->size < 2
+        || event->data[event->size - 2] != '\0'
+        || event->data[event->size - 1] != '\0') {
+        guac_client_log_error(client,
+                "Clipboard data missing null terminator");
+        return;
+    }
+
+    /* Free existing data */
+    free(client_data->clipboard);
+
+    /* Store clipboard data */
+    output_length = event->size * 3;
+    client_data->clipboard = malloc(output_length);
+    guac_rdp_utf16_to_utf8(event->data, event->size/2,
+            client_data->clipboard, output_length);
+
+    /* Send clipboard data */
+    guac_protocol_send_clipboard(client->socket, client_data->clipboard);
+
+}
+
 void guac_rdp_process_cb_data_response(guac_client* client,
         RDP_CB_DATA_RESPONSE_EVENT* event) {
 
     rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
 
-    /* Received clipboard data */
-    if (event->data[event->size - 1] == '\0') {
+    /* Convert to UTF-8 based on format */
+    switch (client_data->requested_clipboard_format) {
 
-        /* Convert to UTF-8 based on format */
-        switch (client_data->requested_clipboard_format) {
+        /* Non-Unicode */
+        case CB_FORMAT_TEXT:
+            guac_client_log_info(client, "STUB: Copy non-unicode");
+            __guac_rdp_clipboard_send_iso8859_1(client, event);
+            break;
 
-            /* Non-Unicode */
-            case CB_FORMAT_TEXT:
-                guac_client_log_info(client, "STUB: Copy non-unicode");
-                break;
+        /* Unicode (UTF-16) */
+        case CB_FORMAT_UNICODETEXT:
+            guac_client_log_info(client, "STUB: Copy unicode");
+            __guac_rdp_clipboard_send_utf16(client, event);
+            break;
 
-            /* Unicode (UTF-16) */
-            case CB_FORMAT_UNICODETEXT:
-                guac_client_log_info(client, "STUB: Copy unicode");
-                break;
-
-            default:
-                guac_client_log_error(client, "Requested clipboard data in "
-                        "unsupported format %i",
-                        client_data->requested_clipboard_format);
-                return;
-
-        }
-
-        /* Free existing data */
-        free(((rdp_guac_client_data*) client->data)->clipboard);
-
-        /* Store clipboard data */
-        ((rdp_guac_client_data*) client->data)->clipboard =
-            strdup((char*) event->data);
-
-        /* Send clipboard data */
-        guac_protocol_send_clipboard(client->socket, (char*) event->data);
+        default:
+            guac_client_log_error(client, "Requested clipboard data in "
+                    "unsupported format %i",
+                    client_data->requested_clipboard_format);
+            return;
 
     }
-    else
-        guac_client_log_error(client,
-                "Clipboard data missing null terminator");
 
 }
 
