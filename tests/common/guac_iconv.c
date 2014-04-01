@@ -29,6 +29,20 @@
 #include <CUnit/Basic.h>
 
 void test_guac_iconv() {
-    /* STUB */
+
+    char output[4096];
+    char input[4096] = "hello";
+
+    char* current_output = output;
+    char* current_input = input;
+
+    /* Test identity conversion of UTF8 */
+    guac_iconv(GUAC_READ_UTF8,  &current_input,  4096,
+               GUAC_WRITE_UTF8, &current_output, 4096);
+
+    CU_ASSERT_EQUAL(6, current_output - output);
+    CU_ASSERT_EQUAL(6, current_input - input);
+    CU_ASSERT_EQUAL(0, memcmp("hello", output, 6));
+
 }
 
