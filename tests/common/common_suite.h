@@ -44,5 +44,10 @@ int register_common_suite();
  */
 void test_guac_string();
 
+/**
+ * Unit test for character conversion functions.
+ */
+void test_guac_iconv();
+
 #endif
 

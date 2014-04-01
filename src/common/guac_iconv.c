@@ -21,39 +21,29 @@
  */
 
 #include "config.h"
+#include "guac_iconv.h"
 
-#include "common_suite.h"
+void guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
+               guac_iconv_write* writer, char** output, int out_remaining) {
+    /* STUB */
+}
 
-#include <CUnit/Basic.h>
-
-int common_suite_init() {
+int GUAC_READ_UTF8(char** input, int remaining) {
+    /* STUB */
     return 0;
 }
 
-int common_suite_cleanup() {
+
+int GUAC_READ_UTF16(char** input, int remaining) {
+    /* STUB */
     return 0;
 }
 
-int register_common_suite() {
+void GUAC_WRITE_UTF8(char** output, int remaining, int value) {
+    /* STUB */
+}
 
-    /* Add common test suite */
-    CU_pSuite suite = CU_add_suite("common",
-            common_suite_init, common_suite_cleanup);
-    if (suite == NULL) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    /* Add tests */
-    if (
-        CU_add_test(suite, "guac-iconv", test_guac_iconv)  == NULL
-     || CU_add_test(suite, "guac-string", test_guac_string) == NULL
-       ) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    return 0;
-
+void GUAC_WRITE_UTF16(char** output, int remaining, int value) {
+    /* STUB */
 }
 

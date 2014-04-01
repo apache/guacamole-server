@@ -39,6 +39,7 @@ test_libguac_SOURCES =           \
 	client/buffer_pool.c         \
 	client/layer_pool.c          \
 	common/common_suite.c        \
+	common/guac_iconv.c          \
 	common/guac_string.c         \
 	protocol/suite.c             \
 	protocol/base64_decode.c     \

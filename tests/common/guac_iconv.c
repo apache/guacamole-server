@@ -23,37 +23,12 @@
 #include "config.h"
 
 #include "common_suite.h"
+#include "guac_iconv.h"
 
+#include <stdlib.h>
 #include <CUnit/Basic.h>
 
-int common_suite_init() {
-    return 0;
-}
-
-int common_suite_cleanup() {
-    return 0;
-}
-
-int register_common_suite() {
-
-    /* Add common test suite */
-    CU_pSuite suite = CU_add_suite("common",
-            common_suite_init, common_suite_cleanup);
-    if (suite == NULL) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    /* Add tests */
-    if (
-        CU_add_test(suite, "guac-iconv", test_guac_iconv)  == NULL
-     || CU_add_test(suite, "guac-string", test_guac_string) == NULL
-       ) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    return 0;
-
+void test_guac_iconv() {
+    /* STUB */
 }
 
