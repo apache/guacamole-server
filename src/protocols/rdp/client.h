@@ -71,6 +71,11 @@
 #define GUAC_RDP_REASONABLE_AREA (800*600)
 
 /**
+ * The maximum number of bytes to allow within the clipboard.
+ */
+#define GUAC_RDP_CLIPBOARD_MAX_LENGTH 262144
+
+/**
  * Client data that will remain accessible through the guac_client.
  * This should generally include data commonly used by Guacamole handlers.
  */
@@ -166,9 +171,9 @@ typedef struct rdp_guac_client_data {
     guac_rdp_keysym_state_map keysym_state;
 
     /**
-     * The current text (NOT Unicode) clipboard contents.
+     * The current clipboard contents, in UTF-8.
      */
-    char* clipboard;
+    char clipboard[GUAC_RDP_CLIPBOARD_MAX_LENGTH];
 
     /**
      * The format of the clipboard which was requested. Data received from

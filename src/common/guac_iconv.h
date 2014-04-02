@@ -53,8 +53,10 @@ typedef void guac_iconv_write(char** output, int remaining, int value);
  * @param output Pointer to the beginning of the output string.
  * @param out_remaining The number of bytes remaining after the pointer to the
  *                      output string.
+ * @return Non-zero if the NULL terminator of the input string was read and
+ *         copied into the destination string, zero otherwise.
  */
-void guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
+int guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
                guac_iconv_write* writer, char** output, int out_remaining);
 
 /**

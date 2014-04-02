@@ -26,7 +26,7 @@
 #include <guacamole/unicode.h>
 #include <stdint.h>
 
-void guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
+int guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
                guac_iconv_write* writer, char** output, int out_remaining) {
 
     while (in_remaining > 0 && out_remaining > 0) {
@@ -47,9 +47,12 @@ void guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
 
         /* Stop if null terminator reached */
         if (value == 0)
-            break;
+            return 1;
 
     }
+
+    /* Null terminator not reached */
+    return 0;
 
 }
 

@@ -655,7 +655,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->bounded = FALSE;
     guac_client_data->mouse_button_mask = 0;
     guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
-    guac_client_data->clipboard = NULL;
     guac_client_data->requested_clipboard_format = CB_FORMAT_TEXT;
     guac_client_data->audio = NULL;
     guac_client_data->filesystem = NULL;

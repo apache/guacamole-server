@@ -24,7 +24,7 @@
 
 #include "client.h"
 #include "rdp_cliprdr.h"
-#include "unicode.h"
+#include "guac_iconv.h"
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
@@ -212,76 +212,26 @@ void guac_rdp_process_cb_data_request(guac_client* client,
 
 }
 
-static void __guac_rdp_clipboard_send_iso8859_1(guac_client* client,
-        RDP_CB_DATA_RESPONSE_EVENT* event) {
-
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
-
-    /* Ensure data is large enough and has null terminator */
-    if (event->size < 1 || event->data[event->size - 1] != '\0') {
-        guac_client_log_error(client,
-                "Clipboard data missing null terminator");
-        return;
-    }
-
-    /* Free existing data */
-    free(client_data->clipboard);
-
-    /* Store clipboard data */
-    client_data->clipboard = strdup((char*) event->data);
-
-    /* Send clipboard data */
-    guac_protocol_send_clipboard(client->socket, client_data->clipboard);
-
-}
-
-static void __guac_rdp_clipboard_send_utf16(guac_client* client,
-        RDP_CB_DATA_RESPONSE_EVENT* event) {
-
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
-    int output_length;
-
-    /* Ensure data is large enough and has null terminator */
-    if (event->size < 2
-        || event->data[event->size - 2] != '\0'
-        || event->data[event->size - 1] != '\0') {
-        guac_client_log_error(client,
-                "Clipboard data missing null terminator");
-        return;
-    }
-
-    /* Free existing data */
-    free(client_data->clipboard);
-
-    /* Store clipboard data */
-    output_length = event->size * 3;
-    client_data->clipboard = malloc(output_length);
-    guac_rdp_utf16_to_utf8(event->data, event->size/2,
-            client_data->clipboard, output_length);
-
-    /* Send clipboard data */
-    guac_protocol_send_clipboard(client->socket, client_data->clipboard);
-
-}
-
 void guac_rdp_process_cb_data_response(guac_client* client,
         RDP_CB_DATA_RESPONSE_EVENT* event) {
 
     rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
 
-    /* Convert to UTF-8 based on format */
+    guac_iconv_read* reader;
+    char* input = (char*) event->data;
+    char* output = client_data->clipboard;
+
+    /* Find correct source encoding */
     switch (client_data->requested_clipboard_format) {
 
         /* Non-Unicode */
         case CB_FORMAT_TEXT:
-            guac_client_log_info(client, "STUB: Copy non-unicode");
-            __guac_rdp_clipboard_send_iso8859_1(client, event);
+            reader = GUAC_READ_UTF8;
             break;
 
         /* Unicode (UTF-16) */
         case CB_FORMAT_UNICODETEXT:
-            guac_client_log_info(client, "STUB: Copy unicode");
-            __guac_rdp_clipboard_send_utf16(client, event);
+            reader = GUAC_READ_UTF16;
             break;
 
         default:
@@ -291,6 +241,11 @@ void guac_rdp_process_cb_data_response(guac_client* client,
             return;
 
     }
+
+    /* Convert send clipboard data */
+    if (guac_iconv(reader, &input, event->size,
+            GUAC_WRITE_UTF8, &output, GUAC_RDP_CLIPBOARD_MAX_LENGTH))
+        guac_protocol_send_clipboard(client->socket, client_data->clipboard);
 
 }
 
