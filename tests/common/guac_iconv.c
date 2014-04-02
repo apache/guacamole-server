@@ -28,21 +28,68 @@
 #include <stdlib.h>
 #include <CUnit/Basic.h>
 
-void test_guac_iconv() {
+static void test_conversion(
+        guac_iconv_read* reader,  unsigned char* in_string,  int in_length,
+        guac_iconv_write* writer, unsigned char* out_string, int out_length) {
 
     char output[4096];
-    char input[4096] = "hello";
+    char input[4096];
 
-    char* current_output = output;
     char* current_input = input;
+    char* current_output = output;
 
-    /* Test identity conversion of UTF8 */
-    guac_iconv(GUAC_READ_UTF8,  &current_input,  4096,
-               GUAC_WRITE_UTF8, &current_output, 4096);
+    memcpy(input, in_string, in_length);
+    guac_iconv(reader, &current_input,  sizeof(input),
+               writer, &current_output, sizeof(output));
 
-    CU_ASSERT_EQUAL(6, current_output - output);
-    CU_ASSERT_EQUAL(6, current_input - input);
-    CU_ASSERT_EQUAL(0, memcmp("hello", output, 6));
+    /* Verify output length */
+    CU_ASSERT_EQUAL(out_length, current_output - output);
+
+    /* Verify entire input read */
+    CU_ASSERT_EQUAL(in_length, current_input - input);
+
+    /* Verify output content */
+    CU_ASSERT_EQUAL(0, memcmp(output, out_string, out_length));
+
+}
+
+void test_guac_iconv() {
+
+    /* UTF8 for "papà è bello" */
+    unsigned char test_string_utf8[] = {
+        'p',  'a',  'p', 0xC3, 0xA0, ' ',
+        0xC3, 0xA8, ' ',
+        'b',  'e',  'l', 'l',  'o',
+        0x00
+    };
+
+    /* UTF16 for "papà è bello" */
+    unsigned char test_string_utf16[] = {
+        'p',  0x00, 'a', 0x00, 'p', 0x00, 0xE0, 0x00, ' ', 0x00,
+        0xE8, 0x00, ' ', 0x00,
+        'b',  0x00, 'e', 0x00, 'l', 0x00, 'l',  0x00, 'o', 0x00,
+        0x00, 0x00
+    };
+
+    /* UTF8 identity */
+    test_conversion(
+            GUAC_READ_UTF8,  test_string_utf8, sizeof(test_string_utf8),
+            GUAC_WRITE_UTF8, test_string_utf8, sizeof(test_string_utf8));
+
+    /* UTF16 identity */
+    test_conversion(
+            GUAC_READ_UTF16,  test_string_utf16, sizeof(test_string_utf16),
+            GUAC_WRITE_UTF16, test_string_utf16, sizeof(test_string_utf16));
+
+    /* UTF8 to UTF16 */
+    test_conversion(
+            GUAC_READ_UTF8,   test_string_utf8,  sizeof(test_string_utf8),
+            GUAC_WRITE_UTF16, test_string_utf16, sizeof(test_string_utf16));
+
+    /* UTF16 to UTF8 */
+    test_conversion(
+            GUAC_READ_UTF16, test_string_utf16, sizeof(test_string_utf16),
+            GUAC_WRITE_UTF8, test_string_utf8,  sizeof(test_string_utf8));
 
 }
 

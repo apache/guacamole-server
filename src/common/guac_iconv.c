@@ -24,6 +24,7 @@
 #include "guac_iconv.h"
 
 #include <guacamole/unicode.h>
+#include <stdint.h>
 
 void guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
                guac_iconv_write* writer, char** output, int out_remaining) {
@@ -62,8 +63,19 @@ int GUAC_READ_UTF8(char** input, int remaining) {
 }
 
 int GUAC_READ_UTF16(char** input, int remaining) {
-    /* STUB */
-    return 0;
+
+    int value;
+
+    /* Bail if not enough data */
+    if (remaining < 2)
+        return 0;
+
+    /* Read two bytes as integer */
+    value = *((uint16_t*) *input);
+    *input += 2;
+
+    return value;
+
 }
 
 void GUAC_WRITE_UTF8(char** output, int remaining, int value) {
@@ -71,6 +83,14 @@ void GUAC_WRITE_UTF8(char** output, int remaining, int value) {
 }
 
 void GUAC_WRITE_UTF16(char** output, int remaining, int value) {
-    /* STUB */
+
+    /* Bail if not enough data */
+    if (remaining < 2)
+        return;
+
+    /* Write two bytes as integer */
+    *((uint16_t*) *output) = value;
+    *output += 2;
+
 }
 
