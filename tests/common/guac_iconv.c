@@ -71,6 +71,22 @@ void test_guac_iconv() {
         0x00, 0x00
     };
 
+    /* ISO-8859-1 for "papà è bello" */
+    unsigned char test_string_iso8859_1[] = {
+        'p',  'a',  'p', 0xE0, ' ',
+        0xE8, ' ',
+        'b',  'e',  'l', 'l',  'o',
+        0x00
+    };
+
+    /* CP1252 for "papà è bello" */
+    unsigned char test_string_cp1252[] = {
+        'p',  'a',  'p', 0xE0, ' ',
+        0xE8, ' ',
+        'b',  'e',  'l', 'l',  'o',
+        0x00
+    };
+
     /* UTF8 identity */
     test_conversion(
             GUAC_READ_UTF8,  test_string_utf8, sizeof(test_string_utf8),
@@ -90,6 +106,26 @@ void test_guac_iconv() {
     test_conversion(
             GUAC_READ_UTF16, test_string_utf16, sizeof(test_string_utf16),
             GUAC_WRITE_UTF8, test_string_utf8,  sizeof(test_string_utf8));
+
+    /* UTF16 to ISO-8859-1 */
+    test_conversion(
+            GUAC_READ_UTF16,      test_string_utf16,      sizeof(test_string_utf16),
+            GUAC_WRITE_ISO8859_1, test_string_iso8859_1,  sizeof(test_string_iso8859_1));
+
+    /* UTF16 to CP1252 */
+    test_conversion(
+            GUAC_READ_UTF16,   test_string_utf16,  sizeof(test_string_utf16),
+            GUAC_WRITE_CP1252, test_string_cp1252, sizeof(test_string_cp1252));
+
+    /* CP1252 to UTF8 */
+    test_conversion(
+            GUAC_READ_CP1252, test_string_cp1252, sizeof(test_string_cp1252),
+            GUAC_WRITE_UTF8,  test_string_utf8,   sizeof(test_string_utf8));
+
+    /* ISO-8859-1 to UTF8 */
+    test_conversion(
+            GUAC_READ_ISO8859_1, test_string_iso8859_1, sizeof(test_string_iso8859_1),
+            GUAC_WRITE_UTF8,     test_string_utf8,      sizeof(test_string_utf8));
 
 }
 

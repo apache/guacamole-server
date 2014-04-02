@@ -70,6 +70,16 @@ guac_iconv_read GUAC_READ_UTF8;
 guac_iconv_read GUAC_READ_UTF16;
 
 /**
+ * Read function for CP-1252.
+ */
+guac_iconv_read GUAC_READ_CP1252;
+
+/**
+ * Read function for ISO-8859-1
+ */
+guac_iconv_read GUAC_READ_ISO8859_1;
+
+/**
  * Write function for UTF8.
  */
 guac_iconv_write GUAC_WRITE_UTF8;
@@ -78,6 +88,16 @@ guac_iconv_write GUAC_WRITE_UTF8;
  * Write function for UTF16.
  */
 guac_iconv_write GUAC_WRITE_UTF16;
+
+/**
+ * Write function for CP-1252.
+ */
+guac_iconv_write GUAC_WRITE_CP1252;
+
+/**
+ * Write function for ISO-8859-1
+ */
+guac_iconv_write GUAC_WRITE_ISO8859_1;
 
 #endif
 
