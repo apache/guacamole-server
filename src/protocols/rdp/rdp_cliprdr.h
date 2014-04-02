@@ -41,9 +41,9 @@
 #endif
 
 /**
- * Clipboard format for text encoded in ISO-8859-1.
+ * Clipboard format for text encoded in Windows CP1252.
  */
-#define GUAC_RDP_CLIPBOARD_FORMAT_ISO8859_1  1
+#define GUAC_RDP_CLIPBOARD_FORMAT_CP1252 1
 
 /**
  * Clipboard format for text encoded in UTF-16.

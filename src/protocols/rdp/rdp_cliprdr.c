@@ -145,7 +145,7 @@ void guac_rdp_process_cb_format_list(guac_client* client,
 
         /* If plain text available, request it */
         if (event->formats[i] == CB_FORMAT_TEXT)
-            formats |= GUAC_RDP_CLIPBOARD_FORMAT_ISO8859_1;
+            formats |= GUAC_RDP_CLIPBOARD_FORMAT_CP1252;
         else if (event->formats[i] == CB_FORMAT_UNICODETEXT)
             formats |= GUAC_RDP_CLIPBOARD_FORMAT_UTF16;
 
@@ -158,7 +158,7 @@ void guac_rdp_process_cb_format_list(guac_client* client,
     }
 
     /* Use plain text if Unicode unavailable */
-    if (formats & GUAC_RDP_CLIPBOARD_FORMAT_ISO8859_1) {
+    if (formats & GUAC_RDP_CLIPBOARD_FORMAT_CP1252) {
         __guac_rdp_cb_request_format(client, CB_FORMAT_TEXT);
         return;
     }
