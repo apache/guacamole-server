@@ -153,14 +153,12 @@ void guac_rdp_process_cb_format_list(guac_client* client,
 
     /* Prefer Unicode to plain text */
     if (formats & GUAC_RDP_CLIPBOARD_FORMAT_UTF16) {
-        guac_client_log_info(client, "Requesting unicode text");
         __guac_rdp_cb_request_format(client, CB_FORMAT_UNICODETEXT);
         return;
     }
 
     /* Use plain text if Unicode unavailable */
     if (formats & GUAC_RDP_CLIPBOARD_FORMAT_ISO8859_1) {
-        guac_client_log_info(client, "Requesting plain text");
         __guac_rdp_cb_request_format(client, CB_FORMAT_TEXT);
         return;
     }
@@ -226,7 +224,7 @@ void guac_rdp_process_cb_data_response(guac_client* client,
 
         /* Non-Unicode */
         case CB_FORMAT_TEXT:
-            reader = GUAC_READ_UTF8;
+            reader = GUAC_READ_CP1252;
             break;
 
         /* Unicode (UTF-16) */
