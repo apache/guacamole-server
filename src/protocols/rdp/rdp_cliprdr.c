@@ -174,39 +174,44 @@ void guac_rdp_process_cb_data_request(guac_client* client,
     rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
     rdpChannels* channels = client_data->rdp_inst->context->channels;
 
-    /* If text requested, send clipboard text contents */
-    if (event->format == CB_FORMAT_TEXT) {
+    guac_iconv_write* writer;
+    char* input = (char*) client_data->clipboard;;
+    char* output = malloc(GUAC_RDP_CLIPBOARD_MAX_LENGTH);
 
-        /* Get clipboard data */
-        const char* clipboard =
-            ((rdp_guac_client_data*) client->data)->clipboard;
+    RDP_CB_DATA_RESPONSE_EVENT* data_response;
 
-        /* Create new data response */
-        RDP_CB_DATA_RESPONSE_EVENT* data_response =
-            (RDP_CB_DATA_RESPONSE_EVENT*) freerdp_event_new(
-                    CliprdrChannel_Class,
-                    CliprdrChannel_DataResponse,
-                    NULL, NULL);
+    /* Determine output encoding */
+    switch (event->format) {
 
-        /* Set data and length */
-        if (clipboard != NULL) {
-            data_response->data = (UINT8*) strdup(clipboard);
-            data_response->size = strlen(clipboard) + 1;
-        }
-        else {
-            data_response->data = (UINT8*) strdup("");
-            data_response->size = 1;
-        }
+        case CB_FORMAT_TEXT:
+            writer = GUAC_WRITE_CP1252;
+            break;
 
-        /* Send response */
-        freerdp_channels_send_event(channels, (wMessage*) data_response);
+        case CB_FORMAT_UNICODETEXT:
+            writer = GUAC_WRITE_UTF16;
+            break;
+
+        default:
+            guac_client_log_error(client, 
+                    "Server requested unsupported clipboard data type");
+            return;
 
     }
 
-    /* Otherwise ... failure */
-    else
-        guac_client_log_error(client, 
-                "Server requested unsupported clipboard data type");
+    /* Create new data response */
+    data_response = (RDP_CB_DATA_RESPONSE_EVENT*) freerdp_event_new(
+                CliprdrChannel_Class,
+                CliprdrChannel_DataResponse,
+                NULL, NULL);
+
+    /* Set data and size */
+    data_response->data = (BYTE*) output;
+    guac_iconv(GUAC_READ_UTF8, &input, GUAC_RDP_CLIPBOARD_MAX_LENGTH,
+               writer, &output, GUAC_RDP_CLIPBOARD_MAX_LENGTH);
+    data_response->size = ((BYTE*) output) - data_response->data;
+
+    /* Send response */
+    freerdp_channels_send_event(channels, (wMessage*) data_response);
 
 }
 
