@@ -1,4 +1,4 @@
-.TH guacd 8 "22 Jul 2013" "version 0.8.2" "Guacamole"
+.TH guacd 8 "22 Jul 2013" "version 0.9.0" "Guacamole"
 .
 .SH NAME
 guacd \- Guacamole proxy daemon
@@ -55,6 +55,14 @@ was compiled, it will contain SSL/TLS support, and connections between the
 web application and
 .B guacd
 can be encrypted if a certificate file is given.
+.P
+When using a chain of certificates, you must append the additional certificates
+to your server certificate. This can be done easily with the standard
+.B cat
+command. Beware that the certificate for
+.B guacd
+.I must
+be the first certificate in the file.
 .TP
 \fB-C\fR \fICERTIFICATE FILE\fR
 Enables SSL/TLS using the given cerficiate file. Future connections to
