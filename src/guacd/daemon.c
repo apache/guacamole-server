@@ -513,7 +513,7 @@ int main(int argc, char* argv[]) {
         /* Load cert file if specified */
         if (cert_file != NULL) {
             guacd_log_info("Using certificate file %s", cert_file);
-            if (!SSL_CTX_use_certificate_file(ssl_context, cert_file, SSL_FILETYPE_PEM)) {
+            if (!SSL_CTX_use_certificate_chain_file(ssl_context, cert_file)) {
                 guacd_log_error("Unable to load certificate.");
                 exit(EXIT_FAILURE);
             }
