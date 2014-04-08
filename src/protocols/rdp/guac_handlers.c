@@ -459,8 +459,12 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 
 }
 
-int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
+int rdp_guac_client_clipboard_handler(guac_client* client, guac_stream* stream,
+        char* mimetype) {
 
+    return guac_rdp_clipboard_handler(client, stream, mimetype);
+
+#if 0
     rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
     rdpChannels* channels = client_data->rdp_inst->context->channels;
 
@@ -479,8 +483,7 @@ int rdp_guac_client_clipboard_handler(guac_client* client, char* data) {
     format_list->num_formats = 1;
 
     freerdp_channels_send_event(channels, (wMessage*) format_list);
-
-    return 0;
+#endif
 
 }
 
@@ -516,6 +519,10 @@ int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
         case GUAC_RDP_INBOUND_SVC_STREAM:
             return guac_rdp_svc_blob_handler(client, stream, data, length);
 
+        /* Clipboard stream */
+        case GUAC_RDP_INBOUND_CLIPBOARD_STREAM:
+            return guac_rdp_clipboard_blob_handler(client, stream, data, length);
+
         /* Other streams do not accept blobs */
         default:
             guac_protocol_send_ack(client->socket, stream,
@@ -539,6 +546,10 @@ int rdp_guac_client_end_handler(guac_client* client, guac_stream* stream) {
         /* Inbound file stream */
         case GUAC_RDP_UPLOAD_STREAM:
             return guac_rdp_upload_end_handler(client, stream);
+
+        /* Clipboard stream */
+        case GUAC_RDP_INBOUND_CLIPBOARD_STREAM:
+            return guac_rdp_clipboard_end_handler(client, stream);
 
         /* Other streams do not accept explicit closure */
         default:

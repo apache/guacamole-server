@@ -247,8 +247,45 @@ void guac_rdp_process_cb_data_response(guac_client* client,
 
     /* Convert send clipboard data */
     if (guac_iconv(reader, &input, event->size,
-            GUAC_WRITE_UTF8, &output, GUAC_RDP_CLIPBOARD_MAX_LENGTH))
-        guac_protocol_send_clipboard(client->socket, client_data->clipboard);
+            GUAC_WRITE_UTF8, &output, GUAC_RDP_CLIPBOARD_MAX_LENGTH)) {
+
+        char* current = client_data->clipboard;
+        int remaining = GUAC_RDP_CLIPBOARD_MAX_LENGTH;
+
+        /* Begin stream */
+        guac_stream* stream = guac_client_alloc_stream(client);
+        guac_protocol_send_clipboard(client->socket, stream, "text/plain");
+
+        /* Split clipboard into chunks */
+        while (remaining > 0) {
+
+            /* Calculate size of next block */
+            int block_size = 4096;
+            if (remaining < block_size)
+                block_size = remaining; 
+
+            /* If at end of string, send final blob */
+            int length = strnlen(current, block_size);
+            if (length < block_size) {
+                guac_protocol_send_blob(client->socket, stream, current, length+1);
+                break;
+            }
+
+            /* Otherwise, send current blob and continue */
+            else
+                guac_protocol_send_blob(client->socket, stream, current, length);
+
+            /* Next block */
+            remaining -= length;
+            current += length;
+
+        }
+
+        /* End stream */
+        guac_protocol_send_end(client->socket, stream);
+        guac_client_free_stream(client, stream);
+
+    }
 
 }
 

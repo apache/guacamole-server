@@ -143,6 +143,20 @@ int guac_rdp_svc_pipe_handler(guac_client* client, guac_stream* stream,
 
 }
 
+int guac_rdp_clipboard_handler(guac_client* client, guac_stream* stream,
+        char* mimetype) {
+
+    guac_rdp_stream* rdp_stream;
+
+    /* Init stream data */
+    stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
+    rdp_stream->type = GUAC_RDP_INBOUND_CLIPBOARD_STREAM;
+
+    guac_client_log_info(client, "Creating clipboard stream %s", mimetype);
+    return 0;
+
+}
+
 int guac_rdp_upload_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length) {
 
@@ -205,6 +219,12 @@ int guac_rdp_svc_blob_handler(guac_client* client, guac_stream* stream,
 
 }
 
+int guac_rdp_clipboard_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length) {
+    guac_client_log_info(client, "Received %i bytes of clipboard data", length);
+    return 0;
+}
+
 int guac_rdp_upload_end_handler(guac_client* client, guac_stream* stream) {
 
     guac_rdp_stream* rdp_stream = (guac_rdp_stream*) stream->data;
@@ -229,6 +249,11 @@ int guac_rdp_upload_end_handler(guac_client* client, guac_stream* stream) {
     free(rdp_stream);
     return 0;
 
+}
+
+int guac_rdp_clipboard_end_handler(guac_client* client, guac_stream* stream) {
+    guac_client_log_info(client, "Received end of clipboard data");
+    return 0;
 }
 
 int guac_rdp_download_ack_handler(guac_client* client, guac_stream* stream,

@@ -82,7 +82,12 @@ typedef enum guac_rdp_stream_type {
     /**
      * The inbound half of a static virtual channel.
      */
-    GUAC_RDP_INBOUND_SVC_STREAM
+    GUAC_RDP_INBOUND_SVC_STREAM,
+
+    /**
+     * An inbound stream of clipboard data.
+     */
+    GUAC_RDP_INBOUND_CLIPBOARD_STREAM
 
 } guac_rdp_stream_type;
 
@@ -126,6 +131,12 @@ int guac_rdp_svc_pipe_handler(guac_client* client, guac_stream* stream,
         char* mimetype, char* name);
 
 /**
+ * Handler for inbound clipboard data.
+ */
+int guac_rdp_clipboard_handler(guac_client* client, guac_stream* stream,
+        char* mimetype);
+
+/**
  * Handler for stream data related to file uploads.
  */
 int guac_rdp_upload_blob_handler(guac_client* client, guac_stream* stream,
@@ -138,9 +149,20 @@ int guac_rdp_svc_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length);
 
 /**
+ * Handler for stream data related to clipboard.
+ */
+int guac_rdp_clipboard_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length);
+
+/**
  * Handler for end-of-stream related to file uploads.
  */
 int guac_rdp_upload_end_handler(guac_client* client, guac_stream* stream);
+
+/**
+ * Handler for end-of-stream related to clipboard.
+ */
+int guac_rdp_clipboard_end_handler(guac_client* client, guac_stream* stream);
 
 /**
  * Handler for acknowledgements of receipt of data related to file downloads.
