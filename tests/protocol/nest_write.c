@@ -68,7 +68,7 @@ void test_nest_write() {
         nested_socket = guac_socket_nest(socket, 0);
 
         /* Write instruction */
-        guac_protocol_send_clipboard(nested_socket, "a" UTF8_4 "b" UTF8_4 "c");
+        guac_protocol_send_name(nested_socket, "a" UTF8_4 "b" UTF8_4 "c");
         guac_protocol_send_sync(nested_socket, 12345);
         guac_socket_flush(nested_socket);
         guac_socket_flush(socket);
@@ -82,8 +82,8 @@ void test_nest_write() {
     else {
 
         char expected[] =
-            "4.nest,1.0,42."
-                "9.clipboard,11.a" UTF8_4 "b" UTF8_4 "c;"
+            "4.nest,1.0,37."
+                "4.name,11.a" UTF8_4 "b" UTF8_4 "c;"
                 "4.sync,5.12345;"
             ";";
 
