@@ -64,13 +64,13 @@ const static int __GUAC_RDP_CP1252_CODEPOINT[32] = {
     0x0178, /* 0x9F */
 };
 
-int guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
+int guac_iconv(guac_iconv_read* reader, const char** input, int in_remaining,
                guac_iconv_write* writer, char** output, int out_remaining) {
 
     while (in_remaining > 0 && out_remaining > 0) {
 
         int value;
-        char* read_start;
+        const char* read_start;
         char* write_start;
 
         /* Read character */
@@ -94,7 +94,7 @@ int guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
 
 }
 
-int GUAC_READ_UTF8(char** input, int remaining) {
+int GUAC_READ_UTF8(const char** input, int remaining) {
 
     int value;
 
@@ -103,7 +103,7 @@ int GUAC_READ_UTF8(char** input, int remaining) {
 
 }
 
-int GUAC_READ_UTF16(char** input, int remaining) {
+int GUAC_READ_UTF16(const char** input, int remaining) {
 
     int value;
 
@@ -119,7 +119,7 @@ int GUAC_READ_UTF16(char** input, int remaining) {
 
 }
 
-int GUAC_READ_CP1252(char** input, int remaining) {
+int GUAC_READ_CP1252(const char** input, int remaining) {
 
     int value = *((unsigned char*) *input);
 
@@ -132,7 +132,7 @@ int GUAC_READ_CP1252(char** input, int remaining) {
 
 }
 
-int GUAC_READ_ISO8859_1(char** input, int remaining) {
+int GUAC_READ_ISO8859_1(const char** input, int remaining) {
 
     int value = *((unsigned char*) *input);
 

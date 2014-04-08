@@ -30,7 +30,7 @@
  * the Unicode codepoint read, updating the string pointer to point to the
  * byte immediately after the character read.
  */
-typedef int guac_iconv_read(char** input, int remaining);
+typedef int guac_iconv_read(const char** input, int remaining);
 
 /**
  * Function writes the character having the given Unicode codepoint value to
@@ -56,7 +56,7 @@ typedef void guac_iconv_write(char** output, int remaining, int value);
  * @return Non-zero if the NULL terminator of the input string was read and
  *         copied into the destination string, zero otherwise.
  */
-int guac_iconv(guac_iconv_read* reader, char** input, int in_remaining,
+int guac_iconv(guac_iconv_read* reader, const char** input, int in_remaining,
                guac_iconv_write* writer, char** output, int out_remaining);
 
 /**

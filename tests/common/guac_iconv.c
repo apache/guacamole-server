@@ -35,7 +35,7 @@ static void test_conversion(
     char output[4096];
     char input[4096];
 
-    char* current_input = input;
+    const char* current_input = input;
     char* current_output = output;
 
     memcpy(input, in_string, in_length);

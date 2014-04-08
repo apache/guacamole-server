@@ -175,7 +175,7 @@ void guac_rdp_process_cb_data_request(guac_client* client,
     rdpChannels* channels = client_data->rdp_inst->context->channels;
 
     guac_iconv_write* writer;
-    char* input = client_data->clipboard->buffer;
+    const char* input = client_data->clipboard->buffer;
     char* output = malloc(GUAC_RDP_CLIPBOARD_MAX_LENGTH);
 
     RDP_CB_DATA_RESPONSE_EVENT* data_response;
@@ -222,7 +222,7 @@ void guac_rdp_process_cb_data_response(guac_client* client,
     char received_data[GUAC_RDP_CLIPBOARD_MAX_LENGTH];
 
     guac_iconv_read* reader;
-    char* input = (char*) event->data;
+    const char* input = (char*) event->data;
     char* output = received_data;
 
     /* Find correct source encoding */
