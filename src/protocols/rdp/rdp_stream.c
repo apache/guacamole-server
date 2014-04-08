@@ -27,10 +27,17 @@
 #include "rdp_svc.h"
 #include "rdp_stream.h"
 
+#include <freerdp/channels/channels.h>
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+
+#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
+#include <freerdp/client/cliprdr.h>
+#else
+#include "compat/client-cliprdr.h"
+#endif
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -146,13 +153,14 @@ int guac_rdp_svc_pipe_handler(guac_client* client, guac_stream* stream,
 int guac_rdp_clipboard_handler(guac_client* client, guac_stream* stream,
         char* mimetype) {
 
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
     guac_rdp_stream* rdp_stream;
 
     /* Init stream data */
     stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
     rdp_stream->type = GUAC_RDP_INBOUND_CLIPBOARD_STREAM;
 
-    guac_client_log_info(client, "Creating clipboard stream %s", mimetype);
+    guac_common_clipboard_reset(client_data->clipboard, mimetype);
     return 0;
 
 }
@@ -221,7 +229,10 @@ int guac_rdp_svc_blob_handler(guac_client* client, guac_stream* stream,
 
 int guac_rdp_clipboard_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length) {
-    guac_client_log_info(client, "Received %i bytes of clipboard data", length);
+
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_common_clipboard_append(client_data->clipboard, (char*) data, length);
+
     return 0;
 }
 
@@ -252,7 +263,24 @@ int guac_rdp_upload_end_handler(guac_client* client, guac_stream* stream) {
 }
 
 int guac_rdp_clipboard_end_handler(guac_client* client, guac_stream* stream) {
-    guac_client_log_info(client, "Received end of clipboard data");
+
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    rdpChannels* channels = client_data->rdp_inst->context->channels;
+
+    RDP_CB_FORMAT_LIST_EVENT* format_list =
+        (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
+            CliprdrChannel_Class,
+            CliprdrChannel_FormatList,
+            NULL, NULL);
+
+    /* Notify server that text data is now available */
+    format_list->formats = (UINT32*) malloc(sizeof(UINT32));
+    format_list->formats[0] = CB_FORMAT_TEXT;
+    format_list->formats[1] = CB_FORMAT_UNICODETEXT;
+    format_list->num_formats = 2;
+
+    freerdp_channels_send_event(channels, (wMessage*) format_list);
+
     return 0;
 }
 

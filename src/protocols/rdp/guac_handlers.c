@@ -465,27 +465,6 @@ int rdp_guac_client_clipboard_handler(guac_client* client, guac_stream* stream,
 
     return guac_rdp_clipboard_handler(client, stream, mimetype);
 
-#if 0
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
-    rdpChannels* channels = client_data->rdp_inst->context->channels;
-
-    RDP_CB_FORMAT_LIST_EVENT* format_list =
-        (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
-            CliprdrChannel_Class,
-            CliprdrChannel_FormatList,
-            NULL, NULL);
-
-    /* Store data in client */
-    strncpy(client_data->clipboard, data, GUAC_RDP_CLIPBOARD_MAX_LENGTH);
-
-    /* Notify server that text data is now available */
-    format_list->formats = (UINT32*) malloc(sizeof(UINT32));
-    format_list->formats[0] = CB_FORMAT_TEXT;
-    format_list->num_formats = 1;
-
-    freerdp_channels_send_event(channels, (wMessage*) format_list);
-#endif
-
 }
 
 int rdp_guac_client_file_handler(guac_client* client, guac_stream* stream,
