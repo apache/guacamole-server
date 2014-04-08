@@ -23,9 +23,8 @@
 #include "config.h"
 
 #include "client.h"
-#include "convert.h"
+#include "guac_iconv.h"
 
-#include <iconv.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include <time.h>
@@ -298,14 +297,21 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
 void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
-    guac_socket* socket = gc->socket;
+    vnc_guac_client_data* client_data = (vnc_guac_client_data*) gc->data;
 
-    /* Convert ASCII character data to UTF-8 */
-    char* utf8_text = convert("ISO_8859-1", "UTF-8", text);
+    char received_data[GUAC_VNC_CLIPBOARD_MAX_LENGTH];
 
-    guac_protocol_send_clipboard(socket, utf8_text);
+    const char* input = text;
+    char* output = received_data;
 
-    free(utf8_text);
+    /* Convert clipboard contents */
+    guac_iconv(GUAC_READ_ISO8859_1, &input, textlen,
+               GUAC_WRITE_UTF8, &output, sizeof(received_data));
+
+    /* Send converted data */
+    guac_common_clipboard_reset(client_data->clipboard, "text/plain");
+    guac_common_clipboard_append(client_data->clipboard, received_data, output - received_data);
+    guac_common_clipboard_send(client_data->clipboard, gc);
 
 }
 

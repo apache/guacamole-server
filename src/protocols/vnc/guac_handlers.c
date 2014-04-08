@@ -24,6 +24,7 @@
 
 #include "client.h"
 #include "convert.h"
+#include "guac_clipboard.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -96,8 +97,8 @@ int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     return 0;
 }
 
-int vnc_guac_client_clipboard_handler(guac_client* client, char* data) {
-
+int vnc_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype) {
+#if 0
     rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
 
     /* Convert UTF-8 character data to ISO_8859-1 */
@@ -115,7 +116,7 @@ int vnc_guac_client_clipboard_handler(guac_client* client, char* data) {
     } 
     else
         SendClientCutText(rfb_client, "", 0);
-
+#endif
     return 0;
 }
 
@@ -133,6 +134,9 @@ int vnc_guac_client_free_handler(guac_client* client) {
     /* Free encodings string, if used */
     if (guac_client_data->encodings != NULL)
         free(guac_client_data->encodings);
+
+    /* Free clipboard */
+    guac_common_clipboard_free(guac_client_data->clipboard);
 
     /* Free generic data struct */
     free(client->data);

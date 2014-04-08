@@ -25,6 +25,7 @@
 #define __GUAC_VNC_CLIENT_H
 
 #include "config.h"
+#include "guac_clipboard.h"
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
@@ -50,6 +51,11 @@
  * The number of milliseconds to wait between connection attempts.
  */
 #define GUAC_VNC_CONNECT_INTERVAL 1000
+
+/**
+ * The maximum number of bytes to allow within the clipboard.
+ */
+#define GUAC_VNC_CLIPBOARD_MAX_LENGTH 262144
 
 extern char* __GUAC_CLIENT;
 
@@ -168,7 +174,12 @@ typedef struct vnc_guac_client_data {
      */
     pa_threaded_mainloop* pa_mainloop;
 #endif
-    
+
+    /**
+     * Internal clipboard.
+     */
+    guac_common_clipboard* clipboard;
+
 } vnc_guac_client_data;
 
 #endif

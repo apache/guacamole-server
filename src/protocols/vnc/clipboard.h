@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,19 +20,30 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __GUAC_VNC_GUAC_HANDLERS_H
-#define __GUAC_VNC_GUAC_HANDLERS_H
+#ifndef _GUAC_VNC_CLIPBOARD_H
+#define _GUAC_VNC_CLIPBOARD_H
 
 #include "config.h"
 
 #include <guacamole/client.h>
+#include <guacamole/stream.h>
 
-int vnc_guac_client_handle_messages(guac_client* client);
-int vnc_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int vnc_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype);
-int vnc_guac_client_free_handler(guac_client* client);
+/**
+ * Handler for inbound clipboard data.
+ */
+int guac_vnc_clipboard_handler(guac_client* client, guac_stream* stream,
+        char* mimetype);
+
+/**
+ * Handler for stream data related to clipboard.
+ */
+int guac_vnc_clipboard_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length);
+
+/**
+ * Handler for end-of-stream related to clipboard.
+ */
+int guac_vnc_clipboard_end_handler(guac_client* client, guac_stream* stream);
 
 #endif
 

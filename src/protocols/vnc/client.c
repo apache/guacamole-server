@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "guac_clipboard.h"
 #include "guac_dot_cursor.h"
 #include "guac_handlers.h"
 #include "guac_pointer_cursor.h"
@@ -265,6 +266,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     else
         guac_client_data->listen_timeout = 5000;
 #endif
+
+    /* Init clipboard */
+    guac_client_data->clipboard = guac_common_clipboard_alloc(GUAC_VNC_CLIPBOARD_MAX_LENGTH);
 
     /* Ensure connection is kept alive during lengthy connects */
     guac_socket_require_keep_alive(client->socket);
