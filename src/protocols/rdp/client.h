@@ -26,6 +26,7 @@
 
 #include "config.h"
 
+#include "guac_clipboard.h"
 #include "guac_list.h"
 #include "rdp_fs.h"
 #include "rdp_keymap.h"
@@ -171,9 +172,9 @@ typedef struct rdp_guac_client_data {
     guac_rdp_keysym_state_map keysym_state;
 
     /**
-     * The current clipboard contents, in UTF-8.
+     * The current clipboard contents.
      */
-    char clipboard[GUAC_RDP_CLIPBOARD_MAX_LENGTH];
+    guac_common_clipboard* clipboard;
 
     /**
      * The format of the clipboard which was requested. Data received from
