@@ -551,14 +551,17 @@ int guac_protocol_send_clip(guac_socket* socket, const guac_layer* layer) {
 
 }
 
-int guac_protocol_send_clipboard(guac_socket* socket, const char* data) {
+int guac_protocol_send_clipboard(guac_socket* socket, const guac_stream* stream,
+        const char* mimetype) {
 
     int ret_val;
 
     guac_socket_instruction_begin(socket);
     ret_val =
            guac_socket_write_string(socket, "9.clipboard,")
-        || __guac_socket_write_length_string(socket, data)
+        || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);

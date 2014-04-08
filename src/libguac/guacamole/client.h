@@ -71,8 +71,8 @@ typedef int guac_client_key_handler(guac_client* client, int keysym, int pressed
 /**
  * Handler for Guacamole clipboard events.
  */
-typedef int guac_client_clipboard_handler(guac_client* client, char* copied);
-
+typedef int guac_client_clipboard_handler(guac_client* client, guac_stream* stream,
+        char* mimetype);
 /**
  * Handler for Guacamole screen size events.
  */
@@ -356,14 +356,14 @@ struct guac_client {
      * handler will be called whenever the web-client sets the data of the
      * clipboard.
      *
-     * This handler takes a single string which contains the text which
-     * has been set in the clipboard. This text is already unescaped from
-     * the Guacamole escaped version sent within the clipboard message
-     * in the protocol.
+     * The handler takes a guac_stream, which contains the stream index and
+     * will persist through the duration of the transfer, and the mimetype
+     * of the data being transferred.
      *
      * Example:
      * @code
-     *     int clipboard_handler(guac_client* client, char* copied);
+     *     int clipboard_handler(guac_client* client, guac_stream* stream,
+     *             char* mimetype);
      *
      *     int guac_client_init(guac_client* client, int argc, char** argv) {
      *         client->clipboard_handler = clipboard_handler;

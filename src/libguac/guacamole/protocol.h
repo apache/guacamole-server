@@ -950,10 +950,12 @@ int guac_protocol_send_size(guac_socket* socket, const guac_layer* layer,
  * returned, and guac_error is set appropriately.
  *
  * @param socket The guac_socket connection to use.
- * @param data The clipboard data to send.
+ * @param stream The stream to use.
+ * @param mimetype The mimetype of the clipboard data being sent.
  * @return Zero on success, non-zero on error.
  */
-int guac_protocol_send_clipboard(guac_socket* socket, const char* data);
+int guac_protocol_send_clipboard(guac_socket* socket, const guac_stream* stream,
+        const char* mimetype);
 
 /**
  * Sends a name instruction over the given guac_socket connection.

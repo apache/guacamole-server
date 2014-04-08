@@ -99,12 +99,40 @@ int __guac_handle_key(guac_client* client, guac_instruction* instruction) {
 }
 
 int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction) {
+
+    /* Pull corresponding stream */
+    int stream_index = atoi(instruction->argv[0]);
+    guac_stream* stream;
+
+    /* Validate stream index */
+    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
+
+        guac_stream dummy_stream;
+        dummy_stream.index = stream_index;
+
+        guac_protocol_send_ack(client->socket, &dummy_stream,
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+        return 0;
+    }
+
+    /* Initialize stream */
+    stream = &(client->__input_streams[stream_index]);
+    stream->index = stream_index;
+    stream->data = NULL;
+
+    /* If supported, call handler */
     if (client->clipboard_handler)
         return client->clipboard_handler(
             client,
-            instruction->argv[0] /* data */
+            stream,
+            instruction->argv[1] /* mimetype */
         );
+
+    /* Otherwise, abort */
+    guac_protocol_send_ack(client->socket, stream,
+            "Clipboard unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
     return 0;
+
 }
 
 int __guac_handle_size(guac_client* client, guac_instruction* instruction) {
