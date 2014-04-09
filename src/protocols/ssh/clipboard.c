@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,20 +20,36 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef _SSH_GUAC_HANDLERS_H
-#define _SSH_GUAC_HANDLERS_H
-
 #include "config.h"
+#include "client.h"
+#include "clipboard.h"
+#include "guac_clipboard.h"
+#include "guac_iconv.h"
 
-#include <guacamole/client.h>
+int guac_ssh_clipboard_handler(guac_client* client, guac_stream* stream,
+        char* mimetype) {
 
-int ssh_guac_client_handle_messages(guac_client* client);
-int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int ssh_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype);
-int ssh_guac_client_size_handler(guac_client* client, int width, int height);
-int ssh_guac_client_free_handler(guac_client* client);
+    /* Clear clipboard and prepare for new data */
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    guac_common_clipboard_reset(client_data->clipboard, mimetype);
 
-#endif
+    return 0;
+}
+
+int guac_ssh_clipboard_blob_handler(guac_client* client, guac_stream* stream,
+        void* data, int length) {
+
+    /* Append new data */
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    guac_common_clipboard_append(client_data->clipboard, (char*) data, length);
+
+    return 0;
+}
+
+int guac_ssh_clipboard_end_handler(guac_client* client, guac_stream* stream) {
+
+    /* Nothing to do - clipboard is implemented within client */
+
+    return 0;
+}
 

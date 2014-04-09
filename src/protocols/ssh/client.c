@@ -127,7 +127,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->mod_alt   =
     client_data->mod_ctrl  =
     client_data->mod_shift = 0;
-    client_data->clipboard_data = NULL;
+    client_data->clipboard = guac_common_clipboard_alloc(GUAC_SSH_CLIPBOARD_MAX_LENGTH);
     client_data->term_channel = NULL;
 
     if (argc != SSH_ARGS_COUNT) {

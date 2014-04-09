@@ -31,6 +31,7 @@ libguac_client_ssh_la_SOURCES = \
     buffer.c                    \
     char_mappings.c             \
     client.c                    \
+    clipboard.c                 \
     common.c                    \
     cursor.c                    \
     display.c                   \
@@ -48,6 +49,7 @@ noinst_HEADERS =                \
     buffer.h                    \
     char_mappings.h             \
     client.h                    \
+    clipboard.h                 \
     common.h                    \
     cursor.h                    \
     display.h                   \
@@ -67,7 +69,7 @@ libguac_client_ssh_la_SOURCES += ssh_agent.c
 noinst_HEADERS += ssh_agent.h
 endif
 
-libguac_client_ssh_la_CFLAGS = -Werror -Wall -Iinclude @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ @LIBGUAC_INCLUDE@
-libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@
+libguac_client_ssh_la_CFLAGS = -Werror -Wall -Iinclude @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
+libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
 libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0 @SSH_LIBS@ @SSL_LIBS@ @PTHREAD_LIBS@ @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @CAIRO_LIBS@
 

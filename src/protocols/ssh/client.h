@@ -27,6 +27,7 @@
 #include "config.h"
 
 #include "cursor.h"
+#include "guac_clipboard.h"
 #include "sftp.h"
 #include "ssh_key.h"
 #include "terminal.h"
@@ -39,6 +40,11 @@
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"
 #endif
+
+/**
+ * The maximum number of bytes to allow within the clipboard.
+ */
+#define GUAC_SSH_CLIPBOARD_MAX_LENGTH 262144
 
 /**
  * SSH-specific client data.
@@ -145,7 +151,7 @@ typedef struct ssh_guac_client_data {
     /**
      * The current contents of the clipboard.
      */
-    char* clipboard_data;
+    guac_common_clipboard* clipboard;
 
     /**
      * Whether the alt key is currently being held down.

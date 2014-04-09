@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "clipboard.h"
 #include "common.h"
 #include "cursor.h"
 #include "guac_handlers.h"
@@ -102,15 +103,8 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
 }
 
-int ssh_guac_client_clipboard_handler(guac_client* client, char* data) {
-
-    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
-
-    free(client_data->clipboard_data);
-
-    client_data->clipboard_data = strdup(data);
-
-    return 0;
+int ssh_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype) {
+    return guac_ssh_clipboard_handler(client, stream, mimetype);
 }
 
 int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
@@ -136,12 +130,8 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     }
 
     /* Paste contents of clipboard on right or middle mouse button up */
-    if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE)) {
-        if (client_data->clipboard_data != NULL)
-            return guac_terminal_send_string(term, client_data->clipboard_data);
-        else
-            return 0;
-    }
+    if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE))
+        return guac_terminal_send_data(term, client_data->clipboard->buffer, client_data->clipboard->length);
 
     /* If text selected, change state based on left mouse mouse button */
     if (term->text_selected) {
@@ -150,16 +140,22 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
         /* If mouse button released, stop selection */
         if (released_mask & GUAC_CLIENT_MOUSE_LEFT) {
 
+            int selected_length;
+
             /* End selection and get selected text */
-            char* string = malloc(term->term_width * term->term_height * sizeof(char));
+            int selectable_size = term->term_width * term->term_height * sizeof(char);
+            char* string = malloc(selectable_size);
             guac_terminal_select_end(term, string);
 
+            selected_length = strnlen(string, selectable_size);
+
             /* Store new data */
-            free(client_data->clipboard_data);
-            client_data->clipboard_data = string;
+            guac_common_clipboard_reset(client_data->clipboard, "text/plain");
+            guac_common_clipboard_append(client_data->clipboard, string, selected_length);
+            free(string);
 
             /* Send data */
-            guac_protocol_send_clipboard(client->socket, string);
+            guac_common_clipboard_send(client_data->clipboard, client);
             guac_socket_flush(client->socket);
 
         }
@@ -231,12 +227,8 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     else if (pressed) {
 
         /* Ctrl+Shift+V shortcut for paste */
-        if (keysym == 'V' && client_data->mod_ctrl) {
-            if (client_data->clipboard_data != NULL)
-                return guac_terminal_send_string(term, client_data->clipboard_data);
-            else
-                return 0;
-        }
+        if (keysym == 'V' && client_data->mod_ctrl)
+            return guac_terminal_send_data(term, client_data->clipboard->buffer, client_data->clipboard->length);
 
         /* Shift+PgUp / Shift+PgDown shortcuts for scrolling */
         if (client_data->mod_shift) {
@@ -426,8 +418,8 @@ int ssh_guac_client_free_handler(guac_client* client) {
     if (guac_client_data->key != NULL)
         ssh_key_free(guac_client_data->key);
 
-    /* Free clipboard data */
-    free(guac_client_data->clipboard_data);
+    /* Free clipboard */
+    guac_common_clipboard_free(guac_client_data->clipboard);
 
     /* Free cursors */
     guac_ssh_cursor_free(client, guac_client_data->ibar_cursor);
