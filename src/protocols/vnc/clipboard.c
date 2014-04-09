@@ -21,22 +21,48 @@
  */
 
 #include "config.h"
+#include "client.h"
 #include "clipboard.h"
+#include "guac_clipboard.h"
+#include "guac_iconv.h"
 
 int guac_vnc_clipboard_handler(guac_client* client, guac_stream* stream,
         char* mimetype) {
-    /* STUB */
+
+    /* Clear clipboard and prepare for new data */
+    vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
+    guac_common_clipboard_reset(client_data->clipboard, mimetype);
+
     return 0;
 }
 
 int guac_vnc_clipboard_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length) {
-    /* STUB */
+
+    /* Append new data */
+    vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
+    guac_common_clipboard_append(client_data->clipboard, (char*) data, length);
+
     return 0;
 }
 
 int guac_vnc_clipboard_end_handler(guac_client* client, guac_stream* stream) {
-    /* STUB */
+
+    vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
+    rfbClient* rfb_client = client_data->rfb_client;
+
+    char output_data[GUAC_VNC_CLIPBOARD_MAX_LENGTH];
+
+    const char* input = client_data->clipboard->buffer;
+    char* output = output_data;
+
+    /* Convert clipboard to ISO 8859-1 */
+    guac_iconv(GUAC_READ_UTF8, &input, client_data->clipboard->length,
+               GUAC_WRITE_ISO8859_1, &output, sizeof(output_data));
+
+    /* Send via VNC */
+    SendClientCutText(rfb_client, output_data, output - output_data);
+
     return 0;
 }
 

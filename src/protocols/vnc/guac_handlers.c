@@ -23,7 +23,7 @@
 #include "config.h"
 
 #include "client.h"
-#include "convert.h"
+#include "clipboard.h"
 #include "guac_clipboard.h"
 
 #include <stdlib.h>
@@ -98,26 +98,15 @@ int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
 }
 
 int vnc_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype) {
-#if 0
-    rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
+    return guac_vnc_clipboard_handler(client, stream, mimetype);
+}
 
-    /* Convert UTF-8 character data to ISO_8859-1 */
-    # if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2) || __GLIBC__ > 2 || _LIBICONV_VERSION >= 0x0105
-    char* iso_8559_1_data = convert("UTF-8", "ISO_8859-1//TRANSLIT", data);
-    #else
-    char* iso_8559_1_data = convert("UTF-8", "ISO_8859-1", data);
-    #endif
+int vnc_guac_client_blob_handler(guac_client* client, guac_stream* stream, void* data, int length) {
+    return guac_vnc_clipboard_blob_handler(client, stream, data, length);
+}
 
-    /* If the conversion was successful, send the converted character data. */
-    if(iso_8559_1_data) {
-        SendClientCutText(rfb_client, iso_8559_1_data, strlen(iso_8559_1_data));
-        free(iso_8559_1_data);
-    /* Otherwise, just send an empty string. */
-    } 
-    else
-        SendClientCutText(rfb_client, "", 0);
-#endif
-    return 0;
+int vnc_guac_client_end_handler(guac_client* client, guac_stream* stream) {
+    return guac_vnc_clipboard_end_handler(client, stream);
 }
 
 int vnc_guac_client_free_handler(guac_client* client) {

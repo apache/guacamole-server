@@ -351,6 +351,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         client->mouse_handler = vnc_guac_client_mouse_handler;
         client->key_handler = vnc_guac_client_key_handler;
         client->clipboard_handler = vnc_guac_client_clipboard_handler;
+        client->blob_handler = vnc_guac_client_blob_handler;
+        client->end_handler = vnc_guac_client_end_handler;
 
         /* If not read-only but cursor is remote, set a dot cursor */
         if (guac_client_data->remote_cursor)
