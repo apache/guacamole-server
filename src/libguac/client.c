@@ -30,7 +30,7 @@
 #include "pool.h"
 #include "protocol.h"
 #include "socket.h"
-#include "time.h"
+#include "timestamp.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -141,6 +141,9 @@ guac_client* guac_client_alloc() {
     client->__stream_pool = guac_pool_alloc(0);
 
     /* Initialze streams */
+    client->__input_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
+    client->__output_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
+
     for (i=0; i<GUAC_CLIENT_MAX_STREAMS; i++) {
         client->__input_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
         client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
@@ -162,6 +165,10 @@ void guac_client_free(guac_client* client) {
     /* Free layer pools */
     guac_pool_free(client->__buffer_pool);
     guac_pool_free(client->__layer_pool);
+
+    /* Free streams */
+    free(client->__input_streams);
+    free(client->__output_streams);
 
     /* Free stream pool */
     guac_pool_free(client->__stream_pool);

@@ -31,6 +31,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
+#include <guacamole/instruction.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>

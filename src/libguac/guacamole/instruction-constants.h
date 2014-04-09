@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,29 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUAC_TIMESTAMP_H
-#define _GUAC_TIMESTAMP_H
+#ifndef _GUAC_INSTRUCTION_CONSTANTS_H
+#define _GUAC_INSTRUCTION_CONSTANTS_H
 
 /**
- * Provides functions and structures for creating timestamps.
+ * Constants related to Guacamole instructions.
  *
- * @file timestamp.h
+ * @file instruction-constants.h
  */
-
-#include "timestamp-types.h"
 
 /**
- * Returns an arbitrary timestamp. The difference between return values of any
- * two calls is equal to the amount of time in milliseconds between those 
- * calls. The return value from a single call will not have any useful
- * (or defined) meaning.
- *
- * @return An arbitrary millisecond timestamp.
+ * The maximum number of characters per instruction.
  */
-guac_timestamp guac_timestamp_current();
+#define GUAC_INSTRUCTION_MAX_LENGTH 8192
+
+/**
+ * The maximum number of digits to allow per length prefix.
+ */
+#define GUAC_INSTRUCTION_MAX_DIGITS 5
+
+/**
+ * The maximum number of elements per instruction, including the opcode.
+ */
+#define GUAC_INSTRUCTION_MAX_ELEMENTS 64
 
 #endif
 

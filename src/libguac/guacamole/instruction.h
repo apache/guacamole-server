@@ -31,56 +31,11 @@
  * @file instruction.h
  */
 
-#include "socket.h"
+#include "instruction-types.h"
+#include "instruction-constants.h"
+#include "socket-types.h"
 
-/**
- * The maximum number of characters per instruction.
- */
-#define GUAC_INSTRUCTION_MAX_LENGTH 8192
-
-/**
- * The maximum number of digits to allow per length prefix.
- */
-#define GUAC_INSTRUCTION_MAX_DIGITS 5
-
-/**
- * The maximum number of elements per instruction, including the opcode.
- */
-#define GUAC_INSTRUCTION_MAX_ELEMENTS 64
-
-/**
- * All possible states of the instruction parser.
- */
-typedef enum guac_instruction_parse_state {
-
-    /**
-     * The parser is currently waiting for data to complete the length prefix
-     * of the current element of the instruction.
-     */
-    GUAC_INSTRUCTION_PARSE_LENGTH,
-
-    /**
-     * The parser has finished reading the length prefix and is currently
-     * waiting for data to complete the content of the instruction.
-     */
-    GUAC_INSTRUCTION_PARSE_CONTENT,
-
-    /**
-     * The instruction has been fully parsed.
-     */
-    GUAC_INSTRUCTION_PARSE_COMPLETE,
-
-    /**
-     * The instruction cannot be parsed because of a protocol error.
-     */
-    GUAC_INSTRUCTION_PARSE_ERROR
-
-} guac_instruction_parse_state;
-
-/**
- * Represents a single instruction within the Guacamole protocol.
- */
-typedef struct guac_instruction {
+struct guac_instruction {
 
     /**
      * The opcode of the instruction.
@@ -117,7 +72,7 @@ typedef struct guac_instruction {
      */
     char* __elementv[GUAC_INSTRUCTION_MAX_ELEMENTS];
 
-} guac_instruction;
+};
 
 /**
  * Allocates a new instruction. Each instruction contains within itself the

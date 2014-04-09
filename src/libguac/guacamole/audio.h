@@ -30,31 +30,12 @@
  * @file audio.h
  */
 
-#include <guacamole/client.h>
-#include <guacamole/stream.h>
+#include "audio-fntypes.h"
+#include "audio-types.h"
+#include "client-types.h"
+#include "stream-types.h"
 
-typedef struct guac_audio_stream guac_audio_stream;
-
-/**
- * Handler which is called when the audio stream is opened.
- */
-typedef void guac_audio_encoder_begin_handler(guac_audio_stream* audio);
-
-/**
- * Handler which is called when the audio stream is closed.
- */
-typedef void guac_audio_encoder_end_handler(guac_audio_stream* audio);
-
-/**
- * Handler which is called when the audio stream is flushed.
- */
-typedef void guac_audio_encoder_write_handler(guac_audio_stream* audio,
-        const unsigned char* pcm_data, int length);
-
-/**
- * Arbitrary audio codec encoder.
- */
-typedef struct guac_audio_encoder {
+struct guac_audio_encoder {
 
     /**
      * The mimetype of the audio data encoded by this audio
@@ -77,13 +58,8 @@ typedef struct guac_audio_encoder {
      */
     guac_audio_encoder_end_handler* end_handler;
 
-} guac_audio_encoder;
+};
 
-/**
- * Basic audio stream. PCM data is added to the stream. When the stream is
- * flushed, a write handler receives PCM data packets and, presumably, streams
- * them to the guac_stream provided.
- */
 struct guac_audio_stream {
 
     /**

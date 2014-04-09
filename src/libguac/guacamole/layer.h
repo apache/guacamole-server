@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 #ifndef _GUAC_LAYER_H
 #define _GUAC_LAYER_H
 
@@ -30,7 +29,7 @@
  * @file layer.h
  */
 
-typedef struct guac_layer guac_layer;
+#include "layer-types.h"
 
 /**
  * Represents a single layer within the Guacamole protocol.

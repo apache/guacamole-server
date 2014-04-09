@@ -27,6 +27,7 @@
 #include "palette.h"
 #include "protocol.h"
 #include "socket.h"
+#include "stream.h"
 #include "unicode.h"
 
 #include <errno.h>

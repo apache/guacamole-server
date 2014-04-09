@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,48 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUAC_TIMESTAMP_H
-#define _GUAC_TIMESTAMP_H
+#ifndef _GUAC_CLIENT_TYPES_H
+#define _GUAC_CLIENT_TYPES_H
 
 /**
- * Provides functions and structures for creating timestamps.
+ * Type definitions related to the Guacamole client structure, guac_client.
  *
- * @file timestamp.h
+ * @file client-types.h
  */
-
-#include "timestamp-types.h"
 
 /**
- * Returns an arbitrary timestamp. The difference between return values of any
- * two calls is equal to the amount of time in milliseconds between those 
- * calls. The return value from a single call will not have any useful
- * (or defined) meaning.
+ * Guacamole proxy client.
  *
- * @return An arbitrary millisecond timestamp.
+ * Represents a Guacamole proxy client (the client which communicates to
+ * a server on behalf of Guacamole, on behalf of the web-client).
  */
-guac_timestamp guac_timestamp_current();
+typedef struct guac_client guac_client;
+
+/**
+ * Possible current states of the Guacamole client. Currently, the only
+ * two states are GUAC_CLIENT_RUNNING and GUAC_CLIENT_STOPPING.
+ */
+typedef enum guac_client_state {
+
+    /**
+     * The state of the client from when it has been allocated by the main
+     * daemon until it is killed or disconnected.
+     */
+    GUAC_CLIENT_RUNNING,
+
+    /**
+     * The state of the client when a stop has been requested, signalling the
+     * I/O threads to shutdown.
+     */
+    GUAC_CLIENT_STOPPING
+
+} guac_client_state;
+
+/**
+ * Information exposed by the remote client during the connection handshake
+ * which can be used by a client plugin.
+ */
+typedef struct guac_client_info guac_client_info;
 
 #endif
 

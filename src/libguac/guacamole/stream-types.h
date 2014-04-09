@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,19 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUAC_TIMESTAMP_H
-#define _GUAC_TIMESTAMP_H
+#ifndef _GUAC_STREAM_TYPES_H
+#define _GUAC_STREAM_TYPES_H
 
 /**
- * Provides functions and structures for creating timestamps.
+ * Type definitions related to Guacamole protocol streams.
  *
- * @file timestamp.h
+ * @file stream-types.h
  */
-
-#include "timestamp-types.h"
 
 /**
- * Returns an arbitrary timestamp. The difference between return values of any
- * two calls is equal to the amount of time in milliseconds between those 
- * calls. The return value from a single call will not have any useful
- * (or defined) meaning.
- *
- * @return An arbitrary millisecond timestamp.
+ * Represents a single stream within the Guacamole protocol.
  */
-guac_timestamp guac_timestamp_current();
+typedef struct guac_stream guac_stream;
 
 #endif
 

@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
-
 #ifndef _GUAC_PLUGIN_H
 #define _GUAC_PLUGIN_H
 
-#include "client.h"
+#include "client-types.h"
+#include "plugin-constants.h"
+#include "plugin-types.h"
 
 /**
  * Provides functions and structures required for handling a client plugin.
@@ -32,44 +33,6 @@
  * @file plugin.h
  */
 
-/**
- * String prefix which begins the library filename of all client plugins.
- */
-#define GUAC_PROTOCOL_LIBRARY_PREFIX "libguac-client-"
-
-/**
- * String suffix which ends the library filename of all client plugins.
- */
-#define GUAC_PROTOCOL_LIBRARY_SUFFIX ".so"
-
-/**
- * The maximum number of characters (COUNTING NULL TERMINATOR) to allow
- * for protocol names within the library filename of client plugins.
- */
-#define GUAC_PROTOCOL_NAME_LIMIT 256
-
-/**
- * The maximum number of characters (INCLUDING NULL TERMINATOR) that a
- * character array containing the concatenation of the library prefix,
- * protocol name, and suffix can contain, assuming the protocol name is
- * limited to GUAC_PROTOCOL_NAME_LIMIT characters.
- */
-#define GUAC_PROTOCOL_LIBRARY_LIMIT (                                  \
-                                                                       \
-      sizeof(GUAC_PROTOCOL_LIBRARY_PREFIX) - 1 /* "libguac-client-" */ \
-    +        GUAC_PROTOCOL_NAME_LIMIT      - 1 /* [up to 256 chars] */ \
-    + sizeof(GUAC_PROTOCOL_LIBRARY_SUFFIX) - 1 /* ".so"             */ \
-    + 1                                        /* NULL terminator   */ \
-                                                                       \
-)
-
-typedef struct guac_client_plugin guac_client_plugin;
-
-/**
- * A handle to a client plugin, containing enough information about the
- * plugin to complete the initial protocol handshake and instantiate a new
- * client supporting the protocol provided by the client plugin. 
- */
 struct guac_client_plugin {
 
     /**

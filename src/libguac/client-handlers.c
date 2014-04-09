@@ -98,10 +98,8 @@ int __guac_handle_key(guac_client* client, guac_instruction* instruction) {
     return 0;
 }
 
-int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction) {
+static guac_stream* __get_input_stream(guac_client* client, int stream_index) {
 
-    /* Pull corresponding stream */
-    int stream_index = atoi(instruction->argv[0]);
     guac_stream* stream;
 
     /* Validate stream index */
@@ -112,13 +110,63 @@ int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction) 
 
         guac_protocol_send_ack(client->socket, &dummy_stream,
                 "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
-        return 0;
+        return NULL;
     }
+
+    return stream;
+
+}
+
+static guac_stream* __get_open_input_stream(guac_client* client, int stream_index) {
+
+    guac_stream* stream = __get_input_stream(client, stream_index);
+
+    /* Fail if no such stream */
+    if (stream == NULL)
+        return NULL;
+
+    /* Validate initialization of stream */
+    if (stream->index == GUAC_CLIENT_CLOSED_STREAM_INDEX) {
+
+        guac_stream dummy_stream;
+        dummy_stream.index = stream_index;
+
+        guac_protocol_send_ack(client->socket, &dummy_stream,
+                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+        return NULL;
+    }
+
+    return stream;
+
+}
+
+static guac_stream* __init_input_stream(guac_client* client, int stream_index) {
+
+    guac_stream* stream = __get_input_stream(client, stream_index);
+
+    /* Fail if no such stream */
+    if (stream == NULL)
+        return NULL;
 
     /* Initialize stream */
     stream = &(client->__input_streams[stream_index]);
     stream->index = stream_index;
     stream->data = NULL;
+    stream->ack_handler = NULL;
+    stream->blob_handler = NULL;
+    stream->end_handler = NULL;
+
+    return stream;
+
+}
+
+int __guac_handle_clipboard(guac_client* client, guac_instruction* instruction) {
+
+    /* Pull corresponding stream */
+    int stream_index = atoi(instruction->argv[0]);
+    guac_stream* stream = __init_input_stream(client, stream_index);
+    if (stream == NULL)
+        return 0;
 
     /* If supported, call handler */
     if (client->clipboard_handler)
@@ -149,23 +197,9 @@ int __guac_handle_file(guac_client* client, guac_instruction* instruction) {
 
     /* Pull corresponding stream */
     int stream_index = atoi(instruction->argv[0]);
-    guac_stream* stream;
-
-    /* Validate stream index */
-    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
-
-        guac_stream dummy_stream;
-        dummy_stream.index = stream_index;
-
-        guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+    guac_stream* stream = __init_input_stream(client, stream_index);
+    if (stream == NULL)
         return 0;
-    }
-
-    /* Initialize stream */
-    stream = &(client->__input_streams[stream_index]);
-    stream->index = stream_index;
-    stream->data = NULL;
 
     /* If supported, call handler */
     if (client->file_handler)
@@ -186,23 +220,9 @@ int __guac_handle_pipe(guac_client* client, guac_instruction* instruction) {
 
     /* Pull corresponding stream */
     int stream_index = atoi(instruction->argv[0]);
-    guac_stream* stream;
-
-    /* Validate stream index */
-    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
-
-        guac_stream dummy_stream;
-        dummy_stream.index = stream_index;
-
-        guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+    guac_stream* stream = __init_input_stream(client, stream_index);
+    if (stream == NULL)
         return 0;
-    }
-
-    /* Initialize stream */
-    stream = &(client->__input_streams[stream_index]);
-    stream->index = stream_index;
-    stream->data = NULL;
 
     /* If supported, call handler */
     if (client->pipe_handler)
@@ -234,7 +254,12 @@ int __guac_handle_ack(guac_client* client, guac_instruction* instruction) {
     if (stream->index == GUAC_CLIENT_CLOSED_STREAM_INDEX)
         return 0;
 
-    /* If handler defined, call it */
+    /* Call stream handler if defined */
+    if (stream->ack_handler)
+        return stream->ack_handler(client, stream, instruction->argv[1],
+                atoi(instruction->argv[2]));
+
+    /* Fall back to global handler if defined */
     if (client->ack_handler)
         return client->ack_handler(client, stream, instruction->argv[1],
                 atoi(instruction->argv[2]));
@@ -244,40 +269,25 @@ int __guac_handle_ack(guac_client* client, guac_instruction* instruction) {
 
 int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
 
-    guac_stream* stream;
-
-    /* Validate stream index */
     int stream_index = atoi(instruction->argv[0]);
-    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
+    guac_stream* stream = __get_open_input_stream(client, stream_index);
 
-        guac_stream dummy_stream;
-        dummy_stream.index = stream_index;
-
-        guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+    /* Fail if no such stream */
+    if (stream == NULL)
         return 0;
+
+    /* Call stream handler if defined */
+    if (stream->blob_handler) {
+        int length = guac_protocol_decode_base64(instruction->argv[1]);
+        return stream->blob_handler(client, stream, instruction->argv[1],
+            length);
     }
 
-    stream = &(client->__input_streams[stream_index]);
-
-    /* Validate initialization of stream */
-    if (stream->index == GUAC_CLIENT_CLOSED_STREAM_INDEX) {
-
-        guac_stream dummy_stream;
-        dummy_stream.index = stream_index;
-
-        guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index", GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
-        return 0;
-    }
-
+    /* Fall back to global handler if defined */
     if (client->blob_handler) {
-
-        /* Decode base64 */
         int length = guac_protocol_decode_base64(instruction->argv[1]);
         return client->blob_handler(client, stream, instruction->argv[1],
             length);
-
     }
 
     guac_protocol_send_ack(client->socket, stream,
@@ -287,26 +297,19 @@ int __guac_handle_blob(guac_client* client, guac_instruction* instruction) {
 
 int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
 
-    guac_stream* stream;
     int result = 0;
-
-    /* Pull corresponding stream */
     int stream_index = atoi(instruction->argv[0]);
+    guac_stream* stream = __get_open_input_stream(client, stream_index);
 
-    /* Validate stream index */
-    if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
-
-        guac_stream dummy_stream;
-        dummy_stream.index = stream_index;
-
-        guac_protocol_send_ack(client->socket, &dummy_stream,
-                "Invalid stream index",
-                GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+    /* Fail if no such stream */
+    if (stream == NULL)
         return 0;
-    }
 
-    stream = &(client->__input_streams[stream_index]);
+    /* Call stream handler if defined */
+    if (stream->end_handler)
+        result = stream->end_handler(client, stream);
 
+    /* Fall back to global handler if defined */
     if (client->end_handler)
         result = client->end_handler(client, stream);
 

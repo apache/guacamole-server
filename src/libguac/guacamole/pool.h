@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 #ifndef _GUAC_POOL_H
 #define _GUAC_POOL_H
 
@@ -31,15 +30,9 @@
  * @file pool.h
  */
 
-typedef struct guac_pool_int guac_pool_int;
+#include "pool-types.h"
 
-/**
- * A pool of integers. Integers can be removed from and later free'd back
- * into the pool. New integers are returned when the pool is exhausted,
- * or when the pool has not met some minimum size. Old, free'd integers
- * are returned otherwise.
- */
-typedef struct guac_pool {
+struct guac_pool {
 
     /**
      * The minimum number of integers which must have been returned by
@@ -69,11 +62,8 @@ typedef struct guac_pool {
      */
     guac_pool_int* __tail;
 
-} guac_pool;
+};
 
-/**
- * Represents a single integer within a larger pool of integers.
- */
 struct guac_pool_int {
 
     /**

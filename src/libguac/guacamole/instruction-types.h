@@ -20,26 +20,49 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUAC_TIMESTAMP_H
-#define _GUAC_TIMESTAMP_H
+
+#ifndef _GUAC_INSTRUCTION_TYPES_H
+#define _GUAC_INSTRUCTION_TYPES_H
 
 /**
- * Provides functions and structures for creating timestamps.
+ * Type definitions related to Guacamole instructions.
  *
- * @file timestamp.h
+ * @file instruction-types.h
  */
-
-#include "timestamp-types.h"
 
 /**
- * Returns an arbitrary timestamp. The difference between return values of any
- * two calls is equal to the amount of time in milliseconds between those 
- * calls. The return value from a single call will not have any useful
- * (or defined) meaning.
- *
- * @return An arbitrary millisecond timestamp.
+ * All possible states of the instruction parser.
  */
-guac_timestamp guac_timestamp_current();
+typedef enum guac_instruction_parse_state {
+
+    /**
+     * The parser is currently waiting for data to complete the length prefix
+     * of the current element of the instruction.
+     */
+    GUAC_INSTRUCTION_PARSE_LENGTH,
+
+    /**
+     * The parser has finished reading the length prefix and is currently
+     * waiting for data to complete the content of the instruction.
+     */
+    GUAC_INSTRUCTION_PARSE_CONTENT,
+
+    /**
+     * The instruction has been fully parsed.
+     */
+    GUAC_INSTRUCTION_PARSE_COMPLETE,
+
+    /**
+     * The instruction cannot be parsed because of a protocol error.
+     */
+    GUAC_INSTRUCTION_PARSE_ERROR
+
+} guac_instruction_parse_state;
+
+/**
+ * Represents a single instruction within the Guacamole protocol.
+ */
+typedef struct guac_instruction guac_instruction;
 
 #endif
 

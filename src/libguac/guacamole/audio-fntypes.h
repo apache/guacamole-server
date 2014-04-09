@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,32 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUAC_TIMESTAMP_H
-#define _GUAC_TIMESTAMP_H
+#ifndef __GUAC_AUDIO_FNTYPES_H
+#define __GUAC_AUDIO_FNTYPES_H
 
 /**
- * Provides functions and structures for creating timestamps.
+ * Function type definitions related to simple streaming audio.
  *
- * @file timestamp.h
+ * @file audio-fntypes.h
  */
 
-#include "timestamp-types.h"
+#include "audio-types.h"
 
 /**
- * Returns an arbitrary timestamp. The difference between return values of any
- * two calls is equal to the amount of time in milliseconds between those 
- * calls. The return value from a single call will not have any useful
- * (or defined) meaning.
- *
- * @return An arbitrary millisecond timestamp.
+ * Handler which is called when the audio stream is opened.
  */
-guac_timestamp guac_timestamp_current();
+typedef void guac_audio_encoder_begin_handler(guac_audio_stream* audio);
+
+/**
+ * Handler which is called when the audio stream is closed.
+ */
+typedef void guac_audio_encoder_end_handler(guac_audio_stream* audio);
+
+/**
+ * Handler which is called when the audio stream is flushed.
+ */
+typedef void guac_audio_encoder_write_handler(guac_audio_stream* audio,
+        const unsigned char* pcm_data, int length);
 
 #endif
 

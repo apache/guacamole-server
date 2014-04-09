@@ -20,186 +20,28 @@
  * THE SOFTWARE.
  */
 
-
 #ifndef _GUAC_CLIENT_H
 #define _GUAC_CLIENT_H
 
 /**
- * Provides functions and structures required for defining (and handling) a proxy client.
+ * Functions and structure contents for the Guacamole proxy client.
  *
  * @file client.h
  */
 
-#include "instruction.h"
-#include "layer.h"
-#include "pool.h"
-#include "protocol.h"
-#include "socket.h"
+#include "client-fntypes.h"
+#include "client-types.h"
+#include "client-constants.h"
+#include "instruction-types.h"
+#include "layer-types.h"
+#include "pool-types.h"
+#include "socket-types.h"
 #include "stream.h"
-#include "timestamp.h"
+#include "timestamp-types.h"
 
 #include <stdarg.h>
 
-/**
- * The maximum number of inbound streams supported by any one guac_client.
- */
-#define GUAC_CLIENT_MAX_STREAMS 64
-
-/**
- * The index of a closed stream.
- */
-#define GUAC_CLIENT_CLOSED_STREAM_INDEX -1
-
-typedef struct guac_client guac_client;
-
-/**
- * Handler for server messages (where "server" refers to the server that
- * the proxy client is connected to).
- */
-typedef int guac_client_handle_messages(guac_client* client);
-
-/**
- * Handler for Guacamole mouse events.
- */
-typedef int guac_client_mouse_handler(guac_client* client, int x, int y, int button_mask);
-
-/**
- * Handler for Guacamole key events.
- */
-typedef int guac_client_key_handler(guac_client* client, int keysym, int pressed);
-
-/**
- * Handler for Guacamole clipboard events.
- */
-typedef int guac_client_clipboard_handler(guac_client* client, guac_stream* stream,
-        char* mimetype);
-/**
- * Handler for Guacamole screen size events.
- */
-typedef int guac_client_size_handler(guac_client* client,
-        int width, int height);
-
-/**
- * Handler for Guacamole file transfer events.
- */
-typedef int guac_client_file_handler(guac_client* client, guac_stream* stream,
-        char* mimetype, char* filename);
-
-/**
- * Handler for Guacamole pipe events.
- */
-typedef int guac_client_pipe_handler(guac_client* client, guac_stream* stream,
-        char* mimetype, char* name);
-
-/**
- * Handler for Guacamole stream blob events.
- */
-typedef int guac_client_blob_handler(guac_client* client, guac_stream* stream,
-        void* data, int length);
-
-/**
- * Handler for Guacamole stream ack events.
- */
-typedef int guac_client_ack_handler(guac_client* client, guac_stream* stream,
-        char* error, guac_protocol_status status);
-
-/**
- * Handler for Guacamole stream end events.
- */
-typedef int guac_client_end_handler(guac_client* client, guac_stream* stream);
-
-/**
- * Handler for Guacamole audio format events.
- */
-typedef int guac_client_audio_handler(guac_client* client, char* mimetype);
-
-/**
- * Handler for Guacamole video format events.
- */
-typedef int guac_client_video_handler(guac_client* client, char* mimetype);
-
-/**
- * Handler for freeing up any extra data allocated by the client
- * implementation.
- */
-typedef int guac_client_free_handler(guac_client* client);
-
-/**
- * Handler for logging messages
- */
-typedef void guac_client_log_handler(guac_client* client, const char* format, va_list args); 
-
-/**
- * Handler which should initialize the given guac_client.
- */
-typedef int guac_client_init_handler(guac_client* client, int argc, char** argv);
-
-/**
- * The flag set in the mouse button mask when the left mouse button is down.
- */
-#define GUAC_CLIENT_MOUSE_LEFT        0x01
-
-/**
- * The flag set in the mouse button mask when the middle mouse button is down.
- */
-#define GUAC_CLIENT_MOUSE_MIDDLE      0x02
-
-/**
- * The flag set in the mouse button mask when the right mouse button is down.
- */
-#define GUAC_CLIENT_MOUSE_RIGHT       0x04
-
-/**
- * The flag set in the mouse button mask when the mouse scrollwheel is scrolled
- * up. Note that mouse scrollwheels are actually sets of two buttons. One
- * button is pressed and released for an upward scroll, and the other is
- * pressed and released for a downward scroll. Some mice may actually implement
- * these as separate buttons, not a wheel.
- */
-#define GUAC_CLIENT_MOUSE_SCROLL_UP   0x08
-
-/**
- * The flag set in the mouse button mask when the mouse scrollwheel is scrolled
- * down. Note that mouse scrollwheels are actually sets of two buttons. One
- * button is pressed and released for an upward scroll, and the other is
- * pressed and released for a downward scroll. Some mice may actually implement
- * these as separate buttons, not a wheel.
- */
-#define GUAC_CLIENT_MOUSE_SCROLL_DOWN 0x10
-
-/**
- * The minimum number of buffers to create before allowing free'd buffers to
- * be reclaimed. In the case a protocol rapidly creates, uses, and destroys
- * buffers, this can prevent unnecessary reuse of the same buffer (which
- * would make draw operations unnecessarily synchronous).
- */
-#define GUAC_BUFFER_POOL_INITIAL_SIZE 1024
-
-/**
- * Possible current states of the Guacamole client. Currently, the only
- * two states are GUAC_CLIENT_RUNNING and GUAC_CLIENT_STOPPING.
- */
-typedef enum guac_client_state {
-
-    /**
-     * The state of the client from when it has been allocated by the main
-     * daemon until it is killed or disconnected.
-     */
-    GUAC_CLIENT_RUNNING,
-
-    /**
-     * The state of the client when a stop has been requested, signalling the
-     * I/O threads to shutdown.
-     */
-    GUAC_CLIENT_STOPPING
-
-} guac_client_state;
-
-/**
- * Information exposed by the remote client during the connection handshake
- * which can be used by a client plugin.
- */
-typedef struct guac_client_info {
+struct guac_client_info {
 
     /**
      * The number of pixels the remote client requests for the display width.
@@ -238,14 +80,8 @@ typedef struct guac_client_info {
      */
     int optimal_resolution;
 
-} guac_client_info;
+};
 
-/**
- * Guacamole proxy client.
- *
- * Represents a Guacamole proxy client (the client which communicates to
- * a server on behalf of Guacamole, on behalf of the web-client).
- */
 struct guac_client {
 
     /**
@@ -576,12 +412,12 @@ struct guac_client {
     /**
      * All available output streams (data going to connected client).
      */
-    guac_stream __output_streams[GUAC_CLIENT_MAX_STREAMS];
+    guac_stream* __output_streams;
 
     /**
      * All available input streams (data coming from connected client).
      */
-    guac_stream __input_streams[GUAC_CLIENT_MAX_STREAMS];
+    guac_stream* __input_streams;
 
 };
 
@@ -760,3 +596,4 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream);
 extern const guac_layer* GUAC_DEFAULT_LAYER;
 
 #endif
+

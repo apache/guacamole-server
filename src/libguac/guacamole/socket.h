@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 #ifndef _GUAC_SOCKET_H
 #define _GUAC_SOCKET_H
 
@@ -30,95 +29,15 @@
  * @file socket.h
  */
 
-#include "timestamp.h"
+#include "socket-constants.h"
+#include "socket-fntypes.h"
+#include "socket-types.h"
+#include "timestamp-types.h"
 
 #include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
 
-/**
- * The number of bytes to buffer within each socket before flushing.
- */
-#define GUAC_SOCKET_OUTPUT_BUFFER_SIZE 8192
-
-/**
- * The number of milliseconds to wait between keep-alive pings on a socket
- * with keep-alive enabled.
- */
-#define GUAC_SOCKET_KEEP_ALIVE_INTERVAL 5000
-
-typedef struct guac_socket guac_socket;
-
-/**
- * Generic read handler for socket read operations, modeled after the standard
- * POSIX read() function. When set within a guac_socket, a handler of this type
- * will be called when data needs to be read into the socket.
- *
- * @param socket The guac_socket being read from.
- * @param buf The arbitrary buffer we must populate with data.
- * @param count The maximum number of bytes to read into the buffer.
- * @return The number of bytes read, or -1 if an error occurs.
- */
-typedef ssize_t guac_socket_read_handler(guac_socket* socket,
-        void* buf, size_t count);
-
-/**
- * Generic write handler for socket write operations, modeled after the standard
- * POSIX write() function. When set within a guac_socket, a handler of this type
- * will be called when data needs to be write into the socket.
- *
- * @param socket The guac_socket being written to.
- * @param buf The arbitrary buffer containing data to be written.
- * @param count The maximum number of bytes to write from the buffer.
- * @return The number of bytes written, or -1 if an error occurs.
- */
-typedef ssize_t guac_socket_write_handler(guac_socket* socket,
-        const void* buf, size_t count);
-
-/**
- * Generic handler for socket select operations, similar to the POSIX select()
- * function. When guac_socket_select() is called on a guac_socket, its
- * guac_socket_select_handler will be invoked, if defined.
- *
- * @param socket The guac_socket being selected.
- * @param usec_timeout The maximum number of microseconds to wait for data, or
- *                     -1 to potentially wait forever.
- * @return Positive on success, zero if the timeout elapsed and no data is
- *         available, negative on error.
- */
-typedef int guac_socket_select_handler(guac_socket* socket, int usec_timeout);
-
-/**
- * Generic handler for the closing of a socket, modeled after the standard
- * POSIX close() function. When set within a guac_socket, a handler of this type
- * will be called when the socket is closed.
- *
- * @param socket The guac_socket being closed.
- * @return Zero on success, or -1 if an error occurs.
- */
-typedef int guac_socket_free_handler(guac_socket* socket);
-
-/**
- * Possible current states of a guac_socket.
- */
-typedef enum guac_socket_state {
-
-    /**
-     * The socket is open and can be written to / read from.
-     */
-    GUAC_SOCKET_OPEN,
-
-    /**
-     * The socket is closed. Reads and writes will fail.
-     */
-    GUAC_SOCKET_CLOSED
-
-} guac_socket_state;
-
-/**
- * The core I/O object of Guacamole. guac_socket provides buffered input and
- * output as well as convenience methods for efficiently writing base64 data.
- */
 struct guac_socket {
 
     /**

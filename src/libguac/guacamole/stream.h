@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 #ifndef _GUAC_STREAM_H
 #define _GUAC_STREAM_H
 
@@ -30,11 +29,9 @@
  * @file stream.h
  */
 
-typedef struct guac_stream guac_stream;
+#include "client-fntypes.h"
+#include "stream-types.h"
 
-/**
- * Represents a single stream within the Guacamole protocol.
- */
 struct guac_stream {
 
     /**
@@ -46,6 +43,70 @@ struct guac_stream {
      * Arbitrary data associated with this stream.
      */
     void* data;
+
+    /**
+     * Handler for ack events sent by the Guacamole web-client.
+     *
+     * The handler takes a guac_stream which contains the stream index and
+     * will persist through the duration of the transfer, a string containing
+     * the error or status message, and a status code.
+     *
+     * Example:
+     * @code
+     *     int ack_handler(guac_client* client, guac_stream* stream,
+     *             char* error, guac_protocol_status status);
+     *
+     *     int some_function(guac_client* client) {
+     *
+     *         guac_stream* stream = guac_client_alloc_stream(client);
+     *         stream->ack_handler = ack_handler;
+     *
+     *         guac_protocol_send_clipboard(client->socket,
+     *             stream, "text/plain");
+     *
+     *     }
+     * @endcode
+     */
+    guac_client_ack_handler* ack_handler;
+
+    /**
+     * Handler for blob events sent by the Guacamole web-client.
+     *
+     * The handler takes a guac_stream which contains the stream index and
+     * will persist through the duration of the transfer, an arbitrary buffer
+     * containing the blob, and the length of the blob.
+     *
+     * Example:
+     * @code
+     *     int blob_handler(guac_client* client, guac_stream* stream,
+     *             void* data, int length);
+     *
+     *     int my_clipboard_handler(guac_client* client, guac_stream* stream,
+     *             char* mimetype) {
+     *         stream->blob_handler = blob_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_blob_handler* blob_handler;
+
+    /**
+     * Handler for stream end events sent by the Guacamole web-client.
+     *
+     * The handler takes only a guac_stream which contains the stream index.
+     * This guac_stream will be disposed of immediately after this event is
+     * finished.
+     *
+     * Example:
+     * @code
+     *     int end_handler(guac_client* client, guac_stream* stream);
+     *
+     *     int my_clipboard_handler(guac_client* client, guac_stream* stream,
+     *             char* mimetype) {
+     *         stream->end_handler = end_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_end_handler* end_handler;
 
 };
 

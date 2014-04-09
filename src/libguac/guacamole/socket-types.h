@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,37 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUAC_TIMESTAMP_H
-#define _GUAC_TIMESTAMP_H
+#ifndef _GUAC_SOCKET_TYPES_H
+#define _GUAC_SOCKET_TYPES_H
 
 /**
- * Provides functions and structures for creating timestamps.
+ * Type definitions related to the guac_socket object.
  *
- * @file timestamp.h
+ * @file socket-types.h
  */
-
-#include "timestamp-types.h"
 
 /**
- * Returns an arbitrary timestamp. The difference between return values of any
- * two calls is equal to the amount of time in milliseconds between those 
- * calls. The return value from a single call will not have any useful
- * (or defined) meaning.
- *
- * @return An arbitrary millisecond timestamp.
+ * The core I/O object of Guacamole. guac_socket provides buffered input and
+ * output as well as convenience methods for efficiently writing base64 data.
  */
-guac_timestamp guac_timestamp_current();
+typedef struct guac_socket guac_socket;
+
+/**
+ * Possible current states of a guac_socket.
+ */
+typedef enum guac_socket_state {
+
+    /**
+     * The socket is open and can be written to / read from.
+     */
+    GUAC_SOCKET_OPEN,
+
+    /**
+     * The socket is closed. Reads and writes will fail.
+     */
+    GUAC_SOCKET_CLOSED
+
+} guac_socket_state;
 
 #endif
 
