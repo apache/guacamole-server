@@ -31,6 +31,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 const guac_terminal_color guac_terminal_palette[16] = {
 

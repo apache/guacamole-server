@@ -46,6 +46,7 @@
 #include <guacamole/error.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/timestamp.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>

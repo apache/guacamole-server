@@ -30,6 +30,7 @@
 #include "pool.h"
 #include "protocol.h"
 #include "socket.h"
+#include "stream.h"
 #include "timestamp.h"
 
 #include <stdio.h>

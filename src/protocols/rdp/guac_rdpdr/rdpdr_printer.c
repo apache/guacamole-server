@@ -29,6 +29,7 @@
 #include "rdp_status.h"
 
 #include <errno.h>
+#include <unistd.h>
 
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/protocol.h>

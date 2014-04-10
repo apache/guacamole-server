@@ -32,6 +32,7 @@
 #include <guacamole/error.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/stream.h>
 
 #ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
 #include <freerdp/client/cliprdr.h>

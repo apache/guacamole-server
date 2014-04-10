@@ -25,6 +25,7 @@
 #include "client.h"
 #include "client-handlers.h"
 #include "protocol.h"
+#include "stream.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -36,7 +36,7 @@
 #include "layer-types.h"
 #include "pool-types.h"
 #include "socket-types.h"
-#include "stream.h"
+#include "stream-types.h"
 #include "timestamp-types.h"
 
 #include <stdarg.h>

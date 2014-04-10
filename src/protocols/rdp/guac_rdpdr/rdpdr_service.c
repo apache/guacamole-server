@@ -36,6 +36,9 @@
 #include <freerdp/constants.h>
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+#include <guacamole/stream.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>

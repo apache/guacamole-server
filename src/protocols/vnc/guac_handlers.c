@@ -32,6 +32,7 @@
 #include <iconv.h>
 
 #include <guacamole/client.h>
+#include <guacamole/timestamp.h>
 #include <rfb/rfbclient.h>
 
 #ifdef ENABLE_PULSE

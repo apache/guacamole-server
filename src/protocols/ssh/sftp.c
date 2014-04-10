@@ -34,6 +34,7 @@
 #include <libssh2.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 #include <guacamole/stream.h>
 
 static bool __ssh_guac_valid_filename(char* filename) {
