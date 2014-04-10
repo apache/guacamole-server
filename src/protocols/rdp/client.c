@@ -33,6 +33,7 @@
 #include "rdp_glyph.h"
 #include "rdp_keymap.h"
 #include "rdp_pointer.h"
+#include "rdp_stream.h"
 #include "rdp_svc.h"
 
 #include <errno.h>
@@ -349,14 +350,11 @@ BOOL rdp_freerdp_post_connect(freerdp* instance) {
     client->handle_messages = rdp_guac_client_handle_messages;
     client->mouse_handler = rdp_guac_client_mouse_handler;
     client->key_handler = rdp_guac_client_key_handler;
-    client->clipboard_handler = rdp_guac_client_clipboard_handler;
 
-    /* File transfer handlers */
-    client->file_handler = rdp_guac_client_file_handler;
-    client->pipe_handler = rdp_guac_client_pipe_handler;
-    client->blob_handler = rdp_guac_client_blob_handler;
-    client->end_handler = rdp_guac_client_end_handler;
-    client->ack_handler = rdp_guac_client_ack_handler;
+    /* Stream handlers */
+    client->clipboard_handler = guac_rdp_clipboard_handler;
+    client->file_handler = guac_rdp_upload_file_handler;
+    client->pipe_handler = guac_rdp_svc_pipe_handler;
 
     return TRUE;
 

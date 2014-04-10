@@ -45,7 +45,8 @@ libguac_client_rdp_la_SOURCES = \
 	unicode.c
 
 guacsvc_sources =          \
-	guac_svc/svc_service.c
+	guac_svc/svc_service.c \
+	rdp_svc.c
 
 guacsnd_sources =                 \
 	guac_rdpsnd/rdpsnd_messages.c \
@@ -61,6 +62,7 @@ guacdr_sources =                             \
 	guac_rdpdr/rdpdr_printer.c               \
 	guac_rdpdr/rdpdr_service.c               \
 	rdp_fs.c                                 \
+	rdp_stream.c                             \
 	unicode.c
 
 noinst_HEADERS =                             \
@@ -109,7 +111,7 @@ guacsnd_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 guacdr_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 
 libguac_client_rdp_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
-guacsvc_libadd = @LIBGUAC_LTLIB@
+guacsvc_libadd = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
 guacsnd_libadd = @LIBGUAC_LTLIB@
 guacdr_libadd = @LIBGUAC_LTLIB@
 

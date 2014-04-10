@@ -112,6 +112,8 @@ int guac_rdp_upload_file_handler(guac_client* client, guac_stream* stream,
     rdp_stream->upload_status.offset = 0;
     rdp_stream->upload_status.file_id = file_id;
     stream->data = rdp_stream;
+    stream->blob_handler = guac_rdp_upload_blob_handler;
+    stream->end_handler = guac_rdp_upload_end_handler;
 
     guac_protocol_send_ack(client->socket, stream, "OK (STREAM BEGIN)",
             GUAC_PROTOCOL_STATUS_SUCCESS);
@@ -143,6 +145,7 @@ int guac_rdp_svc_pipe_handler(guac_client* client, guac_stream* stream,
 
     /* Init stream data */
     stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
+    stream->blob_handler = guac_rdp_svc_blob_handler;
     rdp_stream->type = GUAC_RDP_INBOUND_SVC_STREAM;
     rdp_stream->svc = svc;
     svc->input_pipe = stream;
@@ -159,6 +162,8 @@ int guac_rdp_clipboard_handler(guac_client* client, guac_stream* stream,
 
     /* Init stream data */
     stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
+    stream->blob_handler = guac_rdp_clipboard_blob_handler;
+    stream->end_handler = guac_rdp_clipboard_end_handler;
     rdp_stream->type = GUAC_RDP_INBOUND_CLIPBOARD_STREAM;
 
     guac_common_clipboard_reset(client_data->clipboard, mimetype);
@@ -273,6 +278,9 @@ int guac_rdp_clipboard_end_handler(guac_client* client, guac_stream* stream) {
             CliprdrChannel_Class,
             CliprdrChannel_FormatList,
             NULL, NULL);
+
+    /* Terminate clipboard data with NULL */
+    guac_common_clipboard_append(client_data->clipboard, "", 1);
 
     /* Notify server that text data is now available */
     format_list->formats = (UINT32*) malloc(sizeof(UINT32));

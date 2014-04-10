@@ -243,6 +243,7 @@ void guac_rdpdr_start_download(guac_rdpdr_device* device, const char* path) {
         /* Associate stream with transfer status */
         guac_stream* stream = guac_client_alloc_stream(client);
         stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
+        stream->ack_handler = guac_rdp_download_ack_handler;
         rdp_stream->type = GUAC_RDP_DOWNLOAD_STREAM;
         rdp_stream->download_status.file_id = file_id;
         rdp_stream->download_status.offset = 0;
