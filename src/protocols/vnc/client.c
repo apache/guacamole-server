@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "clipboard.h"
 #include "guac_clipboard.h"
 #include "guac_dot_cursor.h"
 #include "guac_handlers.h"
@@ -350,9 +351,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         /* Only handle mouse/keyboard/clipboard if not read-only */
         client->mouse_handler = vnc_guac_client_mouse_handler;
         client->key_handler = vnc_guac_client_key_handler;
-        client->clipboard_handler = vnc_guac_client_clipboard_handler;
-        client->blob_handler = vnc_guac_client_blob_handler;
-        client->end_handler = vnc_guac_client_end_handler;
+        client->clipboard_handler = guac_vnc_clipboard_handler;
 
         /* If not read-only but cursor is remote, set a dot cursor */
         if (guac_client_data->remote_cursor)

@@ -31,9 +31,6 @@
 int vnc_guac_client_handle_messages(guac_client* client);
 int vnc_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
 int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int vnc_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype);
-int vnc_guac_client_blob_handler(guac_client* client, guac_stream* stream, void* data, int length);
-int vnc_guac_client_end_handler(guac_client* client, guac_stream* stream);
 int vnc_guac_client_free_handler(guac_client* client);
 
 #endif

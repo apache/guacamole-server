@@ -98,18 +98,6 @@ int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
     return 0;
 }
 
-int vnc_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype) {
-    return guac_vnc_clipboard_handler(client, stream, mimetype);
-}
-
-int vnc_guac_client_blob_handler(guac_client* client, guac_stream* stream, void* data, int length) {
-    return guac_vnc_clipboard_blob_handler(client, stream, data, length);
-}
-
-int vnc_guac_client_end_handler(guac_client* client, guac_stream* stream) {
-    return guac_vnc_clipboard_end_handler(client, stream);
-}
-
 int vnc_guac_client_free_handler(guac_client* client) {
 
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) client->data;
