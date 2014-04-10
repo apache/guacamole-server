@@ -31,7 +31,6 @@
 int ssh_guac_client_handle_messages(guac_client* client);
 int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed);
 int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int ssh_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype);
 int ssh_guac_client_size_handler(guac_client* client, int width, int height);
 int ssh_guac_client_free_handler(guac_client* client);
 
