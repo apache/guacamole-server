@@ -103,10 +103,6 @@ int ssh_guac_client_handle_messages(guac_client* client) {
 
 }
 
-int ssh_guac_client_clipboard_handler(guac_client* client, guac_stream* stream, char* mimetype) {
-    return guac_ssh_clipboard_handler(client, stream, mimetype);
-}
-
 int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;

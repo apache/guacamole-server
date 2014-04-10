@@ -24,6 +24,7 @@
 
 #include "blank.h"
 #include "client.h"
+#include "clipboard.h"
 #include "guac_handlers.h"
 #include "ibar.h"
 #include "ssh_client.h"
@@ -202,11 +203,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Set basic handlers */
     client->handle_messages   = ssh_guac_client_handle_messages;
-    client->clipboard_handler = ssh_guac_client_clipboard_handler;
     client->key_handler       = ssh_guac_client_key_handler;
     client->mouse_handler     = ssh_guac_client_mouse_handler;
     client->size_handler      = ssh_guac_client_size_handler;
     client->free_handler      = ssh_guac_client_free_handler;
+    client->clipboard_handler = guac_ssh_clipboard_handler;
 
     /* Start client thread */
     if (pthread_create(&(client_data->client_thread), NULL, ssh_client_thread, (void*) client)) {

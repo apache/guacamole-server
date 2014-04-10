@@ -128,6 +128,10 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
         guac_socket_flush(client->socket);
     }
 
+    /* Set handlers for file stream */
+    stream->blob_handler = guac_sftp_blob_handler;
+    stream->end_handler = guac_sftp_end_handler;
+
     /* Store file within stream */
     stream->data = file;
     return 0;
@@ -241,6 +245,7 @@ guac_stream* guac_sftp_download_file(guac_client* client,
 
     /* Allocate stream */
     stream = guac_client_alloc_stream(client);
+    stream->ack_handler = guac_sftp_ack_handler;
     stream->data = file;
 
     /* Send stream start, strip name */

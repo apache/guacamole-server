@@ -33,6 +33,10 @@ int guac_ssh_clipboard_handler(guac_client* client, guac_stream* stream,
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     guac_common_clipboard_reset(client_data->clipboard, mimetype);
 
+    /* Set handlers for clipboard stream */
+    stream->blob_handler = guac_ssh_clipboard_blob_handler;
+    stream->end_handler = guac_ssh_clipboard_end_handler;
+
     return 0;
 }
 
