@@ -63,6 +63,7 @@ typedef struct guac_common_clipboard {
 /**
  * Creates a new clipboard having the given initial size.
  *
+ * @param size The maximum number of bytes to allow within the clipboard.
  * @return A newly-allocated clipboard.
  */
 guac_common_clipboard* guac_common_clipboard_alloc(int size);
