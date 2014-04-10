@@ -34,22 +34,5 @@ int rdp_guac_client_handle_messages(guac_client* client);
 int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
 int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed);
 
-int rdp_guac_client_clipboard_handler(guac_client* client, guac_stream*,
-        char* mimetype);
-
-int rdp_guac_client_file_handler(guac_client* client, guac_stream* stream,
-        char* mimetype, char* filename);
-
-int rdp_guac_client_pipe_handler(guac_client* client, guac_stream* stream,
-        char* mimetype, char* name);
-
-int rdp_guac_client_blob_handler(guac_client* client, guac_stream* stream,
-        void* data, int length);
-
-int rdp_guac_client_end_handler(guac_client* client, guac_stream* stream);
-
-int rdp_guac_client_ack_handler(guac_client* client, guac_stream* stream,
-        char* message, guac_protocol_status status);
-
 #endif
 
