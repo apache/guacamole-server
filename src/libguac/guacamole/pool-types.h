@@ -26,7 +26,7 @@
 /**
  * Type definitions related to the guac_pool pool of unique integers.
  *
- * @file pool.h
+ * @file pool-types.h
  */
 
 /**
