@@ -101,8 +101,6 @@ int __guac_handle_key(guac_client* client, guac_instruction* instruction) {
 
 static guac_stream* __get_input_stream(guac_client* client, int stream_index) {
 
-    guac_stream* stream;
-
     /* Validate stream index */
     if (stream_index < 0 || stream_index >= GUAC_CLIENT_MAX_STREAMS) {
 
@@ -114,7 +112,7 @@ static guac_stream* __get_input_stream(guac_client* client, int stream_index) {
         return NULL;
     }
 
-    return stream;
+    return &(client->__input_streams[stream_index]);
 
 }
 
@@ -150,7 +148,6 @@ static guac_stream* __init_input_stream(guac_client* client, int stream_index) {
         return NULL;
 
     /* Initialize stream */
-    stream = &(client->__input_streams[stream_index]);
     stream->index = stream_index;
     stream->data = NULL;
     stream->ack_handler = NULL;
