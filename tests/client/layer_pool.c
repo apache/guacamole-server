@@ -26,6 +26,7 @@
 
 #include <CUnit/Basic.h>
 #include <guacamole/client.h>
+#include <guacamole/layer.h>
 
 void test_layer_pool() {
 
