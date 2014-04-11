@@ -41,7 +41,6 @@ AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslo
 
 # Source characteristics
 AC_DEFINE([_XOPEN_SOURCE], [700], [Uses X/Open and POSIX APIs])
-AC_DEFINE([_BSD_SOURCE],   [],    [Uses BSD APIs])
 
 # libpng
 AC_CHECK_LIB([png], [png_write_png], [PNG_LIBS=-lpng],
