@@ -141,13 +141,13 @@ void ssh_key_free(ssh_key* key) {
     free(key);
 }
 
-int ssh_key_sign(ssh_key* key, const char* data, int length, u_char* sig) {
+int ssh_key_sign(ssh_key* key, const char* data, int length, unsigned char* sig) {
 
     const EVP_MD* md;
     EVP_MD_CTX md_ctx;
 
-    u_char digest[EVP_MAX_MD_SIZE];
-    u_int dlen, len;
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int dlen, len;
 
     /* Get SHA1 digest */
     if ((md = EVP_get_digestbynid(NID_sha1)) == NULL)

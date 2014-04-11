@@ -126,7 +126,7 @@ void ssh_key_free(ssh_key* key);
  * Signs the given data using the given key, returning the length of the
  * signature in bytes, or a value less than zero on error.
  */
-int ssh_key_sign(ssh_key* key, const char* data, int length, u_char* sig);
+int ssh_key_sign(ssh_key* key, const char* data, int length, unsigned char* sig);
 
 #endif
 
