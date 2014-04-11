@@ -40,8 +40,8 @@ AC_PROG_LIBTOOL
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h pngstruct.h])
 
 # Source characteristics
-AC_DEFINE([_POSIX_C_SOURCE], [200809L], [Uses POSIX APIs])
-AC_DEFINE([_BSD_SOURCE],     [],        [Uses BSD APIs])
+AC_DEFINE([_XOPEN_SOURCE], [700], [Uses X/Open and POSIX APIs])
+AC_DEFINE([_BSD_SOURCE],   [],    [Uses BSD APIs])
 
 # libpng
 AC_CHECK_LIB([png], [png_write_png], [PNG_LIBS=-lpng],

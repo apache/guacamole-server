@@ -32,6 +32,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <rfb/rfbclient.h>
 #include <guacamole/audio.h>
@@ -280,12 +281,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* If unsuccessful, retry as many times as specified */
     while (!rfb_client && retries_remaining > 0) {
 
+        struct timespec guac_vnc_connect_interval = {
+            .tv_sec  =  GUAC_VNC_CONNECT_INTERVAL/1000,
+            .tv_nsec = (GUAC_VNC_CONNECT_INTERVAL%1000)*1000000
+        };
+
         guac_client_log_info(client,
                 "Connect failed. Waiting %ims before retrying...",
                 GUAC_VNC_CONNECT_INTERVAL);
 
         /* Wait for given interval then retry */
-        usleep(GUAC_VNC_CONNECT_INTERVAL*1000);
+        nanosleep(&guac_vnc_connect_interval, NULL);
         rfb_client = __guac_vnc_get_client(client);
         retries_remaining--;
 

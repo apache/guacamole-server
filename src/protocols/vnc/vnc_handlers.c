@@ -317,23 +317,31 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
 void guac_vnc_client_log_info(const char* format, ...) {
 
+    char message[2048];
+
+    /* Copy log message into buffer */
     va_list args;
     va_start(args, format);
-
-    vsyslog(LOG_INFO, format, args);
-
+    vsnprintf(message, sizeof(message), format, args);
     va_end(args);
+
+    /* Log to syslog */
+    syslog(LOG_INFO, "%s", message);
 
 }
 
 void guac_vnc_client_log_error(const char* format, ...) {
 
+    char message[2048];
+
+    /* Copy log message into buffer */
     va_list args;
     va_start(args, format);
-
-    vsyslog(LOG_ERR, format, args);
-
+    vsnprintf(message, sizeof(message), format, args);
     va_end(args);
+
+    /* Log to syslog */
+    syslog(LOG_ERR, "%s", message);
 
 }
 
