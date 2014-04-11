@@ -34,6 +34,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -129,15 +130,17 @@ static int __sign_callback(LIBSSH2_SESSION* session,
         const unsigned char* data, size_t data_len, void **abstract) {
 
     ssh_key* key = (ssh_key*) abstract;
+    int length;
 
     /* Allocate space for signature */
     *sig = malloc(4096);
 
     /* Sign with key */
-    *sig_len = ssh_key_sign(key, (const char*) data, data_len, *sig);
-    if (*sig_len < 0)
+    length = ssh_key_sign(key, (const char*) data, data_len, *sig);
+    if (length < 0)
         return 1;
 
+    *sig_len = length;
     return 0;
 
 }

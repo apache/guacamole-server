@@ -52,7 +52,7 @@ typedef struct guac_terminal guac_terminal;
  * the current char handler for the terminal is called and given that
  * character.
  */
-typedef int guac_terminal_char_handler(guac_terminal* term, char c);
+typedef int guac_terminal_char_handler(guac_terminal* term, unsigned char c);
 
 /**
  * Represents a terminal emulator which uses a given Guacamole client to

@@ -45,7 +45,7 @@
  */
 #define GUAC_TERMINAL_OK          "\x1B[0n"
 
-int guac_terminal_echo(guac_terminal* term, char c) {
+int guac_terminal_echo(guac_terminal* term, unsigned char c) {
 
     static int bytes_remaining = 0;
     static int codepoint = 0;
@@ -216,7 +216,7 @@ int guac_terminal_echo(guac_terminal* term, char c) {
 
 }
 
-int guac_terminal_escape(guac_terminal* term, char c) {
+int guac_terminal_escape(guac_terminal* term, unsigned char c) {
 
     switch (c) {
 
@@ -360,7 +360,7 @@ static const int* __guac_terminal_get_char_mapping(char c) {
 
 }
 
-int guac_terminal_g0_charset(guac_terminal* term, char c) {
+int guac_terminal_g0_charset(guac_terminal* term, unsigned char c) {
 
     term->char_mapping[0] = __guac_terminal_get_char_mapping(c);
     term->char_handler = guac_terminal_echo; 
@@ -368,7 +368,7 @@ int guac_terminal_g0_charset(guac_terminal* term, char c) {
 
 }
 
-int guac_terminal_g1_charset(guac_terminal* term, char c) {
+int guac_terminal_g1_charset(guac_terminal* term, unsigned char c) {
 
     term->char_mapping[1] = __guac_terminal_get_char_mapping(c);
     term->char_handler = guac_terminal_echo; 
@@ -400,7 +400,7 @@ static bool* __guac_terminal_get_flag(guac_terminal* term, int num, char private
 
 }
 
-int guac_terminal_csi(guac_terminal* term, char c) {
+int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
     /* CSI function arguments */
     static int argc = 0;
@@ -876,7 +876,7 @@ int guac_terminal_csi(guac_terminal* term, char c) {
 
 }
 
-int guac_terminal_guac_set_directory(guac_terminal* term, char c) {
+int guac_terminal_guac_set_directory(guac_terminal* term, unsigned char c) {
 
     static char filename[2048];
     static int length = 0;
@@ -897,7 +897,7 @@ int guac_terminal_guac_set_directory(guac_terminal* term, char c) {
 
 }
 
-int guac_terminal_guac_download(guac_terminal* term, char c) {
+int guac_terminal_guac_download(guac_terminal* term, unsigned char c) {
 
     static char filename[2048];
     static int length = 0;
@@ -918,7 +918,7 @@ int guac_terminal_guac_download(guac_terminal* term, char c) {
 
 }
 
-int guac_terminal_osc(guac_terminal* term, char c) {
+int guac_terminal_osc(guac_terminal* term, unsigned char c) {
 
     static int operation = 0;
 
@@ -949,7 +949,7 @@ int guac_terminal_osc(guac_terminal* term, char c) {
     return 0;
 }
 
-int guac_terminal_ctrl_func(guac_terminal* term, char c) {
+int guac_terminal_ctrl_func(guac_terminal* term, unsigned char c) {
 
     int row;
 
