@@ -193,7 +193,7 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_str
     code     =  ntstatus & 0x0000FFFF;
 
     /* Log error / information */
-    if (device_id >= 0 && device_id < rdpdr->devices_registered) {
+    if (device_id < rdpdr->devices_registered) {
 
         if (severity == 0x0)
             guac_client_log_info(rdpdr->client, "Device %i (%s) connected successfully",
