@@ -43,10 +43,6 @@ AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslo
 AC_DEFINE([_POSIX_C_SOURCE], [200809L], [Uses POSIX APIs])
 AC_DEFINE([_BSD_SOURCE],     [],        [Uses BSD APIs])
 
-# libdl
-AC_CHECK_LIB([dl], [dlopen], [DL_LIBS=-ldl],
-             AC_MSG_ERROR("libdl is required for loading client plugins"))
-
 # libpng
 AC_CHECK_LIB([png], [png_write_png], [PNG_LIBS=-lpng],
              AC_MSG_ERROR("libpng is required for writing png messages"))
@@ -66,7 +62,7 @@ AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
 # WinSock
 AC_CHECK_LIB([wsock32], [main])
 
-AC_SUBST(DL_LIBS)
+AC_SUBST(LIBADD_DLOPEN)
 AC_SUBST(PNG_LIBS)
 AC_SUBST(CAIRO_LIBS)
 AC_SUBST(PTHREAD_LIBS)
