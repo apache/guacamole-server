@@ -102,35 +102,51 @@ void guacd_client_log_error(guac_client* client, const char* format,
 
 void guacd_log_guac_error(const char* message) {
 
-    /* If error message provided, include in log */
-    if (guac_error_message != NULL)
-        guacd_log_error("%s: %s: %s",
-                message,
-                guac_status_string(guac_error),
-                guac_error_message);
+    if (guac_error != GUAC_STATUS_SUCCESS) {
 
-    /* Otherwise just log with standard status string */
+        /* If error message provided, include in log */
+        if (guac_error_message != NULL)
+            guacd_log_error("%s: %s: %s",
+                    message,
+                    guac_status_string(guac_error),
+                    guac_error_message);
+
+        /* Otherwise just log with standard status string */
+        else
+            guacd_log_error("%s: %s",
+                    message,
+                    guac_status_string(guac_error));
+
+    }
+
+    /* Just log message if no status code */
     else
-        guacd_log_error("%s: %s",
-                message,
-                guac_status_string(guac_error));
+        guacd_log_error("%s", message);
 
 }
 
 void guacd_client_log_guac_error(guac_client* client, const char* message) {
 
-    /* If error message provided, include in log */
-    if (guac_error_message != NULL)
-        guac_client_log_error(client, "%s: %s: %s",
-                message,
-                guac_status_string(guac_error),
-                guac_error_message);
+    if (guac_error != GUAC_STATUS_SUCCESS) {
 
-    /* Otherwise just log with standard status string */
+        /* If error message provided, include in log */
+        if (guac_error_message != NULL)
+            guac_client_log_error(client, "%s: %s: %s",
+                    message,
+                    guac_status_string(guac_error),
+                    guac_error_message);
+
+        /* Otherwise just log with standard status string */
+        else
+            guac_client_log_error(client, "%s: %s",
+                    message,
+                    guac_status_string(guac_error));
+
+    }
+
+    /* Just log message if no status code */
     else
-        guac_client_log_error(client, "%s: %s",
-                message,
-                guac_status_string(guac_error));
+        guac_client_log_error(client, "%s", message);
 
 }
 
