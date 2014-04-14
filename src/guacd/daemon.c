@@ -66,6 +66,10 @@ void guacd_handle_connection(guac_socket* socket) {
     guac_instruction* connect;
     int init_result;
 
+    /* Reset guac_error */
+    guac_error = GUAC_STATUS_SUCCESS;
+    guac_error_message = NULL;
+
     /* Get protocol from select instruction */
     select = guac_instruction_expect(
             socket, GUACD_USEC_TIMEOUT, "select");
