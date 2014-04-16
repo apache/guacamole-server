@@ -393,6 +393,9 @@ int ssh_guac_client_size_handler(guac_client* client, int width, int height) {
         /* Resize terminal */
         guac_terminal_resize(terminal, columns, rows);
 
+        /* Update cursor */
+        guac_terminal_commit_cursor(terminal);
+
         /* Update SSH pty size if connected */
         if (guac_client_data->term_channel != NULL)
             channel_change_pty_size(guac_client_data->term_channel,
