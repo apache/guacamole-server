@@ -194,7 +194,7 @@ void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
         *(current++) = *character;
 
     /* Update length depending on row written */
-    if (row >= buffer->length) 
+    if (character->value != 0 && row >= buffer->length) 
         buffer->length = row+1;
 
 }
