@@ -753,6 +753,12 @@ void guac_terminal_resize(guac_terminal* term, int width, int height) {
 
     }
 
+    /* Keep cursor on screen */
+    if (term->cursor_row < 0)       term->cursor_row = 0;
+    if (term->cursor_row >= height) term->cursor_row = height-1;
+    if (term->cursor_col < 0)       term->cursor_col = 0;
+    if (term->cursor_col >= width)  term->cursor_col = width-1;
+
     /* Commit new dimensions */
     term->term_width = width;
     term->term_height = height;
