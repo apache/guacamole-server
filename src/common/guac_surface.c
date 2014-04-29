@@ -23,17 +23,36 @@
 #include "config.h"
 #include "guac_surface.h"
 
+#include <cairo/cairo.h>
 #include <guacamole/layer.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
+#include <stdlib.h>
+
 guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_layer* layer, int w, int h) {
-    /* STUB */
-    return NULL;
+
+    /* Init surface */
+    guac_common_surface* surface = malloc(sizeof(guac_common_surface));
+    surface->layer = layer;
+    surface->socket = socket;
+    surface->width = w;
+    surface->height = h;
+    surface->dirty = 0;
+
+    /* Create corresponding Cairo surface */
+    surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
+    surface->buffer = malloc(surface->stride * h);
+    surface->surface = cairo_image_surface_create_for_data(surface->buffer, CAIRO_FORMAT_RGB24,
+                                                           w, h, surface->stride);
+
+    return surface;
 }
 
 void guac_common_surface_free(guac_common_surface* surface) {
-    /* STUB */
+    cairo_surface_destroy(surface->surface);
+    free(surface->buffer);
+    free(surface);
 }
 
 void guac_common_surface_draw(guac_common_surface* surface, cairo_surface_t* src, int x, int y) {

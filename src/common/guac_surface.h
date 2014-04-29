@@ -25,6 +25,7 @@
 
 #include "config.h"
 
+#include <cairo/cairo.h>
 #include <guacamole/layer.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -34,6 +35,16 @@
  * combining updates when possible.
  */
 typedef struct guac_common_surface {
+
+    /**
+     * The layer this surface will draw to.
+     */
+    const guac_layer* layer;
+
+    /**
+     * The socket to send instructions on when flushing.
+     */
+    guac_socket* socket;
 
     /**
      * The width of this layer, in pixels.
@@ -46,14 +57,14 @@ typedef struct guac_common_surface {
     int height;
 
     /**
-     * The layer this surface will draw to.
+     * The size of each image row, in bytes.
      */
-    guac_layer* layer;
+    int stride;
 
     /**
-     * The socket to send instructions on when flushing.
+     * The underlying buffer of the Cairo surface.
      */
-    guac_socket* socket;
+    unsigned char* buffer;
 
     /**
      * The Cairo surface containins this Guacamole surface's current
