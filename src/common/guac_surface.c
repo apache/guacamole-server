@@ -30,6 +30,54 @@
 
 #include <stdlib.h>
 
+static int __guac_common_should_combine(guac_common_surface* surface, int x, int y, int w, int h) {
+
+    if (surface->dirty) {
+
+        int new_pixels, dirty_pixels, update_pixels;
+        int new_width, new_height;
+
+        /* Calculate extents of existing dirty rect */
+        int dirty_left   = surface->dirty_x;
+        int dirty_top    = surface->dirty_y;
+        int dirty_right  = dirty_left + surface->dirty_width;
+        int dirty_bottom = dirty_top  + surface->dirty_height;
+
+        /* Calculate missing extents of given new rect */
+        int right  = x + w;
+        int bottom = y + h;
+
+        /* Update minimums */
+        if (x      < dirty_left)   dirty_left   = x;
+        if (y      < dirty_top)    dirty_top    = y;
+        if (right  > dirty_right)  dirty_right  = right;
+        if (bottom > dirty_bottom) dirty_bottom = bottom;
+
+        new_width  = dirty_right - dirty_left;
+        new_height = dirty_bottom - dirty_top;
+
+        /* Combine if result is still small */
+        if (new_width <= 64 && new_height <= 64)
+            return 1;
+
+        new_pixels  = new_width*new_height;
+        dirty_pixels = surface->dirty_width*surface->dirty_height;
+        update_pixels = w*h;
+
+        /* Combine if increase in cost is likely negligible */
+        if (new_pixels - dirty_pixels <= update_pixels*4) return 1;
+        if (new_pixels / dirty_pixels <= 2) return 1;
+
+        /* Otherwise, do not combine */
+        return 0;
+
+    }
+    
+    /* Always combine with nothing */
+    return 1;
+
+}
+
 static void __guac_common_mark_dirty(guac_common_surface* surface, int x, int y, int w, int h) {
 
     /* If already dirty, update existing rect */
@@ -102,6 +150,15 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
 
+    int w = cairo_image_surface_get_width(src);
+    int h = cairo_image_surface_get_height(src);
+
+    /* Flush if not combining */
+    if (!__guac_common_should_combine(surface, x, y, w, h)) {
+        guac_protocol_send_log(socket, "Refusing to combine rect (%i, %i) %ix%i", x, y, w, h);
+        guac_common_surface_flush(surface);
+    }
+
     /* STUB */
     __guac_common_mark_dirty(surface, x, y,
                              cairo_image_surface_get_width(src),
@@ -117,8 +174,19 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
 
+    /* Flush if not combining */
+    if (!__guac_common_should_combine(dst, dx, dy, w, h)) {
+        guac_protocol_send_log(socket, "Refusing to combine rect (%i, %i) %ix%i", dx, dy, w, h);
+        guac_common_surface_flush(dst);
+    }
+
+    if (dst->dirty) {
+        guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending copy");
+        __guac_common_mark_dirty(dst, dx, dy, w, h);
+    }
+
     /* STUB */
-    __guac_common_mark_dirty(dst, dx, dy, w, h);
+    guac_common_surface_flush(src);
     guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
 
 }
@@ -130,8 +198,19 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
 
+    /* Flush if not combining */
+    if (!__guac_common_should_combine(dst, dx, dy, w, h)) {
+        guac_protocol_send_log(socket, "Refusing to combine rect (%i, %i) %ix%i", dx, dy, w, h);
+        guac_common_surface_flush(dst);
+    }
+
+    if (dst->dirty) {
+        guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending transfer");
+        __guac_common_mark_dirty(dst, dx, dy, w, h);
+    }
+
     /* STUB */
-    __guac_common_mark_dirty(dst, dx, dy, w, h);
+    guac_common_surface_flush(src);
     guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
 
 }
@@ -143,8 +222,18 @@ void guac_common_surface_rect(guac_common_surface* surface,
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
 
+    /* Flush if not combining */
+    if (!__guac_common_should_combine(surface, x, y, w, h)) {
+        guac_protocol_send_log(socket, "Refusing to combine rect (%i, %i) %ix%i", x, y, w, h);
+        guac_common_surface_flush(surface);
+    }
+
+    if (surface->dirty) {
+        guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending rect+cfill");
+        __guac_common_mark_dirty(surface, x, y, w, h);
+    }
+
     /* STUB */
-    __guac_common_mark_dirty(surface, x, y, w, h);
     guac_protocol_send_rect(socket, layer, x, y, w, h);
     guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
 
