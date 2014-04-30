@@ -650,7 +650,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->rdp_inst = rdp_inst;
     guac_client_data->bounded = FALSE;
     guac_client_data->mouse_button_mask = 0;
-    guac_client_data->current_surface = GUAC_DEFAULT_LAYER;
     guac_client_data->clipboard = guac_common_clipboard_alloc(GUAC_RDP_CLIPBOARD_MAX_LENGTH);
     guac_client_data->requested_clipboard_format = CB_FORMAT_TEXT;
     guac_client_data->audio = NULL;
@@ -707,16 +706,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Send connection name */
     guac_protocol_send_name(client->socket, settings->hostname);
 
-    /* Send size */
-    guac_protocol_send_size(client->socket, GUAC_DEFAULT_LAYER,
-            settings->width, settings->height);
-
     /* Create glyph surfaces */
     guac_client_data->opaque_glyph_surface = cairo_image_surface_create(
             CAIRO_FORMAT_RGB24, settings->width, settings->height);
 
     guac_client_data->trans_glyph_surface = cairo_image_surface_create(
             CAIRO_FORMAT_ARGB32, settings->width, settings->height);
+
+    /* Create default surface */
+    guac_client_data->default_surface = guac_common_surface_alloc(client->socket, GUAC_DEFAULT_LAYER,
+                                                                  settings->width, settings->height);
+    guac_client_data->current_surface = guac_client_data->default_surface;
 
     /* Set default pointer */
     guac_common_set_pointer_cursor(client);

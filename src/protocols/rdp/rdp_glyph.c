@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "guac_surface.h"
 #include "rdp_glyph.h"
 
 #include <pthread.h>
@@ -199,7 +200,7 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdp_guac_client_data* guac_client_data = (rdp_guac_client_data*) client->data;
-    const guac_layer* current_layer = ((rdp_guac_client_data*) client->data)->current_surface;
+    guac_common_surface* current_surface = ((rdp_guac_client_data*) client->data)->current_surface;
 
     /* Use glyph surface to provide image data for glyph rectangle */
     cairo_surface_t* glyph_surface = guac_client_data->glyph_surface;
@@ -225,10 +226,8 @@ void guac_rdp_glyph_enddraw(rdpContext* context,
                 cairo_image_surface_get_format(glyph_surface),
                 width, height, stride);
 
-        /* Send surface with all glyphs to layer */
-        guac_protocol_send_png(client->socket,
-                GUAC_COMP_OVER, current_layer, x, y,
-                surface);
+        /* Send surface with all glyphs to current surface */
+        guac_common_surface_draw(current_surface, x, y, surface);
 
         /* Destroy surface */
         cairo_surface_destroy(surface);

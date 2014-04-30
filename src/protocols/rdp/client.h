@@ -28,6 +28,7 @@
 
 #include "guac_clipboard.h"
 #include "guac_list.h"
+#include "guac_surface.h"
 #include "rdp_fs.h"
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
@@ -120,10 +121,15 @@ typedef struct rdp_guac_client_data {
     cairo_t* glyph_cairo;
 
     /**
-     * The Guacamole layer that GDI operations should draw to. RDP messages
-     * exist which change this surface to allow drawing to occur off-screen.
+     * The display.
      */
-    const guac_layer* current_surface;
+    guac_common_surface* default_surface;
+
+    /**
+     * The surface that GDI operations should draw to. RDP messages exist which
+     * change this surface to allow drawing to occur off-screen.
+     */
+    guac_common_surface* current_surface;
 
     /**
      * Whether graphical operations are restricted to a specific bounding

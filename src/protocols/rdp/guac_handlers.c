@@ -25,6 +25,7 @@
 #include "client.h"
 #include "guac_handlers.h"
 #include "guac_list.h"
+#include "guac_surface.h"
 #include "rdp_cliprdr.h"
 #include "rdp_keymap.h"
 #include "rdp_rail.h"
@@ -92,6 +93,7 @@ int rdp_guac_client_free_handler(guac_client* client) {
 
     /* Free client data */
     guac_common_clipboard_free(guac_client_data->clipboard);
+    guac_common_surface_free(guac_client_data->default_surface);
     cairo_surface_destroy(guac_client_data->opaque_glyph_surface);
     cairo_surface_destroy(guac_client_data->trans_glyph_surface);
     free(guac_client_data);
