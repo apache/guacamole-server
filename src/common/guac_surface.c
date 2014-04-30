@@ -46,10 +46,12 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
     surface->surface = cairo_image_surface_create_for_data(surface->buffer, CAIRO_FORMAT_RGB24,
                                                            w, h, surface->stride);
 
+    guac_protocol_send_size(socket, layer, w, h);
     return surface;
 }
 
 void guac_common_surface_free(guac_common_surface* surface) {
+    guac_protocol_send_dispose(surface->socket, surface->layer);
     cairo_surface_destroy(surface->surface);
     free(surface->buffer);
     free(surface);
