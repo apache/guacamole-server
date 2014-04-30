@@ -264,6 +264,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
         return 1;
 
     /* Success */
+    guac_common_surface_flush(guac_client_data->default_surface);
     return 0;
 
 }
