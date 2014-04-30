@@ -154,13 +154,13 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
     guac_layer* buffer = ((guac_rdp_bitmap*) bitmap)->buffer;
     guac_common_surface* surface = ((guac_rdp_bitmap*) bitmap)->surface;
 
-    /* If cached, free buffer */
-    if (buffer != NULL)
-        guac_client_free_buffer(client, buffer);
-
     /* If cached, free surface */
     if (surface != NULL)
         guac_common_surface_free(surface);
+
+    /* If cached, free buffer */
+    if (buffer != NULL)
+        guac_client_free_buffer(client, buffer);
 
 }
 
