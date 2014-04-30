@@ -126,11 +126,11 @@ void guac_common_surface_free(guac_common_surface* surface);
  * Draws the given data to the given guac_common_surface.
  *
  * @param surface The surface to draw to.
- * @param src The Cairo surface to retrieve data from.
  * @param x The X coordinate of the draw location.
  * @param y The Y coordinate of the draw location.
+ * @param src The Cairo surface to retrieve data from.
  */
-void guac_common_surface_draw(guac_common_surface* surface, cairo_surface_t* src, int x, int y);
+void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src);
 
 /**
  * Copies a rectangle of data between two surfaces.
@@ -150,19 +150,18 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
 /**
  * Transfers a rectangle of data between two surfaces.
  *
- * @param op The transfer function.
  * @param src The source surface.
  * @param sx The X coordinate of the upper-left corner of the source rect.
  * @param sy The Y coordinate of the upper-left corner of the source rect.
  * @param w The width of the source rect.
  * @param h The height of the source rect.
+ * @param op The transfer function.
  * @param dst The destination surface.
  * @param dx The X coordinate of the upper-left corner of the destination rect.
  * @param dy The Y coordinate of the upper-left corner of the destination rect.
  */
-void guac_common_surface_transfer(guac_transfer_function op,
-                                  guac_common_surface* src, int sx, int sy, int w, int h,
-                                  guac_common_surface* dst, int dx, int dy);
+void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int w, int h,
+                                  guac_transfer_function op, guac_common_surface* dst, int dx, int dy);
 
 /**
  * Resizes the given surface to the given size.

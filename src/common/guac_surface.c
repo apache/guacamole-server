@@ -55,29 +55,60 @@ void guac_common_surface_free(guac_common_surface* surface) {
     free(surface);
 }
 
-void guac_common_surface_draw(guac_common_surface* surface, cairo_surface_t* src, int x, int y) {
+void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src) {
+
+    guac_socket* socket = surface->socket;
+    const guac_layer* layer = surface->layer;
+
     /* STUB */
+    guac_protocol_send_png(socket, GUAC_COMP_OVER, layer, x, y, src);
+
 }
 
 void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, int h,
                               guac_common_surface* dst, int dx, int dy) {
+
+    guac_socket* socket = dst->socket;
+    const guac_layer* src_layer = src->layer;
+    const guac_layer* dst_layer = dst->layer;
+
     /* STUB */
+    guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
+
 }
 
-void guac_common_surface_transfer(guac_transfer_function op,
-                                  guac_common_surface* src, int sx, int sy, int w, int h,
-                                  guac_common_surface* dst, int dx, int dy) {
+void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int w, int h,
+                                  guac_transfer_function op, guac_common_surface* dst, int dx, int dy) {
+
+    guac_socket* socket = dst->socket;
+    const guac_layer* src_layer = src->layer;
+    const guac_layer* dst_layer = dst->layer;
+
     /* STUB */
+    guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
+
 }
 
 void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
+
+    guac_socket* socket = surface->socket;
+    const guac_layer* layer = surface->layer;
+
     /* STUB */
+    guac_protocol_send_size(socket, layer, w, h);
+
 }
 
 void guac_common_surface_rect(guac_common_surface* surface,
                               int x, int y, int w, int h,
                               int red, int green, int blue) {
+
+    guac_socket* socket = surface->socket;
+    const guac_layer* layer = surface->layer;
+
     /* STUB */
+    guac_protocol_send_rect(socket, layer, x, y, w, h);
+    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
 }
 
 void guac_common_surface_flush(guac_common_surface* surface) {
