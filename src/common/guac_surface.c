@@ -133,6 +133,11 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
     surface->buffer = malloc(surface->stride * h);
     surface->surface = cairo_image_surface_create_for_data(surface->buffer, CAIRO_FORMAT_RGB24,
                                                            w, h, surface->stride);
+    surface->cairo = cairo_create(surface->surface);
+
+    /* Init with black */
+    cairo_set_source_rgb(surface->cairo, 0, 0, 0);
+    cairo_paint(surface->cairo);
 
     guac_protocol_send_size(socket, layer, w, h);
     return surface;
@@ -141,6 +146,7 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
 void guac_common_surface_free(guac_common_surface* surface) {
     guac_protocol_send_dispose(surface->socket, surface->layer);
     cairo_surface_destroy(surface->surface);
+    cairo_destroy(surface->cairo);
     free(surface->buffer);
     free(surface);
 }
@@ -148,7 +154,6 @@ void guac_common_surface_free(guac_common_surface* surface) {
 void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src) {
 
     guac_socket* socket = surface->socket;
-    const guac_layer* layer = surface->layer;
 
     int w = cairo_image_surface_get_width(src);
     int h = cairo_image_surface_get_height(src);
@@ -159,11 +164,14 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
         guac_common_surface_flush(surface);
     }
 
-    /* STUB */
-    __guac_common_mark_dirty(surface, x, y,
-                             cairo_image_surface_get_width(src),
-                             cairo_image_surface_get_height(src));
-    guac_protocol_send_png(socket, GUAC_COMP_OVER, layer, x, y, src);
+    /* Draw with given surface */
+    cairo_save(surface->cairo);
+    cairo_set_source_surface(surface->cairo, src, x, y);
+    cairo_rectangle(surface->cairo, x, y, w, h);
+    cairo_fill(surface->cairo);
+    cairo_restore(surface->cairo);
+
+    __guac_common_mark_dirty(surface, x, y, w, h);
 
 }
 
@@ -181,13 +189,15 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     }
 
     if (dst->dirty) {
+        /* STUB */
         guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending copy");
         __guac_common_mark_dirty(dst, dx, dy, w, h);
     }
 
-    /* STUB */
-    guac_common_surface_flush(src);
-    guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
+    else {
+        guac_common_surface_flush(src);
+        guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
+    }
 
 }
 
@@ -205,13 +215,15 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     }
 
     if (dst->dirty) {
+        /* STUB */
         guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending transfer");
         __guac_common_mark_dirty(dst, dx, dy, w, h);
     }
 
-    /* STUB */
-    guac_common_surface_flush(src);
-    guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
+    else {
+        guac_common_surface_flush(src);
+        guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
+    }
 
 }
 
@@ -229,26 +241,40 @@ void guac_common_surface_rect(guac_common_surface* surface,
     }
 
     if (surface->dirty) {
+        /* STUB */
         guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending rect+cfill");
         __guac_common_mark_dirty(surface, x, y, w, h);
     }
 
-    /* STUB */
-    guac_protocol_send_rect(socket, layer, x, y, w, h);
-    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
+    else {
+        guac_protocol_send_rect(socket, layer, x, y, w, h);
+        guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
+    }
 
 }
 
 void guac_common_surface_flush(guac_common_surface* surface) {
 
-    /* STUB */
     if (surface->dirty) {
+
         guac_socket* socket = surface->socket;
+        const guac_layer* layer = surface->layer;
+        cairo_surface_t* rect;
+
         guac_protocol_send_log(socket, "Flushing surface %i: (%i, %i) %ix%i",
                                surface->layer->index,
                                surface->dirty_x, surface->dirty_y,
                                surface->dirty_width, surface->dirty_height);
+
+        /* Send PNG for dirty rect */
+        rect = cairo_surface_create_for_rectangle(surface->surface,
+                                                  surface->dirty_x, surface->dirty_y,
+                                                  surface->dirty_width, surface->dirty_height);
+        guac_protocol_send_png(socket, GUAC_COMP_OVER, layer, surface->dirty_x, surface->dirty_y, rect);
+        cairo_surface_destroy(rect);
+
         surface->dirty = 0;
+
     }
 
 }
