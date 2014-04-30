@@ -164,15 +164,6 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
                                   guac_transfer_function op, guac_common_surface* dst, int dx, int dy);
 
 /**
- * Resizes the given surface to the given size.
- *
- * @param surface The surface to resize.
- * @param w The width of the surface.
- * @param h The height of the surface.
- */
-void guac_common_surface_resize(guac_common_surface* surface, int w, int h);
-
-/**
  * Draws a solid color rectangle at the given coordinates on the given surface.
  *
  * @param surface The surface to draw upon.

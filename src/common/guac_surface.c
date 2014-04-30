@@ -30,6 +30,46 @@
 
 #include <stdlib.h>
 
+static void __guac_common_mark_dirty(guac_common_surface* surface, int x, int y, int w, int h) {
+
+    /* If already dirty, update existing rect */
+    if (surface->dirty) {
+
+        /* Calculate extents of existing dirty rect */
+        int dirty_left   = surface->dirty_x;
+        int dirty_top    = surface->dirty_y;
+        int dirty_right  = dirty_left + surface->dirty_width;
+        int dirty_bottom = dirty_top  + surface->dirty_height;
+
+        /* Calculate missing extents of given new rect */
+        int right  = x + w;
+        int bottom = y + h;
+
+        /* Update minimums */
+        if (x      < dirty_left)   dirty_left   = x;
+        if (y      < dirty_top)    dirty_top    = y;
+        if (right  > dirty_right)  dirty_right  = right;
+        if (bottom > dirty_bottom) dirty_bottom = bottom;
+
+        /* Commit rect */
+        surface->dirty_x      = dirty_left;
+        surface->dirty_y      = dirty_top;
+        surface->dirty_width  = dirty_right  - dirty_left;
+        surface->dirty_height = dirty_bottom - dirty_top;
+
+    }
+
+    /* Otherwise init dirty rect */
+    else {
+        surface->dirty_x = x;
+        surface->dirty_y = y;
+        surface->dirty_width = w;
+        surface->dirty_height = h;
+        surface->dirty = 1;
+    }
+
+}
+
 guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_layer* layer, int w, int h) {
 
     /* Init surface */
@@ -63,6 +103,9 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     const guac_layer* layer = surface->layer;
 
     /* STUB */
+    __guac_common_mark_dirty(surface, x, y,
+                             cairo_image_surface_get_width(src),
+                             cairo_image_surface_get_height(src));
     guac_protocol_send_png(socket, GUAC_COMP_OVER, layer, x, y, src);
 
 }
@@ -75,6 +118,7 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     const guac_layer* dst_layer = dst->layer;
 
     /* STUB */
+    __guac_common_mark_dirty(dst, dx, dy, w, h);
     guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
 
 }
@@ -87,17 +131,8 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     const guac_layer* dst_layer = dst->layer;
 
     /* STUB */
+    __guac_common_mark_dirty(dst, dx, dy, w, h);
     guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
-
-}
-
-void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
-
-    guac_socket* socket = surface->socket;
-    const guac_layer* layer = surface->layer;
-
-    /* STUB */
-    guac_protocol_send_size(socket, layer, w, h);
 
 }
 
@@ -109,11 +144,23 @@ void guac_common_surface_rect(guac_common_surface* surface,
     const guac_layer* layer = surface->layer;
 
     /* STUB */
+    __guac_common_mark_dirty(surface, x, y, w, h);
     guac_protocol_send_rect(socket, layer, x, y, w, h);
     guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
+
 }
 
 void guac_common_surface_flush(guac_common_surface* surface) {
+
     /* STUB */
+    if (surface->dirty) {
+        guac_socket* socket = surface->socket;
+        guac_protocol_send_log(socket, "Flushing surface %i: (%i, %i) %ix%i",
+                               surface->layer->index,
+                               surface->dirty_x, surface->dirty_y,
+                               surface->dirty_width, surface->dirty_height);
+        surface->dirty = 0;
+    }
+
 }
 
