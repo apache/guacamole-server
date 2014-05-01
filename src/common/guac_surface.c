@@ -256,16 +256,30 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
     cairo_set_source_rgb(surface->cairo, 0, 0, 0);
     cairo_paint(surface->cairo);
 
-    guac_protocol_send_size(socket, layer, w, h);
+    /* Layers must initially exist */
+    if (layer->index >= 0) {
+        guac_protocol_send_size(socket, layer, w, h);
+        surface->realized = 1;
+    }
+
+    /* Defer creation of buffers */
+    else
+        surface->realized = 0;
+
     return surface;
 }
 
 void guac_common_surface_free(guac_common_surface* surface) {
-    guac_protocol_send_dispose(surface->socket, surface->layer);
+
+    /* Only dispose of surface if it exists */
+    if (surface->realized)
+        guac_protocol_send_dispose(surface->socket, surface->layer);
+
     cairo_surface_destroy(surface->surface);
     cairo_destroy(surface->cairo);
     free(surface->buffer);
     free(surface);
+
 }
 
 void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
@@ -327,6 +341,7 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
 
     /* Update Guacamole layer */
     guac_protocol_send_size(socket, layer, w, h);
+    surface->realized = 1;
 
 }
 
@@ -367,6 +382,7 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
         guac_common_surface_flush(dst);
         guac_common_surface_flush(src);
         guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
+        dst->realized = 1;
     }
 
     /* Update backing surface */
@@ -392,6 +408,7 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
         guac_common_surface_flush(dst);
         guac_common_surface_flush(src);
         guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
+        dst->realized = 1;
     }
 
     /* Update backing surface */
@@ -417,6 +434,7 @@ void guac_common_surface_rect(guac_common_surface* surface,
         guac_common_surface_flush(surface);
         guac_protocol_send_rect(socket, layer, x, y, w, h);
         guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
+        surface->realized = 1;
     }
 
     /* Update backing surface */
@@ -444,6 +462,7 @@ void guac_common_surface_flush(guac_common_surface* surface) {
         cairo_surface_destroy(rect);
 
         surface->dirty = 0;
+        surface->realized = 1;
 
     }
 

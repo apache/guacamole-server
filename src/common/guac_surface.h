@@ -106,6 +106,11 @@ typedef struct guac_common_surface {
      */
     int dirty_height;
 
+    /**
+     * Whether the surface actually exists on the client.
+     */
+    int realized;
+
 } guac_common_surface;
 
 /**
