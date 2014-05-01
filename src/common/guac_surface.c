@@ -115,6 +115,126 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, int x, int y,
 
 }
 
+static void __guac_common_surface_transfer_int(guac_transfer_function op, uint32_t* src, uint32_t* dst) {
+
+    switch (op) {
+
+        case GUAC_TRANSFER_BINARY_BLACK:
+            *dst = 0xFF000000;
+            break;
+
+        case GUAC_TRANSFER_BINARY_WHITE:
+            *dst = 0xFFFFFFFF;
+            break;
+
+        case GUAC_TRANSFER_BINARY_SRC:
+            *dst = *src;
+            break;
+
+        case GUAC_TRANSFER_BINARY_DEST:
+            /* NOP */
+            break;
+
+        case GUAC_TRANSFER_BINARY_NSRC:
+            *dst = ~(*src);
+            break;
+
+        case GUAC_TRANSFER_BINARY_NDEST:
+            *dst = ~(*dst);
+            break;
+
+        case GUAC_TRANSFER_BINARY_AND:
+            *dst = (*dst) & (*src);
+            break;
+
+        case GUAC_TRANSFER_BINARY_NAND:
+            *dst = ~((*dst) & (*src));
+            break;
+
+        case GUAC_TRANSFER_BINARY_OR:
+            *dst = (*dst) | (*src);
+            break;
+
+        case GUAC_TRANSFER_BINARY_NOR:
+            *dst = ~((*dst) | (*src));
+            break;
+
+        case GUAC_TRANSFER_BINARY_XOR:
+            *dst = (*dst) ^ (*src);
+            break;
+
+        case GUAC_TRANSFER_BINARY_XNOR:
+            *dst = ~((*dst) ^ (*src));
+            break;
+
+        case GUAC_TRANSFER_BINARY_NSRC_AND:
+            *dst = (*dst) & ~(*src);
+            break;
+
+        case GUAC_TRANSFER_BINARY_NSRC_NAND:
+            *dst = ~((*dst) & ~(*src));
+            break;
+
+        case GUAC_TRANSFER_BINARY_NSRC_OR:
+            *dst = (*dst) | ~(*src);
+            break;
+
+        case GUAC_TRANSFER_BINARY_NSRC_NOR:
+            *dst = ~((*dst) | ~(*src));
+            break;
+
+    }
+}
+
+static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int w, int h,
+                                           guac_transfer_function op, guac_common_surface* dst, int dx, int dy) {
+
+    unsigned char* src_buffer = src->buffer;
+    unsigned char* dst_buffer = dst->buffer;
+
+    int x, y;
+    int src_stride, dst_stride;
+    int step = 1;
+
+    /* Copy forwards only if destination is in a different surface or is before source */
+    if (src != dst || dy < sy || (dy == sy && dx < sx)) {
+        src_buffer += src->stride*sy + 4*sx;
+        dst_buffer += dst->stride*dy + 4*dx;
+        src_stride = src->stride;
+        dst_stride = dst->stride;
+        step = 1;
+    }
+
+    /* Otherwise, copy backwards */
+    else {
+        src_buffer += src->stride*(sy+h-1) + 4*(sx+w-1);
+        dst_buffer += dst->stride*(dy+h-1) + 4*(dx+w-1);
+        src_stride = -src->stride;
+        dst_stride = -dst->stride;
+        step = -1;
+    }
+
+    /* For each row */
+    for (y=0; y<h; y++) {
+
+        uint32_t* src_current = (uint32_t*) src_buffer;
+        uint32_t* dst_current = (uint32_t*) dst_buffer;
+
+        /* Transfer each pixel in row */
+        for (x=0; x<w; x++) {
+            __guac_common_surface_transfer_int(op, src_current, dst_current);
+            src_current += step;
+            dst_current += step;
+        }
+
+        /* Next row */
+        src_buffer += src_stride;
+        dst_buffer += dst_stride;
+
+    }
+
+}
+
 guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_layer* layer, int w, int h) {
 
     /* Init surface */
@@ -176,7 +296,10 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
 
-    /* TODO: Update backing surface */
+    /* Update backing surface */
+    cairo_surface_flush(src->surface);
+    cairo_surface_flush(dst->surface);
+    __guac_common_surface_transfer(src, sx, sy, w, h, GUAC_TRANSFER_BINARY_SRC, dst, dx, dy);
 
     /* Defer if combining */
     if (__guac_common_should_combine(dst, dx, dy, w, h))
@@ -198,7 +321,10 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
 
-    /* TODO: Update backing surface */
+    /* Update backing surface */
+    cairo_surface_flush(src->surface);
+    cairo_surface_flush(dst->surface);
+    __guac_common_surface_transfer(src, sx, sy, w, h, op, dst, dx, dy);
 
     /* Defer if combining */
     if (__guac_common_should_combine(dst, dx, dy, w, h))
