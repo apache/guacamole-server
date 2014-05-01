@@ -68,13 +68,10 @@ static int __guac_common_should_combine(guac_common_surface* surface, int x, int
         if (new_pixels - dirty_pixels <= update_pixels*4) return 1;
         if (new_pixels / dirty_pixels <= 2) return 1;
 
-        /* Otherwise, do not combine */
-        return 0;
-
     }
     
-    /* Always combine with nothing */
-    return 1;
+    /* Otherwise, do not combine */
+    return 0;
 
 }
 
@@ -153,24 +150,21 @@ void guac_common_surface_free(guac_common_surface* surface) {
 
 void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src) {
 
-    guac_socket* socket = surface->socket;
-
     int w = cairo_image_surface_get_width(src);
     int h = cairo_image_surface_get_height(src);
 
-    /* Flush if not combining */
-    if (!__guac_common_should_combine(surface, x, y, w, h)) {
-        guac_protocol_send_log(socket, "Refusing to combine rect (%i, %i) %ix%i", x, y, w, h);
-        guac_common_surface_flush(surface);
-    }
-
-    /* Draw with given surface */
+    /* Update backing surface */
     cairo_save(surface->cairo);
     cairo_set_source_surface(surface->cairo, src, x, y);
     cairo_rectangle(surface->cairo, x, y, w, h);
     cairo_fill(surface->cairo);
     cairo_restore(surface->cairo);
 
+    /* Flush if not combining */
+    if (!__guac_common_should_combine(surface, x, y, w, h))
+        guac_common_surface_flush(surface);
+
+    /* Always defer draws */
     __guac_common_mark_dirty(surface, x, y, w, h);
 
 }
@@ -182,19 +176,15 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
 
-    /* Flush if not combining */
-    if (!__guac_common_should_combine(dst, dx, dy, w, h)) {
-        guac_protocol_send_log(socket, "Refusing to combine rect (%i, %i) %ix%i", dx, dy, w, h);
-        guac_common_surface_flush(dst);
-    }
+    /* TODO: Update backing surface */
 
-    if (dst->dirty) {
-        /* STUB */
-        guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending copy");
+    /* Defer if combining */
+    if (__guac_common_should_combine(dst, dx, dy, w, h))
         __guac_common_mark_dirty(dst, dx, dy, w, h);
-    }
 
+    /* Otherwise, flush and draw immediately */
     else {
+        guac_common_surface_flush(dst);
         guac_common_surface_flush(src);
         guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
     }
@@ -208,19 +198,15 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
 
-    /* Flush if not combining */
-    if (!__guac_common_should_combine(dst, dx, dy, w, h)) {
-        guac_protocol_send_log(socket, "Refusing to combine rect (%i, %i) %ix%i", dx, dy, w, h);
-        guac_common_surface_flush(dst);
-    }
+    /* TODO: Update backing surface */
 
-    if (dst->dirty) {
-        /* STUB */
-        guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending transfer");
+    /* Defer if combining */
+    if (__guac_common_should_combine(dst, dx, dy, w, h))
         __guac_common_mark_dirty(dst, dx, dy, w, h);
-    }
 
+    /* Otherwise, flush and draw immediately */
     else {
+        guac_common_surface_flush(dst);
         guac_common_surface_flush(src);
         guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
     }
@@ -234,19 +220,20 @@ void guac_common_surface_rect(guac_common_surface* surface,
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
 
-    /* Flush if not combining */
-    if (!__guac_common_should_combine(surface, x, y, w, h)) {
-        guac_protocol_send_log(socket, "Refusing to combine rect (%i, %i) %ix%i", x, y, w, h);
-        guac_common_surface_flush(surface);
-    }
+    /* Update backing surface */
+    cairo_save(surface->cairo);
+    cairo_set_source_rgb(surface->cairo, red, green, blue);
+    cairo_rectangle(surface->cairo, x, y, w, h);
+    cairo_fill(surface->cairo);
+    cairo_restore(surface->cairo);
 
-    if (surface->dirty) {
-        /* STUB */
-        guac_protocol_send_log(socket, "NOTE - would rewrite as PNG instead of sending rect+cfill");
+    /* Defer if combining */
+    if (__guac_common_should_combine(surface, x, y, w, h))
         __guac_common_mark_dirty(surface, x, y, w, h);
-    }
 
+    /* Otherwise, flush and draw immediately */
     else {
+        guac_common_surface_flush(surface);
         guac_protocol_send_rect(socket, layer, x, y, w, h);
         guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
     }
