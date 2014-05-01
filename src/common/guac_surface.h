@@ -127,6 +127,15 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
  */
 void guac_common_surface_free(guac_common_surface* surface);
 
+ /**
+ * Resizes the given surface to the given size.
+ *
+ * @param surface The surface to resize.
+ * @param w The width of the surface.
+ * @param h The height of the surface.
+ */
+void guac_common_surface_resize(guac_common_surface* surface, int w, int h);
+
 /**
  * Draws the given data to the given guac_common_surface.
  *

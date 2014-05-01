@@ -268,6 +268,68 @@ void guac_common_surface_free(guac_common_surface* surface) {
     free(surface);
 }
 
+void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
+
+    guac_socket* socket = surface->socket;
+    const guac_layer* layer = surface->layer;
+
+    /* Create new buffer */
+    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
+    unsigned char* buffer = malloc(stride * h);
+
+    /* Create corresponding cairo objects */
+    cairo_surface_t* cairo_surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24, w, h, stride);
+    cairo_t* cairo = cairo_create(cairo_surface);
+
+    /* Init with old data */
+    cairo_set_source_surface(cairo, surface->surface, 0, 0);
+    cairo_rectangle(cairo, 0, 0, surface->width, surface->height);
+    cairo_paint(cairo);
+
+    /* Destroy old data */
+    cairo_surface_destroy(surface->surface);
+    cairo_destroy(surface->cairo);
+    free(surface->buffer);
+
+    /* Assign new data */
+    surface->width = w;
+    surface->height = h;
+    surface->stride = stride;
+    surface->buffer = buffer;
+    surface->surface = cairo_surface;
+    surface->cairo = cairo;
+
+    /* Clip dirty rect */
+    if (surface->dirty) {
+
+        int dirty_left = surface->dirty_x;
+        int dirty_top  = surface->dirty_y;
+
+        /* Clip dirty rect if still on screen */
+        if (dirty_left < w && dirty_top < h) {
+
+            int dirty_right  = dirty_left + surface->dirty_width;
+            int dirty_bottom = dirty_top  + surface->dirty_height;
+
+            if (dirty_right  > w) dirty_right  = w;
+            if (dirty_bottom > h) dirty_bottom = h;
+
+            surface->dirty_width  = dirty_right  - dirty_left;
+            surface->dirty_height = dirty_bottom - dirty_top;
+
+        }
+
+        /* Otherwise, no longer dirty */
+        else
+            surface->dirty = 0;
+
+    }
+
+    /* Update Guacamole layer */
+    guac_protocol_send_size(socket, layer, w, h);
+
+}
+
 void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src) {
 
     int w = cairo_image_surface_get_width(src);
