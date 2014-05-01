@@ -374,11 +374,6 @@ void guac_common_surface_flush(guac_common_surface* surface) {
         const guac_layer* layer = surface->layer;
         cairo_surface_t* rect;
 
-        guac_protocol_send_log(socket, "Flushing surface %i: (%i, %i) %ix%i",
-                               surface->layer->index,
-                               surface->dirty_x, surface->dirty_y,
-                               surface->dirty_width, surface->dirty_height);
-
         /* Send PNG for dirty rect */
         rect = cairo_surface_create_for_rectangle(surface->surface,
                                                   surface->dirty_x, surface->dirty_y,
