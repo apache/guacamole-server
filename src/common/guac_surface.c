@@ -273,19 +273,19 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     int w = cairo_image_surface_get_width(src);
     int h = cairo_image_surface_get_height(src);
 
-    /* Update backing surface */
-    cairo_save(surface->cairo);
-    cairo_set_source_surface(surface->cairo, src, x, y);
-    cairo_rectangle(surface->cairo, x, y, w, h);
-    cairo_fill(surface->cairo);
-    cairo_restore(surface->cairo);
-
     /* Flush if not combining */
     if (!__guac_common_should_combine(surface, x, y, w, h))
         guac_common_surface_flush(surface);
 
     /* Always defer draws */
     __guac_common_mark_dirty(surface, x, y, w, h);
+
+    /* Update backing surface */
+    cairo_save(surface->cairo);
+    cairo_set_source_surface(surface->cairo, src, x, y);
+    cairo_rectangle(surface->cairo, x, y, w, h);
+    cairo_fill(surface->cairo);
+    cairo_restore(surface->cairo);
 
 }
 
@@ -295,11 +295,6 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     guac_socket* socket = dst->socket;
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
-
-    /* Update backing surface */
-    cairo_surface_flush(src->surface);
-    cairo_surface_flush(dst->surface);
-    __guac_common_surface_transfer(src, sx, sy, w, h, GUAC_TRANSFER_BINARY_SRC, dst, dx, dy);
 
     /* Defer if combining */
     if (__guac_common_should_combine(dst, dx, dy, w, h))
@@ -312,6 +307,11 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
         guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
     }
 
+    /* Update backing surface */
+    cairo_surface_flush(src->surface);
+    cairo_surface_flush(dst->surface);
+    __guac_common_surface_transfer(src, sx, sy, w, h, GUAC_TRANSFER_BINARY_SRC, dst, dx, dy);
+
 }
 
 void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int w, int h,
@@ -320,11 +320,6 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     guac_socket* socket = dst->socket;
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
-
-    /* Update backing surface */
-    cairo_surface_flush(src->surface);
-    cairo_surface_flush(dst->surface);
-    __guac_common_surface_transfer(src, sx, sy, w, h, op, dst, dx, dy);
 
     /* Defer if combining */
     if (__guac_common_should_combine(dst, dx, dy, w, h))
@@ -337,6 +332,11 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
         guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
     }
 
+    /* Update backing surface */
+    cairo_surface_flush(src->surface);
+    cairo_surface_flush(dst->surface);
+    __guac_common_surface_transfer(src, sx, sy, w, h, op, dst, dx, dy);
+
 }
 
 void guac_common_surface_rect(guac_common_surface* surface,
@@ -345,13 +345,6 @@ void guac_common_surface_rect(guac_common_surface* surface,
 
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
-
-    /* Update backing surface */
-    cairo_save(surface->cairo);
-    cairo_set_source_rgb(surface->cairo, red, green, blue);
-    cairo_rectangle(surface->cairo, x, y, w, h);
-    cairo_fill(surface->cairo);
-    cairo_restore(surface->cairo);
 
     /* Defer if combining */
     if (__guac_common_should_combine(surface, x, y, w, h))
@@ -363,6 +356,13 @@ void guac_common_surface_rect(guac_common_surface* surface,
         guac_protocol_send_rect(socket, layer, x, y, w, h);
         guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
     }
+
+    /* Update backing surface */
+    cairo_save(surface->cairo);
+    cairo_set_source_rgb(surface->cairo, red, green, blue);
+    cairo_rectangle(surface->cairo, x, y, w, h);
+    cairo_fill(surface->cairo);
+    cairo_restore(surface->cairo);
 
 }
 
