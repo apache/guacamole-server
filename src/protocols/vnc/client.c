@@ -218,18 +218,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     guac_client_data->hostname = strdup(argv[IDX_HOSTNAME]);
     guac_client_data->port = atoi(argv[IDX_PORT]);
+    guac_client_data->password = strdup(argv[IDX_PASSWORD]); /* NOTE: freed by libvncclient */
+    guac_client_data->default_surface = NULL;
 
-    /* Set remote cursor flag */
+    /* Set flags */
     guac_client_data->remote_cursor = (strcmp(argv[IDX_CURSOR], "remote") == 0);
-
-    /* Set red/blue swap flag */
     guac_client_data->swap_red_blue = (strcmp(argv[IDX_SWAP_RED_BLUE], "true") == 0);
-
-    /* Set read-only flag */
-    guac_client_data->read_only = (strcmp(argv[IDX_READ_ONLY], "true") == 0);
-
-    /* Freed after use by libvncclient */
-    guac_client_data->password = strdup(argv[IDX_PASSWORD]);
+    guac_client_data->read_only     = (strcmp(argv[IDX_READ_ONLY], "true") == 0);
 
     /* Parse color depth */
     guac_client_data->color_depth = atoi(argv[IDX_COLOR_DEPTH]);
@@ -372,10 +367,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Send name */
     guac_protocol_send_name(client->socket, rfb_client->desktopName);
 
-    /* Send size */
-    guac_protocol_send_size(client->socket,
-            GUAC_DEFAULT_LAYER, rfb_client->width, rfb_client->height);
-
+    /* Create default surface */
+    guac_client_data->default_surface = guac_common_surface_alloc(client->socket, GUAC_DEFAULT_LAYER,
+                                                                  rfb_client->width, rfb_client->height);
     return 0;
 
 }

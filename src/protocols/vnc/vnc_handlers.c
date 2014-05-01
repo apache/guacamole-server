@@ -24,6 +24,7 @@
 
 #include "client.h"
 #include "guac_iconv.h"
+#include "guac_surface.h"
 
 #include <stdlib.h>
 #include <syslog.h>
@@ -135,7 +136,6 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
-    guac_socket* socket = gc->socket;
 
     int dx, dy;
 
@@ -216,7 +216,7 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     /* For now, only use default layer */
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24, w, h, stride);
 
-    guac_protocol_send_png(socket, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y, surface);
+    guac_common_surface_draw(guac_client_data->default_surface, x, y, surface);
 
     /* Free surface */
     cairo_surface_destroy(surface);
@@ -227,12 +227,11 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
-    guac_socket* socket = gc->socket;
+    vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
 
     /* For now, only use default layer */
-    guac_protocol_send_copy(socket,
-                            GUAC_DEFAULT_LAYER, src_x,  src_y, w, h,
-            GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, dest_x, dest_y);
+    guac_common_surface_copy(guac_client_data->default_surface, src_x,  src_y, w, h,
+                             guac_client_data->default_surface, dest_x, dest_y);
 
     ((vnc_guac_client_data*) gc->data)->copy_rect_used = 1;
 
@@ -286,9 +285,9 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
     guac_client* gc = rfbClientGetClientData(rfb_client, __GUAC_CLIENT);
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
 
-    /* Send new size */
-    guac_protocol_send_size(gc->socket,
-            GUAC_DEFAULT_LAYER, rfb_client->width, rfb_client->height);
+    /* Resize surface */
+    if (guac_client_data->default_surface != NULL)
+        guac_common_surface_resize(guac_client_data->default_surface, rfb_client->width, rfb_client->height);
 
     /* Use original, wrapped proc */
     return guac_client_data->rfb_MallocFrameBuffer(rfb_client);

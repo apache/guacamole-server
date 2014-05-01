@@ -25,6 +25,7 @@
 #include "client.h"
 #include "clipboard.h"
 #include "guac_clipboard.h"
+#include "guac_surface.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -41,7 +42,8 @@
 
 int vnc_guac_client_handle_messages(guac_client* client) {
 
-    rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
+    vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) client->data;
+    rfbClient* rfb_client = guac_client_data->rfb_client;
 
     /* Initially wait for messages */
     int wait_result = WaitForMessage(rfb_client, 1000000);
@@ -76,6 +78,7 @@ int vnc_guac_client_handle_messages(guac_client* client) {
         return 1;
     }
 
+    guac_common_surface_flush(guac_client_data->default_surface);
     return 0;
 
 }
@@ -115,6 +118,9 @@ int vnc_guac_client_free_handler(guac_client* client) {
 
     /* Free clipboard */
     guac_common_clipboard_free(guac_client_data->clipboard);
+
+    /* Free surface */
+    guac_common_surface_free(guac_client_data->default_surface);
 
     /* Free generic data struct */
     free(client->data);

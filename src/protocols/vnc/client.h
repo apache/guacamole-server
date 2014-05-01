@@ -26,6 +26,7 @@
 
 #include "config.h"
 #include "guac_clipboard.h"
+#include "guac_surface.h"
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
@@ -179,6 +180,11 @@ typedef struct vnc_guac_client_data {
      * Internal clipboard.
      */
     guac_common_clipboard* clipboard;
+
+    /**
+     * Default surface.
+     */
+    guac_common_surface* default_surface;
 
 } vnc_guac_client_data;
 
