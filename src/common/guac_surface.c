@@ -30,12 +30,59 @@
 
 #include <stdlib.h>
 
-static int __guac_common_should_combine(guac_common_surface* surface, int x, int y, int w, int h) {
+/**
+ * The width of an update which should be considered negible and thus
+ * trivial overhead compared ot the cost of two updates.
+ */
+#define GUAC_SURFACE_NEGLIGIBLE_WIDTH 64
+
+/**
+ * The height of an update which should be considered negible and thus
+ * trivial overhead compared ot the cost of two updates.
+ */
+#define GUAC_SURFACE_NEGLIGIBLE_HEIGHT 64
+
+/**
+ * The proportional increase in cost contributed by transfer and processing of
+ * image data, compared to processing an equivalent amount of client-side
+ * data.
+ */
+#define GUAC_SURFACE_DATA_FACTOR 16
+
+/**
+ * The base cost of every update. Each update should be considered to have
+ * this starting cost, plus any additional cost estimated from its
+ * content.
+ */
+#define GUAC_SURFACE_BASE_COST 4096
+
+/**
+ * An increase in cost is negligible if it is less than
+ * 1/GUAC_SURFACE_NEGLIGIBLE_INCREASE of the old cost.
+ */
+#define GUAC_SURFACE_NEGLIGIBLE_INCREASE 4
+
+/**
+ * Returns whether the given rectangle should be combined into the existing
+ * dirty rectangle, to be eventually flushed as a "png" instruction.
+ *
+ * @param surface The surface to be queried.
+ * @param x The X coordinate of the upper-left corner of the update rectangle.
+ * @param y The Y coordinate of the upper-left corner of the update rectangle.
+ * @param w The width of the update rectangle.
+ * @param h The height of the update rectangle.
+ * @param rect_only Non-zero if this update, by its nature, contains only
+ *                  metainformation about the update's rectangle, zero if
+ *                  the update also contains image data.
+ * @return Non-zero if the update should be combined with any existing update,
+ *         zero otherwise.
+ */
+static int __guac_common_should_combine(guac_common_surface* surface, int x, int y, int w, int h, int rect_only) {
 
     if (surface->dirty) {
 
-        int new_pixels, dirty_pixels, update_pixels;
-        int new_width, new_height;
+        int combined_cost, dirty_cost, update_cost;
+        int combined_width, combined_height;
 
         /* Calculate extents of existing dirty rect */
         int dirty_left   = surface->dirty_x;
@@ -53,20 +100,32 @@ static int __guac_common_should_combine(guac_common_surface* surface, int x, int
         if (right  > dirty_right)  dirty_right  = right;
         if (bottom > dirty_bottom) dirty_bottom = bottom;
 
-        new_width  = dirty_right - dirty_left;
-        new_height = dirty_bottom - dirty_top;
+        combined_width  = dirty_right - dirty_left;
+        combined_height = dirty_bottom - dirty_top;
 
         /* Combine if result is still small */
-        if (new_width <= 64 && new_height <= 64)
+        if (combined_width <= GUAC_SURFACE_NEGLIGIBLE_WIDTH && combined_height <= GUAC_SURFACE_NEGLIGIBLE_HEIGHT)
             return 1;
 
-        new_pixels  = new_width*new_height;
-        dirty_pixels = surface->dirty_width*surface->dirty_height;
-        update_pixels = w*h;
+        /* Estimate costs of the existing update, new update, and both combined */
+        combined_cost = GUAC_SURFACE_BASE_COST + combined_width * combined_height;
+        dirty_cost    = GUAC_SURFACE_BASE_COST + surface->dirty_width * surface->dirty_height;
+        update_cost   = GUAC_SURFACE_BASE_COST + w*h;
 
-        /* Combine if increase in cost is likely negligible */
-        if (new_pixels - dirty_pixels <= update_pixels*4) return 1;
-        if (new_pixels / dirty_pixels <= 2) return 1;
+        /* Reduce cost if no image data */
+        if (rect_only)
+            update_cost /= GUAC_SURFACE_DATA_FACTOR;
+
+        /* Combine if cost estimate shows benefit */
+        if (combined_cost <= update_cost + dirty_cost)
+            return 1;
+
+        /* Combine if increase in cost is negligible */
+        if (combined_cost - dirty_cost <= dirty_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
+            return 1;
+
+        if (combined_cost - update_cost <= update_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
+            return 1;
 
     }
     
@@ -351,7 +410,7 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     int h = cairo_image_surface_get_height(src);
 
     /* Flush if not combining */
-    if (!__guac_common_should_combine(surface, x, y, w, h))
+    if (!__guac_common_should_combine(surface, x, y, w, h, 0))
         guac_common_surface_flush(surface);
 
     /* Always defer draws */
@@ -374,7 +433,7 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     const guac_layer* dst_layer = dst->layer;
 
     /* Defer if combining */
-    if (__guac_common_should_combine(dst, dx, dy, w, h))
+    if (__guac_common_should_combine(dst, dx, dy, w, h, 1))
         __guac_common_mark_dirty(dst, dx, dy, w, h);
 
     /* Otherwise, flush and draw immediately */
@@ -400,7 +459,7 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     const guac_layer* dst_layer = dst->layer;
 
     /* Defer if combining */
-    if (__guac_common_should_combine(dst, dx, dy, w, h))
+    if (__guac_common_should_combine(dst, dx, dy, w, h, 1))
         __guac_common_mark_dirty(dst, dx, dy, w, h);
 
     /* Otherwise, flush and draw immediately */
@@ -426,7 +485,7 @@ void guac_common_surface_rect(guac_common_surface* surface,
     const guac_layer* layer = surface->layer;
 
     /* Defer if combining */
-    if (__guac_common_should_combine(surface, x, y, w, h))
+    if (__guac_common_should_combine(surface, x, y, w, h, 1))
         __guac_common_mark_dirty(surface, x, y, w, h);
 
     /* Otherwise, flush and draw immediately */
