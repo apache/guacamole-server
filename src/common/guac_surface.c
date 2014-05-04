@@ -127,6 +127,10 @@ static int __guac_common_should_combine(guac_common_surface* surface, int x, int
         if (combined_cost - update_cost <= update_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
             return 1;
 
+        /* Combine if we anticipate further updates, as this update follows a common fill pattern */
+        if (x == surface->dirty_x && y == surface->dirty_y + surface->dirty_height)
+            return 1;
+
     }
     
     /* Otherwise, do not combine */
