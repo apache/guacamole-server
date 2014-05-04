@@ -67,17 +67,6 @@ typedef struct guac_common_surface {
     unsigned char* buffer;
 
     /**
-     * The Cairo surface containing this Guacamole surface's current
-     * graphical state.
-     */
-    cairo_surface_t* surface;
-
-    /**
-     * Cairo object for the underlying surface.
-     */
-    cairo_t* cairo;
-
-    /**
      * Non-zero if this surface is dirty and needs to be flushed, 0 otherwise.
      */
     int dirty;

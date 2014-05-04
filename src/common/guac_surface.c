@@ -62,6 +62,11 @@
  */
 #define GUAC_SURFACE_NEGLIGIBLE_INCREASE 4
 
+/* Define cairo_format_stride_for_width() if missing */
+#ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH
+#define cairo_format_stride_for_width(format, width) (width*4)
+#endif
+
 /**
  * Returns whether the given rectangle should be combined into the existing
  * dirty rectangle, to be eventually flushed as a "png" instruction.
@@ -249,6 +254,71 @@ static void __guac_common_surface_transfer_int(guac_transfer_function op, uint32
     }
 }
 
+static void __guac_common_surface_rect(guac_common_surface* dst, int dx, int dy, int w, int h,
+                                       int red, int green, int blue) {
+
+    int dst_stride = dst->stride;
+    unsigned char* dst_buffer = dst->buffer + dst_stride*dy + 4*dx;
+
+    int x, y;
+
+    uint32_t color = 0xFF000000 | (red << 16) | (green << 8) | blue;
+
+    /* For each row */
+    for (y=0; y<h; y++) {
+
+        uint32_t* dst_current = (uint32_t*) dst_buffer;
+
+        /* Set row */
+        for (x=0; x<w; x++) {
+            *dst_current = color;
+            dst_current++;
+        }
+
+        /* Next row */
+        dst_buffer += dst_stride;
+
+    }
+
+}
+
+static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
+                                      int sx, int sy, int w, int h,
+                                      guac_common_surface* dst, int dx, int dy,
+                                      int opaque) {
+
+    unsigned char* dst_buffer = dst->buffer;
+    int dst_stride = dst->stride;
+
+    int x, y;
+
+    src_buffer += src_stride*sy + 4*sx;
+    dst_buffer += dst_stride*dy + 4*dx;
+
+    /* For each row */
+    for (y=0; y<h; y++) {
+
+        uint32_t* src_current = (uint32_t*) src_buffer;
+        uint32_t* dst_current = (uint32_t*) dst_buffer;
+
+        /* Copy row */
+        for (x=0; x<w; x++) {
+
+            if (opaque || (*src_current & 0xFF000000))
+                *dst_current = *src_current;
+
+            src_current++;
+            dst_current++;
+        }
+
+        /* Next row */
+        src_buffer += src_stride;
+        dst_buffer += dst_stride;
+
+    }
+
+}
+
 static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int w, int h,
                                            guac_transfer_function op, guac_common_surface* dst, int dx, int dy) {
 
@@ -311,13 +381,9 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
     /* Create corresponding Cairo surface */
     surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
     surface->buffer = malloc(surface->stride * h);
-    surface->surface = cairo_image_surface_create_for_data(surface->buffer, CAIRO_FORMAT_RGB24,
-                                                           w, h, surface->stride);
-    surface->cairo = cairo_create(surface->surface);
 
     /* Init with black */
-    cairo_set_source_rgb(surface->cairo, 0, 0, 0);
-    cairo_paint(surface->cairo);
+    __guac_common_surface_rect(surface, 0, 0, w, h, 0x00, 0x00, 0x00); 
 
     /* Layers must initially exist */
     if (layer->index >= 0) {
@@ -338,8 +404,6 @@ void guac_common_surface_free(guac_common_surface* surface) {
     if (surface->realized)
         guac_protocol_send_dispose(surface->socket, surface->layer);
 
-    cairo_surface_destroy(surface->surface);
-    cairo_destroy(surface->cairo);
     free(surface->buffer);
     free(surface);
 
@@ -350,31 +414,28 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
 
+    /* Copy old surface data */
+    unsigned char* old_buffer = surface->buffer;
+    int old_stride = surface->stride;
+    int old_width = surface->width;
+    int old_height = surface->height;
+
     /* Create new buffer */
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
     unsigned char* buffer = malloc(stride * h);
-
-    /* Create corresponding cairo objects */
-    cairo_surface_t* cairo_surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24, w, h, stride);
-    cairo_t* cairo = cairo_create(cairo_surface);
-
-    /* Init with old data */
-    cairo_set_source_surface(cairo, surface->surface, 0, 0);
-    cairo_rectangle(cairo, 0, 0, surface->width, surface->height);
-    cairo_paint(cairo);
-
-    /* Destroy old data */
-    cairo_surface_destroy(surface->surface);
-    cairo_destroy(surface->cairo);
-    free(surface->buffer);
 
     /* Assign new data */
     surface->width = w;
     surface->height = h;
     surface->stride = stride;
     surface->buffer = buffer;
-    surface->surface = cairo_surface;
-    surface->cairo = cairo;
+
+    /* Init with old data */
+    __guac_common_surface_put(old_buffer, old_stride, 0, 0, old_width, old_height,
+                              surface, 0, 0, 1);
+
+    /* Free old data */
+    free(old_buffer);
 
     /* Clip dirty rect */
     if (surface->dirty) {
@@ -403,13 +464,16 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     }
 
     /* Update Guacamole layer */
-    guac_protocol_send_size(socket, layer, w, h);
-    surface->realized = 1;
+    if (surface->realized)
+        guac_protocol_send_size(socket, layer, w, h);
 
 }
 
 void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src) {
 
+    unsigned char* buffer = cairo_image_surface_get_data(src);
+    cairo_format_t format = cairo_image_surface_get_format(src);
+    int stride = cairo_image_surface_get_stride(src);
     int w = cairo_image_surface_get_width(src);
     int h = cairo_image_surface_get_height(src);
 
@@ -421,11 +485,7 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     __guac_common_mark_dirty(surface, x, y, w, h);
 
     /* Update backing surface */
-    cairo_save(surface->cairo);
-    cairo_set_source_surface(surface->cairo, src, x, y);
-    cairo_rectangle(surface->cairo, x, y, w, h);
-    cairo_fill(surface->cairo);
-    cairo_restore(surface->cairo);
+    __guac_common_surface_put(buffer, stride, 0, 0, w, h, surface, x, y, format != CAIRO_FORMAT_ARGB32);
 
 }
 
@@ -449,8 +509,6 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     }
 
     /* Update backing surface */
-    cairo_surface_flush(src->surface);
-    cairo_surface_flush(dst->surface);
     __guac_common_surface_transfer(src, sx, sy, w, h, GUAC_TRANSFER_BINARY_SRC, dst, dx, dy);
 
 }
@@ -475,8 +533,6 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     }
 
     /* Update backing surface */
-    cairo_surface_flush(src->surface);
-    cairo_surface_flush(dst->surface);
     __guac_common_surface_transfer(src, sx, sy, w, h, op, dst, dx, dy);
 
 }
@@ -501,11 +557,7 @@ void guac_common_surface_rect(guac_common_surface* surface,
     }
 
     /* Update backing surface */
-    cairo_save(surface->cairo);
-    cairo_set_source_rgb(surface->cairo, red, green, blue);
-    cairo_rectangle(surface->cairo, x, y, w, h);
-    cairo_fill(surface->cairo);
-    cairo_restore(surface->cairo);
+    __guac_common_surface_rect(surface, x, y, w, h, red, green, blue);
 
 }
 
@@ -515,12 +567,13 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
         guac_socket* socket = surface->socket;
         const guac_layer* layer = surface->layer;
-        cairo_surface_t* rect;
+        unsigned char* buffer = surface->buffer + surface->dirty_y * surface->stride + surface->dirty_x * 4;
+
+        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
+                                                                    surface->dirty_width, surface->dirty_height,
+                                                                    surface->stride);
 
         /* Send PNG for dirty rect */
-        rect = cairo_surface_create_for_rectangle(surface->surface,
-                                                  surface->dirty_x, surface->dirty_y,
-                                                  surface->dirty_width, surface->dirty_height);
         guac_protocol_send_png(socket, GUAC_COMP_OVER, layer, surface->dirty_x, surface->dirty_y, rect);
         cairo_surface_destroy(rect);
 
