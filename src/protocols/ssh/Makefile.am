@@ -27,41 +27,22 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libguac-client-ssh.la
 
 libguac_client_ssh_la_SOURCES = \
-    blank.c                     \
-    buffer.c                    \
-    char_mappings.c             \
     client.c                    \
     clipboard.c                 \
-    common.c                    \
-    cursor.c                    \
-    display.c                   \
     guac_handlers.c             \
-    ibar.c                      \
     sftp.c                      \
     ssh_buffer.c                \
     ssh_client.c                \
-    ssh_key.c                   \
-    terminal.c                  \
-    terminal_handlers.c
+    ssh_key.c
 
 noinst_HEADERS =                \
-    blank.h                     \
-    buffer.h                    \
-    char_mappings.h             \
     client.h                    \
     clipboard.h                 \
-    common.h                    \
-    cursor.h                    \
-    display.h                   \
     guac_handlers.h             \
-    ibar.h                      \
     sftp.h                      \
     ssh_buffer.h                \
     ssh_client.h                \
-    ssh_key.h                   \
-    terminal.h                  \
-    terminal_handlers.h         \
-    types.h
+    ssh_key.h
 
 # Add agent sources if enabled
 if ENABLE_SSH_AGENT
@@ -69,7 +50,7 @@ libguac_client_ssh_la_SOURCES += ssh_agent.c
 noinst_HEADERS += ssh_agent.h
 endif
 
-libguac_client_ssh_la_CFLAGS = -Werror -Wall -Iinclude @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
-libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
-libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0 @SSH_LIBS@ @SSL_LIBS@ @PTHREAD_LIBS@ @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @CAIRO_LIBS@
+libguac_client_ssh_la_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@ @TERMINAL_INCLUDE@
+libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@ @TERMINAL_LTLIB@
+libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0 @SSH_LIBS@ @SSL_LIBS@ @PTHREAD_LIBS@
 

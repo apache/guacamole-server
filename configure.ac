@@ -87,8 +87,14 @@ AC_TYPE_SSIZE_T
 # Bundled libguac
 AC_SUBST([LIBGUAC_LTLIB],   '$(top_builddir)/src/libguac/libguac.la')
 AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/src/libguac')
-AC_SUBST([COMMON_LTLIB],    '$(top_builddir)/src/common/libguac_common.la')
-AC_SUBST([COMMON_INCLUDE],  '-I$(top_srcdir)/src/common')
+
+# Common non-libguac utility library
+AC_SUBST([COMMON_LTLIB],   '$(top_builddir)/src/common/libguac_common.la')
+AC_SUBST([COMMON_INCLUDE], '-I$(top_srcdir)/src/common')
+
+# Terminal emulator
+AC_SUBST([TERMINAL_LTLIB],   '$(top_builddir)/src/terminal/libguac_terminal.la')
+AC_SUBST([TERMINAL_INCLUDE], '-I$(top_srcdir)/src/terminal $(PANGO_CFLAGS) $(PANGOCAIRO_CFLAGS)')
 
 # Options
 AC_ARG_WITH(init_dir,
@@ -185,6 +191,18 @@ AC_SUBST(PULSE_LIBS)
 have_pango=yes
 PKG_CHECK_MODULES([PANGO], [pango],, [have_pango=no]);
 PKG_CHECK_MODULES([PANGOCAIRO], [pangocairo],, [have_pango=no]);
+
+#
+# Terminal emulator
+#
+
+have_terminal=yes
+if test "x${have_pango}" = "xno"
+then
+    have_terminal=no
+fi
+
+AM_CONDITIONAL([ENABLE_TERMINAL], [test "x${have_terminal}" = "xyes"])
 
 #
 # libVNCServer
@@ -555,9 +573,9 @@ SSH_LIBS=
 AC_CHECK_LIB([ssh2], [libssh2_session_init_ex],
                      [SSH_LIBS="$SSH_LIBS -lssh2"],
                      [have_libssh2=no])
-AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh2}" = "xyes" \
-                                -a "x${have_pango}"   = "xyes" \
-                                -a "x${have_ssl}"     = "xyes"])
+AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh2}"  = "xyes" \
+                                -a "x${have_terminal}" = "xyes" \
+                                -a "x${have_ssl}"      = "xyes"])
 
 AC_SUBST(SSH_LIBS)
 
@@ -594,6 +612,7 @@ AM_CONDITIONAL([ENABLE_SSH_AGENT],
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
                  src/common/Makefile
+                 src/terminal/Makefile
                  src/libguac/Makefile
                  src/guacd/Makefile
                  src/protocols/rdp/Makefile
