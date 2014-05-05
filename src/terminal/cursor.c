@@ -29,17 +29,17 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 
-guac_ssh_cursor* guac_ssh_cursor_alloc(guac_client* client) {
+guac_terminal_cursor* guac_terminal_cursor_alloc(guac_client* client) {
 
     /* Alloc new cursor, initialize buffer */
-    guac_ssh_cursor* cursor = malloc(sizeof(guac_ssh_cursor));
+    guac_terminal_cursor* cursor = malloc(sizeof(guac_terminal_cursor));
     cursor->buffer = guac_client_alloc_buffer(client);
 
     return cursor;
 
 }
 
-void guac_ssh_cursor_free(guac_client* client, guac_ssh_cursor* cursor) {
+void guac_terminal_cursor_free(guac_client* client, guac_terminal_cursor* cursor) {
 
     /* Free buffer */
     guac_client_free_buffer(client, cursor->buffer);
@@ -49,7 +49,7 @@ void guac_ssh_cursor_free(guac_client* client, guac_ssh_cursor* cursor) {
 
 }
 
-void guac_ssh_set_cursor(guac_client* client, guac_ssh_cursor* cursor) {
+void guac_terminal_set_cursor(guac_client* client, guac_terminal_cursor* cursor) {
 
     /* Set cursor */
     guac_protocol_send_cursor(client->socket,

@@ -29,10 +29,10 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
-guac_ssh_cursor* guac_ssh_create_blank(guac_client* client) {
+guac_terminal_cursor* guac_terminal_create_blank(guac_client* client) {
 
     guac_socket* socket = client->socket;
-    guac_ssh_cursor* cursor = guac_ssh_cursor_alloc(client);
+    guac_terminal_cursor* cursor = guac_terminal_cursor_alloc(client);
 
     /* Set buffer to a single 1x1 transparent rectangle */
     guac_protocol_send_rect(socket, cursor->buffer, 0, 0, 1, 1);

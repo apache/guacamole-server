@@ -21,8 +21,8 @@
  */
 
 
-#ifndef _GUAC_SSH_IBAR_H
-#define _GUAC_SSH_IBAR_H
+#ifndef _GUAC_TERMINAL_IBAR_H
+#define _GUAC_TERMINAL_IBAR_H
 
 #include "config.h"
 
@@ -32,34 +32,34 @@
 /**
  * Width of the embedded mouse cursor graphic.
  */
-extern const int guac_ssh_ibar_width;
+extern const int guac_terminal_ibar_width;
 
 /**
  * Height of the embedded mouse cursor graphic.
  */
-extern const int guac_ssh_ibar_height;
+extern const int guac_terminal_ibar_height;
 
 /**
  * Number of bytes in each row of the embedded mouse cursor graphic.
  */
-extern const int guac_ssh_ibar_stride;
+extern const int guac_terminal_ibar_stride;
 
 /**
  * The Cairo grapic format of the mouse cursor graphic.
  */
-extern const cairo_format_t guac_ssh_ibar_format;
+extern const cairo_format_t guac_terminal_ibar_format;
 
 /**
  * Embedded mouse cursor graphic.
  */
-extern unsigned char guac_ssh_ibar[];
+extern unsigned char guac_terminal_ibar[];
 
 /**
  * Creates a new I-bar cursor, returning the corresponding cursor object.
  *
  * @param client The guac_client to send the cursor to.
- * @return A new cursor which must be free'd via guac_ssh_cursor_free()/
+ * @return A new cursor which must be free'd via guac_terminal_cursor_free()/
  */
-guac_ssh_cursor* guac_ssh_create_ibar(guac_client* client);
+guac_terminal_cursor* guac_terminal_create_ibar(guac_client* client);
 
 #endif

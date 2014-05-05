@@ -21,14 +21,14 @@
  */
 
 
-#ifndef _GUAC_SSH_CURSOR_H
-#define _GUAC_SSH_CURSOR_H
+#ifndef _GUAC_TERMINAL_CURSOR_H
+#define _GUAC_TERMINAL_CURSOR_H
 
 #include "config.h"
 
 #include <guacamole/client.h>
 
-typedef struct guac_ssh_cursor {
+typedef struct guac_terminal_cursor {
 
     /**
      * A buffer allocated with guac_client_alloc_buffer() that contains the
@@ -56,22 +56,22 @@ typedef struct guac_ssh_cursor {
      */
     int hotspot_y;
 
-} guac_ssh_cursor;
+} guac_terminal_cursor;
 
 /**
  * Allocates a new cursor, pre-populating the cursor with a newly-allocated
  * buffer.
  */
-guac_ssh_cursor* guac_ssh_cursor_alloc(guac_client* client);
+guac_terminal_cursor* guac_terminal_cursor_alloc(guac_client* client);
 
 /**
  * Frees the buffer associated with this cursor as well as the cursor itself.
  */
-void guac_ssh_cursor_free(guac_client* client, guac_ssh_cursor* cursor);
+void guac_terminal_cursor_free(guac_client* client, guac_terminal_cursor* cursor);
 
 /**
  * Set the remote cursor.
  */
-void guac_ssh_set_cursor(guac_client* client, guac_ssh_cursor* cursor);
+void guac_terminal_set_cursor(guac_client* client, guac_terminal_cursor* cursor);
 
 #endif

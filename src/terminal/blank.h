@@ -21,8 +21,8 @@
  */
 
 
-#ifndef _GUAC_SSH_BLANK_H
-#define _GUAC_SSH_BLANK_H
+#ifndef _GUAC_TERMINAL_BLANK_H
+#define _GUAC_TERMINAL_BLANK_H
 
 #include "config.h"
 
@@ -35,8 +35,8 @@
  * Creates a new blank cursor, returning the corresponding cursor object.
  *
  * @param client The guac_client to send the cursor to.
- * @return A new cursor which must be free'd via guac_ssh_cursor_free()/
+ * @return A new cursor which must be free'd via guac_terminal_cursor_free()/
  */
-guac_ssh_cursor* guac_ssh_create_blank(guac_client* client);
+guac_terminal_cursor* guac_terminal_create_blank(guac_client* client);
 
 #endif

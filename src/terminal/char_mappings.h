@@ -21,8 +21,8 @@
  */
 
 
-#ifndef _GUAC_SSH_CHAR_MAPPINGS_H
-#define _GUAC_SSH_CHAR_MAPPINGS_H
+#ifndef _GUAC_TERMINAL_CHAR_MAPPINGS_H
+#define _GUAC_TERMINAL_CHAR_MAPPINGS_H
 
 #include "config.h"
 

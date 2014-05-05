@@ -187,17 +187,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     }
 
     /* Set up I-bar pointer */
-    client_data->ibar_cursor = guac_ssh_create_ibar(client);
+    client_data->ibar_cursor = guac_terminal_create_ibar(client);
 
     /* Set up blank pointer */
-    client_data->blank_cursor = guac_ssh_create_blank(client);
+    client_data->blank_cursor = guac_terminal_create_blank(client);
 
     /* Send initial name */
     guac_protocol_send_name(socket, client_data->hostname);
 
     /* Initialize pointer */
     client_data->current_cursor = client_data->blank_cursor;
-    guac_ssh_set_cursor(client, client_data->current_cursor);
+    guac_terminal_set_cursor(client, client_data->current_cursor);
 
     guac_socket_flush(socket);
 

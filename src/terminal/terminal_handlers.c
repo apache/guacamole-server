@@ -875,7 +875,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
 }
 
-int guac_terminal_guac_set_directory(guac_terminal* term, unsigned char c) {
+int guac_terminal_set_directory(guac_terminal* term, unsigned char c) {
 
     static char filename[2048];
     static int length = 0;
@@ -896,7 +896,7 @@ int guac_terminal_guac_set_directory(guac_terminal* term, unsigned char c) {
 
 }
 
-int guac_terminal_guac_download(guac_terminal* term, unsigned char c) {
+int guac_terminal_download(guac_terminal* term, unsigned char c) {
 
     static char filename[2048];
     static int length = 0;
@@ -930,11 +930,11 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
 
         /* Download OSC */
         if (operation == 482200)
-            term->char_handler = guac_terminal_guac_download;
+            term->char_handler = guac_terminal_download;
 
         /* Set upload directory OSC */
         else if (operation == 482201)
-            term->char_handler = guac_terminal_guac_set_directory;
+            term->char_handler = guac_terminal_set_directory;
 
         /* Reset parameter for next OSC */
         operation = 0;

@@ -21,8 +21,8 @@
  */
 
 
-#ifndef _SSH_GUAC_TERMINAL_HANDLERS
-#define _SSH_GUAC_TERMINAL_HANDLERS
+#ifndef _GUAC_TERMINAL_HANDLERS
+#define _GUAC_TERMINAL_HANDLERS
 
 #include "config.h"
 
@@ -33,8 +33,8 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c);
 int guac_terminal_g0_charset(guac_terminal* term, unsigned char c);
 int guac_terminal_g1_charset(guac_terminal* term, unsigned char c);
 int guac_terminal_csi(guac_terminal* term, unsigned char c);
-int guac_terminal_guac_download(guac_terminal* term, unsigned char c);
-int guac_terminal_guac_set_directory(guac_terminal* term, unsigned char c);
+int guac_terminal_download(guac_terminal* term, unsigned char c);
+int guac_terminal_set_directory(guac_terminal* term, unsigned char c);
 int guac_terminal_osc(guac_terminal* term, unsigned char c);
 int guac_terminal_ctrl_func(guac_terminal* term, unsigned char c);
 

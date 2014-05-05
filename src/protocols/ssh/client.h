@@ -176,17 +176,17 @@ typedef struct ssh_guac_client_data {
     /**
      * The cached I-bar cursor.
      */
-    guac_ssh_cursor* ibar_cursor;
+    guac_terminal_cursor* ibar_cursor;
 
     /**
      * The cached invisible (blank) cursor.
      */
-    guac_ssh_cursor* blank_cursor;
+    guac_terminal_cursor* blank_cursor;
 
     /**
      * The current cursor, used to avoid re-setting the cursor.
      */
-    guac_ssh_cursor* current_cursor;
+    guac_terminal_cursor* current_cursor;
 
 } ssh_guac_client_data;
 

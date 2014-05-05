@@ -21,8 +21,8 @@
  */
 
 
-#ifndef _SSH_GUAC_COMMON_H
-#define _SSH_GUAC_COMMON_H
+#ifndef _GUAC_TERMINAL_COMMON_H
+#define _GUAC_TERMINAL_COMMON_H
 
 #include "config.h"
 

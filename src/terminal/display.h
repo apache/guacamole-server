@@ -21,8 +21,8 @@
  */
 
 
-#ifndef _SSH_GUAC_DISPLAY_H
-#define _SSH_GUAC_DISPLAY_H
+#ifndef _GUAC_TERMINAL_DISPLAY_H
+#define _GUAC_TERMINAL_DISPLAY_H
 
 #include "config.h"
 

@@ -119,7 +119,7 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
         pthread_mutex_lock(&(term->lock));
 
         client_data->current_cursor = client_data->ibar_cursor;
-        guac_ssh_set_cursor(client, client_data->ibar_cursor);
+        guac_terminal_set_cursor(client, client_data->ibar_cursor);
         guac_socket_flush(client->socket);
 
         pthread_mutex_unlock(&(term->lock));
@@ -180,14 +180,14 @@ int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
     /* Scroll up if wheel moved up */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_UP) {
         pthread_mutex_lock(&(term->lock));
-        guac_terminal_scroll_display_up(term, GUAC_SSH_WHEEL_SCROLL_AMOUNT);
+        guac_terminal_scroll_display_up(term, GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT);
         pthread_mutex_unlock(&(term->lock));
     }
 
     /* Scroll down if wheel moved down */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_DOWN) {
         pthread_mutex_lock(&(term->lock));
-        guac_terminal_scroll_display_down(term, GUAC_SSH_WHEEL_SCROLL_AMOUNT);
+        guac_terminal_scroll_display_down(term, GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT);
         pthread_mutex_unlock(&(term->lock));
     }
 
@@ -205,7 +205,7 @@ int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
         pthread_mutex_lock(&(term->lock));
 
         client_data->current_cursor = client_data->blank_cursor;
-        guac_ssh_set_cursor(client, client_data->blank_cursor);
+        guac_terminal_set_cursor(client, client_data->blank_cursor);
         guac_socket_flush(client->socket);
 
         pthread_mutex_unlock(&(term->lock));
@@ -421,8 +421,8 @@ int ssh_guac_client_free_handler(guac_client* client) {
     guac_common_clipboard_free(guac_client_data->clipboard);
 
     /* Free cursors */
-    guac_ssh_cursor_free(client, guac_client_data->ibar_cursor);
-    guac_ssh_cursor_free(client, guac_client_data->blank_cursor);
+    guac_terminal_cursor_free(client, guac_client_data->ibar_cursor);
+    guac_terminal_cursor_free(client, guac_client_data->blank_cursor);
 
     /* Free generic data struct */
     free(client->data);

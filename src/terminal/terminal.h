@@ -21,8 +21,8 @@
  */
 
 
-#ifndef _SSH_GUAC_TERMINAL_H
-#define _SSH_GUAC_TERMINAL_H
+#ifndef _GUAC_TERMINAL_H
+#define _GUAC_TERMINAL_H
 
 #include "config.h"
 
@@ -43,7 +43,7 @@
 /**
  * The number of rows to scroll per scroll wheel event.
  */
-#define GUAC_SSH_WHEEL_SCROLL_AMOUNT 3
+#define GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT 3
 
 typedef struct guac_terminal guac_terminal;
 
