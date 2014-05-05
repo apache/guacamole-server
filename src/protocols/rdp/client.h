@@ -34,6 +34,7 @@
 #include "rdp_settings.h"
 
 #include <pthread.h>
+#include <stdint.h>
 
 #include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
@@ -99,26 +100,9 @@ typedef struct rdp_guac_client_data {
     int mouse_button_mask;
 
     /**
-     * Cairo surface which will receive all TRANSPARENT glyphs.
+     * Foreground color for any future glyphs.
      */
-    cairo_surface_t* trans_glyph_surface;
-
-    /**
-     * Cairo surface which will receive all OPAQUE glyphs.
-     */
-    cairo_surface_t* opaque_glyph_surface;
-
-    /**
-     * The current Cairo surface which will receive all drawn glyphs,
-     * depending on whether we are currently drawing transparent or
-     * opaque glyphs.
-     */
-    cairo_surface_t* glyph_surface;
-
-    /**
-     * Cairo instance for drawing to the current glyph surface.
-     */
-    cairo_t* glyph_cairo;
+    uint32_t glyph_color;
 
     /**
      * The display.
