@@ -29,6 +29,8 @@
 #include <guacamole/socket.h>
 
 #include <stdlib.h>
+#include <stdint.h>
+
 
 /**
  * The width of an update which should be considered negible and thus
@@ -365,6 +367,45 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
 
 }
 
+static void __guac_common_surface_fill_mask(unsigned char* src_buffer, int src_stride,
+                                            int sx, int sy, int w, int h,
+                                            guac_common_surface* dst, int dx, int dy,
+                                            int red, int green, int blue) {
+
+    unsigned char* dst_buffer = dst->buffer;
+    int dst_stride = dst->stride;
+
+    uint32_t color = 0xFF000000 | (red << 16) | (green << 8) | blue;
+    int x, y;
+
+    src_buffer += src_stride*sy + 4*sx;
+    dst_buffer += dst_stride*dy + 4*dx;
+
+    /* For each row */
+    for (y=0; y<h; y++) {
+
+        uint32_t* src_current = (uint32_t*) src_buffer;
+        uint32_t* dst_current = (uint32_t*) dst_buffer;
+
+        /* Stencil row */
+        for (x=0; x<w; x++) {
+
+            /* Fill with color if opaque */
+            if (*src_current & 0xFF000000)
+                *dst_current = color;
+
+            src_current++;
+            dst_current++;
+        }
+
+        /* Next row */
+        src_buffer += src_stride;
+        dst_buffer += dst_stride;
+
+    }
+
+}
+
 static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int w, int h,
                                            guac_transfer_function op, guac_common_surface* dst, int dx, int dy) {
 
@@ -548,6 +589,34 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
 
     /* Update backing surface */
     __guac_common_surface_put(buffer, stride, sx, sy, w, h, surface, x, y, format != CAIRO_FORMAT_ARGB32);
+
+}
+
+void guac_common_surface_paint(guac_common_surface* surface, int x, int y, cairo_surface_t* src,
+                               int red, int green, int blue) {
+
+    unsigned char* buffer = cairo_image_surface_get_data(src);
+    int stride = cairo_image_surface_get_stride(src);
+    int w = cairo_image_surface_get_width(src);
+    int h = cairo_image_surface_get_height(src);
+
+    int sx = 0;
+    int sy = 0;
+
+    /* Clip operation */
+    __guac_common_bound_rect(surface, &x, &y, &w, &h, &sx, &sy);
+    if (w <= 0 || h <= 0)
+        return;
+
+    /* Flush if not combining */
+    if (!__guac_common_should_combine(surface, x, y, w, h, 0))
+        guac_common_surface_flush(surface);
+
+    /* Always defer draws */
+    __guac_common_mark_dirty(surface, x, y, w, h);
+
+    /* Update backing surface */
+    __guac_common_surface_fill_mask(buffer, stride, sx, sy, w, h, surface, x, y, red, green, blue);
 
 }
 

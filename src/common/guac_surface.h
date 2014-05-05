@@ -30,6 +30,8 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
+#include <stdint.h>
+
 /**
  * Surface which backs a Guacamole buffer or layer, automatically
  * combining updates when possible.
@@ -159,6 +161,22 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h);
  * @param src The Cairo surface to retrieve data from.
  */
 void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src);
+
+/**
+ * Paints to the given guac_common_surface using the given data as a stencil,
+ * filling opaque regions with the specified color, and leaving transparent
+ * regions untouched.
+ *
+ * @param surface The surface to draw to.
+ * @param x The X coordinate of the draw location.
+ * @param y The Y coordinate of the draw location.
+ * @param src The Cairo surface to retrieve data from.
+ * @param red The red component of the fill color.
+ * @param green The green component of the fill color.
+ * @param blue The blue component of the fill color.
+ */
+void guac_common_surface_paint(guac_common_surface* surface, int x, int y, cairo_surface_t* src,
+                              int red, int green, int blue);
 
 /**
  * Copies a rectangle of data between two surfaces.
