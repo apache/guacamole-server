@@ -100,6 +100,26 @@ typedef struct guac_common_surface {
      */
     int realized;
 
+    /**
+     * The X coordinate of the upper-left corner of the bounding rectangle.
+     */
+    int bounds_x;
+
+    /**
+     * The Y coordinate of the upper-left corner of the bounding rectangle.
+     */
+    int bounds_y;
+
+    /**
+     * The width of the bounding rectangle.
+     */
+    int bounds_width;
+
+    /**
+     * The height of the bounding rectangle.
+     */
+    int bounds_height;
+
 } guac_common_surface;
 
 /**
@@ -186,6 +206,26 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
 void guac_common_surface_rect(guac_common_surface* surface,
                               int x, int y, int w, int h,
                               int red, int green, int blue);
+
+/**
+ * Given the coordinates and dimensions of a rectangle, clips all future
+ * operations within that rectangle.
+ *
+ * @param surface The surface whose clipping rectangle should be changed.
+ * @param x The X coordinate of the upper-left corner of the bounding rectangle.
+ * @param y The Y coordinate of the upper-left corner of the bounding rectangle.
+ * @param w The width of the bounding rectangle.
+ * @param h The height of the bounding rectangle.
+ */
+void guac_common_surface_clip(guac_common_surface* surface, int x, int y, int w, int h);
+
+/**
+ * Resets the clipping rectangle, allowing drawing operations throughout the
+ * entire surface.
+ *
+ * @param surface The surface whose clipping rectangle should be reset.
+ */
+void guac_common_surface_reset_clip(guac_common_surface* surface);
 
 /**
  * Flushes the given surface, drawing any pending operations on the remote

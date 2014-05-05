@@ -104,11 +104,6 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
     int w = dstblt->nWidth;
     int h = dstblt->nHeight;
 
-    /* Clip operation to bounds */
-    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
-    if (guac_rdp_clip_rect(data, &x, &y, &w, &h))
-        return;
-
     switch (dstblt->bRop) {
 
         /* Blackness */
@@ -165,18 +160,12 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
     int w = patblt->nWidth;
     int h = patblt->nHeight;
 
-    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
-
     /*
      * Warn that rendering is a fallback, as the server should not be sending
      * this order.
      */
     guac_client_log_info(client, "Using fallback PATBLT (server is ignoring "
             "negotiated client capabilities)");
-
-    /* Clip operation to bounds */
-    if (guac_rdp_clip_rect(data, &x, &y, &w, &h))
-        return;
 
     /* Render rectangle based on ROP */
     switch (patblt->bRop) {
@@ -226,14 +215,7 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
     int x_src = scrblt->nXSrc;
     int y_src = scrblt->nYSrc;
 
-    /* Clip operation to bounds */
     rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
-    if (guac_rdp_clip_rect(data, &x, &y, &w, &h))
-        return;
-
-    /* Update source coordinates */
-    x_src += x - scrblt->nLeftRect;
-    y_src += y - scrblt->nTopRect;
 
     /* Copy screen rect to current surface */
     guac_common_surface_copy(data->default_surface, x_src, y_src, w, h,
@@ -255,21 +237,11 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     int x_src = memblt->nXSrc;
     int y_src = memblt->nYSrc;
 
-    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
-
     /* Make sure that the recieved bitmap is not NULL before processing */
     if (bitmap == NULL) {
         guac_client_log_info(client, "NULL bitmap found in memblt instruction.");
         return;
     }
-
-    /* Clip operation to bounds */
-    if (guac_rdp_clip_rect(data, &x, &y, &w, &h))
-        return;
-
-    /* Update source coordinates */
-    x_src += x - memblt->nLeftRect;
-    y_src += y - memblt->nTopRect;
 
     switch (memblt->bRop) {
 
@@ -352,16 +324,10 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
     guac_common_surface* current_surface = ((rdp_guac_client_data*) client->data)->current_surface;
 
-    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
-
     int x = opaque_rect->nLeftRect;
     int y = opaque_rect->nTopRect;
     int w = opaque_rect->nWidth;
     int h = opaque_rect->nHeight;
-
-    /* Clip operation to bounds */
-    if (guac_rdp_clip_rect(data, &x, &y, &w, &h))
-        return;
 
     guac_common_surface_rect(current_surface, x, y, w, h,
             (color >> 16) & 0xFF,
@@ -389,16 +355,12 @@ void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
 
     /* If no bounds given, clear bounding rect */
     if (bounds == NULL)
-        data->bounded = FALSE;
+        guac_common_surface_reset_clip(data->default_surface);
 
     /* Otherwise, set bounding rectangle */
-    else {
-        data->bounded = TRUE;
-        data->bounds_left   = bounds->left;
-        data->bounds_top    = bounds->top;
-        data->bounds_right  = bounds->right;
-        data->bounds_bottom = bounds->bottom;
-    }
+    else
+        guac_common_surface_clip(data->default_surface, bounds->left, bounds->top,
+                                 bounds->right - bounds->left + 1, bounds->bottom - bounds->top + 1);
 
 }
 

@@ -132,36 +132,6 @@ typedef struct rdp_guac_client_data {
     guac_common_surface* current_surface;
 
     /**
-     * Whether graphical operations are restricted to a specific bounding
-     * rectangle.
-     */
-    int bounded;
-
-    /**
-     * The X coordinate of the upper-left corner of the bounding rectangle,
-     * if any.
-     */
-    int bounds_left;
-
-    /**
-     * The Y coordinate of the upper-left corner of the bounding rectangle,
-     * if any.
-     */
-    int bounds_top;
-
-    /**
-     * The X coordinate of the lower-right corner of the bounding rectangle,
-     * if any.
-     */
-    int bounds_right;
-
-    /**
-     * The Y coordinate of the lower-right corner of the bounding rectangle,
-     * if any.
-     */
-    int bounds_bottom;
-
-    /**
      * The keymap to use when translating keysyms into scancodes or sequences
      * of scancodes for RDP.
      */
@@ -240,15 +210,6 @@ typedef struct rdp_freerdp_context {
     CLRCONV* clrconv;
 
 } rdp_freerdp_context;
-
-/**
- * Given the coordinates and dimensions of a rectangle, clips the rectangle to be
- * within the clipping bounds of the client data, if clipping is active.
- *
- * Returns 0 if the rectangle given is visible at all, and 1 if the entire
- * rectangls is outside the clipping rectangle and this invisible.
- */
-int guac_rdp_clip_rect(rdp_guac_client_data* data, int* x, int* y, int* w, int* h);
 
 #endif
 
