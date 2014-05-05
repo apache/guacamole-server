@@ -28,6 +28,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -63,6 +64,13 @@
  * 1/GUAC_SURFACE_NEGLIGIBLE_INCREASE of the old cost.
  */
 #define GUAC_SURFACE_NEGLIGIBLE_INCREASE 4
+
+/**
+ * If combining an update because it appears to be follow a fill pattern,
+ * the combined cost must not exceed
+ * GUAC_SURFACE_FILL_PATTERN_FACTOR * (total uncombined cost).
+ */
+#define GUAC_SURFACE_FILL_PATTERN_FACTOR 3
 
 /* Define cairo_format_stride_for_width() if missing */
 #ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH
@@ -178,8 +186,10 @@ static int __guac_common_should_combine(guac_common_surface* surface, int x, int
             return 1;
 
         /* Combine if we anticipate further updates, as this update follows a common fill pattern */
-        if (x == surface->dirty_x && y == surface->dirty_y + surface->dirty_height)
-            return 1;
+        if (x == surface->dirty_x && y == surface->dirty_y + surface->dirty_height) {
+            if (combined_cost <= (dirty_cost + update_cost) * GUAC_SURFACE_FILL_PATTERN_FACTOR)
+                return 1;
+        }
 
     }
     
