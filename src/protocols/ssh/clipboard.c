@@ -23,15 +23,13 @@
 #include "config.h"
 #include "client.h"
 #include "clipboard.h"
-#include "guac_clipboard.h"
-#include "guac_iconv.h"
 
 int guac_ssh_clipboard_handler(guac_client* client, guac_stream* stream,
         char* mimetype) {
 
     /* Clear clipboard and prepare for new data */
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
-    guac_common_clipboard_reset(client_data->clipboard, mimetype);
+    guac_terminal_clipboard_reset(client_data->term, mimetype);
 
     /* Set handlers for clipboard stream */
     stream->blob_handler = guac_ssh_clipboard_blob_handler;
@@ -45,7 +43,7 @@ int guac_ssh_clipboard_blob_handler(guac_client* client, guac_stream* stream,
 
     /* Append new data */
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
-    guac_common_clipboard_append(client_data->clipboard, (char*) data, length);
+    guac_terminal_clipboard_append(client_data->term, data, length);
 
     return 0;
 }

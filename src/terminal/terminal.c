@@ -23,8 +23,12 @@
 #include "config.h"
 
 #include "buffer.h"
+#include "blank.h"
 #include "common.h"
+#include "cursor.h"
 #include "display.h"
+#include "ibar.h"
+#include "guac_clipboard.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
 #include "types.h"
@@ -145,6 +149,21 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init terminal */
     guac_terminal_reset(term);
 
+    term->mod_alt   =
+    term->mod_ctrl  =
+    term->mod_shift = 0;
+
+    /* Set up mouse cursors */
+    term->ibar_cursor = guac_terminal_create_ibar(client);
+    term->blank_cursor = guac_terminal_create_blank(client);
+
+    /* Initialize mouse cursor */
+    term->current_cursor = term->blank_cursor;
+    guac_terminal_set_cursor(term->client, term->current_cursor);
+
+    /* Allocate clipboard */
+    term->clipboard = guac_common_clipboard_alloc(GUAC_TERMINAL_CLIPBOARD_MAX_LENGTH);
+
     return term;
 
 }
@@ -164,6 +183,13 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Free buffer */
     guac_terminal_buffer_free(term->buffer);
+
+    /* Free clipboard */
+    guac_common_clipboard_free(term->clipboard);
+
+    /* Free cursors */
+    guac_terminal_cursor_free(term->client, term->ibar_cursor);
+    guac_terminal_cursor_free(term->client, term->blank_cursor);
 
 }
 
@@ -656,7 +682,11 @@ static void __guac_terminal_redraw_rect(guac_terminal* term, int start_row, int 
 
 }
 
-void guac_terminal_resize(guac_terminal* term, int width, int height) {
+/**
+ * Internal terminal resize routine. Accepts width/height in CHARACTERS
+ * (not pixels like the public function).
+ */
+static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
 
     /* If height is decreasing, shift display up */
     if (height < term->term_height) {
@@ -765,12 +795,264 @@ void guac_terminal_resize(guac_terminal* term, int width, int height) {
 
 }
 
+int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
+
+    /* Calculate dimensions */
+    int rows    = height / terminal->display->char_height;
+    int columns = width  / terminal->display->char_width;
+
+    /* If size has changed */
+    if (columns != terminal->term_width || rows != terminal->term_height) {
+
+        /* Resize terminal */
+        __guac_terminal_resize(terminal, columns, rows);
+
+        /* Reset scroll region */
+        terminal->scroll_end = rows - 1;
+
+        guac_terminal_flush(terminal);
+    }
+
+    return 0;
+
+}
+
+void guac_terminal_flush(guac_terminal* terminal) {
+    guac_terminal_commit_cursor(terminal);
+    guac_terminal_display_flush(terminal->display);
+}
+
+void guac_terminal_lock(guac_terminal* terminal) {
+    pthread_mutex_lock(&(terminal->lock));
+}
+
+void guac_terminal_unlock(guac_terminal* terminal) {
+    pthread_mutex_unlock(&(terminal->lock));
+}
+
 int guac_terminal_send_data(guac_terminal* term, const char* data, int length) {
     return guac_terminal_write_all(term->stdin_pipe_fd[1], data, length);
 }
 
 int guac_terminal_send_string(guac_terminal* term, const char* data) {
     return guac_terminal_write_all(term->stdin_pipe_fd[1], data, strlen(data));
+}
+
+int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
+
+    /* Hide mouse cursor if not already hidden */
+    if (term->current_cursor != term->blank_cursor) {
+        term->current_cursor = term->blank_cursor;
+        guac_terminal_set_cursor(term->client, term->blank_cursor);
+        guac_socket_flush(term->client->socket);
+    }
+
+    /* Track modifiers */
+    if (keysym == 0xFFE3)
+        term->mod_ctrl = pressed;
+    else if (keysym == 0xFFE9)
+        term->mod_alt = pressed;
+    else if (keysym == 0xFFE1)
+        term->mod_shift = pressed;
+        
+    /* If key pressed */
+    else if (pressed) {
+
+        /* Ctrl+Shift+V shortcut for paste */
+        if (keysym == 'V' && term->mod_ctrl)
+            return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+
+        /* Shift+PgUp / Shift+PgDown shortcuts for scrolling */
+        if (term->mod_shift) {
+
+            /* Page up */
+            if (keysym == 0xFF55) {
+                guac_terminal_scroll_display_up(term, term->term_height);
+                return 0;
+            }
+
+            /* Page down */
+            if (keysym == 0xFF56) {
+                guac_terminal_scroll_display_down(term, term->term_height);
+                return 0;
+            }
+
+        }
+
+        /* Reset scroll */
+        if (term->scroll_offset != 0)
+            guac_terminal_scroll_display_down(term, term->scroll_offset);
+
+        /* If alt being held, also send escape character */
+        if (term->mod_alt)
+            return guac_terminal_send_string(term, "\x1B");
+
+        /* Translate Ctrl+letter to control code */ 
+        if (term->mod_ctrl) {
+
+            char data;
+
+            /* If valid control code, send it */
+            if (keysym >= 'A' && keysym <= 'Z')
+                data = (char) (keysym - 'A' + 1);
+            else if (keysym >= 'a' && keysym <= 'z')
+                data = (char) (keysym - 'a' + 1);
+
+            /* Otherwise ignore */
+            else
+                return 0;
+
+            return guac_terminal_send_data(term, &data, 1);
+
+        }
+
+        /* Translate Unicode to UTF-8 */
+        else if ((keysym >= 0x00 && keysym <= 0xFF) || ((keysym & 0xFFFF0000) == 0x01000000)) {
+
+            int length;
+            char data[5];
+
+            length = guac_terminal_encode_utf8(keysym & 0xFFFF, data);
+            return guac_terminal_send_data(term, data, length);
+
+        }
+
+        /* Non-printable keys */
+        else {
+
+            if (keysym == 0xFF08) return guac_terminal_send_string(term, "\x7F"); /* Backspace */
+            if (keysym == 0xFF09) return guac_terminal_send_string(term, "\x09"); /* Tab */
+            if (keysym == 0xFF0D) return guac_terminal_send_string(term, "\x0D"); /* Enter */
+            if (keysym == 0xFF1B) return guac_terminal_send_string(term, "\x1B"); /* Esc */
+
+            if (keysym == 0xFF50) return guac_terminal_send_string(term, "\x1B[1~"); /* Home */
+
+            /* Arrow keys w/ application cursor */
+            if (term->application_cursor_keys) {
+                if (keysym == 0xFF51) return guac_terminal_send_string(term, "\x1BOD"); /* Left */
+                if (keysym == 0xFF52) return guac_terminal_send_string(term, "\x1BOA"); /* Up */
+                if (keysym == 0xFF53) return guac_terminal_send_string(term, "\x1BOC"); /* Right */
+                if (keysym == 0xFF54) return guac_terminal_send_string(term, "\x1BOB"); /* Down */
+            }
+            else {
+                if (keysym == 0xFF51) return guac_terminal_send_string(term, "\x1B[D"); /* Left */
+                if (keysym == 0xFF52) return guac_terminal_send_string(term, "\x1B[A"); /* Up */
+                if (keysym == 0xFF53) return guac_terminal_send_string(term, "\x1B[C"); /* Right */
+                if (keysym == 0xFF54) return guac_terminal_send_string(term, "\x1B[B"); /* Down */
+            }
+
+            if (keysym == 0xFF55) return guac_terminal_send_string(term, "\x1B[5~"); /* Page up */
+            if (keysym == 0xFF56) return guac_terminal_send_string(term, "\x1B[6~"); /* Page down */
+            if (keysym == 0xFF57) return guac_terminal_send_string(term, "\x1B[4~"); /* End */
+
+            if (keysym == 0xFF63) return guac_terminal_send_string(term, "\x1B[2~"); /* Insert */
+
+            if (keysym == 0xFFBE) return guac_terminal_send_string(term, "\x1B[[A"); /* F1  */
+            if (keysym == 0xFFBF) return guac_terminal_send_string(term, "\x1B[[B"); /* F2  */
+            if (keysym == 0xFFC0) return guac_terminal_send_string(term, "\x1B[[C"); /* F3  */
+            if (keysym == 0xFFC1) return guac_terminal_send_string(term, "\x1B[[D"); /* F4  */
+            if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[[E"); /* F5  */
+
+            if (keysym == 0xFFC3) return guac_terminal_send_string(term, "\x1B[17~"); /* F6  */
+            if (keysym == 0xFFC4) return guac_terminal_send_string(term, "\x1B[18~"); /* F7  */
+            if (keysym == 0xFFC5) return guac_terminal_send_string(term, "\x1B[19~"); /* F8  */
+            if (keysym == 0xFFC6) return guac_terminal_send_string(term, "\x1B[20~"); /* F9  */
+            if (keysym == 0xFFC7) return guac_terminal_send_string(term, "\x1B[21~"); /* F10 */
+            if (keysym == 0xFFC8) return guac_terminal_send_string(term, "\x1B[22~"); /* F11 */
+            if (keysym == 0xFFC9) return guac_terminal_send_string(term, "\x1B[23~"); /* F12 */
+
+            if (keysym == 0xFFFF) return guac_terminal_send_string(term, "\x1B[3~"); /* Delete */
+
+            /* Ignore unknown keys */
+        }
+
+    }
+
+    return 0;
+
+
+}
+
+int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask) {
+
+    /* Determine which buttons were just released and pressed */
+    int released_mask =  term->mouse_mask & ~mask;
+    int pressed_mask  = ~term->mouse_mask &  mask;
+
+    term->mouse_mask = mask;
+
+    /* Show mouse cursor if not already shown */
+    if (term->current_cursor != term->ibar_cursor) {
+        term->current_cursor = term->ibar_cursor;
+        guac_terminal_set_cursor(term->client, term->ibar_cursor);
+        guac_socket_flush(term->client->socket);
+    }
+
+    /* Paste contents of clipboard on right or middle mouse button up */
+    if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE))
+        return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+
+    /* If text selected, change state based on left mouse mouse button */
+    if (term->text_selected) {
+
+        /* If mouse button released, stop selection */
+        if (released_mask & GUAC_CLIENT_MOUSE_LEFT) {
+
+            int selected_length;
+
+            /* End selection and get selected text */
+            int selectable_size = term->term_width * term->term_height * sizeof(char);
+            char* string = malloc(selectable_size);
+            guac_terminal_select_end(term, string);
+
+            selected_length = strnlen(string, selectable_size);
+
+            /* Store new data */
+            guac_common_clipboard_reset(term->clipboard, "text/plain");
+            guac_common_clipboard_append(term->clipboard, string, selected_length);
+            free(string);
+
+            /* Send data */
+            guac_common_clipboard_send(term->clipboard, term->client);
+            guac_socket_flush(term->client->socket);
+
+        }
+
+        /* Otherwise, just update */
+        else
+            guac_terminal_select_update(term,
+                    y / term->display->char_height - term->scroll_offset,
+                    x / term->display->char_width);
+
+    }
+
+    /* Otherwise, if mouse button pressed AND moved, start selection */
+    else if (!(pressed_mask & GUAC_CLIENT_MOUSE_LEFT) &&
+               mask         & GUAC_CLIENT_MOUSE_LEFT)
+        guac_terminal_select_start(term,
+                y / term->display->char_height - term->scroll_offset,
+                x / term->display->char_width);
+
+    /* Scroll up if wheel moved up */
+    if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_UP)
+        guac_terminal_scroll_display_up(term, GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT);
+
+    /* Scroll down if wheel moved down */
+    if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_DOWN)
+        guac_terminal_scroll_display_down(term, GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT);
+
+    return 0;
+
+
+
+}
+
+void guac_terminal_clipboard_reset(guac_terminal* term, const char* mimetype) {
+    guac_common_clipboard_reset(term->clipboard, mimetype);
+}
+
+void guac_terminal_clipboard_append(guac_terminal* term, const void* data, int length) {
+    guac_common_clipboard_append(term->clipboard, data, length);
 }
 
 int guac_terminal_sendf(guac_terminal* term, const char* format, ...) {

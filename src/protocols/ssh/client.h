@@ -26,8 +26,6 @@
 
 #include "config.h"
 
-#include "cursor.h"
-#include "guac_clipboard.h"
 #include "sftp.h"
 #include "ssh_key.h"
 #include "terminal.h"
@@ -40,11 +38,6 @@
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"
 #endif
-
-/**
- * The maximum number of bytes to allow within the clipboard.
- */
-#define GUAC_SSH_CLIPBOARD_MAX_LENGTH 262144
 
 /**
  * SSH-specific client data.
@@ -148,46 +141,6 @@ typedef struct ssh_guac_client_data {
      */
     guac_terminal* term;
    
-    /**
-     * The current contents of the clipboard.
-     */
-    guac_common_clipboard* clipboard;
-
-    /**
-     * Whether the alt key is currently being held down.
-     */
-    int mod_alt;
-
-    /**
-     * Whether the control key is currently being held down.
-     */
-    int mod_ctrl;
-
-    /**
-     * Whether the shift key is currently being held down.
-     */
-    int mod_shift;
-
-    /**
-     * The current mouse button state.
-     */
-    int mouse_mask;
-
-    /**
-     * The cached I-bar cursor.
-     */
-    guac_terminal_cursor* ibar_cursor;
-
-    /**
-     * The cached invisible (blank) cursor.
-     */
-    guac_terminal_cursor* blank_cursor;
-
-    /**
-     * The current cursor, used to avoid re-setting the cursor.
-     */
-    guac_terminal_cursor* current_cursor;
-
 } ssh_guac_client_data;
 
 #endif

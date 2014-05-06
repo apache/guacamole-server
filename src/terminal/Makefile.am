@@ -22,7 +22,7 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ @LIBGUAC_INCLUDE@
+AM_CFLAGS = -Werror -Wall -pedantic @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
 noinst_LTLIBRARIES = libguac_terminal.la
 
@@ -49,6 +49,6 @@ libguac_terminal_la_SOURCES =   \
     terminal.c                  \
     terminal_handlers.c
 
-libguac_terminal_la_LIBADD = @LIBGUAC_LTLIB@
+libguac_terminal_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@ 
 libguac_terminal_la_LDFLAGS = @PTHREAD_LIBS@ @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @CAIRO_LIBS@
 

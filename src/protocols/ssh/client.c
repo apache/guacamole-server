@@ -125,10 +125,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Init client data */
     client->data = client_data;
-    client_data->mod_alt   =
-    client_data->mod_ctrl  =
-    client_data->mod_shift = 0;
-    client_data->clipboard = guac_common_clipboard_alloc(GUAC_SSH_CLIPBOARD_MAX_LENGTH);
     client_data->term_channel = NULL;
 
     if (argc != SSH_ARGS_COUNT) {
@@ -186,18 +182,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return -1;
     }
 
-    /* Set up I-bar pointer */
-    client_data->ibar_cursor = guac_terminal_create_ibar(client);
-
-    /* Set up blank pointer */
-    client_data->blank_cursor = guac_terminal_create_blank(client);
-
     /* Send initial name */
     guac_protocol_send_name(socket, client_data->hostname);
-
-    /* Initialize pointer */
-    client_data->current_cursor = client_data->blank_cursor;
-    guac_terminal_set_cursor(client, client_data->current_cursor);
 
     guac_socket_flush(socket);
 

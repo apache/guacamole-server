@@ -27,7 +27,9 @@
 #include "config.h"
 
 #include "buffer.h"
+#include "cursor.h"
 #include "display.h"
+#include "guac_clipboard.h"
 #include "types.h"
 
 #include <pthread.h>
@@ -44,6 +46,11 @@
  * The number of rows to scroll per scroll wheel event.
  */
 #define GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT 3
+
+/**
+ * The maximum number of bytes to allow within the clipboard.
+ */
+#define GUAC_TERMINAL_CLIPBOARD_MAX_LENGTH 262144
 
 typedef struct guac_terminal guac_terminal;
 
@@ -241,6 +248,46 @@ struct guac_terminal {
      */
     bool insert_mode;
 
+    /**
+     * Whether the alt key is currently being held down.
+     */
+    int mod_alt;
+
+    /**
+     * Whether the control key is currently being held down.
+     */
+    int mod_ctrl;
+
+    /**
+     * Whether the shift key is currently being held down.
+     */
+    int mod_shift;
+
+    /**
+     * The current mouse button state.
+     */
+    int mouse_mask;
+
+    /**
+     * The cached I-bar cursor.
+     */
+    guac_terminal_cursor* ibar_cursor;
+
+    /**
+     * The cached invisible (blank) cursor.
+     */
+    guac_terminal_cursor* blank_cursor;
+
+    /**
+     * The current cursor, used to avoid re-setting the cursor.
+     */
+    guac_terminal_cursor* current_cursor;
+
+    /**
+     * The current contents of the clipboard.
+     */
+    guac_common_clipboard* clipboard;
+
 };
 
 /**
@@ -359,12 +406,24 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
 /**
  * Resize the terminal to the given dimensions.
  */
-void guac_terminal_resize(guac_terminal* term, int width, int height);
+int guac_terminal_resize(guac_terminal* term, int width, int height);
 
 /**
  * Flushes all pending operations within the given guac_terminal.
  */
 void guac_terminal_flush(guac_terminal* terminal);
+
+/**
+ * Acquires exclusive access to the terminal. Note that enforcing this
+ * exclusive access requires that ALL users of the terminal call this
+ * function before making further calls to the terminal.
+ */
+void guac_terminal_lock(guac_terminal* terminal);
+
+/**
+ * Releases exclusive access to the terminal.
+ */
+void guac_terminal_unlock(guac_terminal* terminal);
 
 /**
  * Sends the given string as if typed by the user. 
@@ -375,6 +434,29 @@ int guac_terminal_send_data(guac_terminal* term, const char* data, int length);
  * Sends the given string as if typed by the user. 
  */
 int guac_terminal_send_string(guac_terminal* term, const char* data);
+
+/**
+ * Handles the given key event, sending data, scrolling, pasting clipboard
+ * data, etc. as necessary.
+ */
+int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed);
+
+/**
+ * Handles the given mouse event, sending data, scrolling, pasting clipboard
+ * data, etc. as necessary.
+ */
+int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask);
+
+/**
+ * Clears the current clipboard contents and sets the mimetype for future
+ * contents.
+ */
+void guac_terminal_clipboard_reset(guac_terminal* term, const char* mimetype);
+
+/**
+ * Appends the given data to the current clipboard.
+ */
+void guac_terminal_clipboard_append(guac_terminal* term, const void* data, int length);
 
 /**
  * Sends data through STDIN as if typed by the user, using the format
