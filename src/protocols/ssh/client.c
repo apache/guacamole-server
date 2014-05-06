@@ -22,11 +22,9 @@
 
 #include "config.h"
 
-#include "blank.h"
 #include "client.h"
 #include "clipboard.h"
 #include "guac_handlers.h"
-#include "ibar.h"
 #include "ssh_client.h"
 #include "terminal.h"
 

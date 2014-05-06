@@ -23,7 +23,6 @@
 #include "config.h"
 
 #include "client.h"
-#include "common.h"
 #include "guac_handlers.h"
 #include "sftp.h"
 #include "ssh_key.h"
