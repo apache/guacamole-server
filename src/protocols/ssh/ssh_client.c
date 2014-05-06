@@ -48,65 +48,6 @@
 #include "ssh_agent.h"
 #endif
 
-/**
- * Reads a single line from STDIN.
- */
-static char* prompt(guac_client* client, const char* title, char* str, int size, bool echo) {
-
-    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
-
-    int pos;
-    char in_byte;
-
-    /* Get STDIN and STDOUT */
-    int stdin_fd  = client_data->term->stdin_pipe_fd[0];
-    int stdout_fd = client_data->term->stdout_pipe_fd[1];
-
-    /* Print title */
-    guac_terminal_write_all(stdout_fd, title, strlen(title));
-
-    /* Make room for null terminator */
-    size--;
-
-    /* Read bytes until newline */
-    pos = 0;
-    while (pos < size && read(stdin_fd, &in_byte, 1) == 1) {
-
-        /* Backspace */
-        if (in_byte == 0x7F) {
-
-            if (pos > 0) {
-                guac_terminal_write_all(stdout_fd, "\b \b", 3);
-                pos--;
-            }
-        }
-
-        /* CR (end of input */
-        else if (in_byte == 0x0D) {
-            guac_terminal_write_all(stdout_fd, "\r\n", 2);
-            break;
-        }
-
-        else {
-
-            /* Store character, update buffers */
-            str[pos++] = in_byte;
-
-            /* Print character if echoing */
-            if (echo)
-                guac_terminal_write_all(stdout_fd, &in_byte, 1);
-            else
-                guac_terminal_write_all(stdout_fd, "*", 1);
-
-        }
-
-    }
-
-    str[pos] = 0;
-    return str;
-
-}
-
 void* ssh_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -115,10 +56,8 @@ void* ssh_input_thread(void* data) {
     char buffer[8192];
     int bytes_read;
 
-    int stdin_fd = client_data->term->stdin_pipe_fd[0];
-
     /* Write all data read */
-    while ((bytes_read = read(stdin_fd, buffer, sizeof(buffer))) > 0)
+    while ((bytes_read = guac_terminal_read_stdin(client_data->term, buffer, sizeof(buffer))) > 0)
         libssh2_channel_write(client_data->term_channel, buffer, bytes_read);
 
     return NULL;
@@ -283,7 +222,6 @@ void* ssh_client_thread(void* data) {
     int bytes_read = -1234;
 
     int socket_fd;
-    int stdout_fd = client_data->term->stdout_pipe_fd[1];
 
     pthread_t input_thread;
 
@@ -291,7 +229,8 @@ void* ssh_client_thread(void* data) {
 
     /* Get username */
     if (client_data->username[0] == 0)
-        prompt(client, "Login as: ", client_data->username, sizeof(client_data->username), true);
+        guac_terminal_prompt(client_data->term, "Login as: ",
+                             client_data->username, sizeof(client_data->username), true);
 
     /* Send new name */
     snprintf(name, sizeof(name)-1, "%s@%s", client_data->username, client_data->hostname);
@@ -309,8 +248,8 @@ void* ssh_client_thread(void* data) {
 
             /* Prompt for passphrase if missing */
             if (client_data->key_passphrase[0] == 0)
-                prompt(client, "Key passphrase: ", client_data->key_passphrase,
-                        sizeof(client_data->key_passphrase), false);
+                guac_terminal_prompt(client_data->term, "Key passphrase: ",
+                                     client_data->key_passphrase, sizeof(client_data->key_passphrase), false);
 
             /* Import key with passphrase */
             client_data->key = ssh_key_alloc(client_data->key_base64,
@@ -332,10 +271,11 @@ void* ssh_client_thread(void* data) {
 
     /* Otherwise, get password if not provided */
     else if (client_data->password[0] == 0)
-        prompt(client, "Password: ", client_data->password, sizeof(client_data->password), false);
+        guac_terminal_prompt(client_data->term, "Password: ",
+                             client_data->password, sizeof(client_data->password), false);
 
     /* Clear screen */
-    guac_terminal_write_all(stdout_fd, "\x1B[H\x1B[J", 6);
+    guac_terminal_printf(client_data->term, "\x1B[H\x1B[J");
 
     /* Open SSH session */
     client_data->session = __guac_ssh_create_session(client, &socket_fd);
@@ -430,7 +370,7 @@ void* ssh_client_thread(void* data) {
 
         /* Attempt to write data received. Exit on failure. */
         if (bytes_read > 0) {
-            int written = guac_terminal_write_all(stdout_fd, buffer, bytes_read);
+            int written = guac_terminal_write_stdout(client_data->term, buffer, bytes_read);
             if (written < 0)
                 break;
 

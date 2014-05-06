@@ -251,8 +251,83 @@ int guac_terminal_render_frame(guac_terminal* terminal) {
 
 }
 
-int guac_terminal_read_input(guac_terminal* terminal, char* c, int size) {
-    return 0;
+int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size) {
+    int stdin_fd = terminal->stdin_pipe_fd[0];
+    return read(stdin_fd, c, size);
+}
+
+int guac_terminal_write_stdout(guac_terminal* terminal, const char* c, int size) {
+    return guac_terminal_write_all(terminal->stdout_pipe_fd[1], c, size);
+}
+
+int guac_terminal_printf(guac_terminal* terminal, const char* format, ...) {
+
+    int written;
+
+    va_list ap;
+    char buffer[1024];
+
+    /* Print to buffer */
+    va_start(ap, format);
+    written = vsnprintf(buffer, sizeof(buffer)-1, format, ap);
+    va_end(ap);
+
+    if (written < 0)
+        return written;
+
+    /* Write to STDOUT */
+    return guac_terminal_write_stdout(terminal, buffer, written);
+
+}
+
+void guac_terminal_prompt(guac_terminal* terminal, const char* title, char* str, int size, bool echo) {
+
+    int pos;
+    char in_byte;
+
+    /* Print title */
+    guac_terminal_printf(terminal, "%s", title);
+
+    /* Make room for null terminator */
+    size--;
+
+    /* Read bytes until newline */
+    pos = 0;
+    while (pos < size && guac_terminal_read_stdin(terminal, &in_byte, 1) == 1) {
+
+        /* Backspace */
+        if (in_byte == 0x7F) {
+
+            if (pos > 0) {
+                guac_terminal_printf(terminal, "\b \b");
+                pos--;
+            }
+        }
+
+        /* CR (end of input */
+        else if (in_byte == 0x0D) {
+            guac_terminal_printf(terminal, "\r\n");
+            break;
+        }
+
+        else {
+
+            /* Store character, update buffers */
+            str[pos++] = in_byte;
+
+            /* Print character if echoing */
+            if (echo)
+                guac_terminal_printf(terminal, "%c", in_byte);
+            else
+                guac_terminal_printf(terminal, "*");
+
+        }
+
+    }
+
+    /* Terminate string */
+    str[pos] = 0;
+
 }
 
 int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint) {

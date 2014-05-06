@@ -315,7 +315,27 @@ int guac_terminal_render_frame(guac_terminal* terminal);
  * guac_terminal_send_mouse(). If input is not yet available, this function
  * will block.
  */
-int guac_terminal_read_input(guac_terminal* terminal, char* c, int size);
+int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size);
+
+/**
+ * Writes to this terminal's STDOUT. This function may block until space
+ * is freed in the output buffer by guac_terminal_render_frame().
+ */
+int guac_terminal_write_stdout(guac_terminal* terminal, const char* c, int size);
+
+/**
+ * Reads a single line from this terminal's STDIN. Input is retrieved in
+ * the same manner as guac_terminal_read_stdin() and the same restrictions
+ * apply.
+ */
+void guac_terminal_prompt(guac_terminal* terminal, const char* title, char* str, int size, bool echo);
+
+/**
+ * Writes the given format string and arguments to this terminal's STDOUT in
+ * the same manner as printf(). This function may block until space is
+ * freed in the output buffer by guac_terminal_render_frame().
+ */
+int guac_terminal_printf(guac_terminal* terminal, const char* format, ...);
 
 /**
  * Handles the given key event, sending data, scrolling, pasting clipboard
