@@ -299,14 +299,53 @@ guac_terminal* guac_terminal_create(guac_client* client,
         int width, int height);
 
 /**
- * Resets the state of the given terminal, as if it were just allocated.
- */
-void guac_terminal_reset(guac_terminal* term);
-
-/**
  * Frees all resources associated with the given terminal.
  */
 void guac_terminal_free(guac_terminal* term);
+
+/**
+ * Acquires exclusive access to the terminal. Note that enforcing this
+ * exclusive access requires that ALL users of the terminal call this
+ * function before making further calls to the terminal.
+ */
+void guac_terminal_lock(guac_terminal* terminal);
+
+/**
+ * Releases exclusive access to the terminal.
+ */
+void guac_terminal_unlock(guac_terminal* terminal);
+
+/**
+ * Handles the given key event, sending data, scrolling, pasting clipboard
+ * data, etc. as necessary.
+ */
+int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed);
+
+/**
+ * Handles the given mouse event, sending data, scrolling, pasting clipboard
+ * data, etc. as necessary.
+ */
+int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask);
+
+/**
+ * Clears the current clipboard contents and sets the mimetype for future
+ * contents.
+ */
+void guac_terminal_clipboard_reset(guac_terminal* term, const char* mimetype);
+
+/**
+ * Appends the given data to the current clipboard.
+ */
+void guac_terminal_clipboard_append(guac_terminal* term, const void* data, int length);
+
+
+/* INTERNAL FUNCTIONS */
+
+
+/**
+ * Resets the state of the given terminal, as if it were just allocated.
+ */
+void guac_terminal_reset(guac_terminal* term);
 
 /**
  * Writes the given string of characters to the terminal.
@@ -380,7 +419,9 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column);
  */
 void guac_terminal_select_end(guac_terminal* terminal, char* string);
 
+
 /* LOW-LEVEL TERMINAL OPERATIONS */
+
 
 /**
  * Copies the given range of columns to a new location, offset from
@@ -414,18 +455,6 @@ int guac_terminal_resize(guac_terminal* term, int width, int height);
 void guac_terminal_flush(guac_terminal* terminal);
 
 /**
- * Acquires exclusive access to the terminal. Note that enforcing this
- * exclusive access requires that ALL users of the terminal call this
- * function before making further calls to the terminal.
- */
-void guac_terminal_lock(guac_terminal* terminal);
-
-/**
- * Releases exclusive access to the terminal.
- */
-void guac_terminal_unlock(guac_terminal* terminal);
-
-/**
  * Sends the given string as if typed by the user. 
  */
 int guac_terminal_send_data(guac_terminal* term, const char* data, int length);
@@ -434,29 +463,6 @@ int guac_terminal_send_data(guac_terminal* term, const char* data, int length);
  * Sends the given string as if typed by the user. 
  */
 int guac_terminal_send_string(guac_terminal* term, const char* data);
-
-/**
- * Handles the given key event, sending data, scrolling, pasting clipboard
- * data, etc. as necessary.
- */
-int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed);
-
-/**
- * Handles the given mouse event, sending data, scrolling, pasting clipboard
- * data, etc. as necessary.
- */
-int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask);
-
-/**
- * Clears the current clipboard contents and sets the mimetype for future
- * contents.
- */
-void guac_terminal_clipboard_reset(guac_terminal* term, const char* mimetype);
-
-/**
- * Appends the given data to the current clipboard.
- */
-void guac_terminal_clipboard_append(guac_terminal* term, const void* data, int length);
 
 /**
  * Sends data through STDIN as if typed by the user, using the format
