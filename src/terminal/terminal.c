@@ -37,6 +37,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
+#include <unistd.h>
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
@@ -191,6 +193,66 @@ void guac_terminal_free(guac_terminal* term) {
     guac_terminal_cursor_free(term->client, term->ibar_cursor);
     guac_terminal_cursor_free(term->client, term->blank_cursor);
 
+}
+
+int guac_terminal_render_frame(guac_terminal* terminal) {
+
+    guac_client* client = terminal->client;
+    char buffer[8192];
+
+    int ret_val;
+    int fd = terminal->stdout_pipe_fd[0];
+    struct timeval timeout;
+    fd_set fds;
+
+    /* Build fd_set */
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+
+    /* Time to wait */
+    timeout.tv_sec =  1;
+    timeout.tv_usec = 0;
+
+    /* Wait for data to be available */
+    ret_val = select(fd+1, &fds, NULL, NULL, &timeout);
+    if (ret_val > 0) {
+
+        int bytes_read = 0;
+
+        guac_terminal_lock(terminal);
+
+        /* Read data, write to terminal */
+        if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
+
+            if (guac_terminal_write(terminal, buffer, bytes_read)) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error writing data");
+                return 1;
+            }
+
+        }
+
+        /* Notify on error */
+        if (bytes_read < 0) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error reading data");
+            return 1;
+        }
+
+        /* Flush terminal */
+        guac_terminal_flush(terminal);
+        guac_terminal_unlock(terminal);
+
+    }
+    else if (ret_val < 0) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error waiting for data");
+        return 1;
+    }
+
+    return 0;
+
+}
+
+int guac_terminal_read_input(guac_terminal* terminal, char* c, int size) {
+    return 0;
 }
 
 int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint) {
@@ -838,7 +900,7 @@ int guac_terminal_send_string(guac_terminal* term, const char* data) {
     return guac_terminal_write_all(term->stdin_pipe_fd[1], data, strlen(data));
 }
 
-int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
+static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
     /* Hide mouse cursor if not already hidden */
     if (term->current_cursor != term->blank_cursor) {
@@ -970,10 +1032,21 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
     return 0;
 
+}
+
+int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
+
+    int result;
+
+    guac_terminal_lock(term);
+    result = __guac_terminal_send_key(term, keysym, pressed);
+    guac_terminal_unlock(term);
+
+    return result;
 
 }
 
-int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask) {
+static int __guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask) {
 
     /* Determine which buttons were just released and pressed */
     int released_mask =  term->mouse_mask & ~mask;
@@ -1043,7 +1116,17 @@ int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask) {
 
     return 0;
 
+}
 
+int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask) {
+
+    int result;
+
+    guac_terminal_lock(term);
+    result = __guac_terminal_send_mouse(term, x, y, mask);
+    guac_terminal_unlock(term);
+
+    return result;
 
 }
 

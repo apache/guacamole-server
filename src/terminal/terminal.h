@@ -304,16 +304,18 @@ guac_terminal* guac_terminal_create(guac_client* client,
 void guac_terminal_free(guac_terminal* term);
 
 /**
- * Acquires exclusive access to the terminal. Note that enforcing this
- * exclusive access requires that ALL users of the terminal call this
- * function before making further calls to the terminal.
+ * Renders a single frame of terminal data. If data is not yet available,
+ * this function will block until data is written.
  */
-void guac_terminal_lock(guac_terminal* terminal);
+int guac_terminal_render_frame(guac_terminal* terminal);
 
 /**
- * Releases exclusive access to the terminal.
+ * Reads from this terminal's STDIN. Input comes from key and mouse events
+ * supplied by calls to guac_terminal_send_key() and
+ * guac_terminal_send_mouse(). If input is not yet available, this function
+ * will block.
  */
-void guac_terminal_unlock(guac_terminal* terminal);
+int guac_terminal_read_input(guac_terminal* terminal, char* c, int size);
 
 /**
  * Handles the given key event, sending data, scrolling, pasting clipboard
@@ -341,6 +343,18 @@ void guac_terminal_clipboard_append(guac_terminal* term, const void* data, int l
 
 /* INTERNAL FUNCTIONS */
 
+
+/**
+ * Acquires exclusive access to the terminal. Note that enforcing this
+ * exclusive access requires that ALL users of the terminal call this
+ * function before making further calls to the terminal.
+ */
+void guac_terminal_lock(guac_terminal* terminal);
+
+/**
+ * Releases exclusive access to the terminal.
+ */
+void guac_terminal_unlock(guac_terminal* terminal);
 
 /**
  * Resets the state of the given terminal, as if it were just allocated.
