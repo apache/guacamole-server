@@ -76,6 +76,12 @@ typedef struct guac_telnet_client_data {
     int naws_enabled;
 
     /**
+     * Whether all user input should be automatically echoed to the
+     * terminal.
+     */
+    int echo_enabled;
+
+    /**
      * The terminal which will render all output from the telnet client.
      */
     guac_terminal* term;

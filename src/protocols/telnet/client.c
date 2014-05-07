@@ -85,6 +85,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->telnet = NULL;
     client_data->socket_fd = -1;
     client_data->naws_enabled = 0;
+    client_data->echo_enabled = 1;
 
     if (argc != TELNET_ARGS_COUNT) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Wrong number of arguments");

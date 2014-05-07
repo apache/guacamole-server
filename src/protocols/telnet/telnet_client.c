@@ -42,7 +42,7 @@
 #include <libtelnet.h>
 
 static const telnet_telopt_t __telnet_options[] = {
-    { TELNET_TELOPT_ECHO,      TELNET_WONT, TELNET_DONT },
+    { TELNET_TELOPT_ECHO,      TELNET_WONT, TELNET_DO   },
     { TELNET_TELOPT_TTYPE,     TELNET_WILL, TELNET_DONT },
     { TELNET_TELOPT_COMPRESS2, TELNET_WONT, TELNET_DO   },
     { TELNET_TELOPT_MSSP,      TELNET_WONT, TELNET_DO   },
@@ -89,7 +89,19 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
                 guac_client_stop(client);
             break;
 
-        /* Feature enable */
+        /* Remote feature enabled */
+        case TELNET_EV_WILL:
+            if (event->neg.telopt == TELNET_TELOPT_ECHO)
+                client_data->echo_enabled = 0; /* Disable local echo, as remote will echo */
+            break;
+
+        /* Remote feature disabled */
+        case TELNET_EV_WONT:
+            if (event->neg.telopt == TELNET_TELOPT_ECHO)
+                client_data->echo_enabled = 1; /* Enable local echo, as remote won't echo */
+            break;
+
+        /* Local feature enable */
         case TELNET_EV_DO:
             if (event->neg.telopt == TELNET_TELOPT_NAWS) {
                 client_data->naws_enabled = 1;
@@ -131,8 +143,11 @@ static void* __guac_telnet_input_thread(void* data) {
     int bytes_read;
 
     /* Write all data read */
-    while ((bytes_read = guac_terminal_read_stdin(client_data->term, buffer, sizeof(buffer))) > 0)
+    while ((bytes_read = guac_terminal_read_stdin(client_data->term, buffer, sizeof(buffer))) > 0) {
         telnet_send(client_data->telnet, buffer, bytes_read);
+        if (client_data->echo_enabled)
+            guac_terminal_write_stdout(client_data->term, buffer, bytes_read);
+    }
 
     return NULL;
 
