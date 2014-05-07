@@ -20,9 +20,8 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __TELNET_CLIENT_H
-#define __TELNET_CLIENT_H
+#ifndef GUAC_TELNET__TELNET_CLIENT_H
+#define GUAC_TELNET__TELNET_CLIENT_H
 
 #include "config.h"
 
@@ -31,7 +30,7 @@
 /**
  * Main telnet client thread, handling transfer of telnet output to STDOUT.
  */
-void* telnet_client_thread(void* data);
+void* guac_telnet_client_thread(void* data);
 
 /**
  * Send a telnet NAWS message indicating the given terminal window dimensions

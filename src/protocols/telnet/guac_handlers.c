@@ -21,7 +21,6 @@
  */
 
 #include "config.h"
-
 #include "client.h"
 #include "guac_handlers.h"
 #include "terminal.h"
@@ -33,23 +32,21 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 
-#include <cairo/cairo.h>
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 #include <libtelnet.h>
-#include <pango/pangocairo.h>
 
-int telnet_guac_client_handle_messages(guac_client* client) {
+int guac_telnet_client_handle_messages(guac_client* client) {
 
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     return guac_terminal_render_frame(client_data->term);
 
 }
 
-int telnet_guac_client_mouse_handler(guac_client* client, int x, int y, int mask) {
+int guac_telnet_client_mouse_handler(guac_client* client, int x, int y, int mask) {
 
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
     /* Send mouse event */
@@ -58,9 +55,9 @@ int telnet_guac_client_mouse_handler(guac_client* client, int x, int y, int mask
 
 }
 
-int telnet_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
+int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed) {
 
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
     /* Send key */
@@ -69,10 +66,10 @@ int telnet_guac_client_key_handler(guac_client* client, int keysym, int pressed)
 
 }
 
-int telnet_guac_client_size_handler(guac_client* client, int width, int height) {
+int guac_telnet_client_size_handler(guac_client* client, int width, int height) {
 
     /* Get terminal */
-    telnet_client_data* guac_client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* guac_client_data = (guac_telnet_client_data*) client->data;
     guac_terminal* terminal = guac_client_data->term;
 
     /* Resize terminal */
@@ -85,9 +82,9 @@ int telnet_guac_client_size_handler(guac_client* client, int width, int height) 
     return 0;
 }
 
-int telnet_guac_client_free_handler(guac_client* client) {
+int guac_telnet_client_free_handler(guac_client* client) {
 
-    telnet_client_data* guac_client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* guac_client_data = (guac_telnet_client_data*) client->data;
 
     /* Close telnet connection */
     if (guac_client_data->socket_fd != -1)

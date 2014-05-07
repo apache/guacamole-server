@@ -23,12 +23,13 @@
 #include "config.h"
 #include "client.h"
 #include "clipboard.h"
+#include "terminal.h"
 
 int guac_telnet_clipboard_handler(guac_client* client, guac_stream* stream,
         char* mimetype) {
 
     /* Clear clipboard and prepare for new data */
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     guac_terminal_clipboard_reset(client_data->term, mimetype);
 
     /* Set handlers for clipboard stream */
@@ -42,7 +43,7 @@ int guac_telnet_clipboard_blob_handler(guac_client* client, guac_stream* stream,
         void* data, int length) {
 
     /* Append new data */
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     guac_terminal_clipboard_append(client_data->term, data, length);
 
     return 0;

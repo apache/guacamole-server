@@ -21,10 +21,10 @@
  */
 
 #include "config.h"
-
 #include "client.h"
 #include "guac_handlers.h"
 #include "telnet_client.h"
+#include "terminal.h"
 
 #include <errno.h>
 #include <netdb.h>
@@ -36,10 +36,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libtelnet.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <libtelnet.h>
 
 static const telnet_telopt_t __telnet_options[] = {
     { TELNET_TELOPT_ECHO,      TELNET_WONT, TELNET_DONT },
@@ -50,7 +50,7 @@ static const telnet_telopt_t __telnet_options[] = {
     { -1, 0, 0 }
 };
 
-static int __write_all(int fd, const char* buffer, int size) {
+static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
 
     int remaining = size;
     while (remaining > 0) {
@@ -73,7 +73,7 @@ static int __write_all(int fd, const char* buffer, int size) {
 static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event, void* data) {
 
     guac_client* client = (guac_client*) data;
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
 
     switch (event->type) {
 
@@ -84,7 +84,8 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Data destined for remote end */
         case TELNET_EV_SEND:
-            if (__write_all(client_data->socket_fd, event->data.buffer, event->data.size) != event->data.size)
+            if (__guac_telnet_write_all(client_data->socket_fd, event->data.buffer, event->data.size)
+                    != event->data.size)
                 guac_client_stop(client);
             break;
 
@@ -121,10 +122,10 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
 }
 
-static void* telnet_input_thread(void* data) {
+static void* __guac_telnet_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
 
     char buffer[8192];
     int bytes_read;
@@ -148,7 +149,7 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     char connected_address[1024];
     char connected_port[64];
 
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
 
     struct addrinfo hints = {
         .ai_family   = AF_UNSPEC,
@@ -244,10 +245,10 @@ void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height) {
     telnet_finish_sb(telnet);
 }
 
-void* telnet_client_thread(void* data) {
+void* guac_telnet_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
-    telnet_client_data* client_data = (telnet_client_data*) client->data;
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
 
     pthread_t input_thread;
     char buffer[8192];
@@ -264,7 +265,7 @@ void* telnet_client_thread(void* data) {
     guac_client_log_info(client, "Telnet connection successful.");
 
     /* Start input thread */
-    if (pthread_create(&(input_thread), NULL, telnet_input_thread, (void*) client)) {
+    if (pthread_create(&(input_thread), NULL, __guac_telnet_input_thread, (void*) client)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start input thread");
         return NULL;
     }

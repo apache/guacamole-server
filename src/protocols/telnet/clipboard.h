@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUAC_TELNET_CLIPBOARD_H
-#define _GUAC_TELNET_CLIPBOARD_H
+#ifndef GUAC_TELNET__CLIPBOARD_H
+#define GUAC_TELNET__CLIPBOARD_H
 
 #include "config.h"
 

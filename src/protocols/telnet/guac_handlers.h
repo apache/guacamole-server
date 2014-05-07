@@ -20,19 +20,18 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef _TELNET_GUAC_HANDLERS_H
-#define _TELNET_GUAC_HANDLERS_H
+#ifndef GUAC_TELNET__GUAC_HANDLERS_H
+#define GUAC_TELNET__GUAC_HANDLERS_H
 
 #include "config.h"
 
 #include <guacamole/client.h>
 
-int telnet_guac_client_handle_messages(guac_client* client);
-int telnet_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int telnet_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int telnet_guac_client_size_handler(guac_client* client, int width, int height);
-int telnet_guac_client_free_handler(guac_client* client);
+int guac_telnet_client_handle_messages(guac_client* client);
+int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed);
+int guac_telnet_client_mouse_handler(guac_client* client, int x, int y, int mask);
+int guac_telnet_client_size_handler(guac_client* client, int width, int height);
+int guac_telnet_client_free_handler(guac_client* client);
 
 #endif
 

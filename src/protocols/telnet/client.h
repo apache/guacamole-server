@@ -20,12 +20,10 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef _TELNET_GUAC_CLIENT_H
-#define _TELNET_GUAC_CLIENT_H
+#ifndef GUAC_TELNET__CLIENT_H
+#define GUAC_TELNET__CLIENT_H
 
 #include "config.h"
-
 #include "terminal.h"
 
 #include <pthread.h>
@@ -34,7 +32,7 @@
 /**
  * Telnet-specific client data.
  */
-typedef struct telnet_client_data {
+typedef struct guac_telnet_client_data {
 
     /**
      * The hostname of the telnet server to connect to.
@@ -82,7 +80,7 @@ typedef struct telnet_client_data {
      */
     guac_terminal* term;
    
-} telnet_client_data;
+} guac_telnet_client_data;
 
 #endif
 

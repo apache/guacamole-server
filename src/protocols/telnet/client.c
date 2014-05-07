@@ -21,7 +21,6 @@
  */
 
 #include "config.h"
-
 #include "client.h"
 #include "clipboard.h"
 #include "guac_handlers.h"
@@ -79,7 +78,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     guac_socket* socket = client->socket;
 
-    telnet_client_data* client_data = malloc(sizeof(telnet_client_data));
+    guac_telnet_client_data* client_data = malloc(sizeof(guac_telnet_client_data));
 
     /* Init client data */
     client->data = client_data;
@@ -131,15 +130,15 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_socket_flush(socket);
 
     /* Set basic handlers */
-    client->handle_messages   = telnet_guac_client_handle_messages;
-    client->key_handler       = telnet_guac_client_key_handler;
-    client->mouse_handler     = telnet_guac_client_mouse_handler;
-    client->size_handler      = telnet_guac_client_size_handler;
-    client->free_handler      = telnet_guac_client_free_handler;
+    client->handle_messages   = guac_telnet_client_handle_messages;
+    client->key_handler       = guac_telnet_client_key_handler;
+    client->mouse_handler     = guac_telnet_client_mouse_handler;
+    client->size_handler      = guac_telnet_client_size_handler;
+    client->free_handler      = guac_telnet_client_free_handler;
     client->clipboard_handler = guac_telnet_clipboard_handler;
 
     /* Start client thread */
-    if (pthread_create(&(client_data->client_thread), NULL, telnet_client_thread, (void*) client)) {
+    if (pthread_create(&(client_data->client_thread), NULL, guac_telnet_client_thread, (void*) client)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start telnet client thread");
         return -1;
     }
