@@ -614,7 +614,7 @@ AM_CONDITIONAL([ENABLE_SSH_AGENT],
 #
 
 have_libtelnet=yes
-SSH_LIBS=
+TELNET_LIBS=
 
 AC_CHECK_LIB([telnet], [telnet_init],
                        [TELNET_LIBS="$TELNET_LIBS -ltelnet"],
