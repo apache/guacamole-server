@@ -25,6 +25,7 @@
 #include "client.h"
 #include "guac_handlers.h"
 #include "terminal.h"
+#include "telnet_client.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -70,9 +71,6 @@ int telnet_guac_client_key_handler(guac_client* client, int keysym, int pressed)
 
 int telnet_guac_client_size_handler(guac_client* client, int width, int height) {
 
-    /* STUB */
-
-#if 0
     /* Get terminal */
     telnet_client_data* guac_client_data = (telnet_client_data*) client->data;
     guac_terminal* terminal = guac_client_data->term;
@@ -80,11 +78,9 @@ int telnet_guac_client_size_handler(guac_client* client, int width, int height) 
     /* Resize terminal */
     guac_terminal_resize(terminal, width, height);
 
-    /* Update SSH pty size if connected */
-    if (guac_client_data->term_channel != NULL)
-        libssh2_channel_request_pty_size(guac_client_data->term_channel,
-                terminal->term_width, terminal->term_height);
-#endif
+    /* Update terminal window size if connected */
+    if (guac_client_data->telnet != NULL && guac_client_data->naws_enabled)
+        guac_telnet_send_naws(guac_client_data->telnet, terminal->term_width, terminal->term_height);
 
     return 0;
 }

@@ -24,12 +24,12 @@
 
 #include "client.h"
 #include "guac_handlers.h"
+#include "telnet_client.h"
 
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <pthread.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -46,6 +46,7 @@ static const telnet_telopt_t __telnet_options[] = {
     { TELNET_TELOPT_TTYPE,     TELNET_WILL, TELNET_DONT },
     { TELNET_TELOPT_COMPRESS2, TELNET_WONT, TELNET_DO   },
     { TELNET_TELOPT_MSSP,      TELNET_WONT, TELNET_DO   },
+    { TELNET_TELOPT_NAWS,      TELNET_WILL, TELNET_DONT },
     { -1, 0, 0 }
 };
 
@@ -87,6 +88,14 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
                 guac_client_stop(client);
             break;
 
+        /* Feature enable */
+        case TELNET_EV_DO:
+            if (event->neg.telopt == TELNET_TELOPT_NAWS) {
+                client_data->naws_enabled = 1;
+                guac_telnet_send_naws(telnet, client_data->term->term_width, client_data->term->term_height);
+            }
+            break;
+
         /* Terminal type request */
         case TELNET_EV_TTYPE:
             if (event->ttype.cmd == TELNET_TTYPE_SEND)
@@ -112,7 +121,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
 }
 
-void* telnet_input_thread(void* data) {
+static void* telnet_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
     telnet_client_data* client_data = (telnet_client_data*) client->data;
@@ -216,6 +225,23 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
 
     return telnet;
 
+}
+
+static void __guac_telnet_send_uint16(telnet_t* telnet, uint16_t value) {
+
+    unsigned char buffer[2];
+    buffer[0] = (value >> 8) & 0xFF;
+    buffer[1] =  value       & 0xFF;
+
+    telnet_send(telnet, (char*) buffer, 2);
+
+}
+
+void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height) {
+    telnet_begin_sb(telnet, TELNET_TELOPT_NAWS);
+    __guac_telnet_send_uint16(telnet, width);
+    __guac_telnet_send_uint16(telnet, height);
+    telnet_finish_sb(telnet);
 }
 
 void* telnet_client_thread(void* data) {

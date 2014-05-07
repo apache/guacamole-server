@@ -33,5 +33,11 @@
  */
 void* telnet_client_thread(void* data);
 
+/**
+ * Send a telnet NAWS message indicating the given terminal window dimensions
+ * in characters.
+ */
+void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height);
+
 #endif
 

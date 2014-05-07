@@ -73,6 +73,11 @@ typedef struct telnet_client_data {
     telnet_t* telnet;
 
     /**
+     * Whether window size should be sent when the window is resized.
+     */
+    int naws_enabled;
+
+    /**
      * The terminal which will render all output from the telnet client.
      */
     guac_terminal* term;
