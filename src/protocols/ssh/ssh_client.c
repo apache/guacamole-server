@@ -309,6 +309,10 @@ void* ssh_client_thread(void* data) {
     /* Start SFTP session as well, if enabled */
     if (client_data->enable_sftp) {
 
+        /* Init handlers for Guacamole-specific console codes */
+        client_data->term->upload_path_handler = guac_sftp_set_upload_path;
+        client_data->term->file_download_handler = guac_sftp_download_file;
+
         /* Create SSH session specific for SFTP */
         guac_client_log_info(client, "Reconnecting for SFTP...");
         client_data->sftp_ssh_session = __guac_ssh_create_session(client, NULL);

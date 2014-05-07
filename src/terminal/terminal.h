@@ -62,6 +62,16 @@ typedef struct guac_terminal guac_terminal;
 typedef int guac_terminal_char_handler(guac_terminal* term, unsigned char c);
 
 /**
+ * Handler for setting the destination path for file uploads.
+ */
+typedef void guac_terminal_upload_path_handler(guac_client* client, char* path);
+
+/**
+ * Handler for creating an outbound file download stream for a specified file.
+ */
+typedef guac_stream* guac_terminal_file_download_handler(guac_client* client, char* filename);
+
+/**
  * Represents a terminal emulator which uses a given Guacamole client to
  * render itself.
  */
@@ -71,6 +81,18 @@ struct guac_terminal {
      * The Guacamole client this terminal emulator will use for rendering.
      */
     guac_client* client;
+
+    /**
+     * Called whenever the necessary terminal codes are sent to change
+     * the path for future file uploads.
+     */
+    guac_terminal_upload_path_handler* upload_path_handler;
+
+    /**
+     * Called whenever the necessary terminal codes are sent to initiate
+     * a download of a given remote file.
+     */
+    guac_terminal_file_download_handler* file_download_handler;
 
     /**
      * Lock which restricts simultaneous access to this terminal via the root

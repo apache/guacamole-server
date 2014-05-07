@@ -884,7 +884,8 @@ int guac_terminal_set_directory(guac_terminal* term, unsigned char c) {
     if (c == 0x9C || c == 0x5C || c == 0x07) {
         filename[length++] = '\0';
         term->char_handler = guac_terminal_echo;
-        /*guac_sftp_set_upload_path(term->client, filename);*/
+        if (term->upload_path_handler)
+            term->upload_path_handler(term->client, filename);
         length = 0;
     }
 
@@ -905,7 +906,8 @@ int guac_terminal_download(guac_terminal* term, unsigned char c) {
     if (c == 0x9C || c == 0x5C || c == 0x07) {
         filename[length++] = '\0';
         term->char_handler = guac_terminal_echo;
-        /*guac_sftp_download_file(term->client, filename);*/
+        if (term->file_download_handler)
+            term->file_download_handler(term->client, filename);
         length = 0;
     }
 

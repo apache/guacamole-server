@@ -100,6 +100,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     guac_terminal* term = malloc(sizeof(guac_terminal));
     term->client = client;
+    term->upload_path_handler = NULL;
+    term->file_download_handler = NULL;
 
     /* Init buffer */
     term->buffer = guac_terminal_buffer_alloc(1000, &default_char);
