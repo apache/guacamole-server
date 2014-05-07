@@ -609,6 +609,23 @@ AM_CONDITIONAL([ENABLE_SSH_AGENT],
 	   [test "x${have_ssh_agent}"   = "xyes" \
 	      -a "x${enable_ssh_agent}" = "xyes"])
 
+#
+# libtelnet
+#
+
+have_libtelnet=yes
+SSH_LIBS=
+
+AC_CHECK_LIB([telnet], [telnet_init],
+                       [TELNET_LIBS="$TELNET_LIBS -ltelnet"],
+                       [have_libtelnet=no])
+AM_CONDITIONAL([ENABLE_TELNET], [test "x${have_libtelnet}"  = "xyes" \
+                                   -a "x${have_terminal}" = "xyes" \
+                                   -a "x${have_ssl}"      = "xyes"])
+
+AC_SUBST(TELNET_LIBS)
+
+
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
                  src/common/Makefile
@@ -617,12 +634,14 @@ AC_CONFIG_FILES([Makefile
                  src/guacd/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/ssh/Makefile
+                 src/protocols/telnet/Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
 
-AM_COND_IF([ENABLE_RDP],  [build_rdp=yes], [build_rdp=no])
-AM_COND_IF([ENABLE_SSH],  [build_ssh=yes], [build_ssh=no])
-AM_COND_IF([ENABLE_VNC],  [build_vnc=yes], [build_vnc=no])
+AM_COND_IF([ENABLE_RDP],    [build_rdp=yes],    [build_rdp=no])
+AM_COND_IF([ENABLE_SSH],    [build_ssh=yes],    [build_ssh=no])
+AM_COND_IF([ENABLE_TELNET], [build_telnet=yes], [build_telnet=no])
+AM_COND_IF([ENABLE_VNC],    [build_vnc=yes],    [build_vnc=no])
 
 AM_COND_IF([ENABLE_INIT], [build_init="${init_dir}"], [build_init=no])
 
@@ -637,6 +656,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      pango ............... ${have_pango}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
+     libtelnet ........... ${have_libtelnet}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
@@ -645,6 +665,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
       RDP ....... ${build_rdp}
       SSH ....... ${build_ssh}
+      Telnet .... ${build_telnet}
       VNC ....... ${build_vnc}
 
    Init scripts: ${build_init}

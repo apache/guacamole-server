@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 Glyptodon LLC
+# Copyright (C) 2014 Glyptodon LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,45 +20,25 @@
 # THE SOFTWARE.
 #
 
+AUTOMAKE_OPTIONS = foreign
+
 ACLOCAL_AMFLAGS = -I m4
 
-# Subprojects
-DIST_SUBDIRS =           \
-    src/libguac          \
-    src/common           \
-    src/terminal         \
-    src/guacd            \
-    src/protocols/rdp    \
-    src/protocols/ssh    \
-    src/protocols/telnet \
-    src/protocols/vnc    \
-    tests
+lib_LTLIBRARIES = libguac-client-telnet.la
 
-SUBDIRS =       \
-    src/libguac \
-    src/common  \
-    src/guacd   \
-    tests
+libguac_client_telnet_la_SOURCES = \
+    client.c                       \
+    clipboard.c                    \
+    guac_handlers.c                \
+    telnet_client.c
 
-if ENABLE_TERMINAL
-    SUBDIRS += src/terminal
-endif
+noinst_HEADERS =                \
+    client.h                    \
+    clipboard.h                 \
+    guac_handlers.h             \
+    telnet_client.h
 
-if ENABLE_RDP
-    SUBDIRS += src/protocols/rdp
-endif
-
-if ENABLE_SSH
-    SUBDIRS += src/protocols/ssh
-endif
-
-if ENABLE_TELNET
-    SUBDIRS += src/protocols/telnet
-endif
-
-if ENABLE_VNC
-    SUBDIRS += src/protocols/vnc
-endif
-
-EXTRA_DIST = LICENSE doc/Doxyfile bin/guacctl
+libguac_client_telnet_la_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@ @TERMINAL_INCLUDE@
+libguac_client_telnet_la_LIBADD = @LIBGUAC_LTLIB@ @TERMINAL_LTLIB@
+libguac_client_telnet_la_LDFLAGS = -version-info 0:0:0 @TELNET_LIBS@ @PTHREAD_LIBS@
 
