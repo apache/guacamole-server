@@ -245,6 +245,22 @@ void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height) {
     telnet_finish_sb(telnet);
 }
 
+static int __guac_telnet_wait(int socket_fd) {
+
+    fd_set fds;
+    struct timeval timeout;
+
+    FD_ZERO(&fds);
+    FD_SET(socket_fd, &fds);
+
+    /* Wait for one second */
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+
+    return select(socket_fd+1, &fds, NULL, NULL, &timeout);
+
+}
+
 void* guac_telnet_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -252,7 +268,7 @@ void* guac_telnet_client_thread(void* data) {
 
     pthread_t input_thread;
     char buffer[8192];
-    int bytes_read;
+    int wait_result;
 
     /* Open telnet session */
     client_data->telnet = __guac_telnet_create_session(client);
@@ -271,8 +287,19 @@ void* guac_telnet_client_thread(void* data) {
     }
 
     /* While data available, write to terminal */
-    while ((bytes_read = read(client_data->socket_fd, buffer, sizeof(buffer))) > 0)
+    while ((wait_result = __guac_telnet_wait(client_data->socket_fd)) >= 0) {
+
+        /* Resume waiting of no data available */
+        if (wait_result == 0)
+            continue;
+
+        int bytes_read = read(client_data->socket_fd, buffer, sizeof(buffer));
+        if (bytes_read <= 0)
+            break;
+
         telnet_recv(client_data->telnet, buffer, bytes_read);
+
+    }
 
     /* Kill client and Wait for input thread to die */
     guac_client_stop(client);

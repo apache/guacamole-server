@@ -90,15 +90,17 @@ int guac_telnet_client_free_handler(guac_client* client) {
     if (guac_client_data->socket_fd != -1)
         close(guac_client_data->socket_fd);
 
+    /* Kill terminal */
+    guac_terminal_free(guac_client_data->term);
+
     /* Wait for and free telnet session, if connected */
     if (guac_client_data->telnet != NULL) {
         pthread_join(guac_client_data->client_thread, NULL);
         telnet_free(guac_client_data->telnet);
     }
 
-    guac_terminal_free(guac_client_data->term);
     free(client->data);
-
     return 0;
+
 }
 
