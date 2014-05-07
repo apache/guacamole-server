@@ -620,8 +620,7 @@ AC_CHECK_LIB([telnet], [telnet_init],
                        [TELNET_LIBS="$TELNET_LIBS -ltelnet"],
                        [have_libtelnet=no])
 AM_CONDITIONAL([ENABLE_TELNET], [test "x${have_libtelnet}"  = "xyes" \
-                                   -a "x${have_terminal}" = "xyes" \
-                                   -a "x${have_ssl}"      = "xyes"])
+                                   -a "x${have_terminal}" = "xyes"])
 
 AC_SUBST(TELNET_LIBS)
 
