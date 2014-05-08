@@ -41,6 +41,10 @@
 #include <guacamole/socket.h>
 #include <libtelnet.h>
 
+/**
+ * Support levels for various telnet options, required for connection
+ * negotiation by telnet_init(), part of libtelnet.
+ */
 static const telnet_telopt_t __telnet_options[] = {
     { TELNET_TELOPT_ECHO,      TELNET_WONT, TELNET_DO   },
     { TELNET_TELOPT_TTYPE,     TELNET_WILL, TELNET_DONT },
@@ -50,6 +54,16 @@ static const telnet_telopt_t __telnet_options[] = {
     { -1, 0, 0 }
 };
 
+/**
+ * Write the entire buffer given to the specified file descriptor, retrying
+ * the write automatically if necessary. This function will return a value
+ * not equal to the buffer's size iff an error occurs which prevents all
+ * future writes.
+ *
+ * @param fd The file descriptor to write to.
+ * @param buffer The buffer to write.
+ * @param size The number of bytes from the buffer to write.
+ */
 static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
 
     int remaining = size;
@@ -70,6 +84,11 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
 
 }
 
+/**
+ * Event handler, as defined by libtelnet. This function is passed to
+ * telnet_init() and will be called for every event fired by libtelnet,
+ * including feature enable/disable and receipt/transmission of data.
+ */
 static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event, void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -134,6 +153,14 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
 }
 
+/**
+ * Input thread, started by the main telnet client thread. This thread
+ * continuously reads from the terminal's STDIN and transfers all read
+ * data to the telnet connection.
+ *
+ * @param data The current guac_client instance.
+ * @return Always NULL.
+ */
 static void* __guac_telnet_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -153,6 +180,14 @@ static void* __guac_telnet_input_thread(void* data) {
 
 }
 
+/**
+ * Connects to the telnet server specified within the data associated
+ * with the given guac_client, which will have been populated by
+ * guac_client_init.
+ *
+ * @return The connected telnet instance, if successful, or NULL if the
+ *         connection fails for any reason.
+ */
 static telnet_t* __guac_telnet_create_session(guac_client* client) {
 
     int retval;
@@ -243,6 +278,13 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
 
 }
 
+/**
+ * Sends a 16-bit value over the given telnet connection with the byte order
+ * required by the telnet protocol.
+ *
+ * @param telnet The telnet connection to use.
+ * @param value The value to send.
+ */
 static void __guac_telnet_send_uint16(telnet_t* telnet, uint16_t value) {
 
     unsigned char buffer[2];
@@ -260,6 +302,15 @@ void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height) {
     telnet_finish_sb(telnet);
 }
 
+/**
+ * Waits for data on the given file descriptor for up to one second. The
+ * return value is identical to that of select(): 0 on timeout, < 0 on
+ * error, and > 0 on success.
+ *
+ * @param socket_fd The file descriptor to wait for.
+ * @return A value greater than zero on success, zero on timeout, and
+ *         less than zero on error.
+ */
 static int __guac_telnet_wait(int socket_fd) {
 
     fd_set fds;
