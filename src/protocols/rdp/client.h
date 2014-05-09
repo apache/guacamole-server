@@ -52,7 +52,7 @@
  * milliseconds. If the server is silent for at least this amount of time, the
  * frame will be considered finished.
  */
-#define GUAC_RDP_FRAME_TIMEOUT 0
+#define GUAC_RDP_FRAME_TIMEOUT 10
 
 /**
  * The native resolution of most RDP connections. As Windows and other systems

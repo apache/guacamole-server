@@ -29,6 +29,7 @@
 #include <guacamole/socket.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 
 
@@ -234,6 +235,42 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, int x, int y,
         surface->dirty_height = h;
         surface->dirty = 1;
     }
+
+}
+
+static void __guac_common_surface_flush_to_queue(guac_common_surface* surface) {
+
+    guac_common_surface_png_rect* rect;
+
+    /* Do not flush if not dirty */
+    if (!surface->dirty)
+        return;
+
+    /* Add new rect to queue */
+    rect = &(surface->png_queue[surface->png_queue_length++]);
+    rect->x      = surface->dirty_x;
+    rect->y      = surface->dirty_y;
+    rect->width  = surface->dirty_width;
+    rect->height = surface->dirty_height;
+
+    /* Surface now flushed */
+    surface->dirty = 0;
+
+}
+
+void guac_common_surface_flush_deferred(guac_common_surface* surface) {
+
+    /* Do not flush if not dirty */
+    if (!surface->dirty)
+        return;
+
+    /* Flush if queue size has reached maximum (space is reserved for the final dirty rect,
+     * as guac_common_surface_flush() MAY add an additional rect to the queue */
+    if (surface->png_queue_length == GUAC_COMMON_SURFACE_QUEUE_SIZE-1)
+        guac_common_surface_flush(surface);
+
+    /* Append dirty rect to queue */
+    __guac_common_surface_flush_to_queue(surface);
 
 }
 
@@ -473,6 +510,7 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
     surface->width = w;
     surface->height = h;
     surface->dirty = 0;
+    surface->png_queue_length = 0;
 
     /* Create corresponding Cairo surface */
     surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
@@ -589,15 +627,15 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     if (w <= 0 || h <= 0)
         return;
 
+    /* Update backing surface */
+    __guac_common_surface_put(buffer, stride, sx, sy, w, h, surface, x, y, format != CAIRO_FORMAT_ARGB32);
+
     /* Flush if not combining */
     if (!__guac_common_should_combine(surface, x, y, w, h, 0))
-        guac_common_surface_flush(surface);
+        guac_common_surface_flush_deferred(surface);
 
     /* Always defer draws */
     __guac_common_mark_dirty(surface, x, y, w, h);
-
-    /* Update backing surface */
-    __guac_common_surface_put(buffer, stride, sx, sy, w, h, surface, x, y, format != CAIRO_FORMAT_ARGB32);
 
 }
 
@@ -617,15 +655,15 @@ void guac_common_surface_paint(guac_common_surface* surface, int x, int y, cairo
     if (w <= 0 || h <= 0)
         return;
 
+    /* Update backing surface */
+    __guac_common_surface_fill_mask(buffer, stride, sx, sy, w, h, surface, x, y, red, green, blue);
+
     /* Flush if not combining */
     if (!__guac_common_should_combine(surface, x, y, w, h, 0))
-        guac_common_surface_flush(surface);
+        guac_common_surface_flush_deferred(surface);
 
     /* Always defer draws */
     __guac_common_mark_dirty(surface, x, y, w, h);
-
-    /* Update backing surface */
-    __guac_common_surface_fill_mask(buffer, stride, sx, sy, w, h, surface, x, y, red, green, blue);
 
 }
 
@@ -641,6 +679,9 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     if (w <= 0 || h <= 0)
         return;
 
+    /* Update backing surface */
+    __guac_common_surface_transfer(src, sx, sy, w, h, GUAC_TRANSFER_BINARY_SRC, dst, dx, dy);
+
     /* Defer if combining */
     if (__guac_common_should_combine(dst, dx, dy, w, h, 1))
         __guac_common_mark_dirty(dst, dx, dy, w, h);
@@ -652,9 +693,6 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
         guac_protocol_send_copy(socket, src_layer, sx, sy, w, h, GUAC_COMP_OVER, dst_layer, dx, dy);
         dst->realized = 1;
     }
-
-    /* Update backing surface */
-    __guac_common_surface_transfer(src, sx, sy, w, h, GUAC_TRANSFER_BINARY_SRC, dst, dx, dy);
 
 }
 
@@ -670,6 +708,9 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     if (w <= 0 || h <= 0)
         return;
 
+    /* Update backing surface */
+    __guac_common_surface_transfer(src, sx, sy, w, h, op, dst, dx, dy);
+
     /* Defer if combining */
     if (__guac_common_should_combine(dst, dx, dy, w, h, 1))
         __guac_common_mark_dirty(dst, dx, dy, w, h);
@@ -681,9 +722,6 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
         guac_protocol_send_transfer(socket, src_layer, sx, sy, w, h, op, dst_layer, dx, dy);
         dst->realized = 1;
     }
-
-    /* Update backing surface */
-    __guac_common_surface_transfer(src, sx, sy, w, h, op, dst, dx, dy);
 
 }
 
@@ -699,6 +737,9 @@ void guac_common_surface_rect(guac_common_surface* surface,
     if (w <= 0 || h <= 0)
         return;
 
+    /* Update backing surface */
+    __guac_common_surface_rect(surface, x, y, w, h, red, green, blue);
+
     /* Defer if combining */
     if (__guac_common_should_combine(surface, x, y, w, h, 1))
         __guac_common_mark_dirty(surface, x, y, w, h);
@@ -710,9 +751,6 @@ void guac_common_surface_rect(guac_common_surface* surface,
         guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
         surface->realized = 1;
     }
-
-    /* Update backing surface */
-    __guac_common_surface_rect(surface, x, y, w, h, red, green, blue);
 
 }
 
@@ -753,26 +791,90 @@ void guac_common_surface_reset_clip(guac_common_surface* surface) {
     surface->bounds_height = surface->height;
 }
 
-void guac_common_surface_flush(guac_common_surface* surface) {
+void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
 
     if (surface->dirty) {
 
         guac_socket* socket = surface->socket;
         const guac_layer* layer = surface->layer;
-        unsigned char* buffer = surface->buffer + surface->dirty_y * surface->stride + surface->dirty_x * 4;
 
+        /* Get Cairo surface for specified rect */
+        unsigned char* buffer = surface->buffer + surface->dirty_y * surface->stride + surface->dirty_x * 4;
         cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
                                                                     surface->dirty_width, surface->dirty_height,
                                                                     surface->stride);
 
-        /* Send PNG for dirty rect */
+        /* Send PNG for rect */
         guac_protocol_send_png(socket, GUAC_COMP_OVER, layer, surface->dirty_x, surface->dirty_y, rect);
         cairo_surface_destroy(rect);
-
-        surface->dirty = 0;
         surface->realized = 1;
 
+        /* Surface is no longer dirty */
+        surface->dirty = 0;
+
     }
+
+}
+
+static int __guac_common_surface_png_rect_compare(const void* a, const void* b) {
+
+    guac_common_surface_png_rect* ra = (guac_common_surface_png_rect*) a;
+    guac_common_surface_png_rect* rb = (guac_common_surface_png_rect*) b;
+
+    /* Order roughly top to bottom, left to right */
+    if (ra->y >> 6 != rb->y >> 6) return ra->y - rb->y;
+    if (ra->x      != rb->x)      return ra->x - rb->x;
+
+    /* Wider updates should come first (more likely to intersect later) */
+    if (ra->width != rb->width) return rb->width - ra->width;
+
+    /* Shorter updates should come first (less likely to increase cost) */
+    return ra->height - rb->height;
+
+}
+
+void guac_common_surface_flush(guac_common_surface* surface) {
+
+    guac_common_surface_png_rect* current = surface->png_queue;
+
+    int i;
+    int flushed = 0;
+
+    /* Flush final dirty rect to queue */
+    __guac_common_surface_flush_to_queue(surface);
+
+    /* Sort updates to make combination less costly */
+    qsort(surface->png_queue, surface->png_queue_length, sizeof(guac_common_surface_png_rect),
+          __guac_common_surface_png_rect_compare);
+
+    /* Flush all rects in queue */
+    for (i=0; i < surface->png_queue_length; i++) {
+
+        int x = current->x;
+        int y = current->y;
+        int w = current->width;
+        int h = current->height;
+
+        /* Flush if not combining */
+        if (!__guac_common_should_combine(surface, x, y, w, h, 0)) {
+            if (surface->dirty) flushed++;
+            __guac_common_surface_flush_to_png(surface);
+        }
+
+        /* Defer, attempt to combine with next rect */
+        __guac_common_mark_dirty(surface, x, y, w, h);
+        current++;
+
+    }
+
+    /* Flush the final png */
+    if (surface->dirty) flushed++;
+    __guac_common_surface_flush_to_png(surface);
+
+    /* Flush complete */
+    if (flushed < surface->png_queue_length)
+        fprintf(stderr, "IMPROVEMENT: Flushed %i (originally %i) updates.\n", flushed, surface->png_queue_length);
+    surface->png_queue_length = 0;
 
 }
 

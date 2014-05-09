@@ -33,6 +33,38 @@
 #include <stdint.h>
 
 /**
+ * The maximum number of updates to allow within the PNG queue.
+ */
+#define GUAC_COMMON_SURFACE_QUEUE_SIZE 256
+
+/**
+ * Simple representation of a rectangle, having a defined corner and dimensions.
+ */
+typedef struct guac_common_surface_png_rect {
+
+    /**
+     * The X coordinate of the upper-left corner of this rectangle.
+     */
+    int x;
+
+    /**
+     * The Y coordinate of the upper-left corner of this rectangle.
+     */
+    int y;
+
+    /**
+     * The width of this rectangle.
+     */
+    int width;
+
+    /**
+     * The height of this rectangle.
+     */
+    int height;
+
+} guac_common_surface_png_rect;
+
+/**
  * Surface which backs a Guacamole buffer or layer, automatically
  * combining updates when possible.
  */
@@ -121,6 +153,16 @@ typedef struct guac_common_surface {
      * The height of the bounding rectangle.
      */
     int bounds_height;
+
+    /**
+     * The number of updates in the PNG queue.
+     */
+    int png_queue_length;
+
+    /**
+     * All queued PNG updates.
+     */
+    guac_common_surface_png_rect png_queue[GUAC_COMMON_SURFACE_QUEUE_SIZE];
 
 } guac_common_surface;
 
@@ -252,6 +294,16 @@ void guac_common_surface_reset_clip(guac_common_surface* surface);
  * @param surface The surface to flush.
  */
 void guac_common_surface_flush(guac_common_surface* surface);
+
+/**
+ * Schedules a deferred flush of the given surface. This will not immediately
+ * flush the surface to the client. Instead, the result of the flush is
+ * added to a queue which is reinspected and combined (if possible) with other
+ * deferred flushes during the call to guac_common_surface_flush().
+ *
+ * @param surface The surface to flush.
+ */
+void guac_common_surface_flush_deferred(guac_common_surface* surface);
 
 #endif
 
