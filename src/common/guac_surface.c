@@ -29,7 +29,6 @@
 #include <guacamole/socket.h>
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <stdint.h>
 
 
@@ -252,6 +251,7 @@ static void __guac_common_surface_flush_to_queue(guac_common_surface* surface) {
     rect->y      = surface->dirty_y;
     rect->width  = surface->dirty_width;
     rect->height = surface->dirty_height;
+    rect->flushed = 0;
 
     /* Surface now flushed */
     surface->dirty = 0;
@@ -822,8 +822,8 @@ static int __guac_common_surface_png_rect_compare(const void* a, const void* b) 
     guac_common_surface_png_rect* rb = (guac_common_surface_png_rect*) b;
 
     /* Order roughly top to bottom, left to right */
-    if (ra->y >> 6 != rb->y >> 6) return ra->y - rb->y;
-    if (ra->x      != rb->x)      return ra->x - rb->x;
+    if (ra->y != rb->y) return ra->y - rb->y;
+    if (ra->x != rb->x) return ra->x - rb->x;
 
     /* Wider updates should come first (more likely to intersect later) */
     if (ra->width != rb->width) return rb->width - ra->width;
@@ -837,11 +837,13 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
     guac_common_surface_png_rect* current = surface->png_queue;
 
-    int i;
+    int i, j;
+    int original_queue_length;
     int flushed = 0;
 
     /* Flush final dirty rect to queue */
     __guac_common_surface_flush_to_queue(surface);
+    original_queue_length = surface->png_queue_length;
 
     /* Sort updates to make combination less costly */
     qsort(surface->png_queue, surface->png_queue_length, sizeof(guac_common_surface_png_rect),
@@ -850,30 +852,53 @@ void guac_common_surface_flush(guac_common_surface* surface) {
     /* Flush all rects in queue */
     for (i=0; i < surface->png_queue_length; i++) {
 
-        int x = current->x;
-        int y = current->y;
-        int w = current->width;
-        int h = current->height;
+        /* Get next unflushed candidate */
+        guac_common_surface_png_rect* candidate = current;
+        if (!candidate->flushed) {
 
-        /* Flush if not combining */
-        if (!__guac_common_should_combine(surface, x, y, w, h, 0)) {
-            if (surface->dirty) flushed++;
-            __guac_common_surface_flush_to_png(surface);
+            int combined = 0;
+
+            /* Build up rect as much as possible */
+            for (j=i; j < surface->png_queue_length; j++) {
+
+                if (!candidate->flushed) {
+
+                    int x = candidate->x;
+                    int y = candidate->y;
+                    int w = candidate->width;
+                    int h = candidate->height;
+
+                    /* Combine if reasonable */
+                    if (__guac_common_should_combine(surface, x, y, w, h, 0) || !surface->dirty) {
+                        __guac_common_mark_dirty(surface, x, y, w, h);
+                        candidate->flushed = 1;
+                        combined++;
+                    }
+
+                }
+
+                candidate++;
+
+            }
+
+            /* Re-add to queue if there's room and this update was modified or we expect others might be */
+            if ((combined > 1 || i < original_queue_length)
+                    && surface->png_queue_length < GUAC_COMMON_SURFACE_QUEUE_SIZE)
+                __guac_common_surface_flush_to_queue(surface);
+
+            /* Flush as PNG otherwise */
+            else {
+                if (surface->dirty) flushed++;
+                __guac_common_surface_flush_to_png(surface);
+            }
+
         }
 
-        /* Defer, attempt to combine with next rect */
-        __guac_common_mark_dirty(surface, x, y, w, h);
         current++;
 
     }
 
-    /* Flush the final png */
-    if (surface->dirty) flushed++;
-    __guac_common_surface_flush_to_png(surface);
-
     /* Flush complete */
-    if (flushed < surface->png_queue_length)
-        fprintf(stderr, "IMPROVEMENT: Flushed %i (originally %i) updates.\n", flushed, surface->png_queue_length);
     surface->png_queue_length = 0;
 
 }

@@ -43,6 +43,11 @@
 typedef struct guac_common_surface_png_rect {
 
     /**
+     * Whether this rectangle has been flushed.
+     */
+    int flushed;
+
+    /**
      * The X coordinate of the upper-left corner of this rectangle.
      */
     int x;
