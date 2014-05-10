@@ -197,6 +197,15 @@ static int __guac_common_should_combine(guac_common_surface* surface, int x, int
 
 }
 
+/**
+ * Expands the dirty rect of the given surface to contain the rect described by the given
+ * coordinates.
+ *
+ * @param x The X coordinate of the upper-left corner of the rectangle.
+ * @param y The Y coordinate of the upper-left corner of the rectangle.
+ * @param w The width of the rectangle.
+ * @param h The height of the rectangle.
+ */
 static void __guac_common_mark_dirty(guac_common_surface* surface, int x, int y, int w, int h) {
 
     /* If already dirty, update existing rect */
@@ -237,6 +246,13 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, int x, int y,
 
 }
 
+/**
+ * Flushes the PNG update currently described by the dirty rectangle within the
+ * given surface to that surface's PNG queue. The MUST be space within the
+ * queue.
+ *
+ * @param surface The surface to flush.
+ */
 static void __guac_common_surface_flush_to_queue(guac_common_surface* surface) {
 
     guac_common_surface_png_rect* rect;
@@ -274,6 +290,13 @@ void guac_common_surface_flush_deferred(guac_common_surface* surface) {
 
 }
 
+/**
+ * Transfers a single uint32_t using the given transfer function.
+ *
+ * @param op The transfer function to use.
+ * @param src The source of the uint32_t value.
+ * @param dst THe destination which will hold the result of the transfer.
+ */
 static void __guac_common_surface_transfer_int(guac_transfer_function op, uint32_t* src, uint32_t* dst) {
 
     switch (op) {
@@ -345,6 +368,19 @@ static void __guac_common_surface_transfer_int(guac_transfer_function op, uint32
     }
 }
 
+/**
+ * Draws a rectangle of solid color within the backing surface of the
+ * given destination surface.
+ *
+ * @param dst The destination surface.
+ * @param dx The destination X coordinate.
+ * @param dy The destination Y coordainte.
+ * @param w The width of the rectangle to draw.
+ * @param h The height of the rectangle to draw.
+ * @param red The red component of the color of the rectangle.
+ * @param green The green component of the color of the rectangle.
+ * @param blue The blue component of the color of the rectangle.
+ */
 static void __guac_common_surface_rect(guac_common_surface* dst, int dx, int dy, int w, int h,
                                        int red, int green, int blue) {
 
@@ -376,6 +412,21 @@ static void __guac_common_surface_rect(guac_common_surface* dst, int dx, int dy,
 
 }
 
+/**
+ * Copies data from the given buffer to the surface at the given coordinates.
+ *
+ * @param src_buffer The buffer to copy.
+ * @param src_stride The number of bytes in each row of the source buffer.
+ * @param sx The X coordinate of the source rectangle.
+ * @param sy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
+ * @param dst The destination surface.
+ * @param dx The destination X coordinate.
+ * @param dy The destination Y coordinate.
+ * @param opaque Non-zero if the source surface is opaque (its alpha channel
+ *               should be ignored), zero otherwise.
+ */
 static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
                                       int sx, int sy, int w, int h,
                                       guac_common_surface* dst, int dx, int dy,
@@ -413,6 +464,24 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
 
 }
 
+/**
+ * Fills the given surface with color, using the given buffer as a mask. Color
+ * will be added to the given surface iff the corresponding pixel within the
+ * buffer is opaque.
+ *
+ * @param src_buffer The buffer to use as a mask.
+ * @param src_stride The number of bytes in each row of the source buffer.
+ * @param sx The X coordinate of the source rectangle.
+ * @param sy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
+ * @param dst The destination surface.
+ * @param dx The destination X coordinate.
+ * @param dy The destination Y coordinate.
+ * @param red The red component of the color of the fill.
+ * @param green The green component of the color of the fill.
+ * @param blue The blue component of the color of the fill.
+ */
 static void __guac_common_surface_fill_mask(unsigned char* src_buffer, int src_stride,
                                             int sx, int sy, int w, int h,
                                             guac_common_surface* dst, int dx, int dy,
@@ -452,6 +521,21 @@ static void __guac_common_surface_fill_mask(unsigned char* src_buffer, int src_s
 
 }
 
+/**
+ * Copies data from the given surface to the given destination surface using
+ * the specified transfer function.
+ *
+ * @param src_buffer The buffer to copy.
+ * @param src_stride The number of bytes in each row of the source buffer.
+ * @param sx The X coordinate of the source rectangle.
+ * @param sy The Y coordinate of the source rectangle.
+ * @param w The width of the source rectangle.
+ * @param h The height of the source rectangle.
+ * @param op The transfer function to use.
+ * @param dst The destination surface.
+ * @param dx The destination X coordinate.
+ * @param dy The destination Y coordinate.
+ */
 static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int w, int h,
                                            guac_transfer_function op, guac_common_surface* dst, int dx, int dy) {
 
@@ -816,6 +900,12 @@ void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
 
 }
 
+/**
+ * Comparator for instances of guac_common_surface_png_rect, the elements
+ * which make up a surface's PNG buffer.
+ *
+ * @see qsort
+ */
 static int __guac_common_surface_png_rect_compare(const void* a, const void* b) {
 
     guac_common_surface_png_rect* ra = (guac_common_surface_png_rect*) a;
