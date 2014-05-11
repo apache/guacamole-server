@@ -248,7 +248,7 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, int x, int y,
 
 /**
  * Flushes the PNG update currently described by the dirty rectangle within the
- * given surface to that surface's PNG queue. The MUST be space within the
+ * given surface to that surface's PNG queue. There MUST be space within the
  * queue.
  *
  * @param surface The surface to flush.
@@ -875,7 +875,14 @@ void guac_common_surface_reset_clip(guac_common_surface* surface) {
     surface->bounds_height = surface->height;
 }
 
-void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
+/**
+ * Flushes the PNG update currently described by the dirty rectangle within the
+ * given surface directly to a "png" instruction, which is sent on the socket
+ * associated with the surface.
+ *
+ * @param surface The surface to flush.
+ */
+static void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
 
     if (surface->dirty) {
 
