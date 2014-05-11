@@ -414,22 +414,25 @@ static void __guac_common_surface_rect(guac_common_surface* dst, int dx, int dy,
 
 /**
  * Copies data from the given buffer to the surface at the given coordinates.
+ * The dimensions and location of the destination rectangle will be altered
+ * to remove as many unchanged pixels as possible.
  *
  * @param src_buffer The buffer to copy.
  * @param src_stride The number of bytes in each row of the source buffer.
  * @param sx The X coordinate of the source rectangle.
  * @param sy The Y coordinate of the source rectangle.
- * @param w The width of the source rectangle.
- * @param h The height of the source rectangle.
  * @param dst The destination surface.
  * @param dx The destination X coordinate.
  * @param dy The destination Y coordinate.
+ * @param w The width of the destination rectangle (same as width of source rect).
+ * @param h The height of the destination rectangle (same as height of source rect).
  * @param opaque Non-zero if the source surface is opaque (its alpha channel
  *               should be ignored), zero otherwise.
  */
 static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
-                                      int sx, int sy, int w, int h,
-                                      guac_common_surface* dst, int dx, int dy,
+                                      int sx, int sy,
+                                      guac_common_surface* dst,
+                                      int* dx, int* dy, int* w, int* h,
                                       int opaque) {
 
     unsigned char* dst_buffer = dst->buffer;
@@ -437,20 +440,36 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
 
     int x, y;
 
+    int min_x = *w - 1;
+    int min_y = *h - 1;
+    int max_x = 0;
+    int max_y = 0;
+
     src_buffer += src_stride*sy + 4*sx;
-    dst_buffer += dst_stride*dy + 4*dx;
+    dst_buffer += dst_stride*(*dy) + 4*(*dx);
 
     /* For each row */
-    for (y=0; y<h; y++) {
+    for (y=0; y<*h; y++) {
 
         uint32_t* src_current = (uint32_t*) src_buffer;
         uint32_t* dst_current = (uint32_t*) dst_buffer;
 
         /* Copy row */
-        for (x=0; x<w; x++) {
+        for (x=0; x<*w; x++) {
 
-            if (opaque || (*src_current & 0xFF000000))
-                *dst_current = *src_current | 0xFF000000;
+            if (opaque || (*src_current & 0xFF000000)) {
+
+                uint32_t new_color = *src_current | 0xFF000000;
+                uint32_t old_color = *dst_current;
+
+                if (old_color != new_color) {
+                    if (x < min_x) min_x = x;
+                    if (y < min_y) min_y = y;
+                    if (x > max_x) max_x = x;
+                    if (y > max_y) max_y = y;
+                    *dst_current = new_color;
+                }
+            }
 
             src_current++;
             dst_current++;
@@ -460,6 +479,17 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
         src_buffer += src_stride;
         dst_buffer += dst_stride;
 
+    }
+
+    if (max_x >= min_x && max_y >= min_y) {
+        *dx += min_x;
+        *dy += min_y;
+        *w = max_x - min_x + 1;
+        *h = max_y - min_y + 1;
+    }
+    else {
+        *w = 0;
+        *h = 0;
     }
 
 }
@@ -655,10 +685,12 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     guac_common_surface_reset_clip(surface);
 
     /* Init with old data */
+    int x = 0;
+    int y = 0;
     if (old_width > w)  old_width = w;
     if (old_height > h) old_height = h;
-    __guac_common_surface_put(old_buffer, old_stride, 0, 0, old_width, old_height,
-                              surface, 0, 0, 1);
+    __guac_common_surface_put(old_buffer, old_stride, 0, 0,
+                              surface, &x, &y, &old_width, &old_height, 1);
 
     /* Free old data */
     free(old_buffer);
@@ -712,7 +744,9 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
         return;
 
     /* Update backing surface */
-    __guac_common_surface_put(buffer, stride, sx, sy, w, h, surface, x, y, format != CAIRO_FORMAT_ARGB32);
+    __guac_common_surface_put(buffer, stride, sx, sy, surface, &x, &y, &w, &h, format != CAIRO_FORMAT_ARGB32);
+    if (w <= 0 || h <= 0)
+        return;
 
     /* Flush if not combining */
     if (!__guac_common_should_combine(surface, x, y, w, h, 0))
