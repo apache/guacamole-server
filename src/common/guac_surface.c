@@ -112,7 +112,7 @@ static void __guac_common_bound_rect(guac_common_surface* surface, guac_common_r
  * @return Non-zero if the update should be combined with any existing update,
  *         zero otherwise.
  */
-static int __guac_common_should_combine(guac_common_surface* surface, guac_common_rect* rect, int rect_only) {
+static int __guac_common_should_combine(guac_common_surface* surface, const guac_common_rect* rect, int rect_only) {
 
     if (surface->dirty) {
 
@@ -166,7 +166,11 @@ static int __guac_common_should_combine(guac_common_surface* surface, guac_commo
  * @param surface The surface to mark as dirty.
  * @param rect The rectangle of the update which is dirtying the surface.
  */
-static void __guac_common_mark_dirty(guac_common_surface* surface, guac_common_rect* rect) {
+static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_common_rect* rect) {
+
+    /* Ignore empty rects */
+    if (rect->width <= 0 || rect->height <= 0)
+        return;
 
     /* If already dirty, update existing rect */
     if (surface->dirty)
