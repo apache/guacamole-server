@@ -329,6 +329,11 @@ static void __guac_common_surface_rect(guac_common_surface* dst, guac_common_rec
 
     uint32_t color = 0xFF000000 | (red << 16) | (green << 8) | blue;
 
+    int min_x = rect->width - 1;
+    int min_y = rect->height - 1;
+    int max_x = 0;
+    int max_y = 0;
+
     dst_stride = dst->stride;
     dst_buffer = dst->buffer + (dst_stride * rect->y) + (4 * rect->x);
 
@@ -339,13 +344,35 @@ static void __guac_common_surface_rect(guac_common_surface* dst, guac_common_rec
 
         /* Set row */
         for (x=0; x < rect->width; x++) {
-            *dst_current = color;
+
+            uint32_t old_color = *dst_current;
+
+            if (old_color != color) {
+                if (x < min_x) min_x = x;
+                if (y < min_y) min_y = y;
+                if (x > max_x) max_x = x;
+                if (y > max_y) max_y = y;
+                *dst_current = color;
+            }
+
             dst_current++;
         }
 
         /* Next row */
         dst_buffer += dst_stride;
 
+    }
+
+    /* Restrict destination rect to only updated pixels */
+    if (max_x >= min_x && max_y >= min_y) {
+        rect->x += min_x;
+        rect->y += min_y;
+        rect->width = max_x - min_x + 1;
+        rect->height = max_y - min_y + 1;
+    }
+    else {
+        rect->width = 0;
+        rect->height = 0;
     }
 
 }
@@ -418,6 +445,7 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
 
     }
 
+    /* Restrict destination rect to only updated pixels */
     if (max_x >= min_x && max_y >= min_y) {
         rect->x += min_x;
         rect->y += min_y;
@@ -575,7 +603,7 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
 
     /* Init with black */
     rect = surface->bounds_rect;
-    __guac_common_surface_rect(surface, &rect, 0x00, 0x00, 0x00); 
+    __guac_common_surface_rect(surface, &rect, 0x00, 0x00, 0x00);
 
     /* Layers must initially exist */
     if (layer->index >= 0) {
@@ -668,7 +696,7 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
 
     /* Update backing surface */
     __guac_common_surface_put(buffer, stride, sx, sy, surface, &rect, format != CAIRO_FORMAT_ARGB32);
-    if (w <= 0 || h <= 0)
+    if (rect.width <= 0 || rect.height <= 0)
         return;
 
     /* Flush if not combining */
@@ -793,6 +821,8 @@ void guac_common_surface_rect(guac_common_surface* surface,
 
     /* Update backing surface */
     __guac_common_surface_rect(surface, &rect, red, green, blue);
+    if (rect.width <= 0 || rect.height <= 0)
+        return;
 
     /* Defer if combining */
     if (__guac_common_should_combine(surface, &rect, 1))
