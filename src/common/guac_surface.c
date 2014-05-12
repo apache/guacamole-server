@@ -790,10 +790,12 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
-    /* Update backing surface */
-    __guac_common_surface_transfer(src, &sx, &sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
-    if (rect.width <= 0 || rect.height <= 0)
-        return;
+    /* Update backing surface first only if destination rect cannot intersect source rect */
+    if (src != dst) {
+        __guac_common_surface_transfer(src, &sx, &sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
+        if (rect.width <= 0 || rect.height <= 0)
+            return;
+    }
 
     /* Defer if combining */
     if (__guac_common_should_combine(dst, &rect, 1))
@@ -807,6 +809,10 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
                                 GUAC_COMP_OVER, dst_layer, rect.x, rect.y);
         dst->realized = 1;
     }
+
+    /* Update backing surface last if destination rect can intersect source rect */
+    if (src == dst)
+        __guac_common_surface_transfer(src, &sx, &sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
 
 }
 
@@ -825,10 +831,12 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
-    /* Update backing surface */
-    __guac_common_surface_transfer(src, &sx, &sy, op, dst, &rect);
-    if (rect.width <= 0 || rect.height <= 0)
-        return;
+    /* Update backing surface first only if destination rect cannot intersect source rect */
+    if (src != dst) {
+        __guac_common_surface_transfer(src, &sx, &sy, op, dst, &rect);
+        if (rect.width <= 0 || rect.height <= 0)
+            return;
+    }
 
     /* Defer if combining */
     if (__guac_common_should_combine(dst, &rect, 1))
@@ -841,6 +849,10 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
         guac_protocol_send_transfer(socket, src_layer, sx, sy, rect.width, rect.height, op, dst_layer, rect.x, rect.y);
         dst->realized = 1;
     }
+
+    /* Update backing surface last if destination rect can intersect source rect */
+    if (src == dst)
+        __guac_common_surface_transfer(src, &sx, &sy, op, dst, &rect);
 
 }
 
