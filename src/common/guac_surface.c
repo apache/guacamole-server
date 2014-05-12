@@ -730,7 +730,7 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
 
     /* Clip operation */
     __guac_common_bound_rect(surface, &rect, &sx, &sy);
-    if (w <= 0 || h <= 0)
+    if (rect.width <= 0 || rect.height <= 0)
         return;
 
     /* Update backing surface */
@@ -763,7 +763,7 @@ void guac_common_surface_paint(guac_common_surface* surface, int x, int y, cairo
 
     /* Clip operation */
     __guac_common_bound_rect(surface, &rect, &sx, &sy);
-    if (w <= 0 || h <= 0)
+    if (rect.width <= 0 || rect.height <= 0)
         return;
 
     /* Update backing surface */
@@ -790,7 +790,7 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
 
     /* Clip operation */
     __guac_common_bound_rect(dst, &rect, &sx, &sy);
-    if (w <= 0 || h <= 0)
+    if (rect.width <= 0 || rect.height <= 0)
         return;
 
     /* Update backing surface */
@@ -825,7 +825,7 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
 
     /* Clip operation */
     __guac_common_bound_rect(dst, &rect, &sx, &sy);
-    if (w <= 0 || h <= 0)
+    if (rect.width <= 0 || rect.height <= 0)
         return;
 
     /* Update backing surface */
@@ -859,7 +859,7 @@ void guac_common_surface_rect(guac_common_surface* surface,
 
     /* Clip operation */
     __guac_common_bound_rect(surface, &rect, NULL, NULL);
-    if (w <= 0 || h <= 0)
+    if (rect.width <= 0 || rect.height <= 0)
         return;
 
     /* Update backing surface */
