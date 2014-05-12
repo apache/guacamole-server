@@ -636,13 +636,10 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
 
     /* Create corresponding Cairo surface */
     surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
-    surface->buffer = malloc(surface->stride * h);
+    surface->buffer = calloc(h, surface->stride);
 
     /* Reset clipping rect */
     guac_common_surface_reset_clip(surface);
-
-    /* Init with transparent black */
-    memset(surface->buffer, surface->stride * h, 0);
 
     /* Layers must initially exist */
     if (layer->index >= 0) {
@@ -681,7 +678,7 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
 
     /* Create new buffer */
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
-    unsigned char* buffer = malloc(stride * h);
+    unsigned char* buffer = calloc(h, stride);
 
     /* Assign new data */
     surface->width = w;
