@@ -45,7 +45,7 @@
 /**
  * The maximum duration of a frame in milliseconds.
  */
-#define GUAC_RDP_FRAME_DURATION 40
+#define GUAC_RDP_FRAME_DURATION 60
 
 /**
  * The amount of time to allow per message read within a frame, in
