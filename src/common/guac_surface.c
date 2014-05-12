@@ -235,7 +235,9 @@ void guac_common_surface_flush_deferred(guac_common_surface* surface) {
  * @param src The source of the uint32_t value.
  * @param dst THe destination which will hold the result of the transfer.
  */
-static void __guac_common_surface_transfer_int(guac_transfer_function op, uint32_t* src, uint32_t* dst) {
+static int __guac_common_surface_transfer_int(guac_transfer_function op, uint32_t* src, uint32_t* dst) {
+
+    uint32_t orig = *dst;
 
     switch (op) {
 
@@ -304,6 +306,9 @@ static void __guac_common_surface_transfer_int(guac_transfer_function op, uint32
             break;
 
     }
+
+    return *dst != orig;
+
 }
 
 /**
@@ -542,6 +547,11 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int
     int src_stride, dst_stride;
     int step = 1;
 
+    int min_x = rect->width - 1;
+    int min_y = rect->height - 1;
+    int max_x = 0;
+    int max_y = 0;
+
     /* Copy forwards only if destination is in a different surface or is before source */
     if (src != dst || rect->y < sy || (rect->y == sy && rect->x < sx)) {
         src_buffer += src->stride*sy + 4*sx;
@@ -568,7 +578,14 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int
 
         /* Transfer each pixel in row */
         for (x=0; x < rect->width; x++) {
-            __guac_common_surface_transfer_int(op, src_current, dst_current);
+
+            if (__guac_common_surface_transfer_int(op, src_current, dst_current)) {
+                if (x < min_x) min_x = x;
+                if (y < min_y) min_y = y;
+                if (x > max_x) max_x = x;
+                if (y > max_y) max_y = y;
+            }
+
             src_current += step;
             dst_current += step;
         }
@@ -577,6 +594,26 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int
         src_buffer += src_stride;
         dst_buffer += dst_stride;
 
+    }
+
+    /* Translate coordinate space of min_* and max_* if moving backwards */
+    if (step < 0) {
+        min_x = rect->width - 1 - min_x;
+        max_x = rect->width - 1 - max_x;
+        min_y = rect->height - 1 - min_y;
+        max_y = rect->height - 1 - max_y;
+    }
+
+    /* Restrict destination rect to only updated pixels */
+    if (max_x >= min_x && max_y >= min_y) {
+        rect->x += min_x;
+        rect->y += min_y;
+        rect->width = max_x - min_x + 1;
+        rect->height = max_y - min_y + 1;
+    }
+    else {
+        rect->width = 0;
+        rect->height = 0;
     }
 
 }
@@ -756,6 +793,8 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
 
     /* Update backing surface */
     __guac_common_surface_transfer(src, sx, sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
+    if (rect.width <= 0 || rect.height <= 0)
+        return;
 
     /* Defer if combining */
     if (__guac_common_should_combine(dst, &rect, 1))
@@ -789,6 +828,8 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
 
     /* Update backing surface */
     __guac_common_surface_transfer(src, sx, sy, op, dst, &rect);
+    if (rect.width <= 0 || rect.height <= 0)
+        return;
 
     /* Defer if combining */
     if (__guac_common_should_combine(dst, &rect, 1))
