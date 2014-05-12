@@ -24,6 +24,7 @@
 #define __GUAC_COMMON_SURFACE_H
 
 #include "config.h"
+#include "guac_rect.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/layer.h>
@@ -38,7 +39,8 @@
 #define GUAC_COMMON_SURFACE_QUEUE_SIZE 256
 
 /**
- * Simple representation of a rectangle, having a defined corner and dimensions.
+ * Representation of a PNG update, having a rectangle of image data (stored
+ * elsewhere) and a flushed/not-flushed state.
  */
 typedef struct guac_common_surface_png_rect {
 
@@ -48,24 +50,9 @@ typedef struct guac_common_surface_png_rect {
     int flushed;
 
     /**
-     * The X coordinate of the upper-left corner of this rectangle.
+     * The rectangle containing the PNG update.
      */
-    int x;
-
-    /**
-     * The Y coordinate of the upper-left corner of this rectangle.
-     */
-    int y;
-
-    /**
-     * The width of this rectangle.
-     */
-    int width;
-
-    /**
-     * The height of this rectangle.
-     */
-    int height;
+    guac_common_rect rect;
 
 } guac_common_surface_png_rect;
 
@@ -111,28 +98,9 @@ typedef struct guac_common_surface {
     int dirty;
 
     /**
-     * The X coordinate of the upper-left corner of the dirty rect. This
-     * value is undefined if the surface is unchanged (not dirty).
+     * The dirty rectangle.
      */
-    int dirty_x;
-
-    /**
-     * The Y coordinate of the upper-left corner of the dirty rect. This
-     * value is undefined if the surface is unchanged (not dirty).
-     */
-    int dirty_y;
-
-    /**
-     * The width of the dirty rect. This value is undefined if the surface is
-     * unchanged (not dirty).
-     */
-    int dirty_width;
-
-    /**
-     * The height of the dirty rect. This value is undefined if the surface
-     * is unchanged (not dirty).
-     */
-    int dirty_height;
+    guac_common_rect dirty_rect;
 
     /**
      * Whether the surface actually exists on the client.
@@ -140,24 +108,9 @@ typedef struct guac_common_surface {
     int realized;
 
     /**
-     * The X coordinate of the upper-left corner of the bounding rectangle.
+     * The bounding rectangle.
      */
-    int bounds_x;
-
-    /**
-     * The Y coordinate of the upper-left corner of the bounding rectangle.
-     */
-    int bounds_y;
-
-    /**
-     * The width of the bounding rectangle.
-     */
-    int bounds_width;
-
-    /**
-     * The height of the bounding rectangle.
-     */
-    int bounds_height;
+    guac_common_rect bounds_rect;
 
     /**
      * The number of updates in the PNG queue.
