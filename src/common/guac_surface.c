@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 
 /**
@@ -81,10 +82,7 @@
  * Updates the coordinates of the given rectangle to be within the bounds of the given surface.
  * 
  * @param surface The surface to use for clipping.
- * @param x The X coordinate of the rectangle to clip.
- * @param y The Y coordinate of the rectangle to clip.
- * @param w The width of the rectangle to clip.
- * @param h The height of the rectangle to clip.
+ * @param rect The rectangle to clip.
  * @param sx The X coordinate of the source rectangle, if any.
  * @param sy The Y coordinate of the source rectangle, if any.
  */
@@ -107,10 +105,7 @@ static void __guac_common_bound_rect(guac_common_surface* surface, guac_common_r
  * dirty rectangle, to be eventually flushed as a "png" instruction.
  *
  * @param surface The surface to be queried.
- * @param x The X coordinate of the upper-left corner of the update rectangle.
- * @param y The Y coordinate of the upper-left corner of the update rectangle.
- * @param w The width of the update rectangle.
- * @param h The height of the update rectangle.
+ * @param rect The update rectangle.
  * @param rect_only Non-zero if this update, by its nature, contains only
  *                  metainformation about the update's rectangle, zero if
  *                  the update also contains image data.
@@ -168,10 +163,8 @@ static int __guac_common_should_combine(guac_common_surface* surface, guac_commo
  * Expands the dirty rect of the given surface to contain the rect described by the given
  * coordinates.
  *
- * @param x The X coordinate of the upper-left corner of the rectangle.
- * @param y The Y coordinate of the upper-left corner of the rectangle.
- * @param w The width of the rectangle.
- * @param h The height of the rectangle.
+ * @param surface The surface to mark as dirty.
+ * @param rect The rectangle of the update which is dirtying the surface.
  */
 static void __guac_common_mark_dirty(guac_common_surface* surface, guac_common_rect* rect) {
 
@@ -316,10 +309,7 @@ static int __guac_common_surface_transfer_int(guac_transfer_function op, uint32_
  * given destination surface.
  *
  * @param dst The destination surface.
- * @param dx The destination X coordinate.
- * @param dy The destination Y coordainte.
- * @param w The width of the rectangle to draw.
- * @param h The height of the rectangle to draw.
+ * @param rect The rectangle to draw.
  * @param red The red component of the color of the rectangle.
  * @param green The green component of the color of the rectangle.
  * @param blue The blue component of the color of the rectangle.
@@ -392,10 +382,7 @@ static void __guac_common_surface_rect(guac_common_surface* dst, guac_common_rec
  * @param sx The X coordinate of the source rectangle.
  * @param sy The Y coordinate of the source rectangle.
  * @param dst The destination surface.
- * @param dx The destination X coordinate.
- * @param dy The destination Y coordinate.
- * @param w The width of the destination rectangle (same as width of source rect).
- * @param h The height of the destination rectangle (same as height of source rect).
+ * @param rect The destination rectangle.
  * @param opaque Non-zero if the source surface is opaque (its alpha channel
  *               should be ignored), zero otherwise.
  */
@@ -480,11 +467,8 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
  * @param src_stride The number of bytes in each row of the source buffer.
  * @param sx The X coordinate of the source rectangle.
  * @param sy The Y coordinate of the source rectangle.
- * @param w The width of the source rectangle.
- * @param h The height of the source rectangle.
  * @param dst The destination surface.
- * @param dx The destination X coordinate.
- * @param dy The destination Y coordinate.
+ * @param rect The destination rectangle.
  * @param red The red component of the color of the fill.
  * @param green The green component of the color of the fill.
  * @param blue The blue component of the color of the fill.
@@ -536,12 +520,9 @@ static void __guac_common_surface_fill_mask(unsigned char* src_buffer, int src_s
  * @param src_stride The number of bytes in each row of the source buffer.
  * @param sx The X coordinate of the source rectangle.
  * @param sy The Y coordinate of the source rectangle.
- * @param w The width of the source rectangle.
- * @param h The height of the source rectangle.
  * @param op The transfer function to use.
  * @param dst The destination surface.
- * @param dx The destination X coordinate.
- * @param dy The destination Y coordinate.
+ * @param rect The destination rectangle.
  */
 static void __guac_common_surface_transfer(guac_common_surface* src, int* sx, int* sy,
                                            guac_transfer_function op,
@@ -640,8 +621,6 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int* sx, in
 
 guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_layer* layer, int w, int h) {
 
-    guac_common_rect rect;
-
     /* Init surface */
     guac_common_surface* surface = malloc(sizeof(guac_common_surface));
     surface->layer = layer;
@@ -658,9 +637,8 @@ guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_l
     /* Reset clipping rect */
     guac_common_surface_reset_clip(surface);
 
-    /* Init with black */
-    rect = surface->bounds_rect;
-    __guac_common_surface_rect(surface, &rect, 0x00, 0x00, 0x00);
+    /* Init with transparent black */
+    memset(surface->buffer, surface->stride * h, 0);
 
     /* Layers must initially exist */
     if (layer->index >= 0) {
