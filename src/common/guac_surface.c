@@ -400,7 +400,7 @@ static void __guac_common_surface_rect(guac_common_surface* dst, guac_common_rec
  *               should be ignored), zero otherwise.
  */
 static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
-                                      int sx, int sy,
+                                      int* sx, int* sy,
                                       guac_common_surface* dst, guac_common_rect* rect,
                                       int opaque) {
 
@@ -414,7 +414,10 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
     int max_x = 0;
     int max_y = 0;
 
-    src_buffer += src_stride*sy + 4*sx;
+    int orig_x = rect->x;
+    int orig_y = rect->y;
+
+    src_buffer += src_stride * (*sy) + 4 * (*sx);
     dst_buffer += (dst_stride * rect->y) + (4 * rect->x);
 
     /* For each row */
@@ -461,6 +464,10 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
         rect->width = 0;
         rect->height = 0;
     }
+
+    /* Update source X/Y */
+    *sx += rect->x - orig_x;
+    *sy += rect->y - orig_y;
 
 }
 
@@ -536,7 +543,7 @@ static void __guac_common_surface_fill_mask(unsigned char* src_buffer, int src_s
  * @param dx The destination X coordinate.
  * @param dy The destination Y coordinate.
  */
-static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int sy,
+static void __guac_common_surface_transfer(guac_common_surface* src, int* sx, int* sy,
                                            guac_transfer_function op,
                                            guac_common_surface* dst, guac_common_rect* rect) {
 
@@ -552,9 +559,12 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int
     int max_x = 0;
     int max_y = 0;
 
+    int orig_x = rect->x;
+    int orig_y = rect->y;
+
     /* Copy forwards only if destination is in a different surface or is before source */
-    if (src != dst || rect->y < sy || (rect->y == sy && rect->x < sx)) {
-        src_buffer += src->stride*sy + 4*sx;
+    if (src != dst || rect->y < *sy || (rect->y == *sy && rect->x < *sx)) {
+        src_buffer += src->stride * (*sy) + 4 * (*sx);
         dst_buffer += (dst->stride * rect->y) + (4 * rect->x);
         src_stride = src->stride;
         dst_stride = dst->stride;
@@ -563,7 +573,7 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int
 
     /* Otherwise, copy backwards */
     else {
-        src_buffer += src->stride * (sy + rect->height - 1) + 4 * (sx + rect->width - 1);
+        src_buffer += src->stride * (*sy + rect->height - 1) + 4 * (*sx + rect->width - 1);
         dst_buffer += dst->stride * (rect->y + rect->height - 1) + 4 * (rect->x + rect->width - 1);
         src_stride = -src->stride;
         dst_stride = -dst->stride;
@@ -596,12 +606,18 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int
 
     }
 
-    /* Translate coordinate space of min_* and max_* if moving backwards */
+    /* Translate X coordinate space of moving backwards */
     if (step < 0) {
-        min_x = rect->width - 1 - min_x;
-        max_x = rect->width - 1 - max_x;
-        min_y = rect->height - 1 - min_y;
-        max_y = rect->height - 1 - max_y;
+        int old_max_x = max_x;
+        max_x = rect->width - 1 - min_x;
+        min_x = rect->width - 1 - old_max_x;
+    }
+
+    /* Translate Y coordinate space of moving backwards */
+    if (dst_stride < 0) {
+        int old_max_y = max_y;
+        max_y = rect->height - 1 - min_y;
+        min_y = rect->height - 1 - old_max_y;
     }
 
     /* Restrict destination rect to only updated pixels */
@@ -615,6 +631,10 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int sx, int
         rect->width = 0;
         rect->height = 0;
     }
+
+    /* Update source X/Y */
+    *sx += rect->x - orig_x;
+    *sy += rect->y - orig_y;
 
 }
 
@@ -732,7 +752,7 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
         return;
 
     /* Update backing surface */
-    __guac_common_surface_put(buffer, stride, sx, sy, surface, &rect, format != CAIRO_FORMAT_ARGB32);
+    __guac_common_surface_put(buffer, stride, &sx, &sy, surface, &rect, format != CAIRO_FORMAT_ARGB32);
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
@@ -792,7 +812,7 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
         return;
 
     /* Update backing surface */
-    __guac_common_surface_transfer(src, sx, sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
+    __guac_common_surface_transfer(src, &sx, &sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
@@ -827,7 +847,7 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
         return;
 
     /* Update backing surface */
-    __guac_common_surface_transfer(src, sx, sy, op, dst, &rect);
+    __guac_common_surface_transfer(src, &sx, &sy, op, dst, &rect);
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
