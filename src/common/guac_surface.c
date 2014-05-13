@@ -231,6 +231,7 @@ void guac_common_surface_flush_deferred(guac_common_surface* surface) {
  * @param op The transfer function to use.
  * @param src The source of the uint32_t value.
  * @param dst THe destination which will hold the result of the transfer.
+ * @return Non-zero if the destination value was changed, zero otherwise.
  */
 static int __guac_common_surface_transfer_int(guac_transfer_function op, uint32_t* src, uint32_t* dst) {
 
