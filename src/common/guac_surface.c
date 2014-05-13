@@ -671,39 +671,37 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
 
-    /* Copy old surface data */
-    unsigned char* old_buffer = surface->buffer;
-    int old_stride = surface->stride;
+    unsigned char* old_buffer;
+    int old_stride;
     guac_common_rect old_rect;
+
+    int sx = 0;
+    int sy = 0;
+
+    /* Copy old surface data */
+    old_buffer = surface->buffer;
+    old_stride = surface->stride;
     guac_common_rect_init(&old_rect, 0, 0, surface->width, surface->height);
 
-    /* Create new buffer */
-    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
-    unsigned char* buffer = calloc(h, stride);
-
-    /* Assign new data */
-    surface->width = w;
+    /* Re-initialize at new size */
+    surface->width  = w;
     surface->height = h;
-    surface->stride = stride;
-    surface->buffer = buffer;
-
-    /* Reset clipping rect */
+    surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
+    surface->buffer = calloc(h, surface->stride);
     guac_common_surface_reset_clip(surface);
 
-    /* Init with old data */
+    /* Copy relevant old data */
     guac_common_rect_constrain(&old_rect, &surface->bounds_rect);
-    __guac_common_surface_put(old_buffer, old_stride, 0, 0, surface, &old_rect, 1);
+    __guac_common_surface_put(old_buffer, old_stride, &sx, &sy, surface, &old_rect, 1);
 
     /* Free old data */
     free(old_buffer);
 
     /* Clip dirty rect */
     if (surface->dirty) {
-
         guac_common_rect_constrain(&surface->dirty_rect, &surface->bounds_rect);
         if (surface->dirty_rect.width <= 0 || surface->dirty_rect.height <= 0)
             surface->dirty = 0;
-
     }
 
     /* Update Guacamole layer */
