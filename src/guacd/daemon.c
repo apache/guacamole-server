@@ -46,6 +46,7 @@
 #include <guacamole/instruction.h>
 #include <guacamole/plugin.h>
 #include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
