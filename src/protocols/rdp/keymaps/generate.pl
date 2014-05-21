@@ -28,7 +28,8 @@
 # into the RDP plugin source.
 #
 
-use 5.012;
+# We need at least Perl 5.8 for Unicode's sake
+use 5.008;
 
 sub keymap_symbol {
     my $_ = shift;
