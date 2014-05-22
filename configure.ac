@@ -21,7 +21,7 @@
 #
 
 AC_PREREQ([2.61])
-AC_INIT([guacamole-server], [0.9.0])
+AC_INIT([guacamole-server], [0.9.1])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
