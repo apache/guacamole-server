@@ -36,7 +36,7 @@
 
 
 AC_PREREQ([2.61])
-AC_INIT([guacamole-server], [0.8.3])
+AC_INIT([guacamole-server], [0.8.4])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
 LT_PREREQ([2.2])

@@ -84,5 +84,5 @@ noinst_HEADERS += ogg_encoder.h
 endif
 
 lib_LTLIBRARIES = libguac.la
-libguac_la_LDFLAGS = -version-info 5:0:0 @PTHREAD_LIBS@ @CAIRO_LIBS@ @PNG_LIBS@ @DL_LIBS@ @VORBIS_LIBS@
+libguac_la_LDFLAGS = -version-info 5:1:0 @PTHREAD_LIBS@ @CAIRO_LIBS@ @PNG_LIBS@ @DL_LIBS@ @VORBIS_LIBS@
 
