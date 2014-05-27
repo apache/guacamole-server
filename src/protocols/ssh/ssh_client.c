@@ -42,6 +42,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <openssl/ssl.h>
 
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"
@@ -224,6 +225,7 @@ void* ssh_client_thread(void* data) {
 
     pthread_t input_thread;
 
+    SSL_library_init();
     libssh2_init(0);
 
     /* Get username */
