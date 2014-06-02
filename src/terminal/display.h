@@ -32,6 +32,11 @@
 #include <pango/pangocairo.h>
 
 /**
+ * The maximum width of any character, in columns.
+ */
+#define GUAC_TERMINAL_MAX_CHAR_WIDTH 2
+
+/**
  * The available color palette. All integer colors within structures
  * here are indices into this palette.
  */
@@ -104,6 +109,11 @@ typedef struct guac_terminal_glyph {
      * The codepoint currently stored at that location.
      */
     int codepoint;
+
+    /**
+     * The width of this glyph, in columns.
+     */
+    int width;
 
 } guac_terminal_glyph;
 

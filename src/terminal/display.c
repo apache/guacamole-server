@@ -28,6 +28,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -119,15 +120,15 @@ int __guac_terminal_hash_codepoint(int codepoint) {
 }
 
 /**
- * Returns the location of the given character in the glyph cache layer,
- * sending it first if necessary. The location returned is in characters,
- * and thus must be multiplied by the glyph width to obtain the actual
- * location within the glyph cache layer.
+ * Returns a cached glyph for the given codepoint, rendering and caching it first if necessary.
  */
-int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
+guac_terminal_glyph* __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
 
     guac_socket* socket = display->client->socket;
+    int cell_width = display->char_width * GUAC_TERMINAL_MAX_CHAR_WIDTH;
+
     int location;
+    int width;
 
     int bytes;
     char utf8[4];
@@ -147,15 +148,16 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
 
     /* Get codepoint hash */
     int hashcode = __guac_terminal_hash_codepoint(codepoint);
+    guac_terminal_glyph* glyph = &(display->glyphs[hashcode]);
 
     /* If something already stored here, either same codepoint or collision */
-    if (display->glyphs[hashcode].location) {
+    if (glyph->location) {
 
-        location = display->glyphs[hashcode].location - 1;
+        location = glyph->location - 1;
 
         /* If match, return match. */
-        if (display->glyphs[hashcode].codepoint == codepoint)
-            return location;
+        if (glyph->codepoint == codepoint)
+            return glyph;
 
         /* Otherwise, reuse location */
 
@@ -168,10 +170,15 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
     /* Convert to UTF-8 */
     bytes = guac_terminal_encode_utf8(codepoint, utf8);
 
+    /* Calculate width in columns */
+    width = wcwidth(codepoint);
+    if (width < 0)
+        width = 1;
+
     /* Prepare surface */
     surface = cairo_image_surface_create(
             CAIRO_FORMAT_ARGB32,
-            display->char_width, display->char_height);
+            cell_width, display->char_height);
     cairo = cairo_create(surface);
 
     /* Get layout */
@@ -195,19 +202,19 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
 
     /* Clear existing glyph (if any) */
     guac_protocol_send_rect(socket, display->glyph_stroke,
-            location * display->char_width, 0,
-            display->char_width, display->char_height);
+            location * cell_width, 0,
+            cell_width, display->char_height);
 
     guac_protocol_send_cfill(socket, GUAC_COMP_ROUT, display->glyph_stroke,
             0x00, 0x00, 0x00, 0xFF);
 
     /* Send glyph */
-    guac_protocol_send_png(socket, GUAC_COMP_OVER, display->glyph_stroke, location * display->char_width, 0, surface);
+    guac_protocol_send_png(socket, GUAC_COMP_OVER, display->glyph_stroke, location * cell_width, 0, surface);
 
     /* Update filled glyphs */
     guac_protocol_send_rect(socket, display->filled_glyphs,
-            location * display->char_width, 0,
-            display->char_width, display->char_height);
+            location * cell_width, 0,
+            cell_width, display->char_height);
 
     guac_protocol_send_cfill(socket, GUAC_COMP_OVER, display->filled_glyphs,
             background->red,
@@ -216,16 +223,16 @@ int __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
             0xFF);
 
     guac_protocol_send_copy(socket, display->glyph_stroke,
-            location * display->char_width, 0, display->char_width, display->char_height,
-            GUAC_COMP_OVER, display->filled_glyphs, location * display->char_width, 0);
-
-    display->glyphs[hashcode].location = location+1;
-    display->glyphs[hashcode].codepoint = codepoint;
+            location * cell_width, 0, cell_width, display->char_height,
+            GUAC_COMP_OVER, display->filled_glyphs, location * cell_width, 0);
 
     cairo_surface_destroy(surface);
 
     /* Return glyph */
-    return location;
+    glyph->location = location+1;
+    glyph->codepoint = codepoint;
+    glyph->width = width;
+    return glyph;
 
 }
 
@@ -238,6 +245,7 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
 
     guac_socket* socket = display->client->socket;
     const guac_terminal_color* background_color;
+    int cell_width = display->char_width * GUAC_TERMINAL_MAX_CHAR_WIDTH;
     int background, foreground;
 
     /* Handle reverse video */
@@ -267,7 +275,7 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
         /* Colorize letter */
         guac_protocol_send_rect(socket, display->glyph_stroke,
             0, 0,
-            display->char_width * display->next_glyph, display->char_height);
+            cell_width * display->next_glyph, display->char_height);
 
         guac_protocol_send_cfill(socket, GUAC_COMP_ATOP, display->glyph_stroke,
             color->red,
@@ -284,7 +292,7 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
         /* Set background */
         guac_protocol_send_rect(socket, display->filled_glyphs,
             0, 0,
-            display->char_width * display->next_glyph, display->char_height);
+            cell_width * display->next_glyph, display->char_height);
 
         guac_protocol_send_cfill(socket, GUAC_COMP_OVER, display->filled_glyphs,
             background_color->red,
@@ -296,7 +304,7 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
         guac_protocol_send_copy(socket, display->glyph_stroke,
 
             0, 0,
-            display->char_width * display->next_glyph, display->char_height,
+            cell_width * display->next_glyph, display->char_height,
 
             GUAC_COMP_OVER, display->filled_glyphs,
             0, 0);
@@ -318,11 +326,16 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
 int __guac_terminal_set(guac_terminal_display* display, int row, int col, int codepoint) {
 
     guac_socket* socket = display->client->socket;
-    int location = __guac_terminal_get_glyph(display, codepoint); 
+    guac_terminal_glyph* glyph = __guac_terminal_get_glyph(display, codepoint); 
+    int cell_width = display->char_width * GUAC_TERMINAL_MAX_CHAR_WIDTH;
+
+    /* Do nothing if glyph is empty */
+    if (glyph->width == 0)
+        return 0;
 
     return guac_protocol_send_copy(socket,
         display->filled_glyphs,
-        location * display->char_width, 0, display->char_width, display->char_height,
+        (glyph->location-1) * cell_width, 0, glyph->width * display->char_width, display->char_height,
         GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
         display->char_width * col,
         display->char_height * row);
