@@ -28,6 +28,7 @@
 #include "terminal_handlers.h"
 
 #include <stdlib.h>
+#include <wchar.h>
 
 /**
  * Response string sent when identification is requested.
@@ -45,6 +46,8 @@
 #define GUAC_TERMINAL_OK          "\x1B[0n"
 
 int guac_terminal_echo(guac_terminal* term, unsigned char c) {
+
+    int width;
 
     static int bytes_remaining = 0;
     static int codepoint = 0;
@@ -206,8 +209,12 @@ int guac_terminal_echo(guac_terminal* term, unsigned char c) {
                     term->cursor_col,
                     codepoint);
 
+            width = wcwidth(codepoint);
+            if (width < 0)
+                width = 1;
+
             /* Advance cursor */
-            term->cursor_col++;
+            term->cursor_col += width;
 
     }
 
