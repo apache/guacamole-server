@@ -28,6 +28,8 @@
 #include "ssh_client.h"
 #include "terminal.h"
 
+#include <langinfo.h>
+#include <locale.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -129,6 +131,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Wrong number of arguments");
         return -1;
     }
+
+    /* Set locale and warn if not UTF-8 */
+    setlocale(LC_CTYPE, "");
+    if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0)
+        guac_client_log_info(client, "Current locale does not use UTF-8. Some characters may not render correctly.");
 
     /* Read parameters */
     strcpy(client_data->hostname,  argv[IDX_HOSTNAME]);
