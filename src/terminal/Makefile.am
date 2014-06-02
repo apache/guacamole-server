@@ -50,5 +50,5 @@ libguac_terminal_la_SOURCES =   \
     terminal_handlers.c
 
 libguac_terminal_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@ 
-libguac_terminal_la_LDFLAGS = @PTHREAD_LIBS@ @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @CAIRO_LIBS@
+libguac_terminal_la_LDFLAGS = @PTHREAD_LIBS@ @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @CAIRO_LIBS@ @MATH_LIBS@
 

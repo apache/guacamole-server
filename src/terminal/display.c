@@ -26,6 +26,7 @@
 #include "display.h"
 #include "types.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
@@ -143,8 +144,11 @@ guac_terminal_glyph* __guac_terminal_get_glyph(guac_terminal_display* display, i
 
     cairo_surface_t* surface;
     cairo_t* cairo;
+    int surface_width, surface_height;
    
     PangoLayout* layout;
+    int layout_width, layout_height;
+    int ideal_layout_width, ideal_layout_height;
 
     /* Get codepoint hash */
     int hashcode = __guac_terminal_hash_codepoint(codepoint);
@@ -175,16 +179,39 @@ guac_terminal_glyph* __guac_terminal_get_glyph(guac_terminal_display* display, i
     if (width < 0)
         width = 1;
 
+    surface_width = width * display->char_width;
+    surface_height = display->char_height;
+
+    ideal_layout_width = surface_width * PANGO_SCALE;
+    ideal_layout_height = surface_height * PANGO_SCALE;
+
     /* Prepare surface */
-    surface = cairo_image_surface_create(
-            CAIRO_FORMAT_ARGB32,
-            cell_width, display->char_height);
+    surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+                                         surface_width, surface_height);
     cairo = cairo_create(surface);
 
     /* Get layout */
     layout = pango_cairo_create_layout(cairo);
     pango_layout_set_font_description(layout, display->font_desc);
     pango_layout_set_text(layout, utf8, bytes);
+    pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
+
+    pango_layout_get_size(layout, &layout_width, &layout_height);
+
+    /* If layout bigger than available space, scale it back */
+    if (layout_width > ideal_layout_width || layout_height > ideal_layout_height) {
+
+        double scale = fmin(ideal_layout_width  / (double) layout_width,
+                            ideal_layout_height / (double) layout_height);
+
+        cairo_scale(cairo, scale, scale);
+
+        /* Update layout to reflect scaled surface */
+        pango_layout_set_width(layout, ideal_layout_width / scale);
+        pango_layout_set_height(layout, ideal_layout_height / scale);
+        pango_cairo_update_layout(cairo, layout);
+
+    }
 
     /* Draw */
     cairo_set_source_rgba(cairo,
