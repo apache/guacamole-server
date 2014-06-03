@@ -245,6 +245,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     pthread_mutex_init(&(term->lock), NULL);
 
     /* Size display */
+    guac_protocol_send_size(term->display->client->socket,
+            GUAC_DEFAULT_LAYER, width, height);
     guac_terminal_display_resize(term->display,
             term->term_width, term->term_height);
 
@@ -1117,14 +1119,21 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
 
 int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 
-    /* Calculate dimensions */
-    int rows    = height / terminal->display->char_height;
-    int columns = width  / terminal->display->char_width;
+    guac_terminal_display* display = terminal->display;
+    guac_client* client = display->client;
+    guac_socket* socket = client->socket;
 
-    /* If size has changed */
+    /* Calculate dimensions */
+    int rows    = height / display->char_height;
+    int columns = width  / display->char_width;
+
+    /* Resize default layer to given pixel dimensions */
+    guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, width, height);
+
+    /* Resize terminal if row/column dimensions have changed */
     if (columns != terminal->term_width || rows != terminal->term_height) {
 
-        guac_client_log(terminal->client, GUAC_LOG_DEBUG,
+        guac_client_log(client, GUAC_LOG_DEBUG,
                 "Resizing terminal to %ix%i", rows, columns);
 
         /* Resize terminal */
@@ -1134,6 +1143,12 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
         terminal->scroll_end = rows - 1;
 
         guac_terminal_flush(terminal);
+    }
+
+    /* If terminal size hasn't changed, still need to flush */
+    else {
+        guac_protocol_send_sync(socket, client->last_sent_timestamp);
+        guac_socket_flush(socket);
     }
 
     return 0;
