@@ -195,12 +195,12 @@ void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
 
     /* Set values */
     current = &(buffer_row->characters[start_column]);
-    for (i=start_column; i<=end_column; i++) {
+    for (i = start_column; i <= end_column; i += character->width) {
 
         *(current++) = *character;
 
         /* Store any required continuation characters */
-        for (j=1; j<character->width; j++)
+        for (j=1; j < character->width; j++)
             *(current++) = continuation_char;
 
     }
