@@ -845,7 +845,28 @@ void guac_terminal_select_end(guac_terminal* terminal, char* string) {
 void guac_terminal_copy_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, int offset) {
 
-    __guac_terminal_overwrite_columns(terminal, row, start_column + offset, end_column + offset);
+    /*
+     * Handle each resulting overwrite. Note that there are effectively TWO.
+     * Handling the entire destination region as a single overwrite ignores
+     * the possibility that the offset may position the source region in
+     * within part of a multicolumn character.
+     *
+     * Consider:
+     *
+     * 1) The overwrite which covers only characters OUTSIDE the source region
+     * 2) The overwrite which coveres only characters WITHIN the source region
+     *
+     * The source region does NOT necessarily begin at a character boundary.
+     */
+
+    if (offset < 0) {
+        __guac_terminal_overwrite_columns(terminal, row, start_column + offset, start_column-1);
+        __guac_terminal_overwrite_columns(terminal, row, start_column, end_column + offset);
+    }
+    else {
+        __guac_terminal_overwrite_columns(terminal, row, start_column + offset, end_column-1);
+        __guac_terminal_overwrite_columns(terminal, row, end_column, end_column + offset);
+    }
 
     guac_terminal_display_copy_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, offset);
