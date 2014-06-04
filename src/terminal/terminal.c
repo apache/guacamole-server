@@ -796,6 +796,34 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
 void guac_terminal_set_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, guac_terminal_char* character) {
 
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, end_column+1);
+
+    /* Reset initial character, if starting on non-char boundary */
+    if (start_column > 0) {
+
+        int aligned_start_column = start_column;
+        guac_terminal_char* start_char = &(buffer_row->characters[aligned_start_column]);
+
+        /* Determine nearest aligned boundary */
+        while (aligned_start_column > 0 && start_char->value == GUAC_CHAR_CONTINUATION) {
+            start_char--;
+            aligned_start_column--;
+        }
+
+        /* Clear up to character start */
+        if (aligned_start_column != start_column) {
+
+            guac_terminal_char cleared_char;
+            cleared_char.value = ' ';
+            cleared_char.attributes = start_char->attributes;
+            cleared_char.width = 1;
+
+            guac_terminal_set_columns(terminal, row, aligned_start_column, start_column-1, &cleared_char);
+
+        }
+
+    }
+
     guac_terminal_display_set_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, character);
 
