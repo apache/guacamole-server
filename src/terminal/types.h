@@ -29,6 +29,15 @@
 #include <stdbool.h>
 
 /**
+ * A character which is not truly a character, but rather part of an
+ * existing character which spans multiple columns. The original
+ * character will be somewhere earlier in the row, separated from
+ * this character by a contiguous string of zero of more
+ * GUAC_CHAR_CONTINUATION characters.
+ */
+#define GUAC_CHAR_CONTINUATION -1
+
+/**
  * An RGB color, where each component ranges from 0 to 255.
  */
 typedef struct guac_terminal_color {
@@ -95,7 +104,9 @@ typedef struct guac_terminal_attributes {
 typedef struct guac_terminal_char {
 
     /**
-     * The Unicode codepoint of the character to display.
+     * The Unicode codepoint of the character to display, or
+     * GUAC_CHAR_CONTINUATION if this character is part of
+     * another character which spans multiple columns.
      */
     int value;
 
@@ -103,6 +114,12 @@ typedef struct guac_terminal_char {
      * The attributes of the character to display.
      */
     guac_terminal_attributes attributes;
+
+    /**
+     * The number of columns this character occupies. If the character is
+     * GUAC_CHAR_CONTINUATION, this value is undefined and not applicable.
+     */
+    int width;
 
 } guac_terminal_char;
 

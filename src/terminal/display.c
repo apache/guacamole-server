@@ -585,7 +585,8 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
         .attributes = {
             .foreground = 0,
             .background = 0
-        }
+        },
+        .width = 1
     };
 
     /* Free old operations buffer */

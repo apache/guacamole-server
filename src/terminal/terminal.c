@@ -96,7 +96,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
             .bold       = false,
             .reverse    = false,
             .underscore = false
-        }};
+        },
+        .width = 1};
 
     guac_terminal* term = malloc(sizeof(guac_terminal));
     term->client = client;

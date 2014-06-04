@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include "types.h"
 
 #include <stdbool.h>
 #include <unistd.h>
@@ -83,7 +84,8 @@ int guac_terminal_encode_utf8(int codepoint, char* utf8) {
 bool guac_terminal_has_glyph(int codepoint) {
     return
            codepoint != 0
-        && codepoint != ' ';
+        && codepoint != ' '
+        && codepoint != GUAC_CHAR_CONTINUATION;
 }
 
 int guac_terminal_write_all(int fd, const char* buffer, int size) {
