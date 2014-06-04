@@ -557,14 +557,15 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
     current = &(display->operations[row * display->width + start_column]);
 
     /* For each column in range */
-    for (i=start_column; i<=end_column; i++) {
+    for (i = start_column; i <= end_column; i += character->width) {
 
         /* Set operation */
         current->type      = GUAC_CHAR_SET;
         current->character = *character;
 
-        /* Next column */
-        current++;
+        /* Next character */
+        current += character->width;
+
     }
 
     /* If selection visible and committed, clear if update touches selection */

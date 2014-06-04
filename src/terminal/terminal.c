@@ -39,6 +39,7 @@
 #include <string.h>
 #include <sys/select.h>
 #include <unistd.h>
+#include <wchar.h>
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
@@ -335,12 +336,20 @@ void guac_terminal_prompt(guac_terminal* terminal, const char* title, char* str,
 
 int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint) {
 
+    int width;
+
     /* Build character with current attributes */
     guac_terminal_char guac_char;
     guac_char.value = codepoint;
     guac_char.attributes = term->current_attributes;
 
-    guac_terminal_set_columns(term, row, col, col, &guac_char);
+    width = wcwidth(codepoint);
+    if (width < 0)
+        width = 1;
+
+    guac_char.width = width;
+
+    guac_terminal_set_columns(term, row, col, col + width - 1, &guac_char);
 
     return 0;
 
@@ -448,6 +457,7 @@ int guac_terminal_clear_columns(guac_terminal* term,
     guac_terminal_char blank;
     blank.value = 0;
     blank.attributes = term->current_attributes;
+    blank.width = 1;
 
     /* Clear */
     guac_terminal_set_columns(term,
@@ -542,9 +552,15 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
         /* Draw row */
         guac_terminal_char* current = buffer_row->characters;
-        for (column=0; column<buffer_row->length; column++)
-            guac_terminal_display_set_columns(terminal->display,
-                    dest_row, column, column, current++);
+        for (column=0; column<buffer_row->length; column++) {
+
+            /* Only draw if not blank */
+            if (guac_terminal_has_glyph(current->value))
+                guac_terminal_display_set_columns(terminal->display, dest_row, column, column, current);
+
+            current++;
+
+        }
 
         /* Next row */
         dest_row++;
@@ -600,9 +616,15 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
         /* Draw row */
         guac_terminal_char* current = buffer_row->characters;
-        for (column=0; column<buffer_row->length; column++)
-            guac_terminal_display_set_columns(terminal->display,
-                    dest_row, column, column, current++);
+        for (column=0; column<buffer_row->length; column++) {
+
+            /* Only draw if not blank */
+            if (guac_terminal_has_glyph(current->value))
+                guac_terminal_display_set_columns(terminal->display, dest_row, column, column, current);
+
+            current++;
+
+        }
 
         /* Next row */
         dest_row++;
@@ -660,7 +682,7 @@ int __guac_terminal_buffer_string(guac_terminal_buffer_row* row, int start, int 
         int codepoint = row->characters[i].value;
 
         /* If not null (blank), add to string */
-        if (codepoint != 0) {
+        if (codepoint != 0 && codepoint != GUAC_CHAR_CONTINUATION) {
             int bytes = guac_terminal_encode_utf8(codepoint, string);
             string += bytes;
             length += bytes;
@@ -814,9 +836,14 @@ static void __guac_terminal_redraw_rect(guac_terminal* term, int start_row, int 
                 row, start_col, end_col, &(term->default_char));
 
         /* Copy characters */
-        for (col=start_col; col <= end_col && col < buffer_row->length; col++)
-            guac_terminal_display_set_columns(term->display, row, col, col,
-                    &(buffer_row->characters[col]));
+        for (col=start_col; col <= end_col && col < buffer_row->length; col++) {
+
+            /* Only redraw if not blank */
+            guac_terminal_char* c = &(buffer_row->characters[col]);
+            if (guac_terminal_has_glyph(c->value))
+                guac_terminal_display_set_columns(term->display, row, col, col, c);
+
+        }
 
     }
 

@@ -182,16 +182,28 @@ void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
 void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
         int start_column, int end_column, guac_terminal_char* character) {
 
-    int i;
+    int i, j;
     guac_terminal_char* current;
+
+    /* Build continuation char (for multicolumn characters) */
+    guac_terminal_char continuation_char;
+    continuation_char.value = GUAC_CHAR_CONTINUATION;
+    continuation_char.attributes = character->attributes;
 
     /* Get and expand row */
     guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(buffer, row, end_column+1);
 
     /* Set values */
     current = &(buffer_row->characters[start_column]);
-    for (i=start_column; i<=end_column; i++)
+    for (i=start_column; i<=end_column; i++) {
+
         *(current++) = *character;
+
+        /* Store any required continuation characters */
+        for (j=1; j<character->width; j++)
+            *(current++) = continuation_char;
+
+    }
 
     /* Update length depending on row written */
     if (character->value != 0 && row >= buffer->length) 
