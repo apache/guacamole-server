@@ -83,13 +83,13 @@ static void __guac_terminal_force_break(guac_terminal* terminal, int row, int ed
         guac_terminal_char* start_char = &(buffer_row->characters[start_column]);
 
         /* Determine start column */
-        while (start_column >= 0 && start_char->value == GUAC_CHAR_CONTINUATION) {
+        while (start_column > 0 && start_char->value == GUAC_CHAR_CONTINUATION) {
             start_char--;
             start_column--;
         }
 
         /* Clear character if broken */
-        if (start_char->value == GUAC_CHAR_CONTINUATION || start_char->width != start_column - end_column + 1) {
+        if (start_char->value == GUAC_CHAR_CONTINUATION || start_char->width != end_column - start_column + 1) {
 
             guac_terminal_char cleared_char;
             cleared_char.value = ' ';
@@ -118,7 +118,7 @@ static void __guac_terminal_force_break(guac_terminal* terminal, int row, int ed
         }
 
         /* Clear character if broken */
-        if (start_char->value == GUAC_CHAR_CONTINUATION || start_char->width != start_column - end_column + 1) {
+        if (start_char->value == GUAC_CHAR_CONTINUATION || start_char->width != end_column - start_column + 1) {
 
             guac_terminal_char cleared_char;
             cleared_char.value = ' ';
