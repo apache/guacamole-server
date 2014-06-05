@@ -63,66 +63,69 @@ static void __guac_terminal_set_columns(guac_terminal* terminal, int row,
 }
 
 /**
- * Declares that the given range of columns within the given row is about to be
- * overwritten, and should be updated as necessary.
+ * Enforces a character break at the given edge, ensuring that the left side
+ * of the edge is the final column of a character, and the right side of the
+ * edge is the initial column of a DIFFERENT character.
+ *
+ * For a character in a column N, the left edge number is N, and the right
+ * edge is N+1.
  */
-static void __guac_terminal_overwrite_columns(guac_terminal* terminal, int row, int start_column, int end_column) {
+static void __guac_terminal_force_break(guac_terminal* terminal, int row, int edge) {
 
     guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
-    /* Clear out initial character */
-    if (start_column > 0) {
+    /* Ensure character to left of edge is unbroken */
+    if (edge > 0) {
 
-        int aligned_start_column = start_column;
-        guac_terminal_char* start_char = &(buffer_row->characters[aligned_start_column]);
+        int end_column = edge - 1;
+        int start_column = end_column;
 
-        /* Determine nearest aligned boundary */
-        while (aligned_start_column > 0 && start_char->value == GUAC_CHAR_CONTINUATION) {
+        guac_terminal_char* start_char = &(buffer_row->characters[start_column]);
+
+        /* Determine start column */
+        while (start_column >= 0 && start_char->value == GUAC_CHAR_CONTINUATION) {
             start_char--;
-            aligned_start_column--;
+            start_column--;
         }
 
-        /* Clear up to character start */
-        if (aligned_start_column != start_column) {
+        /* Clear character if broken */
+        if (start_char->value == GUAC_CHAR_CONTINUATION || start_char->width != start_column - end_column + 1) {
 
             guac_terminal_char cleared_char;
             cleared_char.value = ' ';
             cleared_char.attributes = start_char->attributes;
             cleared_char.width = 1;
 
-            __guac_terminal_set_columns(terminal, row, aligned_start_column, start_column-1, &cleared_char);
+            __guac_terminal_set_columns(terminal, row, start_column, end_column, &cleared_char);
 
         }
 
     }
 
-    /* Clear out final character */
-    if (end_column >= 0 && end_column < buffer_row->length) {
+    /* Ensure character to right of edge is unbroken */
+    if (edge >= 0 && edge < buffer_row->length) {
 
-        int aligned_end_column = end_column;
-        guac_terminal_char* end_char = &(buffer_row->characters[aligned_end_column]);
+        int start_column = edge;
+        int end_column = start_column;
 
-        /* If we're lucky enough to end on the beginning of a character, just use its defined width */
-        if (end_char->value != GUAC_CHAR_CONTINUATION)
-            aligned_end_column += end_char->width - 1;
+        guac_terminal_char* start_char = &(buffer_row->characters[start_column]);
+        guac_terminal_char* end_char = &(buffer_row->characters[end_column]);
 
-        /* Otherwise, search for nearest aligned boundary */
-        else {
-            while (aligned_end_column+1 < buffer_row->length && (end_char+1)->value == GUAC_CHAR_CONTINUATION) {
-                end_char++;
-                aligned_end_column++;
-            }
+        /* Determine end column */
+        while (end_column+1 < buffer_row->length && (end_char+1)->value == GUAC_CHAR_CONTINUATION) {
+            end_char++;
+            end_column++;
         }
 
-        /* Clear up to true character end */
-        if (aligned_end_column != end_column) {
+        /* Clear character if broken */
+        if (start_char->value == GUAC_CHAR_CONTINUATION || start_char->width != start_column - end_column + 1) {
 
             guac_terminal_char cleared_char;
             cleared_char.value = ' ';
             cleared_char.attributes = end_char->attributes;
             cleared_char.width = 1;
 
-            __guac_terminal_set_columns(terminal, row, end_column+1, aligned_end_column, &cleared_char);
+            __guac_terminal_set_columns(terminal, row, start_column, end_column, &cleared_char);
 
         }
 
@@ -845,29 +848,6 @@ void guac_terminal_select_end(guac_terminal* terminal, char* string) {
 void guac_terminal_copy_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, int offset) {
 
-    /*
-     * Handle each resulting overwrite. Note that there are effectively TWO.
-     * Handling the entire destination region as a single overwrite ignores
-     * the possibility that the offset may position the source region in
-     * within part of a multicolumn character.
-     *
-     * Consider:
-     *
-     * 1) The overwrite which covers only characters OUTSIDE the source region
-     * 2) The overwrite which coveres only characters WITHIN the source region
-     *
-     * The source region does NOT necessarily begin at a character boundary.
-     */
-
-    if (offset < 0) {
-        __guac_terminal_overwrite_columns(terminal, row, start_column + offset, start_column-1);
-        __guac_terminal_overwrite_columns(terminal, row, start_column, end_column + offset);
-    }
-    else {
-        __guac_terminal_overwrite_columns(terminal, row, start_column + offset, end_column-1);
-        __guac_terminal_overwrite_columns(terminal, row, end_column, end_column + offset);
-    }
-
     guac_terminal_display_copy_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, offset);
 
@@ -879,6 +859,10 @@ void guac_terminal_copy_columns(guac_terminal* terminal, int row,
             terminal->visible_cursor_col >= start_column &&
             terminal->visible_cursor_col <= end_column)
         terminal->visible_cursor_col += offset;
+
+    /* Force breaks around destination region */
+    __guac_terminal_force_break(terminal, row, start_column + offset);
+    __guac_terminal_force_break(terminal, row, end_column + offset + 1);
 
 }
 
@@ -901,7 +885,6 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
 void guac_terminal_set_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, guac_terminal_char* character) {
 
-    __guac_terminal_overwrite_columns(terminal, row, start_column, end_column);
     __guac_terminal_set_columns(terminal, row, start_column, end_column, character);
 
     /* If visible cursor in current row, preserve state */
@@ -917,6 +900,10 @@ void guac_terminal_set_columns(guac_terminal* terminal, int row,
                 terminal->visible_cursor_col, terminal->visible_cursor_col, &cursor_character);
 
     }
+
+    /* Force breaks around destination region */
+    __guac_terminal_force_break(terminal, row, start_column);
+    __guac_terminal_force_break(terminal, row, end_column + 1);
 
 }
 
