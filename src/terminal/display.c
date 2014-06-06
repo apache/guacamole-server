@@ -24,6 +24,7 @@
 
 #include "common.h"
 #include "display.h"
+#include "guac_surface.h"
 #include "types.h"
 
 #include <math.h>
@@ -121,14 +122,42 @@ int __guac_terminal_hash_codepoint(int codepoint) {
 }
 
 /**
- * Returns a cached glyph for the given codepoint, rendering and caching it first if necessary.
+ * Sets the attributes of the display such that future glyphs will render as
+ * expected.
  */
-guac_terminal_glyph* __guac_terminal_get_glyph(guac_terminal_display* display, int codepoint) {
+int __guac_terminal_set_colors(guac_terminal_display* display,
+        guac_terminal_attributes* attributes) {
 
-    guac_socket* socket = display->client->socket;
-    int cell_width = display->char_width * GUAC_TERMINAL_MAX_CHAR_WIDTH;
+    int background, foreground;
 
-    int location;
+    /* Handle reverse video */
+    if (attributes->reverse != attributes->cursor) {
+        background = attributes->foreground;
+        foreground = attributes->background;
+    }
+    else {
+        foreground = attributes->foreground;
+        background = attributes->background;
+    }
+
+    /* Handle bold */
+    if (attributes->bold && foreground <= 7)
+        foreground += 8;
+
+    display->glyph_foreground = foreground;
+    display->glyph_background = background;
+
+    return 0;
+
+}
+
+/**
+ * Sends the given character to the terminal at the given row and column,
+ * rendering the character immediately. This bypasses the guac_terminal_display
+ * mechanism and is intended for flushing of updates only.
+ */
+int __guac_terminal_set(guac_terminal_display* display, int row, int col, int codepoint) {
+
     int width;
 
     int bytes;
@@ -150,34 +179,17 @@ guac_terminal_glyph* __guac_terminal_get_glyph(guac_terminal_display* display, i
     int layout_width, layout_height;
     int ideal_layout_width, ideal_layout_height;
 
-    /* Get codepoint hash */
-    int hashcode = __guac_terminal_hash_codepoint(codepoint);
-    guac_terminal_glyph* glyph = &(display->glyphs[hashcode]);
-
-    /* If something already stored here, either same codepoint or collision */
-    if (glyph->location) {
-
-        location = glyph->location - 1;
-
-        /* If match, return match. */
-        if (glyph->codepoint == codepoint)
-            return glyph;
-
-        /* Otherwise, reuse location */
-
-    }
-
-    /* If no collision, allocate new glyph location */
-    else
-        location = display->next_glyph++;
-
-    /* Convert to UTF-8 */
-    bytes = guac_terminal_encode_utf8(codepoint, utf8);
-
     /* Calculate width in columns */
     width = wcwidth(codepoint);
     if (width < 0)
         width = 1;
+
+    /* Do nothing if glyph is empty */
+    if (width == 0)
+        return 0;
+
+    /* Convert to UTF-8 */
+    bytes = guac_terminal_encode_utf8(codepoint, utf8);
 
     surface_width = width * display->char_width;
     surface_height = display->char_height;
@@ -186,9 +198,18 @@ guac_terminal_glyph* __guac_terminal_get_glyph(guac_terminal_display* display, i
     ideal_layout_height = surface_height * PANGO_SCALE;
 
     /* Prepare surface */
-    surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+    surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
                                          surface_width, surface_height);
     cairo = cairo_create(surface);
+
+    /* Fill background */
+    cairo_set_source_rgb(cairo,
+            background->red   / 255.0,
+            background->green / 255.0,
+            background->blue  / 255.0);
+
+    cairo_rectangle(cairo, 0, 0, surface_width, surface_height); 
+    cairo_fill(cairo);
 
     /* Get layout */
     layout = pango_cairo_create_layout(cairo);
@@ -214,158 +235,26 @@ guac_terminal_glyph* __guac_terminal_get_glyph(guac_terminal_display* display, i
     }
 
     /* Draw */
-    cairo_set_source_rgba(cairo,
+    cairo_set_source_rgb(cairo,
             color->red   / 255.0,
             color->green / 255.0,
-            color->blue  / 255.0,
-            1.0 /* alpha */ );
+            color->blue  / 255.0);
 
     cairo_move_to(cairo, 0.0, 0.0);
     pango_cairo_show_layout(cairo, layout);
 
+    /* Draw */
+    guac_common_surface_draw(display->default_surface,
+        display->char_width * col,
+        display->char_height * row,
+        surface);
+
     /* Free all */
     g_object_unref(layout);
     cairo_destroy(cairo);
-
-    /* Clear existing glyph (if any) */
-    guac_protocol_send_rect(socket, display->glyph_stroke,
-            location * cell_width, 0,
-            cell_width, display->char_height);
-
-    guac_protocol_send_cfill(socket, GUAC_COMP_ROUT, display->glyph_stroke,
-            0x00, 0x00, 0x00, 0xFF);
-
-    /* Send glyph */
-    guac_protocol_send_png(socket, GUAC_COMP_OVER, display->glyph_stroke, location * cell_width, 0, surface);
-
-    /* Update filled glyphs */
-    guac_protocol_send_rect(socket, display->filled_glyphs,
-            location * cell_width, 0,
-            cell_width, display->char_height);
-
-    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, display->filled_glyphs,
-            background->red,
-            background->green,
-            background->blue,
-            0xFF);
-
-    guac_protocol_send_copy(socket, display->glyph_stroke,
-            location * cell_width, 0, cell_width, display->char_height,
-            GUAC_COMP_OVER, display->filled_glyphs, location * cell_width, 0);
-
     cairo_surface_destroy(surface);
 
-    /* Return glyph */
-    glyph->location = location+1;
-    glyph->codepoint = codepoint;
-    glyph->width = width;
-    return glyph;
-
-}
-
-/**
- * Sets the attributes of the glyph cache layer such that future copies from
- * this layer will display as expected.
- */
-int __guac_terminal_set_colors(guac_terminal_display* display,
-        guac_terminal_attributes* attributes) {
-
-    guac_socket* socket = display->client->socket;
-    const guac_terminal_color* background_color;
-    int cell_width = display->char_width * GUAC_TERMINAL_MAX_CHAR_WIDTH;
-    int background, foreground;
-
-    /* Handle reverse video */
-    if (attributes->reverse != attributes->cursor) {
-        background = attributes->foreground;
-        foreground = attributes->background;
-    }
-    else {
-        foreground = attributes->foreground;
-        background = attributes->background;
-    }
-
-    /* Handle bold */
-    if (attributes->bold && foreground <= 7)
-        foreground += 8;
-
-    /* Get background color */
-    background_color = &guac_terminal_palette[background];
-
-    /* If foreground different from current, colorize */
-    if (foreground != display->glyph_foreground) {
-
-        /* Get color */
-        const guac_terminal_color* color =
-            &guac_terminal_palette[foreground];
-
-        /* Colorize letter */
-        guac_protocol_send_rect(socket, display->glyph_stroke,
-            0, 0,
-            cell_width * display->next_glyph, display->char_height);
-
-        guac_protocol_send_cfill(socket, GUAC_COMP_ATOP, display->glyph_stroke,
-            color->red,
-            color->green,
-            color->blue,
-            255);
-
-    }
-
-    /* If any color change at all, update filled */
-    if (foreground != display->glyph_foreground
-            || background != display->glyph_background) {
-
-        /* Set background */
-        guac_protocol_send_rect(socket, display->filled_glyphs,
-            0, 0,
-            cell_width * display->next_glyph, display->char_height);
-
-        guac_protocol_send_cfill(socket, GUAC_COMP_OVER, display->filled_glyphs,
-            background_color->red,
-            background_color->green,
-            background_color->blue,
-            255);
-
-        /* Copy stroke */
-        guac_protocol_send_copy(socket, display->glyph_stroke,
-
-            0, 0,
-            cell_width * display->next_glyph, display->char_height,
-
-            GUAC_COMP_OVER, display->filled_glyphs,
-            0, 0);
-
-    }
-
-    display->glyph_foreground = foreground;
-    display->glyph_background = background;
-
     return 0;
-
-}
-
-/**
- * Sends the given character to the terminal at the given row and column,
- * rendering the charater immediately. This bypasses the guac_terminal_display
- * mechanism and is intended for flushing of updates only.
- */
-int __guac_terminal_set(guac_terminal_display* display, int row, int col, int codepoint) {
-
-    guac_socket* socket = display->client->socket;
-    guac_terminal_glyph* glyph = __guac_terminal_get_glyph(display, codepoint); 
-    int cell_width = display->char_width * GUAC_TERMINAL_MAX_CHAR_WIDTH;
-
-    /* Do nothing if glyph is empty */
-    if (glyph->width == 0)
-        return 0;
-
-    return guac_protocol_send_copy(socket,
-        display->filled_glyphs,
-        (glyph->location-1) * cell_width, 0, glyph->width * display->char_width, display->char_height,
-        GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
-        display->char_width * col,
-        display->char_height * row);
 
 }
 
@@ -382,10 +271,8 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     guac_terminal_display* display = malloc(sizeof(guac_terminal_display));
     display->client = client;
 
-    memset(display->glyphs, 0, sizeof(display->glyphs));
-    display->glyph_stroke = guac_client_alloc_buffer(client);
-    display->filled_glyphs = guac_client_alloc_buffer(client);
-
+    /* Create default surface */
+    display->default_surface = guac_common_surface_alloc(client->socket, GUAC_DEFAULT_LAYER, 0, 0);
     display->select_layer = guac_client_alloc_layer(client);
 
     /* Get font */
@@ -625,9 +512,9 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
     display->width = width;
     display->height = height;
 
-    /* Send initial display size */
-    guac_protocol_send_size(display->client->socket,
-            GUAC_DEFAULT_LAYER,
+    /* Send display size */
+    guac_common_surface_resize(
+            display->default_surface,
             display->char_width  * width,
             display->char_height * height);
 
@@ -745,16 +632,15 @@ void __guac_terminal_display_flush_copy(guac_terminal_display* display) {
                 }
 
                 /* Send copy */
-                guac_protocol_send_copy(display->client->socket,
+                guac_common_surface_copy(
 
-                        GUAC_DEFAULT_LAYER,
+                        display->default_surface,
                         current->column * display->char_width,
                         current->row * display->char_height,
                         rect_width * display->char_width,
                         rect_height * display->char_height,
 
-                        GUAC_COMP_OVER,
-                        GUAC_DEFAULT_LAYER,
+                        display->default_surface,
                         col * display->char_width,
                         row * display->char_height);
 
@@ -882,18 +768,13 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                 }
 
                 /* Send rect */
-                guac_protocol_send_rect(display->client->socket,
-                        GUAC_DEFAULT_LAYER,
+                guac_common_surface_rect(
+                        display->default_surface,
                         col * display->char_width,
                         row * display->char_height,
                         rect_width * display->char_width,
-                        rect_height * display->char_height);
-
-                guac_protocol_send_cfill(display->client->socket,
-                        GUAC_COMP_OVER,
-                        GUAC_DEFAULT_LAYER,
-                        guac_color->red, guac_color->green, guac_color->blue,
-                        0xFF);
+                        rect_height * display->char_height,
+                        guac_color->red, guac_color->green, guac_color->blue);
 
             } /* end if clear operation */
 
@@ -904,6 +785,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
     }
 
 }
+
 
 void __guac_terminal_display_flush_set(guac_terminal_display* display) {
 
@@ -917,13 +799,18 @@ void __guac_terminal_display_flush_set(guac_terminal_display* display) {
             /* Perform given operation */
             if (current->type == GUAC_CHAR_SET) {
 
+                int codepoint = current->character.value;
+
+                /* Use space if no glyph */
+                if (!guac_terminal_has_glyph(codepoint))
+                    codepoint = ' ';
+
                 /* Set attributes */
                 __guac_terminal_set_colors(display,
                         &(current->character.attributes));
 
                 /* Send character */
-                __guac_terminal_set(display, row, col,
-                        current->character.value);
+                __guac_terminal_set(display, row, col, codepoint);
 
                 /* Mark operation as handled */
                 current->type = GUAC_CHAR_NOP;
@@ -944,6 +831,9 @@ void guac_terminal_display_flush(guac_terminal_display* display) {
     __guac_terminal_display_flush_copy(display);
     __guac_terminal_display_flush_clear(display);
     __guac_terminal_display_flush_set(display);
+
+    /* Flush surface */
+    guac_common_surface_flush(display->default_surface);
 
 }
 

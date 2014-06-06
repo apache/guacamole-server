@@ -25,6 +25,7 @@
 #define _GUAC_TERMINAL_DISPLAY_H
 
 #include "config.h"
+#include "guac_surface.h"
 
 #include "types.h"
 
@@ -96,28 +97,6 @@ typedef struct guac_terminal_operation {
 } guac_terminal_operation;
 
 /**
- * A cached glyph.
- */
-typedef struct guac_terminal_glyph {
-
-    /**
-     * The location within the glyph layer that this glyph can be found.
-     */
-    int location;
-
-    /**
-     * The codepoint currently stored at that location.
-     */
-    int codepoint;
-
-    /**
-     * The width of this glyph, in columns.
-     */
-    int width;
-
-} guac_terminal_glyph;
-
-/**
  * Set of all pending operations for the currently-visible screen area.
  */
 typedef struct guac_terminal_display {
@@ -158,16 +137,6 @@ typedef struct guac_terminal_display {
     int char_height;
 
     /**
-     * Index of next glyph to create
-     */
-    int next_glyph;
-
-    /**
-     * Index of locations for each glyph in the stroke and fill layers.
-     */
-    guac_terminal_glyph glyphs[512];
-
-    /**
      * Color of glyphs in copy buffer
      */
     int glyph_foreground;
@@ -178,21 +147,14 @@ typedef struct guac_terminal_display {
     int glyph_background;
 
     /**
+     * The display.
+     */
+    guac_common_surface* default_surface;
+
+    /**
      * Layer above default layer which highlights selected text.
      */
     guac_layer* select_layer;
-
-    /**
-     * A single wide layer holding each glyph, with each glyph only
-     * colored with foreground color (background remains transparent).
-     */
-    guac_layer* glyph_stroke;
-
-    /**
-     * A single wide layer holding each glyph, with each glyph properly
-     * colored with foreground and background color (no transparency at all).
-     */
-    guac_layer* filled_glyphs;
 
     /**
      * Whether text is being selected.
