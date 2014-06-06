@@ -245,6 +245,11 @@ struct guac_terminal {
     int selection_start_column;
 
     /**
+     * The width of the character at selection start.
+     */
+    int selection_start_width;
+
+    /**
      * The row that the selection ends at.
      */
     int selection_end_row;
@@ -253,6 +258,11 @@ struct guac_terminal {
      * The column that the selection ends at.
      */
     int selection_end_column;
+
+    /**
+     * The width of the character at selection end.
+     */
+    int selection_end_width;
 
     /**
      * Whether the cursor (arrow) keys should send cursor sequences

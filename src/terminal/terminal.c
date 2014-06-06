@@ -737,21 +737,66 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
 void guac_terminal_select_redraw(guac_terminal* terminal) {
 
-    guac_terminal_display_select(terminal->display,
-            terminal->selection_start_row + terminal->scroll_offset,
-            terminal->selection_start_column,
-            terminal->selection_end_row + terminal->scroll_offset,
-            terminal->selection_end_column);
+    int start_row = terminal->selection_start_row + terminal->scroll_offset;
+    int start_column = terminal->selection_start_column;
+
+    int end_row = terminal->selection_end_row + terminal->scroll_offset;
+    int end_column = terminal->selection_end_column;
+
+    /* Update start/end columns to include character width */
+    if (start_row > end_row || (start_row == end_row && start_column > end_column))
+        start_column += terminal->selection_start_width - 1;
+    else
+        end_column += terminal->selection_end_width - 1;
+
+    guac_terminal_display_select(terminal->display, start_row, start_column, end_row, end_column);
+
+}
+
+/**
+ * Locates the beginning of the character at the given row and column, updating
+ * the column to the starting column of that character. The width, if available,
+ * is returned. If the character has no defined width, 1 is returned.
+ */
+static int __guac_terminal_find_char(guac_terminal* terminal, int row, int* column) {
+
+    int start_column = *column;
+
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
+    if (start_column < buffer_row->length) {
+
+        /* Find beginning of character */
+        guac_terminal_char* start_char = &(buffer_row->characters[start_column]);
+        while (start_column > 0 && start_char->value == GUAC_CHAR_CONTINUATION) {
+            start_char--;
+            start_column--;
+        }
+
+        /* Use width, if available */
+        if (start_char->value != GUAC_CHAR_CONTINUATION) {
+            *column = start_column;
+            return start_char->width;
+        }
+
+    }
+
+    /* Default to one column wide */
+    return 1;
 
 }
 
 void guac_terminal_select_start(guac_terminal* terminal, int row, int column) {
+
+    int width = __guac_terminal_find_char(terminal, row, &column);
 
     terminal->selection_start_row = 
     terminal->selection_end_row   = row;
 
     terminal->selection_start_column = 
     terminal->selection_end_column   = column;
+
+    terminal->selection_start_width = 
+    terminal->selection_end_width   = width;
 
     terminal->text_selected = true;
 
@@ -761,9 +806,16 @@ void guac_terminal_select_start(guac_terminal* terminal, int row, int column) {
 
 void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
 
-    if (row != terminal->selection_end_row || column != terminal->selection_end_column) {
-        terminal->selection_end_row   = row;
-        terminal->selection_end_column   = column;
+    /* Only update if selection has changed */
+    if (row != terminal->selection_end_row
+        || column <  terminal->selection_end_column
+        || column >= terminal->selection_end_column + terminal->selection_end_width) {
+
+        int width = __guac_terminal_find_char(terminal, row, &column);
+
+        terminal->selection_end_row = row;
+        terminal->selection_end_column = column;
+        terminal->selection_end_width = width;
 
         guac_terminal_select_redraw(terminal);
     }
@@ -805,15 +857,19 @@ void guac_terminal_select_end(guac_terminal* terminal, char* string) {
     int end_row, end_col;
 
     /* Ensure proper ordering of start and end coords */
-    if (terminal->selection_start_row <= terminal->selection_end_row) {
+    if (terminal->selection_start_row < terminal->selection_end_row
+        || (terminal->selection_start_row == terminal->selection_end_row
+            && terminal->selection_start_column < terminal->selection_end_column)) {
+
         start_row = terminal->selection_start_row;
         start_col = terminal->selection_start_column;
         end_row   = terminal->selection_end_row;
-        end_col   = terminal->selection_end_column;
+        end_col   = terminal->selection_end_column + terminal->selection_end_width - 1;
+
     }
     else {
         end_row   = terminal->selection_start_row;
-        end_col   = terminal->selection_start_column;
+        end_col   = terminal->selection_start_column + terminal->selection_start_width - 1;
         start_row = terminal->selection_end_row;
         start_col = terminal->selection_end_column;
     }
