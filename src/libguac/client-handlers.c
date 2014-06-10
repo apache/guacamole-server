@@ -24,10 +24,13 @@
 
 #include "client.h"
 #include "client-handlers.h"
+#include "instruction.h"
 #include "protocol.h"
 #include "stream.h"
+#include "timestamp.h"
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 /* Guacamole instruction handler map */

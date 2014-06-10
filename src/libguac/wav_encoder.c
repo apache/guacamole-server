@@ -22,14 +22,11 @@
 
 #include "config.h"
 
+#include "audio.h"
 #include "wav_encoder.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-#include <guacamole/audio.h>
-#include <guacamole/client.h>
-#include <guacamole/protocol.h>
 
 #define WAV_BUFFER_SIZE 0x4000
 

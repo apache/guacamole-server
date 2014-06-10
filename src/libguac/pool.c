@@ -25,7 +25,6 @@
 #include "pool.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 guac_pool* guac_pool_alloc(int size) {
 

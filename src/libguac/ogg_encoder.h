@@ -26,7 +26,8 @@
 
 #include "config.h"
 
-#include <guacamole/audio.h>
+#include "audio.h"
+
 #include <vorbis/vorbisenc.h>
 
 typedef struct ogg_encoder_state {

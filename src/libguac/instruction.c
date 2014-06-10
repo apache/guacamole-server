@@ -24,7 +24,6 @@
 
 #include "error.h"
 #include "instruction.h"
-#include "protocol.h"
 #include "socket.h"
 #include "unicode.h"
 

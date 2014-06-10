@@ -22,20 +22,19 @@
 
 #include "config.h"
 
-#include "wav_encoder.h"
+#ifdef ENABLE_OGG
+#include "ogg_encoder.h"
+#endif
 
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
+#include "wav_encoder.h"
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/stream.h>
 
-#ifdef ENABLE_OGG
-#include "ogg_encoder.h"
-#endif
+#include <stdlib.h>
+#include <string.h>
 
 guac_audio_stream* guac_audio_stream_alloc(guac_client* client, guac_audio_encoder* encoder) {
 

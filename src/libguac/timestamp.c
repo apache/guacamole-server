@@ -24,9 +24,7 @@
 
 #include "timestamp.h"
 
-#ifndef HAVE_CLOCK_GETTIME
 #include <sys/time.h>
-#endif
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_NANOSLEEP)
 #include <time.h>

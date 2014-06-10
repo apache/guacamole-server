@@ -25,14 +25,10 @@
 #include "error.h"
 #include "socket.h"
 
-#include <fcntl.h>
-#include <inttypes.h>
-#include <stdint.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/time.h>
-#include <time.h>
 #include <unistd.h>
 
 #ifdef __MINGW32__

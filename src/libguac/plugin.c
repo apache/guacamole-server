@@ -23,12 +23,8 @@
 #include "config.h"
 
 #include "client.h"
-#include "client-handlers.h"
 #include "error.h"
 #include "plugin.h"
-#include "protocol.h"
-#include "socket.h"
-#include "time.h"
 
 #include <dlfcn.h>
 #include <stdio.h>

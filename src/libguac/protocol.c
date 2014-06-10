@@ -30,21 +30,21 @@
 #include "stream.h"
 #include "unicode.h"
 
-#include <errno.h>
-#include <inttypes.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-
 #include <png.h>
 #include <cairo/cairo.h>
 
 #ifdef HAVE_PNGSTRUCT_H
 #include <pngstruct.h>
 #endif
+
+#include <inttypes.h>
+#include <setjmp.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 
 /* Output formatting functions */
 

@@ -22,14 +22,12 @@
 
 #include "config.h"
 
+#include "audio.h"
 #include "ogg_encoder.h"
 
-#include <stdlib.h>
-
-#include <guacamole/audio.h>
-#include <guacamole/client.h>
-#include <guacamole/protocol.h>
 #include <vorbis/vorbisenc.h>
+
+#include <stdlib.h>
 
 void ogg_encoder_begin_handler(guac_audio_stream* audio) {
 
@@ -45,7 +43,7 @@ void ogg_encoder_begin_handler(guac_audio_stream* audio) {
     vorbis_block_init(&(state->vorbis_state), &(state->vorbis_block));
 
     vorbis_comment_init(&(state->comment));
-    vorbis_comment_add_tag(&(state->comment), "ENCODER", "libguac-client-rdp");
+    vorbis_comment_add_tag(&(state->comment), "ENCODER", "libguac");
 
     ogg_stream_init(&(state->ogg_state), rand());
 

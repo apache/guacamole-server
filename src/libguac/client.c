@@ -25,14 +25,15 @@
 #include "client.h"
 #include "client-handlers.h"
 #include "error.h"
+#include "instruction.h"
 #include "layer.h"
-#include "plugin.h"
 #include "pool.h"
 #include "protocol.h"
 #include "socket.h"
 #include "stream.h"
 #include "timestamp.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

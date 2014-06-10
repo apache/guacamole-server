@@ -27,22 +27,14 @@
 #include "socket.h"
 #include "timestamp.h"
 
-#include <fcntl.h>
 #include <inttypes.h>
 #include <pthread.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
-
-#ifdef __MINGW32__
-#include <winsock2.h>
-#else
-#include <sys/select.h>
-#endif
 
 char __guac_socket_BASE64_CHARACTERS[64] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',

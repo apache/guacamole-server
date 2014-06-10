@@ -22,10 +22,10 @@
 
 #include "config.h"
 
+#include <cairo/cairo.h>
+
 #include <stdint.h>
 #include <string.h>
-
-#include <cairo/cairo.h>
 
 /*
  * Arbitrary hash function whhich maps ALL 32-bit numbers onto 24-bit numbers

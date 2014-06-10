@@ -26,7 +26,7 @@
 
 #include "config.h"
 
-#include <guacamole/audio.h>
+#include "audio.h"
 
 typedef struct wav_encoder_riff_header {
 
