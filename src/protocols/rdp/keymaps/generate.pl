@@ -32,9 +32,9 @@
 use 5.008;
 
 sub keymap_symbol {
-    my $_ = shift;
-    s/-/_/g;
-    return 'guac_rdp_keymap_' . $_;
+    my $name = shift;
+    $name =~ s/-/_/g;
+    return 'guac_rdp_keymap_' . $name;
 }
 
 #
@@ -54,6 +54,8 @@ print OUTPUT
      . '#else'                                              . "\n"
      . '#include <freerdp/kbd/layouts.h>'                   . "\n"
      . '#endif'                                             . "\n"
+     .                                                        "\n"
+     . '#include <stddef.h>'                                . "\n"
      .                                                        "\n";
 
 for my $filename (@ARGV) {
