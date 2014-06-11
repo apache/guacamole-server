@@ -25,16 +25,16 @@
 #include "client.h"
 #include "log.h"
 
-#include <pthread.h>
-#include <stdlib.h>
-#include <time.h>
-
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/instruction.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
+
+#include <pthread.h>
+#include <stdlib.h>
+#include <time.h>
 
 /**
  * Sleep for the given number of milliseconds.

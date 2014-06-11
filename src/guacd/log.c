@@ -22,15 +22,13 @@
 
 #include "config.h"
 
-#include <errno.h>
+#include <guacamole/client.h>
+#include <guacamole/error.h>
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <syslog.h>
-#include <sys/types.h>
 #include <unistd.h>
-
-#include <guacamole/client.h>
-#include <guacamole/error.h>
 
 /* Log prefix, defaulting to "guacd" */
 char log_prefix[64] = "guacd";

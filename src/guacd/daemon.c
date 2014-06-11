@@ -25,9 +25,21 @@
 #include "client.h"
 #include "log.h"
 
-#include <ctype.h>
+#include <guacamole/client.h>
+#include <guacamole/error.h>
+#include <guacamole/instruction.h>
+#include <guacamole/plugin.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+
+#ifdef ENABLE_SSL
+#include <openssl/ssl.h>
+#include "socket-ssl.h"
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <libgen.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -40,18 +52,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include <guacamole/client.h>
-#include <guacamole/error.h>
-#include <guacamole/instruction.h>
-#include <guacamole/plugin.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-
-#ifdef ENABLE_SSL
-#include <openssl/ssl.h>
-#include "socket-ssl.h"
-#endif
 
 #define GUACD_DEV_NULL "/dev/null"
 #define GUACD_ROOT     "/"
