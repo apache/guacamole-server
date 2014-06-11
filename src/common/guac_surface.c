@@ -31,8 +31,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
-
 
 /**
  * The width of an update which should be considered negible and thus

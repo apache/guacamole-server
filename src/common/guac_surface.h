@@ -31,8 +31,6 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
-#include <stdint.h>
-
 /**
  * The maximum number of updates to allow within the PNG queue.
  */

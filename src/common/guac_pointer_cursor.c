@@ -24,6 +24,7 @@
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
+#include <guacamole/layer.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
