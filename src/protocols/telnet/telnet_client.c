@@ -22,9 +22,12 @@
 
 #include "config.h"
 #include "client.h"
-#include "guac_handlers.h"
 #include "telnet_client.h"
 #include "terminal.h"
+
+#include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <libtelnet.h>
 
 #include <errno.h>
 #include <netdb.h>
@@ -33,13 +36,8 @@
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <sys/types.h>
+#include <sys/time.h>
 #include <unistd.h>
-
-#include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-#include <libtelnet.h>
 
 /**
  * Support levels for various telnet options, required for connection

@@ -25,7 +25,9 @@
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include <libtelnet.h>
+
+#include <stdint.h>
 
 /**
  * Main telnet client thread, handling transfer of telnet output to STDOUT.

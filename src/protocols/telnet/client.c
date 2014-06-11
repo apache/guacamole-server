@@ -32,7 +32,6 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>

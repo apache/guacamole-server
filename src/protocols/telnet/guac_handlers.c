@@ -26,16 +26,12 @@
 #include "terminal.h"
 #include "telnet_client.h"
 
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/select.h>
-#include <sys/stat.h>
-
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
 #include <guacamole/client.h>
 #include <libtelnet.h>
+
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 int guac_telnet_client_handle_messages(guac_client* client) {
 
