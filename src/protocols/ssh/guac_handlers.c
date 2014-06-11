@@ -24,20 +24,16 @@
 
 #include "client.h"
 #include "guac_handlers.h"
+#include "ssh_key.h"
 #include "terminal.h"
 
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/select.h>
-#include <sys/stat.h>
-
 #include <cairo/cairo.h>
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
 #include <guacamole/client.h>
 #include <libssh2.h>
-#include <pango/pangocairo.h>
+#include <libssh2_sftp.h>
+
+#include <pthread.h>
+#include <stdlib.h>
 
 int ssh_guac_client_handle_messages(guac_client* client) {
 

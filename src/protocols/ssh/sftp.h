@@ -27,6 +27,7 @@
 #include "config.h"
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 #include <guacamole/stream.h>
 
 /**

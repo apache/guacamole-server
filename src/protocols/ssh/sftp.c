@@ -23,15 +23,14 @@
 #include "config.h"
 
 #include "client.h"
+#include "sftp.h"
 
 #include <fcntl.h>
 #include <libgen.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
-#include <libssh2.h>
+#include <libssh2_sftp.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>

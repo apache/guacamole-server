@@ -22,10 +22,12 @@
 
 #include "config.h"
 
+#include <openssl/bn.h>
+#include <openssl/ossl_typ.h>
+
 #include <stdint.h>
 #include <string.h>
-
-#include <openssl/bn.h>
+#include <stdlib.h>
 
 void buffer_write_byte(char** buffer, uint8_t value) {
 

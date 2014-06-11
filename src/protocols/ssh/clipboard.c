@@ -23,6 +23,10 @@
 #include "config.h"
 #include "client.h"
 #include "clipboard.h"
+#include "terminal.h"
+
+#include <guacamole/client.h>
+#include <guacamole/stream.h>
 
 int guac_ssh_clipboard_handler(guac_client* client, guac_stream* stream,
         char* mimetype) {

@@ -25,12 +25,16 @@
 #include "ssh_buffer.h"
 #include "ssh_key.h"
 
-#include <string.h>
-
-#include <openssl/err.h>
+#include <openssl/bio.h>
+#include <openssl/bn.h>
+#include <openssl/dsa.h>
 #include <openssl/evp.h>
+#include <openssl/obj_mac.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+
+#include <stdlib.h>
+#include <string.h>
 
 ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
 

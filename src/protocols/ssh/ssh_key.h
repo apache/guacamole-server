@@ -26,11 +26,7 @@
 
 #include "config.h"
 
-#include <openssl/dsa.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
+#include <openssl/ossl_typ.h>
 
 /**
  * The expected header of RSA private keys.

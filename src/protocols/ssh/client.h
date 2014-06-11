@@ -30,14 +30,15 @@
 #include "ssh_key.h"
 #include "terminal.h"
 
-#include <pthread.h>
-
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"
 #endif
+
+#include <pthread.h>
+#include <stdbool.h>
 
 /**
  * SSH-specific client data.

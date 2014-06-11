@@ -23,30 +23,33 @@
 #include "config.h"
 
 #include "client.h"
-#include "guac_handlers.h"
 #include "sftp.h"
 #include "ssh_key.h"
+#include "terminal.h"
 
-#include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
+#ifdef ENABLE_SSH_AGENT
+#include "ssh_agent.h"
+#endif
 
 #include <libssh2.h>
+#include <libssh2_sftp.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <openssl/ssl.h>
 
-#ifdef ENABLE_SSH_AGENT
-#include "ssh_agent.h"
-#endif
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pthread.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 
 void* ssh_input_thread(void* data) {
 
