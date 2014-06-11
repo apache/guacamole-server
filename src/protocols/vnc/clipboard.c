@@ -26,6 +26,10 @@
 #include "guac_clipboard.h"
 #include "guac_iconv.h"
 
+#include <guacamole/client.h>
+#include <guacamole/stream.h>
+#include <rfb/rfbclient.h>
+
 int guac_vnc_clipboard_handler(guac_client* client, guac_stream* stream,
         char* mimetype) {
 

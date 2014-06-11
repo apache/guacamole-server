@@ -30,19 +30,19 @@
 #include "guac_pointer_cursor.h"
 #include "vnc_handlers.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#ifdef ENABLE_PULSE
+#include "pulse.h"
+#endif
 
 #include <rfb/rfbclient.h>
-#include <guacamole/audio.h>
+#include <rfb/rfbproto.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
-#ifdef ENABLE_PULSE
-#include "pulse.h"
-#endif
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {

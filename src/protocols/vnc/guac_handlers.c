@@ -23,22 +23,19 @@
 #include "config.h"
 
 #include "client.h"
-#include "clipboard.h"
 #include "guac_clipboard.h"
 #include "guac_surface.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <iconv.h>
-
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 #include <guacamole/timestamp.h>
 #include <rfb/rfbclient.h>
 
 #ifdef ENABLE_PULSE
 #include "pulse.h"
 #endif
+
+#include <stdlib.h>
 
 int vnc_guac_client_handle_messages(guac_client* client) {
 

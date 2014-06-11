@@ -26,20 +26,23 @@
 #include "guac_iconv.h"
 #include "guac_surface.h"
 
-#include <stdlib.h>
-#include <syslog.h>
-#include <time.h>
-
 #include <cairo/cairo.h>
-#include <rfb/rfbclient.h>
-#include <guacamole/socket.h>
-#include <guacamole/protocol.h>
 #include <guacamole/client.h>
+#include <guacamole/layer.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+#include <rfb/rfbclient.h>
+#include <rfb/rfbproto.h>
 
 /* Define cairo_format_stride_for_width() if missing */
 #ifndef HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH
 #define cairo_format_stride_for_width(format, width) (width*4)
 #endif
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <syslog.h>
 
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 

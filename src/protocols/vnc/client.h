@@ -29,7 +29,7 @@
 #include "guac_surface.h"
 
 #include <guacamole/audio.h>
-#include <guacamole/client.h>
+#include <guacamole/layer.h>
 #include <rfb/rfbclient.h>
 
 #ifdef ENABLE_PULSE
