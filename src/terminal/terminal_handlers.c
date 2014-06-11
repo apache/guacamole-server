@@ -309,6 +309,7 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
         /* Set Tab (HTS) */
         case 'H':
             guac_terminal_set_tab(term, term->cursor_col);
+            term->char_handler = guac_terminal_echo; 
             break;
 
         /* Reverse Linefeed */
@@ -956,6 +957,12 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
     /* Stop on ECMA-48 ST (String Terminator */
     else if (c == 0x9C || c == 0x5C || c == 0x07)
         term->char_handler = guac_terminal_echo;
+
+    /* Stop on unrecognized character */
+    else {
+        guac_client_log_info(term->client, "Unexpected character in OSC: 0x%X", c);
+        term->char_handler = guac_terminal_echo;
+    }
 
     return 0;
 }
