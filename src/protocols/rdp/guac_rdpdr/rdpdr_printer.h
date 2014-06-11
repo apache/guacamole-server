@@ -26,13 +26,17 @@
 
 #include "config.h"
 
-#include <freerdp/utils/svc_plugin.h>
+#include "rdpdr_service.h"
+
+#include <guacamole/stream.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
+
+#include <pthread.h>
 
 /**
  * Data specific to an instance of the printer device.

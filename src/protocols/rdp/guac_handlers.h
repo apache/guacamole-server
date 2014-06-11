@@ -27,7 +27,6 @@
 #include "config.h"
 
 #include <guacamole/client.h>
-#include <guacamole/stream.h>
 
 int rdp_guac_client_free_handler(guac_client* client);
 int rdp_guac_client_handle_messages(guac_client* client);

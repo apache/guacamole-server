@@ -28,7 +28,7 @@
 #include "guac_surface.h"
 
 #include <freerdp/freerdp.h>
-#include <guacamole/protocol.h>
+#include <guacamole/layer.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>

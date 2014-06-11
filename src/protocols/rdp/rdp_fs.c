@@ -25,17 +25,16 @@
 #include "debug.h"
 #include "rdp_fs.h"
 #include "rdp_status.h"
-#include "unicode.h"
 
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include <guacamole/pool.h>

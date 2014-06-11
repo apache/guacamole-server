@@ -33,14 +33,13 @@
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
 
-#include <pthread.h>
-#include <stdint.h>
-
-#include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/codec/color.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+
+#include <pthread.h>
+#include <stdint.h>
 
 /**
  * The maximum duration of a frame in milliseconds.

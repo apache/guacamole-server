@@ -24,13 +24,13 @@
 
 #include "client.h"
 #include "rdp_cliprdr.h"
+#include "guac_clipboard.h"
 #include "guac_iconv.h"
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/utils/event.h>
 #include <guacamole/client.h>
-#include <guacamole/protocol.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -43,6 +43,9 @@
 #else
 #include "compat/client-cliprdr.h"
 #endif
+
+#include <stdlib.h>
+#include <string.h>
 
 void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event) {
 

@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "winpr-stream.h"
+#include "winpr-wtypes.h"
 
 /*
  * NOTE: Because the old API did not support local allocation of the buffer

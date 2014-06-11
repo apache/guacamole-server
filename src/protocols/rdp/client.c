@@ -34,12 +34,6 @@
 #include "rdp_stream.h"
 #include "rdp_svc.h"
 
-#include <errno.h>
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/select.h>
-
 #include <freerdp/cache/bitmap.h>
 #include <freerdp/cache/brush.h>
 #include <freerdp/cache/glyph.h>
@@ -47,12 +41,9 @@
 #include <freerdp/cache/palette.h>
 #include <freerdp/cache/pointer.h>
 #include <freerdp/channels/channels.h>
-#include <freerdp/constants.h>
 #include <freerdp/freerdp.h>
-#include <freerdp/input.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
-#include <guacamole/error.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
@@ -75,6 +66,11 @@
 #ifdef HAVE_FREERDP_CLIENT_CHANNELS_H
 #include <freerdp/client/channels.h>
 #endif
+
+#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {

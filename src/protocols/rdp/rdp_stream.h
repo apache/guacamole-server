@@ -27,6 +27,10 @@
 #include "config.h"
 #include "rdp_svc.h"
 
+#include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/stream.h>
+
 #include <stdint.h>
 
 /**

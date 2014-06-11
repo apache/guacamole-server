@@ -26,6 +26,14 @@
 
 #include <freerdp/constants.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/wtypes.h>
+#else
+#include "compat/winpr-wtypes.h"
+#endif
+
+#include <stddef.h>
+
 void guac_rdp_pull_settings(freerdp* rdp, guac_rdp_settings* guac_settings) {
 
     rdpSettings* rdp_settings = rdp->settings;

@@ -36,8 +36,6 @@
 
 #include "rdpdr_service.h"
 
-#include <guacamole/pool.h>
-
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else

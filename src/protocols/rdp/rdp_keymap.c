@@ -24,6 +24,8 @@
 
 #include "rdp_keymap.h"
 
+#include <string.h>
+
 const int GUAC_KEYSYMS_SHIFT[] = {0xFFE1, 0};
 const int GUAC_KEYSYMS_ALL_SHIFT[] = {0xFFE1, 0xFFE2, 0};
 

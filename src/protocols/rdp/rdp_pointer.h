@@ -27,8 +27,7 @@
 #include "config.h"
 
 #include <freerdp/freerdp.h>
-
-#include <guacamole/protocol.h>
+#include <guacamole/layer.h>
 
 typedef struct guac_rdp_pointer {
 

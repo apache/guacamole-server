@@ -26,7 +26,7 @@
 
 #include "config.h"
 
-#include <freerdp/freerdp.h>
+#include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>

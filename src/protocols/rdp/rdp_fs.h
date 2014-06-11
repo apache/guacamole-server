@@ -37,11 +37,10 @@
 
 #include "config.h"
 
+#include <guacamole/pool.h>
+
 #include <dirent.h>
 #include <stdint.h>
-#include <sys/types.h>
-
-#include <guacamole/pool.h>
 
 /**
  * The maximum number of file IDs to provide.

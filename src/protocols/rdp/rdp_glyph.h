@@ -26,6 +26,7 @@
 
 #include "config.h"
 
+#include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
 
 #ifdef ENABLE_WINPR
@@ -33,8 +34,6 @@
 #else
 #include "compat/winpr-wtypes.h"
 #endif
-
-#include <guacamole/protocol.h>
 
 typedef struct guac_rdp_glyph {
 

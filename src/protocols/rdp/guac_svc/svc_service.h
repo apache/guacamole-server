@@ -26,10 +26,7 @@
 #include "config.h"
 #include "rdp_svc.h"
 
-#include <pthread.h>
-
 #include <freerdp/utils/svc_plugin.h>
-#include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>

@@ -29,17 +29,14 @@
 #include <string.h>
 
 #include <freerdp/constants.h>
-#include <freerdp/types.h>
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#include <winpr/wtypes.h>
 #else
 #include "compat/winpr-stream.h"
-#include "compat/winpr-wtypes.h"
 #endif
 
 /**

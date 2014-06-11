@@ -25,7 +25,6 @@
 #include "guac_list.h"
 #include "rdp_svc.h"
 
-#include <freerdp/freerdp.h>
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 
@@ -34,6 +33,9 @@
 #else
 #include "compat/winpr-stream.h"
 #endif
+
+#include <stdlib.h>
+#include <string.h>
 
 guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
 

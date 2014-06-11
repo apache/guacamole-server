@@ -22,26 +22,20 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "rdpdr_messages.h"
-#include "rdpdr_printer.h"
 #include "rdpdr_service.h"
 
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <freerdp/constants.h>
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#include <winpr/wtypes.h>
 #else
 #include "compat/winpr-stream.h"
-#include "compat/winpr-wtypes.h"
 #endif
+
+#include <stdlib.h>
+#include <string.h>
 
 static void guac_rdpdr_send_client_announce_reply(guac_rdpdrPlugin* rdpdr,
         unsigned int major, unsigned int minor, unsigned int client_id) {

@@ -27,11 +27,9 @@
 #include "rdpdr_fs_messages.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_service.h"
-#include "rdp_fs.h"
-#include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
-#include <guacamole/pool.h>
+#include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>

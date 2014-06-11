@@ -30,6 +30,8 @@
 
 #include <freerdp/utils/stream.h>
 
+#include <stddef.h>
+
 /* FreeRDP 1.0 streams */
 
 #define Stream_Write                   stream_write

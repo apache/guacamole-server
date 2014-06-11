@@ -25,17 +25,13 @@
 #include "client.h"
 #include "guac_surface.h"
 #include "rdp_bitmap.h"
-
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "rdp_settings.h"
 
 #include <cairo/cairo.h>
 #include <freerdp/codec/bitmap.h>
 #include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
-#include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
 #ifdef ENABLE_WINPR
@@ -43,6 +39,9 @@
 #else
 #include "compat/winpr-wtypes.h"
 #endif
+
+#include <stdio.h>
+#include <stdlib.h>
 
 void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 

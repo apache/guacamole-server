@@ -22,8 +22,6 @@
 
 #include "config.h"
 
-#include "client.h"
-#include "debug.h"
 #include "svc_service.h"
 
 #include <stdlib.h>
@@ -37,10 +35,8 @@
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#include <winpr/wtypes.h>
 #else
 #include "compat/winpr-stream.h"
-#include "compat/winpr-wtypes.h"
 #endif
 
 /**

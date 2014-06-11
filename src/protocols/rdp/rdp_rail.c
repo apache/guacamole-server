@@ -24,6 +24,7 @@
 
 #include "client.h"
 #include "rdp_rail.h"
+#include "rdp_settings.h"
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
@@ -38,9 +39,11 @@
 
 #ifdef LEGACY_FREERDP
 #include "compat/rail.h"
+#else
+#include <freerdp/rail.h>
 #endif
 
-#include <freerdp/rail.h>
+#include <stddef.h>
 
 void guac_rdp_process_rail_event(guac_client* client, wMessage* event) {
 

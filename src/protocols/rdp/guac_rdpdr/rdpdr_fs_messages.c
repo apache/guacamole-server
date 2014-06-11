@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "debug.h"
 #include "rdpdr_fs_messages_dir_info.h"
 #include "rdpdr_fs_messages_file_info.h"
@@ -34,17 +33,21 @@
 #include "rdp_status.h"
 #include "unicode.h"
 
-#include <inttypes.h>
-#include <errno.h>
-
 #include <freerdp/utils/svc_plugin.h>
-#include <guacamole/pool.h>
+#include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
+#include <winpr/wtypes.h>
 #else
 #include "compat/winpr-stream.h"
+#include "compat/winpr-wtypes.h"
 #endif
+
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {

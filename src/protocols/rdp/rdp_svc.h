@@ -25,15 +25,9 @@
 
 #include "config.h"
 
-#include <freerdp/freerdp.h>
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
-#include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
+#include <guacamole/stream.h>
 
 /**
  * The maximum number of characters to allow for each channel name.

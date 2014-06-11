@@ -23,19 +23,15 @@
 #include "config.h"
 
 #include "client.h"
+#include "guac_clipboard.h"
 #include "guac_handlers.h"
 #include "guac_list.h"
 #include "guac_surface.h"
 #include "rdp_cliprdr.h"
 #include "rdp_keymap.h"
+#include "rdp_fs.h"
 #include "rdp_rail.h"
 #include "rdp_stream.h"
-
-#include <errno.h>
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/select.h>
 
 #include <freerdp/cache/cache.h>
 #include <freerdp/channels/channels.h>
@@ -46,14 +42,7 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/protocol.h>
-#include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
-
-#ifdef ENABLE_WINPR
-#include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
 
 #ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
 #include <freerdp/client/cliprdr.h>
@@ -61,9 +50,11 @@
 #include "compat/client-cliprdr.h"
 #endif
 
-#ifdef LEGACY_FREERDP
-#include "compat/rail.h"
-#endif
+#include <errno.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <sys/select.h>
+#include <sys/time.h>
 
 void __guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, int from, int to);
 int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);

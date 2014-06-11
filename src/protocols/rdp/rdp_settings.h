@@ -29,7 +29,6 @@
 #include "rdp_keymap.h"
 
 #include <freerdp/freerdp.h>
-#include <guacamole/client.h>
 
 /**
  * The default RDP port.

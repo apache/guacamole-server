@@ -34,6 +34,8 @@
 #include "compat/winpr-stream.h"
 #endif
 
+#include <stdint.h>
+
 /**
  * Identifies the "core" component of RDPDR as the destination of the received
  * packet.

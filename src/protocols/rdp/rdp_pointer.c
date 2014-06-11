@@ -25,10 +25,13 @@
 #include "client.h"
 #include "rdp_pointer.h"
 
-#include <pthread.h>
-
+#include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+
+#include <stdlib.h>
 
 void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 

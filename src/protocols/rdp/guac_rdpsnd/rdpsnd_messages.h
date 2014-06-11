@@ -30,6 +30,12 @@
 
 #include <guacamole/audio.h>
 
+#ifdef ENABLE_WINPR
+#include <winpr/stream.h>
+#else
+#include "compat/winpr-stream.h"
+#endif
+
 /*
  * PDU Message Types
  */

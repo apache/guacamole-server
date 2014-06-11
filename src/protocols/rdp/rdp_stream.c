@@ -23,13 +23,14 @@
 
 #include "config.h"
 #include "client.h"
+#include "guac_clipboard.h"
 #include "rdp_fs.h"
 #include "rdp_svc.h"
 #include "rdp_stream.h"
 
+#include <freerdp/freerdp.h>
 #include <freerdp/channels/channels.h>
 #include <guacamole/client.h>
-#include <guacamole/error.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
@@ -41,10 +42,14 @@
 #endif
 
 #ifdef ENABLE_WINPR
+#include <winpr/stream.h>
 #include <winpr/wtypes.h>
 #else
+#include "compat/winpr-stream.h"
 #include "compat/winpr-wtypes.h"
 #endif
+
+#include <stdlib.h>
 
 /**
  * Writes the given filename to the given upload path, sanitizing the filename

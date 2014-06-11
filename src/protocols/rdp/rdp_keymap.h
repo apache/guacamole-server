@@ -32,12 +32,6 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
-#ifdef HAVE_FREERDP_LOCALE_KEYBOARD_H
-#include <freerdp/locale/keyboard.h>
-#else
-#include <freerdp/kbd/layouts.h>
-#endif
-
 /**
  * Represents a keysym-to-scancode mapping for RDP, with extra information
  * about the state of prerequisite keysyms.

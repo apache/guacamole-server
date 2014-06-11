@@ -24,6 +24,8 @@
 
 #include "client.h"
 #include "debug.h"
+#include "rdp_fs.h"
+#include "rdp_settings.h"
 #include "rdp_stream.h"
 #include "rdpdr_fs_service.h"
 #include "rdpdr_messages.h"
@@ -42,10 +44,8 @@
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#include <winpr/wtypes.h>
 #else
 #include "compat/winpr-stream.h"
-#include "compat/winpr-wtypes.h"
 #endif
 
 /**

@@ -26,8 +26,6 @@
 
 #include "config.h"
 
-#include <pthread.h>
-
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 

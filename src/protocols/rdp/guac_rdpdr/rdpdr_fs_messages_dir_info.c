@@ -23,12 +23,12 @@
 #include "config.h"
 
 #include "debug.h"
-#include "rdpdr_messages.h"
 #include "rdpdr_service.h"
 #include "rdp_fs.h"
 #include "rdp_status.h"
 #include "unicode.h"
 
+#include <freerdp/utils/svc_plugin.h>
 #include <guacamole/unicode.h>
 
 #ifdef ENABLE_WINPR
@@ -36,6 +36,8 @@
 #else
 #include "compat/winpr-stream.h"
 #endif
+
+#include <stddef.h>
 
 void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
         const char* entry_name, int file_id, int completion_id) {

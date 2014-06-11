@@ -25,16 +25,20 @@
 #include "client.h"
 #include "guac_surface.h"
 #include "rdp_bitmap.h"
+#include "rdp_settings.h"
 
-#include <pthread.h>
+#include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
 #else
 #include "compat/winpr-wtypes.h"
 #endif
+
+#include <stddef.h>
 
 guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
         int rop3) {

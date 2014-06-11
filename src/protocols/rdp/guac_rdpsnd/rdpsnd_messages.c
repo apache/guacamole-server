@@ -28,9 +28,7 @@
 
 #include <pthread.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <freerdp/constants.h>
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
