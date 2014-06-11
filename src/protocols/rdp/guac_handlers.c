@@ -50,6 +50,12 @@
 #include "compat/client-cliprdr.h"
 #endif
 
+#ifdef LEGACY_FREERDP
+#include "compat/rail.h"
+#else
+#include <freerdp/rail.h>
+#endif
+
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
