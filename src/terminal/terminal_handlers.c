@@ -23,10 +23,13 @@
 #include "config.h"
 
 #include "char_mappings.h"
-#include "common.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
+#include "types.h"
 
+#include <guacamole/client.h>
+
+#include <stdbool.h>
 #include <stdlib.h>
 #include <wchar.h>
 

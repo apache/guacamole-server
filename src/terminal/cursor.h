@@ -27,6 +27,7 @@
 #include "config.h"
 
 #include <guacamole/client.h>
+#include <guacamole/layer.h>
 
 typedef struct guac_terminal_cursor {
 

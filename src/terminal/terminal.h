@@ -36,6 +36,7 @@
 #include <stdbool.h>
 
 #include <guacamole/client.h>
+#include <guacamole/stream.h>
 
 /**
  * The maximum number of custom tab stops.

@@ -25,12 +25,15 @@
 #define _GUAC_TERMINAL_DISPLAY_H
 
 #include "config.h"
-#include "guac_surface.h"
 
+#include "guac_surface.h"
 #include "types.h"
 
 #include <guacamole/client.h>
+#include <guacamole/layer.h>
 #include <pango/pangocairo.h>
+
+#include <stdbool.h>
 
 /**
  * The maximum width of any character, in columns.

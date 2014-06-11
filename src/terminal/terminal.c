@@ -35,18 +35,18 @@
 
 #include <pthread.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/select.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <wchar.h>
 
-#include <cairo/cairo.h>
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
-#include <pango/pangocairo.h>
 
 /**
  * Sets the given range of columns to the given character.

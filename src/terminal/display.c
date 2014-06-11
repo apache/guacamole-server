@@ -32,6 +32,8 @@
 #include <string.h>
 #include <wchar.h>
 
+#include <cairo/cairo.h>
+#include <glib-object.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
