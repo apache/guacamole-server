@@ -45,6 +45,11 @@ typedef struct guac_telnet_client_data {
     char port[64];
 
     /**
+     * The name of the user to login as.
+     */
+    char username[1024];
+
+    /**
      * The name of the font to use for display rendering.
      */
     char font_name[1024];

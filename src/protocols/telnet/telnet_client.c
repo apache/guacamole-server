@@ -44,11 +44,12 @@
  * negotiation by telnet_init(), part of libtelnet.
  */
 static const telnet_telopt_t __telnet_options[] = {
-    { TELNET_TELOPT_ECHO,      TELNET_WONT, TELNET_DO   },
-    { TELNET_TELOPT_TTYPE,     TELNET_WILL, TELNET_DONT },
-    { TELNET_TELOPT_COMPRESS2, TELNET_WONT, TELNET_DO   },
-    { TELNET_TELOPT_MSSP,      TELNET_WONT, TELNET_DO   },
-    { TELNET_TELOPT_NAWS,      TELNET_WILL, TELNET_DONT },
+    { TELNET_TELOPT_ECHO,        TELNET_WONT, TELNET_DO   },
+    { TELNET_TELOPT_TTYPE,       TELNET_WILL, TELNET_DONT },
+    { TELNET_TELOPT_COMPRESS2,   TELNET_WONT, TELNET_DO   },
+    { TELNET_TELOPT_MSSP,        TELNET_WONT, TELNET_DO   },
+    { TELNET_TELOPT_NAWS,        TELNET_WILL, TELNET_DONT },
+    { TELNET_TELOPT_NEW_ENVIRON, TELNET_WILL, TELNET_DONT },
     { -1, 0, 0 }
 };
 
@@ -130,6 +131,15 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
         case TELNET_EV_TTYPE:
             if (event->ttype.cmd == TELNET_TTYPE_SEND)
                 telnet_ttype_is(client_data->telnet, "linux");
+            break;
+
+        /* Environment request */
+        case TELNET_EV_ENVIRON:
+
+            /* Only send USER if entire environment was requested */
+            if (event->environ.size == 0)
+                guac_telnet_send_user(telnet, client_data->username);
+
             break;
 
         /* Connection warnings */
@@ -293,11 +303,40 @@ static void __guac_telnet_send_uint16(telnet_t* telnet, uint16_t value) {
 
 }
 
+/**
+ * Sends an 8-bit value over the given telnet connection.
+ *
+ * @param telnet The telnet connection to use.
+ * @param value The value to send.
+ */
+static void __guac_telnet_send_uint8(telnet_t* telnet, uint8_t value) {
+    telnet_send(telnet, (char*) (&value), 1);
+}
+
 void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height) {
     telnet_begin_sb(telnet, TELNET_TELOPT_NAWS);
     __guac_telnet_send_uint16(telnet, width);
     __guac_telnet_send_uint16(telnet, height);
     telnet_finish_sb(telnet);
+}
+
+void guac_telnet_send_user(telnet_t* telnet, const char* username) {
+
+    /* IAC SB NEW-ENVIRON IS */
+    telnet_begin_sb(telnet, TELNET_TELOPT_NEW_ENVIRON);
+    __guac_telnet_send_uint8(telnet, TELNET_ENVIRON_IS);
+
+    /* VAR "USER" */
+    __guac_telnet_send_uint8(telnet, TELNET_ENVIRON_VAR);
+    telnet_send(telnet, "USER", 4);
+
+    /* VALUE username */
+    __guac_telnet_send_uint8(telnet, TELNET_ENVIRON_VALUE);
+    telnet_send(telnet, username, strlen(username));
+
+    /* IAC SE */
+    telnet_finish_sb(telnet);
+
 }
 
 /**

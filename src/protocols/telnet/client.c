@@ -45,6 +45,7 @@
 const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
+    "username",
     "font-name",
     "font-size",
     NULL
@@ -61,6 +62,11 @@ enum __TELNET_ARGS_IDX {
      * The port to connect to. Optional.
      */
     IDX_PORT,
+
+    /**
+     * The name of the user to login as. Optional.
+     */
+    IDX_USERNAME,
 
     /**
      * The name of the font to use within the terminal.
@@ -100,6 +106,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Read parameters */
     strcpy(client_data->hostname,  argv[IDX_HOSTNAME]);
+    strcpy(client_data->username,  argv[IDX_USERNAME]);
 
     /* Read port */
     if (argv[IDX_PORT][0] != 0)

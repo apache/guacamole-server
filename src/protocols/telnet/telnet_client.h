@@ -40,5 +40,11 @@ void* guac_telnet_client_thread(void* data);
  */
 void guac_telnet_send_naws(telnet_t* telnet, uint16_t width, uint16_t height);
 
+/**
+ * Sends the given username by setting the remote USER environment variable
+ * using the telnet NEW-ENVIRON option.
+ */
+void guac_telnet_send_user(telnet_t* telnet, const char* username);
+
 #endif
 
