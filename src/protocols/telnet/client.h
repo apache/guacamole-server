@@ -27,7 +27,12 @@
 #include "terminal.h"
 
 #include <pthread.h>
+#include <regex.h>
+#include <sys/types.h>
+
 #include <libtelnet.h>
+
+#define GUAC_TELNET_DEFAULT_REGEX "^Password:"
 
 /**
  * Telnet-specific client data.
@@ -48,6 +53,18 @@ typedef struct guac_telnet_client_data {
      * The name of the user to login as.
      */
     char username[1024];
+
+    /**
+     * The password to give when authenticating.
+     */
+    char password[1024];
+
+    /**
+     * The regular expression to use when searching for the password
+     * prompt. This will be NULL unless the telnet client is currently
+     * searching for the password prompt.
+     */
+    regex_t* password_regex;
 
     /**
      * The name of the font to use for display rendering.

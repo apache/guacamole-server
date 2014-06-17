@@ -30,8 +30,10 @@
 #include <langinfo.h>
 #include <locale.h>
 #include <pthread.h>
+#include <regex.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -46,6 +48,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
     "username",
+    "password",
+    "password-regex",
     "font-name",
     "font-size",
     NULL
@@ -67,6 +71,17 @@ enum __TELNET_ARGS_IDX {
      * The name of the user to login as. Optional.
      */
     IDX_USERNAME,
+
+    /**
+     * The password to use when logging in. Optional.
+     */
+    IDX_PASSWORD,
+
+    /**
+     * The regular expression to use when searching for the password prompt.
+     * Optional.
+     */
+    IDX_PASSWORD_REGEX,
 
     /**
      * The name of the font to use within the terminal.
@@ -107,6 +122,34 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Read parameters */
     strcpy(client_data->hostname,  argv[IDX_HOSTNAME]);
     strcpy(client_data->username,  argv[IDX_USERNAME]);
+    strcpy(client_data->password,  argv[IDX_PASSWORD]);
+
+    /* Set password regex, if needed */
+    if (client_data->password[0] != 0) {
+
+        int compile_result;
+
+        client_data->password_regex = malloc(sizeof(regex_t));
+
+        /* Compile regular expression */
+        if (argv[IDX_PASSWORD_REGEX][0] != 0)
+            compile_result = regcomp(client_data->password_regex, argv[IDX_PASSWORD_REGEX],
+                    REG_EXTENDED | REG_NOSUB | REG_NEWLINE);
+        else
+            compile_result = regcomp(client_data->password_regex, GUAC_TELNET_DEFAULT_REGEX,
+                    REG_EXTENDED | REG_NOSUB | REG_NEWLINE);
+
+        /* Notify of failure to parse/compile */
+        if (compile_result != 0) {
+            guac_client_log_info(client, "Password regular expression could not be compiled. "
+                                         "Password must be entered manually.");
+            free(client_data->password_regex);
+            client_data->password_regex = NULL;
+        }
+
+    }
+    else
+        client_data->password_regex = NULL;
 
     /* Read port */
     if (argv[IDX_PORT][0] != 0)

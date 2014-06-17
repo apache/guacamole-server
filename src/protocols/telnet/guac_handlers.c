@@ -30,7 +30,9 @@
 #include <libtelnet.h>
 
 #include <pthread.h>
+#include <regex.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 int guac_telnet_client_handle_messages(guac_client* client) {
@@ -45,8 +47,10 @@ int guac_telnet_client_mouse_handler(guac_client* client, int x, int y, int mask
     guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
-    /* Send mouse event */
-    guac_terminal_send_mouse(term, x, y, mask);
+    /* Send mouse if not searching for password */
+    if (client_data->password_regex == NULL)
+        guac_terminal_send_mouse(term, x, y, mask);
+
     return 0;
 
 }
@@ -56,8 +60,10 @@ int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed)
     guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
-    /* Send key */
-    guac_terminal_send_key(term, keysym, pressed);
+    /* Send key if not searching for password */
+    if (client_data->password_regex == NULL)
+        guac_terminal_send_key(term, keysym, pressed);
+
     return 0;
 
 }
@@ -93,6 +99,12 @@ int guac_telnet_client_free_handler(guac_client* client) {
     if (guac_client_data->telnet != NULL) {
         pthread_join(guac_client_data->client_thread, NULL);
         telnet_free(guac_client_data->telnet);
+    }
+
+    /* Free password regex */
+    if (guac_client_data->password_regex != NULL) {
+        regfree(guac_client_data->password_regex);
+        free(guac_client_data->password_regex);
     }
 
     free(client->data);

@@ -33,6 +33,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -84,6 +85,61 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
 }
 
 /**
+ * Searches for a line matching the stored password regex, appending the given
+ * buffer to the internal pattern matching buffer. The internal pattern match
+ * buffer is cleared whenever a newline is read.
+ */
+static void __guac_telnet_password_search(guac_client* client, const char* buffer, int size) {
+
+    static char line_buffer[1024] = {0};
+    static int length = 0;
+
+    guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
+
+    int i;
+    const char* current;
+
+    /* Ensure line buffer contains only the most recent line */
+    current = buffer;
+    for (i = 0; i < size; i++) {
+
+        /* Reset line buffer and shift input buffer for each newline */
+        if (*(current++) == '\n') {
+            length = 0;
+            buffer += i;
+            size -= i;
+            i = 0;
+        }
+
+    }
+
+    /* Truncate if necessary */
+    if (size + length + 1 > sizeof(line_buffer))
+        size = sizeof(line_buffer) - length - 1;
+
+    /* Append to line */
+    memcpy(&(line_buffer[length]), buffer, size);
+    length += size;
+    line_buffer[length] = '\0';
+
+    /* Send password upon match */
+    if (regexec(client_data->password_regex, line_buffer, 0, NULL, 0) == 0) {
+
+        /* Send password */
+        guac_terminal_send_string(client_data->term, client_data->password);
+        guac_terminal_send_key(client_data->term, 0xFF0D, 1);
+        guac_terminal_send_key(client_data->term, 0xFF0D, 0);
+
+        /* Stop searching for password */
+        regfree(client_data->password_regex);
+        free(client_data->password_regex);
+        client_data->password_regex = NULL;
+
+    }
+
+}
+
+/**
  * Event handler, as defined by libtelnet. This function is passed to
  * telnet_init() and will be called for every event fired by libtelnet,
  * including feature enable/disable and receipt/transmission of data.
@@ -95,9 +151,14 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
     switch (event->type) {
 
-        /* User input received */
+        /* Terminal output received */
         case TELNET_EV_DATA:
             guac_terminal_write_stdout(client_data->term, event->data.buffer, event->data.size);
+
+            /* Continue search for password prompt */
+            if (client_data->password_regex != NULL)
+                __guac_telnet_password_search(client, event->data.buffer, event->data.size);
+
             break;
 
         /* Data destined for remote end */
