@@ -60,9 +60,19 @@ int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed)
     guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
-    /* Send key if not searching for password */
-    if (client_data->password_regex == NULL)
-        guac_terminal_send_key(term, keysym, pressed);
+    /* Stop searching for password */
+    if (client_data->password_regex != NULL) {
+
+        guac_client_log_info(client, "Stopping password prompt search due to user input.");
+
+        regfree(client_data->password_regex);
+        free(client_data->password_regex);
+        client_data->password_regex = NULL;
+
+    }
+
+    /* Send key */
+    guac_terminal_send_key(term, keysym, pressed);
 
     return 0;
 
