@@ -216,6 +216,10 @@ void guacd_handle_connection(guac_socket* socket) {
             sizeof(char*) * video->argc);
     client->info.video_mimetypes[video->argc] = NULL;
 
+    /* Send connection ID */
+    guacd_log_info("Connection ID is \"%s\"", client->connection_id);
+    guac_protocol_send_ready(socket, client->connection_id);
+
     /* Init client */
     init_result = guac_client_plugin_init_client(plugin,
                 client, connect->argc, connect->argv);
@@ -235,10 +239,6 @@ void guacd_handle_connection(guac_socket* socket) {
         guac_socket_free(socket);
         return;
     }
-
-    /* Send connection ID */
-    guacd_log_info("Connection ID is \"%s\"", client->connection_id);
-    guac_protocol_send_ready(socket, client->connection_id);
 
     /* Start client threads */
     guacd_log_info("Starting client");
