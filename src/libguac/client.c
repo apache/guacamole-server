@@ -33,6 +33,8 @@
 #include "stream.h"
 #include "timestamp.h"
 
+#include <ossp/uuid.h>
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,6 +117,64 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
 }
 
+/**
+ * Returns a newly allocated string containing a guaranteed-unique connection
+ * identifier string which is 37 characters long and begins with a '$'
+ * character.  If an error occurs, NULL is returned, and no memory is
+ * allocated.
+ */
+static char* __guac_generate_connection_id() {
+
+    char* buffer;
+    char* identifier;
+    size_t identifier_length;
+
+    uuid_t* uuid;
+
+    /* Attempt to create UUID object */
+    if (uuid_create(&uuid) != UUID_RC_OK) {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for UUID";
+        return NULL;
+    }
+
+    /* Generate random UUID */
+    if (uuid_make(uuid, UUID_MAKE_V4) != UUID_RC_OK) {
+        uuid_destroy(uuid);
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "UUID generation failed";
+        return NULL;
+    }
+
+    /* Allocate buffer for future formatted ID */
+    buffer = malloc(UUID_LEN_STR + 2);
+    if (buffer == NULL) {
+        uuid_destroy(uuid);
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for connection ID";
+        return NULL;
+    }
+
+    identifier = &(buffer[1]);
+    identifier_length = UUID_LEN_STR + 1;
+
+    /* Build connection ID from UUID */
+    if (uuid_export(uuid, UUID_FMT_STR, &identifier, &identifier_length) != UUID_RC_OK) {
+        free(buffer);
+        uuid_destroy(uuid);
+        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error_message = "Conversion of UUID to connection ID failed";
+        return NULL;
+    }
+
+    uuid_destroy(uuid);
+
+    buffer[0] = '$';
+    buffer[UUID_LEN_STR + 1] = '\0';
+    return buffer;
+
+}
+
 guac_client* guac_client_alloc() {
 
     int i;
@@ -134,6 +194,13 @@ guac_client* guac_client_alloc() {
         client->last_sent_timestamp = guac_timestamp_current();
 
     client->state = GUAC_CLIENT_RUNNING;
+
+    /* Generate ID */
+    client->connection_id = __guac_generate_connection_id();
+    if (client->connection_id == NULL) {
+        free(client);
+        return NULL;
+    }
 
     /* Allocate buffer and layer pools */
     client->__buffer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);

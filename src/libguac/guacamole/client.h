@@ -419,6 +419,15 @@ struct guac_client {
      */
     guac_stream* __input_streams;
 
+    /**
+     * The unique identifier allocated for the connection, which may
+     * be used within the Guacamole protocol to refer to this connection.
+     * This identifier is guaranteed to be unique from all existing
+     * connections and will not collide with any available protocol
+     * names.
+     */
+    char* connection_id;
+
 };
 
 /**

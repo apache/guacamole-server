@@ -182,6 +182,12 @@ void guacd_handle_connection(guac_socket* socket) {
 
     /* Get client */
     client = guac_client_alloc();
+    if (client == NULL) {
+        guacd_log_guac_error("Client could not be allocated");
+        guac_socket_free(socket);
+        return;
+    }
+
     client->socket = socket;
     client->log_info_handler = guacd_client_log_info;
     client->log_error_handler = guacd_client_log_error;
@@ -229,6 +235,8 @@ void guacd_handle_connection(guac_socket* socket) {
         guac_socket_free(socket);
         return;
     }
+
+    guacd_log_info("Connection ID is \"%s\"", client->connection_id);
 
     /* Start client threads */
     guacd_log_info("Starting client");
