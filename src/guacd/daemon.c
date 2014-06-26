@@ -236,7 +236,9 @@ void guacd_handle_connection(guac_socket* socket) {
         return;
     }
 
+    /* Send connection ID */
     guacd_log_info("Connection ID is \"%s\"", client->connection_id);
+    guac_protocol_send_ready(socket, client->connection_id);
 
     /* Start client threads */
     guacd_log_info("Starting client");

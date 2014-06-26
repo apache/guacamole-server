@@ -1060,6 +1060,21 @@ int guac_protocol_send_push(guac_socket* socket, const guac_layer* layer) {
 
 }
 
+int guac_protocol_send_ready(guac_socket* socket, const char* id) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "5.ready,")
+        || __guac_socket_write_length_string(socket, id)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_rect(guac_socket* socket,
         const guac_layer* layer, int x, int y, int width, int height) {
 

@@ -166,6 +166,18 @@ int guac_protocol_send_nest(guac_socket* socket, int index,
 int guac_protocol_send_nop(guac_socket* socket);
 
 /**
+ * Sends a ready instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket The guac_socket connection to use.
+ * @param id The connection ID of the connection that is ready.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_protocol_send_ready(guac_socket* socket, const char* id);
+
+/**
  * Sends a set instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
