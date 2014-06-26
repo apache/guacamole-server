@@ -62,9 +62,10 @@ AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
               AC_DEFINE([HAVE_LIBPTHREAD],,
                         [Whether libpthread was found])])
 
-# libossp-uuid 
-AC_CHECK_LIB([ossp-uuid], [uuid_create], [UUID_LIBS=-lossp-uuid],
-             AC_MSG_ERROR("The OSSP UUID library is required"))
+# OSSP UUID
+AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
+             AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
+                          AC_MSG_ERROR("The OSSP UUID library is required")))
 
 # cunit
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
