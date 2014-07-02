@@ -67,6 +67,17 @@ AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
              AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
                           AC_MSG_ERROR("The OSSP UUID library is required")))
 
+# Check for and validate OSSP uuid.h header
+AC_CHECK_HEADERS([ossp/uuid.h])
+AC_CHECK_DECL([uuid_make],,
+              AC_MSG_ERROR("No OSSP uuid.h found in include path"),
+              [#ifdef HAVE_OSSP_UUID_H
+               #include <ossp/uuid.h>
+               #else
+               #include <uuid.h>
+               #endif
+               ])
+
 # cunit
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
 

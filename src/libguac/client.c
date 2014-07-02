@@ -33,7 +33,11 @@
 #include "stream.h"
 #include "timestamp.h"
 
+#ifdef HAVE_OSSP_UUID_H
 #include <ossp/uuid.h>
+#else
+#include <uuid.h>
+#endif
 
 #include <stdarg.h>
 #include <stdio.h>
