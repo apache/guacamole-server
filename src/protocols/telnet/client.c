@@ -48,6 +48,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "hostname",
     "port",
     "username",
+    "username-regex",
     "password",
     "password-regex",
     "font-name",
@@ -73,6 +74,12 @@ enum __TELNET_ARGS_IDX {
     IDX_USERNAME,
 
     /**
+     * The regular expression to use when searching for the username/login prompt.
+     * Optional
+     */
+    IDX_USERNAME_REGEX,
+
+    /**
      * The password to use when logging in. Optional.
      */
     IDX_PASSWORD,
@@ -95,6 +102,26 @@ enum __TELNET_ARGS_IDX {
 
     TELNET_ARGS_COUNT
 };
+
+/**
+ * Compile a regular expression and checks it return value. Returns NULL if compilation fails
+ */
+static regex_t* __guac_telnet_compile_regext(guac_client* client, char* pattern) {
+    int compile_result;
+    regex_t* regex = malloc(sizeof(regex_t));
+
+    /* Compile regular expression */
+    compile_result = regcomp(regex, pattern,REG_EXTENDED | REG_NOSUB | REG_ICASE | REG_NEWLINE);
+
+    /* Notify of failure to parse/compile */
+    if (compile_result != 0) {
+        guac_client_log_info(client, "Regular expression '%s' could not be compiled.", pattern);
+        free(regex);
+        return NULL;
+    }
+
+    return regex;
+}
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
@@ -124,29 +151,25 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     strcpy(client_data->username,  argv[IDX_USERNAME]);
     strcpy(client_data->password,  argv[IDX_PASSWORD]);
 
-    /* Set password regex, if needed */
-    if (client_data->password[0] != 0) {
-
-        int compile_result;
-
-        client_data->password_regex = malloc(sizeof(regex_t));
+    /* Set username regex, if needed */
+    if (client_data->username[0] != 0) {
 
         /* Compile regular expression */
-        if (argv[IDX_PASSWORD_REGEX][0] != 0)
-            compile_result = regcomp(client_data->password_regex, argv[IDX_PASSWORD_REGEX],
-                    REG_EXTENDED | REG_NOSUB | REG_NEWLINE);
+        if (argv[IDX_USERNAME_REGEX][0] != 0)
+            client_data->username_regex = __guac_telnet_compile_regext(client, argv[IDX_USERNAME_REGEX]);
         else
-            compile_result = regcomp(client_data->password_regex, GUAC_TELNET_DEFAULT_REGEX,
-                    REG_EXTENDED | REG_NOSUB | REG_NEWLINE);
+            client_data->username_regex = __guac_telnet_compile_regext(client, GUAC_TELNET_DEFAULT_USERNAME_REGEX);
+    }
+    else
+        client_data->username_regex = NULL;
 
-        /* Notify of failure to parse/compile */
-        if (compile_result != 0) {
-            guac_client_log_info(client, "Password regular expression could not be compiled. "
-                                         "Password must be entered manually.");
-            free(client_data->password_regex);
-            client_data->password_regex = NULL;
-        }
-
+    /* Set password regex, if needed */
+    if (client_data->password[0] != 0) {
+        /* Compile regular expression */
+        if (argv[IDX_PASSWORD_REGEX][0] != 0)
+            client_data->password_regex = __guac_telnet_compile_regext(client, argv[IDX_PASSWORD_REGEX]);
+        else
+            client_data->password_regex = __guac_telnet_compile_regext(client, GUAC_TELNET_DEFAULT_PASSWORD_REGEX);
     }
     else
         client_data->password_regex = NULL;

@@ -71,6 +71,17 @@ int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed)
 
     }
 
+    /* Stop searching for username */
+    if (client_data->username_regex != NULL) {
+
+        guac_client_log_info(client, "Stopping username prompt search due to user input.");
+
+        regfree(client_data->username_regex);
+        free(client_data->username_regex);
+        client_data->username_regex = NULL;
+
+    }
+
     /* Send key */
     guac_terminal_send_key(term, keysym, pressed);
 

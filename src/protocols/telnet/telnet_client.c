@@ -87,9 +87,10 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
 /**
  * Searches for a line matching the stored password regex, appending the given
  * buffer to the internal pattern matching buffer. The internal pattern match
- * buffer is cleared whenever a newline is read.
+ * buffer is cleared whenever a newline is read. Returns TRUE if a match is found and the
+ * value is sent.
  */
-static void __guac_telnet_password_search(guac_client* client, const char* buffer, int size) {
+static bool __guac_telnet_regex_search(guac_client* client, regex_t* regex, char* value, const char* buffer, int size) {
 
     static char line_buffer[1024] = {0};
     static int length = 0;
@@ -110,7 +111,6 @@ static void __guac_telnet_password_search(guac_client* client, const char* buffe
             size -= i;
             i = 0;
         }
-
     }
 
     /* Truncate if necessary */
@@ -122,21 +122,26 @@ static void __guac_telnet_password_search(guac_client* client, const char* buffe
     length += size;
     line_buffer[length] = '\0';
 
+    /* Remove non-printable characters as they interfere with regex matching */
+    for (int i = 0; i < length; i++) {
+        if (line_buffer[i] <= 31 || (line_buffer[i] >= 128 && line_buffer[i] <= 255)) {
+            line_buffer[i] = ' ';
+        }
+    }
+
     /* Send password upon match */
-    if (regexec(client_data->password_regex, line_buffer, 0, NULL, 0) == 0) {
+    if (regexec(regex, line_buffer, 0, NULL, 0) == 0) {
 
         /* Send password */
-        guac_terminal_send_string(client_data->term, client_data->password);
+        guac_terminal_send_string(client_data->term, value);
         guac_terminal_send_key(client_data->term, 0xFF0D, 1);
         guac_terminal_send_key(client_data->term, 0xFF0D, 0);
 
         /* Stop searching for password */
-        regfree(client_data->password_regex);
-        free(client_data->password_regex);
-        client_data->password_regex = NULL;
-
+        return TRUE;
     }
 
+    return FALSE;
 }
 
 /**
@@ -155,10 +160,25 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
         case TELNET_EV_DATA:
             guac_terminal_write_stdout(client_data->term, event->data.buffer, event->data.size);
 
-            /* Continue search for password prompt */
-            if (client_data->password_regex != NULL)
-                __guac_telnet_password_search(client, event->data.buffer, event->data.size);
+            /* Continue search for username prompt */
+            if (client_data->username_regex != NULL) {
+                if (__guac_telnet_regex_search(client, client_data->username_regex, client_data->username,
+                                           event->data.buffer, event->data.size)) {
+                    regfree(client_data->username_regex);
+                    free(client_data->username_regex);
+                    client_data->username_regex = NULL;
+                }
+            }
 
+            /* Continue search for password prompt */
+            if (client_data->password_regex != NULL) {
+                if (__guac_telnet_regex_search(client, client_data->password_regex, client_data->password,
+                                           event->data.buffer, event->data.size)) {
+                    regfree(client_data->password_regex);
+                    free(client_data->password_regex);
+                    client_data->password_regex = NULL;
+                }
+            }
             break;
 
         /* Data destined for remote end */
@@ -196,7 +216,6 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Environment request */
         case TELNET_EV_ENVIRON:
-
             /* Only send USER if entire environment was requested */
             if (event->environ.size == 0)
                 guac_telnet_send_user(telnet, client_data->username);

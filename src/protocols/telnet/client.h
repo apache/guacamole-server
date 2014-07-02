@@ -32,7 +32,8 @@
 
 #include <libtelnet.h>
 
-#define GUAC_TELNET_DEFAULT_REGEX "^Password:"
+#define GUAC_TELNET_DEFAULT_USERNAME_REGEX "login:"
+#define GUAC_TELNET_DEFAULT_PASSWORD_REGEX "password:"
 
 /**
  * Telnet-specific client data.
@@ -53,6 +54,13 @@ typedef struct guac_telnet_client_data {
      * The name of the user to login as.
      */
     char username[1024];
+
+    /**
+     * The regular expression to use when searching for the username
+     * prompt. This will be NULL unless the telnet client is currently
+     * searching for the username prompt.
+     */
+    regex_t* username_regex;
 
     /**
      * The password to give when authenticating.
