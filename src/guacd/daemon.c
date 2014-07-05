@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "client-map.h"
 #include "log.h"
 
 #include <guacamole/client.h>
@@ -56,7 +57,11 @@
 #define GUACD_DEV_NULL "/dev/null"
 #define GUACD_ROOT     "/"
 
-void guacd_handle_connection(guac_socket* socket) {
+/**
+ * Creates a new guac_client for the connection on the given socket, adding
+ * it to the client map based on its ID.
+ */
+static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) {
 
     guac_client* client;
     guac_client_plugin* plugin;
@@ -216,6 +221,10 @@ void guacd_handle_connection(guac_socket* socket) {
             sizeof(char*) * video->argc);
     client->info.video_mimetypes[video->argc] = NULL;
 
+    /* Store client */
+    if (guacd_client_map_add(map, client))
+        guacd_log_error("Unable to add client. Internal client storage has failed");
+
     /* Send connection ID */
     guacd_log_info("Connection ID is \"%s\"", client->connection_id);
     guac_protocol_send_ready(socket, client->connection_id);
@@ -246,6 +255,10 @@ void guacd_handle_connection(guac_socket* socket) {
         guacd_log_error("Client finished abnormally");
     else
         guacd_log_info("Client finished normally");
+
+    /* Remove client */
+    if (guacd_client_map_remove(map, client->connection_id) == NULL)
+        guacd_log_error("Unable to remove client. Internal client storage has failed");
 
     /* Free mimetype lists */
     free(client->info.audio_mimetypes);
@@ -375,6 +388,8 @@ int main(int argc, char* argv[]) {
     char* key_file = NULL;
     SSL_CTX* ssl_context = NULL;
 #endif
+
+    guacd_client_map* map = guacd_client_map_alloc();
 
     /* General */
     int retval;
@@ -645,7 +660,7 @@ int main(int argc, char* argv[]) {
             socket = guac_socket_open(connected_socket_fd);
 #endif
 
-            guacd_handle_connection(socket);
+            guacd_handle_connection(map, socket);
             close(connected_socket_fd);
             return 0;
         }
