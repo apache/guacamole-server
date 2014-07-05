@@ -22,14 +22,14 @@
 
 AUTOMAKE_OPTIONS = foreign 
 
-AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@
+AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
 sbin_PROGRAMS = guacd
 man_MANS = man/guacd.8
 
-noinst_HEADERS = client.h log.h
-guacd_SOURCES  = daemon.c client.c log.c
-guacd_LDADD    = @LIBGUAC_LTLIB@
+noinst_HEADERS = client.h client-map.h log.h
+guacd_SOURCES  = daemon.c client.c client-map.c log.c
+guacd_LDADD    = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
 guacd_LDFLAGS  = @PTHREAD_LIBS@ @SSL_LIBS@
 
 EXTRA_DIST = init.d/guacd.in man/guacd.8

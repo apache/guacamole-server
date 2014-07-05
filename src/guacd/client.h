@@ -67,6 +67,13 @@
  */
 #define GUACD_USEC_TIMEOUT (GUACD_TIMEOUT*1000)
 
+/**
+ * The maximum number of concurrent connections to a single instance
+ * of guacd.
+ */
+#define GUACD_CLIENT_MAX_CONNECTIONS 65536
+
 int guacd_client_start(guac_client* client);
 
 #endif
+
