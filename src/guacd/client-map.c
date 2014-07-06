@@ -46,6 +46,10 @@ static unsigned int __guacd_client_hash(const char* str) {
 
 }
 
+/**
+ * Locates the bucket corresponding to the hash code indicated by the give id.
+ * Each bucket is an instance of guac_common_list.
+ */
 static guac_common_list* __guacd_client_find_bucket(guacd_client_map* map, const char* id) {
 
     const int index = __guacd_client_hash(id) % GUACD_CLIENT_MAP_BUCKETS;
@@ -53,6 +57,10 @@ static guac_common_list* __guacd_client_find_bucket(guacd_client_map* map, const
 
 }
 
+/**
+ * Given a list of guac_client instances, returns the guac_client having the
+ * given ID, or NULL if no such client is stored.
+ */
 static guac_common_list_element* __guacd_client_find(guac_common_list* bucket, const char* id) {
 
     guac_common_list_element* current = bucket->head;
