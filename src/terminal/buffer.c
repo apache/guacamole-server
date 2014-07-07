@@ -189,6 +189,7 @@ void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
     guac_terminal_char continuation_char;
     continuation_char.value = GUAC_CHAR_CONTINUATION;
     continuation_char.attributes = character->attributes;
+    continuation_char.width = 0; /* Not applicable for GUAC_CHAR_CONTINUATION */
 
     /* Get and expand row */
     guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(buffer, row, end_column+1);
