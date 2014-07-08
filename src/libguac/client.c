@@ -106,6 +106,9 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
     allocd_stream = &(client->__output_streams[stream_index]);
     allocd_stream->index = stream_index;
     allocd_stream->data = NULL;
+    allocd_stream->ack_handler = NULL;
+    allocd_stream->blob_handler = NULL;
+    allocd_stream->end_handler = NULL;
 
     return allocd_stream;
 
