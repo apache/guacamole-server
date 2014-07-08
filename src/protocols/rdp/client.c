@@ -67,6 +67,10 @@
 #include <freerdp/client/channels.h>
 #endif
 
+#ifdef HAVE_FREERDP_VERSION_H
+#include <freerdp/version.h>
+#endif
+
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -128,7 +132,13 @@ enum RDP_ARGS_IDX {
     RDP_ARGS_COUNT
 };
 
+#ifdef LEGACY_FREERDP
 int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, UINT8* data, int size, int flags, int total_size) {
+#elif defined(FREERDP_VERSION_MAJOR) && (FREERDP_VERSION_MAJOR == 1 && FREERDP_VERSION_MINOR == 2)
+int __guac_receive_channel_data(freerdp* rdp_inst, UINT16 channelId, BYTE* data, int size, int flags, int total_size) {
+#else
+int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, BYTE* data, int size, int flags, int total_size) {
+#endif
     return freerdp_channels_data(rdp_inst, channelId, data, size, flags, total_size);
 }
 
@@ -468,7 +478,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     srandom(time(NULL));
 
     /* Init client */
+#ifdef HAVE_FREERDP_CHANNELS_GLOBAL_INIT
     freerdp_channels_global_init();
+#endif
     rdp_inst = freerdp_new();
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->PostConnect = rdp_freerdp_post_connect;

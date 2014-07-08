@@ -45,8 +45,8 @@
 int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
 
     /* Gain access to plugin data */
-    CHANNEL_ENTRY_POINTS_EX* entry_points_ex =
-        (CHANNEL_ENTRY_POINTS_EX*) pEntryPoints;
+    CHANNEL_ENTRY_POINTS_FREERDP* entry_points_ex =
+        (CHANNEL_ENTRY_POINTS_FREERDP*) pEntryPoints;
 
     /* Allocate plugin */
     guac_svcPlugin* svc_plugin =
