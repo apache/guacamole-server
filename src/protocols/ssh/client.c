@@ -186,6 +186,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return -1;
     }
 
+    /* Ensure main socket is threadsafe */
+    guac_socket_require_threadsafe(socket);
+
     /* Send initial name */
     guac_protocol_send_name(socket, client_data->hostname);
 
