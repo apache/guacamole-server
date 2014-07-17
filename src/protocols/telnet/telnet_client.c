@@ -216,6 +216,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Environment request */
         case TELNET_EV_ENVIRON:
+
             /* Only send USER if entire environment was requested */
             if (event->environ.size == 0)
                 guac_telnet_send_user(telnet, client_data->username);

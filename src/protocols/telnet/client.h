@@ -32,8 +32,8 @@
 
 #include <libtelnet.h>
 
-#define GUAC_TELNET_DEFAULT_USERNAME_REGEX "login:"
-#define GUAC_TELNET_DEFAULT_PASSWORD_REGEX "password:"
+#define GUAC_TELNET_DEFAULT_USERNAME_REGEX "[Ll]ogin:"
+#define GUAC_TELNET_DEFAULT_PASSWORD_REGEX "[Pp]assword:"
 
 /**
  * Telnet-specific client data.
