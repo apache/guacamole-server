@@ -122,13 +122,6 @@ static bool __guac_telnet_regex_search(guac_client* client, regex_t* regex, char
     length += size;
     line_buffer[length] = '\0';
 
-    /* Remove non-printable characters as they interfere with regex matching */
-    for (int i = 0; i < length; i++) {
-        if (line_buffer[i] <= 31 || (line_buffer[i] >= 128 && line_buffer[i] <= 255)) {
-            line_buffer[i] = ' ';
-        }
-    }
-
     /* Send password upon match */
     if (regexec(regex, line_buffer, 0, NULL, 0) == 0) {
 
