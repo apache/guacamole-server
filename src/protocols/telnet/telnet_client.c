@@ -122,16 +122,17 @@ static bool __guac_telnet_regex_search(guac_client* client, regex_t* regex, char
     length += size;
     line_buffer[length] = '\0';
 
-    /* Send password upon match */
+    /* Send value upon match */
     if (regexec(regex, line_buffer, 0, NULL, 0) == 0) {
 
-        /* Send password */
+        /* Send value */
         guac_terminal_send_string(client_data->term, value);
         guac_terminal_send_key(client_data->term, 0xFF0D, 1);
         guac_terminal_send_key(client_data->term, 0xFF0D, 0);
 
-        /* Stop searching for password */
+        /* Stop searching for prompt */
         return TRUE;
+
     }
 
     return FALSE;
@@ -167,6 +168,14 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
             if (client_data->password_regex != NULL) {
                 if (__guac_telnet_regex_search(client, client_data->password_regex, client_data->password,
                                            event->data.buffer, event->data.size)) {
+
+                    /* Do not continue searching for username once password is sent */
+                    if (client_data->username_regex != NULL) {
+                        regfree(client_data->username_regex);
+                        free(client_data->username_regex);
+                        client_data->username_regex = NULL;
+                    }
+
                     regfree(client_data->password_regex);
                     free(client_data->password_regex);
                     client_data->password_regex = NULL;
