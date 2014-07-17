@@ -95,16 +95,19 @@ static void __kbd_callback(const char *name, int name_len,
                             int num_prompts,
                             const LIBSSH2_USERAUTH_KBDINT_PROMPT *prompts,
                             LIBSSH2_USERAUTH_KBDINT_RESPONSE *responses,
-                            void **abstract)
-{
-	guac_client *client = (guac_client *) *abstract;
-	ssh_guac_client_data *client_data = (ssh_guac_client_data *) client->data;
+                            void **abstract) {
+
+    guac_client* client = (guac_client*) *abstract;
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
     if (num_prompts == 1) {
         responses[0].text = strdup(client_data->password);
         responses[0].length = strlen(client_data->password);
     }
-}
+    else
+        guac_client_log_info(client, "Unsupported number of keyboard-interactive prompts: %i", num_prompts);
 
+}
 
 static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
         int* socket_fd) {
@@ -117,7 +120,7 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
 
     char connected_address[1024];
     char connected_port[64];
-	char *user_authlist;
+    char *user_authlist;
 
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
 
@@ -202,18 +205,19 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
     if (socket_fd != NULL)
         *socket_fd = fd;
 
-	/* Get list of suported authentication methods */
-	user_authlist = libssh2_userauth_list(session, client_data->username, strlen(client_data->username));
-	guac_client_log_info (client, "Supported authentications: %s", user_authlist);
+    /* Get list of suported authentication methods */
+    user_authlist = libssh2_userauth_list(session, client_data->username, strlen(client_data->username));
+    guac_client_log_info(client, "Supported authentication methods: %s", user_authlist);
 
     /* Authenticate with key if available */
     if (client_data->key != NULL) {
-		/* Check if public key auth is suported on the server */
-		if (strstr(user_authlist, "publickey") == NULL) {
-			guac_client_abort (client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-			                   "Public key authentication not suported");
-			return NULL;
-		}
+
+        /* Check if public key auth is suported on the server */
+        if (strstr(user_authlist, "publickey") == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                               "Public key authentication not suported");
+            return NULL;
+        }
 
         if (!libssh2_userauth_publickey(session, client_data->username,
                     (unsigned char*) client_data->key->public_key,
@@ -230,19 +234,22 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
     }
 
     /* Authenticate with password */
-	if (strstr(user_authlist, "password") != NULL) {
-		guac_client_log_info(client, "Using password authentication method");
-		retval = libssh2_userauth_password(session, client_data->username, client_data->password);
-	} else if (strstr(user_authlist, "keyboard-interactive") != NULL) {
-		guac_client_log_info(client, "Using keyboard-interactive authentication method");
-		retval = libssh2_userauth_keyboard_interactive(session, client_data->username, &__kbd_callback);
-	} else {
-		guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_BAD_TYPE, "No known authentication methods");
-		return NULL;
-	}
+    if (strstr(user_authlist, "password") != NULL) {
+        guac_client_log_info(client, "Using password authentication method");
+        retval = libssh2_userauth_password(session, client_data->username, client_data->password);
+    }
+    else if (strstr(user_authlist, "keyboard-interactive") != NULL) {
+        guac_client_log_info(client, "Using keyboard-interactive authentication method");
+        retval = libssh2_userauth_keyboard_interactive(session, client_data->username, &__kbd_callback);
+    }
+    else {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_BAD_TYPE, "No known authentication methods");
+        return NULL;
+    }
 
-	if (retval == 0)
+    if (retval == 0)
         return session;
+
     else {
         char* error_message;
         libssh2_session_last_error(session, &error_message, NULL, 0);
