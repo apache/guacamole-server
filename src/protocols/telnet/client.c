@@ -104,7 +104,7 @@ enum __TELNET_ARGS_IDX {
 };
 
 /**
- * Compile a regular expression and checks it return value. Returns NULL if compilation fails
+ * Compiles the given regular expression, returning NULL if compilation fails.
  */
 static regex_t* __guac_telnet_compile_regex(guac_client* client, char* pattern) {
 
