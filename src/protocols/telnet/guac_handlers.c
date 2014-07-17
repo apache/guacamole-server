@@ -47,8 +47,8 @@ int guac_telnet_client_mouse_handler(guac_client* client, int x, int y, int mask
     guac_telnet_client_data* client_data = (guac_telnet_client_data*) client->data;
     guac_terminal* term = client_data->term;
 
-    /* Send mouse if not searching for password */
-    if (client_data->password_regex == NULL)
+    /* Send mouse if not searching for password or username */
+    if (client_data->password_regex == NULL && client_data->username_regex == NULL)
         guac_terminal_send_mouse(term, x, y, mask);
 
     return 0;
