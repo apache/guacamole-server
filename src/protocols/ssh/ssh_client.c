@@ -409,6 +409,8 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
+    pthread_mutex_init(&client_data->term_channel_lock, NULL);
+
     /* Open channel for terminal */
     client_data->term_channel = libssh2_channel_open_session(client_data->session);
     if (client_data->term_channel == NULL) {
@@ -476,8 +478,6 @@ void* ssh_client_thread(void* data) {
 
     /* Logged in */
     guac_client_log_info(client, "SSH connection successful.");
-
-    pthread_mutex_init(&client_data->term_channel_lock, NULL);
 
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, ssh_input_thread, (void*) client)) {
