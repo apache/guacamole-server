@@ -209,10 +209,19 @@ typedef struct guac_rdp_settings {
 void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp);
 
 /**
- * Pull all settings from the given freerdp instance into the client
- * stored settings.
+ * Returns the width of the RDP session display.
  */
-void guac_rdp_pull_settings(freerdp* rdp, guac_rdp_settings* guac_settings);
+int guac_rdp_get_width(freerdp* rdp);
+
+/**
+ * Returns the height of the RDP session display.
+ */
+int guac_rdp_get_height(freerdp* rdp);
+
+/**
+ * Returns the depth of the RDP session display.
+ */
+int guac_rdp_get_depth(freerdp* rdp);
 
 #endif
 

@@ -372,3 +372,17 @@ void guac_rdp_gdi_end_paint(rdpContext* context) {
     /* IGNORE */
 }
 
+void guac_rdp_gdi_desktop_resize(rdpContext* context) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    rdp_guac_client_data* data = (rdp_guac_client_data*) client->data;
+
+    guac_common_surface_resize(data->default_surface,
+            guac_rdp_get_width(context->instance),
+            guac_rdp_get_height(context->instance));
+
+    guac_common_surface_reset_clip(data->default_surface);
+
+}
+
+

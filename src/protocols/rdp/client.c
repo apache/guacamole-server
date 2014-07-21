@@ -307,6 +307,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     free(pointer);
 
     /* Set up GDI */
+    instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
     instance->update->Palette = guac_rdp_gdi_palette_update;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
@@ -696,6 +697,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Load keymap into client */
     __guac_rdp_client_load_keymap(client, settings->server_layout);
 
+    /* Create default surface */
+    guac_client_data->default_surface = guac_common_surface_alloc(client->socket, GUAC_DEFAULT_LAYER,
+                                                                  settings->width, settings->height);
+    guac_client_data->current_surface = guac_client_data->default_surface;
+
+    /* Send connection name */
+    guac_protocol_send_name(client->socket, settings->hostname);
+
+    /* Set default pointer */
+    guac_common_set_pointer_cursor(client);
+
     /* Push desired settings to FreeRDP */
     guac_rdp_push_settings(settings, rdp_inst);
 
@@ -704,20 +716,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Error connecting to RDP server");
         return 1;
     }
-
-    /* Pull actual settings back from FreeRDP */
-    guac_rdp_pull_settings(rdp_inst, settings);
-
-    /* Send connection name */
-    guac_protocol_send_name(client->socket, settings->hostname);
-
-    /* Create default surface */
-    guac_client_data->default_surface = guac_common_surface_alloc(client->socket, GUAC_DEFAULT_LAYER,
-                                                                  settings->width, settings->height);
-    guac_client_data->current_surface = guac_client_data->default_surface;
-
-    /* Set default pointer */
-    guac_common_set_pointer_cursor(client);
 
     /* Success */
     return 0;

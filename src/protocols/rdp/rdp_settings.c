@@ -34,20 +34,28 @@
 
 #include <stddef.h>
 
-void guac_rdp_pull_settings(freerdp* rdp, guac_rdp_settings* guac_settings) {
-
-    rdpSettings* rdp_settings = rdp->settings;
-
+int guac_rdp_get_width(freerdp* rdp) {
 #ifdef LEGACY_RDPSETTINGS
-    guac_settings->color_depth = rdp_settings->color_depth;
-    guac_settings->width       = rdp_settings->width;
-    guac_settings->height      = rdp_settings->height;
+    return rdp->settings->width;
 #else
-    guac_settings->color_depth = rdp_settings->ColorDepth;
-    guac_settings->width       = rdp_settings->DesktopWidth;
-    guac_settings->height      = rdp_settings->DesktopHeight;
+    return rdp->settings->DesktopWidth;
 #endif
+}
 
+int guac_rdp_get_height(freerdp* rdp) {
+#ifdef LEGACY_RDPSETTINGS
+    return rdp->settings->height;
+#else
+    return rdp->settings->DesktopHeight;
+#endif
+}
+
+int guac_rdp_get_depth(freerdp* rdp) {
+#ifdef LEGACY_RDPSETTINGS
+    return rdp->settings->color_depth;
+#else
+    return rdp->settings->ColorDepth;
+#endif
 }
 
 void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
@@ -202,6 +210,7 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->fast_path_input = FALSE;
     rdp_settings->fast_path_output = FALSE;
 #endif
+    rdp_settings->desktop_resize = TRUE;
     rdp_settings->order_support[NEG_DSTBLT_INDEX] = TRUE;
     rdp_settings->order_support[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
     rdp_settings->order_support[NEG_SCRBLT_INDEX] = TRUE;
@@ -234,6 +243,7 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->FastPathInput = FALSE;
     rdp_settings->FastPathOutput = FALSE;
 #endif
+    rdp_settings->DesktopResize = TRUE;
     rdp_settings->OrderSupport[NEG_DSTBLT_INDEX] = TRUE;
     rdp_settings->OrderSupport[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
     rdp_settings->OrderSupport[NEG_SCRBLT_INDEX] = TRUE;

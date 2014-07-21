@@ -136,7 +136,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
 
         /* Convert background color */
         bgcolor = freerdp_color_convert_var(bgcolor,
-                guac_client_data->settings.color_depth, 32,
+                guac_rdp_get_depth(context->instance), 32,
                 ((rdp_freerdp_context*) context)->clrconv);
 
         guac_common_surface_rect(guac_client_data->current_surface, x, y, width, height,
@@ -148,7 +148,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
 
     /* Convert foreground color */
     guac_client_data->glyph_color = freerdp_color_convert_var(fgcolor,
-            guac_client_data->settings.color_depth, 32, ((rdp_freerdp_context*) context)->clrconv);
+            guac_rdp_get_depth(context->instance), 32, ((rdp_freerdp_context*) context)->clrconv);
 
 }
 
