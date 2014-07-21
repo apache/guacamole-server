@@ -613,6 +613,27 @@ AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh2}"  = "xyes" \
 AC_SUBST(SSH_LIBS)
 
 #
+# Underlying crypto library usage of libssh2
+#
+
+if test "x${have_libssh2}" = "xyes"
+then
+
+    # Whether libssh2 was built against libgcrypt
+    AC_CHECK_LIB([ssh2], [gcry_control],
+                         [AC_CHECK_HEADER(gcrypt.h,
+                                          [AC_DEFINE([LIBSSH2_USES_GCRYPT],,
+                                                     [Whether libssh2 was built against libgcrypt])],
+                                          [AC_MSG_WARN([
+  --------------------------------------------
+   libssh2 appears to be built against libgcrypt, but the libgcrypt headers
+   could not be found. SSH will be disabled.
+  --------------------------------------------])
+                                           have_libssh2=no])])
+
+fi
+
+#
 # Agent forwarding support within libssh2
 #
 

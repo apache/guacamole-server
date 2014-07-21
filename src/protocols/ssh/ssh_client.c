@@ -38,6 +38,10 @@
 #include <guacamole/socket.h>
 #include <openssl/ssl.h>
 
+#ifdef LIBSSH2_USES_GCRYPT
+#include <gcrypt.h>
+#endif
+
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -260,6 +264,10 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
 
 }
 
+#ifdef LIBSSH2_USES_GCRYPT
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+#endif
+
 void* ssh_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -274,6 +282,14 @@ void* ssh_client_thread(void* data) {
     int socket_fd;
 
     pthread_t input_thread;
+
+#ifdef LIBSSH2_USES_GCRYPT
+    gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+    if (!gcry_check_version(GCRYPT_VERSION)) {
+        guac_client_log_error(client, "libgcrypt version mismatch.");
+        return NULL;
+    }
+#endif
 
     SSL_library_init();
     libssh2_init(0);
