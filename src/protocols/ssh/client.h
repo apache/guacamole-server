@@ -138,6 +138,11 @@ typedef struct ssh_guac_client_data {
     LIBSSH2_CHANNEL* term_channel;
 
     /**
+     * Lock dictating access to the SSH terminal channel.
+     */
+    pthread_mutex_t term_channel_lock;
+
+    /**
      * The terminal which will render all output from the SSH client.
      */
     guac_terminal* term;

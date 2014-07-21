@@ -74,9 +74,12 @@ int ssh_guac_client_size_handler(guac_client* client, int width, int height) {
     guac_terminal_resize(terminal, width, height);
 
     /* Update SSH pty size if connected */
-    if (guac_client_data->term_channel != NULL)
+    if (guac_client_data->term_channel != NULL) {
+        pthread_mutex_lock(&(guac_client_data->term_channel_lock));
         libssh2_channel_request_pty_size(guac_client_data->term_channel,
                 terminal->term_width, terminal->term_height);
+        pthread_mutex_unlock(&(guac_client_data->term_channel_lock));
+    }
 
     return 0;
 }

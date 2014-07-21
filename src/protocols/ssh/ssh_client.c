@@ -64,8 +64,11 @@ void* ssh_input_thread(void* data) {
     int bytes_read;
 
     /* Write all data read */
-    while ((bytes_read = guac_terminal_read_stdin(client_data->term, buffer, sizeof(buffer))) > 0)
+    while ((bytes_read = guac_terminal_read_stdin(client_data->term, buffer, sizeof(buffer))) > 0) {
+        pthread_mutex_lock(&(client_data->term_channel_lock));
         libssh2_channel_write(client_data->term_channel, buffer, bytes_read);
+        pthread_mutex_unlock(&(client_data->term_channel_lock));
+    }
 
     return NULL;
 
@@ -474,6 +477,8 @@ void* ssh_client_thread(void* data) {
     /* Logged in */
     guac_client_log_info(client, "SSH connection successful.");
 
+    pthread_mutex_init(&client_data->term_channel_lock, NULL);
+
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, ssh_input_thread, (void*) client)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start input thread");
@@ -485,14 +490,24 @@ void* ssh_client_thread(void* data) {
 
     /* While data available, write to terminal */
     bytes_read = 0;
-    while (!libssh2_channel_eof(client_data->term_channel)) {
+    for (;;) {
 
         /* Track total amount of data read */
         int total_read = 0;
 
+        pthread_mutex_lock(&(client_data->term_channel_lock));
+
+        /* Stop reading at EOF */
+        if (libssh2_channel_eof(client_data->term_channel)) {
+            pthread_mutex_unlock(&(client_data->term_channel_lock));
+            break;
+        }
+
         /* Read terminal data */
         bytes_read = libssh2_channel_read(client_data->term_channel,
                 buffer, sizeof(buffer));
+
+        pthread_mutex_unlock(&(client_data->term_channel_lock));
 
         /* Attempt to write data received. Exit on failure. */
         if (bytes_read > 0) {
@@ -540,6 +555,8 @@ void* ssh_client_thread(void* data) {
     pthread_join(input_thread, NULL);
 
     __openssl_free_locks(CRYPTO_num_locks());
+    pthread_mutex_destroy(&client_data->term_channel_lock);
+
     guac_client_log_info(client, "SSH connection ended.");
     return NULL;
 
