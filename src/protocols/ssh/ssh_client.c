@@ -268,6 +268,55 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 
+/**
+ * Array of mutexes, used by OpenSSL.
+ */
+static pthread_mutex_t* __openssl_locks;
+
+/**
+ * Called by OpenSSL when locking or unlocking the Nth mutex.
+ */
+static void __openssl_locking_callback(int mode, int n, const char* file, int line){
+    if (mode & CRYPTO_LOCK)
+        pthread_mutex_lock(&(__openssl_locks[n]));
+    else if (mode & CRYPTO_UNLOCK)
+        pthread_mutex_unlock(&(__openssl_locks[n]));
+}
+
+/**
+ * Called by OpenSSL when determining the current thread ID.
+ */
+static unsigned long __openssl_id_callback() {
+    return (unsigned long) pthread_self();
+}
+
+/**
+ * Creates the given number of mutexes, such that OpenSSL will have at least
+ * this number of mutexes at its disposal.
+ */
+static void __openssl_init_locks(int count) {
+
+    int i;
+
+    __openssl_locks = malloc(sizeof(pthread_mutex_t) * CRYPTO_num_locks());
+
+    for (i=0; i<count; i++)
+        pthread_mutex_init(&(__openssl_locks[i]), NULL);
+
+}
+
+/**
+ * Frees the given number of mutexes.
+ */
+static void __openssl_free_locks(int count) {
+
+    int i;
+
+    for (i=0; i<count; i++)
+        pthread_mutex_destroy(&(__openssl_locks[i]));
+
+}
+
 void* ssh_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -284,12 +333,18 @@ void* ssh_client_thread(void* data) {
     pthread_t input_thread;
 
 #ifdef LIBSSH2_USES_GCRYPT
+    /* Init threadsafety in libgcrypt */
     gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
     if (!gcry_check_version(GCRYPT_VERSION)) {
         guac_client_log_error(client, "libgcrypt version mismatch.");
         return NULL;
     }
 #endif
+
+    /* Init threadsafety in OpenSSL */
+    __openssl_init_locks(CRYPTO_num_locks());
+    CRYPTO_set_id_callback(__openssl_id_callback);
+    CRYPTO_set_locking_callback(__openssl_locking_callback);
 
     SSL_library_init();
     libssh2_init(0);
@@ -484,6 +539,7 @@ void* ssh_client_thread(void* data) {
     guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
+    __openssl_free_locks(CRYPTO_num_locks());
     guac_client_log_info(client, "SSH connection ended.");
     return NULL;
 
