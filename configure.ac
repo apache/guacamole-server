@@ -326,18 +326,12 @@ AC_CHECK_LIB([freerdp-core], [freerdp_new],
   --------------------------------------------])
               have_freerdp=no])
 
-# libfreerdp-channels (1.0) / libfreerdp-client (1.1) / libfreerdp-core (1.2+)
-AC_SEARCH_LIBS([freerdp_channels_new], [freerdp-core freerdp-client],
-              [RDP_LIBS="$RDP_LIBS -lfreerdp-client"],
-              [AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],
-                            [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"
-                            legacy_freerdp_extensions=yes],
-                           [AC_MSG_WARN([
-  --------------------------------------------
-   Unable to find libfreerdp-client / libfreerdp-channels
-   RDP will be disabled.
-  --------------------------------------------])
-                            have_freerdp=no])])
+# libfreerdp-channels (1.0) / libfreerdp-client (1.1)
+AC_CHECK_LIB([freerdp-client], [freerdp_channels_new],
+             [RDP_LIBS="$RDP_LIBS -lfreerdp-client"],
+             [AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],
+                           [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"
+                           legacy_freerdp_extensions=yes])])
 
 # libfreerdp-utils
 AC_CHECK_LIB([freerdp-utils], [svc_plugin_init],
@@ -393,6 +387,11 @@ AC_CHECK_DECL([freerdp_register_addin_provider],
 	[AC_DEFINE([HAVE_FREERDP_REGISTER_ADDIN_PROVIDER],,
                [Whether freerdp_register_addin_provider() is defined])],,
 	[#include <freerdp/addin.h>])
+
+AC_CHECK_DECL([freerdp_channels_global_init],
+	[AC_DEFINE([HAVE_FREERDP_CHANNELS_GLOBAL_INIT],,
+               [Whether freerdp_channels_global_init() is defined])],,
+	[#include <freerdp/channels/channels.h>])
 
 #
 # FreeRDP: WinPR
@@ -505,11 +504,6 @@ if test "x${rdpsettings_fastpath}" = "xyes"; then
     AC_DEFINE([HAVE_RDPSETTINGS_FASTPATH],,
               [Whether the rdpSettings structure has FastPath settings])
 fi
-
-# Check if freerdp_channels_global_init exists
-AC_SEARCH_LIBS([freerdp_channels_global_init], [freerdp-channels],
-    [AC_DEFINE([HAVE_FREERDP_CHANNELS_GLOBAL_INIT],,
-               [Wheter the freerdp_channels_global_init() is defined])],,)
 
 # Check if the type CHANNEL_ENTRY_POINTS_FREERDP exists, if not define it to CHANNEL_ENTRY_POINTS_EX
 AC_CHECK_TYPE([CHANNEL_ENTRY_POINTS_FREERDP],,
