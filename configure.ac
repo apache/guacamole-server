@@ -382,7 +382,7 @@ fi
 
 
 # libfreerdp-cache
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_LIB([freerdp-cache], [glyph_cache_register_callbacks],
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-cache"],
@@ -395,7 +395,7 @@ then
 fi
 
 # libfreerdp-channels (1.0) / libfreerdp-client (1.1)
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_LIB([freerdp-client], [freerdp_channels_new],
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-client"],
@@ -405,7 +405,7 @@ then
 fi
 
 # libfreerdp-utils
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_LIB([freerdp-utils], [svc_plugin_init],
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-utils"],
@@ -418,7 +418,7 @@ then
 fi
 
 # libfreerdp-codec
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"],
@@ -431,14 +431,14 @@ then
 fi
 
 # Check for interval polling in plugins
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_MEMBERS([rdpSvcPlugin.interval_ms],,,
                      [[#include <freerdp/utils/svc_plugin.h>]])
 fi
 
 # Keyboard layout header
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_HEADERS([freerdp/locale/keyboard.h],,
                       [AC_CHECK_HEADERS([freerdp/kbd/layouts.h],,
@@ -451,13 +451,13 @@ then
 fi
 
 # New headers defining addins
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_HEADERS([freerdp/addin.h freerdp/client/channels.h])
 fi
 
 # Header defining cliprdr
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_HEADERS([freerdp/client/cliprdr.h],,
                      [AC_CHECK_HEADERS([freerdp/plugins/cliprdr.h],,
@@ -473,7 +473,7 @@ then
 fi
 
 # Addin registration variations
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_DECL([freerdp_register_addin_provider],
         [AC_DEFINE([HAVE_FREERDP_REGISTER_ADDIN_PROVIDER],,
@@ -491,7 +491,7 @@ fi
 #
 
 # Check for stream support via WinPR
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_HEADER(winpr/stream.h,,
                     [have_winpr=no,
@@ -506,7 +506,7 @@ then
 fi
 
 # Check for types in WinPR
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_HEADER(winpr/wtypes.h,,
                     [have_winpr=no,
@@ -519,7 +519,7 @@ then
                                       have_freerdp=no])])
 fi
 
-if test "x${have_libfreerdp}" = "xyes" -a "x${have_winpr}" = "xyes"
+if test "x${have_freerdp}" = "xyes" -a "x${have_winpr}" = "xyes"
 then
     AC_DEFINE([ENABLE_WINPR],,
               [Whether library support for WinPR types was found])
@@ -529,7 +529,7 @@ fi
 # FreeRDP: freerdp 
 #
 
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     # Check for current (as of 1.1) freerdp interface
     AC_CHECK_MEMBERS([freerdp.ContextSize],
@@ -562,7 +562,7 @@ fi
 # FreeRDP: rdpSettings
 #
 
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     # Check for current (as of 1.1) rdpSettings interface
     AC_CHECK_MEMBERS([rdpSettings.Width,
@@ -605,13 +605,13 @@ then
 fi
 
 # Activate FastPath settings if present
-if test "x${have_libfreerdp}" = "xyes" -a "x${rdpsettings_fastpath}" = "xyes"; then
+if test "x${have_freerdp}" = "xyes" -a "x${rdpsettings_fastpath}" = "xyes"; then
     AC_DEFINE([HAVE_RDPSETTINGS_FASTPATH],,
               [Whether the rdpSettings structure has FastPath settings])
 fi
 
 # Check if the type CHANNEL_ENTRY_POINTS_FREERDP exists, if not define it to CHANNEL_ENTRY_POINTS_EX
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_TYPE([CHANNEL_ENTRY_POINTS_FREERDP],,
                   AC_DEFINE([CHANNEL_ENTRY_POINTS_FREERDP],[CHANNEL_ENTRY_POINTS_EX], [Type compatibility]),
@@ -619,7 +619,7 @@ then
 fi
 
 # Check if the freerdp version header exists
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_HEADERS([freerdp/version.h])
 fi
@@ -628,7 +628,7 @@ fi
 # FreeRDP: rdpBitmap
 #
 
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_MSG_CHECKING([whether rdpBitmap.Decompress() requires the codec_id])
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
@@ -653,7 +653,7 @@ fi
 # FreeRDP: rdpPalette
 #
 
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_MSG_CHECKING([whether rdpPalette.entries is static])
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <freerdp/update.h>
@@ -670,7 +670,7 @@ fi
 #
 
 # Check for SetDefault and SetNull members of rdpPointer
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_MEMBERS([rdpPointer.SetDefault,
                       rdpPointer.SetNull],
@@ -683,7 +683,7 @@ fi
 #
 
 # Check for current (as of 1.1) wMessage interface
-if test "x${have_libfreerdp}" = "xyes"
+if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_MEMBERS([wMessage.id],
                      [event_interface=stable],,
