@@ -26,6 +26,11 @@
 #include "config.h"
 
 /**
+ * The location of the system-wide configuration file.
+ */
+#define GUACD_CONF_FILE "/etc/guacamole/guacd.conf"
+
+/**
  * The contents of a guacd configuration file.
  */
 typedef struct guacd_config {

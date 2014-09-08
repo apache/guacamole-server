@@ -508,6 +508,12 @@ static int guacd_parse_line(guacd_param_callback* callback, char* buffer, int le
 }
 
 int guacd_parse_conf(guacd_param_callback* callback, char* buffer, int length, void* data) {
+
+    /* Empty buffers are valid */
+    if (length == 0)
+        return 0;
+
     return guacd_parse_line(callback, buffer, length, data);
+
 }
 

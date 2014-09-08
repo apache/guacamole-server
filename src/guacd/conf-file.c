@@ -25,13 +25,71 @@
 #include "conf-file.h"
 #include "conf-parse.h"
 
+#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+/**
+ * Updates the configuration with the given parameter/value pair, flagging
+ * errors as necessary.
+ */
+static int guacd_conf_callback(const char* section, const char* param, const char* value, void* data) {
+    fprintf(stderr, "%s: %s: %s\n", section, param, value);
+    return 0;
+}
 
 int guacd_conf_parse_file(guacd_config* conf, int fd) {
 
-    /* STUB */
+    int line = 1;
+    char* line_start;
+    int parsed = 0;
+
+    char buffer[8192];
+    int chars_read;
+    int length = 0;
+
+    /* Attempt to fill remaining space in buffer */
+    while ((chars_read = read(fd, buffer + length, sizeof(buffer) -  length)) > 0) {
+
+        length += chars_read;
+
+        line_start = buffer;
+
+        /* Attempt to parse entire buffer */
+        while ((parsed = guacd_parse_conf(guacd_conf_callback, line_start, length, conf)) > 0) {
+            line_start += parsed;
+            length -= parsed;
+            line++;
+        }
+
+        /* Shift contents to front */
+        memmove(buffer, line_start, length);
+
+    }
+
+    /* Handle parse errors */
+    if (parsed < 0) {
+        int column = guacd_conf_parse_error_location - line_start + 1;
+        fprintf(stderr, "Parse error at line %i, column %i: %s.\n",
+                line, column, guacd_conf_parse_error);
+        return 1;
+    }
+
+    /* Check for error conditions */
+    if (chars_read < 0) {
+        fprintf(stderr, "Error reading configuration: %s\n", strerror(errno));
+        return 1;
+    }
+
+    /* Read successfully */
     return 0;
+
 }
 
 guacd_config* guacd_conf_load() {
@@ -50,6 +108,26 @@ guacd_config* guacd_conf_load() {
     conf->cert_file = NULL;
     conf->key_file = NULL;
 #endif
+
+    /* Read configuration from file */
+    int fd = open(GUACD_CONF_FILE, O_RDONLY);
+    if (fd > 0) {
+
+        int retval = guacd_conf_parse_file(conf, fd);
+        close(fd);
+
+        if (retval != 0) {
+            fprintf(stderr, "Unable to parse \"" GUACD_CONF_FILE "\".\n");
+            return NULL;
+        }
+
+    }
+
+    /* Notify of errors preventing reading */
+    else if (errno != ENOENT) {
+        fprintf(stderr, "Unable to open \"" GUACD_CONF_FILE "\": %s\n", strerror(errno));
+        return NULL;
+    }
 
     return conf;
 
