@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUACD_CONF_FILE_H
-#define _GUACD_CONF_FILE_H
+#ifndef _GUACD_CONF_PARSE_H
+#define _GUACD_CONF_PARSE_H
 
 /**
  * The maximum length of a name, in characters.

@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#include "conf-file.h"
+#include "conf-parse.h"
 
 #include <ctype.h>
 #include <string.h>
