@@ -40,8 +40,67 @@
  * errors as necessary.
  */
 static int guacd_conf_callback(const char* section, const char* param, const char* value, void* data) {
-    fprintf(stderr, "%s: %s: %s\n", section, param, value);
-    return 0;
+
+    guacd_config* config = (guacd_config*) data;
+
+    /* Network server options */
+    if (strcmp(section, "server") == 0) {
+
+        /* Bind host */
+        if (strcmp(param, "bind_host") == 0) {
+            free(config->bind_host);
+            config->bind_host = strdup(value);
+            return 0;
+        }
+
+        /* Bind port */
+        else if (strcmp(param, "bind_port") == 0) {
+            free(config->bind_port);
+            config->bind_port = strdup(value);
+            return 0;
+        }
+
+    }
+
+    /* Options related to daemon startup */
+    else if (strcmp(section, "daemon") == 0) {
+
+        /* PID file */
+        if (strcmp(param, "pid_file") == 0) {
+            free(config->pidfile);
+            config->pidfile = strdup(value);
+            return 0;
+        }
+
+    }
+
+    /* SSL-specific options */
+    else if (strcmp(section, "ssl") == 0) {
+#ifdef ENABLE_SSL
+        /* SSL certificate */
+        if (strcmp(param, "server_certificate") == 0) {
+            free(config->cert_file);
+            config->cert_file = strdup(value);
+            return 0;
+        }
+
+        /* SSL key */
+        else if (strcmp(param, "server_key") == 0) {
+            free(config->key_file);
+            config->key_file = strdup(value);
+            return 0;
+        }
+#else
+        guacd_conf_parse_error = "SSL support not compiled in";
+        return 1;
+#endif
+
+    }
+
+    /* If still unhandled, the parameter/section is invalid */
+    guacd_conf_parse_error = "Invalid parameter or section name";
+    return 1;
+
 }
 
 int guacd_conf_parse_file(guacd_config* conf, int fd) {

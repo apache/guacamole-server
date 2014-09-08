@@ -261,6 +261,8 @@ static int guacd_parse_parameter(guacd_param_callback* callback, char* buffer, i
     int retval;
     int chars_read = 0;
 
+    char* param_start = buffer;
+
     retval = guacd_parse_name(buffer, length, param_name);
     if (retval < 0)
         return -1;
@@ -316,8 +318,10 @@ static int guacd_parse_parameter(guacd_param_callback* callback, char* buffer, i
     chars_read += retval;
 
     /* Call callback, handling error code */
-    if (callback(__guacd_current_section, param_name, param_value, data))
+    if (callback(__guacd_current_section, param_name, param_value, data)) {
+        guacd_conf_parse_error_location = param_start;
         return -1;
+    }
 
     return chars_read;
 
