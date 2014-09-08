@@ -31,9 +31,36 @@
 typedef struct guacd_config {
 
     /**
+     * The host to bind on.
+     */
+    char* bind_host;
+
+    /**
      * The port to bind on.
      */
-    int bind_port;
+    char* bind_port;
+
+    /**
+     * The file to write the PID in, if any.
+     */
+    char* pidfile;
+
+    /**
+     * Whether guacd should run in the foreground.
+     */
+    int foreground;
+
+#ifdef ENABLE_SSL
+    /**
+     * SSL certificate file.
+     */
+    char* cert_file;
+
+    /**
+     * SSL private key file.
+     */
+    char* key_file;
+#endif
 
 } guacd_config;
 
@@ -43,6 +70,12 @@ typedef struct guacd_config {
  * error message is printed to stderr.
  */
 int guacd_conf_parse_file(guacd_config* conf, int fd);
+
+/**
+ * Loads the configuration from any of several default locations, if found. If
+ * parsing fails, NULL is returned, and an error message is printed to stderr.
+ */
+guacd_config* guacd_conf_load();
 
 #endif
 

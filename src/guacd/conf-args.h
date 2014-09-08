@@ -20,38 +20,18 @@
  * THE SOFTWARE.
  */
 
+#ifndef _GUACD_CONF_ARGS_H
+#define _GUACD_CONF_ARGS_H
+
 #include "config.h"
 
 #include "conf-file.h"
-#include "conf-parse.h"
 
-#include <stdlib.h>
-#include <string.h>
+/**
+ * Parses the given arguments into the given configuration. Zero is returned on
+ * success, and non-zero is returned if arguments cannot be parsed.
+ */
+int guacd_conf_parse_args(guacd_config* config, int argc, char** argv);
 
-int guacd_conf_parse_file(guacd_config* conf, int fd) {
-
-    /* STUB */
-    return 0;
-}
-
-guacd_config* guacd_conf_load() {
-
-    guacd_config* conf = malloc(sizeof(guacd_config));
-    if (conf == NULL)
-        return NULL;
-
-    /* Load defaults */
-    conf->bind_host = NULL;
-    conf->bind_port = strdup("4822");
-    conf->pidfile = NULL;
-    conf->foreground = 0;
-
-#ifdef ENABLE_SSL
-    conf->cert_file = NULL;
-    conf->key_file = NULL;
 #endif
-
-    return conf;
-
-}
 
