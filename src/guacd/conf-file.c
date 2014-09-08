@@ -105,13 +105,14 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
 
 int guacd_conf_parse_file(guacd_config* conf, int fd) {
 
-    int line = 1;
-    char* line_start = NULL; /* Pointless initialization, but this is not obvious enough for some compilers */
-    int parsed = 0;
+    int chars_read;
 
     char buffer[8192];
-    int chars_read;
     int length = 0;
+
+    int line = 1;
+    char* line_start = buffer;
+    int parsed = 0;
 
     /* Attempt to fill remaining space in buffer */
     while ((chars_read = read(fd, buffer + length, sizeof(buffer) -  length)) > 0) {
