@@ -30,6 +30,7 @@ man_MANS = man/guacd.8
 noinst_HEADERS =  \
     client.h      \
     client-map.h  \
+    conf-file.h   \
     conf-parse.h  \
     log.h
 
@@ -37,6 +38,7 @@ guacd_SOURCES =   \
     daemon.c      \
 	client.c      \
 	client-map.c  \
+	conf-file.c   \
 	conf-parse.c  \
 	log.c
 
