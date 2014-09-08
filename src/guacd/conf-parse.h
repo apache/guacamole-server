@@ -39,15 +39,16 @@
  * function will not be called for parameters outside of sections, which are
  * illegal.
  */
-typedef int guacd_param_callback(const char* section, const char* param, const char* value);
+typedef int guacd_param_callback(const char* section, const char* param, const char* value, void* data);
 
 /**
  * Parses an arbitrary buffer of configuration file data, calling the given
  * callback for each valid parameter/value pair. Upon success, the number of
  * characters parsed is returned. On failure, a negative value is returned, and
- * guacd_conf_parse_error and guacd_conf_parse_error_location are set.
+ * guacd_conf_parse_error and guacd_conf_parse_error_location are set. The
+ * provided data will be passed to the callback for each invocation.
  */
-int guacd_parse_conf(guacd_param_callback* callback, char* buffer, int length);
+int guacd_parse_conf(guacd_param_callback* callback, char* buffer, int length, void* data);
 
 /**
  * Human-readable description of the current error, if any.

@@ -253,7 +253,7 @@ static int guacd_parse_quoted_value(char* buffer, int length, char* value) {
  * parameter/value pair is invalid for any reason, a negative value is
  * returned.
  */
-static int guacd_parse_parameter(guacd_param_callback* callback, char* buffer, int length) {
+static int guacd_parse_parameter(guacd_param_callback* callback, char* buffer, int length, void* data) {
 
     char param_name[GUACD_CONF_MAX_NAME_LENGTH + 1];
     char param_value[GUACD_CONF_MAX_VALUE_LENGTH + 1];
@@ -316,7 +316,7 @@ static int guacd_parse_parameter(guacd_param_callback* callback, char* buffer, i
     chars_read += retval;
 
     /* Call callback, handling error code */
-    if (callback(__guacd_current_section, param_name, param_value))
+    if (callback(__guacd_current_section, param_name, param_value, data))
         return -1;
 
     return chars_read;
@@ -373,7 +373,7 @@ static int guacd_parse_section(char* buffer, int length) {
  * parameter/value pair. The empty string is acceptable, as well, as a
  * "null declaration".
  */
-static int guacd_parse_declaration(guacd_param_callback* callback, char* buffer, int length) {
+static int guacd_parse_declaration(guacd_param_callback* callback, char* buffer, int length, void* data) {
 
     int retval;
 
@@ -383,7 +383,7 @@ static int guacd_parse_declaration(guacd_param_callback* callback, char* buffer,
         return retval;
 
     /* Lacking a section name, read parameter/value pair */
-    retval = guacd_parse_parameter(callback, buffer, length);
+    retval = guacd_parse_parameter(callback, buffer, length, data);
     if (retval != 0)
         return retval;
 
@@ -476,7 +476,7 @@ static int guacd_parse_line_end(char* buffer, int length) {
  * occurs, a negative value is returned. Otherwise, the number of characters
  * parsed is returned.
  */
-static int guacd_parse_line(guacd_param_callback* callback, char* buffer, int length) {
+static int guacd_parse_line(guacd_param_callback* callback, char* buffer, int length, void* data) {
 
     int chars_read = 0;
     int retval;
@@ -488,7 +488,7 @@ static int guacd_parse_line(guacd_param_callback* callback, char* buffer, int le
     length -= retval;
 
     /* Declaration (which may be the empty string) */
-    retval = guacd_parse_declaration(callback, buffer, length);
+    retval = guacd_parse_declaration(callback, buffer, length, data);
     if (retval < 0)
         return retval;
 
@@ -507,7 +507,7 @@ static int guacd_parse_line(guacd_param_callback* callback, char* buffer, int le
 
 }
 
-int guacd_parse_conf(guacd_param_callback* callback, char* buffer, int length) {
-    return guacd_parse_line(callback, buffer, length);
+int guacd_parse_conf(guacd_param_callback* callback, char* buffer, int length, void* data) {
+    return guacd_parse_line(callback, buffer, length, data);
 }
 
