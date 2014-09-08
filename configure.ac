@@ -121,13 +121,21 @@ AC_SUBST([COMMON_INCLUDE], '-I$(top_srcdir)/src/common')
 AC_SUBST([TERMINAL_LTLIB],   '$(top_builddir)/src/terminal/libguac_terminal.la')
 AC_SUBST([TERMINAL_INCLUDE], '-I$(top_srcdir)/src/terminal $(PANGO_CFLAGS) $(PANGOCAIRO_CFLAGS) $(COMMON_INCLUDE)')
 
-# Options
+# Init directory
 AC_ARG_WITH(init_dir,
             [AS_HELP_STRING([--with-init-dir=<path>],
                             [install init scripts to the given directory])
             ],init_dir=$withval)
 AM_CONDITIONAL([ENABLE_INIT], [test "x${init_dir}" != "x"])
 AC_SUBST(init_dir)
+
+# guacd config file
+AC_ARG_WITH(guacd_conf,
+            [AS_HELP_STRING([--with-guacd-conf=<path>],
+                            [the full path to the guacd config file @<:@default=/etc/guacamole/guacd.conf@:>@])],
+            [guacd_conf=$withval],
+            [guacd_conf=/etc/guacamole/guacd.conf])
+AC_DEFINE_UNQUOTED([GUACD_CONF_FILE], ["$guacd_conf"], [The full path to the guacd config file])
 
 #
 # libssl
