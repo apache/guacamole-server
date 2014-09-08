@@ -106,7 +106,7 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
 int guacd_conf_parse_file(guacd_config* conf, int fd) {
 
     int line = 1;
-    char* line_start;
+    char* line_start = NULL; /* Pointless initialization, but this is not obvious enough for some compilers */
     int parsed = 0;
 
     char buffer[8192];
