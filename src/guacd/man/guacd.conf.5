@@ -13,12 +13,12 @@ from the command line when running
 .B guacd.
 If you provide both the
 .B guacd.conf
-file and command line options, the command line options will take precendence.
+file and command line options, the command line options will take precedence.
 .
 .SH SYNTAX
 .B guacd.conf
 is made up of sections, where each section contains a set of parameter/value
-pairs. The parameter available are dictated by the section in use, and
+pairs. The parameters available are dictated by the section in use, and
 parameters may only be specified within a section.
 .P
 The beginning of each section is denoted with a section name in brackets, and
@@ -37,8 +37,8 @@ behaves as a daemon, such as what file should contain the PID, if any.
 .TP
 \fB[ssl]\fR
 Parameters which control the SSL support of
-.B guacd
-, such as the certificate and private key used for encryption of the Guacamole
+.B guacd,
+such as the certificate and private key used for encryption of the Guacamole
 protocol. This section and its parameters are only valid if
 .B guacd
 was built with SSL support.
@@ -100,7 +100,7 @@ and kill it if necessary.
 .SH SSL PARAMETERS
 If
 .B guacd
-was built SSL support, then connections between the web application and
+was built with SSL support, then connections between the web application and
 .B guacd
 can be encrypted if an SSL certificate and key file are given.
 .P
