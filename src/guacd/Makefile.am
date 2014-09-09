@@ -25,7 +25,10 @@ AUTOMAKE_OPTIONS = foreign
 AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
 sbin_PROGRAMS = guacd
-man_MANS = man/guacd.8
+
+man_MANS =           \
+    man/guacd.8      \
+    man/guacd.conf.5
 
 noinst_HEADERS =  \
     client.h      \
