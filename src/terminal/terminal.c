@@ -1213,11 +1213,17 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
             char data;
 
-            /* If valid control code, send it */
-            if (keysym >= 'A' && keysym <= 'Z')
-                data = (char) (keysym - 'A' + 1);
+            /* Keysyms for '@' through '_' are all conveniently in C0 order */
+            if (keysym >= '@' && keysym <= '_')
+                data = (char) (keysym - '@');
+
+            /* Handle lowercase as well */
             else if (keysym >= 'a' && keysym <= 'z')
                 data = (char) (keysym - 'a' + 1);
+
+            /* Ctrl+? is DEL (0x7f) */
+            else if (keysym == '?')
+                data = 0x7F;
 
             /* Otherwise ignore */
             else
