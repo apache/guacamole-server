@@ -50,7 +50,7 @@ guacd_SOURCES =   \
 guacd_LDADD   = @LIBGUAC_LTLIB@ @COMMON_LTLIB@
 guacd_LDFLAGS = @PTHREAD_LIBS@ @SSL_LIBS@
 
-EXTRA_DIST = init.d/guacd.in man/guacd.8
+EXTRA_DIST = init.d/guacd.in man/guacd.8 man/guacd.conf.5
 CLEANFILES = $(init_SCRIPTS)
 
 # SSL support
