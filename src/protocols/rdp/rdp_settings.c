@@ -109,9 +109,13 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     /* Audio */
 #ifdef LEGACY_RDPSETTINGS
+#ifdef HAVE_RDPSETTINGS_AUDIOPLAYBACK
     rdp_settings->audio_playback = guac_settings->audio_enabled;
+#endif
 #else
+#ifdef HAVE_RDPSETTINGS_AUDIOPLAYBACK
     rdp_settings->AudioPlayback = guac_settings->audio_enabled;
+#endif
 #endif
 
     /* Security */
