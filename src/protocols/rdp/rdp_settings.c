@@ -118,6 +118,21 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 #endif
 #endif
 
+    /* Device redirection */
+#ifdef LEGACY_RDPSETTINGS
+#ifdef HAVE_RDPSETTINGS_DEVICEREDIRECTION
+    rdp_settings->device_redirection =  guac_settings->audio_enabled
+                                     || guac_settings->drive_enabled
+                                     || guac_settings->printing_enabled;
+#endif
+#else
+#ifdef HAVE_RDPSETTINGS_DEVICEREDIRECTION
+    rdp_settings->DeviceRedirection =  guac_settings->audio_enabled
+                                    || guac_settings->drive_enabled
+                                    || guac_settings->printing_enabled;
+#endif
+#endif
+
     /* Security */
     switch (guac_settings->security_mode) {
 

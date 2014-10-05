@@ -374,6 +374,7 @@ then
     legacy_freerdp_extensions=no
     rdpsettings_interface=unknown
     rdpsettings_audioplayback=yes
+    rdpsettings_deviceredirection=yes
     freerdp_interface=unknown
     event_interface=unknown
 
@@ -601,6 +602,11 @@ then
                          [rdpsettings_audioplayback=no],
                          [[#include <freerdp/freerdp.h>]])
 
+        # Legacy interface may not have DeviceRedirection settings
+        AC_CHECK_MEMBERS([rdpSettings.device_redirection],,
+                         [rdpsettings_deviceredirection=no],
+                         [[#include <freerdp/freerdp.h>]])
+
     elif test "x${rdpsettings_interface}" = "xunknown"; then
         AC_MSG_WARN([
   --------------------------------------------
@@ -615,6 +621,12 @@ fi
 if test "x${have_freerdp}" = "xyes" -a "x${rdpsettings_audioplayback}" = "xyes"; then
     AC_DEFINE([HAVE_RDPSETTINGS_AUDIOPLAYBACK],,
               [Whether the rdpSettings structure has AudioPlayback settings])
+fi
+
+# Activate device redirection settings if present
+if test "x${have_freerdp}" = "xyes" -a "x${rdpsettings_deviceredirection}" = "xyes"; then
+    AC_DEFINE([HAVE_RDPSETTINGS_DEVICEREDIRECTION],,
+              [Whether the rdpSettings structure has DeviceRedirection settings])
 fi
 
 # Check if the type CHANNEL_ENTRY_POINTS_FREERDP exists, if not define it to CHANNEL_ENTRY_POINTS_EX

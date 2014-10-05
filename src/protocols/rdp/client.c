@@ -193,7 +193,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* If RDPDR required, load it */
     if (guac_client_data->settings.printing_enabled
-        || guac_client_data->settings.drive_enabled) {
+        || guac_client_data->settings.drive_enabled
+        || guac_client_data->settings.audio_enabled) {
 
         /* Load RDPDR plugin */
         if (freerdp_channels_load_plugin(channels, instance->settings,
