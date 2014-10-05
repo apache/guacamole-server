@@ -374,7 +374,6 @@ then
     legacy_freerdp_extensions=no
     rdpsettings_interface=unknown
     rdpsettings_audioplayback=yes
-    rdpsettings_fastpath=yes
     freerdp_interface=unknown
     event_interface=unknown
 
@@ -597,12 +596,6 @@ then
         AC_DEFINE([LEGACY_RDPSETTINGS],,
                   [Whether the legacy version of the rdpSettings API was found])
 
-        # Legacy interface may not have FastPath settings
-        AC_CHECK_MEMBERS([rdpSettings.fast_path_input,
-                          rdpSettings.fast_path_output],,
-                         [rdpsettings_fastpath=no],
-                         [[#include <freerdp/freerdp.h>]])
-
         # Legacy interface may not have AudioPlayback settings
         AC_CHECK_MEMBERS([rdpSettings.audio_playback],,
                          [rdpsettings_audioplayback=no],
@@ -616,12 +609,6 @@ then
   --------------------------------------------]) 
         have_freerdp=no
     fi
-fi
-
-# Activate FastPath settings if present
-if test "x${have_freerdp}" = "xyes" -a "x${rdpsettings_fastpath}" = "xyes"; then
-    AC_DEFINE([HAVE_RDPSETTINGS_FASTPATH],,
-              [Whether the rdpSettings structure has FastPath settings])
 fi
 
 # Activate audio playback settings if present
