@@ -986,8 +986,13 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
                 if (!candidate->flushed) {
 
+                    /* Clip candidate within current bounds */
+                    __guac_common_bound_rect(surface, &candidate->rect, NULL, NULL);
+                    if (candidate->rect.width <= 0 || candidate->rect.height <= 0)
+                        candidate->flushed = 1;
+
                     /* Combine if reasonable */
-                    if (__guac_common_should_combine(surface, &candidate->rect, 0) || !surface->dirty) {
+                    else if (__guac_common_should_combine(surface, &candidate->rect, 0) || !surface->dirty) {
                         __guac_common_mark_dirty(surface, &candidate->rect);
                         candidate->flushed = 1;
                         combined++;
