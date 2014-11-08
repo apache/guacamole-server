@@ -49,7 +49,7 @@ guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
 
     /* Warn about name length */
     if (strnlen(name, GUAC_RDP_SVC_MAX_LENGTH+1) > GUAC_RDP_SVC_MAX_LENGTH)
-        guac_client_log_info(client,
+        guac_client_log(client, GUAC_LOG_INFO,
                 "Static channel name \"%s\" exceeds maximum of %i characters "
                 "and will be truncated",
                 name, GUAC_RDP_SVC_MAX_LENGTH);
@@ -138,7 +138,7 @@ void guac_rdp_svc_write(guac_rdp_svc* svc, void* data, int length) {
 
     /* Do not write of plugin not associated */
     if (svc->plugin == NULL) {
-        guac_client_log_error(svc->client,
+        guac_client_log(svc->client, GUAC_LOG_ERROR,
                 "Channel \"%s\" output dropped.",
                 svc->name);
         return;

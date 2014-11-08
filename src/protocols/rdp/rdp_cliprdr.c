@@ -76,11 +76,11 @@ void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event) {
 
             default:
 #ifdef LEGACY_EVENT
-                guac_client_log_info(client,
+                guac_client_log(client, GUAC_LOG_INFO,
                         "Unknown cliprdr event type: 0x%x",
                         event->event_type);
 #else
-                guac_client_log_info(client,
+                guac_client_log(client, GUAC_LOG_INFO,
                         "Unknown cliprdr event type: 0x%x",
                         GetMessageType(event->id));
 #endif
@@ -167,7 +167,7 @@ void guac_rdp_process_cb_format_list(guac_client* client,
     }
 
     /* Ignore if no supported format available */
-    guac_client_log_info(client, "Ignoring unsupported clipboard data");
+    guac_client_log(client, GUAC_LOG_INFO, "Ignoring unsupported clipboard data");
 
 }
 
@@ -195,7 +195,7 @@ void guac_rdp_process_cb_data_request(guac_client* client,
             break;
 
         default:
-            guac_client_log_error(client, 
+            guac_client_log(client, GUAC_LOG_ERROR, 
                     "Server requested unsupported clipboard data type");
             return;
 
@@ -242,7 +242,7 @@ void guac_rdp_process_cb_data_response(guac_client* client,
             break;
 
         default:
-            guac_client_log_error(client, "Requested clipboard data in "
+            guac_client_log(client, GUAC_LOG_ERROR, "Requested clipboard data in "
                     "unsupported format %i",
                     client_data->requested_clipboard_format);
             return;

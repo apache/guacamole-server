@@ -167,7 +167,7 @@ static rfbClient* __guac_vnc_get_client(guac_client* client) {
     /* If reverse connection enabled, start listening */
     if (guac_client_data->reverse_connect) {
 
-        guac_client_log_info(client, "Listening for connections on port %i",
+        guac_client_log(client, GUAC_LOG_INFO, "Listening for connections on port %i",
                 guac_client_data->port);
 
         /* Listen for connection from server */
@@ -281,7 +281,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             .tv_nsec = (GUAC_VNC_CONNECT_INTERVAL%1000)*1000000
         };
 
-        guac_client_log_info(client,
+        guac_client_log(client, GUAC_LOG_INFO,
                 "Connect failed. Waiting %ims before retrying...",
                 GUAC_VNC_CONNECT_INTERVAL);
 
@@ -317,7 +317,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         /* If successful, init audio system */
         if (guac_client_data->audio != NULL) {
             
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "Audio will be encoded as %s",
                     guac_client_data->audio->encoder->mimetype);
 
@@ -331,7 +331,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         /* Otherwise, audio loading failed */
         else
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "No available audio encoding. Sound disabled.");
 
     } /* end if audio enabled */

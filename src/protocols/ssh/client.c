@@ -134,7 +134,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set locale and warn if not UTF-8 */
     setlocale(LC_CTYPE, "");
     if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0)
-        guac_client_log_info(client, "Current locale does not use UTF-8. Some characters may not render correctly.");
+        guac_client_log(client, GUAC_LOG_INFO, "Current locale does not use UTF-8. Some characters may not render correctly.");
 
     /* Read parameters */
     strcpy(client_data->hostname,  argv[IDX_HOSTNAME]);

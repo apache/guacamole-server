@@ -101,7 +101,7 @@ void guac_svc_process_connect(rdpSvcPlugin* plugin) {
             "application/octet-stream", svc->name);
 
     /* Log connection to static channel */
-    guac_client_log_info(svc->client,
+    guac_client_log(svc->client, GUAC_LOG_INFO,
             "Static channel \"%s\" connected.", svc->name);
 
 }
@@ -113,7 +113,7 @@ void guac_svc_process_terminate(rdpSvcPlugin* plugin) {
     guac_rdp_svc* svc = svc_plugin->svc;
 
     /* Remove and free SVC */
-    guac_client_log_info(svc->client, "Closing channel \"%s\"...", svc->name);
+    guac_client_log(svc->client, GUAC_LOG_INFO, "Closing channel \"%s\"...", svc->name);
     guac_rdp_remove_svc(svc->client, svc->name);
     free(svc);
 
@@ -134,7 +134,7 @@ void guac_svc_process_receive(rdpSvcPlugin* plugin,
 
     /* Fail if output not created */
     if (svc->output_pipe == NULL) {
-        guac_client_log_error(svc->client,
+        guac_client_log(svc->client, GUAC_LOG_ERROR,
                 "Output for channel \"%s\" dropped.",
                 svc->name);
         return;

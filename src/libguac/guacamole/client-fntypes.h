@@ -111,7 +111,7 @@ typedef int guac_client_free_handler(guac_client* client);
 /**
  * Handler for logging messages
  */
-typedef void guac_client_log_handler(guac_client* client, const char* format, va_list args); 
+typedef void guac_client_log_handler(guac_client* client, guac_client_log_level level, const char* format, va_list args); 
 
 /**
  * Handler which should initialize the given guac_client.

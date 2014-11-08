@@ -270,41 +270,22 @@ int guac_client_handle_instruction(guac_client* client, guac_instruction* instru
 
 }
 
-void vguac_client_log_info(guac_client* client, const char* format,
-        va_list ap) {
+void vguac_client_log(guac_client* client, guac_client_log_level level,
+        const char* format, va_list ap) {
 
     /* Call handler if defined */
-    if (client->log_info_handler != NULL)
-        client->log_info_handler(client, format, ap);
+    if (client->log_handler != NULL)
+        client->log_handler(client, level, format, ap);
 
 }
 
-void vguac_client_log_error(guac_client* client, const char* format,
-        va_list ap) {
-
-    /* Call handler if defined */
-    if (client->log_error_handler != NULL)
-        client->log_error_handler(client, format, ap);
-
-}
-
-void guac_client_log_info(guac_client* client, const char* format, ...) {
+void guac_client_log(guac_client* client, guac_client_log_level level,
+        const char* format, ...) {
 
     va_list args;
     va_start(args, format);
 
-    vguac_client_log_info(client, format, args);
-
-    va_end(args);
-
-}
-
-void guac_client_log_error(guac_client* client, const char* format, ...) {
-
-    va_list args;
-    va_start(args, format);
-
-    vguac_client_log_error(client, format, args);
+    vguac_client_log(client, level, format, args);
 
     va_end(args);
 
@@ -321,7 +302,7 @@ void vguac_client_abort(guac_client* client, guac_protocol_status status,
     if (client->state == GUAC_CLIENT_RUNNING) {
 
         /* Log detail of error */
-        vguac_client_log_error(client, format, ap);
+        vguac_client_log(client, GUAC_LOG_ERROR, format, ap);
 
         /* Send error immediately, limit information given */
         guac_protocol_send_error(client->socket, "Aborted. See logs.", status);

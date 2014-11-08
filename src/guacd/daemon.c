@@ -94,7 +94,7 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     if (select->argc != 1) {
 
         /* Log error */
-        guacd_log_error("Bad number of arguments to \"select\" (%i)",
+        guacd_log(GUAC_LOG_ERROR, "Bad number of arguments to \"select\" (%i)",
                 select->argc);
 
         /* Free resources */
@@ -102,7 +102,7 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
         return;
     }
 
-    guacd_log_info("Protocol \"%s\" selected", select->argv[0]);
+    guacd_log(GUAC_LOG_INFO, "Protocol \"%s\" selected", select->argv[0]);
 
     /* Get plugin from protocol in select */
     plugin = guac_client_plugin_open(select->argv[0]);
@@ -195,8 +195,7 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     }
 
     client->socket = socket;
-    client->log_info_handler = guacd_client_log_info;
-    client->log_error_handler = guacd_client_log_error;
+    client->log_handler = guacd_client_log;
 
     /* Parse optimal screen dimensions from size instruction */
     client->info.optimal_width  = atoi(size->argv[0]);
@@ -224,10 +223,10 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
 
     /* Store client */
     if (guacd_client_map_add(map, client))
-        guacd_log_error("Unable to add client. Internal client storage has failed");
+        guacd_log(GUAC_LOG_ERROR, "Unable to add client. Internal client storage has failed");
 
     /* Send connection ID */
-    guacd_log_info("Connection ID is \"%s\"", client->connection_id);
+    guacd_log(GUAC_LOG_INFO, "Connection ID is \"%s\"", client->connection_id);
     guac_protocol_send_ready(socket, client->connection_id);
 
     /* Init client */
@@ -251,15 +250,15 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     }
 
     /* Start client threads */
-    guacd_log_info("Starting client");
+    guacd_log(GUAC_LOG_INFO, "Starting client");
     if (guacd_client_start(client))
-        guacd_log_error("Client finished abnormally");
+        guacd_log(GUAC_LOG_ERROR, "Client finished abnormally");
     else
-        guacd_log_info("Client finished normally");
+        guacd_log(GUAC_LOG_INFO, "Client finished normally");
 
     /* Remove client */
     if (guacd_client_map_remove(map, client->connection_id) == NULL)
-        guacd_log_error("Unable to remove client. Internal client storage has failed");
+        guacd_log(GUAC_LOG_ERROR, "Unable to remove client. Internal client storage has failed");
 
     /* Free mimetype lists */
     free(client->info.audio_mimetypes);
@@ -273,7 +272,7 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     /* Clean up */
     guac_client_free(client);
     if (guac_client_plugin_close(plugin))
-        guacd_log_error("Error closing client plugin");
+        guacd_log(GUAC_LOG_ERROR, "Error closing client plugin");
 
     /* Close socket */
     guac_socket_free(socket);
@@ -304,13 +303,13 @@ int daemonize() {
     /* Fork once to ensure we aren't the process group leader */
     pid = fork();
     if (pid < 0) {
-        guacd_log_error("Could not fork() parent: %s", strerror(errno));
+        guacd_log(GUAC_LOG_ERROR, "Could not fork() parent: %s", strerror(errno));
         return 1;
     }
 
     /* Exit if we are the parent */
     if (pid > 0) {
-        guacd_log_info("Exiting and passing control to PID %i", pid);
+        guacd_log(GUAC_LOG_INFO, "Exiting and passing control to PID %i", pid);
         _exit(0);
     }
 
@@ -320,19 +319,19 @@ int daemonize() {
     /* Fork again so the session group leader exits */
     pid = fork();
     if (pid < 0) {
-        guacd_log_error("Could not fork() group leader: %s", strerror(errno));
+        guacd_log(GUAC_LOG_ERROR, "Could not fork() group leader: %s", strerror(errno));
         return 1;
     }
 
     /* Exit if we are the parent */
     if (pid > 0) {
-        guacd_log_info("Exiting and passing control to PID %i", pid);
+        guacd_log(GUAC_LOG_INFO, "Exiting and passing control to PID %i", pid);
         _exit(0);
     }
 
     /* Change to root directory */
     if (chdir(GUACD_ROOT) < 0) {
-        guacd_log_error(
+        guacd_log(GUAC_LOG_ERROR, 
                 "Unable to change working directory to "
                 GUACD_ROOT);
         return 1;
@@ -344,7 +343,7 @@ int daemonize() {
     || redirect_fd(STDOUT_FILENO, O_WRONLY)
     || redirect_fd(STDERR_FILENO, O_WRONLY)) {
 
-        guacd_log_error(
+        guacd_log(GUAC_LOG_ERROR, 
                 "Unable to redirect standard file descriptors to "
                 GUACD_DEV_NULL);
         return 1;
@@ -394,16 +393,16 @@ int main(int argc, char* argv[]) {
     strncpy(log_prefix, basename(argv[0]), sizeof(log_prefix));
 
     /* Open log as early as we can */
-    openlog(NULL, LOG_PID, LOG_DAEMON);
+    openlog("guacd", LOG_PID, LOG_DAEMON);
 
     /* Log start */
-    guacd_log_info("Guacamole proxy daemon (guacd) version " VERSION);
+    guacd_log(GUAC_LOG_INFO, "Guacamole proxy daemon (guacd) version " VERSION);
 
     /* Get addresses for binding */
     if ((retval = getaddrinfo(config->bind_host, config->bind_port,
                     &hints, &addresses))) {
 
-        guacd_log_error("Error parsing given address or port: %s",
+        guacd_log(GUAC_LOG_ERROR, "Error parsing given address or port: %s",
                 gai_strerror(retval));
         exit(EXIT_FAILURE);
 
@@ -412,14 +411,14 @@ int main(int argc, char* argv[]) {
     /* Get socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
-        guacd_log_error("Error opening socket: %s", strerror(errno));
+        guacd_log(GUAC_LOG_ERROR, "Error opening socket: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     /* Allow socket reuse */
     if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR,
                 (void*) &opt_on, sizeof(opt_on))) {
-        guacd_log_info("Unable to set socket options for reuse: %s",
+        guacd_log(GUAC_LOG_INFO, "Unable to set socket options for reuse: %s",
                 strerror(errno));
     }
 
@@ -435,7 +434,7 @@ int main(int argc, char* argv[]) {
                 bound_address, sizeof(bound_address),
                 bound_port, sizeof(bound_port),
                 NI_NUMERICHOST | NI_NUMERICSERV)))
-            guacd_log_error("Unable to resolve host: %s",
+            guacd_log(GUAC_LOG_ERROR, "Unable to resolve host: %s",
                     gai_strerror(retval));
 
         /* Attempt to bind socket to address */
@@ -443,7 +442,7 @@ int main(int argc, char* argv[]) {
                     current_address->ai_addr,
                     current_address->ai_addrlen) == 0) {
 
-            guacd_log_info("Successfully bound socket to "
+            guacd_log(GUAC_LOG_INFO, "Successfully bound socket to "
                     "host %s, port %s", bound_address, bound_port);
 
             /* Done if successful bind */
@@ -453,7 +452,7 @@ int main(int argc, char* argv[]) {
 
         /* Otherwise log information regarding bind failure */
         else
-            guacd_log_info("Unable to bind socket to "
+            guacd_log(GUAC_LOG_INFO, "Unable to bind socket to "
                     "host %s, port %s: %s",
                     bound_address, bound_port, strerror(errno));
 
@@ -463,7 +462,7 @@ int main(int argc, char* argv[]) {
 
     /* If unable to bind to anything, fail */
     if (current_address == NULL) {
-        guacd_log_error("Unable to bind socket to any addresses.");
+        guacd_log(GUAC_LOG_ERROR, "Unable to bind socket to any addresses.");
         exit(EXIT_FAILURE);
     }
 
@@ -472,32 +471,32 @@ int main(int argc, char* argv[]) {
     if (config->key_file != NULL || config->cert_file != NULL) {
 
         /* Init SSL */
-        guacd_log_info("Communication will require SSL/TLS.");
+        guacd_log(GUAC_LOG_INFO, "Communication will require SSL/TLS.");
         SSL_library_init();
         SSL_load_error_strings();
         ssl_context = SSL_CTX_new(SSLv23_server_method());
 
         /* Load key */
         if (config->key_file != NULL) {
-            guacd_log_info("Using PEM keyfile %s", config->key_file);
+            guacd_log(GUAC_LOG_INFO, "Using PEM keyfile %s", config->key_file);
             if (!SSL_CTX_use_PrivateKey_file(ssl_context, config->key_file, SSL_FILETYPE_PEM)) {
-                guacd_log_error("Unable to load keyfile.");
+                guacd_log(GUAC_LOG_ERROR, "Unable to load keyfile.");
                 exit(EXIT_FAILURE);
             }
         }
         else
-            guacd_log_info("No PEM keyfile given - SSL/TLS may not work.");
+            guacd_log(GUAC_LOG_INFO, "No PEM keyfile given - SSL/TLS may not work.");
 
         /* Load cert file if specified */
         if (config->cert_file != NULL) {
-            guacd_log_info("Using certificate file %s", config->cert_file);
+            guacd_log(GUAC_LOG_INFO, "Using certificate file %s", config->cert_file);
             if (!SSL_CTX_use_certificate_chain_file(ssl_context, config->cert_file)) {
-                guacd_log_error("Unable to load certificate.");
+                guacd_log(GUAC_LOG_ERROR, "Unable to load certificate.");
                 exit(EXIT_FAILURE);
             }
         }
         else
-            guacd_log_info("No certificate file given - SSL/TLS may not work.");
+            guacd_log(GUAC_LOG_INFO, "No certificate file given - SSL/TLS may not work.");
 
     }
 #endif
@@ -507,7 +506,7 @@ int main(int argc, char* argv[]) {
 
         /* Attempt to daemonize process */
         if (daemonize()) {
-            guacd_log_error("Could not become a daemon.");
+            guacd_log(GUAC_LOG_ERROR, "Could not become a daemon.");
             exit(EXIT_FAILURE);
         }
 
@@ -525,7 +524,7 @@ int main(int argc, char* argv[]) {
         
         /* Fail if could not write PID file*/
         else {
-            guacd_log_error("Could not write PID file: %s", strerror(errno));
+            guacd_log(GUAC_LOG_ERROR, "Could not write PID file: %s", strerror(errno));
             exit(EXIT_FAILURE);
         }
 
@@ -533,18 +532,18 @@ int main(int argc, char* argv[]) {
 
     /* Ignore SIGPIPE */
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-        guacd_log_info("Could not set handler for SIGPIPE to ignore. "
+        guacd_log(GUAC_LOG_INFO, "Could not set handler for SIGPIPE to ignore. "
                 "SIGPIPE may cause termination of the daemon.");
     }
 
     /* Ignore SIGCHLD (force automatic removal of children) */
     if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
-        guacd_log_info("Could not set handler for SIGCHLD to ignore. "
+        guacd_log(GUAC_LOG_INFO, "Could not set handler for SIGCHLD to ignore. "
                 "Child processes may pile up in the process table.");
     }
 
     /* Log listening status */
-    guacd_log_info("Listening on host %s, port %s", bound_address, bound_port);
+    guacd_log(GUAC_LOG_INFO, "Listening on host %s, port %s", bound_address, bound_port);
 
     /* Free addresses */
     freeaddrinfo(addresses);
@@ -556,7 +555,7 @@ int main(int argc, char* argv[]) {
 
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
-            guacd_log_error("Could not listen on socket: %s", strerror(errno));
+            guacd_log(GUAC_LOG_ERROR, "Could not listen on socket: %s", strerror(errno));
             return 3;
         }
 
@@ -566,7 +565,7 @@ int main(int argc, char* argv[]) {
                 (struct sockaddr*) &client_addr, &client_addr_len);
 
         if (connected_socket_fd < 0) {
-            guacd_log_error("Could not accept client connection: %s",
+            guacd_log(GUAC_LOG_ERROR, "Could not accept client connection: %s",
                     strerror(errno));
             return 3;
         }
@@ -584,7 +583,7 @@ int main(int argc, char* argv[]) {
 
         /* If error, log */
         if (child_pid == -1)
-            guacd_log_error("Error forking child process: %s", strerror(errno));
+            guacd_log(GUAC_LOG_ERROR, "Error forking child process: %s", strerror(errno));
 
         /* If child, start client, and exit when finished */
         else if (child_pid == 0) {
@@ -615,7 +614,7 @@ int main(int argc, char* argv[]) {
 
         /* If parent, close reference to child's descriptor */
         else if (close(connected_socket_fd) < 0) {
-            guacd_log_error("Error closing daemon reference to "
+            guacd_log(GUAC_LOG_ERROR, "Error closing daemon reference to "
                     "child descriptor: %s", strerror(errno));
         }
 
@@ -623,7 +622,7 @@ int main(int argc, char* argv[]) {
 
     /* Close socket */
     if (close(socket_fd) < 0) {
-        guacd_log_error("Could not close socket: %s", strerror(errno));
+        guacd_log(GUAC_LOG_ERROR, "Could not close socket: %s", strerror(errno));
         return 3;
     }
 

@@ -87,7 +87,7 @@ void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin) {
 #endif
 
     /* Log that sound has been loaded */
-    guac_client_log_info(audio->client, "guacsnd connected.");
+    guac_client_log(audio->client, GUAC_LOG_INFO, "guacsnd connected.");
 
 }
 

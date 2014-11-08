@@ -77,7 +77,7 @@ static void guac_rdpdr_send_client_name_request(guac_rdpdrPlugin* rdpdr, const c
 static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
 
     wStream* output_stream = Stream_New(NULL, 256);
-    guac_client_log_info(rdpdr->client, "Sending capabilities...");
+    guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Sending capabilities...");
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
@@ -118,7 +118,7 @@ static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
     Stream_Write_UINT32(output_stream, DRIVE_CAPABILITY_VERSION_02);
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
-    guac_client_log_info(rdpdr->client, "Capabilities sent.");
+    guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Capabilities sent.");
 
 }
 
@@ -136,12 +136,12 @@ static void guac_rdpdr_send_client_device_list_announce_request(guac_rdpdrPlugin
     for (i=0; i<rdpdr->devices_registered; i++) {
         guac_rdpdr_device* device = &(rdpdr->devices[i]);
         device->announce_handler(device, output_stream, i);
-        guac_client_log_info(rdpdr->client, "Registered device %i (%s)",
+        guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Registered device %i (%s)",
                 device->device_id, device->device_name);
     }
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
-    guac_client_log_info(rdpdr->client, "All supported devices sent.");
+    guac_client_log(rdpdr->client, GUAC_LOG_INFO, "All supported devices sent.");
 
 }
 
@@ -158,7 +158,7 @@ void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
     if (minor < 12)
         client_id = random() & 0xFFFF;
 
-    guac_client_log_info(rdpdr->client, "Connected to RDPDR %u.%u as client 0x%04x", major, minor, client_id);
+    guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Connected to RDPDR %u.%u as client 0x%04x", major, minor, client_id);
 
     /* Respond to announce */
     guac_rdpdr_send_client_announce_reply(rdpdr, major, minor, client_id);
@@ -169,7 +169,7 @@ void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
 }
 
 void guac_rdpdr_process_clientid_confirm(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
-    guac_client_log_info(rdpdr->client, "Client ID confirmed");
+    guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Client ID confirmed");
 }
 
 void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
@@ -190,11 +190,11 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_str
     if (device_id < rdpdr->devices_registered) {
 
         if (severity == 0x0)
-            guac_client_log_info(rdpdr->client, "Device %i (%s) connected successfully",
+            guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Device %i (%s) connected successfully",
                     device_id, rdpdr->devices[device_id].device_name);
 
         else
-            guac_client_log_error(rdpdr->client, "Problem connecting device %i (%s): "
+            guac_client_log(rdpdr->client, GUAC_LOG_ERROR, "Problem connecting device %i (%s): "
                     "severity=0x%x, c=0x%x, n=0x%x, facility=0x%x, code=0x%x",
                      device_id, rdpdr->devices[device_id].device_name,
                      severity,      c,      n,      facility,      code);
@@ -202,7 +202,7 @@ void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_str
     }
 
     else
-        guac_client_log_error(rdpdr->client, "Unknown device ID: 0x%08x", device_id);
+        guac_client_log(rdpdr->client, GUAC_LOG_ERROR, "Unknown device ID: 0x%08x", device_id);
 
 }
 
@@ -228,7 +228,7 @@ void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, wStream* input
     }
 
     else
-        guac_client_log_error(rdpdr->client, "Unknown device ID: 0x%08x", device_id);
+        guac_client_log(rdpdr->client, GUAC_LOG_ERROR, "Unknown device ID: 0x%08x", device_id);
 
 }
 
@@ -251,7 +251,7 @@ void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, wStream* inpu
         Stream_Read_UINT16(input_stream, length);
 
         /* Ignore all for now */
-        guac_client_log_info(rdpdr->client, "Ignoring server capability set type=0x%04x, length=%i", type, length);
+        guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Ignoring server capability set type=0x%04x, length=%i", type, length);
         Stream_Seek(input_stream, length - 4);
 
     }
@@ -263,16 +263,16 @@ void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, wStream* inpu
 
 void guac_rdpdr_process_user_loggedon(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
 
-    guac_client_log_info(rdpdr->client, "User logged on");
+    guac_client_log(rdpdr->client, GUAC_LOG_INFO, "User logged on");
     guac_rdpdr_send_client_device_list_announce_request(rdpdr);
 
 }
 
 void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
-    guac_client_log_info(rdpdr->client, "Ignoring printer cached configuration data");
+    guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Ignoring printer cached configuration data");
 }
 
 void guac_rdpdr_process_prn_using_xps(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
-    guac_client_log_info(rdpdr->client, "Printer unexpectedly switched to XPS mode");
+    guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Printer unexpectedly switched to XPS mode");
 }
 

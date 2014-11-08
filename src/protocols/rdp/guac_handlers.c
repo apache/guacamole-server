@@ -405,7 +405,7 @@ int __guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
         else if (keysym >= 0x1000000)
             codepoint = keysym & 0xFFFFFF;
         else {
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "Unmapped keysym has no equivalent unicode "
                     "value: 0x%x", keysym);
             return 0;

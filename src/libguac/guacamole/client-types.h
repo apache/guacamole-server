@@ -58,6 +58,57 @@ typedef enum guac_client_state {
 } guac_client_state;
 
 /**
+ * All supported log levels used by the logging subsystem of each Guacamole
+ * client. These log levels correspond to the log levels defined by RFC 5424.
+ */
+typedef enum guac_client_log_level {
+
+    /**
+     * Emergencies which render the system unusable.
+     */
+    GUAC_LOG_EMERGENCY = 0,
+
+    /**
+     * The system may be usable, but the current state is dangerous enough that
+     * action must be taken immediately.
+     */
+    GUAC_LOG_ALERT = 1,
+
+    /**
+     * Critically-important messages.
+     */
+    GUAC_LOG_CRITICAL = 2,
+
+    /**
+     * General errors: important, but not necessarily critically so.
+     */
+    GUAC_LOG_ERROR = 3,
+
+    /**
+     * Non-fatal conditions that are likely unintentional.
+     */
+    GUAC_LOG_WARNING = 4,
+
+    /**
+     * Significant but normal conditions.
+     */
+    GUAC_LOG_NOTICE = 5,
+
+    /**
+     * Normal conditions that may be interesting but in most cases should be
+     * ignored.
+     */
+    GUAC_LOG_INFO = 6,
+
+    /**
+     * Informational messages that are too frequent or too detailed for a more
+     * severe log level, but can be useful for debugging.
+     */
+    GUAC_LOG_DEBUG = 7
+
+} guac_client_log_level;
+
+/**
  * Information exposed by the remote client during the connection handshake
  * which can be used by a client plugin.
  */

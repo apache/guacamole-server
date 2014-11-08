@@ -85,7 +85,7 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
     /* If an error occurred, notify server */
     if (file_id < 0) {
-        guac_client_log_error(device->rdpdr->client,
+        guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR,
                 "File open refused (%i): \"%s\"", file_id, path);
 
         output_stream = guac_rdpdr_new_io_completion(device, completion_id,
@@ -278,7 +278,7 @@ void guac_rdpdr_fs_process_volume_info(guac_rdpdr_device* device, wStream* input
             break;
 
         default:
-            guac_client_log_info(device->rdpdr->client,
+            guac_client_log(device->rdpdr->client, GUAC_LOG_INFO,
                     "Unknown volume information class: 0x%x", fs_information_class);
     }
 
@@ -310,7 +310,7 @@ void guac_rdpdr_fs_process_file_info(guac_rdpdr_device* device, wStream* input_s
             break;
 
         default:
-            guac_client_log_info(device->rdpdr->client,
+            guac_client_log(device->rdpdr->client, GUAC_LOG_INFO,
                     "Unknown file information class: 0x%x", fs_information_class);
     }
 
@@ -367,7 +367,7 @@ void guac_rdpdr_fs_process_set_file_info(guac_rdpdr_device* device,
             break;
 
         default:
-            guac_client_log_info(device->rdpdr->client,
+            guac_client_log(device->rdpdr->client, GUAC_LOG_INFO,
                     "Unknown file information class: 0x%x",
                     fs_information_class);
     }
@@ -476,7 +476,7 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
                         break;
 
                     default:
-                        guac_client_log_info(device->rdpdr->client,
+                        guac_client_log(device->rdpdr->client, GUAC_LOG_INFO,
                                 "Unknown dir information class: 0x%x",
                                 fs_information_class);
                 }

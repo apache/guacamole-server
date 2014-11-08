@@ -171,7 +171,7 @@ void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL pri
 
         /* Make sure that the recieved bitmap is not NULL before processing */
         if (bitmap == NULL) {
-            guac_client_log_info(client, "NULL bitmap found in bitmap_setsurface instruction.");
+            guac_client_log(client, GUAC_LOG_INFO, "NULL bitmap found in bitmap_setsurface instruction.");
             return;
         }
 

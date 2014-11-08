@@ -90,7 +90,7 @@ guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
     }
 
     /* Log warning if ROP3 opcode not supported */
-    guac_client_log_info (client, "guac_rdp_rop3_transfer_function: "
+    guac_client_log(client, GUAC_LOG_INFO, "guac_rdp_rop3_transfer_function: "
             "UNSUPPORTED opcode = 0x%02X", rop3);
 
     /* Default to BINARY_SRC */
@@ -134,7 +134,7 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
 
         /* Unsupported ROP3 */
         default:
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "guac_rdp_gdi_dstblt(rop3=0x%x)", dstblt->bRop);
 
     }
@@ -168,7 +168,7 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
      * Warn that rendering is a fallback, as the server should not be sending
      * this order.
      */
-    guac_client_log_info(client, "Using fallback PATBLT (server is ignoring "
+    guac_client_log(client, GUAC_LOG_INFO, "Using fallback PATBLT (server is ignoring "
             "negotiated client capabilities)");
 
     /* Render rectangle based on ROP */
@@ -243,7 +243,7 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
     /* Make sure that the recieved bitmap is not NULL before processing */
     if (bitmap == NULL) {
-        guac_client_log_info(client, "NULL bitmap found in memblt instruction.");
+        guac_client_log(client, GUAC_LOG_INFO, "NULL bitmap found in memblt instruction.");
         return;
     }
 

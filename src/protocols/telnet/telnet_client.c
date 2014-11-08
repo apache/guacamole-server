@@ -227,7 +227,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Connection warnings */
         case TELNET_EV_WARNING:
-            guac_client_log_info(client, "%s", event->error.msg);
+            guac_client_log(client, GUAC_LOG_INFO, "%s", event->error.msg);
             break;
 
         /* Connection errors */
@@ -322,13 +322,13 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
                 connected_address, sizeof(connected_address),
                 connected_port, sizeof(connected_port),
                 NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log_info(client, "Unable to resolve host: %s", gai_strerror(retval));
+            guac_client_log(client, GUAC_LOG_INFO, "Unable to resolve host: %s", gai_strerror(retval));
 
         /* Connect */
         if (connect(fd, current_address->ai_addr,
                         current_address->ai_addrlen) == 0) {
 
-            guac_client_log_info(client, "Successfully connected to "
+            guac_client_log(client, GUAC_LOG_INFO, "Successfully connected to "
                     "host %s, port %s", connected_address, connected_port);
 
             /* Done if successful connect */
@@ -338,7 +338,7 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
 
         /* Otherwise log information regarding bind failure */
         else
-            guac_client_log_info(client, "Unable to connect to "
+            guac_client_log(client, GUAC_LOG_INFO, "Unable to connect to "
                     "host %s, port %s: %s",
                     connected_address, connected_port, strerror(errno));
 
@@ -464,7 +464,7 @@ void* guac_telnet_client_thread(void* data) {
     }
 
     /* Logged in */
-    guac_client_log_info(client, "Telnet connection successful.");
+    guac_client_log(client, GUAC_LOG_INFO, "Telnet connection successful.");
 
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, __guac_telnet_input_thread, (void*) client)) {
@@ -491,7 +491,7 @@ void* guac_telnet_client_thread(void* data) {
     guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
-    guac_client_log_info(client, "Telnet connection ended.");
+    guac_client_log(client, GUAC_LOG_INFO, "Telnet connection ended.");
     return NULL;
 
 }

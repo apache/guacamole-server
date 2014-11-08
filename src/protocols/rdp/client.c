@@ -162,7 +162,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
                 "cliprdr", NULL))
-        guac_client_log_error(client, "Failed to load cliprdr plugin.");
+        guac_client_log(client, GUAC_LOG_ERROR, "Failed to load cliprdr plugin.");
 
     /* If audio enabled, choose an encoder */
     if (guac_client_data->settings.audio_enabled) {
@@ -175,12 +175,12 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             /* Load sound plugin */
             if (freerdp_channels_load_plugin(channels, instance->settings,
                         "guacsnd", guac_client_data->audio))
-                guac_client_log_error(client,
+                guac_client_log(client, GUAC_LOG_ERROR,
                         "Failed to load guacsnd plugin.");
 
         }
         else
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "No available audio encoding. Sound disabled.");
 
     } /* end if audio enabled */
@@ -199,7 +199,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         /* Load RDPDR plugin */
         if (freerdp_channels_load_plugin(channels, instance->settings,
                     "guacdr", client))
-            guac_client_log_error(client,
+            guac_client_log(client, GUAC_LOG_ERROR,
                     "Failed to load guacdr plugin.");
 
     }
@@ -221,12 +221,12 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         /* Attempt to load rail */
         if (freerdp_channels_load_plugin(channels, instance->settings,
                     "rail", plugin_data))
-            guac_client_log_error(client, "Failed to load rail plugin.");
+            guac_client_log(client, GUAC_LOG_ERROR, "Failed to load rail plugin.");
 #else
         /* Attempt to load rail */
         if (freerdp_channels_load_plugin(channels, instance->settings,
                     "rail", instance->settings))
-            guac_client_log_error(client, "Failed to load rail plugin.");
+            guac_client_log(client, GUAC_LOG_ERROR, "Failed to load rail plugin.");
 #endif
 
     }
@@ -242,7 +242,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             /* Attempt to load guacsvc plugin for new static channel */
             if (freerdp_channels_load_plugin(channels, instance->settings,
                         "guacsvc", svc)) {
-                guac_client_log_error(client,
+                guac_client_log(client, GUAC_LOG_ERROR,
                         "Failed to load guacsvc plugin for channel \"%s\".",
                         svc->name);
                 guac_rdp_free_svc(svc);
@@ -251,7 +251,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             /* Store and log on success */
             else {
                 guac_rdp_add_svc(client, svc);
-                guac_client_log_info(client, "Created static channel \"%s\"...",
+                guac_client_log(client, GUAC_LOG_INFO, "Created static channel \"%s\"...",
                         svc->name);
             }
 
@@ -371,7 +371,7 @@ BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
     /* Warn if connection is likely to fail due to lack of credentials */
-    guac_client_log_info(client,
+    guac_client_log(client, GUAC_LOG_INFO,
             "Authentication requested but username or password not given");
     return TRUE;
 
@@ -387,11 +387,11 @@ BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
 
     /* Bypass validation if ignore_certificate given */
     if (guac_client_data->settings.ignore_certificate) {
-        guac_client_log_info(client, "Certificate validation bypassed");
+        guac_client_log(client, GUAC_LOG_INFO, "Certificate validation bypassed");
         return TRUE;
     }
 
-    guac_client_log_info(client, "Certificate validation failed");
+    guac_client_log(client, GUAC_LOG_INFO, "Certificate validation failed");
     return FALSE;
 
 }
@@ -418,7 +418,7 @@ void __guac_rdp_client_load_keymap(guac_client* client,
         __guac_rdp_client_load_keymap(client, keymap->parent);
 
     /* Log load */
-    guac_client_log_info(client, "Loading keymap \"%s\"", keymap->name);
+    guac_client_log(client, GUAC_LOG_INFO, "Loading keymap \"%s\"", keymap->name);
 
     /* Load mapping into keymap */
     while (mapping->keysym != 0) {
@@ -449,7 +449,7 @@ static int __guac_rdp_reduce_resolution(guac_client* client, int resolution) {
         client->info.optimal_width = width;
         client->info.optimal_height = height;
         client->info.optimal_resolution = resolution;
-        guac_client_log_info(client, "Reducing resolution to %ix%i at %i DPI", width, height, resolution);
+        guac_client_log(client, GUAC_LOG_INFO, "Reducing resolution to %ix%i at %i DPI", width, height, resolution);
         return 1;
     }
 
@@ -511,31 +511,31 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* NLA security */
     if (strcmp(argv[IDX_SECURITY], "nla") == 0) {
-        guac_client_log_info(client, "Security mode: NLA");
+        guac_client_log(client, GUAC_LOG_INFO, "Security mode: NLA");
         settings->security_mode = GUAC_SECURITY_NLA;
     }
 
     /* TLS security */
     else if (strcmp(argv[IDX_SECURITY], "tls") == 0) {
-        guac_client_log_info(client, "Security mode: TLS");
+        guac_client_log(client, GUAC_LOG_INFO, "Security mode: TLS");
         settings->security_mode = GUAC_SECURITY_TLS;
     }
 
     /* RDP security */
     else if (strcmp(argv[IDX_SECURITY], "rdp") == 0) {
-        guac_client_log_info(client, "Security mode: RDP");
+        guac_client_log(client, GUAC_LOG_INFO, "Security mode: RDP");
         settings->security_mode = GUAC_SECURITY_RDP;
     }
 
     /* ANY security (allow server to choose) */
     else if (strcmp(argv[IDX_SECURITY], "any") == 0) {
-        guac_client_log_info(client, "Security mode: ANY");
+        guac_client_log(client, GUAC_LOG_INFO, "Security mode: ANY");
         settings->security_mode = GUAC_SECURITY_ANY;
     }
 
     /* If nothing given, default to RDP */
     else {
-        guac_client_log_info(client, "No security mode specified. Defaulting to RDP.");
+        guac_client_log(client, GUAC_LOG_INFO, "No security mode specified. Defaulting to RDP.");
         settings->security_mode = GUAC_SECURITY_RDP;
     }
 
@@ -547,7 +547,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (argv[IDX_PORT][0] != '\0')
         settings->port = atoi(argv[IDX_PORT]);
 
-    guac_client_log_info(client, "Client resolution is %ix%i at %i DPI",
+    guac_client_log(client, GUAC_LOG_INFO, "Client resolution is %ix%i at %i DPI",
             client->info.optimal_width,
             client->info.optimal_height,
             client->info.optimal_resolution);
@@ -556,7 +556,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (client->info.optimal_resolution > GUAC_RDP_NATIVE_RESOLUTION
             && !__guac_rdp_reduce_resolution(client, GUAC_RDP_NATIVE_RESOLUTION)
             && !__guac_rdp_reduce_resolution(client, GUAC_RDP_HIGH_RESOLUTION))
-        guac_client_log_info(client, "No reasonable lower resolution");
+        guac_client_log(client, GUAC_LOG_INFO, "No reasonable lower resolution");
 
     /* Use optimal width unless overridden */
     settings->width = client->info.optimal_width;
@@ -566,7 +566,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Use default width if given width is invalid. */
     if (settings->width <= 0) {
         settings->width = RDP_DEFAULT_WIDTH;
-        guac_client_log_error(client,
+        guac_client_log(client, GUAC_LOG_ERROR,
                 "Invalid width: \"%s\". Using default of %i.",
                 argv[IDX_WIDTH], settings->width);
     }
@@ -582,7 +582,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Use default height if given height is invalid. */
     if (settings->height <= 0) {
         settings->height = RDP_DEFAULT_HEIGHT;
-        guac_client_log_error(client,
+        guac_client_log(client, GUAC_LOG_ERROR,
                 "Invalid height: \"%s\". Using default of %i.",
                 argv[IDX_WIDTH], settings->height);
     }
@@ -635,7 +635,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Use default depth if given depth is invalid. */
     if (settings->color_depth == 0) {
         settings->color_depth = RDP_DEFAULT_DEPTH;
-        guac_client_log_error(client,
+        guac_client_log(client, GUAC_LOG_ERROR,
                 "Invalid color-depth: \"%s\". Using default of %i.",
                 argv[IDX_WIDTH], settings->color_depth);
     }

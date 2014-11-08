@@ -30,13 +30,10 @@
 
 extern char log_prefix[64];
 
-void vguacd_log_info(const char* format, va_list args);
-void vguacd_log_error(const char* format, va_list args);
-void guacd_log_info(const char* format, ...);
-void guacd_log_error(const char* format, ...);
+void vguacd_log(guac_client_log_level level, const char* format, va_list args);
+void guacd_log(guac_client_log_level level, const char* format, ...);
 
-void guacd_client_log_info(guac_client* client, const char* format, va_list args);
-void guacd_client_log_error(guac_client* client, const char* format, va_list args);
+void guacd_client_log(guac_client* client, guac_client_log_level level, const char* format, va_list args);
 
 void guacd_log_guac_error(const char* message);
 void guacd_client_log_guac_error(guac_client* client, const char* message);

@@ -128,7 +128,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
                 rdpsnd->formats[current].bps      = bps;
 
                 /* Log format */
-                guac_client_log_info(audio->client,
+                guac_client_log(audio->client, GUAC_LOG_INFO,
                         "Accepted format: %i-bit PCM with %i channels at "
                         "%i Hz",
                         bps, channels, rate);
@@ -146,7 +146,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
 
             /* Otherwise, log that we dropped one */
             else
-                guac_client_log_info(audio->client,
+                guac_client_log(audio->client, GUAC_LOG_INFO,
                         "Dropped valid format: %i-bit PCM with %i channels at "
                         "%i Hz",
                         bps, channels, rate);

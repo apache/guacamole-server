@@ -116,7 +116,7 @@ static regex_t* __guac_telnet_compile_regex(guac_client* client, char* pattern) 
 
     /* Notify of failure to parse/compile */
     if (compile_result != 0) {
-        guac_client_log_error(client, "Regular expression '%s' could not be compiled.", pattern);
+        guac_client_log(client, GUAC_LOG_ERROR, "Regular expression '%s' could not be compiled.", pattern);
         free(regex);
         return NULL;
     }
@@ -145,7 +145,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set locale and warn if not UTF-8 */
     setlocale(LC_CTYPE, "");
     if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0)
-        guac_client_log_info(client, "Current locale does not use UTF-8. Some characters may not render correctly.");
+        guac_client_log(client, GUAC_LOG_INFO, "Current locale does not use UTF-8. Some characters may not render correctly.");
 
     /* Read parameters */
     strcpy(client_data->hostname,  argv[IDX_HOSTNAME]);

@@ -320,7 +320,8 @@ int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
 }
 
 int __guac_handle_disconnect(guac_client* client, guac_instruction* instruction) {
-    guac_client_log_info(client, "Disconnect requested. Stopping client...");
+    guac_client_log(client, GUAC_LOG_NOTICE,
+            "Disconnect requested. Stopping client...");
     guac_client_stop(client);
     return 0;
 }

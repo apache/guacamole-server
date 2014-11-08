@@ -150,7 +150,7 @@ void* __guacd_client_input_thread(void* data) {
                     "Client instruction handler error");
 
             /* Log handler details */
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "Failing instruction handler in client was \"%s\"",
                     instruction->opcode);
 
@@ -173,12 +173,12 @@ int guacd_client_start(guac_client* client) {
     pthread_t input_thread, output_thread;
 
     if (pthread_create(&output_thread, NULL, __guacd_client_output_thread, (void*) client)) {
-        guac_client_log_error(client, "Unable to start output thread");
+        guac_client_log(client, GUAC_LOG_ERROR, "Unable to start output thread");
         return -1;
     }
 
     if (pthread_create(&input_thread, NULL, __guacd_client_input_thread, (void*) client)) {
-        guac_client_log_error(client, "Unable to start input thread");
+        guac_client_log(client, GUAC_LOG_ERROR, "Unable to start input thread");
         guac_client_stop(client);
         pthread_join(output_thread, NULL);
         return -1;

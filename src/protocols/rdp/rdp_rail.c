@@ -69,11 +69,11 @@ void guac_rdp_process_rail_event(guac_client* client, wMessage* event) {
 
             default:
 #ifdef LEGACY_EVENT
-                guac_client_log_info(client,
+                guac_client_log(client, GUAC_LOG_INFO,
                         "Unknown rail event type: 0x%x",
                         event->event_type);
 #else
-                guac_client_log_info(client,
+                guac_client_log(client, GUAC_LOG_INFO,
                         "Unknown rail event type: 0x%x",
                         GetMessageType(event->id));
 #endif

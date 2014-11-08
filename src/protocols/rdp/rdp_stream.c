@@ -135,7 +135,7 @@ int guac_rdp_svc_pipe_handler(guac_client* client, guac_stream* stream,
 
     /* Fail if no such SVC */
     if (svc == NULL) {
-        guac_client_log_error(client,
+        guac_client_log(client, GUAC_LOG_ERROR,
                 "Requested non-existent pipe: \"%s\".",
                 name);
         guac_protocol_send_ack(client->socket, stream, "FAIL (NO SUCH PIPE)",
@@ -144,7 +144,7 @@ int guac_rdp_svc_pipe_handler(guac_client* client, guac_stream* stream,
         return 0;
     }
     else
-        guac_client_log_error(client,
+        guac_client_log(client, GUAC_LOG_ERROR,
                 "Inbound half of channel \"%s\" connected.",
                 name);
 
@@ -337,7 +337,7 @@ int guac_rdp_download_ack_handler(guac_client* client, guac_stream* stream,
 
         /* Otherwise, fail stream */
         else {
-            guac_client_log_error(client,
+            guac_client_log(client, GUAC_LOG_ERROR,
                     "Error reading file for download");
             guac_protocol_send_end(client->socket, stream);
             guac_client_free_stream(client, stream);

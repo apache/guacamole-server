@@ -74,7 +74,7 @@ static void* guac_rdpdr_print_filter_output_thread(void* data) {
 
     /* Log any error */
     if (length < 0)
-        guac_client_log_error(device->rdpdr->client, "Error reading from filter: %s", strerror(errno));
+        guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "Error reading from filter: %s", strerror(errno));
 
     return NULL;
 
@@ -90,14 +90,14 @@ static int guac_rdpdr_create_print_process(guac_rdpdr_device* device) {
 
     /* Create STDIN pipe */
     if (pipe(stdin_pipe)) {
-        guac_client_log_error(device->rdpdr->client,
+        guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR,
                 "Unable to create STDIN pipe for PDF filter process: %s", strerror(errno));
         return 1;
     }
 
     /* Create STDOUT pipe */
     if (pipe(stdout_pipe)) {
-        guac_client_log_error(device->rdpdr->client,
+        guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR,
                 "Unable to create STDIN pipe for PDF filter process: %s", strerror(errno));
         close(stdin_pipe[0]);
         close(stdin_pipe[1]);
@@ -110,7 +110,7 @@ static int guac_rdpdr_create_print_process(guac_rdpdr_device* device) {
 
     /* Start output thread */
     if (pthread_create(&(printer_data->printer_output_thread), NULL, guac_rdpdr_print_filter_output_thread, device)) {
-        guac_client_log_error(device->rdpdr->client, "Unable to fork PDF filter process");
+        guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "Unable to fork PDF filter process");
         close(stdin_pipe[0]);
         close(stdin_pipe[1]);
         close(stdout_pipe[0]);
@@ -123,7 +123,7 @@ static int guac_rdpdr_create_print_process(guac_rdpdr_device* device) {
 
     /* Log fork errors */
     if (child_pid == -1) {
-        guac_client_log_error(device->rdpdr->client,
+        guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR,
                 "Unable to fork PDF filter process: %s", strerror(errno));
         close(stdin_pipe[0]);
         close(stdin_pipe[1]);
@@ -144,11 +144,11 @@ static int guac_rdpdr_create_print_process(guac_rdpdr_device* device) {
         dup2(stdout_pipe[1], STDOUT_FILENO);
 
         /* Run PDF filter */
-        guac_client_log_info(device->rdpdr->client, "Running %s", guac_rdpdr_pdf_filter_command[0]);
+        guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Running %s", guac_rdpdr_pdf_filter_command[0]);
         if (execvp(guac_rdpdr_pdf_filter_command[0], guac_rdpdr_pdf_filter_command) < 0)
-            guac_client_log_error(device->rdpdr->client, "Unable to execute PDF filter command: %s", strerror(errno));
+            guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "Unable to execute PDF filter command: %s", strerror(errno));
         else
-            guac_client_log_error(device->rdpdr->client, "Unable to execute PDF filter command, but no error given");
+            guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "Unable to execute PDF filter command, but no error given");
 
         /* Terminate child process */
         exit(1);
@@ -156,7 +156,7 @@ static int guac_rdpdr_create_print_process(guac_rdpdr_device* device) {
     }
 
     /* Log fork success */
-    guac_client_log_info(device->rdpdr->client, "Created PDF filter process PID=%i", child_pid);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Created PDF filter process PID=%i", child_pid);
 
     /* Close unneeded ends of pipe */
     close(stdin_pipe[0]);
@@ -237,7 +237,7 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
         }
 
         /* Begin file */
-        guac_client_log_info(device->rdpdr->client, "Print job created");
+        guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Print job created");
         guac_protocol_send_file(device->rdpdr->client->socket,
                 printer_data->stream, "application/pdf", filename);
 
@@ -257,7 +257,7 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
         /* Write data to printer, translate output for RDP */
         length = write(printer_data->printer_input, buffer, length);
         if (length == -1) {
-            guac_client_log_error(device->rdpdr->client, "Error writing to printer: %s", strerror(errno));
+            guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "Error writing to printer: %s", strerror(errno));
             status = STATUS_DEVICE_OFF_LINE;
             length = 0;
         }
@@ -293,7 +293,7 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
     close(printer_data->printer_output);
 
     /* Close file */
-    guac_client_log_info(device->rdpdr->client, "Print job closed");
+    guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Print job closed");
     guac_protocol_send_end(device->rdpdr->client->socket, printer_data->stream);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
@@ -304,7 +304,7 @@ static void guac_rdpdr_device_printer_announce_handler(guac_rdpdr_device* device
         wStream* output_stream, int device_id) {
 
     /* Printer header */
-    guac_client_log_info(device->rdpdr->client, "Sending printer");
+    guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Sending printer");
     Stream_Write_UINT32(output_stream, RDPDR_DTYP_PRINT);
     Stream_Write_UINT32(output_stream, device_id);
     Stream_Write(output_stream, "PRN1\0\0\0\0", 8); /* DOS name */
@@ -347,7 +347,7 @@ static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* devic
 
         /* Log unknown */
         default:
-            guac_client_log_error(device->rdpdr->client,
+            guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR,
                     "Unknown printer I/O request function: 0x%x/0x%x",
                     major_func, minor_func);
 

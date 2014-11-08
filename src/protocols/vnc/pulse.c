@@ -65,28 +65,28 @@ static void __stream_state_callback(pa_stream* stream, void* data) {
     switch (pa_stream_get_state(stream)) {
 
         case PA_STREAM_UNCONNECTED:
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "PulseAudio stream currently unconnected");
             break;
 
         case PA_STREAM_CREATING:
-            guac_client_log_info(client, "PulseAudio stream being created...");
+            guac_client_log(client, GUAC_LOG_INFO, "PulseAudio stream being created...");
             break;
 
         case PA_STREAM_READY:
-            guac_client_log_info(client, "PulseAudio stream now ready");
+            guac_client_log(client, GUAC_LOG_INFO, "PulseAudio stream now ready");
             break;
 
         case PA_STREAM_FAILED:
-            guac_client_log_info(client, "PulseAudio stream connection failed");
+            guac_client_log(client, GUAC_LOG_INFO, "PulseAudio stream connection failed");
             break;
 
         case PA_STREAM_TERMINATED:
-            guac_client_log_info(client, "PulseAudio stream terminated");
+            guac_client_log(client, GUAC_LOG_INFO, "PulseAudio stream terminated");
             break;
 
         default:
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "Unknown PulseAudio stream state: 0x%x",
                     pa_stream_get_state(stream));
 
@@ -106,7 +106,7 @@ static void __context_get_sink_info_callback(pa_context* context,
     if (is_last)
         return;
 
-    guac_client_log_info(client, "Starting streaming from \"%s\"",
+    guac_client_log(client, GUAC_LOG_INFO, "Starting streaming from \"%s\"",
             info->description);
 
     /* Set format */
@@ -138,11 +138,11 @@ static void __context_get_server_info_callback(pa_context* context,
 
     /* If no default sink, cannot continue */
     if (info->default_sink_name == NULL) {
-        guac_client_log_error(client, "No default sink. Cannot stream audio.");
+        guac_client_log(client, GUAC_LOG_ERROR, "No default sink. Cannot stream audio.");
         return;
     }
 
-    guac_client_log_info(client, "Will use default sink: \"%s\"",
+    guac_client_log(client, GUAC_LOG_INFO, "Will use default sink: \"%s\"",
             info->default_sink_name);
 
     /* Wait for default sink information */
@@ -160,39 +160,39 @@ static void __context_state_callback(pa_context* context, void* data) {
     switch (pa_context_get_state(context)) {
 
         case PA_CONTEXT_UNCONNECTED:
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "PulseAudio reports it is unconnected");
             break;
 
         case PA_CONTEXT_CONNECTING:
-            guac_client_log_info(client, "Connecting to PulseAudio...");
+            guac_client_log(client, GUAC_LOG_INFO, "Connecting to PulseAudio...");
             break;
 
         case PA_CONTEXT_AUTHORIZING:
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "Authorizing PulseAudio connection...");
             break;
 
         case PA_CONTEXT_SETTING_NAME:
-            guac_client_log_info(client, "Sending client name...");
+            guac_client_log(client, GUAC_LOG_INFO, "Sending client name...");
             break;
 
         case PA_CONTEXT_READY:
-            guac_client_log_info(client, "PulseAudio now ready");
+            guac_client_log(client, GUAC_LOG_INFO, "PulseAudio now ready");
             pa_operation_unref(pa_context_get_server_info(context,
                         __context_get_server_info_callback, client));
             break;
 
         case PA_CONTEXT_FAILED:
-            guac_client_log_info(client, "PulseAudio connection failed");
+            guac_client_log(client, GUAC_LOG_INFO, "PulseAudio connection failed");
             break;
 
         case PA_CONTEXT_TERMINATED:
-            guac_client_log_info(client, "PulseAudio connection terminated");
+            guac_client_log(client, GUAC_LOG_INFO, "PulseAudio connection terminated");
             break;
 
         default:
-            guac_client_log_info(client,
+            guac_client_log(client, GUAC_LOG_INFO,
                     "Unknown PulseAudio context state: 0x%x",
                     pa_context_get_state(context));
 
@@ -205,7 +205,7 @@ void guac_pa_start_stream(guac_client* client) {
     vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
     pa_context* context;
 
-    guac_client_log_info(client, "Starting audio stream");
+    guac_client_log(client, GUAC_LOG_INFO, "Starting audio stream");
     guac_audio_stream_begin(client_data->audio,
                 GUAC_VNC_AUDIO_RATE,
                 GUAC_VNC_AUDIO_CHANNELS,
@@ -236,7 +236,7 @@ void guac_pa_stop_stream(guac_client* client) {
     /* Stop loop */
     pa_threaded_mainloop_stop(client_data->pa_mainloop);
 
-    guac_client_log_info(client, "Audio stream finished");
+    guac_client_log(client, GUAC_LOG_INFO, "Audio stream finished");
 
 }
 

@@ -41,7 +41,7 @@ static void guac_rdpdr_device_fs_announce_handler(guac_rdpdr_device* device,
         wStream* output_stream, int device_id) {
 
     /* Filesystem header */
-    guac_client_log_info(device->rdpdr->client, "Sending filesystem");
+    guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Sending filesystem");
     Stream_Write_UINT32(output_stream, RDPDR_DTYP_FILESYSTEM);
     Stream_Write_UINT32(output_stream, device_id);
     Stream_Write(output_stream, "GUAC\0\0\0\0", 8); /* DOS name */
@@ -121,7 +121,7 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
             break;
 
         default:
-            guac_client_log_error(device->rdpdr->client,
+            guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR,
                     "Unknown filesystem I/O request function: 0x%x/0x%x",
                     major_func, minor_func);
     }

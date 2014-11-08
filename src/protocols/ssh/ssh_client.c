@@ -112,7 +112,7 @@ static void __kbd_callback(const char *name, int name_len,
         responses[0].length = strlen(client_data->password);
     }
     else
-        guac_client_log_info(client, "Unsupported number of keyboard-interactive prompts: %i", num_prompts);
+        guac_client_log(client, GUAC_LOG_INFO, "Unsupported number of keyboard-interactive prompts: %i", num_prompts);
 
 }
 
@@ -161,13 +161,13 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
                 connected_address, sizeof(connected_address),
                 connected_port, sizeof(connected_port),
                 NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log_info(client, "Unable to resolve host: %s", gai_strerror(retval));
+            guac_client_log(client, GUAC_LOG_INFO, "Unable to resolve host: %s", gai_strerror(retval));
 
         /* Connect */
         if (connect(fd, current_address->ai_addr,
                         current_address->ai_addrlen) == 0) {
 
-            guac_client_log_info(client, "Successfully connected to "
+            guac_client_log(client, GUAC_LOG_INFO, "Successfully connected to "
                     "host %s, port %s", connected_address, connected_port);
 
             /* Done if successful connect */
@@ -177,7 +177,7 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
 
         /* Otherwise log information regarding bind failure */
         else
-            guac_client_log_info(client, "Unable to connect to "
+            guac_client_log(client, GUAC_LOG_INFO, "Unable to connect to "
                     "host %s, port %s: %s",
                     connected_address, connected_port, strerror(errno));
 
@@ -214,7 +214,7 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
 
     /* Get list of suported authentication methods */
     user_authlist = libssh2_userauth_list(session, client_data->username, strlen(client_data->username));
-    guac_client_log_info(client, "Supported authentication methods: %s", user_authlist);
+    guac_client_log(client, GUAC_LOG_INFO, "Supported authentication methods: %s", user_authlist);
 
     /* Authenticate with key if available */
     if (client_data->key != NULL) {
@@ -242,11 +242,11 @@ static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
 
     /* Authenticate with password */
     if (strstr(user_authlist, "password") != NULL) {
-        guac_client_log_info(client, "Using password authentication method");
+        guac_client_log(client, GUAC_LOG_INFO, "Using password authentication method");
         retval = libssh2_userauth_password(session, client_data->username, client_data->password);
     }
     else if (strstr(user_authlist, "keyboard-interactive") != NULL) {
-        guac_client_log_info(client, "Using keyboard-interactive authentication method");
+        guac_client_log(client, GUAC_LOG_INFO, "Using keyboard-interactive authentication method");
         retval = libssh2_userauth_keyboard_interactive(session, client_data->username, &__kbd_callback);
     }
     else {
@@ -339,7 +339,7 @@ void* ssh_client_thread(void* data) {
     /* Init threadsafety in libgcrypt */
     gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
     if (!gcry_check_version(GCRYPT_VERSION)) {
-        guac_client_log_error(client, "libgcrypt version mismatch.");
+        guac_client_log(client, GUAC_LOG_ERROR, "libgcrypt version mismatch.");
         return NULL;
     }
 #endif
@@ -383,14 +383,14 @@ void* ssh_client_thread(void* data) {
 
             /* If still failing, give up */
             if (client_data->key == NULL) {
-                guac_client_log_error(client, "Auth key import failed.");
+                guac_client_log(client, GUAC_LOG_ERROR, "Auth key import failed.");
                 return NULL;
             }
 
         } /* end decrypt key with passphrase */
 
         /* Success */
-        guac_client_log_info(client, "Auth key successfully imported.");
+        guac_client_log(client, GUAC_LOG_INFO, "Auth key successfully imported.");
 
     } /* end if key given */
 
@@ -426,9 +426,9 @@ void* ssh_client_thread(void* data) {
 
         /* Request agent forwarding */
         if (libssh2_channel_request_auth_agent(client_data->term_channel))
-            guac_client_log_error(client, "Agent forwarding request failed");
+            guac_client_log(client, GUAC_LOG_ERROR, "Agent forwarding request failed");
         else
-            guac_client_log_info(client, "Agent forwarding enabled.");
+            guac_client_log(client, GUAC_LOG_INFO, "Agent forwarding enabled.");
     }
 
     client_data->auth_agent = NULL;
@@ -442,7 +442,7 @@ void* ssh_client_thread(void* data) {
         client_data->term->file_download_handler = guac_sftp_download_file;
 
         /* Create SSH session specific for SFTP */
-        guac_client_log_info(client, "Reconnecting for SFTP...");
+        guac_client_log(client, GUAC_LOG_INFO, "Reconnecting for SFTP...");
         client_data->sftp_ssh_session = __guac_ssh_create_session(client, NULL);
         if (client_data->sftp_ssh_session == NULL) {
             /* Already aborted within __guac_ssh_create_session() */
@@ -459,7 +459,7 @@ void* ssh_client_thread(void* data) {
         /* Set file handler */
         client->file_handler = guac_sftp_file_handler;
 
-        guac_client_log_info(client, "SFTP session initialized");
+        guac_client_log(client, GUAC_LOG_INFO, "SFTP session initialized");
 
     }
 
@@ -477,7 +477,7 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Logged in */
-    guac_client_log_info(client, "SSH connection successful.");
+    guac_client_log(client, GUAC_LOG_INFO, "SSH connection successful.");
 
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, ssh_input_thread, (void*) client)) {
@@ -557,7 +557,7 @@ void* ssh_client_thread(void* data) {
     __openssl_free_locks(CRYPTO_num_locks());
     pthread_mutex_destroy(&client_data->term_channel_lock);
 
-    guac_client_log_info(client, "SSH connection ended.");
+    guac_client_log(client, GUAC_LOG_INFO, "SSH connection ended.");
     return NULL;
 
 }
