@@ -46,24 +46,6 @@ void vguacd_log(guac_client_log_level level, const char* format,
     /* Convert log level to syslog priority */
     switch (level) {
 
-        /* Emergency log level */
-        case GUAC_LOG_EMERGENCY:
-            priority = LOG_EMERG;
-            priority_name = "EMERGENCY";
-            break;
-
-        /* Alert log level */
-        case GUAC_LOG_ALERT:
-            priority = LOG_ALERT;
-            priority_name = "ALERT";
-            break;
-
-        /* Critical log level */
-        case GUAC_LOG_CRITICAL:
-            priority = LOG_CRIT;
-            priority_name = "CRITICAL";
-            break;
-
         /* Error log level */
         case GUAC_LOG_ERROR:
             priority = LOG_ERR;
@@ -74,12 +56,6 @@ void vguacd_log(guac_client_log_level level, const char* format,
         case GUAC_LOG_WARNING:
             priority = LOG_WARNING;
             priority_name = "WARNING";
-            break;
-
-        /* Notice log level */
-        case GUAC_LOG_NOTICE:
-            priority = LOG_NOTICE;
-            priority_name = "NOTICE";
             break;
 
         /* Informational log level */
