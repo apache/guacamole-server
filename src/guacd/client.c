@@ -72,7 +72,7 @@ void* __guacd_client_output_thread(void* data) {
 
                 int retval = client->handle_messages(client);
                 if (retval) {
-                    guacd_client_log_guac_error(client,
+                    guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
                             "Error handling server messages");
                     guac_client_stop(client);
                     return NULL;
@@ -81,7 +81,7 @@ void* __guacd_client_output_thread(void* data) {
                 /* Send sync instruction */
                 client->last_sent_timestamp = guac_timestamp_current();
                 if (guac_protocol_send_sync(socket, client->last_sent_timestamp)) {
-                    guacd_client_log_guac_error(client, 
+                    guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
                             "Error sending \"sync\" instruction");
                     guac_client_stop(client);
                     return NULL;
@@ -89,7 +89,7 @@ void* __guacd_client_output_thread(void* data) {
 
                 /* Flush */
                 if (guac_socket_flush(socket)) {
-                    guacd_client_log_guac_error(client,
+                    guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
                             "Error flushing output");
                     guac_client_stop(client);
                     return NULL;
@@ -139,7 +139,9 @@ void* __guacd_client_input_thread(void* data) {
                 guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_TIMEOUT, "Client is not responding.");
 
             else {
-                guacd_client_log_guac_error(client, "Error reading instruction");
+                if (guac_error != GUAC_STATUS_CLOSED)
+                    guacd_client_log_guac_error(client, GUAC_LOG_WARNING,
+                            "Guacamole connection failure");
                 guac_client_stop(client);
             }
 
@@ -155,11 +157,11 @@ void* __guacd_client_input_thread(void* data) {
         if (guac_client_handle_instruction(client, instruction) < 0) {
 
             /* Log error */
-            guacd_client_log_guac_error(client,
-                    "Client instruction handler error");
+            guacd_client_log_guac_error(client, GUAC_LOG_WARNING,
+                    "Connection aborted");
 
             /* Log handler details */
-            guac_client_log(client, GUAC_LOG_INFO,
+            guac_client_log(client, GUAC_LOG_DEBUG,
                     "Failing instruction handler in client was \"%s\"",
                     instruction->opcode);
 

@@ -59,6 +59,27 @@
 #define GUACD_ROOT     "/"
 
 /**
+ * Logs a reasonable explanatory message regarding handshake failure based on
+ * the current value of guac_error.
+ */
+static void guacd_log_handshake_failure() {
+
+    if (guac_error == GUAC_STATUS_CLOSED)
+        guacd_log(GUAC_LOG_INFO,
+                "Guacamole connection closed during handshake");
+    else if (guac_error == GUAC_STATUS_PROTOCOL_ERROR)
+        guacd_log(GUAC_LOG_ERROR,
+                "Guacamole protocol violation. Perhaps the version of "
+                "guacamole-client is incompatible with this version of "
+                "guacd?");
+    else
+        guacd_log(GUAC_LOG_WARNING,
+                "Guacamole handshake failed: %s",
+                guac_status_string(guac_error));
+
+}
+
+/**
  * Creates a new guac_client for the connection on the given socket, adding
  * it to the client map based on its ID.
  */
@@ -78,22 +99,25 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     guac_error_message = NULL;
 
     /* Get protocol from select instruction */
-    select = guac_instruction_expect(
-            socket, GUACD_USEC_TIMEOUT, "select");
+    select = guac_instruction_expect(socket, GUACD_USEC_TIMEOUT, "select");
     if (select == NULL) {
 
         /* Log error */
-        guacd_log_guac_error("Error reading \"select\"");
+        guacd_log_handshake_failure();
+        guacd_log_guac_error(GUAC_LOG_DEBUG,
+                "Error reading \"select\"");
 
         /* Free resources */
         guac_socket_free(socket);
         return;
+
     }
 
     /* Validate args to select */
     if (select->argc != 1) {
 
         /* Log error */
+        guacd_log_handshake_failure();
         guacd_log(GUAC_LOG_ERROR, "Bad number of arguments to \"select\" (%i)",
                 select->argc);
 
@@ -111,7 +135,12 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     if (plugin == NULL) {
 
         /* Log error */
-        guacd_log_guac_error("Error loading client plugin");
+        if (guac_error == GUAC_STATUS_NOT_FOUND)
+            guacd_log(GUAC_LOG_WARNING,
+                    "Support for selected protocol is not installed");
+        else
+            guacd_log_guac_error(GUAC_LOG_ERROR,
+                    "Unable to load client plugin");
 
         /* Free resources */
         guac_socket_free(socket);
@@ -123,10 +152,12 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
             || guac_socket_flush(socket)) {
 
         /* Log error */
-        guacd_log_guac_error("Error sending \"args\"");
+        guacd_log_handshake_failure();
+        guacd_log_guac_error(GUAC_LOG_DEBUG, "Error sending \"args\"");
 
         if (guac_client_plugin_close(plugin))
-            guacd_log_guac_error("Error closing client plugin");
+            guacd_log_guac_error(GUAC_LOG_WARNING,
+                    "Unable to close client plugin");
 
         guac_socket_free(socket);
         return;
@@ -138,7 +169,8 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     if (size == NULL) {
 
         /* Log error */
-        guacd_log_guac_error("Error reading \"size\"");
+        guacd_log_handshake_failure();
+        guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"size\"");
 
         /* Free resources */
         guac_socket_free(socket);
@@ -151,7 +183,8 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     if (audio == NULL) {
 
         /* Log error */
-        guacd_log_guac_error("Error reading \"audio\"");
+        guacd_log_handshake_failure();
+        guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"audio\"");
 
         /* Free resources */
         guac_socket_free(socket);
@@ -164,7 +197,8 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     if (video == NULL) {
 
         /* Log error */
-        guacd_log_guac_error("Error reading \"video\"");
+        guacd_log_handshake_failure();
+        guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"video\"");
 
         /* Free resources */
         guac_socket_free(socket);
@@ -177,10 +211,12 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     if (connect == NULL) {
 
         /* Log error */
-        guacd_log_guac_error("Error reading \"connect\"");
+        guacd_log_handshake_failure();
+        guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"connect\"");
 
         if (guac_client_plugin_close(plugin))
-            guacd_log_guac_error("Error closing client plugin");
+            guacd_log_guac_error(GUAC_LOG_WARNING,
+                    "Unable to close client plugin");
 
         guac_socket_free(socket);
         return;
@@ -189,7 +225,7 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     /* Get client */
     client = guac_client_alloc();
     if (client == NULL) {
-        guacd_log_guac_error("Client could not be allocated");
+        guacd_log_guac_error(GUAC_LOG_ERROR, "Unable to create client");
         guac_socket_free(socket);
         return;
     }
@@ -240,10 +276,11 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
 
         guac_client_free(client);
 
-        guacd_log_guac_error("Error instantiating client");
+        guacd_log_guac_error(GUAC_LOG_INFO, "Connection did not succeed");
 
         if (guac_client_plugin_close(plugin))
-            guacd_log_guac_error("Error closing client plugin");
+            guacd_log_guac_error(GUAC_LOG_WARNING,
+                    "Unable to close client plugin");
 
         guac_socket_free(socket);
         return;
@@ -252,9 +289,9 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     /* Start client threads */
     guacd_log(GUAC_LOG_INFO, "Starting client");
     if (guacd_client_start(client))
-        guacd_log(GUAC_LOG_ERROR, "Client finished abnormally");
+        guacd_log(GUAC_LOG_WARNING, "Client finished abnormally");
     else
-        guacd_log(GUAC_LOG_INFO, "Client finished normally");
+        guacd_log(GUAC_LOG_INFO, "Client disconnected");
 
     /* Remove client */
     if (guacd_client_map_remove(map, client->connection_id) == NULL)
@@ -272,7 +309,8 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     /* Clean up */
     guac_client_free(client);
     if (guac_client_plugin_close(plugin))
-        guacd_log(GUAC_LOG_ERROR, "Error closing client plugin");
+        guacd_log_guac_error(GUAC_LOG_WARNING,
+                "Unable to close client plugin");
 
     /* Close socket */
     guac_socket_free(socket);
@@ -309,7 +347,7 @@ int daemonize() {
 
     /* Exit if we are the parent */
     if (pid > 0) {
-        guacd_log(GUAC_LOG_INFO, "Exiting and passing control to PID %i", pid);
+        guacd_log(GUAC_LOG_DEBUG, "Exiting and passing control to PID %i", pid);
         _exit(0);
     }
 
@@ -325,7 +363,7 @@ int daemonize() {
 
     /* Exit if we are the parent */
     if (pid > 0) {
-        guacd_log(GUAC_LOG_INFO, "Exiting and passing control to PID %i", pid);
+        guacd_log(GUAC_LOG_DEBUG, "Exiting and passing control to PID %i", pid);
         _exit(0);
     }
 
@@ -394,7 +432,7 @@ int main(int argc, char* argv[]) {
     openlog(GUACD_LOG_NAME, LOG_PID, LOG_DAEMON);
 
     /* Log start */
-    guacd_log(GUAC_LOG_INFO, "Guacamole proxy daemon (guacd) version " VERSION);
+    guacd_log(GUAC_LOG_INFO, "Guacamole proxy daemon (guacd) version " VERSION " started");
 
     /* Get addresses for binding */
     if ((retval = getaddrinfo(config->bind_host, config->bind_port,
@@ -594,7 +632,8 @@ int main(int argc, char* argv[]) {
             if (ssl_context != NULL) {
                 socket = guac_socket_open_secure(ssl_context, connected_socket_fd);
                 if (socket == NULL) {
-                    guacd_log_guac_error("Error opening secure connection");
+                    guacd_log_guac_error(GUAC_LOG_ERROR,
+                            "Unable to set up SSL/TLS");
                     return 0;
                 }
             }
