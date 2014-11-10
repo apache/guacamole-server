@@ -32,16 +32,34 @@
 #include <pthread.h>
 #endif
 
-/* Error strings */
+/*
+ * Error strings
+ */
 
-const char* __GUAC_STATUS_SUCCESS_STR        = "Success";
-const char* __GUAC_STATUS_NO_MEMORY_STR      = "Insufficient memory";
-const char* __GUAC_STATUS_NO_INPUT_STR       = "End of input stream";
-const char* __GUAC_STATUS_INPUT_TIMEOUT_STR  = "Read timeout";
-const char* __GUAC_STATUS_OUTPUT_ERROR_STR   = "Output error";
-const char* __GUAC_STATUS_BAD_ARGUMENT_STR   = "Invalid argument";
-const char* __GUAC_STATUS_BAD_STATE_STR      = "Illegal state";
-const char* __GUAC_STATUS_INVALID_STATUS_STR = "UNKNOWN STATUS CODE";
+const char* __GUAC_STATUS_SUCCESS_STR           = "Success";
+const char* __GUAC_STATUS_NO_MEMORY_STR         = "Insufficient memory";
+const char* __GUAC_STATUS_CLOSED_STR            = "Closed";
+const char* __GUAC_STATUS_TIMEOUT_STR           = "Timed out";
+const char* __GUAC_STATUS_IO_ERROR_STR          = "Input/output error";
+const char* __GUAC_STATUS_INVALID_ARGUMENT_STR  = "Invalid argument";
+const char* __GUAC_STATUS_INTERNAL_ERROR_STR    = "Internal error";
+const char* __GUAC_STATUS_UNKNOWN_STATUS_STR    = "UNKNOWN STATUS CODE";
+const char* __GUAC_STATUS_NO_SPACE_STR          = "Insufficient space";
+const char* __GUAC_STATUS_INPUT_TOO_LARGE_STR   = "Input too large";
+const char* __GUAC_STATUS_RESULT_TOO_LARGE_STR  = "Result too large";
+const char* __GUAC_STATUS_PERMISSION_DENIED_STR = "Permission denied";
+const char* __GUAC_STATUS_BUSY_STR              = "Resource busy";
+const char* __GUAC_STATUS_NOT_AVAILABLE_STR     = "Resource not available";
+const char* __GUAC_STATUS_NOT_SUPPORTED_STR     = "Not supported";
+const char* __GUAC_STATUS_NOT_INPLEMENTED_STR   = "Not implemented";
+const char* __GUAC_STATUS_TRY_AGAIN_STR         = "Temporary failure";
+const char* __GUAC_STATUS_PROTOCOL_ERROR_STR    = "Protocol violation";
+const char* __GUAC_STATUS_NOT_FOUND_STR         = "Not found";
+const char* __GUAC_STATUS_CANCELED_STR          = "Canceled";
+const char* __GUAC_STATUS_OUT_OF_RANGE_STR      = "Value out of range";
+const char* __GUAC_STATUS_REFUSED_STR           = "Operation refused";
+const char* __GUAC_STATUS_TOO_MANY_STR          = "Insufficient resources";
+const char* __GUAC_STATUS_WOULD_BLOCK_STR       = "Operation would block";
 
 const char* guac_status_string(guac_status status) {
 
@@ -55,32 +73,97 @@ const char* guac_status_string(guac_status status) {
 		case GUAC_STATUS_NO_MEMORY:
             return __GUAC_STATUS_NO_MEMORY_STR;
 
-        /* End of input */
-		case GUAC_STATUS_NO_INPUT:
-            return __GUAC_STATUS_NO_INPUT_STR;
+        /* End of stream */
+		case GUAC_STATUS_CLOSED:
+            return __GUAC_STATUS_CLOSED_STR;
 
-        /* Input timeout */
-		case GUAC_STATUS_INPUT_TIMEOUT:
-            return __GUAC_STATUS_INPUT_TIMEOUT_STR;
+        /* Timeout */
+		case GUAC_STATUS_TIMEOUT:
+            return __GUAC_STATUS_TIMEOUT_STR;
 
         /* Further information in errno */
 		case GUAC_STATUS_SEE_ERRNO:
             return strerror(errno);
 
-        /* Output error */
-		case GUAC_STATUS_OUTPUT_ERROR:
-            return __GUAC_STATUS_OUTPUT_ERROR_STR;
+        /* Input/output error */
+		case GUAC_STATUS_IO_ERROR:
+            return __GUAC_STATUS_IO_ERROR_STR;
 
         /* Invalid argument */
-		case GUAC_STATUS_BAD_ARGUMENT:
-            return __GUAC_STATUS_BAD_ARGUMENT_STR;
+		case GUAC_STATUS_INVALID_ARGUMENT:
+            return __GUAC_STATUS_INVALID_ARGUMENT_STR;
 
-        /* Illegal state */
-		case GUAC_STATUS_BAD_STATE:
-            return __GUAC_STATUS_BAD_STATE_STR;
+        /* Internal error */
+		case GUAC_STATUS_INTERNAL_ERROR:
+            return __GUAC_STATUS_INTERNAL_ERROR_STR;
 
+        /* Out of space */
+		case GUAC_STATUS_NO_SPACE:
+            return __GUAC_STATUS_NO_SPACE_STR;
+
+        /* Input too large */
+        case GUAC_STATUS_INPUT_TOO_LARGE:
+            return __GUAC_STATUS_INPUT_TOO_LARGE_STR;
+
+        /* Result too large */
+        case GUAC_STATUS_RESULT_TOO_LARGE:
+            return __GUAC_STATUS_RESULT_TOO_LARGE_STR;
+
+        /* Permission denied */
+        case GUAC_STATUS_PERMISSION_DENIED:
+            return __GUAC_STATUS_PERMISSION_DENIED_STR;
+
+        /* Resource is busy */
+        case GUAC_STATUS_BUSY:
+            return __GUAC_STATUS_BUSY_STR;
+
+        /* Resource not available */
+        case GUAC_STATUS_NOT_AVAILABLE:
+            return __GUAC_STATUS_NOT_AVAILABLE_STR;
+
+        /* Not supported */
+        case GUAC_STATUS_NOT_SUPPORTED:
+            return __GUAC_STATUS_NOT_SUPPORTED_STR;
+
+        /* Not implemented */
+        case GUAC_STATUS_NOT_INPLEMENTED:
+            return __GUAC_STATUS_NOT_INPLEMENTED_STR;
+
+        /* Temporary failure */
+        case GUAC_STATUS_TRY_AGAIN:
+            return __GUAC_STATUS_TRY_AGAIN_STR;
+
+        /* Guacamole protocol error */
+        case GUAC_STATUS_PROTOCOL_ERROR:
+            return __GUAC_STATUS_PROTOCOL_ERROR_STR;
+
+        /* Resource not found */
+        case GUAC_STATUS_NOT_FOUND:
+            return __GUAC_STATUS_NOT_FOUND_STR;
+
+        /* Operation canceled */
+        case GUAC_STATUS_CANCELED:
+            return __GUAC_STATUS_CANCELED_STR;
+
+        /* Value out of range */
+        case GUAC_STATUS_OUT_OF_RANGE:
+            return __GUAC_STATUS_OUT_OF_RANGE_STR;
+
+        /* Operation refused */
+        case GUAC_STATUS_REFUSED:
+            return __GUAC_STATUS_REFUSED_STR;
+
+        /* Too many resource in use */
+        case GUAC_STATUS_TOO_MANY:
+            return __GUAC_STATUS_TOO_MANY_STR;
+
+        /* Operation would block */
+        case GUAC_STATUS_WOULD_BLOCK:
+            return __GUAC_STATUS_WOULD_BLOCK_STR;
+
+        /* Unknown status code */
         default:
-            return __GUAC_STATUS_INVALID_STATUS_STR;
+            return __GUAC_STATUS_UNKNOWN_STATUS_STR;
 
     }
 

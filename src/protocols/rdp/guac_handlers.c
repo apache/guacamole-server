@@ -196,16 +196,14 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
         /* Check the libfreerdp fds */
         if (!freerdp_check_fds(rdp_inst)) {
-            guac_error = GUAC_STATUS_BAD_STATE;
-            guac_error_message = "Error handling RDP file descriptors";
+            guac_client_log(client, GUAC_LOG_DEBUG, "Error handling RDP file descriptors");
             pthread_mutex_unlock(&(guac_client_data->rdp_lock));
             return 1;
         }
 
         /* Check channel fds */
         if (!freerdp_channels_check_fds(channels, rdp_inst)) {
-            guac_error = GUAC_STATUS_BAD_STATE;
-            guac_error_message = "Error handling RDP channel file descriptors";
+            guac_client_log(client, GUAC_LOG_DEBUG, "Error handling RDP channel file descriptors");
             pthread_mutex_unlock(&(guac_client_data->rdp_lock));
             return 1;
         }
@@ -233,8 +231,7 @@ int rdp_guac_client_handle_messages(guac_client* client) {
 
         /* Handle RDP disconnect */
         if (freerdp_shall_disconnect(rdp_inst)) {
-            guac_error = GUAC_STATUS_NO_INPUT;
-            guac_error_message = "RDP server closed connection";
+            guac_client_log(client, GUAC_LOG_INFO, "RDP server closed connection");
             pthread_mutex_unlock(&(guac_client_data->rdp_lock));
             return 1;
         }

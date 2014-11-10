@@ -135,7 +135,7 @@ void* __guacd_client_input_thread(void* data) {
         /* Stop on error */
         if (instruction == NULL) {
 
-            if (guac_error == GUAC_STATUS_INPUT_TIMEOUT)
+            if (guac_error == GUAC_STATUS_TIMEOUT)
                 guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_TIMEOUT, "Client is not responding.");
 
             else {

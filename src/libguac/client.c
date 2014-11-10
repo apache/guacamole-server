@@ -169,7 +169,7 @@ static char* __guac_generate_connection_id() {
     if (uuid_export(uuid, UUID_FMT_STR, &identifier, &identifier_length) != UUID_RC_OK) {
         free(buffer);
         uuid_destroy(uuid);
-        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = "Conversion of UUID to connection ID failed";
         return NULL;
     }

@@ -99,7 +99,7 @@ static int __guac_socket_ssl_select_handler(guac_socket* socket, int usec_timeou
     }
 
     if (retval == 0) {
-        guac_error = GUAC_STATUS_INPUT_TIMEOUT;
+        guac_error = GUAC_STATUS_TIMEOUT;
         guac_error_message = "Timeout while waiting for data on secure socket";
     }
 
@@ -131,7 +131,7 @@ guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd) {
     /* Accept SSL connection, handle errors */
     if (SSL_accept(data->ssl) <= 0) {
 
-        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = "SSL accept failed";
 
         free(data);

@@ -213,8 +213,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Fail if display init failed */
     if (term->display == NULL) {
-        guac_error = GUAC_STATUS_BAD_STATE;
-        guac_error_message = "Display initialization failed";
+        guac_client_log(client, GUAC_LOG_DEBUG, "Display initialization failed");
         free(term);
         return NULL;
     }

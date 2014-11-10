@@ -114,7 +114,7 @@ int __guac_socket_fd_select_handler(guac_socket* socket, int usec_timeout) {
     }
 
     if (retval == 0) {
-        guac_error = GUAC_STATUS_INPUT_TIMEOUT;
+        guac_error = GUAC_STATUS_TIMEOUT;
         guac_error_message = "Timeout while waiting for data on socket";
     }
 

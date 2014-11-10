@@ -57,7 +57,7 @@ guac_client_plugin* guac_client_plugin_open(const char* protocol) {
     /* Load client plugin */
     client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
     if (!client_plugin_handle) {
-        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+        guac_error = GUAC_STATUS_NOT_FOUND;
         guac_error_message = dlerror();
         return NULL;
     }
@@ -69,7 +69,7 @@ guac_client_plugin* guac_client_plugin_open(const char* protocol) {
 
     /* Fail if cannot find guac_client_init */
     if (dlerror() != NULL) {
-        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = dlerror();
         return NULL;
     }
@@ -79,7 +79,7 @@ guac_client_plugin* guac_client_plugin_open(const char* protocol) {
 
     /* Fail if cannot find GUAC_CLIENT_ARGS */
     if (dlerror() != NULL) {
-        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = dlerror();
         return NULL;
     }
@@ -104,7 +104,7 @@ int guac_client_plugin_close(guac_client_plugin* plugin) {
 
     /* Unload client plugin */
     if (dlclose(plugin->__client_plugin_handle)) {
-        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = dlerror();
         return -1;
     }

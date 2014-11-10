@@ -238,7 +238,7 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
 
             /* EOF */
             if (retval == 0) {
-                guac_error = GUAC_STATUS_NO_INPUT;
+                guac_error = GUAC_STATUS_CLOSED;
                 guac_error_message = "End of stream reached while "
                                      "reading instruction";
                 return NULL;
@@ -257,7 +257,7 @@ guac_instruction* guac_instruction_read(guac_socket* socket,
 
     /* Fail on error */
     if (instruction->state == GUAC_INSTRUCTION_PARSE_ERROR) {
-        guac_error = GUAC_STATUS_BAD_ARGUMENT;
+        guac_error = GUAC_STATUS_PROTOCOL_ERROR;
         guac_error_message = "Instruction parse error";
         return NULL;
     }
@@ -284,7 +284,7 @@ guac_instruction* guac_instruction_expect(guac_socket* socket, int usec_timeout,
 
     /* Validate instruction */
     if (strcmp(instruction->opcode, opcode) != 0) {
-        guac_error = GUAC_STATUS_BAD_STATE;
+        guac_error = GUAC_STATUS_PROTOCOL_ERROR;
         guac_error_message = "Instruction read did not have expected opcode";
         guac_instruction_free(instruction);
         return NULL;
