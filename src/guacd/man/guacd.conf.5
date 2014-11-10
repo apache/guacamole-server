@@ -86,6 +86,19 @@ will bind to port 4822.
 .
 .SH DAEMON PARAMETERS
 .TP
+\fBlog_level\fR \fB=\fR \fILEVEL\fR
+Sets the maximum level at which
+.B guacd
+will log messages to syslog and, if running in the foreground, the console.
+Legal values are
+.B debug,
+.B info,
+.B warning,
+and
+.B error.
+The default value is
+.B info.
+.TP
 \fBpid_file\fR \fB=\fR \fIFILE\fR
 Causes
 .B guacd

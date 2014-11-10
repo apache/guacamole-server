@@ -25,6 +25,8 @@
 #include "conf-file.h"
 #include "conf-parse.h"
 
+#include <guacamole/client.h>
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -70,6 +72,30 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
             free(config->pidfile);
             config->pidfile = strdup(value);
             return 0;
+        }
+
+        /* Max log level */
+        else if (strcmp(param, "log_level") == 0) {
+
+            /* Translate level name */
+            if (strcmp(value, "info") == 0)
+                config->max_log_level = GUAC_LOG_INFO;
+            else if (strcmp(value, "error") == 0)
+                config->max_log_level = GUAC_LOG_ERROR;
+            else if (strcmp(value, "warning") == 0)
+                config->max_log_level = GUAC_LOG_WARNING;
+            else if (strcmp(value, "debug") == 0)
+                config->max_log_level = GUAC_LOG_DEBUG;
+
+            /* Invalid log level */
+            else {
+                guacd_conf_parse_error = "Invalid log level. Valid levels are: \"debug\", \"info\", \"warning\", and \"error\".";
+                return 1;
+            }
+
+            /* Valid log level */
+            return 0;
+
         }
 
     }
@@ -163,6 +189,7 @@ guacd_config* guacd_conf_load() {
     conf->bind_port = strdup("4822");
     conf->pidfile = NULL;
     conf->foreground = 0;
+    conf->max_log_level = GUAC_LOG_INFO;
 
 #ifdef ENABLE_SSL
     conf->cert_file = NULL;

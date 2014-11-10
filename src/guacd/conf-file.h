@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <guacamole/client.h>
+
 /**
  * The contents of a guacd configuration file.
  */
@@ -61,6 +63,11 @@ typedef struct guacd_config {
      */
     char* key_file;
 #endif
+
+    /**
+     * The maximum log level to be logged by guacd.
+     */
+    guac_client_log_level max_log_level;
 
 } guacd_config;
 
