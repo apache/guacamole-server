@@ -32,12 +32,12 @@
  * The maximum level at which to log messages. All other messages will be
  * dropped.
  */
-extern int log_level;
+extern int guacd_log_level;
 
 /**
  * The string to prepend to all log messages.
  */
-extern char log_prefix[64];
+#define GUACD_LOG_NAME "guacd"
 
 /**
  * Writes a message to guacd's logs. This function takes a format and va_list,
