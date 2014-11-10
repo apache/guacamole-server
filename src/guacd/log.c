@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include "log.h"
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
@@ -33,14 +34,21 @@
 /* Log prefix, defaulting to "guacd" */
 char log_prefix[64] = "guacd";
 
+int log_level = GUAC_LOG_INFO;
+
 void vguacd_log(guac_client_log_level level, const char* format,
         va_list args) {
 
     const char* priority_name;
     int priority;
 
-    /* Copy log message into buffer */
     char message[2048];
+
+    /* Don't bother if the log level is too high */
+    if (level > log_level)
+        return;
+
+    /* Copy log message into buffer */
     vsnprintf(message, sizeof(message), format, args);
 
     /* Convert log level to syslog priority */

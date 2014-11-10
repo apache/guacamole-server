@@ -392,7 +392,8 @@ int main(int argc, char* argv[]) {
     /* Set up logging prefix */
     strncpy(log_prefix, basename(argv[0]), sizeof(log_prefix));
 
-    /* Open log as early as we can */
+    /* Init logging as early as possible */
+    log_level = config->max_log_level;
     openlog("guacd", LOG_PID, LOG_DAEMON);
 
     /* Log start */
