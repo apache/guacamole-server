@@ -8,6 +8,7 @@ guacd \- Guacamole proxy daemon
 [\fB-b\fR \fIHOST\fR]
 [\fB-l\fR \fIPORT\fR]
 [\fB-p\fR \fIPID FILE\fR]
+[\fB-L\fR \fILOG LEVEL\fR]
 [\fB-C\fR \fICERTIFICATE FILE\fR]
 [\fB-K\fR \fIKEY FILE\fR]
 [\fB-f\fR]
@@ -41,6 +42,19 @@ Causes
 to write the PID of the daemon process to the specified
 file. This is useful for init scripts and is used by the provided init
 script.
+.TP
+\fB\-L\fR \fILEVEL\fR
+Sets the maximum level at which
+.B guacd
+will log messages to syslog and, if running in the foreground, the console.
+Legal values are
+.B debug,
+.B info,
+.B warning,
+and
+.B error.
+The default value is
+.B info.
 .TP
 \fB\-f\fR
 Causes

@@ -24,6 +24,7 @@
 
 #include "conf-args.h"
 #include "conf-file.h"
+#include "conf-parse.h"
 
 #include <getopt.h>
 #include <stdio.h>
@@ -34,7 +35,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "l:b:p:C:K:f")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:f")) != -1) {
 
         /* -l: Bind port */
         if (opt == 'l') {
@@ -57,6 +58,20 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
         else if (opt == 'p') {
             free(config->pidfile);
             config->pidfile = strdup(optarg);
+        }
+
+        /* -L: Log level */
+        else if (opt == 'L') {
+
+            /* Validate and parse log level */
+            int level = guacd_parse_log_level(optarg);
+            if (level == -1) {
+                fprintf(stderr, "Invalid log level. Valid levels are: \"debug\", \"info\", \"warning\", and \"error\".\n");
+                return 1;
+            }
+
+            config->max_log_level = level;
+
         }
 
 #ifdef ENABLE_SSL
@@ -88,6 +103,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
                     " [-l LISTENPORT]"
                     " [-b LISTENADDRESS]"
                     " [-p PIDFILE]"
+                    " [-L LEVEL]"
 #ifdef ENABLE_SSL
                     " [-C CERTIFICATE_FILE]"
                     " [-K PEM_FILE]"
