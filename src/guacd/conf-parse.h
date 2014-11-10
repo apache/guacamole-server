@@ -51,6 +51,12 @@ typedef int guacd_param_callback(const char* section, const char* param, const c
 int guacd_parse_conf(guacd_param_callback* callback, char* buffer, int length, void* data);
 
 /**
+ * Parses the given level name, returning the corresponding log level, or -1 if
+ * no such log level exists.
+ */
+int guacd_parse_log_level(const char* name);
+
+/**
  * Human-readable description of the current error, if any.
  */
 extern char* guacd_conf_parse_error;

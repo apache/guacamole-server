@@ -24,6 +24,8 @@
 
 #include "conf-parse.h"
 
+#include <guacamole/client.h>
+
 #include <ctype.h>
 #include <string.h>
 
@@ -518,6 +520,19 @@ int guacd_parse_conf(guacd_param_callback* callback, char* buffer, int length, v
         return 0;
 
     return guacd_parse_line(callback, buffer, length, data);
+
+}
+
+int guacd_parse_log_level(const char* name) {
+
+    /* Translate log level name */
+    if (strcmp(name, "info")    == 0) return GUAC_LOG_INFO;
+    if (strcmp(name, "error")   == 0) return GUAC_LOG_ERROR;
+    if (strcmp(name, "warning") == 0) return GUAC_LOG_WARNING;
+    if (strcmp(name, "debug")   == 0) return GUAC_LOG_DEBUG;
+
+    /* No such log level */
+    return -1;
 
 }
 

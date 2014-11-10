@@ -77,23 +77,16 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
         /* Max log level */
         else if (strcmp(param, "log_level") == 0) {
 
-            /* Translate level name */
-            if (strcmp(value, "info") == 0)
-                config->max_log_level = GUAC_LOG_INFO;
-            else if (strcmp(value, "error") == 0)
-                config->max_log_level = GUAC_LOG_ERROR;
-            else if (strcmp(value, "warning") == 0)
-                config->max_log_level = GUAC_LOG_WARNING;
-            else if (strcmp(value, "debug") == 0)
-                config->max_log_level = GUAC_LOG_DEBUG;
+            int level = guacd_parse_log_level(value);
 
             /* Invalid log level */
-            else {
+            if (level < 0) {
                 guacd_conf_parse_error = "Invalid log level. Valid levels are: \"debug\", \"info\", \"warning\", and \"error\".";
                 return 1;
             }
 
             /* Valid log level */
+            config->max_log_level = level;
             return 0;
 
         }
