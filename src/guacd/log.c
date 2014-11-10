@@ -86,7 +86,7 @@ void vguacd_log(guac_client_log_level level, const char* format,
     syslog(priority, "%s", message);
 
     /* Log to STDERR */
-    fprintf(stderr, GUACD_LOG_NAME "[%i]: %s:  %s\n",
+    fprintf(stderr, GUACD_LOG_NAME "[%i]: %s:\t%s\n",
             getpid(), priority_name, message);
 
 }
