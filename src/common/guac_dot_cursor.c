@@ -78,5 +78,8 @@ void guac_common_set_dot_cursor(guac_client* client) {
     /* Free buffer */
     guac_client_free_buffer(client, cursor);
 
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Client cursor image set to generic built-in dot.");
+
 }
 
