@@ -106,9 +106,9 @@ typedef struct guac_common_surface {
     int realized;
 
     /**
-     * The bounding rectangle.
+     * The clipping rectangle.
      */
-    guac_common_rect bounds_rect;
+    guac_common_rect clip_rect;
 
     /**
      * The number of updates in the PNG queue.

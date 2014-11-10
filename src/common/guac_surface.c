@@ -77,20 +77,52 @@
 #endif
 
 /**
- * Updates the coordinates of the given rectangle to be within the bounds of the given surface.
- * 
+ * Updates the coordinates of the given rectangle to be within the bounds of
+ * the given surface.
+ *
  * @param surface The surface to use for clipping.
  * @param rect The rectangle to clip.
  * @param sx The X coordinate of the source rectangle, if any.
  * @param sy The Y coordinate of the source rectangle, if any.
  */
-static void __guac_common_bound_rect(guac_common_surface* surface, guac_common_rect* rect,
-                                     int* sx, int* sy) {
+static void __guac_common_bound_rect(guac_common_surface* surface,
+        guac_common_rect* rect, int* sx, int* sy) {
+
+    guac_common_rect bounds_rect = {
+        .x = 0,
+        .y = 0,
+        .width  = surface->width,
+        .height = surface->height
+    };
 
     int orig_x = rect->x;
     int orig_y = rect->y;
 
-    guac_common_rect_constrain(rect, &surface->bounds_rect);
+    guac_common_rect_constrain(rect, &bounds_rect);
+
+    /* Update source X/Y if given */
+    if (sx != NULL) *sx += rect->x - orig_x;
+    if (sy != NULL) *sy += rect->y - orig_y;
+
+}
+
+/**
+ * Updates the coordinates of the given rectangle to be within the clipping
+ * rectangle of the given surface, which must always be within the bounding
+ * rectangle of the given surface.
+ *
+ * @param surface The surface to use for clipping.
+ * @param rect The rectangle to clip.
+ * @param sx The X coordinate of the source rectangle, if any.
+ * @param sy The Y coordinate of the source rectangle, if any.
+ */
+static void __guac_common_clip_rect(guac_common_surface* surface,
+        guac_common_rect* rect, int* sx, int* sy) {
+
+    int orig_x = rect->x;
+    int orig_y = rect->y;
+
+    guac_common_rect_constrain(rect, &surface->clip_rect);
 
     /* Update source X/Y if given */
     if (sx != NULL) *sx += rect->x - orig_x;
@@ -689,7 +721,7 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     guac_common_surface_reset_clip(surface);
 
     /* Copy relevant old data */
-    guac_common_rect_constrain(&old_rect, &surface->bounds_rect);
+    guac_common_rect_constrain(&old_rect, &surface->clip_rect);
     __guac_common_surface_put(old_buffer, old_stride, &sx, &sy, surface, &old_rect, 1);
 
     /* Free old data */
@@ -697,7 +729,7 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
 
     /* Clip dirty rect */
     if (surface->dirty) {
-        guac_common_rect_constrain(&surface->dirty_rect, &surface->bounds_rect);
+        guac_common_rect_constrain(&surface->dirty_rect, &surface->clip_rect);
         if (surface->dirty_rect.width <= 0 || surface->dirty_rect.height <= 0)
             surface->dirty = 0;
     }
@@ -723,7 +755,7 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     guac_common_rect_init(&rect, x, y, w, h);
 
     /* Clip operation */
-    __guac_common_bound_rect(surface, &rect, &sx, &sy);
+    __guac_common_clip_rect(surface, &rect, &sx, &sy);
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
@@ -756,7 +788,7 @@ void guac_common_surface_paint(guac_common_surface* surface, int x, int y, cairo
     guac_common_rect_init(&rect, x, y, w, h);
 
     /* Clip operation */
-    __guac_common_bound_rect(surface, &rect, &sx, &sy);
+    __guac_common_clip_rect(surface, &rect, &sx, &sy);
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
@@ -783,7 +815,7 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     guac_common_rect_init(&rect, dx, dy, w, h);
 
     /* Clip operation */
-    __guac_common_bound_rect(dst, &rect, &sx, &sy);
+    __guac_common_clip_rect(dst, &rect, &sx, &sy);
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
@@ -824,7 +856,7 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     guac_common_rect_init(&rect, dx, dy, w, h);
 
     /* Clip operation */
-    __guac_common_bound_rect(dst, &rect, &sx, &sy);
+    __guac_common_clip_rect(dst, &rect, &sx, &sy);
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
@@ -864,7 +896,7 @@ void guac_common_surface_rect(guac_common_surface* surface,
     guac_common_rect_init(&rect, x, y, w, h);
 
     /* Clip operation */
-    __guac_common_bound_rect(surface, &rect, NULL, NULL);
+    __guac_common_clip_rect(surface, &rect, NULL, NULL);
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
@@ -892,12 +924,12 @@ void guac_common_surface_clip(guac_common_surface* surface, int x, int y, int w,
     guac_common_rect clip;
 
     guac_common_rect_init(&clip, x, y, w, h);
-    guac_common_rect_constrain(&surface->bounds_rect, &clip);
+    guac_common_rect_constrain(&surface->clip_rect, &clip);
 
 }
 
 void guac_common_surface_reset_clip(guac_common_surface* surface) {
-    guac_common_rect_init(&surface->bounds_rect, 0, 0, surface->width, surface->height);
+    guac_common_rect_init(&surface->clip_rect, 0, 0, surface->width, surface->height);
 }
 
 /**
