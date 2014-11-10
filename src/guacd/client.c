@@ -57,6 +57,9 @@ void* __guacd_client_output_thread(void* data) {
     guac_client* client = (guac_client*) data;
     guac_socket* socket = client->socket;
 
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Starting output thread.");
+
     /* Guacamole client output loop */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
@@ -106,6 +109,9 @@ void* __guacd_client_output_thread(void* data) {
 
     } /* End of output loop */
 
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Output thread terminated.");
+
     guac_client_stop(client);
     return NULL;
 
@@ -115,6 +121,9 @@ void* __guacd_client_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
     guac_socket* socket = client->socket;
+
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Starting input thread.");
 
     /* Guacamole client input loop */
     while (client->state == GUAC_CLIENT_RUNNING) {
@@ -163,6 +172,9 @@ void* __guacd_client_input_thread(void* data) {
         guac_instruction_free(instruction);
 
     }
+
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Input thread terminated.");
 
     return NULL;
 

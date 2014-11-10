@@ -416,7 +416,7 @@ int main(int argc, char* argv[]) {
     /* Allow socket reuse */
     if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR,
                 (void*) &opt_on, sizeof(opt_on))) {
-        guacd_log(GUAC_LOG_INFO, "Unable to set socket options for reuse: %s",
+        guacd_log(GUAC_LOG_WARNING, "Unable to set socket options for reuse: %s",
                 strerror(errno));
     }
 
@@ -440,7 +440,7 @@ int main(int argc, char* argv[]) {
                     current_address->ai_addr,
                     current_address->ai_addrlen) == 0) {
 
-            guacd_log(GUAC_LOG_INFO, "Successfully bound socket to "
+            guacd_log(GUAC_LOG_DEBUG, "Successfully bound socket to "
                     "host %s, port %s", bound_address, bound_port);
 
             /* Done if successful bind */
@@ -450,7 +450,7 @@ int main(int argc, char* argv[]) {
 
         /* Otherwise log information regarding bind failure */
         else
-            guacd_log(GUAC_LOG_INFO, "Unable to bind socket to "
+            guacd_log(GUAC_LOG_DEBUG, "Unable to bind socket to "
                     "host %s, port %s: %s",
                     bound_address, bound_port, strerror(errno));
 
@@ -483,7 +483,7 @@ int main(int argc, char* argv[]) {
             }
         }
         else
-            guacd_log(GUAC_LOG_INFO, "No PEM keyfile given - SSL/TLS may not work.");
+            guacd_log(GUAC_LOG_WARNING, "No PEM keyfile given - SSL/TLS may not work.");
 
         /* Load cert file if specified */
         if (config->cert_file != NULL) {
@@ -494,7 +494,7 @@ int main(int argc, char* argv[]) {
             }
         }
         else
-            guacd_log(GUAC_LOG_INFO, "No certificate file given - SSL/TLS may not work.");
+            guacd_log(GUAC_LOG_WARNING, "No certificate file given - SSL/TLS may not work.");
 
     }
 #endif
