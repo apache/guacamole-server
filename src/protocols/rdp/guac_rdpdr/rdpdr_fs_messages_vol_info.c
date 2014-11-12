@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include "debug.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_service.h"
 #include "rdp_fs.h"
@@ -44,7 +43,9 @@ void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device,
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 21 + GUAC_FILESYSTEM_LABEL_LENGTH);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     Stream_Write_UINT32(output_stream, 17 + GUAC_FILESYSTEM_LABEL_LENGTH);
     Stream_Write_UINT64(output_stream, 0); /* VolumeCreationTime */
@@ -67,7 +68,9 @@ void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* i
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 28);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     Stream_Write_UINT32(output_stream, 24);
     Stream_Write_UINT64(output_stream, info.blocks_total);     /* TotalAllocationUnits */
@@ -85,7 +88,9 @@ void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream*
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 12);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     Stream_Write_UINT32(output_stream, 8);
     Stream_Write_UINT32(output_stream, FILE_DEVICE_DISK); /* DeviceType */
@@ -101,7 +106,9 @@ void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStre
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 16 + GUAC_FILESYSTEM_NAME_LENGTH);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     Stream_Write_UINT32(output_stream, 12 + GUAC_FILESYSTEM_NAME_LENGTH);
     Stream_Write_UINT32(output_stream,
@@ -126,7 +133,9 @@ void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStre
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 36);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     Stream_Write_UINT32(output_stream, 32);
     Stream_Write_UINT64(output_stream, info.blocks_total);     /* TotalAllocationUnits */

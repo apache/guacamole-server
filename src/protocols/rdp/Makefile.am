@@ -80,7 +80,6 @@ noinst_HEADERS =                             \
 	guac_rdpsnd/rdpsnd_service.h             \
 	guac_svc/svc_service.h                   \
 	client.h                                 \
-	debug.h                                  \
 	guac_handlers.h                          \
 	rdp_bitmap.h                             \
 	rdp_cliprdr.h                            \

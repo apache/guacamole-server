@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include "debug.h"
 #include "rdpdr_fs_messages_dir_info.h"
 #include "rdpdr_fs_messages_file_info.h"
 #include "rdpdr_fs_messages.h"
@@ -77,11 +76,13 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
             desired_access, file_attributes,
             create_disposition, create_options);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] "
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] "
              "desired_access=0x%x, file_attributes=0x%x, "
              "create_disposition=0x%x, create_options=0x%x, path=\"%s\"",
-             file_id, desired_access, file_attributes, create_disposition,
-             create_options, path);
+             __func__, file_id,
+             desired_access, file_attributes,
+             create_disposition, create_options, path);
 
     /* If an error occurred, notify server */
     if (file_id < 0) {
@@ -136,8 +137,9 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
     Stream_Read_UINT32(input_stream, length);
     Stream_Read_UINT64(input_stream, offset);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] length=%i, offset=%" PRIu64,
-             file_id, length, (uint64_t) offset);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] length=%i, offset=%" PRIu64,
+             __func__, file_id, length, (uint64_t) offset);
 
     /* Ensure buffer size does not exceed a safe maximum */
     if (length > GUAC_RDP_MAX_READ_BUFFER)
@@ -184,8 +186,9 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
     Stream_Read_UINT64(input_stream, offset);
     Stream_Seek(input_stream, 20); /* Padding */
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] length=%i, offset=%" PRIu64,
-             file_id, length, (uint64_t) offset);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] length=%i, offset=%" PRIu64,
+             __func__, file_id, length, (uint64_t) offset);
 
     /* Attempt write */
     bytes_written = guac_rdp_fs_write((guac_rdp_fs*) device->data, file_id,
@@ -217,7 +220,9 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
     wStream* output_stream;
     guac_rdp_fs_file* file;
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     /* Get file */
     file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
@@ -322,7 +327,9 @@ void guac_rdpdr_fs_process_set_volume_info(guac_rdpdr_device* device,
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_NOT_SUPPORTED, 0);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] Set volume info not supported", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] Set volume info not supported",
+            __func__, file_id);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
@@ -380,7 +387,9 @@ void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device,
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_INVALID_PARAMETER, 4);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] IGNORED", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] IGNORED",
+            __func__, file_id);
 
     /* No content for now */
     Stream_Write_UINT32(output_stream, 0);
@@ -392,7 +401,9 @@ void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device,
 void guac_rdpdr_fs_process_notify_change_directory(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] Not implemented", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] Not implemented",
+            __func__, file_id);
 
 }
 
@@ -428,8 +439,9 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
 
     }
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] initial_query=%i, dir_pattern=\"%s\"",
-             file_id, initial_query, file->dir_pattern);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] initial_query=%i, dir_pattern=\"%s\"",
+             __func__, file_id, initial_query, file->dir_pattern);
 
     /* Find first matching entry in directory */
     while ((entry_name = guac_rdp_fs_read_dir((guac_rdp_fs*) device->data,
@@ -508,7 +520,9 @@ void guac_rdpdr_fs_process_lock_control(guac_rdpdr_device* device, wStream* inpu
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_NOT_SUPPORTED, 5);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] Lock not supported", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] Lock not supported",
+            __func__, file_id);
 
     Stream_Zero(output_stream, 5); /* Padding */
 

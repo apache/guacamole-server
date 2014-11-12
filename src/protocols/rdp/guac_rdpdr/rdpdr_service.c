@@ -23,7 +23,6 @@
 #include "config.h"
 
 #include "client.h"
-#include "debug.h"
 #include "rdp_fs.h"
 #include "rdp_settings.h"
 #include "rdp_stream.h"
@@ -261,7 +260,8 @@ void guac_rdpdr_start_download(guac_rdpdr_device* device, const char* path) {
 
         } while (c != '\0');
 
-        GUAC_RDP_DEBUG(2, "Initiating download of \"%s\"", path);
+        guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+                "%s: Initiating download of \"%s\"", __func__, path);
 
         /* Begin stream */
         guac_protocol_send_file(client->socket, stream,

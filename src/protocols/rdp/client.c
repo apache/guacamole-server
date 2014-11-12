@@ -189,7 +189,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Load filesystem if drive enabled */
     if (guac_client_data->settings.drive_enabled) {
         guac_client_data->filesystem =
-            guac_rdp_fs_alloc(guac_client_data->settings.drive_path);
+            guac_rdp_fs_alloc(client, guac_client_data->settings.drive_path);
     }
 
     /* If RDPDR required, load it */

@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include "debug.h"
 #include "rdpdr_service.h"
 #include "rdp_fs.h"
 #include "rdp_status.h"
@@ -53,7 +52,9 @@ void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* 
     if (file == NULL)
         return;
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     output_stream = guac_rdpdr_new_io_completion(device, completion_id,
             STATUS_SUCCESS, 40);
@@ -83,7 +84,9 @@ void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStrea
     if (file == NULL)
         return;
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     if (file->attributes & FILE_ATTRIBUTE_DIRECTORY)
         is_directory = TRUE;
@@ -115,7 +118,9 @@ void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device,
     if (file == NULL)
         return;
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     output_stream = guac_rdpdr_new_io_completion(device, completion_id,
             STATUS_SUCCESS, 12);
@@ -147,7 +152,9 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
     guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), filename_length/2,
             destination_path, sizeof(destination_path));
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] destination_path=\"%s\"", file_id, destination_path);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] destination_path=\"%s\"",
+            __func__, file_id, destination_path);
 
     /* If file moving to \Download folder, start stream, do not move */
     if (strncmp(destination_path, "\\Download\\", 10) == 0) {
@@ -195,7 +202,9 @@ void guac_rdpdr_fs_process_set_allocation_info(guac_rdpdr_device* device,
     /* Read new size */
     Stream_Read_UINT64(input_stream, size); /* AllocationSize */
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] size=%" PRIu64, file_id, (uint64_t) size);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] size=%" PRIu64,
+            __func__, file_id, (uint64_t) size);
 
     /* Truncate file */
     result = guac_rdp_fs_truncate((guac_rdp_fs*) device->data, file_id, size);
@@ -225,7 +234,9 @@ void guac_rdpdr_fs_process_set_disposition_info(guac_rdpdr_device* device,
         output_stream = guac_rdpdr_new_io_completion(device,
                 completion_id, STATUS_SUCCESS, 4);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i]", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i]",
+            __func__, file_id);
 
     Stream_Write_UINT32(output_stream, length);
 
@@ -243,7 +254,9 @@ void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdpdr_device* device,
     /* Read new size */
     Stream_Read_UINT64(input_stream, size); /* AllocationSize */
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] size=%" PRIu64, file_id, (uint64_t) size);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] size=%" PRIu64,
+            __func__, file_id, (uint64_t) size);
 
     /* Truncate file */
     result = guac_rdp_fs_truncate((guac_rdp_fs*) device->data, file_id, size);
@@ -268,7 +281,9 @@ void guac_rdpdr_fs_process_set_basic_info(guac_rdpdr_device* device,
     /* Currently do nothing, just respond */
     Stream_Write_UINT32(output_stream, length);
 
-    GUAC_RDP_DEBUG(2, "[file_id=%i] IGNORED", file_id);
+    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+            "%s: [file_id=%i] IGNORED",
+            __func__, file_id);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 

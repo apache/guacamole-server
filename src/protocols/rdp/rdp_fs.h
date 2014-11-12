@@ -37,6 +37,7 @@
 
 #include "config.h"
 
+#include <guacamole/client.h>
 #include <guacamole/pool.h>
 
 #include <dirent.h>
@@ -267,6 +268,11 @@ typedef struct guac_rdp_fs_file {
 typedef struct guac_rdp_fs {
 
     /**
+     * The controlling client.
+     */
+    guac_client* client;
+
+    /**
      * The root of the filesystem.
      */
     char* drive_path;
@@ -313,7 +319,7 @@ typedef struct guac_rdp_fs_info {
 /**
  * Allocates a new filesystem given a root path.
  */
-guac_rdp_fs* guac_rdp_fs_alloc(const char* drive_path);
+guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path);
 
 /**
  * Frees the given filesystem.

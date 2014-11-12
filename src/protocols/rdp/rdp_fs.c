@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include "debug.h"
 #include "rdp_fs.h"
 #include "rdp_status.h"
 
@@ -39,10 +38,11 @@
 
 #include <guacamole/pool.h>
 
-guac_rdp_fs* guac_rdp_fs_alloc(const char* drive_path) {
+guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path) {
 
     guac_rdp_fs* fs = malloc(sizeof(guac_rdp_fs));
 
+    fs->client = client;
     fs->drive_path = strdup(drive_path);
     fs->file_id_pool = guac_pool_alloc(0);
     fs->open_files = 0;
@@ -157,14 +157,17 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
 
     int flags = 0;
 
-    GUAC_RDP_DEBUG(2, "path=\"%s\", access=0x%x, file_attributes=0x%x, "
-                      "create_disposition=0x%x, create_options=0x%x",
-                      path, access, file_attributes, create_disposition,
-                      create_options);
+    guac_client_log(fs->client, GUAC_LOG_DEBUG,
+            "%s: path=\"%s\", access=0x%x, file_attributes=0x%x, "
+            "create_disposition=0x%x, create_options=0x%x",
+            __func__, path, access, file_attributes,
+            create_disposition, create_options);
 
     /* If no files available, return too many open */
     if (fs->open_files >= GUAC_RDP_FS_MAX_FILES) {
-        GUAC_RDP_DEBUG(1, "%s", "Failure - too many open files.");
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Too many open files.",
+                __func__, path);
         return GUAC_RDP_FS_ENFILE;
     }
 
@@ -174,7 +177,9 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
 
     /* If path is relative, the file does not exist */
     else if (path[0] != '\\') {
-        GUAC_RDP_DEBUG(1, "Failure - path \"%s\" is relative.", path);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Access denied - supplied path \"%s\" is relative.",
+                __func__, path);
         return GUAC_RDP_FS_ENOENT;
     }
 
@@ -195,18 +200,21 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
 
     /* Normalize path, return no-such-file if invalid  */
     if (guac_rdp_fs_normalize_path(path, normalized_path)) {
-        GUAC_RDP_DEBUG(1, "Normalization of path \"%s\" failed.", path);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Normalization of path \"%s\" failed.", __func__, path);
         return GUAC_RDP_FS_ENOENT;
     }
 
-    GUAC_RDP_DEBUG(2, "Normalized path \"%s\" to \"%s\".",
-            path, normalized_path);
+    guac_client_log(fs->client, GUAC_LOG_DEBUG,
+            "%s: Normalized path \"%s\" to \"%s\".",
+            __func__, path, normalized_path);
 
     /* Translate normalized path to real path */
     __guac_rdp_fs_translate_path(fs, normalized_path, real_path);
 
-    GUAC_RDP_DEBUG(2, "Translated path \"%s\" to \"%s\".",
-            normalized_path, real_path);
+    guac_client_log(fs->client, GUAC_LOG_DEBUG,
+            "%s: Translated path \"%s\" to \"%s\".",
+            __func__, normalized_path, real_path);
 
     switch (create_disposition) {
 
@@ -253,7 +261,9 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
         /* Create directory */
         if (mkdir(real_path, S_IRWXU)) {
             if (errno != EEXIST || (flags & O_EXCL)) {
-                GUAC_RDP_DEBUG(1, "mkdir() failed: %s", strerror(errno));
+                guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                        "%s: mkdir() failed: %s",
+                        __func__, strerror(errno));
                 return guac_rdp_fs_get_errorcode(errno);
             }
         }
@@ -263,8 +273,9 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
 
     }
 
-    GUAC_RDP_DEBUG(2, "native open: real_path=\"%s\", flags=0x%x",
-            real_path, flags);
+    guac_client_log(fs->client, GUAC_LOG_DEBUG,
+            "%s: native open: real_path=\"%s\", flags=0x%x",
+            __func__, real_path, flags);
 
     /* Open file */
     fd = open(real_path, flags, S_IRUSR | S_IWUSR);
@@ -277,7 +288,8 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     }
 
     if (fd == -1) {
-        GUAC_RDP_DEBUG(1, "open() failed: %s", strerror(errno));
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: open() failed: %s", __func__, strerror(errno));
         return guac_rdp_fs_get_errorcode(errno);
     }
 
@@ -292,7 +304,9 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     file->real_path = strdup(real_path);
     file->bytes_written = 0;
 
-    GUAC_RDP_DEBUG(2, "Opened \"%s\" as file_id=%i", normalized_path, file_id);
+    guac_client_log(fs->client, GUAC_LOG_DEBUG,
+            "%s: Opened \"%s\" as file_id=%i",
+            __func__, normalized_path, file_id);
 
     /* Attempt to pull file information */
     if (fstat(fd, &file_stat) == 0) {
@@ -336,7 +350,8 @@ int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
 
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
-        GUAC_RDP_DEBUG(1, "Read from bad file_id: %i", file_id);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Read from bad file_id: %i", __func__, file_id);
         return GUAC_RDP_FS_EINVAL;
     }
 
@@ -359,7 +374,8 @@ int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, int offset,
 
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
-        GUAC_RDP_DEBUG(1, "Write to bad file_id: %i", file_id);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Write to bad file_id: %i", __func__, file_id);
         return GUAC_RDP_FS_EINVAL;
     }
 
@@ -384,25 +400,31 @@ int guac_rdp_fs_rename(guac_rdp_fs* fs, int file_id,
 
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
-        GUAC_RDP_DEBUG(1, "Rename of bad file_id: %i", file_id);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Rename of bad file_id: %i", __func__, file_id);
         return GUAC_RDP_FS_EINVAL;
     }
 
     /* Normalize path, return no-such-file if invalid  */
     if (guac_rdp_fs_normalize_path(new_path, normalized_path)) {
-        GUAC_RDP_DEBUG(1, "Normalization of path \"%s\" failed.", new_path);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Normalization of path \"%s\" failed.",
+                __func__, new_path);
         return GUAC_RDP_FS_ENOENT;
     }
 
     /* Translate normalized path to real path */
     __guac_rdp_fs_translate_path(fs, normalized_path, real_path);
 
-    GUAC_RDP_DEBUG(2, "Renaming \"%s\" -> \"%s\"", file->real_path, real_path);
+    guac_client_log(fs->client, GUAC_LOG_DEBUG,
+            "%s: Renaming \"%s\" -> \"%s\"",
+            __func__, file->real_path, real_path);
 
     /* Perform rename */
     if (rename(file->real_path, real_path)) {
-        GUAC_RDP_DEBUG(1, "rename() failed: \"%s\" -> \"%s\"",
-                file->real_path, real_path);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: rename() failed: \"%s\" -> \"%s\"",
+                __func__, file->real_path, real_path);
         return guac_rdp_fs_get_errorcode(errno);
     }
 
@@ -415,21 +437,24 @@ int guac_rdp_fs_delete(guac_rdp_fs* fs, int file_id) {
     /* Get file */
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
-        GUAC_RDP_DEBUG(1, "Delete of bad file_id: %i", file_id);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Delete of bad file_id: %i", __func__, file_id);
         return GUAC_RDP_FS_EINVAL;
     }
 
     /* If directory, attempt removal */
     if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
         if (rmdir(file->real_path)) {
-            GUAC_RDP_DEBUG(1, "rmdir() failed: \"%s\"", file->real_path);
+            guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                    "%s: rmdir() failed: \"%s\"", __func__, file->real_path);
             return guac_rdp_fs_get_errorcode(errno);
         }
     }
 
     /* Otherwise, attempt deletion */
     else if (unlink(file->real_path)) {
-        GUAC_RDP_DEBUG(1, "unlink() failed: \"%s\"", file->real_path);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: unlink() failed: \"%s\"", __func__, file->real_path);
         return guac_rdp_fs_get_errorcode(errno);
     }
 
@@ -442,14 +467,16 @@ int guac_rdp_fs_truncate(guac_rdp_fs* fs, int file_id, int length) {
     /* Get file */
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
-        GUAC_RDP_DEBUG(1, "Delete of bad file_id: %i", file_id);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Delete of bad file_id: %i", __func__, file_id);
         return GUAC_RDP_FS_EINVAL;
     }
 
     /* Attempt truncate */
     if (ftruncate(file->fd, length)) {
-        GUAC_RDP_DEBUG(1, "ftruncate() to %i bytes failed: \"%s\"",
-                length, file->real_path);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: ftruncate() to %i bytes failed: \"%s\"",
+                __func__, length, file->real_path);
         return guac_rdp_fs_get_errorcode(errno);
     }
 
@@ -461,15 +488,17 @@ void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id) {
 
     guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
     if (file == NULL) {
-        GUAC_RDP_DEBUG(2, "Ignoring close for bad file_id: %i",
-                file_id);
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Ignoring close for bad file_id: %i",
+                __func__, file_id);
         return;
     }
 
     file = &(fs->files[file_id]);
 
-    GUAC_RDP_DEBUG(2, "Closed \"%s\" (file_id=%i)",
-            file->absolute_path, file_id);
+    guac_client_log(fs->client, GUAC_LOG_DEBUG,
+            "%s: Closed \"%s\" (file_id=%i)",
+            __func__, file->absolute_path, file_id);
 
     /* Close directory, if open */
     if (file->dir != NULL)
