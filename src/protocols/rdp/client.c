@@ -162,7 +162,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
                 "cliprdr", NULL))
-        guac_client_log(client, GUAC_LOG_ERROR, "Failed to load cliprdr plugin.");
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Failed to load cliprdr plugin. Clipboard will not work.");
 
     /* If audio enabled, choose an encoder */
     if (guac_client_data->settings.audio_enabled) {
@@ -175,8 +176,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             /* Load sound plugin */
             if (freerdp_channels_load_plugin(channels, instance->settings,
                         "guacsnd", guac_client_data->audio))
-                guac_client_log(client, GUAC_LOG_ERROR,
-                        "Failed to load guacsnd plugin.");
+                guac_client_log(client, GUAC_LOG_WARNING,
+                        "Failed to load guacsnd plugin. Audio will not work.");
 
         }
         else
@@ -199,8 +200,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         /* Load RDPDR plugin */
         if (freerdp_channels_load_plugin(channels, instance->settings,
                     "guacdr", client))
-            guac_client_log(client, GUAC_LOG_ERROR,
-                    "Failed to load guacdr plugin.");
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Failed to load guacdr plugin. Drive redirection and printing will not work.");
 
     }
 
@@ -221,12 +222,14 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         /* Attempt to load rail */
         if (freerdp_channels_load_plugin(channels, instance->settings,
                     "rail", plugin_data))
-            guac_client_log(client, GUAC_LOG_ERROR, "Failed to load rail plugin.");
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Failed to load rail plugin. RemoteApp will not work.");
 #else
         /* Attempt to load rail */
         if (freerdp_channels_load_plugin(channels, instance->settings,
                     "rail", instance->settings))
-            guac_client_log(client, GUAC_LOG_ERROR, "Failed to load rail plugin.");
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Failed to load rail plugin. RemoteApp will not work.");
 #endif
 
     }
@@ -242,8 +245,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             /* Attempt to load guacsvc plugin for new static channel */
             if (freerdp_channels_load_plugin(channels, instance->settings,
                         "guacsvc", svc)) {
-                guac_client_log(client, GUAC_LOG_ERROR,
-                        "Failed to load guacsvc plugin for channel \"%s\".",
+                guac_client_log(client, GUAC_LOG_WARNING,
+                        "Cannot create static channel \"%s\": failed to load guacsvc plugin.",
                         svc->name);
                 guac_rdp_free_svc(svc);
             }
