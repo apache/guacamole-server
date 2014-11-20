@@ -378,15 +378,17 @@ then
     freerdp_interface=unknown
     event_interface=unknown
 
-    # libfreerdp-core
+    # libfreerdp-core / libfreerdp
     AC_CHECK_LIB([freerdp-core], [freerdp_new],
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-core"],
-                 [AC_MSG_WARN([
+                 [AC_CHECK_LIB([freerdp], [freerdp_new],
+                               [RDP_LIBS="$RDP_LIBS -lfreerdp -lfreerdp-client"],
+                               [AC_MSG_WARN([
   --------------------------------------------
-   Unable to find libfreerdp-core
+   Unable to find libfreerdp-core / libfreerdp
    RDP will be disabled.
   --------------------------------------------])
-                  have_freerdp=no])
+                  have_freerdp=no])])
 fi
 
 
@@ -394,13 +396,7 @@ fi
 if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_LIB([freerdp-cache], [glyph_cache_register_callbacks],
-                 [RDP_LIBS="$RDP_LIBS -lfreerdp-cache"],
-                 [AC_MSG_WARN([
-  --------------------------------------------
-   Unable to find libfreerdp-cache
-   RDP will be disabled.
-  --------------------------------------------])
-                  have_freerdp=no])
+                 [RDP_LIBS="$RDP_LIBS -lfreerdp-cache"])
 fi
 
 # libfreerdp-channels (1.0) / libfreerdp-client (1.1)
@@ -417,26 +413,14 @@ fi
 if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_LIB([freerdp-utils], [svc_plugin_init],
-                 [RDP_LIBS="$RDP_LIBS -lfreerdp-utils"],
-                 [AC_MSG_WARN([
-  --------------------------------------------
-   Unable to find libfreerdp-utils
-   RDP will be disabled.
-  --------------------------------------------])
-                  have_freerdp=no])
+                 [RDP_LIBS="$RDP_LIBS -lfreerdp-utils"])
 fi
 
 # libfreerdp-codec
 if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_LIB([freerdp-codec], [freerdp_image_convert],
-                 [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"],
-                 [AC_MSG_WARN([
-  --------------------------------------------
-   Unable to find libfreerdp-codec
-   RDP will be disabled.
-  --------------------------------------------])
-                  have_freerdp=no])
+                 [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"])
 fi
 
 # Check for interval polling in plugins
