@@ -86,8 +86,13 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
                 32, ((rdp_freerdp_context*) context)->clrconv);
 
         /* Free existing image, if any */
-        if (image_buffer != bitmap->data)
+        if (image_buffer != bitmap->data) {
+#ifdef FREERDP_BITMAP_REQUIRES_ALIGNED_MALLOC
             _aligned_free(bitmap->data);
+#else
+            free(bitmap->data);
+#endif
+        }
 
         /* Store converted image in bitmap */
         bitmap->data = image_buffer;
@@ -195,7 +200,11 @@ void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* d
 
     int size = width * height * 4;
 
+#ifdef FREERDP_BITMAP_REQUIRES_ALIGNED_MALLOC
     bitmap->data = (UINT8*) _aligned_malloc(size, 16);
+#else
+    bitmap->data = (UINT8*) malloc(size);
+#endif
 
     if (compressed) {
 

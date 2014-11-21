@@ -668,7 +668,9 @@ fi
 # Check for rdpContext.codecs
 if test "x${have_freerdp}" = "xyes"
 then
-    AC_CHECK_MEMBERS([rdpContext.codecs],,,
+    AC_CHECK_MEMBERS([rdpContext.codecs],
+                     [AC_DEFINE([FREERDP_BITMAP_REQUIRES_ALIGNED_MALLOC],,
+                                [Whether this version of FreeRDP requires _aligned_malloc() for bitmap data])],,
                      [[#include <freerdp/freerdp.h>]])
 fi
 
