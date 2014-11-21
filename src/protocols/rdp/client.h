@@ -38,6 +38,10 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 
+#ifdef HAVE_FREERDP_CLIENT_DISP_H
+#include <freerdp/client/disp.h>
+#endif
+
 #include <pthread.h>
 #include <stdint.h>
 
@@ -152,6 +156,13 @@ typedef struct rdp_guac_client_data {
      * The filesystem being shared, if any.
      */
     guac_rdp_fs* filesystem;
+
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+    /**
+     * Display control interface.
+     */
+    DispClientContext* disp;
+#endif
 
     /**
      * List of all available static virtual channels.

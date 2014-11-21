@@ -34,6 +34,10 @@
 #include "rdp_stream.h"
 #include "rdp_svc.h"
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+#include "rdp_disp.h"
+#endif
+
 #include <freerdp/cache/bitmap.h>
 #include <freerdp/cache/brush.h>
 #include <freerdp/cache/glyph.h>
@@ -157,6 +161,18 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 #ifdef HAVE_FREERDP_REGISTER_ADDIN_PROVIDER
     /* Init FreeRDP add-in provider */
     freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
+#endif
+
+    /* Load virtual channel management plugin */
+    if (freerdp_channels_load_plugin(channels, instance->settings,
+                "drdynvc", instance->settings))
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Failed to load drdynvc plugin.");
+
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+    /* Init display update plugin */
+    guac_client_data->disp = NULL;
+    guac_rdp_disp_load_plugin(instance->context);
 #endif
 
     /* Load clipboard plugin */
@@ -357,6 +373,7 @@ BOOL rdp_freerdp_post_connect(freerdp* instance) {
     client->handle_messages = rdp_guac_client_handle_messages;
     client->mouse_handler = rdp_guac_client_mouse_handler;
     client->key_handler = rdp_guac_client_key_handler;
+    client->size_handler = rdp_guac_client_size_handler;
 
     /* Stream handlers */
     client->clipboard_handler = guac_rdp_clipboard_handler;

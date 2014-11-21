@@ -106,6 +106,12 @@ guacsnd_sources += compat/winpr-stream.c
 guacdr_sources  += compat/winpr-stream.c
 endif
 
+# Add display update channel support, if supported by FreeRDP
+if ENABLE_DISPLAY_UPDATE
+noinst_HEADERS += rdp_disp.h
+libguac_client_rdp_la_SOURCES += rdp_disp.c
+endif
+
 libguac_client_rdp_la_LDFLAGS = -version-info 0:0:0 @RDP_LIBS@ @PTHREAD_LIBS@ @CAIRO_LIBS@
 guacsvc_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@
 guacsnd_ldflags = -module -avoid-version -shared @RDP_LIBS@ @PTHREAD_LIBS@

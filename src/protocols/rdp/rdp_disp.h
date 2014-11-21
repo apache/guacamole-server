@@ -20,19 +20,23 @@
  * THE SOFTWARE.
  */
 
+#ifndef GUAC_RDP_DISP_H
+#define GUAC_RDP_DISP_H
 
-#ifndef _GUAC_RDP_GUAC_HANDLERS_H
-#define _GUAC_RDP_GUAC_HANDLERS_H
+#include <freerdp/freerdp.h>
 
-#include "config.h"
+/**
+ * Loads the "disp" plugin for FreeRDP. If successfully loaded, it will be
+ * stored within the guac_client data.
+ */
+void guac_rdp_disp_load_plugin(rdpContext* context);
 
-#include <guacamole/client.h>
-
-int rdp_guac_client_free_handler(guac_client* client);
-int rdp_guac_client_handle_messages(guac_client* client);
-int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int rdp_guac_client_size_handler(guac_client* client, int width, int height);
+/**
+ * Sends a display update message to the RDP server, notifying that the
+ * monitor layout has changed to a single monitor of the given width and
+ * height (in pixels).
+ */
+void guac_rdp_disp_send_size(rdpContext* context, int width, int height);
 
 #endif
 

@@ -44,6 +44,10 @@
 #include <guacamole/protocol.h>
 #include <guacamole/timestamp.h>
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+#include "rdp_disp.h"
+#endif
+
 #ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
 #include <freerdp/client/cliprdr.h>
 #else
@@ -453,6 +457,22 @@ int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed) {
         GUAC_RDP_KEYSYM_LOOKUP(guac_client_data->keysym_state, keysym) = pressed;
 
     return __guac_rdp_send_keysym(client, keysym, pressed);
+
+}
+
+int rdp_guac_client_size_handler(guac_client* client, int width, int height) {
+
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+    rdp_guac_client_data* guac_client_data =
+        (rdp_guac_client_data*) client->data;
+
+    freerdp* rdp_inst = guac_client_data->rdp_inst;
+
+    /* Send display update */
+    guac_rdp_disp_send_size(rdp_inst->context, width, height);
+#endif
+
+    return 0;
 
 }
 
