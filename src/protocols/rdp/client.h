@@ -192,6 +192,11 @@ typedef struct rdp_freerdp_context {
      */
     CLRCONV* clrconv;
 
+    /**
+     * The current color palette, as received from the RDP server.
+     */
+    UINT32 palette[256];
+
 } rdp_freerdp_context;
 
 #endif

@@ -320,11 +320,11 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
     /* Get client data */
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    UINT32* palette = ((rdp_freerdp_context*) context)->palette;
 
-    UINT32 color = freerdp_color_convert_var(opaque_rect->color,
-            client_data->settings.color_depth, 32,
-            ((rdp_freerdp_context*) context)->clrconv);
+    UINT32 color = freerdp_convert_gdi_order_color(opaque_rect->color,
+            guac_rdp_get_depth(context->instance),
+            PIXEL_FORMAT_ARGB32, (BYTE*) palette);
 
     guac_common_surface* current_surface = ((rdp_guac_client_data*) client->data)->current_surface;
 
@@ -340,15 +340,55 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
 }
 
-void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette) {
+/**
+ * Updates the palette within a FreeRDP CLRCONV object using the new palette
+ * entries provided by an RDP palette update.
+ */
+static void guac_rdp_update_clrconv(CLRCONV* clrconv,
+        PALETTE_UPDATE* palette) {
 
-    CLRCONV* clrconv = ((rdp_freerdp_context*) context)->clrconv;
     clrconv->palette->count = palette->number;
 #ifdef LEGACY_RDPPALETTE
     clrconv->palette->entries = palette->entries;
 #else
-    memcpy(clrconv->palette->entries, palette->entries, sizeof(palette->entries));
+    memcpy(clrconv->palette->entries, palette->entries,
+            sizeof(palette->entries));
 #endif
+
+}
+
+/**
+ * Updates a raw ARGB32 palette using the new palette entries provided by an
+ * RDP palette update.
+ */
+static void guac_rdp_update_palette(UINT32* guac_palette,
+        PALETTE_UPDATE* palette) {
+
+    PALETTE_ENTRY* entry = palette->entries;
+    int i;
+
+    /* Copy each palette entry as ARGB32 */
+    for (i=0; i < palette->number; i++) {
+
+        *guac_palette = 0xFF000000
+                      | (entry->red   << 16)
+                      | (entry->green << 8)
+                      |  entry->blue;
+
+        guac_palette++;
+        entry++;
+    }
+
+}
+
+void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette) {
+
+    CLRCONV* clrconv = ((rdp_freerdp_context*) context)->clrconv;
+    UINT32* guac_palette = ((rdp_freerdp_context*) context)->palette;
+
+    /* Update internal palette representations */
+    guac_rdp_update_clrconv(clrconv, palette);
+    guac_rdp_update_palette(guac_palette, palette);
 
 }
 

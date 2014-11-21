@@ -128,6 +128,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
         int x, int y, int width, int height, UINT32 fgcolor, UINT32 bgcolor) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
+    UINT32* palette = ((rdp_freerdp_context*) context)->palette;
     rdp_guac_client_data* guac_client_data =
         (rdp_guac_client_data*) client->data;
 
@@ -137,7 +138,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
         /* Convert background color */
         bgcolor = freerdp_convert_gdi_order_color(bgcolor,
             guac_rdp_get_depth(context->instance),
-            PIXEL_FORMAT_ARGB32, NULL);
+            PIXEL_FORMAT_ARGB32, (BYTE*) palette);
 
         guac_common_surface_rect(guac_client_data->current_surface, x, y, width, height,
                                  (bgcolor & 0xFF0000) >> 16,
@@ -150,7 +151,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
     guac_client_data->glyph_color =
         freerdp_convert_gdi_order_color(fgcolor,
             guac_rdp_get_depth(context->instance),
-            PIXEL_FORMAT_ARGB32, NULL);
+            PIXEL_FORMAT_ARGB32, (BYTE*) palette);
 
 }
 
