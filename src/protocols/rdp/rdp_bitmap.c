@@ -31,7 +31,6 @@
 #include <freerdp/codec/bitmap.h>
 #include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
-#include <freerdp/gdi/gdi.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
 
@@ -88,7 +87,7 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
         /* Free existing image, if any */
         if (image_buffer != bitmap->data)
-            free(bitmap->data);
+            _aligned_free(bitmap->data);
 
         /* Store converted image in bitmap */
         bitmap->data = image_buffer;
@@ -194,13 +193,13 @@ void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* d
         int width, int height, int bpp, int length, BOOL compressed, int codec_id) {
 #endif
 
-    UINT32* palette = ((rdp_freerdp_context*) context)->palette;
     int size = width * height * 4;
 
     bitmap->data = (UINT8*) _aligned_malloc(size, 16);
 
     if (compressed) {
 
+#ifdef HAVE_RDPCONTEXT_CODECS 
         rdpCodecs* codecs = context->codecs;
         UINT32* palette = ((rdp_freerdp_context*) context)->palette;
 
@@ -219,16 +218,20 @@ void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* d
                 &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height, TRUE);
         }
 
+        bitmap->bpp = 32;
+#else
+        bitmap_decompress(data, bitmap->data, width, height, length, bpp, bpp);
+        bitmap->bpp = bpp;
+#endif
+
     }
-    else
-        freerdp_image_copy(
-                bitmap->data, PIXEL_FORMAT_XRGB32, -1, 0, 0,
-                width, height, data, gdi_get_pixel_format(bpp, TRUE), -1, 0, 0,
-                (BYTE*) palette);
+    else {
+        freerdp_image_flip(data, bitmap->data, width, height, bpp);
+        bitmap->bpp = bpp;
+    }
 
     bitmap->compressed = FALSE;
     bitmap->length = size;
-    bitmap->bpp = 32;
 
 }
 

@@ -653,6 +653,17 @@ then
 fi
 
 #
+# FreeRDP: rdpContext
+#
+
+# Check for rdpContext.codecs
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_MEMBERS([rdpContext.codecs],,,
+                     [[#include <freerdp/freerdp.h>]])
+fi
+
+#
 # FreeRDP: rdpPalette
 #
 
