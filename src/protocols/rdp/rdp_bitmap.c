@@ -31,6 +31,7 @@
 #include <freerdp/codec/bitmap.h>
 #include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/gdi/gdi.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
 
@@ -224,7 +225,10 @@ void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* d
     if (compressed)
         bitmap_decompress(context, data, length, bpp, width, height, bitmap->data);
     else
-        freerdp_image_flip(data, bitmap->data, width, height, bpp);
+        freerdp_image_copy(
+                bitmap->data, PIXEL_FORMAT_XRGB32, -1, 0, 0,
+                width, height, data, gdi_get_pixel_format(bpp, TRUE), -1, 0, 0,
+                NULL);
 
     bitmap->compressed = FALSE;
     bitmap->length = size;
