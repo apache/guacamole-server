@@ -25,6 +25,7 @@
 #include "client.h"
 #include "guac_surface.h"
 #include "rdp_bitmap.h"
+#include "rdp_color.h"
 #include "rdp_settings.h"
 
 #include <cairo/cairo.h>
@@ -320,11 +321,8 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
     /* Get client data */
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    UINT32* palette = ((rdp_freerdp_context*) context)->palette;
 
-    UINT32 color = freerdp_convert_gdi_order_color(opaque_rect->color,
-            guac_rdp_get_depth(context->instance),
-            PIXEL_FORMAT_ARGB32, (BYTE*) palette);
+    UINT32 color = guac_rdp_convert_color(context, opaque_rect->color);
 
     guac_common_surface* current_surface = ((rdp_guac_client_data*) client->data)->current_surface;
 

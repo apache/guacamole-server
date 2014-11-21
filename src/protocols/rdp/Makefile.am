@@ -33,6 +33,7 @@ libguac_client_rdp_la_SOURCES = \
 	guac_handlers.c             \
 	rdp_bitmap.c                \
 	rdp_cliprdr.c               \
+	rdp_color.c                 \
 	rdp_fs.c                    \
 	rdp_gdi.c                   \
 	rdp_glyph.c                 \
@@ -83,6 +84,7 @@ noinst_HEADERS =                             \
 	guac_handlers.h                          \
 	rdp_bitmap.h                             \
 	rdp_cliprdr.h                            \
+	rdp_color.h                              \
 	rdp_fs.h                                 \
 	rdp_gdi.h                                \
 	rdp_glyph.h                              \

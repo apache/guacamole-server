@@ -423,6 +423,15 @@ then
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-codec"])
 fi
 
+# Available color conversion functions
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_DECL([freerdp_convert_gdi_order_color],
+        [AC_DEFINE([HAVE_FREERDP_CONVERT_GDI_ORDER_COLOR],,
+                   [Whether freerdp_convert_gdi_order_color() id defined])],,
+        [#include <freerdp/codec/color.h>])
+fi
+
 # Check for interval polling in plugins
 if test "x${have_freerdp}" = "xyes"
 then
