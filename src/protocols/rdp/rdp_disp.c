@@ -83,7 +83,7 @@ void guac_rdp_disp_send_size(rdpContext* context, int width, int height) {
     if (guac_client_data->disp != NULL) {
 
         guac_client_log(client, GUAC_LOG_DEBUG,
-                "Resizing remote display to %ix%i\n",
+                "Resizing remote display to %ix%i",
                 width, height);
 
         DISPLAY_CONTROL_MONITOR_LAYOUT monitors[1] = {{
