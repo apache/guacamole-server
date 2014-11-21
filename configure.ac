@@ -474,6 +474,16 @@ then
                       #include <winpr/collections.h>])
 fi
 
+# Header defining display update channel
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_HEADERS([freerdp/client/disp.h],
+                     [AC_DEFINE([HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT],,
+                                [Whether FreeRDP supports the display update channel])],,
+                     [#include <winpr/wtypes.h>
+                      #include <winpr/collections.h>])
+fi
+
 # Addin registration variations
 if test "x${have_freerdp}" = "xyes"
 then
