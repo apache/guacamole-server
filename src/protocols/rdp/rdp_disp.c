@@ -20,6 +20,7 @@
  * THE SOFTWARE.
  */
 
+#include "config.h"
 #include "client.h"
 
 #include <freerdp/freerdp.h>
@@ -58,7 +59,9 @@ void guac_rdp_disp_load_plugin(rdpContext* context) {
     PubSub_SubscribeChannelConnected(context->pubSub,
             (pChannelConnectedEventHandler) guac_rdp_disp_channel_connected);
 
+#ifdef HAVE_RDPSETTINGS_SUPPORTDISPLAYCONTROL
     context->settings->SupportDisplayControl = TRUE;
+#endif
 
     /* Add "disp" channel */
     ADDIN_ARGV* args = malloc(sizeof(ADDIN_ARGV));
