@@ -469,7 +469,9 @@ int rdp_guac_client_size_handler(guac_client* client, int width, int height) {
     freerdp* rdp_inst = guac_client_data->rdp_inst;
 
     /* Send display update */
+    pthread_mutex_lock(&(guac_client_data->rdp_lock));
     guac_rdp_disp_send_size(rdp_inst->context, width, height);
+    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 #endif
 
     return 0;
