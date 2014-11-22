@@ -89,6 +89,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "password",
     "width",
     "height",
+    "dpi",
     "initial-program",
     "color-depth",
     "disable-audio",
@@ -117,6 +118,7 @@ enum RDP_ARGS_IDX {
     IDX_PASSWORD,
     IDX_WIDTH,
     IDX_HEIGHT,
+    IDX_DPI,
     IDX_INITIAL_PROGRAM,
     IDX_COLOR_DEPTH,
     IDX_DISABLE_AUDIO,
@@ -469,12 +471,38 @@ static int __guac_rdp_reduce_resolution(guac_client* client, int resolution) {
         client->info.optimal_width = width;
         client->info.optimal_height = height;
         client->info.optimal_resolution = resolution;
-        guac_client_log(client, GUAC_LOG_INFO, "Reducing resolution to %ix%i at %i DPI", width, height, resolution);
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Reducing resolution to %i DPI (%ix%i)", resolution, width, height);
         return 1;
     }
 
     /* No reduction performed */
     return 0;
+
+}
+
+/**
+ * Forces the client resolution to the given value, without checking whether
+ * the resulting width and height are reasonable.
+ */
+static void __guac_rdp_force_resolution(guac_client* client, int resolution) {
+
+    int width  = client->info.optimal_width  * resolution / client->info.optimal_resolution;
+    int height = client->info.optimal_height * resolution / client->info.optimal_resolution;
+
+    /* Do not force DPI to zero */
+    if (resolution == 0) {
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Cowardly refusing to force resolution to %i DPI", resolution);
+        return;
+    }
+
+    /* Reduced resolution if result is reasonably sized */
+    client->info.optimal_width = width;
+    client->info.optimal_height = height;
+    client->info.optimal_resolution = resolution;
+    guac_client_log(client, GUAC_LOG_INFO,
+            "Resolution forced to %i DPI (%ix%i)", resolution, width, height);
 
 }
 
@@ -572,8 +600,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             client->info.optimal_height,
             client->info.optimal_resolution);
 
-    /* Attempt to reduce resolution for high DPI */
-    if (client->info.optimal_resolution > GUAC_RDP_NATIVE_RESOLUTION
+    /* Use optimal resolution unless overridden */
+    if (argv[IDX_DPI][0] != '\0')
+        __guac_rdp_force_resolution(client, atoi(argv[IDX_DPI]));
+
+    /* If resolution not forced, attempt to reduce resolution for high DPI */
+    else if (client->info.optimal_resolution > GUAC_RDP_NATIVE_RESOLUTION
             && !__guac_rdp_reduce_resolution(client, GUAC_RDP_NATIVE_RESOLUTION)
             && !__guac_rdp_reduce_resolution(client, GUAC_RDP_HIGH_RESOLUTION))
         guac_client_log(client, GUAC_LOG_INFO, "No reasonable lower resolution");
