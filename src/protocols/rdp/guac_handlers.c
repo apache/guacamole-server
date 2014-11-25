@@ -89,6 +89,11 @@ int rdp_guac_client_free_handler(guac_client* client) {
     if (guac_client_data->filesystem != NULL)
         guac_rdp_fs_free(guac_client_data->filesystem);
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+    /* Free display update module */
+    guac_rdp_disp_free(guac_client_data->disp);
+#endif
+
     /* Free SVC list */
     guac_common_list_free(guac_client_data->available_svc);
 
@@ -187,6 +192,13 @@ int rdp_guac_client_handle_messages(guac_client* client) {
     freerdp* rdp_inst = guac_client_data->rdp_inst;
     rdpChannels* channels = rdp_inst->context->channels;
     wMessage* event;
+
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+    /* Update remote display size */
+    pthread_mutex_lock(&(guac_client_data->rdp_lock));
+    guac_rdp_disp_update_size(guac_client_data->disp, rdp_inst->context);
+    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+#endif
 
     /* Wait for messages */
     int wait_result = rdp_guac_client_wait_for_messages(client, 250000);
@@ -470,7 +482,8 @@ int rdp_guac_client_size_handler(guac_client* client, int width, int height) {
 
     /* Send display update */
     pthread_mutex_lock(&(guac_client_data->rdp_lock));
-    guac_rdp_disp_send_size(rdp_inst->context, width, height);
+    guac_rdp_disp_set_size(guac_client_data->disp, rdp_inst->context,
+            width, height);
     pthread_mutex_unlock(&(guac_client_data->rdp_lock));
 #endif
 

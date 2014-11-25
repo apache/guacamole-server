@@ -421,6 +421,10 @@ void guac_rdp_gdi_desktop_resize(rdpContext* context) {
 
     guac_common_surface_reset_clip(data->default_surface);
 
+    guac_client_log(client, GUAC_LOG_DEBUG, "Server resized display to %ix%i",
+            guac_rdp_get_width(context->instance),
+            guac_rdp_get_height(context->instance));
+
 }
 
 

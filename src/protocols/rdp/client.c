@@ -146,6 +146,39 @@ int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, UINT8* data, i
     return freerdp_channels_data(rdp_inst, channelId, data, size, flags, total_size);
 }
 
+#ifdef HAVE_FREERDP_PUBSUB
+/**
+ * Called whenever a channel connects.
+ */
+static void guac_rdp_channel_connected(rdpContext* context,
+        ChannelConnectedEventArgs* e) {
+
+#ifdef HAVE_RDPSETTINGS_SUPPORTDISPLAYCONTROL
+    /* Store reference to the display update plugin once it's connected */
+    if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0) {
+
+        DispClientContext* disp = (DispClientContext*) e->pInterface;
+
+        guac_client* client = ((rdp_freerdp_context*) context)->client;
+        rdp_guac_client_data* guac_client_data =
+            (rdp_guac_client_data*) client->data;
+
+        /* Init module with current display size */
+        guac_rdp_disp_set_size(guac_client_data->disp, context,
+                guac_rdp_get_width(context->instance),
+                guac_rdp_get_height(context->instance));
+
+        /* Store connected channel */
+        guac_rdp_disp_connect(guac_client_data->disp, disp);
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Display update channel connected.");
+
+    }
+#endif
+
+}
+#endif
+
 BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
@@ -171,9 +204,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load drdynvc plugin.");
 
+#ifdef HAVE_FREERDP_PUBSUB
+    /* Subscribe to and handle channel connected events */
+    PubSub_SubscribeChannelConnected(context->pubSub,
+            (pChannelConnectedEventHandler) guac_rdp_channel_connected);
+#endif
+
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /* Init display update plugin */
-    guac_client_data->disp = NULL;
+    guac_client_data->disp = guac_rdp_disp_alloc();
     guac_rdp_disp_load_plugin(instance->context);
 #endif
 
