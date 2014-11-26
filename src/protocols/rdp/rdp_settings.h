@@ -123,6 +123,12 @@ typedef struct guac_rdp_settings {
     int height;
 
     /**
+     * The DPI of the remote display to assume when converting between
+     * client pixels and remote pixels.
+     */
+    int resolution;
+
+    /**
      * Whether audio is enabled.
      */
     int audio_enabled;
