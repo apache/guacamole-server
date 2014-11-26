@@ -33,14 +33,14 @@
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+#include "rdp_disp.h"
+#endif
+
 #include <freerdp/freerdp.h>
 #include <freerdp/codec/color.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
-
-#ifdef HAVE_FREERDP_CLIENT_DISP_H
-#include <freerdp/client/disp.h>
-#endif
 
 #include <pthread.h>
 #include <stdint.h>
@@ -159,9 +159,9 @@ typedef struct rdp_guac_client_data {
 
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /**
-     * Display control interface.
+     * Display size update module.
      */
-    DispClientContext* disp;
+    guac_rdp_disp* disp;
 #endif
 
     /**
