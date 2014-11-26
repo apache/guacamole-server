@@ -156,7 +156,13 @@ int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, UINT8* data, i
 
 #ifdef HAVE_FREERDP_EVENT_PUBSUB
 /**
- * Called whenever a channel connects.
+ * Called whenever a channel connects via the PubSub event system within
+ * FreeRDP.
+ *
+ * @param context The rdpContext associated with the active RDP session.
+ * @param e Event-specific arguments, mainly the name of the channel, and a
+ *          reference to the associated plugin loaded for that channel by
+ *          FreeRDP.
  */
 static void guac_rdp_channel_connected(rdpContext* context,
         ChannelConnectedEventArgs* e) {
