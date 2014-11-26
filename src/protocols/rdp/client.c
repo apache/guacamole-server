@@ -57,6 +57,14 @@
 #include "compat/client-cliprdr.h"
 #endif
 
+#ifdef HAVE_FREERDP_CLIENT_DISP_H
+#include <freerdp/client/disp.h>
+#endif
+
+#ifdef HAVE_FREERDP_EVENT_PUBSUB
+#include <freerdp/event.h>
+#endif
+
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
 #else
@@ -146,7 +154,7 @@ int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, UINT8* data, i
     return freerdp_channels_data(rdp_inst, channelId, data, size, flags, total_size);
 }
 
-#ifdef HAVE_FREERDP_PUBSUB
+#ifdef HAVE_FREERDP_EVENT_PUBSUB
 /**
  * Called whenever a channel connects.
  */
@@ -204,7 +212,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load drdynvc plugin.");
 
-#ifdef HAVE_FREERDP_PUBSUB
+#ifdef HAVE_FREERDP_EVENT_PUBSUB
     /* Subscribe to and handle channel connected events */
     PubSub_SubscribeChannelConnected(context->pubSub,
             (pChannelConnectedEventHandler) guac_rdp_channel_connected);

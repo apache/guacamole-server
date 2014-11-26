@@ -491,10 +491,10 @@ fi
 # Support for "PubSub" event system
 if test "x${have_freerdp}" = "xyes"
 then
-    AC_CHECK_MEMBERS([rdpContext.pubSub],
-                     [AC_DEFINE([HAVE_FREERDP_PUBSUB],,
-                                [Whether this version of FreeRDP provides the PubSub event system])],,
-                     [[#include <freerdp/freerdp.h>]])
+    AC_CHECK_DECL([PubSub_SubscribeChannelConnected],
+        [AC_DEFINE([HAVE_FREERDP_EVENT_PUBSUB],,
+                   [Whether this version of FreeRDP provides the PubSub event system])],,
+        [#include <freerdp/event.h>])
 fi
 
 # Addin registration variations
