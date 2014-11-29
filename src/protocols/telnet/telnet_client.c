@@ -158,6 +158,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
             if (client_data->username_regex != NULL) {
                 if (__guac_telnet_regex_search(client, client_data->username_regex, client_data->username,
                                            event->data.buffer, event->data.size)) {
+                    guac_client_log(client, GUAC_LOG_DEBUG, "Username sent");
                     regfree(client_data->username_regex);
                     free(client_data->username_regex);
                     client_data->username_regex = NULL;
@@ -168,6 +169,8 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
             if (client_data->password_regex != NULL) {
                 if (__guac_telnet_regex_search(client, client_data->password_regex, client_data->password,
                                            event->data.buffer, event->data.size)) {
+
+                    guac_client_log(client, GUAC_LOG_DEBUG, "Password sent");
 
                     /* Do not continue searching for username once password is sent */
                     if (client_data->username_regex != NULL) {
@@ -227,7 +230,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Connection warnings */
         case TELNET_EV_WARNING:
-            guac_client_log(client, GUAC_LOG_INFO, "%s", event->error.msg);
+            guac_client_log(client, GUAC_LOG_WARNING, "%s", event->error.msg);
             break;
 
         /* Connection errors */
@@ -322,13 +325,13 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
                 connected_address, sizeof(connected_address),
                 connected_port, sizeof(connected_port),
                 NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log(client, GUAC_LOG_INFO, "Unable to resolve host: %s", gai_strerror(retval));
+            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to resolve host: %s", gai_strerror(retval));
 
         /* Connect */
         if (connect(fd, current_address->ai_addr,
                         current_address->ai_addrlen) == 0) {
 
-            guac_client_log(client, GUAC_LOG_INFO, "Successfully connected to "
+            guac_client_log(client, GUAC_LOG_DEBUG, "Successfully connected to "
                     "host %s, port %s", connected_address, connected_port);
 
             /* Done if successful connect */
@@ -338,7 +341,7 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
 
         /* Otherwise log information regarding bind failure */
         else
-            guac_client_log(client, GUAC_LOG_INFO, "Unable to connect to "
+            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
                     "host %s, port %s: %s",
                     connected_address, connected_port, strerror(errno));
 

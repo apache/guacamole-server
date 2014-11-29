@@ -1124,6 +1124,9 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     /* If size has changed */
     if (columns != terminal->term_width || rows != terminal->term_height) {
 
+        guac_client_log(terminal->client, GUAC_LOG_DEBUG,
+                "Resizing terminal to %ix%i", rows, columns);
+
         /* Resize terminal */
         __guac_terminal_resize(terminal, columns, rows);
 
@@ -1298,6 +1301,8 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
             if (keysym == 0xFFFF) return guac_terminal_send_string(term, "\x1B[3~"); /* Delete */
 
             /* Ignore unknown keys */
+            guac_client_log(term->client, GUAC_LOG_DEBUG,
+                    "Ignoring unknown keysym: 0x%X", keysym);
         }
 
     }
