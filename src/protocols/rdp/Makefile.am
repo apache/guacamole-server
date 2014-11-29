@@ -131,7 +131,8 @@ rdp_keymaps =                   \
     keymaps/failsafe.keymap     \
     keymaps/de_de_qwertz.keymap \
     keymaps/en_us_qwerty.keymap \
-    keymaps/fr_fr_azerty.keymap
+    keymaps/fr_fr_azerty.keymap \
+    keymaps/sv_se_qwerty.keymap
 
 _generated_keymaps.c: $(rdp_keymaps)
 	keymaps/generate.pl $(rdp_keymaps)
