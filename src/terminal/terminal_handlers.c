@@ -897,6 +897,9 @@ int guac_terminal_set_directory(guac_terminal* term, unsigned char c) {
         term->char_handler = guac_terminal_echo;
         if (term->upload_path_handler)
             term->upload_path_handler(term->client, filename);
+        else
+            guac_client_log(term->client, GUAC_LOG_DEBUG,
+                    "Cannot set upload path. File is transfer not enabled.");
         length = 0;
     }
 
@@ -919,6 +922,9 @@ int guac_terminal_download(guac_terminal* term, unsigned char c) {
         term->char_handler = guac_terminal_echo;
         if (term->file_download_handler)
             term->file_download_handler(term->client, filename);
+        else
+            guac_client_log(term->client, GUAC_LOG_DEBUG,
+                    "Cannot send file. File is transfer not enabled.");
         length = 0;
     }
 

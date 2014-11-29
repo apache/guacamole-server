@@ -63,7 +63,8 @@ int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed)
     /* Stop searching for password */
     if (client_data->password_regex != NULL) {
 
-        guac_client_log(client, GUAC_LOG_INFO, "Stopping password prompt search due to user input.");
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Stopping password prompt search due to user input.");
 
         regfree(client_data->password_regex);
         free(client_data->password_regex);
@@ -74,7 +75,8 @@ int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed)
     /* Stop searching for username */
     if (client_data->username_regex != NULL) {
 
-        guac_client_log(client, GUAC_LOG_INFO, "Stopping username prompt search due to user input.");
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Stopping username prompt search due to user input.");
 
         regfree(client_data->username_regex);
         free(client_data->username_regex);

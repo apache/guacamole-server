@@ -74,6 +74,11 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
 
     /* Ensure filename is a valid filename and not a path */
     if (!__ssh_guac_valid_filename(filename)) {
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Filename \"%s\" is invalid",
+                filename);
+
         guac_protocol_send_ack(client->socket, stream, "SFTP: Illegal filename",
                 GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
         guac_socket_flush(client->socket);
@@ -102,6 +107,11 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
 
     /* If path + filename exceeds max length, abort */
     if (i == GUAC_SFTP_MAX_PATH) {
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Filename exceeds maximum of %i characters",
+                GUAC_SFTP_MAX_PATH);
+
         guac_protocol_send_ack(client->socket, stream, "SFTP: Name too long", GUAC_PROTOCOL_STATUS_CLIENT_OVERRUN);
         guac_socket_flush(client->socket);
         return 0;
@@ -117,11 +127,16 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
 
     /* Inform of status */
     if (file != NULL) {
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "File \"%s\" opened",
+                fullpath);
+
         guac_protocol_send_ack(client->socket, stream, "SFTP: File opened", GUAC_PROTOCOL_STATUS_SUCCESS);
         guac_socket_flush(client->socket);
     }
     else {
-        guac_client_log(client, GUAC_LOG_ERROR, "Unable to open file \"%s\": %s",
+        guac_client_log(client, GUAC_LOG_INFO, "Unable to open file \"%s\": %s",
                 fullpath, libssh2_sftp_last_error(client_data->sftp_session));
         guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed", GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND);
         guac_socket_flush(client->socket);
@@ -146,13 +161,14 @@ int guac_sftp_blob_handler(guac_client* client, guac_stream* stream,
 
     /* Attempt write */
     if (libssh2_sftp_write(file, data, length) == length) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "%i bytes written", length);
         guac_protocol_send_ack(client->socket, stream, "SFTP: OK", GUAC_PROTOCOL_STATUS_SUCCESS);
         guac_socket_flush(client->socket);
     }
 
     /* Inform of any errors */
     else {
-        guac_client_log(client, GUAC_LOG_ERROR, "Unable to write to file: %s",
+        guac_client_log(client, GUAC_LOG_INFO, "Unable to write to file: %s",
                 libssh2_sftp_last_error(client_data->sftp_session));
         guac_protocol_send_ack(client->socket, stream, "SFTP: Write failed", GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
@@ -169,11 +185,12 @@ int guac_sftp_end_handler(guac_client* client, guac_stream* stream) {
 
     /* Attempt to close file */
     if (libssh2_sftp_close(file) == 0) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "File closed");
         guac_protocol_send_ack(client->socket, stream, "SFTP: OK", GUAC_PROTOCOL_STATUS_SUCCESS);
         guac_socket_flush(client->socket);
     }
     else {
-        guac_client_log(client, GUAC_LOG_ERROR, "Unable to close file");
+        guac_client_log(client, GUAC_LOG_INFO, "Unable to close file");
         guac_protocol_send_ack(client->socket, stream, "SFTP: Close failed", GUAC_PROTOCOL_STATUS_SERVER_ERROR);
         guac_socket_flush(client->socket);
     }
@@ -196,19 +213,25 @@ int guac_sftp_ack_handler(guac_client* client, guac_stream* stream,
         int bytes_read = libssh2_sftp_read(file, buffer, sizeof(buffer)); 
 
         /* If bytes read, send as blob */
-        if (bytes_read > 0)
+        if (bytes_read > 0) {
             guac_protocol_send_blob(client->socket, stream,
                     buffer, bytes_read);
 
+            guac_client_log(client, GUAC_LOG_DEBUG, "%i bytes sent to client",
+                    bytes_read);
+
+        }
+
         /* If EOF, send end */
         else if (bytes_read == 0) {
+            guac_client_log(client, GUAC_LOG_DEBUG, "File sent");
             guac_protocol_send_end(client->socket, stream);
             guac_client_free_stream(client, stream);
         }
 
         /* Otherwise, fail stream */
         else {
-            guac_client_log(client, GUAC_LOG_ERROR, "Error reading file: %s",
+            guac_client_log(client, GUAC_LOG_INFO, "Error reading file: %s",
                     libssh2_sftp_last_error(client_data->sftp_session));
             guac_protocol_send_end(client->socket, stream);
             guac_client_free_stream(client, stream);
@@ -236,7 +259,7 @@ guac_stream* guac_sftp_download_file(guac_client* client,
     file = libssh2_sftp_open(client_data->sftp_session, filename,
             LIBSSH2_FXF_READ, 0);
     if (file == NULL) {
-        guac_client_log(client, GUAC_LOG_ERROR, "Unable to read file \"%s\": %s",
+        guac_client_log(client, GUAC_LOG_INFO, "Unable to read file \"%s\": %s",
                 filename,
                 libssh2_sftp_last_error(client_data->sftp_session));
         return NULL;
@@ -253,6 +276,7 @@ guac_stream* guac_sftp_download_file(guac_client* client,
             "application/octet-stream", filename);
     guac_socket_flush(client->socket);
 
+    guac_client_log(client, GUAC_LOG_DEBUG, "Sending file \"%s\"", filename);
     return stream;
 
 }
@@ -272,6 +296,7 @@ void guac_sftp_set_upload_path(guac_client* client, char* path) {
 
     /* Copy path */
     memcpy(client_data->sftp_upload_path, path, length);
+    guac_client_log(client, GUAC_LOG_DEBUG, "Upload path set to \"%s\"", path);
 
 }
 
