@@ -480,6 +480,13 @@ int rdp_guac_client_size_handler(guac_client* client, int width, int height) {
 
     freerdp* rdp_inst = guac_client_data->rdp_inst;
 
+    /* Convert client pixels to remote pixels */
+    width  = width  * guac_client_data->settings.resolution
+                    / client->info.optimal_resolution;
+
+    height = height * guac_client_data->settings.resolution
+                    / client->info.optimal_resolution;
+
     /* Send display update */
     pthread_mutex_lock(&(guac_client_data->rdp_lock));
     guac_rdp_disp_set_size(guac_client_data->disp, rdp_inst->context,
