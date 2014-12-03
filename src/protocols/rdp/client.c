@@ -212,12 +212,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
 #endif
 
-    /* Load virtual channel management plugin */
-    if (freerdp_channels_load_plugin(channels, instance->settings,
-                "drdynvc", instance->settings))
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Failed to load drdynvc plugin.");
-
 #ifdef HAVE_FREERDP_EVENT_PUBSUB
     /* Subscribe to and handle channel connected events */
     PubSub_SubscribeChannelConnected(context->pubSub,
@@ -225,6 +219,12 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 #endif
 
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+    /* Load virtual channel management plugin */
+    if (freerdp_channels_load_plugin(channels, instance->settings,
+                "drdynvc", instance->settings))
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Failed to load drdynvc plugin.");
+
     /* Init display update plugin */
     guac_client_data->disp = guac_rdp_disp_alloc();
     guac_rdp_disp_load_plugin(instance->context);
