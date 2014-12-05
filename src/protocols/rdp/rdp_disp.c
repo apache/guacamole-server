@@ -67,28 +67,60 @@ void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, DispClientContext* disp) {
     guac_disp->disp = disp;
 }
 
+/**
+ * Fits a given dimension within the allowed bounds for Display Update
+ * messages, adjusting the other dimension such that aspect ratio is
+ * maintained.
+ *
+ * @param a The dimension to fit within allowed bounds.
+ *
+ * @param b
+ *     The other dimension to adjust if and only if necessary to preserve
+ *     aspect ratio.
+ */
+static void guac_rdp_disp_fit(int* a, int* b) {
+
+    int a_value = *a;
+    int b_value = *b;
+
+    /* Ensure first dimension is within allowed range */
+    if (a_value < GUAC_RDP_DISP_MIN_SIZE) {
+
+        /* Adjust other dimension to maintain aspect ratio */
+        int adjusted_b = b_value * GUAC_RDP_DISP_MIN_SIZE / a_value;
+        if (adjusted_b > GUAC_RDP_DISP_MAX_SIZE)
+            adjusted_b = GUAC_RDP_DISP_MAX_SIZE;
+
+        *a = GUAC_RDP_DISP_MIN_SIZE;
+        *b = adjusted_b;
+
+    }
+    else if (a_value > GUAC_RDP_DISP_MAX_SIZE) {
+
+        /* Adjust other dimension to maintain aspect ratio */
+        int adjusted_b = b_value * GUAC_RDP_DISP_MAX_SIZE / a_value;
+        if (adjusted_b < GUAC_RDP_DISP_MIN_SIZE)
+            adjusted_b = GUAC_RDP_DISP_MIN_SIZE;
+
+        *a = GUAC_RDP_DISP_MAX_SIZE;
+        *b = adjusted_b;
+
+    }
+
+}
+
 void guac_rdp_disp_set_size(guac_rdp_disp* disp, rdpContext* context,
         int width, int height) {
 
-    /* Width must be at least 200 pixels */
-    if (width < 200)
-        width = 200;
+    /* Fit width within bounds, adjusting height to maintain aspect ratio */
+    guac_rdp_disp_fit(&width, &height);
 
-    /* Width may be no more than 8192 pixels */
-    else if (width > 8192)
-        width = 8192;
+    /* Fit height within bounds, adjusting width to maintain aspect ratio */
+    guac_rdp_disp_fit(&height, &width);
 
     /* Width must be even */
-    else if (width % 2 == 1)
+    if (width % 2 == 1)
         width -= 1;
-
-    /* Height must be at least 200 pixels */
-    if (height < 200)
-        height = 200;
-
-    /* Height may be no more than 8192 pixels */
-    else if (height > 8192)
-        height = 8192;
 
     /* Store deferred size */
     disp->requested_width = width;
