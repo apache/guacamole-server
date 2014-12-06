@@ -26,6 +26,15 @@
 #include <freerdp/client/disp.h>
 #include <freerdp/freerdp.h>
 
+/**
+ * The minimum value for width or height, in pixels.
+ */
+#define GUAC_RDP_DISP_MIN_SIZE 200
+
+/**
+ * The maximum value for width or height, in pixels.
+ */
+#define GUAC_RDP_DISP_MAX_SIZE 8192
 
 /**
  * The minimum amount of time that must elapse between display size updates,
