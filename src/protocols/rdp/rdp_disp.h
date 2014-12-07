@@ -40,7 +40,7 @@
  * The minimum amount of time that must elapse between display size updates,
  * in milliseconds.
  */
-#define GUAC_RDP_DISP_UPDATE_INTERVAL 250
+#define GUAC_RDP_DISP_UPDATE_INTERVAL 500
 
 /**
  * Display size update module.
