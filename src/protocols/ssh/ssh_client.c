@@ -36,6 +36,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <openssl/err.h>
 #include <openssl/ssl.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
@@ -351,7 +352,9 @@ void* ssh_client_thread(void* data) {
     CRYPTO_set_id_callback(__openssl_id_callback);
     CRYPTO_set_locking_callback(__openssl_locking_callback);
 
+    /* Init OpenSSL */
     SSL_library_init();
+    ERR_load_crypto_strings();
     libssh2_init(0);
 
     /* Get username */
@@ -366,12 +369,22 @@ void* ssh_client_thread(void* data) {
     /* If key specified, import */
     if (client_data->key_base64[0] != 0) {
 
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Attempting private key import (WITHOUT passphrase)");
+
         /* Attempt to read key without passphrase */
         client_data->key = ssh_key_alloc(client_data->key_base64,
                 strlen(client_data->key_base64), "");
 
         /* On failure, attempt with passphrase */
         if (client_data->key == NULL) {
+
+            /* Log failure of initial attempt */
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Initial import failed: %s", ssh_key_error());
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Re-attempting private key import (WITH passphrase)");
 
             /* Prompt for passphrase if missing */
             if (client_data->key_passphrase[0] == 0)
@@ -385,7 +398,9 @@ void* ssh_client_thread(void* data) {
 
             /* If still failing, give up */
             if (client_data->key == NULL) {
-                guac_client_log(client, GUAC_LOG_ERROR, "Auth key import failed.");
+                guac_client_abort(client,
+                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                        "Auth key import failed: %s", ssh_key_error());
                 return NULL;
             }
 

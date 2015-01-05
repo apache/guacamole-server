@@ -28,6 +28,7 @@
 #include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <openssl/dsa.h>
+#include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/obj_mac.h>
 #include <openssl/pem.h>
@@ -130,6 +131,13 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
 
     BIO_free(key_bio);
     return key;
+
+}
+
+const char* ssh_key_error() {
+
+    /* Return static error string */
+    return ERR_reason_error_string(ERR_get_error());
 
 }
 

@@ -114,6 +114,15 @@ typedef struct ssh_key {
 ssh_key* ssh_key_alloc(char* data, int length, char* passphrase);
 
 /**
+ * Returns a statically-allocated string describing the most recent SSH key
+ * error.
+ *
+ * @return
+ *     A statically-allocated string describing the most recent SSH key error.
+ */
+const char* ssh_key_error();
+
+/**
  * Frees all memory associated with the given key.
  */
 void ssh_key_free(ssh_key* key);
