@@ -385,7 +385,9 @@ void* ssh_client_thread(void* data) {
 
             /* If still failing, give up */
             if (client_data->key == NULL) {
-                guac_client_log(client, GUAC_LOG_ERROR, "Auth key import failed.");
+                guac_client_abort(client,
+                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                        "Auth key import failed.");
                 return NULL;
             }
 
