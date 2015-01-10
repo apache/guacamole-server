@@ -718,10 +718,10 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     surface->height = h;
     surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
     surface->buffer = calloc(h, surface->stride);
-    guac_common_surface_reset_clip(surface);
+    __guac_common_bound_rect(surface, &surface->clip_rect, NULL, NULL);
 
     /* Copy relevant old data */
-    guac_common_rect_constrain(&old_rect, &surface->clip_rect);
+    __guac_common_bound_rect(surface, &old_rect, NULL, NULL);
     __guac_common_surface_put(old_buffer, old_stride, &sx, &sy, surface, &old_rect, 1);
 
     /* Free old data */
