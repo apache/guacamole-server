@@ -106,6 +106,12 @@ typedef struct guac_common_surface {
     int realized;
 
     /**
+     * Whether drawing operations are currently clipped by the clipping
+     * rectangle.
+     */
+    int clipped;
+
+    /**
      * The clipping rectangle.
      */
     guac_common_rect clip_rect;
