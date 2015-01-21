@@ -6,12 +6,11 @@
 This README is intended to provide quick and to-the-point documentation for
 technical users intending to compile parts of Guacamole themselves.
 
-Distribution-specific packages are available from the files section of the main
-project page:
+Source archives are available from the files section of the main project page:
  
     http://sourceforge.net/projects/guacamole/files/
 
-Distribution-specific documentation is provided on the Guacamole wiki:
+A full manual is provided on the Guacamole web site:
 
     http://guac-dev.org/
 
@@ -35,11 +34,6 @@ proxy which translates between arbitrary protocols and the Guacamole protocol.
 ------------------------------------------------------------
  Compiling and installing guacd, libguac, etc.
 ------------------------------------------------------------
-
-Please note that distribution-specific pre-compiled packages are available from
-the files section of the main project site:
-
-    http://sourceforge.net/projects/guacamole/files/
 
 All software within guacamole-server is built using the popular GNU Automake,
 and thus provides the standard configure script. Before compiling, you need to
@@ -95,7 +89,7 @@ guacd itself directly without the init script (as any user):
 
     $ guacd
 
-guacd currently takes four command-line options:
+guacd currently takes several command-line options:
 
     -b HOST 
 
@@ -111,17 +105,26 @@ guacd currently takes four command-line options:
         file. This is useful for init scripts and is used by the provided init
         script.
 
+    -L LEVEL
+
+        Sets the maximum level at which guacd will log messages to syslog and,
+        if running in the foreground, the console.  Legal values are debug,
+        info, warning, and error.  The default value is info.
+
     -f
         Causes guacd to run in the foreground, rather than automatically
         forking into the background. 
 
+Additional information can be found in the guacd man page:
+
+    $ man guacd
 
 ------------------------------------------------------------
  Reporting problems
 ------------------------------------------------------------
 
-Please report any bugs encountered by opening a new ticket at the Trac system
+Please report any bugs encountered by opening a new issue in the JIRA system
 hosted at:
     
-    http://guac-dev.rg/trac/
+    http://glyptodon.org/jira/
 

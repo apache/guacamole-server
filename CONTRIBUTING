@@ -1,0 +1,66 @@
+
+------------------------------------------------------------
+ Contributing to Guacamole
+------------------------------------------------------------
+
+Thank you for contributing to the Guacamole project!
+
+There are certain procedures that must be followed for all contributions. These
+procedures are necessary to allow us to allocate resources for reviewing and
+testing your contribution, as well as to ensure we have your legal
+authorization to include your contribution in Guacamole.
+
+1) Create an issue in our JIRA
+
+    All changes to Guacamole must have corresponding issues in JIRA so the
+    change can be properly tracked:
+
+        http://glyptodon.org/jira/
+
+    If you do not already have an account on our JIRA, you will need to create
+    one before creating your new issue.
+
+2) Make and test your changes locally
+
+    The Guacamole source is maintained in git repositories hosted on GitHub:
+
+        https://github.com/glyptodon/guacamole-client
+        https://github.com/glyptodon/guacamole-server
+
+    To make your changes, fork the applicable repositories and make commits
+    to a topic branch in your fork. Commits should be made in logical units
+    and must reference the JIRA issue number:
+
+    $ git commit -m "GUAC-123: Message describing the specific changes made."
+
+    Avoid commits which cover multiple, distinct goals that could (and should)
+    be handled separately.
+
+    If you do not already have an account on GitHub, you will need to create
+    one before making your changes.
+
+3) Sign our Contributor License Agreement (CLA)
+
+    All contributors to the Guacamole project must have signed CLAs on file
+    before we can merge their contributions:
+
+        http://glyptodon.org/cla.html
+
+    This is necessary to ensure we have the legal right to include your code
+    in our repositories, that we can continue to distribute that code under
+    the MIT license, and that you have the legal right to give us that code.
+
+    If you create a pull request without first signing the CLA, you will be
+    asked to do so before the pull request is reviewed.
+
+4) Submit your changes via a pull request on GitHub
+
+    Once your changes are ready, submit them by creating a pull request for
+    the corresponding topic branch you created when you began working on your
+    changes.
+
+    The Guacamole team will then review your changes and, if they pass review
+    and we have your CLA on file, your changes will be allocated to a sprint
+    for final testing and merge, and your name will be added to the list of
+    contributors for whichever repositories contain your contributions.
+
