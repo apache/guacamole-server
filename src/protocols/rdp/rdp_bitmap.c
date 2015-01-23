@@ -210,24 +210,36 @@ void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* d
 
 #ifdef HAVE_RDPCONTEXT_CODECS 
         rdpCodecs* codecs = context->codecs;
-        UINT32* palette = ((rdp_freerdp_context*) context)->palette;
 
         /* Decode as interleaved if less than 32 bits per pixel */
         if (bpp < 32) {
             freerdp_client_codecs_prepare(codecs, FREERDP_CODEC_INTERLEAVED);
+#ifdef INTERLEAVED_DECOMPRESS_TAKES_PALETTE
             interleaved_decompress(codecs->interleaved, data, length, bpp,
                 &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height,
-                (BYTE*) palette);
+                (BYTE*) ((rdp_freerdp_context*) context)->palette);
+            bitmap->bpp = 32;
+#else
+            interleaved_decompress(codecs->interleaved, data, length, bpp,
+                &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height);
+            bitmap->bpp = bpp;
+#endif
         }
 
         /* Otherwise, decode as planar */
         else {
             freerdp_client_codecs_prepare(codecs, FREERDP_CODEC_PLANAR);
+#ifdef PLANAR_DECOMPRESS_CAN_FLIP
             planar_decompress(codecs->planar, data, length,
-                &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height, TRUE);
+                &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height,
+                TRUE);
+            bitmap->bpp = 32;
+#else
+            planar_decompress(codecs->planar, data, length,
+                &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height);
+            bitmap->bpp = bpp;
+#endif
         }
-
-        bitmap->bpp = 32;
 #else
         bitmap_decompress(data, bitmap->data, width, height, length, bpp, bpp);
         bitmap->bpp = bpp;

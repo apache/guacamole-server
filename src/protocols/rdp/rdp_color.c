@@ -43,6 +43,14 @@ UINT32 guac_rdp_convert_color(rdpContext* context, UINT32 color) {
     return freerdp_convert_gdi_order_color(color,
             guac_rdp_get_depth(context->instance), PIXEL_FORMAT_ARGB32,
             (BYTE*) palette);
+
+#elif defined(HAVE_FREERDP_COLOR_CONVERT_DRAWING_ORDER_COLOR_TO_GDI_COLOR)
+    CLRCONV* clrconv = ((rdp_freerdp_context*) context)->clrconv;
+
+    /* Convert given color to ARGB32 */
+    return freerdp_color_convert_drawing_order_color_to_gdi_color(color,
+            guac_rdp_get_depth(context->instance), clrconv);
+
 #else
     CLRCONV* clrconv = ((rdp_freerdp_context*) context)->clrconv;
 
