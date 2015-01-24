@@ -429,7 +429,12 @@ if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_DECL([freerdp_convert_gdi_order_color],
         [AC_DEFINE([HAVE_FREERDP_CONVERT_GDI_ORDER_COLOR],,
-                   [Whether freerdp_convert_gdi_order_color() id defined])],,
+                   [Whether freerdp_convert_gdi_order_color() is defined])],,
+        [#include <freerdp/codec/color.h>])
+
+    AC_CHECK_DECL([freerdp_color_convert_drawing_order_color_to_gdi_color],
+        [AC_DEFINE([HAVE_FREERDP_COLOR_CONVERT_DRAWING_ORDER_COLOR_TO_GDI_COLOR],,
+                   [Whether freerdp_color_convert_drawing_order_color_to_gdi_color() is defined])],,
         [#include <freerdp/codec/color.h>])
 fi
 
@@ -682,6 +687,42 @@ then
                       [AC_MSG_RESULT([no])
                        AC_DEFINE([LEGACY_RDPBITMAP],,
                                  [Whether the legacy rdpBitmap API was found])])
+fi
+
+#
+# FreeRDP: Decompression function variants
+#
+
+# Check whether interleaved_decompress() can handle the palette
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([whether interleaved_decompress() accepts an additional palette parameter])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <freerdp/codec/interleaved.h>
+
+                                        int main() {
+                                            BYTE* palette = NULL;
+                                            interleaved_decompress(NULL, NULL, 0, 0, NULL, 0, 0, 0, 0, 0, 0, palette);
+                                        }]])],
+                      [AC_MSG_RESULT([yes])
+                       AC_DEFINE([INTERLEAVED_DECOMPRESS_TAKES_PALETTE],,
+                                 [Whether interleaved_decompress() accepts an additional palette parameter])],
+                      [AC_MSG_RESULT([no])])
+fi
+
+# Check whether planar_decompress() will handle flipping
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([whether planar_decompress() can flip])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <freerdp/codec/planar.h>
+
+                                        int main() {
+                                            BOOL* flip = TRUE;
+                                            planar_decompress(NULL, NULL, 0, NULL, 0, 0, 0, 0, 0, 0, flip);
+                                        }]])],
+                      [AC_MSG_RESULT([yes])
+                       AC_DEFINE([PLANAR_DECOMPRESS_CAN_FLIP],,
+                                 [Whether planar_decompress() can flip])],
+                      [AC_MSG_RESULT([no])])
 fi
 
 #
