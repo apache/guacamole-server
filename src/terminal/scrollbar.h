@@ -79,7 +79,7 @@ typedef struct guac_terminal_scrollbar {
      * The movable box within the scrollbar, representing the current scroll
      * value.
      */
-    guac_layer* layer;
+    guac_layer* box;
 
     /**
      * The minimum scroll value.
@@ -123,7 +123,7 @@ typedef struct guac_terminal_scrollbar {
  *     A newly allocated scrollbar.
  */
 guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
-        guac_layer* parent, int parent_width, int parent_height);
+        const guac_layer* parent, int parent_width, int parent_height);
 
 /**
  * Frees the given scrollbar.

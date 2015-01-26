@@ -29,6 +29,7 @@
 #include "display.h"
 #include "ibar.h"
 #include "guac_clipboard.h"
+#include "scrollbar.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
 #include "types.h"
@@ -159,7 +160,7 @@ void guac_terminal_reset(guac_terminal* term) {
     term->cursor_row = term->visible_cursor_row = term->saved_cursor_row = 0;
     term->cursor_col = term->visible_cursor_col = term->saved_cursor_col = 0;
 
-    /* Clear scrollback, buffer, and scoll region */
+    /* Clear scrollback, buffer, and scroll region */
     term->buffer->top = 0;
     term->buffer->length = 0;
     term->scroll_start = 0;
@@ -268,6 +269,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Allocate clipboard */
     term->clipboard = guac_common_clipboard_alloc(GUAC_TERMINAL_CLIPBOARD_MAX_LENGTH);
 
+    /* Allocate scrollbar */
+    term->scrollbar = guac_terminal_scrollbar_alloc(term->client,
+            GUAC_DEFAULT_LAYER, width, height);
+
     return term;
 
 }
@@ -290,6 +295,9 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Free clipboard */
     guac_common_clipboard_free(term->clipboard);
+
+    /* Free scrollbar */
+    guac_terminal_scrollbar_free(term->scrollbar);
 
     /* Free cursors */
     guac_terminal_cursor_free(term->client, term->ibar_cursor);
@@ -1129,6 +1137,9 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 
     /* Resize default layer to given pixel dimensions */
     guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, width, height);
+
+    /* Notify scrollbar of resize */
+    guac_terminal_scrollbar_parent_resized(terminal->scrollbar, width, height);
 
     /* Resize terminal if row/column dimensions have changed */
     if (columns != terminal->term_width || rows != terminal->term_height) {
