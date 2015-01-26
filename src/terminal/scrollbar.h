@@ -92,6 +92,11 @@ typedef struct guac_terminal_scrollbar {
     int max;
 
     /**
+     * The size of the visible area, in the same units as min and max.
+     */
+    int visible_area;
+
+    /**
      * The current scroll value.
      */
     int value;
@@ -119,11 +124,17 @@ typedef struct guac_terminal_scrollbar {
  * @param parent_height
  *     The height of the parent layer, in pixels.
  *
+ * @param visible_area
+ *     The amount of scrollable data that can be shown within the parent layer
+ *     at any given time. This value uses the same units as min, max, and the
+ *     current scroll value.
+ *
  * @return
  *     A newly allocated scrollbar.
  */
 guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
-        const guac_layer* parent, int parent_width, int parent_height);
+        const guac_layer* parent, int parent_width, int parent_height,
+        int visible_area);
 
 /**
  * Frees the given scrollbar.
@@ -186,8 +197,13 @@ void guac_terminal_scrollbar_set_value(guac_terminal_scrollbar* scrollbar,
  *
  * @param parent_height
  *     The new height of the parent layer, in pixels.
+ *
+ * @param visible_area
+ *     The amount of scrollable data that can be shown within the parent layer
+ *     at any given time. This value uses the same units as min, max, and the
+ *     current scroll value.
  */
 void guac_terminal_scrollbar_parent_resized(guac_terminal_scrollbar* scrollbar,
-        int parent_width, int parent_height);
+        int parent_width, int parent_height, int visible_area);
 
 #endif
