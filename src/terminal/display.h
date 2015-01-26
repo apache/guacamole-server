@@ -150,12 +150,17 @@ typedef struct guac_terminal_display {
     int glyph_background;
 
     /**
-     * The display.
+     * The surface containing the actual terminal.
      */
-    guac_common_surface* default_surface;
+    guac_common_surface* display_surface;
 
     /**
-     * Layer above default layer which highlights selected text.
+     * Layer which contains the actual terminal.
+     */
+    guac_layer* display_layer;
+
+    /**
+     * Sub-layer of display layer which highlights selected text.
      */
     guac_layer* select_layer;
 
