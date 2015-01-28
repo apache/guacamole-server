@@ -117,7 +117,11 @@ static void __update_box(guac_terminal_scrollbar* scrollbar) {
 
     /* Fill box with solid color */
     guac_protocol_send_rect(socket, scrollbar->box, 0, 0, box_width, box_height);
-    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->box, 0xFF, 0xFF, 0xFF, 0x80);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->box,
+            0x80, 0x80, 0x80, 0xFF);
+    guac_protocol_send_cstroke(socket, GUAC_COMP_OVER, scrollbar->box,
+            GUAC_LINE_CAP_SQUARE, GUAC_LINE_JOIN_MITER, 2,
+            0xA0, 0xA0, 0xA0, 0xFF);
 
 }
 
@@ -175,6 +179,12 @@ void guac_terminal_scrollbar_parent_resized(guac_terminal_scrollbar* scrollbar,
     /* Resize to fit within parent */
     guac_protocol_send_size(socket, scrollbar->container,
             container_width, container_height);
+
+    /* Fill container with solid color */
+    guac_protocol_send_rect(socket, scrollbar->container, 0, 0,
+            container_width, container_height);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->container,
+            0x40, 0x40, 0x40, 0xFF);
 
     /* Assign new dimensions */
     scrollbar->parent_width  = parent_width;
