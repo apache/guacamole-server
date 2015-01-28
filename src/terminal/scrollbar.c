@@ -53,7 +53,7 @@ guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
 
     /* Allocate and init layers */
     scrollbar->container = guac_client_alloc_layer(client);
-    scrollbar->box       = guac_client_alloc_layer(client);
+    scrollbar->handle    = guac_client_alloc_layer(client);
 
     /* Reposition and resize to fit parent */
     guac_terminal_scrollbar_parent_resized(scrollbar,
@@ -66,7 +66,7 @@ guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
 void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
 
     /* Free layers */
-    guac_client_free_layer(scrollbar->client, scrollbar->box);
+    guac_client_free_layer(scrollbar->client, scrollbar->handle);
     guac_client_free_layer(scrollbar->client, scrollbar->container);
 
     /* Free scrollbar */
@@ -75,13 +75,13 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
 }
 
 /**
- * Updates the position and size of the scrollbar inner box relative to the
+ * Updates the position and size of the scrollbar handle relative to the
  * current scrollbar value, bounds, and parent layer dimensions.
  *
  * @param scrollbar
- *     The scrollbar whose inner box should be updated.
+ *     The scrollbar whose handle should be updated.
  */
-static void __update_box(guac_terminal_scrollbar* scrollbar) {
+static void __update_handle(guac_terminal_scrollbar* scrollbar) {
 
     guac_socket* socket = scrollbar->client->socket;
 
@@ -91,35 +91,35 @@ static void __update_box(guac_terminal_scrollbar* scrollbar) {
 
     int region_size = scrollbar->max - scrollbar->min;
 
-    /* Calculate box dimensions */
-    int box_width  = GUAC_TERMINAL_SCROLLBAR_WIDTH - GUAC_TERMINAL_SCROLLBAR_PADDING*2;
-    int box_height = GUAC_TERMINAL_SCROLLBAR_MIN_HEIGHT;
+    /* Calculate handle dimensions */
+    int handle_width  = GUAC_TERMINAL_SCROLLBAR_WIDTH - GUAC_TERMINAL_SCROLLBAR_PADDING*2;
+    int handle_height = GUAC_TERMINAL_SCROLLBAR_MIN_HEIGHT;
 
-    /* Size box relative to visible area */
+    /* Size handle relative to visible area */
     int padded_container_height = (scrollbar->parent_height - GUAC_TERMINAL_SCROLLBAR_PADDING*2);
     int proportional_height = padded_container_height * scrollbar->visible_area / (region_size + scrollbar->visible_area);
-    if (proportional_height > box_height)
-        box_height = proportional_height;
+    if (proportional_height > handle_height)
+        handle_height = proportional_height;
 
-    /* Calculate box position and dimensions */
-    int box_x = GUAC_TERMINAL_SCROLLBAR_PADDING;
-    int box_y = GUAC_TERMINAL_SCROLLBAR_PADDING
-              + (padded_container_height - box_height) * (scrollbar->value - scrollbar->min) / region_size;
+    /* Calculate handle position and dimensions */
+    int handle_x = GUAC_TERMINAL_SCROLLBAR_PADDING;
+    int handle_y = GUAC_TERMINAL_SCROLLBAR_PADDING
+              + (padded_container_height - handle_height) * (scrollbar->value - scrollbar->min) / region_size;
 
-    /* Reposition box relative to container and current value */
+    /* Reposition handle relative to container and current value */
     guac_protocol_send_move(socket,
-            scrollbar->box, scrollbar->container,
-            box_x, box_y, 0);
+            scrollbar->handle, scrollbar->container,
+            handle_x, handle_y, 0);
 
-    /* Resize box relative to scrollable area */
-    guac_protocol_send_size(socket, scrollbar->box,
-            box_width, box_height);
+    /* Resize handle relative to scrollable area */
+    guac_protocol_send_size(socket, scrollbar->handle,
+            handle_width, handle_height);
 
-    /* Fill box with solid color */
-    guac_protocol_send_rect(socket, scrollbar->box, 0, 0, box_width, box_height);
-    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->box,
+    /* Fill handle with solid color */
+    guac_protocol_send_rect(socket, scrollbar->handle, 0, 0, handle_width, handle_height);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->handle,
             0x80, 0x80, 0x80, 0xFF);
-    guac_protocol_send_cstroke(socket, GUAC_COMP_OVER, scrollbar->box,
+    guac_protocol_send_cstroke(socket, GUAC_COMP_OVER, scrollbar->handle,
             GUAC_LINE_CAP_SQUARE, GUAC_LINE_JOIN_MITER, 2,
             0xA0, 0xA0, 0xA0, 0xFF);
 
@@ -138,8 +138,8 @@ void guac_terminal_scrollbar_set_bounds(guac_terminal_scrollbar* scrollbar,
     scrollbar->min = min;
     scrollbar->max = max;
 
-    /* Update box position and size */
-    __update_box(scrollbar);
+    /* Update handle position and size */
+    __update_handle(scrollbar);
 
 }
 
@@ -155,8 +155,8 @@ void guac_terminal_scrollbar_set_value(guac_terminal_scrollbar* scrollbar,
     /* Update value */
     scrollbar->value = value;
 
-    /* Update box position and size */
-    __update_box(scrollbar);
+    /* Update handle position and size */
+    __update_handle(scrollbar);
 
 }
 
@@ -191,8 +191,8 @@ void guac_terminal_scrollbar_parent_resized(guac_terminal_scrollbar* scrollbar,
     scrollbar->parent_height = parent_height;
     scrollbar->visible_area  = visible_area;
 
-    /* Update box position and size */
-    __update_box(scrollbar);
+    /* Update handle position and size */
+    __update_handle(scrollbar);
 
 }
 

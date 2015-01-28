@@ -34,19 +34,20 @@
 #define GUAC_TERMINAL_SCROLLBAR_WIDTH 16 
 
 /**
- * The number of pixels between the inner box of the scrollbar and the outer
- * box.
+ * The number of pixels between the draggable handle of the scrollbar and the
+ * boundary of the containing layer.
  */
 #define GUAC_TERMINAL_SCROLLBAR_PADDING 2
 
 /**
- * The minimum height of the inner box of the scrollbar, in pixels.
+ * The minimum height of the draggable handle of the scrollbar, in pixels.
  */
 #define GUAC_TERMINAL_SCROLLBAR_MIN_HEIGHT 64
 
 /**
- * A scrollbar, made up of an outer and inner box, which represents its value
- * graphically by the relative position and size of the inner box.
+ * A scrollbar, made up of a containing layer and inner draggable handle. The
+ * position of the handle within the layer represents the value of the
+ * scrollbar.
  */
 typedef struct guac_terminal_scrollbar {
 
@@ -76,10 +77,10 @@ typedef struct guac_terminal_scrollbar {
     guac_layer* container;
 
     /**
-     * The movable box within the scrollbar, representing the current scroll
-     * value.
+     * The draggable handle within the scrollbar, representing the current
+     * scroll value.
      */
-    guac_layer* box;
+    guac_layer* handle;
 
     /**
      * The minimum scroll value.
