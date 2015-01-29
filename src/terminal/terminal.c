@@ -29,6 +29,7 @@
 #include "display.h"
 #include "ibar.h"
 #include "guac_clipboard.h"
+#include "scrollbar.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
 #include "types.h"
@@ -159,12 +160,16 @@ void guac_terminal_reset(guac_terminal* term) {
     term->cursor_row = term->visible_cursor_row = term->saved_cursor_row = 0;
     term->cursor_col = term->visible_cursor_col = term->saved_cursor_col = 0;
 
-    /* Clear scrollback, buffer, and scoll region */
+    /* Clear scrollback, buffer, and scroll region */
     term->buffer->top = 0;
     term->buffer->length = 0;
     term->scroll_start = 0;
     term->scroll_end = term->term_height - 1;
     term->scroll_offset = 0;
+
+    /* Reset scrollbar bounds */
+    guac_terminal_scrollbar_set_bounds(term->scrollbar, term->term_height - term->buffer->length, 0);
+    guac_terminal_scrollbar_set_value(term->scrollbar, -term->scroll_offset);
 
     /* Reset flags */
     term->text_selected = false;
@@ -197,6 +202,11 @@ guac_terminal* guac_terminal_create(guac_client* client,
         },
         .width = 1};
 
+    /* Calculate available display area */
+    int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
+    if (available_width < 0)
+        available_width = 0;
+
     guac_terminal* term = malloc(sizeof(guac_terminal));
     term->client = client;
     term->upload_path_handler = NULL;
@@ -222,7 +232,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
 
-    term->term_width   = width  / term->display->char_width;
+    term->term_width   = available_width / term->display->char_width;
     term->term_height  = height / term->display->char_height;
 
     /* Open STDOUT pipe */
@@ -249,6 +259,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
             GUAC_DEFAULT_LAYER, width, height);
     guac_terminal_display_resize(term->display,
             term->term_width, term->term_height);
+
+    /* Allocate scrollbar */
+    term->scrollbar = guac_terminal_scrollbar_alloc(term->client,
+            GUAC_DEFAULT_LAYER, width, height, term->term_height);
 
     /* Init terminal */
     guac_terminal_reset(term);
@@ -290,6 +304,9 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Free clipboard */
     guac_common_clipboard_free(term->clipboard);
+
+    /* Free scrollbar */
+    guac_terminal_scrollbar_free(term->scrollbar);
 
     /* Free cursors */
     guac_terminal_cursor_free(term->client, term->ibar_cursor);
@@ -516,6 +533,9 @@ int guac_terminal_scroll_up(guac_terminal* term,
         if (term->buffer->length > term->buffer->available)
             term->buffer->length = term->buffer->available;
 
+        /* Reset scrollbar bounds */
+        guac_terminal_scrollbar_set_bounds(term->scrollbar, term->term_height - term->buffer->length, 0);
+
         /* Update cursor location if within region */
         if (term->visible_cursor_row >= start_row &&
             term->visible_cursor_row <= end_row)
@@ -631,6 +651,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
     /* Advance by scroll amount */
     terminal->scroll_offset -= scroll_amount;
+    guac_terminal_scrollbar_set_value(terminal->scrollbar, -terminal->scroll_offset);
 
     /* Get row range */
     end_row   = terminal->term_height - terminal->scroll_offset - 1;
@@ -666,6 +687,8 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
     }
 
     guac_terminal_display_flush(terminal->display);
+    guac_terminal_scrollbar_flush(terminal->scrollbar);
+
     guac_protocol_send_sync(terminal->client->socket,
             terminal->client->last_sent_timestamp);
     guac_socket_flush(terminal->client->socket);
@@ -695,6 +718,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
     /* Advance by scroll amount */
     terminal->scroll_offset += scroll_amount;
+    guac_terminal_scrollbar_set_value(terminal->scrollbar, -terminal->scroll_offset);
 
     /* Get row range */
     start_row = -terminal->scroll_offset;
@@ -730,6 +754,8 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
     }
 
     guac_terminal_display_flush(terminal->display);
+    guac_terminal_scrollbar_flush(terminal->scrollbar);
+
     guac_protocol_send_sync(terminal->client->socket,
             terminal->client->last_sent_timestamp);
     guac_socket_flush(terminal->client->socket);
@@ -1072,6 +1098,7 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
             if (term->scroll_offset >= shift_amount) {
 
                 term->scroll_offset -= shift_amount;
+                guac_terminal_scrollbar_set_value(term->scrollbar, -term->scroll_offset);
 
                 /* Draw characters from scroll at bottom */
                 __guac_terminal_redraw_rect(term, term->term_height, 0, term->term_height + shift_amount - 1, width-1);
@@ -1087,6 +1114,7 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
                 /* Update shift_amount and scroll based on new rows */
                 shift_amount -= term->scroll_offset;
                 term->scroll_offset = 0;
+                guac_terminal_scrollbar_set_value(term->scrollbar, -term->scroll_offset);
 
                 /* If anything remains, move screen as necessary */
                 if (shift_amount > 0) {
@@ -1123,12 +1151,21 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     guac_client* client = display->client;
     guac_socket* socket = client->socket;
 
+    /* Calculate available display area */
+    int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
+    if (available_width < 0)
+        available_width = 0;
+
     /* Calculate dimensions */
     int rows    = height / display->char_height;
-    int columns = width  / display->char_width;
+    int columns = available_width / display->char_width;
 
     /* Resize default layer to given pixel dimensions */
     guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, width, height);
+
+    /* Notify scrollbar of resize */
+    guac_terminal_scrollbar_parent_resized(terminal->scrollbar, width, height, rows);
+    guac_terminal_scrollbar_set_bounds(terminal->scrollbar, rows - terminal->buffer->length, 0);
 
     /* Resize terminal if row/column dimensions have changed */
     if (columns != terminal->term_width || rows != terminal->term_height) {
@@ -1147,6 +1184,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 
     /* If terminal size hasn't changed, still need to flush */
     else {
+        guac_terminal_scrollbar_flush(terminal->scrollbar);
         guac_protocol_send_sync(socket, client->last_sent_timestamp);
         guac_socket_flush(socket);
     }
@@ -1158,6 +1196,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 void guac_terminal_flush(guac_terminal* terminal) {
     guac_terminal_commit_cursor(terminal);
     guac_terminal_display_flush(terminal->display);
+    guac_terminal_scrollbar_flush(terminal->scrollbar);
 }
 
 void guac_terminal_lock(guac_terminal* terminal) {

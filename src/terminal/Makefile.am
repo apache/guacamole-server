@@ -34,6 +34,7 @@ noinst_HEADERS =                \
     cursor.h                    \
     display.h                   \
     ibar.h                      \
+    scrollbar.h                 \
     terminal.h                  \
     terminal_handlers.h         \
     types.h
@@ -46,6 +47,7 @@ libguac_terminal_la_SOURCES =   \
     cursor.c                    \
     display.c                   \
     ibar.c                      \
+    scrollbar.c                 \
     terminal.c                  \
     terminal_handlers.c
 

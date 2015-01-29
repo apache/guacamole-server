@@ -30,6 +30,7 @@
 #include "cursor.h"
 #include "display.h"
 #include "guac_clipboard.h"
+#include "scrollbar.h"
 #include "types.h"
 
 #include <pthread.h>
@@ -116,6 +117,11 @@ struct guac_terminal {
      * this pipe.
      */
     int stdin_pipe_fd[2];
+
+    /**
+     * Graphical representation of the current scroll state.
+     */
+    guac_terminal_scrollbar* scrollbar;
 
     /**
      * The relative offset of the display. A positive value indicates that
