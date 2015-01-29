@@ -45,6 +45,58 @@
 #define GUAC_TERMINAL_SCROLLBAR_MIN_HEIGHT 64
 
 /**
+ * The state of all scrollbar components, describing all variable aspects of
+ * the scrollbar's appearance.
+ */
+typedef struct guac_terminal_scrollbar_render_state {
+
+    /**
+     * The current X-coordinate of the upper-left corner of the scrollbar's
+     * handle. This value will be relative to the scrollbar's containing layer.
+     */
+    int handle_x;
+
+    /**
+     * The current Y-coordinate of the upper-left corner of the scrollbar's
+     * handle. This value will be relative to the scrollbar's containing layer.
+     */
+    int handle_y;
+
+    /**
+     * The width of the scrollbar's handle.
+     */
+    int handle_width;
+
+    /**
+     * The height of the scrollbar's handle.
+     */
+    int handle_height;
+
+    /**
+     * The current X-coordinate of the upper-left corner of the scrollbar's
+     * containing layer.
+     */
+    int container_x;
+
+    /**
+     * The current Y-coordinate of the upper-left corner of the scrollbar's
+     * containing layer.
+     */
+    int container_y;
+
+    /**
+     * The width of the scrollbar's containing layer.
+     */
+    int container_width;
+
+    /**
+     * The height of the scrollbar's containing layer.
+     */
+    int container_height;
+
+} guac_terminal_scrollbar_render_state;
+
+/**
  * A scrollbar, made up of a containing layer and inner draggable handle. The
  * position of the handle within the layer represents the value of the
  * scrollbar.
@@ -102,6 +154,11 @@ typedef struct guac_terminal_scrollbar {
      */
     int value;
 
+    /**
+     * The current state of all variable, visible parts of the scrollbar.
+     */
+    guac_terminal_scrollbar_render_state render_state;
+
 } guac_terminal_scrollbar;
 
 /**
@@ -144,6 +201,18 @@ guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
  *     The scrollbar to free.
  */
 void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar);
+
+/**
+ * Flushes the render state of the given scrollbar, updating the remote display
+ * accordingly.
+ *
+ * This may cause instructions to be written to the client's socket, but the
+ * client's socket will not be automatically flushed.
+ *
+ * @param scrollbar
+ *     The scrollbar whose render state is to be flushed.
+ */
+void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar);
 
 /**
  * Sets the minimum and maximum allowed scroll values of the given scrollbar

@@ -682,6 +682,8 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
     }
 
     guac_terminal_display_flush(terminal->display);
+    guac_terminal_scrollbar_flush(terminal->scrollbar);
+
     guac_protocol_send_sync(terminal->client->socket,
             terminal->client->last_sent_timestamp);
     guac_socket_flush(terminal->client->socket);
@@ -747,6 +749,8 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
     }
 
     guac_terminal_display_flush(terminal->display);
+    guac_terminal_scrollbar_flush(terminal->scrollbar);
+
     guac_protocol_send_sync(terminal->client->socket,
             terminal->client->last_sent_timestamp);
     guac_socket_flush(terminal->client->socket);
@@ -1170,6 +1174,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 
     /* If terminal size hasn't changed, still need to flush */
     else {
+        guac_terminal_scrollbar_flush(terminal->scrollbar);
         guac_protocol_send_sync(socket, client->last_sent_timestamp);
         guac_socket_flush(socket);
     }
@@ -1181,6 +1186,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 void guac_terminal_flush(guac_terminal* terminal) {
     guac_terminal_commit_cursor(terminal);
     guac_terminal_display_flush(terminal->display);
+    guac_terminal_scrollbar_flush(terminal->scrollbar);
 }
 
 void guac_terminal_lock(guac_terminal* terminal) {

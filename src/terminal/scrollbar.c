@@ -51,6 +51,18 @@ guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
     scrollbar->parent_height = 0;
     scrollbar->visible_area  = 0;
 
+    /* Init handle render state */
+    scrollbar->render_state.handle_x      = 0;
+    scrollbar->render_state.handle_y      = 0;
+    scrollbar->render_state.handle_width  = 0;
+    scrollbar->render_state.handle_height = 0;
+
+    /* Init container render state */
+    scrollbar->render_state.container_x      = 0;
+    scrollbar->render_state.container_y      = 0;
+    scrollbar->render_state.container_width  = 0;
+    scrollbar->render_state.container_height = 0;
+
     /* Allocate and init layers */
     scrollbar->container = guac_client_alloc_layer(client);
     scrollbar->handle    = guac_client_alloc_layer(client);
@@ -75,53 +87,155 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
 }
 
 /**
- * Updates the position and size of the scrollbar handle relative to the
- * current scrollbar value, bounds, and parent layer dimensions.
+ * Calculates the render state of the scroll bar, given its minimum, maximum,
+ * and current values. This render state will not be reflected graphically
+ * unless the scrollbar is flushed.
  *
  * @param scrollbar
- *     The scrollbar whose handle should be updated.
+ *     The scrollbar whose render state should be calculated.
+ *
+ * @param render_state
+ *     A pointer to an existing guac_terminal_scrollbar_render_state that will
+ *     be populated with the calculated result.
  */
-static void __update_handle(guac_terminal_scrollbar* scrollbar) {
+static void calculate_render_state(guac_terminal_scrollbar* scrollbar,
+        guac_terminal_scrollbar_render_state* render_state) {
+
+    /* Calculate container dimensions */
+    render_state->container_width  = GUAC_TERMINAL_SCROLLBAR_WIDTH;
+    render_state->container_height = scrollbar->parent_height;
+
+    /* Calculate container position */
+    render_state->container_x = scrollbar->parent_width
+                              - render_state->container_width;
+
+    render_state->container_y = 0;
+
+    /* Calculate handle dimensions */
+    render_state->handle_width  = render_state->container_width
+                                - GUAC_TERMINAL_SCROLLBAR_PADDING*2;
+
+    /* Handle can be no bigger than the scrollbar itself */
+    int max_handle_height = render_state->container_height
+                          - GUAC_TERMINAL_SCROLLBAR_PADDING*2;
+
+    /* Calculate legal delta between scroll values */
+    int scroll_delta;
+    if (scrollbar->max > scrollbar->min)
+        scroll_delta = scrollbar->max - scrollbar->min;
+    else
+        scroll_delta = 0;
+
+    /* Scale handle relative to visible area vs. scrolling region size */
+    int proportional_height = max_handle_height
+                            * scrollbar->visible_area
+                            / (scroll_delta + scrollbar->visible_area);
+
+    /* Ensure handle is no smaller than minimum height */
+    if (proportional_height > GUAC_TERMINAL_SCROLLBAR_MIN_HEIGHT)
+        render_state->handle_height = proportional_height;
+    else
+        render_state->handle_height = GUAC_TERMINAL_SCROLLBAR_MIN_HEIGHT;
+
+    /* Ensure handle is no larger than maximum height */
+    if (render_state->handle_height > max_handle_height)
+        render_state->handle_height = max_handle_height;
+
+    /* Calculate handle position */
+    render_state->handle_x = GUAC_TERMINAL_SCROLLBAR_PADDING;
+
+    /* Handle Y position is relative to current scroll value */
+    if (scroll_delta > 0)
+        render_state->handle_y = GUAC_TERMINAL_SCROLLBAR_PADDING
+            + (max_handle_height - render_state->handle_height)
+               * (scrollbar->value - scrollbar->min)
+               / scroll_delta;
+
+    /* ... unless there is only one possible scroll value */
+    else
+        render_state->handle_y = GUAC_TERMINAL_SCROLLBAR_PADDING;
+
+}
+
+void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
 
     guac_socket* socket = scrollbar->client->socket;
 
-    /* Skip if no scrolling region at all */
-    if (scrollbar->min >= scrollbar->max)
-        return;
+    /* Get old render state */
+    guac_terminal_scrollbar_render_state* old_state = &scrollbar->render_state;
 
-    int region_size = scrollbar->max - scrollbar->min;
+    /* Calculate new render state */
+    guac_terminal_scrollbar_render_state new_state;
+    calculate_render_state(scrollbar, &new_state);
 
-    /* Calculate handle dimensions */
-    int handle_width  = GUAC_TERMINAL_SCROLLBAR_WIDTH - GUAC_TERMINAL_SCROLLBAR_PADDING*2;
-    int handle_height = GUAC_TERMINAL_SCROLLBAR_MIN_HEIGHT;
+    /* Reposition container if moved */
+    if (old_state->container_x != new_state.container_x
+     || old_state->container_y != new_state.container_y) {
 
-    /* Size handle relative to visible area */
-    int padded_container_height = (scrollbar->parent_height - GUAC_TERMINAL_SCROLLBAR_PADDING*2);
-    int proportional_height = padded_container_height * scrollbar->visible_area / (region_size + scrollbar->visible_area);
-    if (proportional_height > handle_height)
-        handle_height = proportional_height;
+        guac_protocol_send_move(socket,
+                scrollbar->container, scrollbar->parent,
+                new_state.container_x,
+                new_state.container_y,
+                0);
 
-    /* Calculate handle position and dimensions */
-    int handle_x = GUAC_TERMINAL_SCROLLBAR_PADDING;
-    int handle_y = GUAC_TERMINAL_SCROLLBAR_PADDING
-              + (padded_container_height - handle_height) * (scrollbar->value - scrollbar->min) / region_size;
+    }
 
-    /* Reposition handle relative to container and current value */
-    guac_protocol_send_move(socket,
-            scrollbar->handle, scrollbar->container,
-            handle_x, handle_y, 0);
+    /* Resize and redraw container if size changed */
+    if (old_state->container_width  != new_state.container_width
+     || old_state->container_height != new_state.container_height) {
 
-    /* Resize handle relative to scrollable area */
-    guac_protocol_send_size(socket, scrollbar->handle,
-            handle_width, handle_height);
+        /* Set new size */
+        guac_protocol_send_size(socket, scrollbar->container,
+                new_state.container_width,
+                new_state.container_height);
 
-    /* Fill handle with solid color */
-    guac_protocol_send_rect(socket, scrollbar->handle, 0, 0, handle_width, handle_height);
-    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->handle,
-            0x80, 0x80, 0x80, 0xFF);
-    guac_protocol_send_cstroke(socket, GUAC_COMP_OVER, scrollbar->handle,
-            GUAC_LINE_CAP_SQUARE, GUAC_LINE_JOIN_MITER, 2,
-            0xA0, 0xA0, 0xA0, 0xFF);
+        /* Fill container with solid color */
+        guac_protocol_send_rect(socket, scrollbar->container, 0, 0,
+                new_state.container_width,
+                new_state.container_height);
+
+        guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->container,
+                0x40, 0x40, 0x40, 0xFF);
+
+    }
+
+    /* Reposition handle if moved */
+    if (old_state->handle_x != new_state.handle_x
+     || old_state->handle_y != new_state.handle_y) {
+
+        guac_protocol_send_move(socket,
+                scrollbar->handle, scrollbar->container,
+                new_state.handle_x,
+                new_state.handle_y,
+                0);
+
+    }
+
+    /* Resize and redraw handle if size changed */
+    if (old_state->handle_width  != new_state.handle_width
+     || old_state->handle_height != new_state.handle_height) {
+
+        /* Send new size */
+        guac_protocol_send_size(socket, scrollbar->handle,
+                new_state.handle_width,
+                new_state.handle_height);
+
+        /* Fill and stroke handle with solid color */
+        guac_protocol_send_rect(socket, scrollbar->handle, 0, 0,
+                new_state.handle_width,
+                new_state.handle_height);
+
+        guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->handle,
+                0x80, 0x80, 0x80, 0xFF);
+
+        guac_protocol_send_cstroke(socket, GUAC_COMP_OVER, scrollbar->handle,
+                GUAC_LINE_CAP_SQUARE, GUAC_LINE_JOIN_MITER, 2,
+                0xA0, 0xA0, 0xA0, 0xFF);
+
+    }
+
+    /* Store current render state */
+    scrollbar->render_state = new_state;
 
 }
 
@@ -138,9 +252,6 @@ void guac_terminal_scrollbar_set_bounds(guac_terminal_scrollbar* scrollbar,
     scrollbar->min = min;
     scrollbar->max = max;
 
-    /* Update handle position and size */
-    __update_handle(scrollbar);
-
 }
 
 void guac_terminal_scrollbar_set_value(guac_terminal_scrollbar* scrollbar,
@@ -155,44 +266,15 @@ void guac_terminal_scrollbar_set_value(guac_terminal_scrollbar* scrollbar,
     /* Update value */
     scrollbar->value = value;
 
-    /* Update handle position and size */
-    __update_handle(scrollbar);
-
 }
 
 void guac_terminal_scrollbar_parent_resized(guac_terminal_scrollbar* scrollbar,
         int parent_width, int parent_height, int visible_area) {
 
-    guac_socket* socket = scrollbar->client->socket;
-
-    /* Calculate container position and dimensions */
-    int container_x      = parent_width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
-    int container_y      = 0;
-    int container_width  = GUAC_TERMINAL_SCROLLBAR_WIDTH;
-    int container_height = parent_height;
-
-    /* Reposition container relative to parent dimensions */
-    guac_protocol_send_move(socket,
-            scrollbar->container, scrollbar->parent,
-            container_x, container_y, 0);
-
-    /* Resize to fit within parent */
-    guac_protocol_send_size(socket, scrollbar->container,
-            container_width, container_height);
-
-    /* Fill container with solid color */
-    guac_protocol_send_rect(socket, scrollbar->container, 0, 0,
-            container_width, container_height);
-    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->container,
-            0x40, 0x40, 0x40, 0xFF);
-
     /* Assign new dimensions */
     scrollbar->parent_width  = parent_width;
     scrollbar->parent_height = parent_height;
     scrollbar->visible_area  = visible_area;
-
-    /* Update handle position and size */
-    __update_handle(scrollbar);
 
 }
 
