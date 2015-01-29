@@ -202,6 +202,11 @@ guac_terminal* guac_terminal_create(guac_client* client,
         },
         .width = 1};
 
+    /* Calculate available display area */
+    int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
+    if (available_width < 0)
+        available_width = 0;
+
     guac_terminal* term = malloc(sizeof(guac_terminal));
     term->client = client;
     term->upload_path_handler = NULL;
@@ -227,7 +232,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
 
-    term->term_width   = width  / term->display->char_width;
+    term->term_width   = available_width / term->display->char_width;
     term->term_height  = height / term->display->char_height;
 
     /* Open STDOUT pipe */
@@ -1146,9 +1151,14 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     guac_client* client = display->client;
     guac_socket* socket = client->socket;
 
+    /* Calculate available display area */
+    int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
+    if (available_width < 0)
+        available_width = 0;
+
     /* Calculate dimensions */
     int rows    = height / display->char_height;
-    int columns = width  / display->char_width;
+    int columns = available_width / display->char_width;
 
     /* Resize default layer to given pixel dimensions */
     guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, width, height);
