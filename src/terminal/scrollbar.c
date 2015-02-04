@@ -90,19 +90,29 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
 }
 
 /**
- * Calculates the render state of the scroll bar, given its minimum, maximum,
- * and current values. This render state will not be reflected graphically
- * unless the scrollbar is flushed.
+ * Calculates the state of the scroll bar, given its minimum, maximum, current
+ * values, and the state of any dragging operation. The resulting render state
+ * will not be reflected graphically unless the scrollbar is flushed, and any
+ * resulting value will not be assigned to the scrollbar unless explicitly set
+ * with guac_terminal_scrollbar_set_value().
  *
  * @param scrollbar
- *     The scrollbar whose render state should be calculated.
+ *     The scrollbar whose state should be calculated.
  *
  * @param render_state
  *     A pointer to an existing guac_terminal_scrollbar_render_state that will
  *     be populated with the calculated result.
+ *
+ * @param value
+ *     A pointer to an existing int that will be populated with the updated
+ *     scrollbar value.
  */
-static void calculate_render_state(guac_terminal_scrollbar* scrollbar,
-        guac_terminal_scrollbar_render_state* render_state) {
+static void calculate_state(guac_terminal_scrollbar* scrollbar,
+        guac_terminal_scrollbar_render_state* render_state,
+        int* value) {
+
+    /* Use unchanged current value by default */
+    *value = scrollbar->value;
 
     /* Calculate container dimensions */
     render_state->container_width  = GUAC_TERMINAL_SCROLLBAR_WIDTH;
@@ -166,6 +176,14 @@ static void calculate_render_state(guac_terminal_scrollbar* scrollbar,
 
         render_state->handle_y = dragged_handle_y;
 
+        /* Calculate scrollbar value */
+        if (max_handle_y > min_handle_y) {
+            *value = scrollbar->min
+                   + (dragged_handle_y - min_handle_y)
+                      * scroll_delta
+                      / (max_handle_y - min_handle_y);
+        }
+
     }
 
     /* Handle Y position is relative to current scroll value */
@@ -185,12 +203,24 @@ void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
 
     guac_socket* socket = scrollbar->client->socket;
 
-    /* Get old render state */
+    /* Get old state */
+    int old_value = scrollbar->value;
     guac_terminal_scrollbar_render_state* old_state = &scrollbar->render_state;
 
-    /* Calculate new render state */
+    /* Calculate new state */
+    int new_value;
     guac_terminal_scrollbar_render_state new_state;
-    calculate_render_state(scrollbar, &new_state);
+    calculate_state(scrollbar, &new_state, &new_value);
+
+    /* Notify of scroll if value is changing */
+    if (new_value != old_value) {
+
+        /* TODO: Call scroll value handler */
+        guac_client_log(scrollbar->client, GUAC_LOG_DEBUG,
+                "SCROLL: min=%i max=%i value=%i",
+                scrollbar->min, scrollbar->max, new_value);
+
+    }
 
     /* Reposition container if moved */
     if (old_state->container_x != new_state.container_x
@@ -321,10 +351,8 @@ int guac_terminal_scrollbar_handle_mouse(guac_terminal_scrollbar* scrollbar,
     if (scrollbar->dragging_handle) {
 
         /* Update drag while mouse button is held */
-        if (mask & GUAC_CLIENT_MOUSE_LEFT) {
+        if (mask & GUAC_CLIENT_MOUSE_LEFT)
             scrollbar->drag_current_y = y;
-            /* TODO: Update scrollbar value */
-        }
 
         /* Stop drag if mouse button is released */
         else
