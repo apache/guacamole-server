@@ -1379,17 +1379,28 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
 static int __guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask) {
 
+    guac_client* client = term->client;
+    guac_socket* socket = client->socket;
+
     /* Determine which buttons were just released and pressed */
     int released_mask =  term->mouse_mask & ~mask;
     int pressed_mask  = ~term->mouse_mask &  mask;
+
+    /* Notify scrollbar, do not handle anything handled by scrollbar */
+    if (guac_terminal_scrollbar_handle_mouse(term->scrollbar, x, y, mask)) {
+        guac_terminal_scrollbar_flush(term->scrollbar);
+        guac_protocol_send_sync(socket, client->last_sent_timestamp);
+        guac_socket_flush(socket);
+        return 0;
+    }
 
     term->mouse_mask = mask;
 
     /* Show mouse cursor if not already shown */
     if (term->current_cursor != term->ibar_cursor) {
         term->current_cursor = term->ibar_cursor;
-        guac_terminal_set_cursor(term->client, term->ibar_cursor);
-        guac_socket_flush(term->client->socket);
+        guac_terminal_set_cursor(client, term->ibar_cursor);
+        guac_socket_flush(socket);
     }
 
     /* Paste contents of clipboard on right or middle mouse button up */
@@ -1417,8 +1428,8 @@ static int __guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mas
             free(string);
 
             /* Send data */
-            guac_common_clipboard_send(term->clipboard, term->client);
-            guac_socket_flush(term->client->socket);
+            guac_common_clipboard_send(term->clipboard, client);
+            guac_socket_flush(socket);
 
         }
 
