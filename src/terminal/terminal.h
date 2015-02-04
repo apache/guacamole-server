@@ -308,6 +308,11 @@ struct guac_terminal {
     int mouse_mask;
 
     /**
+     * The cached pointer cursor.
+     */
+    guac_terminal_cursor* pointer_cursor;
+
+    /**
      * The cached I-bar cursor.
      */
     guac_terminal_cursor* ibar_cursor;

@@ -29,6 +29,7 @@
 #include "display.h"
 #include "ibar.h"
 #include "guac_clipboard.h"
+#include "pointer.h"
 #include "scrollbar.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
@@ -276,8 +277,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->mod_shift = 0;
 
     /* Set up mouse cursors */
-    term->ibar_cursor = guac_terminal_create_ibar(client);
-    term->blank_cursor = guac_terminal_create_blank(client);
+    term->pointer_cursor = guac_terminal_create_pointer(client);
+    term->ibar_cursor    = guac_terminal_create_ibar(client);
+    term->blank_cursor   = guac_terminal_create_blank(client);
 
     /* Initialize mouse cursor */
     term->current_cursor = term->blank_cursor;
@@ -313,6 +315,7 @@ void guac_terminal_free(guac_terminal* term) {
     guac_terminal_scrollbar_free(term->scrollbar);
 
     /* Free cursors */
+    guac_terminal_cursor_free(term->client, term->pointer_cursor);
     guac_terminal_cursor_free(term->client, term->ibar_cursor);
     guac_terminal_cursor_free(term->client, term->blank_cursor);
 
@@ -1392,10 +1395,20 @@ static int __guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mas
 
     /* Notify scrollbar, do not handle anything handled by scrollbar */
     if (guac_terminal_scrollbar_handle_mouse(term->scrollbar, x, y, mask)) {
+
+        /* Set pointer cursor if mouse is over scrollbar */
+        if (term->current_cursor != term->pointer_cursor) {
+            term->current_cursor = term->pointer_cursor;
+            guac_terminal_set_cursor(client, term->pointer_cursor);
+        }
+
+        /* Flush scrollbar */
         guac_terminal_scrollbar_flush(term->scrollbar);
         guac_protocol_send_sync(socket, client->last_sent_timestamp);
         guac_socket_flush(socket);
+
         return 0;
+
     }
 
     term->mouse_mask = mask;
@@ -1404,6 +1417,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mas
     if (term->current_cursor != term->ibar_cursor) {
         term->current_cursor = term->ibar_cursor;
         guac_terminal_set_cursor(client, term->ibar_cursor);
+        guac_protocol_send_sync(socket, client->last_sent_timestamp);
         guac_socket_flush(socket);
     }
 
