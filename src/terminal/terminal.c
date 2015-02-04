@@ -50,6 +50,7 @@
 #include <guacamole/error.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/timestamp.h>
 
 /**
  * Sets the given range of columns to the given character.
@@ -322,56 +323,105 @@ void guac_terminal_free(guac_terminal* term) {
 
 }
 
+/**
+ * Waits for data to become available on the given file descriptor.
+ *
+ * @param fd
+ *    The file descriptor to wait on.
+ *
+ * @param msec_timeout
+ *    The maximum amount of time to wait, in milliseconds.
+ *
+ * @return
+ *    A positive if data is available, zero if the timeout has elapsed without
+ *    data becoming available, or negative if an error occurred.
+ */
+static int guac_terminal_wait_for_data(int fd, int msec_timeout) {
+
+    /* Build fd_set */
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+
+    /* Split millisecond timeout into seconds and microseconds */
+    struct timeval timeout = {
+        .tv_sec  =  msec_timeout / 1000,
+        .tv_usec = (msec_timeout % 1000) * 1000
+    };
+
+    /* Wait for data */
+    return select(fd+1, &fds, NULL, NULL, &timeout);
+
+}
+
 int guac_terminal_render_frame(guac_terminal* terminal) {
 
     guac_client* client = terminal->client;
     char buffer[GUAC_TERMINAL_PACKET_SIZE];
 
-    int ret_val;
+    int wait_result;
     int fd = terminal->stdout_pipe_fd[0];
-    struct timeval timeout;
-    fd_set fds;
-
-    /* Build fd_set */
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
-
-    /* Time to wait */
-    timeout.tv_sec =  1;
-    timeout.tv_usec = 0;
 
     /* Wait for data to be available */
-    ret_val = select(fd+1, &fds, NULL, NULL, &timeout);
-    if (ret_val > 0) {
-
-        int bytes_read = 0;
+    wait_result = guac_terminal_wait_for_data(fd, 1000);
+    if (wait_result > 0) {
 
         guac_terminal_lock(terminal);
+        guac_timestamp frame_start = guac_timestamp_current();
 
-        /* Read data, write to terminal */
-        if ((bytes_read = guac_terminal_packet_read(fd,
-                        buffer, sizeof(buffer))) > 0) {
+        do {
 
-            if (guac_terminal_write(terminal, buffer, bytes_read)) {
-                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error writing data");
+            guac_timestamp frame_end;
+            int frame_remaining;
+
+            int bytes_read;
+
+            /* Read data, write to terminal */
+            if ((bytes_read = guac_terminal_packet_read(fd,
+                            buffer, sizeof(buffer))) > 0) {
+
+                if (guac_terminal_write(terminal, buffer, bytes_read)) {
+                    guac_client_abort(client,
+                            GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                            "Error writing data");
+                    guac_terminal_unlock(terminal);
+                    return 1;
+                }
+
+            }
+
+            /* Notify on error */
+            if (bytes_read < 0) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "Error reading data");
+                guac_terminal_unlock(terminal);
                 return 1;
             }
 
-        }
+            /* Calculate time remaining in frame */
+            frame_end = guac_timestamp_current();
+            frame_remaining = frame_start + GUAC_TERMINAL_FRAME_DURATION
+                            - frame_end;
 
-        /* Notify on error */
-        if (bytes_read < 0) {
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error reading data");
-            return 1;
-        }
+            /* Wait again if frame remaining */
+            if (frame_remaining > 0)
+                wait_result = guac_terminal_wait_for_data(fd,
+                        GUAC_TERMINAL_FRAME_TIMEOUT);
+            else
+                break;
+
+        } while (wait_result > 0);
 
         /* Flush terminal */
         guac_terminal_flush(terminal);
         guac_terminal_unlock(terminal);
 
     }
-    else if (ret_val < 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error waiting for data");
+
+    /* Notify of any errors */
+    if (wait_result < 0) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Error waiting for data");
         return 1;
     }
 
