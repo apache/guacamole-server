@@ -404,6 +404,10 @@ int guac_terminal_write_stdout(guac_terminal* terminal, const char* c,
     return guac_terminal_packet_write(terminal->stdout_pipe_fd[1], c, size);
 }
 
+int guac_terminal_notify(guac_terminal* terminal) {
+    return guac_terminal_packet_write(terminal->stdout_pipe_fd[1], NULL, 0);
+}
+
 int guac_terminal_printf(guac_terminal* terminal, const char* format, ...) {
 
     int written;
@@ -711,12 +715,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
     }
 
-    guac_terminal_display_flush(terminal->display);
-    guac_terminal_scrollbar_flush(terminal->scrollbar);
-
-    guac_protocol_send_sync(terminal->client->socket,
-            terminal->client->last_sent_timestamp);
-    guac_socket_flush(terminal->client->socket);
+    guac_terminal_notify(terminal);
 
 }
 
@@ -778,12 +777,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
     }
 
-    guac_terminal_display_flush(terminal->display);
-    guac_terminal_scrollbar_flush(terminal->scrollbar);
-
-    guac_protocol_send_sync(terminal->client->socket,
-            terminal->client->last_sent_timestamp);
-    guac_socket_flush(terminal->client->socket);
+    guac_terminal_notify(terminal);
 
 }
 
@@ -1204,16 +1198,9 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
         /* Reset scroll region */
         terminal->scroll_end = rows - 1;
 
-        guac_terminal_flush(terminal);
     }
 
-    /* If terminal size hasn't changed, still need to flush */
-    else {
-        guac_terminal_scrollbar_flush(terminal->scrollbar);
-        guac_protocol_send_sync(socket, client->last_sent_timestamp);
-        guac_socket_flush(socket);
-    }
-
+    guac_terminal_notify(terminal);
     return 0;
 
 }
@@ -1246,7 +1233,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     if (term->current_cursor != term->blank_cursor) {
         term->current_cursor = term->blank_cursor;
         guac_terminal_set_cursor(term->client, term->blank_cursor);
-        guac_socket_flush(term->client->socket);
+        guac_terminal_notify(term);
     }
 
     /* Track modifiers */
@@ -1420,11 +1407,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mas
             guac_terminal_set_cursor(client, term->pointer_cursor);
         }
 
-        /* Flush scrollbar */
-        guac_terminal_scrollbar_flush(term->scrollbar);
-        guac_protocol_send_sync(socket, client->last_sent_timestamp);
-        guac_socket_flush(socket);
-
+        guac_terminal_notify(term);
         return 0;
 
     }
@@ -1435,8 +1418,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mas
     if (term->current_cursor != term->ibar_cursor) {
         term->current_cursor = term->ibar_cursor;
         guac_terminal_set_cursor(client, term->ibar_cursor);
-        guac_protocol_send_sync(socket, client->last_sent_timestamp);
-        guac_socket_flush(socket);
+        guac_terminal_notify(term);
     }
 
     /* Paste contents of clipboard on right or middle mouse button up */

@@ -368,6 +368,19 @@ int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size);
 int guac_terminal_write_stdout(guac_terminal* terminal, const char* c, int size);
 
 /**
+ * Notifies the terminal that an event has occurred and the terminal should
+ * flush itself when reasonable.
+ *
+ * @param terminal
+ *     The terminal to notify.
+ *
+ * @return
+ *     Zero if notification succeeded, non-zero if an error occurred while
+ *     notifying the terminal.
+ */
+int guac_terminal_notify(guac_terminal* terminal);
+
+/**
  * Reads a single line from this terminal's STDIN. Input is retrieved in
  * the same manner as guac_terminal_read_stdin() and the same restrictions
  * apply.
