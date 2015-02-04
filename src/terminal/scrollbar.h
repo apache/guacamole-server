@@ -96,12 +96,21 @@ typedef struct guac_terminal_scrollbar_render_state {
 
 } guac_terminal_scrollbar_render_state;
 
+typedef struct guac_terminal_scrollbar guac_terminal_scrollbar;
+
+/**
+ * Handler which is called whenever the scrollbar value changes outside a call
+ * to guac_terminal_scrollbar_set_value().
+ */
+typedef void guac_terminal_scrollbar_scroll_handler(
+        guac_terminal_scrollbar* scrollbar, int value);
+
 /**
  * A scrollbar, made up of a containing layer and inner draggable handle. The
  * position of the handle within the layer represents the value of the
  * scrollbar.
  */
-typedef struct guac_terminal_scrollbar {
+struct guac_terminal_scrollbar {
 
     /**
      * The client associated with this scrollbar.
@@ -177,7 +186,18 @@ typedef struct guac_terminal_scrollbar {
      */
     int drag_current_y;
 
-} guac_terminal_scrollbar;
+    /**
+     * The function to call when the scrollbar handle is being dragged, and
+     * the new scrollbar value needs to be handled and assigned.
+     */
+    guac_terminal_scrollbar_scroll_handler* scroll_handler;
+
+    /**
+     * Arbitrary reference to data related to this scrollbar.
+     */
+    void* data;
+
+};
 
 /**
  * Allocates a new scrollbar, associating that scrollbar with the given client

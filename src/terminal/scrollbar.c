@@ -213,14 +213,8 @@ void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
     calculate_state(scrollbar, &new_state, &new_value);
 
     /* Notify of scroll if value is changing */
-    if (new_value != old_value) {
-
-        /* TODO: Call scroll value handler */
-        guac_client_log(scrollbar->client, GUAC_LOG_DEBUG,
-                "SCROLL: min=%i max=%i value=%i",
-                scrollbar->min, scrollbar->max, new_value);
-
-    }
+    if (new_value != old_value && scrollbar->scroll_handler)
+        scrollbar->scroll_handler(scrollbar, new_value);
 
     /* Reposition container if moved */
     if (old_state->container_x != new_state.container_x

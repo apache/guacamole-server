@@ -264,6 +264,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->scrollbar = guac_terminal_scrollbar_alloc(term->client,
             GUAC_DEFAULT_LAYER, width, height, term->term_height);
 
+    /* Associate scrollbar with this terminal */
+    term->scrollbar->data = term;
+    term->scrollbar->scroll_handler = guac_terminal_scroll_handler;
+
     /* Init terminal */
     guac_terminal_reset(term);
 
@@ -1469,6 +1473,24 @@ int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask) {
     guac_terminal_unlock(term);
 
     return result;
+
+}
+
+void guac_terminal_scroll_handler(guac_terminal_scrollbar* scrollbar, int value) {
+
+    guac_terminal* terminal = (guac_terminal*) scrollbar->data;
+
+    /* Calculate change in scroll offset */
+    int delta = -value - terminal->scroll_offset;
+
+    /* Update terminal based on change in scroll offset */
+    if (delta < 0)
+        guac_terminal_scroll_display_down(terminal, -delta);
+    else if (delta > 0)
+        guac_terminal_scroll_display_up(terminal, delta);
+
+    /* Update scrollbar value */
+    guac_terminal_scrollbar_set_value(scrollbar, value);
 
 }
 

@@ -389,6 +389,19 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed);
 int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask);
 
 /**
+ * Handles a scroll event received from the scrollbar associated with a
+ * terminal.
+ *
+ * @param scrollbar
+ *     The scrollbar that has been scrolled.
+ *
+ * @param value
+ *     The new value that should be stored within the scrollbar, and
+ *     represented within the terminal display.
+ */
+void guac_terminal_scroll_handler(guac_terminal_scrollbar* scrollbar, int value);
+
+/**
  * Clears the current clipboard contents and sets the mimetype for future
  * contents.
  */
