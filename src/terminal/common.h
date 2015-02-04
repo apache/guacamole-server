@@ -52,5 +52,26 @@ bool guac_terminal_has_glyph(int codepoint);
  */
 int guac_terminal_write_all(int fd, const char* buffer, int size);
 
+/**
+ * Similar to read, but automatically retries the read until an error occurs,
+ * filling all available space within the buffer. Unless it is known that the
+ * given amount of space is available on the file descriptor, there is a good
+ * chance this function will block.
+ *
+ * @param fd
+ *     The file descriptor to read data from.
+ *
+ * @param buffer
+ *     The buffer to store data within.
+ *
+ * @param size
+ *     The number of bytes available within the buffer.
+ *
+ * @return
+ *     The number of bytes read if successful, or a negative value if an error
+ *     occurs.
+ */
+int guac_terminal_fill_buffer(int fd, char* buffer, int size);
+
 #endif
 

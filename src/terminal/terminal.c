@@ -29,6 +29,7 @@
 #include "display.h"
 #include "ibar.h"
 #include "guac_clipboard.h"
+#include "packet.h"
 #include "pointer.h"
 #include "scrollbar.h"
 #include "terminal.h"
@@ -324,7 +325,7 @@ void guac_terminal_free(guac_terminal* term) {
 int guac_terminal_render_frame(guac_terminal* terminal) {
 
     guac_client* client = terminal->client;
-    char buffer[8192];
+    char buffer[GUAC_TERMINAL_PACKET_SIZE];
 
     int ret_val;
     int fd = terminal->stdout_pipe_fd[0];
@@ -348,7 +349,8 @@ int guac_terminal_render_frame(guac_terminal* terminal) {
         guac_terminal_lock(terminal);
 
         /* Read data, write to terminal */
-        if ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
+        if ((bytes_read = guac_terminal_packet_read(fd,
+                        buffer, sizeof(buffer))) > 0) {
 
             if (guac_terminal_write(terminal, buffer, bytes_read)) {
                 guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error writing data");
@@ -382,8 +384,24 @@ int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size) {
     return read(stdin_fd, c, size);
 }
 
-int guac_terminal_write_stdout(guac_terminal* terminal, const char* c, int size) {
-    return guac_terminal_write_all(terminal->stdout_pipe_fd[1], c, size);
+int guac_terminal_write_stdout(guac_terminal* terminal, const char* c,
+        int size) {
+
+    /* Write maximally-sized packets until only one packet remains */
+    while (size > GUAC_TERMINAL_PACKET_SIZE) {
+
+        /* Write maximally-sized packet */
+        if (guac_terminal_packet_write(terminal->stdout_pipe_fd[1], c,
+                GUAC_TERMINAL_PACKET_SIZE) < 0)
+            return -1;
+
+        /* Advance to next packet */
+        c    += GUAC_TERMINAL_PACKET_SIZE;
+        size -= GUAC_TERMINAL_PACKET_SIZE;
+
+    }
+
+    return guac_terminal_packet_write(terminal->stdout_pipe_fd[1], c, size);
 }
 
 int guac_terminal_printf(guac_terminal* terminal, const char* format, ...) {
