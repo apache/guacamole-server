@@ -96,12 +96,21 @@ typedef struct guac_terminal_scrollbar_render_state {
 
 } guac_terminal_scrollbar_render_state;
 
+typedef struct guac_terminal_scrollbar guac_terminal_scrollbar;
+
+/**
+ * Handler which is called whenever the scrollbar value changes outside a call
+ * to guac_terminal_scrollbar_set_value().
+ */
+typedef void guac_terminal_scrollbar_scroll_handler(
+        guac_terminal_scrollbar* scrollbar, int value);
+
 /**
  * A scrollbar, made up of a containing layer and inner draggable handle. The
  * position of the handle within the layer represents the value of the
  * scrollbar.
  */
-typedef struct guac_terminal_scrollbar {
+struct guac_terminal_scrollbar {
 
     /**
      * The client associated with this scrollbar.
@@ -159,7 +168,36 @@ typedef struct guac_terminal_scrollbar {
      */
     guac_terminal_scrollbar_render_state render_state;
 
-} guac_terminal_scrollbar;
+    /**
+     * Whether the scrollbar handle is currently being dragged.
+     */
+    int dragging_handle;
+
+    /**
+     * The offset of the Y location of the mouse pointer when the dragging
+     * began, relative to the top of the scrollbar handle. If dragging is not
+     * in progress, this value is undefined.
+     */
+    int drag_offset_y;
+
+    /**
+     * The current Y location of the mouse pointer if dragging is in progress.
+     * If dragging is not in progress, this value is undefined.
+     */
+    int drag_current_y;
+
+    /**
+     * The function to call when the scrollbar handle is being dragged, and
+     * the new scrollbar value needs to be handled and assigned.
+     */
+    guac_terminal_scrollbar_scroll_handler* scroll_handler;
+
+    /**
+     * Arbitrary reference to data related to this scrollbar.
+     */
+    void* data;
+
+};
 
 /**
  * Allocates a new scrollbar, associating that scrollbar with the given client
@@ -275,5 +313,30 @@ void guac_terminal_scrollbar_set_value(guac_terminal_scrollbar* scrollbar,
  */
 void guac_terminal_scrollbar_parent_resized(guac_terminal_scrollbar* scrollbar,
         int parent_width, int parent_height, int visible_area);
+
+/**
+ * Notifies the scrollbar of the current mouse state, allowing it to update
+ * itself with respect to button state and dragging.
+ *
+ * @param scrollbar
+ *     The scrollbar to notify of the current mouse state.
+ *
+ * @param x
+ *     The X coordinate of the mouse pointer.
+ *
+ * @param y
+ *     The Y coordinate of the mouse pointer.
+ *
+ * @param mask
+ *     The button mask, where the Nth bit of the button mask represents the
+ *     pressed state of the Nth mouse button, where button 0 is the left
+ *     mouse button, button 1 is the middle button, etc.
+ *
+ * @return
+ *     Zero if the mouse event was not handled by the scrollbar, non-zero
+ *     otherwise.
+ */
+int guac_terminal_scrollbar_handle_mouse(guac_terminal_scrollbar* scrollbar,
+        int x, int y, int mask);
 
 #endif
