@@ -40,6 +40,17 @@
 #include <guacamole/stream.h>
 
 /**
+ * The maximum duration of a single frame, in milliseconds.
+ */
+#define GUAC_TERMINAL_FRAME_DURATION 40
+
+/**
+ * The maximum amount of time to wait for more data before declaring a frame
+ * complete, in milliseconds.
+ */
+#define GUAC_TERMINAL_FRAME_TIMEOUT 10
+
+/**
  * The maximum number of custom tab stops.
  */
 #define GUAC_TERMINAL_MAX_TABS       16
@@ -366,6 +377,19 @@ int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size);
  * is freed in the output buffer by guac_terminal_render_frame().
  */
 int guac_terminal_write_stdout(guac_terminal* terminal, const char* c, int size);
+
+/**
+ * Notifies the terminal that an event has occurred and the terminal should
+ * flush itself when reasonable.
+ *
+ * @param terminal
+ *     The terminal to notify.
+ *
+ * @return
+ *     Zero if notification succeeded, non-zero if an error occurred while
+ *     notifying the terminal.
+ */
+int guac_terminal_notify(guac_terminal* terminal);
 
 /**
  * Reads a single line from this terminal's STDIN. Input is retrieved in
