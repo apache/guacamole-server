@@ -1220,6 +1220,9 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     guac_client* client = display->client;
     guac_socket* socket = client->socket;
 
+    /* Acquire exclusive access to terminal */
+    guac_terminal_lock(terminal);
+
     /* Calculate available display area */
     int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
     if (available_width < 0)
@@ -1249,6 +1252,9 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
         terminal->scroll_end = rows - 1;
 
     }
+
+    /* Release terminal */
+    guac_terminal_unlock(terminal);
 
     guac_terminal_notify(terminal);
     return 0;
