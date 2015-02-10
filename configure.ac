@@ -400,14 +400,15 @@ then
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-cache"])
 fi
 
-# libfreerdp-channels (1.0) / libfreerdp-client (1.1)
+# libfreerdp-channels (1.0) / libfreerdp-client + libfreerdp-core (1.1)
 if test "x${have_freerdp}" = "xyes"
 then
     AC_CHECK_LIB([freerdp-client], [freerdp_channels_new],
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-client"],
                  [AC_CHECK_LIB([freerdp-channels], [freerdp_channels_new],
                                [RDP_LIBS="$RDP_LIBS -lfreerdp-channels"
-                               legacy_freerdp_extensions=yes])])
+                               legacy_freerdp_extensions=yes])],
+                 [-lfreerdp-core])
 fi
 
 # libfreerdp-utils
