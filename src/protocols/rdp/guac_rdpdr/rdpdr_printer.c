@@ -54,6 +54,7 @@ char* const guac_rdpdr_pdf_filter_command[] = {
     "-sOutputFile=-",
     "-c",
     ".setpdfwrite",
+    "-sstdout=/dev/null",
     "-f",
     "-",
     NULL
