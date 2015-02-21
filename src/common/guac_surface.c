@@ -122,9 +122,11 @@ static void __guac_common_clip_rect(guac_common_surface* surface,
     int orig_x = rect->x;
     int orig_y = rect->y;
 
-    /* Skip clipping if no clipping rectangle applied */
-    if (!surface->clipped)
+    /* Just bound within surface if no clipping rectangle applied */
+    if (!surface->clipped) {
+        __guac_common_bound_rect(surface, rect, sx, sy);
         return;
+    }
 
     guac_common_rect_constrain(rect, &surface->clip_rect);
 
