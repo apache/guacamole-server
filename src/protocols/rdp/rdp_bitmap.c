@@ -201,8 +201,17 @@ void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* d
     int size = width * height * 4;
 
 #ifdef FREERDP_BITMAP_REQUIRES_ALIGNED_MALLOC
+    /* Free pre-existing data, if any (might be reused) */
+    if (bitmap->data != NULL)
+        _aligned_free(bitmap->data);
+
+    /* Allocate new data */
     bitmap->data = (UINT8*) _aligned_malloc(size, 16);
 #else
+    /* Free pre-existing data, if any (might be reused) */
+    free(bitmap->data);
+
+    /* Allocate new data */
     bitmap->data = (UINT8*) malloc(size);
 #endif
 
