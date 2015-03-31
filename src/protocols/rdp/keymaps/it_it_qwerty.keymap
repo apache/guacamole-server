@@ -46,6 +46,7 @@ map +altgr -shift 0x12 ~ "€"
 map +altgr -shift 0x1A ~ "["
 map +altgr -shift 0x1B ~ "]"
 map +altgr -shift 0x27 ~ "@"
+map +altgr -shift 0x28 ~ "#"
 
 map +altgr +shift 0x1A ~ "{"
 map +altgr +shift 0x1B ~ "}"
