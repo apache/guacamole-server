@@ -37,13 +37,39 @@
 
 #include <stdlib.h>
 
+/**
+ * Waits until data is available to be read from the given rfbClient, and thus
+ * a call to HandleRFBServerMessages() should not block. If the timeout elapses
+ * before data is available, zero is returned.
+ *
+ * @param rfb_client
+ *     The rfbClient to wait for.
+ *
+ * @param timeout
+ *     The maximum amount of time to wait, in microseconds.
+ *
+ * @returns
+ *     A positive value if data is available, zero if the timeout elapses
+ *     before data becomes available, or a negative value on error.
+ */
+static int guac_vnc_wait_for_messages(rfbClient* rfb_client, int timeout) {
+
+    /* Do not explicitly wait while data is on the buffer */
+    if (rfb_client->buffered)
+        return 1;
+
+    /* If no data on buffer, wait for data on socket */
+    return WaitForMessage(rfb_client, timeout);
+
+}
+
 int vnc_guac_client_handle_messages(guac_client* client) {
 
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) client->data;
     rfbClient* rfb_client = guac_client_data->rfb_client;
 
     /* Initially wait for messages */
-    int wait_result = WaitForMessage(rfb_client, 1000000);
+    int wait_result = guac_vnc_wait_for_messages(rfb_client, 1000000);
     guac_timestamp frame_start = guac_timestamp_current();
     while (wait_result > 0) {
 
@@ -62,7 +88,7 @@ int vnc_guac_client_handle_messages(guac_client* client) {
 
         /* Wait again if frame remaining */
         if (frame_remaining > 0)
-            wait_result = WaitForMessage(rfb_client,
+            wait_result = guac_vnc_wait_for_messages(rfb_client,
                     GUAC_VNC_FRAME_TIMEOUT*1000);
         else
             break;
