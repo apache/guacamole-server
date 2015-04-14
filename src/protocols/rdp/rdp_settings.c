@@ -33,6 +33,7 @@
 #endif
 
 #include <stddef.h>
+#include <string.h>
 
 int guac_rdp_get_width(freerdp* rdp) {
 #ifdef LEGACY_RDPSETTINGS
@@ -97,6 +98,17 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->AlternateShell = guac_settings->initial_program;
     rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
 #endif
+
+    /* Client name */
+    if (guac_settings->client_name != NULL) {
+#ifdef LEGACY_RDPSETTINGS
+        strncpy(rdp_settings->client_hostname, guac_settings->client_name,
+                RDP_CLIENT_HOSTNAME_SIZE - 1);
+#else
+        strncpy(rdp_settings->ClientHostname, guac_settings->client_name,
+                RDP_CLIENT_HOSTNAME_SIZE - 1);
+#endif
+    }
 
     /* Console */
 #ifdef LEGACY_RDPSETTINGS

@@ -31,6 +31,12 @@
 #include <freerdp/freerdp.h>
 
 /**
+ * The maximum number of bytes in the client hostname claimed during
+ * connection.
+ */
+#define RDP_CLIENT_HOSTNAME_SIZE 32
+
+/**
  * The default RDP port.
  */
 #define RDP_DEFAULT_PORT 3389
@@ -168,6 +174,12 @@ typedef struct guac_rdp_settings {
      * The initial program to run, if any.
      */
     char* initial_program;
+
+    /**
+     * The name of the client to submit to the RDP server upon connection, or
+     * NULL if the name is not specified.
+     */
+    char* client_name;
 
     /**
      * The type of security to use for the connection.

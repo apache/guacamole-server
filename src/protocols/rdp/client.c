@@ -115,6 +115,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "remote-app-dir",
     "remote-app-args",
     "static-channels",
+    "client-name",
     NULL
 };
 
@@ -144,6 +145,7 @@ enum RDP_ARGS_IDX {
     IDX_REMOTE_APP_DIR,
     IDX_REMOTE_APP_ARGS,
     IDX_STATIC_CHANNELS,
+    IDX_CLIENT_NAME,
     RDP_ARGS_COUNT
 };
 
@@ -665,6 +667,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->password = NULL;
     if (argv[IDX_PASSWORD][0] != '\0')
         settings->password = strdup(argv[IDX_PASSWORD]);
+
+    /* Client name */
+    settings->client_name = NULL;
+    if (argv[IDX_CLIENT_NAME][0] != '\0')
+        settings->client_name = strdup(argv[IDX_CLIENT_NAME]);
 
     /* Initial program */
     settings->initial_program = NULL;
