@@ -287,10 +287,10 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     display->font_desc = pango_font_description_new();
     pango_font_description_set_family(display->font_desc, font_name);
     pango_font_description_set_weight(display->font_desc, PANGO_WEIGHT_NORMAL);
-    pango_font_description_set_size(display->font_desc, font_size*PANGO_SCALE);
+    pango_font_description_set_size(display->font_desc,
+            font_size * PANGO_SCALE * dpi / 96);
 
     font_map = pango_cairo_font_map_get_default();
-    pango_cairo_font_map_set_resolution((PangoCairoFontMap*) font_map, dpi);
     context = pango_font_map_create_context(font_map);
 
     font = pango_font_map_load_font(font_map, context, display->font_desc);
