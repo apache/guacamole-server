@@ -219,6 +219,47 @@ typedef struct guac_rdp_settings {
      */
     char** svc_names;
 
+    /**
+     * Whether the desktop wallpaper should be visible. If unset, the desktop
+     * wallpaper will be hidden, reducing the amount of bandwidth required.
+     */
+    int wallpaper_enabled;
+
+    /**
+     * Whether desktop and window theming should be allowed. If unset, theming
+     * is temporarily disabled on the desktop of the RDP server for the sake of
+     * performance, reducing the amount of bandwidth required.
+     */
+    int theming_enabled;
+
+    /**
+     * Whether glyphs should be smoothed with antialiasing (ClearType). If
+     * unset, glyphs will be rendered with sharp edges and using single colors,
+     * effectively 1-bit images, reducing the amount of bandwidth required.
+     */
+    int font_smoothing_enabled;
+
+    /**
+     * Whether windows contents should be shown as they are moved. If unset,
+     * only a window border will be shown during window move operations,
+     * reducing the amount of bandwidth required.
+     */
+    int full_window_drag_enabled;
+
+    /**
+     * Whether desktop composition (Aero) should be enabled during the session.
+     * As desktop composition provides alpha blending and other special
+     * effects, this increases the amount of bandwidth used. If unset, desktop
+     * composition will be disabled.
+     */
+    int desktop_composition_enabled;
+
+    /**
+     * Whether menu animations should be shown. If unset, menus will not be
+     * animated, reducing the amount of bandwidth required.
+     */
+    int menu_animations_enabled;
+
 } guac_rdp_settings;
 
 /**

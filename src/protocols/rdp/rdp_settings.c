@@ -25,6 +25,7 @@
 #include "rdp_settings.h"
 
 #include <freerdp/constants.h>
+#include <freerdp/settings.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -57,6 +58,51 @@ int guac_rdp_get_depth(freerdp* rdp) {
 #else
     return rdp->settings->ColorDepth;
 #endif
+}
+
+/**
+ * Given the settings structure of the Guacamole RDP client, calculates the
+ * standard performance flag value to send to the RDP server. The value of
+ * these flags is dictated by the RDP standard.
+ *
+ * @param guac_settings
+ *     The settings structure to read performance settings from.
+ *
+ * @returns
+ *     The standard RDP performance flag value representing the union of all
+ *     performance settings within the given settings structure.
+ */
+static int guac_rdp_get_performance_flags(guac_rdp_settings* guac_settings) {
+
+    /* No performance flags initially */
+    int flags = PERF_FLAG_NONE;
+
+    /* Desktop wallpaper */
+    if (!guac_settings->wallpaper_enabled)
+        flags |= PERF_DISABLE_WALLPAPER;
+
+    /* Theming of desktop/windows */
+    if (!guac_settings->theming_enabled)
+        flags |= PERF_DISABLE_THEMING;
+
+    /* Font smoothing (ClearType) */
+    if (guac_settings->font_smoothing_enabled)
+        flags |= PERF_ENABLE_FONT_SMOOTHING;
+
+    /* Full-window drag */
+    if (!guac_settings->full_window_drag_enabled)
+        flags |= PERF_DISABLE_FULLWINDOWDRAG;
+
+    /* Desktop composition (Aero) */
+    if (guac_settings->desktop_composition_enabled)
+        flags |= PERF_ENABLE_DESKTOP_COMPOSITION;
+
+    /* Menu animations */
+    if (!guac_settings->menu_animations_enabled)
+        flags |= PERF_DISABLE_MENUANIMATIONS;
+
+    return flags;
+
 }
 
 void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
@@ -97,6 +143,13 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->DesktopHeight = guac_settings->height;
     rdp_settings->AlternateShell = guac_settings->initial_program;
     rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
+#endif
+
+    /* Performance flags */
+#ifdef LEGACY_RDPSETTINGS
+    rdp_settings->performance_flags = guac_rdp_get_performance_flags(guac_settings);
+#else
+    rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
 #endif
 
     /* Client name */

@@ -116,6 +116,12 @@ const char* GUAC_CLIENT_ARGS[] = {
     "remote-app-args",
     "static-channels",
     "client-name",
+    "enable-wallpaper",
+    "enable-theming",
+    "enable-font-smoothing",
+    "enable-full-window-drag",
+    "enable-desktop-composition",
+    "enable-menu-animations",
     NULL
 };
 
@@ -146,6 +152,12 @@ enum RDP_ARGS_IDX {
     IDX_REMOTE_APP_ARGS,
     IDX_STATIC_CHANNELS,
     IDX_CLIENT_NAME,
+    IDX_ENABLE_WALLPAPER,
+    IDX_ENABLE_THEMING,
+    IDX_ENABLE_FONT_SMOOTHING,
+    IDX_ENABLE_FULL_WINDOW_DRAG,
+    IDX_ENABLE_DESKTOP_COMPOSITION,
+    IDX_ENABLE_MENU_ANIMATIONS,
     RDP_ARGS_COUNT
 };
 
@@ -697,6 +709,14 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     settings->svc_names = NULL;
     if (argv[IDX_STATIC_CHANNELS][0] != '\0')
         settings->svc_names = guac_split(argv[IDX_STATIC_CHANNELS], ',');
+
+    /* Performance flags */
+    settings->wallpaper_enabled           = (strcmp(argv[IDX_ENABLE_WALLPAPER],           "true") == 0);
+    settings->theming_enabled             = (strcmp(argv[IDX_ENABLE_THEMING],             "true") == 0);
+    settings->font_smoothing_enabled      = (strcmp(argv[IDX_ENABLE_FONT_SMOOTHING],      "true") == 0);
+    settings->full_window_drag_enabled    = (strcmp(argv[IDX_ENABLE_FULL_WINDOW_DRAG],    "true") == 0);
+    settings->desktop_composition_enabled = (strcmp(argv[IDX_ENABLE_DESKTOP_COMPOSITION], "true") == 0);
+    settings->menu_animations_enabled     = (strcmp(argv[IDX_ENABLE_MENU_ANIMATIONS],     "true") == 0);
 
     /* Session color depth */
     settings->color_depth = RDP_DEFAULT_DEPTH;
