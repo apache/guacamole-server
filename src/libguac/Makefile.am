@@ -29,33 +29,33 @@ libguacinc_HEADERS =                  \
     guacamole/audio.h                 \
     guacamole/audio-fntypes.h         \
     guacamole/audio-types.h           \
-	guacamole/client-constants.h      \
+    guacamole/client-constants.h      \
     guacamole/client.h                \
-	guacamole/client-fntypes.h        \
-	guacamole/client-types.h          \
+    guacamole/client-fntypes.h        \
+    guacamole/client-types.h          \
     guacamole/error.h                 \
-	guacamole/error-types.h           \
+    guacamole/error-types.h           \
     guacamole/hash.h                  \
-	guacamole/instruction-constants.h \
+    guacamole/instruction-constants.h \
     guacamole/instruction.h           \
-	guacamole/instruction-types.h     \
+    guacamole/instruction-types.h     \
     guacamole/layer.h                 \
-	guacamole/layer-types.h           \
-	guacamole/plugin-constants.h      \
+    guacamole/layer-types.h           \
+    guacamole/plugin-constants.h      \
     guacamole/plugin.h                \
-	guacamole/plugin-types.h          \
+    guacamole/plugin-types.h          \
     guacamole/pool.h                  \
-	guacamole/pool-types.h            \
+    guacamole/pool-types.h            \
     guacamole/protocol.h              \
-	guacamole/protocol-types.h        \
-	guacamole/socket-constants.h      \
+    guacamole/protocol-types.h        \
+    guacamole/socket-constants.h      \
     guacamole/socket.h                \
-	guacamole/socket-fntypes.h        \
-	guacamole/socket-types.h          \
+    guacamole/socket-fntypes.h        \
+    guacamole/socket-types.h          \
     guacamole/stream.h                \
-	guacamole/stream-types.h          \
+    guacamole/stream-types.h          \
     guacamole/timestamp.h             \
-	guacamole/timestamp-types.h       \
+    guacamole/timestamp-types.h       \
     guacamole/unicode.h
 
 noinst_HEADERS =      \
