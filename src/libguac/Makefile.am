@@ -41,6 +41,8 @@ libguacinc_HEADERS =                  \
     guacamole/instruction-types.h     \
     guacamole/layer.h                 \
     guacamole/layer-types.h           \
+    guacamole/object.h                \
+    guacamole/object-types.h          \
     guacamole/plugin-constants.h      \
     guacamole/plugin.h                \
     guacamole/plugin-types.h          \

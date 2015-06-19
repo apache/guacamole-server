@@ -27,6 +27,7 @@
 #include "error.h"
 #include "instruction.h"
 #include "layer.h"
+#include "object.h"
 #include "pool.h"
 #include "protocol.h"
 #include "socket.h"
@@ -216,7 +217,7 @@ guac_client* guac_client_alloc() {
     /* Allocate stream pool */
     client->__stream_pool = guac_pool_alloc(0);
 
-    /* Initialze streams */
+    /* Initialize streams */
     client->__input_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
     client->__output_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
 
@@ -224,6 +225,11 @@ guac_client* guac_client_alloc() {
         client->__input_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
         client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
     }
+
+    /* Initialize objects */
+    client->__objects = malloc(sizeof(guac_object) * GUAC_CLIENT_MAX_OBJECTS);
+    for (i=0; i<GUAC_CLIENT_MAX_OBJECTS; i++)
+        client->__objects[i].index = GUAC_CLIENT_UNDEFINED_OBJECT_INDEX;
 
     return client;
 
@@ -245,6 +251,9 @@ void guac_client_free(guac_client* client) {
     /* Free streams */
     free(client->__input_streams);
     free(client->__output_streams);
+
+    /* Free objects */
+    free(client->__objects);
 
     /* Free stream pool */
     guac_pool_free(client->__stream_pool);

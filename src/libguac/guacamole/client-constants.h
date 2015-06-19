@@ -40,6 +40,16 @@
 #define GUAC_CLIENT_CLOSED_STREAM_INDEX -1
 
 /**
+ * The maximum number of objects supported by any one guac_client.
+ */
+#define GUAC_CLIENT_MAX_OBJECTS 64
+
+/**
+ * The index of an object which has not been defined.
+ */
+#define GUAC_CLIENT_UNDEFINED_OBJECT_INDEX -1
+
+/**
  * The flag set in the mouse button mask when the left mouse button is down.
  */
 #define GUAC_CLIENT_MOUSE_LEFT 0x01

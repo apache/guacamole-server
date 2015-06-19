@@ -31,6 +31,7 @@
  */
 
 #include "client-types.h"
+#include "object-types.h"
 #include "protocol-types.h"
 #include "stream-types.h"
 
@@ -91,6 +92,18 @@ typedef int guac_client_ack_handler(guac_client* client, guac_stream* stream,
  * Handler for Guacamole stream end events.
  */
 typedef int guac_client_end_handler(guac_client* client, guac_stream* stream);
+
+/**
+ * Handler for Guacamole object get events.
+ */
+typedef int guac_client_get_handler(guac_client* client, guac_object* object,
+        char* name);
+
+/**
+ * Handler for Guacamole object put events.
+ */
+typedef int guac_client_put_handler(guac_client* client, guac_object* object,
+        guac_stream* stream, char* mimetype, char* name);
 
 /**
  * Handler for Guacamole audio format events.
