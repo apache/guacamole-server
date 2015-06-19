@@ -437,6 +437,11 @@ struct guac_client {
     guac_stream* __input_streams;
 
     /**
+     * Pool of object indices.
+     */
+    guac_pool* __object_pool;
+
+    /**
      * All available objects (arbitrary sets of named streams).
      */
     guac_object* __objects;

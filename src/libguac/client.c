@@ -125,6 +125,39 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
 }
 
+guac_object* guac_client_alloc_object(guac_client* client) {
+
+    guac_object* allocd_object;
+    int object_index;
+
+    /* Refuse to allocate beyond maximum */
+    if (client->__object_pool->active == GUAC_CLIENT_MAX_OBJECTS)
+        return NULL;
+
+    /* Allocate object */
+    object_index = guac_pool_next_int(client->__object_pool);
+
+    /* Initialize object */
+    allocd_object = &(client->__objects[object_index]);
+    allocd_object->index = object_index;
+    allocd_object->data = NULL;
+    allocd_object->get_handler = NULL;
+    allocd_object->put_handler = NULL;
+
+    return allocd_object;
+
+}
+
+void guac_client_free_object(guac_client* client, guac_object* object) {
+
+    /* Release index to pool */
+    guac_pool_free_int(client->__object_pool, object->index);
+
+    /* Mark object as undefined */
+    object->index = GUAC_CLIENT_UNDEFINED_OBJECT_INDEX;
+
+}
+
 /**
  * Returns a newly allocated string containing a guaranteed-unique connection
  * identifier string which is 37 characters long and begins with a '$'
@@ -226,6 +259,9 @@ guac_client* guac_client_alloc() {
         client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
     }
 
+    /* Allocate object pool */
+    client->__object_pool = guac_pool_alloc(0);
+
     /* Initialize objects */
     client->__objects = malloc(sizeof(guac_object) * GUAC_CLIENT_MAX_OBJECTS);
     for (i=0; i<GUAC_CLIENT_MAX_OBJECTS; i++)
@@ -252,11 +288,14 @@ void guac_client_free(guac_client* client) {
     free(client->__input_streams);
     free(client->__output_streams);
 
+    /* Free stream pool */
+    guac_pool_free(client->__stream_pool);
+
     /* Free objects */
     free(client->__objects);
 
-    /* Free stream pool */
-    guac_pool_free(client->__stream_pool);
+    /* Free object pool */
+    guac_pool_free(client->__object_pool);
 
     free(client);
 }
