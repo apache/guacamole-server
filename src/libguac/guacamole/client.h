@@ -604,6 +604,30 @@ guac_stream* guac_client_alloc_stream(guac_client* client);
 void guac_client_free_stream(guac_client* client, guac_stream* stream);
 
 /**
+ * Allocates a new object. An arbitrary index is automatically assigned
+ * if no previously-allocated object is available for use.
+ *
+ * @param client
+ *     The proxy client to allocate the object for.
+ *
+ * @return
+ *     The next available object, or a newly allocated object.
+ */
+guac_object* guac_client_alloc_object(guac_client* client);
+
+/**
+ * Returns the given object to the pool of available objects, such that it
+ * can be reused by any subsequent call to guac_client_alloc_object().
+ *
+ * @param client
+ *     The proxy client to return the object to.
+ *
+ * @param object
+ *     The object to return to the pool of available object.
+ */
+void guac_client_free_object(guac_client* client, guac_object* object);
+
+/**
  * The default Guacamole client layer, layer 0.
  */
 extern const guac_layer* GUAC_DEFAULT_LAYER;
