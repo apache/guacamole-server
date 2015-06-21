@@ -721,9 +721,37 @@ int guac_sftp_get_handler(guac_client* client, guac_object* object,
 int guac_sftp_put_handler(guac_client* client, guac_object* object,
         guac_stream* stream, char* mimetype, char* name) {
 
-    /* STUB */
-    guac_client_log(client, GUAC_LOG_DEBUG, "STUB: put: %s", name);
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    LIBSSH2_SFTP* sftp = client_data->sftp_session;
 
+    /* Open file via SFTP */
+    LIBSSH2_SFTP_HANDLE* file = libssh2_sftp_open(sftp, name,
+            LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
+            S_IRUSR | S_IWUSR);
+
+    /* Acknowledge stream if successful */
+    if (file != NULL) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "File \"%s\" opened", name);
+        guac_protocol_send_ack(client->socket, stream, "SFTP: File opened",
+                GUAC_PROTOCOL_STATUS_SUCCESS);
+    }
+
+    /* Abort on failure */
+    else {
+        guac_client_log(client, GUAC_LOG_INFO, "Unable to open file \"%s\": %s",
+                name, libssh2_sftp_last_error(sftp));
+        guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed",
+                GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND);
+    }
+
+    /* Set handlers for file stream */
+    stream->blob_handler = guac_sftp_blob_handler;
+    stream->end_handler = guac_sftp_end_handler;
+
+    /* Store file within stream */
+    stream->data = file;
+
+    guac_socket_flush(client->socket);
     return 0;
 }
 
