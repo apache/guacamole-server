@@ -36,7 +36,29 @@
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
 
-static bool __ssh_guac_valid_filename(char* filename) {
+/**
+ * Concatenates the given filename with the given path, separating the two
+ * with a single forward slash. The full result must be no more than
+ * GUAC_SFTP_MAX_PATH bytes long, counting null terminator.
+ *
+ * @param fullpath
+ *     The buffer to store the result within. This buffer must be at least
+ *     GUAC_SFTP_MAX_PATH bytes long.
+ *
+ * @param path
+ *     The path to append the filename to.
+ *
+ * @param filename
+ *     The filename to appaned to the path.
+ *
+ * @return
+ *     true if the filename is valid and was successfully appended to the path,
+ *     false otherwise.
+ */
+static bool guac_ssh_append_filename(char* fullpath, const char* path,
+        const char* filename) {
+
+    int i;
 
     /* Disallow "." as a filename */
     if (strcmp(filename, ".") == 0)
@@ -46,20 +68,51 @@ static bool __ssh_guac_valid_filename(char* filename) {
     if (strcmp(filename, "..") == 0)
         return false;
 
-    /* Search for path separator characters */
-    for (;;) {
+    /* Copy path, append trailing slash */
+    for (i=0; i<GUAC_SFTP_MAX_PATH; i++) {
+
+        /*
+         * Append trailing slash only if:
+         *  1) Trailing slash is not already present
+         *  2) Path is non-empty
+         */
+
+        char c = path[i];
+        if (c == '\0') {
+            if (i > 0 && path[i-1] != '/')
+                fullpath[i++] = '/';
+            break;
+        }
+
+        /* Copy character if not end of string */
+        fullpath[i] = c;
+
+    }
+
+    /* Append filename */
+    for (; i<GUAC_SFTP_MAX_PATH; i++) {
 
         char c = *(filename++);
         if (c == '\0')
             break;
 
-        /* Replace slashes with underscores */
+        /* Filenames may not contain slashes */
         if (c == '\\' || c == '/')
             return false;
 
+        /* Append each character within filename */
+        fullpath[i] = c;
+
     }
 
-    /* If filename does not contain a path, it's ok */
+    /* Verify path length is within maximum */
+    if (i == GUAC_SFTP_MAX_PATH)
+        return false;
+
+    /* Terminate path string */
+    fullpath[i] = '\0';
+
+    /* Append was successful */
     return true;
 
 }
@@ -70,55 +123,23 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
     char fullpath[GUAC_SFTP_MAX_PATH];
     LIBSSH2_SFTP_HANDLE* file;
-    int i;
 
-    /* Ensure filename is a valid filename and not a path */
-    if (!__ssh_guac_valid_filename(filename)) {
+    /* Concatenate filename with path */
+    if (!guac_ssh_append_filename(fullpath, 
+                client_data->sftp_upload_path, filename)) {
 
         guac_client_log(client, GUAC_LOG_DEBUG,
-                "Filename \"%s\" is invalid",
+                "Filename \"%s/%s\" is invalid or resulting path is too long",
                 filename);
 
-        guac_protocol_send_ack(client->socket, stream, "SFTP: Illegal filename",
+        /* Abort transfer - invalid filename */
+        guac_protocol_send_ack(client->socket, stream, 
+                "SFTP: Illegal filename",
                 GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+
         guac_socket_flush(client->socket);
         return 0;
     }
-
-    /* Copy upload path, append trailing slash */
-    for (i=0; i<GUAC_SFTP_MAX_PATH; i++) {
-        char c = client_data->sftp_upload_path[i];
-        if (c == '\0') {
-            fullpath[i++] = '/';
-            break;
-        }
-
-        fullpath[i] = c;
-    }
-
-    /* Append filename */
-    for (; i<GUAC_SFTP_MAX_PATH; i++) {
-        char c = *(filename++);
-        if (c == '\0')
-            break;
-
-        fullpath[i] = c;
-    }
-
-    /* If path + filename exceeds max length, abort */
-    if (i == GUAC_SFTP_MAX_PATH) {
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Filename exceeds maximum of %i characters",
-                GUAC_SFTP_MAX_PATH);
-
-        guac_protocol_send_ack(client->socket, stream, "SFTP: Name too long", GUAC_PROTOCOL_STATUS_CLIENT_OVERRUN);
-        guac_socket_flush(client->socket);
-        return 0;
-    }
-
-    /* Terminate path string */
-    fullpath[i] = '\0';
 
     /* Open file via SFTP */
     file = libssh2_sftp_open(client_data->sftp_session, fullpath,
