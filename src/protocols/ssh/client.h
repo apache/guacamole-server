@@ -33,6 +33,8 @@
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 
+#include <guacamole/object.h>
+
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"
 #endif
@@ -128,7 +130,13 @@ typedef struct ssh_guac_client_data {
     LIBSSH2_SFTP* sftp_session;
 
     /**
-     * The path files will be sent to.
+     * The filesystem object exposed for the SFTP session.
+     */
+    guac_object* filesystem;
+
+    /**
+     * The path files will be sent to, if uploaded directly via a "file"
+     * instruction.
      */
     char sftp_upload_path[GUAC_SFTP_MAX_PATH];
 

@@ -476,6 +476,9 @@ void* ssh_client_thread(void* data) {
         /* Set file handler */
         client->file_handler = guac_sftp_file_handler;
 
+        /* Expose filesystem */
+        guac_sftp_expose_filesystem(client);
+
         guac_client_log(client, GUAC_LOG_DEBUG, "SFTP session initialized");
 
     }
