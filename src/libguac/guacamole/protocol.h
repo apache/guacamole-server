@@ -32,6 +32,7 @@
  */
 
 #include "layer-types.h"
+#include "object-types.h"
 #include "protocol-types.h"
 #include "socket-types.h"
 #include "stream-types.h"
@@ -216,6 +217,75 @@ int guac_protocol_send_select(guac_socket* socket, const char* protocol);
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
+
+/* OBJECT INSTRUCTIONS */
+
+/**
+ * Sends a body instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param object
+ *     The object to associated with the stream being used.
+ *
+ * @param stream
+ *     The stream to use.
+ *
+ * @param mimetype
+ *     The mimetype of the data being sent.
+ *
+ * @param name
+ *     The name of the stream whose body is being sent, as requested by a "get"
+ *     instruction.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_body(guac_socket* socket, const guac_object* object,
+        const guac_stream* stream, const char* mimetype, const char* name);
+
+/**
+ * Sends a filesystem instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param object
+ *     The object representing the filesystem being exposed.
+ *
+ * @param name
+ *     A name describing the filesystem being exposed.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_filesystem(guac_socket* socket,
+        const guac_object* object, const char* name);
+
+/**
+ * Sends an undefine instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param object
+ *     The object being undefined.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_undefine(guac_socket* socket,
+        const guac_object* object);
 
 /* MEDIA INSTRUCTIONS */
 

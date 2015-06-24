@@ -27,6 +27,7 @@
 #include "error.h"
 #include "instruction.h"
 #include "layer.h"
+#include "object.h"
 #include "pool.h"
 #include "protocol.h"
 #include "socket.h"
@@ -124,6 +125,39 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
 }
 
+guac_object* guac_client_alloc_object(guac_client* client) {
+
+    guac_object* allocd_object;
+    int object_index;
+
+    /* Refuse to allocate beyond maximum */
+    if (client->__object_pool->active == GUAC_CLIENT_MAX_OBJECTS)
+        return NULL;
+
+    /* Allocate object */
+    object_index = guac_pool_next_int(client->__object_pool);
+
+    /* Initialize object */
+    allocd_object = &(client->__objects[object_index]);
+    allocd_object->index = object_index;
+    allocd_object->data = NULL;
+    allocd_object->get_handler = NULL;
+    allocd_object->put_handler = NULL;
+
+    return allocd_object;
+
+}
+
+void guac_client_free_object(guac_client* client, guac_object* object) {
+
+    /* Release index to pool */
+    guac_pool_free_int(client->__object_pool, object->index);
+
+    /* Mark object as undefined */
+    object->index = GUAC_CLIENT_UNDEFINED_OBJECT_INDEX;
+
+}
+
 /**
  * Returns a newly allocated string containing a guaranteed-unique connection
  * identifier string which is 37 characters long and begins with a '$'
@@ -216,7 +250,7 @@ guac_client* guac_client_alloc() {
     /* Allocate stream pool */
     client->__stream_pool = guac_pool_alloc(0);
 
-    /* Initialze streams */
+    /* Initialize streams */
     client->__input_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
     client->__output_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
 
@@ -224,6 +258,14 @@ guac_client* guac_client_alloc() {
         client->__input_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
         client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
     }
+
+    /* Allocate object pool */
+    client->__object_pool = guac_pool_alloc(0);
+
+    /* Initialize objects */
+    client->__objects = malloc(sizeof(guac_object) * GUAC_CLIENT_MAX_OBJECTS);
+    for (i=0; i<GUAC_CLIENT_MAX_OBJECTS; i++)
+        client->__objects[i].index = GUAC_CLIENT_UNDEFINED_OBJECT_INDEX;
 
     return client;
 
@@ -248,6 +290,12 @@ void guac_client_free(guac_client* client) {
 
     /* Free stream pool */
     guac_pool_free(client->__stream_pool);
+
+    /* Free objects */
+    free(client->__objects);
+
+    /* Free object pool */
+    guac_pool_free(client->__object_pool);
 
     free(client);
 }

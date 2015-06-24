@@ -24,6 +24,7 @@
 
 #include "error.h"
 #include "layer.h"
+#include "object.h"
 #include "palette.h"
 #include "protocol.h"
 #include "socket.h"
@@ -463,6 +464,28 @@ int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
 
 }
 
+int guac_protocol_send_body(guac_socket* socket, const guac_object* object,
+        const guac_stream* stream, const char* mimetype, const char* name) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "4.body,")
+        || __guac_socket_write_length_int(socket, object->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_cfill(guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer,
         int r, int g, int b, int a) {
@@ -824,6 +847,24 @@ int guac_protocol_send_file(guac_socket* socket, const guac_stream* stream,
         || __guac_socket_write_length_int(socket, stream->index)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_filesystem(guac_socket* socket,
+        const guac_object* object, const char* name) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "10.filesystem,")
+        || __guac_socket_write_length_int(socket, object->index)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, name)
         || guac_socket_write_string(socket, ";");
@@ -1277,6 +1318,22 @@ int guac_protocol_send_transform(guac_socket* socket, const guac_layer* layer,
         || __guac_socket_write_length_double(socket, e)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_double(socket, f)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_undefine(guac_socket* socket,
+        const guac_object* object) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "8.undefine,")
+        || __guac_socket_write_length_int(socket, object->index)
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);

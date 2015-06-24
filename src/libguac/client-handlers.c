@@ -25,6 +25,7 @@
 #include "client.h"
 #include "client-handlers.h"
 #include "instruction.h"
+#include "object.h"
 #include "protocol.h"
 #include "stream.h"
 #include "timestamp.h"
@@ -47,6 +48,8 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"ack",        __guac_handle_ack},
    {"blob",       __guac_handle_blob},
    {"end",        __guac_handle_end},
+   {"get",        __guac_handle_get},
+   {"put",        __guac_handle_put},
    {NULL,         NULL}
 };
 
@@ -317,6 +320,77 @@ int __guac_handle_end(guac_client* client, guac_instruction* instruction) {
     /* Mark stream as closed */
     stream->index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
     return result;
+}
+
+int __guac_handle_get(guac_client* client, guac_instruction* instruction) {
+
+    guac_object* object;
+
+    /* Validate object index */
+    int object_index = atoi(instruction->argv[0]);
+    if (object_index < 0 || object_index >= GUAC_CLIENT_MAX_OBJECTS)
+        return 0;
+
+    object = &(client->__objects[object_index]);
+
+    /* Validate initialization of object */
+    if (object->index == GUAC_CLIENT_UNDEFINED_OBJECT_INDEX)
+        return 0;
+
+    /* Call object handler if defined */
+    if (object->get_handler)
+        return object->get_handler(client, object,
+            instruction->argv[1] /* name */
+        );
+
+    /* Fall back to global handler if defined */
+    if (client->get_handler)
+        return client->get_handler(client, object,
+            instruction->argv[1] /* name */
+        );
+
+    return 0;
+}
+
+int __guac_handle_put(guac_client* client, guac_instruction* instruction) {
+
+    guac_object* object;
+
+    /* Validate object index */
+    int object_index = atoi(instruction->argv[0]);
+    if (object_index < 0 || object_index >= GUAC_CLIENT_MAX_OBJECTS)
+        return 0;
+
+    object = &(client->__objects[object_index]);
+
+    /* Validate initialization of object */
+    if (object->index == GUAC_CLIENT_UNDEFINED_OBJECT_INDEX)
+        return 0;
+
+    /* Pull corresponding stream */
+    int stream_index = atoi(instruction->argv[1]);
+    guac_stream* stream = __init_input_stream(client, stream_index);
+    if (stream == NULL)
+        return 0;
+
+    /* Call object handler if defined */
+    if (object->put_handler)
+        return object->put_handler(client, object, stream,
+            instruction->argv[2], /* mimetype */
+            instruction->argv[3]  /* name */
+        );
+
+    /* Fall back to global handler if defined */
+    if (client->put_handler)
+        return client->put_handler(client, object, stream,
+            instruction->argv[2], /* mimetype */
+            instruction->argv[3]  /* name */
+        );
+
+    /* Otherwise, abort */
+    guac_protocol_send_ack(client->socket, stream,
+            "Object write unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
+    return 0;
 }
 
 int __guac_handle_disconnect(guac_client* client, guac_instruction* instruction) {
