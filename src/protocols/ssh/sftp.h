@@ -26,7 +26,11 @@
 
 #include "config.h"
 
+#include <libssh2.h>
+#include <libssh2_sftp.h>
+
 #include <guacamole/client.h>
+#include <guacamole/object.h>
 #include <guacamole/protocol.h>
 #include <guacamole/stream.h>
 
@@ -34,6 +38,41 @@
  * Maximum number of bytes per path.
  */
 #define GUAC_SFTP_MAX_PATH 2048
+
+/**
+ * The current state of a directory listing operation.
+ */
+typedef struct guac_sftp_ls_state {
+
+    /**
+     * Reference to the directory currently being listed over SFTP. This
+     * directory must already be open from a call to libssh2_sftp_opendir().
+     */
+    LIBSSH2_SFTP_HANDLE* directory;
+
+    /**
+     * The absolute path of the directory being listed.
+     */
+    char directory_name[GUAC_SFTP_MAX_PATH];
+
+    /**
+     * Buffer of partial JSON data. The individual blobs which make up the JSON
+     * body of the directory listing sent over the Guacamole protocol will be
+     * built here.
+     */
+    char json_buffer[4096];
+
+    /**
+     * The number of bytes currently used within the JSON buffer.
+     */
+    int json_size;
+
+    /**
+     * The number of entries written to the JSON thus far.
+     */
+    int entries_written;
+
+} guac_sftp_ls_state;
 
 /**
  * Handler for file messages which begins an SFTP data transfer (upload).
@@ -67,6 +106,91 @@ guac_stream* guac_sftp_download_file(guac_client* client, char* filename);
  * Set the destination directory for future uploads.
  */
 void guac_sftp_set_upload_path(guac_client* client, char* path);
+
+/**
+ * Exposes access to SFTP via a filesystem object, returning that object. The
+ * object returned must eventually be explicitly freed through a call to
+ * guac_client_free_object().
+ *
+ * @param client
+ *     The Guacamole client to expose the filesystem to.
+ *
+ * @return
+ *     The resulting Guacamole filesystem object, initialized and exposed to
+ *     the client.
+ */
+guac_object* guac_sftp_expose_filesystem(guac_client* client);
+
+/**
+ * Handler for get messages. In context of SFTP and the filesystem exposed via
+ * the Guacamole protocol, get messages request the body of a file within the
+ * filesystem.
+ *
+ * @param client
+ *     The client receiving the get message.
+ *
+ * @param object
+ *     The Guacamole protocol object associated with the get request itself.
+ *
+ * @param name
+ *     The name of the input stream (file) being requested.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_sftp_get_handler(guac_client* client, guac_object* object,
+        char* name);
+
+/**
+ * Handler for put messages. In context of SFTP and the filesystem exposed via
+ * the Guacamole protocol, put messages request write access to a file within
+ * the filesystem.
+ *
+ * @param client
+ *     The client receiving the put message.
+ *
+ * @param object
+ *     The Guacamole protocol object associated with the put request itself.
+ *
+ * @param stream
+ *     The Guacamole protocol stream along which the client will be sending
+ *     file data.
+ *
+ * @param mimetype
+ *     The mimetype of the data being send along the stream.
+ *
+ * @param name
+ *     The name of the input stream (file) being requested.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_sftp_put_handler(guac_client* client, guac_object* object,
+        guac_stream* stream, char* mimetype, char* name);
+
+/**
+ * Handler for ack messages received due to receipt of a "body" or "blob"
+ * instruction associated with a SFTP directory list operation.
+ *
+ * @param client
+ *     The client receiving the ack message.
+ *
+ * @param stream
+ *     The Guacamole protocol stream associated with the received ack message.
+ *
+ * @param message
+ *     An arbitrary human-readable message describing the nature of the
+ *     success or failure denoted by this ack message.
+ *
+ * @param status
+ *     The status code associated with this ack message, which may indicate
+ *     success or an error.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_sftp_ls_ack_handler(guac_client* client, guac_stream* stream,
+        char* message, guac_protocol_status status);
 
 #endif
 
