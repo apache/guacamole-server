@@ -52,7 +52,7 @@
  *     The path to append the filename to.
  *
  * @param filename
- *     The filename to appaned to the path.
+ *     The filename to append to the path.
  *
  * @return
  *     true if the filename is valid and was successfully appended to the path,
