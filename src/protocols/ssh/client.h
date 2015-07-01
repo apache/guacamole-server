@@ -132,7 +132,7 @@ typedef struct ssh_guac_client_data {
     /**
      * The filesystem object exposed for the SFTP session.
      */
-    guac_object* filesystem;
+    guac_object* sftp_filesystem;
 
     /**
      * The path files will be sent to, if uploaded directly via a "file"

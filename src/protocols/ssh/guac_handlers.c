@@ -101,14 +101,19 @@ int ssh_guac_client_free_handler(guac_client* client) {
     /* Free channels */
     libssh2_channel_free(guac_client_data->term_channel);
 
-    /* Clean up SFTP */
+    /* Shutdown SFTP session, if any */
     if (guac_client_data->sftp_session)
         libssh2_sftp_shutdown(guac_client_data->sftp_session);
 
+    /* Disconnect SSH session corresponding to the SFTP session */
     if (guac_client_data->sftp_ssh_session) {
         libssh2_session_disconnect(guac_client_data->sftp_ssh_session, "Bye");
         libssh2_session_free(guac_client_data->sftp_ssh_session);
     }
+
+    /* Clean up the SFTP filesystem object */
+    if (guac_client_data->sftp_filesystem)
+        guac_client_free_object(client, guac_client_data->sftp_filesystem);
 
     /* Free session */
     if (guac_client_data->session != NULL)

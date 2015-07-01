@@ -108,7 +108,9 @@ guac_stream* guac_sftp_download_file(guac_client* client, char* filename);
 void guac_sftp_set_upload_path(guac_client* client, char* path);
 
 /**
- * Exposes access to SFTP via a filesystem object, returning that object.
+ * Exposes access to SFTP via a filesystem object, returning that object. The
+ * object returned must eventually be explicitly freed through a call to
+ * guac_client_free_object().
  *
  * @param client
  *     The Guacamole client to expose the filesystem to.

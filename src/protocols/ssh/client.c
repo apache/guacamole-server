@@ -162,6 +162,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->enable_sftp = strcmp(argv[IDX_ENABLE_SFTP], "true") == 0;
     client_data->sftp_session = NULL;
     client_data->sftp_ssh_session = NULL;
+    client_data->sftp_filesystem = NULL;
     strcpy(client_data->sftp_upload_path, ".");
 
 #ifdef ENABLE_SSH_AGENT
