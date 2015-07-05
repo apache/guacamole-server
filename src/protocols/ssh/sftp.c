@@ -624,6 +624,11 @@ int guac_sftp_ls_ack_handler(guac_client* client, guac_stream* stream,
     /* Complete JSON and cleanup at end of directory */
     if (bytes_read <= 0) {
 
+        /* Ensure leading brace is written */
+        if (list_state->entries_written == 0)
+            blob_written |= guac_sftp_ls_write_json(client, stream,
+                    list_state, "{", 1);
+
         /* Write end of JSON */
         guac_sftp_ls_write_json(client, stream, list_state, "}", 1);
         guac_sftp_ls_flush_json(client, stream, list_state);
