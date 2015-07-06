@@ -26,6 +26,8 @@
 
 #include "config.h"
 
+#include "guac_json.h"
+
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 
@@ -56,21 +58,9 @@ typedef struct guac_sftp_ls_state {
     char directory_name[GUAC_SFTP_MAX_PATH];
 
     /**
-     * Buffer of partial JSON data. The individual blobs which make up the JSON
-     * body of the directory listing sent over the Guacamole protocol will be
-     * built here.
+     * The current state of the JSON directory object being written.
      */
-    char json_buffer[4096];
-
-    /**
-     * The number of bytes currently used within the JSON buffer.
-     */
-    int json_size;
-
-    /**
-     * The number of entries written to the JSON thus far.
-     */
-    int entries_written;
+    guac_common_json_state json_state;
 
 } guac_sftp_ls_state;
 

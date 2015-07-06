@@ -22,6 +22,8 @@
 
 #include "config.h"
 
+#include "guac_json.h"
+
 #include "client.h"
 #include "sftp.h"
 
@@ -340,222 +342,6 @@ guac_object* guac_sftp_expose_filesystem(guac_client* client) {
 
 }
 
-/**
- * Given a stream, the client to which it belongs, and the current directory
- * list state, flushes the contents of the JSON buffer to a blob instruction.
- * Note that this will flush the JSON buffer only, and will not necessarily
- * flush the underlying guac_socket of the client.
- *
- * @param client
- *     The client to which the data will be flushed.
- *
- * @param stream
- *     The stream through which the flushed data should be sent as a blob.
- *
- * @param list_state
- *     The directory list state.
- */
-static void guac_sftp_ls_flush_json(guac_client* client, guac_stream* stream,
-        guac_sftp_ls_state* list_state) {
-
-    /* If JSON buffer is non-empty, write contents to blob and reset */
-    if (list_state->json_size > 0) {
-        guac_protocol_send_blob(client->socket, stream,
-                list_state->json_buffer, list_state->json_size);
-
-        /* Reset JSON buffer size */
-        list_state->json_size = 0;
-
-    }
-
-}
-
-/**
- * Given a stream, the client to which it belongs, and the current directory
- * list state, writes the contents of the given buffer to the JSON buffer of
- * the directory list state, flushing as necessary.
- *
- * @param client
- *     The client to which the data will be flushed as necessary.
- *
- * @param stream
- *     The stream through which the flushed data should be sent as a blob, if
- *     data must be flushed at all.
- *
- * @param list_state
- *     The directory list state containing the JSON buffer to which the given
- *     buffer should be written.
- *
- * @param buffer
- *     The buffer to write.
- *
- * @param length
- *     The number of bytes in the buffer.
- *
- * @return
- *     true if at least one blob was written, false otherwise.
- */
-static bool guac_sftp_ls_write_json(guac_client* client, guac_stream* stream,
-        guac_sftp_ls_state* list_state, const char* buffer, int length) {
-
-    bool blob_written = false;
-
-    /*
-     * Append to and flush the JSON buffer as necessary to write the given
-     * data
-     */
-    while (length > 0) {
-
-        /* Ensure provided data does not exceed size of buffer */
-        int blob_length = length;
-        if (blob_length > sizeof(list_state->json_buffer))
-            blob_length = sizeof(list_state->json_buffer);
-
-        /* Flush if more room is needed */
-        if (list_state->json_size + blob_length > sizeof(list_state->json_buffer)) {
-            guac_sftp_ls_flush_json(client, stream, list_state);
-            blob_written = true;
-        }
-
-        /* Append data to JSON buffer */
-        memcpy(list_state->json_buffer + list_state->json_size,
-                buffer, blob_length);
-
-        list_state->json_size += blob_length;
-
-        /* Advance to next blob of data */
-        buffer += blob_length;
-        length -= blob_length;
-
-    }
-
-    return blob_written;
-
-}
-
-/**
- * Given a stream, the client to which it belongs, and the current directory
- * list state, writes the given string as a proper JSON string, including
- * starting and ending quotes. The contents of the string will be escaped as
- * necessary.
- *
- * @param client
- *     The client to which the data will be flushed as necessary.
- *
- * @param stream
- *     The stream through which the flushed data should be sent as a blob, if
- *     data must be flushed at all.
- *
- * @param list_state
- *     The directory list state containing the JSON buffer to which the given
- *     string should be written as a proper JSON string.
- *
- * @param str
- *     The string to write.
- *
- * @return
- *     true if at least one blob was written, false otherwise.
- */
-static bool guac_sftp_ls_write_json_string(guac_client* client,
-        guac_stream* stream, guac_sftp_ls_state* list_state,
-        const char* str) {
-
-    bool blob_written = false;
-
-    /* Write starting quote */
-    blob_written |= guac_sftp_ls_write_json(client, stream,
-            list_state, "\"", 1);
-
-    /* Write given string, escaping as necessary */
-    const char* current = str;
-    for (; *current != '\0'; current++) {
-
-        /* Escape all quotes */
-        if (*current == '"') {
-
-            /* Write any string content up to current character */
-            if (current != str)
-                blob_written |= guac_sftp_ls_write_json(client, stream,
-                        list_state, str, current - str);
-
-            /* Escape the quote that was just read */
-            blob_written |= guac_sftp_ls_write_json(client, stream,
-                    list_state, "\\", 1);
-
-            /* Reset string */
-            str = current;
-
-        }
-
-    }
-
-    /* Write any remaining string content */
-    if (current != str)
-        blob_written |= guac_sftp_ls_write_json(client, stream,
-                list_state, str, current - str);
-
-    /* Write ending quote */
-    blob_written |= guac_sftp_ls_write_json(client, stream,
-            list_state, "\"", 1);
-
-    return blob_written;
-
-}
-
-/**
- * Given a stream, the client to which it belongs, and the current directory
- * list state, writes the given directory entry as a JSON name/value pair. The
- * name and value will be written as proper JSON strings separated by a colon.
- *
- * @param client
- *     The client to which the data will be flushed as necessary.
- *
- * @param stream
- *     The stream through which the flushed data should be sent as a blob, if
- *     data must be flushed at all.
- *
- * @param list_state
- *     The directory list state containing the JSON buffer to which the given
- *     directory should be written as a JSON name/value pair.
- *
- * @param mimetype
- *     The mimetype of the directory entry to write.
- *
- * @param filename
- *     The filename of the directory entry to write.
- *
- * @return
- *     true if at least one blob was written, false otherwise.
- */
-static bool guac_sftp_ls_write_entry(guac_client* client, guac_stream* stream,
-        guac_sftp_ls_state* list_state, const char* mimetype,
-        const char* filename) {
-
-    bool blob_written = false;
-
-    /* Write leading comma if not first entry */
-    if (list_state->entries_written != 0)
-        blob_written |= guac_sftp_ls_write_json(client, stream,
-                list_state, ",", 1);
-
-    /* Write filename */
-    blob_written |= guac_sftp_ls_write_json_string(client, stream,
-            list_state, filename);
-
-    /* Separate filename from mimetype with colon */
-    blob_written |= guac_sftp_ls_write_json(client, stream,
-            list_state, ":", 1);
-
-    /* Write mimetype */
-    blob_written |= guac_sftp_ls_write_json_string(client, stream,
-            list_state, mimetype);
-
-    list_state->entries_written++;
-
-    return blob_written;
-
-}
-
 int guac_sftp_ls_ack_handler(guac_client* client, guac_stream* stream,
         char* message, guac_protocol_status status) {
 
@@ -610,28 +396,18 @@ int guac_sftp_ls_ack_handler(guac_client* client, guac_stream* stream,
         else
             mimetype = "application/octet-stream";
 
-        /* Write leading brace if just starting */
-        if (list_state->entries_written == 0)
-            blob_written |= guac_sftp_ls_write_json(client, stream,
-                    list_state, "{", 1);
-
         /* Write entry */
-        blob_written |= guac_sftp_ls_write_entry(client, stream,
-                list_state, mimetype, absolute_path);
+        blob_written |= guac_common_json_write_property(client, stream,
+                &list_state->json_state, absolute_path, mimetype);
 
     }
 
     /* Complete JSON and cleanup at end of directory */
     if (bytes_read <= 0) {
 
-        /* Ensure leading brace is written */
-        if (list_state->entries_written == 0)
-            blob_written |= guac_sftp_ls_write_json(client, stream,
-                    list_state, "{", 1);
-
-        /* Write end of JSON */
-        guac_sftp_ls_write_json(client, stream, list_state, "}", 1);
-        guac_sftp_ls_flush_json(client, stream, list_state);
+        /* Complete JSON object */
+        guac_common_json_end_object(client, stream, &list_state->json_state);
+        guac_common_json_flush(client, stream, &list_state->json_state);
 
         /* Clean up resources */
         libssh2_sftp_closedir(list_state->directory);
@@ -681,13 +457,13 @@ int guac_sftp_get_handler(guac_client* client, guac_object* object,
         strncpy(list_state->directory_name, name,
                 sizeof(list_state->directory_name));
 
-        list_state->json_size = 0;
-        list_state->entries_written = 0;
-
         /* Allocate stream for body */
         guac_stream* stream = guac_client_alloc_stream(client);
         stream->ack_handler = guac_sftp_ls_ack_handler;
         stream->data = list_state;
+
+        /* Init JSON object state */
+        guac_common_json_begin_object(client, stream, &list_state->json_state);
 
         /* Associate new stream with get request */
         guac_protocol_send_body(client->socket, object, stream,
