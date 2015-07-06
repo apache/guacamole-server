@@ -428,5 +428,27 @@ int guac_rdp_fs_matches(const char* filename, const char* pattern);
  */
 int guac_rdp_fs_get_info(guac_rdp_fs* fs, guac_rdp_fs_info* info);
 
+/**
+ * Concatenates the given filename with the given path, separating the two
+ * with a single forward slash. The full result must be no more than
+ * GUAC_RDP_FS_MAX_PATH bytes long, counting null terminator.
+ *
+ * @param fullpath
+ *     The buffer to store the result within. This buffer must be at least
+ *     GUAC_RDP_FS_MAX_PATH bytes long.
+ *
+ * @param path
+ *     The path to append the filename to.
+ *
+ * @param filename
+ *     The filename to append to the path.
+ *
+ * @return
+ *     Non-zero if the filename is valid and was successfully appended to the
+ *     path, zero otherwise.
+ */
+int guac_rdp_fs_append_filename(char* fullpath, const char* path,
+        const char* filename);
+
 #endif
 

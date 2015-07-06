@@ -24,6 +24,7 @@
 
 #include "rdp_fs.h"
 #include "rdp_status.h"
+#include "rdp_stream.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -45,6 +46,8 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path) {
 
     fs->client = client;
     fs->object = guac_client_alloc_object(client);
+    fs->object->get_handler = guac_rdp_download_get_handler;
+    fs->object->put_handler = guac_rdp_upload_put_handler;
 
     fs->drive_path = strdup(drive_path);
     fs->file_id_pool = guac_pool_alloc(0);
@@ -180,7 +183,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
         path = "\\";
 
     /* If path is relative, the file does not exist */
-    else if (path[0] != '\\') {
+    else if (path[0] != '\\' && path[0] != '/') {
         guac_client_log(fs->client, GUAC_LOG_DEBUG,
                 "%s: Access denied - supplied path \"%s\" is relative.",
                 __func__, path);
@@ -689,6 +692,68 @@ int guac_rdp_fs_get_info(guac_rdp_fs* fs, guac_rdp_fs_info* info) {
     info->blocks_total = fs_stat.f_blocks;
     info->block_size = fs_stat.f_bsize;
     return 0;
+
+}
+
+int guac_rdp_fs_append_filename(char* fullpath, const char* path,
+        const char* filename) {
+
+    int i;
+
+    /* Disallow "." as a filename */
+    if (strcmp(filename, ".") == 0)
+        return 0;
+
+    /* Disallow ".." as a filename */
+    if (strcmp(filename, "..") == 0)
+        return 0;
+
+    /* Copy path, append trailing slash */
+    for (i=0; i<GUAC_RDP_FS_MAX_PATH; i++) {
+
+        /*
+         * Append trailing slash only if:
+         *  1) Trailing slash is not already present
+         *  2) Path is non-empty
+         */
+
+        char c = path[i];
+        if (c == '\0') {
+            if (i > 0 && path[i-1] != '/' && path[i-1] != '\\')
+                fullpath[i++] = '/';
+            break;
+        }
+
+        /* Copy character if not end of string */
+        fullpath[i] = c;
+
+    }
+
+    /* Append filename */
+    for (; i<GUAC_RDP_FS_MAX_PATH; i++) {
+
+        char c = *(filename++);
+        if (c == '\0')
+            break;
+
+        /* Filenames may not contain slashes */
+        if (c == '\\' || c == '/')
+            return 0;
+
+        /* Append each character within filename */
+        fullpath[i] = c;
+
+    }
+
+    /* Verify path length is within maximum */
+    if (i == GUAC_RDP_FS_MAX_PATH)
+        return 0;
+
+    /* Terminate path string */
+    fullpath[i] = '\0';
+
+    /* Append was successful */
+    return 1;
 
 }
 
