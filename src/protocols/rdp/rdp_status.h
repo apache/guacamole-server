@@ -32,6 +32,14 @@
 
 #include "config.h"
 
+/* Include any constants from winpr/file.h, if available */
+
+#ifdef ENABLE_WINPR
+#include <winpr/file.h>
+#endif
+
+/* Constants which MAY be defined within FreeRDP */
+
 #ifndef STATUS_SUCCESS
 #define STATUS_SUCCESS                  0x00000000
 #define STATUS_NO_MORE_FILES            0x80000006
@@ -52,6 +60,8 @@
 #define STATUS_FILE_DELETED             0xC0000123
 #define STATUS_FILE_CLOSED              0xC0000128
 #endif
+
+/* Constants which are NEVER defined within FreeRDP */
 
 #define STATUS_FILE_SYSTEM_LIMITATION   0xC0000427
 #define STATUS_FILE_TOO_LARGE           0xC0000904
