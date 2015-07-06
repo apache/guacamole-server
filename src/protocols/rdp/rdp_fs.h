@@ -38,6 +38,7 @@
 #include "config.h"
 
 #include <guacamole/client.h>
+#include <guacamole/object.h>
 #include <guacamole/pool.h>
 
 #include <dirent.h>
@@ -271,6 +272,11 @@ typedef struct guac_rdp_fs {
      * The controlling client.
      */
     guac_client* client;
+
+    /**
+     * The underlying filesystem object.
+     */
+    guac_object* object;
 
     /**
      * The root of the filesystem.

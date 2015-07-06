@@ -36,6 +36,7 @@
 #include <sys/statvfs.h>
 #include <unistd.h>
 
+#include <guacamole/object.h>
 #include <guacamole/pool.h>
 
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path) {
@@ -43,6 +44,8 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path) {
     guac_rdp_fs* fs = malloc(sizeof(guac_rdp_fs));
 
     fs->client = client;
+    fs->object = guac_client_alloc_object(client);
+
     fs->drive_path = strdup(drive_path);
     fs->file_id_pool = guac_pool_alloc(0);
     fs->open_files = 0;
@@ -52,6 +55,7 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path) {
 }
 
 void guac_rdp_fs_free(guac_rdp_fs* fs) {
+    guac_client_free_object(fs->client, fs->object);
     guac_pool_free(fs->file_id_pool);
     free(fs->drive_path);
     free(fs);

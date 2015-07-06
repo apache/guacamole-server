@@ -30,6 +30,8 @@
 
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -151,6 +153,11 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
 
     /* Init data */
     device->data = data->filesystem;
+
+    /* Announce filesystem to client */
+    guac_protocol_send_filesystem(rdpdr->client->socket,
+            data->filesystem->object, "Shared Drive");
+    guac_socket_flush(rdpdr->client->socket);
 
 }
 
