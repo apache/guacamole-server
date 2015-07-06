@@ -25,6 +25,7 @@
 #define _GUAC_RDP_STREAM_H
 
 #include "config.h"
+#include "guac_json.h"
 #include "rdp_svc.h"
 
 #include <guacamole/client.h>
@@ -69,6 +70,33 @@ typedef struct guac_rdp_upload_status {
 } guac_rdp_upload_status;
 
 /**
+ * The current state of a directory listing operation.
+ */
+typedef struct guac_rdp_ls_status {
+
+    /**
+     * The filesystem associated with the directory being listed.
+     */
+    guac_rdp_fs* fs;
+
+    /**
+     * The file ID of the directory being listed.
+     */
+    int file_id;
+
+    /**
+     * The absolute path of the directory being listed.
+     */
+    char directory_name[GUAC_RDP_FS_MAX_PATH];
+
+    /**
+     * The current state of the JSON directory object being written.
+     */
+    guac_common_json_state json_state;
+
+} guac_rdp_ls_status;
+
+/**
  * All available stream types.
  */
 typedef enum guac_rdp_stream_type {
@@ -82,6 +110,11 @@ typedef enum guac_rdp_stream_type {
      * An in-progress file download.
      */
     GUAC_RDP_DOWNLOAD_STREAM,
+
+    /**
+     * An in-progress stream of a directory listing.
+     */
+    GUAC_RDP_LS_STREAM,
 
     /**
      * The inbound half of a static virtual channel.
@@ -114,6 +147,11 @@ typedef struct guac_rdp_stream {
      * The file upload status. Only valid for GUAC_RDP_DOWNLOAD_STREAM.
      */
     guac_rdp_download_status download_status;
+
+    /**
+     * The directory list status. Only valid for GUAC_RDP_LS_STREAM.
+     */
+    guac_rdp_ls_status ls_status;
 
     /**
      * Associated SVC instance. Only valid for GUAC_RDP_INBOUND_SVC_STREAM.
@@ -173,6 +211,77 @@ int guac_rdp_clipboard_end_handler(guac_client* client, guac_stream* stream);
  */
 int guac_rdp_download_ack_handler(guac_client* client, guac_stream* stream,
         char* message, guac_protocol_status status);
+
+/**
+ * Handler for ack messages received due to receipt of a "body" or "blob"
+ * instruction associated with a directory list operation.
+ *
+ * @param client
+ *     The client receiving the ack message.
+ *
+ * @param stream
+ *     The Guacamole protocol stream associated with the received ack message.
+ *
+ * @param message
+ *     An arbitrary human-readable message describing the nature of the
+ *     success or failure denoted by this ack message.
+ *
+ * @param status
+ *     The status code associated with this ack message, which may indicate
+ *     success or an error.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_rdp_ls_ack_handler(guac_client* client, guac_stream* stream,
+        char* message, guac_protocol_status status);
+
+/**
+ * Handler for get messages. In context of downloads and the filesystem exposed
+ * via the Guacamole protocol, get messages request the body of a file within
+ * the filesystem.
+ *
+ * @param client
+ *     The client receiving the get message.
+ *
+ * @param object
+ *     The Guacamole protocol object associated with the get request itself.
+ *
+ * @param name
+ *     The name of the input stream (file) being requested.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_rdp_download_get_handler(guac_client* client, guac_object* object,
+        char* name);
+
+/**
+ * Handler for put messages. In context of uploads and the filesystem exposed
+ * via the Guacamole protocol, put messages request write access to a file
+ * within the filesystem.
+ *
+ * @param client
+ *     The client receiving the put message.
+ *
+ * @param object
+ *     The Guacamole protocol object associated with the put request itself.
+ *
+ * @param stream
+ *     The Guacamole protocol stream along which the client will be sending
+ *     file data.
+ *
+ * @param mimetype
+ *     The mimetype of the data being send along the stream.
+ *
+ * @param name
+ *     The name of the input stream (file) being requested.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_rdp_upload_put_handler(guac_client* client, guac_object* object,
+        guac_stream* stream, char* mimetype, char* name);
 
 #endif
 

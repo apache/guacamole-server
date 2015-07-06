@@ -25,8 +25,6 @@
 
 #include "config.h"
 
-#include <stdbool.h>
-
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 
@@ -97,9 +95,9 @@ void guac_common_json_flush(guac_client* client, guac_stream* stream,
  *     The number of bytes in the buffer.
  *
  * @return
- *     true if at least one blob was written, false otherwise.
+ *     Non-zero if at least one blob was written, zero otherwise.
  */
-bool guac_common_json_write(guac_client* client, guac_stream* stream,
+int guac_common_json_write(guac_client* client, guac_stream* stream,
         guac_common_json_state* json_state, const char* buffer, int length);
 
 /**
@@ -123,9 +121,9 @@ bool guac_common_json_write(guac_client* client, guac_stream* stream,
  *     The string to write.
  *
  * @return
- *     true if at least one blob was written, false otherwise.
+ *     Non-zero if at least one blob was written, zero otherwise.
  */
-bool guac_common_json_write_string(guac_client* client,
+int guac_common_json_write_string(guac_client* client,
         guac_stream* stream, guac_common_json_state* json_state,
         const char* str);
 
@@ -152,9 +150,9 @@ bool guac_common_json_write_string(guac_client* client,
  *     The value of the property to write.
  *
  * @return
- *     true if at least one blob was written, false otherwise.
+ *     Non-zero if at least one blob was written, zero otherwise.
  */
-bool guac_common_json_write_property(guac_client* client, guac_stream* stream,
+int guac_common_json_write_property(guac_client* client, guac_stream* stream,
         guac_common_json_state* json_state, const char* name,
         const char* value);
 
@@ -192,9 +190,9 @@ void guac_common_json_begin_object(guac_client* client, guac_stream* stream,
  *     The state object whose in-progress JSON object should be terminated.
  *
  * @return
- *     true if at least one blob was written, false otherwise.
+ *     Non-zero if at least one blob was written, zero otherwise.
  */
-bool guac_common_json_end_object(guac_client* client, guac_stream* stream,
+int guac_common_json_end_object(guac_client* client, guac_stream* stream,
         guac_common_json_state* json_state);
 
 #endif

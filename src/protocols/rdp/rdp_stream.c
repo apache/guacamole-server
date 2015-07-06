@@ -356,4 +356,216 @@ int guac_rdp_download_ack_handler(guac_client* client, guac_stream* stream,
 
 }
 
+int guac_rdp_ls_ack_handler(guac_client* client, guac_stream* stream,
+        char* message, guac_protocol_status status) {
+
+    int blob_written = 0;
+    const char* filename;
+
+    guac_rdp_stream* rdp_stream = (guac_rdp_stream*) stream->data;
+
+    /* If unsuccessful, free stream and abort */
+    if (status != GUAC_PROTOCOL_STATUS_SUCCESS) {
+        guac_rdp_fs_close(rdp_stream->ls_status.fs,
+                rdp_stream->ls_status.file_id);
+        guac_client_free_stream(client, stream);
+        free(rdp_stream);
+        return 0;
+    }
+
+    /* While directory entries remain */
+    while ((filename = guac_rdp_fs_read_dir(rdp_stream->ls_status.fs,
+                    rdp_stream->ls_status.file_id)) != NULL
+            && !blob_written) {
+
+        char absolute_path[GUAC_RDP_FS_MAX_PATH];
+
+        /* Skip current and parent directory entries */
+        if (strcmp(filename, ".") == 0 || strcmp(filename, "..") == 0)
+            continue;
+
+        /* Concatenate into absolute path - skip if invalid */
+        if (!guac_rdp_fs_append_filename(absolute_path,
+                    rdp_stream->ls_status.directory_name, filename)) {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Skipping filename \"%s\" - filename is invalid or "
+                    "resulting path is too long", filename);
+
+            continue;
+        }
+
+        /* Attempt to open file to determine type */
+        int file_id = guac_rdp_fs_open(rdp_stream->ls_status.fs, absolute_path,
+                ACCESS_GENERIC_READ, 0, DISP_FILE_OPEN, 0);
+        if (file_id < 0)
+            continue;
+
+        /* Get opened file */
+        guac_rdp_fs_file* file = guac_rdp_fs_get_file(rdp_stream->ls_status.fs,
+                file_id);
+        if (file == NULL) {
+            guac_client_log(rdp_stream->ls_status.fs->client, GUAC_LOG_DEBUG,
+                    "%s: Successful open produced bad file_id: %i",
+                    __func__, file_id);
+            return 0;
+        }
+
+        /* Determine mimetype */
+        const char* mimetype;
+        if (file->attributes & FILE_ATTRIBUTE_DIRECTORY)
+            mimetype = GUAC_CLIENT_STREAM_INDEX_MIMETYPE;
+        else
+            mimetype = "application/octet-stream";
+
+        /* Write entry */
+        blob_written |= guac_common_json_write_property(client, stream,
+                &rdp_stream->ls_status.json_state, absolute_path, mimetype);
+
+        guac_rdp_fs_close(rdp_stream->ls_status.fs, file_id);
+
+    }
+
+    /* Complete JSON and cleanup at end of directory */
+    if (filename == NULL) {
+
+        /* Complete JSON object */
+        guac_common_json_end_object(client, stream,
+                &rdp_stream->ls_status.json_state);
+        guac_common_json_flush(client, stream,
+                &rdp_stream->ls_status.json_state);
+
+        /* Clean up resources */
+        guac_rdp_fs_close(rdp_stream->ls_status.fs,
+                rdp_stream->ls_status.file_id);
+        free(rdp_stream);
+
+        /* Signal of stream */
+        guac_protocol_send_end(client->socket, stream);
+        guac_client_free_stream(client, stream);
+
+    }
+
+    guac_socket_flush(client->socket);
+    return 0;
+
+}
+
+int guac_rdp_download_get_handler(guac_client* client, guac_object* object,
+        char* name) {
+
+    /* Get filesystem, ignore request if no filesystem */
+    guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
+    if (fs == NULL)
+        return 0;
+
+    /* Attempt to open file for reading */
+    int file_id = guac_rdp_fs_open(fs, name, ACCESS_GENERIC_READ, 0,
+            DISP_FILE_OPEN, 0);
+    if (file_id < 0) {
+        guac_client_log(client, GUAC_LOG_INFO, "Unable to read file \"%s\"",
+                name);
+        return 0;
+    }
+
+    /* Get opened file */
+    guac_rdp_fs_file* file = guac_rdp_fs_get_file(fs, file_id);
+    if (file == NULL) {
+        guac_client_log(fs->client, GUAC_LOG_DEBUG,
+                "%s: Successful open produced bad file_id: %i",
+                __func__, file_id);
+        return 0;
+    }
+
+    /* If directory, send contents of directory */
+    if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
+
+        /* Create stream data */
+        guac_rdp_stream* rdp_stream = malloc(sizeof(guac_rdp_stream));
+        rdp_stream->type = GUAC_RDP_LS_STREAM;
+        rdp_stream->ls_status.fs = fs;
+        rdp_stream->ls_status.file_id = file_id;
+        strncpy(rdp_stream->ls_status.directory_name, name,
+                sizeof(rdp_stream->ls_status.directory_name));
+
+        /* Allocate stream for body */
+        guac_stream* stream = guac_client_alloc_stream(client);
+        stream->ack_handler = guac_rdp_ls_ack_handler;
+        stream->data = rdp_stream;
+
+        /* Init JSON object state */
+        guac_common_json_begin_object(client, stream,
+                &rdp_stream->ls_status.json_state);
+
+        /* Associate new stream with get request */
+        guac_protocol_send_body(client->socket, object, stream,
+                GUAC_CLIENT_STREAM_INDEX_MIMETYPE, name);
+
+    }
+
+    /* Otherwise, send file contents */
+    else {
+
+        /* Create stream data */
+        guac_rdp_stream* rdp_stream = malloc(sizeof(guac_rdp_stream));
+        rdp_stream->type = GUAC_RDP_DOWNLOAD_STREAM;
+        rdp_stream->download_status.file_id = file_id;
+        rdp_stream->download_status.offset = 0;
+
+        /* Allocate stream for body */
+        guac_stream* stream = guac_client_alloc_stream(client);
+        stream->data = rdp_stream;
+        stream->ack_handler = guac_rdp_download_ack_handler;
+
+        /* Associate new stream with get request */
+        guac_protocol_send_body(client->socket, object, stream,
+                "application/octet-stream", name);
+
+    }
+
+    guac_socket_flush(client->socket);
+    return 0;
+}
+
+int guac_rdp_upload_put_handler(guac_client* client, guac_object* object,
+        guac_stream* stream, char* mimetype, char* name) {
+
+    /* Get filesystem, return error if no filesystem */
+    guac_rdp_fs* fs = ((rdp_guac_client_data*) client->data)->filesystem;
+    if (fs == NULL) {
+        guac_protocol_send_ack(client->socket, stream, "FAIL (NO FS)",
+                GUAC_PROTOCOL_STATUS_SERVER_ERROR);
+        guac_socket_flush(client->socket);
+        return 0;
+    }
+
+    /* Open file */
+    int file_id = guac_rdp_fs_open(fs, name, ACCESS_GENERIC_WRITE, 0,
+            DISP_FILE_OVERWRITE_IF, 0);
+
+    /* Abort on failure */
+    if (file_id < 0) {
+        guac_protocol_send_ack(client->socket, stream, "FAIL (CANNOT OPEN)",
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
+        guac_socket_flush(client->socket);
+        return 0;
+    }
+
+    /* Init upload stream data */
+    guac_rdp_stream* rdp_stream = malloc(sizeof(guac_rdp_stream));
+    rdp_stream->type = GUAC_RDP_UPLOAD_STREAM;
+    rdp_stream->upload_status.offset = 0;
+    rdp_stream->upload_status.file_id = file_id;
+
+    /* Allocate stream, init for file upload */
+    stream->data = rdp_stream;
+    stream->blob_handler = guac_rdp_upload_blob_handler;
+    stream->end_handler = guac_rdp_upload_end_handler;
+
+    /* Acknowledge stream creation */
+    guac_protocol_send_ack(client->socket, stream, "OK (STREAM BEGIN)",
+            GUAC_PROTOCOL_STATUS_SUCCESS);
+    guac_socket_flush(client->socket);
+    return 0;
+}
 
