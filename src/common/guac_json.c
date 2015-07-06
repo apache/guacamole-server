@@ -48,10 +48,10 @@ void guac_common_json_flush(guac_client* client, guac_stream* stream,
 
 }
 
-bool guac_common_json_write(guac_client* client, guac_stream* stream,
+int guac_common_json_write(guac_client* client, guac_stream* stream,
         guac_common_json_state* json_state, const char* buffer, int length) {
 
-    bool blob_written = false;
+    int blob_written = 0;
 
     /*
      * Append to and flush the JSON buffer as necessary to write the given
@@ -67,7 +67,7 @@ bool guac_common_json_write(guac_client* client, guac_stream* stream,
         /* Flush if more room is needed */
         if (json_state->size + blob_length > sizeof(json_state->buffer)) {
             guac_common_json_flush(client, stream, json_state);
-            blob_written = true;
+            blob_written = 1;
         }
 
         /* Append data to JSON buffer */
@@ -86,11 +86,11 @@ bool guac_common_json_write(guac_client* client, guac_stream* stream,
 
 }
 
-bool guac_common_json_write_string(guac_client* client,
+int guac_common_json_write_string(guac_client* client,
         guac_stream* stream, guac_common_json_state* json_state,
         const char* str) {
 
-    bool blob_written = false;
+    int blob_written = 0;
 
     /* Write starting quote */
     blob_written |= guac_common_json_write(client, stream,
@@ -132,11 +132,11 @@ bool guac_common_json_write_string(guac_client* client,
 
 }
 
-bool guac_common_json_write_property(guac_client* client, guac_stream* stream,
+int guac_common_json_write_property(guac_client* client, guac_stream* stream,
         guac_common_json_state* json_state, const char* name,
         const char* value) {
 
-    bool blob_written = false;
+    int blob_written = 0;
 
     /* Write leading comma if not first property */
     if (json_state->properties_written != 0)
@@ -173,7 +173,7 @@ void guac_common_json_begin_object(guac_client* client, guac_stream* stream,
 
 }
 
-bool guac_common_json_end_object(guac_client* client, guac_stream* stream,
+int guac_common_json_end_object(guac_client* client, guac_stream* stream,
         guac_common_json_state* json_state) {
 
     /* Write final brace of JSON object */
