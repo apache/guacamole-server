@@ -27,6 +27,7 @@
 #include "config.h"
 #include "guac_clipboard.h"
 #include "guac_surface.h"
+#include "guac_iconv.h"
 
 #include <guacamole/audio.h>
 #include <guacamole/layer.h>
@@ -185,6 +186,12 @@ typedef struct vnc_guac_client_data {
      * Default surface.
      */
     guac_common_surface* default_surface;
+
+    /**
+     * Clipboard encoding specific reader and writer.
+     */
+    guac_iconv_read* clipboard_reader;
+    guac_iconv_write* clipboard_writer;
 
 } vnc_guac_client_data;
 
