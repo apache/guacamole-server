@@ -437,8 +437,8 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
 
     int x, y;
 
-    int min_x = rect->width - 1;
-    int min_y = rect->height - 1;
+    int min_x = rect->width;
+    int min_y = rect->height;
     int max_x = 0;
     int max_y = 0;
 
