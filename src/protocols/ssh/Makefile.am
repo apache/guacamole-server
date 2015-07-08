@@ -50,7 +50,7 @@ libguac_client_ssh_la_SOURCES += ssh_agent.c
 noinst_HEADERS += ssh_agent.h
 endif
 
-libguac_client_ssh_la_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@ @TERMINAL_INCLUDE@
-libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@ @TERMINAL_LTLIB@
+libguac_client_ssh_la_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@ @TERMINAL_INCLUDE@ @COMMON_SSH_INCLUDE@
+libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@ @TERMINAL_LTLIB@ @COMMON_SSH_LTLIB@
 libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0 @SSH_LIBS@ @SSL_LIBS@ @PTHREAD_LIBS@
 

@@ -20,50 +20,18 @@
 # THE SOFTWARE.
 #
 
+AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
+AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
-# Subprojects
-DIST_SUBDIRS =           \
-    src/libguac          \
-    src/common           \
-    src/common-ssh       \
-    src/terminal         \
-    src/guacd            \
-    src/protocols/rdp    \
-    src/protocols/ssh    \
-    src/protocols/telnet \
-    src/protocols/vnc    \
-    tests
+noinst_LTLIBRARIES = libguac_common_ssh.la
 
-SUBDIRS =       \
-    src/libguac \
-    src/common  \
-    src/guacd   \
-    tests
+libguac_common_ssh_la_SOURCES = \
+    guac_ssh_config.c
 
-if ENABLE_COMMON_SSH
-    SUBDIRS += src/common-ssh
-endif
+noinst_HEADERS = \
+    guac_ssh_config.h
 
-if ENABLE_TERMINAL
-    SUBDIRS += src/terminal
-endif
-
-if ENABLE_RDP
-    SUBDIRS += src/protocols/rdp
-endif
-
-if ENABLE_SSH
-    SUBDIRS += src/protocols/ssh
-endif
-
-if ENABLE_TELNET
-    SUBDIRS += src/protocols/telnet
-endif
-
-if ENABLE_VNC
-    SUBDIRS += src/protocols/vnc
-endif
-
-EXTRA_DIST = LICENSE doc/Doxyfile bin/guacctl
+libguac_common_ssh_la_LIBADD = @LIBGUAC_LTLIB@
+libguac_common_ssh_la_LDFLAGS = @SSH_LIBS@ @SSL_LIBS@ @PTHREAD_LIBS@
 
