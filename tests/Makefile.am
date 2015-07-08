@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 Glyptodon LLC
+# Copyright (C) 2015 Glyptodon LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,34 +22,41 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
 TESTS = test_libguac
 check_PROGRAMS = test_libguac
 
 noinst_HEADERS =          \
-	client/client_suite.h \
-	common/common_suite.h \
-	protocol/suite.h      \
-	util/util_suite.h
+    client/client_suite.h \
+    common/common_suite.h \
+    protocol/suite.h      \
+    util/util_suite.h
 
 test_libguac_SOURCES =           \
     test_libguac.c               \
-	client/client_suite.c        \
-	client/buffer_pool.c         \
-	client/layer_pool.c          \
-	common/common_suite.c        \
-	common/guac_iconv.c          \
-	common/guac_string.c         \
-	protocol/suite.c             \
-	protocol/base64_decode.c     \
-	protocol/instruction_parse.c \
-	protocol/instruction_read.c  \
-	protocol/instruction_write.c \
-	protocol/nest_write.c        \
-	util/util_suite.c            \
-	util/guac_pool.c             \
-	util/guac_unicode.c
+    client/client_suite.c        \
+    client/buffer_pool.c         \
+    client/layer_pool.c          \
+    common/common_suite.c        \
+    common/guac_iconv.c          \
+    common/guac_string.c         \
+    protocol/suite.c             \
+    protocol/base64_decode.c     \
+    protocol/instruction_parse.c \
+    protocol/instruction_read.c  \
+    protocol/instruction_write.c \
+    protocol/nest_write.c        \
+    util/util_suite.c            \
+    util/guac_pool.c             \
+    util/guac_unicode.c
 
-test_libguac_LDADD = @LIBGUAC_LTLIB@ @CUNIT_LIBS@ @COMMON_LTLIB@
+test_libguac_CFLAGS =       \
+    -Werror -Wall -pedantic \
+    @COMMON_INCLUDE@        \
+    @LIBGUAC_INCLUDE@
+
+test_libguac_LDADD = \
+    @COMMON_LTLIB@   \
+    @CUNIT_LIBS@     \
+    @LIBGUAC_LTLIB@
 

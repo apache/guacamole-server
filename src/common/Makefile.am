@@ -22,7 +22,6 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@
 
 noinst_LTLIBRARIES = libguac_common.la
 
@@ -50,5 +49,10 @@ libguac_common_la_SOURCES = \
     guac_string.c           \
     guac_surface.c
 
-libguac_common_la_LIBADD = @LIBGUAC_LTLIB@
+libguac_common_la_CFLAGS =  \
+    -Werror -Wall -pedantic \
+    @LIBGUAC_INCLUDE@
+
+libguac_common_la_LIBADD = \
+    @LIBGUAC_LTLIB@
 

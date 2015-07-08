@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 Glyptodon LLC
+# Copyright (C) 2015 Glyptodon LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,9 +22,11 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic -Iguacamole
+
+lib_LTLIBRARIES = libguac.la
 
 libguacincdir = $(includedir)/guacamole
+
 libguacinc_HEADERS =                  \
     guacamole/audio.h                 \
     guacamole/audio-fntypes.h         \
@@ -89,7 +91,17 @@ libguac_la_SOURCES += ogg_encoder.c
 noinst_HEADERS += ogg_encoder.h
 endif
 
-lib_LTLIBRARIES = libguac.la
-libguac_la_LDFLAGS = -version-info 9:0:0 @PTHREAD_LIBS@ @CAIRO_LIBS@ @PNG_LIBS@ @VORBIS_LIBS@ @UUID_LIBS@
-libguac_la_LIBADD = @LIBADD_DLOPEN@ 
+libguac_la_CFLAGS = \
+    -Werror -Wall -pedantic -Iguacamole
+
+libguac_la_LDFLAGS =    \
+    -version-info 9:0:0 \
+    @CAIRO_LIBS@        \
+    @PNG_LIBS@          \
+    @PTHREAD_LIBS@      \
+    @UUID_LIBS@         \
+    @VORBIS_LIBS@
+
+libguac_la_LIBADD = \
+    @LIBADD_DLOPEN@ 
 

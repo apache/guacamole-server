@@ -22,7 +22,6 @@
 
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
 noinst_LTLIBRARIES = libguac_common_ssh.la
 
@@ -32,6 +31,16 @@ libguac_common_ssh_la_SOURCES = \
 noinst_HEADERS = \
     guac_ssh_config.h
 
-libguac_common_ssh_la_LIBADD = @LIBGUAC_LTLIB@
-libguac_common_ssh_la_LDFLAGS = @SSH_LIBS@ @SSL_LIBS@ @PTHREAD_LIBS@
+libguac_common_ssh_la_CFLAGS = \
+    -Werror -Wall -pedantic    \
+    @COMMON_INCLUDE@           \
+    @LIBGUAC_INCLUDE@
+
+libguac_common_ssh_la_LIBADD = \
+    @LIBGUAC_LTLIB@
+
+libguac_common_ssh_la_LDFLAGS = \
+    @PTHREAD_LIBS@              \
+    @SSH_LIBS@                  \
+    @SSL_LIBS@
 
