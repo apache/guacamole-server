@@ -24,7 +24,6 @@
 #define GUAC_COMMON_SSH_H
 
 #include <guacamole/client.h>
-#include <guacamole/object.h>
 #include <libssh2.h>
 
 /**
@@ -97,42 +96,6 @@ LIBSSH2_SESSION* guac_common_ssh_connect_password(const char* hostname,
 LIBSSH2_SESSION* guac_common_ssh_connect_private_key(const char* hostname,
         int port, const char* username, const char* private_key,
         const char* passphrase);
-
-/**
- * Creates a new Guacamole filesystem object which provides access to files
- * and directories via SFTP using the given SSH session. When the filesystem
- * will no longer be used, it must be explicitly destroyed with
- * guac_common_ssh_destroy_sftp_filesystem().
- *
- * @param client
- *     The Guacamole client which will be associated with the new filesystem
- *     object.
- *
- * @param name
- *     The name to send as the name of the filesystem.
- *
- * @param session
- *     The session to use to provide SFTP.
- *
- * @return
- *     A new Guacamole filesystem object, already configured to use SFTP for
- *     uploading and downloading files.
- */
-guac_object* guac_common_ssh_create_sftp_filesystem(guac_client* client,
-         const char* name, LIBSSH2_SESSION* session);
-
-/**
- * Destroys the given filesystem object, disconnecting from SFTP and freeing
- * and associated resources.
- *
- * @param client
- *     The client associated with the filesystem object.
- *
- * @param object
- *     The filesystem object to destroy.
- */
-void guac_common_ssh_destroy_sftp_filesystem(guac_client* client,
-        guac_object* filesystem);
 
 #endif
 

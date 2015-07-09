@@ -23,7 +23,6 @@
 #include "guac_ssh.h"
 
 #include <guacamole/client.h>
-#include <guacamole/object.h>
 #include <libssh2.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
@@ -145,18 +144,5 @@ LIBSSH2_SESSION* guac_common_ssh_connect_private_key(const char* hostname,
     /* STUB */
     return NULL;
 
-}
-
-guac_object* guac_common_ssh_create_sftp_filesystem(guac_client* client,
-         const char* name, LIBSSH2_SESSION* session) {
-
-    /* STUB */
-    return NULL;
-
-}
-
-void guac_common_ssh_destroy_sftp_filesystem(guac_client* client,
-        guac_object* filesystem) {
-    /* STUB */
 }
 
