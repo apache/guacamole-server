@@ -31,8 +31,21 @@
  * Initializes the underlying SSH and encryption libraries used by Guacamole.
  * This function must be called before any other guac_common_ssh_*() functions
  * are called.
+ *
+ * @param client
+ *     The Guacamole client that will be using SSH.
+ *
+ * @return
+ *     Zero if initialization, or non-zero if an error occurs.
  */
-void guac_common_ssh_init();
+int guac_common_ssh_init(guac_client* client);
+
+/**
+ * Cleans up the underlying SSH and encryption libraries used by Guacamole.
+ * This function must be called once no other guac_common_ssh_*() functions
+ * will be used.
+ */
+void guac_common_ssh_uninit();
 
 /**
  * Connects to the SSH server running at the given hostname and port using the
