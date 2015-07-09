@@ -20,9 +20,43 @@
  * THE SOFTWARE.
  */
 
-#include "guac_ssh_config.h"
+#include "guac_ssh.h"
 
-void guac_common_ssh_connect() {
+#include <guacamole/client.h>
+#include <guacamole/object.h>
+#include <libssh2.h>
+
+void guac_common_ssh_init() {
+    /* STUB */
+}
+
+LIBSSH2_SESSION* guac_common_ssh_connect_password(const char* hostname,
+        int port, const char* username, const char* password) {
+
+    /* STUB */
+    return NULL;
+
+}
+
+LIBSSH2_SESSION* guac_common_ssh_connect_private_key(const char* hostname,
+        int port, const char* username, const char* private_key,
+        const char* passphrase) {
+
+    /* STUB */
+    return NULL;
+
+}
+
+guac_object* guac_common_ssh_create_sftp_filesystem(guac_client* client,
+         const char* name, LIBSSH2_SESSION* session) {
+
+    /* STUB */
+    return NULL;
+
+}
+
+void guac_common_ssh_destroy_sftp_filesystem(guac_client* client,
+        guac_object* filesystem) {
     /* STUB */
 }
 

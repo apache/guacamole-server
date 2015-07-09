@@ -26,10 +26,10 @@ ACLOCAL_AMFLAGS = -I m4
 noinst_LTLIBRARIES = libguac_common_ssh.la
 
 libguac_common_ssh_la_SOURCES = \
-    guac_ssh_config.c
+    guac_ssh.c
 
 noinst_HEADERS = \
-    guac_ssh_config.h
+    guac_ssh.h
 
 libguac_common_ssh_la_CFLAGS = \
     -Werror -Wall -pedantic    \
