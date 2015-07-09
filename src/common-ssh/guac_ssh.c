@@ -32,7 +32,14 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <pthread.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
@@ -129,20 +136,156 @@ void guac_common_ssh_uninit() {
     guac_common_ssh_openssl_free_locks(CRYPTO_num_locks());
 }
 
-LIBSSH2_SESSION* guac_common_ssh_connect_password(const char* hostname,
-        int port, const char* username, const char* password) {
+/**
+ * Connects to the SSH server running at the given hostname and port, but does
+ * not perform any authentication. Authentication must be immediately performed
+ * after creation of the session for the session to become usable. If an error
+ * occurs while connecting, the Guacamole client will automatically and fatally
+ * abort.
+ *
+ * @param client
+ *     The Guacamole client that will be using SSH.
+ *
+ * @param hostname
+ *     The hostname of the SSH server to connect to.
+ *
+ * @param port
+ *     The port to connect to on the given hostname.
+ *
+ * @param socket_fd
+ *     A pointer to an integer in which the newly-allocated file descriptor for
+ *     the SSH socket should be stored.
+ *
+ * @return
+ *     A new SSH session if the connection succeeds, or NULL if the connection
+ *     was not successful.
+ */
+static LIBSSH2_SESSION* guac_common_ssh_connect(guac_client* client,
+        const char* hostname, const char* port, int* socket_fd) {
 
-    /* STUB */
-    return NULL;
+    int retval;
+
+    int fd;
+    struct addrinfo* addresses;
+    struct addrinfo* current_address;
+
+    char connected_address[1024];
+    char connected_port[64];
+
+    struct addrinfo hints = {
+        .ai_family   = AF_UNSPEC,
+        .ai_socktype = SOCK_STREAM,
+        .ai_protocol = IPPROTO_TCP
+    };
+
+    /* Get socket */
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    /* Get addresses connection */
+    if ((retval = getaddrinfo(hostname, port, &hints, &addresses))) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Error parsing given address or port: %s",
+                gai_strerror(retval));
+        return NULL;
+    }
+
+    /* Attempt connection to each address until success */
+    current_address = addresses;
+    while (current_address != NULL) {
+
+        /* Resolve hostname */
+        if ((retval = getnameinfo(current_address->ai_addr,
+                current_address->ai_addrlen,
+                connected_address, sizeof(connected_address),
+                connected_port, sizeof(connected_port),
+                NI_NUMERICHOST | NI_NUMERICSERV)))
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Unable to resolve host: %s", gai_strerror(retval));
+
+        /* Connect */
+        if (connect(fd, current_address->ai_addr,
+                        current_address->ai_addrlen) == 0) {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Successfully connected to host %s, port %s",
+                    connected_address, connected_port);
+
+            /* Done if successful connect */
+            break;
+
+        }
+
+        /* Otherwise log information regarding bind failure */
+        else
+            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
+                    "host %s, port %s: %s",
+                    connected_address, connected_port, strerror(errno));
+
+        current_address = current_address->ai_next;
+
+    }
+
+    /* If unable to connect to anything, fail */
+    if (current_address == NULL) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                "Unable to connect to any addresses.");
+        return NULL;
+    }
+
+    /* Free addrinfo */
+    freeaddrinfo(addresses);
+
+    /* Open SSH session */
+    LIBSSH2_SESSION* session = libssh2_session_init_ex(NULL, NULL,
+            NULL, client);
+    if (session == NULL) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Session allocation failed.");
+        return NULL;
+    }
+
+    /* Perform handshake */
+    if (libssh2_session_handshake(session, fd)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                "SSH handshake failed.");
+        return NULL;
+    }
+
+    /* Save file descriptor */
+    if (socket_fd != NULL)
+        *socket_fd = fd;
+
+    /* Return created session */
+    return session;
 
 }
 
-LIBSSH2_SESSION* guac_common_ssh_connect_private_key(const char* hostname,
-        int port, const char* username, const char* private_key,
-        const char* passphrase) {
+LIBSSH2_SESSION* guac_common_ssh_connect_password(guac_client* client,
+        const char* hostname, const char* port,
+        const char* username, const char* password,
+        int* socket_fd) {
+
+    LIBSSH2_SESSION* session = guac_common_ssh_connect(client,
+            hostname, port, socket_fd);
 
     /* STUB */
-    return NULL;
+
+    return session;
+
+}
+
+LIBSSH2_SESSION* guac_common_ssh_connect_private_key(guac_client* client,
+        const char* hostname, const char* port,
+        const char* username, const char* private_key,
+        const char* passphrase,
+        int* socket_fd) {
+
+    LIBSSH2_SESSION* session = guac_common_ssh_connect(client,
+            hostname, port, socket_fd);
+
+    /* STUB */
+
+    return session;
 
 }
 
