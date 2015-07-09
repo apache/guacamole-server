@@ -113,8 +113,7 @@ LIBSSH2_SESSION* guac_common_ssh_connect_password(guac_client* client,
  */
 LIBSSH2_SESSION* guac_common_ssh_connect_private_key(guac_client* client,
         const char* hostname, const char* port,
-        const char* username, const char* private_key,
-        const char* passphrase,
+        const char* username, char* private_key, char* passphrase,
         int* socket_fd);
 
 #endif

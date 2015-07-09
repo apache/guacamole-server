@@ -27,11 +27,15 @@ noinst_LTLIBRARIES = libguac_common_ssh.la
 
 libguac_common_ssh_la_SOURCES = \
     guac_sftp.c                 \
-    guac_ssh.c
+    guac_ssh.c                  \
+    guac_ssh_buffer.c           \
+    guac_ssh_key.c
 
-noinst_HEADERS = \
-    guac_sftp.h  \
-    guac_ssh.h
+noinst_HEADERS =      \
+    guac_sftp.h       \
+    guac_ssh.h        \
+    guac_ssh_buffer.h \
+    guac_ssh_key.h
 
 libguac_common_ssh_la_CFLAGS = \
     -Werror -Wall -pedantic    \
