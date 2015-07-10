@@ -137,32 +137,8 @@ void guac_common_ssh_uninit() {
     guac_common_ssh_openssl_free_locks(CRYPTO_num_locks());
 }
 
-/**
- * Connects to the SSH server running at the given hostname and port, but does
- * not perform any authentication. Authentication must be immediately performed
- * after creation of the session for the session to become usable. If an error
- * occurs while connecting, the Guacamole client will automatically and fatally
- * abort.
- *
- * @param client
- *     The Guacamole client that will be using SSH.
- *
- * @param hostname
- *     The hostname of the SSH server to connect to.
- *
- * @param port
- *     The port to connect to on the given hostname.
- *
- * @param socket_fd
- *     A pointer to an integer in which the newly-allocated file descriptor for
- *     the SSH socket should be stored.
- *
- * @return
- *     A new SSH session if the connection succeeds, or NULL if the connection
- *     was not successful.
- */
-static LIBSSH2_SESSION* guac_common_ssh_connect(guac_client* client,
-        const char* hostname, const char* port, int* socket_fd) {
+guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
+        const char* hostname, const char* port) {
 
     int retval;
 
@@ -252,30 +228,27 @@ static LIBSSH2_SESSION* guac_common_ssh_connect(guac_client* client,
         return NULL;
     }
 
-    /* Save file descriptor */
-    if (socket_fd != NULL)
-        *socket_fd = fd;
+    /* Allocate new session */
+    guac_common_ssh_session* common_session =
+        malloc(sizeof(guac_common_ssh_session));
+
+    /* Store basic session data */
+    common_session->client = client;
+    common_session->session = session;
+    common_session->fd = fd;
 
     /* Return created session */
-    return session;
+    return common_session;
 
 }
 
-LIBSSH2_SESSION* guac_common_ssh_connect_password(guac_client* client,
-        const char* hostname, const char* port,
-        const char* username, const char* password,
-        int* socket_fd) {
-
-    LIBSSH2_SESSION* session = guac_common_ssh_connect(client,
-            hostname, port, socket_fd);
-
-    /* STUB */
-
-    return session;
-
+void guac_common_ssh_destroy_session(guac_common_ssh_session* session) {
+    libssh2_session_disconnect(session->session, "Bye");
+    libssh2_session_free(session->session);
+    free(session);
 }
 
-static int __sign_callback(LIBSSH2_SESSION* session,
+static int guac_common_ssh_sign_callback(LIBSSH2_SESSION* session,
         unsigned char** sig, size_t* sig_len,
         const unsigned char* data, size_t data_len, void **abstract) {
 
@@ -294,73 +267,33 @@ static int __sign_callback(LIBSSH2_SESSION* session,
     return 0;
 }
 
-LIBSSH2_SESSION* guac_common_ssh_connect_private_key(guac_client* client,
-        const char* hostname, const char* port,
-        const char* username, char* private_key, char* passphrase,
-        int* socket_fd) {
+int guac_common_ssh_authenticate(guac_common_ssh_session* common_session,
+        guac_common_ssh_user* user) {
 
-    LIBSSH2_SESSION* session = guac_common_ssh_connect(client,
-            hostname, port, socket_fd);
+    guac_client* client = common_session->client;
+    LIBSSH2_SESSION* session = common_session->session;
 
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "Attempting private key import (WITHOUT passphrase)");
+    /* Get user credentials */
+    char* username = user->username;
+    guac_common_ssh_key* key = user->private_key;
 
-    /* Attempt to read key without passphrase */
-    guac_common_ssh_key* key = guac_common_ssh_key_alloc(private_key,
-            strlen(private_key), "");
-
-#if 0
-    /* On failure, attempt with passphrase */
-    if (key == NULL) {
-
-        /* Log failure of initial attempt */
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Initial import failed: %s", guac_common_ssh_key_error());
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Re-attempting private key import (WITH passphrase)");
-
-        /* Prompt for passphrase if missing */
-        if (client_data->key_passphrase[0] == 0)
-            guac_terminal_prompt(client_data->term, "Key passphrase: ",
-                                 client_data->key_passphrase, sizeof(client_data->key_passphrase), false);
-
-        /* Import key with passphrase */
-        client_data->key = guac_common_ssh_key_alloc(client_data->key_base64,
-                strlen(client_data->key_base64),
-                client_data->key_passphrase);
-
-        /* If still failing, give up */
-        if (client_data->key == NULL) {
-            guac_client_abort(client,
-                    GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                    "Auth key import failed: %s", guac_common_ssh_key_error());
-            return NULL;
-        }
-
-    } /* end decrypt key with passphrase */
-#endif
-
-    /* Success */
-    guac_client_log(client, GUAC_LOG_INFO, "Auth key successfully imported.");
-
-    /* Get list of suported authentication methods */
+    /* Get list of supported authentication methods */
     char* user_authlist = libssh2_userauth_list(session, username,
             strlen(username));
     guac_client_log(client, GUAC_LOG_DEBUG,
             "Supported authentication methods: %s", user_authlist);
 
-    /* Check if public key auth is suported on the server */
+    /* Check if public key auth is supported on the server */
     if (strstr(user_authlist, "publickey") == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                           "Public key authentication not suported");
-        return NULL;
+                           "Public key authentication not supported");
+        return 1;
     }
 
     /* Attempt public key auth */
     if (libssh2_userauth_publickey(session, username,
                 (unsigned char*) key->public_key, key->public_key_length,
-                __sign_callback, (void**) key)) {
+                guac_common_ssh_sign_callback, (void**) key)) {
 
         /* Abort on failure */
         char* error_message;
@@ -368,12 +301,12 @@ LIBSSH2_SESSION* guac_common_ssh_connect_private_key(guac_client* client,
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
                 "Public key authentication failed: %s", error_message);
 
-        return NULL;
+        return 1;
 
     }
 
-    /* Return new session on success */
-    return session;
+    /* Authentication succeeded */
+    return 0;
 
 }
 

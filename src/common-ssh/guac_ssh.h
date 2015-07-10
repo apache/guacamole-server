@@ -23,8 +23,33 @@
 #ifndef GUAC_COMMON_SSH_H
 #define GUAC_COMMON_SSH_H
 
+#include "guac_ssh_user.h"
+
 #include <guacamole/client.h>
 #include <libssh2.h>
+
+/**
+ * An SSH session, backed by libssh2 and associated with a particular
+ * Guacamole client.
+ */
+typedef struct guac_common_ssh_session {
+
+    /**
+     * The Guacamole client using this SSH session.
+     */
+    guac_client* client;
+
+    /**
+     * The underlying SSH session from libssh2.
+     */
+    LIBSSH2_SESSION* session;
+
+    /**
+     * The file descriptor of the socket being used for the SSH connection.
+     */
+    int fd;
+
+} guac_common_ssh_session;
 
 /**
  * Initializes the underlying SSH and encryption libraries used by Guacamole.
@@ -47,9 +72,9 @@ int guac_common_ssh_init(guac_client* client);
 void guac_common_ssh_uninit();
 
 /**
- * Connects to the SSH server running at the given hostname and port using the
- * given username and password for authentication. If an error occurs while
- * connecting, the Guacamole client will automatically and fatally abort.
+ * Connects to the SSH server running at the given hostname and port but does
+ * not perform any authentication. If an error occurs while connecting, the
+ * Guacamole client will automatically and fatally abort.
  *
  * @param client
  *     The Guacamole client that will be using SSH.
@@ -60,61 +85,39 @@ void guac_common_ssh_uninit();
  * @param port
  *     The port to connect to on the given hostname.
  *
- * @param username
- *     The username to authenticate as.
- *
- * @param password
- *     The password to provide when authenticating as the given user.
- *
- * @param socket_fd
- *     A pointer to an integer in which the newly-allocated file descriptor for
- *     the SSH socket should be stored.
- *
  * @return
- *     A new SSH session if the connection and authentication succeed, or
- *     NULL if the connection or authentication were not successful.
+ *     A new SSH session if the connection succeeds, or NULL if the connection
+ *     was not successful.
  */
-LIBSSH2_SESSION* guac_common_ssh_connect_password(guac_client* client,
-        const char* hostname, const char* port,
-        const char* username, const char* password,
-        int* socket_fd);
+guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
+        const char* hostname, const char* port);
 
 /**
- * Connects to the SSH server running at the given hostname and port using the
- * given username and private key for authentication. If an error occurs while
- * connecting, the Guacamole client will automatically and fatally abort.
+ * Disconnects and destroys the given SSH session, freeing all associated
+ * resources.
  *
- * @param client
- *     The Guacamole client that will be using SSH.
+ * @param session
+ *     The SSH session to destroy.
+ */
+void guac_common_ssh_destroy_session(guac_common_ssh_session* session);
+
+/**
+ * Authenticates the given user with the given, existing SSH session. If
+ * authentication fails, the Guacamole client will automatically and fatally
+ * abort.
  *
- * @param hostname
- *     The hostname of the SSH server to connect to.
+ * @param session
+ *     The SSH session to authenticate with.
  *
- * @param port
- *     The port to connect to on the given hostname.
- *
- * @param username
- *     The username to authenticate as.
- *
- * @param private_key
- *     The base64-encoded private key to use when authenticating.
- *
- * @param passphrase
- *     The passphrase to use when importing the private key, if any, or NULL
- *     if no passphrase should be used.
- *
- * @param socket_fd
- *     A pointer to an integer in which the newly-allocated file descriptor for
- *     the SSH socket should be stored.
+ * @param user
+ *     The user object describing the current user and their associated
+ *     credentials.
  *
  * @return
- *     A new SSH session if the connection and authentication succeed, or
- *     NULL if the connection or authentication were not successful.
+ *     Zero if authentication succeeds, non-zero if authentication fails.
  */
-LIBSSH2_SESSION* guac_common_ssh_connect_private_key(guac_client* client,
-        const char* hostname, const char* port,
-        const char* username, char* private_key, char* passphrase,
-        int* socket_fd);
+int guac_common_ssh_authenticate(guac_common_ssh_session* session,
+        guac_common_ssh_user* user);
 
 #endif
 
