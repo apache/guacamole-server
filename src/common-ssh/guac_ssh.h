@@ -40,6 +40,11 @@ typedef struct guac_common_ssh_session {
     guac_client* client;
 
     /**
+     * The user that will be authenticating via SSH.
+     */
+    guac_common_ssh_user* user;
+
+    /**
      * The underlying SSH session from libssh2.
      */
     LIBSSH2_SESSION* session;
@@ -72,9 +77,9 @@ int guac_common_ssh_init(guac_client* client);
 void guac_common_ssh_uninit();
 
 /**
- * Connects to the SSH server running at the given hostname and port but does
- * not perform any authentication. If an error occurs while connecting, the
- * Guacamole client will automatically and fatally abort.
+ * Connects to the SSH server running at the given hostname and port, and
+ * authenticates as the given user. If an error occurs while connecting or
+ * authenticating, the Guacamole client will automatically and fatally abort.
  *
  * @param client
  *     The Guacamole client that will be using SSH.
@@ -85,12 +90,15 @@ void guac_common_ssh_uninit();
  * @param port
  *     The port to connect to on the given hostname.
  *
+ * @param user
+ *     The user to authenticate as, once connected.
+ *
  * @return
- *     A new SSH session if the connection succeeds, or NULL if the connection
- *     was not successful.
+ *     A new SSH session if the connection and authentication succeed, or NULL
+ *     if the connection or authentication were not successful.
  */
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
-        const char* hostname, const char* port);
+        const char* hostname, const char* port, guac_common_ssh_user* user);
 
 /**
  * Disconnects and destroys the given SSH session, freeing all associated
@@ -100,24 +108,6 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
  *     The SSH session to destroy.
  */
 void guac_common_ssh_destroy_session(guac_common_ssh_session* session);
-
-/**
- * Authenticates the given user with the given, existing SSH session. If
- * authentication fails, the Guacamole client will automatically and fatally
- * abort.
- *
- * @param session
- *     The SSH session to authenticate with.
- *
- * @param user
- *     The user object describing the current user and their associated
- *     credentials.
- *
- * @return
- *     Zero if authentication succeeds, non-zero if authentication fails.
- */
-int guac_common_ssh_authenticate(guac_common_ssh_session* session,
-        guac_common_ssh_user* user);
 
 #endif
 
