@@ -53,6 +53,20 @@ static pthread_mutex_t* guac_common_ssh_openssl_locks;
 
 /**
  * Called by OpenSSL when locking or unlocking the Nth mutex.
+ *
+ * @param mode
+ *     A bitmask denoting the action to be taken on the Nth lock, such as
+ *     CRYPTO_LOCK or CRYPTO_UNLOCK.
+ *
+ * @param n
+ *     The index of the lock to lock or unlock.
+ *
+ * @param file
+ *     The filename of the function setting the lock, for debugging purposes.
+ *
+ * @param line
+ *     The line number of the function setting the lock, for debugging
+ *     purposes.
  */
 static void guac_common_ssh_openssl_locking_callback(int mode, int n,
         const char* file, int line){
@@ -69,6 +83,9 @@ static void guac_common_ssh_openssl_locking_callback(int mode, int n,
 
 /**
  * Called by OpenSSL when determining the current thread ID.
+ *
+ * @return
+ *     An ID which uniquely identifies the current thread.
  */
 static unsigned long guac_common_ssh_openssl_id_callback() {
     return (unsigned long) pthread_self();
@@ -77,6 +94,9 @@ static unsigned long guac_common_ssh_openssl_id_callback() {
 /**
  * Creates the given number of mutexes, such that OpenSSL will have at least
  * this number of mutexes at its disposal.
+ *
+ * @param count
+ *     The number of mutexes (locks) to create.
  */
 static void guac_common_ssh_openssl_init_locks(int count) {
 
@@ -94,6 +114,9 @@ static void guac_common_ssh_openssl_init_locks(int count) {
 
 /**
  * Frees the given number of mutexes.
+ *
+ * @param count
+ *     The number of mutexes (locks) to free.
  */
 static void guac_common_ssh_openssl_free_locks(int count) {
 
@@ -137,6 +160,36 @@ void guac_common_ssh_uninit() {
     guac_common_ssh_openssl_free_locks(CRYPTO_num_locks());
 }
 
+/**
+ * Callback invoked by libssh2 when libssh2_userauth_publickkey() is invoked.
+ * This callback must sign the given data, returning the signature as newly-
+ * allocated buffer space.
+ *
+ * @param session
+ *     The SSH session for which the signature is being generated.
+ *
+ * @param sig
+ *     A pointer to the buffer space containing the signature. This callback
+ *     MUST allocate and assign this space.
+ *
+ * @param sig_len
+ *     The length of the signature within the allocated buffer space, in bytes.
+ *     This value must be set to the size of the signature after the signing
+ *     operation completes.
+ *
+ * @param data
+ *     The arbitrary data that must be signed.
+ *
+ * @param data_len
+ *     The length of the arbitrary data to be signed, in bytes.
+ *
+ * @param abstract
+ *     The value of the abstract parameter provided with the corresponding call
+ *     to libssh2_userauth_publickey().
+ *
+ * @return
+ *     Zero on success, non-zero if the signing operation failed.
+ */
 static int guac_common_ssh_sign_callback(LIBSSH2_SESSION* session,
         unsigned char** sig, size_t* sig_len,
         const unsigned char* data, size_t data_len, void **abstract) {
@@ -158,7 +211,40 @@ static int guac_common_ssh_sign_callback(LIBSSH2_SESSION* session,
 
 /**
  * Callback for the keyboard-interactive authentication method. Currently
- * suports just one prompt for the password.
+ * supports just one prompt for the password. This callback is invoked as
+ * needed to fullfill a call to libssh2_userauth_keyboard_interactive().
+ *
+ * @param name
+ *     An arbitrary name which should be printed to the terminal for the
+ *     benefit of the user. This is currently ignored.
+ *
+ * @param name_len
+ *     The length of the name string, in bytes.
+ *
+ * @param instruction
+ *     Arbitrary instructions which should be printed to the terminal for the
+ *     benefit of the user. This is currently ignored.
+ *
+ * @param instruction_len
+ *     The length of the instruction string, in bytes.
+ *
+ * @param num_prompts
+ *     The number of keyboard-interactive prompts for which responses are
+ *     requested. This callback currently only supports one prompt, and assumes
+ *     that this prompt is requesting the password.
+ *
+ * @param prompts
+ *     An array of all keyboard-interactive prompts for which responses are
+ *     requested.
+ *
+ * @param responses
+ *     A parallel array into which all prompt responses should be stored. Each
+ *     entry within this array corresponds to the entry in the prompts array
+ *     with the same index.
+ *
+ * @param abstract
+ *     The value of the abstract parameter provided when the SSH session was
+ *     created with libssh2_session_init_ex().
  */
 static void guac_common_ssh_kbd_callback(const char *name, int name_len,
         const char *instruction, int instruction_len, int num_prompts,
@@ -186,6 +272,18 @@ static void guac_common_ssh_kbd_callback(const char *name, int name_len,
 
 }
 
+/**
+ * Authenticates the user associated with the given session over SSH. All
+ * required credentials must already be present within the user object
+ * associated with the given session.
+ *
+ * @param session
+ *     The session associated with the user to be authenticated.
+ *
+ * @return
+ *     Zero if authentication succeeds, or non-zero if authentication has
+ *     failed.
+ */
 static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session) {
 
     guac_client* client = common_session->client;
