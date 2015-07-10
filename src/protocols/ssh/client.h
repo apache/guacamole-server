@@ -115,25 +115,9 @@ typedef struct ssh_guac_client_data {
     guac_common_ssh_session* session;
 
     /**
-     * The distinct SSH session used for SFTP.
-     */
-    guac_common_ssh_session* sftp_ssh_session;
-
-    /**
-     * SFTP session, used for file transfers.
-     */
-    LIBSSH2_SFTP* sftp_session;
-
-    /**
      * The filesystem object exposed for the SFTP session.
      */
     guac_object* sftp_filesystem;
-
-    /**
-     * The path files will be sent to, if uploaded directly via a "file"
-     * instruction.
-     */
-    char sftp_upload_path[GUAC_SFTP_MAX_PATH];
 
     /**
      * SSH terminal channel, used by the SSH client thread.
