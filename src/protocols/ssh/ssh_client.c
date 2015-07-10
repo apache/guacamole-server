@@ -25,7 +25,6 @@
 #include "client.h"
 #include "guac_ssh.h"
 #include "sftp.h"
-#include "ssh_key.h"
 #include "terminal.h"
 
 #ifdef ENABLE_SSH_AGENT
@@ -57,6 +56,96 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 
+/**
+ * Produces a new user object containing a username and password or private
+ * key, prompting the user as necessary to obtain that information.
+ *
+ * @param client
+ *     The Guacamole client containing any existing user data, as well as the
+ *     terminal to use when prompting the user.
+ *
+ * @return
+ *     A new user object containing the user's username and other credentials.
+ */
+static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
+
+    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+
+    guac_common_ssh_user* user;
+
+    /* Get username */
+    if (client_data->username[0] == 0)
+        guac_terminal_prompt(client_data->term, "Login as: ",
+                client_data->username, sizeof(client_data->username), true);
+
+    /* Create user object from username */
+    user = guac_common_ssh_create_user(client_data->username);
+
+    /* If key specified, import */
+    if (client_data->key_base64[0] != 0) {
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Attempting private key import (WITHOUT passphrase)");
+
+        /* Attempt to read key without passphrase */
+        if (guac_common_ssh_user_import_key(user,
+                    client_data->key_base64, NULL)) {
+
+            /* Log failure of initial attempt */
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Initial import failed: %s",
+                    guac_common_ssh_key_error());
+  
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Re-attempting private key import (WITH passphrase)");
+
+            /* Prompt for passphrase if missing */
+            if (client_data->key_passphrase[0] == 0)
+                guac_terminal_prompt(client_data->term, "Key passphrase: ",
+                        client_data->key_passphrase,
+                        sizeof(client_data->key_passphrase), false);
+
+            /* Reattempt import with passphrase */
+            if (guac_common_ssh_user_import_key(user,
+                        client_data->key_base64,
+                        client_data->key_passphrase)) {
+
+                /* If still failing, give up */
+                guac_client_abort(client,
+                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                        "Auth key import failed: %s",
+                        guac_common_ssh_key_error());
+
+                guac_common_ssh_destroy_user(user);
+                return NULL;
+
+            }
+
+        } /* end decrypt key with passphrase */
+
+        /* Success */
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Auth key successfully imported.");
+
+    } /* end if key given */
+
+    /* Otherwise, get password if not provided */
+    else if (client_data->password[0] == 0) {
+
+        guac_terminal_prompt(client_data->term, "Password: ",
+                client_data->password, sizeof(client_data->password), false);
+
+        guac_common_ssh_user_set_password(user, client_data->password);
+
+    }
+
+    /* Clear screen of any prompts */
+    guac_terminal_printf(client_data->term, "\x1B[H\x1B[J");
+
+    return user;
+
+}
+
 void* ssh_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
@@ -76,213 +165,13 @@ void* ssh_input_thread(void* data) {
 
 }
 
-static int __sign_callback(LIBSSH2_SESSION* session,
-        unsigned char** sig, size_t* sig_len,
-        const unsigned char* data, size_t data_len, void **abstract) {
-
-    ssh_key* key = (ssh_key*) abstract;
-    int length;
-
-    /* Allocate space for signature */
-    *sig = malloc(4096);
-
-    /* Sign with key */
-    length = ssh_key_sign(key, (const char*) data, data_len, *sig);
-    if (length < 0)
-        return 1;
-
-    *sig_len = length;
-    return 0;
-}
-
-/**
- * Callback for the keyboard-interactive authentication method. Currently
- * suports just one prompt for the password.
- */
-static void __kbd_callback(const char *name, int name_len,
-                            const char *instruction, int instruction_len,
-                            int num_prompts,
-                            const LIBSSH2_USERAUTH_KBDINT_PROMPT *prompts,
-                            LIBSSH2_USERAUTH_KBDINT_RESPONSE *responses,
-                            void **abstract) {
-
-    guac_client* client = (guac_client*) *abstract;
-    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
-
-    if (num_prompts == 1) {
-        responses[0].text = strdup(client_data->password);
-        responses[0].length = strlen(client_data->password);
-    }
-    else
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Unsupported number of keyboard-interactive prompts: %i",
-                num_prompts);
-
-}
-
-static LIBSSH2_SESSION* __guac_ssh_create_session(guac_client* client,
-        int* socket_fd) {
-
-    int retval;
-
-    int fd;
-    struct addrinfo* addresses;
-    struct addrinfo* current_address;
-
-    char connected_address[1024];
-    char connected_port[64];
-    char *user_authlist;
-
-    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
-
-    struct addrinfo hints = {
-        .ai_family   = AF_UNSPEC,
-        .ai_socktype = SOCK_STREAM,
-        .ai_protocol = IPPROTO_TCP
-    };
-
-    /* Get socket */
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-
-    /* Get addresses connection */
-    if ((retval = getaddrinfo(client_data->hostname, client_data->port,
-                    &hints, &addresses))) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error parsing given address or port: %s",
-                gai_strerror(retval));
-        return NULL;
-
-    }
-
-    /* Attempt connection to each address until success */
-    current_address = addresses;
-    while (current_address != NULL) {
-
-        int retval;
-
-        /* Resolve hostname */
-        if ((retval = getnameinfo(current_address->ai_addr,
-                current_address->ai_addrlen,
-                connected_address, sizeof(connected_address),
-                connected_port, sizeof(connected_port),
-                NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to resolve host: %s", gai_strerror(retval));
-
-        /* Connect */
-        if (connect(fd, current_address->ai_addr,
-                        current_address->ai_addrlen) == 0) {
-
-            guac_client_log(client, GUAC_LOG_DEBUG, "Successfully connected to "
-                    "host %s, port %s", connected_address, connected_port);
-
-            /* Done if successful connect */
-            break;
-
-        }
-
-        /* Otherwise log information regarding bind failure */
-        else
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
-                    "host %s, port %s: %s",
-                    connected_address, connected_port, strerror(errno));
-
-        current_address = current_address->ai_next;
-
-    }
-
-    /* If unable to connect to anything, fail */
-    if (current_address == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to connect to any addresses.");
-        return NULL;
-    }
-
-    /* Free addrinfo */
-    freeaddrinfo(addresses);
-
-    /* Open SSH session */
-    LIBSSH2_SESSION* session = libssh2_session_init_ex(NULL, NULL,
-            NULL, client);
-    if (session == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Session allocation failed.");
-        return NULL;
-    }
-
-    /* Perform handshake */
-    if (libssh2_session_handshake(session, fd)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "SSH handshake failed.");
-        return NULL;
-    }
-
-    /* Save file descriptor */
-    if (socket_fd != NULL)
-        *socket_fd = fd;
-
-    /* Get list of suported authentication methods */
-    user_authlist = libssh2_userauth_list(session, client_data->username, strlen(client_data->username));
-    guac_client_log(client, GUAC_LOG_DEBUG, "Supported authentication methods: %s", user_authlist);
-
-    /* Authenticate with key if available */
-    if (client_data->key != NULL) {
-
-        /* Check if public key auth is suported on the server */
-        if (strstr(user_authlist, "publickey") == NULL) {
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                               "Public key authentication not suported");
-            return NULL;
-        }
-
-        if (!libssh2_userauth_publickey(session, client_data->username,
-                    (unsigned char*) client_data->key->public_key,
-                    client_data->key->public_key_length,
-                    __sign_callback, (void**) client_data->key))
-            return session;
-        else {
-            char* error_message;
-            libssh2_session_last_error(session, &error_message, NULL, 0);
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                    "Public key authentication failed: %s", error_message);
-            return NULL;
-        }
-    }
-
-    /* Authenticate with password */
-    if (strstr(user_authlist, "password") != NULL) {
-        guac_client_log(client, GUAC_LOG_DEBUG, "Using password authentication method");
-        retval = libssh2_userauth_password(session, client_data->username, client_data->password);
-    }
-    else if (strstr(user_authlist, "keyboard-interactive") != NULL) {
-        guac_client_log(client, GUAC_LOG_DEBUG, "Using keyboard-interactive authentication method");
-        retval = libssh2_userauth_keyboard_interactive(session, client_data->username, &__kbd_callback);
-    }
-    else {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_BAD_TYPE, "No known authentication methods");
-        return NULL;
-    }
-
-    if (retval == 0)
-        return session;
-
-    else {
-        char* error_message;
-        libssh2_session_last_error(session, &error_message, NULL, 0);
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                "Password authentication failed: %s", error_message);
-        return NULL;
-    }
-
-}
-
 void* ssh_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
 
-    char name[1024];
-
     guac_socket* socket = client->socket;
     char buffer[8192];
-    int bytes_read = -1234;
-
-    int socket_fd;
 
     pthread_t input_thread;
 
@@ -290,81 +179,31 @@ void* ssh_client_thread(void* data) {
     if (guac_common_ssh_init(client))
         return NULL;
 
-    /* Get username */
-    if (client_data->username[0] == 0)
-        guac_terminal_prompt(client_data->term, "Login as: ",
-                             client_data->username, sizeof(client_data->username), true);
+    /* Get user and credentials */
+    guac_common_ssh_user* user = guac_ssh_get_user(client);
 
     /* Send new name */
-    snprintf(name, sizeof(name)-1, "%s@%s", client_data->username, client_data->hostname);
+    char name[1024];
+    snprintf(name, sizeof(name)-1, "%s@%s",
+            client_data->username, client_data->hostname);
     guac_protocol_send_name(socket, name);
 
-    /* If key specified, import */
-    if (client_data->key_base64[0] != 0) {
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Attempting private key import (WITHOUT passphrase)");
-
-        /* Attempt to read key without passphrase */
-        client_data->key = ssh_key_alloc(client_data->key_base64,
-                strlen(client_data->key_base64), "");
-
-        /* On failure, attempt with passphrase */
-        if (client_data->key == NULL) {
-
-            /* Log failure of initial attempt */
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Initial import failed: %s", ssh_key_error());
-
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Re-attempting private key import (WITH passphrase)");
-
-            /* Prompt for passphrase if missing */
-            if (client_data->key_passphrase[0] == 0)
-                guac_terminal_prompt(client_data->term, "Key passphrase: ",
-                                     client_data->key_passphrase, sizeof(client_data->key_passphrase), false);
-
-            /* Import key with passphrase */
-            client_data->key = ssh_key_alloc(client_data->key_base64,
-                    strlen(client_data->key_base64),
-                    client_data->key_passphrase);
-
-            /* If still failing, give up */
-            if (client_data->key == NULL) {
-                guac_client_abort(client,
-                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                        "Auth key import failed: %s", ssh_key_error());
-                return NULL;
-            }
-
-        } /* end decrypt key with passphrase */
-
-        /* Success */
-        guac_client_log(client, GUAC_LOG_INFO, "Auth key successfully imported.");
-
-    } /* end if key given */
-
-    /* Otherwise, get password if not provided */
-    else if (client_data->password[0] == 0)
-        guac_terminal_prompt(client_data->term, "Password: ",
-                             client_data->password, sizeof(client_data->password), false);
-
-    /* Clear screen */
-    guac_terminal_printf(client_data->term, "\x1B[H\x1B[J");
-
     /* Open SSH session */
-    client_data->session = __guac_ssh_create_session(client, &socket_fd);
+    client_data->session = guac_common_ssh_create_session(client,
+            client_data->hostname, client_data->port, user);
     if (client_data->session == NULL) {
-        /* Already aborted within __guac_ssh_create_session() */
+        /* Already aborted within guac_common_ssh_create_session() */
         return NULL;
     }
 
     pthread_mutex_init(&client_data->term_channel_lock, NULL);
 
     /* Open channel for terminal */
-    client_data->term_channel = libssh2_channel_open_session(client_data->session);
+    client_data->term_channel =
+        libssh2_channel_open_session(client_data->session->session);
     if (client_data->term_channel == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to open terminal channel.");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                "Unable to open terminal channel.");
         return NULL;
     }
 
@@ -393,14 +232,15 @@ void* ssh_client_thread(void* data) {
 
         /* Create SSH session specific for SFTP */
         guac_client_log(client, GUAC_LOG_DEBUG, "Reconnecting for SFTP...");
-        client_data->sftp_ssh_session = __guac_ssh_create_session(client, NULL);
+        client_data->sftp_ssh_session = guac_common_ssh_create_session(client,
+                client_data->hostname, client_data->port, user);
         if (client_data->sftp_ssh_session == NULL) {
-            /* Already aborted within __guac_ssh_create_session() */
+            /* Already aborted within guac_common_ssh_create_session() */
             return NULL;
         }
 
         /* Request SFTP */
-        client_data->sftp_session = libssh2_sftp_init(client_data->sftp_ssh_session);
+        client_data->sftp_session = libssh2_sftp_init(client_data->sftp_ssh_session->session);
         if (client_data->sftp_session == NULL) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to start SFTP session.");
             return NULL;
@@ -439,10 +279,10 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Set non-blocking */
-    libssh2_session_set_blocking(client_data->session, 0);
+    libssh2_session_set_blocking(client_data->session->session, 0);
 
     /* While data available, write to terminal */
-    bytes_read = 0;
+    int bytes_read = 0;
     for (;;) {
 
         /* Track total amount of data read */
@@ -491,13 +331,14 @@ void* ssh_client_thread(void* data) {
             struct timeval timeout;
 
             FD_ZERO(&fds);
-            FD_SET(socket_fd, &fds);
+            FD_SET(client_data->session->fd, &fds);
 
             /* Wait for one second */
             timeout.tv_sec = 1;
             timeout.tv_usec = 0;
 
-            if (select(socket_fd+1, &fds, NULL, NULL, &timeout) < 0)
+            if (select(client_data->session->fd + 1, &fds,
+                        NULL, NULL, &timeout) < 0)
                 break;
         }
 
@@ -508,7 +349,6 @@ void* ssh_client_thread(void* data) {
     pthread_join(input_thread, NULL);
 
     pthread_mutex_destroy(&client_data->term_channel_lock);
-    guac_common_ssh_uninit();
 
     guac_client_log(client, GUAC_LOG_INFO, "SSH connection ended.");
     return NULL;

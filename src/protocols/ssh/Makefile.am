@@ -30,18 +30,14 @@ libguac_client_ssh_la_SOURCES = \
     clipboard.c                 \
     guac_handlers.c             \
     sftp.c                      \
-    ssh_buffer.c                \
-    ssh_client.c                \
-    ssh_key.c
+    ssh_client.c
 
 noinst_HEADERS =                \
     client.h                    \
     clipboard.h                 \
     guac_handlers.h             \
     sftp.h                      \
-    ssh_buffer.h                \
-    ssh_client.h                \
-    ssh_key.h
+    ssh_client.h
 
 # Add agent sources if enabled
 if ENABLE_SSH_AGENT

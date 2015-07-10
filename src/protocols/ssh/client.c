@@ -142,7 +142,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     strcpy(client_data->password,  argv[IDX_PASSWORD]);
 
     /* Init public key auth information */
-    client_data->key = NULL;
     strcpy(client_data->key_base64,     argv[IDX_PRIVATE_KEY]);
     strcpy(client_data->key_passphrase, argv[IDX_PASSPHRASE]);
 
