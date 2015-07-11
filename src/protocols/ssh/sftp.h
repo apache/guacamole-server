@@ -34,7 +34,7 @@
  * contents of that stream to the file having the given name within the
  * upload directory set by guac_sftp_set_upload_path().
  *
- * @param client 
+ * @param client
  *     The client receiving the uploaded file.
  *
  * @param stream
@@ -61,7 +61,7 @@ int guac_sftp_file_handler(guac_client* client, guac_stream* stream,
  * after this function terminates in response to "ack" instructions received by
  * the client.
  *
- * @param client 
+ * @param client
  *     The client receiving the file.
  *
  * @param filename
@@ -78,7 +78,7 @@ guac_stream* guac_sftp_download_file(guac_client* client, char* filename);
  * "file" instruction. This function has no bearing on the destination
  * directories of files uploaded with "put" instructions.
  *
- * @param client 
+ * @param client
  *     The client setting the upload path.
  *
  * @param path
