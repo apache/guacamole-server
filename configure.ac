@@ -840,6 +840,9 @@ fi
 
 AM_CONDITIONAL([ENABLE_COMMON_SSH], [test "x${have_libssh2}"  = "xyes" \
                                        -a "x${have_ssl}"      = "xyes"])
+AM_COND_IF([ENABLE_COMMON_SSH],
+           [AC_DEFINE([ENABLE_COMMON_SSH],,
+                      [Whether support for the common SSH core is enabled])])
 
 AM_CONDITIONAL([ENABLE_SSH], [test "x${have_libssh2}"  = "xyes" \
                                 -a "x${have_terminal}" = "xyes" \
