@@ -46,6 +46,7 @@ endif
 libguac_client_vnc_la_CFLAGS =        \
     -Werror -Wall -pedantic -Iinclude \
     @COMMON_INCLUDE@                  \
+    @COMMON_SSH_INCLUDE@              \
     @LIBGUAC_INCLUDE@
 
 libguac_client_vnc_la_LDFLAGS = \
@@ -56,5 +57,6 @@ libguac_client_vnc_la_LDFLAGS = \
 
 libguac_client_vnc_la_LIBADD = \
     @COMMON_LTLIB@             \
+    @COMMON_SSH_LTLIB@         \
     @LIBGUAC_LTLIB@
 

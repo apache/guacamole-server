@@ -36,6 +36,10 @@
 #include <pulse/pulseaudio.h>
 #endif
 
+#ifdef ENABLE_COMMON_SSH
+#include "guac_sftp.h"
+#endif
+
 /**
  * The maximum duration of a frame in milliseconds.
  */
@@ -185,6 +189,13 @@ typedef struct vnc_guac_client_data {
      * Default surface.
      */
     guac_common_surface* default_surface;
+
+#ifdef ENABLE_COMMON_SSH
+    /**
+     * The exposed filesystem object, implemented with SFTP.
+     */
+    guac_object* sftp_filesystem;
+#endif
 
 } vnc_guac_client_data;
 

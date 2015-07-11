@@ -31,6 +31,11 @@
 #include <guacamole/timestamp.h>
 #include <rfb/rfbclient.h>
 
+#ifdef ENABLE_COMMON_SSH
+#include <guac_sftp.h>
+#include <guac_ssh.h>
+#endif
+
 #ifdef ENABLE_PULSE
 #include "pulse.h"
 #endif
@@ -133,6 +138,14 @@ int vnc_guac_client_free_handler(guac_client* client) {
     /* If audio enabled, stop streaming */
     if (guac_client_data->audio_enabled)
         guac_pa_stop_stream(client);
+#endif
+
+#ifdef ENABLE_COMMON_SSH
+    /* Free SFTP filesystem, if loaded */
+    if (guac_client_data->sftp_filesystem)
+        guac_common_ssh_destroy_sftp_filesystem(guac_client_data->sftp_filesystem);
+
+    guac_common_ssh_uninit();
 #endif
 
     /* Free encodings string, if used */
