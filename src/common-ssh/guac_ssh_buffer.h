@@ -38,7 +38,7 @@
  * @param value
  *     The value to write.
  */
-void guac_common_buffer_write_byte(char** buffer, uint8_t value);
+void guac_common_ssh_buffer_write_byte(char** buffer, uint8_t value);
 
 /**
  * Writes the given integer to the given buffer, advancing the buffer pointer
@@ -50,7 +50,7 @@ void guac_common_buffer_write_byte(char** buffer, uint8_t value);
  * @param value
  *     The value to write.
  */
-void guac_common_buffer_write_uint32(char** buffer, uint32_t value);
+void guac_common_ssh_buffer_write_uint32(char** buffer, uint32_t value);
 
 /**
  * Writes the given string and its length to the given buffer, advancing the
@@ -66,7 +66,7 @@ void guac_common_buffer_write_uint32(char** buffer, uint32_t value);
  * @param length
  *     The length of the string to write, in bytes.
  */
-void guac_common_buffer_write_string(char** buffer, const char* string,
+void guac_common_ssh_buffer_write_string(char** buffer, const char* string,
         int length);
 
 /**
@@ -79,7 +79,7 @@ void guac_common_buffer_write_string(char** buffer, const char* string,
  * @param value
  *     The value to write.
  */
-void guac_common_buffer_write_bignum(char** buffer, BIGNUM* value);
+void guac_common_ssh_buffer_write_bignum(char** buffer, BIGNUM* value);
 
 /**
  * Writes the given data the given buffer, advancing the buffer pointer by the
@@ -91,7 +91,7 @@ void guac_common_buffer_write_bignum(char** buffer, BIGNUM* value);
  * @param length
  *     The length of data to write, in bytes.
  */
-void guac_common_buffer_write_data(char** buffer, const char* data, int length);
+void guac_common_ssh_buffer_write_data(char** buffer, const char* data, int length);
 
 /**
  * Reads a single byte from the given buffer, advancing the buffer by one byte.
@@ -102,7 +102,7 @@ void guac_common_buffer_write_data(char** buffer, const char* data, int length);
  * @return
  *     The value read from the buffer.
  */
-uint8_t guac_common_buffer_read_byte(char** buffer);
+uint8_t guac_common_ssh_buffer_read_byte(char** buffer);
 
 /**
  * Reads an integer from the given buffer, advancing the buffer by four bytes.
@@ -113,7 +113,7 @@ uint8_t guac_common_buffer_read_byte(char** buffer);
  * @return
  *     The value read from the buffer.
  */
-uint32_t guac_common_buffer_read_uint32(char** buffer);
+uint32_t guac_common_ssh_buffer_read_uint32(char** buffer);
 
 /**
  * Reads a string and its length from the given buffer, advancing the buffer
@@ -131,7 +131,7 @@ uint32_t guac_common_buffer_read_uint32(char** buffer);
  * @return
  *     A pointer to the value within the buffer.
  */
-char* guac_common_buffer_read_string(char** buffer, int* length);
+char* guac_common_ssh_buffer_read_string(char** buffer, int* length);
 
 #endif
 

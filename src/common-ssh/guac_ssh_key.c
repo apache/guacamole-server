@@ -73,9 +73,9 @@ guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
         pos = public_key;
 
         /* Derive public key */
-        guac_common_buffer_write_string(&pos, "ssh-rsa", sizeof("ssh-rsa")-1);
-        guac_common_buffer_write_bignum(&pos, rsa_key->e);
-        guac_common_buffer_write_bignum(&pos, rsa_key->n);
+        guac_common_ssh_buffer_write_string(&pos, "ssh-rsa", sizeof("ssh-rsa")-1);
+        guac_common_ssh_buffer_write_bignum(&pos, rsa_key->e);
+        guac_common_ssh_buffer_write_bignum(&pos, rsa_key->n);
 
         /* Save public key to structure */
         key->public_key = public_key;
@@ -107,11 +107,11 @@ guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
         pos = public_key;
 
         /* Derive public key */
-        guac_common_buffer_write_string(&pos, "ssh-dss", sizeof("ssh-dss")-1);
-        guac_common_buffer_write_bignum(&pos, dsa_key->p);
-        guac_common_buffer_write_bignum(&pos, dsa_key->q);
-        guac_common_buffer_write_bignum(&pos, dsa_key->g);
-        guac_common_buffer_write_bignum(&pos, dsa_key->pub_key);
+        guac_common_ssh_buffer_write_string(&pos, "ssh-dss", sizeof("ssh-dss")-1);
+        guac_common_ssh_buffer_write_bignum(&pos, dsa_key->p);
+        guac_common_ssh_buffer_write_bignum(&pos, dsa_key->q);
+        guac_common_ssh_buffer_write_bignum(&pos, dsa_key->g);
+        guac_common_ssh_buffer_write_bignum(&pos, dsa_key->pub_key);
 
         /* Save public key to structure */
         key->public_key = public_key;
