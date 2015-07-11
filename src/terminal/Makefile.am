@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 Glyptodon LLC
+# Copyright (C) 2015 Glyptodon LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,6 @@
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -pedantic @PANGO_CFLAGS@ @PANGOCAIRO_CFLAGS@ @LIBGUAC_INCLUDE@ @COMMON_INCLUDE@
 
 noinst_LTLIBRARIES = libguac_terminal.la
 
@@ -55,6 +54,20 @@ libguac_terminal_la_SOURCES =   \
     terminal.c                  \
     terminal_handlers.c
 
-libguac_terminal_la_LIBADD = @LIBGUAC_LTLIB@ @COMMON_LTLIB@ 
-libguac_terminal_la_LDFLAGS = @PTHREAD_LIBS@ @PANGO_LIBS@ @PANGOCAIRO_LIBS@ @CAIRO_LIBS@ @MATH_LIBS@
+libguac_terminal_la_CFLAGS = \
+    -Werror -Wall -pedantic  \
+    @COMMON_INCLUDE@         \
+    @LIBGUAC_INCLUDE@        \
+    @PANGO_CFLAGS@           \
+    @PANGOCAIRO_CFLAGS@
+
+libguac_terminal_la_LIBADD = \
+    @LIBGUAC_LTLIB@
+
+libguac_terminal_la_LDFLAGS = \
+    @CAIRO_LIBS@              \
+    @MATH_LIBS@               \
+    @PANGO_LIBS@              \
+    @PANGOCAIRO_LIBS@         \
+    @PTHREAD_LIBS@
 

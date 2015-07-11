@@ -20,43 +20,35 @@
 # THE SOFTWARE.
 #
 
-AUTOMAKE_OPTIONS = foreign 
+AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
-TESTS = test_libguac
-check_PROGRAMS = test_libguac
+noinst_LTLIBRARIES = libguac_common_ssh.la
 
-noinst_HEADERS =          \
-    client/client_suite.h \
-    common/common_suite.h \
-    protocol/suite.h      \
-    util/util_suite.h
+libguac_common_ssh_la_SOURCES = \
+    guac_sftp.c                 \
+    guac_ssh.c                  \
+    guac_ssh_buffer.c           \
+    guac_ssh_key.c              \
+    guac_ssh_user.c
 
-test_libguac_SOURCES =           \
-    test_libguac.c               \
-    client/client_suite.c        \
-    client/buffer_pool.c         \
-    client/layer_pool.c          \
-    common/common_suite.c        \
-    common/guac_iconv.c          \
-    common/guac_string.c         \
-    protocol/suite.c             \
-    protocol/base64_decode.c     \
-    protocol/instruction_parse.c \
-    protocol/instruction_read.c  \
-    protocol/instruction_write.c \
-    protocol/nest_write.c        \
-    util/util_suite.c            \
-    util/guac_pool.c             \
-    util/guac_unicode.c
+noinst_HEADERS =      \
+    guac_sftp.h       \
+    guac_ssh.h        \
+    guac_ssh_buffer.h \
+    guac_ssh_key.h    \
+    guac_ssh_user.h
 
-test_libguac_CFLAGS =       \
-    -Werror -Wall -pedantic \
-    @COMMON_INCLUDE@        \
+libguac_common_ssh_la_CFLAGS = \
+    -Werror -Wall -pedantic    \
+    @COMMON_INCLUDE@           \
     @LIBGUAC_INCLUDE@
 
-test_libguac_LDADD = \
-    @COMMON_LTLIB@   \
-    @CUNIT_LIBS@     \
+libguac_common_ssh_la_LIBADD = \
     @LIBGUAC_LTLIB@
+
+libguac_common_ssh_la_LDFLAGS = \
+    @PTHREAD_LIBS@              \
+    @SSH_LIBS@                  \
+    @SSL_LIBS@
 

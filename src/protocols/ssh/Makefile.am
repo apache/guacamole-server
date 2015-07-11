@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 Glyptodon LLC
+# Copyright (C) 2015 Glyptodon LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,6 @@
 #
 
 AUTOMAKE_OPTIONS = foreign
-
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac-client-ssh.la
@@ -31,18 +30,14 @@ libguac_client_ssh_la_SOURCES = \
     clipboard.c                 \
     guac_handlers.c             \
     sftp.c                      \
-    ssh_buffer.c                \
-    ssh_client.c                \
-    ssh_key.c
+    ssh_client.c
 
 noinst_HEADERS =                \
     client.h                    \
     clipboard.h                 \
     guac_handlers.h             \
     sftp.h                      \
-    ssh_buffer.h                \
-    ssh_client.h                \
-    ssh_key.h
+    ssh_client.h
 
 # Add agent sources if enabled
 if ENABLE_SSH_AGENT
@@ -50,7 +45,21 @@ libguac_client_ssh_la_SOURCES += ssh_agent.c
 noinst_HEADERS += ssh_agent.h
 endif
 
-libguac_client_ssh_la_CFLAGS = -Werror -Wall -Iinclude @LIBGUAC_INCLUDE@ @TERMINAL_INCLUDE@
-libguac_client_ssh_la_LIBADD = @LIBGUAC_LTLIB@ @TERMINAL_LTLIB@
-libguac_client_ssh_la_LDFLAGS = -version-info 0:0:0 @SSH_LIBS@ @SSL_LIBS@ @PTHREAD_LIBS@
+libguac_client_ssh_la_CFLAGS = \
+    -Werror -Wall -Iinclude    \
+    @COMMON_SSH_INCLUDE@       \
+    @LIBGUAC_INCLUDE@          \
+    @TERMINAL_INCLUDE@
+
+libguac_client_ssh_la_LIBADD = \
+    @COMMON_LTLIB@             \
+    @COMMON_SSH_LTLIB@         \
+    @LIBGUAC_LTLIB@            \
+    @TERMINAL_LTLIB@
+
+libguac_client_ssh_la_LDFLAGS = \
+    -version-info 0:0:0         \
+    @PTHREAD_LIBS@              \
+    @SSH_LIBS@                  \
+    @SSL_LIBS@
 

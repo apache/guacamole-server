@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-void buffer_write_byte(char** buffer, uint8_t value) {
+void guac_common_ssh_buffer_write_byte(char** buffer, uint8_t value) {
 
     uint8_t* data = (uint8_t*) *buffer;
     *data = value;
@@ -38,7 +38,7 @@ void buffer_write_byte(char** buffer, uint8_t value) {
 
 }
 
-void buffer_write_uint32(char** buffer, uint32_t value) {
+void guac_common_ssh_buffer_write_uint32(char** buffer, uint32_t value) {
 
     uint8_t* data = (uint8_t*) *buffer;
 
@@ -51,19 +51,20 @@ void buffer_write_uint32(char** buffer, uint32_t value) {
 
 }
 
-void buffer_write_data(char** buffer, const char* data, int length) {
+void guac_common_ssh_buffer_write_data(char** buffer, const char* data,
+        int length) {
     memcpy(*buffer, data, length);
     *buffer += length;
 }
 
-void buffer_write_bignum(char** buffer, BIGNUM* value) {
+void guac_common_ssh_buffer_write_bignum(char** buffer, BIGNUM* value) {
 
     unsigned char* bn_buffer;
     int length;
 
     /* If zero, just write zero length */
     if (BN_is_zero(value)) {
-        buffer_write_uint32(buffer, 0);
+        guac_common_ssh_buffer_write_uint32(buffer, 0);
         return;
     }
 
@@ -76,11 +77,11 @@ void buffer_write_bignum(char** buffer, BIGNUM* value) {
 
     /* If first byte has high bit set, write padding byte */
     if (bn_buffer[0] & 0x80) {
-        buffer_write_uint32(buffer, length+1);
-        buffer_write_byte(buffer, 0);
+        guac_common_ssh_buffer_write_uint32(buffer, length+1);
+        guac_common_ssh_buffer_write_byte(buffer, 0);
     }
     else
-        buffer_write_uint32(buffer, length);
+        guac_common_ssh_buffer_write_uint32(buffer, length);
 
     /* Write data */
     memcpy(*buffer, bn_buffer, length);
@@ -90,12 +91,13 @@ void buffer_write_bignum(char** buffer, BIGNUM* value) {
 
 }
 
-void buffer_write_string(char** buffer, const char* string, int length) {
-    buffer_write_uint32(buffer, length);
-    buffer_write_data(buffer, string, length);
+void guac_common_ssh_buffer_write_string(char** buffer, const char* string,
+        int length) {
+    guac_common_ssh_buffer_write_uint32(buffer, length);
+    guac_common_ssh_buffer_write_data(buffer, string, length);
 }
 
-uint8_t buffer_read_byte(char** buffer) {
+uint8_t guac_common_ssh_buffer_read_byte(char** buffer) {
 
     uint8_t* data = (uint8_t*) *buffer;
     uint8_t value = *data;
@@ -106,7 +108,7 @@ uint8_t buffer_read_byte(char** buffer) {
 
 }
 
-uint32_t buffer_read_uint32(char** buffer) {
+uint32_t guac_common_ssh_buffer_read_uint32(char** buffer) {
 
     uint8_t* data = (uint8_t*) *buffer;
     uint32_t value =
@@ -121,11 +123,11 @@ uint32_t buffer_read_uint32(char** buffer) {
 
 }
 
-char* buffer_read_string(char** buffer, int* length) {
+char* guac_common_ssh_buffer_read_string(char** buffer, int* length) {
 
     char* value;
 
-    *length = buffer_read_uint32(buffer);
+    *length = guac_common_ssh_buffer_read_uint32(buffer);
     value = *buffer;
 
     *buffer += *length;

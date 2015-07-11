@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,9 +20,8 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef _GUAC_SSH_KEY_H
-#define _GUAC_SSH_KEY_H
+#ifndef GUAC_COMMON_SSH_KEY_H
+#define GUAC_COMMON_SSH_KEY_H
 
 #include "config.h"
 
@@ -51,7 +50,7 @@
 /**
  * The type of an SSH key.
  */
-typedef enum ssh_key_type {
+typedef enum guac_common_ssh_key_type {
 
     /**
      * RSA key.
@@ -63,17 +62,17 @@ typedef enum ssh_key_type {
      */
     SSH_KEY_DSA
 
-} ssh_key_type;
+} guac_common_ssh_key_type;
 
 /**
  * Abstraction of a key used for SSH authentication.
  */
-typedef struct ssh_key {
+typedef struct guac_common_ssh_key {
 
     /**
      * The type of this key.
      */
-    ssh_key_type type;
+    guac_common_ssh_key_type type;
 
     /**
      * Underlying RSA private key, if any.
@@ -105,13 +104,28 @@ typedef struct ssh_key {
      */
     int private_key_length;
 
-} ssh_key;
+} guac_common_ssh_key;
 
 /**
  * Allocates a new key containing the given private key data and specified
  * passphrase. If unable to read the key, NULL is returned.
+ *
+ * @param data
+ *     The base64-encoded data to decode when reading the key.
+ *
+ * @param length
+ *     The length of the provided data, in bytes.
+ *
+ * @param passphrase
+ *     The passphrase to use when decrypting the key, if any, or an empty
+ *     string or NULL if no passphrase is needed.
+ *
+ * @return
+ *     The decoded, decrypted private key, or NULL if the key could not be
+ *     decoded.
  */
-ssh_key* ssh_key_alloc(char* data, int length, char* passphrase);
+guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
+        char* passphrase);
 
 /**
  * Returns a statically-allocated string describing the most recent SSH key
@@ -120,18 +134,40 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase);
  * @return
  *     A statically-allocated string describing the most recent SSH key error.
  */
-const char* ssh_key_error();
+const char* guac_common_ssh_key_error();
 
 /**
  * Frees all memory associated with the given key.
+ *
+ * @param key
+ *     The key to free.
  */
-void ssh_key_free(ssh_key* key);
+void guac_common_ssh_key_free(guac_common_ssh_key* key);
 
 /**
  * Signs the given data using the given key, returning the length of the
  * signature in bytes, or a value less than zero on error.
+ *
+ * @param key
+ *     The key to use when signing the given data.
+ *
+ * @param data
+ *     The arbitrary data to sign.
+ *
+ * @param length
+ *     The length of the arbitrary data being signed, in bytes.
+ *
+ * @param sig
+ *     The buffer into which the signature should be written. The buffer must
+ *     be at least DSA_SIG_SIZE for DSA keys. For RSA keys, the signature size
+ *     is dependent only on key size, and is equal to the length of the
+ *     modulus, in bytes.
+ *
+ * @return
+ *     The number of bytes in the resulting signature.
  */
-int ssh_key_sign(ssh_key* key, const char* data, int length, unsigned char* sig);
+int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
+        int length, unsigned char* sig);
 
 #endif
 

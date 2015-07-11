@@ -26,8 +26,8 @@
 
 #include "config.h"
 
+#include "guac_ssh.h"
 #include "sftp.h"
-#include "ssh_key.h"
 #include "terminal.h"
 
 #include <libssh2.h>
@@ -78,11 +78,6 @@ typedef struct ssh_guac_client_data {
     char key_passphrase[1024];
 
     /**
-     * The private key to use for authentication, if any.
-     */
-    ssh_key* key;
-
-    /**
      * The name of the font to use for display rendering.
      */
     char font_name[1024];
@@ -117,28 +112,12 @@ typedef struct ssh_guac_client_data {
     /**
      * SSH session, used by the SSH client thread.
      */
-    LIBSSH2_SESSION* session;
-
-    /**
-     * The distinct SSH session used for SFTP.
-     */
-    LIBSSH2_SESSION* sftp_ssh_session;
-
-    /**
-     * SFTP session, used for file transfers.
-     */
-    LIBSSH2_SFTP* sftp_session;
+    guac_common_ssh_session* session;
 
     /**
      * The filesystem object exposed for the SFTP session.
      */
     guac_object* sftp_filesystem;
-
-    /**
-     * The path files will be sent to, if uploaded directly via a "file"
-     * instruction.
-     */
-    char sftp_upload_path[GUAC_SFTP_MAX_PATH];
 
     /**
      * SSH terminal channel, used by the SSH client thread.

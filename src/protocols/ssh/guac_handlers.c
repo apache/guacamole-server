@@ -24,7 +24,8 @@
 
 #include "client.h"
 #include "guac_handlers.h"
-#include "ssh_key.h"
+#include "guac_sftp.h"
+#include "guac_ssh.h"
 #include "terminal.h"
 
 #include <cairo/cairo.h>
@@ -101,31 +102,18 @@ int ssh_guac_client_free_handler(guac_client* client) {
     /* Free channels */
     libssh2_channel_free(guac_client_data->term_channel);
 
-    /* Shutdown SFTP session, if any */
-    if (guac_client_data->sftp_session)
-        libssh2_sftp_shutdown(guac_client_data->sftp_session);
-
-    /* Disconnect SSH session corresponding to the SFTP session */
-    if (guac_client_data->sftp_ssh_session) {
-        libssh2_session_disconnect(guac_client_data->sftp_ssh_session, "Bye");
-        libssh2_session_free(guac_client_data->sftp_ssh_session);
-    }
-
     /* Clean up the SFTP filesystem object */
     if (guac_client_data->sftp_filesystem)
-        guac_client_free_object(client, guac_client_data->sftp_filesystem);
+        guac_common_ssh_destroy_sftp_filesystem(guac_client_data->sftp_filesystem);
 
     /* Free session */
     if (guac_client_data->session != NULL)
-        libssh2_session_free(guac_client_data->session);
-
-    /* Free auth key */
-    if (guac_client_data->key != NULL)
-        ssh_key_free(guac_client_data->key);
+        guac_common_ssh_destroy_session(guac_client_data->session);
 
     /* Free generic data struct */
     free(client->data);
 
+    guac_common_ssh_uninit();
     return 0;
 }
 

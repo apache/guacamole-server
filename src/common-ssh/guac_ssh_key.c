@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,8 @@
 
 #include "config.h"
 
-#include "ssh_buffer.h"
-#include "ssh_key.h"
+#include "guac_ssh_buffer.h"
+#include "guac_ssh_key.h"
 
 #include <openssl/bio.h>
 #include <openssl/bn.h>
@@ -37,9 +37,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
+guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
+        char* passphrase) {
 
-    ssh_key* key;
+    guac_common_ssh_key* key;
     BIO* key_bio;
 
     char* public_key;
@@ -61,7 +62,7 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
             return NULL;
 
         /* Allocate key */
-        key = malloc(sizeof(ssh_key));
+        key = malloc(sizeof(guac_common_ssh_key));
         key->rsa = rsa_key;
 
         /* Set type */
@@ -72,9 +73,9 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
         pos = public_key;
 
         /* Derive public key */
-        buffer_write_string(&pos, "ssh-rsa", sizeof("ssh-rsa")-1);
-        buffer_write_bignum(&pos, rsa_key->e);
-        buffer_write_bignum(&pos, rsa_key->n);
+        guac_common_ssh_buffer_write_string(&pos, "ssh-rsa", sizeof("ssh-rsa")-1);
+        guac_common_ssh_buffer_write_bignum(&pos, rsa_key->e);
+        guac_common_ssh_buffer_write_bignum(&pos, rsa_key->n);
 
         /* Save public key to structure */
         key->public_key = public_key;
@@ -95,7 +96,7 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
             return NULL;
 
         /* Allocate key */
-        key = malloc(sizeof(ssh_key));
+        key = malloc(sizeof(guac_common_ssh_key));
         key->dsa = dsa_key;
 
         /* Set type */
@@ -106,11 +107,11 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
         pos = public_key;
 
         /* Derive public key */
-        buffer_write_string(&pos, "ssh-dss", sizeof("ssh-dss")-1);
-        buffer_write_bignum(&pos, dsa_key->p);
-        buffer_write_bignum(&pos, dsa_key->q);
-        buffer_write_bignum(&pos, dsa_key->g);
-        buffer_write_bignum(&pos, dsa_key->pub_key);
+        guac_common_ssh_buffer_write_string(&pos, "ssh-dss", sizeof("ssh-dss")-1);
+        guac_common_ssh_buffer_write_bignum(&pos, dsa_key->p);
+        guac_common_ssh_buffer_write_bignum(&pos, dsa_key->q);
+        guac_common_ssh_buffer_write_bignum(&pos, dsa_key->g);
+        guac_common_ssh_buffer_write_bignum(&pos, dsa_key->pub_key);
 
         /* Save public key to structure */
         key->public_key = public_key;
@@ -134,14 +135,14 @@ ssh_key* ssh_key_alloc(char* data, int length, char* passphrase) {
 
 }
 
-const char* ssh_key_error() {
+const char* guac_common_ssh_key_error() {
 
     /* Return static error string */
     return ERR_reason_error_string(ERR_get_error());
 
 }
 
-void ssh_key_free(ssh_key* key) {
+void guac_common_ssh_key_free(guac_common_ssh_key* key) {
 
     /* Free key-specific data */
     if (key->type == SSH_KEY_RSA)
@@ -153,7 +154,8 @@ void ssh_key_free(ssh_key* key) {
     free(key);
 }
 
-int ssh_key_sign(ssh_key* key, const char* data, int length, unsigned char* sig) {
+int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
+        int length, unsigned char* sig) {
 
     const EVP_MD* md;
     EVP_MD_CTX md_ctx;
