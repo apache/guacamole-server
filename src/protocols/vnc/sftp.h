@@ -30,8 +30,7 @@
 
 /**
  * Handles an incoming stream from a Guacamole "file" instruction, saving the
- * contents of that stream to the file having the given name within the
- * upload directory set by guac_sftp_set_upload_path().
+ * contents of that stream to the file having the given name.
  *
  * @param client
  *     The client receiving the uploaded file.
@@ -43,9 +42,7 @@
  *     The mimetype of the data being received.
  *
  * @param filename
- *     The filename of the file to write to. This filename will always be taken
- *     relative to the upload path set by
- *     guac_common_ssh_sftp_set_upload_path().
+ *     The filename of the file to write to.
  *
  * @return
  *     Zero if the incoming stream has been handled successfully, non-zero on
