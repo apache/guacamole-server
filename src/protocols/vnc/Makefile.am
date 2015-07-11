@@ -37,12 +37,6 @@ noinst_HEADERS =      \
     guac_handlers.h   \
     vnc_handlers.h    
 
-# Optional SFTP support
-if ENABLE_COMMON_SSH
-libguac_client_vnc_la_SOURCES += sftp.c
-noinst_HEADERS  += sftp.h
-endif
-
 # Optional PulseAudio support
 if ENABLE_PULSE
 libguac_client_vnc_la_SOURCES += pulse.c
@@ -63,6 +57,12 @@ libguac_client_vnc_la_LDFLAGS = \
 
 libguac_client_vnc_la_LIBADD = \
     @COMMON_LTLIB@             \
-    @COMMON_SSH_LTLIB@         \
     @LIBGUAC_LTLIB@
+
+# Optional SFTP support
+if ENABLE_COMMON_SSH
+libguac_client_vnc_la_SOURCES += sftp.c
+noinst_HEADERS                += sftp.h
+libguac_client_vnc_la_LIBADD  += @COMMON_SSH_LTLIB@
+endif
 

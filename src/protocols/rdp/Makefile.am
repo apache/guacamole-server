@@ -97,12 +97,6 @@ noinst_HEADERS =                             \
     resolution.h                             \
     unicode.h
 
-# Build SFTP support if enabled
-if ENABLE_COMMON_SSH
-noinst_HEADERS  += sftp.h
-libguac_client_rdp_la_SOURCES += sftp.c
-endif
-
 # Add compatibility layer for WinPR if not available
 if ! ENABLE_WINPR
 noinst_HEADERS  += compat/winpr-stream.h compat/winpr-wtypes.h
@@ -136,7 +130,6 @@ libguac_client_rdp_la_LDFLAGS = \
 
 libguac_client_rdp_la_LIBADD =     \
     @COMMON_LTLIB@                 \
-    @COMMON_SSH_LTLIB@             \
     @LIBGUAC_LTLIB@
 
 #
@@ -195,6 +188,16 @@ guacsvc_ldflags =                  \
 guacsvc_libadd =    \
     @COMMON_LTLIB@  \
     @LIBGUAC_LTLIB@
+
+#
+# Optional SFTP support
+#
+
+if ENABLE_COMMON_SSH
+libguac_client_rdp_la_SOURCES += sftp.c
+noinst_HEADERS                += sftp.h
+libguac_client_rdp_la_LIBADD  += @COMMON_SSH_LTLIB@
+endif
 
 #
 # Autogenerate keymaps
