@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "guac_sftp.h"
 #include "guac_ssh.h"
 #include "sftp.h"
 #include "terminal.h"
@@ -226,31 +227,26 @@ void* ssh_client_thread(void* data) {
     /* Start SFTP session as well, if enabled */
     if (client_data->enable_sftp) {
 
-        /* Init handlers for Guacamole-specific console codes */
-        client_data->term->upload_path_handler = guac_sftp_set_upload_path;
-        client_data->term->file_download_handler = guac_sftp_download_file;
-
         /* Create SSH session specific for SFTP */
         guac_client_log(client, GUAC_LOG_DEBUG, "Reconnecting for SFTP...");
-        client_data->sftp_ssh_session = guac_common_ssh_create_session(client,
-                client_data->hostname, client_data->port, user);
-        if (client_data->sftp_ssh_session == NULL) {
+        guac_common_ssh_session* sftp_ssh_session =
+            guac_common_ssh_create_session(client, client_data->hostname,
+                    client_data->port, user);
+        if (sftp_ssh_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             return NULL;
         }
 
         /* Request SFTP */
-        client_data->sftp_session = libssh2_sftp_init(client_data->sftp_ssh_session->session);
-        if (client_data->sftp_session == NULL) {
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to start SFTP session.");
-            return NULL;
-        }
+        client_data->sftp_filesystem =
+            guac_common_ssh_create_sftp_filesystem(sftp_ssh_session, "/");
 
-        /* Set file handler */
+        /* Set generic (non-filesystem) file upload handler */
         client->file_handler = guac_sftp_file_handler;
 
-        /* Expose filesystem */
-        client_data->sftp_filesystem = guac_sftp_expose_filesystem(client);
+        /* Init handlers for Guacamole-specific console codes */
+        client_data->term->upload_path_handler = guac_sftp_set_upload_path;
+        client_data->term->file_download_handler = guac_sftp_download_file;
 
         guac_client_log(client, GUAC_LOG_DEBUG, "SFTP session initialized");
 
