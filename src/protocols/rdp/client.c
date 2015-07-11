@@ -35,6 +35,12 @@
 #include "rdp_svc.h"
 #include "resolution.h"
 
+#ifdef ENABLE_COMMON_SSH
+#include "guac_sftp.h"
+#include "guac_ssh.h"
+#include "sftp.h"
+#endif
+
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 #include "rdp_disp.h"
 #endif
@@ -298,6 +304,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     if (guac_client_data->settings.drive_enabled) {
         guac_client_data->filesystem =
             guac_rdp_fs_alloc(client, guac_client_data->settings.drive_path);
+        client->file_handler = guac_rdp_upload_file_handler;
     }
 
     /* If RDPDR required, load it */
@@ -469,7 +476,6 @@ BOOL rdp_freerdp_post_connect(freerdp* instance) {
 
     /* Stream handlers */
     client->clipboard_handler = guac_rdp_clipboard_handler;
-    client->file_handler = guac_rdp_upload_file_handler;
     client->pipe_handler = guac_rdp_svc_pipe_handler;
 
     return TRUE;
@@ -884,6 +890,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         /* Abort if SFTP connection fails */
         if (guac_client_data->sftp_filesystem == NULL)
             return 1;
+
+        /* Use SFTP for basic uploads, if drive not enabled */
+        if (!settings->drive_enabled)
+            client->file_handler = guac_rdp_sftp_file_handler;
 
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "SFTP connection succeeded.");

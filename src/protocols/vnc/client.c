@@ -28,12 +28,16 @@
 #include "guac_dot_cursor.h"
 #include "guac_handlers.h"
 #include "guac_pointer_cursor.h"
-#include "guac_sftp.h"
-#include "guac_ssh.h"
 #include "vnc_handlers.h"
 
 #ifdef ENABLE_PULSE
 #include "pulse.h"
+#endif
+
+#ifdef ENABLE_COMMON_SSH
+#include "guac_sftp.h"
+#include "guac_ssh.h"
+#include "sftp.h"
 #endif
 
 #include <rfb/rfbclient.h>
@@ -420,6 +424,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         /* Abort if SFTP connection fails */
         if (guac_client_data->sftp_filesystem == NULL)
             return 1;
+
+        /* Set file handler for basic uploads */
+        client->file_handler = guac_vnc_sftp_file_handler;
 
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "SFTP connection succeeded.");
