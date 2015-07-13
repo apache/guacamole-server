@@ -552,7 +552,7 @@ static int guac_common_ssh_sftp_get_handler(guac_client* client,
         list_state->directory = dir;
         list_state->sftp_data = sftp_data;
         strncpy(list_state->directory_name, name,
-                sizeof(list_state->directory_name));
+                sizeof(list_state->directory_name) - 1);
 
         /* Allocate stream for body */
         guac_stream* stream = guac_client_alloc_stream(client);
