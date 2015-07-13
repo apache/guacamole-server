@@ -665,23 +665,24 @@ guac_object* guac_common_ssh_create_sftp_filesystem(
 
     guac_client* client = session->client;
 
+    /* Request SFTP */
+    LIBSSH2_SFTP* sftp_session = libssh2_sftp_init(session->session);
+    if (sftp_session == NULL) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                "Unable to start SFTP session.");
+        return NULL;
+    }
+
     /* Allocate data for SFTP session */
     guac_common_ssh_sftp_data* sftp_data =
         malloc(sizeof(guac_common_ssh_sftp_data));
 
     /* Associate SSH session with SFTP data */
     sftp_data->ssh_session = session;
+    sftp_data->sftp_session = sftp_session;
 
     /* Initially upload files to current directory */
     strcpy(sftp_data->upload_path, ".");
-
-    /* Request SFTP */
-    sftp_data->sftp_session = libssh2_sftp_init(session->session);
-    if (sftp_data->sftp_session == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
-                "Unable to start SFTP session.");
-        return NULL;
-    }
 
     /* Init filesystem */
     guac_object* filesystem = guac_client_alloc_object(client);

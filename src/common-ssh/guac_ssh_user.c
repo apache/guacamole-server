@@ -48,6 +48,7 @@ void guac_common_ssh_destroy_user(guac_common_ssh_user* user) {
     /* Free all other data */
     free(user->password);
     free(user->username);
+    free(user);
 
 }
 
