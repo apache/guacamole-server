@@ -246,8 +246,8 @@ int guac_common_ssh_sftp_handle_file_stream(guac_object* filesystem,
         guac_socket_flush(client->socket);
     }
     else {
-        guac_client_log(client, GUAC_LOG_INFO, "Unable to open file \"%s\": %s",
-                fullpath, libssh2_sftp_last_error(sftp_data->sftp_session));
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Unable to open file \"%s\"", fullpath);
         guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed",
                 GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND);
         guac_socket_flush(client->socket);
@@ -350,8 +350,7 @@ guac_stream* guac_common_ssh_sftp_download_file(guac_object* filesystem,
             LIBSSH2_FXF_READ, 0);
     if (file == NULL) {
         guac_client_log(client, GUAC_LOG_INFO, 
-                "Unable to read file \"%s\": %s",
-                filename, libssh2_sftp_last_error(sftp_data->sftp_session));
+                "Unable to read file \"%s\"", filename);
         return NULL;
     }
 
@@ -540,8 +539,7 @@ static int guac_common_ssh_sftp_get_handler(guac_client* client,
         LIBSSH2_SFTP_HANDLE* dir = libssh2_sftp_opendir(sftp, name);
         if (dir == NULL) {
             guac_client_log(client, GUAC_LOG_INFO,
-                    "Unable to read directory \"%s\": %s",
-                    name, libssh2_sftp_last_error(sftp));
+                    "Unable to read directory \"%s\"", name);
             return 0;
         }
 
@@ -576,8 +574,7 @@ static int guac_common_ssh_sftp_get_handler(guac_client* client,
             LIBSSH2_FXF_READ, 0);
         if (file == NULL) {
             guac_client_log(client, GUAC_LOG_INFO,
-                    "Unable to read file \"%s\": %s",
-                    name, libssh2_sftp_last_error(sftp));
+                    "Unable to read file \"%s\"", name);
             return 0;
         }
 
@@ -642,8 +639,8 @@ static int guac_common_ssh_sftp_put_handler(guac_client* client,
 
     /* Abort on failure */
     else {
-        guac_client_log(client, GUAC_LOG_INFO, "Unable to open file \"%s\": %s",
-                name, libssh2_sftp_last_error(sftp));
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Unable to open file \"%s\"", name);
         guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed",
                 GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND);
     }
