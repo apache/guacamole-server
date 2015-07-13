@@ -374,6 +374,11 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
     /* Get socket */
     fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Unable to create socket: %s", strerror(errno));
+        return NULL;
+    }
 
     /* Get addresses connection */
     if ((retval = getaddrinfo(hostname, port, &hints, &addresses))) {
