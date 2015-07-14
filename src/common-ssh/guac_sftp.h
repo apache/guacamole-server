@@ -94,7 +94,8 @@ typedef struct guac_common_ssh_sftp_ls_state {
  * guac_common_ssh_destroy_sftp_filesystem().
  *
  * @param session
- *     The session to use to provide SFTP.
+ *     The session to use to provide SFTP. This session will automatically be
+ *     destroyed when this filesystem is destroyed.
  *
  * @param name
  *     The name to send as the name of the filesystem.

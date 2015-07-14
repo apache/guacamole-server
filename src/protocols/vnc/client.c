@@ -384,8 +384,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             /* Abort if private key cannot be read */
             if (guac_common_ssh_user_import_key(user,
                         argv[IDX_SFTP_PRIVATE_KEY],
-                        argv[IDX_SFTP_PASSPHRASE]))
+                        argv[IDX_SFTP_PASSPHRASE])) {
+                guac_common_ssh_destroy_user(user);
                 return 1;
+            }
 
         }
 
@@ -414,6 +416,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         /* Fail if SSH connection does not succeed */
         if (session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
+            guac_common_ssh_destroy_user(user);
             return 1;
         }
 
