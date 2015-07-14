@@ -828,7 +828,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
         /* Parse username - use RDP username by default */
         const char* sftp_username = argv[IDX_SFTP_USERNAME];
-        if (sftp_username[0] == '\0')
+        if (sftp_username[0] == '\0' && settings->username != NULL)
             sftp_username = settings->username;
 
         guac_common_ssh_user* user = guac_common_ssh_create_user(sftp_username);
@@ -842,8 +842,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             /* Abort if private key cannot be read */
             if (guac_common_ssh_user_import_key(user,
                         argv[IDX_SFTP_PRIVATE_KEY],
-                        argv[IDX_SFTP_PASSPHRASE]))
+                        argv[IDX_SFTP_PASSPHRASE])) {
+                guac_common_ssh_destroy_user(user);
                 return 1;
+            }
 
         }
 
@@ -855,7 +857,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
             /* Parse password - use RDP password by default */
             const char* sftp_password = argv[IDX_SFTP_USERNAME];
-            if (sftp_password[0] == '\0')
+            if (sftp_password[0] == '\0' && settings->password != NULL)
                 sftp_password = settings->password;
 
             guac_common_ssh_user_set_password(user, sftp_password);
@@ -880,6 +882,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         /* Fail if SSH connection does not succeed */
         if (session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
+            guac_common_ssh_destroy_user(user);
             return 1;
         }
 
