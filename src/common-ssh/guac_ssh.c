@@ -22,6 +22,7 @@
 
 #include "guac_ssh.h"
 #include "guac_ssh_key.h"
+#include "guac_ssh_user.h"
 
 #include <guacamole/client.h>
 #include <libssh2.h>
@@ -477,8 +478,17 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 }
 
 void guac_common_ssh_destroy_session(guac_common_ssh_session* session) {
+
+    /* Disconnect and clean up libssh2 */
     libssh2_session_disconnect(session->session, "Bye");
     libssh2_session_free(session->session);
+
+    /* Destroy associated user */
+    if (session->user)
+        guac_common_ssh_destroy_user(session->user);
+
+    /* Free all other data */
     free(session);
+
 }
 

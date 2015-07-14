@@ -91,7 +91,8 @@ void guac_common_ssh_uninit();
  *     The port to connect to on the given hostname.
  *
  * @param user
- *     The user to authenticate as, once connected.
+ *     The user to authenticate as, once connected. This user will be
+ *     automatically destroyed when this session is destroyed.
  *
  * @return
  *     A new SSH session if the connection and authentication succeed, or NULL
