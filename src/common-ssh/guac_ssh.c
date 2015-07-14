@@ -457,6 +457,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                 "SSH handshake failed.");
         free(common_session);
+        close(fd);
         return NULL;
     }
 
@@ -469,6 +470,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     /* Attempt authentication */
     if (guac_common_ssh_authenticate(common_session)) {
         free(common_session);
+        close(fd);
         return NULL;
     }
 
