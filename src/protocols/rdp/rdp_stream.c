@@ -486,7 +486,7 @@ int guac_rdp_download_get_handler(guac_client* client, guac_object* object,
         rdp_stream->ls_status.fs = fs;
         rdp_stream->ls_status.file_id = file_id;
         strncpy(rdp_stream->ls_status.directory_name, name,
-                sizeof(rdp_stream->ls_status.directory_name));
+                sizeof(rdp_stream->ls_status.directory_name) - 1);
 
         /* Allocate stream for body */
         guac_stream* stream = guac_client_alloc_stream(client);

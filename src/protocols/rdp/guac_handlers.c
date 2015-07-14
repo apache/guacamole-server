@@ -33,6 +33,11 @@
 #include "rdp_rail.h"
 #include "rdp_stream.h"
 
+#ifdef ENABLE_COMMON_SSH
+#include <guac_sftp.h>
+#include <guac_ssh.h>
+#endif
+
 #include <freerdp/cache/cache.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/codec/color.h>
@@ -88,6 +93,14 @@ int rdp_guac_client_free_handler(guac_client* client) {
     /* Clean up filesystem, if allocated */
     if (guac_client_data->filesystem != NULL)
         guac_rdp_fs_free(guac_client_data->filesystem);
+
+#ifdef ENABLE_COMMON_SSH
+    /* Free SFTP filesystem, if loaded */
+    if (guac_client_data->sftp_filesystem)
+        guac_common_ssh_destroy_sftp_filesystem(guac_client_data->sftp_filesystem);
+
+    guac_common_ssh_uninit();
+#endif
 
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /* Free display update module */

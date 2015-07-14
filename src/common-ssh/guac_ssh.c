@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
@@ -373,12 +374,18 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
     /* Get socket */
     fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Unable to create socket: %s", strerror(errno));
+        return NULL;
+    }
 
     /* Get addresses connection */
     if ((retval = getaddrinfo(hostname, port, &hints, &addresses))) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Error parsing given address or port: %s",
                 gai_strerror(retval));
+        close(fd);
         return NULL;
     }
 
@@ -422,6 +429,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     if (current_address == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                 "Unable to connect to any addresses.");
+        close(fd);
         return NULL;
     }
 
@@ -439,6 +447,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Session allocation failed.");
         free(common_session);
+        close(fd);
         return NULL;
     }
 

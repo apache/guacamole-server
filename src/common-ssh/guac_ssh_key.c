@@ -178,6 +178,7 @@ int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
         case SSH_KEY_RSA:
             if (RSA_sign(NID_sha1, digest, dlen, sig, &len, key->rsa) == 1)
                 return len;
+            break;
 
         case SSH_KEY_DSA: {
 

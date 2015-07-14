@@ -119,6 +119,7 @@ endif
 libguac_client_rdp_la_CFLAGS = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
+    @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@
 
 libguac_client_rdp_la_LDFLAGS = \
@@ -138,6 +139,7 @@ libguac_client_rdp_la_LIBADD =     \
 guacdr_cflags                = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
+    @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@
 
 guacdr_ldflags =                   \
@@ -156,6 +158,7 @@ guacdr_libadd =     \
 guacsnd_cflags               = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
+    @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@
 
 guacsnd_ldflags =                  \
@@ -174,6 +177,7 @@ guacsnd_libadd =    \
 guacsvc_cflags               = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
+    @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@
 
 guacsvc_ldflags =                  \
@@ -184,6 +188,16 @@ guacsvc_ldflags =                  \
 guacsvc_libadd =    \
     @COMMON_LTLIB@  \
     @LIBGUAC_LTLIB@
+
+#
+# Optional SFTP support
+#
+
+if ENABLE_COMMON_SSH
+libguac_client_rdp_la_SOURCES += sftp.c
+noinst_HEADERS                += sftp.h
+libguac_client_rdp_la_LIBADD  += @COMMON_SSH_LTLIB@
+endif
 
 #
 # Autogenerate keymaps

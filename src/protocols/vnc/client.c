@@ -34,6 +34,12 @@
 #include "pulse.h"
 #endif
 
+#ifdef ENABLE_COMMON_SSH
+#include "guac_sftp.h"
+#include "guac_ssh.h"
+#include "sftp.h"
+#endif
+
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>
 #include <guacamole/client.h>
@@ -71,6 +77,16 @@ const char* GUAC_CLIENT_ARGS[] = {
     "listen-timeout",
 #endif
 
+#ifdef ENABLE_COMMON_SSH
+    "enable-sftp",
+    "sftp-hostname",
+    "sftp-port",
+    "sftp-username",
+    "sftp-password",
+    "sftp-private-key",
+    "sftp-passphrase",
+#endif
+
     NULL
 };
 
@@ -99,6 +115,16 @@ enum VNC_ARGS_IDX {
 #ifdef ENABLE_VNC_LISTEN
     IDX_REVERSE_CONNECT,
     IDX_LISTEN_TIMEOUT,
+#endif
+
+#ifdef ENABLE_COMMON_SSH
+    IDX_ENABLE_SFTP,
+    IDX_SFTP_HOSTNAME,
+    IDX_SFTP_PORT,
+    IDX_SFTP_USERNAME,
+    IDX_SFTP_PASSWORD,
+    IDX_SFTP_PRIVATE_KEY,
+    IDX_SFTP_PASSPHRASE,
 #endif
 
     VNC_ARGS_COUNT
@@ -335,6 +361,77 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                     "No available audio encoding. Sound disabled.");
 
     } /* end if audio enabled */
+#endif
+
+#ifdef ENABLE_COMMON_SSH
+    guac_common_ssh_init(client);
+
+    /* Connect via SSH if SFTP is enabled */
+    if (strcmp(argv[IDX_ENABLE_SFTP], "true") == 0) {
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Connecting via SSH for SFTP filesystem access.");
+
+        guac_common_ssh_user* user =
+            guac_common_ssh_create_user(argv[IDX_SFTP_USERNAME]);
+
+        /* Import private key, if given */
+        if (argv[IDX_SFTP_PRIVATE_KEY][0] != '\0') {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating with private key.");
+
+            /* Abort if private key cannot be read */
+            if (guac_common_ssh_user_import_key(user,
+                        argv[IDX_SFTP_PRIVATE_KEY],
+                        argv[IDX_SFTP_PASSPHRASE]))
+                return 1;
+
+        }
+
+        /* Otherwise, use specified password */
+        else {
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating with password.");
+            guac_common_ssh_user_set_password(user, argv[IDX_SFTP_PASSWORD]);
+        }
+
+        /* Parse hostname - use VNC hostname by default */
+        const char* sftp_hostname = argv[IDX_SFTP_HOSTNAME];
+        if (sftp_hostname[0] == '\0')
+            sftp_hostname = guac_client_data->hostname;
+
+        /* Parse port, defaulting to standard SSH port */
+        const char* sftp_port = argv[IDX_SFTP_PORT];
+        if (sftp_port[0] == '\0')
+            sftp_port = "22";
+
+        /* Attempt SSH connection */
+        guac_common_ssh_session* session =
+            guac_common_ssh_create_session(client, sftp_hostname, sftp_port,
+                    user);
+
+        /* Fail if SSH connection does not succeed */
+        if (session == NULL) {
+            /* Already aborted within guac_common_ssh_create_session() */
+            return 1;
+        }
+
+        /* Load and expose filesystem */
+        guac_client_data->sftp_filesystem =
+            guac_common_ssh_create_sftp_filesystem(session, "/");
+
+        /* Abort if SFTP connection fails */
+        if (guac_client_data->sftp_filesystem == NULL)
+            return 1;
+
+        /* Set file handler for basic uploads */
+        client->file_handler = guac_vnc_sftp_file_handler;
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SFTP connection succeeded.");
+
+    }
 #endif
 
     /* Set remaining client data */

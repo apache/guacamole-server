@@ -33,6 +33,10 @@
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
 
+#ifdef ENABLE_COMMON_SSH
+#include "guac_sftp.h"
+#endif
+
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 #include "rdp_disp.h"
 #endif
@@ -156,6 +160,13 @@ typedef struct rdp_guac_client_data {
      * The filesystem being shared, if any.
      */
     guac_rdp_fs* filesystem;
+
+#ifdef ENABLE_COMMON_SSH
+    /**
+     * The exposed filesystem object, implemented with SFTP.
+     */
+    guac_object* sftp_filesystem;
+#endif
 
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /**

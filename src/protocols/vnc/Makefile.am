@@ -46,6 +46,7 @@ endif
 libguac_client_vnc_la_CFLAGS =        \
     -Werror -Wall -pedantic -Iinclude \
     @COMMON_INCLUDE@                  \
+    @COMMON_SSH_INCLUDE@              \
     @LIBGUAC_INCLUDE@
 
 libguac_client_vnc_la_LDFLAGS = \
@@ -57,4 +58,11 @@ libguac_client_vnc_la_LDFLAGS = \
 libguac_client_vnc_la_LIBADD = \
     @COMMON_LTLIB@             \
     @LIBGUAC_LTLIB@
+
+# Optional SFTP support
+if ENABLE_COMMON_SSH
+libguac_client_vnc_la_SOURCES += sftp.c
+noinst_HEADERS                += sftp.h
+libguac_client_vnc_la_LIBADD  += @COMMON_SSH_LTLIB@
+endif
 
