@@ -297,6 +297,13 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     char* password = user->password;
     guac_common_ssh_key* key = user->private_key;
 
+    /* Validate username provided */
+    if (username == NULL) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                "SSH authentication requires a username.");
+        return 1;
+    }
+
     /* Get list of supported authentication methods */
     char* user_authlist = libssh2_userauth_list(session, username,
             strlen(username));
@@ -309,7 +316,8 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
         /* Check if public key auth is supported on the server */
         if (strstr(user_authlist, "publickey") == NULL) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                               "Public key authentication not supported");
+                    "Public key authentication is not supported by "
+                    "the SSH server");
             return 1;
         }
 
@@ -333,24 +341,35 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 
     }
 
-    /* Authenticate with password */
-    if (strstr(user_authlist, "password") != NULL) {
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Using password authentication method");
-        return libssh2_userauth_password(session, username, password);
+    /* Authenticate with password, if provided */
+    else if (password != NULL) {
+
+        /* Authenticate with password */
+        if (strstr(user_authlist, "password") != NULL) {
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Using password authentication method");
+            return libssh2_userauth_password(session, username, password);
+        }
+
+        /* Authenticate with password via keyboard-interactive auth */
+        if (strstr(user_authlist, "keyboard-interactive") != NULL) {
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Using keyboard-interactive authentication method");
+            return libssh2_userauth_keyboard_interactive(session, username,
+                    &guac_common_ssh_kbd_callback);
+        }
+
+        /* No known authentication types available */
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                "Password and keyboard-interactive authentication are not "
+                "supported by the SSH server");
+        return 1;
+
     }
 
-    /* Authenticate with password via keyboard-interactive auth */
-    if (strstr(user_authlist, "keyboard-interactive") != NULL) {
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Using keyboard-interactive authentication method");
-        return libssh2_userauth_keyboard_interactive(session, username,
-                &guac_common_ssh_kbd_callback);
-    }
-
-    /* No known authentication types available */
-    guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_BAD_TYPE,
-            "No known authentication methods");
+    /* No credentials provided */
+    guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+            "SSH authentication requires either a private key or a password.");
     return 1;
 
 }
