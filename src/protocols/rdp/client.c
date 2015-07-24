@@ -857,7 +857,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                     "Authenticating with password.");
 
             /* Parse password - use RDP password by default */
-            const char* sftp_password = argv[IDX_SFTP_USERNAME];
+            const char* sftp_password = argv[IDX_SFTP_PASSWORD];
             if (sftp_password[0] == '\0' && settings->password != NULL)
                 sftp_password = settings->password;
 
