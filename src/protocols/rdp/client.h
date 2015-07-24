@@ -35,6 +35,8 @@
 
 #ifdef ENABLE_COMMON_SSH
 #include "guac_sftp.h"
+#include "guac_ssh.h"
+#include "guac_ssh_user.h"
 #endif
 
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
@@ -162,6 +164,16 @@ typedef struct rdp_guac_client_data {
     guac_rdp_fs* filesystem;
 
 #ifdef ENABLE_COMMON_SSH
+    /**
+     * The user and credentials used to authenticate for SFTP.
+     */
+    guac_common_ssh_user* sftp_user;
+
+    /**
+     * The SSH session used for SFTP.
+     */
+    guac_common_ssh_session* sftp_session;
+
     /**
      * The exposed filesystem object, implemented with SFTP.
      */
