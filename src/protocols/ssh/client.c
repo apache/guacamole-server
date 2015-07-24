@@ -120,11 +120,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     guac_socket* socket = client->socket;
 
-    ssh_guac_client_data* client_data = malloc(sizeof(ssh_guac_client_data));
+    ssh_guac_client_data* client_data = calloc(1, sizeof(ssh_guac_client_data));
 
     /* Init client data */
     client->data = client_data;
-    client_data->term_channel = NULL;
 
     if (argc != SSH_ARGS_COUNT) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Wrong number of arguments");
@@ -159,7 +158,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Parse SFTP enable */
     client_data->enable_sftp = strcmp(argv[IDX_ENABLE_SFTP], "true") == 0;
-    client_data->sftp_filesystem = NULL;
 
 #ifdef ENABLE_SSH_AGENT
     client_data->enable_agent = strcmp(argv[IDX_ENABLE_AGENT], "true") == 0;

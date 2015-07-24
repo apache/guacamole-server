@@ -504,10 +504,6 @@ void guac_common_ssh_destroy_session(guac_common_ssh_session* session) {
     libssh2_session_disconnect(session->session, "Bye");
     libssh2_session_free(session->session);
 
-    /* Destroy associated user */
-    if (session->user)
-        guac_common_ssh_destroy_user(session->user);
-
     /* Free all other data */
     free(session);
 

@@ -27,6 +27,7 @@
 #include "config.h"
 
 #include "guac_ssh.h"
+#include "guac_ssh_user.h"
 #include "sftp.h"
 #include "terminal.h"
 
@@ -110,9 +111,19 @@ typedef struct ssh_guac_client_data {
     pthread_t client_thread;
 
     /**
+     * The user and credentials to use for all SSH sessions.
+     */
+    guac_common_ssh_user* user;
+
+    /**
      * SSH session, used by the SSH client thread.
      */
     guac_common_ssh_session* session;
+
+    /**
+     * SFTP session, used by the SFTP client/filesystem.
+     */
+    guac_common_ssh_session* sftp_session;
 
     /**
      * The filesystem object exposed for the SFTP session.
