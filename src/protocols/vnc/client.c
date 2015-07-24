@@ -372,7 +372,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "Connecting via SSH for SFTP filesystem access.");
 
-        guac_common_ssh_user* user =
+        guac_client_data->sftp_user =
             guac_common_ssh_create_user(argv[IDX_SFTP_USERNAME]);
 
         /* Import private key, if given */
@@ -382,10 +382,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                     "Authenticating with private key.");
 
             /* Abort if private key cannot be read */
-            if (guac_common_ssh_user_import_key(user,
+            if (guac_common_ssh_user_import_key(guac_client_data->sftp_user,
                         argv[IDX_SFTP_PRIVATE_KEY],
                         argv[IDX_SFTP_PASSPHRASE])) {
-                guac_common_ssh_destroy_user(user);
+                guac_common_ssh_destroy_user(guac_client_data->sftp_user);
                 return 1;
             }
 
@@ -395,7 +395,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         else {
             guac_client_log(client, GUAC_LOG_DEBUG,
                     "Authenticating with password.");
-            guac_common_ssh_user_set_password(user, argv[IDX_SFTP_PASSWORD]);
+            guac_common_ssh_user_set_password(guac_client_data->sftp_user,
+                    argv[IDX_SFTP_PASSWORD]);
         }
 
         /* Parse hostname - use VNC hostname by default */
@@ -409,24 +410,28 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             sftp_port = "22";
 
         /* Attempt SSH connection */
-        guac_common_ssh_session* session =
+        guac_client_data->sftp_session =
             guac_common_ssh_create_session(client, sftp_hostname, sftp_port,
-                    user);
+                    guac_client_data->sftp_user);
 
         /* Fail if SSH connection does not succeed */
-        if (session == NULL) {
+        if (guac_client_data->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
-            guac_common_ssh_destroy_user(user);
+            guac_common_ssh_destroy_user(guac_client_data->sftp_user);
             return 1;
         }
 
         /* Load and expose filesystem */
         guac_client_data->sftp_filesystem =
-            guac_common_ssh_create_sftp_filesystem(session, "/");
+            guac_common_ssh_create_sftp_filesystem(
+                    guac_client_data->sftp_session, "/");
 
         /* Abort if SFTP connection fails */
-        if (guac_client_data->sftp_filesystem == NULL)
+        if (guac_client_data->sftp_filesystem == NULL) {
+            guac_common_ssh_destroy_session(guac_client_data->sftp_session);
+            guac_common_ssh_destroy_user(guac_client_data->sftp_user);
             return 1;
+        }
 
         /* Set file handler for basic uploads */
         client->file_handler = guac_vnc_sftp_file_handler;

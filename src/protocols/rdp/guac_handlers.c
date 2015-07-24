@@ -36,6 +36,7 @@
 #ifdef ENABLE_COMMON_SSH
 #include <guac_sftp.h>
 #include <guac_ssh.h>
+#include <guac_ssh_user.h>
 #endif
 
 #include <freerdp/cache/cache.h>
@@ -98,6 +99,14 @@ int rdp_guac_client_free_handler(guac_client* client) {
     /* Free SFTP filesystem, if loaded */
     if (guac_client_data->sftp_filesystem)
         guac_common_ssh_destroy_sftp_filesystem(guac_client_data->sftp_filesystem);
+
+    /* Free SFTP session */
+    if (guac_client_data->sftp_session)
+        guac_common_ssh_destroy_session(guac_client_data->sftp_session);
+
+    /* Free SFTP user */
+    if (guac_client_data->sftp_user)
+        guac_common_ssh_destroy_user(guac_client_data->sftp_user);
 
     guac_common_ssh_uninit();
 #endif

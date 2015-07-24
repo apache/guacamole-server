@@ -80,6 +80,9 @@ void guac_common_ssh_uninit();
  * Connects to the SSH server running at the given hostname and port, and
  * authenticates as the given user. If an error occurs while connecting or
  * authenticating, the Guacamole client will automatically and fatally abort.
+ * The user object provided must eventually be explicitly destroyed, but should
+ * not be destroyed until this session is destroyed, assuming the session is
+ * successfully created.
  *
  * @param client
  *     The Guacamole client that will be using SSH.
@@ -91,8 +94,7 @@ void guac_common_ssh_uninit();
  *     The port to connect to on the given hostname.
  *
  * @param user
- *     The user to authenticate as, once connected. This user will be
- *     automatically destroyed when this session is destroyed.
+ *     The user to authenticate as, once connected.
  *
  * @return
  *     A new SSH session if the connection and authentication succeed, or NULL
@@ -103,7 +105,8 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
 /**
  * Disconnects and destroys the given SSH session, freeing all associated
- * resources.
+ * resources. Any associated user must be explicitly destroyed, and will not
+ * be destroyed automatically.
  *
  * @param session
  *     The SSH session to destroy.

@@ -38,6 +38,8 @@
 
 #ifdef ENABLE_COMMON_SSH
 #include "guac_sftp.h"
+#include "guac_ssh.h"
+#include "guac_ssh_user.h"
 #endif
 
 /**
@@ -191,6 +193,16 @@ typedef struct vnc_guac_client_data {
     guac_common_surface* default_surface;
 
 #ifdef ENABLE_COMMON_SSH
+    /**
+     * The user and credentials used to authenticate for SFTP.
+     */
+    guac_common_ssh_user* sftp_user;
+
+    /**
+     * The SSH session used for SFTP.
+     */
+    guac_common_ssh_session* sftp_session;
+
     /**
      * The exposed filesystem object, implemented with SFTP.
      */
