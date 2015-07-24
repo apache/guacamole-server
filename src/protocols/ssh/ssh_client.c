@@ -130,12 +130,16 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
 
     } /* end if key given */
 
-    /* Otherwise, get password if not provided */
-    else if (client_data->password[0] == 0) {
+    /* Otherwise, use password */
+    else {
 
-        guac_terminal_prompt(client_data->term, "Password: ",
-                client_data->password, sizeof(client_data->password), false);
+        /* Get password if not provided */
+        if (client_data->password[0] == 0)
+            guac_terminal_prompt(client_data->term, "Password: ",
+                    client_data->password, sizeof(client_data->password),
+                    false);
 
+        /* Set provided password */
         guac_common_ssh_user_set_password(user, client_data->password);
 
     }
@@ -181,7 +185,7 @@ void* ssh_client_thread(void* data) {
         return NULL;
 
     /* Get user and credentials */
-    guac_common_ssh_user* user = guac_ssh_get_user(client);
+    client_data->user = guac_ssh_get_user(client);
 
     /* Send new name */
     char name[1024];
@@ -191,7 +195,7 @@ void* ssh_client_thread(void* data) {
 
     /* Open SSH session */
     client_data->session = guac_common_ssh_create_session(client,
-            client_data->hostname, client_data->port, user);
+            client_data->hostname, client_data->port, client_data->user);
     if (client_data->session == NULL) {
         /* Already aborted within guac_common_ssh_create_session() */
         return NULL;
@@ -229,17 +233,18 @@ void* ssh_client_thread(void* data) {
 
         /* Create SSH session specific for SFTP */
         guac_client_log(client, GUAC_LOG_DEBUG, "Reconnecting for SFTP...");
-        guac_common_ssh_session* sftp_ssh_session =
+        client_data->sftp_session =
             guac_common_ssh_create_session(client, client_data->hostname,
-                    client_data->port, user);
-        if (sftp_ssh_session == NULL) {
+                    client_data->port, client_data->user);
+        if (client_data->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             return NULL;
         }
 
         /* Request SFTP */
         client_data->sftp_filesystem =
-            guac_common_ssh_create_sftp_filesystem(sftp_ssh_session, "/");
+            guac_common_ssh_create_sftp_filesystem(
+                    client_data->sftp_session, "/");
 
         /* Set generic (non-filesystem) file upload handler */
         client->file_handler = guac_sftp_file_handler;

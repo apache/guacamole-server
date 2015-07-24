@@ -707,8 +707,5 @@ void guac_common_ssh_destroy_sftp_filesystem(guac_object* filesystem) {
     /* Clean up the SFTP filesystem object */
     guac_client_free_object(sftp_data->ssh_session->client, filesystem);
 
-    /* Disconnect SSH session corresponding to the SFTP session */
-    guac_common_ssh_destroy_session(sftp_data->ssh_session);
-
 }
 

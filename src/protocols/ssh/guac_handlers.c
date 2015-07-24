@@ -102,13 +102,19 @@ int ssh_guac_client_free_handler(guac_client* client) {
     /* Free channels */
     libssh2_channel_free(guac_client_data->term_channel);
 
-    /* Clean up the SFTP filesystem object */
-    if (guac_client_data->sftp_filesystem)
+    /* Clean up the SFTP filesystem object and session */
+    if (guac_client_data->sftp_filesystem) {
         guac_common_ssh_destroy_sftp_filesystem(guac_client_data->sftp_filesystem);
+        guac_common_ssh_destroy_session(guac_client_data->sftp_session);
+    }
 
     /* Free session */
     if (guac_client_data->session != NULL)
         guac_common_ssh_destroy_session(guac_client_data->session);
+
+    /* Free user */
+    if (guac_client_data->user != NULL)
+        guac_common_ssh_destroy_user(guac_client_data->user);
 
     /* Free generic data struct */
     free(client->data);

@@ -110,7 +110,8 @@ guac_object* guac_common_ssh_create_sftp_filesystem(
 
 /**
  * Destroys the given filesystem object, disconnecting from SFTP and freeing
- * and associated resources.
+ * and associated resources. Any associated session or user objects must be
+ * explicitly destroyed.
  *
  * @param object
  *     The filesystem object to destroy.
