@@ -156,6 +156,12 @@ typedef struct guac_rdp_settings {
     char* drive_path;
 
     /**
+     * Whether to automatically create the local system path if it does not
+     * exist.
+     */
+    int create_drive_path;
+
+    /**
      * Whether this session is a console session.
      */
     int console;

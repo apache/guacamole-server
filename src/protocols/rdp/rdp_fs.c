@@ -35,12 +35,28 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
 
-guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path) {
+guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
+        int create_drive_path) {
+
+    /* Create drive path if it does not exist */
+    if (create_drive_path) {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+               "%s: Creating directory \"%s\" if necessary.",
+               __func__, drive_path);
+
+        /* Log error if directory creation fails */
+        if (mkdir(drive_path, S_IRWXU) && errno != EEXIST) {
+            guac_client_log(client, GUAC_LOG_ERROR,
+                    "Unable to create directory \"%s\": %s",
+                    drive_path, strerror(errno));
+        }
+    }
 
     guac_rdp_fs* fs = malloc(sizeof(guac_rdp_fs));
 

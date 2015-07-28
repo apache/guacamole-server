@@ -111,6 +111,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "enable-printing",
     "enable-drive",
     "drive-path",
+    "create-drive-path",
     "console",
     "console-audio",
     "server-layout",
@@ -158,6 +159,7 @@ enum RDP_ARGS_IDX {
     IDX_ENABLE_PRINTING,
     IDX_ENABLE_DRIVE,
     IDX_DRIVE_PATH,
+    IDX_CREATE_DRIVE_PATH,
     IDX_CONSOLE,
     IDX_CONSOLE_AUDIO,
     IDX_SERVER_LAYOUT,
@@ -303,7 +305,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Load filesystem if drive enabled */
     if (guac_client_data->settings.drive_enabled) {
         guac_client_data->filesystem =
-            guac_rdp_fs_alloc(client, guac_client_data->settings.drive_path);
+            guac_rdp_fs_alloc(client, guac_client_data->settings.drive_path,
+                    guac_client_data->settings.create_drive_path);
         client->file_handler = guac_rdp_upload_file_handler;
     }
 
@@ -772,6 +775,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         (strcmp(argv[IDX_ENABLE_DRIVE], "true") == 0);
 
     guac_client_data->settings.drive_path = strdup(argv[IDX_DRIVE_PATH]);
+
+    guac_client_data->settings.create_drive_path =
+        (strcmp(argv[IDX_CREATE_DRIVE_PATH], "true") == 0);
 
     /* Store client data */
     guac_client_data->rdp_inst = rdp_inst;
