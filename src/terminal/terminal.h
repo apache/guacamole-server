@@ -65,6 +65,26 @@
  */
 #define GUAC_TERMINAL_CLIPBOARD_MAX_LENGTH 262144
 
+/**
+ * The name of the color scheme having black foreground and white background.
+ */
+#define GUAC_TERMINAL_SCHEME_BLACK_WHITE "black-white"
+
+/**
+ * The name of the color scheme having gray foreground and black background.
+ */
+#define GUAC_TERMINAL_SCHEME_GRAY_BLACK "gray-black"
+
+/**
+ * The name of the color scheme having green foreground and black background.
+ */
+#define GUAC_TERMINAL_SCHEME_GREEN_BLACK "green-black"
+
+/**
+ * The name of the color scheme having white foreground and black background.
+ */
+#define GUAC_TERMINAL_SCHEME_WHITE_BLACK "white-black"
+
 typedef struct guac_terminal guac_terminal;
 
 /**
@@ -368,16 +388,12 @@ struct guac_terminal {
  * @param height
  *     The height of the terminal, in pixels.
  *
- * @param default_foreground
- *     The default foreground color for all glyphs whose foreground has not
- *     been explicitly set through terminal codes. This color is the color
- *     index within the terminal palette - a value between 0 and 15 inclusive.
- *
- * @param default_background
- *     The default background color for all glyphs whose background has not
- *     been explicitly set through terminal codes, and the background of the
- *     terminal as a whole. This color is the color index within the terminal
- *     palette - a value between 0 and 15 inclusive.
+ * @param color_scheme
+ *     The name of the color scheme to use. This string must be one of the
+ *     names defined by the GUAC_TERMINAL_SCHEME_* constants. If blank or NULL,
+ *     the default scheme of GUAC_TERMINAL_SCHEME_GRAY_BLACK will be used. If
+ *     invalid, a warning will be logged, and the terminal will fall back on
+ *     GUAC_TERMINAL_SCHEME_GRAY_BLACK.
  *
  * @return
  *     A new guac_terminal having the given font, dimensions, and attributes
@@ -385,8 +401,7 @@ struct guac_terminal {
  */
 guac_terminal* guac_terminal_create(guac_client* client,
         const char* font_name, int font_size, int dpi,
-        int width, int height,
-        int default_foreground, int default_background);
+        int width, int height, const char* color_scheme);
 
 /**
  * Frees all resources associated with the given terminal.

@@ -226,10 +226,45 @@ static void guac_terminal_paint_background(guac_terminal* terminal,
 
 guac_terminal* guac_terminal_create(guac_client* client,
         const char* font_name, int font_size, int dpi,
-        int width, int height,
-        int default_foreground,
-        int default_background) {
+        int width, int height, const char* color_scheme) {
 
+    int default_foreground;
+    int default_background;
+
+    /* Default to "gray-black" color scheme if no scheme provided */
+    if (color_scheme == NULL || color_scheme[0] == '\0') {
+        default_foreground = GUAC_TERMINAL_COLOR_GRAY;
+        default_background = GUAC_TERMINAL_COLOR_BLACK;
+    }
+
+    /* Otherwise, parse color scheme */
+    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GRAY_BLACK) == 0) {
+        default_foreground = GUAC_TERMINAL_COLOR_GRAY;
+        default_background = GUAC_TERMINAL_COLOR_BLACK;
+    }
+    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_BLACK_WHITE) == 0) {
+        default_foreground = GUAC_TERMINAL_COLOR_BLACK;
+        default_background = GUAC_TERMINAL_COLOR_WHITE;
+    }
+    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GREEN_BLACK) == 0) {
+        default_foreground = GUAC_TERMINAL_COLOR_DARK_GREEN;
+        default_background = GUAC_TERMINAL_COLOR_BLACK;
+    }
+    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_WHITE_BLACK) == 0) {
+        default_foreground = GUAC_TERMINAL_COLOR_WHITE;
+        default_background = GUAC_TERMINAL_COLOR_BLACK;
+    }
+
+    /* If invalid, default to "gray-black" */
+    else {
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Invalid color scheme: \"%s\". Defaulting to \"gray-black\".",
+                color_scheme);
+        default_foreground = GUAC_TERMINAL_COLOR_GRAY;
+        default_background = GUAC_TERMINAL_COLOR_BLACK;
+    }
+
+    /* Build default character using default colors */
     guac_terminal_char default_char = {
         .value = 0,
         .attributes = {
