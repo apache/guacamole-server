@@ -325,7 +325,7 @@ typedef struct guac_rdp_fs_info {
 /**
  * Allocates a new filesystem given a root path.
  */
-guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path);
+guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path, int create_drive_path);
 
 /**
  * Frees the given filesystem.
