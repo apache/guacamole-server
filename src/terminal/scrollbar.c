@@ -243,7 +243,7 @@ void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
                 new_state.container_height);
 
         guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->container,
-                0x40, 0x40, 0x40, 0xFF);
+                0x80, 0x80, 0x80, 0x40);
 
     }
 
@@ -274,11 +274,7 @@ void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
                 new_state.handle_height);
 
         guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->handle,
-                0x80, 0x80, 0x80, 0xFF);
-
-        guac_protocol_send_cstroke(socket, GUAC_COMP_OVER, scrollbar->handle,
-                GUAC_LINE_CAP_SQUARE, GUAC_LINE_JOIN_MITER, 2,
-                0xA0, 0xA0, 0xA0, 0xFF);
+                0xA0, 0xA0, 0xA0, 0x8F);
 
     }
 
