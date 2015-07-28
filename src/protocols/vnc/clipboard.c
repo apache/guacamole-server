@@ -63,10 +63,11 @@ int guac_vnc_clipboard_end_handler(guac_client* client, guac_stream* stream) {
 
     const char* input = client_data->clipboard->buffer;
     char* output = output_data;
+    guac_iconv_write* writer = client_data->clipboard_writer;
 
-    /* Convert clipboard to ISO 8859-1 */
+    /* Convert clipboard contents */
     guac_iconv(GUAC_READ_UTF8, &input, client_data->clipboard->length,
-               GUAC_WRITE_ISO8859_1, &output, sizeof(output_data));
+               writer, &output, sizeof(output_data));
 
     /* Send via VNC */
     SendClientCutText(rfb_client, output_data, output - output_data);
