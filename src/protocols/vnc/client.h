@@ -27,6 +27,7 @@
 #include "config.h"
 #include "guac_clipboard.h"
 #include "guac_surface.h"
+#include "guac_iconv.h"
 
 #include <guacamole/audio.h>
 #include <guacamole/layer.h>
@@ -208,6 +209,16 @@ typedef struct vnc_guac_client_data {
      */
     guac_object* sftp_filesystem;
 #endif
+
+    /**
+     * Clipboard encoding-specific reader.
+     */
+    guac_iconv_read* clipboard_reader;
+
+    /**
+     * Clipboard encoding-specific writer.
+     */
+    guac_iconv_write* clipboard_writer;
 
 } vnc_guac_client_data;
 

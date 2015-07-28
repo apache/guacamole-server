@@ -61,6 +61,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "color-depth",
     "cursor",
     "autoretry",
+    "clipboard-encoding",
 
 #ifdef ENABLE_VNC_REPEATER
     "dest-host",
@@ -101,6 +102,7 @@ enum VNC_ARGS_IDX {
     IDX_COLOR_DEPTH,
     IDX_CURSOR,
     IDX_AUTORETRY,
+    IDX_CLIPBOARD_ENCODING,
 
 #ifdef ENABLE_VNC_REPEATER
     IDX_DEST_HOST,
@@ -219,6 +221,66 @@ static rfbClient* __guac_vnc_get_client(guac_client* client) {
 
 }
 
+/**
+ * Sets the encoding of clipboard data exchanged with the VNC server to the
+ * encoding having the given name. If the name is left blank, or is invalid,
+ * the standard ISO8859-1 encoding will be used.
+ *
+ * @param client
+ *     The client to set the clipboard encoding of.
+ *
+ * @param name
+ *     The name of the encoding to use for all clipboard data. Valid values
+ *     are: "ISO8859-1", "UTF-8", "UTF-16", "CP1252", or "".
+ *
+ * @return
+ *     Zero if the chosen encoding is standard for VNC, or non-zero if the VNC
+ *     standard is being violated.
+ */
+static int guac_vnc_set_clipboard_encoding(guac_client* client,
+        const char* name) {
+
+    vnc_guac_client_data* guac_client_data =
+        (vnc_guac_client_data*) client->data;
+
+    /* Use ISO8859-1 if explicitly selected or blank */
+    if (name[0] == '\0' || strcmp(name, "ISO8859-1") == 0) {
+        guac_client_data->clipboard_reader = GUAC_READ_ISO8859_1;
+        guac_client_data->clipboard_writer = GUAC_WRITE_ISO8859_1;
+        return 0;
+    }
+
+    /* UTF-8 */
+    if (strcmp(name, "UTF-8") == 0) {
+        guac_client_data->clipboard_reader = GUAC_READ_UTF8;
+        guac_client_data->clipboard_writer = GUAC_WRITE_UTF8;
+        return 1;
+    }
+
+    /* UTF-16 */
+    if (strcmp(name, "UTF-16") == 0) {
+        guac_client_data->clipboard_reader = GUAC_READ_UTF16;
+        guac_client_data->clipboard_writer = GUAC_WRITE_UTF16;
+        return 1;
+    }
+
+    /* CP1252 */
+    if (strcmp(name, "CP1252") == 0) {
+        guac_client_data->clipboard_reader = GUAC_READ_CP1252;
+        guac_client_data->clipboard_writer = GUAC_WRITE_CP1252;
+        return 1;
+    }
+
+    /* If encoding unrecognized, warn and default to ISO8859-1 */
+    guac_client_log(client, GUAC_LOG_WARNING,
+            "Encoding '%s' is invalid. Defaulting to ISO8859-1.", name);
+
+    guac_client_data->clipboard_reader = GUAC_READ_ISO8859_1;
+    guac_client_data->clipboard_writer = GUAC_WRITE_ISO8859_1;
+    return 0;
+
+}
+
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
     rfbClient* rfb_client;
@@ -292,6 +354,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Init clipboard */
     guac_client_data->clipboard = guac_common_clipboard_alloc(GUAC_VNC_CLIPBOARD_MAX_LENGTH);
+
+    /* Configure clipboard encoding */
+    if (guac_vnc_set_clipboard_encoding(client, argv[IDX_CLIPBOARD_ENCODING]))
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Using non-standard VNC clipboard encoding: '%s'.",
+                argv[IDX_CLIPBOARD_ENCODING]);
 
     /* Ensure connection is kept alive during lengthy connects */
     guac_socket_require_keep_alive(client->socket);

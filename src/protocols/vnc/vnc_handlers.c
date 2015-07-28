@@ -305,9 +305,10 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
     const char* input = text;
     char* output = received_data;
+    guac_iconv_read* reader = client_data->clipboard_reader;
 
     /* Convert clipboard contents */
-    guac_iconv(GUAC_READ_ISO8859_1, &input, textlen,
+    guac_iconv(reader, &input, textlen,
                GUAC_WRITE_UTF8, &output, sizeof(received_data));
 
     /* Send converted data */
