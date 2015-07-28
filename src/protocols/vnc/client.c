@@ -225,12 +225,16 @@ static rfbClient* __guac_vnc_get_client(guac_client* client) {
  * Configure the VNC clipboard reader/writer based on configured encoding.
  * Defaults to standard ISO8859-1 encoding if an invalid format is encountered.
  *
- * @param guac_client_data Structure containing VNC client configuration.
- * @param name Encoding name.
- * @return Returns 0 if standard ISO8859-1 encoding is used, 1 otherwise.
+ * @param guac_client_data
+ *     Structure containing VNC client configuration.
+ *
+ * @param name
+ *     Encoding name.
+ *
+ * @return
+ *     Returns 0 if standard ISO8859-1 encoding is used, 1 otherwise.
  */
-int __guac_client_configure_clipboard_encoding(vnc_guac_client_data* guac_client_data,
-        const char* name) {
+int __guac_client_configure_clipboard_encoding(vnc_guac_client_data* guac_client_data, const char* name) {
 
     /* Configure clipboard reader/writer based on encoding name */
     if (strcmp(name, "UTF-8") == 0) {

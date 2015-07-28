@@ -211,9 +211,13 @@ typedef struct vnc_guac_client_data {
 #endif
 
     /**
-     * Clipboard encoding specific reader and writer.
+     * Clipboard encoding-specific reader.
      */
     guac_iconv_read* clipboard_reader;
+
+    /**
+     * Clipboard encoding-specific writer.
+     */
     guac_iconv_write* clipboard_writer;
 
 } vnc_guac_client_data;
