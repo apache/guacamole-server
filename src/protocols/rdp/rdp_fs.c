@@ -40,20 +40,20 @@
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
 
-guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path, int create_drive_path) {
+guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
+        int create_drive_path) {
 
     /* Create drive path if it does not exist */
     if (create_drive_path) {
         guac_client_log(client, GUAC_LOG_DEBUG,
-               "%s: Creating directory \"%s\".",
+               "%s: Creating directory \"%s\" if necessary.",
                __func__, drive_path);
 
-        if (mkdir(drive_path, S_IRWXU)) {
-            if (errno != EEXIST) {
-                guac_client_log(client, GUAC_LOG_DEBUG,
-                        "%s: mkdir() failed: %s",
-                        __func__, strerror(errno));
-            }
+        /* Log error if directory creation fails */
+        if (mkdir(drive_path, S_IRWXU) && errno != EEXIST) {
+            guac_client_log(client, GUAC_LOG_ERROR,
+                    "Unable to create directory \"%s\": %s",
+                    drive_path, strerror(errno));
         }
     }
 
