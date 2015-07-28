@@ -23,6 +23,7 @@
 #include "config.h"
 #include "client.h"
 #include "clipboard.h"
+#include "display.h"
 #include "guac_handlers.h"
 #include "telnet_client.h"
 #include "terminal.h"
@@ -201,7 +202,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             client_data->font_name, client_data->font_size,
             client->info.optimal_resolution,
             client->info.optimal_width, client->info.optimal_height,
-            7, 0);
+            GUAC_TERMINAL_COLOR_GRAY, GUAC_TERMINAL_COLOR_BLACK);
 
     /* Fail if terminal init failed */
     if (client_data->term == NULL) {
