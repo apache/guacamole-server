@@ -190,20 +190,57 @@ void guac_terminal_reset(guac_terminal* term) {
 
 }
 
+/**
+ * Paints or repaints the background of the terminal display. This painting
+ * occurs beneath the actual terminal and scrollbar layers, and thus will not
+ * overwrite any text or other content currently on the screen. This is only
+ * necessary to paint over parts of the terminal background which may otherwise
+ * be transparent (the default layer background).
+ *
+ * @param terminal
+ *     The terminal whose background should be painted or repainted.
+ *
+ * @param width
+ *     The width of the background to draw, in pixels.
+ *
+ * @param height
+ *     The height of the background to draw, in pixels.
+ */
+static void guac_terminal_paint_background(guac_terminal* terminal,
+        int width, int height) {
+
+    guac_terminal_display* display = terminal->display;
+    guac_client* client = display->client;
+    guac_socket* socket = client->socket;
+
+    /* Get background color */
+    const guac_terminal_color* color =
+        &guac_terminal_palette[display->default_background];
+
+    /* Paint background color */
+    guac_protocol_send_rect(socket, GUAC_DEFAULT_LAYER, 0, 0, width, height);
+    guac_protocol_send_cfill(socket, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER,
+            color->red, color->green, color->blue, 0xFF);
+
+}
+
 guac_terminal* guac_terminal_create(guac_client* client,
         const char* font_name, int font_size, int dpi,
-        int width, int height) {
+        int width, int height,
+        int default_foreground,
+        int default_background) {
 
     guac_terminal_char default_char = {
         .value = 0,
         .attributes = {
-            .foreground = 7,
-            .background = 0,
+            .foreground = default_foreground,
+            .background = default_background,
             .bold       = false,
             .reverse    = false,
             .underscore = false
         },
-        .width = 1};
+        .width = 1
+    };
 
     /* Calculate available display area */
     int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
@@ -260,6 +297,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Size display */
     guac_protocol_send_size(term->display->client->socket,
             GUAC_DEFAULT_LAYER, width, height);
+    guac_terminal_paint_background(term, width, height);
     guac_terminal_display_resize(term->display,
             term->term_width, term->term_height);
 
@@ -1234,6 +1272,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 
     /* Resize default layer to given pixel dimensions */
     guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, width, height);
+    guac_terminal_paint_background(terminal, width, height);
 
     /* Notify scrollbar of resize */
     guac_terminal_scrollbar_parent_resized(terminal->scrollbar, width, height, rows);

@@ -348,10 +348,45 @@ struct guac_terminal {
 /**
  * Creates a new guac_terminal, having the given width and height, and
  * rendering to the given client.
+ *
+ * @param client
+ *     The client to which the terminal will be rendered.
+ *
+ * @param font_name
+ *     The name of the font to use when rendering glyphs.
+ *
+ * @param font_size
+ *     The size of each glyph, in points.
+ *
+ * @param dpi
+ *     The DPI of the display. The given font size will be adjusted to produce
+ *     glyphs at the given DPI.
+ *
+ * @param width
+ *     The width of the terminal, in pixels.
+ *
+ * @param height
+ *     The height of the terminal, in pixels.
+ *
+ * @param default_foreground
+ *     The default foreground color for all glyphs whose foreground has not
+ *     been explicitly set through terminal codes. This color is the color
+ *     index within the terminal palette - a value between 0 and 15 inclusive.
+ *
+ * @param default_background
+ *     The default background color for all glyphs whose background has not
+ *     been explicitly set through terminal codes, and the background of the
+ *     terminal as a whole. This color is the color index within the terminal
+ *     palette - a value between 0 and 15 inclusive.
+ *
+ * @return
+ *     A new guac_terminal having the given font, dimensions, and attributes
+ *     which renders all text to the given client.
  */
 guac_terminal* guac_terminal_create(guac_client* client,
         const char* font_name, int font_size, int dpi,
-        int width, int height);
+        int width, int height,
+        int default_foreground, int default_background);
 
 /**
  * Frees all resources associated with the given terminal.

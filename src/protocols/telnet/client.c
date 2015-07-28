@@ -200,7 +200,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->term = guac_terminal_create(client,
             client_data->font_name, client_data->font_size,
             client->info.optimal_resolution,
-            client->info.optimal_width, client->info.optimal_height);
+            client->info.optimal_width, client->info.optimal_height,
+            7, 0);
 
     /* Fail if terminal init failed */
     if (client_data->term == NULL) {

@@ -140,6 +140,16 @@ typedef struct guac_terminal_display {
     int char_height;
 
     /**
+     * Default foreground color for all glyphs.
+     */
+    int default_foreground;
+
+    /**
+     * Default background color for all glyphs and the terminal itself.
+     */
+    int default_background;
+
+    /**
      * Color of glyphs in copy buffer
      */
     int glyph_foreground;
