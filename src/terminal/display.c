@@ -306,8 +306,8 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
         return NULL;
     }
 
-    display->glyph_foreground = foreground;
-    display->glyph_background = background;
+    display->default_foreground = display->glyph_foreground = foreground;
+    display->default_background = display->glyph_background = background;
 
     /* Calculate character dimensions */
     display->char_width =
@@ -475,12 +475,12 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
     guac_terminal_operation* current;
     int x, y;
 
-    /* Fill with background color (index 0) */
+    /* Fill with background color */
     guac_terminal_char fill = {
         .value = 0,
         .attributes = {
-            .foreground = 0,
-            .background = 0
+            .foreground = display->default_background,
+            .background = display->default_background
         },
         .width = 1
     };

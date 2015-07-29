@@ -56,6 +56,7 @@ const char* GUAC_CLIENT_ARGS[] = {
 #ifdef ENABLE_SSH_AGENT
     "enable-agent",
 #endif
+    "color-scheme",
     NULL
 };
 
@@ -112,6 +113,14 @@ enum __SSH_ARGS_IDX {
      */
     IDX_ENABLE_AGENT,
 #endif
+
+    /**
+     * The name of the color scheme to use. Currently valid color schemes are:
+     * "black-white", "white-black", "gray-black", and "green-black", each
+     * following the "foreground-background" pattern. By default, this will be
+     * "gray-black".
+     */
+    IDX_COLOR_SCHEME,
 
     SSH_ARGS_COUNT
 };
@@ -173,7 +182,8 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client_data->term = guac_terminal_create(client,
             client_data->font_name, client_data->font_size,
             client->info.optimal_resolution,
-            client->info.optimal_width, client->info.optimal_height);
+            client->info.optimal_width, client->info.optimal_height,
+            argv[IDX_COLOR_SCHEME]);
 
     /* Fail if terminal init failed */
     if (client_data->term == NULL) {

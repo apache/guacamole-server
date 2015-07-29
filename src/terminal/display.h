@@ -41,6 +41,87 @@
 #define GUAC_TERMINAL_MAX_CHAR_WIDTH 2
 
 /**
+ * The index of black within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_BLACK 0
+
+/**
+ * The index of low-intensity red within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_DARK_RED 1
+
+/**
+ * The index of low-intensity green within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_DARK_GREEN 2
+
+/**
+ * The index of brown within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_BROWN 3
+
+/**
+ * The index of low-intensity blue within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_DARK_BLUE 4
+
+/**
+ * The index of low-intensity magenta (purple) within the terminal color
+ * palette.
+ */
+#define GUAC_TERMINAL_COLOR_PURPLE 5
+
+/**
+ * The index of low-intensity cyan (teal) within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_TEAL 6
+
+/**
+ * The index of low-intensity white (gray) within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_GRAY 7
+
+/**
+ * The index of bright black (dark gray) within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_DARK_GRAY 8
+
+/**
+ * The index of bright red within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_RED 9
+
+/**
+ * The index of bright green within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_GREEN 10
+
+/**
+ * The index of bright brown (yellow) within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_YELLOW 11
+
+/**
+ * The index of bright blue within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_BLUE 12
+
+/**
+ * The index of bright magenta within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_MAGENTA 13
+
+/**
+ * The index of bright cyan within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_CYAN 14
+
+/**
+ * The index of bright white within the terminal color palette.
+ */
+#define GUAC_TERMINAL_COLOR_WHITE 15
+
+/**
  * The available color palette. All integer colors within structures
  * here are indices into this palette.
  */
@@ -138,6 +219,16 @@ typedef struct guac_terminal_display {
      * The height of each character, in pixels.
      */
     int char_height;
+
+    /**
+     * Default foreground color for all glyphs.
+     */
+    int default_foreground;
+
+    /**
+     * Default background color for all glyphs and the terminal itself.
+     */
+    int default_background;
 
     /**
      * Color of glyphs in copy buffer
