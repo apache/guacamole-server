@@ -100,8 +100,8 @@ libguac_la_LDFLAGS =    \
     @PNG_LIBS@          \
     @PTHREAD_LIBS@      \
     @UUID_LIBS@         \
-    @VORBIS_LIBS@
+    @VORBIS_LIBS@	\
+    @JPEG_LIBS@
 
 libguac_la_LIBADD = \
     @LIBADD_DLOPEN@ 
-

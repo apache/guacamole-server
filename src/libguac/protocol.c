@@ -33,6 +33,7 @@
 
 #include <png.h>
 #include <cairo/cairo.h>
+#include <jpeglib.h>
 
 #ifdef HAVE_PNGSTRUCT_H
 #include <pngstruct.h>
@@ -71,6 +72,138 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
     char buffer[128];
     snprintf(buffer, sizeof(buffer), "%.16g", d);
     return __guac_socket_write_length_string(socket, buffer);
+
+}
+
+/**
+ * Converts the image data on a Cairo surface to a JPEG image and sends it
+ * as a base64-encoded transmission on the socket.
+ * 
+ * @param socket
+ *     The guac_socket connection to use.
+ * 
+ * @param surface
+ *     A cairo surface containing the image data to send. 
+ * 
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+static int __guac_socket_write_length_jpeg(guac_socket* socket, cairo_surface_t* surface) {
+
+    /* Get image surface properties and data */
+    cairo_format_t format = cairo_image_surface_get_format(surface);
+
+    if (format != CAIRO_FORMAT_RGB24) {
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
+        guac_error_message = "Invalid Cairo image format. Unable to create JPEG.";
+        return -1;
+    }
+
+    int quality = 80; /* JPEG compression quality setting */
+    int width = cairo_image_surface_get_width(surface);
+    int height = cairo_image_surface_get_height(surface);
+    int stride = cairo_image_surface_get_stride(surface);
+    unsigned char* data = cairo_image_surface_get_data(surface);
+
+    /* Flush pending operations to surface */
+    cairo_surface_flush(surface);
+
+    /* Prepare JPEG bits */
+    struct jpeg_compress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+    cinfo.err = jpeg_std_error(&jerr);
+    jpeg_create_compress(&cinfo);
+
+    unsigned char *mem = NULL;
+    unsigned long mem_size = 0;
+    jpeg_mem_dest(&cinfo, &mem, &mem_size);
+
+    cinfo.image_width = width; /* image width and height, in pixels */
+    cinfo.image_height = height;
+    cinfo.arith_code = TRUE;
+
+#ifdef JCS_EXTENSIONS
+    /* The Turbo JPEG extentions allows us to use the Cairo surface
+     * (BRGx) as input without converting it */
+    cinfo.input_components = 4;
+    cinfo.in_color_space = JCS_EXT_BGRX;
+#else
+    /* Standard JPEG supports RGB as input so we will have to convert
+     * the contents of the Cairo surface from (BRGx) to RGB */
+    cinfo.input_components = 3;
+    cinfo.in_color_space = JCS_RGB;
+
+    /* Create a buffer for the write scan line which is where we will
+     * put the converted pixels (BRGx -> RGB) */
+    int write_stride = cinfo.image_width * cinfo.input_components;
+    unsigned char *scanline_data = malloc(write_stride);
+    memset(scanline_data, 0, write_stride);
+#endif
+
+    /* Initialize the JPEG compressor */
+    jpeg_set_defaults(&cinfo);
+    jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
+    jpeg_start_compress(&cinfo, TRUE);
+
+    JSAMPROW row_pointer[1]; /* pointer to a single row */
+
+    /* Write scanlines to be used in JPEG compression */
+    while (cinfo.next_scanline < cinfo.image_height) {
+
+        int row_offset = stride * cinfo.next_scanline;
+
+#ifdef JCS_EXTENSIONS
+        /* In Turbo JPEG we can use the raw BGRx scanline  */
+        row_pointer[0] = &data[row_offset];
+#else
+        /* For standard JOEG libraries we have to convert the
+         * scanline from 24 bit (4 byte) BGRx to 24 bit (3 byte) RGB */
+        unsigned char *inptr = data + row_offset;
+        unsigned char *outptr = scanline_data;
+
+        for (int x = 0; x < width; ++x) {
+
+            outptr[2] = *inptr++; /* B */
+            outptr[1] = *inptr++; /* G */
+            outptr[0] = *inptr++; /* R */
+            inptr++; /* skip the upper byte (x/A) */
+            outptr += 3;
+
+        }
+
+        row_pointer[0] = scanline_data;
+#endif
+
+        jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    }
+
+#ifndef JCS_EXTENSIONS
+    free(scanline_data);
+#endif
+
+    /* Finalize compression */
+    jpeg_finish_compress(&cinfo);
+
+    int base64_length = (mem_size + 2) / 3 * 4;
+
+    /* Write length and data */
+    if (guac_socket_write_int(socket, base64_length)
+            || guac_socket_write_string(socket, ".")
+            || guac_socket_write_base64(socket, mem, mem_size)
+            || guac_socket_flush_base64(socket)) {
+
+        /* Something failed. Clean up and return error code. */
+        jpeg_destroy_compress(&cinfo);
+        free(mem);
+
+        return -1;
+    }
+
+    /* Clean up */
+    jpeg_destroy_compress(&cinfo);
+    free(mem);
+
+    return 0;
 
 }
 
@@ -1040,6 +1173,30 @@ int guac_protocol_send_pipe(guac_socket* socket, const guac_stream* stream,
         || __guac_socket_write_length_string(socket, mimetype)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_jpeg(guac_socket* socket, guac_composite_mode mode,
+        const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "4.jpeg,")
+        || __guac_socket_write_length_int(socket, mode)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_jpeg(socket, surface)
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);
