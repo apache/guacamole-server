@@ -97,11 +97,11 @@ libguac_la_CFLAGS = \
 libguac_la_LDFLAGS =    \
     -version-info 9:0:0 \
     @CAIRO_LIBS@        \
+    @JPEG_LIBS@         \
     @PNG_LIBS@          \
     @PTHREAD_LIBS@      \
     @UUID_LIBS@         \
-    @VORBIS_LIBS@	\
-    @JPEG_LIBS@
+    @VORBIS_LIBS@
 
 libguac_la_LIBADD = \
     @LIBADD_DLOPEN@ 

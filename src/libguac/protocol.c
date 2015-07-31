@@ -85,10 +85,14 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
  * @param surface
  *     A cairo surface containing the image data to send. 
  * 
+ * @param quality
+ *     JPEG image quality.
+ * 
  * @return
  *     Zero on success, non-zero on error.
  */
-static int __guac_socket_write_length_jpeg(guac_socket* socket, cairo_surface_t* surface) {
+static int __guac_socket_write_length_jpeg(guac_socket* socket, 
+        cairo_surface_t* surface, int quality) {
 
     /* Get image surface properties and data */
     cairo_format_t format = cairo_image_surface_get_format(surface);
@@ -99,7 +103,6 @@ static int __guac_socket_write_length_jpeg(guac_socket* socket, cairo_surface_t*
         return -1;
     }
 
-    int quality = 80; /* JPEG compression quality setting */
     int width = cairo_image_surface_get_width(surface);
     int height = cairo_image_surface_get_height(surface);
     int stride = cairo_image_surface_get_stride(surface);
@@ -1181,7 +1184,8 @@ int guac_protocol_send_pipe(guac_socket* socket, const guac_stream* stream,
 }
 
 int guac_protocol_send_jpeg(guac_socket* socket, guac_composite_mode mode,
-        const guac_layer* layer, int x, int y, cairo_surface_t* surface) {
+        const guac_layer* layer, int x, int y, cairo_surface_t* surface,
+        int quality) {
 
     int ret_val;
 
@@ -1196,7 +1200,7 @@ int guac_protocol_send_jpeg(guac_socket* socket, guac_composite_mode mode,
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_int(socket, y)
         || guac_socket_write_string(socket, ",")
-        || __guac_socket_write_length_jpeg(socket, surface)
+        || __guac_socket_write_length_jpeg(socket, surface, quality)
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);

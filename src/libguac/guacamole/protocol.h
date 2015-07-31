@@ -637,11 +637,15 @@ int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
  * @param surface
  *     A cairo surface containing the image data to send.
  * 
+ * @param quality
+ *     JPEG image quality.
+ * 
  * @return
  *     Zero on success, non-zero on error.
  */
 int guac_protocol_send_jpeg(guac_socket* socket, guac_composite_mode mode,
-        const guac_layer* layer, int x, int y, cairo_surface_t* surface);
+        const guac_layer* layer, int x, int y, cairo_surface_t* surface,
+        int quality);
 
 /**
  * Sends a pop instruction over the given guac_socket connection.
