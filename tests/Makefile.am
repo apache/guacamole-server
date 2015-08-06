@@ -40,6 +40,7 @@ test_libguac_SOURCES =           \
     common/common_suite.c        \
     common/guac_iconv.c          \
     common/guac_string.c         \
+    common/guac_rect.c           \
     protocol/suite.c             \
     protocol/base64_decode.c     \
     protocol/instruction_parse.c \
