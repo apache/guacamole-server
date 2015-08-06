@@ -159,7 +159,7 @@ static int __guac_socket_write_length_jpeg(guac_socket* socket,
         /* In Turbo JPEG we can use the raw BGRx scanline  */
         row_pointer[0] = &data[row_offset];
 #else
-        /* For standard JOEG libraries we have to convert the
+        /* For standard JPEG libraries we have to convert the
          * scanline from 24 bit (4 byte) BGRx to 24 bit (3 byte) RGB */
         unsigned char *inptr = data + row_offset;
         unsigned char *outptr = scanline_data;
