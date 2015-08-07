@@ -75,6 +75,174 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
 
 }
 
+#ifndef HAVE_JPEG_MEM_DEST
+
+/**
+ * The number of bytes to allocate for the initial JPEG output buffer, if no
+ * buffer (or an empty buffer) is provided.
+ */
+#define GUAC_JPEG_DEFAULT_BUFFER_SIZE 16384
+
+/**
+ * Extended version of the standard libjpeg jpeg_destination_mgr struct, which
+ * provides access to the pointers to the output buffer and size. The values
+ * of this structure will be initialized by jpeg_mem_dest().
+ */
+typedef struct guac_jpeg_destination_mgr {
+
+    /**
+     * Original jpeg_destination_mgr structure. This MUST be the first member
+     * for guac_jpeg_destination_mgr to be usable as a jpeg_destination_mgr.
+     */
+    struct jpeg_destination_mgr parent;
+
+    /**
+     * The current output buffer.
+     */
+    unsigned char* buffer;
+
+    /**
+     * The size of the current output buffer, in bytes.
+     */
+    unsigned long size;
+
+    /**
+     * The originally-supplied (via jpeg_mem_dest()) pointer to output buffer
+     * pointer.
+     */
+    unsigned char** outbuffer;
+
+    /**
+     * The originally-supplied (via jpeg_mem_dest()) pointer to the output
+     * buffer size, in bytes.
+     */
+    unsigned long* outsize;
+
+} guac_jpeg_destination_mgr;
+
+/**
+ * Initializes the destination structure of the given compression structure.
+ *
+ * @param cinfo
+ *     The compression structure whose destination structure should be
+ *     initialized.
+ */
+static void guac_jpeg_init_destination(j_compress_ptr cinfo) {
+
+    guac_jpeg_destination_mgr* dest = (guac_jpeg_destination_mgr*) cinfo->dest;
+
+    /* Init parent destination state */
+    dest->parent.next_output_byte = dest->buffer;
+    dest->parent.free_in_buffer   = dest->size;
+
+}
+
+/**
+ * Re-allocates the output buffer associated with the given compression
+ * structure, as the current output buffer is full.
+ *
+ * @param cinfo
+ *     The compression structure whose output buffer should be re-allocated.
+ * 
+ * @return
+ *     TRUE, always, indicating that space is now available. FALSE is returned
+ *     only by applications that may need additional time to empty the buffer.
+ */
+static boolean guac_jpeg_empty_output_buffer(j_compress_ptr cinfo) {
+
+    guac_jpeg_destination_mgr* dest = (guac_jpeg_destination_mgr*) cinfo->dest;
+    unsigned long current_offset = dest->size;
+
+    /* Double size of current buffer */
+    dest->size *= 2;
+    dest->buffer = realloc(dest->buffer, dest->size);
+
+    /* Update destination offset */
+    dest->parent.next_output_byte = dest->buffer + current_offset;
+    dest->parent.free_in_buffer = dest->size - current_offset;
+
+    return TRUE;
+
+}
+
+/**
+ * Updates the given compression structure such that the originally-supplied
+ * output buffer size describes the size of the output image, not the overall
+ * size of the output buffer. This function is automatically called once JPEG
+ * compression ends.
+ *
+ * @param cinfo
+ *     The compression structure associated with the now-complete JPEG
+ *     compression operation.
+ */
+static void guac_jpeg_term_destination(j_compress_ptr cinfo) {
+
+    guac_jpeg_destination_mgr* dest = (guac_jpeg_destination_mgr*) cinfo->dest;
+
+    /* Commit current buffer and total image size to provided pointers */
+    *dest->outbuffer = dest->buffer;
+    *dest->outsize   = dest->size - dest->parent.free_in_buffer;
+
+}
+
+/**
+ * Configures the given compression structure to use the given buffer for JPEG
+ * output. If no buffer is supplied, a new buffer is allocated. This is a
+ * limited, internal implementation of libjpeg's jpeg_mem_dest(), which is
+ * unavailable in older versions of libjpeg.
+ *
+ * @param cinfo
+ *     The libjpeg compression structure to configure.
+ *
+ * @param outbuffer
+ *     Pointer to a pointer to the output buffer to write JPEG data to. If the
+ *     output buffer pointer is NULL, a new output buffer will be allocated and
+ *     assigned.
+ *
+ * @param outsize
+ *     Pointer to the size of the output buffer, if an output buffer is
+ *     supplied. If a new output buffer is allocated, its size will be stored
+ *     here. When JPEG compression is complete, the total image size (NOT
+ *     buffer size) will be stored here.
+ */
+static void jpeg_mem_dest(j_compress_ptr cinfo,
+        unsigned char** outbuffer, unsigned long* outsize) {
+
+    guac_jpeg_destination_mgr* dest;
+
+    /* Allocate dest from pool if not already allocated */
+    if (cinfo->dest == NULL)
+        cinfo->dest = (struct jpeg_destination_mgr*)
+            (cinfo->mem->alloc_small)((j_common_ptr) cinfo, JPOOL_PERMANENT,
+                    sizeof(guac_jpeg_destination_mgr));
+
+    /* Pull possibly-new destination struct from cinfo */
+    dest = (guac_jpeg_destination_mgr*) cinfo->dest;
+
+    /* Allocate output buffer if necessary */
+    if (*outbuffer == NULL || *outsize == 0) {
+        dest->buffer = malloc(GUAC_JPEG_DEFAULT_BUFFER_SIZE);
+        dest->size   = GUAC_JPEG_DEFAULT_BUFFER_SIZE;
+    }
+
+    /* Otherwise, use provided buffer */
+    else {
+        dest->buffer = *outbuffer;
+        dest->size   = *outsize;
+    }
+
+    /* Associate destination handlers */
+    dest->parent.init_destination    = guac_jpeg_init_destination;
+    dest->parent.empty_output_buffer = guac_jpeg_empty_output_buffer;
+    dest->parent.term_destination    = guac_jpeg_term_destination;
+
+    /* Store provided pointers */
+    dest->outbuffer = outbuffer;
+    dest->outsize   = outsize;
+
+}
+#endif
+
 /**
  * Converts the image data on a Cairo surface to a JPEG image and sends it
  * as a base64-encoded transmission on the socket.
