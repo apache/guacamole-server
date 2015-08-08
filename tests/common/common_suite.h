@@ -49,5 +49,10 @@ void test_guac_string();
  */
 void test_guac_iconv();
 
+/**
+ * Unit test for rectangle calculation functions.
+ */
+void test_guac_rect();
+
 #endif
 

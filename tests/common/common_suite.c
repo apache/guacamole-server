@@ -48,6 +48,7 @@ int register_common_suite() {
     if (
         CU_add_test(suite, "guac-iconv", test_guac_iconv)  == NULL
      || CU_add_test(suite, "guac-string", test_guac_string) == NULL
+     || CU_add_test(suite, "guac-rect", test_guac_rect) == NULL
        ) {
         CU_cleanup_registry();
         return CU_get_error();
