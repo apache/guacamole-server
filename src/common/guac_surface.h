@@ -33,15 +33,69 @@
 #include <guacamole/socket.h>
 
 /**
- * The maximum number of updates to allow within the PNG queue.
+ * The maximum number of updates to allow within the bitmap queue.
  */
 #define GUAC_COMMON_SURFACE_QUEUE_SIZE 256
 
 /**
- * Representation of a PNG update, having a rectangle of image data (stored
+ * The maximum surface width; 2x WQXGA @ 16:10.
+ */
+#define GUAC_COMMON_SURFACE_MAX_WIDTH 5120
+
+/**
+ * The maximum surface height; 2x WQXGA @ 16:10.
+ */
+#define GUAC_COMMON_SURFACE_MAX_HEIGHT 3200
+
+/**
+ * Heat map square size in pixels.
+ */
+#define GUAC_COMMON_SURFACE_HEAT_MAP_CELL 64
+
+/**
+ * Heat map number of columns.
+ */
+#define GUAC_COMMON_SURFACE_HEAT_MAP_COLS (GUAC_COMMON_SURFACE_MAX_WIDTH / GUAC_COMMON_SURFACE_HEAT_MAP_CELL)
+
+/**
+ * Heat map number of rows.
+ */
+#define GUAC_COMMON_SURFACE_HEAT_MAP_ROWS (GUAC_COMMON_SURFACE_MAX_HEIGHT / GUAC_COMMON_SURFACE_HEAT_MAP_CELL)
+
+/**
+ * The number of time stamps to collect to be able to calculate the refresh
+ * frequency for a heat map cell.
+ */
+#define GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ 5
+
+/**
+ * Representation of a rectangle or cell in the refresh heat map. This rectangle
+ * is used to keep track of how often an area on a surface is refreshed.
+ */
+typedef struct guac_common_surface_heat_rect {
+
+    /**
+     * Time of the last N updates, used to calculate the refresh frequency.
+     */
+    guac_timestamp updates[GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ];
+
+    /**
+     * Index of the next update slot in the updates array.
+     */
+    int index;
+
+    /**
+     * The current update frequency.
+     */
+    unsigned int frequency;
+
+} guac_common_surface_heat_rect;
+
+/**
+ * Representation of a bitmap update, having a rectangle of image data (stored
  * elsewhere) and a flushed/not-flushed state.
  */
-typedef struct guac_common_surface_png_rect {
+typedef struct guac_common_surface_bitmap_rect {
 
     /**
      * Whether this rectangle has been flushed.
@@ -49,11 +103,11 @@ typedef struct guac_common_surface_png_rect {
     int flushed;
 
     /**
-     * The rectangle containing the PNG update.
+     * The rectangle containing the bitmap update.
      */
     guac_common_rect rect;
 
-} guac_common_surface_png_rect;
+} guac_common_surface_bitmap_rect;
 
 /**
  * Surface which backs a Guacamole buffer or layer, automatically
@@ -123,14 +177,41 @@ typedef struct guac_common_surface {
     guac_common_rect clip_rect;
 
     /**
-     * The number of updates in the PNG queue.
+     * The number of updates in the bitmap queue.
      */
-    int png_queue_length;
+    int bitmap_queue_length;
 
     /**
-     * All queued PNG updates.
+     * All queued bitmap updates.
      */
-    guac_common_surface_png_rect png_queue[GUAC_COMMON_SURFACE_QUEUE_SIZE];
+    guac_common_surface_bitmap_rect bitmap_queue[GUAC_COMMON_SURFACE_QUEUE_SIZE];
+
+    /**
+     * Last time the heat map was refreshed.
+     */
+    guac_timestamp last_heat_map_update;
+
+    /**
+     * A heat map keeping track of the refresh frequency of
+     * the areas of the screen.
+     */
+    guac_common_surface_heat_rect heat_map[GUAC_COMMON_SURFACE_HEAT_MAP_ROWS][GUAC_COMMON_SURFACE_HEAT_MAP_COLS];
+
+    /*
+     * Map of areas currently refreshed lossy.
+     */
+    int lossy_rect[GUAC_COMMON_SURFACE_HEAT_MAP_ROWS][GUAC_COMMON_SURFACE_HEAT_MAP_COLS];
+
+    /**
+     * Non-zero if this surface's lossy area is dirty and needs to be flushed,
+     * 0 otherwise.
+     */
+    int lossy_dirty;
+
+    /**
+     * The lossy area's dirty rectangle.
+     */
+    guac_common_rect lossy_dirty_rect;
 
 } guac_common_surface;
 
