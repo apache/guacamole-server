@@ -50,7 +50,8 @@ void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Allocate surface */
     guac_layer* buffer = guac_client_alloc_buffer(client);
-    guac_common_surface* surface = guac_common_surface_alloc(socket, buffer, bitmap->width, bitmap->height);
+    guac_common_surface* surface = guac_common_surface_alloc(client, socket,
+            buffer, bitmap->width, bitmap->height);
 
     /* Cache image data if present */
     if (bitmap->data != NULL) {
