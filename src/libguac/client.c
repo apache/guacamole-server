@@ -24,6 +24,7 @@
 
 #include "client.h"
 #include "client-handlers.h"
+#include "encode-png.h"
 #include "error.h"
 #include "instruction.h"
 #include "layer.h"
@@ -372,6 +373,27 @@ void guac_client_abort(guac_client* client, guac_protocol_status status,
     vguac_client_abort(client, status, format, args);
 
     va_end(args);
+
+}
+
+void guac_client_stream_png(guac_client* client, guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer, int x, int y,
+        cairo_surface_t* surface) {
+
+    /* Allocate new stream for image */
+    guac_stream* stream = guac_client_alloc_stream(client);
+
+    /* Declare stream as containing image data */
+    guac_protocol_send_img(socket, stream, mode, layer, "image/png", x, y);
+
+    /* Write PNG data */
+    guac_png_write(socket, stream, surface);
+
+    /* Terminate stream */
+    guac_protocol_send_end(socket, stream);
+
+    /* Free allocated stream */
+    guac_client_free_stream(client, stream);
 
 }
 

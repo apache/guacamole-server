@@ -969,7 +969,8 @@ static void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
                                                                     surface->stride);
 
         /* Send PNG for rect */
-        guac_protocol_send_png(socket, GUAC_COMP_OVER, layer, surface->dirty_rect.x, surface->dirty_rect.y, rect);
+        guac_client_stream_png(surface->client, socket, GUAC_COMP_OVER,
+                layer, surface->dirty_rect.x, surface->dirty_rect.y, rect);
         cairo_surface_destroy(rect);
         surface->realized = 1;
 

@@ -40,6 +40,7 @@
 #include "stream-types.h"
 #include "timestamp-types.h"
 
+#include <cairo/cairo.h>
 #include <stdarg.h>
 
 struct guac_client_info {
@@ -626,6 +627,39 @@ guac_object* guac_client_alloc_object(guac_client* client);
  *     The object to return to the pool of available object.
  */
 void guac_client_free_object(guac_client* client, guac_object* object);
+
+/**
+ * Streams the image data of the given surface over an image stream ("img"
+ * instruction) as PNG-encoded data. The image stream will be automatically
+ * allocated and freed.
+ *
+ * @param client
+ *     The Guacamole client from which the image stream should be allocated.
+ *
+ * @param socket
+ *     The socket over which instructions associated with the image stream
+ *     should be sent.
+ *
+ * @param mode
+ *     The composite mode to use when rendering the image over the given layer.
+ *
+ * @param layer
+ *     The destination layer.
+ *
+ * @param x
+ *     The X coordinate of the upper-left corner of the destination rectangle
+ *     within the given layer.
+ *
+ * @param y
+ *     The Y coordinate of the upper-left corner of the destination rectangle
+ *     within the given layer.
+ *
+ * @param surface
+ *     A Cairo surface containing the image data to be streamed.
+ */
+void guac_client_stream_png(guac_client* client, guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer, int x, int y,
+        cairo_surface_t* surface);
 
 /**
  * The default Guacamole client layer, layer 0.
