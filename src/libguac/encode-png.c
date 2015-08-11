@@ -396,6 +396,8 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
         free(png_rows[y]);
     free(png_rows);
 
+    /* Ensure all data is written */
+    guac_png_flush_data(&write_state);
     return 0;
 
 }
