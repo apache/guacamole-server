@@ -549,8 +549,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_protocol_send_name(client->socket, rfb_client->desktopName);
 
     /* Create default surface */
-    guac_client_data->default_surface = guac_common_surface_alloc(client->socket, GUAC_DEFAULT_LAYER,
-                                                                  rfb_client->width, rfb_client->height);
+    guac_client_data->default_surface = guac_common_surface_alloc(client,
+            client->socket, GUAC_DEFAULT_LAYER,
+            rfb_client->width, rfb_client->height);
     return 0;
 
 }
