@@ -1400,6 +1400,33 @@ int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
 
 }
 
+int guac_protocol_send_img(guac_socket* socket, const guac_stream* stream,
+        guac_composite_mode mode, const guac_layer* layer,
+        const char* mimetype, int x, int y) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "3.img,")
+        || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, mode)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_pop(guac_socket* socket, const guac_layer* layer) {
 
     int ret_val;

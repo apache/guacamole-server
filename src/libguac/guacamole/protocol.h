@@ -648,6 +648,40 @@ int guac_protocol_send_jpeg(guac_socket* socket, guac_composite_mode mode,
         int quality);
 
 /**
+ * Sends an img instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use when sending the img instruction.
+ *
+ * @param stream
+ *     The stream over which the image data will be sent.
+ *
+ * @param mode
+ *     The composite mode to use when drawing the image over the destination
+ *     layer.
+ *
+ * @param layer
+ *     The destination layer.
+ *
+ * @param x
+ *     The X coordinate of the upper-left corner of the destination rectangle
+ *     within the destination layer, in pixels.
+ *
+ * @param y
+ *     The Y coordinate of the upper-left corner of the destination rectangle
+ *     within the destination layer, in pixels.
+ *
+ * @return
+ *     Zero if the instruction was successfully sent, non-zero on error.
+ */
+int guac_protocol_send_img(guac_socket* socket, const guac_stream* stream,
+        guac_composite_mode mode, const guac_layer* layer,
+        const char* mimetype, int x, int y);
+
+/**
  * Sends a pop instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
