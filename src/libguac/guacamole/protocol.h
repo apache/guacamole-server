@@ -595,59 +595,6 @@ int guac_protocol_send_lstroke(guac_socket* socket,
         const guac_layer* srcl);
 
 /**
- * Sends a png instruction over the given guac_socket connection. The PNG image
- * data given will be automatically base64-encoded for transmission.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket The guac_socket connection to use.
- * @param mode The composite mode to use.
- * @param layer The destination layer.
- * @param x The destination X coordinate.
- * @param y The destination Y coordinate.
- * @param surface A cairo surface containing the image data to send.
- * @return Zero on success, non-zero on error.
- */
-int guac_protocol_send_png(guac_socket* socket, guac_composite_mode mode,
-        const guac_layer* layer, int x, int y, cairo_surface_t* surface);
-
-/**
- * Sends a jpeg instruction over the given guac_socket connection. The JPEG image
- * data given will be automatically base64-encoded for transmission.
- *
- * If an error occurs sending the instruction, a non-zero value is
- * returned, and guac_error is set appropriately.
- *
- * @param socket
- *     The guac_socket connection to use.
- * 
- * @param mode
- *     The composite mode to use.
- * 
- * @param layer
- *     The destination layer.
- * 
- * @param x
- *     The destination X coordinate.
- * 
- * @param y
- *     The destination Y coordinate.
- * 
- * @param surface
- *     A cairo surface containing the image data to send.
- * 
- * @param quality
- *     JPEG image quality.
- * 
- * @return
- *     Zero on success, non-zero on error.
- */
-int guac_protocol_send_jpeg(guac_socket* socket, guac_composite_mode mode,
-        const guac_layer* layer, int x, int y, cairo_surface_t* surface,
-        int quality);
-
-/**
  * Sends an img instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
