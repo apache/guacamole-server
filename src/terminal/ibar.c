@@ -78,7 +78,7 @@ guac_terminal_cursor* guac_terminal_create_ibar(guac_client* client) {
             guac_terminal_ibar_height,
             guac_terminal_ibar_stride);
 
-    guac_protocol_send_png(socket, GUAC_COMP_SRC, cursor->buffer,
+    guac_client_stream_png(client, socket, GUAC_COMP_SRC, cursor->buffer,
             0, 0, graphic);
     cairo_surface_destroy(graphic);
 
