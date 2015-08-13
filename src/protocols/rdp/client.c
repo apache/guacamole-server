@@ -309,7 +309,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
         /* Allocate filesystem */
         guac_client_data->filesystem =
-            guac_rdp_fs_alloc(client, guac_client_data->settings.drive_path);
+            guac_rdp_fs_alloc(client, guac_client_data->settings.drive_path,
+                    guac_client_data->settings.create_drive_path);
 
         /* Use for basic uploads if no other handler set */
         if (client->file_handler == NULL)
