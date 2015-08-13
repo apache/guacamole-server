@@ -86,6 +86,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "sftp-password",
     "sftp-private-key",
     "sftp-passphrase",
+    "sftp-directory",
 #endif
 
     NULL
@@ -127,6 +128,7 @@ enum VNC_ARGS_IDX {
     IDX_SFTP_PASSWORD,
     IDX_SFTP_PRIVATE_KEY,
     IDX_SFTP_PASSPHRASE,
+    IDX_SFTP_DIRECTORY,
 #endif
 
     VNC_ARGS_COUNT
@@ -500,6 +502,12 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             guac_common_ssh_destroy_user(guac_client_data->sftp_user);
             return 1;
         }
+
+        /* Configure destination for basic uploads, if specified */
+        if (argv[IDX_SFTP_DIRECTORY][0] != '\0')
+            guac_common_ssh_sftp_set_upload_path(
+                    guac_client_data->sftp_filesystem,
+                    argv[IDX_SFTP_DIRECTORY]);
 
         /* Set file handler for basic uploads */
         client->file_handler = guac_vnc_sftp_file_handler;
