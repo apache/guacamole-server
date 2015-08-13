@@ -203,17 +203,17 @@ int guac_jpeg_write(guac_socket* socket, guac_stream* stream,
 
 #ifdef JCS_EXTENSIONS
     /* The Turbo JPEG extentions allows us to use the Cairo surface
-     * (BRGx) as input without converting it */
+     * (BGRx) as input without converting it */
     cinfo.input_components = 4;
     cinfo.in_color_space = JCS_EXT_BGRX;
 #else
     /* Standard JPEG supports RGB as input so we will have to convert
-     * the contents of the Cairo surface from (BRGx) to RGB */
+     * the contents of the Cairo surface from (BGRx) to RGB */
     cinfo.input_components = 3;
     cinfo.in_color_space = JCS_RGB;
 
     /* Create a buffer for the write scan line which is where we will
-     * put the converted pixels (BRGx -> RGB) */
+     * put the converted pixels (BGRx -> RGB) */
     int write_stride = cinfo.image_width * cinfo.input_components;
     unsigned char *scanline_data = malloc(write_stride);
     memset(scanline_data, 0, write_stride);
