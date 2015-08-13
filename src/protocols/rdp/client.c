@@ -137,6 +137,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "sftp-password",
     "sftp-private-key",
     "sftp-passphrase",
+    "sftp-directory",
 #endif
 
     NULL
@@ -184,6 +185,7 @@ enum RDP_ARGS_IDX {
     IDX_SFTP_PASSWORD,
     IDX_SFTP_PRIVATE_KEY,
     IDX_SFTP_PASSPHRASE,
+    IDX_SFTP_DIRECTORY,
 #endif
 
     RDP_ARGS_COUNT
@@ -302,9 +304,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Load filesystem if drive enabled */
     if (guac_client_data->settings.drive_enabled) {
+
+        /* Allocate filesystem */
         guac_client_data->filesystem =
             guac_rdp_fs_alloc(client, guac_client_data->settings.drive_path);
-        client->file_handler = guac_rdp_upload_file_handler;
+
+        /* Use for basic uploads if no other handler set */
+        if (client->file_handler == NULL)
+            client->file_handler = guac_rdp_upload_file_handler;
+
     }
 
     /* If RDPDR required, load it */
@@ -900,8 +908,16 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             return 1;
         }
 
-        /* Use SFTP for basic uploads, if drive not enabled */
-        if (!settings->drive_enabled)
+        /* Configure destination for basic uploads, if specified */
+        if (argv[IDX_SFTP_DIRECTORY][0] != '\0') {
+            client->file_handler = guac_rdp_sftp_file_handler;
+            guac_common_ssh_sftp_set_upload_path(
+                    guac_client_data->sftp_filesystem,
+                    argv[IDX_SFTP_DIRECTORY]);
+        }
+
+        /* Otherwise, use SFTP for basic uploads only if drive not enabled */
+        else if (!settings->drive_enabled)
             client->file_handler = guac_rdp_sftp_file_handler;
 
         guac_client_log(client, GUAC_LOG_DEBUG,
