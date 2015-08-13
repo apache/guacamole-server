@@ -117,17 +117,149 @@
  */
 #define GUAC_COMMON_SURFACE_NON_LOSSY_REFRESH_THRESHOLD 3000
 
-/*
- * Forward declarations.
+/**
+ * Updates the coordinates of the given rectangle to be within the bounds of
+ * the given surface.
+ *
+ * @param surface The surface to use for clipping.
+ * @param rect The rectangle to clip.
+ * @param sx The X coordinate of the source rectangle, if any.
+ * @param sy The Y coordinate of the source rectangle, if any.
+ */
+static void __guac_common_bound_rect(guac_common_surface* surface,
+        guac_common_rect* rect, int* sx, int* sy) {
+
+    guac_common_rect bounds_rect = {
+        .x = 0,
+        .y = 0,
+        .width  = surface->width,
+        .height = surface->height
+    };
+
+    int orig_x = rect->x;
+    int orig_y = rect->y;
+
+    guac_common_rect_constrain(rect, &bounds_rect);
+
+    /* Update source X/Y if given */
+    if (sx != NULL) *sx += rect->x - orig_x;
+    if (sy != NULL) *sy += rect->y - orig_y;
+
+}
+
+/**
+ * Updates the coordinates of the given rectangle to be within the clipping
+ * rectangle of the given surface, which must always be within the bounding
+ * rectangle of the given surface.
+ *
+ * @param surface The surface to use for clipping.
+ * @param rect The rectangle to clip.
+ * @param sx The X coordinate of the source rectangle, if any.
+ * @param sy The Y coordinate of the source rectangle, if any.
  */
 static void __guac_common_clip_rect(guac_common_surface* surface,
-        guac_common_rect* rect, int* sx, int* sy);
-static int __guac_common_should_combine(guac_common_surface* surface,
-        const guac_common_rect* rect, int rect_only);
-static void __guac_common_mark_dirty(guac_common_surface* surface,
-        const guac_common_rect* rect);
-static void __guac_common_surface_flush_rect_to_queue(guac_common_surface* surface,
-        const guac_common_rect* rect);
+        guac_common_rect* rect, int* sx, int* sy) {
+
+    int orig_x = rect->x;
+    int orig_y = rect->y;
+
+    /* Just bound within surface if no clipping rectangle applied */
+    if (!surface->clipped) {
+        __guac_common_bound_rect(surface, rect, sx, sy);
+        return;
+    }
+
+    guac_common_rect_constrain(rect, &surface->clip_rect);
+
+    /* Update source X/Y if given */
+    if (sx != NULL) *sx += rect->x - orig_x;
+    if (sy != NULL) *sy += rect->y - orig_y;
+
+}
+
+/**
+ * Returns whether the given rectangle should be combined into the existing
+ * dirty rectangle, to be eventually flushed as a "png" instruction.
+ *
+ * @param surface The surface to be queried.
+ * @param rect The update rectangle.
+ * @param rect_only Non-zero if this update, by its nature, contains only
+ *                  metainformation about the update's rectangle, zero if
+ *                  the update also contains image data.
+ * @return Non-zero if the update should be combined with any existing update,
+ *         zero otherwise.
+ */
+static int __guac_common_should_combine(guac_common_surface* surface, const guac_common_rect* rect, int rect_only) {
+
+    if (surface->dirty) {
+
+        int combined_cost, dirty_cost, update_cost;
+
+        /* Simulate combination */
+        guac_common_rect combined = surface->dirty_rect;
+        guac_common_rect_extend(&combined, rect);
+
+        /* Combine if result is still small */
+        if (combined.width <= GUAC_SURFACE_NEGLIGIBLE_WIDTH && combined.height <= GUAC_SURFACE_NEGLIGIBLE_HEIGHT)
+            return 1;
+
+        /* Estimate costs of the existing update, new update, and both combined */
+        combined_cost = GUAC_SURFACE_BASE_COST + combined.width * combined.height;
+        dirty_cost    = GUAC_SURFACE_BASE_COST + surface->dirty_rect.width * surface->dirty_rect.height;
+        update_cost   = GUAC_SURFACE_BASE_COST + rect->width * rect->height;
+
+        /* Reduce cost if no image data */
+        if (rect_only)
+            update_cost /= GUAC_SURFACE_DATA_FACTOR;
+
+        /* Combine if cost estimate shows benefit */
+        if (combined_cost <= update_cost + dirty_cost)
+            return 1;
+
+        /* Combine if increase in cost is negligible */
+        if (combined_cost - dirty_cost <= dirty_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
+            return 1;
+
+        if (combined_cost - update_cost <= update_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
+            return 1;
+
+        /* Combine if we anticipate further updates, as this update follows a common fill pattern */
+        if (rect->x == surface->dirty_rect.x && rect->y == surface->dirty_rect.y + surface->dirty_rect.height) {
+            if (combined_cost <= (dirty_cost + update_cost) * GUAC_SURFACE_FILL_PATTERN_FACTOR)
+                return 1;
+        }
+
+    }
+
+    /* Otherwise, do not combine */
+    return 0;
+
+}
+
+/**
+ * Expands the dirty rect of the given surface to contain the rect described by the given
+ * coordinates.
+ *
+ * @param surface The surface to mark as dirty.
+ * @param rect The rectangle of the update which is dirtying the surface.
+ */
+static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_common_rect* rect) {
+
+    /* Ignore empty rects */
+    if (rect->width <= 0 || rect->height <= 0)
+        return;
+
+    /* If already dirty, update existing rect */
+    if (surface->dirty)
+        guac_common_rect_extend(&surface->dirty_rect, rect);
+
+    /* Otherwise init dirty rect */
+    else {
+        surface->dirty_rect = *rect;
+        surface->dirty = 1;
+    }
+
+}
 
 /**
  * Flush a surface's lossy area to the dirty rectangle. This will make the
@@ -247,6 +379,23 @@ static void __guac_common_surface_flush_to_bitmap_impl(guac_common_surface* surf
 
     cairo_surface_destroy(rect);
 
+}
+
+/**
+ * Flushes the rectangle to the given surface's bitmap queue. There MUST be
+ * space within the queue.
+ *
+ * @param surface The surface queue to flush to.
+ * @param rect The rectangle to flush.
+ */
+static void __guac_common_surface_flush_rect_to_queue(guac_common_surface* surface,
+        const guac_common_rect* rect) {
+    guac_common_surface_bitmap_rect* bitmap_rect;
+
+    /* Add new rect to queue */
+    bitmap_rect = &(surface->bitmap_queue[surface->bitmap_queue_length++]);
+    bitmap_rect->rect = *rect;
+    bitmap_rect->flushed = 0;
 }
 
 /**
@@ -500,150 +649,6 @@ static void __guac_common_surface_touch_rect(guac_common_surface* surface,
 }
 
 /**
- * Updates the coordinates of the given rectangle to be within the bounds of
- * the given surface.
- *
- * @param surface The surface to use for clipping.
- * @param rect The rectangle to clip.
- * @param sx The X coordinate of the source rectangle, if any.
- * @param sy The Y coordinate of the source rectangle, if any.
- */
-static void __guac_common_bound_rect(guac_common_surface* surface,
-        guac_common_rect* rect, int* sx, int* sy) {
-
-    guac_common_rect bounds_rect = {
-        .x = 0,
-        .y = 0,
-        .width  = surface->width,
-        .height = surface->height
-    };
-
-    int orig_x = rect->x;
-    int orig_y = rect->y;
-
-    guac_common_rect_constrain(rect, &bounds_rect);
-
-    /* Update source X/Y if given */
-    if (sx != NULL) *sx += rect->x - orig_x;
-    if (sy != NULL) *sy += rect->y - orig_y;
-
-}
-
-/**
- * Updates the coordinates of the given rectangle to be within the clipping
- * rectangle of the given surface, which must always be within the bounding
- * rectangle of the given surface.
- *
- * @param surface The surface to use for clipping.
- * @param rect The rectangle to clip.
- * @param sx The X coordinate of the source rectangle, if any.
- * @param sy The Y coordinate of the source rectangle, if any.
- */
-static void __guac_common_clip_rect(guac_common_surface* surface,
-        guac_common_rect* rect, int* sx, int* sy) {
-
-    int orig_x = rect->x;
-    int orig_y = rect->y;
-
-    /* Just bound within surface if no clipping rectangle applied */
-    if (!surface->clipped) {
-        __guac_common_bound_rect(surface, rect, sx, sy);
-        return;
-    }
-
-    guac_common_rect_constrain(rect, &surface->clip_rect);
-
-    /* Update source X/Y if given */
-    if (sx != NULL) *sx += rect->x - orig_x;
-    if (sy != NULL) *sy += rect->y - orig_y;
-
-}
-
-/**
- * Returns whether the given rectangle should be combined into the existing
- * dirty rectangle, to be eventually flushed as a "png" instruction.
- *
- * @param surface The surface to be queried.
- * @param rect The update rectangle.
- * @param rect_only Non-zero if this update, by its nature, contains only
- *                  metainformation about the update's rectangle, zero if
- *                  the update also contains image data.
- * @return Non-zero if the update should be combined with any existing update,
- *         zero otherwise.
- */
-static int __guac_common_should_combine(guac_common_surface* surface, const guac_common_rect* rect, int rect_only) {
-
-    if (surface->dirty) {
-
-        int combined_cost, dirty_cost, update_cost;
-
-        /* Simulate combination */
-        guac_common_rect combined = surface->dirty_rect;
-        guac_common_rect_extend(&combined, rect);
-
-        /* Combine if result is still small */
-        if (combined.width <= GUAC_SURFACE_NEGLIGIBLE_WIDTH && combined.height <= GUAC_SURFACE_NEGLIGIBLE_HEIGHT)
-            return 1;
-
-        /* Estimate costs of the existing update, new update, and both combined */
-        combined_cost = GUAC_SURFACE_BASE_COST + combined.width * combined.height;
-        dirty_cost    = GUAC_SURFACE_BASE_COST + surface->dirty_rect.width * surface->dirty_rect.height;
-        update_cost   = GUAC_SURFACE_BASE_COST + rect->width * rect->height;
-
-        /* Reduce cost if no image data */
-        if (rect_only)
-            update_cost /= GUAC_SURFACE_DATA_FACTOR;
-
-        /* Combine if cost estimate shows benefit */
-        if (combined_cost <= update_cost + dirty_cost)
-            return 1;
-
-        /* Combine if increase in cost is negligible */
-        if (combined_cost - dirty_cost <= dirty_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
-            return 1;
-
-        if (combined_cost - update_cost <= update_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
-            return 1;
-
-        /* Combine if we anticipate further updates, as this update follows a common fill pattern */
-        if (rect->x == surface->dirty_rect.x && rect->y == surface->dirty_rect.y + surface->dirty_rect.height) {
-            if (combined_cost <= (dirty_cost + update_cost) * GUAC_SURFACE_FILL_PATTERN_FACTOR)
-                return 1;
-        }
-
-    }
-
-    /* Otherwise, do not combine */
-    return 0;
-
-}
-
-/**
- * Expands the dirty rect of the given surface to contain the rect described by the given
- * coordinates.
- *
- * @param surface The surface to mark as dirty.
- * @param rect The rectangle of the update which is dirtying the surface.
- */
-static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_common_rect* rect) {
-
-    /* Ignore empty rects */
-    if (rect->width <= 0 || rect->height <= 0)
-        return;
-
-    /* If already dirty, update existing rect */
-    if (surface->dirty)
-        guac_common_rect_extend(&surface->dirty_rect, rect);
-
-    /* Otherwise init dirty rect */
-    else {
-        surface->dirty_rect = *rect;
-        surface->dirty = 1;
-    }
-
-}
-
-/**
  * Expands the lossy dirty rectangle of the given surface to contain the
  * rectangle described by the given coordinates.
  *
@@ -670,23 +675,6 @@ static void __guac_common_mark_lossy_dirty(guac_common_surface* surface,
         surface->lossy_dirty = 1;
     }
 
-}
-
-/**
- * Flushes the rectangle to the given surface's bitmap queue. There MUST be
- * space within the queue.
- *
- * @param surface The surface queue to flush to.
- * @param rect The rectangle to flush.
- */
-static void __guac_common_surface_flush_rect_to_queue(guac_common_surface* surface,
-        const guac_common_rect* rect) {
-    guac_common_surface_bitmap_rect* bitmap_rect;
-
-    /* Add new rect to queue */
-    bitmap_rect = &(surface->bitmap_queue[surface->bitmap_queue_length++]);
-    bitmap_rect->rect = *rect;
-    bitmap_rect->flushed = 0;
 }
 
 /**
