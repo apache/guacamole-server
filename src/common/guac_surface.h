@@ -38,22 +38,23 @@
 #define GUAC_COMMON_SURFACE_QUEUE_SIZE 256
 
 /**
- * Heat map square size in pixels.
+ * Heat map cell size in pixels. Each side of each heat map cell will consist
+ * of this many pixels.
  */
-#define GUAC_COMMON_SURFACE_HEAT_MAP_CELL 64
+#define GUAC_COMMON_SURFACE_HEAT_CELL_SIZE 64
 
 /**
  * The number of entries to collect within each heat map cell. Collected
  * history entries are used to determine the framerate of the region associated
  * with that cell.
  */
-#define GUAC_COMMON_SURFACE_HEAT_MAP_HISTORY_SIZE 5
+#define GUAC_COMMON_SURFACE_HEAT_CELL_HISTORY_SIZE 5
 
 /**
- * Representation of a rectangle or cell in the refresh heat map. This rectangle
- * is used to keep track of how often an area on a surface is refreshed.
+ * Representation of a cell in the refresh heat map. This cell is used to keep
+ * track of how often an area on a surface is refreshed.
  */
-typedef struct guac_common_surface_heat_rect {
+typedef struct guac_common_surface_heat_cell {
 
     /**
      * Timestamps of each of the last N updates covering the location
@@ -63,14 +64,14 @@ typedef struct guac_common_surface_heat_rect {
      * pointed to by oldest_entry and proceeding through all other entries,
      * wrapping around if the end of the array is reached.
      */
-    guac_timestamp history[GUAC_COMMON_SURFACE_HEAT_MAP_HISTORY_SIZE];
+    guac_timestamp history[GUAC_COMMON_SURFACE_HEAT_CELL_HISTORY_SIZE];
 
     /**
      * Index of the oldest entry within the history.
      */
     int oldest_entry;
 
-} guac_common_surface_heat_rect;
+} guac_common_surface_heat_cell;
 
 /**
  * Representation of a bitmap update, having a rectangle of image data (stored
@@ -171,7 +172,7 @@ typedef struct guac_common_surface {
      * A heat map keeping track of the refresh frequency of
      * the areas of the screen.
      */
-    guac_common_surface_heat_rect* heat_map;
+    guac_common_surface_heat_cell* heat_map;
 
 } guac_common_surface;
 
