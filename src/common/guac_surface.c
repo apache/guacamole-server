@@ -284,7 +284,7 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_co
  *     The average refresh frequency.
  */
 static unsigned int __guac_common_surface_calculate_framerate(
-        guac_common_surface* surface, guac_common_rect* rect) {
+        guac_common_surface* surface, const guac_common_rect* rect) {
 
     int x, y;
 
@@ -332,6 +332,31 @@ static unsigned int __guac_common_surface_calculate_framerate(
         return sum_framerate / count;
 
     return 0;
+
+}
+
+/**
+ * Returns whether the given rectangle would be optimally encoded as JPEG
+ * rather than PNG.
+ *
+ * @param surface
+ *     The surface to be queried.
+ *
+ * @param rect
+ *     The rectangle to check.
+ *
+ * @return
+ *     Non-zero if the rectangle would be optimally encoded as JPEG, zero
+ *     otherwise.
+ */
+static int __guac_common_surface_should_use_jpeg(guac_common_surface* surface,
+        const guac_common_rect* rect) {
+
+    /* Calculate the average framerate for the given rect */
+    int framerate = __guac_common_surface_calculate_framerate(surface, rect);
+
+    /* JPEG is preferred if rect is hot and smooth */
+    return framerate >= GUAC_COMMON_SURFACE_LOSSY_REFRESH_FREQUENCY;
 
 }
 
@@ -1264,13 +1289,9 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
                 flushed++;
 
-                /* Calculate the average framerate for the dirty rect */
-                int framerate =
-                    __guac_common_surface_calculate_framerate(surface,
-                            &surface->dirty_rect);
-
-                /* If this rectangle is hot, flush as JPEG */
-                if (framerate >= GUAC_COMMON_SURFACE_LOSSY_REFRESH_FREQUENCY)
+                /* Flush as JPEG if JPEG is preferred */
+                if (__guac_common_surface_should_use_jpeg(surface,
+                            &surface->dirty_rect))
                     __guac_common_surface_flush_to_jpeg(surface);
 
                 /* Otherwise, use PNG */
