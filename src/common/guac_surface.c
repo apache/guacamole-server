@@ -80,20 +80,6 @@
 #endif
 
 /**
- * The JPEG compression minimum block size. This defines the optimal rectangle
- * block size factor for JPEG compression to reduce artifacts. Usually this is
- * 8 (8x8), but use 16 to reduce the occurence of ringing artifacts further.
- */
-#define GUAC_SURFACE_JPEG_BLOCK_SIZE 16
-
-/**
- * Minimum JPEG bitmap size (area). If the bitmap is smaller than this
- * threshold, it should be compressed as a PNG image to avoid the JPEG
- * compression tax.
- */
-#define GUAC_SURFACE_JPEG_MIN_BITMAP_SIZE 4096
-
-/**
  * The JPEG image quality ('quantization') setting to use. Range 0-100 where
  * 100 is the highest quality/largest file size, and 0 is the lowest
  * quality/smallest file size.
