@@ -38,29 +38,9 @@
 #define GUAC_COMMON_SURFACE_QUEUE_SIZE 256
 
 /**
- * The maximum surface width; 2x WQXGA @ 16:10.
- */
-#define GUAC_COMMON_SURFACE_MAX_WIDTH 5120
-
-/**
- * The maximum surface height; 2x WQXGA @ 16:10.
- */
-#define GUAC_COMMON_SURFACE_MAX_HEIGHT 3200
-
-/**
  * Heat map square size in pixels.
  */
 #define GUAC_COMMON_SURFACE_HEAT_MAP_CELL 64
-
-/**
- * Heat map number of columns.
- */
-#define GUAC_COMMON_SURFACE_HEAT_MAP_COLS (GUAC_COMMON_SURFACE_MAX_WIDTH / GUAC_COMMON_SURFACE_HEAT_MAP_CELL)
-
-/**
- * Heat map number of rows.
- */
-#define GUAC_COMMON_SURFACE_HEAT_MAP_ROWS (GUAC_COMMON_SURFACE_MAX_HEIGHT / GUAC_COMMON_SURFACE_HEAT_MAP_CELL)
 
 /**
  * The number of entries to collect within each heat map cell. Collected
@@ -191,7 +171,7 @@ typedef struct guac_common_surface {
      * A heat map keeping track of the refresh frequency of
      * the areas of the screen.
      */
-    guac_common_surface_heat_rect heat_map[GUAC_COMMON_SURFACE_HEAT_MAP_ROWS][GUAC_COMMON_SURFACE_HEAT_MAP_COLS];
+    guac_common_surface_heat_rect* heat_map;
 
 } guac_common_surface;
 
