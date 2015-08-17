@@ -261,7 +261,6 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_co
 
 }
 
-#if 0
 /**
  * Calculate the current average refresh frequency for a given area on the
  * surface.
@@ -335,7 +334,6 @@ static unsigned int __guac_common_surface_calculate_framerate(
     return 0;
 
 }
-#endif
 
 /**
  * Touch the heat map with this update rectangle, so that the update
@@ -1149,6 +1147,43 @@ static void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
 }
 
 /**
+ * Flushes the bitmap update currently described by the dirty rectangle within
+ * the given surface directly via an "img" instruction as JPEG data. The
+ * resulting instructions will be sent over the socket associated with the
+ * given surface.
+ *
+ * @param surface
+ *     The surface to flush.
+ */
+static void __guac_common_surface_flush_to_jpeg(guac_common_surface* surface) {
+
+    if (surface->dirty) {
+
+        guac_socket* socket = surface->socket;
+        const guac_layer* layer = surface->layer;
+
+        /* Get Cairo surface for specified rect */
+        unsigned char* buffer = surface->buffer + surface->dirty_rect.y * surface->stride + surface->dirty_rect.x * 4;
+        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
+                                                                    surface->dirty_rect.width,
+                                                                    surface->dirty_rect.height,
+                                                                    surface->stride);
+
+        /* Send JPEG for rect */
+        guac_client_stream_jpeg(surface->client, socket, GUAC_COMP_OVER, layer,
+                surface->dirty_rect.x, surface->dirty_rect.y, rect,
+                GUAC_SURFACE_JPEG_IMAGE_QUALITY);
+        cairo_surface_destroy(rect);
+        surface->realized = 1;
+
+        /* Surface is no longer dirty */
+        surface->dirty = 0;
+
+    }
+
+}
+
+/**
  * Comparator for instances of guac_common_surface_bitmap_rect, the elements
  * which make up a surface's bitmap buffer.
  *
@@ -1225,9 +1260,23 @@ void guac_common_surface_flush(guac_common_surface* surface) {
                 __guac_common_surface_flush_to_queue(surface);
 
             /* Flush as bitmap otherwise */
-            else {
-                if (surface->dirty) flushed++;
-                __guac_common_surface_flush_to_png(surface);
+            else if (surface->dirty) {
+
+                flushed++;
+
+                /* Calculate the average framerate for the dirty rect */
+                int framerate =
+                    __guac_common_surface_calculate_framerate(surface,
+                            &surface->dirty_rect);
+
+                /* If this rectangle is hot, flush as JPEG */
+                if (framerate >= GUAC_COMMON_SURFACE_LOSSY_REFRESH_FREQUENCY)
+                    __guac_common_surface_flush_to_jpeg(surface);
+
+                /* Otherwise, use PNG */
+                else
+                    __guac_common_surface_flush_to_png(surface);
+
             }
 
         }
