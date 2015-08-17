@@ -347,17 +347,17 @@ static int guac_common_surface_png_optimality(guac_common_surface* surface,
     /* For each row */
     for (y = 0; y < height; y++) {
 
-        uint32_t last_pixel = -1;
+        uint32_t last_pixel;
         uint32_t* row = (uint32_t*) buffer;
 
         /* For each pixel in current row */
         for (x = 0; x < width; x++) {
 
             /* Get next pixel */
-            uint32_t current_pixel = *(row++);
+            uint32_t current_pixel = *(row++) | 0xFF000000;
 
             /* Update similarity according to whether pixel is identical */
-            if (last_pixel != -1) {
+            if (x != 0) {
                 if (current_pixel == last_pixel)
                     similarity++;
                 else
