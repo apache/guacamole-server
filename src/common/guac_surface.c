@@ -102,20 +102,9 @@
 #define GUAC_SURFACE_JPEG_IMAGE_QUALITY 90
 
 /**
- * Time (msec) between each time the surface's heat map is recalculated.
+ * The framerate which, if exceeded, indicates that JPEG is preferred.
  */
-#define GUAC_COMMON_SURFACE_HEAT_MAP_UPDATE_FREQ 2000
-
-/**
- * Refresh frequency threshold for when an area should be refreshed lossy.
- */
-#define GUAC_COMMON_SURFACE_LOSSY_REFRESH_FREQUENCY 3
-
-/**
- * Time delay threshold between two updates where a lossy area will be moved
- * to the non-lossy refresh pipe.
- */
-#define GUAC_COMMON_SURFACE_NON_LOSSY_REFRESH_THRESHOLD 3000
+#define GUAC_COMMON_SURFACE_JPEG_FRAMERATE 3
 
 /**
  * Updates the coordinates of the given rectangle to be within the bounds of
@@ -262,26 +251,17 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_co
 }
 
 /**
- * Calculate the current average refresh frequency for a given area on the
- * surface.
+ * Calculate the current average framerate for a given area on the surface.
  *
  * @param surface
- *     The surface on which the refresh frequency will be calculated.
+ *     The surface on which the framerate will be calculated.
  *
- * @param x
- *     The x coordinate for the area.
- *
- * @param y
- *     The y coordinate for the area.
- *
- * @param w
- *     The area width.
- *
- * @param h
- *     The area height.
+ * @param rect
+ *     The rect containing the area for which the average framerate will be 
+ *     calculated.
  *
  * @return
- *     The average refresh frequency.
+ *     The average framerate of the given area, in frames per second.
  */
 static unsigned int __guac_common_surface_calculate_framerate(
         guac_common_surface* surface, const guac_common_rect* rect) {
@@ -355,23 +335,25 @@ static int __guac_common_surface_should_use_jpeg(guac_common_surface* surface,
     /* Calculate the average framerate for the given rect */
     int framerate = __guac_common_surface_calculate_framerate(surface, rect);
 
-    /* JPEG is preferred if rect is hot and smooth */
-    return framerate >= GUAC_COMMON_SURFACE_LOSSY_REFRESH_FREQUENCY;
+    /* JPEG is preferred if framerate is high enough */
+    return framerate >= GUAC_COMMON_SURFACE_JPEG_FRAMERATE;
 
 }
 
 /**
- * Touch the heat map with this update rectangle, so that the update
- * frequency can be calculated later.
+ * Updates the heat map cells which intersect the given rectangle using the
+ * given timestamp. This timestamp, along with timestamps from past updates,
+ * is used to calculate the framerate of each heat cell.
  *
  * @param surface
- *     The surface containing the rectangle to be updated.
+ *     The surface containing the heat map cells to be updated.
  *
  * @param rect
- *     The rectangle updated.
+ *     The rectangle containing the heat map cells to be updated.
  *
  * @param time
- *     The time stamp of this update.
+ *     The timestamp to use when updating the heat map cells which intersect
+ *     the given rectangle.
  */
 static void __guac_common_surface_touch_rect(guac_common_surface* surface,
         guac_common_rect* rect, guac_timestamp time) {
