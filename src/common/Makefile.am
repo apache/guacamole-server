@@ -35,8 +35,7 @@ noinst_HEADERS =            \
     guac_pointer_cursor.h   \
     guac_rect.h             \
     guac_string.h           \
-    guac_surface.h          \
-    guac_surface_smoothness.h
+    guac_surface.h
 
 libguac_common_la_SOURCES =   \
     guac_io.c                 \
@@ -48,8 +47,7 @@ libguac_common_la_SOURCES =   \
     guac_pointer_cursor.c     \
     guac_rect.c               \
     guac_string.c             \
-    guac_surface.c            \
-    guac_surface_smoothness.c
+    guac_surface.c
 
 libguac_common_la_CFLAGS =  \
     -Werror -Wall -pedantic \

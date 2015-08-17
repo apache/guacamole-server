@@ -23,7 +23,6 @@
 #include "config.h"
 #include "guac_rect.h"
 #include "guac_surface.h"
-#include "guac_surface_smoothness.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
@@ -315,6 +314,70 @@ static unsigned int __guac_common_surface_calculate_framerate(
 
 }
 
+ /**
+ * Guesses whether a rectangle within a particular surface would be better
+ * compressed as PNG or as JPEG. Positive values indicate PNG is likely to
+ * be superior, while negative values indicate JPEG.
+ *
+ * @param surface
+ *     The surface containing the image data to check.
+ *
+ * @param rect
+ *     The rect to check within the given surface.
+ *
+ * @return
+ *     Positive values if PNG compression is likely to perform better than
+ *     JPEG, or negative values if JPEG is likely to perform better than PNG.
+ */
+static int guac_common_surface_png_optimality(guac_common_surface* surface,
+        const guac_common_rect* rect) {
+
+    int x, y;
+
+    int similarity = 0;
+
+    /* Get image/buffer metrics */
+    int width = rect->width;
+    int height = rect->height;
+    int stride = surface->stride;
+
+    /* Get buffer from surface */
+    unsigned char* buffer = surface->buffer + rect->y * stride + rect->x * 4;
+
+    /* For each row */
+    for (y = 0; y < height; y++) {
+
+        uint32_t last_pixel = -1;
+        uint32_t* row = (uint32_t*) buffer;
+
+        /* For each pixel in current row */
+        for (x = 0; x < width; x++) {
+
+            /* Get next pixel */
+            uint32_t current_pixel = *(row++);
+
+            /* Update similarity according to whether pixel is identical */
+            if (last_pixel != -1) {
+                if (current_pixel == last_pixel)
+                    similarity++;
+                else
+                    similarity--;
+            }
+
+            last_pixel = current_pixel;
+
+        }
+
+        /* Advance to next row */
+        buffer += stride;
+
+    }
+
+    /* Return rough approximation of optimality for PNG compression */
+    return 0xFF * similarity / width / height;
+
+}
+
 /**
  * Returns whether the given rectangle would be optimally encoded as JPEG
  * rather than PNG.
@@ -336,7 +399,8 @@ static int __guac_common_surface_should_use_jpeg(guac_common_surface* surface,
     int framerate = __guac_common_surface_calculate_framerate(surface, rect);
 
     /* JPEG is preferred if framerate is high enough */
-    return framerate >= GUAC_COMMON_SURFACE_JPEG_FRAMERATE;
+    return framerate >= GUAC_COMMON_SURFACE_JPEG_FRAMERATE
+        && guac_common_surface_png_optimality(surface, rect) < 0;
 
 }
 
