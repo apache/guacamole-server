@@ -334,7 +334,8 @@ static int guac_common_surface_png_optimality(guac_common_surface* surface,
 
     int x, y;
 
-    int similarity = 0;
+    int num_same = 0;
+    int num_different = 1;
 
     /* Get image/buffer metrics */
     int width = rect->width;
@@ -356,12 +357,12 @@ static int guac_common_surface_png_optimality(guac_common_surface* surface,
             /* Get next pixel */
             uint32_t current_pixel = *(row++) | 0xFF000000;
 
-            /* Update similarity according to whether pixel is identical */
+            /* Update same/different counts according to pixel value */
             if (x != 0) {
                 if (current_pixel == last_pixel)
-                    similarity++;
+                    num_same++;
                 else
-                    similarity--;
+                    num_different++;
             }
 
             last_pixel = current_pixel;
@@ -374,7 +375,7 @@ static int guac_common_surface_png_optimality(guac_common_surface* surface,
     }
 
     /* Return rough approximation of optimality for PNG compression */
-    return 0xFF * similarity / width / height;
+    return 0x100 * num_same / num_different - 0x400;
 
 }
 
