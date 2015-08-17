@@ -327,7 +327,7 @@ static unsigned int __guac_common_surface_calculate_framerate(
  *     Positive values if PNG compression is likely to perform better than
  *     JPEG, or negative values if JPEG is likely to perform better than PNG.
  */
-static int guac_common_surface_png_optimality(guac_common_surface* surface,
+static int __guac_common_surface_png_optimality(guac_common_surface* surface,
         const guac_common_rect* rect) {
 
     int x, y;
@@ -399,7 +399,7 @@ static int __guac_common_surface_should_use_jpeg(guac_common_surface* surface,
 
     /* JPEG is preferred if framerate is high enough */
     return framerate >= GUAC_COMMON_SURFACE_JPEG_FRAMERATE
-        && guac_common_surface_png_optimality(surface, rect) < 0;
+        && __guac_common_surface_png_optimality(surface, rect) < 0;
 
 }
 
