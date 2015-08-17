@@ -63,10 +63,11 @@
 #define GUAC_COMMON_SURFACE_HEAT_MAP_ROWS (GUAC_COMMON_SURFACE_MAX_HEIGHT / GUAC_COMMON_SURFACE_HEAT_MAP_CELL)
 
 /**
- * The number of time stamps to collect to be able to calculate the refresh
- * frequency for a heat map cell.
+ * The number of entries to collect within each heat map cell. Collected
+ * history entries are used to determine the framerate of the region associated
+ * with that cell.
  */
-#define GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ 5
+#define GUAC_COMMON_SURFACE_HEAT_MAP_HISTORY_SIZE 5
 
 /**
  * Representation of a rectangle or cell in the refresh heat map. This rectangle
@@ -75,19 +76,19 @@
 typedef struct guac_common_surface_heat_rect {
 
     /**
-     * Time of the last N updates, used to calculate the refresh frequency.
+     * Timestamps of each of the last N updates covering the location
+     * associated with this heat map cell. This is used to calculate the
+     * framerate. This array is structured as a ring buffer containing history
+     * entries in chronologically-ascending order, starting at the entry
+     * pointed to by oldest_entry and proceeding through all other entries,
+     * wrapping around if the end of the array is reached.
      */
-    guac_timestamp updates[GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ];
+    guac_timestamp history[GUAC_COMMON_SURFACE_HEAT_MAP_HISTORY_SIZE];
 
     /**
-     * Index of the next update slot in the updates array.
+     * Index of the oldest entry within the history.
      */
-    int index;
-
-    /**
-     * The current update frequency.
-     */
-    unsigned int frequency;
+    int oldest_entry;
 
 } guac_common_surface_heat_rect;
 

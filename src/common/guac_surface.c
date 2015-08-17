@@ -262,55 +262,6 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_co
 }
 
 /**
- * Flush a surface's lossy area to the dirty rectangle. This will make the
- * rectangle refresh through the normal non-lossy refresh path.
- *
- * @param surface
- *     The surface whose lossy area will be moved to the dirty refresh
- *     queue.
- *
- * @param x
- *     The x coordinate of the area to move.
- *
- * @param y
- *     The y coordinate of the area to move.
- */
-static void __guac_common_surface_flush_lossy_rect_to_dirty_rect(
-        guac_common_surface* surface, int x, int y) {
-
-    /* Get the heat map index. */
-    int hx = x / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    int hy = y / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-
-    /* Don't update if this rect was not previously sent as a lossy refresh. */
-    if (!surface->lossy_rect[hy][hx]) {
-        return;
-    }
-
-    /* Clear the lossy status for this heat map rectangle. */
-    surface->lossy_rect[hy][hx] = 0;
-
-    guac_common_rect lossy_rect;
-    guac_common_rect_init(&lossy_rect, x, y,
-            GUAC_COMMON_SURFACE_HEAT_MAP_CELL, GUAC_COMMON_SURFACE_HEAT_MAP_CELL);
-    int sx = 0;
-    int sy = 0;
-
-    /* Clip operation */
-    __guac_common_clip_rect(surface, &lossy_rect, &sx, &sy);
-    if (lossy_rect.width <= 0 || lossy_rect.height <= 0)
-        return;
-
-    /* Flush the rectangle if not combining. */
-    if (!__guac_common_should_combine(surface, &lossy_rect, 0))
-        guac_common_surface_flush_deferred(surface);
-
-    /* Always defer draws */
-    __guac_common_mark_dirty(surface, &lossy_rect);
-
-}
-
-/**
  * Actual method which flushes a bitmap described by the dirty rectangle
  * on the socket associated with the surface.
  *
@@ -508,107 +459,55 @@ static void __guac_common_surface_flush_lossy_bitmap(
  * @return
  *     The average refresh frequency.
  */
-static unsigned int __guac_common_surface_calculate_refresh_frequency(
-                                                   guac_common_surface* surface,
-                                                   int x, int y, int w, int h)
-{
+static unsigned int __guac_common_surface_calculate_framerate(
+        guac_common_surface* surface, guac_common_rect* rect) {
 
-    w = (x + w) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    h = (y + h) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    x /= GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    y /= GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
+    int x, y;
 
-    unsigned int sum_frequency = 0;
+    /* Calculate minimum X/Y coordinates intersecting given rect */
+    int min_x = rect->x / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
+    int min_y = rect->y / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
+
+    /* Calculate maximum X/Y coordinates intersecting given rect */
+    int max_x = min_x + (rect->width  - 1) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
+    int max_y = min_y + (rect->height - 1) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
+
+    unsigned int sum_framerate = 0;
     unsigned int count = 0;
-    /* Iterate over all the heat map cells for the area
-     * and calculate the average refresh frequency. */
-    for (int hy = y; hy <= h; hy++) {
-        for (int hx = x; hx <= w; hx++) {
 
-            const guac_common_surface_heat_rect* heat_rect = &surface->heat_map[hy][hx];
-            sum_frequency += heat_rect->frequency;
+    /* Iterate over all the heat map cells for the area
+     * and calculate the average framerate */
+    for (y = min_y; y < max_y; y++) {
+        for (x = min_x; x < max_x; x++) {
+
+            const guac_common_surface_heat_rect* heat_rect =
+                &surface->heat_map[y][x];
+
+            /* Calculate indicies for latest and oldest history entries */
+            int oldest_entry = heat_rect->oldest_entry;
+            int latest_entry = oldest_entry - 1;
+            if (latest_entry < 0)
+                latest_entry = GUAC_COMMON_SURFACE_HEAT_MAP_HISTORY_SIZE;
+
+            /* Calculate elapsed time covering entire history for this cell */
+            int elapsed_time = heat_rect->history[latest_entry]
+                             - heat_rect->history[oldest_entry];
+
+            /* Calculate and add framerate */
+            if (elapsed_time)
+                sum_framerate += GUAC_COMMON_SURFACE_HEAT_MAP_HISTORY_SIZE
+                    * 1000 / elapsed_time;
+
             count++;
 
         }
     }
 
-    /* Calculate the average. */
-    if (count) {
-        return sum_frequency / count;
-    }
-    else {
-        return 0;
-    }
-}
+    /* Calculate the average framerate over entire rect */
+    if (count)
+        return sum_framerate / count;
 
-/**
- * Update the heat map for the surface and re-calculate the refresh frequencies.
- *
- * Any areas of the surface which have not been updated within a given threshold
- * will be moved from the lossy to the normal refresh path.
- *
- * @param surface
- *     The surface on which the heat map will be refreshed.
- *
- * @param now
- *     The current time.
- */
-static void __guac_common_surface_update_heat_map(guac_common_surface* surface,
-                                                  guac_timestamp now)
-{
-
-    /* Only update the heat map at the given interval. */
-    if (now - surface->last_heat_map_update < GUAC_COMMON_SURFACE_HEAT_MAP_UPDATE_FREQ) {
-        return;
-    }
-    surface->last_heat_map_update = now;
-
-    const int width = surface->width / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    const int height = surface->height / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    int hx, hy;
-
-    for (hy = 0; hy < height; hy++) {
-        for (hx = 0; hx < width; hx++) {
-
-            guac_common_surface_heat_rect* heat_rect = &surface->heat_map[hy][hx];
-
-            const int last_update_index = (heat_rect->index + GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ - 1) % GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ;
-            const guac_timestamp last_update = heat_rect->updates[last_update_index];
-            const guac_timestamp time_since_last = now - last_update;
-
-            /* If the time between the last 2 refreshes is larger than the
-             * threshold, move this rectangle back to the non-lossy
-             * refresh pipe. */
-            if (time_since_last > GUAC_COMMON_SURFACE_NON_LOSSY_REFRESH_THRESHOLD) {
-
-                /* Send this lossy rectangle to the normal update queue. */
-                const int x = hx * GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-                const int y = hy * GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-                __guac_common_surface_flush_lossy_rect_to_dirty_rect(surface,
-                                                                     x, y);
-
-                /* Clear the frequency and refresh times for this square. */
-                heat_rect->frequency = 0;
-                memset(heat_rect->updates, 0, sizeof(heat_rect->updates));
-                continue ;
-            }
-
-            /* Only calculate frequency after N updates to this heat
-             * rectangle. */
-            if (heat_rect->updates[GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ - 1] == 0) {
-                continue;
-            }
-
-            /* Calculate refresh frequency. */
-            const guac_timestamp first_update = heat_rect->updates[heat_rect->index];
-            int elapsed_time = last_update - first_update;
-            if (elapsed_time)
-                heat_rect->frequency = GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ * 1000 / elapsed_time;
-            else
-                heat_rect->frequency = 0;
-
-        }
-    }
+    return 0;
 
 }
 
@@ -626,22 +525,33 @@ static void __guac_common_surface_update_heat_map(guac_common_surface* surface,
  *     The time stamp of this update.
  */
 static void __guac_common_surface_touch_rect(guac_common_surface* surface,
-        guac_common_rect* rect, guac_timestamp time)
-{
+        guac_common_rect* rect, guac_timestamp time) {
 
-    const int w = (rect->x + rect->width) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    const int h = (rect->y + rect->height) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    int hx = rect->x / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-    int hy = rect->y / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
+    int x, y;
 
-    for (; hy <= h; hy++) {
-        for (; hx <= w; hx++) {
+    /* Calculate minimum X/Y coordinates intersecting given rect */
+    int min_x = rect->x / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
+    int min_y = rect->y / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
 
-            guac_common_surface_heat_rect* heat_rect = &surface->heat_map[hy][hx];
-            heat_rect->updates[heat_rect->index] = time;
+    /* Calculate maximum X/Y coordinates intersecting given rect */
+    int max_x = min_x + (rect->width  - 1) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
+    int max_y = min_y + (rect->height - 1) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
 
-            /* Move the heat index to the next. */
-            heat_rect->index = (heat_rect->index + 1) % GUAC_COMMON_SURFACE_HEAT_UPDATE_ARRAY_SZ;
+    /* Update all heat map cells which intersect with rectangle */
+    for (y = min_y; y <= max_y; y++) {
+        for (x = min_x; x <= max_x; x++) {
+
+            /* Get heat map cell at current location */
+            guac_common_surface_heat_rect* heat_rect = &surface->heat_map[y][x];
+
+            /* Replace oldest entry with new timestamp */
+            heat_rect->history[heat_rect->oldest_entry] = time;
+
+            /* Update to next oldest entry */
+            heat_rect->oldest_entry++;
+            if (heat_rect->oldest_entry >=
+                    GUAC_COMMON_SURFACE_HEAT_MAP_HISTORY_SIZE)
+                heat_rect->oldest_entry = 0;
 
         }
     }
@@ -1116,14 +1026,12 @@ guac_common_surface* guac_common_surface_alloc(guac_client* client,
         guac_socket* socket, const guac_layer* layer, int w, int h) {
 
     /* Init surface */
-    guac_common_surface* surface = malloc(sizeof(guac_common_surface));
+    guac_common_surface* surface = calloc(1, sizeof(guac_common_surface));
     surface->client = client;
     surface->socket = socket;
     surface->layer = layer;
     surface->width = w;
     surface->height = h;
-    surface->dirty = 0;
-    surface->bitmap_queue_length = 0;
 
     /* Create corresponding Cairo surface */
     surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
@@ -1141,22 +1049,6 @@ guac_common_surface* guac_common_surface_alloc(guac_client* client,
     /* Defer creation of buffers */
     else
         surface->realized = 0;
-
-    /* Initialize heat map and adaptive coding bits. */
-    surface->lossy_dirty = 0;
-    surface->last_heat_map_update = 0;
-    for (int y = 0; y < GUAC_COMMON_SURFACE_HEAT_MAP_ROWS; y++) {
-        for (int x = 0; x < GUAC_COMMON_SURFACE_HEAT_MAP_COLS; x++) {
-
-            guac_common_surface_heat_rect *rect= & surface->heat_map[y][x];
-            memset(rect->updates, 0, sizeof(rect->updates));
-            rect->frequency = 0;
-            rect->index = 0;
-
-            surface->lossy_rect[y][x] = 0;
-
-        }
-    }
 
     return surface;
 }
@@ -1246,8 +1138,8 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     guac_timestamp time = guac_timestamp_current();
     __guac_common_surface_touch_rect(surface, &rect, time);
 
-    /* Calculate the update frequency for this rectangle. */
-    freq = __guac_common_surface_calculate_refresh_frequency(surface, x, y, w, h);
+    /* Calculate the average framerate for this rectangle. */
+    freq = __guac_common_surface_calculate_framerate(surface, &rect);
 
     /* If this rectangle is hot, mark lossy dirty rectangle. */
     if (freq >= GUAC_COMMON_SURFACE_LOSSY_REFRESH_FREQUENCY) {
@@ -1485,10 +1377,6 @@ static int __guac_common_surface_bitmap_rect_compare(const void* a, const void* 
 }
 
 void guac_common_surface_flush(guac_common_surface* surface) {
-
-    /* Update heat map. */
-    guac_timestamp time = guac_timestamp_current();
-    __guac_common_surface_update_heat_map(surface, time);
 
     /* Flush final dirty rectangle to queue. */
     __guac_common_surface_flush_to_queue(surface);
