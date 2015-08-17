@@ -198,22 +198,6 @@ typedef struct guac_common_surface {
      */
     guac_common_surface_heat_rect heat_map[GUAC_COMMON_SURFACE_HEAT_MAP_ROWS][GUAC_COMMON_SURFACE_HEAT_MAP_COLS];
 
-    /*
-     * Map of areas currently refreshed lossy.
-     */
-    int lossy_rect[GUAC_COMMON_SURFACE_HEAT_MAP_ROWS][GUAC_COMMON_SURFACE_HEAT_MAP_COLS];
-
-    /**
-     * Non-zero if this surface's lossy area is dirty and needs to be flushed,
-     * 0 otherwise.
-     */
-    int lossy_dirty;
-
-    /**
-     * The lossy area's dirty rectangle.
-     */
-    guac_common_rect lossy_dirty_rect;
-
 } guac_common_surface;
 
 /**

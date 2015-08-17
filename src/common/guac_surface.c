@@ -261,182 +261,7 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_co
 
 }
 
-/**
- * Actual method which flushes a bitmap described by the dirty rectangle
- * on the socket associated with the surface.
- *
- * The bitmap will be sent as a "jpeg" or "png" instruction based on the lossy
- * flag. Certain conditions may override the lossy flag and send a lossless
- * update.
- *
- * @param surface
- *     The surface whose dirty area will be flushed.
- *
- * @param dirty_rect
- *     The dirty rectangle.
- *
- * @param lossy
- *     Flag indicating whether this refresh should be lossy.
- */
-static void __guac_common_surface_flush_to_bitmap_impl(guac_common_surface* surface,
-        guac_common_rect* dirty_rect, int lossy) {
-
-    guac_socket* socket = surface->socket;
-    const guac_layer* layer = surface->layer;
-    int send_jpeg = 0;
-
-    /* Set the JPEG flag indicating whether this bitmap should be sent as JPEG.
-     * Only send as a JPEG if the dirty is larger than the minimum JPEG bitmap
-     * size to avoid the JPEG image compression tax. */
-    if (lossy &&
-        (dirty_rect->width * dirty_rect->height) > GUAC_SURFACE_JPEG_MIN_BITMAP_SIZE) {
-
-        /* Check the smoothness of the dirty rectangle. If smooth, do not send
-         * a JPEG as it has a higher overhead than standard PNG. */
-        if (!guac_common_surface_rect_is_smooth(surface, dirty_rect)) {
-
-            send_jpeg = 1;
-
-            /* Tweak the rectangle if it is to be sent as JPEG so the size
-             * matches the JPEG block size. */
-            guac_common_rect max;
-            guac_common_rect_init(&max, 0, 0, surface->width, surface->height);
-
-            guac_common_rect_expand_to_grid(GUAC_SURFACE_JPEG_BLOCK_SIZE,
-                                            dirty_rect, &max);
-        }
-
-    }
-
-    /* Get Cairo surface for specified rect.
-     * The buffer is created with 4 bytes per pixel because Cairo's 24 bit RGB
-     * really is 32 bit BGRx */
-    unsigned char* buffer = surface->buffer + dirty_rect->y * surface->stride + dirty_rect->x * 4;
-    cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
-                                                                dirty_rect->width,
-                                                                dirty_rect->height,
-                                                                surface->stride);
-
-    /* Send bitmap update for the dirty rectangle */
-    if (send_jpeg) {
-        guac_client_stream_jpeg(surface->client, socket, GUAC_COMP_OVER, layer,
-                                dirty_rect->x, dirty_rect->y, rect,
-                                GUAC_SURFACE_JPEG_IMAGE_QUALITY);
-    }
-    else {
-        guac_client_stream_png(surface->client, socket, GUAC_COMP_OVER, layer,
-                               dirty_rect->x, dirty_rect->y, rect);
-    }
-
-    cairo_surface_destroy(rect);
-
-}
-
-/**
- * Flushes the rectangle to the given surface's bitmap queue. There MUST be
- * space within the queue.
- *
- * @param surface The surface queue to flush to.
- * @param rect The rectangle to flush.
- */
-static void __guac_common_surface_flush_rect_to_queue(guac_common_surface* surface,
-        const guac_common_rect* rect) {
-    guac_common_surface_bitmap_rect* bitmap_rect;
-
-    /* Add new rect to queue */
-    bitmap_rect = &(surface->bitmap_queue[surface->bitmap_queue_length++]);
-    bitmap_rect->rect = *rect;
-    bitmap_rect->flushed = 0;
-}
-
-/**
- * Flushes the bitmap update currently described by a lossy rectangle within the
- * given surface.
- *
- * Scans through the regular bitmap update queue and excludes any rectangles
- * covered by the lossy rectangle.
- *
- *  @param surface
- *     The surface whose lossy area will be flushed.
- */
-static void __guac_common_surface_flush_lossy_bitmap(
-        guac_common_surface* surface) {
-
-    if (surface->lossy_dirty) {
-
-        guac_common_surface_bitmap_rect* current = surface->bitmap_queue;
-        int original_queue_length = surface->bitmap_queue_length;
-
-        /* Identify all bitmaps in queue which are
-         * covered by the lossy rectangle. */
-        for (int i=0; i < original_queue_length; i++) {
-
-            int intersects = guac_common_rect_intersects(&current->rect,
-                                                    &surface->lossy_dirty_rect);
-            /* Complete intersection. */
-            if (intersects == 2) {
-
-                /* Exclude this from the normal refresh as it is completely
-                 * covered by the lossy dirty rectangle. */
-                current->flushed = 1;
-
-            }
-
-            /* Partial intersection.
-             * The rectangle will be split if there is room on the queue. */
-            else if (intersects == 1 &&
-                     surface->bitmap_queue_length < GUAC_COMMON_SURFACE_QUEUE_SIZE-5) {
-
-                /* Clip and split rectangle into rectangles that are outside the
-                 * lossy rectangle which are added to the normal refresh queue.
-                 * The remaining rectangle which overlaps with the lossy
-                 * rectangle is marked flushed to not be refreshed in the normal
-                 * refresh cycle.
-                 */
-                guac_common_rect split_rect;
-                while (guac_common_rect_clip_and_split(&current->rect,
-                       &surface->lossy_dirty_rect, &split_rect)) {
-
-                    /* Add new rectangle to update queue */
-                    __guac_common_surface_flush_rect_to_queue(surface,
-                                                              &split_rect);
-
-                }
-
-                /* Exclude the remaining part of the dirty rectangle
-                 * which is completely covered by the lossy dirty rectangle. */
-                current->flushed = 1;
-
-            }
-            current++;
-
-        }
-
-        /* Flush the lossy bitmap */
-        __guac_common_surface_flush_to_bitmap_impl(surface,
-                                                 &surface->lossy_dirty_rect, 1);
-
-        /* Flag this area as lossy so it can be moved back to the
-         * dirty rect and refreshed normally when refreshed less frequently. */
-        int x = surface->lossy_dirty_rect.x;
-        int y = surface->lossy_dirty_rect.y;
-        int w = (x + surface->lossy_dirty_rect.width) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-        int h = (y + surface->lossy_dirty_rect.height) / GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-        x /= GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-        y /= GUAC_COMMON_SURFACE_HEAT_MAP_CELL;
-
-        for (int j = y; j <= h; j++) {
-            for (int i = x; i <= w; i++) {
-                surface->lossy_rect[j][i] = 1;
-            }
-        }
-
-        /* Clear the lossy dirty flag. */
-        surface->lossy_dirty = 0;
-    }
-
-}
-
+#if 0
 /**
  * Calculate the current average refresh frequency for a given area on the
  * surface.
@@ -510,6 +335,7 @@ static unsigned int __guac_common_surface_calculate_framerate(
     return 0;
 
 }
+#endif
 
 /**
  * Touch the heat map with this update rectangle, so that the update
@@ -559,35 +385,6 @@ static void __guac_common_surface_touch_rect(guac_common_surface* surface,
 }
 
 /**
- * Expands the lossy dirty rectangle of the given surface to contain the
- * rectangle described by the given coordinates.
- *
- * @param surface
- *     The surface to mark as dirty.
- *
- * @param rect
- *     The rectangle of the update which is dirtying the surface.
- */
-static void __guac_common_mark_lossy_dirty(guac_common_surface* surface,
-        const guac_common_rect* rect) {
-
-    /* Ignore empty rects */
-    if (rect->width <= 0 || rect->height <= 0)
-        return;
-
-    /* If already dirty, update existing rect */
-    if (surface->lossy_dirty) {
-        guac_common_rect_extend(&surface->lossy_dirty_rect, rect);
-    }
-    /* Otherwise init lossy dirty rect */
-    else {
-        surface->lossy_dirty_rect = *rect;
-        surface->lossy_dirty = 1;
-    }
-
-}
-
-/**
  * Flushes the bitmap update currently described by the dirty rectangle within the
  * given surface to that surface's bitmap queue. There MUST be space within the
  * queue.
@@ -596,15 +393,20 @@ static void __guac_common_mark_lossy_dirty(guac_common_surface* surface,
  */
 static void __guac_common_surface_flush_to_queue(guac_common_surface* surface) {
 
+    guac_common_surface_bitmap_rect* rect;
+
     /* Do not flush if not dirty */
     if (!surface->dirty)
         return;
 
     /* Add new rect to queue */
-    __guac_common_surface_flush_rect_to_queue(surface, &surface->dirty_rect);
+    rect = &(surface->bitmap_queue[surface->bitmap_queue_length++]);
+    rect->rect = surface->dirty_rect;
+    rect->flushed = 0;
 
     /* Surface now flushed */
     surface->dirty = 0;
+
 }
 
 void guac_common_surface_flush_deferred(guac_common_surface* surface) {
@@ -1132,30 +934,16 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     if (rect.width <= 0 || rect.height <= 0)
         return;
 
-    unsigned int freq = 0;
-
     /* Update the heat map for the update rectangle. */
     guac_timestamp time = guac_timestamp_current();
     __guac_common_surface_touch_rect(surface, &rect, time);
 
-    /* Calculate the average framerate for this rectangle. */
-    freq = __guac_common_surface_calculate_framerate(surface, &rect);
+    /* Flush if not combining */
+    if (!__guac_common_should_combine(surface, &rect, 0))
+        guac_common_surface_flush_deferred(surface);
 
-    /* If this rectangle is hot, mark lossy dirty rectangle. */
-    if (freq >= GUAC_COMMON_SURFACE_LOSSY_REFRESH_FREQUENCY) {
-        __guac_common_mark_lossy_dirty(surface, &rect);
-    }
-    /* Standard refresh path */
-    else {
-
-        /* Flush if not combining */
-        if (!__guac_common_should_combine(surface, &rect, 0))
-            guac_common_surface_flush_deferred(surface);
-
-        /* Always defer draws */
-        __guac_common_mark_dirty(surface, &rect);
-
-    }
+    /* Always defer draws */
+    __guac_common_mark_dirty(surface, &rect);
 
 }
 
@@ -1325,25 +1113,32 @@ void guac_common_surface_reset_clip(guac_common_surface* surface) {
 }
 
 /**
- * Flushes the bitmap update currently described by the dirty rectangle within the
+ * Flushes the bitmap update currently described by the dirty rectangle within
+ * the given surface directly via an "img" instruction as PNG data. The
+ * resulting instructions will be sent over the socket associated with the
  * given surface.
  *
- * @param surface The surface to flush.
+ * @param surface
+ *     The surface to flush.
  */
-static void __guac_common_surface_flush_to_bitmap(guac_common_surface* surface) {
+static void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
 
     if (surface->dirty) {
 
-        guac_common_rect dirty_rect;
-        guac_common_rect_init(&dirty_rect,
-                              surface->dirty_rect.x,
-                              surface->dirty_rect.y,
-                              surface->dirty_rect.width,
-                              surface->dirty_rect.height);
+        guac_socket* socket = surface->socket;
+        const guac_layer* layer = surface->layer;
 
-        /* Flush bitmap */
-        __guac_common_surface_flush_to_bitmap_impl(surface, &dirty_rect, 0);
+        /* Get Cairo surface for specified rect */
+        unsigned char* buffer = surface->buffer + surface->dirty_rect.y * surface->stride + surface->dirty_rect.x * 4;
+        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
+                                                                    surface->dirty_rect.width,
+                                                                    surface->dirty_rect.height,
+                                                                    surface->stride);
 
+        /* Send PNG for rect */
+        guac_client_stream_png(surface->client, socket, GUAC_COMP_OVER, layer,
+                surface->dirty_rect.x, surface->dirty_rect.y, rect);
+        cairo_surface_destroy(rect);
         surface->realized = 1;
 
         /* Surface is no longer dirty */
@@ -1380,9 +1175,6 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
     /* Flush final dirty rectangle to queue. */
     __guac_common_surface_flush_to_queue(surface);
-
-    /* Flush the lossy bitmap to client. */
-    __guac_common_surface_flush_lossy_bitmap(surface);
 
     guac_common_surface_bitmap_rect* current = surface->bitmap_queue;
     int i, j;
@@ -1435,7 +1227,7 @@ void guac_common_surface_flush(guac_common_surface* surface) {
             /* Flush as bitmap otherwise */
             else {
                 if (surface->dirty) flushed++;
-                __guac_common_surface_flush_to_bitmap(surface);
+                __guac_common_surface_flush_to_png(surface);
             }
 
         }
