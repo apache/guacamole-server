@@ -188,11 +188,6 @@ typedef struct guac_common_surface {
     guac_common_surface_bitmap_rect bitmap_queue[GUAC_COMMON_SURFACE_QUEUE_SIZE];
 
     /**
-     * Last time the heat map was refreshed.
-     */
-    guac_timestamp last_heat_map_update;
-
-    /**
      * A heat map keeping track of the refresh frequency of
      * the areas of the screen.
      */
