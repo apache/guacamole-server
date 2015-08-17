@@ -218,7 +218,7 @@ static int __guac_common_should_combine(guac_common_surface* surface, const guac
         }
 
     }
-
+    
     /* Otherwise, do not combine */
     return 0;
 

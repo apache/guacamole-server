@@ -25,28 +25,28 @@ ACLOCAL_AMFLAGS = -I m4
 
 noinst_LTLIBRARIES = libguac_common.la
 
-noinst_HEADERS =            \
-    guac_io.h               \
-    guac_clipboard.h        \
-    guac_dot_cursor.h       \
-    guac_iconv.h            \
-    guac_json.h             \
-    guac_list.h             \
-    guac_pointer_cursor.h   \
-    guac_rect.h             \
-    guac_string.h           \
+noinst_HEADERS =          \
+    guac_io.h             \
+    guac_clipboard.h      \
+    guac_dot_cursor.h     \
+    guac_iconv.h          \
+    guac_json.h           \
+    guac_list.h           \
+    guac_pointer_cursor.h \
+    guac_rect.h           \
+    guac_string.h         \
     guac_surface.h
 
-libguac_common_la_SOURCES =   \
-    guac_io.c                 \
-    guac_clipboard.c          \
-    guac_dot_cursor.c         \
-    guac_iconv.c              \
-    guac_json.c               \
-    guac_list.c               \
-    guac_pointer_cursor.c     \
-    guac_rect.c               \
-    guac_string.c             \
+libguac_common_la_SOURCES = \
+    guac_io.c               \
+    guac_clipboard.c        \
+    guac_dot_cursor.c       \
+    guac_iconv.c            \
+    guac_json.c             \
+    guac_list.c             \
+    guac_pointer_cursor.c   \
+    guac_rect.c             \
+    guac_string.c           \
     guac_surface.c
 
 libguac_common_la_CFLAGS =  \
