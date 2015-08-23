@@ -92,7 +92,7 @@ int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed)
        )) {
 
         /* Send IAC BRK */
-        guac_client_log(client, GUAC_LOG_DEBUG, "STUB");
+        telnet_iac(client_data->telnet, TELNET_BREAK);
 
         return 0;
     }
