@@ -84,6 +84,19 @@ int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed)
 
     }
 
+    /* Intercept and handle Pause / Break / Ctrl+0 as "IAC BRK" */
+    if (pressed && (
+                keysym == 0xFF13                  /* Pause */
+             || keysym == 0xFF6B                  /* Break */
+             || (term->mod_ctrl && keysym == '0') /* Ctrl + 0 */
+       )) {
+
+        /* Send IAC BRK */
+        telnet_iac(client_data->telnet, TELNET_BREAK);
+
+        return 0;
+    }
+
     /* Send key */
     guac_terminal_send_key(term, keysym, pressed);
 
