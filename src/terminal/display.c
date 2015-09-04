@@ -276,8 +276,8 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     /* Create default surface */
     display->display_layer = guac_client_alloc_layer(client);
     display->select_layer = guac_client_alloc_layer(client);
-    display->display_surface = guac_common_surface_alloc(client->socket,
-            display->display_layer, 0, 0);
+    display->display_surface = guac_common_surface_alloc(client,
+            client->socket, display->display_layer, 0, 0);
 
     /* Select layer is a child of the display layer */
     guac_protocol_send_move(client->socket, display->select_layer,

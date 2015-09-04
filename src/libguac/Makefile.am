@@ -64,6 +64,8 @@ libguacinc_HEADERS =                  \
 
 noinst_HEADERS =      \
     client-handlers.h \
+    encode-jpeg.h     \
+    encode-png.h      \
     palette.h         \
     wav_encoder.h
 
@@ -71,6 +73,8 @@ libguac_la_SOURCES =  \
     audio.c           \
     client.c          \
     client-handlers.c \
+    encode-jpeg.c     \
+    encode-png.c      \
     error.c           \
     hash.c            \
     instruction.c     \

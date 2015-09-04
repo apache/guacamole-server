@@ -25,6 +25,7 @@
 #include "guac_surface.h"
 
 #include <cairo/cairo.h>
+#include <guacamole/client.h>
 #include <guacamole/layer.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -660,12 +661,14 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int* sx, in
 
 }
 
-guac_common_surface* guac_common_surface_alloc(guac_socket* socket, const guac_layer* layer, int w, int h) {
+guac_common_surface* guac_common_surface_alloc(guac_client* client,
+        guac_socket* socket, const guac_layer* layer, int w, int h) {
 
     /* Init surface */
     guac_common_surface* surface = malloc(sizeof(guac_common_surface));
-    surface->layer = layer;
+    surface->client = client;
     surface->socket = socket;
+    surface->layer = layer;
     surface->width = w;
     surface->height = h;
     surface->dirty = 0;
@@ -966,7 +969,8 @@ static void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
                                                                     surface->stride);
 
         /* Send PNG for rect */
-        guac_protocol_send_png(socket, GUAC_COMP_OVER, layer, surface->dirty_rect.x, surface->dirty_rect.y, rect);
+        guac_client_stream_png(surface->client, socket, GUAC_COMP_OVER,
+                layer, surface->dirty_rect.x, surface->dirty_rect.y, rect);
         cairo_surface_destroy(rect);
         surface->realized = 1;
 

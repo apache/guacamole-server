@@ -77,7 +77,8 @@ void guac_common_set_pointer_cursor(guac_client* client) {
             guac_common_pointer_cursor_height,
             guac_common_pointer_cursor_stride);
 
-    guac_protocol_send_png(socket, GUAC_COMP_SRC, cursor, 0, 0, graphic);
+    guac_client_stream_png(client, socket, GUAC_COMP_SRC, cursor,
+            0, 0, graphic);
     cairo_surface_destroy(graphic);
 
     /* Set cursor */

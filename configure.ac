@@ -110,13 +110,6 @@ AC_CHECK_DECL([cairo_format_stride_for_width],
                [Whether cairo_format_stride_for_width() is defined])],,
 	[#include <cairo/cairo.h>])
 
-AC_CHECK_DECL([jpeg_mem_dest],
-    [AC_DEFINE([HAVE_JPEG_MEM_DEST],,
-               [Whether jpeg_mem_dest() is defined])],,
-    [#include <stddef.h>
-     #include <stdio.h>
-     #include <jpeglib.h>])
-
 # Typedefs
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T

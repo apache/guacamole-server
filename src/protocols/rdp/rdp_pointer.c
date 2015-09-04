@@ -60,7 +60,8 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
         pointer->width, pointer->height, 4*pointer->width);
 
     /* Send surface to buffer */
-    guac_protocol_send_png(socket, GUAC_COMP_SRC, buffer, 0, 0, surface);
+    guac_client_stream_png(client, socket, GUAC_COMP_SRC, buffer,
+            0, 0, surface);
 
     /* Free surface */
     cairo_surface_destroy(surface);
