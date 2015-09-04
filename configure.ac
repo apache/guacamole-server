@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 Glyptodon LLC
+# Copyright (C) 2015 Glyptodon LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #
 
 AC_PREREQ([2.61])
-AC_INIT([guacamole-server], [0.9.7])
+AC_INIT([guacamole-server], [0.9.8])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
