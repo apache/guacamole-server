@@ -45,7 +45,7 @@ static int guac_pa_is_silence(const void* buffer, size_t length) {
 
     int i;
 
-    unsigned char* current = (unsigned char*) buffer;
+    const unsigned char* current = (const unsigned char*) buffer;
 
     /* For each byte in buffer */
     for (i = 0; i < length; i++) {
