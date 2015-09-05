@@ -27,6 +27,7 @@
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/socket.h>
 #include <pulse/pulseaudio.h>
 
 /**
@@ -86,6 +87,7 @@ static void __stream_read_callback(pa_stream* stream, size_t length,
                     GUAC_VNC_AUDIO_RATE,
                     GUAC_VNC_AUDIO_CHANNELS,
                     GUAC_VNC_AUDIO_BPS);
+            guac_socket_flush(client->socket);
         }
 
     }
