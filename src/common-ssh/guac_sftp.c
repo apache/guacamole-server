@@ -35,6 +35,78 @@
 #include <string.h>
 
 /**
+ * Translates the last error message received by the SFTP layer of an SSH
+ * session into a Guacamole protocol status code.
+ *
+ * @param filesystem
+ *     The Guacamole protocol object defining the filesystem associated with
+ *     the SFTP and SSH sessions.
+ *
+ * @return
+ *     The Guacamole protocol status code corresponding to the last reported
+ *     error of the SFTP layer, if nay, or GUAC_PROTOCOL_STATUS_SUCCESS if no
+ *     error has occurred.
+ */
+static guac_protocol_status guac_sftp_get_status(guac_object* filesystem) {
+
+    guac_common_ssh_sftp_data* sftp_data =
+        (guac_common_ssh_sftp_data*) filesystem->data;
+
+    /* Get libssh2 objects */
+    LIBSSH2_SFTP*    sftp    = sftp_data->sftp_session;
+    LIBSSH2_SESSION* session = sftp_data->ssh_session->session;
+
+    /* Return success code if no error occurred */
+    if (libssh2_session_last_errno(session) != LIBSSH2_ERROR_SFTP_PROTOCOL)
+        return GUAC_PROTOCOL_STATUS_SUCCESS;
+
+    /* Translate SFTP error codes defined by
+     * https://tools.ietf.org/html/draft-ietf-secsh-filexfer-02 (the most
+     * commonly-implemented standard) */
+    switch (libssh2_sftp_last_error(sftp)) {
+
+        /* SSH_FX_OK (not an error) */
+        case 0:
+            return GUAC_PROTOCOL_STATUS_SUCCESS;
+
+        /* SSH_FX_EOF (technically not an error) */
+        case 1:
+            return GUAC_PROTOCOL_STATUS_SUCCESS;
+
+        /* SSH_FX_NO_SUCH_FILE */
+        case 2:
+            return GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND;
+
+        /* SSH_FX_PERMISSION_DENIED */
+        case 3:
+            return GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN;
+
+        /* SSH_FX_FAILURE */
+        case 4:
+            return GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR;
+
+        /* SSH_FX_BAD_MESSAGE */
+        case 5:
+            return GUAC_PROTOCOL_STATUS_SERVER_ERROR;
+
+        /* SSH_FX_NO_CONNECTION / SSH_FX_CONNECTION_LOST */
+        case 6:
+        case 7:
+            return GUAC_PROTOCOL_STATUS_UPSTREAM_TIMEOUT;
+
+        /* SSH_FX_OP_UNSUPPORTED */
+        case 8:
+            return GUAC_PROTOCOL_STATUS_UNSUPPORTED;
+
+        /* Return generic error if cause unknown */
+        default:
+            return GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR;
+
+    }
+
+}
+
+/**
  * Concatenates the given filename with the given path, separating the two
  * with a single forward slash. The full result must be no more than
  * GUAC_COMMON_SSH_SFTP_MAX_PATH bytes long, counting null terminator.
@@ -249,7 +321,7 @@ int guac_common_ssh_sftp_handle_file_stream(guac_object* filesystem,
         guac_client_log(client, GUAC_LOG_INFO,
                 "Unable to open file \"%s\"", fullpath);
         guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed",
-                GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND);
+                guac_sftp_get_status(filesystem));
         guac_socket_flush(client->socket);
     }
 
@@ -642,7 +714,7 @@ static int guac_common_ssh_sftp_put_handler(guac_client* client,
         guac_client_log(client, GUAC_LOG_INFO,
                 "Unable to open file \"%s\"", name);
         guac_protocol_send_ack(client->socket, stream, "SFTP: Open failed",
-                GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND);
+                guac_sftp_get_status(object));
     }
 
     /* Set handlers for file stream */
