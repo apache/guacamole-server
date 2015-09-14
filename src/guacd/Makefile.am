@@ -77,7 +77,7 @@ initdir = @init_dir@
 init_SCRIPTS = init.d/guacd
 
 init.d/guacd: init.d/guacd.in
-    sed -e 's,[@]sbindir[@],$(sbindir),g' < init.d/guacd.in > init.d/guacd
-    chmod +x init.d/guacd
+	sed -e 's,[@]sbindir[@],$(sbindir),g' < init.d/guacd.in > init.d/guacd
+	chmod +x init.d/guacd
 endif
 

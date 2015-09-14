@@ -27,7 +27,40 @@
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/socket.h>
 #include <pulse/pulseaudio.h>
+
+/**
+ * Returns whether the given buffer contains only silence (only null bytes).
+ *
+ * @param buffer
+ *     The audio buffer to check.
+ *
+ * @param length
+ *     The length of the buffer to check.
+ *
+ * @return
+ *     Non-zero if the audio buffer contains silence, zero otherwise.
+ */
+static int guac_pa_is_silence(const void* buffer, size_t length) {
+
+    int i;
+
+    const unsigned char* current = (const unsigned char*) buffer;
+
+    /* For each byte in buffer */
+    for (i = 0; i < length; i++) {
+
+        /* If current value non-zero, then not silence */
+        if (*(current++))
+            return 0;
+
+    }
+
+    /* Otherwise, the buffer contains 100% silence */
+    return 1;
+
+}
 
 static void __stream_read_callback(pa_stream* stream, size_t length,
         void* data) {
@@ -41,16 +74,22 @@ static void __stream_read_callback(pa_stream* stream, size_t length,
     /* Read data */
     pa_stream_peek(stream, &buffer, &length);
 
-    /* Write data */
-    guac_audio_stream_write_pcm(audio, buffer, length);
+    /* Avoid sending silence unless data is waiting to be flushed */
+    if (audio->pcm_bytes_written != 0 || !guac_pa_is_silence(buffer, length)) {
 
-    /* Flush occasionally */
-    if (audio->pcm_bytes_written > GUAC_VNC_PCM_WRITE_RATE) {
-        guac_audio_stream_end(audio);
-        guac_audio_stream_begin(client_data->audio,
-                GUAC_VNC_AUDIO_RATE,
-                GUAC_VNC_AUDIO_CHANNELS,
-                GUAC_VNC_AUDIO_BPS);
+        /* Write data */
+        guac_audio_stream_write_pcm(audio, buffer, length);
+
+        /* Flush occasionally */
+        if (audio->pcm_bytes_written > GUAC_VNC_PCM_WRITE_RATE) {
+            guac_audio_stream_end(audio);
+            guac_audio_stream_begin(client_data->audio,
+                    GUAC_VNC_AUDIO_RATE,
+                    GUAC_VNC_AUDIO_CHANNELS,
+                    GUAC_VNC_AUDIO_BPS);
+            guac_socket_flush(client->socket);
+        }
+
     }
 
     /* Advance buffer */
