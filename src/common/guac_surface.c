@@ -343,25 +343,27 @@ static int __guac_common_surface_png_optimality(guac_common_surface* surface,
     /* Get buffer from surface */
     unsigned char* buffer = surface->buffer + rect->y * stride + rect->x * 4;
 
+    /* Image must be at least 1x1 */
+    if (width < 1 || height < 1)
+        return 0;
+
     /* For each row */
     for (y = 0; y < height; y++) {
 
-        uint32_t last_pixel;
         uint32_t* row = (uint32_t*) buffer;
+        uint32_t last_pixel = *(row++) | 0xFF000000;
 
         /* For each pixel in current row */
-        for (x = 0; x < width; x++) {
+        for (x = 1; x < width; x++) {
 
             /* Get next pixel */
             uint32_t current_pixel = *(row++) | 0xFF000000;
 
             /* Update same/different counts according to pixel value */
-            if (x != 0) {
-                if (current_pixel == last_pixel)
-                    num_same++;
-                else
-                    num_different++;
-            }
+            if (current_pixel == last_pixel)
+                num_same++;
+            else
+                num_different++;
 
             last_pixel = current_pixel;
 
