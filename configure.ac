@@ -955,7 +955,7 @@ then
         AC_MSG_WARN([
   --------------------------------------------
    Unable to find libwebp.
-   guacd will not support WebP image encoding.
+   Images will not be encoded using WebP.
   --------------------------------------------])
     else
         AC_DEFINE([ENABLE_WEBP],, [Whether WebP support is enabled])
