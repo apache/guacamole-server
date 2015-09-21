@@ -931,6 +931,40 @@ AM_CONDITIONAL([ENABLE_TELNET], [test "x${have_libtelnet}"  = "xyes" \
 
 AC_SUBST(TELNET_LIBS)
 
+#
+# libwebp
+#
+
+have_webp=disabled
+WEBP_LIBS=
+AC_ARG_WITH([webp],
+            [AS_HELP_STRING([--with-webp],
+                            [support WebP image encoding @<:@default=check@:>@])],
+            [],
+            [with_webp=check])
+
+if test "x$with_webp" != "xno"
+then
+    have_webp=yes
+
+    AC_CHECK_HEADER(webp/encode.h,, [have_webp=no])
+    AC_CHECK_LIB([webp], [WebPEncode], [WEBP_LIBS="$WEBP_LIBS -lwebp"], [have_webp=no])
+
+    if test "x${have_webp}" = "xno"
+    then
+        AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libwebp.
+   guacd will not support WebP image encoding.
+  --------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_WEBP],, [Whether WebP support is enabled])
+    fi
+fi
+
+AM_CONDITIONAL([ENABLE_WEBP], [test "x${have_webp}" = "xyes"])
+AC_SUBST(WEBP_LIBS)
+
 
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
@@ -967,6 +1001,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
+     libwebp ............. ${have_webp}
 
    Protocol support:
 
