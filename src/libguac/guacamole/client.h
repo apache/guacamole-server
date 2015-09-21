@@ -74,6 +74,13 @@ struct guac_client_info {
     const char** video_mimetypes;
 
     /**
+     * NULL-terminated array of client-supported image mimetypes. Though all
+     * supported image mimetypes will be listed here, it can be safely assumed
+     * that all clients will support at least "image/png" and "image/jpeg".
+     */ 
+    const char** image_mimetypes;
+
+    /**
      * The DPI of the physical remote display if configured for the optimal
      * width/height combination described here. This need not be honored by
      * a client plugin implementation, but if the underlying protocol of the

@@ -91,6 +91,7 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     guac_instruction* size;
     guac_instruction* audio;
     guac_instruction* video;
+    guac_instruction* image;
     guac_instruction* connect;
     int init_result;
 
@@ -205,6 +206,20 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
         return;
     }
 
+    /* Get supported image formats */
+    image = guac_instruction_expect(
+            socket, GUACD_USEC_TIMEOUT, "image");
+    if (image == NULL) {
+
+        /* Log error */
+        guacd_log_handshake_failure();
+        guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"image\"");
+
+        /* Free resources */
+        guac_socket_free(socket);
+        return;
+    }
+
     /* Get args from connect instruction */
     connect = guac_instruction_expect(
             socket, GUACD_USEC_TIMEOUT, "connect");
@@ -257,6 +272,12 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
             sizeof(char*) * video->argc);
     client->info.video_mimetypes[video->argc] = NULL;
 
+    /* Store image mimetypes */
+    client->info.image_mimetypes = malloc(sizeof(char*) * (image->argc+1));
+    memcpy(client->info.image_mimetypes, image->argv,
+            sizeof(char*) * image->argc);
+    client->info.image_mimetypes[image->argc] = NULL;
+
     /* Store client */
     if (guacd_client_map_add(map, client))
         guacd_log(GUAC_LOG_ERROR, "Unable to add client. Internal client storage has failed");
@@ -300,10 +321,12 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
     /* Free mimetype lists */
     free(client->info.audio_mimetypes);
     free(client->info.video_mimetypes);
+    free(client->info.image_mimetypes);
 
     /* Free remaining instructions */
     guac_instruction_free(audio);
     guac_instruction_free(video);
+    guac_instruction_free(image);
     guac_instruction_free(size);
 
     /* Clean up */
