@@ -36,6 +36,10 @@
 #include "stream.h"
 #include "timestamp.h"
 
+#ifdef ENABLE_WEBP
+#include "encode-webp.h"
+#endif
+
 #ifdef HAVE_OSSP_UUID_H
 #include <ossp/uuid.h>
 #else
@@ -416,6 +420,57 @@ void guac_client_stream_jpeg(guac_client* client, guac_socket* socket,
 
     /* Free allocated stream */
     guac_client_free_stream(client, stream);
+
+}
+
+void guac_client_stream_webp(guac_client* client, guac_socket* socket,
+        guac_composite_mode mode, const guac_layer* layer, int x, int y,
+        cairo_surface_t* surface, int quality) {
+
+#ifdef ENABLE_WEBP
+    /* Allocate new stream for image */
+    guac_stream* stream = guac_client_alloc_stream(client);
+
+    /* Declare stream as containing image data */
+    guac_protocol_send_img(socket, stream, mode, layer, "image/webp", x, y);
+
+    /* Write WebP data */
+    guac_webp_write(socket, stream, surface, quality);
+
+    /* Terminate stream */
+    guac_protocol_send_end(socket, stream);
+
+    /* Free allocated stream */
+    guac_client_free_stream(client, stream);
+#else
+    /* Do nothing if WebP support is not built in */
+#endif
+
+}
+
+int guac_client_supports_webp(guac_client* client) {
+
+#ifdef ENABLE_WEBP
+    const char** mimetype = client->info.image_mimetypes;
+
+    /* Search for WebP mimetype in list of supported image mimetypes */
+    while (*mimetype != NULL) {
+
+        /* If WebP mimetype found, no need to search further */
+        if (strcmp(*mimetype, "image/webp") == 0)
+            return 1;
+
+        /* Next mimetype */
+        mimetype++;
+
+    }
+
+    /* Client does not support WebP */
+    return 0;
+#else
+    /* Support for WebP is completely absent */
+    return 0;
+#endif
 
 }
 

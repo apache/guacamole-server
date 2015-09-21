@@ -95,6 +95,13 @@ libguac_la_SOURCES += ogg_encoder.c
 noinst_HEADERS += ogg_encoder.h
 endif
 
+# Compile WebP support if available
+if ENABLE_WEBP
+libguac_la_SOURCES += encode-webp.c
+noinst_HEADERS += encode-webp.h
+endif
+
+
 libguac_la_CFLAGS = \
     -Werror -Wall -pedantic -Iguacamole
 
@@ -105,7 +112,8 @@ libguac_la_LDFLAGS =     \
     @PNG_LIBS@           \
     @PTHREAD_LIBS@       \
     @UUID_LIBS@          \
-    @VORBIS_LIBS@
+    @VORBIS_LIBS@        \
+    @WEBP_LIBS@
 
 libguac_la_LIBADD = \
     @LIBADD_DLOPEN@ 
