@@ -31,11 +31,15 @@
 #include <cairo/cairo.h>
 #include <webp/encode.h>
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * Structure which describes the current state of the WebP image writer.
+ */
 typedef struct guac_webp_stream_writer {
 
     /**
@@ -118,15 +122,14 @@ static void guac_webp_stream_writer_init(guac_webp_stream_writer* writer,
  *     picture->custom_ptr which contains the Guacamole stream writer structure.
  *
  * @return
- *     True if writing was successful, false on failure.
+ *     Non-zero if writing was successful, zero on failure.
  */
 static int guac_webp_stream_write(const uint8_t* data, size_t data_size,
         const WebPPicture* picture) {
 
-    guac_webp_stream_writer* const writer = (guac_webp_stream_writer*)picture->custom_ptr;
-    if (writer == NULL) {
-        return 0;
-    }
+    guac_webp_stream_writer* const writer =
+        (guac_webp_stream_writer*) picture->custom_ptr;
+    assert(writer != NULL);
 
     const unsigned char* current = data;
     int length = data_size;
@@ -165,10 +168,17 @@ static int guac_webp_stream_write(const uint8_t* data, size_t data_size,
 int guac_webp_write(guac_socket* socket, guac_stream* stream,
         cairo_surface_t* surface, int quality) {
 
+    guac_webp_stream_writer writer;
+    WebPPicture picture;
+    uint32_t* argb_output;
+
+    int x, y;
+
     int width = cairo_image_surface_get_width(surface);
     int height = cairo_image_surface_get_height(surface);
     int stride = cairo_image_surface_get_stride(surface);
     cairo_format_t format = cairo_image_surface_get_format(surface);
+    unsigned char* data = cairo_image_surface_get_data(surface);
 
     if (format != CAIRO_FORMAT_RGB24 && format != CAIRO_FORMAT_ARGB32) {
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
@@ -179,54 +189,61 @@ int guac_webp_write(guac_socket* socket, guac_stream* stream,
     /* Flush pending operations to surface */
     cairo_surface_flush(surface);
 
-    unsigned char* data = cairo_image_surface_get_data(surface);
-
     /* Configure WebP compression bits */
     WebPConfig config;
-    if (!WebPConfigPreset(&config, WEBP_HINT_DEFAULT, quality)) return -1;  // version error
-    /* Add additional tuning: */
+    if (!WebPConfigPreset(&config, WEBP_HINT_DEFAULT, quality))
+        return -1;
+
+    /* Add additional tuning */
     config.lossless = 0;
     config.quality = quality;
     config.thread_level = 1; /* Multi threaded */
     config.method = 2; /* Compression method (0=fast/larger, 6=slow/smaller) */
 
-    WebPValidateConfig(&config);  /* verify parameter ranges */
+    /* Validate configuration */
+    WebPValidateConfig(&config);
 
-    /* Set up WebP picture and writer */
-    guac_webp_stream_writer writer;
-    WebPPicture picture;
+    /* Set up WebP picture */
     WebPPictureInit(&picture);
     picture.use_argb = 1;
     picture.width = width;
     picture.height = height;
+
+    /* Allocate and init writer */
     WebPPictureAlloc(&picture);
     picture.writer = guac_webp_stream_write;
     picture.custom_ptr = &writer;
     guac_webp_stream_writer_init(&writer, socket, stream);
 
     /* Copy image data into WebP picture */
-    for (int y = 0; y < height; ++y) {
+    argb_output = picture.argb;
+    for (y = 0; y < height; y++) {
 
-        unsigned char *inptr = data + (stride * y);
-        unsigned char *outptr = (unsigned char*)&picture.argb[y * picture.argb_stride];
+        /* Get pixels at start of each row */
+        uint32_t* src = (uint32_t*) data;
+        uint32_t* dst = argb_output;
 
-        for (int x = 0; x < width; ++x) {
+        /* For each pixel in row */
+        for (x = 0; x < width; x++) {
 
-            outptr[0] = *inptr++; // B
-            outptr[1] = *inptr++; // G
-            outptr[2] = *inptr++; // R
+            /* Pull pixel data, removing alpha channel if necessary */
+            uint32_t src_pixel = *src;
+            if (format != CAIRO_FORMAT_ARGB32)
+                src_pixel |= 0xFF000000;
 
-            if (format != CAIRO_FORMAT_ARGB32) {
-                outptr[3] = 0xFF;
-            }
-            else {
-                outptr[3] = *inptr; // A
-            }
+            /* Store converted pixel data */
+            *dst = src_pixel;
 
-            inptr++;
-            outptr += 4;
+            /* Next pixel */
+            src++;
+            dst++;
 
         }
+
+        /* Next row */
+        data += stride;
+        argb_output += picture.argb_stride;
+
     }
 
     /* Encode image */
@@ -241,3 +258,4 @@ int guac_webp_write(guac_socket* socket, guac_stream* stream,
     return 0;
 
 }
+
