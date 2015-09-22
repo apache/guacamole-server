@@ -425,7 +425,7 @@ void guac_client_stream_jpeg(guac_client* client, guac_socket* socket,
 
 void guac_client_stream_webp(guac_client* client, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
-        cairo_surface_t* surface, int quality) {
+        cairo_surface_t* surface, int quality, int lossless) {
 
 #ifdef ENABLE_WEBP
     /* Allocate new stream for image */
@@ -435,7 +435,7 @@ void guac_client_stream_webp(guac_client* client, guac_socket* socket,
     guac_protocol_send_img(socket, stream, mode, layer, "image/webp", x, y);
 
     /* Write WebP data */
-    guac_webp_write(socket, stream, surface, quality);
+    guac_webp_write(socket, stream, surface, quality, lossless);
 
     /* Terminate stream */
     guac_protocol_send_end(socket, stream);

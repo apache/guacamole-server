@@ -1340,7 +1340,7 @@ static void __guac_common_surface_flush_to_webp(guac_common_surface* surface) {
         /* Send WebP for rect */
         guac_client_stream_webp(surface->client, socket, GUAC_COMP_OVER, layer,
                 surface->dirty_rect.x, surface->dirty_rect.y, rect,
-                GUAC_SURFACE_WEBP_IMAGE_QUALITY);
+                GUAC_SURFACE_WEBP_IMAGE_QUALITY, 0);
         cairo_surface_destroy(rect);
         surface->realized = 1;
 

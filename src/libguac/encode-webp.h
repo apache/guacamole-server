@@ -44,12 +44,18 @@
  *     The Cairo surface to write to the given stream and socket as PNG blobs.
  *
  * @param quality
- *     The WebP image quality to use.
+ *     The WebP image quality to use. For lossy images, larger values indicate
+ *     improving quality at the expense of larger file size. For lossless
+ *     images, this dictates the quality of compression, with larger values
+ *     producing smaller files at the expense of speed.
+ *
+ * @param lossless
+ *     Zero for a lossy image, non-zero for lossless.
  *
  * @return
  *     Zero if the encoding operation is successful, non-zero otherwise.
  */
 int guac_webp_write(guac_socket* socket, guac_stream* stream,
-        cairo_surface_t* surface, int quality);
+        cairo_surface_t* surface, int quality, int lossless);
 
 #endif

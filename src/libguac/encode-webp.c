@@ -166,7 +166,7 @@ static int guac_webp_stream_write(const uint8_t* data, size_t data_size,
 }
 
 int guac_webp_write(guac_socket* socket, guac_stream* stream,
-        cairo_surface_t* surface, int quality) {
+        cairo_surface_t* surface, int quality, int lossless) {
 
     guac_webp_stream_writer writer;
     WebPPicture picture;
@@ -195,7 +195,7 @@ int guac_webp_write(guac_socket* socket, guac_stream* stream,
         return -1;
 
     /* Add additional tuning */
-    config.lossless = 0;
+    config.lossless = lossless;
     config.quality = quality;
     config.thread_level = 1; /* Multi threaded */
     config.method = 2; /* Compression method (0=fast/larger, 6=slow/smaller) */

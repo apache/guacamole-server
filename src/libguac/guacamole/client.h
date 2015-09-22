@@ -737,12 +737,18 @@ void guac_client_stream_jpeg(guac_client* client, guac_socket* socket,
  *     A Cairo surface containing the image data to be streamed.
  *
  * @param quality
- *     The WebP image quality, which must be an integer value between 0 and
- *     100 inclusive.
+ *     The WebP image quality, which must be an integer value between 0 and 100
+ *     inclusive. For lossy images, larger values indicate improving quality at
+ *     the expense of larger file size. For lossless images, this dictates the
+ *     quality of compression, with larger values producing smaller files at
+ *     the expense of speed.
+ *
+ * @param lossless
+ *     Zero to encode a lossy image, non-zero to encode losslessly.
  */
 void guac_client_stream_webp(guac_client* client, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
-        cairo_surface_t* surface, int quality);
+        cairo_surface_t* surface, int quality, int lossless);
 
 /**
  * Returns whether the given client supports WebP. If the client does not
