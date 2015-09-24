@@ -65,20 +65,20 @@ struct guac_client_info {
      * NULL-terminated array of client-supported audio mimetypes. If the client
      * does not support audio at all, this will be NULL.
      */
-    const char** audio_mimetypes;
+    char** audio_mimetypes;
 
     /**
      * NULL-terminated array of client-supported video mimetypes. If the client
      * does not support video at all, this will be NULL.
      */
-    const char** video_mimetypes;
+    char** video_mimetypes;
 
     /**
      * NULL-terminated array of client-supported image mimetypes. Though all
      * supported image mimetypes will be listed here, it can be safely assumed
      * that all clients will support at least "image/png" and "image/jpeg".
      */ 
-    const char** image_mimetypes;
+    char** image_mimetypes;
 
     /**
      * The DPI of the physical remote display if configured for the optimal

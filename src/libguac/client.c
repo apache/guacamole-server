@@ -451,7 +451,7 @@ void guac_client_stream_webp(guac_client* client, guac_socket* socket,
 int guac_client_supports_webp(guac_client* client) {
 
 #ifdef ENABLE_WEBP
-    const char** mimetype = client->info.image_mimetypes;
+    char** mimetype = client->info.image_mimetypes;
 
     /* Search for WebP mimetype in list of supported image mimetypes */
     while (*mimetype != NULL) {
