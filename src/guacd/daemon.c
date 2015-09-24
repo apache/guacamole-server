@@ -80,6 +80,64 @@ static void guacd_log_handshake_failure() {
 }
 
 /**
+ * Copies the given array of mimetypes (strings) into a newly-allocated NULL-
+ * terminated array of strings. Both the array and the strings within the array
+ * are newly-allocated and must be later freed via guacd_free_mimetypes().
+ *
+ * @param mimetypes
+ *     The array of mimetypes to copy.
+ *
+ * @param count
+ *     The number of mimetypes in the given array.
+ *
+ * @return
+ *     A newly-allocated, NULL-terminated array containing newly-allocated
+ *     copies of each of the mimetypes provided in the original mimetypes
+ *     array.
+ */
+static char** guacd_copy_mimetypes(char** mimetypes, int count) {
+
+    int i;
+
+    /* Allocate sufficient space for NULL-terminated array of mimetypes */
+    char** mimetypes_copy = malloc(sizeof(char*) * (count+1));
+
+    /* Copy each provided mimetype */
+    for (i = 0; i < count; i++)
+        mimetypes_copy[i] = strdup(mimetypes[i]);
+
+    /* Terminate with NULL */
+    mimetypes_copy[count] = NULL;
+
+    return mimetypes_copy;
+
+}
+
+/**
+ * Frees the given array of mimetypes, including the space allocated to each
+ * mimetype string within the array. The provided array of mimetypes MUST have
+ * been allocated with guacd_copy_mimetypes().
+ *
+ * @param mimetypes
+ *     The NULL-terminated array of mimetypes to free. This array MUST have
+ *     been previously allocated with guacd_copy_mimetypes().
+ */
+static void guacd_free_mimetypes(char** mimetypes) {
+
+    char** current_mimetype = mimetypes;
+
+    /* Free all strings within NULL-terminated mimetype array */
+    while (*current_mimetype != NULL) {
+        free(*current_mimetype);
+        current_mimetype++;
+    }
+
+    /* Free the array itself, now that its contents have been freed */
+    free(mimetypes);
+
+}
+
+/**
  * Creates a new guac_client for the connection on the given socket, adding
  * it to the client map based on its ID.
  */
@@ -164,6 +222,14 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
         return;
     }
 
+    /* Get client */
+    client = guac_client_alloc();
+    if (client == NULL) {
+        guacd_log_guac_error(GUAC_LOG_ERROR, "Unable to create client");
+        guac_socket_free(socket);
+        return;
+    }
+
     /* Get optimal screen size */
     size = guac_instruction_expect(
             socket, GUACD_USEC_TIMEOUT, "size");
@@ -174,9 +240,24 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
         guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"size\"");
 
         /* Free resources */
+        guac_client_free(client);
         guac_socket_free(socket);
         return;
     }
+
+    /* Parse optimal screen dimensions from size instruction */
+    client->info.optimal_width  = atoi(size->argv[0]);
+    client->info.optimal_height = atoi(size->argv[1]);
+
+    /* If DPI given, set the client resolution */
+    if (size->argc >= 3)
+        client->info.optimal_resolution = atoi(size->argv[2]);
+
+    /* Otherwise, use a safe default for rough backwards compatibility */
+    else
+        client->info.optimal_resolution = 96;
+
+    guac_instruction_free(size);
 
     /* Get supported audio formats */
     audio = guac_instruction_expect(
@@ -188,9 +269,16 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
         guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"audio\"");
 
         /* Free resources */
+        guac_client_free(client);
         guac_socket_free(socket);
         return;
     }
+
+    /* Store audio mimetypes */
+    client->info.audio_mimetypes =
+        guacd_copy_mimetypes(audio->argv, audio->argc);
+
+    guac_instruction_free(audio);
 
     /* Get supported video formats */
     video = guac_instruction_expect(
@@ -202,9 +290,16 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
         guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"video\"");
 
         /* Free resources */
+        guac_client_free(client);
         guac_socket_free(socket);
         return;
     }
+
+    /* Store video mimetypes */
+    client->info.video_mimetypes =
+        guacd_copy_mimetypes(video->argv, video->argc);
+
+    guac_instruction_free(video);
 
     /* Get supported image formats */
     image = guac_instruction_expect(
@@ -216,9 +311,16 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
         guacd_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"image\"");
 
         /* Free resources */
+        guac_client_free(client);
         guac_socket_free(socket);
         return;
     }
+
+    /* Store image mimetypes */
+    client->info.image_mimetypes =
+        guacd_copy_mimetypes(image->argv, image->argc);
+
+    guac_instruction_free(image);
 
     /* Get args from connect instruction */
     connect = guac_instruction_expect(
@@ -233,50 +335,13 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
             guacd_log_guac_error(GUAC_LOG_WARNING,
                     "Unable to close client plugin");
 
-        guac_socket_free(socket);
-        return;
-    }
-
-    /* Get client */
-    client = guac_client_alloc();
-    if (client == NULL) {
-        guacd_log_guac_error(GUAC_LOG_ERROR, "Unable to create client");
+        guac_client_free(client);
         guac_socket_free(socket);
         return;
     }
 
     client->socket = socket;
     client->log_handler = guacd_client_log;
-
-    /* Parse optimal screen dimensions from size instruction */
-    client->info.optimal_width  = atoi(size->argv[0]);
-    client->info.optimal_height = atoi(size->argv[1]);
-
-    /* If DPI given, set the client resolution */
-    if (size->argc >= 3)
-        client->info.optimal_resolution = atoi(size->argv[2]);
-
-    /* Otherwise, use a safe default for rough backwards compatibility */
-    else
-        client->info.optimal_resolution = 96;
-
-    /* Store audio mimetypes */
-    client->info.audio_mimetypes = malloc(sizeof(char*) * (audio->argc+1));
-    memcpy(client->info.audio_mimetypes, audio->argv,
-            sizeof(char*) * audio->argc);
-    client->info.audio_mimetypes[audio->argc] = NULL;
-
-    /* Store video mimetypes */
-    client->info.video_mimetypes = malloc(sizeof(char*) * (video->argc+1));
-    memcpy(client->info.video_mimetypes, video->argv,
-            sizeof(char*) * video->argc);
-    client->info.video_mimetypes[video->argc] = NULL;
-
-    /* Store image mimetypes */
-    client->info.image_mimetypes = malloc(sizeof(char*) * (image->argc+1));
-    memcpy(client->info.image_mimetypes, image->argv,
-            sizeof(char*) * image->argc);
-    client->info.image_mimetypes[image->argc] = NULL;
 
     /* Store client */
     if (guacd_client_map_add(map, client))
@@ -319,15 +384,9 @@ static void guacd_handle_connection(guacd_client_map* map, guac_socket* socket) 
         guacd_log(GUAC_LOG_ERROR, "Unable to remove client. Internal client storage has failed");
 
     /* Free mimetype lists */
-    free(client->info.audio_mimetypes);
-    free(client->info.video_mimetypes);
-    free(client->info.image_mimetypes);
-
-    /* Free remaining instructions */
-    guac_instruction_free(audio);
-    guac_instruction_free(video);
-    guac_instruction_free(image);
-    guac_instruction_free(size);
+    guacd_free_mimetypes(client->info.audio_mimetypes);
+    guacd_free_mimetypes(client->info.video_mimetypes);
+    guacd_free_mimetypes(client->info.image_mimetypes);
 
     /* Clean up */
     guac_client_free(client);
