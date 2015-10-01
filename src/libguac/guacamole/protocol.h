@@ -295,15 +295,20 @@ int guac_protocol_send_undefine(guac_socket* socket,
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param socket The guac_socket connection to use.
- * @param stream The stream to use.
- * @param channel The index of the audio channel to use.
- * @param mimetype The mimetype of the data being sent.
- * @param duration The duration of the sound being sent, in milliseconds.
- * @return Zero on success, non-zero on error.
+ * @param socket
+ *     The guac_socket connection to use when sending the audio instruction.
+ *
+ * @param stream
+ *     The stream to use for future audio data.
+ *
+ * @param mimetype
+ *     The mimetype of the audio data which will be sent over the given stream.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
  */
 int guac_protocol_send_audio(guac_socket* socket, const guac_stream* stream,
-        int channel, const char* mimetype, double duration);
+        const char* mimetype);
 
 /**
  * Sends a file instruction over the given guac_socket connection.
@@ -350,7 +355,7 @@ int guac_protocol_send_pipe(guac_socket* socket, const guac_stream* stream,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
-        void* data, int count);
+        const void* data, int count);
 
 /**
  * Sends an end instruction over the given guac_socket connection.

@@ -20,37 +20,59 @@
  * THE SOFTWARE.
  */
 
-#ifndef __GUAC_AUDIO_FNTYPES_H
-#define __GUAC_AUDIO_FNTYPES_H
+
+#ifndef GUAC_RAW_ENCODER_H
+#define GUAC_RAW_ENCODER_H
+
+#include "config.h"
+
+#include "audio.h"
 
 /**
- * Function type definitions related to simple streaming audio.
- *
- * @file audio-fntypes.h
+ * The number of bytes to send in each audio blob.
  */
-
-#include "audio-types.h"
+#define GUAC_RAW_ENCODER_BLOB_SIZE 6048
 
 /**
- * Handler which is called when the audio stream is opened.
+ * The size of the raw encoder output PCM buffer, in milliseconds. The
+ * equivalent size in bytes will vary by PCM rate, number of channels, and bits
+ * per sample.
  */
-typedef void guac_audio_encoder_begin_handler(guac_audio_stream* audio);
+#define GUAC_RAW_ENCODER_BUFFER_SIZE 250
 
 /**
- * Handler which is called when the audio stream needs to be flushed.
+ * The current state of the raw encoder. The raw encoder performs very minimal
+ * processing, buffering provided PCM data only as necessary to ensure audio
+ * packet sizes are reasonable.
  */
-typedef void guac_audio_encoder_flush_handler(guac_audio_stream* audio);
+typedef struct raw_encoder_state {
+
+    /**
+     * Buffer of not-yet-written raw PCM data.
+     */
+    unsigned char* buffer;
+
+    /**
+     * Size of the PCM buffer, in bytes.
+     */
+    int length;
+
+    /**
+     * The current number of bytes stored within the PCM buffer.
+     */
+    int written;
+
+} raw_encoder_state;
 
 /**
- * Handler which is called when the audio stream is closed.
+ * Audio encoder which writes 8-bit raw PCM (one byte per sample).
  */
-typedef void guac_audio_encoder_end_handler(guac_audio_stream* audio);
+extern guac_audio_encoder* raw8_encoder;
 
 /**
- * Handler which is called when PCM data is written to the audio stream.
+ * Audio encoder which writes 16-bit raw PCM (two bytes per sample).
  */
-typedef void guac_audio_encoder_write_handler(guac_audio_stream* audio,
-        const unsigned char* pcm_data, int length);
+extern guac_audio_encoder* raw16_encoder;
 
 #endif
 

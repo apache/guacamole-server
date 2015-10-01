@@ -286,7 +286,10 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* If audio enabled, choose an encoder */
     if (guac_client_data->settings.audio_enabled) {
 
-        guac_client_data->audio = guac_audio_stream_alloc(client, NULL);
+        guac_client_data->audio = guac_audio_stream_alloc(client, NULL,
+                GUAC_RDP_AUDIO_RATE,
+                GUAC_RDP_AUDIO_CHANNELS,
+                GUAC_RDP_AUDIO_BPS);
 
         /* If an encoding is available, load the sound plugin */
         if (guac_client_data->audio != NULL) {

@@ -67,7 +67,7 @@ noinst_HEADERS =      \
     encode-jpeg.h     \
     encode-png.h      \
     palette.h         \
-    wav_encoder.h
+    raw_encoder.h
 
 libguac_la_SOURCES =  \
     audio.c           \
@@ -82,12 +82,12 @@ libguac_la_SOURCES =  \
     plugin.c          \
     pool.c            \
     protocol.c        \
+    raw_encoder.c     \
     socket.c          \
     socket-fd.c       \
     socket-nest.c     \
     timestamp.c       \
-    unicode.c         \
-    wav_encoder.c
+    unicode.c
 
 # Compile OGG support if available
 if ENABLE_OGG
