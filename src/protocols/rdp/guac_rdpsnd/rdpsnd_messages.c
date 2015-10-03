@@ -133,6 +133,9 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
                         "%i Hz",
                         bps, channels, rate);
 
+                /* Ensure audio stream is configured to use accepted format */
+                guac_audio_stream_reset(audio, NULL, rate, channels, bps);
+
                 /* Queue format for sending as accepted */
                 Stream_EnsureRemainingCapacity(output_stream, 18 + body_size);
                 Stream_Write(output_stream, format_start, 18 + body_size);
@@ -225,7 +228,6 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
         guac_audio_stream* audio, wStream* input_stream,
         guac_rdpsnd_pdu_header* header) {
 
-    unsigned char buffer[4];
     int format;
 
     /* Read wave information */
@@ -233,7 +235,7 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_Read_UINT16(input_stream, format);
     Stream_Read_UINT8(input_stream, rdpsnd->waveinfo_block_number);
     Stream_Seek(input_stream, 3);
-    Stream_Read(input_stream, buffer, 4);
+    Stream_Read(input_stream, rdpsnd->initial_wave_data, 4);
 
     /*
      * Size of incoming wave data is equal to the body size field of this
@@ -245,14 +247,11 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
     /* Read wave in next iteration */
     rdpsnd->next_pdu_is_wave = TRUE;
 
-    /* Init stream with requested format */
-    guac_audio_stream_begin(audio,
+    /* Reset audio stream if format has changed */
+    guac_audio_stream_reset(audio, NULL,
             rdpsnd->formats[format].rate,
             rdpsnd->formats[format].channels,
             rdpsnd->formats[format].bps);
-
-    /* Write initial 4 bytes of data */
-    guac_audio_stream_write_pcm(audio, buffer, 4);
 
 }
 
@@ -269,11 +268,14 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
     wStream* output_stream = Stream_New(NULL, 8);
 
     /* Get wave data */
-    unsigned char* buffer = Stream_Buffer(input_stream) + 4;
+    unsigned char* buffer = Stream_Buffer(input_stream);
+
+    /* Copy over first four bytes */
+    memcpy(buffer, rdpsnd->initial_wave_data, 4);
 
     /* Write rest of audio packet */
-    guac_audio_stream_write_pcm(audio, buffer, rdpsnd->incoming_wave_size);
-    guac_audio_stream_end(audio);
+    guac_audio_stream_write_pcm(audio, buffer, rdpsnd->incoming_wave_size + 4);
+    guac_audio_stream_flush(audio);
 
     /* Write Wave Confirmation PDU */
     Stream_Write_UINT8(output_stream, SNDC_WAVECONFIRM);

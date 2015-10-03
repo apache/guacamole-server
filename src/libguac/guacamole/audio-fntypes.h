@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,12 +37,17 @@
 typedef void guac_audio_encoder_begin_handler(guac_audio_stream* audio);
 
 /**
+ * Handler which is called when the audio stream needs to be flushed.
+ */
+typedef void guac_audio_encoder_flush_handler(guac_audio_stream* audio);
+
+/**
  * Handler which is called when the audio stream is closed.
  */
 typedef void guac_audio_encoder_end_handler(guac_audio_stream* audio);
 
 /**
- * Handler which is called when the audio stream is flushed.
+ * Handler which is called when PCM data is written to the audio stream.
  */
 typedef void guac_audio_encoder_write_handler(guac_audio_stream* audio,
         const unsigned char* pcm_data, int length);

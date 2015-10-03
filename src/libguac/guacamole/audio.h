@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,14 +44,20 @@ struct guac_audio_encoder {
     const char* mimetype;
 
     /**
-     * Handler which will be called when the audio stream is opened.
+     * Handler which will be called when the audio stream is first created.
      */
     guac_audio_encoder_begin_handler* begin_handler;
 
     /**
-     * Handler which will be called when the audio stream is flushed.
+     * Handler which will be called when PCM data is written to the audio
+     * stream for encoding.
      */
     guac_audio_encoder_write_handler* write_handler;
+
+    /**
+     * Handler which will be called when the audio stream is flushed.
+     */
+    guac_audio_encoder_flush_handler* flush_handler;
 
     /**
      * Handler which will be called when the audio stream is closed.
@@ -63,38 +69,7 @@ struct guac_audio_encoder {
 struct guac_audio_stream {
 
     /**
-     * PCM data buffer, 16-bit samples, 2-channel, 44100 Hz.
-     */
-    unsigned char* pcm_data;
-
-    /**
-     * Number of bytes in buffer.
-     */
-    int used;
-
-    /**
-     * Maximum number of bytes in buffer.
-     */
-    int length;
-
-    /**
-     * Encoded audio data buffer, as written by the encoder.
-     */
-    unsigned char* encoded_data;
-
-    /**
-     * Number of bytes in the encoded data buffer.
-     */
-    int encoded_data_used;
-
-    /**
-     * Maximum number of bytes in the encoded data buffer.
-     */
-    int encoded_data_length;
-
-    /**
-     * Arbitrary codec encoder. When the PCM buffer is flushed, PCM data will
-     * be sent to this encoder.
+     * Arbitrary codec encoder which will receive raw PCM data.
      */
     guac_audio_encoder* encoder;
 
@@ -126,11 +101,6 @@ struct guac_audio_stream {
     int bps;
 
     /**
-     * The number of PCM bytes written since the audio chunk began.
-     */
-    int pcm_bytes_written;
-
-    /**
      * Encoder-specific state data.
      */
     void* data;
@@ -141,79 +111,83 @@ struct guac_audio_stream {
  * Allocates a new audio stream which encodes audio data using the given
  * encoder. If NULL is specified for the encoder, an appropriate encoder
  * will be selected based on the encoders built into libguac and the level
- * of client support.
+ * of client support. The PCM format specified here (via rate, channels, and
+ * bps) must be the format used for all PCM data provided to the audio stream.
+ * The format may only be changed using guac_audio_stream_reset().
  *
- * @param client The guac_client for which this audio stream is being
- *               allocated.
- * @param encoder The guac_audio_encoder to use when encoding audio, or
- *                NULL if libguac should select an appropriate built-in
- *                encoder on its own.
- * @return The newly allocated guac_audio_stream, or NULL if no audio
- *         stream could be allocated due to lack of client support.
+ * @param client
+ *     The guac_client for which this audio stream is being allocated.
+ *
+ * @param encoder
+ *     The guac_audio_encoder to use when encoding audio, or NULL if libguac
+ *     should select an appropriate built-in encoder on its own.
+ *
+ * @param rate
+ *     The number of samples per second of PCM data sent to this stream.
+ *
+ * @param channels
+ *     The number of audio channels per sample of PCM data. Legal values are
+ *     1 or 2.
+ *
+ * @param bps
+ *     The number of bits per sample per channel for PCM data. Legal values are
+ *     8 or 16.
+ *
+ * @return
+ *     The newly allocated guac_audio_stream, or NULL if no audio stream could
+ *     be allocated due to lack of client support.
  */
 guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
-        guac_audio_encoder* encoder);
+        guac_audio_encoder* encoder, int rate, int channels, int bps);
 
 /**
- * Frees the given audio stream.
+ * Resets the given audio stream, switching to the given encoder, rate,
+ * channels, and bits per sample. If NULL is specified for the encoder, the
+ * encoder is left unchanged. If the encoder, rate, channels, and bits per
+ * sample are all identical to the current settings, this function has no
+ * effect.
  *
- * @param stream The guac_audio_stream to free.
+ * @param encoder
+ *     The guac_audio_encoder to use when encoding audio, or NULL to leave this
+ *     unchanged.
+ */
+void guac_audio_stream_reset(guac_audio_stream* audio,
+        guac_audio_encoder* encoder, int rate, int channels, int bps);
+
+/**
+ * Closes and frees the given audio stream.
+ *
+ * @param stream
+ *     The guac_audio_stream to free.
  */
 void guac_audio_stream_free(guac_audio_stream* stream);
 
 /**
- * Begins a new audio packet within the given audio stream. This packet will be
- * built up with repeated writes of PCM data, finally being sent when complete
- * via guac_audio_stream_end().
- *
- * @param stream The guac_audio_stream which should start a new audio packet.
- * @param rate The audio rate of the packet, in Hz.
- * @param channels The number of audio channels.
- * @param bps The number of bits per audio sample.
- */
-void guac_audio_stream_begin(guac_audio_stream* stream, int rate, int channels, int bps);
-
-/**
- * Ends the current audio packet, writing the finished packet as an audio
- * instruction.
- *
- * @param stream The guac_audio_stream whose current audio packet should be
- *               completed and sent.
- */
-void guac_audio_stream_end(guac_audio_stream* stream);
-
-/**
  * Writes PCM data to the given audio stream. This PCM data will be
- * automatically encoded by the audio encoder associated with this stream. This
- * function must only be called after an audio packet has been started with
- * guac_audio_stream_begin().
+ * automatically encoded by the audio encoder associated with this stream. The
+ * PCM data must be 2-channel, 44100 Hz, with signed 16-bit samples.
  *
- * @param stream The guac_audio_stream to write PCM data through.
- * @param data The PCM data to write.
- * @param length The number of bytes of PCM data provided.
+ * @param stream
+ *     The guac_audio_stream to write PCM data through.
+ *
+ * @param data
+ *     The PCM data to write.
+ *
+ * @param length
+ *     The number of bytes of PCM data provided.
  */
 void guac_audio_stream_write_pcm(guac_audio_stream* stream,
         const unsigned char* data, int length);
 
 /**
- * Flushes the given audio stream.
+ * Flushes the underlying audio buffer, if any, ensuring that all audio
+ * previously written via guac_audio_stream_write_pcm() has been encoded and
+ * sent to the client.
  *
- * @param stream The guac_audio_stream to flush.
+ * @param stream
+ *     The guac_audio_stream whose audio buffers should be flushed.
  */
 void guac_audio_stream_flush(guac_audio_stream* stream);
-
-/**
- * Appends arbitrarily-encoded data to the encoded_data buffer within the given
- * audio stream. This data must be encoded in the output format of the encoder
- * used by the stream. This function is mainly for use by encoder
- * implementations.
- *
- * @param audio The guac_audio_stream to write data through.
- * @param data Arbitrary encoded data to write through the audio stream.
- * @param length The number of bytes of data provided.
- */
-void guac_audio_stream_write_encoded(guac_audio_stream* audio,
-        const unsigned char* data, int length);
 
 #endif
 

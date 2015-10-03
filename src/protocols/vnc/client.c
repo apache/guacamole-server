@@ -401,7 +401,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* If an encoding is available, load an audio stream */
     if (guac_client_data->audio_enabled) {    
 
-        guac_client_data->audio = guac_audio_stream_alloc(client, NULL);
+        guac_client_data->audio = guac_audio_stream_alloc(client, NULL,
+                GUAC_VNC_AUDIO_RATE,
+                GUAC_VNC_AUDIO_CHANNELS,
+                GUAC_VNC_AUDIO_BPS);
 
         /* Load servername if specified */
         if (argv[IDX_AUDIO_SERVERNAME][0] != '\0')

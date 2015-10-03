@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,35 +21,58 @@
  */
 
 
-#ifndef __GUAC_OGG_ENCODER_H
-#define __GUAC_OGG_ENCODER_H
+#ifndef GUAC_RAW_ENCODER_H
+#define GUAC_RAW_ENCODER_H
 
 #include "config.h"
 
 #include "audio.h"
 
-#include <vorbis/vorbisenc.h>
+/**
+ * The number of bytes to send in each audio blob.
+ */
+#define GUAC_RAW_ENCODER_BLOB_SIZE 6048
 
-typedef struct ogg_encoder_state {
+/**
+ * The size of the raw encoder output PCM buffer, in milliseconds. The
+ * equivalent size in bytes will vary by PCM rate, number of channels, and bits
+ * per sample.
+ */
+#define GUAC_RAW_ENCODER_BUFFER_SIZE 250
+
+/**
+ * The current state of the raw encoder. The raw encoder performs very minimal
+ * processing, buffering provided PCM data only as necessary to ensure audio
+ * packet sizes are reasonable.
+ */
+typedef struct raw_encoder_state {
 
     /**
-     * Ogg state
+     * Buffer of not-yet-written raw PCM data.
      */
-    ogg_stream_state ogg_state;
-    ogg_page ogg_page;
-    ogg_packet ogg_packet;
+    unsigned char* buffer;
 
     /**
-     * Vorbis state
+     * Size of the PCM buffer, in bytes.
      */
-    vorbis_info info;
-    vorbis_comment comment;
-    vorbis_dsp_state vorbis_state;
-    vorbis_block vorbis_block;
+    int length;
 
-} ogg_encoder_state;
+    /**
+     * The current number of bytes stored within the PCM buffer.
+     */
+    int written;
 
-extern guac_audio_encoder* ogg_encoder;
+} raw_encoder_state;
+
+/**
+ * Audio encoder which writes 8-bit raw PCM (one byte per sample).
+ */
+extern guac_audio_encoder* raw8_encoder;
+
+/**
+ * Audio encoder which writes 16-bit raw PCM (two bytes per sample).
+ */
+extern guac_audio_encoder* raw16_encoder;
 
 #endif
 

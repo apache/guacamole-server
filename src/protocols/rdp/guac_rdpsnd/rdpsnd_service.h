@@ -96,7 +96,15 @@ typedef struct guac_rdpsndPlugin {
     int next_pdu_is_wave;
 
     /**
+     * The wave data received within the last SNDC_WAVE (WaveInfo) PDU.
+     */
+    unsigned char initial_wave_data[4];
+
+    /**
      * The size, in bytes, of the wave data in the coming Wave PDU, if any.
+     * This does not include the initial wave data received within the last
+     * SNDC_WAVE (WaveInfo) PDU, which is always the first four bytes of the
+     * actual wave data block.
      */
     int incoming_wave_size;
 

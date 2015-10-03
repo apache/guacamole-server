@@ -74,23 +74,13 @@ static void __stream_read_callback(pa_stream* stream, size_t length,
     /* Read data */
     pa_stream_peek(stream, &buffer, &length);
 
-    /* Avoid sending silence unless data is waiting to be flushed */
-    if (audio->pcm_bytes_written != 0 || !guac_pa_is_silence(buffer, length)) {
-
-        /* Write data */
+    /* Continuously write received PCM data */
+    if (!guac_pa_is_silence(buffer, length))
         guac_audio_stream_write_pcm(audio, buffer, length);
 
-        /* Flush occasionally */
-        if (audio->pcm_bytes_written > GUAC_VNC_PCM_WRITE_RATE) {
-            guac_audio_stream_end(audio);
-            guac_audio_stream_begin(client_data->audio,
-                    GUAC_VNC_AUDIO_RATE,
-                    GUAC_VNC_AUDIO_CHANNELS,
-                    GUAC_VNC_AUDIO_BPS);
-            guac_socket_flush(client->socket);
-        }
-
-    }
+    /* Flush upon silence */
+    else
+        guac_audio_stream_flush(audio);
 
     /* Advance buffer */
     pa_stream_drop(stream);
@@ -245,10 +235,6 @@ void guac_pa_start_stream(guac_client* client) {
     pa_context* context;
 
     guac_client_log(client, GUAC_LOG_INFO, "Starting audio stream");
-    guac_audio_stream_begin(client_data->audio,
-                GUAC_VNC_AUDIO_RATE,
-                GUAC_VNC_AUDIO_CHANNELS,
-                GUAC_VNC_AUDIO_BPS);
 
     /* Init main loop */
     client_data->pa_mainloop = pa_threaded_mainloop_new();
