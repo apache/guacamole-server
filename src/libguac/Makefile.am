@@ -89,12 +89,6 @@ libguac_la_SOURCES =  \
     timestamp.c       \
     unicode.c
 
-# Compile OGG support if available
-if ENABLE_OGG
-libguac_la_SOURCES += ogg_encoder.c
-noinst_HEADERS += ogg_encoder.h
-endif
-
 # Compile WebP support if available
 if ENABLE_WEBP
 libguac_la_SOURCES += encode-webp.c

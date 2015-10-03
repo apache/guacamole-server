@@ -22,10 +22,6 @@
 
 #include "config.h"
 
-#ifdef ENABLE_OGG
-#include "ogg_encoder.h"
-#endif
-
 #include "raw_encoder.h"
 
 #include <guacamole/audio.h>
@@ -50,14 +46,6 @@ guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
         for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
 
             const char* mimetype = client->info.audio_mimetypes[i];
-
-#ifdef ENABLE_OGG
-            /* If Ogg is supported, done. */
-            if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
-                encoder = ogg_encoder;
-                break;
-            }
-#endif
 
             /* If 16-bit raw audio is supported, done. */
             if (bps == 16 && strcmp(mimetype, raw16_encoder->mimetype) == 0) {
