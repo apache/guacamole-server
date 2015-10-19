@@ -375,15 +375,23 @@ int guac_protocol_send_end(guac_socket* socket, const guac_stream* stream);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param socket The guac_socket connection to use.
- * @param stream The stream to use.
- * @param layer The destination layer.
- * @param mimetype The mimetype of the data being sent.
- * @param duration The duration of the video being sent, in milliseconds.
- * @return Zero on success, non-zero on error.
+ * @param socket
+ *     The guac_socket connection to use when sending the video instruction.
+ *
+ * @param stream
+ *     The stream to use for future video data.
+ *
+ * @param layer
+ *     The destination layer on which the streamed video should be played.
+ *
+ * @param mimetype
+ *     The mimetype of the video data which will be sent over the given stream.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
  */
 int guac_protocol_send_video(guac_socket* socket, const guac_stream* stream,
-        const guac_layer* layer, const char* mimetype, double duration);
+        const guac_layer* layer, const char* mimetype);
 
 /* DRAWING INSTRUCTIONS */
 
