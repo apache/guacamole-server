@@ -105,6 +105,20 @@
 #define GUAC_SURFACE_WEBP_IMAGE_QUALITY 90
 
 /**
+ * The JPEG compression min block size. This defines the optimal rectangle block
+ * size factor for JPEG compression. Usually 8x8 would suffice, but use 16 to
+ * reduce the occurrence of ringing artifacts further.
+ */
+#define GUAC_SURFACE_JPEG_BLOCK_SIZE 16
+
+/**
+ * The WebP compression min block size. This defines the optimal rectangle block
+ * size factor for WebP compression. WebP does utilize variable block size, but
+ * ensuring a block size factor reduces any noise on the image edges.
+ */
+#define GUAC_SURFACE_WEBP_BLOCK_SIZE 8
+
+/**
  * Updates the coordinates of the given rectangle to be within the bounds of
  * the given surface.
  *
@@ -1308,6 +1322,14 @@ static void __guac_common_surface_flush_to_jpeg(guac_common_surface* surface) {
         guac_socket* socket = surface->socket;
         const guac_layer* layer = surface->layer;
 
+        guac_common_rect max;
+        guac_common_rect_init(&max, 0, 0, surface->width, surface->height);
+
+        /* Expand the dirty rect size to fit in a grid with cells equal to the
+         * minimum JPEG block size */
+        guac_common_rect_expand_to_grid(GUAC_SURFACE_JPEG_BLOCK_SIZE,
+                                        &surface->dirty_rect, &max);
+
         /* Get Cairo surface for specified rect */
         unsigned char* buffer = surface->buffer + surface->dirty_rect.y * surface->stride + surface->dirty_rect.x * 4;
         cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
@@ -1344,6 +1366,14 @@ static void __guac_common_surface_flush_to_webp(guac_common_surface* surface) {
 
         guac_socket* socket = surface->socket;
         const guac_layer* layer = surface->layer;
+
+        guac_common_rect max;
+        guac_common_rect_init(&max, 0, 0, surface->width, surface->height);
+
+        /* Expand the dirty rect size to fit in a grid with cells equal to the
+         * minimum WebP block size */
+        guac_common_rect_expand_to_grid(GUAC_SURFACE_WEBP_BLOCK_SIZE,
+                                        &surface->dirty_rect, &max);
 
         /* Get Cairo surface for specified rect */
         unsigned char* buffer = surface->buffer
