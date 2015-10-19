@@ -161,6 +161,9 @@ guac_socket* guac_socket_alloc() {
     /* Default to unsafe threading */
     socket->__threadsafe_instructions = 0;
 
+    /* No keep alive ping by default */
+    socket->__keep_alive_enabled = 0;
+
     pthread_mutexattr_init(&lock_attributes);
     pthread_mutexattr_setpshared(&lock_attributes, PTHREAD_PROCESS_SHARED);
 
