@@ -57,6 +57,7 @@ const char* GUAC_CLIENT_ARGS[] = {
     "enable-agent",
 #endif
     "color-scheme",
+    "command",
     NULL
 };
 
@@ -122,6 +123,12 @@ enum __SSH_ARGS_IDX {
      */
     IDX_COLOR_SCHEME,
 
+    /**
+     * The command to run instead if the default shell. If omitted, a normal
+     * shell session will be created.
+     */
+    IDX_COMMAND,
+
     SSH_ARGS_COUNT
 };
 
@@ -177,6 +184,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         strcpy(client_data->port, argv[IDX_PORT]);
     else
         strcpy(client_data->port, GUAC_SSH_DEFAULT_PORT);
+
+    /* Read command, if any */
+    if (argv[IDX_COMMAND][0] != 0)
+        client_data->command = strdup(argv[IDX_COMMAND]);
 
     /* Create terminal */
     client_data->term = guac_terminal_create(client,

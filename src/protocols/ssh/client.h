@@ -79,6 +79,12 @@ typedef struct ssh_guac_client_data {
     char key_passphrase[1024];
 
     /**
+     * The command to run instead of the default shell. If a normal shell
+     * session is desired, this will be NULL.
+     */
+    char* command;
+
+    /**
      * The name of the font to use for display rendering.
      */
     char font_name[1024];

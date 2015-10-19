@@ -264,9 +264,19 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
-    /* Request shell */
-    if (libssh2_channel_shell(client_data->term_channel)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to associate shell with PTY.");
+    /* If a command is specified, run that instead of a shell */
+    if (client_data->command != NULL) {
+        if (libssh2_channel_exec(client_data->term_channel, client_data->command)) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                    "Unable to execute command.");
+            return NULL;
+        }
+    }
+
+    /* Otherwise, request a shell */
+    else if (libssh2_channel_shell(client_data->term_channel)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                "Unable to associate shell with PTY.");
         return NULL;
     }
 
