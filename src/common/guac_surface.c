@@ -92,6 +92,12 @@
 #define GUAC_COMMON_SURFACE_JPEG_FRAMERATE 3
 
 /**
+ * Minimum JPEG bitmap size (area). If the bitmap is smaller than this threshold,
+ * it should be compressed as a PNG image to avoid the JPEG compression tax.
+ */
+#define GUAC_SURFACE_JPEG_MIN_BITMAP_SIZE 4096
+
+/**
  * The WebP image quality ('quantization') setting to use. Range 0-100 where
  * 100 is the highest quality/largest file size, and 0 is the lowest
  * quality/smallest file size.
@@ -408,14 +414,20 @@ static int __guac_common_surface_should_use_jpeg(guac_common_surface* surface,
     /* Calculate the average framerate for the given rect */
     int framerate = __guac_common_surface_calculate_framerate(surface, rect);
 
-    /* JPEG is preferred if framerate is high enough */
+    int rect_size = rect->width * rect->height;
+
+    /* JPEG is preferred if:
+     * - frame rate is high enough
+     * - image size is large enough
+     * - PNG is not more optimal based on image contents */
     return framerate >= GUAC_COMMON_SURFACE_JPEG_FRAMERATE
+        && rect_size > GUAC_SURFACE_JPEG_MIN_BITMAP_SIZE
         && __guac_common_surface_png_optimality(surface, rect) < 0;
 
 }
 
 /**
- * Returns whether the given rectangle would be optimally encoded as WebP 
+ * Returns whether the given rectangle would be optimally encoded as WebP
  * rather than PNG.
  *
  * @param surface
@@ -435,8 +447,14 @@ static int __guac_common_surface_should_use_webp(guac_common_surface* surface,
     if (!guac_client_supports_webp(surface->client))
         return 0;
 
-    /* Usage criteria are currently the same as JPEG */
-    return __guac_common_surface_should_use_jpeg(surface, rect);
+    /* Calculate the average framerate for the given rect */
+    int framerate = __guac_common_surface_calculate_framerate(surface, rect);
+
+    /* WebP is preferred if:
+     * - frame rate is high enough
+     * - PNG is not more optimal based on image contents */
+    return framerate >= GUAC_COMMON_SURFACE_JPEG_FRAMERATE
+        && __guac_common_surface_png_optimality(surface, rect) < 0;
 
 }
 
