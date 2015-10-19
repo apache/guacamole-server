@@ -1074,7 +1074,7 @@ int guac_protocol_send_undefine(guac_socket* socket,
 }
 
 int guac_protocol_send_video(guac_socket* socket, const guac_stream* stream,
-        const guac_layer* layer, const char* mimetype, double duration) {
+        const guac_layer* layer, const char* mimetype) {
 
     int ret_val;
 
@@ -1086,8 +1086,6 @@ int guac_protocol_send_video(guac_socket* socket, const guac_stream* stream,
         || __guac_socket_write_length_int(socket, layer->index)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, mimetype)
-        || guac_socket_write_string(socket, ",")
-        || __guac_socket_write_length_double(socket, duration)
         || guac_socket_write_string(socket, ";");
     guac_socket_instruction_end(socket);
 
