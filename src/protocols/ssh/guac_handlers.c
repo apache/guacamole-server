@@ -116,6 +116,9 @@ int ssh_guac_client_free_handler(guac_client* client) {
     if (guac_client_data->user != NULL)
         guac_common_ssh_destroy_user(guac_client_data->user);
 
+    /* Free copied settings */
+    free(guac_client_data->command);
+
     /* Free generic data struct */
     free(client->data);
 
