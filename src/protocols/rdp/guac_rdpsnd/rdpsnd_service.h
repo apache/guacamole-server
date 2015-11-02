@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "config.h"
 
 #include <freerdp/utils/svc_plugin.h>
-#include <guacamole/audio.h>
+#include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -80,9 +80,10 @@ typedef struct guac_rdpsndPlugin {
     rdpSvcPlugin plugin;
 
     /**
-     * The current audio stream.
+     * The Guacamole client associated with the guac_audio_stream that this
+     * plugin should use to stream received audio packets.
      */
-    guac_audio_stream* audio;
+    guac_client* client;
 
     /**
      * The block number of the last SNDC_WAVE (WaveInfo) PDU received.

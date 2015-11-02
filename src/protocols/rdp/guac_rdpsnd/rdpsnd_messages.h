@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,6 @@
 #include "config.h"
 
 #include "rdpsnd_service.h"
-
-#include <guacamole/audio.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -125,36 +123,31 @@ typedef struct guac_rdpsnd_pdu_header {
  * Handler for the SNDC_FORMATS (Server Audio Formats and Version) PDU.
  */
 void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header);
+        wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
  * Handler for the SNDC_TRAINING (Training) PDU.
  */
 void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header);
+        wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
  * Handler for the SNDC_WAVE (WaveInfo) PDU.
  */
 void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header);
+        wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
  * Handler for the SNDWAV (Wave) PDU which follows any WaveInfo PDU.
  */
 void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header);
+        wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
  * Handler for the SNDC_CLOSE (Close) PDU.
  */
 void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header);
+        wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 #endif
 

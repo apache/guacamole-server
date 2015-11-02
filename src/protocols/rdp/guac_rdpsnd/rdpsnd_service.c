@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,6 @@
 
 #include <freerdp/constants.h>
 #include <freerdp/utils/svc_plugin.h>
-#include <guacamole/audio.h>
 #include <guacamole/client.h>
 
 #ifdef ENABLE_WINPR
@@ -73,11 +72,11 @@ void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin) {
 
     guac_rdpsndPlugin* rdpsnd = (guac_rdpsndPlugin*) plugin;
 
-    /* Get audio stream from plugin parameters */
-    guac_audio_stream* audio = rdpsnd->audio =
-        (guac_audio_stream*) plugin->channel_entry_points.pExtendedData;
+    /* Get client from plugin parameters */
+    guac_client* client = rdpsnd->client =
+        (guac_client*) plugin->channel_entry_points.pExtendedData;
 
-    /* NULL out pExtendedData so we don't lose our guac_audio_stream due to an
+    /* NULL out pExtendedData so we don't lose our guac_client due to an
      * automatic free() within libfreerdp */
     plugin->channel_entry_points.pExtendedData = NULL;
 
@@ -87,7 +86,7 @@ void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin) {
 #endif
 
     /* Log that sound has been loaded */
-    guac_client_log(audio->client, GUAC_LOG_INFO, "guacsnd connected.");
+    guac_client_log(client, GUAC_LOG_INFO, "guacsnd connected.");
 
 }
 
@@ -105,9 +104,6 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
     guac_rdpsndPlugin* rdpsnd = (guac_rdpsndPlugin*) plugin;
     guac_rdpsnd_pdu_header header;
 
-    /* Get audio stream from plugin */
-    guac_audio_stream* audio = rdpsnd->audio;
-
     /* Read RDPSND PDU header */
     Stream_Read_UINT8(input_stream, header.message_type);
     Stream_Seek_UINT8(input_stream);
@@ -118,7 +114,7 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
      * ignore the header and parse as a Wave PDU.
      */
     if (rdpsnd->next_pdu_is_wave) {
-        guac_rdpsnd_wave_handler(rdpsnd, audio, input_stream, &header);
+        guac_rdpsnd_wave_handler(rdpsnd, input_stream, &header);
         return;
     }
 
@@ -127,26 +123,22 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
 
         /* Server Audio Formats and Version PDU */
         case SNDC_FORMATS:
-            guac_rdpsnd_formats_handler(rdpsnd, audio,
-                    input_stream, &header);
+            guac_rdpsnd_formats_handler(rdpsnd, input_stream, &header);
             break;
 
         /* Training PDU */
         case SNDC_TRAINING:
-            guac_rdpsnd_training_handler(rdpsnd, audio,
-                    input_stream, &header);
+            guac_rdpsnd_training_handler(rdpsnd, input_stream, &header);
             break;
 
         /* WaveInfo PDU */
         case SNDC_WAVE:
-            guac_rdpsnd_wave_info_handler(rdpsnd, audio,
-                    input_stream, &header);
+            guac_rdpsnd_wave_info_handler(rdpsnd, input_stream, &header);
             break;
 
         /* Close PDU */
         case SNDC_CLOSE:
-            guac_rdpsnd_close_handler(rdpsnd, audio,
-                    input_stream, &header);
+            guac_rdpsnd_close_handler(rdpsnd, input_stream, &header);
             break;
 
     }

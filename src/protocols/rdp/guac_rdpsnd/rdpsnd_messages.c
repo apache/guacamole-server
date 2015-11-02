@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,8 +44,7 @@
 /* MESSAGE HANDLERS */
 
 void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream, 
-        guac_rdpsnd_pdu_header* header) {
+        wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int server_format_count;
     int server_version;
@@ -55,8 +54,12 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
     int output_body_size;
     unsigned char* output_stream_end;
 
-    rdp_guac_client_data* guac_client_data =
-        (rdp_guac_client_data*) audio->client->data;
+    /* Get associated client data */
+    guac_client* client = rdpsnd->client;
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+
+    /* Get audio stream from client data */
+    guac_audio_stream* audio = client_data->audio;
 
     /* Format header */
     Stream_Seek(input_stream, 14);
@@ -128,7 +131,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
                 rdpsnd->formats[current].bps      = bps;
 
                 /* Log format */
-                guac_client_log(audio->client, GUAC_LOG_INFO,
+                guac_client_log(client, GUAC_LOG_INFO,
                         "Accepted format: %i-bit PCM with %i channels at "
                         "%i Hz",
                         bps, channels, rate);
@@ -149,7 +152,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
 
             /* Otherwise, log that we dropped one */
             else
-                guac_client_log(audio->client, GUAC_LOG_INFO,
+                guac_client_log(client, GUAC_LOG_INFO,
                         "Dropped valid format: %i-bit PCM with %i channels at "
                         "%i Hz",
                         bps, channels, rate);
@@ -174,7 +177,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_SetPointer(output_stream, output_stream_end);
 
     /* Send accepted formats */
-    pthread_mutex_lock(&(guac_client_data->rdp_lock));
+    pthread_mutex_lock(&(client_data->rdp_lock));
     svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
 
     /* If version greater than 6, must send Quality Mode PDU */
@@ -191,20 +194,20 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
         svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
     }
 
-    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+    pthread_mutex_unlock(&(client_data->rdp_lock));
 
 }
 
 /* server is getting a feel of the round trip time */
 void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header) {
+        wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int data_size;
     wStream* output_stream;
 
-    rdp_guac_client_data* guac_client_data =
-        (rdp_guac_client_data*) audio->client->data;
+    /* Get associated client data */
+    guac_client* client = rdpsnd->client;
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
 
     /* Read timestamp and data size */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
@@ -218,17 +221,23 @@ void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_Write_UINT16(output_stream, rdpsnd->server_timestamp);
     Stream_Write_UINT16(output_stream, data_size);
 
-    pthread_mutex_lock(&(guac_client_data->rdp_lock));
+    pthread_mutex_lock(&(client_data->rdp_lock));
     svc_plugin_send((rdpSvcPlugin*) rdpsnd, output_stream);
-    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+    pthread_mutex_unlock(&(client_data->rdp_lock));
 
 }
 
 void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header) {
+        wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int format;
+
+    /* Get associated client data */
+    guac_client* client = rdpsnd->client;
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+
+    /* Get audio stream from client data */
+    guac_audio_stream* audio = client_data->audio;
 
     /* Read wave information */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
@@ -256,13 +265,16 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header) {
+        wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     rdpSvcPlugin* plugin = (rdpSvcPlugin*)rdpsnd;
 
-    rdp_guac_client_data* guac_client_data =
-        (rdp_guac_client_data*) audio->client->data;
+    /* Get associated client data */
+    guac_client* client = rdpsnd->client;
+    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+
+    /* Get audio stream from client data */
+    guac_audio_stream* audio = client_data->audio;
 
     /* Wave Confirmation PDU */
     wStream* output_stream = Stream_New(NULL, 8);
@@ -286,9 +298,9 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_Write_UINT8(output_stream, 0);
 
     /* Send Wave Confirmation PDU */
-    pthread_mutex_lock(&(guac_client_data->rdp_lock));
+    pthread_mutex_lock(&(client_data->rdp_lock));
     svc_plugin_send(plugin, output_stream);
-    pthread_mutex_unlock(&(guac_client_data->rdp_lock));
+    pthread_mutex_unlock(&(client_data->rdp_lock));
 
     /* We no longer expect to receive wave data */
     rdpsnd->next_pdu_is_wave = FALSE;
@@ -296,8 +308,7 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
 }
 
 void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
-        guac_audio_stream* audio, wStream* input_stream,
-        guac_rdpsnd_pdu_header* header) {
+        wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     /* STUB: Do nothing for now */
 

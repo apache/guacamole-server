@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -296,7 +296,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
             /* Load sound plugin */
             if (freerdp_channels_load_plugin(channels, instance->settings,
-                        "guacsnd", guac_client_data->audio))
+                        "guacsnd", client))
                 guac_client_log(client, GUAC_LOG_WARNING,
                         "Failed to load guacsnd plugin. Audio will not work.");
 
