@@ -780,9 +780,21 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Preconnection ID */
     settings->preconnection_id = -1;
     if (argv[IDX_PRECONNECTION_ID][0] != '\0') {
-        settings->preconnection_id = atoi(argv[IDX_PRECONNECTION_ID]);
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Preconnection ID: %i", settings->preconnection_id);
+
+        /* Parse preconnection ID, warn if invalid */
+        int preconnection_id = atoi(argv[IDX_PRECONNECTION_ID]);
+        if (preconnection_id < 0)
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Ignoring invalid preconnection ID: %i",
+                    preconnection_id);
+
+        /* Otherwise, assign specified ID */
+        else {
+            settings->preconnection_id = preconnection_id;
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Preconnection ID: %i", settings->preconnection_id);
+        }
+
     }
 
     /* Preconnection BLOB */
