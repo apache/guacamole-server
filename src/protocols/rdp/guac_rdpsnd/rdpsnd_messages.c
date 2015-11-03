@@ -325,7 +325,7 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
 void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
-    /* STUB: Do nothing for now */
+    /* Do nothing */
 
 }
 
