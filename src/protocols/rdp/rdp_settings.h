@@ -266,6 +266,20 @@ typedef struct guac_rdp_settings {
      */
     int menu_animations_enabled;
 
+    /**
+     * The preconnection ID to send within the preconnection PDU when
+     * initiating an RDP connection, if any. If no preconnection ID is
+     * specified, this will be -1.
+     */
+    int preconnection_id;
+
+    /**
+     * The preconnection BLOB (PCB) to send to the RDP server prior to full RDP
+     * connection negotiation. This value is used by Hyper-V to select the
+     * destination VM.
+     */
+    char* preconnection_blob;
+
 } guac_rdp_settings;
 
 /**
