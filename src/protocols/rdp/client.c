@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -291,17 +291,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
                 GUAC_RDP_AUDIO_CHANNELS,
                 GUAC_RDP_AUDIO_BPS);
 
-        /* If an encoding is available, load the sound plugin */
-        if (guac_client_data->audio != NULL) {
-
-            /* Load sound plugin */
-            if (freerdp_channels_load_plugin(channels, instance->settings,
-                        "guacsnd", guac_client_data->audio))
-                guac_client_log(client, GUAC_LOG_WARNING,
-                        "Failed to load guacsnd plugin. Audio will not work.");
-
-        }
-        else
+        /* Warn if no audio encoding is available */
+        if (guac_client_data->audio == NULL)
             guac_client_log(client, GUAC_LOG_INFO,
                     "No available audio encoding. Sound disabled.");
 
@@ -321,7 +312,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     }
 
-    /* If RDPDR required, load it */
+    /* If RDPSND/RDPDR required, load them */
     if (guac_client_data->settings.printing_enabled
         || guac_client_data->settings.drive_enabled
         || guac_client_data->settings.audio_enabled) {
@@ -330,7 +321,16 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         if (freerdp_channels_load_plugin(channels, instance->settings,
                     "guacdr", client))
             guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load guacdr plugin. Drive redirection and printing will not work.");
+                    "Failed to load guacdr plugin. Drive redirection and "
+                    "printing will not work. Sound MAY not work.");
+
+        /* Load RDPSND plugin */
+        if (freerdp_channels_load_plugin(channels, instance->settings,
+                    "guacsnd", client))
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Failed to load guacsnd alongside guacdr plugin. Sound "
+                    "will not work. Drive redirection and printing MAY not "
+                    "work.");
 
     }
 
