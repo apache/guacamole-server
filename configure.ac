@@ -609,6 +609,7 @@ then
                       rdpSettings.Height,
                       rdpSettings.FastPathInput,
                       rdpSettings.FastPathOutput,
+                      rdpSettings.SendPreconnectionPdu,
                       rdpSettings.OrderSupport],
                      [rdpsettings_interface=stable],,
                      [[#include <freerdp/freerdp.h>]])

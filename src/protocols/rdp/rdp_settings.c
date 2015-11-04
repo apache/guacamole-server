@@ -292,6 +292,22 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 #endif
     }
 
+#ifdef HAVE_RDPSETTINGS_SENDPRECONNECTIONPDU
+    /* Preconnection ID */
+    if (guac_settings->preconnection_id != -1) {
+        rdp_settings->NegotiateSecurityLayer = FALSE;
+        rdp_settings->SendPreconnectionPdu = TRUE;
+        rdp_settings->PreconnectionId = guac_settings->preconnection_id;
+    }
+
+    /* Preconnection BLOB */
+    if (guac_settings->preconnection_blob != NULL) {
+        rdp_settings->NegotiateSecurityLayer = FALSE;
+        rdp_settings->SendPreconnectionPdu = TRUE;
+        rdp_settings->PreconnectionBlob = guac_settings->preconnection_blob;
+    }
+#endif
+
     /* Order support */
 #ifdef LEGACY_RDPSETTINGS
     bitmap_cache = rdp_settings->bitmap_cache;

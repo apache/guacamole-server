@@ -129,6 +129,8 @@ const char* GUAC_CLIENT_ARGS[] = {
     "enable-full-window-drag",
     "enable-desktop-composition",
     "enable-menu-animations",
+    "preconnection-id",
+    "preconnection-blob",
 
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
@@ -178,6 +180,8 @@ enum RDP_ARGS_IDX {
     IDX_ENABLE_FULL_WINDOW_DRAG,
     IDX_ENABLE_DESKTOP_COMPOSITION,
     IDX_ENABLE_MENU_ANIMATIONS,
+    IDX_PRECONNECTION_ID,
+    IDX_PRECONNECTION_BLOB,
 
 #ifdef ENABLE_COMMON_SSH
     IDX_ENABLE_SFTP,
@@ -772,6 +776,45 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                 "Invalid color-depth: \"%s\". Using default of %i.",
                 argv[IDX_WIDTH], settings->color_depth);
     }
+
+    /* Preconnection ID */
+    settings->preconnection_id = -1;
+    if (argv[IDX_PRECONNECTION_ID][0] != '\0') {
+
+        /* Parse preconnection ID, warn if invalid */
+        int preconnection_id = atoi(argv[IDX_PRECONNECTION_ID]);
+        if (preconnection_id < 0)
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Ignoring invalid preconnection ID: %i",
+                    preconnection_id);
+
+        /* Otherwise, assign specified ID */
+        else {
+            settings->preconnection_id = preconnection_id;
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Preconnection ID: %i", settings->preconnection_id);
+        }
+
+    }
+
+    /* Preconnection BLOB */
+    settings->preconnection_blob = NULL;
+    if (argv[IDX_PRECONNECTION_BLOB][0] != '\0') {
+        settings->preconnection_blob = strdup(argv[IDX_PRECONNECTION_BLOB]);
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Preconnection BLOB: \"%s\"", settings->preconnection_blob);
+    }
+
+#ifndef HAVE_RDPSETTINGS_SENDPRECONNECTIONPDU
+    /* Warn if support for the preconnection BLOB / ID is absent */
+    if (settings->preconnection_blob != NULL
+            || settings->preconnection_id != -1) {
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Installed version of FreeRDP lacks support for the "
+                "preconnection PDU. The specified preconnection BLOB and/or "
+                "ID will be ignored.");
+    }
+#endif
 
     /* Audio enable/disable */
     guac_client_data->settings.audio_enabled =
