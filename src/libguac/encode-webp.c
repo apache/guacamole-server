@@ -191,7 +191,7 @@ int guac_webp_write(guac_socket* socket, guac_stream* stream,
 
     /* Configure WebP compression bits */
     WebPConfig config;
-    if (!WebPConfigPreset(&config, WEBP_HINT_DEFAULT, quality))
+    if (!WebPConfigPreset(&config, WEBP_PRESET_DEFAULT, quality))
         return -1;
 
     /* Add additional tuning */
