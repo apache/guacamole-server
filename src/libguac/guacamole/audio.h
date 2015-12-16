@@ -147,9 +147,23 @@ guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
  * sample are all identical to the current settings, this function has no
  * effect.
  *
+ * @param audio
+ *     The guac_audio_stream to reset.
+ *
  * @param encoder
  *     The guac_audio_encoder to use when encoding audio, or NULL to leave this
  *     unchanged.
+ *
+ * @param rate
+ *     The number of samples per second of PCM data sent to this stream.
+ *
+ * @param channels
+ *     The number of audio channels per sample of PCM data. Legal values are
+ *     1 or 2.
+ *
+ * @param bps
+ *     The number of bits per sample per channel for PCM data. Legal values are
+ *     8 or 16.
  */
 void guac_audio_stream_reset(guac_audio_stream* audio,
         guac_audio_encoder* encoder, int rate, int channels, int bps);

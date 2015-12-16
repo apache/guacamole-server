@@ -130,10 +130,19 @@ int guac_protocol_send_log(guac_socket* socket, const char* format, ...);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param socket The guac_socket connection to use.
- * @param format A printf-style format string to log.
- * @param ap The va_list containing the arguments to be used when filling the
- *           format string for printing.
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param format
+ *     A printf-style format string to log.
+ *
+ * @param args
+ *     The va_list containing the arguments to be used when filling the
+ *     format string for printing.
+ *
+ * @return
+ *     Zero if the instruction was sent successfully, non-zero if an error
+ *     occurs.
  */
 int vguac_protocol_send_log(guac_socket* socket, const char* format,
         va_list args);
@@ -625,6 +634,9 @@ int guac_protocol_send_lstroke(guac_socket* socket,
  *
  * @param layer
  *     The destination layer.
+ *
+ * @param mimetype
+ *     The mimetype of the image data being sent.
  *
  * @param x
  *     The X coordinate of the upper-left corner of the destination rectangle
