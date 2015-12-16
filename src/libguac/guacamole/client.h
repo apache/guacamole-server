@@ -486,11 +486,18 @@ void guac_client_free(guac_client* client);
  * initial handler lookup table defined in client-handlers.c. The intial
  * handlers will in turn call the client's handler (if defined).
  *
- * @param client The proxy client whose handlers should be called.
- * @param instruction The instruction to pass to the proxy client via the
- *                    appropriate handler.
+ * @param client
+ *     The proxy client whose handlers should be called.
+ *
+ * @param instruction
+ *     The instruction to pass to the proxy client via the appropriate handler.
+ *
+ * @return
+ *     Non-negative if the instruction was handled successfully, or negative
+ *     if an error occurred.
  */
-int guac_client_handle_instruction(guac_client* client, guac_instruction* instruction);
+int guac_client_handle_instruction(guac_client* client,
+        guac_instruction* instruction);
 
 /**
  * Writes a message in the log used by the given client. The logger used will
