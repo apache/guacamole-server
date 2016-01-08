@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2013 Glyptodon LLC
+# Copyright (C) 2016 Glyptodon LLC
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,12 @@
 # guacctl
 # -------
 #
-# Utility for sending Guacamole-specific console codes for controlling the SSH
-# session, such as:
+# Utility for sending Guacamole-specific console codes for controlling a
+# terminal session, such as:
 #
-#     * Downloading files
-#     * Setting the destination directory for uploads
+#     * Downloading files (SSH only)
+#     * Setting the destination directory for uploads (SSH only)
+#     * Redirecting output to a named pipe stream (SSH or telnet)
 #
 # This script may also be run as "guacget", in which case the script accepts
 # no options and assumes anything given on the commandline is a file to be
@@ -58,6 +59,19 @@ send_set_directory() {
     printf "\033]482201;%s\007" "$FILENAME"
 }
 
+# Sends the Guacamole-specific console code for redirecting output to a named
+# pipe stream (instead of the terminal emulator)
+send_open_pipe_stream() {
+    NAME="$1"
+    printf "\033]482202;%s\007" "$NAME"
+}
+
+# Sends the Guacamole-specific console code for redirecting output back to the
+# terminal emulator
+send_close_pipe_stream() {
+    printf "\033]482203\007"
+}
+
 # Prints the given error text to STDERR.
 error() {
     echo "$NAME:" "$@" >&2
@@ -66,12 +80,16 @@ error() {
 # Prints usage documentation for this script.
 usage() {
     cat >&2 <<END
-guacctl 0.8.0, Guacamole SSH session control utility.
-Usage: guacctl [OPTION] [FILE]...
+guacctl 0.9.9, Guacamole terminal session control utility.
+Usage: guacctl [OPTION] [FILE or NAME]...
 
     -d, --download         download each of the files listed.
     -s, --set-directory    set the destination directory for future uploaded 
                            files.
+    -o, --open-pipe        redirect output to a new pipe stream with the given
+                           name.
+    -c, --close-pipe       close any existing pipe stream and redirect output
+                           back to the terminal emulator.
 END
 }
 
@@ -117,6 +135,40 @@ set_directory() {
 
 }
 
+# Opens a new pipe stream having the given name and redirects terminal output
+# to that stream
+open_pipe_stream() {
+
+    # Validate arguments
+    if [ $# -lt 1 ]; then
+        error "No pipe name specified."
+        return;
+    fi
+
+    if [ $# -gt 1 ]; then
+        error "Only one pipe name may be given."
+        return;
+    fi
+
+    NAME="$1"
+    send_open_pipe_stream "$NAME"
+
+}
+
+# Closes the currently-open pipe stream and redirects terminal output back to
+# the terminal emulator
+close_pipe_stream() {
+
+    # Validate arguments
+    if [ $# -gt 0 ]; then
+        error "Closing an open pipe stream does not require any arguments."
+        return;
+    fi
+
+    send_close_pipe_stream
+
+}
+
 # Get script name
 NAME=`basename "$0"`
 
@@ -129,6 +181,12 @@ elif [ "x$1" = "x--download" -o "x$1" = "x-d" ]; then
 elif [ "x$1" = "x--set-directory" -o "x$1" = "x-s" ]; then
     shift
     set_directory "$@"
+elif [ "x$1" = "x--open-pipe" -o "x$1" = "x-o" ]; then
+    shift
+    open_pipe_stream "$@"
+elif [ "x$1" = "x--close-pipe" -o "x$1" = "x-c" ]; then
+    shift
+    close_pipe_stream "$@"
 else
     usage
     exit 1
