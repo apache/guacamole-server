@@ -253,25 +253,63 @@ close_pipe_stream() {
 NAME=`basename "$0"`
 
 #
-# Parse options
+# Handle downloads directly if invoked as "guacget"
 #
 
 if [ "x$NAME" = "xguacget" ]; then
     download_files "$@"
-elif [ "x$1" = "x--download" -o "x$1" = "x-d" ]; then
-    shift
-    download_files "$@"
-elif [ "x$1" = "x--set-directory" -o "x$1" = "x-s" ]; then
-    shift
-    set_directory "$@"
-elif [ "x$1" = "x--open-pipe" -o "x$1" = "x-o" ]; then
-    shift
-    open_pipe_stream "$@"
-elif [ "x$1" = "x--close-pipe" -o "x$1" = "x-c" ]; then
-    shift
-    close_pipe_stream "$@"
-else
-    usage
-    exit 1
+    exit 0;
 fi
+
+#
+# Parse options
+#
+
+case "$1" in
+
+    #
+    # Download files
+    #
+
+    "--download"|"-d")
+        shift
+        download_files "$@"
+        ;;
+
+    #
+    # Set upload directory
+    #
+
+    "--set-directory"|"-s")
+        shift
+        set_directory "$@"
+        ;;
+
+    #
+    # Redirect to pipe
+    #
+
+    "--open-pipe"|"-o")
+        shift
+        open_pipe_stream "$@"
+        ;;
+
+    #
+    # Redirect back to terminal
+    #
+
+    "--close-pipe"|"-c")
+        shift
+        close_pipe_stream "$@"
+        ;;
+
+    #
+    # Show usage info if options are invalid
+    #
+
+    *)
+        usage
+        exit 1
+        ;;
+esac
 
