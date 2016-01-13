@@ -44,6 +44,15 @@
 #define GUAC_COMMON_SURFACE_HEAT_CELL_SIZE 64
 
 /**
+ * The width or height of the heat map (in cells) given the width or height of
+ * the image (in pixels).
+ */
+#define GUAC_COMMON_SURFACE_HEAT_DIMENSION(x) (       \
+        (x + GUAC_COMMON_SURFACE_HEAT_CELL_SIZE - 1)  \
+            / GUAC_COMMON_SURFACE_HEAT_CELL_SIZE      \
+)
+
+/**
  * The number of entries to collect within each heat map cell. Collected
  * history entries are used to determine the framerate of the region associated
  * with that cell.
