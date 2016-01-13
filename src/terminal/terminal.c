@@ -326,6 +326,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
         return NULL;
     }
 
+    /* Init pipe stream (output to display by default) */
+    term->pipe_stream = NULL;
+
     /* Init terminal lock */
     pthread_mutex_init(&(term->lock), NULL);
 

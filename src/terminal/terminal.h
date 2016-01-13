@@ -150,6 +150,13 @@ struct guac_terminal {
     int stdin_pipe_fd[2];
 
     /**
+     * The currently-open pipe stream to which all terminal output should be
+     * written, if any. If no pipe stream is open, terminal output will be
+     * written to the terminal display, and this value will be NULL.
+     */
+    guac_stream* pipe_stream;
+
+    /**
      * Graphical representation of the current scroll state.
      */
     guac_terminal_scrollbar* scrollbar;
