@@ -280,6 +280,9 @@ static unsigned int __guac_common_surface_calculate_framerate(
 
     int x, y;
 
+    /* Calculate heat map dimensions */
+    int heat_width = GUAC_COMMON_SURFACE_HEAT_DIMENSION(surface->width);
+
     /* Calculate minimum X/Y coordinates intersecting given rect */
     int min_x = rect->x / GUAC_COMMON_SURFACE_HEAT_CELL_SIZE;
     int min_y = rect->y / GUAC_COMMON_SURFACE_HEAT_CELL_SIZE;
@@ -293,7 +296,7 @@ static unsigned int __guac_common_surface_calculate_framerate(
 
     /* Get start of buffer at given coordinates */
     const guac_common_surface_heat_cell* heat_row =
-        surface->heat_map + min_y * surface->width + min_x;
+        surface->heat_map + min_y * heat_width + min_x;
 
     /* Iterate over all the heat map cells for the area
      * and calculate the average framerate */
@@ -327,7 +330,7 @@ static unsigned int __guac_common_surface_calculate_framerate(
         }
 
         /* Next heat map row */
-        heat_row += surface->width;
+        heat_row += heat_width;
 
     }
 
@@ -492,6 +495,9 @@ static void __guac_common_surface_touch_rect(guac_common_surface* surface,
 
     int x, y;
 
+    /* Calculate heat map dimensions */
+    int heat_width = GUAC_COMMON_SURFACE_HEAT_DIMENSION(surface->width);
+
     /* Calculate minimum X/Y coordinates intersecting given rect */
     int min_x = rect->x / GUAC_COMMON_SURFACE_HEAT_CELL_SIZE;
     int min_y = rect->y / GUAC_COMMON_SURFACE_HEAT_CELL_SIZE;
@@ -502,7 +508,7 @@ static void __guac_common_surface_touch_rect(guac_common_surface* surface,
 
     /* Get start of buffer at given coordinates */
     guac_common_surface_heat_cell* heat_row =
-        surface->heat_map + min_y * surface->width + min_x;
+        surface->heat_map + min_y * heat_width + min_x;
 
     /* Update all heat map cells which intersect with rectangle */
     for (y = min_y; y <= max_y; y++) {
@@ -528,7 +534,7 @@ static void __guac_common_surface_touch_rect(guac_common_surface* surface,
         }
 
         /* Next heat map row */
-        heat_row += surface->width;
+        heat_row += heat_width;
 
     }
 
@@ -977,6 +983,10 @@ static void __guac_common_surface_transfer(guac_common_surface* src, int* sx, in
 guac_common_surface* guac_common_surface_alloc(guac_client* client,
         guac_socket* socket, const guac_layer* layer, int w, int h) {
 
+    /* Calculate heat map dimensions */
+    int heat_width = GUAC_COMMON_SURFACE_HEAT_DIMENSION(w);
+    int heat_height = GUAC_COMMON_SURFACE_HEAT_DIMENSION(h);
+
     /* Init surface */
     guac_common_surface* surface = calloc(1, sizeof(guac_common_surface));
     surface->client = client;
@@ -990,7 +1000,8 @@ guac_common_surface* guac_common_surface_alloc(guac_client* client,
     surface->buffer = calloc(h, surface->stride);
 
     /* Create corresponding heat map */
-    surface->heat_map = calloc(w*h, sizeof(guac_common_surface_heat_cell));
+    surface->heat_map = calloc(heat_width * heat_height,
+            sizeof(guac_common_surface_heat_cell));
 
     /* Reset clipping rect */
     guac_common_surface_reset_clip(surface);
@@ -1032,6 +1043,10 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     int sx = 0;
     int sy = 0;
 
+    /* Calculate heat map dimensions */
+    int heat_width = GUAC_COMMON_SURFACE_HEAT_DIMENSION(w);
+    int heat_height = GUAC_COMMON_SURFACE_HEAT_DIMENSION(h);
+
     /* Copy old surface data */
     old_buffer = surface->buffer;
     old_stride = surface->stride;
@@ -1053,7 +1068,8 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
 
     /* Allocate completely new heat map (can safely discard old stats) */
     free(surface->heat_map);
-    surface->heat_map = calloc(w*h, sizeof(guac_common_surface_heat_cell));
+    surface->heat_map = calloc(heat_width * heat_height,
+            sizeof(guac_common_surface_heat_cell));
 
     /* Resize dirty rect to fit new surface dimensions */
     if (surface->dirty) {
