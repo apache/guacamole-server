@@ -90,7 +90,7 @@ send_open_pipe_stream() {
 ## terminal emulator
 ##
 send_close_pipe_stream() {
-    printf "\033]482203\007"
+    printf "\033]482203;\007"
 }
 
 ##
