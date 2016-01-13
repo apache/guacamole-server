@@ -936,6 +936,41 @@ int guac_terminal_download(guac_terminal* term, unsigned char c) {
 
 }
 
+int guac_terminal_open_pipe_stream(guac_terminal* term, unsigned char c) {
+
+    static char stream_name[2048];
+    static int length = 0;
+
+    /* Open pipe on ECMA-48 ST (String Terminator) */
+    if (c == 0x9C || c == 0x5C || c == 0x07) {
+        stream_name[length++] = '\0';
+        term->char_handler = guac_terminal_echo;
+        guac_client_log(term->client, GUAC_LOG_DEBUG,
+                "STUB: Opening pipe: '%s'", stream_name);
+        length = 0;
+    }
+
+    /* Otherwise, store character within stream name */
+    else if (length < sizeof(stream_name)-1)
+        stream_name[length++] = c;
+
+    return 0;
+
+}
+
+int guac_terminal_close_pipe_stream(guac_terminal* term, unsigned char c) {
+
+    /* Handle closure on ECMA-48 ST (String Terminator) */
+    if (c == 0x9C || c == 0x5C || c == 0x07) {
+        term->char_handler = guac_terminal_echo;
+        guac_client_log(term->client, GUAC_LOG_DEBUG, "STUB: Closing pipe");
+    }
+
+    /* Ignore all other characters */
+    return 0;
+
+}
+
 int guac_terminal_osc(guac_terminal* term, unsigned char c) {
 
     static int operation = 0;
@@ -954,6 +989,14 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
         /* Set upload directory OSC */
         else if (operation == 482201)
             term->char_handler = guac_terminal_set_directory;
+
+        /* Open and redirect output to pipe stream OSC */
+        else if (operation == 482202)
+            term->char_handler = guac_terminal_open_pipe_stream;
+
+        /* Close pipe stream OSC */
+        else if (operation == 482203)
+            term->char_handler = guac_terminal_close_pipe_stream;
 
         /* Reset parameter for next OSC */
         operation = 0;

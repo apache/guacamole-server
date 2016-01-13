@@ -35,6 +35,8 @@ int guac_terminal_g1_charset(guac_terminal* term, unsigned char c);
 int guac_terminal_csi(guac_terminal* term, unsigned char c);
 int guac_terminal_download(guac_terminal* term, unsigned char c);
 int guac_terminal_set_directory(guac_terminal* term, unsigned char c);
+int guac_terminal_open_pipe_stream(guac_terminal* term, unsigned char c);
+int guac_terminal_close_pipe_stream(guac_terminal* term, unsigned char c);
 int guac_terminal_osc(guac_terminal* term, unsigned char c);
 int guac_terminal_ctrl_func(guac_terminal* term, unsigned char c);
 
