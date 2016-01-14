@@ -371,7 +371,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
 }
 
 void guac_terminal_free(guac_terminal* term) {
-    
+
+    /* Close and flush any open pipe stream */
+    guac_terminal_pipe_stream_close(term);
+
     /* Close terminal output pipe */
     close(term->stdout_pipe_fd[1]);
     close(term->stdout_pipe_fd[0]);
