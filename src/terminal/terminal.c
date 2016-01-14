@@ -326,6 +326,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
         return NULL;
     }
 
+    /* Init pipe stream (output to display by default) */
+    term->pipe_stream = NULL;
+
     /* Init terminal lock */
     pthread_mutex_init(&(term->lock), NULL);
 
@@ -368,7 +371,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
 }
 
 void guac_terminal_free(guac_terminal* term) {
-    
+
+    /* Close and flush any open pipe stream */
+    guac_terminal_pipe_stream_close(term);
+
     /* Close terminal output pipe */
     close(term->stdout_pipe_fd[1]);
     close(term->stdout_pipe_fd[0]);
@@ -1726,5 +1732,82 @@ int guac_terminal_next_tab(guac_terminal* term, int column) {
     }
 
     return tabstop;
+}
+
+void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name) {
+
+    guac_client* client = term->client;
+    guac_socket* socket = client->socket;
+
+    /* Close existing stream, if any */
+    guac_terminal_pipe_stream_close(term);
+
+    /* Allocate and assign new pipe stream */
+    term->pipe_stream = guac_client_alloc_stream(client);
+    term->pipe_buffer_length = 0;
+
+    /* Open new pipe stream */
+    guac_protocol_send_pipe(socket, term->pipe_stream, "text/plain", name);
+
+    /* Log redirect at debug level */
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "Terminal output now redirected to pipe '%s'.", name);
+
+}
+
+void guac_terminal_pipe_stream_write(guac_terminal* term, char c) {
+
+    /* Append byte to buffer only if pipe is open */
+    if (term->pipe_stream != NULL) {
+
+        /* Flush buffer if no space is available */
+        if (term->pipe_buffer_length == sizeof(term->pipe_buffer))
+            guac_terminal_pipe_stream_flush(term);
+
+        /* Append single byte to buffer */
+        term->pipe_buffer[term->pipe_buffer_length++] = c;
+
+    }
+
+}
+
+void guac_terminal_pipe_stream_flush(guac_terminal* term) {
+
+    guac_client* client = term->client;
+    guac_socket* socket = client->socket;
+    guac_stream* pipe_stream = term->pipe_stream;
+
+    /* Write blob if data exists in buffer */
+    if (pipe_stream != NULL && term->pipe_buffer_length > 0) {
+        guac_protocol_send_blob(socket, pipe_stream,
+                term->pipe_buffer, term->pipe_buffer_length);
+        term->pipe_buffer_length = 0;
+    }
+
+}
+
+void guac_terminal_pipe_stream_close(guac_terminal* term) {
+
+    guac_client* client = term->client;
+    guac_socket* socket = client->socket;
+    guac_stream* pipe_stream = term->pipe_stream;
+
+    /* Close any existing pipe */
+    if (pipe_stream != NULL) {
+
+        /* Write end of stream */
+        guac_terminal_pipe_stream_flush(term);
+        guac_protocol_send_end(socket, pipe_stream);
+
+        /* Destroy stream */
+        guac_client_free_stream(client, pipe_stream);
+        term->pipe_stream = NULL;
+
+        /* Log redirect at debug level */
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Terminal output now redirected to display.");
+
+    }
+
 }
 
