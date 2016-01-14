@@ -59,6 +59,12 @@ int guac_terminal_echo(guac_terminal* term, unsigned char c) {
 
     const int* char_mapping = term->char_mapping[term->active_char_set];
 
+    /* Echo to pipe stream if open and not starting an ESC sequence */
+    if (term->pipe_stream != NULL && c != 0x1B) {
+        guac_terminal_pipe_stream_write(term, c);
+        return 0;
+    }
+
     /* If using non-Unicode mapping, just map straight bytes */
     if (char_mapping != NULL) {
         codepoint = c;
@@ -940,9 +946,6 @@ int guac_terminal_download(guac_terminal* term, unsigned char c) {
 
 int guac_terminal_open_pipe_stream(guac_terminal* term, unsigned char c) {
 
-    guac_client* client = term->client;
-    guac_socket* socket = client->socket;
-
     static char stream_name[2048];
     static int length = 0;
 
@@ -951,25 +954,14 @@ int guac_terminal_open_pipe_stream(guac_terminal* term, unsigned char c) {
 
         /* End stream name string */
         stream_name[length++] = '\0';
-        term->char_handler = guac_terminal_echo;
         length = 0;
 
-        /* Close existing stream, if any */
-        if (term->pipe_stream != NULL) {
-            guac_protocol_send_end(socket, term->pipe_stream);
-            guac_client_free_stream(client, term->pipe_stream);
-        }
-
-        /* Allocate and assign new pipe stream */
-        term->pipe_stream = guac_client_alloc_stream(client);
-
         /* Open new pipe stream */
-        guac_protocol_send_pipe(socket, term->pipe_stream,
-                "text/plain", stream_name);
+        guac_terminal_pipe_stream_open(term, stream_name);
 
-        /* Log redirect at debug level */
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Terminal output now redirected to pipe '%s'.", stream_name);
+        /* Return to echo mode */
+        term->char_handler = guac_terminal_echo;
+
     }
 
     /* Otherwise, store character within stream name */
@@ -982,26 +974,14 @@ int guac_terminal_open_pipe_stream(guac_terminal* term, unsigned char c) {
 
 int guac_terminal_close_pipe_stream(guac_terminal* term, unsigned char c) {
 
-    guac_client* client = term->client;
-    guac_socket* socket = client->socket;
-
     /* Handle closure on ECMA-48 ST (String Terminator) */
     if (c == 0x9C || c == 0x5C || c == 0x07) {
-        term->char_handler = guac_terminal_echo;
 
         /* Close any existing pipe */
-        if (term->pipe_stream != NULL) {
-            guac_protocol_send_end(socket, term->pipe_stream);
-            guac_client_free_stream(client, term->pipe_stream);
-            term->pipe_stream = NULL;
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Terminal output now redirected to display.");
-        }
+        guac_terminal_pipe_stream_close(term);
 
-        /* Warn if OSC is inappropriate */
-        else
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Cannot handle pipe close OSC - no open pipe exists.");
+        /* Return to echo mode */
+        term->char_handler = guac_terminal_echo;
 
     }
 

@@ -157,6 +157,19 @@ struct guac_terminal {
     guac_stream* pipe_stream;
 
     /**
+     * Buffer of data pending write to the pipe_stream. Data within this buffer
+     * will be flushed to the pipe_stream when either (1) the buffer is full
+     * and another character needs to be written or (2) the pipe_stream is
+     * closed.
+     */
+    char pipe_buffer[6048];
+
+    /**
+     * The number of bytes currently stored within the pipe_buffer.
+     */
+    int pipe_buffer_length;
+
+    /**
      * Graphical representation of the current scroll state.
      */
     guac_terminal_scrollbar* scrollbar;
@@ -662,6 +675,59 @@ void guac_terminal_clear_tabs(guac_terminal* term);
  * next tabstop (or the rightmost character, if no more tabstops exist).
  */
 int guac_terminal_next_tab(guac_terminal* term, int column);
+
+/**
+ * Opens a new pipe stream, redirecting all output from the given terminal to
+ * that pipe stream. If a pipe stream is already open, that pipe stream will
+ * be flushed and closed prior to opening the new pipe stream.
+ *
+ * @param term
+ *     The terminal which should redirect output to a new pipe stream having
+ *     the given name.
+ *
+ * @param name
+ *     The name of the pipe stream to open.
+ */
+void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name);
+
+/**
+ * Writes a single byte of data to the pipe stream currently open and
+ * associated with the given terminal. The pipe stream must already have been
+ * opened via guac_terminal_pipe_stream_open(). If no pipe stream is currently
+ * open, this function has no effect. Data written through this function may
+ * be buffered.
+ *
+ * @param term
+ *     The terminal whose currently-open pipe stream should be written to.
+ *
+ * @param c
+ *     The byte of data to write to the pipe stream.
+ */
+void guac_terminal_pipe_stream_write(guac_terminal* term, char c);
+
+/**
+ * Flushes any data currently buffered for the currently-open pipe stream
+ * associated with the given terminal. The pipe stream must already have been
+ * opened via guac_terminal_pipe_stream_open(). If no pipe stream is currently
+ * open or no data is in the buffer, this function has no effect.
+ *
+ * @param term
+ *     The terminal whose pipe stream buffer should be flushed.
+ */
+void guac_terminal_pipe_stream_flush(guac_terminal* term);
+
+/**
+ * Closes the currently-open pipe stream associated with the given terminal,
+ * redirecting all output back to the terminal display.  Any data currently
+ * buffered for output to the pipe stream will be flushed prior to closure. The
+ * pipe stream must already have been opened via
+ * guac_terminal_pipe_stream_open(). If no pipe stream is currently open, this
+ * function has no effect.
+ *
+ * @param term
+ *     The terminal whose currently-open pipe stream should be closed.
+ */
+void guac_terminal_pipe_stream_close(guac_terminal* term);
 
 #endif
 
