@@ -58,6 +58,9 @@ const char* GUAC_CLIENT_ARGS[] = {
 #endif
     "color-scheme",
     "command",
+    "typescript-path",
+    "typescript-name",
+    "create-typescript-path",
     NULL
 };
 
@@ -128,6 +131,25 @@ enum __SSH_ARGS_IDX {
      * shell session will be created.
      */
     IDX_COMMAND,
+
+    /**
+     * The full absolute path to the directory in which typescripts should be
+     * written.
+     */
+    IDX_TYPESCRIPT_PATH,
+
+    /**
+     * The name that should be given to typescripts which are written in the
+     * given path. Each typescript will consist of two files: "NAME" and
+     * "NAME.timing".
+     */
+    IDX_TYPESCRIPT_NAME,
+
+    /**
+     * Whether the specified typescript path should automatically be created
+     * if it does not yet exist.
+     */
+    IDX_CREATE_TYPESCRIPT_PATH,
 
     SSH_ARGS_COUNT
 };

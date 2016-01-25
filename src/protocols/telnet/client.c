@@ -54,6 +54,9 @@ const char* GUAC_CLIENT_ARGS[] = {
     "font-name",
     "font-size",
     "color-scheme",
+    "typescript-path",
+    "typescript-name",
+    "create-typescript-path",
     NULL
 };
 
@@ -108,6 +111,25 @@ enum __TELNET_ARGS_IDX {
      * "gray-black".
      */
     IDX_COLOR_SCHEME,
+
+    /**
+     * The full absolute path to the directory in which typescripts should be
+     * written.
+     */
+    IDX_TYPESCRIPT_PATH,
+
+    /**
+     * The name that should be given to typescripts which are written in the
+     * given path. Each typescript will consist of two files: "NAME" and
+     * "NAME.timing".
+     */
+    IDX_TYPESCRIPT_NAME,
+
+    /**
+     * Whether the specified typescript path should automatically be created
+     * if it does not yet exist.
+     */
+    IDX_CREATE_TYPESCRIPT_PATH,
 
     TELNET_ARGS_COUNT
 };
