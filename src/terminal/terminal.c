@@ -35,6 +35,7 @@
 #include "terminal.h"
 #include "terminal_handlers.h"
 #include "types.h"
+#include "typescript.h"
 
 #include <pthread.h>
 #include <stdarg.h>
@@ -329,6 +330,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init pipe stream (output to display by default) */
     term->pipe_stream = NULL;
 
+    /* No typescript by default */
+    term->typescript = NULL;
+
     /* Init terminal lock */
     pthread_mutex_init(&(term->lock), NULL);
 
@@ -374,6 +378,9 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Close and flush any open pipe stream */
     guac_terminal_pipe_stream_close(term);
+
+    /* Close and flush any active typescript */
+    guac_terminal_typescript_free(term->typescript);
 
     /* Close terminal output pipe */
     close(term->stdout_pipe_fd[1]);
@@ -1808,6 +1815,17 @@ void guac_terminal_pipe_stream_close(guac_terminal* term) {
                 "Terminal output now redirected to display.");
 
     }
+
+}
+
+int guac_terminal_create_typescript(guac_terminal* term, const char* path,
+        const char* name, int create_path) {
+
+    /* Create typescript */
+    term->typescript = guac_terminal_typescript_alloc(path, name, create_path);
+
+    /* Typescript creation failed if NULL */
+    return term->typescript != NULL;
 
 }
 

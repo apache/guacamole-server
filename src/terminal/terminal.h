@@ -32,6 +32,7 @@
 #include "guac_clipboard.h"
 #include "scrollbar.h"
 #include "types.h"
+#include "typescript.h"
 
 #include <pthread.h>
 #include <stdbool.h>
@@ -168,6 +169,12 @@ struct guac_terminal {
      * The number of bytes currently stored within the pipe_buffer.
      */
     int pipe_buffer_length;
+
+    /**
+     * The currently-active typescript recording all terminal output, or NULL
+     * if no typescript is being used for the terminal session.
+     */
+    guac_terminal_typescript* typescript;
 
     /**
      * Graphical representation of the current scroll state.
@@ -728,6 +735,38 @@ void guac_terminal_pipe_stream_flush(guac_terminal* term);
  *     The terminal whose currently-open pipe stream should be closed.
  */
 void guac_terminal_pipe_stream_close(guac_terminal* term);
+
+/**
+ * Requests that the terminal write all output to a new pair of typescript
+ * files within the given path and using the given base name. Terminal output
+ * will be written to these new files, along with timing information. If the
+ * create_path flag is non-zero, the given path will be created if it does not
+ * yet exist. If creation of the typescript files or path fails, error messages
+ * will automatically be logged, and no typescript will be written. The
+ * typescript will automatically be closed once the terminal is freed.
+ *
+ * @param term
+ *     The terminal whose output should be written to a typescript.
+ *
+ * @param path
+ *     The full absolute path to a directory in which the typescript files
+ *     should be created.
+ *
+ * @param name
+ *     The base name to use for the typescript files created within the
+ *     specified path.
+ *
+ * @param create_path
+ *     Zero if the specified path MUST exist for typescript files to be
+ *     written, or non-zero if the path should be created if it does not yet
+ *     exist.
+ *
+ * @return
+ *     Zero if the typescript files have been successfully created and a
+ *     typescript will be written, non-zero otherwise.
+ */
+int guac_terminal_create_typescript(guac_terminal* term, const char* path,
+        const char* name, int create_path);
 
 #endif
 
