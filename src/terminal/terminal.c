@@ -1842,7 +1842,7 @@ int guac_terminal_create_typescript(guac_terminal* term, const char* path,
     term->typescript = guac_terminal_typescript_alloc(path, name, create_path);
 
     /* Typescript creation failed if NULL */
-    return term->typescript != NULL;
+    return term->typescript == NULL;
 
 }
 
