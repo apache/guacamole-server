@@ -91,6 +91,18 @@ typedef struct guac_terminal_typescript {
     int length;
 
     /**
+     * The full path to the file which will contain the raw terminal output for
+     * this typescript.
+     */
+    char data_filename[GUAC_TERMINAL_TYPESCRIPT_MAX_NAME_LENGTH];
+
+    /**
+     * The full path to the file which will contain the timing information for
+     * this typescript.
+     */
+    char timing_filename[GUAC_TERMINAL_TYPESCRIPT_MAX_NAME_LENGTH];
+
+    /**
      * The file descriptor of the file into which raw terminal output should be
      * written.
      */

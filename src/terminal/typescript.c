@@ -114,44 +114,44 @@ static int guac_terminal_typescript_open_data_file(const char* path,
 guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
         const char* name, int create_path) {
 
-    char basename[GUAC_TERMINAL_TYPESCRIPT_MAX_NAME_LENGTH];
-    char timing_name[GUAC_TERMINAL_TYPESCRIPT_MAX_NAME_LENGTH];
-
-    guac_terminal_typescript* typescript;
-    int data_fd, timing_fd;
-
     /* Create path if it does not exist, fail if impossible */
     if (create_path && mkdir(path, S_IRWXU) && errno != EEXIST)
         return NULL;
 
+    /* Allocate space for new typescript */
+    guac_terminal_typescript* typescript =
+        malloc(sizeof(guac_terminal_typescript));
+
     /* Attempt to open typescript data file */
-    data_fd = guac_terminal_typescript_open_data_file(path, name, basename,
-            sizeof(basename) - sizeof(GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX));
-    if (data_fd == -1)
-        return NULL;
-
-    /* Append suffix to basename */
-    sprintf(timing_name, "%s.%s", basename,
-            GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX);
-
-    /* Attempt to open typescript timing file */
-    timing_fd = open(timing_name,
-            O_CREAT | O_EXCL | O_WRONLY,
-            S_IRUSR | S_IWUSR);
-    if (timing_fd == -1) {
-        close(data_fd);
+    typescript->data_fd = guac_terminal_typescript_open_data_file(
+            path, name, typescript->data_filename,
+            sizeof(typescript->data_filename)
+                - sizeof(GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX));
+    if (typescript->data_fd == -1) {
+        free(typescript);
         return NULL;
     }
 
-    /* Init newly-created typescript */
-    typescript = malloc(sizeof(guac_terminal_typescript));
-    typescript->data_fd = data_fd;
-    typescript->timing_fd = timing_fd;
+    /* Append suffix to basename */
+    sprintf(typescript->timing_filename, "%s.%s", typescript->data_filename,
+            GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX);
+
+    /* Attempt to open typescript timing file */
+    typescript->timing_fd = open(typescript->timing_filename,
+            O_CREAT | O_EXCL | O_WRONLY,
+            S_IRUSR | S_IWUSR);
+    if (typescript->timing_fd == -1) {
+        free(typescript);
+        close(typescript->data_fd);
+        return NULL;
+    }
+
+    /* Typescript starts out flushed */
     typescript->length = 0;
     typescript->last_flush = guac_timestamp_current();
 
     /* Write header */
-    guac_common_write(data_fd, GUAC_TERMINAL_TYPESCRIPT_HEADER,
+    guac_common_write(typescript->data_fd, GUAC_TERMINAL_TYPESCRIPT_HEADER,
             sizeof(GUAC_TERMINAL_TYPESCRIPT_HEADER) - 1);
 
     return typescript;
