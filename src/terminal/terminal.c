@@ -37,6 +37,7 @@
 #include "types.h"
 #include "typescript.h"
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -1841,8 +1842,22 @@ int guac_terminal_create_typescript(guac_terminal* term, const char* path,
     /* Create typescript */
     term->typescript = guac_terminal_typescript_alloc(path, name, create_path);
 
-    /* Typescript creation failed if NULL */
-    return term->typescript == NULL;
+    /* Log failure */
+    if (term->typescript == NULL) {
+        guac_client_log(term->client, GUAC_LOG_ERROR,
+                "Creation of typescript failed: %s", strerror(errno));
+        return 1;
+    }
+
+    /* If typescript was successfully created, log filenames */
+    guac_client_log(term->client, GUAC_LOG_INFO,
+            "Typescript of terminal session will be saved to \"%s\". "
+            "Timing file is \"%s\".",
+            term->typescript->data_filename,
+            term->typescript->timing_filename);
+
+    /* Typescript creation succeeded */
+    return 0;
 
 }
 
