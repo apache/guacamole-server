@@ -27,6 +27,18 @@
 #include "config.h"
 
 /**
+ * A NULL-terminated string of raw bytes which should be written at the
+ * beginning of any typescript.
+ */
+#define GUAC_TERMINAL_TYPESCRIPT_HEADER "[BEGIN TYPESCRIPT]\n"
+
+/**
+ * A NULL-terminated string of raw bytes which should be written at the
+ * end of any typescript.
+ */
+#define GUAC_TERMINAL_TYPESCRIPT_FOOTER "\n[END TYPESCRIPT]\n"
+
+/**
  * An active typescript, consisting of a data file (raw terminal output) and
  * timing file (related timestamps and byte counts).
  */

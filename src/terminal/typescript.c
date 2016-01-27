@@ -64,6 +64,10 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
     typescript->timing_fd = timing_fd;
     typescript->length = 0;
 
+    /* Write header */
+    guac_common_write(data_fd, GUAC_TERMINAL_TYPESCRIPT_HEADER,
+            sizeof(GUAC_TERMINAL_TYPESCRIPT_HEADER) - 1);
+
     return typescript;
 
 }
@@ -99,6 +103,10 @@ void guac_terminal_typescript_free(guac_terminal_typescript* typescript) {
 
     /* Flush any pending data */
     guac_terminal_typescript_flush(typescript);
+
+    /* Write footer */
+    guac_common_write(typescript->data_fd, GUAC_TERMINAL_TYPESCRIPT_FOOTER,
+            sizeof(GUAC_TERMINAL_TYPESCRIPT_FOOTER) - 1);
 
     /* Close file descriptors */
     close(typescript->data_fd);
