@@ -114,6 +114,10 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
     guac_terminal_typescript* typescript;
     int data_fd, timing_fd;
 
+    /* Create path if it does not exist, fail if impossible */
+    if (create_path && mkdir(path, S_IRWXU) && errno != EEXIST)
+        return NULL;
+
     /* Attempt to open typescript data file */
     data_fd = guac_terminal_typescript_open_data_file(path, name,
             basename, sizeof(basename));
