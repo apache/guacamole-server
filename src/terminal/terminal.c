@@ -672,8 +672,18 @@ void guac_terminal_commit_cursor(guac_terminal* term) {
 int guac_terminal_write(guac_terminal* term, const char* c, int size) {
 
     while (size > 0) {
-        term->char_handler(term, *(c++));
+
+        /* Read and advance to next character */
+        char current = *(c++);
         size--;
+
+        /* Write character to typescript, if any */
+        if (term->typescript != NULL)
+            guac_terminal_typescript_write(term->typescript, current);
+
+        /* Handle character and its meaning */
+        term->char_handler(term, current);
+
     }
 
     return 0;
@@ -1349,9 +1359,16 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 }
 
 void guac_terminal_flush(guac_terminal* terminal) {
+
+    /* Flush typescript if in use */
+    if (terminal->typescript != NULL)
+        guac_terminal_typescript_flush(terminal->typescript);
+
+    /* Flush display state */
     guac_terminal_commit_cursor(terminal);
     guac_terminal_display_flush(terminal->display);
     guac_terminal_scrollbar_flush(terminal->scrollbar);
+
 }
 
 void guac_terminal_lock(guac_terminal* terminal) {
