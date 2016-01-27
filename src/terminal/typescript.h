@@ -56,15 +56,22 @@
 
 /**
  * The maximum length of the string containing a sequential numeric suffix
- * between 1 and GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX inclusive, in bytes.
+ * between 1 and GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX inclusive, in bytes,
+ * including NULL terminator.
  */
 #define GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX_LENGTH 4
 
 /**
  * The maximum overall length of the full path to the typescript file,
- * including any additional suffix, in bytes.
+ * including any additional suffix and NULL terminator, in bytes.
  */
 #define GUAC_TERMINAL_TYPESCRIPT_MAX_NAME_LENGTH 2048
+
+/**
+ * The suffix which will be appended to the typescript data file's name to
+ * produce the name of the timing file.
+ */
+#define GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX "timing"
 
 /**
  * An active typescript, consisting of a data file (raw terminal output) and

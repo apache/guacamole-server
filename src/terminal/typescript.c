@@ -69,7 +69,7 @@ static int guac_terminal_typescript_open_data_file(const char* path,
 
     /* Concatenate path and name (separated by a single slash) */
     int basename_length = snprintf(basename,
-            basename_size - GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX_LENGTH ,
+            basename_size - GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX_LENGTH,
             "%s/%s", path, name);
 
     /* Abort if maximum length reached */
@@ -84,21 +84,26 @@ static int guac_terminal_typescript_open_data_file(const char* path,
             O_CREAT | O_EXCL | O_WRONLY,
             S_IRUSR | S_IWUSR);
 
-    /* Prepare basename for additional suffix */
-    basename[basename_length] = '.';
-    char* suffix = basename + basename_length + 1;
+    /* Continuously retry with alternate names on failure */
+    if (data_fd == -1) {
 
-    /* Continue retrying alternative suffixes if file already exists */
-    for (i = 1; data_fd == -1 && errno == EEXIST
-            && i <= GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX; i++) {
+        /* Prepare basename for additional suffix */
+        basename[basename_length] = '.';
+        char* suffix = &(basename[basename_length + 1]);
 
-        /* Append new suffix */
-        sprintf(suffix, "%i", i);
+        /* Continue retrying alternative suffixes if file already exists */
+        for (i = 1; data_fd == -1 && errno == EEXIST
+                && i <= GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX; i++) {
 
-        /* Retry with newly-suffixed filename */
-        data_fd = open(basename,
-                O_CREAT | O_EXCL | O_WRONLY,
-                S_IRUSR | S_IWUSR);
+            /* Append new suffix */
+            sprintf(suffix, "%i", i);
+
+            /* Retry with newly-suffixed filename */
+            data_fd = open(basename,
+                    O_CREAT | O_EXCL | O_WRONLY,
+                    S_IRUSR | S_IWUSR);
+
+        }
 
     }
 
@@ -110,6 +115,7 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
         const char* name, int create_path) {
 
     char basename[GUAC_TERMINAL_TYPESCRIPT_MAX_NAME_LENGTH];
+    char timing_name[GUAC_TERMINAL_TYPESCRIPT_MAX_NAME_LENGTH];
 
     guac_terminal_typescript* typescript;
     int data_fd, timing_fd;
@@ -119,13 +125,17 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
         return NULL;
 
     /* Attempt to open typescript data file */
-    data_fd = guac_terminal_typescript_open_data_file(path, name,
-            basename, sizeof(basename));
+    data_fd = guac_terminal_typescript_open_data_file(path, name, basename,
+            sizeof(basename) - sizeof(GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX));
     if (data_fd == -1)
         return NULL;
 
+    /* Append suffix to basename */
+    sprintf(timing_name, "%s.%s", basename,
+            GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX);
+
     /* Attempt to open typescript timing file */
-    timing_fd = open("/tmp/typescript-timing",
+    timing_fd = open(timing_name,
             O_CREAT | O_EXCL | O_WRONLY,
             S_IRUSR | S_IWUSR);
     if (timing_fd == -1) {
