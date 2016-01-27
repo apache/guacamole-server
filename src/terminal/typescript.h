@@ -26,6 +26,8 @@
 
 #include "config.h"
 
+#include <guacamole/timestamp.h>
+
 /**
  * A NULL-terminated string of raw bytes which should be written at the
  * beginning of any typescript.
@@ -67,6 +69,12 @@ typedef struct guac_terminal_typescript {
      * data file should be written.
      */
     int timing_fd;
+
+    /**
+     * The last time that this typescript was flushed. If this typescript was
+     * never flushed, this will be the time the typescripe was created.
+     */
+    guac_timestamp last_flush;
 
 } guac_terminal_typescript;
 

@@ -24,7 +24,10 @@
 #include "guac_io.h"
 #include "typescript.h"
 
+#include <guacamole/timestamp.h>
+
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 
 #include <sys/types.h>
@@ -63,6 +66,7 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
     typescript->data_fd = data_fd;
     typescript->timing_fd = timing_fd;
     typescript->length = 0;
+    typescript->last_flush = guac_timestamp_current();
 
     /* Write header */
     guac_common_write(data_fd, GUAC_TERMINAL_TYPESCRIPT_HEADER,
@@ -86,12 +90,37 @@ void guac_terminal_typescript_write(guac_terminal_typescript* typescript,
 
 void guac_terminal_typescript_flush(guac_terminal_typescript* typescript) {
 
+    /* Do nothing if nothing to flush */
+    if (typescript->length == 0)
+        return;
+
+    /* Get timestamps of previous and current flush */
+    guac_timestamp this_flush = guac_timestamp_current();
+    guac_timestamp last_flush = typescript->last_flush;
+
+    /* Calculate elapsed time in seconds */
+    double elapsed_time = (this_flush - last_flush) / 1000.0;
+
+    /* Produce single line of timestamp output */
+    char timestamp_buffer[32];
+    int timestamp_length = snprintf(timestamp_buffer, sizeof(timestamp_buffer),
+            "%0.6f %i\n", elapsed_time, typescript->length);
+
+    /* Calculate actual length of timestamp line */
+    if (timestamp_length > sizeof(timestamp_buffer))
+        timestamp_length = sizeof(timestamp_buffer);
+
+    /* Write timestamp to timing file */
+    guac_common_write(typescript->timing_fd,
+            timestamp_buffer, timestamp_length);
+
     /* Empty buffer into data file */
     guac_common_write(typescript->data_fd,
             typescript->buffer, typescript->length);
-    typescript->length = 0;
 
-    /* TODO: Write timestamp */
+    /* Buffer is now flushed */
+    typescript->length = 0;
+    typescript->last_flush = this_flush;
 
 }
 
