@@ -98,13 +98,15 @@ void guac_terminal_typescript_flush(guac_terminal_typescript* typescript) {
     guac_timestamp this_flush = guac_timestamp_current();
     guac_timestamp last_flush = typescript->last_flush;
 
-    /* Calculate elapsed time in seconds */
-    double elapsed_time = (this_flush - last_flush) / 1000.0;
+    /* Calculate time since last flush */
+    int elapsed_time = this_flush - last_flush;
+    if (elapsed_time > GUAC_TERMINAL_TYPESCRIPT_MAX_DELAY)
+        elapsed_time = GUAC_TERMINAL_TYPESCRIPT_MAX_DELAY;
 
     /* Produce single line of timestamp output */
     char timestamp_buffer[32];
     int timestamp_length = snprintf(timestamp_buffer, sizeof(timestamp_buffer),
-            "%0.6f %i\n", elapsed_time, typescript->length);
+            "%0.6f %i\n", elapsed_time / 1000.0, typescript->length);
 
     /* Calculate actual length of timestamp line */
     if (timestamp_length > sizeof(timestamp_buffer))

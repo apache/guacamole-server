@@ -41,6 +41,13 @@
 #define GUAC_TERMINAL_TYPESCRIPT_FOOTER "\n[END TYPESCRIPT]\n"
 
 /**
+ * The maximum amount of time to allow for a particular timing entry, in
+ * milliseconds. Any timing entries exceeding this value will be written as
+ * exactly this value instead.
+ */
+#define GUAC_TERMINAL_TYPESCRIPT_MAX_DELAY 86400000
+
+/**
  * An active typescript, consisting of a data file (raw terminal output) and
  * timing file (related timestamps and byte counts).
  */
