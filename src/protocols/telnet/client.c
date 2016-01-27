@@ -240,6 +240,25 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
         return -1;
     }
 
+    /* Set up typescript, if requested */
+    const char* typescript_path = argv[IDX_TYPESCRIPT_PATH];
+    if (typescript_path[0] != 0) {
+
+        /* Default to "typescript" if no name provided */
+        const char* typescript_name = argv[IDX_TYPESCRIPT_NAME];
+        if (typescript_name[0] == 0)
+            typescript_name = "typescript";
+
+        /* Parse path creation flag */
+        int create_path =
+            strcmp(argv[IDX_CREATE_TYPESCRIPT_PATH], "true") == 0;
+
+        /* Create typescript */
+        guac_terminal_create_typescript(client_data->term, typescript_path,
+                    typescript_name, create_path);
+
+    }
+
     /* Send initial name */
     guac_protocol_send_name(socket, client_data->hostname);
 
