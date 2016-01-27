@@ -58,6 +58,9 @@ const char* GUAC_CLIENT_ARGS[] = {
 #endif
     "color-scheme",
     "command",
+    "typescript-path",
+    "typescript-name",
+    "create-typescript-path",
     NULL
 };
 
@@ -128,6 +131,25 @@ enum __SSH_ARGS_IDX {
      * shell session will be created.
      */
     IDX_COMMAND,
+
+    /**
+     * The full absolute path to the directory in which typescripts should be
+     * written.
+     */
+    IDX_TYPESCRIPT_PATH,
+
+    /**
+     * The name that should be given to typescripts which are written in the
+     * given path. Each typescript will consist of two files: "NAME" and
+     * "NAME.timing".
+     */
+    IDX_TYPESCRIPT_NAME,
+
+    /**
+     * Whether the specified typescript path should automatically be created
+     * if it does not yet exist.
+     */
+    IDX_CREATE_TYPESCRIPT_PATH,
 
     SSH_ARGS_COUNT
 };
@@ -200,6 +222,25 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     if (client_data->term == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Terminal initialization failed");
         return -1;
+    }
+
+    /* Set up typescript, if requested */
+    const char* typescript_path = argv[IDX_TYPESCRIPT_PATH];
+    if (typescript_path[0] != 0) {
+
+        /* Default to "typescript" if no name provided */
+        const char* typescript_name = argv[IDX_TYPESCRIPT_NAME];
+        if (typescript_name[0] == 0)
+            typescript_name = "typescript";
+
+        /* Parse path creation flag */
+        int create_path =
+            strcmp(argv[IDX_CREATE_TYPESCRIPT_PATH], "true") == 0;
+
+        /* Create typescript */
+        guac_terminal_create_typescript(client_data->term, typescript_path,
+                    typescript_name, create_path);
+
     }
 
     /* Ensure main socket is threadsafe */

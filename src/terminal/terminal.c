@@ -35,7 +35,9 @@
 #include "terminal.h"
 #include "terminal_handlers.h"
 #include "types.h"
+#include "typescript.h"
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -329,6 +331,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init pipe stream (output to display by default) */
     term->pipe_stream = NULL;
 
+    /* No typescript by default */
+    term->typescript = NULL;
+
     /* Init terminal lock */
     pthread_mutex_init(&(term->lock), NULL);
 
@@ -374,6 +379,9 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Close and flush any open pipe stream */
     guac_terminal_pipe_stream_close(term);
+
+    /* Close and flush any active typescript */
+    guac_terminal_typescript_free(term->typescript);
 
     /* Close terminal output pipe */
     close(term->stdout_pipe_fd[1]);
@@ -665,8 +673,18 @@ void guac_terminal_commit_cursor(guac_terminal* term) {
 int guac_terminal_write(guac_terminal* term, const char* c, int size) {
 
     while (size > 0) {
-        term->char_handler(term, *(c++));
+
+        /* Read and advance to next character */
+        char current = *(c++);
         size--;
+
+        /* Write character to typescript, if any */
+        if (term->typescript != NULL)
+            guac_terminal_typescript_write(term->typescript, current);
+
+        /* Handle character and its meaning */
+        term->char_handler(term, current);
+
     }
 
     return 0;
@@ -1342,9 +1360,16 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 }
 
 void guac_terminal_flush(guac_terminal* terminal) {
+
+    /* Flush typescript if in use */
+    if (terminal->typescript != NULL)
+        guac_terminal_typescript_flush(terminal->typescript);
+
+    /* Flush display state */
     guac_terminal_commit_cursor(terminal);
     guac_terminal_display_flush(terminal->display);
     guac_terminal_scrollbar_flush(terminal->scrollbar);
+
 }
 
 void guac_terminal_lock(guac_terminal* terminal) {
@@ -1808,6 +1833,31 @@ void guac_terminal_pipe_stream_close(guac_terminal* term) {
                 "Terminal output now redirected to display.");
 
     }
+
+}
+
+int guac_terminal_create_typescript(guac_terminal* term, const char* path,
+        const char* name, int create_path) {
+
+    /* Create typescript */
+    term->typescript = guac_terminal_typescript_alloc(path, name, create_path);
+
+    /* Log failure */
+    if (term->typescript == NULL) {
+        guac_client_log(term->client, GUAC_LOG_ERROR,
+                "Creation of typescript failed: %s", strerror(errno));
+        return 1;
+    }
+
+    /* If typescript was successfully created, log filenames */
+    guac_client_log(term->client, GUAC_LOG_INFO,
+            "Typescript of terminal session will be saved to \"%s\". "
+            "Timing file is \"%s\".",
+            term->typescript->data_filename,
+            term->typescript->timing_filename);
+
+    /* Typescript creation succeeded */
+    return 0;
 
 }
 
