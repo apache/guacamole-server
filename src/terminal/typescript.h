@@ -48,6 +48,25 @@
 #define GUAC_TERMINAL_TYPESCRIPT_MAX_DELAY 86400000
 
 /**
+ * The maximum numeric value allowed for the .1, .2, .3, etc. suffix appended
+ * to the end of the typescript filename if a typescript having the requested
+ * name already exists.
+ */
+#define GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX 255
+
+/**
+ * The maximum length of the string containing a sequential numeric suffix
+ * between 1 and GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX inclusive, in bytes.
+ */
+#define GUAC_TERMINAL_TYPESCRIPT_MAX_SUFFIX_LENGTH 4
+
+/**
+ * The maximum overall length of the full path to the typescript file,
+ * including any additional suffix, in bytes.
+ */
+#define GUAC_TERMINAL_TYPESCRIPT_MAX_NAME_LENGTH 2048
+
+/**
  * An active typescript, consisting of a data file (raw terminal output) and
  * timing file (related timestamps and byte counts).
  */
