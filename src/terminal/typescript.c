@@ -43,12 +43,16 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
      */
 
     /* Attempt to open typescript data file */
-    data_fd = open("/tmp/typescript-data", O_CREAT | O_EXCL | O_WRONLY);
+    data_fd = open("/tmp/typescript-data",
+            O_CREAT | O_EXCL | O_WRONLY,
+            S_IRUSR | S_IWUSR);
     if (data_fd == -1)
         return NULL;
 
     /* Attempt to open typescript timing file */
-    timing_fd = open("/tmp/typescript-timing", O_CREAT | O_EXCL | O_WRONLY);
+    timing_fd = open("/tmp/typescript-timing",
+            O_CREAT | O_EXCL | O_WRONLY,
+            S_IRUSR | S_IWUSR);
     if (timing_fd == -1) {
         close(data_fd);
         return NULL;
