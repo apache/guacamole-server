@@ -141,8 +141,8 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
             O_CREAT | O_EXCL | O_WRONLY,
             S_IRUSR | S_IWUSR);
     if (typescript->timing_fd == -1) {
-        free(typescript);
         close(typescript->data_fd);
+        free(typescript);
         return NULL;
     }
 
