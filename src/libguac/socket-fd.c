@@ -92,6 +92,10 @@ int __guac_socket_fd_select_handler(guac_socket* socket, int usec_timeout) {
     struct timeval timeout;
     int retval;
 
+    /* Initialize fd_set with single underlying file descriptor */
+    FD_ZERO(&fds);
+    FD_SET(data->fd, &fds);
+
     /* No timeout if usec_timeout is negative */
     if (usec_timeout < 0)
         retval = select(data->fd + 1, &fds, NULL, NULL, NULL); 
@@ -100,10 +104,6 @@ int __guac_socket_fd_select_handler(guac_socket* socket, int usec_timeout) {
     else {
         timeout.tv_sec = usec_timeout/1000000;
         timeout.tv_usec = usec_timeout%1000000;
-
-        FD_ZERO(&fds);
-        FD_SET(data->fd, &fds);
-
         retval = select(data->fd + 1, &fds, NULL, NULL, &timeout);
     }
 
