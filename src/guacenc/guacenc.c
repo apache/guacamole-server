@@ -34,12 +34,13 @@ int main(int argc, char* argv[]) {
             "version " VERSION);
 
     /* Abort if no files given */
-    if (argc == 1) {
+    if (argc <= 1) {
         guacenc_log(GUAC_LOG_INFO, "No input files specified. Nothing to do.");
         return 0;
     }
 
     /* Track number of overall failures */
+    int total_files = argc - 1;
     int failures = 0;
 
     /* Encode all input files */
@@ -61,8 +62,8 @@ int main(int argc, char* argv[]) {
 
     /* Warn if at least one file failed */
     if (failures != 0)
-        guacenc_log(GUAC_LOG_WARNING, "Encoding failed for %i file(s).",
-                failures);
+        guacenc_log(GUAC_LOG_WARNING, "Encoding failed for %i of %i file(s).",
+                failures, total_files);
 
     /* Notify of success */
     else
