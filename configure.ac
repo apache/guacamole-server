@@ -974,6 +974,7 @@ AC_CONFIG_FILES([Makefile
                  src/terminal/Makefile
                  src/libguac/Makefile
                  src/guacd/Makefile
+                 src/guacenc/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile

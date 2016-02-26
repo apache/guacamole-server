@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015 Glyptodon LLC
+# Copyright (C) 2016 Glyptodon, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,55 +20,23 @@
 # THE SOFTWARE.
 #
 
-ACLOCAL_AMFLAGS = -I m4
+AUTOMAKE_OPTIONS = foreign 
 
-# Subprojects
-DIST_SUBDIRS =           \
-    src/libguac          \
-    src/common           \
-    src/common-ssh       \
-    src/terminal         \
-    src/guacd            \
-    src/guacenc          \
-    src/protocols/rdp    \
-    src/protocols/ssh    \
-    src/protocols/telnet \
-    src/protocols/vnc    \
-    tests
+bin_PROGRAMS = guacenc
 
-SUBDIRS =       \
-    src/libguac \
-    src/common  \
-    src/guacd   \
-    src/guacenc \
-    tests
+noinst_HEADERS =  \
+    encode.h      \
+    log.h
 
-if ENABLE_COMMON_SSH
-SUBDIRS += src/common-ssh
-endif
+guacenc_SOURCES = \
+    encode.c      \
+    guacenc.c     \
+    log.c
 
-if ENABLE_TERMINAL
-SUBDIRS += src/terminal
-endif
+guacenc_CFLAGS =            \
+    -Werror -Wall -pedantic \
+    @LIBGUAC_INCLUDE@
 
-if ENABLE_RDP
-SUBDIRS += src/protocols/rdp
-endif
-
-if ENABLE_SSH
-SUBDIRS += src/protocols/ssh
-endif
-
-if ENABLE_TELNET
-SUBDIRS += src/protocols/telnet
-endif
-
-if ENABLE_VNC
-SUBDIRS += src/protocols/vnc
-endif
-
-EXTRA_DIST =     \
-    LICENSE      \
-    bin/guacctl  \
-    doc/Doxyfile
+guacenc_LDADD =     \
+    @LIBGUAC_LTLIB@
 
