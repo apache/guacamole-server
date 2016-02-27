@@ -24,9 +24,9 @@
 #include "log.h"
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 
 #include <stdlib.h>
-#include <string.h>
 
 int guacenc_handle_blob(int argc, char** argv) {
 
@@ -39,10 +39,11 @@ int guacenc_handle_blob(int argc, char** argv) {
     /* Parse arguments */
     int index = atoi(argv[0]);
     char* data = argv[1];
+    int data_length = guac_protocol_decode_base64(data);
 
     /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "blob: stream=%i data=[%i chars]",
-            index, strlen(data));
+    guacenc_log(GUAC_LOG_DEBUG, "blob: stream=%i data=[%i bytes]",
+            index, data_length);
     return 0;
 
 }
