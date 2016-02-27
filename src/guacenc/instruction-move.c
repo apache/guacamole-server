@@ -43,9 +43,21 @@ int guacenc_handle_move(guacenc_display* display, int argc, char** argv) {
     int y = atoi(argv[3]);
     int z = atoi(argv[4]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "move: layer=%i parent=%i (%i, %i) z=%i",
-            layer_index, parent_index, x, y, z);
+    /* Retrieve requested layer */
+    guacenc_layer* layer = guacenc_display_get_layer(display, layer_index);
+    if (layer == NULL)
+        return 1;
+
+    /* Validate parent layer */
+    if (guacenc_display_get_layer(display, parent_index) == NULL)
+        return 1;
+
+    /* Update layer properties */
+    layer->parent_index = parent_index;
+    layer->x = x;
+    layer->y = y;
+    layer->z = z;
+
     return 0;
 
 }

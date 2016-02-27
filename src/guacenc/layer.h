@@ -41,7 +41,7 @@ typedef struct guacenc_layer {
      * The actual image contents of this layer, as well as this layer's size
      * (width and height).
      */
-    guacenc_buffer buffer;
+    guacenc_buffer* buffer;
 
     /**
      * The index of the layer that contains this layer. If this layer is the
@@ -75,6 +75,26 @@ typedef struct guacenc_layer {
     int opacity;
 
 } guacenc_layer;
+
+/**
+ * Allocates and initializes a new layer object. This allocation is independent
+ * of the Guacamole video encoder display; the allocated guacenc_layer will not
+ * automatically be associated with the active display.
+ *
+ * @return
+ *     A newly-allocated and initialized guacenc_layer, or NULL if allocation
+ *     fails.
+ */
+guacenc_layer* guacenc_layer_alloc();
+
+/**
+ * Frees all memory associated with the given layer object. If the layer
+ * provided is NULL, this function has no effect.
+ *
+ * @param layer
+ *     The layer to free, which may be NULL.
+ */
+void guacenc_layer_free(guacenc_layer* layer);
 
 #endif
 

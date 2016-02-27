@@ -51,6 +51,7 @@ guacenc_SOURCES =          \
     instruction-size.c     \
     instruction-sync.c     \
     instruction-transfer.c \
+    layer.c                \
     log.c
 
 guacenc_CFLAGS =            \

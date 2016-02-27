@@ -39,9 +39,8 @@ int guacenc_handle_dispose(guacenc_display* display, int argc, char** argv) {
     /* Parse arguments */
     int index = atoi(argv[0]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "dispose: layer=%i", index);
-    return 0;
+    /* Dispose of layer */
+    return guacenc_display_free_layer(display, index);
 
 }
 

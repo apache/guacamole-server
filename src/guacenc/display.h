@@ -114,15 +114,45 @@ guacenc_display* guacenc_display_alloc();
 
 /**
  * Frees all memory associated with the given Guacamole video encoder display,
- * and finishes any underlying encoding process.
+ * and finishes any underlying encoding process. If the given display is NULL,
+ * this function has no effect.
  *
  * @param display
- *     The Guacamole video encoder display to free.
+ *     The Guacamole video encoder display to free, which may be NULL.
  *
  * @return
  *     Zero if the encoding process completed successfully, non-zero otherwise.
  */
 int guacenc_display_free(guacenc_display* display);
+
+/**
+ * Returns the layer having the given index. A new layer will be allocated if
+ * necessary. If the layer having the given index already exists, it will be
+ * returned.
+ *
+ * @param index
+ *     The index of the layer to retrieve.
+ *
+ * @return
+ *     The layer having the given index, or NULL if the index is invalid or
+ *     a new layer cannot be allocated.
+ */
+guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
+        int index);
+
+/**
+ * Frees all resources associated with the layer having the given index. If
+ * the layer has not been allocated, this function has no effect.
+ *
+ * @param index
+ *     The index of the layer to free.
+ *
+ * @return
+ *     Zero if the layer was successfully freed or was not allocated, non-zero
+ *     if the layer could not be freed as the index was invalid.
+ */
+int guacenc_display_free_layer(guacenc_display* display,
+        int index);
 
 #endif
 

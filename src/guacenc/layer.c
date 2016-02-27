@@ -21,34 +21,25 @@
  */
 
 #include "config.h"
-#include "display.h"
-#include "log.h"
-
-#include <guacamole/client.h>
+#include "layer.h"
 
 #include <stdlib.h>
 
-int guacenc_handle_shade(guacenc_display* display, int argc, char** argv) {
+guacenc_layer* guacenc_layer_alloc() {
 
-    /* Verify argument count */
-    if (argc < 2) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"shade\" instruction incomplete");
-        return 1;
-    }
-
-    /* Parse arguments */
-    int index = atoi(argv[0]);
-    int opacity = atoi(argv[1]);
-
-    /* Retrieve requested layer */
-    guacenc_layer* layer = guacenc_display_get_layer(display, index);
+    /* Allocate new layer */
+    guacenc_layer* layer = (guacenc_layer*) calloc(1, sizeof(guacenc_layer));
     if (layer == NULL)
-        return 1;
+        return NULL;
 
-    /* Update layer properties */
-    layer->opacity = opacity;
+    /* Layers default to fully opaque */
+    layer->opacity = 0xFF;
 
-    return 0;
+    return layer;
 
+}
+
+void guacenc_layer_free(guacenc_layer* layer) {
+    free(layer);
 }
 
