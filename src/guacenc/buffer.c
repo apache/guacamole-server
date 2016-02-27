@@ -60,8 +60,15 @@ static void guacenc_buffer_free_image(guacenc_buffer* buffer) {
 }
 
 void guacenc_buffer_free(guacenc_buffer* buffer) {
+
+    /* Ignore NULL buffer */
+    if (buffer == NULL)
+        return;
+
+    /* Free buffer and underlying image */
     guacenc_buffer_free_image(buffer);
     free(buffer);
+
 }
 
 int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height) {
