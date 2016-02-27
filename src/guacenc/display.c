@@ -94,6 +94,81 @@ int guacenc_display_free_layer(guacenc_display* display,
 
 }
 
+guacenc_buffer* guacenc_display_get_buffer(guacenc_display* display,
+        int index) {
+
+    /* Transform index to buffer space */
+    int internal_index = -index - 1;
+
+    /* Do not lookup / allocate if index is invalid */
+    if (internal_index < 0 || internal_index > GUACENC_DISPLAY_MAX_BUFFERS) {
+        guacenc_log(GUAC_LOG_DEBUG, "Buffer index out of bounds: %i", index);
+        return NULL;
+    }
+
+    /* Lookup buffer, allocating a new buffer if necessary */
+    guacenc_buffer* buffer = display->buffers[internal_index];
+    if (buffer == NULL) {
+
+        /* Attempt to allocate buffer */
+        buffer = guacenc_buffer_alloc();
+        if (buffer == NULL) {
+            guacenc_log(GUAC_LOG_DEBUG, "Buffer allocation failed");
+            return NULL;
+        }
+
+        /* Store buffer within display for future retrieval / management */
+        display->buffers[internal_index] = buffer;
+
+    }
+
+    return buffer;
+
+}
+
+int guacenc_display_free_buffer(guacenc_display* display,
+        int index) {
+
+    /* Transform index to buffer space */
+    int internal_index = -index - 1;
+
+    /* Do not lookup / allocate if index is invalid */
+    if (internal_index < 0 || internal_index > GUACENC_DISPLAY_MAX_BUFFERS) {
+        guacenc_log(GUAC_LOG_DEBUG, "Buffer index out of bounds: %i", index);
+        return 1;
+    }
+
+    /* Free buffer (if allocated) */
+    guacenc_buffer_free(display->buffers[internal_index]);
+
+    /* Mark buffer as freed */
+    display->buffers[internal_index] = NULL;
+
+    return 0;
+
+}
+
+guacenc_buffer* guacenc_display_get_related_buffer(guacenc_display* display,
+        int index) {
+
+    /* Retrieve underlying buffer of layer if a layer is requested */
+    if (index >= 0) {
+
+        /* Retrieve / allocate layer (if possible */
+        guacenc_layer* layer = guacenc_display_get_layer(display, index);
+        if (layer == NULL)
+            return NULL;
+
+        /* Return underlying buffer */
+        return layer->buffer;
+
+    }
+
+    /* Otherwise retrieve buffer directly */
+    return guacenc_display_get_buffer(display, index);
+
+}
+
 guacenc_display* guacenc_display_alloc() {
     return (guacenc_display*) calloc(1, sizeof(guacenc_display));
 }

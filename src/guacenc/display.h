@@ -131,7 +131,8 @@ int guacenc_display_free(guacenc_display* display);
  * returned.
  *
  * @param index
- *     The index of the layer to retrieve.
+ *     The index of the layer to retrieve. All valid layer indices are
+ *     non-negative.
  *
  * @return
  *     The layer having the given index, or NULL if the index is invalid or
@@ -145,13 +146,62 @@ guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
  * the layer has not been allocated, this function has no effect.
  *
  * @param index
- *     The index of the layer to free.
+ *     The index of the layer to free. All valid layer indices are
+ *     non-negative.
  *
  * @return
  *     Zero if the layer was successfully freed or was not allocated, non-zero
  *     if the layer could not be freed as the index was invalid.
  */
 int guacenc_display_free_layer(guacenc_display* display,
+        int index);
+
+/**
+ * Returns the buffer having the given index. A new buffer will be allocated if
+ * necessary. If the buffer having the given index already exists, it will be
+ * returned.
+ *
+ * @param index
+ *     The index of the buffer to retrieve. All valid buffer indices are
+ *     negative.
+ *
+ * @return
+ *     The buffer having the given index, or NULL if the index is invalid or
+ *     a new buffer cannot be allocated.
+ */
+guacenc_buffer* guacenc_display_get_buffer(guacenc_display* display,
+        int index);
+
+/**
+ * Frees all resources associated with the buffer having the given index. If
+ * the buffer has not been allocated, this function has no effect.
+ *
+ * @param index
+ *     The index of the buffer to free. All valid buffer indices are negative.
+ *
+ * @return
+ *     Zero if the buffer was successfully freed or was not allocated, non-zero
+ *     if the buffer could not be freed as the index was invalid.
+ */
+int guacenc_display_free_buffer(guacenc_display* display,
+        int index);
+
+/**
+ * Returns the buffer associated with the layer or buffer having the given
+ * index. A new buffer or layer will be allocated if necessary. If the given
+ * index refers to a layer (is non-negative), the buffer underlying that layer
+ * will be returned. If the given index refers to a buffer (is negative), that
+ * buffer will be returned directly.
+ *
+ * @param index
+ *     The index of the buffer or layer whose associated buffer should be
+ *     retrieved.
+ *
+ * @return
+ *     The buffer associated with the buffer or layer having the given index,
+ *     or NULL if the index is invalid.
+ */
+guacenc_buffer* guacenc_display_get_related_buffer(guacenc_display* display,
         int index);
 
 #endif
