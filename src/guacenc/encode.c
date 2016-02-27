@@ -24,6 +24,9 @@
 #include "log.h"
 
 #include <guacamole/client.h>
+#include <guacamole/error.h>
+#include <guacamole/parser.h>
+#include <guacamole/socket.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -32,10 +35,51 @@
 #include <string.h>
 #include <unistd.h>
 
-int guacenc_encode(const char* path) {
+/**
+ * Reads and handles all Guacamole instructions from the given guac_socket
+ * until end-of-stream is reached.
+ *
+ * @param path
+ *     The name of the file being parsed (for logging purposes). This file
+ *     must already be open and available through the given socket.
+ *
+ * @param socket
+ *     The guac_socket through which instructions should be read.
+ *
+ * @return
+ *     Zero on success, non-zero if parsing of Guacamole protocol data through
+ *     the given socket fails.
+ */
+static int guacenc_read_instructions(const char* path, guac_socket* socket) {
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_INFO, "STUB: Encoding \"%s\" ...", path);
+    /* Obtain Guacamole protocol parser */
+    guac_parser* parser = guac_parser_alloc();
+    if (parser == NULL)
+        return 1;
+
+    /* Continuously read instructions */
+    while (!guac_parser_read(parser, socket, -1)) {
+
+        /* STUB: Handle instruction */
+        guacenc_log(GUAC_LOG_DEBUG, "STUB: \"%s\" ...", parser->opcode);
+
+    }
+
+    /* Fail on read/parse error */
+    if (guac_error != GUAC_STATUS_CLOSED) {
+        guacenc_log(GUAC_LOG_ERROR, "%s: %s",
+                path, guac_status_string(guac_error));
+        guac_parser_free(parser);
+        return 1;
+    }
+
+    /* Parse complete */
+    guac_parser_free(parser);
+    return 0;
+
+}
+
+int guacenc_encode(const char* path) {
 
     /* Open input file */
     int fd = open(path, O_RDONLY);
@@ -44,10 +88,25 @@ int guacenc_encode(const char* path) {
         return 1;
     }
 
-    /* Close input file */
-    close(fd);
+    /* Obtain guac_socket wrapping file descriptor */
+    guac_socket* socket = guac_socket_open(fd);
+    if (socket == NULL) {
+        guacenc_log(GUAC_LOG_ERROR, "%s: %s", path,
+                guac_status_string(guac_error));
+        close(fd);
+        return 1;
+    }
 
-    /* Encoding was successful */
+    guacenc_log(GUAC_LOG_INFO, "Encoding \"%s\" ...", path);
+
+    /* Attempt to read all instructions in the file */
+    if (guacenc_read_instructions(path, socket)) {
+        guac_socket_free(socket);
+        return 1;
+    }
+
+    /* Parsing/encoding was successful */
+    guac_socket_free(socket);
     return 0;
 
 }
