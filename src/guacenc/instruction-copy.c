@@ -37,20 +37,34 @@ int guacenc_handle_copy(guacenc_display* display, int argc, char** argv) {
     }
 
     /* Parse arguments */
-    int src_index = atoi(argv[0]);
-    int src_x = atoi(argv[1]);
-    int src_y = atoi(argv[2]);
-    int src_w = atoi(argv[3]);
-    int src_h = atoi(argv[4]);
+    int sindex = atoi(argv[0]);
+    int sx = atoi(argv[1]);
+    int sy = atoi(argv[2]);
+    int width = atoi(argv[3]);
+    int height = atoi(argv[4]);
     int mask = atoi(argv[5]);
-    int dst_index = atoi(argv[6]);
-    int dst_x = atoi(argv[7]);
-    int dst_y = atoi(argv[8]);
+    int dindex = atoi(argv[6]);
+    int dx = atoi(argv[7]);
+    int dy = atoi(argv[8]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "copy: src_layer=%i (%i, %i) %ix%i mask=0x%X "
-            "dst_layer=%i (%i, %i)", src_index, src_x, src_y, src_w, src_h,
-            mask, dst_index, dst_x, dst_y);
+    /* Pull buffer of source layer/buffer */
+    guacenc_buffer* src = guacenc_display_get_related_buffer(display, sindex);
+    if (src == NULL)
+        return 1;
+
+    /* Pull buffer of destination layer/buffer */
+    guacenc_buffer* dst = guacenc_display_get_related_buffer(display, dindex);
+    if (dst == NULL)
+        return 1;
+
+    /* Copy rectangle from source to destination */
+    if (src->surface != NULL && dst->cairo != NULL) {
+        cairo_set_operator(dst->cairo, guacenc_display_cairo_operator(mask));
+        cairo_set_source_surface(dst->cairo, src->surface, dx - sx, dy - sy);
+        cairo_rectangle(dst->cairo, dx, dy, width, height);
+        cairo_fill(dst->cairo);
+    }
+
     return 0;
 
 }
