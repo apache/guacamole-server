@@ -21,9 +21,31 @@
  */
 
 #include "config.h"
+#include "log.h"
+
+#include <guacamole/client.h>
+
+#include <stdlib.h>
 
 int guacenc_handle_move(int argc, const char** argv) {
+
+    /* Verify argument count */
+    if (argc < 5) {
+        guacenc_log(GUAC_LOG_DEBUG, "\"move\" instruction incomplete");
+        return 1;
+    }
+
+    /* Parse arguments */
+    int layer_index = atoi(argv[0]);
+    int parent_index = atoi(argv[1]);
+    int x = atoi(argv[2]);
+    int y = atoi(argv[3]);
+    int z = atoi(argv[4]);
+
     /* STUB */
+    guacenc_log(GUAC_LOG_DEBUG, "move: layer=%i parent=%i (%i, %i) z=%i",
+            layer_index, parent_index, x, y, z);
     return 0;
+
 }
 

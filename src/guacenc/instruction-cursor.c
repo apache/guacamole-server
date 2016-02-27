@@ -21,9 +21,34 @@
  */
 
 #include "config.h"
+#include "log.h"
+
+#include <guacamole/client.h>
+
+#include <stdlib.h>
 
 int guacenc_handle_cursor(int argc, const char** argv) {
+
+    /* Verify argument count */
+    if (argc < 7) {
+        guacenc_log(GUAC_LOG_DEBUG, "\"cursor\" instruction incomplete");
+        return 1;
+    }
+
+    /* Parse arguments */
+    int hotspot_x = atoi(argv[0]);
+    int hotspot_y = atoi(argv[1]);
+    int src_index = atoi(argv[2]);
+    int src_x = atoi(argv[3]);
+    int src_y = atoi(argv[4]);
+    int src_w = atoi(argv[5]);
+    int src_h = atoi(argv[6]);
+
     /* STUB */
+    guacenc_log(GUAC_LOG_DEBUG, "cursor: hotspot (%i, %i) "
+            "src_layer=%i (%i, %i) %ix%i", hotspot_x, hotspot_y,
+            src_index, src_x, src_y, src_w, src_h);
     return 0;
+
 }
 

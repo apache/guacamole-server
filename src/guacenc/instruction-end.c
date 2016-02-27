@@ -21,9 +21,26 @@
  */
 
 #include "config.h"
+#include "log.h"
+
+#include <guacamole/client.h>
+
+#include <stdlib.h>
 
 int guacenc_handle_end(int argc, const char** argv) {
+
+    /* Verify argument count */
+    if (argc < 1) {
+        guacenc_log(GUAC_LOG_DEBUG, "\"end\" instruction incomplete");
+        return 1;
+    }
+
+    /* Parse arguments */
+    int index = atoi(argv[0]);
+
     /* STUB */
+    guacenc_log(GUAC_LOG_DEBUG, "end: stream=%i", index);
     return 0;
+
 }
 

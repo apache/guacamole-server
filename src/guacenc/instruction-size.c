@@ -21,9 +21,28 @@
  */
 
 #include "config.h"
+#include "log.h"
+
+#include <guacamole/client.h>
+
+#include <stdlib.h>
 
 int guacenc_handle_size(int argc, const char** argv) {
+
+    /* Verify argument count */
+    if (argc < 3) {
+        guacenc_log(GUAC_LOG_DEBUG, "\"size\" instruction incomplete");
+        return 1;
+    }
+
+    /* Parse arguments */
+    int index = atoi(argv[0]);
+    int width = atoi(argv[1]);
+    int height = atoi(argv[2]);
+
     /* STUB */
+    guacenc_log(GUAC_LOG_DEBUG, "size: layer=%i %ix%i", index, width, height);
     return 0;
+
 }
 

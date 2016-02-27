@@ -21,9 +21,32 @@
  */
 
 #include "config.h"
+#include "log.h"
+
+#include <guacamole/client.h>
+
+#include <stdlib.h>
 
 int guacenc_handle_cfill(int argc, const char** argv) {
+ 
+    /* Verify argument count */
+    if (argc < 6) {
+        guacenc_log(GUAC_LOG_DEBUG, "\"cfill\" instruction incomplete");
+        return 1;
+    }
+
+    /* Parse arguments */
+    int mask = atoi(argv[0]);
+    int index = atoi(argv[1]);
+    int r = atoi(argv[2]);
+    int g = atoi(argv[3]);
+    int b = atoi(argv[4]);
+    int a = atoi(argv[5]);
+
     /* STUB */
+    guacenc_log(GUAC_LOG_DEBUG, "cfill: mask=0x%X layer=%i "
+            "rgba(%i, %i, %i, %i)", mask, index, r, g, b, a);
     return 0;
+
 }
 

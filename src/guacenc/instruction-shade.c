@@ -21,9 +21,27 @@
  */
 
 #include "config.h"
+#include "log.h"
+
+#include <guacamole/client.h>
+
+#include <stdlib.h>
 
 int guacenc_handle_shade(int argc, const char** argv) {
+
+    /* Verify argument count */
+    if (argc < 2) {
+        guacenc_log(GUAC_LOG_DEBUG, "\"shade\" instruction incomplete");
+        return 1;
+    }
+
+    /* Parse arguments */
+    int index = atoi(argv[0]);
+    int opacity = atoi(argv[1]);
+
     /* STUB */
+    guacenc_log(GUAC_LOG_DEBUG, "shade: layer=%i opacity=0x%X", index, opacity);
     return 0;
+
 }
 

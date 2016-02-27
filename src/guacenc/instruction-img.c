@@ -21,9 +21,34 @@
  */
 
 #include "config.h"
+#include "log.h"
+
+#include <guacamole/client.h>
+
+#include <stdlib.h>
 
 int guacenc_handle_img(int argc, const char** argv) {
+
+    /* Verify argument count */
+    if (argc < 6) {
+        guacenc_log(GUAC_LOG_DEBUG, "\"img\" instruction incomplete");
+        return 1;
+    }
+
+    /* Parse arguments */
+    int stream_index = atoi(argv[0]);
+    int mask = atoi(argv[1]);
+    int layer_index = atoi(argv[2]);
+    const char* mimetype = argv[3];
+    int x = atoi(argv[4]);
+    int y = atoi(argv[5]);
+
     /* STUB */
+    guacenc_log(GUAC_LOG_DEBUG, "img: stream=%i mask=0x%X layer=%i "
+            "mimetype=%s (%i, %i)", stream_index, mask, layer_index,
+            mimetype, x, y);
+
     return 0;
+
 }
 
