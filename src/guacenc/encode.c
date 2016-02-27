@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include "instructions.h"
 #include "log.h"
 
 #include <guacamole/client.h>
@@ -57,12 +58,10 @@ static int guacenc_read_instructions(const char* path, guac_socket* socket) {
     if (parser == NULL)
         return 1;
 
-    /* Continuously read instructions */
+    /* Continuously read and handle all instructions */
     while (!guac_parser_read(parser, socket, -1)) {
-
-        /* STUB: Handle instruction */
-        guacenc_log(GUAC_LOG_DEBUG, "STUB: \"%s\" ...", parser->opcode);
-
+        guacenc_handle_instruction(parser->opcode, parser->argc,
+                (const char**) parser->argv);
     }
 
     /* Fail on read/parse error */

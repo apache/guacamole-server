@@ -24,13 +24,15 @@ AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = guacenc
 
-noinst_HEADERS =  \
-    encode.h      \
+noinst_HEADERS =   \
+    encode.h       \
+    instructions.h \
     log.h
 
-guacenc_SOURCES = \
-    encode.c      \
-    guacenc.c     \
+guacenc_SOURCES =  \
+    encode.c       \
+    guacenc.c      \
+    instructions.c \
     log.c
 
 guacenc_CFLAGS =            \
