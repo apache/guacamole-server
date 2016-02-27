@@ -75,9 +75,8 @@ int guacenc_handle_sync(guacenc_display* display, int argc, char** argv) {
     /* Parse arguments */
     guac_timestamp timestamp = guacenc_parse_timestamp(argv[0]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "sync: timestamp=%" PRId64, timestamp);
-    return 0;
+    /* Update timestamp / flush frame */
+    return guacenc_display_sync(display, timestamp);
 
 }
 

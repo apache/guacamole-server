@@ -22,14 +22,28 @@
 
 #include "config.h"
 #include "display.h"
+#include "log.h"
 
+#include <guacamole/client.h>
 #include <guacamole/timestamp.h>
 
 #include <stdlib.h>
 
 int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
+
+    /* Verify timestamp is not decreasing */
+    if (timestamp < display->last_sync) {
+        guacenc_log(GUAC_LOG_DEBUG, "Decreasing sync timestamp");
+        return 1;
+    }
+
+    /* Update timestamp of display */
+    display->last_sync = timestamp;
+
     /* STUB */
+
     return 0;
+
 }
 
 guacenc_display* guacenc_display_alloc() {
