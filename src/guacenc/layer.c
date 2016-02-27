@@ -43,6 +43,9 @@ guacenc_layer* guacenc_layer_alloc() {
     /* Layers default to fully opaque */
     layer->opacity = 0xFF;
 
+    /* Default to unparented */
+    layer->parent_index = GUACENC_LAYER_NO_PARENT;
+
     return layer;
 
 }
