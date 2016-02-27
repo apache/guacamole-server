@@ -32,7 +32,7 @@ int guacenc_handle_end(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 1) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"end\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"end\" instruction incomplete");
         return 1;
     }
 

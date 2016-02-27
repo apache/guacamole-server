@@ -32,7 +32,7 @@ int guacenc_handle_size(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 3) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"size\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"size\" instruction incomplete");
         return 1;
     }
 

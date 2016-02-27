@@ -32,7 +32,7 @@ int guacenc_handle_copy(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 9) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"copy\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"copy\" instruction incomplete");
         return 1;
     }
 

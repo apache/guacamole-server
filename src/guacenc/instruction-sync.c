@@ -68,7 +68,7 @@ int guacenc_handle_sync(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 1) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"sync\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"sync\" instruction incomplete");
         return 1;
     }
 

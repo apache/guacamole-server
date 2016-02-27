@@ -33,7 +33,7 @@ int guacenc_handle_blob(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 2) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"blob\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"blob\" instruction incomplete");
         return 1;
     }
 

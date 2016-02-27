@@ -32,7 +32,7 @@ int guacenc_handle_move(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 5) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"move\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"move\" instruction incomplete");
         return 1;
     }
 

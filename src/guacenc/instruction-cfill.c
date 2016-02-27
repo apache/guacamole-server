@@ -32,7 +32,7 @@ int guacenc_handle_cfill(guacenc_display* display, int argc, char** argv) {
  
     /* Verify argument count */
     if (argc < 6) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"cfill\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"cfill\" instruction incomplete");
         return 1;
     }
 

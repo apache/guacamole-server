@@ -32,7 +32,7 @@ int guacenc_handle_transfer(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 9) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"transform\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"transform\" instruction incomplete");
         return 1;
     }
 

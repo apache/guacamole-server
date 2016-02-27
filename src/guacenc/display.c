@@ -34,7 +34,7 @@ int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
 
     /* Verify timestamp is not decreasing */
     if (timestamp < display->last_sync) {
-        guacenc_log(GUAC_LOG_DEBUG, "Decreasing sync timestamp");
+        guacenc_log(GUAC_LOG_WARNING, "Decreasing sync timestamp");
         return 1;
     }
 
@@ -52,7 +52,7 @@ guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
 
     /* Do not lookup / allocate if index is invalid */
     if (index < 0 || index > GUACENC_DISPLAY_MAX_LAYERS) {
-        guacenc_log(GUAC_LOG_DEBUG, "Layer index out of bounds: %i", index);
+        guacenc_log(GUAC_LOG_WARNING, "Layer index out of bounds: %i", index);
         return NULL;
     }
 
@@ -63,7 +63,7 @@ guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
         /* Attempt to allocate layer */
         layer = guacenc_layer_alloc();
         if (layer == NULL) {
-            guacenc_log(GUAC_LOG_DEBUG, "Layer allocation failed");
+            guacenc_log(GUAC_LOG_WARNING, "Layer allocation failed");
             return NULL;
         }
 
@@ -81,7 +81,7 @@ int guacenc_display_free_layer(guacenc_display* display,
 
     /* Do not lookup / allocate if index is invalid */
     if (index < 0 || index > GUACENC_DISPLAY_MAX_LAYERS) {
-        guacenc_log(GUAC_LOG_DEBUG, "Layer index out of bounds: %i", index);
+        guacenc_log(GUAC_LOG_WARNING, "Layer index out of bounds: %i", index);
         return 1;
     }
 
@@ -103,7 +103,7 @@ guacenc_buffer* guacenc_display_get_buffer(guacenc_display* display,
 
     /* Do not lookup / allocate if index is invalid */
     if (internal_index < 0 || internal_index > GUACENC_DISPLAY_MAX_BUFFERS) {
-        guacenc_log(GUAC_LOG_DEBUG, "Buffer index out of bounds: %i", index);
+        guacenc_log(GUAC_LOG_WARNING, "Buffer index out of bounds: %i", index);
         return NULL;
     }
 
@@ -114,7 +114,7 @@ guacenc_buffer* guacenc_display_get_buffer(guacenc_display* display,
         /* Attempt to allocate buffer */
         buffer = guacenc_buffer_alloc();
         if (buffer == NULL) {
-            guacenc_log(GUAC_LOG_DEBUG, "Buffer allocation failed");
+            guacenc_log(GUAC_LOG_WARNING, "Buffer allocation failed");
             return NULL;
         }
 
@@ -135,7 +135,7 @@ int guacenc_display_free_buffer(guacenc_display* display,
 
     /* Do not lookup / allocate if index is invalid */
     if (internal_index < 0 || internal_index > GUACENC_DISPLAY_MAX_BUFFERS) {
-        guacenc_log(GUAC_LOG_DEBUG, "Buffer index out of bounds: %i", index);
+        guacenc_log(GUAC_LOG_WARNING, "Buffer index out of bounds: %i", index);
         return 1;
     }
 

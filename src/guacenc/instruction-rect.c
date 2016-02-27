@@ -34,7 +34,7 @@ int guacenc_handle_rect(guacenc_display* display, int argc, char** argv) {
  
     /* Verify argument count */
     if (argc < 5) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"rect\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"rect\" instruction incomplete");
         return 1;
     }
 

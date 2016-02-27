@@ -32,7 +32,7 @@ int guacenc_handle_dispose(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 1) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"dispose\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"dispose\" instruction incomplete");
         return 1;
     }
 

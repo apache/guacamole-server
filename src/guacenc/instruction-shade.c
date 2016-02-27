@@ -32,7 +32,7 @@ int guacenc_handle_shade(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 2) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"shade\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"shade\" instruction incomplete");
         return 1;
     }
 

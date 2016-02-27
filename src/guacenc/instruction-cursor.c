@@ -32,7 +32,7 @@ int guacenc_handle_cursor(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 7) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"cursor\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"cursor\" instruction incomplete");
         return 1;
     }
 

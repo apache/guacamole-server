@@ -32,7 +32,7 @@ int guacenc_handle_img(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 6) {
-        guacenc_log(GUAC_LOG_DEBUG, "\"img\" instruction incomplete");
+        guacenc_log(GUAC_LOG_WARNING, "\"img\" instruction incomplete");
         return 1;
     }
 
