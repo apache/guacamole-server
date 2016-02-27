@@ -29,7 +29,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-int guacenc_log_level = GUAC_LOG_INFO;
+int guacenc_log_level = GUAC_LOG_DEBUG;
 
 void vguacenc_log(guac_client_log_level level, const char* format,
         va_list args) {
