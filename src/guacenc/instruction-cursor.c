@@ -45,10 +45,11 @@ int guacenc_handle_cursor(guacenc_display* display, int argc, char** argv) {
     int src_w = atoi(argv[5]);
     int src_h = atoi(argv[6]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "cursor: hotspot (%i, %i) "
+    /* Nothing to do with cursor (yet) */
+    guacenc_log(GUAC_LOG_DEBUG, "Ignoring cursor: hotspot (%i, %i) "
             "src_layer=%i (%i, %i) %ix%i", hotspot_x, hotspot_y,
             src_index, src_x, src_y, src_w, src_h);
+
     return 0;
 
 }
