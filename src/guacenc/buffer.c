@@ -23,22 +23,86 @@
 #include "config.h"
 #include "buffer.h"
 
+#include <cairo/cairo.h>
+
 #include <stdlib.h>
 
 guacenc_buffer* guacenc_buffer_alloc() {
     return calloc(1, sizeof(guacenc_buffer));
 }
 
+/**
+ * Frees the underlying image data, surface, and graphics context of the given
+ * buffer, marking each as unallocated.
+ *
+ * @param buffer
+ *     The guacenc_buffer whose image data, surface, and graphics context
+ *     should be freed.
+ */
+static void guacenc_buffer_free_image(guacenc_buffer* buffer) {
+
+    /* Free graphics context */
+    if (buffer->cairo != NULL) {
+        cairo_destroy(buffer->cairo);
+        buffer->cairo = NULL;
+    }
+
+    /* Free Cairo surface */
+    if (buffer->surface != NULL) {
+        cairo_surface_destroy(buffer->surface);
+        buffer->surface = NULL;
+    }
+
+    /* Free image data (previously wrapped by Cairo surface */
+    free(buffer->image);
+    buffer->image = NULL;
+
+}
+
 void guacenc_buffer_free(guacenc_buffer* buffer) {
+    guacenc_buffer_free_image(buffer);
     free(buffer);
 }
 
 int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height) {
 
-    /* STUB */
+    /* Simply deallocate if new image has absolutely no pixels */
+    if (width == 0 || height == 0) {
+        guacenc_buffer_free_image(buffer);
+        buffer->width = width;
+        buffer->height = height;
+        buffer->stride = 0;
+        return 0;
+    }
 
+    /* Allocate data for new image */
+    int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
+    unsigned char* image = calloc(1, stride*height);
+
+    /* Wrap data in surface */
+    cairo_surface_t* surface = cairo_image_surface_create_for_data(image,
+            CAIRO_FORMAT_ARGB32, width, height, stride);
+
+    /* Obtain graphics context of new surface */
+    cairo_t* cairo = cairo_create(surface);
+
+    /* Copy old surface, if defined */
+    if (buffer->surface != NULL) {
+        cairo_set_source_surface(cairo, buffer->surface, 0, 0);
+        cairo_paint(cairo);
+        cairo_set_source_rgba(cairo, 0.0, 0.0, 0.0, 1.0);
+    }
+
+    /* Update properties */
     buffer->width = width;
     buffer->height = height;
+    buffer->stride = stride;
+
+    /* Replace old image */
+    guacenc_buffer_free_image(buffer);
+    buffer->image = image;
+    buffer->surface = surface;
+    buffer->cairo = cairo;
 
     return 0;
 

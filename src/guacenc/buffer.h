@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <cairo/cairo.h>
+
 /**
  * The image and size storage for either a buffer (a Guacamole layer with a
  * negative index) or a layer (a Guacamole layer with a non-negative index).
@@ -45,6 +47,24 @@ typedef struct guacenc_buffer {
      * The number of bytes in each row of image data.
      */
     int stride;
+
+    /**
+     * The underlying image data of this surface. If the width or height of
+     * this surface are 0, this will be NULL.
+     */
+    unsigned char* image;
+
+    /**
+     * The Cairo surface wrapping the underlying image data of this surface. If
+     * the width or height of this surface are 0, this will be NULL.
+     */
+    cairo_surface_t* surface;
+
+    /**
+     * The current graphics context of the Cairo surface. If the width or
+     * height of this surface are 0, this will be NULL.
+     */
+    cairo_t* cairo;
 
 } guacenc_buffer;
 
