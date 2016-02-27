@@ -25,11 +25,16 @@ AUTOMAKE_OPTIONS = foreign
 bin_PROGRAMS = guacenc
 
 noinst_HEADERS =   \
+    buffer.h       \
+    display.h      \
     encode.h       \
+    image-stream.h \
     instructions.h \
+    layer.h        \
     log.h
 
 guacenc_SOURCES =          \
+    display.c              \
     encode.c               \
     guacenc.c              \
     instructions.c         \
