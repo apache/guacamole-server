@@ -94,5 +94,65 @@ extern guacenc_instruction_handler_mapping guacenc_instruction_handler_map[];
 int guacenc_handle_instruction(const char* opcode, int argc,
         const char** argv);
 
+/**
+ * Handler for the Guacamole "blob" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_blob;
+
+/**
+ * Handler for the Guacamole "img" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_img;
+
+/**
+ * Handler for the Guacamole "end" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_end;
+
+/**
+ * Handler for the Guacamole "cursor" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_cursor;
+
+/**
+ * Handler for the Guacamole "copy" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_copy;
+
+/**
+ * Handler for the Guacamole "transfer" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_transfer;
+
+/**
+ * Handler for the Guacamole "size" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_size;
+
+/**
+ * Handler for the Guacamole "rect" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_rect;
+
+/**
+ * Handler for the Guacamole "cfill" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_cfill;
+
+/**
+ * Handler for the Guacamole "move" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_move;
+
+/**
+ * Handler for the Guacamole "shade" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_shade;
+
+/**
+ * Handler for the Guacamole "dispose" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_dispose;
+
 #endif
 

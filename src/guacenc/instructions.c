@@ -29,18 +29,18 @@
 #include <string.h>
 
 guacenc_instruction_handler_mapping guacenc_instruction_handler_map[] = {
-    {"blob",     NULL},
-    {"img",      NULL},
-    {"end",      NULL},
-    {"cursor",   NULL},
-    {"copy",     NULL},
-    {"transfer", NULL},
-    {"size",     NULL},
-    {"rect",     NULL},
-    {"cfill",    NULL},
-    {"move",     NULL},
-    {"shade",    NULL},
-    {"dispose",  NULL},
+    {"blob",     guacenc_handle_blob},
+    {"img",      guacenc_handle_img},
+    {"end",      guacenc_handle_end},
+    {"cursor",   guacenc_handle_cursor},
+    {"copy",     guacenc_handle_copy},
+    {"transfer", guacenc_handle_transfer},
+    {"size",     guacenc_handle_size},
+    {"rect",     guacenc_handle_rect},
+    {"cfill",    guacenc_handle_cfill},
+    {"move",     guacenc_handle_move},
+    {"shade",    guacenc_handle_shade},
+    {"dispose",  guacenc_handle_dispose},
     {NULL,       NULL}
 };
 

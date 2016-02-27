@@ -29,10 +29,22 @@ noinst_HEADERS =   \
     instructions.h \
     log.h
 
-guacenc_SOURCES =  \
-    encode.c       \
-    guacenc.c      \
-    instructions.c \
+guacenc_SOURCES =          \
+    encode.c               \
+    guacenc.c              \
+    instructions.c         \
+    instruction-blob.c     \
+    instruction-cfill.c    \
+    instruction-copy.c     \
+    instruction-cursor.c   \
+    instruction-dispose.c  \
+    instruction-end.c      \
+    instruction-img.c      \
+    instruction-move.c     \
+    instruction-rect.c     \
+    instruction-shade.c    \
+    instruction-size.c     \
+    instruction-transfer.c \
     log.c
 
 guacenc_CFLAGS =            \
