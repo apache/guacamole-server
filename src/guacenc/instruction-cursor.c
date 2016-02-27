@@ -21,13 +21,14 @@
  */
 
 #include "config.h"
+#include "display.h"
 #include "log.h"
 
 #include <guacamole/client.h>
 
 #include <stdlib.h>
 
-int guacenc_handle_cursor(int argc, char** argv) {
+int guacenc_handle_cursor(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 7) {

@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include "display.h"
 #include "log.h"
 
 #include <guacamole/client.h>
@@ -63,7 +64,7 @@ static guac_timestamp guacenc_parse_timestamp(const char* str) {
 
 }
 
-int guacenc_handle_sync(int argc, char** argv) {
+int guacenc_handle_sync(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 1) {

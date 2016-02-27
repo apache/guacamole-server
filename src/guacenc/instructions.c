@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include "display.h"
 #include "instructions.h"
 #include "log.h"
 
@@ -45,7 +46,7 @@ guacenc_instruction_handler_mapping guacenc_instruction_handler_map[] = {
     {NULL,       NULL}
 };
 
-int guacenc_handle_instruction(const char* opcode,
+int guacenc_handle_instruction(guacenc_display* display, const char* opcode,
         int argc, char** argv) {
 
     /* Search through mapping for instruction handler having given opcode */
@@ -58,7 +59,7 @@ int guacenc_handle_instruction(const char* opcode,
             /* Invoke defined handler */
             guacenc_instruction_handler* handler = current->handler;
             if (handler != NULL)
-                return handler(argc, argv);
+                return handler(display, argc, argv);
 
             /* Log defined but unimplemented instructions */
             guacenc_log(GUAC_LOG_DEBUG, "\"%s\" not implemented", opcode);

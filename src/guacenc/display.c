@@ -25,8 +25,19 @@
 
 #include <guacamole/timestamp.h>
 
+#include <stdlib.h>
+
 int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
     /* STUB */
+    return 0;
+}
+
+guacenc_display* guacenc_display_alloc() {
+    return (guacenc_display*) calloc(1, sizeof(guacenc_display));
+}
+
+int guacenc_display_free(guacenc_display* display) {
+    free(display);
     return 0;
 }
 

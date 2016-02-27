@@ -101,5 +101,28 @@ typedef struct guacenc_display {
  */
 int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp);
 
+/**
+ * Allocates a new Guacamole video encoder display. This display serves as the
+ * representation of encoding state, as well as the state of the Guacamole
+ * display as instructions are read and handled.
+ *
+ * @return
+ *     The newly-allocated Guacamole video encoder display, or NULL if the
+ *     display could not be allocated.
+ */
+guacenc_display* guacenc_display_alloc();
+
+/**
+ * Frees all memory associated with the given Guacamole video encoder display,
+ * and finishes any underlying encoding process.
+ *
+ * @param display
+ *     The Guacamole video encoder display to free.
+ *
+ * @return
+ *     Zero if the encoding process completed successfully, non-zero otherwise.
+ */
+int guacenc_display_free(guacenc_display* display);
+
 #endif
 

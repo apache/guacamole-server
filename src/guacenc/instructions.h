@@ -24,6 +24,7 @@
 #define GUACENC_INSTRUCTIONS_H
 
 #include "config.h"
+#include "display.h"
 
 /**
  * A callback function which, when invoked, handles a particular Guacamole
@@ -31,6 +32,9 @@
  * that there will be a 1:1 mapping of opcode to callback function), while the
  * arguments for that instruction are included in the parameters given to the
  * callback.
+ *
+ * @param display
+ *     The current internal display of the Guacamole video encoder.
  *
  * @param argc
  *     The number of arguments (excluding opcode) passed to the instruction
@@ -44,7 +48,8 @@
  *     Zero if the instruction was handled successfully, non-zero if an error
  *     occurs.
  */
-typedef int guacenc_instruction_handler(int argc, char** argv);
+typedef int guacenc_instruction_handler(guacenc_display* display,
+        int argc, char** argv);
 
 /**
  * Mapping of instruction opcode to corresponding handler function.
@@ -76,6 +81,9 @@ extern guacenc_instruction_handler_mapping guacenc_instruction_handler_map[];
  * Handles the instruction having the given opcode and arguments, encoding the
  * result to the in-progress video.
  *
+ * @param display
+ *     The current internal display of the Guacamole video encoder.
+ *
  * @param opcode
  *     The opcode of the instruction being handled.
  *
@@ -91,7 +99,8 @@ extern guacenc_instruction_handler_mapping guacenc_instruction_handler_map[];
  *     Zero if the instruction was handled successfully, non-zero if an error
  *     occurs.
  */
-int guacenc_handle_instruction(const char* opcode, int argc, char** argv);
+int guacenc_handle_instruction(guacenc_display* display,
+        const char* opcode, int argc, char** argv);
 
 /**
  * Handler for the Guacamole "blob" instruction.
