@@ -44,6 +44,7 @@ guacenc_SOURCES =          \
     instruction-rect.c     \
     instruction-shade.c    \
     instruction-size.c     \
+    instruction-sync.c     \
     instruction-transfer.c \
     log.c
 

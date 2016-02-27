@@ -32,6 +32,7 @@ guacenc_instruction_handler_mapping guacenc_instruction_handler_map[] = {
     {"blob",     guacenc_handle_blob},
     {"img",      guacenc_handle_img},
     {"end",      guacenc_handle_end},
+    {"sync",     guacenc_handle_sync},
     {"cursor",   guacenc_handle_cursor},
     {"copy",     guacenc_handle_copy},
     {"transfer", guacenc_handle_transfer},

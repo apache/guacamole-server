@@ -109,6 +109,11 @@ guacenc_instruction_handler guacenc_handle_img;
 guacenc_instruction_handler guacenc_handle_end;
 
 /**
+ * Handler for the Guacamole "sync" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_sync;
+
+/**
  * Handler for the Guacamole "cursor" instruction.
  */
 guacenc_instruction_handler guacenc_handle_cursor;
