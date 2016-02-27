@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int guacenc_handle_blob(int argc, const char** argv) {
+int guacenc_handle_blob(int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 2) {
@@ -38,7 +38,7 @@ int guacenc_handle_blob(int argc, const char** argv) {
 
     /* Parse arguments */
     int index = atoi(argv[0]);
-    const char* data = argv[1];
+    char* data = argv[1];
 
     /* STUB */
     guacenc_log(GUAC_LOG_DEBUG, "blob: stream=%i data=[%i chars]",

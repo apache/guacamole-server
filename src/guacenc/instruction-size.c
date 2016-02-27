@@ -27,7 +27,7 @@
 
 #include <stdlib.h>
 
-int guacenc_handle_size(int argc, const char** argv) {
+int guacenc_handle_size(int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 3) {

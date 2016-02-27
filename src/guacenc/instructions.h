@@ -44,7 +44,7 @@
  *     Zero if the instruction was handled successfully, non-zero if an error
  *     occurs.
  */
-typedef int guacenc_instruction_handler(int argc, const char** argv);
+typedef int guacenc_instruction_handler(int argc, char** argv);
 
 /**
  * Mapping of instruction opcode to corresponding handler function.
@@ -91,8 +91,7 @@ extern guacenc_instruction_handler_mapping guacenc_instruction_handler_map[];
  *     Zero if the instruction was handled successfully, non-zero if an error
  *     occurs.
  */
-int guacenc_handle_instruction(const char* opcode, int argc,
-        const char** argv);
+int guacenc_handle_instruction(const char* opcode, int argc, char** argv);
 
 /**
  * Handler for the Guacamole "blob" instruction.

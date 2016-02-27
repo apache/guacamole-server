@@ -60,8 +60,7 @@ static int guacenc_read_instructions(const char* path, guac_socket* socket) {
 
     /* Continuously read and handle all instructions */
     while (!guac_parser_read(parser, socket, -1)) {
-        guacenc_handle_instruction(parser->opcode, parser->argc,
-                (const char**) parser->argv);
+        guacenc_handle_instruction(parser->opcode, parser->argc, parser->argv);
     }
 
     /* Fail on read/parse error */

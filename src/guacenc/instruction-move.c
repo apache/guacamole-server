@@ -27,7 +27,7 @@
 
 #include <stdlib.h>
 
-int guacenc_handle_move(int argc, const char** argv) {
+int guacenc_handle_move(int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 5) {

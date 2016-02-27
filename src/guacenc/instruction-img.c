@@ -27,7 +27,7 @@
 
 #include <stdlib.h>
 
-int guacenc_handle_img(int argc, const char** argv) {
+int guacenc_handle_img(int argc, char** argv) {
 
     /* Verify argument count */
     if (argc < 6) {
@@ -39,7 +39,7 @@ int guacenc_handle_img(int argc, const char** argv) {
     int stream_index = atoi(argv[0]);
     int mask = atoi(argv[1]);
     int layer_index = atoi(argv[2]);
-    const char* mimetype = argv[3];
+    char* mimetype = argv[3];
     int x = atoi(argv[4]);
     int y = atoi(argv[5]);
 

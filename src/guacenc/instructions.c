@@ -45,7 +45,7 @@ guacenc_instruction_handler_mapping guacenc_instruction_handler_map[] = {
 };
 
 int guacenc_handle_instruction(const char* opcode,
-        int argc, const char** argv) {
+        int argc, char** argv) {
 
     /* Search through mapping for instruction handler having given opcode */
     guacenc_instruction_handler_mapping* current = guacenc_instruction_handler_map;
