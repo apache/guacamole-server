@@ -31,10 +31,15 @@
 typedef struct guacenc_image_stream {
 
     /**
-     * STUB: Placeholder property. This property exists only so that the
-     * guacenc_image_stream struct can be defined prior to implementation.
+     * The index of the destination layer or buffer.
      */
-    int __PLACEHOLDER;
+    int index;
+
+    /**
+     * The Guacamole protocol compositing operation (channel mask) to apply
+     * when drawing the image.
+     */
+    int mask;
 
 } guacenc_image_stream;
 
