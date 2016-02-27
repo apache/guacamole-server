@@ -39,14 +39,23 @@ int guacenc_handle_cfill(guacenc_display* display, int argc, char** argv) {
     /* Parse arguments */
     int mask = atoi(argv[0]);
     int index = atoi(argv[1]);
-    int r = atoi(argv[2]);
-    int g = atoi(argv[3]);
-    int b = atoi(argv[4]);
-    int a = atoi(argv[5]);
+    double r = atoi(argv[2]) / 255.0;
+    double g = atoi(argv[3]) / 255.0;
+    double b = atoi(argv[4]) / 255.0;
+    double a = atoi(argv[5]) / 255.0;
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "cfill: mask=0x%X layer=%i "
-            "rgba(%i, %i, %i, %i)", mask, index, r, g, b, a);
+    /* Pull buffer of requested layer/buffer */
+    guacenc_buffer* buffer = guacenc_display_get_related_buffer(display, index);
+    if (buffer == NULL)
+        return 1;
+
+    /* Fill with RGBA color */
+    if (buffer->cairo != NULL) {
+        cairo_set_operator(buffer->cairo, guacenc_display_cairo_operator(mask));
+        cairo_set_source_rgba(buffer->cairo, r, g, b, a);
+        cairo_fill(buffer->cairo);
+    }
+
     return 0;
 
 }

@@ -28,6 +28,7 @@
 #include "image-stream.h"
 #include "layer.h"
 
+#include <guacamole/protocol.h>
 #include <guacamole/timestamp.h>
 
 /**
@@ -203,6 +204,21 @@ int guacenc_display_free_buffer(guacenc_display* display,
  */
 guacenc_buffer* guacenc_display_get_related_buffer(guacenc_display* display,
         int index);
+
+/**
+ * Translates the given Guacamole protocol compositing mode (channel mask) to
+ * the corresponding Cairo composition operator. If no such operator exists,
+ * CAIRO_OPERATOR_OVER will be returned by default.
+ *
+ * @param mask
+ *     The Guacamole protocol compositing mode (channel mask) to translate.
+ *
+ * @return
+ *     The cairo_operator_t that corresponds to the given compositing mode
+ *     (channel mask). CAIRO_OPERATOR_OVER will be returned by default if no
+ *     such operator exists.
+ */
+cairo_operator_t guacenc_display_cairo_operator(guac_composite_mode mask);
 
 #endif
 

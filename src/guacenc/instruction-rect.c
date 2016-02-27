@@ -21,9 +21,11 @@
  */
 
 #include "config.h"
+#include "buffer.h"
 #include "display.h"
 #include "log.h"
 
+#include <cairo/cairo.h>
 #include <guacamole/client.h>
 
 #include <stdlib.h>
@@ -43,9 +45,15 @@ int guacenc_handle_rect(guacenc_display* display, int argc, char** argv) {
     int width = atoi(argv[3]);
     int height = atoi(argv[4]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "rect: layer=%i (%i, %i) %ix%i",
-            index, x, y, width, height);
+    /* Pull buffer of requested layer/buffer */
+    guacenc_buffer* buffer = guacenc_display_get_related_buffer(display, index);
+    if (buffer == NULL)
+        return 1;
+
+    /* Set path to rectangle */
+    if (buffer->cairo != NULL)
+        cairo_rectangle(buffer->cairo, x, y, width, height);
+
     return 0;
 
 }

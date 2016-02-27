@@ -25,6 +25,7 @@
 #include "log.h"
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 #include <guacamole/timestamp.h>
 
 #include <stdlib.h>
@@ -166,6 +167,63 @@ guacenc_buffer* guacenc_display_get_related_buffer(guacenc_display* display,
 
     /* Otherwise retrieve buffer directly */
     return guacenc_display_get_buffer(display, index);
+
+}
+
+cairo_operator_t guacenc_display_cairo_operator(guac_composite_mode mask) {
+
+    /* Translate Guacamole channel mask into Cairo operator */
+    switch (mask) {
+
+        /* Source */
+        case GUAC_COMP_SRC:
+            return CAIRO_OPERATOR_SOURCE;
+
+        /* Over */
+        case GUAC_COMP_OVER:
+            return CAIRO_OPERATOR_OVER;
+
+        /* In */
+        case GUAC_COMP_IN:
+            return CAIRO_OPERATOR_IN;
+
+        /* Out */
+        case GUAC_COMP_OUT:
+            return CAIRO_OPERATOR_OUT;
+
+        /* Atop */
+        case GUAC_COMP_ATOP:
+            return CAIRO_OPERATOR_ATOP;
+
+        /* Over (source/destination reversed) */
+        case GUAC_COMP_ROVER:
+            return CAIRO_OPERATOR_DEST_OVER;
+
+        /* In (source/destination reversed) */
+        case GUAC_COMP_RIN:
+            return CAIRO_OPERATOR_DEST_IN;
+
+        /* Out (source/destination reversed) */
+        case GUAC_COMP_ROUT:
+            return CAIRO_OPERATOR_DEST_OUT;
+
+        /* Atop (source/destination reversed) */
+        case GUAC_COMP_RATOP:
+            return CAIRO_OPERATOR_DEST_ATOP;
+
+        /* XOR */
+        case GUAC_COMP_XOR:
+            return CAIRO_OPERATOR_XOR;
+
+        /* Additive */
+        case GUAC_COMP_PLUS:
+            return CAIRO_OPERATOR_ADD;
+
+        /* If unrecognized, just default to CAIRO_OPERATOR_OVER */
+        default:
+            return CAIRO_OPERATOR_OVER;
+
+    }
 
 }
 
