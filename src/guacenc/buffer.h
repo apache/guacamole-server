@@ -41,7 +41,51 @@ typedef struct guacenc_buffer {
      */
     int height;
 
+    /**
+     * The number of bytes in each row of image data.
+     */
+    int stride;
+
 } guacenc_buffer;
+
+/**
+ * Allocates and initializes a new buffer object. This allocation is
+ * independent of the Guacamole video encoder display; the allocated
+ * guacenc_buffer will not automatically be associated with the active display.
+ *
+ * @return
+ *     A newly-allocated and initialized guacenc_buffer, or NULL if allocation
+ *     fails.
+ */
+guacenc_buffer* guacenc_buffer_alloc();
+
+/**
+ * Frees all memory associated with the given buffer object. If the buffer
+ * provided is NULL, this function has no effect.
+ *
+ * @param buffer
+ *     The buffer to free, which may be NULL.
+ */
+void guacenc_buffer_free(guacenc_buffer* buffer);
+
+/**
+ * Resizes the given buffer to the given dimensions, allocating or freeing
+ * memory as necessary, and updating the buffer's width, height, and stride
+ * properties.
+ *
+ * @param buffer
+ *     The buffer to resize.
+ *
+ * @param width
+ *     The new width of the buffer, in pixels.
+ *
+ * @param height
+ *     The new height of the buffer, in pixels.
+ *
+ * @return
+ *     Zero if the resize operation is successful, non-zero on error.
+ */
+int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height);
 
 #endif
 

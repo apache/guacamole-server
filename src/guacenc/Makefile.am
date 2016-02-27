@@ -34,6 +34,7 @@ noinst_HEADERS =   \
     log.h
 
 guacenc_SOURCES =          \
+    buffer.c               \
     display.c              \
     encode.c               \
     guacenc.c              \

@@ -22,41 +22,25 @@
 
 #include "config.h"
 #include "buffer.h"
-#include "layer.h"
 
 #include <stdlib.h>
 
-guacenc_layer* guacenc_layer_alloc() {
-
-    /* Allocate new layer */
-    guacenc_layer* layer = (guacenc_layer*) calloc(1, sizeof(guacenc_layer));
-    if (layer == NULL)
-        return NULL;
-
-    /* Allocate associated buffer (width, height, and image storage) */
-    layer->buffer = guacenc_buffer_alloc();
-    if (layer->buffer == NULL) {
-        free(layer);
-        return NULL;
-    }
-
-    /* Layers default to fully opaque */
-    layer->opacity = 0xFF;
-
-    return layer;
-
+guacenc_buffer* guacenc_buffer_alloc() {
+    return calloc(1, sizeof(guacenc_buffer));
 }
 
-void guacenc_layer_free(guacenc_layer* layer) {
+void guacenc_buffer_free(guacenc_buffer* buffer) {
+    free(buffer);
+}
 
-    /* Ignore NULL layers */
-    if (layer == NULL)
-        return;
+int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height) {
 
-    /* Free underlying buffer */
-    guacenc_buffer_free(layer->buffer);
+    /* STUB */
 
-    free(layer);
+    buffer->width = width;
+    buffer->height = height;
+
+    return 0;
 
 }
 

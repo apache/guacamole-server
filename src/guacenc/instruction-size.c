@@ -41,9 +41,13 @@ int guacenc_handle_size(guacenc_display* display, int argc, char** argv) {
     int width = atoi(argv[1]);
     int height = atoi(argv[2]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "size: layer=%i %ix%i", index, width, height);
-    return 0;
+    /* Retrieve requested layer */
+    guacenc_layer* layer = guacenc_display_get_layer(display, index);
+    if (layer == NULL)
+        return 1;
+
+    /* Resize layer */
+    return guacenc_buffer_resize(layer->buffer, width, height);
 
 }
 
