@@ -24,11 +24,51 @@
 #include "display.h"
 #include "log.h"
 
+#include <cairo/cairo.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/timestamp.h>
 
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+/**
+ * Comparator which orders layer pointers such that (1) NULL pointers are last,
+ * (2) layers with the same parent_index are adjacent, and (3) layers with the
+ * same parent_index are ordered by Z.
+ *
+ * @see qsort()
+ */
+static int guacenc_display_layer_comparator(const void* a, const void* b) {
+
+    /* If a is NULL, sort it to bottom */
+    if (a == NULL) {
+
+        /* ... unless b is also NULL, in which case they are equal */
+        if (b == NULL)
+            return 0;
+
+        return 1;
+    }
+
+    /* If b is NULL (and a is not NULL), sort it to bottom */
+    if (b == NULL)
+        return -1;
+
+    guacenc_layer* layer_a = (guacenc_layer*) a;
+    guacenc_layer* layer_b = (guacenc_layer*) b;
+
+    /* Order such that sibling layers are adjacent */
+    if (layer_b->parent_index != layer_a->parent_index)
+        return layer_b->parent_index - layer_a->parent_index;
+
+    /* Order sibling layers according to descending Z */
+    return layer_b->z - layer_a->z;
+
+}
 
 int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
 
@@ -38,10 +78,69 @@ int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
         return 1;
     }
 
+    /* Get buffer for display frame rendering */
+    guacenc_buffer* frame = display->frame;
+
     /* Update timestamp of display */
     display->last_sync = timestamp;
 
-    /* STUB */
+    /* Ensure frame is the same size as the default layer */
+    guacenc_buffer* def_layer = guacenc_display_get_related_buffer(display, 0);
+    guacenc_buffer_resize(frame, def_layer->width, def_layer->height);
+
+    /* Render all layers to frame */
+    cairo_t* cairo = frame->cairo;
+    if (cairo != NULL) {
+
+        int i;
+        guacenc_layer* render_order[GUACENC_DISPLAY_MAX_LAYERS];
+
+        /* Copy and sort layers (ensuring layer #0 is always first) */
+        memcpy(render_order, display->layers, sizeof(render_order));
+        qsort(render_order + 1, GUACENC_DISPLAY_MAX_LAYERS - 1,
+                sizeof(guacenc_layer*), guacenc_display_layer_comparator);
+
+        /* Render each layer, in order */
+        for (i = 0; i < GUACENC_DISPLAY_MAX_LAYERS; i++) {
+
+            /* Pull current layer, ignoring unallocated layers */
+            guacenc_layer* layer = render_order[i];
+            if (layer == NULL)
+                continue;
+
+            /* Skip fully-transparent layers */
+            if (layer->opacity == 0)
+                continue;
+
+            /* Pull underlying buffer */
+            guacenc_buffer* buffer = layer->buffer;
+
+            /* Ignore layers with empty buffers */
+            if (buffer->surface == NULL)
+                continue;
+
+            /* TODO: Determine actual location relative to parent layer */
+            int x = layer->x;
+            int y = layer->y;
+
+            /* Render buffer to layer */
+            cairo_reset_clip(cairo);
+            cairo_rectangle(cairo, x, y, buffer->width, buffer->height);
+            cairo_clip(cairo);
+
+            cairo_set_source_surface(cairo, buffer->surface, x, y);
+            cairo_paint_with_alpha(cairo, layer->opacity / 255.0);
+
+        }
+
+    }
+
+    /* STUB: Write frame as PNG */
+    char filename[256];
+    sprintf(filename, "frame-%" PRId64 ".png", timestamp);
+    cairo_surface_t* surface = frame->surface;
+    if (surface != NULL)
+        cairo_surface_write_to_png(surface, filename);
 
     return 0;
 
@@ -66,6 +165,10 @@ guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
             guacenc_log(GUAC_LOG_WARNING, "Layer allocation failed");
             return NULL;
         }
+
+        /* The default layer has no parent */
+        if (index == 0)
+            layer->parent_index = GUACENC_LAYER_NO_PARENT;
 
         /* Store layer within display for future retrieval / management */
         display->layers[index] = layer;
@@ -117,6 +220,9 @@ guacenc_buffer* guacenc_display_get_buffer(guacenc_display* display,
             guacenc_log(GUAC_LOG_WARNING, "Buffer allocation failed");
             return NULL;
         }
+
+        /* All non-layer buffers must autosize */
+        buffer->autosize = true;
 
         /* Store buffer within display for future retrieval / management */
         display->buffers[internal_index] = buffer;
@@ -281,7 +387,16 @@ cairo_operator_t guacenc_display_cairo_operator(guac_composite_mode mask) {
 }
 
 guacenc_display* guacenc_display_alloc() {
-    return (guacenc_display*) calloc(1, sizeof(guacenc_display));
+
+    /* Allocate display */
+    guacenc_display* display =
+        (guacenc_display*) calloc(1, sizeof(guacenc_display));
+
+    /* Allocate buffer for frame rendering */
+    display->frame = guacenc_buffer_alloc();
+
+    return display;
+
 }
 
 int guacenc_display_free(guacenc_display* display) {
@@ -291,6 +406,9 @@ int guacenc_display_free(guacenc_display* display) {
     /* Ignore NULL display */
     if (display == NULL)
         return 0;
+
+    /* Free internal frame buffer */
+    guacenc_buffer_free(display->frame);
 
     /* Free all buffers */
     for (i = 0; i < GUACENC_DISPLAY_MAX_BUFFERS; i++)
