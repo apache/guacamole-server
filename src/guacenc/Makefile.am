@@ -30,14 +30,17 @@ noinst_HEADERS =   \
     encode.h       \
     image-stream.h \
     instructions.h \
+    jpeg.h         \
     layer.h        \
-    log.h
+    log.h          \
+    png.h
 
 guacenc_SOURCES =          \
     buffer.c               \
     display.c              \
     encode.c               \
     guacenc.c              \
+    image-stream.c         \
     instructions.c         \
     instruction-blob.c     \
     instruction-cfill.c    \
@@ -52,8 +55,16 @@ guacenc_SOURCES =          \
     instruction-size.c     \
     instruction-sync.c     \
     instruction-transfer.c \
+    jpeg.c                 \
     layer.c                \
-    log.c
+    log.c                  \
+    png.c
+
+# Compile WebP support if available
+if ENABLE_WEBP
+guacenc_SOURCES += webp.c
+noinst_HEADERS  += webp.h
+endif
 
 guacenc_CFLAGS =            \
     -Werror -Wall -pedantic \
