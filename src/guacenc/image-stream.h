@@ -238,6 +238,47 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
         const char* mimetype, int x, int y);
 
 /**
+ * Signals the decoder of the given image stream that a chunk of image data
+ * has been received. If no decoder is associated with the given image stream,
+ * this function has no effect.
+ *
+ * @param stream
+ *     The image stream that received the data.
+ *
+ * @param data
+ *     The chunk of data received along the image stream.
+ *
+ * @param length
+ *     The length of the chunk of data received, in bytes.
+ *
+ * @return
+ *     Zero if the given data was handled successfully by the decoder, or
+ *     non-zero if an error occurs.
+ */
+int guacenc_image_stream_receive(guacenc_image_stream* stream,
+        unsigned char* data, int length);
+
+/**
+ * Signals the decoder of the given image stream that no more data will be
+ * received and the image should be written to the given buffer as-is. If no
+ * decoder is associated with the given image stream, this function has no
+ * effect. Meta-information describing the image draw operation itself is
+ * stored within the guacenc_image_stream.
+ *
+ * @param stream
+ *     The image stream that has ended.
+ *
+ * @param buffer
+ *     The buffer that the decoded image should be written to.
+ *
+ * @return
+ *     Zero if the image is written successfully, or non-zero if an error
+ *     occurs.
+ */
+int guacenc_image_stream_end(guacenc_image_stream* stream,
+        guacenc_buffer* buffer);
+
+/**
  * Frees the given image stream and all associated data. If the image stream
  * has not yet ended (reached end-of-stream), no image will be drawn to the
  * associated buffer or layer.

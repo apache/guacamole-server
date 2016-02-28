@@ -86,6 +86,32 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
 
 }
 
+int guacenc_image_stream_receive(guacenc_image_stream* stream,
+        unsigned char* data, int length) {
+
+    /* Invoke data handler of corresponding decoder (if any) */
+    guacenc_decoder* decoder = stream->decoder;
+    if (decoder != NULL)
+        return decoder->data_handler(stream, data, length);
+
+    /* If there is no decoder, simply return success */
+    return 0;
+
+}
+
+int guacenc_image_stream_end(guacenc_image_stream* stream,
+        guacenc_buffer* buffer) {
+
+    /* Invoke end handler of corresponding decoder (if any) */
+    guacenc_decoder* decoder = stream->decoder;
+    if (decoder != NULL)
+        return decoder->end_handler(stream, buffer);
+
+    /* If there is no decoder, simply return success */
+    return 0;
+
+}
+
 int guacenc_image_stream_free(guacenc_image_stream* stream) {
 
     /* Ignore NULL streams */
