@@ -96,8 +96,8 @@ int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height) {
     /* Copy old surface, if defined */
     if (buffer->surface != NULL) {
         cairo_set_source_surface(cairo, buffer->surface, 0, 0);
+        cairo_rectangle(cairo, 0, 0, width, height);
         cairo_paint(cairo);
-        cairo_set_source_rgba(cairo, 0.0, 0.0, 0.0, 1.0);
     }
 
     /* Update properties */

@@ -134,8 +134,16 @@ int guacenc_image_stream_end(guacenc_image_stream* stream,
 
     /* Draw surface to buffer */
     if (buffer->cairo != NULL) {
+
+        /* Get surface dimensions */
+        int width = cairo_image_surface_get_width(surface);
+        int height = cairo_image_surface_get_height(surface);
+
+        /* Paint surface contents to buffer */
         cairo_set_source_surface(buffer->cairo, surface, stream->x, stream->y);
+        cairo_rectangle(buffer->cairo, stream->x, stream->y, width, height);
         cairo_fill(buffer->cairo);
+
     }
 
     cairo_surface_destroy(surface);
