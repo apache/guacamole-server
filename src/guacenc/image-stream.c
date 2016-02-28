@@ -78,7 +78,9 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
     stream->y = y;
 
     /* Associate with corresponding decoder */
-    stream->decoder = guacenc_get_decoder(mimetype);
+    guacenc_decoder* decoder = stream->decoder = guacenc_get_decoder(mimetype);
+    if (decoder != NULL)
+        decoder->init_handler(stream);
 
     return stream;
 
@@ -91,8 +93,9 @@ int guacenc_image_stream_free(guacenc_image_stream* stream) {
         return 0;
 
     /* Invoke free handler for decoder (if associated) */
-    if (stream->decoder != NULL)
-        stream->decoder->free_handler(stream);
+    guacenc_decoder* decoder = stream->decoder;
+    if (decoder != NULL)
+        decoder->free_handler(stream);
 
     /* Free actual stream */
     free(stream);
