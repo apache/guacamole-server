@@ -23,6 +23,7 @@
 #include "config.h"
 #include "image-stream.h"
 #include "jpeg.h"
+#include "log.h"
 #include "png.h"
 
 #ifdef ENABLE_WEBP
@@ -30,6 +31,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 guacenc_decoder_mapping guacenc_decoder_map[] = {
     {"image/png",  &guacenc_png_decoder},
@@ -39,4 +41,25 @@ guacenc_decoder_mapping guacenc_decoder_map[] = {
 #endif
     {NULL,         NULL}
 };
+
+guacenc_decoder* guacenc_get_decoder(const char* mimetype) {
+
+    /* Search through mapping for the decoder having given mimetype */
+    guacenc_decoder_mapping* current = guacenc_decoder_map;
+    while (current->mimetype != NULL) {
+
+        /* Return decoder if mimetype matches */
+        if (strcmp(current->mimetype, mimetype) == 0)
+            return current->decoder;
+
+        /* Next candidate decoder */
+        current++;
+
+    }
+
+    /* No such decoder */
+    guacenc_log(GUAC_LOG_WARNING, "Support for \"%s\" not present", mimetype);
+    return NULL;
+
+}
 

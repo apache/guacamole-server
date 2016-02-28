@@ -193,5 +193,18 @@ typedef struct guacenc_decoder_mapping {
  */
 extern guacenc_decoder_mapping guacenc_decoder_map[];
 
+/**
+ * Returns the decoder associated with the given mimetype. If no such decoder
+ * exists, NULL is returned.
+ *
+ * @param mimetype
+ *     The image mimetype to return the associated decoder of.
+ *
+ * @return
+ *     The decoder associated with the given mimetype, or NULL if no such
+ *     decoder exists.
+ */
+guacenc_decoder* guacenc_get_decoder(const char* mimetype);
+
 #endif
 
