@@ -152,6 +152,19 @@ guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
         int index);
 
 /**
+ * Returns the depth of a given layer in terms of parent layers. The layer
+ * depth is the number of layers above the given layer in hierarchy, where a
+ * layer without any parent (such as the default layer) has a depth of 0.
+ *
+ * @param layer
+ *     The layer to check.
+ *
+ * @return
+ *     The depth of the layer.
+ */
+int guacenc_display_get_depth(guacenc_display* display, guacenc_layer* layer);
+
+/**
  * Frees all resources associated with the layer having the given index. If
  * the layer has not been allocated, this function has no effect.
  *

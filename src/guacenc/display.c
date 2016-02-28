@@ -22,6 +22,7 @@
 
 #include "config.h"
 #include "display.h"
+#include "layer.h"
 #include "log.h"
 
 #include <cairo/cairo.h>
@@ -36,6 +37,14 @@
 #include <string.h>
 
 /**
+ * The Guacamole video encoder display related to the current qsort()
+ * operation. As qsort() does not provide a means of passing arbitrary data to
+ * the comparitor, this value must be set prior to invoking qsort() with
+ * guacenc_display_layer_comparator.
+ */
+guacenc_display* __qsort_display;
+
+/**
  * Comparator which orders layer pointers such that (1) NULL pointers are last,
  * (2) layers with the same parent_index are adjacent, and (3) layers with the
  * same parent_index are ordered by Z.
@@ -44,22 +53,28 @@
  */
 static int guacenc_display_layer_comparator(const void* a, const void* b) {
 
+    guacenc_layer* layer_a = *((guacenc_layer**) a);
+    guacenc_layer* layer_b = *((guacenc_layer**) b);
+
     /* If a is NULL, sort it to bottom */
-    if (a == NULL) {
+    if (layer_a == NULL) {
 
         /* ... unless b is also NULL, in which case they are equal */
-        if (b == NULL)
+        if (layer_b == NULL)
             return 0;
 
         return 1;
     }
 
     /* If b is NULL (and a is not NULL), sort it to bottom */
-    if (b == NULL)
+    if (layer_b == NULL)
         return -1;
 
-    guacenc_layer* layer_a = (guacenc_layer*) a;
-    guacenc_layer* layer_b = (guacenc_layer*) b;
+    /* Order such that the deepest layers are first */
+    int a_depth = guacenc_display_get_depth(__qsort_display, layer_a);
+    int b_depth = guacenc_display_get_depth(__qsort_display, layer_b);
+    if (b_depth != a_depth)
+        return b_depth - a_depth;
 
     /* Order such that sibling layers are adjacent */
     if (layer_b->parent_index != layer_a->parent_index)
@@ -95,10 +110,13 @@ int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
         int i;
         guacenc_layer* render_order[GUACENC_DISPLAY_MAX_LAYERS];
 
-        /* Copy and sort layers (ensuring layer #0 is always first) */
+        /* Copy list of layers within display */
         memcpy(render_order, display->layers, sizeof(render_order));
-        qsort(render_order + 1, GUACENC_DISPLAY_MAX_LAYERS - 1,
-                sizeof(guacenc_layer*), guacenc_display_layer_comparator);
+
+        /* Sort layers by depth, parent, and Z */
+        __qsort_display = display;
+        qsort(render_order, GUACENC_DISPLAY_MAX_LAYERS, sizeof(guacenc_layer*),
+                guacenc_display_layer_comparator);
 
         /* Render each layer, in order */
         for (i = 0; i < GUACENC_DISPLAY_MAX_LAYERS; i++) {
@@ -176,6 +194,25 @@ guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
     }
 
     return layer;
+
+}
+
+int guacenc_display_get_depth(guacenc_display* display, guacenc_layer* layer) {
+
+    /* Non-existent layers have a depth of 0 */
+    if (layer == NULL)
+        return 0;
+
+    /* Layers with no parent have a depth of 0 */
+    if (layer->parent_index == GUACENC_LAYER_NO_PARENT)
+        return 0;
+
+    /* Retrieve parent layer */
+    guacenc_layer* parent =
+        guacenc_display_get_layer(display, layer->parent_index);
+
+    /* Current layer depth is the depth of the parent + 1 */
+    return guacenc_display_get_depth(display, parent) + 1;
 
 }
 
