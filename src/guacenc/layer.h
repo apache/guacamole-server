@@ -74,6 +74,12 @@ typedef struct guacenc_layer {
      */
     int opacity;
 
+    /**
+     * The internal buffer used by to record the state of this layer in the
+     * previous frame and to render additional frames.
+     */
+    guacenc_buffer* frame;
+
 } guacenc_layer;
 
 /**

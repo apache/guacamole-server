@@ -40,6 +40,14 @@ guacenc_layer* guacenc_layer_alloc() {
         return NULL;
     }
 
+    /* Allocate buffer for frame rendering */
+    layer->frame = guacenc_buffer_alloc();
+    if (layer->frame== NULL) {
+        guacenc_buffer_free(layer->buffer);
+        free(layer);
+        return NULL;
+    }
+
     /* Layers default to fully opaque */
     layer->opacity = 0xFF;
 
@@ -55,6 +63,9 @@ void guacenc_layer_free(guacenc_layer* layer) {
     /* Ignore NULL layers */
     if (layer == NULL)
         return;
+
+    /* Free internal frame buffer */
+    guacenc_buffer_free(layer->frame);
 
     /* Free underlying buffer */
     guacenc_buffer_free(layer->buffer);
