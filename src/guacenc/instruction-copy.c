@@ -57,6 +57,10 @@ int guacenc_handle_copy(guacenc_display* display, int argc, char** argv) {
     if (dst == NULL)
         return 1;
 
+    /* Expand the destination buffer as necessary to fit the draw operation */
+    if (dst->autosize)
+        guacenc_buffer_fit(dst, dx + width, dy + height);
+
     /* Copy rectangle from source to destination */
     if (src->surface != NULL && dst->cairo != NULL) {
         cairo_set_operator(dst->cairo, guacenc_display_cairo_operator(mask));

@@ -50,6 +50,10 @@ int guacenc_handle_rect(guacenc_display* display, int argc, char** argv) {
     if (buffer == NULL)
         return 1;
 
+    /* Expand the buffer as necessary to fit the draw operation */
+    if (buffer->autosize)
+        guacenc_buffer_fit(buffer, x + width, y + height);
+
     /* Set path to rectangle */
     if (buffer->cairo != NULL)
         cairo_rectangle(buffer->cairo, x, y, width, height);

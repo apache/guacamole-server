@@ -25,6 +25,7 @@
 
 #include <cairo/cairo.h>
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 guacenc_buffer* guacenc_buffer_alloc() {
@@ -111,6 +112,27 @@ int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height) {
     buffer->surface = surface;
     buffer->cairo = cairo;
 
+    return 0;
+
+}
+
+int guacenc_buffer_fit(guacenc_buffer* buffer, int x, int y) {
+
+    /* Increase width to fit X (if necessary) */
+    int new_width = buffer->width;
+    if (new_width < x+1)
+        new_width = x+1;
+
+    /* Increase height to fit Y (if necessary) */
+    int new_height = buffer->height;
+    if (new_height < y+1)
+        new_height = y+1;
+
+    /* Resize buffer if size needs to change to fit X/Y coordinate */
+    if (new_width != buffer->width || new_height != buffer->height)
+        return guacenc_buffer_resize(buffer, new_width, new_height);
+
+    /* No change necessary */
     return 0;
 
 }

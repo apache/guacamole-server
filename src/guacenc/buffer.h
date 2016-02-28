@@ -27,11 +27,19 @@
 
 #include <cairo/cairo.h>
 
+#include <stdbool.h>
+
 /**
  * The image and size storage for either a buffer (a Guacamole layer with a
  * negative index) or a layer (a Guacamole layer with a non-negative index).
  */
 typedef struct guacenc_buffer {
+
+    /**
+     * Whether this buffer should be automatically resized to fit any draw
+     * operation.
+     */
+    bool autosize;
 
     /**
      * The width of this buffer or layer, in pixels.
@@ -106,6 +114,27 @@ void guacenc_buffer_free(guacenc_buffer* buffer);
  *     Zero if the resize operation is successful, non-zero on error.
  */
 int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height);
+
+/**
+ * Resizes the given buffer as necessary to contain at the given X/Y
+ * coordinate, allocating or freeing memory as necessary, and updating the
+ * buffer's width, height, and stride properties. If the buffer already
+ * contains the given coordinate, this function has no effect.
+ *
+ * @param buffer
+ *     The buffer to resize.
+ *
+ * @param x
+ *     The X coordinate to ensure is within the buffer.
+ *
+ * @param y
+ *     The Y coordinate to ensure is within the buffer.
+ *
+ * @return
+ *     Zero if the resize operation is successful or no resize was performed,
+ *     non-zero if the resize operation failed.
+ */
+int guacenc_buffer_fit(guacenc_buffer* buffer, int x, int y);
 
 #endif
 
