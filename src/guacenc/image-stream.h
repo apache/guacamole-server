@@ -206,5 +206,51 @@ extern guacenc_decoder_mapping guacenc_decoder_map[];
  */
 guacenc_decoder* guacenc_get_decoder(const char* mimetype);
 
+/**
+ * Allocates and initializes a new image stream. This allocation is independent
+ * of the Guacamole video encoder display; the allocated guacenc_image_stream
+ * will not automatically be associated with the active display, nor will the
+ * provided layer/buffer index be validated.
+ *
+ * @param mask
+ *     The Guacamole protocol compositing operation (channel mask) to apply
+ *     when drawing the image.
+ *
+ * @param index
+ *     The index of the layer or bugger that the image should be drawn to.
+ *
+ * @param mimetype
+ *     The mimetype of the image data that will be received along this stream.
+ *
+ * @param x
+ *     The X coordinate of the upper-left corner of the rectangle within the
+ *     destination layer or buffer that the image should be drawn to.
+ *
+ * @param y
+ *     The Y coordinate of the upper-left corner of the rectangle within the
+ *     destination layer or buffer that the image should be drawn to.
+ *
+ * @return
+ *     A newly-allocated and initialized guacenc_image_stream, or NULL if
+ *     allocation fails.
+ */
+guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
+        const char* mimetype, int x, int y);
+
+/**
+ * Frees the given image stream and all associated data. If the image stream
+ * has not yet ended (reached end-of-stream), no image will be drawn to the
+ * associated buffer or layer.
+ *
+ * @param stream
+ *     The stream to free.
+ *
+ * @return
+ *     Zero if freeing the stream succeeded, or non-zero if freeing the stream
+ *     failed (for example, due to an error in the free handler of the
+ *     decoder).
+ */
+int guacenc_image_stream_free(guacenc_image_stream* stream);
+
 #endif
 

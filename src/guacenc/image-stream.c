@@ -63,3 +63,40 @@ guacenc_decoder* guacenc_get_decoder(const char* mimetype) {
 
 }
 
+guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
+        const char* mimetype, int x, int y) {
+
+    /* Allocate stream */
+    guacenc_image_stream* stream = malloc(sizeof(guacenc_image_stream));
+    if (stream == NULL)
+        return NULL;
+
+    /* Init properties */
+    stream->index = index;
+    stream->mask = mask;
+    stream->x = x;
+    stream->y = y;
+
+    /* Associate with corresponding decoder */
+    stream->decoder = guacenc_get_decoder(mimetype);
+
+    return stream;
+
+}
+
+int guacenc_image_stream_free(guacenc_image_stream* stream) {
+
+    /* Ignore NULL streams */
+    if (stream == NULL)
+        return 0;
+
+    /* Invoke free handler for decoder (if associated) */
+    if (stream->decoder != NULL)
+        stream->decoder->free_handler(stream);
+
+    /* Free actual stream */
+    free(stream);
+    return 0;
+
+}
+

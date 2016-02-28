@@ -131,6 +131,9 @@ int guacenc_display_free(guacenc_display* display);
  * necessary. If the layer having the given index already exists, it will be
  * returned.
  *
+ * @param display
+ *     The Guacamole video encoder display to retrieve the layer from.
+ *
  * @param index
  *     The index of the layer to retrieve. All valid layer indices are
  *     non-negative.
@@ -146,6 +149,10 @@ guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
  * Frees all resources associated with the layer having the given index. If
  * the layer has not been allocated, this function has no effect.
  *
+ * @param display
+ *     The Guacamole video encoder display associated with the layer being
+ *     freed.
+ *
  * @param index
  *     The index of the layer to free. All valid layer indices are
  *     non-negative.
@@ -154,13 +161,15 @@ guacenc_layer* guacenc_display_get_layer(guacenc_display* display,
  *     Zero if the layer was successfully freed or was not allocated, non-zero
  *     if the layer could not be freed as the index was invalid.
  */
-int guacenc_display_free_layer(guacenc_display* display,
-        int index);
+int guacenc_display_free_layer(guacenc_display* display, int index);
 
 /**
  * Returns the buffer having the given index. A new buffer will be allocated if
  * necessary. If the buffer having the given index already exists, it will be
  * returned.
+ *
+ * @param display
+ *     The Guacamole video encoder display to retrieve the buffer from.
  *
  * @param index
  *     The index of the buffer to retrieve. All valid buffer indices are
@@ -177,6 +186,10 @@ guacenc_buffer* guacenc_display_get_buffer(guacenc_display* display,
  * Frees all resources associated with the buffer having the given index. If
  * the buffer has not been allocated, this function has no effect.
  *
+ * @param display
+ *     The Guacamole video encoder display associated with the buffer being
+ *     freed.
+ *
  * @param index
  *     The index of the buffer to free. All valid buffer indices are negative.
  *
@@ -184,8 +197,7 @@ guacenc_buffer* guacenc_display_get_buffer(guacenc_display* display,
  *     Zero if the buffer was successfully freed or was not allocated, non-zero
  *     if the buffer could not be freed as the index was invalid.
  */
-int guacenc_display_free_buffer(guacenc_display* display,
-        int index);
+int guacenc_display_free_buffer(guacenc_display* display, int index);
 
 /**
  * Returns the buffer associated with the layer or buffer having the given
@@ -193,6 +205,9 @@ int guacenc_display_free_buffer(guacenc_display* display,
  * index refers to a layer (is non-negative), the buffer underlying that layer
  * will be returned. If the given index refers to a buffer (is negative), that
  * buffer will be returned directly.
+ *
+ * @param display
+ *     The Guacamole video encoder display to retrieve the buffer from.
  *
  * @param index
  *     The index of the buffer or layer whose associated buffer should be
@@ -204,6 +219,81 @@ int guacenc_display_free_buffer(guacenc_display* display,
  */
 guacenc_buffer* guacenc_display_get_related_buffer(guacenc_display* display,
         int index);
+
+/**
+ * Creates a new image stream having the given index. If the stream having the
+ * given index already exists, it will be freed and replaced. If the mimetype
+ * specified is not supported, the image stream will still be allocated but
+ * will have no associated decoder (blobs send to that stream will have no
+ * effect).
+ *
+ * @param display
+ *     The Guacamole video encoder display to associate with the
+ *     newly-created image stream.
+ *
+ * @param index
+ *     The index of the stream to create. All valid stream indices are
+ *     non-negative.
+ *
+ * @param mask
+ *     The Guacamole protocol compositing operation (channel mask) to apply
+ *     when drawing the image.
+ *
+ * @param layer_index
+ *     The index of the layer or bugger that the image should be drawn to.
+ *
+ * @param mimetype
+ *     The mimetype of the image data that will be received along this stream.
+ *
+ * @param x
+ *     The X coordinate of the upper-left corner of the rectangle within the
+ *     destination layer or buffer that the image should be drawn to.
+ *
+ * @param y
+ *     The Y coordinate of the upper-left corner of the rectangle within the
+ *     destination layer or buffer that the image should be drawn to.
+ *
+ * @return
+ *     Zero if the image stream was successfully created, non-zero otherwise.
+ */
+int guacenc_display_create_image_stream(guacenc_display* display, int index,
+        int mask, int layer_index, const char* mimetype, int x, int y);
+
+/**
+ * Returns the stream having the given index. If no such stream exists, NULL
+ * will be returned.
+ *
+ * @param display
+ *     The Guacamole video encoder display to retrieve the image stream from.
+ *
+ * @param index
+ *     The index of the stream to retrieve. All valid stream indices are
+ *     non-negative.
+ *
+ * @return
+ *     The stream having the given index, or NULL if the index is invalid or
+ *     a no such stream exists.
+ */
+guacenc_image_stream* guacenc_display_get_image_stream(
+        guacenc_display* display, int index);
+
+/**
+ * Frees all resources associated with the stream having the given index. If
+ * the stream has not been allocated, this function has no effect.
+ *
+ * @param display
+ *     The Guacamole video encoder display associated with the image stream
+ *     being freed.
+ *
+ * @param index
+ *     The index of the stream to free. All valid stream indices are
+ *     non-negative.
+ *
+ * @return
+ *     Zero if the stream was successfully freed or was not allocated, non-zero
+ *     if the stream could not be freed as the index was invalid.
+ */
+int guacenc_display_free_image_stream(guacenc_display* display, int index);
 
 /**
  * Translates the given Guacamole protocol compositing mode (channel mask) to

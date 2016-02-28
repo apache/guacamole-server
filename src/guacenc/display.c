@@ -170,6 +170,59 @@ guacenc_buffer* guacenc_display_get_related_buffer(guacenc_display* display,
 
 }
 
+int guacenc_display_create_image_stream(guacenc_display* display, int index,
+        int mask, int layer_index, const char* mimetype, int x, int y) {
+
+    /* Do not lookup / allocate if index is invalid */
+    if (index < 0 || index > GUACENC_DISPLAY_MAX_STREAMS) {
+        guacenc_log(GUAC_LOG_WARNING, "Stream index out of bounds: %i", index);
+        return 1;
+    }
+
+    /* Free existing stream (if any) */
+    guacenc_image_stream_free(display->image_streams[index]);
+
+    /* Associate new stream */
+    guacenc_image_stream* stream = display->image_streams[index] =
+        guacenc_image_stream_alloc(mask, layer_index, mimetype, x, y);
+
+    /* Return zero only if stream is not NULL */
+    return stream == NULL;
+
+}
+
+guacenc_image_stream* guacenc_display_get_image_stream(
+        guacenc_display* display, int index) {
+
+    /* Do not lookup / allocate if index is invalid */
+    if (index < 0 || index > GUACENC_DISPLAY_MAX_STREAMS) {
+        guacenc_log(GUAC_LOG_WARNING, "Stream index out of bounds: %i", index);
+        return NULL;
+    }
+
+    /* Return existing stream (if any) */
+    return display->image_streams[index];
+
+}
+
+int guacenc_display_free_image_stream(guacenc_display* display, int index) {
+
+    /* Do not lookup / allocate if index is invalid */
+    if (index < 0 || index > GUACENC_DISPLAY_MAX_STREAMS) {
+        guacenc_log(GUAC_LOG_WARNING, "Stream index out of bounds: %i", index);
+        return 1;
+    }
+
+    /* Free stream (if allocated) */
+    guacenc_image_stream_free(display->image_streams[index]);
+
+    /* Mark stream as freed */
+    display->image_streams[index] = NULL;
+
+    return 0;
+
+}
+
 cairo_operator_t guacenc_display_cairo_operator(guac_composite_mode mask) {
 
     /* Translate Guacamole channel mask into Cairo operator */
@@ -249,7 +302,7 @@ int guacenc_display_free(guacenc_display* display) {
 
     /* Free all streams */
     for (i = 0; i < GUACENC_DISPLAY_MAX_STREAMS; i++)
-        free(display->image_streams[i]);
+        guacenc_image_stream_free(display->image_streams[i]);
 
     free(display);
     return 0;
