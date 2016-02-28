@@ -241,7 +241,7 @@ int guacenc_display_free(guacenc_display* display) {
 
     /* Free all buffers */
     for (i = 0; i < GUACENC_DISPLAY_MAX_BUFFERS; i++)
-        free(display->buffers[i]);
+        guacenc_buffer_free(display->buffers[i]);
 
     /* Free all layers */
     for (i = 0; i < GUACENC_DISPLAY_MAX_LAYERS; i++)
