@@ -21,37 +21,14 @@
  */
 
 #include "config.h"
-#include "buffer.h"
-#include "image-stream.h"
 #include "webp.h"
+
+#include <cairo/cairo.h>
 
 #include <stdlib.h>
 
-int guacenc_webp_init(guacenc_image_stream* stream) {
+cairo_surface_t* guacenc_webp_decoder(unsigned char* data, int length) {
     /* STUB */
-    return 0;
+    return NULL;
 }
-
-int guacenc_webp_data(guacenc_image_stream* stream, unsigned char* data,
-        int length) {
-    /* STUB */
-    return 0;
-}
-
-int guacenc_webp_end(guacenc_image_stream* stream, guacenc_buffer* buffer) {
-    /* STUB */
-    return 0;
-}
-
-int guacenc_webp_free(guacenc_image_stream* stream) {
-    /* STUB */
-    return 0;
-}
-
-guacenc_decoder guacenc_webp_decoder = {
-    .init_handler = guacenc_webp_init,
-    .data_handler = guacenc_webp_data,
-    .end_handler  = guacenc_webp_end,
-    .free_handler = guacenc_webp_free
-};
 

@@ -30,14 +30,16 @@
 #include "webp.h"
 #endif
 
+#include <cairo/cairo.h>
+
 #include <stdlib.h>
 #include <string.h>
 
 guacenc_decoder_mapping guacenc_decoder_map[] = {
-    {"image/png",  &guacenc_png_decoder},
-    {"image/jpeg", &guacenc_jpeg_decoder},
+    {"image/png",  guacenc_png_decoder},
+    {"image/jpeg", guacenc_jpeg_decoder},
 #ifdef ENABLE_WEBP
-    {"image/webp", &guacenc_webp_decoder},
+    {"image/webp", guacenc_webp_decoder},
 #endif
     {NULL,         NULL}
 };
@@ -78,9 +80,12 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
     stream->y = y;
 
     /* Associate with corresponding decoder */
-    guacenc_decoder* decoder = stream->decoder = guacenc_get_decoder(mimetype);
-    if (decoder != NULL)
-        decoder->init_handler(stream);
+    stream->decoder = guacenc_get_decoder(mimetype);
+
+    /* Allocate initial buffer */
+    stream->length = 0;
+    stream->max_length = GUACENC_IMAGE_STREAM_INITIAL_LENGTH;
+    stream->buffer = (unsigned char*) malloc(stream->max_length);
 
     return stream;
 
@@ -89,12 +94,27 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
 int guacenc_image_stream_receive(guacenc_image_stream* stream,
         unsigned char* data, int length) {
 
-    /* Invoke data handler of corresponding decoder (if any) */
-    guacenc_decoder* decoder = stream->decoder;
-    if (decoder != NULL)
-        return decoder->data_handler(stream, data, length);
+    /* Allocate more space if necessary */
+    if (stream->max_length - stream->length < length) {
 
-    /* If there is no decoder, simply return success */
+        /* Calculate a reasonable new max length guaranteed to fit buffer */
+        int new_max_length = stream->max_length * 2 + length;
+
+        /* Attempt to resize buffer */
+        unsigned char* new_buffer =
+            (unsigned char*) realloc(stream->buffer, new_max_length);
+        if (new_buffer == NULL)
+            return 1;
+
+        /* Store updated buffer and size */
+        stream->buffer = new_buffer;
+        stream->max_length = new_max_length;
+
+    }
+
+    /* Append data */
+    memcpy(stream->buffer + stream->length, data, length);
+    stream->length += length;
     return 0;
 
 }
@@ -102,12 +122,20 @@ int guacenc_image_stream_receive(guacenc_image_stream* stream,
 int guacenc_image_stream_end(guacenc_image_stream* stream,
         guacenc_buffer* buffer) {
 
-    /* Invoke end handler of corresponding decoder (if any) */
-    guacenc_decoder* decoder = stream->decoder;
-    if (decoder != NULL)
-        return decoder->end_handler(stream, buffer);
-
     /* If there is no decoder, simply return success */
+    guacenc_decoder* decoder = stream->decoder;
+    if (decoder == NULL)
+        return 0;
+
+    /* Decode received data to a Cairo surface */
+    cairo_surface_t* surface = stream->decoder(stream->buffer, stream->length);
+    if (surface == NULL)
+        return 1;
+
+    /* Draw surface to buffer */
+    cairo_set_source_surface(buffer->cairo, surface, stream->x, stream->y);
+    cairo_fill(buffer->cairo);
+    cairo_surface_destroy(surface);
     return 0;
 
 }
@@ -118,10 +146,8 @@ int guacenc_image_stream_free(guacenc_image_stream* stream) {
     if (stream == NULL)
         return 0;
 
-    /* Invoke free handler for decoder (if associated) */
-    guacenc_decoder* decoder = stream->decoder;
-    if (decoder != NULL)
-        decoder->free_handler(stream);
+    /* Free image buffer */
+    free(stream->buffer);
 
     /* Free actual stream */
     free(stream);

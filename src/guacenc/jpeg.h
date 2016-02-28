@@ -29,7 +29,7 @@
 /**
  * Decoder implementation which handles "image/jpeg" images.
  */
-extern guacenc_decoder guacenc_jpeg_decoder;
+guacenc_decoder guacenc_jpeg_decoder;
 
 #endif
 

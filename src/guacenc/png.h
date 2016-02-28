@@ -29,7 +29,7 @@
 /**
  * Decoder implementation which handles "image/png" images.
  */
-extern guacenc_decoder guacenc_png_decoder;
+guacenc_decoder guacenc_png_decoder;
 
 #endif
 

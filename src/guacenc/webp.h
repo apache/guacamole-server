@@ -29,7 +29,7 @@
 /**
  * Decoder implementation which handles "image/webp" images.
  */
-extern guacenc_decoder guacenc_webp_decoder;
+guacenc_decoder guacenc_webp_decoder;
 
 #endif
 

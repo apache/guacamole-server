@@ -21,37 +21,14 @@
  */
 
 #include "config.h"
-#include "buffer.h"
-#include "image-stream.h"
 #include "jpeg.h"
+
+#include <cairo/cairo.h>
 
 #include <stdlib.h>
 
-int guacenc_jpeg_init(guacenc_image_stream* stream) {
+cairo_surface_t* guacenc_jpeg_decoder(unsigned char* data, int length) {
     /* STUB */
-    return 0;
+    return NULL;
 }
-
-int guacenc_jpeg_data(guacenc_image_stream* stream, unsigned char* data,
-        int length) {
-    /* STUB */
-    return 0;
-}
-
-int guacenc_jpeg_end(guacenc_image_stream* stream, guacenc_buffer* buffer) {
-    /* STUB */
-    return 0;
-}
-
-int guacenc_jpeg_free(guacenc_image_stream* stream) {
-    /* STUB */
-    return 0;
-}
-
-guacenc_decoder guacenc_jpeg_decoder = {
-    .init_handler = guacenc_jpeg_init,
-    .data_handler = guacenc_jpeg_data,
-    .end_handler  = guacenc_jpeg_end,
-    .free_handler = guacenc_jpeg_free
-};
 

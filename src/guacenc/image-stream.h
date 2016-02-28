@@ -26,11 +26,31 @@
 #include "config.h"
 #include "buffer.h"
 
+#include <cairo/cairo.h>
+
 /**
- * A decoder implementation which processes arbitrary image data of a
- * particular type. Image data is fed explicitly into the decoder as chunks.
+ * The initial number of bytes to allocate for the image data buffer. If this
+ * buffer is not sufficiently larged, it will be dynamically reallocated as it
+ * grows.
  */
-typedef struct guacenc_decoder guacenc_decoder;
+#define GUACENC_IMAGE_STREAM_INITIAL_LENGTH 4096
+
+/**
+ * Callback function which is provided raw, encoded image data of the given
+ * length. The function is expected to return a new Cairo surface which will
+ * later (by guacenc) be freed via cairo_surface_destroy().
+ *
+ * @param data
+ *     The raw encoded image data that this function must decode.
+ *
+ * @param length
+ *     The length of the image data, in bytes.
+ *
+ * @return
+ *     A newly-allocated Cairo surface containing the decoded image, or NULL
+ *     or decoding fails.
+ */
+typedef cairo_surface_t* guacenc_decoder(unsigned char* data, int length);
 
 /**
  * The current state of an allocated Guacamole image stream.
@@ -61,116 +81,33 @@ typedef struct guacenc_image_stream {
     int y;
 
     /**
+     * Buffer of image data which will be built up over time as chunks are
+     * received via "blob" instructions. This will ultimately be passed in its
+     * entirety to the decoder function.
+     */
+    unsigned char* buffer;
+
+    /**
+     * The number of bytes currently stored in the buffer.
+     */
+    int length;
+
+    /**
+     * The maximum number of bytes that can be stored in the current buffer
+     * before it must be reallocated.
+     */
+    int max_length;
+
+    /**
      * The decoder to use when decoding the raw data received along this
      * stream, or NULL if no such decoder exists.
      */
     guacenc_decoder* decoder;
 
-    /**
-     * Arbitrary implementation-specific data associated with the stream.
-     */
-    void* data;
-
 } guacenc_image_stream;
 
 /**
- * Callback function which is invoked when a decoder has been assigned to an
- * image stream.
- *
- * @param stream
- *     The image stream that the decoder has been assigned to.
- *
- * @return
- *     Zero if initialization was successful, non-zero otherwise.
- */
-typedef int guacenc_decoder_init_handler(guacenc_image_stream* stream);
-
-/**
- * Callback function which is invoked when data has been received along an
- * image stream with an associated decoder.
- *
- * @param stream
- *     The image stream that the decoder was assigned to.
- *
- * @param data
- *     The chunk of data received along the image stream.
- *
- * @param length
- *     The length of the chunk of data received, in bytes.
- *
- * @return
- *     Zero if the provided data was processed successfully, non-zero
- *     otherwise.
- */
-typedef int guacenc_decoder_data_handler(guacenc_image_stream* stream,
-        unsigned char* data, int length);
-
-/**
- * Callback function which is invoked when an image stream with an associated
- * decoder has ended (reached end-of-stream). The image stream will contain
- * the required meta-information describing the drawing operation, including
- * the destination X/Y coordinates.
- *
- * @param stream
- *     The image stream that has ended.
- *
- * @param buffer
- *     The buffer to which the decoded image should be drawn.
- *
- * @return
- *     Zero if the end of the stream has been processed successfully and the
- *     resulting image has been rendered to the given buffer, non-zero
- *     otherwise.
- */
-typedef int guacenc_decoder_end_handler(guacenc_image_stream* stream,
-        guacenc_buffer* buffer);
-
-/**
- * Callback function which will be invoked when the data associated with an
- * image stream must be freed. This may happen at any time, and will not
- * necessarily occur only after the image stream has ended. It is possible
- * that an image stream will be in-progress at the end of a protocol dump, thus
- * the memory associated with the stream will need to be freed without ever
- * ending.
- *
- * @param stream
- *     The stream whose associated data must be freed.
- *
- * @return
- *     Zero if the data was successfully freed, non-zero otherwise.
- */
-typedef int guacenc_decoder_free_handler(guacenc_image_stream* stream);
-
-struct guacenc_decoder {
-
-    /**
-     * Callback invoked when this decoder has just been assigned to an image
-     * stream.
-     */
-    guacenc_decoder_init_handler* init_handler;
-
-    /**
-     * Callback invoked when data has been received along an image stream to
-     * which this decoder has been assigned.
-     */
-    guacenc_decoder_data_handler* data_handler;
-
-    /**
-     * Callback invoked when an image stream to which this decoder has been
-     * assigned has ended (reached end-of-stream).
-     */
-    guacenc_decoder_end_handler* end_handler;
-
-    /**
-     * Callback invoked when data associated with an image stream by this
-     * decoder must be freed.
-     */
-    guacenc_decoder_free_handler* free_handler;
-
-};
-
-/**
- * Mapping of image mimetype to corresponding decoder.
+ * Mapping of image mimetype to corresponding decoder function.
  */
 typedef struct guacenc_decoder_mapping {
 
@@ -180,8 +117,8 @@ typedef struct guacenc_decoder_mapping {
     const char* mimetype;
 
     /**
-     * The decoder to use when an image stream of the associated mimetype is
-     * received.
+     * The decoder function to use when an image stream of the associated
+     * mimetype is received.
      */
     guacenc_decoder* decoder;
 
@@ -238,9 +175,9 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
         const char* mimetype, int x, int y);
 
 /**
- * Signals the decoder of the given image stream that a chunk of image data
- * has been received. If no decoder is associated with the given image stream,
- * this function has no effect.
+ * Appends newly-received data to the internal buffer of the given image
+ * stream, such that the entire received image can be fed to the decoder as one
+ * buffer once the stream ends.
  *
  * @param stream
  *     The image stream that received the data.
@@ -252,18 +189,19 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
  *     The length of the chunk of data received, in bytes.
  *
  * @return
- *     Zero if the given data was handled successfully by the decoder, or
- *     non-zero if an error occurs.
+ *     Zero if the given data was successfully appended to the in-progress
+ *     image, non-zero if an error occurs.
  */
 int guacenc_image_stream_receive(guacenc_image_stream* stream,
         unsigned char* data, int length);
 
 /**
- * Signals the decoder of the given image stream that no more data will be
- * received and the image should be written to the given buffer as-is. If no
- * decoder is associated with the given image stream, this function has no
- * effect. Meta-information describing the image draw operation itself is
- * stored within the guacenc_image_stream.
+ * Marks the end of the given image stream (no more data will be received) and
+ * invokes the associated decoder. The decoded image will be written to the
+ * given buffer as-is. If no decoder is associated with the given image stream,
+ * this function has no effect. Meta-information describing the image draw
+ * operation itself is pulled from the guacenc_image_stream, having been stored
+ * there when the image stream was created.
  *
  * @param stream
  *     The image stream that has ended.
