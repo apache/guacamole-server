@@ -44,12 +44,9 @@ int guacenc_handle_img(guacenc_display* display, int argc, char** argv) {
     int x = atoi(argv[4]);
     int y = atoi(argv[5]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "img: stream=%i mask=0x%X layer=%i "
-            "mimetype=%s (%i, %i)", stream_index, mask, layer_index,
-            mimetype, x, y);
-
-    return 0;
+    /* Create requested stream */
+    return guacenc_display_create_image_stream(display, stream_index,
+            mask, layer_index, mimetype, x, y);
 
 }
 

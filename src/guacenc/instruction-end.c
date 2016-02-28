@@ -22,6 +22,7 @@
 
 #include "config.h"
 #include "display.h"
+#include "image-stream.h"
 #include "log.h"
 
 #include <guacamole/client.h>
@@ -39,9 +40,20 @@ int guacenc_handle_end(guacenc_display* display, int argc, char** argv) {
     /* Parse arguments */
     int index = atoi(argv[0]);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "end: stream=%i", index);
-    return 0;
+    /* Retrieve image stream */
+    guacenc_image_stream* stream =
+        guacenc_display_get_image_stream(display, index);
+    if (stream == NULL)
+        return 1;
+
+    /* Retrieve destination buffer */
+    guacenc_buffer* buffer =
+        guacenc_display_get_related_buffer(display, stream->index);
+    if (buffer == NULL)
+        return 1;
+
+    /* End image stream, drawing final image to the buffer */
+    return guacenc_image_stream_end(stream, buffer);
 
 }
 

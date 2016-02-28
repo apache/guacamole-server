@@ -40,12 +40,16 @@ int guacenc_handle_blob(guacenc_display* display, int argc, char** argv) {
     /* Parse arguments */
     int index = atoi(argv[0]);
     char* data = argv[1];
-    int data_length = guac_protocol_decode_base64(data);
+    int length = guac_protocol_decode_base64(data);
 
-    /* STUB */
-    guacenc_log(GUAC_LOG_DEBUG, "blob: stream=%i data=[%i bytes]",
-            index, data_length);
-    return 0;
+    /* Retrieve image stream */
+    guacenc_image_stream* stream =
+        guacenc_display_get_image_stream(display, index);
+    if (stream == NULL)
+        return 1;
+
+    /* Send data to decoder within associated stream */
+    return guacenc_image_stream_receive(stream, (unsigned char*) data, length);
 
 }
 
