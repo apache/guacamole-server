@@ -74,6 +74,10 @@ void guacenc_buffer_free(guacenc_buffer* buffer) {
 
 int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height) {
 
+    /* Ignore requests which do not change the size */
+    if (buffer->width == width && buffer->height == height)
+        return 0;
+
     /* Simply deallocate if new image has absolutely no pixels */
     if (width == 0 || height == 0) {
         guacenc_buffer_free_image(buffer);
