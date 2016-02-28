@@ -133,8 +133,11 @@ int guacenc_image_stream_end(guacenc_image_stream* stream,
         return 1;
 
     /* Draw surface to buffer */
-    cairo_set_source_surface(buffer->cairo, surface, stream->x, stream->y);
-    cairo_fill(buffer->cairo);
+    if (buffer->cairo != NULL) {
+        cairo_set_source_surface(buffer->cairo, surface, stream->x, stream->y);
+        cairo_fill(buffer->cairo);
+    }
+
     cairo_surface_destroy(surface);
     return 0;
 
