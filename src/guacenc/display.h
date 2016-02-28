@@ -103,6 +103,22 @@ typedef struct guacenc_display {
 int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp);
 
 /**
+ * Flattens the given display, rendering all child layers to the frame buffers
+ * of their parent layers. The frame buffer of the default layer of the display
+ * will thus contain the flattened, composited rendering of the entire display
+ * state after this function succeeds. The contents of the frame buffers of
+ * each layer are replaced by this function.
+ *
+ * @param display
+ *     The display to flatten.
+ *
+ * @return
+ *     Zero if the flatten operation succeeds, non-zero if an error occurs
+ *     preventing proper rendering.
+ */
+int guacenc_display_flatten(guacenc_display* display);
+
+/**
  * Allocates a new Guacamole video encoder display. This display serves as the
  * representation of encoding state, as well as the state of the Guacamole
  * display as instructions are read and handled.

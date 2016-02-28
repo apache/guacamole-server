@@ -35,29 +35,34 @@ noinst_HEADERS =   \
     log.h          \
     png.h
 
-guacenc_SOURCES =          \
-    buffer.c               \
-    display.c              \
-    encode.c               \
-    guacenc.c              \
-    image-stream.c         \
-    instructions.c         \
-    instruction-blob.c     \
-    instruction-cfill.c    \
-    instruction-copy.c     \
-    instruction-cursor.c   \
-    instruction-dispose.c  \
-    instruction-end.c      \
-    instruction-img.c      \
-    instruction-move.c     \
-    instruction-rect.c     \
-    instruction-shade.c    \
-    instruction-size.c     \
-    instruction-sync.c     \
-    instruction-transfer.c \
-    jpeg.c                 \
-    layer.c                \
-    log.c                  \
+guacenc_SOURCES =           \
+    buffer.c                \
+    display.c               \
+    display-buffers.c       \
+    display-image-streams.c \
+    display-flatten.c       \
+    display-layers.c        \
+    display-sync.c          \
+    encode.c                \
+    guacenc.c               \
+    image-stream.c          \
+    instructions.c          \
+    instruction-blob.c      \
+    instruction-cfill.c     \
+    instruction-copy.c      \
+    instruction-cursor.c    \
+    instruction-dispose.c   \
+    instruction-end.c       \
+    instruction-img.c       \
+    instruction-move.c      \
+    instruction-rect.c      \
+    instruction-shade.c     \
+    instruction-size.c      \
+    instruction-sync.c      \
+    instruction-transfer.c  \
+    jpeg.c                  \
+    layer.c                 \
+    log.c                   \
     png.c
 
 # Compile WebP support if available

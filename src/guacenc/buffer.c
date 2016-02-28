@@ -26,7 +26,6 @@
 #include <cairo/cairo.h>
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stdlib.h>
 
 guacenc_buffer* guacenc_buffer_alloc() {
