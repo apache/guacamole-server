@@ -30,6 +30,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/timestamp.h>
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -93,70 +94,91 @@ int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
         return 1;
     }
 
-    /* Get buffer for display frame rendering */
-    guacenc_buffer* frame = display->frame;
-
     /* Update timestamp of display */
     display->last_sync = timestamp;
 
-    /* Ensure frame is the same size as the default layer */
-    guacenc_buffer* def_layer = guacenc_display_get_related_buffer(display, 0);
-    guacenc_buffer_resize(frame, def_layer->width, def_layer->height);
+    int i;
+    guacenc_layer* render_order[GUACENC_DISPLAY_MAX_LAYERS];
 
-    /* Render all layers to frame */
-    cairo_t* cairo = frame->cairo;
-    if (cairo != NULL) {
+    /* Copy list of layers within display */
+    memcpy(render_order, display->layers, sizeof(render_order));
 
-        int i;
-        guacenc_layer* render_order[GUACENC_DISPLAY_MAX_LAYERS];
+    /* Sort layers by depth, parent, and Z */
+    __qsort_display = display;
+    qsort(render_order, GUACENC_DISPLAY_MAX_LAYERS, sizeof(guacenc_layer*),
+            guacenc_display_layer_comparator);
 
-        /* Copy list of layers within display */
-        memcpy(render_order, display->layers, sizeof(render_order));
+    /* Reset layer frame buffers */
+    for (i = 0; i < GUACENC_DISPLAY_MAX_LAYERS; i++) {
 
-        /* Sort layers by depth, parent, and Z */
-        __qsort_display = display;
-        qsort(render_order, GUACENC_DISPLAY_MAX_LAYERS, sizeof(guacenc_layer*),
-                guacenc_display_layer_comparator);
+        /* Pull current layer, ignoring unallocated layers */
+        guacenc_layer* layer = render_order[i];
+        if (layer == NULL)
+            continue;
 
-        /* Render each layer, in order */
-        for (i = 0; i < GUACENC_DISPLAY_MAX_LAYERS; i++) {
+        /* Get source buffer and destination frame buffer */
+        guacenc_buffer* buffer = layer->buffer;
+        guacenc_buffer* frame = layer->frame;
 
-            /* Pull current layer, ignoring unallocated layers */
-            guacenc_layer* layer = render_order[i];
-            if (layer == NULL)
-                continue;
-
-            /* Skip fully-transparent layers */
-            if (layer->opacity == 0)
-                continue;
-
-            /* Pull underlying buffer */
-            guacenc_buffer* buffer = layer->buffer;
-
-            /* Ignore layers with empty buffers */
-            if (buffer->surface == NULL)
-                continue;
-
-            /* TODO: Determine actual location relative to parent layer */
-            int x = layer->x;
-            int y = layer->y;
-
-            /* Render buffer to layer */
-            cairo_reset_clip(cairo);
-            cairo_rectangle(cairo, x, y, buffer->width, buffer->height);
-            cairo_clip(cairo);
-
-            cairo_set_source_surface(cairo, buffer->surface, x, y);
-            cairo_paint_with_alpha(cairo, layer->opacity / 255.0);
-
-        }
+        /* Reset frame contents */
+        guacenc_buffer_copy(frame, buffer);
 
     }
+
+    /* Render each layer, in order */
+    for (i = 0; i < GUACENC_DISPLAY_MAX_LAYERS; i++) {
+
+        /* Pull current layer, ignoring unallocated layers */
+        guacenc_layer* layer = render_order[i];
+        if (layer == NULL)
+            continue;
+
+        /* Skip fully-transparent layers */
+        if (layer->opacity == 0)
+            continue;
+
+        /* Ignore layers without a parent */
+        int parent_index = layer->parent_index;
+        if (parent_index == GUACENC_LAYER_NO_PARENT)
+            continue;
+
+        /* Retrieve parent layer, ignoring layers with invalid parents */
+        guacenc_layer* parent = guacenc_display_get_layer(display, parent_index);
+        if (parent == NULL)
+            continue;
+
+        /* Get source and destination frame buffer */
+        guacenc_buffer* src = layer->frame;
+        guacenc_buffer* dst = parent->frame;
+
+        /* Ignore layers with empty buffers */
+        cairo_surface_t* surface = src->surface;
+        if (surface == NULL)
+            continue;
+
+        /* Ignore if parent has no pixels */
+        cairo_t* cairo = dst->cairo;
+        if (cairo == NULL)
+            continue;
+
+        /* Render buffer to layer */
+        cairo_reset_clip(cairo);
+        cairo_rectangle(cairo, layer->x, layer->y, src->width, src->height);
+        cairo_clip(cairo);
+
+        cairo_set_source_surface(cairo, surface, layer->x, layer->y);
+        cairo_paint_with_alpha(cairo, layer->opacity / 255.0);
+
+    }
+
+    /* Retrieve default layer (guaranteed to not be NULL) */
+    guacenc_layer* def_layer = guacenc_display_get_layer(display, 0);
+    assert(def_layer != NULL);
 
     /* STUB: Write frame as PNG */
     char filename[256];
     sprintf(filename, "frame-%" PRId64 ".png", timestamp);
-    cairo_surface_t* surface = frame->surface;
+    cairo_surface_t* surface = def_layer->frame->surface;
     if (surface != NULL)
         cairo_surface_write_to_png(surface, filename);
 
@@ -424,16 +446,7 @@ cairo_operator_t guacenc_display_cairo_operator(guac_composite_mode mask) {
 }
 
 guacenc_display* guacenc_display_alloc() {
-
-    /* Allocate display */
-    guacenc_display* display =
-        (guacenc_display*) calloc(1, sizeof(guacenc_display));
-
-    /* Allocate buffer for frame rendering */
-    display->frame = guacenc_buffer_alloc();
-
-    return display;
-
+    return (guacenc_display*) calloc(1, sizeof(guacenc_display));
 }
 
 int guacenc_display_free(guacenc_display* display) {
@@ -443,9 +456,6 @@ int guacenc_display_free(guacenc_display* display) {
     /* Ignore NULL display */
     if (display == NULL)
         return 0;
-
-    /* Free internal frame buffer */
-    guacenc_buffer_free(display->frame);
 
     /* Free all buffers */
     for (i = 0; i < GUACENC_DISPLAY_MAX_BUFFERS; i++)

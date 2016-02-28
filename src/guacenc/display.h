@@ -84,12 +84,6 @@ typedef struct guacenc_display {
      */
     guac_timestamp last_sync;
 
-    /**
-     * The internal buffer used by the display to record the previous frame
-     * and to render additional frames.
-     */
-    guacenc_buffer* frame;
-
 } guacenc_display;
 
 /**
