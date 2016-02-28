@@ -136,5 +136,22 @@ int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height);
  */
 int guacenc_buffer_fit(guacenc_buffer* buffer, int x, int y);
 
+/**
+ * Copies the entire contents of the given source buffer to the destination
+ * buffer, ignoring the current contents of the destination. The destination
+ * buffer's contents are entirely replaced.
+ *
+ * @param dst
+ *     The destination buffer whose contents should be replaced.
+ *
+ * @param src
+ *     The source buffer whose contents should replace those of the destination
+ *     buffer.
+ *
+ * @return
+ *     Zero if the copy operation was successful, non-zero on failure.
+ */
+int guacenc_buffer_copy(guacenc_buffer* dst, guacenc_buffer* src);
+
 #endif
 

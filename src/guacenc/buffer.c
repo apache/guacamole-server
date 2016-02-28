@@ -25,6 +25,7 @@
 
 #include <cairo/cairo.h>
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -137,6 +138,36 @@ int guacenc_buffer_fit(guacenc_buffer* buffer, int x, int y) {
         return guacenc_buffer_resize(buffer, new_width, new_height);
 
     /* No change necessary */
+    return 0;
+
+}
+
+int guacenc_buffer_copy(guacenc_buffer* dst, guacenc_buffer* src) {
+
+    /* Resize destination to exactly fit source */
+    if (guacenc_buffer_resize(dst, src->width, src->height))
+        return 1;
+
+    /* Copy surface contents identically */
+    if (src->surface != NULL) {
+
+        /* Destination must be non-NULL as its size is that of the source */
+        assert(dst->cairo != NULL);
+
+        /* Reset state of destination */
+        cairo_t* cairo = dst->cairo;
+        cairo_reset_clip(cairo);
+
+        /* Overwrite destination with contents of source */
+        cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
+        cairo_set_source_surface(cairo, src->surface, 0, 0);
+        cairo_paint(cairo);
+
+        /* Reset operator of destination to default */
+        cairo_set_operator(cairo, CAIRO_OPERATOR_OVER);
+
+    }
+
     return 0;
 
 }
