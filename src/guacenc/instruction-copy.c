@@ -63,10 +63,41 @@ int guacenc_handle_copy(guacenc_display* display, int argc, char** argv) {
 
     /* Copy rectangle from source to destination */
     if (src->surface != NULL && dst->cairo != NULL) {
+
+        /* If surfaces are different, no need to copy */
+        cairo_surface_t* surface;
+        if (src != dst)
+            surface = src->surface;
+
+        /* Otherwise, copy to a temporary surface */
+        else {
+
+            /* Create new surface to hold the source rect */
+            surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+                    width, height);
+
+            /* Copy relevant rectangle from source surface */
+            cairo_t* cairo = cairo_create(surface);
+            cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
+            cairo_set_source_surface(cairo, src->surface, -sx, -sy);
+            cairo_paint(cairo);
+            cairo_destroy(cairo);
+
+            /* Source coordinates are now (0, 0) */
+            sx = sy = 0;
+
+        }
+
+        /* Perform copy */
         cairo_set_operator(dst->cairo, guacenc_display_cairo_operator(mask));
-        cairo_set_source_surface(dst->cairo, src->surface, dx - sx, dy - sy);
+        cairo_set_source_surface(dst->cairo, surface, dx - sx, dy - sy);
         cairo_rectangle(dst->cairo, dx, dy, width, height);
         cairo_fill(dst->cairo);
+
+        /* Destroy temporary surface if it was created */
+        if (surface != src->surface)
+            cairo_surface_destroy(surface);
+
     }
 
     return 0;
