@@ -78,3 +78,8 @@ guacenc_CFLAGS =            \
 guacenc_LDADD =     \
     @LIBGUAC_LTLIB@
 
+guacenc_LDFLAGS = \
+    @CAIRO_LIBS@  \
+    @JPEG_LIBS@   \
+    @WEBP_LIBS@
+
