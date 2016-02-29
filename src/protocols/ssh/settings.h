@@ -52,6 +52,11 @@
 #define GUAC_SSH_DEFAULT_TYPESCRIPT_NAME "typescript" 
 
 /**
+ * The filename to use for the screen recording, if not specified.
+ */
+#define GUAC_SSH_DEFAULT_RECORDING_NAME "recording"
+
+/**
  * Settings for the SSH connection. The values for this structure are parsed
  * from the arguments given during the Guacamole protocol handshake using the
  * guac_ssh_parse_args() function.
@@ -156,6 +161,23 @@ typedef struct guac_ssh_settings {
      * not already exist.
      */
     bool create_typescript_path;
+
+    /**
+     * The path in which the screen recording should be saved, if enabled. If
+     * no screen recording should be saved, this will be NULL.
+     */
+    char* recording_path;
+
+    /**
+     * The filename to use for the screen recording, if enabled.
+     */
+    char* recording_name;
+
+    /**
+     * Whether the screen recording path should be automatically created if it
+     * does not already exist.
+     */
+    bool create_recording_path;
 
 } guac_ssh_settings;
 

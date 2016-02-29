@@ -71,6 +71,10 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "sftp-directory",
 #endif
 
+    "recording-path",
+    "recording-name",
+    "create-recording-path",
+
     NULL
 };
 
@@ -228,6 +232,10 @@ enum VNC_ARGS_IDX {
     IDX_SFTP_DIRECTORY,
 #endif
 
+    IDX_RECORDING_PATH,
+    IDX_RECORDING_NAME,
+    IDX_CREATE_RECORDING_PATH,
+
     VNC_ARGS_COUNT
 };
 
@@ -378,6 +386,20 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
                 IDX_SFTP_DIRECTORY, NULL);
 #endif
 
+    /* Read recording path */
+    settings->recording_path =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_RECORDING_PATH, NULL);
+
+    /* Read recording name */
+    settings->recording_name =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_RECORDING_NAME, GUAC_VNC_DEFAULT_RECORDING_NAME);
+
+    /* Parse path creation flag */
+    settings->create_recording_path =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_CREATE_RECORDING_PATH, false);
 
     return settings;
 
@@ -389,6 +411,8 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
     free(settings->clipboard_encoding);
     free(settings->encodings);
     free(settings->hostname);
+    free(settings->recording_name);
+    free(settings->recording_path);
 
 #ifdef ENABLE_VNC_REPEATER
     /* Free VNC repeater settings */

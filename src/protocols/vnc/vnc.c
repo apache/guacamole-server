@@ -30,6 +30,7 @@
 #include "guac_clipboard.h"
 #include "guac_cursor.h"
 #include "guac_display.h"
+#include "guac_recording.h"
 #include "log.h"
 #include "settings.h"
 #include "vnc.h"
@@ -316,6 +317,14 @@ void* guac_vnc_client_thread(void* data) {
 
     /* Set remaining client data */
     vnc_client->rfb_client = rfb_client;
+
+    /* Set up screen recording, if requested */
+    if (settings->recording_path != NULL) {
+        guac_common_recording_create(client,
+                settings->recording_path,
+                settings->recording_name,
+                settings->create_recording_path);
+    }
 
     /* Send name */
     guac_protocol_send_name(client->socket, rfb_client->desktopName);
