@@ -41,7 +41,7 @@ SUBDIRS =       \
     tests
 
 if ENABLE_COMMON_SSH
-#SUBDIRS += src/common-ssh
+SUBDIRS += src/common-ssh
 endif
 
 if ENABLE_TERMINAL
