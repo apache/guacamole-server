@@ -49,11 +49,11 @@ typedef ssize_t guac_socket_read_handler(guac_socket* socket,
 /**
  * Generic write handler for socket write operations, modeled after the standard
  * POSIX write() function. When set within a guac_socket, a handler of this type
- * will be called when data needs to be write into the socket.
+ * will be called when data needs to be written to the socket.
  *
  * @param socket The guac_socket being written to.
  * @param buf The arbitrary buffer containing data to be written.
- * @param count The maximum number of bytes to write from the buffer.
+ * @param count The maximum number of bytes to written to the buffer.
  * @return The number of bytes written, or -1 if an error occurs.
  */
 typedef ssize_t guac_socket_write_handler(guac_socket* socket,
@@ -71,6 +71,39 @@ typedef ssize_t guac_socket_write_handler(guac_socket* socket,
  *         available, negative on error.
  */
 typedef int guac_socket_select_handler(guac_socket* socket, int usec_timeout);
+
+/**
+ * Generic flush handler for socket flush operations. This function is not
+ * modeled after any POSIX function. When set within a guac_socket, a handler
+ * of this type will be called when guac_socket_flush() is called.
+ *
+ * @param socket
+ *     The guac_socket being flushed.
+ *
+ * @return
+ *     Zero on success, or non-zero if an error occurs during flush.
+ */
+typedef ssize_t guac_socket_flush_handler(guac_socket* socket);
+
+/**
+ * When set within a guac_socket, a handler of this type will be called
+ * whenever exclusive access to the guac_socket is required, such as when
+ * guac_socket_instruction_begin() is called.
+ *
+ * @param socket
+ *     The guac_socket to which exclusive access is required.
+ */
+typedef void guac_socket_lock_handler(guac_socket* socket);
+
+/**
+ * When set within a guac_socket, a handler of this type will be called
+ * whenever exclusive access to the guac_socket is no longer required, such as
+ * when guac_socket_instruction_end() is called.
+ *
+ * @param socket
+ *     The guac_socket to which exclusive access is no longer required.
+ */
+typedef void guac_socket_unlock_handler(guac_socket* socket);
 
 /**
  * Generic handler for the closing of a socket, modeled after the standard

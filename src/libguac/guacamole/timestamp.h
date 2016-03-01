@@ -37,9 +37,18 @@
  * calls. The return value from a single call will not have any useful
  * (or defined) meaning.
  *
- * @return An arbitrary millisecond timestamp.
+ * @return
+ *     An arbitrary millisecond timestamp.
  */
 guac_timestamp guac_timestamp_current();
+
+/**
+ * Sleeps for the given number of milliseconds.
+ *
+ * @param duration
+ *     The number of milliseconds to sleep.
+ */
+void guac_timestamp_msleep(int duration);
 
 #endif
 

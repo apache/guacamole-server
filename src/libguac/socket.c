@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -138,7 +139,6 @@ int guac_socket_select(guac_socket* socket, int usec_timeout) {
 
 guac_socket* guac_socket_alloc() {
 
-    pthread_mutexattr_t lock_attributes;
     guac_socket* socket = malloc(sizeof(guac_socket));
 
     /* If no memory available, return with error */
@@ -149,45 +149,27 @@ guac_socket* guac_socket_alloc() {
     }
 
     socket->__ready = 0;
-    socket->__written = 0;
     socket->data = NULL;
     socket->state = GUAC_SOCKET_OPEN;
     socket->last_write_timestamp = guac_timestamp_current();
 
-    /* Init members */
-    socket->__instructionbuf_unparsed_start = socket->__instructionbuf;
-    socket->__instructionbuf_unparsed_end = socket->__instructionbuf;
-
-    /* Default to unsafe threading */
-    socket->__threadsafe_instructions = 0;
-
     /* No keep alive ping by default */
     socket->__keep_alive_enabled = 0;
 
-    pthread_mutexattr_init(&lock_attributes);
-    pthread_mutexattr_setpshared(&lock_attributes, PTHREAD_PROCESS_SHARED);
-
-    pthread_mutex_init(&(socket->__instruction_write_lock), &lock_attributes);
-    pthread_mutex_init(&(socket->__buffer_lock),            &lock_attributes);
-    
     /* No handlers yet */
     socket->read_handler   = NULL;
     socket->write_handler  = NULL;
     socket->select_handler = NULL;
     socket->free_handler   = NULL;
+    socket->flush_handler  = NULL;
+    socket->lock_handler   = NULL;
+    socket->unlock_handler = NULL;
 
     return socket;
 
 }
 
-void guac_socket_require_threadsafe(guac_socket* socket) {
-    socket->__threadsafe_instructions = 1;
-}
-
 void guac_socket_require_keep_alive(guac_socket* socket) {
-
-    /* Keep-alive thread requires a threadsafe socket */
-    guac_socket_require_threadsafe(socket);
 
     /* Start keep-alive thread */
     socket->__keep_alive_enabled = 1;
@@ -198,43 +180,27 @@ void guac_socket_require_keep_alive(guac_socket* socket) {
 
 void guac_socket_instruction_begin(guac_socket* socket) {
 
-    /* Lock writes if threadsafety enabled */
-    if (socket->__threadsafe_instructions)
-        pthread_mutex_lock(&(socket->__instruction_write_lock));
+    /* Call instruction begin handler if defined */
+    if (socket->lock_handler)
+        socket->lock_handler(socket);
 
 }
 
 void guac_socket_instruction_end(guac_socket* socket) {
 
-    /* Unlock writes if threadsafety enabled */
-    if (socket->__threadsafe_instructions)
-        pthread_mutex_unlock(&(socket->__instruction_write_lock));
-
-}
-
-void guac_socket_update_buffer_begin(guac_socket* socket) {
-
-    /* Lock if threadsafety enabled */
-    if (socket->__threadsafe_instructions)
-        pthread_mutex_lock(&(socket->__buffer_lock));
-
-}
-
-void guac_socket_update_buffer_end(guac_socket* socket) {
-
-    /* Unlock if threadsafety enabled */
-    if (socket->__threadsafe_instructions)
-        pthread_mutex_unlock(&(socket->__buffer_lock));
+    /* Call instruction end handler if defined */
+    if (socket->unlock_handler)
+        socket->unlock_handler(socket);
 
 }
 
 void guac_socket_free(guac_socket* socket) {
 
+    guac_socket_flush(socket);
+
     /* Call free handler if defined */
     if (socket->free_handler)
         socket->free_handler(socket);
-
-    guac_socket_flush(socket);
 
     /* Mark as closed */
     socket->state = GUAC_SOCKET_CLOSED;
@@ -243,91 +209,92 @@ void guac_socket_free(guac_socket* socket) {
     if (socket->__keep_alive_enabled)
         pthread_join(socket->__keep_alive_thread, NULL);
 
-    pthread_mutex_destroy(&(socket->__instruction_write_lock));
     free(socket);
 }
 
 ssize_t guac_socket_write_int(guac_socket* socket, int64_t i) {
 
     char buffer[128];
-    snprintf(buffer, sizeof(buffer), "%"PRIi64, i);
-    return guac_socket_write_string(socket, buffer);
+    int length;
+
+    /* Write provided integer as a string */
+    length = snprintf(buffer, sizeof(buffer), "%"PRIi64, i);
+    return guac_socket_write(socket, buffer, length);
 
 }
 
 ssize_t guac_socket_write_string(guac_socket* socket, const char* str) {
 
-    char* __out_buf = socket->__out_buf;
+    /* Write contents of string */
+    if (guac_socket_write(socket, str, strlen(str)))
+        return 1;
 
-    guac_socket_update_buffer_begin(socket);
-
-    for (; *str != '\0'; str++) {
-
-        __out_buf[socket->__written++] = *str; 
-
-        /* Flush when necessary, return on error. Note that we must flush within 4 bytes of boundary because
-         * __guac_socket_write_base64_triplet ALWAYS writes four bytes, and would otherwise potentially overflow
-         * the buffer. */
-        if (socket->__written > GUAC_SOCKET_OUTPUT_BUFFER_SIZE - 4) {
-
-            if (guac_socket_write(socket, __out_buf, socket->__written)) {
-                guac_socket_update_buffer_end(socket);
-                return 1;
-            }
-
-            socket->__written = 0;
-
-        }
-
-    }
-
-    guac_socket_update_buffer_end(socket);
     return 0;
 
 }
 
-ssize_t __guac_socket_write_base64_triplet(guac_socket* socket, int a, int b, int c) {
+ssize_t __guac_socket_write_base64_triplet(guac_socket* socket,
+        int a, int b, int c) {
 
-    char* __out_buf = socket->__out_buf;
+    char output[4];
 
-    /* Byte 1 */
-    __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[(a & 0xFC) >> 2]; /* [AAAAAA]AABBBB BBBBCC CCCCCC */
+    /* Byte 0:[AAAAAA] AABBBB BBBBCC CCCCCC */
+    output[0] = __guac_socket_BASE64_CHARACTERS[(a & 0xFC) >> 2];
 
     if (b >= 0) {
-        __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4) | ((b & 0xF0) >> 4)]; /* AAAAAA[AABBBB]BBBBCC CCCCCC */
 
+        /* Byte 1: AAAAAA [AABBBB] BBBBCC CCCCCC */
+        output[1] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4) | ((b & 0xF0) >> 4)];
+
+        /* 
+         * Bytes 2 and 3, zero characters of padding:
+         *
+         * AAAAAA  AABBBB [BBBBCC] CCCCCC
+         * AAAAAA  AABBBB  BBBBCC [CCCCCC]
+         */
         if (c >= 0) {
-            __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2) | ((c & 0xC0) >> 6)]; /* AAAAAA AABBBB[BBBBCC]CCCCCC */
-            __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[c & 0x3F]; /* AAAAAA AABBBB BBBBCC[CCCCCC] */
+            output[2] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2) | ((c & 0xC0) >> 6)];
+            output[3] = __guac_socket_BASE64_CHARACTERS[c & 0x3F];
         }
+
+        /* 
+         * Bytes 2 and 3, one character of padding:
+         *
+         * AAAAAA  AABBBB [BBBB--] ------
+         * AAAAAA  AABBBB  BBBB-- [------]
+         */
         else { 
-            __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2)]; /* AAAAAA AABBBB[BBBB--]------ */
-            __out_buf[socket->__written++] = '='; /* AAAAAA AABBBB BBBB--[------] */
+            output[2] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2)];
+            output[3] = '=';
         }
     }
+
+    /* 
+     * Bytes 1, 2, and 3, two characters of padding:
+     *
+     * AAAAAA [AA----] ------  ------
+     * AAAAAA  AA---- [------] ------
+     * AAAAAA  AA----  ------ [------]
+     */
     else {
-        __out_buf[socket->__written++] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4)]; /* AAAAAA[AA----]------ ------ */
-        __out_buf[socket->__written++] = '='; /* AAAAAA AA----[------]------ */
-        __out_buf[socket->__written++] = '='; /* AAAAAA AA---- ------[------] */
+        output[1] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4)];
+        output[2] = '=';
+        output[3] = '=';
     }
 
-    /* At this point, 4 bytes have been socket->__written */
+    /* At this point, 4 base64 bytes have been written */
+    if (guac_socket_write(socket, output, 4))
+        return -1;
 
-    /* Flush when necessary, return on error */
-    if (socket->__written > GUAC_SOCKET_OUTPUT_BUFFER_SIZE - 4) {
-
-        if (guac_socket_write(socket, __out_buf, socket->__written))
-            return -1;
-
-        socket->__written = 0;
-    }
-
+    /* If no second byte was provided, only one byte was written */
     if (b < 0)
         return 1;
 
+    /* If no third byte was provided, only two bytes were written */
     if (c < 0)
         return 2;
 
+    /* Otherwise, three bytes were written */
     return 3;
 
 }
@@ -359,37 +326,25 @@ ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t co
     const unsigned char* char_buf = (const unsigned char*) buf;
     const unsigned char* end = char_buf + count;
 
-    guac_socket_update_buffer_begin(socket);
     while (char_buf < end) {
 
         retval = __guac_socket_write_base64_byte(socket, *(char_buf++));
-        if (retval < 0) {
-            guac_socket_update_buffer_end(socket);
+        if (retval < 0)
             return retval;
-        }
 
     }
 
-    guac_socket_update_buffer_end(socket);
     return 0;
 
 }
 
 ssize_t guac_socket_flush(guac_socket* socket) {
 
-    /* Flush remaining bytes in buffer */
-    guac_socket_update_buffer_begin(socket);
-    if (socket->__written > 0) {
+    /* If handler defined, call it. */
+    if (socket->flush_handler)
+        return socket->flush_handler(socket);
 
-        if (guac_socket_write(socket, socket->__out_buf, socket->__written)) {
-            guac_socket_update_buffer_end(socket);
-            return 1;
-        }
-
-        socket->__written = 0;
-    }
-
-    guac_socket_update_buffer_end(socket);
+    /* Otherwise, do nothing */
     return 0;
 
 }
@@ -399,18 +354,14 @@ ssize_t guac_socket_flush_base64(guac_socket* socket) {
     int retval;
 
     /* Flush triplet to output buffer */
-    guac_socket_update_buffer_begin(socket);
     while (socket->__ready > 0) {
 
         retval = __guac_socket_write_base64_byte(socket, -1);
-        if (retval < 0) {
-            guac_socket_update_buffer_end(socket);
+        if (retval < 0)
             return retval;
-        }
 
     }
 
-    guac_socket_update_buffer_end(socket);
     return 0;
 
 }

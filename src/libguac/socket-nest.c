@@ -105,6 +105,16 @@ ssize_t __guac_socket_nest_write_handler(guac_socket* socket,
 
 }
 
+static int __guac_socket_nest_free_handler(guac_socket* socket) {
+
+    /* Free associated data */
+    __guac_socket_nest_data* data = (__guac_socket_nest_data*) socket->data;
+    free(data);
+
+    return 0;
+
+}
+
 guac_socket* guac_socket_nest(guac_socket* parent, int index) {
 
     /* Allocate socket and associated data */
@@ -115,8 +125,9 @@ guac_socket* guac_socket_nest(guac_socket* parent, int index) {
     data->parent = parent;
     socket->data = data;
 
-    /* Set write handler */
+    /* Set write and free handlers */
     socket->write_handler  = __guac_socket_nest_write_handler;
+    socket->free_handler   = __guac_socket_nest_free_handler;
 
     return socket;
 

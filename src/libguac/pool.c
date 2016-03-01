@@ -28,6 +28,7 @@
 
 guac_pool* guac_pool_alloc(int size) {
 
+    pthread_mutexattr_t lock_attributes;
     guac_pool* pool = malloc(sizeof(guac_pool));
 
     /* If unable to allocate, just return NULL. */
@@ -40,6 +41,11 @@ guac_pool* guac_pool_alloc(int size) {
     pool->__next_value = 0;
     pool->__head = NULL;
     pool->__tail = NULL;
+
+    /* Init lock */
+    pthread_mutexattr_init(&lock_attributes);
+    pthread_mutexattr_setpshared(&lock_attributes, PTHREAD_PROCESS_SHARED);
+    pthread_mutex_init(&(pool->__lock), &lock_attributes);
 
     return pool;
 
@@ -57,6 +63,9 @@ void guac_pool_free(guac_pool* pool) {
         free(old);
     }
 
+    /* Destroy lock */
+    pthread_mutex_destroy(&(pool->__lock));
+
     /* Free pool */
     free(pool);
 
@@ -66,11 +75,17 @@ int guac_pool_next_int(guac_pool* pool) {
 
     int value;
 
+    /* Acquire exclusive access */
+    pthread_mutex_lock(&(pool->__lock));
+
     pool->active++;
 
     /* If more integers are needed, return a new one. */
-    if (pool->__head == NULL || pool->__next_value < pool->min_size)
-        return pool->__next_value++;
+    if (pool->__head == NULL || pool->__next_value < pool->min_size) {
+        value = pool->__next_value++;
+        pthread_mutex_unlock(&(pool->__lock));
+        return value;
+    }
 
     /* Otherwise, remove first integer. */
     value = pool->__head->value;
@@ -90,6 +105,7 @@ int guac_pool_next_int(guac_pool* pool) {
     }
 
     /* Return retrieved value. */
+    pthread_mutex_unlock(&(pool->__lock));
     return value;
 }
 
@@ -99,6 +115,9 @@ void guac_pool_free_int(guac_pool* pool, int value) {
     guac_pool_int* pool_int = malloc(sizeof(guac_pool_int));
     pool_int->value = value;
     pool_int->__next = NULL;
+
+    /* Acquire exclusive access */
+    pthread_mutex_lock(&(pool->__lock));
 
     pool->active--;
 
@@ -111,6 +130,9 @@ void guac_pool_free_int(guac_pool* pool, int value) {
         pool->__tail->__next = pool_int;
         pool->__tail = pool_int;
     }
+
+    /* Value has been freed */
+    pthread_mutex_unlock(&(pool->__lock));
 
 }
 

@@ -32,73 +32,34 @@
 #include "client-fntypes.h"
 #include "client-types.h"
 #include "client-constants.h"
-#include "instruction-types.h"
 #include "layer-types.h"
 #include "object-types.h"
 #include "pool-types.h"
 #include "socket-types.h"
 #include "stream-types.h"
 #include "timestamp-types.h"
+#include "user-fntypes.h"
+#include "user-types.h"
 
 #include <cairo/cairo.h>
+
+#include <pthread.h>
 #include <stdarg.h>
-
-struct guac_client_info {
-
-    /**
-     * The number of pixels the remote client requests for the display width.
-     * This need not be honored by a client plugin implementation, but if the
-     * underlying protocol of the client plugin supports dynamic sizing of the
-     * screen, honoring the display size request is recommended.
-     */
-    int optimal_width;
-
-    /**
-     * The number of pixels the remote client requests for the display height.
-     * This need not be honored by a client plugin implementation, but if the
-     * underlying protocol of the client plugin supports dynamic sizing of the
-     * screen, honoring the display size request is recommended.
-     */
-    int optimal_height;
-
-    /**
-     * NULL-terminated array of client-supported audio mimetypes. If the client
-     * does not support audio at all, this will be NULL.
-     */
-    char** audio_mimetypes;
-
-    /**
-     * NULL-terminated array of client-supported video mimetypes. If the client
-     * does not support video at all, this will be NULL.
-     */
-    char** video_mimetypes;
-
-    /**
-     * NULL-terminated array of client-supported image mimetypes. Though all
-     * supported image mimetypes will be listed here, it can be safely assumed
-     * that all clients will support at least "image/png" and "image/jpeg".
-     */ 
-    char** image_mimetypes;
-
-    /**
-     * The DPI of the physical remote display if configured for the optimal
-     * width/height combination described here. This need not be honored by
-     * a client plugin implementation, but if the underlying protocol of the
-     * client plugin supports dynamic sizing of the screen, honoring the
-     * stated resolution of the display size request is recommended.
-     */
-    int optimal_resolution;
-
-};
 
 struct guac_client {
 
     /**
-     * The guac_socket structure to be used to communicate with the web-client.
-     * It is expected that the implementor of any Guacamole proxy client will
+     * The guac_socket structure to be used to communicate with all connected
+     * web-clients (users). Unlike the user-level guac_socket, this guac_socket
+     * will broadcast instructions to all connected users simultaneously.  It
+     * is expected that the implementor of any Guacamole proxy client will
      * provide their own mechanism of I/O for their protocol. The guac_socket
      * structure is used only to communicate conveniently with the Guacamole
      * web-client.
+     *
+     * Because this socket broadcasts to all connected users, this socket MUST
+     * NOT be used within the same thread as a "leave" or "join" handler. Doing
+     * so results in undefined behavior, including possible segfaults.
      */
     guac_socket* socket;
 
@@ -111,24 +72,6 @@ struct guac_client {
     guac_client_state state;
 
     /**
-     * The time (in milliseconds) of receipt of the last sync message from
-     * the client.
-     */
-    guac_timestamp last_received_timestamp;
-
-    /**
-     * The time (in milliseconds) that the last sync message was sent to the
-     * client.
-     */
-    guac_timestamp last_sent_timestamp;
-
-    /**
-     * Information structure containing properties exposed by the remote
-     * client during the initial handshake process.
-     */
-    guac_client_info info;
-
-    /**
      * Arbitrary reference to proxy client-specific data. Implementors of a
      * Guacamole proxy client can store any data they want here, which can then
      * be retrieved as necessary in the message handlers.
@@ -136,197 +79,10 @@ struct guac_client {
     void* data;
 
     /**
-     * Handler for server messages. If set, this function will be called
-     * occasionally by the Guacamole proxy to give the client a chance to
-     * handle messages from whichever server it is connected to.
-     *
-     * Example:
-     * @code
-     *     int handle_messages(guac_client* client);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->handle_messages = handle_messages;
-     *     }
-     * @endcode
+     * The time (in milliseconds) that the last sync message was sent to the
+     * client.
      */
-    guac_client_handle_messages* handle_messages;
-
-    /**
-     * Handler for mouse events sent by the Gaucamole web-client.
-     *
-     * The handler takes the integer mouse X and Y coordinates, as well as
-     * a button mask containing the bitwise OR of all button values currently
-     * being pressed. Those values are:
-     *
-     * <table>
-     *     <tr><th>Button</th>          <th>Value</th></tr>
-     *     <tr><td>Left</td>            <td>1</td></tr>
-     *     <tr><td>Middle</td>          <td>2</td></tr>
-     *     <tr><td>Right</td>           <td>4</td></tr>
-     *     <tr><td>Scrollwheel Up</td>  <td>8</td></tr>
-     *     <tr><td>Scrollwheel Down</td><td>16</td></tr>
-     * </table>
-
-     * Example:
-     * @code
-     *     int mouse_handler(guac_client* client, int x, int y, int button_mask);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->mouse_handler = mouse_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_mouse_handler* mouse_handler;
-
-    /**
-     * Handler for key events sent by the Guacamole web-client.
-     *
-     * The handler takes the integer X11 keysym associated with the key
-     * being pressed/released, and an integer representing whether the key
-     * is being pressed (1) or released (0).
-     *
-     * Example:
-     * @code
-     *     int key_handler(guac_client* client, int keysym, int pressed);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->key_handler = key_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_key_handler* key_handler;
-
-    /**
-     * Handler for clipboard events sent by the Guacamole web-client. This
-     * handler will be called whenever the web-client sets the data of the
-     * clipboard.
-     *
-     * The handler takes a guac_stream, which contains the stream index and
-     * will persist through the duration of the transfer, and the mimetype
-     * of the data being transferred.
-     *
-     * Example:
-     * @code
-     *     int clipboard_handler(guac_client* client, guac_stream* stream,
-     *             char* mimetype);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->clipboard_handler = clipboard_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_clipboard_handler* clipboard_handler;
-
-    /**
-     * Handler for size events sent by the Guacamole web-client.
-     *
-     * The handler takes an integer width and integer height, representing
-     * the current visible screen area of the client.
-     *
-     * Example:
-     * @code
-     *     int size_handler(guac_client* client, int width, int height);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->size_handler = size_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_size_handler* size_handler;
-
-    /**
-     * Handler for file events sent by the Guacamole web-client.
-     *
-     * The handler takes a guac_stream which contains the stream index and
-     * will persist through the duration of the transfer, the mimetype of
-     * the file being transferred, and the filename.
-     *
-     * Example:
-     * @code
-     *     int file_handler(guac_client* client, guac_stream* stream,
-     *             char* mimetype, char* filename);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->file_handler = file_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_file_handler* file_handler;
-
-    /**
-     * Handler for pipe events sent by the Guacamole web-client.
-     *
-     * The handler takes a guac_stream which contains the stream index and
-     * will persist through the duration of the transfer, the mimetype of
-     * the data being transferred, and the pipe name.
-     *
-     * Example:
-     * @code
-     *     int pipe_handler(guac_client* client, guac_stream* stream,
-     *             char* mimetype, char* name);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->pipe_handler = pipe_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_pipe_handler* pipe_handler;
-
-    /**
-     * Handler for ack events sent by the Guacamole web-client.
-     *
-     * The handler takes a guac_stream which contains the stream index and
-     * will persist through the duration of the transfer, a string containing
-     * the error or status message, and a status code.
-     *
-     * Example:
-     * @code
-     *     int ack_handler(guac_client* client, guac_stream* stream,
-     *             char* error, guac_protocol_status status);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->ack_handler = ack_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_ack_handler* ack_handler;
-
-    /**
-     * Handler for blob events sent by the Guacamole web-client.
-     *
-     * The handler takes a guac_stream which contains the stream index and
-     * will persist through the duration of the transfer, an arbitrary buffer
-     * containing the blob, and the length of the blob.
-     *
-     * Example:
-     * @code
-     *     int blob_handler(guac_client* client, guac_stream* stream,
-     *             void* data, int length);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->blob_handler = blob_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_blob_handler* blob_handler;
-
-    /**
-     * Handler for stream end events sent by the Guacamole web-client.
-     *
-     * The handler takes only a guac_stream which contains the stream index.
-     * This guac_stream will be disposed of immediately after this event is
-     * finished.
-     *
-     * Example:
-     * @code
-     *     int end_handler(guac_client* client, guac_stream* stream);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->end_handler = end_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_end_handler* end_handler;
+    guac_timestamp last_sent_timestamp;
 
     /**
      * Handler for freeing data when the client is being unloaded.
@@ -344,7 +100,7 @@ struct guac_client {
      * @code
      *     int free_handler(guac_client* client);
      *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
+     *     int guac_client_init(guac_client* client) {
      *         client->free_handler = free_handler;
      *     }
      * @endcode
@@ -376,46 +132,6 @@ struct guac_client {
     guac_client_log_handler* log_handler;
 
     /**
-     * Handler for get events sent by the Guacamole web-client.
-     *
-     * The handler takes a guac_object, containing the object index which will
-     * persist through the duration of the transfer, and the name of the stream
-     * being requested. It is up to the get handler to create the required body
-     * stream.
-     *
-     * Example:
-     * @code
-     *     int get_handler(guac_client* client, guac_object* object,
-     *             char* name);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->get_handler = get_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_get_handler* get_handler;
-
-    /**
-     * Handler for put events sent by the Guacamole web-client.
-     *
-     * The handler takes a guac_object and guac_stream, which each contain their
-     * respective indices which will persist through the duration of the
-     * transfer, the mimetype of the data being transferred, and the name of
-     * the stream within the object being written to.
-     *
-     * Example:
-     * @code
-     *     int put_handler(guac_client* client, guac_object* object,
-     *             guac_stream* stream, char* mimetype, char* name);
-     *
-     *     int guac_client_init(guac_client* client, int argc, char** argv) {
-     *         client->put_handler = put_handler;
-     *     }
-     * @endcode
-     */
-    guac_client_put_handler* put_handler;
-
-    /**
      * Pool of buffer indices. Buffers are simply layers with negative indices.
      * Note that because guac_pool always gives non-negative indices starting
      * at 0, the output of this guac_pool will be adjusted.
@@ -435,24 +151,10 @@ struct guac_client {
     guac_pool* __stream_pool;
 
     /**
-     * All available output streams (data going to connected client).
+     * All available client-level output streams (data going to all connected
+     * users).
      */
     guac_stream* __output_streams;
-
-    /**
-     * All available input streams (data coming from connected client).
-     */
-    guac_stream* __input_streams;
-
-    /**
-     * Pool of object indices.
-     */
-    guac_pool* __object_pool;
-
-    /**
-     * All available objects (arbitrary sets of named streams).
-     */
-    guac_object* __objects;
 
     /**
      * The unique identifier allocated for the connection, which may
@@ -462,6 +164,106 @@ struct guac_client {
      * names.
      */
     char* connection_id;
+
+    /**
+     * Lock which is acquired when the users list is being manipulated, or when
+     * the users list is being iterated.
+     */
+    pthread_rwlock_t __users_lock;
+
+    /**
+     * The first user within the list of all connected users, or NULL if no
+     * users are currently connected.
+     */
+    guac_user* __users;
+
+    /**
+     * The user that first created this connection. This user will also have
+     * their "owner" flag set to a non-zero value. If the owner has left the
+     * connection, this will be NULL.
+     */
+    guac_user* __owner;
+
+    /**
+     * The number of currently-connected users. This value may include inactive
+     * users if cleanup of those users has not yet finished.
+     */
+    int connected_users;
+
+    /**
+     * Handler for join events, called whenever a new user is joining an active
+     * connection. Note that because users may leave the connection at any
+     * time, a reference to a guac_user can become invalid at any time and
+     * should never be maintained outside the scope of a function invoked by
+     * libguac to which that guac_user was passed (the scope in which the
+     * guac_user reference is guaranteed to be valid) UNLESS that reference is
+     * properly invalidated within the leave_handler.
+     *
+     * The handler is given a pointer to a newly-allocated guac_user which
+     * must then be initialized, if needed.
+     *
+     * Example:
+     * @code
+     *     int join_handler(guac_user* user, int argc, char** argv);
+     *
+     *     int guac_client_init(guac_client* client) {
+     *         client->join_handler = join_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_join_handler* join_handler;
+
+    /**
+     * Handler for leave events, called whenever a new user is leaving an
+     * active connection.
+     *
+     * The handler is given a pointer to the leaving guac_user whose custom
+     * data and associated resources must now be freed, if any.
+     *
+     * Example:
+     * @code
+     *     int leave_handler(guac_user* user);
+     *
+     *     int guac_client_init(guac_client* client) {
+     *         client->leave_handler = leave_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_leave_handler* leave_handler;
+
+    /**
+     * NULL-terminated array of all arguments accepted by this client , in
+     * order. New users will specify these arguments when they join the
+     * connection, and the values of those arguments will be made available to
+     * the function initializing newly-joined users.
+     *
+     * The guac_client_init entry point is expected to initialize this, if
+     * arguments are expected.
+     *
+     * Example:
+     * @code
+     *     const char* __my_args[] = {
+     *         "hostname",
+     *         "port",
+     *         "username",
+     *         "password",
+     *         NULL
+     *     };
+     *
+     *     int guac_client_init(guac_client* client) {
+     *         client->args = __my_args;
+     *     }
+     * @endcode
+
+     */
+    const char** args;
+
+    /**
+     * Handle to the dlopen()'d plugin, which should be given to dlclose() when
+     * this client is freed. This is only assigned if guac_client_load_plugin()
+     * is used.
+     */
+    void* __plugin_handle;
 
 };
 
@@ -479,25 +281,6 @@ guac_client* guac_client_alloc();
  * @param client The proxy client to free all reasources of.
  */
 void guac_client_free(guac_client* client);
-
-/**
- * Call the appropriate handler defined by the given client for the given
- * instruction. A comparison is made between the instruction opcode and the
- * initial handler lookup table defined in client-handlers.c. The intial
- * handlers will in turn call the client's handler (if defined).
- *
- * @param client
- *     The proxy client whose handlers should be called.
- *
- * @param instruction
- *     The instruction to pass to the proxy client via the appropriate handler.
- *
- * @return
- *     Non-negative if the instruction was handled successfully, or negative
- *     if an error occurred.
- */
-int guac_client_handle_instruction(guac_client* client,
-        guac_instruction* instruction);
 
 /**
  * Writes a message in the log used by the given client. The logger used will
@@ -604,8 +387,11 @@ void guac_client_free_layer(guac_client* client, guac_layer* layer);
  * Allocates a new stream. An arbitrary index is automatically assigned
  * if no previously-allocated stream is available for use.
  *
- * @param client The proxy client to allocate the layer buffer for.
- * @return The next available stream, or a newly allocated stream.
+ * @param client
+ *     The client to allocate the stream for.
+ *
+ * @return
+ *     The next available stream, or a newly allocated stream.
  */
 guac_stream* guac_client_alloc_stream(guac_client* client);
 
@@ -613,34 +399,134 @@ guac_stream* guac_client_alloc_stream(guac_client* client);
  * Returns the given stream to the pool of available streams, such that it
  * can be reused by any subsequent call to guac_client_alloc_stream().
  *
- * @param client The proxy client to return the buffer to.
- * @param stream The stream to return to the pool of available stream.
+ * @param client
+ *     The client to return the stream to.
+ *
+ * @param stream
+ *     The stream to return to the pool of available stream.
  */
 void guac_client_free_stream(guac_client* client, guac_stream* stream);
 
 /**
- * Allocates a new object. An arbitrary index is automatically assigned
- * if no previously-allocated object is available for use.
+ * Adds the given user to the internal list of connected users. Future writes
+ * to the broadcast socket stored within guac_client will also write to this
+ * user. The join handler of this guac_client will be called.
  *
- * @param client
- *     The proxy client to allocate the object for.
- *
- * @return
- *     The next available object, or a newly allocated object.
+ * @param client The proxy client to add the user to.
+ * @param user The user to add.
+ * @param argc The number of arguments to pass to the new user.
+ * @param argv An array of strings containing the argument values being passed.
+ * @return Zero if the user was added successfully, non-zero if the user could
+ *         not join the connection.
  */
-guac_object* guac_client_alloc_object(guac_client* client);
+int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** argv);
 
 /**
- * Returns the given object to the pool of available objects, such that it
- * can be reused by any subsequent call to guac_client_alloc_object().
+ * Removes the given user, removing the user from the internally-tracked list
+ * of connected users, and calling any appropriate leave handler.
+ *
+ * @param client The proxy client to return the buffer to.
+ * @param user The user to remove.
+ */
+void guac_client_remove_user(guac_client* client, guac_user* user);
+
+/**
+ * Calls the given function on all currently-connected users of the given
+ * client. The function will be given a reference to a guac_user and the
+ * specified arbitrary data. The value returned by the callback will be
+ * ignored.
+ *
+ * This function is reentrant, but the user list MUST NOT be manipulated
+ * within the same thread as a callback to this function. Though the callback
+ * MAY invoke guac_client_foreach_user(), doing so should not be necessary, and
+ * may indicate poor design choices.
+ *
+ * Because this function loops through all connected users, this function MUST
+ * NOT be invoked within the same thread as a "leave" or "join" handler. Doing
+ * so results in undefined behavior, including possible segfaults.
  *
  * @param client
- *     The proxy client to return the object to.
+ *     The client whose users should be iterated.
  *
- * @param object
- *     The object to return to the pool of available object.
+ * @param callback
+ *     The function to call for each user.
+ *
+ * @param data
+ *     Arbitrary data to pass to the callback each time it is invoked.
  */
-void guac_client_free_object(guac_client* client, guac_object* object);
+void guac_client_foreach_user(guac_client* client,
+        guac_user_callback* callback, void* data);
+
+/**
+ * Retrieves the connected user that is marked as the owner. The owner of a
+ * connection is the user that established the initial connection that created
+ * the connection (the first user to connect and join).
+ *
+ * Calls the given function on with the currently-connected user that is marked
+ * as the owner. The owner of a connection is the user that established the
+ * initial connection that created the connection (the first user to connect
+ * and join). The function will be given a reference to a guac_user and the
+ * specified arbitrary data. If the owner has since left the connection, the
+ * function will instead be invoked with NULL as the guac_user. The value
+ * returned by the callback will be returned by this function.
+ *
+ * This function is reentrant, but the user list MUST NOT be manipulated
+ * within the same thread as a callback to this function.
+ *
+ * Because this function depends on a consistent list of connected users, this
+ * function MUST NOT be invoked within the same thread as a "leave" or "join"
+ * handler. Doing so results in undefined behavior, including possible
+ * segfaults.
+ *
+ * @param client
+ *     The client to retrieve the owner from.
+ *
+ * @return
+ *     The value returned by the callback.
+ */
+void* guac_client_for_owner(guac_client* client, guac_user_callback* callback,
+        void* data);
+
+/**
+ * Marks the end of the current frame by sending a "sync" instruction to
+ * all connected users. This instruction will contain the current timestamp.
+ * The last_sent_timestamp member of guac_client will be updated accordingly.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param client The guac_client which has finished a frame.
+ * @return Zero on success, non-zero on error.
+ */
+int guac_client_end_frame(guac_client* client);
+
+/**
+ * Initializes the given guac_client using the initialization routine provided
+ * by the plugin corresponding to the named protocol. This will automatically
+ * invoke guac_client_init within the plugin for the given protocol.
+ *
+ * Note that the connection will likely not be established until the first
+ * user (the "owner") is added to the client.
+ *
+ * @param client The guac_client to initialize.
+ * @param protocol The name of the protocol to use.
+ * @return Zero if initialization was successful, non-zero otherwise.
+ */
+int guac_client_load_plugin(guac_client* client, const char* protocol);
+
+/**
+ * Calculates and returns the approximate processing lag experienced by the
+ * pool of users. The processing lag is the difference in time between server
+ * and client due purely to data processing and excluding network delays.
+ *
+ * @param client
+ *     The guac_client to calculate the processing lag of.
+ *
+ * @return
+ *     The approximate processing lag of the pool of users associated with the
+ *     given guac_client, in milliseconds.
+ */
+int guac_client_get_processing_lag(guac_client* client);
 
 /**
  * Streams the image data of the given surface over an image stream ("img"
@@ -648,7 +534,7 @@ void guac_client_free_object(guac_client* client, guac_object* object);
  * allocated and freed.
  *
  * @param client
- *     The Guacamole client from which the image stream should be allocated.
+ *     The Guacamole client for which the image stream should be allocated.
  *
  * @param socket
  *     The socket over which instructions associated with the image stream
@@ -681,7 +567,7 @@ void guac_client_stream_png(guac_client* client, guac_socket* socket,
  * will be automatically allocated and freed.
  *
  * @param client
- *     The Guacamole client from which the image stream should be allocated.
+ *     The Guacamole client for which the image stream should be allocated.
  *
  * @param socket
  *     The socket over which instructions associated with the image stream
@@ -705,8 +591,9 @@ void guac_client_stream_png(guac_client* client, guac_socket* socket,
  *     A Cairo surface containing the image data to be streamed.
  *
  * @param quality
- *     The JPEG image quality, which must be an integer value between 0 and
- *     100 inclusive.
+ *     The JPEG image quality, which must be an integer value between 0 and 100
+ *     inclusive. Larger values indicate improving quality at the expense of
+ *     larger file size.
  */
 void guac_client_stream_jpeg(guac_client* client, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
@@ -717,10 +604,11 @@ void guac_client_stream_jpeg(guac_client* client, guac_socket* socket,
  * instruction) as WebP-encoded data at the given quality. The image stream
  * will be automatically allocated and freed. If the server does not support
  * WebP, this function has no effect, so be sure to check the result of
- * guac_client_supports_webp() prior to calling this function.
+ * guac_client_supports_webp() prior to calling
+ * this function.
  *
  * @param client
- *     The Guacamole client from which the image stream should be allocated.
+ *     The Guacamole client for whom the image stream should be allocated.
  *
  * @param socket
  *     The socket over which instructions associated with the image stream
@@ -758,15 +646,15 @@ void guac_client_stream_webp(guac_client* client, guac_socket* socket,
         cairo_surface_t* surface, int quality, int lossless);
 
 /**
- * Returns whether the given client supports WebP. If the client does not
- * support WebP, or the server cannot encode WebP images, zero is returned.
+ * Returns whether all users of the given client support WebP. If any user does
+ * not support WebP, or the server cannot encode WebP images, zero is returned.
  *
  * @param client
- *     The Guacamole client to check for WebP support.
+ *     The Guacamole client whose users should be checked for WebP support.
  *
  * @return
- *     Non-zero if the given client claims to support WebP and the server has
- *     been built with WebP support, zero otherwise.
+ *     Non-zero if the all users of the given client claim to support WebP and
+ *     the server has been built with WebP support, zero otherwise.
  */
 int guac_client_supports_webp(guac_client* client);
 

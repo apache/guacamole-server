@@ -230,6 +230,9 @@ AC_ARG_WITH([pulse],
             [],
             [with_pulse=check])
 
+# FIXME: Temporarily disabled
+with_pulse=no
+
 if test "x$with_pulse" != "xno"
 then
     have_pulse=yes

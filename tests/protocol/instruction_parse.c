@@ -29,13 +29,13 @@
 #include <unistd.h>
 
 #include <CUnit/Basic.h>
-#include <guacamole/instruction.h>
+#include <guacamole/parser.h>
 
 void test_instruction_parse() {
 
-    /* Allocate instruction space */
-    guac_instruction* instruction = guac_instruction_alloc();
-    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction);
+    /* Allocate parser */
+    guac_parser* parser = guac_parser_alloc();
+    CU_ASSERT_PTR_NOT_NULL_FATAL(parser);
 
     /* Instruction input */
     char buffer[] = "4.test,8.testdata,5.zxcvb,13.guacamoletest;XXXXXXXXXXXXXXXXXX";
@@ -46,7 +46,7 @@ void test_instruction_parse() {
     while (remaining > 18) {
 
         /* Parse more data */
-        int parsed = guac_instruction_append(instruction, current, remaining);
+        int parsed = guac_parser_append(parser, current, remaining);
         if (parsed == 0)
             break;
 
@@ -56,24 +56,24 @@ void test_instruction_parse() {
     }
 
     CU_ASSERT_EQUAL(remaining, 18);
-    CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_COMPLETE);
+    CU_ASSERT_EQUAL(parser->state, GUAC_PARSE_COMPLETE);
 
     /* Parse is complete - no more data should be read */
-    CU_ASSERT_EQUAL(guac_instruction_append(instruction, current, 18), 0);
-    CU_ASSERT_EQUAL(instruction->state, GUAC_INSTRUCTION_PARSE_COMPLETE);
+    CU_ASSERT_EQUAL(guac_parser_append(parser, current, 18), 0);
+    CU_ASSERT_EQUAL(parser->state, GUAC_PARSE_COMPLETE);
 
     /* Validate resulting structure */
-    CU_ASSERT_EQUAL(instruction->argc, 3);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction->opcode);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction->argv[0]);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction->argv[1]);
-    CU_ASSERT_PTR_NOT_NULL_FATAL(instruction->argv[2]);
+    CU_ASSERT_EQUAL(parser->argc, 3);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(parser->opcode);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(parser->argv[0]);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(parser->argv[1]);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(parser->argv[2]);
 
     /* Validate resulting content */
-    CU_ASSERT_STRING_EQUAL(instruction->opcode,  "test");
-    CU_ASSERT_STRING_EQUAL(instruction->argv[0], "testdata");
-    CU_ASSERT_STRING_EQUAL(instruction->argv[1], "zxcvb");
-    CU_ASSERT_STRING_EQUAL(instruction->argv[2], "guacamoletest");
+    CU_ASSERT_STRING_EQUAL(parser->opcode,  "test");
+    CU_ASSERT_STRING_EQUAL(parser->argv[0], "testdata");
+    CU_ASSERT_STRING_EQUAL(parser->argv[1], "zxcvb");
+    CU_ASSERT_STRING_EQUAL(parser->argv[2], "guacamoletest");
 
 }
 

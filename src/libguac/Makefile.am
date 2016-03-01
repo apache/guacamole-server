@@ -38,16 +38,15 @@ libguacinc_HEADERS =                  \
     guacamole/error.h                 \
     guacamole/error-types.h           \
     guacamole/hash.h                  \
-    guacamole/instruction-constants.h \
-    guacamole/instruction.h           \
-    guacamole/instruction-types.h     \
     guacamole/layer.h                 \
     guacamole/layer-types.h           \
     guacamole/object.h                \
     guacamole/object-types.h          \
+    guacamole/parser-constants.h      \
+    guacamole/parser.h                \
+    guacamole/parser-types.h          \
     guacamole/plugin-constants.h      \
     guacamole/plugin.h                \
-    guacamole/plugin-types.h          \
     guacamole/pool.h                  \
     guacamole/pool-types.h            \
     guacamole/protocol.h              \
@@ -60,34 +59,39 @@ libguacinc_HEADERS =                  \
     guacamole/stream-types.h          \
     guacamole/timestamp.h             \
     guacamole/timestamp-types.h       \
-    guacamole/unicode.h
+    guacamole/unicode.h               \
+    guacamole/user.h                  \
+    guacamole/user-constants.h        \
+    guacamole/user-fntypes.h          \
+    guacamole/user-types.h
 
 noinst_HEADERS =      \
-    client-handlers.h \
+    id.h              \
     encode-jpeg.h     \
     encode-png.h      \
     palette.h         \
+    user-handlers.h   \
     raw_encoder.h
 
+# Temporarily removed audio.c and raw_encoder.c for testing of others
 libguac_la_SOURCES =  \
-    audio.c           \
     client.c          \
-    client-handlers.c \
     encode-jpeg.c     \
     encode-png.c      \
     error.c           \
     hash.c            \
-    instruction.c     \
+    id.c              \
     palette.c         \
-    plugin.c          \
+    parser.c          \
     pool.c            \
     protocol.c        \
-    raw_encoder.c     \
     socket.c          \
     socket-fd.c       \
     socket-nest.c     \
     timestamp.c       \
-    unicode.c
+    unicode.c         \
+    user.c            \
+    user-handlers.c
 
 # Compile WebP support if available
 if ENABLE_WEBP

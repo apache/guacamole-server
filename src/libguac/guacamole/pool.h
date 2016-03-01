@@ -32,6 +32,8 @@
 
 #include "pool-types.h"
 
+#include <pthread.h>
+
 struct guac_pool {
 
     /**
@@ -61,6 +63,11 @@ struct guac_pool {
      * The last integer in the pool, if any.
      */
     guac_pool_int* __tail;
+
+    /**
+     * Lock which is acquired when the pool is being modified or accessed.
+     */
+    pthread_mutex_t __lock;
 
 };
 
@@ -99,21 +106,29 @@ void guac_pool_free(guac_pool* pool);
 /**
  * Returns the next available integer from the given guac_pool. All integers
  * returned are non-negative, and are returned in sequences, starting from 0.
+ * This operation is threadsafe.
  *
- * @param pool The guac_pool to retrieve an integer from.
- * @return The next available integer, which may be either an integer not yet
- *         returned by a call to guac_pool_next_int, or an integer which was
- *         previosly returned, but has since been freed.
+ * @param pool
+ *     The guac_pool to retrieve an integer from.
+ *
+ * @return
+ *     The next available integer, which may be either an integer not yet
+ *     returned by a call to guac_pool_next_int, or an integer which was
+ *     previosly returned, but has since been freed.
  */
 int guac_pool_next_int(guac_pool* pool);
 
 /**
  * Frees the given integer back into the given guac_pool. The integer given
- * will be available for future calls to guac_pool_next_int.
+ * will be available for future calls to guac_pool_next_int.  This operation is
+ * threadsafe.
  *
- * @param pool The guac_pool to free the given integer into.
- * @param value The integer which should be returned to the given pool, such
- *              that it can be received by a future call to guac_pool_next_int.
+ * @param pool
+ *     The guac_pool to free the given integer into.
+ *
+ * @param value
+ *     The integer which should be returned to the given pool, such that it can
+ *     be received by a future call to guac_pool_next_int.
  */
 void guac_pool_free_int(guac_pool* pool, int value);
 

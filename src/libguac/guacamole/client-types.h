@@ -87,11 +87,5 @@ typedef enum guac_client_log_level {
 
 } guac_client_log_level;
 
-/**
- * Information exposed by the remote client during the connection handshake
- * which can be used by a client plugin.
- */
-typedef struct guac_client_info guac_client_info;
-
 #endif
 

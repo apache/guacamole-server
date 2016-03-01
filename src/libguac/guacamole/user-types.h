@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,26 @@
  * THE SOFTWARE.
  */
 
-#include "config.h"
+#ifndef _GUAC_USER_TYPES_H
+#define _GUAC_USER_TYPES_H
 
-#include "client/client_suite.h"
-#include "common/common_suite.h"
-#include "protocol/suite.h"
-#include "util/util_suite.h"
+/**
+ * Type definitions related to the guac_user object.
+ *
+ * @file user-types.h
+ */
 
-#include <CUnit/Basic.h>
+/**
+ * Representation of a physical connection within a larger logical connection
+ * which may be shared. Logical connections are represented by guac_client.
+ */
+typedef struct guac_user guac_user;
 
-int main() {
+/**
+ * Information exposed by the remote client during the connection handshake
+ * which can be used by a client plugin.
+ */
+typedef struct guac_user_info guac_user_info;
 
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
-        return CU_get_error();
-
-    /* Register suites */
-    register_protocol_suite();
-    register_client_suite();
-    register_util_suite();
-
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
-
-}
+#endif
 
