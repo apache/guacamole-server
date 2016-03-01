@@ -43,6 +43,11 @@
 typedef struct guac_common_ssh_sftp_filesystem {
 
     /**
+     * The human-readable display name of this filesystem.
+     */
+    char* name;
+
+    /**
      * The distinct SSH session used for SFTP.
      */
     guac_common_ssh_session* ssh_session;
@@ -101,11 +106,15 @@ typedef struct guac_common_ssh_sftp_ls_state {
  *     The session to use to provide SFTP. This session will automatically be
  *     destroyed when this filesystem is destroyed.
  *
+ * @param name
+ *     The name to send as the name of the filesystem whenever it is exposed
+ *     to a user.
+ *
  * @return
  *     A new SFTP filesystem object, not yet exposed to users.
  */
 guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
-        guac_common_ssh_session* session);
+        guac_common_ssh_session* session, const char* name);
 
 /**
  * Destroys the given filesystem object, disconnecting from SFTP and freeing
@@ -129,16 +138,39 @@ void guac_common_ssh_destroy_sftp_filesystem(
  * @param user
  *     The user that the SFTP filesystem should be exposed to.
  *
- * @param name
- *     The name to send as the name of the filesystem.
- *
  * @return
  *     A new Guacamole filesystem object, configured to use SFTP for uploading
  *     and downloading files.
  */
 guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
-        guac_common_ssh_sftp_filesystem* filesystem, guac_user* user,
-        const char* name);
+        guac_common_ssh_sftp_filesystem* filesystem, guac_user* user);
+
+/**
+ * Allocates a new filesystem guac_object for the given user, returning the
+ * resulting guac_object. This function is provided for convenience, as it is
+ * can be used as the callback for guac_client_foreach_user() or
+ * guac_client_for_owner(). Note that this guac_object will be tracked
+ * internally by libguac, will be provided to us in the parameters of handlers
+ * related to that guac_object, and will automatically be freed when the
+ * associated guac_user is freed, so the return value of this function can
+ * safely be ignored.
+ *
+ * If either the given user or the given filesystem are NULL, then this
+ * function has no effect.
+ *
+ * @param user
+ *     The use to expose the filesystem to, or NULL if nothing should be
+ *     exposed.
+ *
+ * @param data
+ *     A pointer to the guac_common_ssh_sftp_filesystem instance to expose
+ *     to the given user, or NULL if nothing should be exposed.
+ *
+ * @return
+ *     The guac_object allocated for the newly-exposed filesystem, or NULL if
+ *     no filesystem object could be allocated.
+ */
+void* guac_common_ssh_expose_sftp_filesystem(guac_user* user, void* data);
 
 /**
  * Initiates an SFTP file download to the user via the Guacamole "file"

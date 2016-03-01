@@ -716,9 +716,22 @@ static int guac_common_ssh_sftp_put_handler(guac_user* user,
     return 0;
 }
 
+void* guac_common_ssh_expose_sftp_filesystem(guac_user* user, void* data) {
+
+    guac_common_ssh_sftp_filesystem* filesystem =
+        (guac_common_ssh_sftp_filesystem*) data;
+
+    /* No need to expose if there is no filesystem or the user has left */
+    if (user == NULL || filesystem == NULL)
+        return NULL;
+
+    /* Allocate and expose filesystem object for user */
+    return guac_common_ssh_alloc_sftp_filesystem_object(filesystem, user);
+
+}
+
 guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
-        guac_common_ssh_sftp_filesystem* filesystem, guac_user* user,
-        const char* name) {
+        guac_common_ssh_sftp_filesystem* filesystem, guac_user* user) {
 
     /* Init filesystem */
     guac_object* fs_object = guac_user_alloc_object(user);
@@ -727,7 +740,7 @@ guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
     fs_object->data = filesystem;
 
     /* Send filesystem to user */
-    guac_protocol_send_filesystem(user->socket, fs_object, name);
+    guac_protocol_send_filesystem(user->socket, fs_object, filesystem->name);
     guac_socket_flush(user->socket);
 
     return fs_object;
@@ -735,7 +748,7 @@ guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
 }
 
 guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
-        guac_common_ssh_session* session) {
+        guac_common_ssh_session* session, const char* name) {
 
     /* Request SFTP */
     LIBSSH2_SFTP* sftp_session = libssh2_sftp_init(session->session);
@@ -747,6 +760,7 @@ guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
         malloc(sizeof(guac_common_ssh_sftp_filesystem));
 
     /* Associate SSH session with SFTP data and user */
+    filesystem->name = strdup(name);
     filesystem->ssh_session = session;
     filesystem->sftp_session = sftp_session;
 
@@ -765,6 +779,7 @@ void guac_common_ssh_destroy_sftp_filesystem(
     libssh2_sftp_shutdown(filesystem->sftp_session);
 
     /* Free associated memory */
+    free(filesystem->name);
     free(filesystem);
 
 }
