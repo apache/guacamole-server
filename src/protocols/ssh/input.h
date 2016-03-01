@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2016 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,27 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __SSH_CLIENT_H
-#define __SSH_CLIENT_H
+#ifndef GUAC_SSH_INPUT_H
+#define GUAC_SSH_INPUT_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include <guacamole/user.h>
 
 /**
- * Main SSH client thread, handling transfer of SSH output to STDOUT.
+ * Handler for Guacamole user mouse events.
  */
-void* ssh_client_thread(void* data);
+int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask);
+
+/**
+ * Handler for Guacamole user key events.
+ */
+int guac_ssh_user_key_handler(guac_user* user, int keysym, int pressed);
+
+/**
+ * Handler for Guacamole user size events.
+ */
+int guac_ssh_user_size_handler(guac_user* user, int width, int height);
 
 #endif
 

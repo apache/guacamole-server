@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,19 +20,17 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef _SSH_GUAC_HANDLERS_H
-#define _SSH_GUAC_HANDLERS_H
+#ifndef GUAC_VNC_USER_H
+#define GUAC_VNC_USER_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include <guacamole/user.h>
 
-int ssh_guac_client_handle_messages(guac_client* client);
-int ssh_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int ssh_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int ssh_guac_client_size_handler(guac_client* client, int width, int height);
-int ssh_guac_client_free_handler(guac_client* client);
+/**
+ * Handler for joining users.
+ */
+int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv);
 
 #endif
 

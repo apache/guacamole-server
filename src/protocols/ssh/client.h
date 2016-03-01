@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2016 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,138 +20,24 @@
  * THE SOFTWARE.
  */
 
+#ifndef GUAC_SSH_CLIENT_H
+#define GUAC_SSH_CLIENT_H
 
-#ifndef _SSH_GUAC_CLIENT_H
-#define _SSH_GUAC_CLIENT_H
-
-#include "config.h"
-
-#include "guac_ssh.h"
-#include "guac_ssh_user.h"
-#include "sftp.h"
-#include "terminal.h"
-
-#include <libssh2.h>
-#include <libssh2_sftp.h>
-
-#include <guacamole/object.h>
-
-#ifdef ENABLE_SSH_AGENT
-#include "ssh_agent.h"
-#endif
-
-#include <pthread.h>
-#include <stdbool.h>
+#include <guacamole/client.h>
 
 /**
- * SSH-specific client data.
+ * Handler which is invoked when the SSH client needs to be disconnected (if
+ * connected) and freed. This can happen if initialization fails, or all users
+ * have left the connection.
+ *
+ * @param client
+ *     The client associated with the SSH client to be freed.
+ *
+ * @return
+ *     Zero on success, non-zero if an error occurs preventing the client from
+ *     being entirely freed.
  */
-typedef struct ssh_guac_client_data {
-
-    /**
-     * The hostname of the SSH server to connect to.
-     */
-    char hostname[1024];
-
-    /**
-     * The port of the SSH server to connect to.
-     */
-    char port[64];
-
-    /**
-     * The name of the user to login as.
-     */
-    char username[1024];
-
-    /**
-     * The password to give when authenticating.
-     */
-    char password[1024];
-
-    /**
-     * The private key, encoded as base64.
-     */
-    char key_base64[4096];
-
-    /**
-     * The password to use to decrypt the given private key.
-     */
-    char key_passphrase[1024];
-
-    /**
-     * The command to run instead of the default shell. If a normal shell
-     * session is desired, this will be NULL.
-     */
-    char* command;
-
-    /**
-     * The name of the font to use for display rendering.
-     */
-    char font_name[1024];
-
-    /**
-     * The size of the font to use, in points.
-     */
-    int font_size;
-
-    /**
-     * Whether SFTP is enabled.
-     */
-    bool enable_sftp;
-
-#ifdef ENABLE_SSH_AGENT
-    /**
-     * Whether the SSH agent is enabled.
-     */
-    bool enable_agent;
-
-    /**
-     * The current agent, if any.
-     */
-    ssh_auth_agent* auth_agent;
-#endif
-
-    /**
-     * The SSH client thread.
-     */
-    pthread_t client_thread;
-
-    /**
-     * The user and credentials to use for all SSH sessions.
-     */
-    guac_common_ssh_user* user;
-
-    /**
-     * SSH session, used by the SSH client thread.
-     */
-    guac_common_ssh_session* session;
-
-    /**
-     * SFTP session, used by the SFTP client/filesystem.
-     */
-    guac_common_ssh_session* sftp_session;
-
-    /**
-     * The filesystem object exposed for the SFTP session.
-     */
-    guac_object* sftp_filesystem;
-
-    /**
-     * SSH terminal channel, used by the SSH client thread.
-     */
-    LIBSSH2_CHANNEL* term_channel;
-
-    /**
-     * Lock dictating access to the SSH terminal channel.
-     */
-    pthread_mutex_t term_channel_lock;
-
-    /**
-     * The terminal which will render all output from the SSH client.
-     */
-    guac_terminal* term;
-   
-} ssh_guac_client_data;
+int guac_ssh_client_free_handler(guac_client* client);
 
 #endif
 

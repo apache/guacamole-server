@@ -31,19 +31,19 @@
 /**
  * Handler for inbound clipboard data.
  */
-int guac_ssh_clipboard_handler(guac_client* client, guac_stream* stream,
+int guac_ssh_clipboard_handler(guac_user* user, guac_stream* stream,
         char* mimetype);
 
 /**
  * Handler for stream data related to clipboard.
  */
-int guac_ssh_clipboard_blob_handler(guac_client* client, guac_stream* stream,
+int guac_ssh_clipboard_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length);
 
 /**
  * Handler for end-of-stream related to clipboard.
  */
-int guac_ssh_clipboard_end_handler(guac_client* client, guac_stream* stream);
+int guac_ssh_clipboard_end_handler(guac_user* user, guac_stream* stream);
 
 #endif
 
