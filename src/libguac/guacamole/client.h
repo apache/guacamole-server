@@ -254,7 +254,6 @@ struct guac_client {
      *         client->args = __my_args;
      *     }
      * @endcode
-
      */
     const char** args;
 
