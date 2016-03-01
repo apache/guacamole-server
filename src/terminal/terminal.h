@@ -27,9 +27,9 @@
 #include "config.h"
 
 #include "buffer.h"
-#include "cursor.h"
 #include "display.h"
 #include "guac_clipboard.h"
+#include "guac_display.h"
 #include "scrollbar.h"
 #include "types.h"
 #include "typescript.h"
@@ -89,6 +89,28 @@
 typedef struct guac_terminal guac_terminal;
 
 /**
+ * All possible mouse cursors used by the terminal emulator.
+ */
+typedef enum guac_terminal_cursor_type {
+
+    /**
+     * A transparent (blank) cursor.
+     */
+    GUAC_TERMINAL_CURSOR_BLANK,
+
+    /**
+     * A standard I-bar cursor for selecting text, etc.
+     */
+    GUAC_TERMINAL_CURSOR_IBAR,
+
+    /**
+     * A standard triangular mouse pointer for manipulating non-text objects.
+     */
+    GUAC_TERMINAL_CURSOR_POINTER
+
+} guac_terminal_cursor_type;
+
+/**
  * Handler for characters printed to the terminal. When a character is printed,
  * the current char handler for the terminal is called and given that
  * character.
@@ -112,9 +134,20 @@ typedef guac_stream* guac_terminal_file_download_handler(guac_client* client, ch
 struct guac_terminal {
 
     /**
-     * The Guacamole client this terminal emulator will use for rendering.
+     * The Guacamole client associated with this terminal emulator.
      */
     guac_client* client;
+
+    /**
+     * The terminal render thread.
+     */
+    pthread_t thread;
+
+    /**
+     * The display associated with the Guacamole client this terminal emulator
+     * will use for rendering.
+     */
+    guac_common_display* display;
 
     /**
      * Called whenever the necessary terminal codes are sent to change
@@ -260,7 +293,7 @@ struct guac_terminal {
      * The difference between the currently-rendered screen and the current
      * state of the terminal.
      */
-    guac_terminal_display* display;
+    guac_terminal_display* term_display;
 
     /**
      * Current terminal display state. All characters present on the screen
@@ -366,24 +399,9 @@ struct guac_terminal {
     int mouse_mask;
 
     /**
-     * The cached pointer cursor.
+     * The current mouse cursor, to avoid re-setting the cursor image.
      */
-    guac_terminal_cursor* pointer_cursor;
-
-    /**
-     * The cached I-bar cursor.
-     */
-    guac_terminal_cursor* ibar_cursor;
-
-    /**
-     * The cached invisible (blank) cursor.
-     */
-    guac_terminal_cursor* blank_cursor;
-
-    /**
-     * The current cursor, used to avoid re-setting the cursor.
-     */
-    guac_terminal_cursor* current_cursor;
+    guac_terminal_cursor_type current_cursor;
 
     /**
      * The current contents of the clipboard.
@@ -469,11 +487,29 @@ int guac_terminal_write_stdout(guac_terminal* terminal, const char* c, int size)
 int guac_terminal_notify(guac_terminal* terminal);
 
 /**
- * Reads a single line from this terminal's STDIN. Input is retrieved in
- * the same manner as guac_terminal_read_stdin() and the same restrictions
- * apply.
+ * Reads a single line from this terminal's STDIN, storing the result in a
+ * newly-allocated string. Input is retrieved in the same manner as
+ * guac_terminal_read_stdin() and the same restrictions apply.
+ *
+ * @param terminal
+ *     The terminal to which the provided title should be output, and from
+ *     whose STDIN the single line of input should be read.
+ *
+ * @param title
+ *     The human-readable title to output to the terminal just prior to reading
+ *     from STDIN.
+ *
+ * @param echo
+ *     Non-zero if the characters read from STDIN should be echoed back as
+ *     terminal output, or zero if asterisks should be displayed instead.
+ *
+ * @return
+ *     A newly-allocated string containing a single line of input read from the
+ *     provided terminal's STDIN. This string must eventually be manually
+ *     freed with a call to free().
  */
-void guac_terminal_prompt(guac_terminal* terminal, const char* title, char* str, int size, bool echo);
+char* guac_terminal_prompt(guac_terminal* terminal, const char* title,
+        bool echo);
 
 /**
  * Writes the given format string and arguments to this terminal's STDOUT in
@@ -492,7 +528,8 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed);
  * Handles the given mouse event, sending data, scrolling, pasting clipboard
  * data, etc. as necessary.
  */
-int guac_terminal_send_mouse(guac_terminal* term, int x, int y, int mask);
+int guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
+        int x, int y, int mask);
 
 /**
  * Handles a scroll event received from the scrollbar associated with a
@@ -518,6 +555,22 @@ void guac_terminal_clipboard_reset(guac_terminal* term, const char* mimetype);
  */
 void guac_terminal_clipboard_append(guac_terminal* term, const void* data, int length);
 
+/**
+ * Signals the terminal emulator that a new user has joined the connection, and
+ * requests that the current display state be replicated to that user.
+ *
+ * @param term
+ *     The terminal emulator associated with the connection being joined.
+ *
+ * @param user
+ *     The user joining the connection.
+ *
+ * @param socket
+ *     The guac_socket specific to the joining user and across which messages
+ *     synchronizing the current display state should be sent.
+ */
+void guac_terminal_add_user(guac_terminal* term, guac_user* user,
+        guac_socket* socket);
 
 /* INTERNAL FUNCTIONS */
 

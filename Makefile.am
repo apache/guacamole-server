@@ -46,7 +46,7 @@ SUBDIRS += src/common-ssh
 endif
 
 if ENABLE_TERMINAL
-#SUBDIRS += src/terminal
+SUBDIRS += src/terminal
 endif
 
 if ENABLE_RDP
