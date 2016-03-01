@@ -114,7 +114,7 @@ void guac_pool_free(guac_pool* pool);
  * @return
  *     The next available integer, which may be either an integer not yet
  *     returned by a call to guac_pool_next_int, or an integer which was
- *     previosly returned, but has since been freed.
+ *     previously returned, but has since been freed.
  */
 int guac_pool_next_int(guac_pool* pool);
 
