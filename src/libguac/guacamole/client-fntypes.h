@@ -41,16 +41,44 @@
 /**
  * Handler for freeing up any extra data allocated by the client
  * implementation.
+ *
+ * @param client
+ *     The client whose extra data should be freed (if any).
+ *
+ * @return
+ *     Zero if the data was successfully freed, non-zero if an error prevents
+ *     the data from being freed.
  */
 typedef int guac_client_free_handler(guac_client* client);
 
 /**
- * Handler for logging messages.
+ * Handler for logging messages related to a given guac_client instance.
+ *
+ * @param client
+ *     The client related to the message being logged.
+ *
+ * @param level
+ *     The log level at which to log the given message.
+ *
+ * @param format
+ *     A printf-style format string, defining the message to be logged.
+ *
+ * @param args
+ *     The va_list containing the arguments to be used when filling the
+ *     conversion specifiers ("%s", "%i", etc.) within the format string.
  */
-typedef void guac_client_log_handler(guac_client* client, guac_client_log_level level, const char* format, va_list args); 
+typedef void guac_client_log_handler(guac_client* client,
+        guac_client_log_level level, const char* format, va_list args);
 
 /**
- * Handler which should initialize the given guac_client.
+ * The entry point of a client plugin which must initialize the given
+ * guac_client. In practice, this function will be called "guac_client_init".
+ *
+ * @param client
+ *     The guac_client that must be initialized.
+ *
+ * @return
+ *     Zero on success, non-zero if initialization fails for any reason.
  */
 typedef int guac_client_init_handler(guac_client* client);
 
