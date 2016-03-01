@@ -73,5 +73,11 @@ void guacd_log_guac_error(guac_client_log_level level, const char* message);
 void guacd_client_log_guac_error(guac_client* client,
         guac_client_log_level level, const char* message);
 
+/**
+ * Logs a reasonable explanatory message regarding handshake failure based on
+ * the current value of guac_error.
+ */
+void guacd_log_handshake_failure();
+
 #endif
 

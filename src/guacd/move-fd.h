@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,44 +20,24 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __GUACD_SOCKET_SSL_H
-#define __GUACD_SOCKET_SSL_H
+#ifndef GUACD_MOVE_FD_H
+#define GUACD_MOVE_FD_H
 
 #include "config.h"
 
-#include <guacamole/socket.h>
-#include <openssl/ssl.h>
+/**
+ * Sends the given file descriptor along the given socket. The file descriptor
+ * must have been sent via guacd_recv_fd. Returns non-zero on success, zero on
+ * error. If an error does occur, errno will be set appropriately.
+ */
+int guacd_send_fd(int sock, int fd);
 
 /**
- * SSL socket-specific data.
+ * Waits for a file descriptor on the given socket, returning the received file
+ * descriptor. If an error occurs, -1 is returned, and errno will be set
+ * appropriately.
  */
-typedef struct guac_socket_ssl_data {
-
-    /**
-     * The file descriptor that SSL communication will take place
-     * over.
-     */
-    int fd;
-
-    /**
-     * The current SSL context.
-     */
-    SSL_CTX* context;
-
-    /**
-     * The SSL connection, created automatically via
-     * guac_socket_open_secure().
-     */
-    SSL* ssl;
-
-} guac_socket_ssl_data;
-
-/**
- * Creates a new guac_socket which will use SSL for all communication. Freeing
- * this guac_socket will automatically close the associated file descriptor.
- */
-guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd);
+int guacd_recv_fd(int sock);
 
 #endif
 

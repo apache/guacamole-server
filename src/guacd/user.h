@@ -21,38 +21,14 @@
  */
 
 
-#ifndef _GUACD_CLIENT_H
-#define _GUACD_CLIENT_H
+#ifndef _GUACD_USER_H
+#define _GUACD_USER_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
-
-/**
- * The time to allow between sync responses in milliseconds. If a sync
- * instruction is sent to the client and no response is received within this
- * timeframe, server messages will not be handled until a sync instruction is
- * received from the client.
- */
-#define GUACD_SYNC_THRESHOLD 500
-
-/**
- * The time to allow between server sync messages in milliseconds. A sync
- * message from the server will be sent every GUACD_SYNC_FREQUENCY milliseconds.
- * As this will induce a response from a client that is not malfunctioning,
- * this is used to detect when a client has died. This must be set to a
- * reasonable value to avoid clients being disconnected unnecessarily due
- * to timeout.
- */
-#define GUACD_SYNC_FREQUENCY 5000
-
-/**
- * The amount of time to wait after handling server messages. If a client
- * plugin has a message handler, and sends instructions when server messages
- * are being handled, there will be a pause of this many milliseconds before
- * the next call to the message handler.
- */
-#define GUACD_MESSAGE_HANDLE_FREQUENCY 50
+#include <guacamole/parser.h>
+#include <guacamole/socket.h>
+#include <guacamole/user.h>
 
 /**
  * The number of milliseconds to wait for messages in any phase before
@@ -73,7 +49,34 @@
  */
 #define GUACD_CLIENT_MAX_CONNECTIONS 65536
 
-int guacd_client_start(guac_client* client);
+/**
+ * Parameters required by the user input thread.
+ */
+typedef struct guacd_user_input_thread_params {
+
+    /**
+     * The parser which will be used throughout the user's session.
+     */
+    guac_parser* parser;
+
+    /**
+     * A reference to the connected user.
+     */
+    guac_user* user;
+
+} guacd_user_input_thread_params;
+
+/**
+ * Starts the input/output threads of a new user. This function will block
+ * until the user disconnects.
+ */
+int guacd_user_start(guac_parser* parser, guac_user* user);
+
+/**
+ * The thread which handles all user input, calling event handlers for received
+ * instructions.
+ */
+void* guacd_user_input_thread(void* data);
 
 #endif
 
