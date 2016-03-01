@@ -49,7 +49,7 @@ guac_parser* guac_parser_alloc() {
         return NULL;
     }
 
-    /* Init parse start/end marksers */
+    /* Init parse start/end markers */
     parser->__instructionbuf_unparsed_start = parser->__instructionbuf;
     parser->__instructionbuf_unparsed_end = parser->__instructionbuf;
 
