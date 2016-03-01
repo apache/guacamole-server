@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,9 +20,8 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef _GUAC_COMMON_POINTER_CURSOR_H
-#define _GUAC_COMMON_POINTER_CURSOR_H
+#ifndef GUAC_COMMON_BLANK_CURSOR_H
+#define GUAC_COMMON_BLANK_CURSOR_H
 
 #include "config.h"
 
@@ -30,35 +29,39 @@
 #include <guacamole/user.h>
 
 /**
- * Width of the embedded mouse cursor graphic.
+ * Width of the embedded transparent (blank) mouse cursor graphic.
  */
-extern const int guac_common_pointer_cursor_width;
+extern const int guac_common_blank_cursor_width;
 
 /**
- * Height of the embedded mouse cursor graphic.
+ * Height of the embedded transparent (blank) mouse cursor graphic.
  */
-extern const int guac_common_pointer_cursor_height;
+extern const int guac_common_blank_cursor_height;
 
 /**
- * Number of bytes in each row of the embedded mouse cursor graphic.
+ * Number of bytes in each row of the embedded transparent (blank) mouse cursor
+ * graphic.
  */
-extern const int guac_common_pointer_cursor_stride;
+extern const int guac_common_blank_cursor_stride;
 
 /**
- * The Cairo grapic format of the mouse cursor graphic.
+ * The Cairo grapic format of the transparent (blank) mouse cursor graphic.
  */
-extern const cairo_format_t guac_common_pointer_cursor_format;
+extern const cairo_format_t guac_common_blank_cursor_format;
 
 /**
- * Embedded mouse cursor graphic.
+ * Embedded transparent (blank) mouse cursor graphic.
  */
-extern unsigned char guac_common_pointer_cursor[];
+extern unsigned char guac_common_blank_cursor[];
 
 /**
- * Set the cursor of the remote display to the embedded cursor graphic.
+ * Sets the cursor of the remote display to the embedded transparent (blank)
+ * cursor graphic.
  *
- * @param user The guac_user to send the cursor to.
+ * @param user
+ *     The guac_user to send the cursor to.
  */
-void guac_common_set_pointer_cursor(guac_user* user);
+void guac_common_set_blank_cursor(guac_user* user);
 
 #endif
+

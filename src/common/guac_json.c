@@ -28,17 +28,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
+#include <guacamole/user.h>
 
-void guac_common_json_flush(guac_client* client, guac_stream* stream,
+void guac_common_json_flush(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state) {
 
     /* If JSON buffer is non-empty, write contents to blob and reset */
     if (json_state->size > 0) {
-        guac_protocol_send_blob(client->socket, stream,
+        guac_protocol_send_blob(user->socket, stream,
                 json_state->buffer, json_state->size);
 
         /* Reset JSON buffer size */
@@ -48,7 +48,7 @@ void guac_common_json_flush(guac_client* client, guac_stream* stream,
 
 }
 
-int guac_common_json_write(guac_client* client, guac_stream* stream,
+int guac_common_json_write(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state, const char* buffer, int length) {
 
     int blob_written = 0;
@@ -66,7 +66,7 @@ int guac_common_json_write(guac_client* client, guac_stream* stream,
 
         /* Flush if more room is needed */
         if (json_state->size + blob_length > sizeof(json_state->buffer)) {
-            guac_common_json_flush(client, stream, json_state);
+            guac_common_json_flush(user, stream, json_state);
             blob_written = 1;
         }
 
@@ -86,14 +86,14 @@ int guac_common_json_write(guac_client* client, guac_stream* stream,
 
 }
 
-int guac_common_json_write_string(guac_client* client,
+int guac_common_json_write_string(guac_user* user,
         guac_stream* stream, guac_common_json_state* json_state,
         const char* str) {
 
     int blob_written = 0;
 
     /* Write starting quote */
-    blob_written |= guac_common_json_write(client, stream,
+    blob_written |= guac_common_json_write(user, stream,
             json_state, "\"", 1);
 
     /* Write given string, escaping as necessary */
@@ -105,11 +105,11 @@ int guac_common_json_write_string(guac_client* client,
 
             /* Write any string content up to current character */
             if (current != str)
-                blob_written |= guac_common_json_write(client, stream,
+                blob_written |= guac_common_json_write(user, stream,
                         json_state, str, current - str);
 
             /* Escape the quote that was just read */
-            blob_written |= guac_common_json_write(client, stream,
+            blob_written |= guac_common_json_write(user, stream,
                     json_state, "\\", 1);
 
             /* Reset string */
@@ -121,18 +121,18 @@ int guac_common_json_write_string(guac_client* client,
 
     /* Write any remaining string content */
     if (current != str)
-        blob_written |= guac_common_json_write(client, stream,
+        blob_written |= guac_common_json_write(user, stream,
                 json_state, str, current - str);
 
     /* Write ending quote */
-    blob_written |= guac_common_json_write(client, stream,
+    blob_written |= guac_common_json_write(user, stream,
             json_state, "\"", 1);
 
     return blob_written;
 
 }
 
-int guac_common_json_write_property(guac_client* client, guac_stream* stream,
+int guac_common_json_write_property(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state, const char* name,
         const char* value) {
 
@@ -140,19 +140,19 @@ int guac_common_json_write_property(guac_client* client, guac_stream* stream,
 
     /* Write leading comma if not first property */
     if (json_state->properties_written != 0)
-        blob_written |= guac_common_json_write(client, stream,
+        blob_written |= guac_common_json_write(user, stream,
                 json_state, ",", 1);
 
     /* Write property name */
-    blob_written |= guac_common_json_write_string(client, stream,
+    blob_written |= guac_common_json_write_string(user, stream,
             json_state, name);
 
     /* Separate name from value with colon */
-    blob_written |= guac_common_json_write(client, stream,
+    blob_written |= guac_common_json_write(user, stream,
             json_state, ":", 1);
 
     /* Write property value */
-    blob_written |= guac_common_json_write_string(client, stream,
+    blob_written |= guac_common_json_write_string(user, stream,
             json_state, value);
 
     json_state->properties_written++;
@@ -161,7 +161,7 @@ int guac_common_json_write_property(guac_client* client, guac_stream* stream,
 
 }
 
-void guac_common_json_begin_object(guac_client* client, guac_stream* stream,
+void guac_common_json_begin_object(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state) {
 
     /* Init JSON state */
@@ -169,15 +169,15 @@ void guac_common_json_begin_object(guac_client* client, guac_stream* stream,
     json_state->properties_written = 0;
 
     /* Write leading brace - no blob can possibly be written by this */
-    assert(!guac_common_json_write(client, stream, json_state, "{", 1));
+    assert(!guac_common_json_write(user, stream, json_state, "{", 1));
 
 }
 
-int guac_common_json_end_object(guac_client* client, guac_stream* stream,
+int guac_common_json_end_object(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state) {
 
     /* Write final brace of JSON object */
-    return guac_common_json_write(client, stream, json_state, "}", 1);
+    return guac_common_json_write(user, stream, json_state, "}", 1);
 
 }
 

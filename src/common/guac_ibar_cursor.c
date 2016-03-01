@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,40 +31,41 @@
 
 /* Macros for prettying up the embedded image. */
 #define X 0x00,0x00,0x00,0xFF
+#define U 0x80,0x80,0x80,0xFF
 #define O 0xFF,0xFF,0xFF,0xFF
 #define _ 0x00,0x00,0x00,0x00
 
 /* Dimensions */
-const int guac_common_pointer_cursor_width  = 11;
-const int guac_common_pointer_cursor_height = 16;
+const int guac_common_ibar_cursor_width  = 7;
+const int guac_common_ibar_cursor_height = 16;
 
 /* Format */
-const cairo_format_t guac_common_pointer_cursor_format = CAIRO_FORMAT_ARGB32;
-const int guac_common_pointer_cursor_stride = 44;
+const cairo_format_t guac_common_ibar_cursor_format = CAIRO_FORMAT_ARGB32;
+const int guac_common_ibar_cursor_stride = 28;
 
-/* Embedded pointer graphic */
-unsigned char guac_common_pointer_cursor[] = {
+/* Embedded I-bar graphic */
+unsigned char guac_common_ibar_cursor[] = {
 
-        O,_,_,_,_,_,_,_,_,_,_,
-        O,O,_,_,_,_,_,_,_,_,_,
-        O,X,O,_,_,_,_,_,_,_,_,
-        O,X,X,O,_,_,_,_,_,_,_,
-        O,X,X,X,O,_,_,_,_,_,_,
-        O,X,X,X,X,O,_,_,_,_,_,
-        O,X,X,X,X,X,O,_,_,_,_,
-        O,X,X,X,X,X,X,O,_,_,_,
-        O,X,X,X,X,X,X,X,O,_,_,
-        O,X,X,X,X,X,X,X,X,O,_,
-        O,X,X,X,X,X,O,O,O,O,O,
-        O,X,X,O,X,X,O,_,_,_,_,
-        O,X,O,_,O,X,X,O,_,_,_,
-        O,O,_,_,O,X,X,O,_,_,_,
-        O,_,_,_,_,O,X,X,O,_,_,
-        _,_,_,_,_,O,O,O,O,_,_
+        X,X,X,X,X,X,X,
+        X,O,O,U,O,O,X,
+        X,X,X,O,X,X,X,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        _,_,X,O,X,_,_,
+        X,X,X,O,X,X,X,
+        X,O,O,U,O,O,X,
+        X,X,X,X,X,X,X
 
 };
 
-void guac_common_set_pointer_cursor(guac_user* user) {
+void guac_common_set_ibar_cursor(guac_user* user) {
 
     guac_client* client = user->client;
     guac_socket* socket = user->socket;
@@ -73,11 +74,11 @@ void guac_common_set_pointer_cursor(guac_user* user) {
     guac_layer* cursor = guac_client_alloc_buffer(client);
 
     cairo_surface_t* graphic = cairo_image_surface_create_for_data(
-            guac_common_pointer_cursor,
-            guac_common_pointer_cursor_format,
-            guac_common_pointer_cursor_width,
-            guac_common_pointer_cursor_height,
-            guac_common_pointer_cursor_stride);
+            guac_common_ibar_cursor,
+            guac_common_ibar_cursor_format,
+            guac_common_ibar_cursor_width,
+            guac_common_ibar_cursor_height,
+            guac_common_ibar_cursor_stride);
 
     guac_user_stream_png(user, socket, GUAC_COMP_SRC, cursor,
             0, 0, graphic);
@@ -85,15 +86,16 @@ void guac_common_set_pointer_cursor(guac_user* user) {
 
     /* Set cursor */
     guac_protocol_send_cursor(socket, 0, 0, cursor,
-            0, 0,
-            guac_common_pointer_cursor_width,
-            guac_common_pointer_cursor_height);
+            guac_common_ibar_cursor_width / 2,
+            guac_common_ibar_cursor_height / 2,
+            guac_common_ibar_cursor_width,
+            guac_common_ibar_cursor_height);
 
     /* Free buffer */
     guac_client_free_buffer(client, cursor);
 
     guac_client_log(client, GUAC_LOG_DEBUG,
-            "Client cursor image set to generic built-in pointer.");
+            "Client cursor image set to generic built-in I-bar.");
 
 }
 

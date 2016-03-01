@@ -37,6 +37,7 @@ DIST_SUBDIRS =           \
 
 SUBDIRS =       \
     src/libguac \
+    src/common  \
     tests
 
 if ENABLE_COMMON_SSH

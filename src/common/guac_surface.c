@@ -30,6 +30,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/user.h>
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -269,7 +270,7 @@ static void __guac_common_mark_dirty(guac_common_surface* surface, const guac_co
  *     The surface on which the framerate will be calculated.
  *
  * @param rect
- *     The rect containing the area for which the average framerate will be 
+ *     The rect containing the area for which the average framerate will be
  *     calculated.
  *
  * @return
@@ -1303,15 +1304,18 @@ static void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
         const guac_layer* layer = surface->layer;
 
         /* Get Cairo surface for specified rect */
-        unsigned char* buffer = surface->buffer + surface->dirty_rect.y * surface->stride + surface->dirty_rect.x * 4;
-        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
-                                                                    surface->dirty_rect.width,
-                                                                    surface->dirty_rect.height,
-                                                                    surface->stride);
+        unsigned char* buffer = surface->buffer
+                              + surface->dirty_rect.y * surface->stride
+                              + surface->dirty_rect.x * 4;
+
+        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
+                CAIRO_FORMAT_RGB24, surface->dirty_rect.width,
+                surface->dirty_rect.height, surface->stride);
 
         /* Send PNG for rect */
         guac_client_stream_png(surface->client, socket, GUAC_COMP_OVER,
                 layer, surface->dirty_rect.x, surface->dirty_rect.y, rect);
+
         cairo_surface_destroy(rect);
         surface->realized = 1;
 
@@ -1347,16 +1351,19 @@ static void __guac_common_surface_flush_to_jpeg(guac_common_surface* surface) {
                                         &surface->dirty_rect, &max);
 
         /* Get Cairo surface for specified rect */
-        unsigned char* buffer = surface->buffer + surface->dirty_rect.y * surface->stride + surface->dirty_rect.x * 4;
-        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
-                                                                    surface->dirty_rect.width,
-                                                                    surface->dirty_rect.height,
-                                                                    surface->stride);
+        unsigned char* buffer = surface->buffer
+                              + surface->dirty_rect.y * surface->stride
+                              + surface->dirty_rect.x * 4;
+
+        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
+                CAIRO_FORMAT_RGB24, surface->dirty_rect.width,
+                surface->dirty_rect.height, surface->stride);
 
         /* Send JPEG for rect */
         guac_client_stream_jpeg(surface->client, socket, GUAC_COMP_OVER, layer,
                 surface->dirty_rect.x, surface->dirty_rect.y, rect,
                 GUAC_SURFACE_JPEG_IMAGE_QUALITY);
+
         cairo_surface_destroy(rect);
         surface->realized = 1;
 
@@ -1393,18 +1400,18 @@ static void __guac_common_surface_flush_to_webp(guac_common_surface* surface) {
 
         /* Get Cairo surface for specified rect */
         unsigned char* buffer = surface->buffer
-            + surface->dirty_rect.y * surface->stride
-            + surface->dirty_rect.x * 4;
+                              + surface->dirty_rect.y * surface->stride
+                              + surface->dirty_rect.x * 4;
 
         cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
-                CAIRO_FORMAT_RGB24,
-                surface->dirty_rect.width, surface->dirty_rect.height,
-                surface->stride);
+                CAIRO_FORMAT_RGB24, surface->dirty_rect.width,
+                surface->dirty_rect.height, surface->stride);
 
         /* Send WebP for rect */
         guac_client_stream_webp(surface->client, socket, GUAC_COMP_OVER, layer,
                 surface->dirty_rect.x, surface->dirty_rect.y, rect,
                 GUAC_SURFACE_WEBP_IMAGE_QUALITY, 0);
+
         cairo_surface_destroy(rect);
         surface->realized = 1;
 
@@ -1521,6 +1528,28 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
     /* Flush complete */
     surface->bitmap_queue_length = 0;
+
+}
+
+void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
+        guac_socket* socket) {
+
+    /* Do nothing if not realized */
+    if (!surface->realized)
+        return;
+
+    /* Sync size to new socket */
+    guac_protocol_send_size(socket, surface->layer, surface->width, surface->height);
+
+    /* Get entire surface */
+    cairo_surface_t* rect = cairo_image_surface_create_for_data(
+            surface->buffer, CAIRO_FORMAT_RGB24,
+            surface->width, surface->height, surface->stride);
+
+    /* Send PNG for rect */
+    guac_user_stream_png(user, socket, GUAC_COMP_OVER, surface->layer,
+            0, 0, rect);
+    cairo_surface_destroy(rect);
 
 }
 
