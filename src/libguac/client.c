@@ -529,6 +529,8 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
     char protocol_lib[GUAC_PROTOCOL_LIBRARY_LIMIT] =
         GUAC_PROTOCOL_LIBRARY_PREFIX;
  
+    /* Type-pun for the sake of dlsym() - cannot typecast a void* to a function
+     * pointer otherwise */ 
     union {
         guac_client_init_handler* client_init;
         void* obj;
