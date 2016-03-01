@@ -141,9 +141,23 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
 }
 
-
 /**
- * The broadcast socket cannot be read from.
+ * Callback which handles read requests on the broadcast socket. This callback
+ * always fails, as the broadcast socket is write-only; it cannot be read.
+ *
+ * @param socket
+ *     The broadcast socket to read from.
+ *
+ * @param buf
+ *     The buffer into which data should be read.
+ *
+ * @param count
+ *     The number of bytes to attempt to read.
+ *
+ * @return
+ *     The number of bytes read, or -1 if an error occurs. This implementation
+ *     always returns -1, as the broadcast socket is write-only and cannot be
+ *     read.
  */
 static ssize_t __guac_socket_broadcast_read_handler(guac_socket* socket,
         void* buf, size_t count) {
@@ -154,7 +168,18 @@ static ssize_t __guac_socket_broadcast_read_handler(guac_socket* socket,
 }
 
 /**
- * Writes a chunk of data to a given user.
+ * Callback invoked by guac_client_foreach_user() which write a given chunk of
+ * data to that user's socket. If the write attempt fails, the user is
+ * signalled to stop with guac_user_stop().
+ *
+ * @param user
+ *     The user that the chunk of data should be written to.
+ *
+ * @param data
+ *     A pointer to a __write_chunk which describes the data to be written.
+ *
+ * @return
+ *     Always NULL.
  */
 static void* __write_chunk_callback(guac_user* user, void* data) {
 
@@ -170,7 +195,22 @@ static void* __write_chunk_callback(guac_user* user, void* data) {
 
 /**
  * Socket write handler which operates on each of the sockets of all connected
- * users, unifying the results.
+ * users. This write handler will always succeed, but any failing user-specific
+ * writes will invoke guac_user_stop() on the failing user.
+ *
+ * @param socket
+ *     The socket to which the given data must be written.
+ *
+ * @param buf
+ *     The buffer containing the data to write.
+ *
+ * @param count
+ *     The number of bytes to attempt to write from the given buffer.
+ *
+ * @return
+ *     The number of bytes written, or -1 if an error occurs. This handler will
+ *     always succeed, and thus will always return the exact number of bytes
+ *     specified by count.
  */
 static ssize_t __guac_socket_broadcast_write_handler(guac_socket* socket,
         const void* buf, size_t count) {
@@ -189,6 +229,21 @@ static ssize_t __guac_socket_broadcast_write_handler(guac_socket* socket,
 
 }
 
+/**
+ * Callback which is invoked by guac_client_foreach_user() to flush all
+ * pending data on the given user's socket. If an error occurs while flushing
+ * a user's socket, that user is signalled to stop with guac_user_stop().
+ *
+ * @param user
+ *     The user whose socket should be flushed.
+ *
+ * @param data
+ *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     by this callback, and should be left as NULL.
+ *
+ * @return
+ *     Always NULL.
+ */
 static void* __flush_callback(guac_user* user, void* data) {
 
     /* Attempt flush, disconnect on failure */
@@ -199,6 +254,18 @@ static void* __flush_callback(guac_user* user, void* data) {
 
 }
 
+/**
+ * Socket flush handler which operates on each of the sockets of all connected
+ * users. This flush handler will always succeed, but any failing user-specific
+ * flush will invoke guac_user_stop() on the failing user.
+ *
+ * @param socket
+ *     The broadcast socket to flush.
+ *
+ * @return
+ *     Zero if the flush operation succeeds, non-zero if the operation fails.
+ *     This handler will always succeed, and thus will always return zero.
+ */
 static ssize_t __guac_socket_broadcast_flush_handler(guac_socket* socket) {
 
     guac_client* client = (guac_client*) socket->data;
@@ -210,6 +277,21 @@ static ssize_t __guac_socket_broadcast_flush_handler(guac_socket* socket) {
 
 }
 
+/**
+ * Callback which is invoked by guac_client_foreach_user() to lock the given
+ * user's socket in preparation for the beginning of a Guacamole protocol
+ * instruction.
+ *
+ * @param user
+ *     The user whose socket should be locked.
+ *
+ * @param data
+ *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     by this callback, and should be left as NULL.
+ *
+ * @return
+ *     Always NULL.
+ */
 static void* __lock_callback(guac_user* user, void* data) {
 
     /* Lock socket */
@@ -219,37 +301,85 @@ static void* __lock_callback(guac_user* user, void* data) {
 
 }
 
+/**
+ * Socket lock handler which acquires the socket locks of all connected users.
+ * Socket-level locks are acquired in preparation for the beginning of a new
+ * Guacamole instruction to ensure that parallel writes are only interleaved at
+ * instruction boundaries.
+ *
+ * @param socket
+ *     The broadcast socket to lock.
+ */
 static void __guac_socket_broadcast_lock_handler(guac_socket* socket) {
 
     guac_client* client = (guac_client*) socket->data;
 
-    /* Flush all users */
+    /* Lock sockets of all users */
     guac_client_foreach_user(client, __lock_callback, NULL);
 
 }
 
+/**
+ * Callback which is invoked by guac_client_foreach_user() to unlock the given
+ * user's socket at the end of a Guacamole protocol instruction.
+ *
+ * @param user
+ *     The user whose socket should be unlocked.
+ *
+ * @param data
+ *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     by this callback, and should be left as NULL.
+ *
+ * @return
+ *     Always NULL.
+ */
 static void* __unlock_callback(guac_user* user, void* data) {
 
-    /* Lock socket */
+    /* Unlock socket */
     guac_socket_instruction_end(user->socket);
 
     return NULL;
 
 }
 
+/**
+ * Socket unlock handler which releases the socket locks of all connected users.
+ * Socket-level locks are released after a Guacamole instruction has finished
+ * being written.
+ *
+ * @param socket
+ *     The broadcast socket to unlock.
+ */
 static void __guac_socket_broadcast_unlock_handler(guac_socket* socket) {
 
     guac_client* client = (guac_client*) socket->data;
 
-    /* Flush all users */
+    /* Unlock sockets of all users */
     guac_client_foreach_user(client, __unlock_callback, NULL);
 
 }
 
 /**
- * The broadcast socket cannot be read from (nor selected).
+ * Callback which handles select operations on the broadcast socket, waiting
+ * for data to become available such that the next read operation will not
+ * block. This callback always fails, as the broadcast socket is write-only; it
+ * cannot be read.
+ *
+ * @param socket
+ *     The broadcast socket to wait for.
+ *
+ * @param usec_timeout
+ *     The maximum amount of time to wait for data, in microseconds, or -1 to
+ *     potentially wait forever.
+ *
+ * @return
+ *     A positive value on success, zero if the timeout elapsed and no data is
+ *     available, or a negative value if an error occurs. This implementation
+ *     always returns -1, as the broadcast socket is write-only and cannot be
+ *     read.
  */
-static int __guac_socket_broadcast_select_handler(guac_socket* socket, int usec_timeout) {
+static int __guac_socket_broadcast_select_handler(guac_socket* socket,
+        int usec_timeout) {
 
     /* Selecting the broadcast socket is not possible */
     return -1;
@@ -528,7 +658,7 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
     /* Pluggable client */
     char protocol_lib[GUAC_PROTOCOL_LIBRARY_LIMIT] =
         GUAC_PROTOCOL_LIBRARY_PREFIX;
- 
+
     /* Type-pun for the sake of dlsym() - cannot typecast a void* to a function
      * pointer otherwise */ 
     union {
@@ -579,6 +709,9 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
  *     Pointer to an int containing the current approximate processing lag.
  *     The int will be updated according to the processing lag of the given
  *     user.
+ *
+ * @return
+ *     Always NULL.
  */
 static void* __calculate_lag(guac_user* user, void* data) {
 
@@ -683,6 +816,9 @@ void guac_client_stream_webp(guac_client* client, guac_socket* socket,
  *     Pointer to an int containing the current WebP support status for the
  *     client associated with the given user. This flag will be 0 if any user
  *     already checked has lacked WebP support, or 1 otherwise.
+ *
+ * @return
+ *     Always NULL.
  */
 static void* __webp_support_callback(guac_user* user, void* data) {
 
