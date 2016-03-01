@@ -62,7 +62,7 @@ if ENABLE_TELNET
 endif
 
 if ENABLE_VNC
-#SUBDIRS += src/protocols/vnc
+SUBDIRS += src/protocols/vnc
 endif
 
 EXTRA_DIST =     \

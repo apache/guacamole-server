@@ -20,54 +20,34 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __GUAC_VNC_PULSE_H
-#define __GUAC_VNC_PULSE_H
+#ifndef GUAC_VNC_DISPLAY_H
+#define GUAC_VNC_DISPLAY_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include <rfb/rfbclient.h>
+#include <rfb/rfbproto.h>
 
 /**
- * The number of bytes to request for the audio fragments received from
- * PulseAudio.
+ * Called for normal binary VNC image data.
  */
-#define GUAC_VNC_AUDIO_FRAGMENT_SIZE 8192
+void guac_vnc_update(rfbClient* client, int x, int y, int w, int h);
 
 /**
- * The minimum number of PCM bytes to wait for before flushing an audio
- * packet. The current value is 48K, which works out to be around 280ms.
+ * Called for updates which contain data from existing rectangles of the
+ * display.
  */
-#define GUAC_VNC_PCM_WRITE_RATE 49152
+void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
 
 /**
- * Rate of audio to stream, in Hz.
+ * Called when the pixel format of future updates is changing.
  */
-#define GUAC_VNC_AUDIO_RATE     44100
+void guac_vnc_set_pixel_format(rfbClient* client, int color_depth);
 
 /**
- * The number of channels to stream.
+ * Called when the display is being resized (or initially allocated).
  */
-#define GUAC_VNC_AUDIO_CHANNELS 2
-
-/**
- * The number of bits per sample.
- */
-#define GUAC_VNC_AUDIO_BPS      16
-
-/**
- * Starts streaming audio from PulseAudio to the given Guacamole client.
- *
- * @param client The client to stream data to.
- */
-void guac_pa_start_stream(guac_client* client);
-
-/**
- * Stops streaming audio from PulseAudio to the given Guacamole client.
- *
- * @param client The client to stream data to.
- */
-void guac_pa_stop_stream(guac_client* client);
+rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client);
 
 #endif
 

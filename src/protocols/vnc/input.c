@@ -20,54 +20,34 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __GUAC_VNC_PULSE_H
-#define __GUAC_VNC_PULSE_H
-
 #include "config.h"
 
-#include <guacamole/client.h>
+#include "guac_cursor.h"
+#include "guac_display.h"
+#include "vnc.h"
 
-/**
- * The number of bytes to request for the audio fragments received from
- * PulseAudio.
- */
-#define GUAC_VNC_AUDIO_FRAGMENT_SIZE 8192
+#include <guacamole/user.h>
+#include <rfb/rfbclient.h>
 
-/**
- * The minimum number of PCM bytes to wait for before flushing an audio
- * packet. The current value is 48K, which works out to be around 280ms.
- */
-#define GUAC_VNC_PCM_WRITE_RATE 49152
+int guac_vnc_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
-/**
- * Rate of audio to stream, in Hz.
- */
-#define GUAC_VNC_AUDIO_RATE     44100
+    guac_client* client = user->client;
+    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
 
-/**
- * The number of channels to stream.
- */
-#define GUAC_VNC_AUDIO_CHANNELS 2
+    /* Store current mouse location */
+    guac_common_cursor_move(vnc_client->display->cursor, user, x, y);
 
-/**
- * The number of bits per sample.
- */
-#define GUAC_VNC_AUDIO_BPS      16
+    SendPointerEvent(vnc_client->rfb_client, x, y, mask);
 
-/**
- * Starts streaming audio from PulseAudio to the given Guacamole client.
- *
- * @param client The client to stream data to.
- */
-void guac_pa_start_stream(guac_client* client);
+    return 0;
+}
 
-/**
- * Stops streaming audio from PulseAudio to the given Guacamole client.
- *
- * @param client The client to stream data to.
- */
-void guac_pa_stop_stream(guac_client* client);
+int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
 
-#endif
+    guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
+
+    SendKeyEvent(vnc_client->rfb_client, keysym, pressed);
+
+    return 0;
+}
 

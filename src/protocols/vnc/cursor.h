@@ -20,18 +20,15 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __GUAC_VNC_GUAC_HANDLERS_H
-#define __GUAC_VNC_GUAC_HANDLERS_H
+#ifndef GUAC_DISPLAY_CURSOR_H
+#define GUAC_DISPLAY_CURSOR_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include <rfb/rfbclient.h>
+#include <rfb/rfbproto.h>
 
-int vnc_guac_client_handle_messages(guac_client* client);
-int vnc_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int vnc_guac_client_free_handler(guac_client* client);
+void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp);
 
 #endif
 

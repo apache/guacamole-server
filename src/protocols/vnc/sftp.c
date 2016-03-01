@@ -22,21 +22,23 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "guac_sftp.h"
 #include "sftp.h"
+#include "vnc.h"
 
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
+#include <guacamole/user.h>
 
-int guac_vnc_sftp_file_handler(guac_client* client, guac_stream* stream,
+int guac_vnc_sftp_file_handler(guac_user* user, guac_stream* stream,
         char* mimetype, char* filename) {
 
-    vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
-    guac_object* filesystem = client_data->sftp_filesystem;
+    guac_client* client = user->client;
+    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
+    guac_common_ssh_sftp_filesystem* filesystem = vnc_client->sftp_filesystem;
 
     /* Handle file upload */
-    return guac_common_ssh_sftp_handle_file_stream(filesystem, stream,
+    return guac_common_ssh_sftp_handle_file_stream(filesystem, user, stream,
             mimetype, filename);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,54 +20,24 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __GUAC_VNC_PULSE_H
-#define __GUAC_VNC_PULSE_H
+#ifndef GUAC_VNC_USER_H
+#define GUAC_VNC_USER_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include "guac_clipboard.h"
+
+#include <guacamole/user.h>
 
 /**
- * The number of bytes to request for the audio fragments received from
- * PulseAudio.
+ * Handler for joining users.
  */
-#define GUAC_VNC_AUDIO_FRAGMENT_SIZE 8192
+int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv);
 
 /**
- * The minimum number of PCM bytes to wait for before flushing an audio
- * packet. The current value is 48K, which works out to be around 280ms.
+ * Handler for leaving users.
  */
-#define GUAC_VNC_PCM_WRITE_RATE 49152
-
-/**
- * Rate of audio to stream, in Hz.
- */
-#define GUAC_VNC_AUDIO_RATE     44100
-
-/**
- * The number of channels to stream.
- */
-#define GUAC_VNC_AUDIO_CHANNELS 2
-
-/**
- * The number of bits per sample.
- */
-#define GUAC_VNC_AUDIO_BPS      16
-
-/**
- * Starts streaming audio from PulseAudio to the given Guacamole client.
- *
- * @param client The client to stream data to.
- */
-void guac_pa_start_stream(guac_client* client);
-
-/**
- * Stops streaming audio from PulseAudio to the given Guacamole client.
- *
- * @param client The client to stream data to.
- */
-void guac_pa_stop_stream(guac_client* client);
+int guac_vnc_user_leave_handler(guac_user* user);
 
 #endif
 
