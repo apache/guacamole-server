@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#include "client.h"
+#include "rdp.h"
 #include "rdp_fs.h"
 #include "rdp_settings.h"
 #include "rdp_stream.h"
@@ -91,18 +91,18 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
     plugin->channel_entry_points.pExtendedData = NULL;
 
     /* Get data from client */
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Init plugin */
     rdpdr->client = client;
     rdpdr->devices_registered = 0;
 
     /* Register printer if enabled */
-    if (client_data->settings.printing_enabled)
+    if (rdp_client->settings->printing_enabled)
         guac_rdpdr_register_printer(rdpdr);
 
     /* Register drive if enabled */
-    if (client_data->settings.drive_enabled)
+    if (rdp_client->settings->drive_enabled)
         guac_rdpdr_register_fs(rdpdr);
 
     /* Log that printing, etc. has been loaded */

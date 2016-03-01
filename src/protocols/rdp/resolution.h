@@ -23,27 +23,27 @@
 #ifndef GUAC_RDP_RESOLUTION_H
 #define GUAC_RDP_RESOLUTION_H
 
-#include <guacamole/client.h>
+#include <guacamole/user.h>
 
 /**
- * Returns whether the given resolution is reasonable for the given client,
+ * Returns whether the given resolution is reasonable for the given user,
  * based on arbitrary criteria for reasonability.
  *
- * @param client The guac_client to test the given resolution against.
+ * @param user The guac_user to test the given resolution against.
  * @param resolution The resolution to test, in DPI.
  * @return Non-zero if the resolution is reasonable, zero otherwise.
  */
-int guac_rdp_resolution_reasonable(guac_client* client, int resolution);
+int guac_rdp_resolution_reasonable(guac_user* user, int resolution);
 
 /**
  * Returns a reasonable resolution for the remote display, given the size and
- * resolution of a guac_client.
+ * resolution of a guac_user.
  *
- * @param client The guac_client whose size and resolution shall be used to
- *               determine an appropriate remote display resolution.
+ * @param user The guac_user whose size and resolution shall be used to
+ *             determine an appropriate remote display resolution.
  * @return A reasonable resolution for the remote display, in DPI.
  */
-int guac_rdp_suggest_resolution(guac_client* client);
+int guac_rdp_suggest_resolution(guac_user* user);
 
 #endif
 

@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "rdp.h"
 #include "rdp_settings.h"
 
 #include <freerdp/codec/color.h>

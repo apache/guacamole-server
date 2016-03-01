@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#include "client.h"
+#include "rdp.h"
 #include "rdpsnd_messages.h"
 #include "rdpsnd_service.h"
 
@@ -56,10 +56,10 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
 
     /* Get associated client data */
     guac_client* client = rdpsnd->client;
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Get audio stream from client data */
-    guac_audio_stream* audio = client_data->audio;
+    guac_audio_stream* audio = rdp_client->audio;
 
     /* Format header */
     Stream_Seek(input_stream, 14);
@@ -188,7 +188,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_SetPointer(output_stream, output_stream_end);
 
     /* Send accepted formats */
-    pthread_mutex_lock(&(client_data->rdp_lock));
+    pthread_mutex_lock(&(rdp_client->rdp_lock));
     svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
 
     /* If version greater than 6, must send Quality Mode PDU */
@@ -205,7 +205,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
         svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
     }
 
-    pthread_mutex_unlock(&(client_data->rdp_lock));
+    pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
 }
 
@@ -218,7 +218,7 @@ void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
 
     /* Get associated client data */
     guac_client* client = rdpsnd->client;
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Read timestamp and data size */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
@@ -232,9 +232,9 @@ void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_Write_UINT16(output_stream, rdpsnd->server_timestamp);
     Stream_Write_UINT16(output_stream, data_size);
 
-    pthread_mutex_lock(&(client_data->rdp_lock));
+    pthread_mutex_lock(&(rdp_client->rdp_lock));
     svc_plugin_send((rdpSvcPlugin*) rdpsnd, output_stream);
-    pthread_mutex_unlock(&(client_data->rdp_lock));
+    pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
 }
 
@@ -245,10 +245,10 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
 
     /* Get associated client data */
     guac_client* client = rdpsnd->client;
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Get audio stream from client data */
-    guac_audio_stream* audio = client_data->audio;
+    guac_audio_stream* audio = rdp_client->audio;
 
     /* Read wave information */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
@@ -283,10 +283,10 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
 
     /* Get associated client data */
     guac_client* client = rdpsnd->client;
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Get audio stream from client data */
-    guac_audio_stream* audio = client_data->audio;
+    guac_audio_stream* audio = rdp_client->audio;
 
     /* Wave Confirmation PDU */
     wStream* output_stream = Stream_New(NULL, 8);
@@ -313,9 +313,9 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_Write_UINT8(output_stream, 0);
 
     /* Send Wave Confirmation PDU */
-    pthread_mutex_lock(&(client_data->rdp_lock));
+    pthread_mutex_lock(&(rdp_client->rdp_lock));
     svc_plugin_send(plugin, output_stream);
-    pthread_mutex_unlock(&(client_data->rdp_lock));
+    pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
     /* We no longer expect to receive wave data */
     rdpsnd->next_pdu_is_wave = FALSE;

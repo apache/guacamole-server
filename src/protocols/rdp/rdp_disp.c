@@ -22,6 +22,8 @@
 
 #include "config.h"
 #include "client.h"
+#include "rdp.h"
+#include "rdp_disp.h"
 
 #include <freerdp/freerdp.h>
 #include <freerdp/client/disp.h>

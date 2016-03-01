@@ -35,6 +35,12 @@
  * Converts the given color to ARGB32. The color given may be an index
  * referring to the palette, a 16-bit or 32-bit color, etc. all depending on
  * the current color depth of the RDP session.
+ *
+ * @param context The rdpContext associated with the current RDP session.
+ * @param color A color value in the format of the current RDP session.
+ * @return
+ *     A 32-bit ARGB color, where the low 8 bits are the blue component and
+ *     the high 8 bits are alpha.
  */
 UINT32 guac_rdp_convert_color(rdpContext* context, UINT32 color);
 

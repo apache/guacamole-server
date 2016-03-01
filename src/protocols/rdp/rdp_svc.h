@@ -71,31 +71,61 @@ typedef struct guac_rdp_svc {
 
 /**
  * Allocate a new SVC with the given name.
+ *
+ * @param client The guac_client associated with the current RDP session.
+ * @param name The name of the virtual channel to allocate.
+ * @return A newly-allocated static virtual channel.
  */
 guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name);
 
 /**
  * Free the given SVC.
+ *
+ * @param svc The static virtual channel to free.
  */
 void guac_rdp_free_svc(guac_rdp_svc* svc);
 
 /**
  * Add the given SVC to the list of all available SVCs.
+ *
+ * @param client The guac_client associated with the current RDP session.
+ *
+ * @param svc
+ *     The static virtual channel to add to the list of all such channels
+ *     available.
  */
 void guac_rdp_add_svc(guac_client* client, guac_rdp_svc* svc);
 
 /**
  * Retrieve the SVC with the given name from the list stored in the client.
+ *
+ * @param client The guac_client associated with the current RDP session.
+ * @param name The name of the static virtual channel to retrieve.
+ *
+ * @return
+ *     The static virtual channel with the given name, or NULL if no such
+ *     virtual channel exists.
  */
 guac_rdp_svc* guac_rdp_get_svc(guac_client* client, const char* name);
 
 /**
  * Remove the SVC with the given name from the list stored in the client.
+ *
+ * @param client The guac_client associated with the current RDP session.
+ * @param name The name of the static virtual channel to remove.
+ *
+ * @return
+ *     The static virtual channel that was removed, or NULL if no such virtual
+ *     channel exists.
  */
 guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, const char* name);
 
 /**
  * Write the given blob of data to the virtual channel.
+ *
+ * @param svc The static virtual channel to write data to.
+ * @param data The data to write.
+ * @param length The number of bytes to write.
  */
 void guac_rdp_svc_write(guac_rdp_svc* svc, void* data, int length);
 

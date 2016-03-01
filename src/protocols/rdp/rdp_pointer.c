@@ -23,27 +23,29 @@
 #include "config.h"
 
 #include "client.h"
+#include "guac_cursor.h"
+#include "guac_display.h"
+#include "rdp.h"
 #include "rdp_pointer.h"
 
 #include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
 
 #include <stdlib.h>
 
 void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_socket* socket = client->socket;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    /* Allocate buffer */
+    guac_common_display_layer* buffer = guac_common_display_alloc_buffer(
+            rdp_client->display, pointer->width, pointer->height);
 
     /* Allocate data for image */
     unsigned char* data =
         (unsigned char*) malloc(pointer->width * pointer->height * 4);
-
-    /* Allocate layer */
-    guac_layer* buffer = guac_client_alloc_buffer(client);
 
     cairo_surface_t* surface;
 
@@ -60,8 +62,7 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
         pointer->width, pointer->height, 4*pointer->width);
 
     /* Send surface to buffer */
-    guac_client_stream_png(client, socket, GUAC_COMP_SRC, buffer,
-            0, 0, surface);
+    guac_common_surface_draw(buffer->surface, 0, 0, surface);
 
     /* Free surface */
     cairo_surface_destroy(surface);
@@ -75,19 +76,23 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_socket* socket = client->socket;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Set cursor */
-    guac_protocol_send_cursor(socket, pointer->xPos, pointer->yPos,
-            ((guac_rdp_pointer*) pointer)->layer,
-            0, 0, pointer->width, pointer->height);
+    guac_common_cursor_set_surface(rdp_client->display->cursor,
+            pointer->xPos, pointer->yPos,
+            ((guac_rdp_pointer*) pointer)->layer->surface);
 
 }
 
 void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_client_free_buffer(client, ((guac_rdp_pointer*) pointer)->layer);
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_common_display_layer* buffer = ((guac_rdp_pointer*) pointer)->layer;
+
+    /* Free buffer */
+    guac_common_display_free_buffer(rdp_client->display, buffer);
 
 }
 

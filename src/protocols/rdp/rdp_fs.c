@@ -38,8 +38,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <guacamole/client.h>
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
+#include <guacamole/socket.h>
+#include <guacamole/user.h>
 
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
         int create_drive_path) {
@@ -61,10 +64,6 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
     guac_rdp_fs* fs = malloc(sizeof(guac_rdp_fs));
 
     fs->client = client;
-    fs->object = guac_client_alloc_object(client);
-    fs->object->get_handler = guac_rdp_download_get_handler;
-    fs->object->put_handler = guac_rdp_upload_put_handler;
-
     fs->drive_path = strdup(drive_path);
     fs->file_id_pool = guac_pool_alloc(0);
     fs->open_files = 0;
@@ -74,16 +73,55 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
 }
 
 void guac_rdp_fs_free(guac_rdp_fs* fs) {
-    guac_client_free_object(fs->client, fs->object);
     guac_pool_free(fs->file_id_pool);
     free(fs->drive_path);
     free(fs);
 }
 
+guac_object* guac_rdp_fs_alloc_object(guac_rdp_fs* fs, guac_user* user) {
+
+    /* Init filesystem */
+    guac_object* fs_object = guac_user_alloc_object(user);
+    fs_object->get_handler = guac_rdp_download_get_handler;
+    fs_object->put_handler = guac_rdp_upload_put_handler;
+    fs_object->data = fs;
+
+    /* Send filesystem to user */
+    guac_protocol_send_filesystem(user->socket, fs_object, "Shared Drive");
+    guac_socket_flush(user->socket);
+
+    return fs_object;
+
+}
+
+void* guac_rdp_fs_expose(guac_user* user, void* data) {
+
+    guac_rdp_fs* fs = (guac_rdp_fs*) data;
+
+    /* No need to expose if there is no filesystem or the user has left */
+    if (user == NULL || fs == NULL)
+        return NULL;
+
+    /* Allocate and expose filesystem object for user */
+    return guac_rdp_fs_alloc_object(fs, user);
+
+}
+
 /**
- * Translates an absolute Windows virtual_path to an absolute virtual_path
- * which is within the "drive virtual_path" specified in the connection
- * settings.
+ * Translates an absolute Windows path to an absolute path which is within the
+ * "drive path" specified in the connection settings. No checking is performed
+ * on the path provided, which is assumed to have already been normalized and
+ * validated as absolute.
+ *
+ * @param fs The filesystem containing the file whose path is being translated.
+ *
+ * @param virtual_path
+ *     The absolute path to the file on the simulated filesystem, relative to
+ *     the simulated filesystem root.
+ *
+ * @param real_path
+ *     The buffer in which to store the absolute path to the real file on the
+ *     local filesystem.
  */
 static void __guac_rdp_fs_translate_path(guac_rdp_fs* fs,
         const char* virtual_path, char* real_path) {
@@ -701,7 +739,7 @@ int guac_rdp_fs_get_info(guac_rdp_fs* fs, guac_rdp_fs_info* info) {
     /* Read FS information */
     struct statvfs fs_stat;
     if (statvfs(fs->drive_path, &fs_stat))
-        return guac_rdp_fs_get_status(errno);
+        return guac_rdp_fs_get_errorcode(errno);
 
     /* Assign to structure */
     info->blocks_available = fs_stat.f_bfree;

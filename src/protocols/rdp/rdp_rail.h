@@ -36,11 +36,18 @@
 
 /**
  * Dispatches a given RAIL event to the appropriate handler.
+ *
+ * @param client The guac_client associated with the current RDP session.
+ * @param event The RAIL event to process.
  */
 void guac_rdp_process_rail_event(guac_client* client, wMessage* event);
 
 /**
- * Handles the event sent when updating system parameters.
+ * Handles the event sent when updating system parameters. The event given
+ * MUST be a SYSPARAM event.
+ *
+ * @param client The guac_client associated with the current RDP session.
+ * @param event The system parameter event to process.
  */
 void guac_rdp_process_rail_get_sysparam(guac_client* client, wMessage* event);
 

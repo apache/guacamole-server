@@ -280,25 +280,121 @@ typedef struct guac_rdp_settings {
      */
     char* preconnection_blob;
 
+#ifdef ENABLE_COMMON_SSH
+    /**
+     * Whether SFTP should be enabled for the VNC connection.
+     */
+    int enable_sftp;
+
+    /**
+     * The hostname of the SSH server to connect to for SFTP.
+     */
+    char* sftp_hostname;
+
+    /**
+     * The port of the SSH server to connect to for SFTP.
+     */
+    char* sftp_port;
+
+    /**
+     * The username to provide when authenticating with the SSH server for
+     * SFTP.
+     */
+    char* sftp_username;
+
+    /**
+     * The password to provide when authenticating with the SSH server for
+     * SFTP (if not using a private key).
+     */
+    char* sftp_password;
+
+    /**
+     * The base64-encoded private key to use when authenticating with the SSH
+     * server for SFTP (if not using a password).
+     */
+    char* sftp_private_key;
+
+    /**
+     * The passphrase to use to decrypt the provided base64-encoded private
+     * key.
+     */
+    char* sftp_passphrase;
+
+    /**
+     * The default location for file uploads within the SSH server. This will
+     * apply only to uploads which do not use the filesystem guac_object (where
+     * the destination directory is otherwise ambiguous).
+     */
+    char* sftp_directory;
+#endif
+
 } guac_rdp_settings;
 
 /**
+ * Parses all given args, storing them in a newly-allocated settings object. If
+ * the args fail to parse, NULL is returned.
+ *
+ * @param user
+ *     The user who submitted the given arguments while joining the
+ *     connection.
+ *
+ * @param argc
+ *     The number of arguments within the argv array.
+ *
+ * @param argv
+ *     The values of all arguments provided by the user.
+ *
+ * @return
+ *     A newly-allocated settings object which must be freed with
+ *     guac_rdp_settings_free() when no longer needed. If the arguments fail
+ *     to parse, NULL is returned.
+ */
+guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
+        int argc, const char** argv);
+
+/**
+ * Frees the given guac_rdp_settings object, having been previously allocated
+ * via guac_rdp_parse_args().
+ *
+ * @param settings
+ *     The settings object to free.
+ */
+void guac_rdp_settings_free(guac_rdp_settings* settings);
+
+/**
+ * NULL-terminated array of accepted client args.
+ */
+extern const char* GUAC_RDP_CLIENT_ARGS[];
+
+/**
  * Save all given settings to the given freerdp instance.
+ *
+ * @param guac_settings The guac_rdp_settings object to save.
+ * @param rdp The RDP instance to save settings to.
  */
 void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp);
 
 /**
  * Returns the width of the RDP session display.
+ *
+ * @param rdp The RDP instance to retrieve the width from.
+ * @return The current width of the RDP display, in pixels.
  */
 int guac_rdp_get_width(freerdp* rdp);
 
 /**
  * Returns the height of the RDP session display.
+ *
+ * @param rdp The RDP instance to retrieve the height from.
+ * @return The current height of the RDP display, in pixels.
  */
 int guac_rdp_get_height(freerdp* rdp);
 
 /**
  * Returns the depth of the RDP session display.
+ *
+ * @param rdp The RDP instance to retrieve the depth from.
+ * @return The current depth of the RDP display, in bits per pixel.
  */
 int guac_rdp_get_depth(freerdp* rdp);
 

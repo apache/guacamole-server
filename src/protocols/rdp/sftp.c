@@ -22,21 +22,23 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "guac_sftp.h"
+#include "rdp.h"
 #include "sftp.h"
 
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
+#include <guacamole/user.h>
 
-int guac_rdp_sftp_file_handler(guac_client* client, guac_stream* stream,
+int guac_rdp_sftp_file_handler(guac_user* user, guac_stream* stream,
         char* mimetype, char* filename) {
 
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
-    guac_object* filesystem = client_data->sftp_filesystem;
+    guac_client* client = user->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_common_ssh_sftp_filesystem* filesystem = rdp_client->sftp_filesystem;
 
     /* Handle file upload */
-    return guac_common_ssh_sftp_handle_file_stream(filesystem, stream,
+    return guac_common_ssh_sftp_handle_file_stream(filesystem, user, stream,
             mimetype, filename);
 
 }
