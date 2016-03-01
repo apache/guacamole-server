@@ -603,8 +603,7 @@ void guac_client_stream_jpeg(guac_client* client, guac_socket* socket,
  * instruction) as WebP-encoded data at the given quality. The image stream
  * will be automatically allocated and freed. If the server does not support
  * WebP, this function has no effect, so be sure to check the result of
- * guac_client_supports_webp() prior to calling
- * this function.
+ * guac_client_supports_webp() prior to calling this function.
  *
  * @param client
  *     The Guacamole client for whom the image stream should be allocated.
