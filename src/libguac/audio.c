@@ -28,57 +28,87 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/stream.h>
+#include <guacamole/user.h>
 
 #include <stdlib.h>
 #include <string.h>
+
+/**
+ * Assigns a new audio encoder to the given guac_audio_stream based on the
+ * audio mimetypes declared as supported by the given user. If no audio encoder
+ * can be found, no new audio encoder is assigned, and the existing encoder is
+ * left untouched (if any).
+ *
+ * @param owner
+ *     The user whose supported audio mimetypes should determine the audio
+ *     encoder selected. It is expected that this user will be the owner of
+ *     the connection.
+ *
+ * @param data
+ *     The guac_audio_stream to which the new encoder should be assigned.
+ *     Existing properties set on this audio stream, such as the bits per
+ *     sample, may affect the encoder chosen.
+ *
+ * @return
+ *     The assigned audio encoder. If no new audio encoder can be assigned,
+ *     this will be the currently-assigned audio encoder (which may be NULL).
+ */
+static void* guac_audio_assign_encoder(guac_user* owner, void* data) {
+
+    int i;
+
+    guac_audio_stream* audio = (guac_audio_stream*) data;
+    int bps = audio->bps;
+
+    /* If there is no owner, do not attempt to assign a new encoder */
+    if (owner == NULL)
+        return audio->encoder;
+
+    /* For each supported mimetype, check for an associated encoder */
+    for (i=0; owner->info.audio_mimetypes[i] != NULL; i++) {
+
+        const char* mimetype = owner->info.audio_mimetypes[i];
+
+        /* If 16-bit raw audio is supported, done. */
+        if (bps == 16 && strcmp(mimetype, raw16_encoder->mimetype) == 0) {
+            audio->encoder = raw16_encoder;
+            break;
+        }
+
+        /* If 8-bit raw audio is supported, done. */
+        if (bps == 8 && strcmp(mimetype, raw8_encoder->mimetype) == 0) {
+            audio->encoder = raw8_encoder;
+            break;
+        }
+
+    } /* end for each mimetype */
+
+    /* Return assigned encoder, if any */
+    return audio->encoder;
+
+}
 
 guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
         guac_audio_encoder* encoder, int rate, int channels, int bps) {
 
     guac_audio_stream* audio;
 
-    /* Choose an encoding if not specified */
-    if (encoder == NULL) {
-
-        int i;
-
-        /* For each supported mimetype, check for an associated encoder */
-        for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
-
-            const char* mimetype = client->info.audio_mimetypes[i];
-
-            /* If 16-bit raw audio is supported, done. */
-            if (bps == 16 && strcmp(mimetype, raw16_encoder->mimetype) == 0) {
-                encoder = raw16_encoder;
-                break;
-            }
-
-            /* If 8-bit raw audio is supported, done. */
-            if (bps == 8 && strcmp(mimetype, raw8_encoder->mimetype) == 0) {
-                encoder = raw8_encoder;
-                break;
-            }
-
-        } /* end for each mimetype */
-
-        /* If still no encoder could be found, fail */
-        if (encoder == NULL)
-            return NULL;
-
-    }
-
     /* Allocate stream */
     audio = (guac_audio_stream*) calloc(1, sizeof(guac_audio_stream));
     audio->client = client;
-
-    /* Assign encoder */
-    audio->encoder = encoder;
     audio->stream = guac_client_alloc_stream(client);
 
     /* Load PCM properties */
     audio->rate = rate;
     audio->channels = channels;
     audio->bps = bps;
+
+    /* Assign encoder for owner, abort if no encoder can be found */
+    if (!guac_client_for_owner(client, guac_audio_assign_encoder, audio)) {
+        guac_client_free_stream(client, audio->stream);
+        free(audio);
+        return NULL;
+    }
 
     /* Call handler, if defined */
     if (audio->encoder->begin_handler)
@@ -115,6 +145,16 @@ void guac_audio_stream_reset(guac_audio_stream* audio,
     /* Init encoder with new data */
     if (audio->encoder->begin_handler)
         audio->encoder->begin_handler(audio);
+
+}
+
+void guac_audio_stream_add_user(guac_audio_stream* audio, guac_user* user) {
+
+    guac_audio_encoder* encoder = audio->encoder;
+
+    /* Notify encoder that a new user is present */
+    if (encoder->join_handler)
+        encoder->join_handler(audio, user);
 
 }
 

@@ -73,8 +73,8 @@ noinst_HEADERS =      \
     user-handlers.h   \
     raw_encoder.h
 
-# Temporarily removed audio.c and raw_encoder.c for testing of others
 libguac_la_SOURCES =  \
+    audio.c           \
     client.c          \
     encode-jpeg.c     \
     encode-png.c      \
@@ -85,6 +85,7 @@ libguac_la_SOURCES =  \
     parser.c          \
     pool.c            \
     protocol.c        \
+    raw_encoder.c     \
     socket.c          \
     socket-fd.c       \
     socket-nest.c     \
