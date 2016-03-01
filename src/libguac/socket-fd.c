@@ -129,6 +129,22 @@ ssize_t guac_socket_fd_write(guac_socket* socket,
 
 }
 
+/**
+ * Attempts to read from the underlying file descriptor of the given
+ * guac_socket, populating the given buffer.
+ *
+ * @param socket
+ *     The guac_socket being read from.
+ *
+ * @param buf
+ *     The arbitrary buffer which we must populate with data.
+ *
+ * @param count
+ *     The maximum number of bytes to read into the buffer.
+ *
+ * @return
+ *     The number of bytes read, or -1 if an error occurs.
+ */
 static ssize_t guac_socket_fd_read_handler(guac_socket* socket,
         void* buf, size_t count) {
 
@@ -176,6 +192,16 @@ static ssize_t guac_socket_fd_flush(guac_socket* socket) {
 
 }
 
+/**
+ * Flushes the internal buffer of the given guac_socket, writing all data
+ * to the underlying file descriptor.
+ *
+ * @param socket
+ *     The guac_socket to flush.
+ *
+ * @return
+ *     Zero if the flush operation was successful, non-zero otherwise.
+ */
 static ssize_t guac_socket_fd_flush_handler(guac_socket* socket) {
 
     int retval;
@@ -258,6 +284,23 @@ static ssize_t guac_socket_fd_write_buffered(guac_socket* socket,
 
 }
 
+/**
+ * Appends the provided data to the internal buffer for future writing. The
+ * actual write attempt will occur only upon flush, or when the internal buffer
+ * is full.
+ *
+ * @param socket
+ *     The guac_socket being write to.
+ *
+ * @param buf
+ *     The arbitrary buffer containing the data to be written.
+ *
+ * @param count
+ *     The number of bytes contained within the buffer.
+ *
+ * @return
+ *     The number of bytes written, or -1 if an error occurs.
+ */
 static ssize_t guac_socket_fd_write_handler(guac_socket* socket,
         const void* buf, size_t count) {
 
@@ -277,6 +320,21 @@ static ssize_t guac_socket_fd_write_handler(guac_socket* socket,
 
 }
 
+/**
+ * Waits for data on the underlying file desriptor of the given socket to
+ * become available such that the next read operation will not block.
+ *
+ * @param socket
+ *     The guac_socket to wait for.
+ *
+ * @param usec_timeout
+ *     The maximum amount of time to wait for data, in microseconds, or -1 to
+ *     potentially wait forever.
+ *
+ * @return
+ *     A positive value on success, zero if the timeout elapsed and no data is
+ *     available, or a negative value if an error occurs.
+ */
 static int guac_socket_fd_select_handler(guac_socket* socket,
         int usec_timeout) {
 
