@@ -53,7 +53,20 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {NULL,         NULL}
 };
 
-int64_t __guac_parse_int(const char* str) {
+/**
+ * Parses a 64-bit integer from the given string. It is assumed that the string
+ * will contain only decimal digits, with an optional leading minus sign.
+ * The result of parsing a string which does not conform to this pattern is
+ * undefined.
+ *
+ * @param str
+ *     The string to parse, which must contain only decimal digits and an
+ *     optional leading minus sign.
+ *
+ * @return
+ *     The 64-bit integer value represented by the given string.
+ */
+static int64_t __guac_parse_int(const char* str) {
 
     int sign = 1;
     int64_t num = 0;
@@ -134,6 +147,22 @@ int __guac_handle_key(guac_user* user, int argc, char** argv) {
     return 0;
 }
 
+/**
+ * Retrieves the existing user-level input stream having the given index. These
+ * will be streams which were created by the remotely-connected user. If the
+ * index is invalid or too large, this function will automatically respond with
+ * an "ack" instruction containing an appropriate error code.
+ *
+ * @param user
+ *     The user associated with the stream being retrieved.
+ *
+ * @param stream_index
+ *     The index of the stream to retrieve.
+ *
+ * @return
+ *     The stream associated with the given user and having the given index,
+ *     or NULL if the index is invalid.
+ */
 static guac_stream* __get_input_stream(guac_user* user, int stream_index) {
 
     /* Validate stream index */
@@ -151,6 +180,24 @@ static guac_stream* __get_input_stream(guac_user* user, int stream_index) {
 
 }
 
+/**
+ * Retrieves the existing, in-progress (open) user-level input stream having
+ * the given index. These will be streams which were created by the
+ * remotely-connected user. If the index is invalid, too large, or the stream
+ * is closed, this function will automatically respond with an "ack"
+ * instruction containing an appropriate error code.
+ *
+ * @param user
+ *     The user associated with the stream being retrieved.
+ *
+ * @param stream_index
+ *     The index of the stream to retrieve.
+ *
+ * @return
+ *     The in-progress (open)stream associated with the given user and having
+ *     the given index, or NULL if the index is invalid or the stream is
+ *     closed.
+ */
 static guac_stream* __get_open_input_stream(guac_user* user, int stream_index) {
 
     guac_stream* stream = __get_input_stream(user, stream_index);
@@ -174,6 +221,23 @@ static guac_stream* __get_open_input_stream(guac_user* user, int stream_index) {
 
 }
 
+/**
+ * Initializes and returns a new user-level input stream having the given
+ * index, clearing any values that may have been assigned by a past use of the
+ * underlying stream object storage. If the stream was already open, it will
+ * first be closed and its end handlers invoked as if explicitly closed by the
+ * user.
+ *
+ * @param user
+ *     The user associated with the stream being initialized.
+ *
+ * @param stream_index
+ *     The index of the stream to initialized.
+ *
+ * @return
+ *     A new initialized user-level input stream having the given index, or
+ *     NULL if the index is invalid.
+ */
 static guac_stream* __init_input_stream(guac_user* user, int stream_index) {
 
     guac_stream* stream = __get_input_stream(user, stream_index);
@@ -181,6 +245,19 @@ static guac_stream* __init_input_stream(guac_user* user, int stream_index) {
     /* Fail if no such stream */
     if (stream == NULL)
         return NULL;
+
+    /* Force end of previous stream if open */
+    if (stream->index != GUAC_USER_CLOSED_STREAM_INDEX) {
+
+        /* Call stream handler if defined */
+        if (stream->end_handler)
+            stream->end_handler(user, stream);
+
+        /* Fall back to global handler if defined */
+        else if (user->end_handler)
+            user->end_handler(user, stream);
+
+    }
 
     /* Initialize stream */
     stream->index = stream_index;
@@ -352,7 +429,7 @@ int __guac_handle_end(guac_user* user, int argc, char** argv) {
         result = stream->end_handler(user, stream);
 
     /* Fall back to global handler if defined */
-    if (user->end_handler)
+    else if (user->end_handler)
         result = user->end_handler(user, stream);
 
     /* Mark stream as closed */
