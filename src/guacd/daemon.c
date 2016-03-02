@@ -53,7 +53,18 @@
 
 /**
  * Redirects the given file descriptor to /dev/null. The given flags must match
- * the read/write flags of the file descriptor given.
+ * the read/write flags of the file descriptor given (if the given file
+ * descriptor was opened write-only, flags here must be O_WRONLY, etc.).
+ *
+ * @param fd
+ *     The file descriptor to redirect to /dev/null.
+ *
+ * @param flags
+ *     The flags to use when opening /dev/null as the target for redirection.
+ *     These flags must match the flags of the file descriptor given.
+ *
+ * @return
+ *     Zero on success, non-zero if redirecting the file descriptor fails.
  */
 static int redirect_fd(int fd, int flags) {
 
@@ -74,6 +85,17 @@ static int redirect_fd(int fd, int flags) {
 
 /**
  * Turns the current process into a daemon through a series of fork() calls.
+ * The standard I/O file desriptors for STDIN, STDOUT, and STDERR will be
+ * redirected to /dev/null, and the working directory is changed to root.
+ * Execution within the caller of this function will terminate before this
+ * function returns, while execution within the daemonized child process will
+ * continue.
+ *
+ * @return
+ *    Zero if the daemonization process succeeded and we are now in the
+ *    daemonized child process, or non-zero if daemonization failed and we are
+ *    still the original caller. This function does not return for the original
+ *    caller if daemonization succeeds.
  */
 static int daemonize() {
 
