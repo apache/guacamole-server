@@ -23,29 +23,22 @@
 #include "config.h"
 
 #include "client.h"
-#include "client-handlers.h"
 #include "encode-jpeg.h"
 #include "encode-png.h"
+#include "encode-webp.h"
 #include "error.h"
-#include "instruction.h"
+#include "id.h"
 #include "layer.h"
-#include "object.h"
 #include "pool.h"
+#include "plugin.h"
 #include "protocol.h"
 #include "socket.h"
 #include "stream.h"
 #include "timestamp.h"
+#include "user.h"
 
-#ifdef ENABLE_WEBP
-#include "encode-webp.h"
-#endif
-
-#ifdef HAVE_OSSP_UUID_H
-#include <ossp/uuid.h>
-#else
-#include <uuid.h>
-#endif
-
+#include <dlfcn.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,6 +49,23 @@ guac_layer __GUAC_DEFAULT_LAYER = {
 };
 
 const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
+
+/**
+ * Single chunk of data, to be broadcast to all users.
+ */
+typedef struct __write_chunk {
+
+    /**
+     * The buffer to write.
+     */
+    const void* buffer;
+
+    /**
+     * The number of bytes in the buffer.
+     */
+    size_t length;
+
+} __write_chunk;
 
 guac_layer* guac_client_alloc_layer(guac_client* client) {
 
@@ -109,9 +119,9 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
     /* Allocate stream */
     stream_index = guac_pool_next_int(client->__stream_pool);
 
-    /* Initialize stream */
+    /* Initialize stream with odd index (even indices are user-level) */
     allocd_stream = &(client->__output_streams[stream_index]);
-    allocd_stream->index = stream_index;
+    allocd_stream->index = (stream_index * 2) + 1;
     allocd_stream->data = NULL;
     allocd_stream->ack_handler = NULL;
     allocd_stream->blob_handler = NULL;
@@ -124,107 +134,262 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
 void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
     /* Release index to pool */
-    guac_pool_free_int(client->__stream_pool, stream->index);
+    guac_pool_free_int(client->__stream_pool, (stream->index - 1) / 2);
 
     /* Mark stream as closed */
     stream->index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
 
 }
 
-guac_object* guac_client_alloc_object(guac_client* client) {
+/**
+ * Callback which handles read requests on the broadcast socket. This callback
+ * always fails, as the broadcast socket is write-only; it cannot be read.
+ *
+ * @param socket
+ *     The broadcast socket to read from.
+ *
+ * @param buf
+ *     The buffer into which data should be read.
+ *
+ * @param count
+ *     The number of bytes to attempt to read.
+ *
+ * @return
+ *     The number of bytes read, or -1 if an error occurs. This implementation
+ *     always returns -1, as the broadcast socket is write-only and cannot be
+ *     read.
+ */
+static ssize_t __guac_socket_broadcast_read_handler(guac_socket* socket,
+        void* buf, size_t count) {
 
-    guac_object* allocd_object;
-    int object_index;
-
-    /* Refuse to allocate beyond maximum */
-    if (client->__object_pool->active == GUAC_CLIENT_MAX_OBJECTS)
-        return NULL;
-
-    /* Allocate object */
-    object_index = guac_pool_next_int(client->__object_pool);
-
-    /* Initialize object */
-    allocd_object = &(client->__objects[object_index]);
-    allocd_object->index = object_index;
-    allocd_object->data = NULL;
-    allocd_object->get_handler = NULL;
-    allocd_object->put_handler = NULL;
-
-    return allocd_object;
-
-}
-
-void guac_client_free_object(guac_client* client, guac_object* object) {
-
-    /* Release index to pool */
-    guac_pool_free_int(client->__object_pool, object->index);
-
-    /* Mark object as undefined */
-    object->index = GUAC_CLIENT_UNDEFINED_OBJECT_INDEX;
+    /* Broadcast socket reads are not allowed */
+    return -1;
 
 }
 
 /**
- * Returns a newly allocated string containing a guaranteed-unique connection
- * identifier string which is 37 characters long and begins with a '$'
- * character.  If an error occurs, NULL is returned, and no memory is
- * allocated.
+ * Callback invoked by guac_client_foreach_user() which write a given chunk of
+ * data to that user's socket. If the write attempt fails, the user is
+ * signalled to stop with guac_user_stop().
+ *
+ * @param user
+ *     The user that the chunk of data should be written to.
+ *
+ * @param data
+ *     A pointer to a __write_chunk which describes the data to be written.
+ *
+ * @return
+ *     Always NULL.
  */
-static char* __guac_generate_connection_id() {
+static void* __write_chunk_callback(guac_user* user, void* data) {
 
-    char* buffer;
-    char* identifier;
-    size_t identifier_length;
+    __write_chunk* chunk = (__write_chunk*) data;
 
-    uuid_t* uuid;
+    /* Attempt write, disconnect on failure */
+    if (guac_socket_write(user->socket, chunk->buffer, chunk->length))
+        guac_user_stop(user);
 
-    /* Attempt to create UUID object */
-    if (uuid_create(&uuid) != UUID_RC_OK) {
-        guac_error = GUAC_STATUS_NO_MEMORY;
-        guac_error_message = "Could not allocate memory for UUID";
-        return NULL;
-    }
+    return NULL;
 
-    /* Generate random UUID */
-    if (uuid_make(uuid, UUID_MAKE_V4) != UUID_RC_OK) {
-        uuid_destroy(uuid);
-        guac_error = GUAC_STATUS_NO_MEMORY;
-        guac_error_message = "UUID generation failed";
-        return NULL;
-    }
+}
 
-    /* Allocate buffer for future formatted ID */
-    buffer = malloc(UUID_LEN_STR + 2);
-    if (buffer == NULL) {
-        uuid_destroy(uuid);
-        guac_error = GUAC_STATUS_NO_MEMORY;
-        guac_error_message = "Could not allocate memory for connection ID";
-        return NULL;
-    }
+/**
+ * Socket write handler which operates on each of the sockets of all connected
+ * users. This write handler will always succeed, but any failing user-specific
+ * writes will invoke guac_user_stop() on the failing user.
+ *
+ * @param socket
+ *     The socket to which the given data must be written.
+ *
+ * @param buf
+ *     The buffer containing the data to write.
+ *
+ * @param count
+ *     The number of bytes to attempt to write from the given buffer.
+ *
+ * @return
+ *     The number of bytes written, or -1 if an error occurs. This handler will
+ *     always succeed, and thus will always return the exact number of bytes
+ *     specified by count.
+ */
+static ssize_t __guac_socket_broadcast_write_handler(guac_socket* socket,
+        const void* buf, size_t count) {
 
-    identifier = &(buffer[1]);
-    identifier_length = UUID_LEN_STR + 1;
+    guac_client* client = (guac_client*) socket->data;
 
-    /* Build connection ID from UUID */
-    if (uuid_export(uuid, UUID_FMT_STR, &identifier, &identifier_length) != UUID_RC_OK) {
-        free(buffer);
-        uuid_destroy(uuid);
-        guac_error = GUAC_STATUS_INTERNAL_ERROR;
-        guac_error_message = "Conversion of UUID to connection ID failed";
-        return NULL;
-    }
+    /* Build chunk */
+    __write_chunk chunk;
+    chunk.buffer = buf;
+    chunk.length = count;
 
-    uuid_destroy(uuid);
+    /* Broadcast chunk to all users */
+    guac_client_foreach_user(client, __write_chunk_callback, &chunk);
 
-    buffer[0] = '$';
-    buffer[UUID_LEN_STR + 1] = '\0';
-    return buffer;
+    return count;
+
+}
+
+/**
+ * Callback which is invoked by guac_client_foreach_user() to flush all
+ * pending data on the given user's socket. If an error occurs while flushing
+ * a user's socket, that user is signalled to stop with guac_user_stop().
+ *
+ * @param user
+ *     The user whose socket should be flushed.
+ *
+ * @param data
+ *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     by this callback, and should be left as NULL.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* __flush_callback(guac_user* user, void* data) {
+
+    /* Attempt flush, disconnect on failure */
+    if (guac_socket_flush(user->socket))
+        guac_user_stop(user);
+
+    return NULL;
+
+}
+
+/**
+ * Socket flush handler which operates on each of the sockets of all connected
+ * users. This flush handler will always succeed, but any failing user-specific
+ * flush will invoke guac_user_stop() on the failing user.
+ *
+ * @param socket
+ *     The broadcast socket to flush.
+ *
+ * @return
+ *     Zero if the flush operation succeeds, non-zero if the operation fails.
+ *     This handler will always succeed, and thus will always return zero.
+ */
+static ssize_t __guac_socket_broadcast_flush_handler(guac_socket* socket) {
+
+    guac_client* client = (guac_client*) socket->data;
+
+    /* Flush all users */
+    guac_client_foreach_user(client, __flush_callback, NULL);
+
+    return 0;
+
+}
+
+/**
+ * Callback which is invoked by guac_client_foreach_user() to lock the given
+ * user's socket in preparation for the beginning of a Guacamole protocol
+ * instruction.
+ *
+ * @param user
+ *     The user whose socket should be locked.
+ *
+ * @param data
+ *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     by this callback, and should be left as NULL.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* __lock_callback(guac_user* user, void* data) {
+
+    /* Lock socket */
+    guac_socket_instruction_begin(user->socket);
+
+    return NULL;
+
+}
+
+/**
+ * Socket lock handler which acquires the socket locks of all connected users.
+ * Socket-level locks are acquired in preparation for the beginning of a new
+ * Guacamole instruction to ensure that parallel writes are only interleaved at
+ * instruction boundaries.
+ *
+ * @param socket
+ *     The broadcast socket to lock.
+ */
+static void __guac_socket_broadcast_lock_handler(guac_socket* socket) {
+
+    guac_client* client = (guac_client*) socket->data;
+
+    /* Lock sockets of all users */
+    guac_client_foreach_user(client, __lock_callback, NULL);
+
+}
+
+/**
+ * Callback which is invoked by guac_client_foreach_user() to unlock the given
+ * user's socket at the end of a Guacamole protocol instruction.
+ *
+ * @param user
+ *     The user whose socket should be unlocked.
+ *
+ * @param data
+ *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     by this callback, and should be left as NULL.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* __unlock_callback(guac_user* user, void* data) {
+
+    /* Unlock socket */
+    guac_socket_instruction_end(user->socket);
+
+    return NULL;
+
+}
+
+/**
+ * Socket unlock handler which releases the socket locks of all connected users.
+ * Socket-level locks are released after a Guacamole instruction has finished
+ * being written.
+ *
+ * @param socket
+ *     The broadcast socket to unlock.
+ */
+static void __guac_socket_broadcast_unlock_handler(guac_socket* socket) {
+
+    guac_client* client = (guac_client*) socket->data;
+
+    /* Unlock sockets of all users */
+    guac_client_foreach_user(client, __unlock_callback, NULL);
+
+}
+
+/**
+ * Callback which handles select operations on the broadcast socket, waiting
+ * for data to become available such that the next read operation will not
+ * block. This callback always fails, as the broadcast socket is write-only; it
+ * cannot be read.
+ *
+ * @param socket
+ *     The broadcast socket to wait for.
+ *
+ * @param usec_timeout
+ *     The maximum amount of time to wait for data, in microseconds, or -1 to
+ *     potentially wait forever.
+ *
+ * @return
+ *     A positive value on success, zero if the timeout elapsed and no data is
+ *     available, or a negative value if an error occurs. This implementation
+ *     always returns -1, as the broadcast socket is write-only and cannot be
+ *     read.
+ */
+static int __guac_socket_broadcast_select_handler(guac_socket* socket,
+        int usec_timeout) {
+
+    /* Selecting the broadcast socket is not possible */
+    return -1;
 
 }
 
 guac_client* guac_client_alloc() {
 
     int i;
+    pthread_rwlockattr_t lock_attributes;
 
     /* Allocate new client */
     guac_client* client = malloc(sizeof(guac_client));
@@ -237,13 +402,11 @@ guac_client* guac_client_alloc() {
     /* Init new client */
     memset(client, 0, sizeof(guac_client));
 
-    client->last_received_timestamp =
-        client->last_sent_timestamp = guac_timestamp_current();
-
     client->state = GUAC_CLIENT_RUNNING;
+    client->last_sent_timestamp = guac_timestamp_current();
 
     /* Generate ID */
-    client->connection_id = __guac_generate_connection_id();
+    client->connection_id = guac_generate_id(GUAC_CLIENT_ID_PREFIX);
     if (client->connection_id == NULL) {
         free(client);
         return NULL;
@@ -257,27 +420,40 @@ guac_client* guac_client_alloc() {
     client->__stream_pool = guac_pool_alloc(0);
 
     /* Initialize streams */
-    client->__input_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
     client->__output_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
 
     for (i=0; i<GUAC_CLIENT_MAX_STREAMS; i++) {
-        client->__input_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
         client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
     }
 
-    /* Allocate object pool */
-    client->__object_pool = guac_pool_alloc(0);
 
-    /* Initialize objects */
-    client->__objects = malloc(sizeof(guac_object) * GUAC_CLIENT_MAX_OBJECTS);
-    for (i=0; i<GUAC_CLIENT_MAX_OBJECTS; i++)
-        client->__objects[i].index = GUAC_CLIENT_UNDEFINED_OBJECT_INDEX;
+    /* Init locks */
+    pthread_rwlockattr_init(&lock_attributes);
+    pthread_rwlockattr_setpshared(&lock_attributes, PTHREAD_PROCESS_SHARED);
+
+    pthread_rwlock_init(&(client->__users_lock), &lock_attributes);
+
+    /* Set up socket to broadcast to all users */
+    guac_socket* socket = guac_socket_alloc();
+    client->socket = socket;
+    socket->data   = client;
+
+    socket->read_handler   = __guac_socket_broadcast_read_handler;
+    socket->write_handler  = __guac_socket_broadcast_write_handler;
+    socket->select_handler = __guac_socket_broadcast_select_handler;
+    socket->flush_handler  = __guac_socket_broadcast_flush_handler;
+    socket->lock_handler   = __guac_socket_broadcast_lock_handler;
+    socket->unlock_handler = __guac_socket_broadcast_unlock_handler;
 
     return client;
 
 }
 
 void guac_client_free(guac_client* client) {
+
+    /* Remove all users */
+    while (client->__users != NULL)
+        guac_client_remove_user(client, client->__users);
 
     if (client->free_handler) {
 
@@ -291,37 +467,19 @@ void guac_client_free(guac_client* client) {
     guac_pool_free(client->__layer_pool);
 
     /* Free streams */
-    free(client->__input_streams);
     free(client->__output_streams);
 
     /* Free stream pool */
     guac_pool_free(client->__stream_pool);
 
-    /* Free objects */
-    free(client->__objects);
-
-    /* Free object pool */
-    guac_pool_free(client->__object_pool);
-
-    free(client);
-}
-
-int guac_client_handle_instruction(guac_client* client, guac_instruction* instruction) {
-
-    /* For each defined instruction */
-    __guac_instruction_handler_mapping* current = __guac_instruction_handler_map;
-    while (current->opcode != NULL) {
-
-        /* If recognized, call handler */
-        if (strcmp(instruction->opcode, current->opcode) == 0)
-            return current->handler(client, instruction);
-
-        current++;
+    /* Close associated plugin */
+    if (client->__plugin_handle != NULL) {
+        if (dlclose(client->__plugin_handle))
+            guac_client_log(client, GUAC_LOG_ERROR, "Unable to close plugin: %s", dlerror());
     }
 
-    /* If unrecognized, ignore */
-    return 0;
-
+    pthread_rwlock_destroy(&(client->__users_lock));
+    free(client);
 }
 
 void vguac_client_log(guac_client* client, guac_client_log_level level,
@@ -378,6 +536,203 @@ void guac_client_abort(guac_client* client, guac_protocol_status status,
     vguac_client_abort(client, status, format, args);
 
     va_end(args);
+
+}
+
+int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** argv) {
+
+    int retval = 0;
+
+    pthread_rwlock_wrlock(&(client->__users_lock));
+
+    /* Call handler, if defined */
+    if (client->join_handler)
+        retval = client->join_handler(user, argc, argv);
+
+    /* Add to list if join was successful */
+    if (retval == 0) {
+
+        user->__prev = NULL;
+        user->__next = client->__users;
+
+        if (client->__users != NULL)
+            client->__users->__prev = user;
+
+        client->__users = user;
+        client->connected_users++;
+
+        /* Update owner pointer if user is owner */
+        if (user->owner)
+            client->__owner = user;
+
+    }
+
+    pthread_rwlock_unlock(&(client->__users_lock));
+
+    return retval;
+
+}
+
+void guac_client_remove_user(guac_client* client, guac_user* user) {
+
+    pthread_rwlock_wrlock(&(client->__users_lock));
+
+    /* Call handler, if defined */
+    if (user->leave_handler)
+        user->leave_handler(user);
+    else if (client->leave_handler)
+        client->leave_handler(user);
+
+    /* Update prev / head */
+    if (user->__prev != NULL)
+        user->__prev->__next = user->__next;
+    else
+        client->__users = user->__next;
+
+    /* Update next */
+    if (user->__next != NULL)
+        user->__next->__prev = user->__prev;
+
+    client->connected_users--;
+
+    /* Update owner pointer if user was owner */
+    if (user->owner)
+        client->__owner = NULL;
+
+    pthread_rwlock_unlock(&(client->__users_lock));
+
+}
+
+void guac_client_foreach_user(guac_client* client, guac_user_callback* callback, void* data) {
+
+    guac_user* current;
+
+    pthread_rwlock_rdlock(&(client->__users_lock));
+
+    /* Call function on each user */
+    current = client->__users;
+    while (current != NULL) {
+        callback(current, data);
+        current = current->__next;
+    }
+
+    pthread_rwlock_unlock(&(client->__users_lock));
+
+}
+
+void* guac_client_for_owner(guac_client* client, guac_user_callback* callback,
+        void* data) {
+
+    void* retval;
+
+    pthread_rwlock_rdlock(&(client->__users_lock));
+
+    /* Invoke callback with current owner */
+    retval = callback(client->__owner, data);
+
+    pthread_rwlock_unlock(&(client->__users_lock));
+
+    /* Return value from callback */
+    return retval;
+
+}
+
+int guac_client_end_frame(guac_client* client) {
+
+    /* Update and send timestamp */
+    client->last_sent_timestamp = guac_timestamp_current();
+    return guac_protocol_send_sync(client->socket, client->last_sent_timestamp);
+
+}
+
+/**
+ * Empty NULL-terminated array of argument names.
+ */
+const char* __GUAC_CLIENT_NO_ARGS[] = { NULL };
+
+int guac_client_load_plugin(guac_client* client, const char* protocol) {
+
+    /* Reference to dlopen()'d plugin */
+    void* client_plugin_handle;
+
+    /* Pluggable client */
+    char protocol_lib[GUAC_PROTOCOL_LIBRARY_LIMIT] =
+        GUAC_PROTOCOL_LIBRARY_PREFIX;
+
+    /* Type-pun for the sake of dlsym() - cannot typecast a void* to a function
+     * pointer otherwise */ 
+    union {
+        guac_client_init_handler* client_init;
+        void* obj;
+    } alias;
+
+    /* Add protocol and .so suffix to protocol_lib */
+    strncat(protocol_lib, protocol, GUAC_PROTOCOL_NAME_LIMIT-1);
+    strcat(protocol_lib, GUAC_PROTOCOL_LIBRARY_SUFFIX);
+
+    /* Load client plugin */
+    client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
+    if (!client_plugin_handle) {
+        guac_error = GUAC_STATUS_NOT_FOUND;
+        guac_error_message = dlerror();
+        return -1;
+    }
+
+    dlerror(); /* Clear errors */
+
+    /* Get init function */
+    alias.obj = dlsym(client_plugin_handle, "guac_client_init");
+
+    /* Fail if cannot find guac_client_init */
+    if (dlerror() != NULL) {
+        guac_error = GUAC_STATUS_INTERNAL_ERROR;
+        guac_error_message = dlerror();
+        return -1;
+    }
+
+    /* Init client */
+    client->args = __GUAC_CLIENT_NO_ARGS;
+    client->__plugin_handle = client_plugin_handle;
+
+    return alias.client_init(client);
+
+}
+
+/**
+ * Updates the provided approximate processing lag, taking into account the
+ * processing lag of the given user.
+ *
+ * @param user
+ *     The guac_user to use to update the approximate processing lag.
+ *
+ * @param data
+ *     Pointer to an int containing the current approximate processing lag.
+ *     The int will be updated according to the processing lag of the given
+ *     user.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* __calculate_lag(guac_user* user, void* data) {
+
+    int* processing_lag = (int*) data;
+
+    /* Simply find maximum */
+    if (user->processing_lag > *processing_lag)
+        *processing_lag = user->processing_lag;
+
+    return NULL;
+
+}
+
+int guac_client_get_processing_lag(guac_client* client) {
+
+    int processing_lag = 0;
+
+    /* Approximate the processing lag of all users */
+    guac_client_foreach_user(client, __calculate_lag, &processing_lag);
+
+    return processing_lag;
 
 }
 
@@ -448,25 +803,45 @@ void guac_client_stream_webp(guac_client* client, guac_socket* socket,
 
 }
 
+#ifdef ENABLE_WEBP
+/**
+ * Callback which is invoked by guac_client_supports_webp() for each user
+ * associated with the given client, thus updating an overall support flag
+ * describing the WebP support state for the client as a whole.
+ *
+ * @param user
+ *     The user to check for WebP support.
+ *
+ * @param data
+ *     Pointer to an int containing the current WebP support status for the
+ *     client associated with the given user. This flag will be 0 if any user
+ *     already checked has lacked WebP support, or 1 otherwise.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* __webp_support_callback(guac_user* user, void* data) {
+
+    int* webp_supported = (int*) data;
+
+    /* Check whether current user supports WebP */
+    if (*webp_supported)
+        *webp_supported = guac_user_supports_webp(user);
+
+    return NULL;
+
+}
+#endif
+
 int guac_client_supports_webp(guac_client* client) {
 
 #ifdef ENABLE_WEBP
-    char** mimetype = client->info.image_mimetypes;
+    int webp_supported = 1;
 
-    /* Search for WebP mimetype in list of supported image mimetypes */
-    while (*mimetype != NULL) {
+    /* WebP is supported for entire client only if each user supports it */
+    guac_client_foreach_user(client, __webp_support_callback, &webp_supported);
 
-        /* If WebP mimetype found, no need to search further */
-        if (strcmp(*mimetype, "image/webp") == 0)
-            return 1;
-
-        /* Next mimetype */
-        mimetype++;
-
-    }
-
-    /* Client does not support WebP */
-    return 0;
+    return webp_supported;
 #else
     /* Support for WebP is completely absent */
     return 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,49 +20,52 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef _GUAC_INSTRUCTION_TYPES_H
-#define _GUAC_INSTRUCTION_TYPES_H
+#ifndef _GUAC_USER_CONSTANTS_H
+#define _GUAC_USER_CONSTANTS_H
 
 /**
- * Type definitions related to Guacamole instructions.
+ * Constants related to the Guacamole user structure, guac_user.
  *
- * @file instruction-types.h
+ * @file user-constants.h
  */
 
 /**
- * All possible states of the instruction parser.
+ * The character prefix which identifies a user ID.
  */
-typedef enum guac_instruction_parse_state {
-
-    /**
-     * The parser is currently waiting for data to complete the length prefix
-     * of the current element of the instruction.
-     */
-    GUAC_INSTRUCTION_PARSE_LENGTH,
-
-    /**
-     * The parser has finished reading the length prefix and is currently
-     * waiting for data to complete the content of the instruction.
-     */
-    GUAC_INSTRUCTION_PARSE_CONTENT,
-
-    /**
-     * The instruction has been fully parsed.
-     */
-    GUAC_INSTRUCTION_PARSE_COMPLETE,
-
-    /**
-     * The instruction cannot be parsed because of a protocol error.
-     */
-    GUAC_INSTRUCTION_PARSE_ERROR
-
-} guac_instruction_parse_state;
+#define GUAC_USER_ID_PREFIX '@'
 
 /**
- * Represents a single instruction within the Guacamole protocol.
+ * The maximum number of inbound or outbound streams supported by any one
+ * guac_user.
  */
-typedef struct guac_instruction guac_instruction;
+#define GUAC_USER_MAX_STREAMS 64
+
+/**
+ * The index of a closed stream.
+ */
+#define GUAC_USER_CLOSED_STREAM_INDEX -1
+
+/**
+ * The maximum number of objects supported by any one guac_client.
+ */
+#define GUAC_USER_MAX_OBJECTS 64
+
+/**
+ * The index of an object which has not been defined.
+ */
+#define GUAC_USER_UNDEFINED_OBJECT_INDEX -1
+
+/**
+ * The stream name reserved for the root of a Guacamole protocol object.
+ */
+#define GUAC_USER_OBJECT_ROOT_NAME "/"
+
+/**
+ * The mimetype of a stream containing a map of available stream names to their
+ * corresponding mimetypes. The root of a Guacamole protocol object is
+ * guaranteed to have this type.
+ */
+#define GUAC_USER_STREAM_INDEX_MIMETYPE "application/vnd.glyptodon.guacamole.stream-index+json"
 
 #endif
 

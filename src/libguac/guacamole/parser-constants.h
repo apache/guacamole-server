@@ -20,21 +20,29 @@
  * THE SOFTWARE.
  */
 
-#ifndef _GUAC_PLUGIN_TYPES_H
-#define _GUAC_PLUGIN_TYPES_H
+#ifndef _GUAC_PARSER_CONSTANTS_H
+#define _GUAC_PARSER_CONSTANTS_H
 
 /**
- * Type definitions related to client plugins.
+ * Constants related to the Guacamole protocol parser.
  *
- * @file plugin-types.h
+ * @file parser-constants.h
  */
 
 /**
- * A handle to a client plugin, containing enough information about the
- * plugin to complete the initial protocol handshake and instantiate a new
- * client supporting the protocol provided by the client plugin. 
+ * The maximum number of characters per instruction.
  */
-typedef struct guac_client_plugin guac_client_plugin;
+#define GUAC_INSTRUCTION_MAX_LENGTH 8192
+
+/**
+ * The maximum number of digits to allow per length prefix.
+ */
+#define GUAC_INSTRUCTION_MAX_DIGITS 5
+
+/**
+ * The maximum number of elements per instruction, including the opcode.
+ */
+#define GUAC_INSTRUCTION_MAX_ELEMENTS 64
 
 #endif
 

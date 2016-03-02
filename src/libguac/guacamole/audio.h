@@ -64,6 +64,12 @@ struct guac_audio_encoder {
      */
     guac_audio_encoder_end_handler* end_handler;
 
+    /**
+     * Handler which will be called when a new user joins the Guacamole
+     * connection associated with an audio stream.
+     */
+    guac_audio_encoder_join_handler* join_handler;
+
 };
 
 struct guac_audio_stream {
@@ -108,15 +114,24 @@ struct guac_audio_stream {
 };
 
 /**
- * Allocates a new audio stream which encodes audio data using the given
- * encoder. If NULL is specified for the encoder, an appropriate encoder
- * will be selected based on the encoders built into libguac and the level
- * of client support. The PCM format specified here (via rate, channels, and
+ * Allocates a new audio stream at the client level which encodes audio data
+ * using the given encoder. If NULL is specified for the encoder, an
+ * appropriate encoder will be selected based on the encoders built into
+ * libguac and the level of support declared by the owner associated with the
+ * given guac_client. The PCM format specified here (via rate, channels, and
  * bps) must be the format used for all PCM data provided to the audio stream.
  * The format may only be changed using guac_audio_stream_reset().
  *
+ * If a new user joins the connection after the audio stream is created, that
+ * user will not be aware of the existence of the audio stream, and
+ * guac_audio_stream_add_user() will need to be invoked to recreate the stream
+ * for the new user.
+ *
  * @param client
- *     The guac_client for which this audio stream is being allocated.
+ *     The guac_client for which this audio stream is being allocated. Only the
+ *     connection owner is used to determine the level of audio support, and it
+ *     is currently assumed that all other joining users on the connection will
+ *     have the same level of audio support.
  *
  * @param encoder
  *     The guac_audio_encoder to use when encoding audio, or NULL if libguac
@@ -135,7 +150,8 @@ struct guac_audio_stream {
  *
  * @return
  *     The newly allocated guac_audio_stream, or NULL if no audio stream could
- *     be allocated due to lack of client support.
+ *     be allocated due to lack of support on the part of the connecting
+ *     Guacamole client.
  */
 guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
         guac_audio_encoder* encoder, int rate, int channels, int bps);
@@ -167,6 +183,21 @@ guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
  */
 void guac_audio_stream_reset(guac_audio_stream* audio,
         guac_audio_encoder* encoder, int rate, int channels, int bps);
+
+/**
+ * Notifies the given audio stream that a user has joined the connection. The
+ * audio stream itself may need to be restarted. and the audio stream will need
+ * to be created for the new user to ensure they can properly handle future
+ * data received along the stream.
+ *
+ * @param audio
+ *     The guac_audio_stream associated with the Guacamole connection being
+ *     joined.
+ *
+ * @param user
+ *     The user that has joined the Guacamole connection.
+ */
+void guac_audio_stream_add_user(guac_audio_stream* audio, guac_user* user);
 
 /**
  * Closes and frees the given audio stream.

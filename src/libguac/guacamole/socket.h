@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2015 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -52,13 +52,28 @@ struct guac_socket {
 
     /**
      * Handler which will be called whenever data is written to this socket.
-     * Note that because guac_socket automatically buffers written data, this
-     * handler might only get called when the socket is flushed.
      */
     guac_socket_write_handler* write_handler;
 
     /**
-     * Handler which will be called whenever guac_socket_select is invoked
+     * Handler which will be called whenever this socket needs to be flushed.
+     */
+    guac_socket_flush_handler* flush_handler;
+
+    /**
+     * Handler which will be called whenever a socket needs to be acquired for
+     * exclusive access, such as when an instruction is about to be written.
+     */
+    guac_socket_lock_handler* lock_handler;
+
+    /**
+     * Handler which will be called whenever exclusive access to a socket is
+     * being released, such as when an instruction has finished being written.
+     */
+    guac_socket_unlock_handler* unlock_handler;
+
+    /**
+     * Handler which will be called whenever guac_socket_select() is invoked
      * on this socket.
      */
     guac_socket_select_handler* select_handler;
@@ -91,52 +106,6 @@ struct guac_socket {
     int __ready_buf[3];
 
     /**
-     * The number of bytes currently in the main write buffer.
-     */
-    int __written;
-
-    /**
-     * The main write buffer. Bytes written go here before being flushed
-     * to the open file descriptor.
-     */
-    char __out_buf[GUAC_SOCKET_OUTPUT_BUFFER_SIZE];
-
-    /**
-     * Pointer to the first character of the current in-progress instruction
-     * within the buffer.
-     */
-    char* __instructionbuf_unparsed_start;
-
-    /**
-     * Pointer to the first unused section of the instruction buffer.
-     */
-    char* __instructionbuf_unparsed_end;
-
-    /**
-     * The instruction buffer. This is essentially the input buffer,
-     * provided as a convenience to be used to buffer instructions until
-     * those instructions are complete and ready to be parsed.
-     */
-    char __instructionbuf[32768];
-
-    /**
-     * Whether instructions should be guaranteed atomic across threads using
-     * locks. By default, thread safety is disabled on sockets.
-     */
-    int __threadsafe_instructions;
-
-    /**
-     * Lock which is acquired when an instruction is being written, and
-     * released when the instruction is finished being written.
-     */
-    pthread_mutex_t __instruction_write_lock;
-
-    /**
-     * Lock which is acquired when the buffer is being modified or flushed.
-     */
-    pthread_mutex_t __buffer_lock;
-
-    /**
      * Whether automatic keep-alive is enabled.
      */
     int __keep_alive_enabled;
@@ -165,65 +134,35 @@ guac_socket* guac_socket_alloc();
 void guac_socket_free(guac_socket* socket);
 
 /**
- * Declares that the given socket must behave in a threadsafe way. Calling
- * this function on a socket guarantees that the socket will send instructions
- * atomically. Without automatic threadsafe sockets, multiple threads writing
- * to the same socket must ensure that instructions will not potentially
- * overlap.
- *
- * @param socket The guac_socket to declare as threadsafe.
- */
-void guac_socket_require_threadsafe(guac_socket* socket);
-
-/**
  * Declares that the given socket must automatically send a keep-alive ping
  * to ensure neither side of the socket times out while the socket is open.
- * This ping will take the form of a "nop" instruction. Enabling keep-alive
- * automatically enables threadsafety.
+ * This ping will take the form of a "nop" instruction.
  *
- * @param socket The guac_socket to declare as requiring an automatic
- *               keep-alive ping.
+ * @param socket
+ *     The guac_socket to declare as requiring an automatic keep-alive ping.
  */
 void guac_socket_require_keep_alive(guac_socket* socket);
 
 /**
- * Marks the beginning of a Guacamole protocol instruction. If threadsafety
- * is enabled on the socket, other instructions will be blocked from sending
- * until this instruction is complete.
+ * Marks the beginning of a Guacamole protocol instruction.
  *
- * @param socket The guac_socket beginning an instruction.
+ * @param socket
+ *     The guac_socket beginning an instruction.
  */
 void guac_socket_instruction_begin(guac_socket* socket);
 
 /**
- * Marks the end of a Guacamole protocol instruction. If threadsafety
- * is enabled on the socket, other instructions will be allowed to send.
+ * Marks the end of a Guacamole protocol instruction.
  *
- * @param socket The guac_socket ending an instruction.
+ * @param socket
+ *     The guac_socket ending an instruction.
  */
 void guac_socket_instruction_end(guac_socket* socket);
 
 /**
- * Marks the beginning of a socket's buffer modification. If threadsafety is
- * enabled on the socket, other functions which modify the buffer will be
- * blocked until this modification is complete.
- *
- * @param socket The guac_socket whose buffer is being updated.
- */
-void guac_socket_update_buffer_begin(guac_socket* socket);
-
-/**
- * Marks the end of a socket's buffer modification. If threadsafety is enabled
- * on the socket, other functions which modify the buffer will now be allowed
- * to continue.
- *
- * @param socket The guac_socket whose buffer is done being updated.
- */
-void guac_socket_update_buffer_end(guac_socket* socket);
-
-/**
  * Allocates and initializes a new guac_socket object with the given open
- * file descriptor.
+ * file descriptor. The file descriptor will be automatically closed when
+ * the allocated guac_socket is freed.
  *
  * If an error occurs while allocating the guac_socket object, NULL is returned,
  * and guac_error is set appropriately.
@@ -237,7 +176,8 @@ guac_socket* guac_socket_open(int fd);
 
 /**
  * Allocates and initializes a new guac_socket which writes all data via
- * nest instructions to the given existing, open guac_socket.
+ * nest instructions to the given existing, open guac_socket. Freeing the
+ * returned guac_socket has no effect on the underlying, nested guac_socket.
  *
  * If an error occurs while allocating the guac_socket object, NULL is returned,
  * and guac_error is set appropriately.
@@ -268,9 +208,7 @@ ssize_t guac_socket_write_int(guac_socket* socket, int64_t i);
 /**
  * Writes the given string to the given guac_socket object. The data
  * written may be buffered until the buffer is flushed automatically or
- * manually. Note that if the string can contain characters used
- * internally by the Guacamole protocol (commas, semicolons, or
- * backslashes) it will need to be escaped.
+ * manually.
  *
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.
@@ -284,9 +222,9 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str);
 /**
  * Writes the given binary data to the given guac_socket object as base64-
  * encoded data. The data written may be buffered until the buffer is flushed
- * automatically or manually. Beware that because base64 data is buffered
+ * automatically or manually. Beware that, because base64 data is buffered
  * on top of the write buffer already used, a call to guac_socket_flush_base64()
- * must be made before non-base64 writes (or writes of an independent block of
+ * MUST be made before non-base64 writes (or writes of an independent block of
  * base64 data) can be made.
  *
  * If an error occurs while writing, a non-zero value is returned, and
@@ -300,8 +238,8 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str);
 ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t count);
 
 /**
- * Writes the given data to the specified socket. The data written is not
- * buffered, and will be sent immediately.
+ * Writes the given data to the specified socket. The data written may be
+ * buffered until the buffer is flushed automatically or manually.
  *
  * If an error occurs while writing, a non-zero value is returned, and
  * guac_error is set appropriately.

@@ -29,8 +29,8 @@
  * @file object.h
  */
 
-#include "client-fntypes.h"
 #include "object-types.h"
+#include "user-fntypes.h"
 
 struct guac_object {
 
@@ -54,18 +54,18 @@ struct guac_object {
      *
      * Example:
      * @code
-     *     int get_handler(guac_client* client, guac_object* object,
+     *     int get_handler(guac_user* user, guac_object* object,
      *             char* name);
      *
-     *     int some_function(guac_client* client) {
+     *     int some_function(guac_user* user) {
      *
-     *         guac_object* object = guac_client_alloc_object(client);
+     *         guac_object* object = guac_user_alloc_object(user);
      *         object->get_handler = get_handler;
      *
      *     }
      * @endcode
      */
-    guac_client_get_handler* get_handler;
+    guac_user_get_handler* get_handler;
 
     /**
      * Handler for put events sent by the Guacamole web-client.
@@ -77,18 +77,18 @@ struct guac_object {
      *
      * Example:
      * @code
-     *     int put_handler(guac_client* client, guac_object* object,
+     *     int put_handler(guac_user* user, guac_object* object,
      *             guac_stream* stream, char* mimetype, char* name);
      *
-     *     int some_function(guac_client* client) {
+     *     int some_function(guac_user* user) {
      *
-     *         guac_object* object = guac_client_alloc_object(client);
+     *         guac_object* object = guac_user_alloc_object(user);
      *         object->put_handler = put_handler;
      *
      *     }
      * @endcode
      */
-    guac_client_put_handler* put_handler;
+    guac_user_put_handler* put_handler;
 
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,21 @@
  * THE SOFTWARE.
  */
 
-#include "config.h"
+#ifndef __GUAC_ID_H
+#define __GUAC_ID_H
 
-#include "client/client_suite.h"
-#include "common/common_suite.h"
-#include "protocol/suite.h"
-#include "util/util_suite.h"
+/**
+ * Generates a guaranteed-unique identifier which is a total of 37 characters
+ * long, having the given single-character prefix. The resulting identifier
+ * must be freed with a call to free() when no longer needed.  If an error
+ * occurs, NULL is returned, no memory is allocated, and guac_error is set
+ * appropriately.
+ *
+ * @param prefix The single-character prefix to use.
+ * @return A newly-allocated unique identifier with the given prefix, or
+ *         NULL if the identifier could not be generated.
+ */
+char* guac_generate_id(char prefix);
 
-#include <CUnit/Basic.h>
-
-int main() {
-
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
-        return CU_get_error();
-
-    /* Register suites */
-    register_protocol_suite();
-    register_client_suite();
-    register_util_suite();
-
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
-
-}
+#endif
 

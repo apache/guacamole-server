@@ -23,70 +23,12 @@
 #ifndef _GUAC_PLUGIN_H
 #define _GUAC_PLUGIN_H
 
-#include "client-types.h"
 #include "plugin-constants.h"
-#include "plugin-types.h"
 
 /**
  * Provides functions and structures required for handling a client plugin.
  *
  * @file plugin.h
  */
-
-struct guac_client_plugin {
-
-    /**
-     * Reference to dlopen'd client plugin.
-     */
-    void* __client_plugin_handle;
-
-    /**
-     * Reference to the init handler of this client plugin. This
-     * function will be called when the client plugin is started.
-     */
-    guac_client_init_handler* init_handler;
-
-    /**
-     * NULL-terminated array of all arguments accepted by this client
-     * plugin, in order. The values of these arguments will be passed
-     * to the init_handler if the client plugin is started.
-     */
-    const char** args;
-
-};
-
-/**
- * Open the plugin which provides support for the given protocol, if it
- * exists.
- *
- * @param protocol The name of the protocol to retrieve the client plugin
- *                 for.
- * @return The client plugin supporting the given protocol, or NULL if
- *         an error occurs or no such plugin exists.
- */
-guac_client_plugin* guac_client_plugin_open(const char* protocol);
-
-/**
- * Close the given plugin, releasing all associated resources. This function
- * must be called after use of a client plugin is finished.
- *
- * @param plugin The client plugin to close.
- * @return Zero on success, non-zero if an error occurred while releasing
- *         the resources associated with the plugin.
- */
-int guac_client_plugin_close(guac_client_plugin* plugin);
-
-/**
- * Initializes the given guac_client using the initialization routine provided
- * by the given guac_client_plugin.
- *
- * @param plugin The client plugin to use to initialize the new client.
- * @param client The guac_client to initialize.
- * @param argc The number of arguments being passed to the client.
- * @param argv All arguments to be passed to the client.
- * @return Zero if initialization was successful, non-zero otherwise.
- */
-int guac_client_plugin_init_client(guac_client_plugin* plugin, 
-        guac_client* client, int argc, char** argv);
 
 #endif

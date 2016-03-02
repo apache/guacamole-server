@@ -29,7 +29,7 @@
  * @file stream.h
  */
 
-#include "client-fntypes.h"
+#include "user-fntypes.h"
 #include "stream-types.h"
 
 struct guac_stream {
@@ -53,21 +53,21 @@ struct guac_stream {
      *
      * Example:
      * @code
-     *     int ack_handler(guac_client* client, guac_stream* stream,
+     *     int ack_handler(guac_user* user, guac_stream* stream,
      *             char* error, guac_protocol_status status);
      *
-     *     int some_function(guac_client* client) {
+     *     int some_function(guac_user* user) {
      *
-     *         guac_stream* stream = guac_client_alloc_stream(client);
+     *         guac_stream* stream = guac_user_alloc_stream(user);
      *         stream->ack_handler = ack_handler;
      *
-     *         guac_protocol_send_clipboard(client->socket,
+     *         guac_protocol_send_clipboard(user->socket,
      *             stream, "text/plain");
      *
      *     }
      * @endcode
      */
-    guac_client_ack_handler* ack_handler;
+    guac_user_ack_handler* ack_handler;
 
     /**
      * Handler for blob events sent by the Guacamole web-client.
@@ -78,16 +78,16 @@ struct guac_stream {
      *
      * Example:
      * @code
-     *     int blob_handler(guac_client* client, guac_stream* stream,
+     *     int blob_handler(guac_user* user, guac_stream* stream,
      *             void* data, int length);
      *
-     *     int my_clipboard_handler(guac_client* client, guac_stream* stream,
+     *     int my_clipboard_handler(guac_user* user, guac_stream* stream,
      *             char* mimetype) {
      *         stream->blob_handler = blob_handler;
      *     }
      * @endcode
      */
-    guac_client_blob_handler* blob_handler;
+    guac_user_blob_handler* blob_handler;
 
     /**
      * Handler for stream end events sent by the Guacamole web-client.
@@ -98,15 +98,15 @@ struct guac_stream {
      *
      * Example:
      * @code
-     *     int end_handler(guac_client* client, guac_stream* stream);
+     *     int end_handler(guac_user* user, guac_stream* stream);
      *
-     *     int my_clipboard_handler(guac_client* client, guac_stream* stream,
+     *     int my_clipboard_handler(guac_user* user, guac_stream* stream,
      *             char* mimetype) {
      *         stream->end_handler = end_handler;
      *     }
      * @endcode
      */
-    guac_client_end_handler* end_handler;
+    guac_user_end_handler* end_handler;
 
 };
 
