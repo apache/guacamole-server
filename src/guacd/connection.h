@@ -58,8 +58,22 @@ typedef struct guacd_connection_thread_params {
 
 /**
  * Handles an inbound connection to guacd, allowing guacd to continue listening
- * for other connections. It is expected that this thread will operate
- * detached. The creating process need not join on the resulting thread.
+ * for other connections. The file descriptor of the inbound connection will
+ * either be given to a new process for a new remote desktop connection, or
+ * will be passed to an existing process for joining an existing remote desktop
+ * connection. It is expected that this thread will operate detached. The
+ * creating process need not join on the resulting thread.
+ *
+ * @param data
+ *     A pointer to a guacd_connection_thread_params structure containing the
+ *     shared overall map of currently-connected processes, the file
+ *     descriptor associated with the newly-established connection that is to
+ *     be either (1) associated with a new process or (2) passed on to an
+ *     existing process, and the SSL context for the encryption surrounding
+ *     that connection (if any).
+ *
+ * @return
+ *     Always NULL.
  */
 void* guacd_connection_thread(void* data);
 
@@ -91,7 +105,19 @@ typedef struct guacd_connection_io_thread_params {
 
 /**
  * Transfers data back and forth between the guacd-side guac_socket and the
- * file descriptor used by the process-side guac_socket.
+ * file descriptor used by the process-side guac_socket. Note that both the
+ * provided guac_parser and the guac_socket will be freed once this thread
+ * terminates, which will occur when no further data can be read from the
+ * guac_socket.
+ *
+ * @param data
+ *     A pointer to a guacd_connection_io_thread_params structure containing
+ *     the guac_socket and file descriptor to transfer data between
+ *     (bidirectionally), as well as the guac_parser associated with the
+ *     guac_socket (which may have unhandled data in its parsing buffers).
+ *
+ * @return
+ *     Always NULL.
  */
 void* guacd_connection_io_thread(void* data);
 

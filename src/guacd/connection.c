@@ -51,6 +51,20 @@
  * Behaves exactly as write(), but writes as much as possible, returning
  * successfully only if the entire buffer was written. If the write fails for
  * any reason, a negative value is returned.
+ *
+ * @param fd
+ *     The file descriptor to write to.
+ *
+ * @param buffer
+ *     The buffer containing the data to be written.
+ *
+ * @param length
+ *     The number of bytes in the buffer to write.
+ *
+ * @return
+ *     The number of bytes written, or -1 if an error occurs. As this function
+ *     is guaranteed to write ALL bytes, this will always be the number of
+ *     bytes specified by length unless an error occurs.
  */
 static int __write_all(int fd, char* buffer, int length) {
 
@@ -72,7 +86,22 @@ static int __write_all(int fd, char* buffer, int length) {
 
 /**
  * Continuously reads from a guac_socket, writing all data read to a file
- * descriptor.
+ * descriptor. Any data already buffered from that guac_socket by a given
+ * guac_parser is read first, prior to reading further data from the
+ * guac_socket. The provided guac_parser will be freed once its buffers have
+ * been emptied, but the guac_socket will not.
+ *
+ * This thread ultimately terminates when no further data can be read from the
+ * guac_socket.
+ *
+ * @param data
+ *     A pointer to a guacd_connection_io_thread_params structure containing
+ *     the guac_socket to read from, the file descriptor to write the read data
+ *     to, and the guac_parser associated with the guac_socket which may have
+ *     unhandled data in its parsing buffers.
+ *
+ * @return
+ *     Always NULL.
  */
 static void* guacd_connection_write_thread(void* data) {
 
@@ -81,6 +110,7 @@ static void* guacd_connection_write_thread(void* data) {
 
     int length;
 
+    /* Read all buffered data from parser first */
     while ((length = guac_parser_shift(params->parser, buffer, sizeof(buffer))) > 0) {
         if (__write_all(params->fd, buffer, length) < 0)
             break;
@@ -136,6 +166,20 @@ void* guacd_connection_io_thread(void* data) {
  *
  * If adding the user fails for any reason, non-zero is returned. Zero is
  * returned upon success.
+ *
+ * @param proc
+ *     The existing process to add the user to.
+ *
+ * @param parser
+ *     The parser associated with the given guac_socket (used to handle the
+ *     user's connection handshake thus far).
+ *
+ * @param socket
+ *     The socket associated with the user to be added to the existing
+ *     process.
+ *
+ * @return
+ *     Zero if the user was added successfully, non-zero if an error occurred.
  */
 static int guacd_add_user(guacd_proc* proc, guac_parser* parser, guac_socket* socket) {
 
@@ -175,11 +219,23 @@ static int guacd_add_user(guacd_proc* proc, guac_parser* parser, guac_socket* so
 
 /**
  * Routes the connection on the given socket according to the Guacamole
- * protocol on the given socket, adding new users and creating new client
- * processes as needed.
+ * protocol, adding new users and creating new client processes as needed. If a
+ * new process is created, this function blocks until that process terminates,
+ * automatically deregistering the process at that point.
  *
  * The socket provided will be automatically freed when the connection
  * terminates unless routing fails, in which case non-zero is returned.
+ *
+ * @param map
+ *     The map of existing client processes.
+ *
+ * @param socket
+ *     The socket associated with the new connection that must be routed to
+ *     a new or existing process within the given map.
+ *
+ * @return
+ *     Zero if the connection was successfully routed, non-zero if routing has
+ *     failed.
  */
 static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
 
