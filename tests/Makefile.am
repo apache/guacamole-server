@@ -28,6 +28,7 @@ check_PROGRAMS = test_libguac
 
 noinst_HEADERS =          \
     client/client_suite.h \
+    common/common_suite.h \
     protocol/suite.h      \
     util/util_suite.h
 
@@ -36,6 +37,10 @@ test_libguac_SOURCES =           \
     client/client_suite.c        \
     client/buffer_pool.c         \
     client/layer_pool.c          \
+    common/common_suite.c        \
+    common/guac_iconv.c          \
+    common/guac_string.c         \
+    common/guac_rect.c           \
     protocol/suite.c             \
     protocol/base64_decode.c     \
     protocol/instruction_parse.c \
@@ -48,9 +53,11 @@ test_libguac_SOURCES =           \
 
 test_libguac_CFLAGS =       \
     -Werror -Wall -pedantic \
+    @COMMON_INCLUDE@        \
     @LIBGUAC_INCLUDE@
 
 test_libguac_LDADD = \
+    @COMMON_LTLIB@   \
     @CUNIT_LIBS@     \
     @LIBGUAC_LTLIB@
 

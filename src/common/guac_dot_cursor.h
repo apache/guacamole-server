@@ -27,7 +27,7 @@
 #include "config.h"
 
 #include <cairo/cairo.h>
-#include <guacamole/client.h>
+#include <guacamole/user.h>
 
 /**
  * Width of the embedded mouse cursor graphic.
@@ -57,8 +57,8 @@ extern unsigned char guac_common_dot_cursor[];
 /**
  * Set the cursor of the remote display to the embedded cursor graphic.
  *
- * @param client The guac_client to send the cursor to.
+ * @param user The guac_user to send the cursor to.
  */
-void guac_common_set_dot_cursor(guac_client* client);
+void guac_common_set_dot_cursor(guac_user* user);
 
 #endif

@@ -27,6 +27,7 @@
 #include <guacamole/layer.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/user.h>
 
 /* Macros for prettying up the embedded image. */
 #define X 0x00,0x00,0x00,0xFF
@@ -52,9 +53,10 @@ unsigned char guac_common_dot_cursor[] = {
 
 };
 
-void guac_common_set_dot_cursor(guac_client* client) {
+void guac_common_set_dot_cursor(guac_user* user) {
 
-    guac_socket* socket = client->socket;
+    guac_client* client = user->client;
+    guac_socket* socket = user->socket;
 
     /* Draw to buffer */
     guac_layer* cursor = guac_client_alloc_buffer(client);
@@ -66,7 +68,7 @@ void guac_common_set_dot_cursor(guac_client* client) {
             guac_common_dot_cursor_height,
             guac_common_dot_cursor_stride);
 
-    guac_client_stream_png(client, socket, GUAC_COMP_SRC, cursor,
+    guac_user_stream_png(user, socket, GUAC_COMP_SRC, cursor,
             0, 0, graphic);
     cairo_surface_destroy(graphic);
 

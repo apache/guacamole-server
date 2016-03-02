@@ -25,8 +25,8 @@
 
 #include "config.h"
 
-#include <guacamole/client.h>
 #include <guacamole/stream.h>
+#include <guacamole/user.h>
 
 /**
  * The current streaming state of an arbitrary JSON object, consisting of
@@ -55,13 +55,13 @@ typedef struct guac_common_json_state {
 } guac_common_json_state;
 
 /**
- * Given a stream, the client to which it belongs, and the current stream state
+ * Given a stream, the user to which it belongs, and the current stream state
  * of a JSON object, flushes the contents of the JSON buffer to a blob
  * instruction. Note that this will flush the JSON buffer only, and will not
- * necessarily flush the underlying guac_socket of the client.
+ * necessarily flush the underlying guac_socket of the user.
  *
- * @param client
- *     The client to which the data will be flushed.
+ * @param user
+ *     The user to which the data will be flushed.
  *
  * @param stream
  *     The stream through which the flushed data should be sent as a blob.
@@ -69,16 +69,16 @@ typedef struct guac_common_json_state {
  * @param json_state
  *     The state object whose buffer should be flushed.
  */
-void guac_common_json_flush(guac_client* client, guac_stream* stream,
+void guac_common_json_flush(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state);
 
 /**
- * Given a stream, the client to which it belongs, and the current stream state
+ * Given a stream, the user to which it belongs, and the current stream state
  * of a JSON object, writes the contents of the given buffer to the JSON buffer
  * of the stream state, flushing as necessary.
  *
- * @param client
- *     The client to which the data will be flushed as necessary.
+ * @param user
+ *     The user to which the data will be flushed as necessary.
  *
  * @param stream
  *     The stream through which the flushed data should be sent as a blob, if
@@ -97,17 +97,17 @@ void guac_common_json_flush(guac_client* client, guac_stream* stream,
  * @return
  *     Non-zero if at least one blob was written, zero otherwise.
  */
-int guac_common_json_write(guac_client* client, guac_stream* stream,
+int guac_common_json_write(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state, const char* buffer, int length);
 
 /**
- * Given a stream, the client to which it belongs, and the current stream state
+ * Given a stream, the user to which it belongs, and the current stream state
  * of a JSON object state, writes the given string as a proper JSON string,
  * including starting and ending quotes. The contents of the string will be
  * escaped as necessary.
  *
- * @param client
- *     The client to which the data will be flushed as necessary.
+ * @param user
+ *     The user to which the data will be flushed as necessary.
  *
  * @param stream
  *     The stream through which the flushed data should be sent as a blob, if
@@ -123,17 +123,17 @@ int guac_common_json_write(guac_client* client, guac_stream* stream,
  * @return
  *     Non-zero if at least one blob was written, zero otherwise.
  */
-int guac_common_json_write_string(guac_client* client,
+int guac_common_json_write_string(guac_user* user,
         guac_stream* stream, guac_common_json_state* json_state,
         const char* str);
 
 /**
- * Given a stream, the client to which it belongs, and the current stream state
+ * Given a stream, the user to which it belongs, and the current stream state
  * of a JSON object, writes the given JSON property name/value pair. The
  * name and value will be written as proper JSON strings separated by a colon.
  *
- * @param client
- *     The client to which the data will be flushed as necessary.
+ * @param user
+ *     The user to which the data will be flushed as necessary.
  *
  * @param stream
  *     The stream through which the flushed data should be sent as a blob, if
@@ -152,18 +152,18 @@ int guac_common_json_write_string(guac_client* client,
  * @return
  *     Non-zero if at least one blob was written, zero otherwise.
  */
-int guac_common_json_write_property(guac_client* client, guac_stream* stream,
+int guac_common_json_write_property(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state, const char* name,
         const char* value);
 
 /**
- * Given a stream, the client to which it belongs, and the current stream state
+ * Given a stream, the user to which it belongs, and the current stream state
  * of a JSON object, initializes the state for writing a new JSON object. Note
- * that although the client and stream must be provided, no instruction or
+ * that although the user and stream must be provided, no instruction or
  * blobs will be written due to any call to this function.
  *
- * @param client
- *     The client associated with the given stream.
+ * @param user
+ *     The user associated with the given stream.
  *
  * @param stream
  *     The stream associated with the JSON object being written.
@@ -171,17 +171,17 @@ int guac_common_json_write_property(guac_client* client, guac_stream* stream,
  * @param json_state
  *     The state object to initialize.
  */
-void guac_common_json_begin_object(guac_client* client, guac_stream* stream,
+void guac_common_json_begin_object(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state);
 
 /**
- * Given a stream, the client to which it belongs, and the current stream state
+ * Given a stream, the user to which it belongs, and the current stream state
  * of a JSON object, completes writing that JSON object by writing the final
  * terminating brace. This function must only be called following a
  * corresponding call to guac_common_json_begin_object().
  *
- * @param client
- *     The client associated with the given stream.
+ * @param user
+ *     The user associated with the given stream.
  *
  * @param stream
  *     The stream associated with the JSON object being written.
@@ -192,7 +192,7 @@ void guac_common_json_begin_object(guac_client* client, guac_stream* stream,
  * @return
  *     Non-zero if at least one blob was written, zero otherwise.
  */
-int guac_common_json_end_object(guac_client* client, guac_stream* stream,
+int guac_common_json_end_object(guac_user* user, guac_stream* stream,
         guac_common_json_state* json_state);
 
 #endif
