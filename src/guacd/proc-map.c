@@ -32,7 +32,13 @@
 #include <string.h>
 
 /**
- * Returns a hash code based on the connection ID of the given client.
+ * Returns a hash code based on the given connection ID.
+ *
+ * @param str
+ *     The string containing the connection ID.
+ *
+ * @return
+ *     A reasonably well-distributed hash code for the given string.
  */
 static unsigned int __guacd_client_hash(const char* str) {
 
@@ -48,10 +54,22 @@ static unsigned int __guacd_client_hash(const char* str) {
 }
 
 /**
- * Locates the bucket corresponding to the hash code indicated by the give id.
- * Each bucket is an instance of guac_common_list.
+ * Locates the bucket corresponding to the hash code indicated by the given id,
+ * where the hash code is dictated by __guacd_client_hash().  Each bucket is an
+ * instance of guac_common_list.
+ *
+ * @param map
+ *     The map to retrieve the hash bucket from.
+ *
+ * @param id
+ *     The ID whose hash code determines the bucket being retrieved.
+ *
+ * @return
+ *     The bucket corresponding to the hash code for the given ID, represented
+ *     by a guac_common_list.
  */
-static guac_common_list* __guacd_proc_find_bucket(guacd_proc_map* map, const char* id) {
+static guac_common_list* __guacd_proc_find_bucket(guacd_proc_map* map,
+        const char* id) {
 
     const int index = __guacd_client_hash(id) % GUACD_PROC_MAP_BUCKETS;
     return map->__buckets[index];
@@ -59,11 +77,24 @@ static guac_common_list* __guacd_proc_find_bucket(guacd_proc_map* map, const cha
 }
 
 /**
- * Given a list of guacd_proc instances, returns the
- * guacd_proc having the guac_client with the given ID, or NULL if no
- * such client is stored.
+ * Given a bucket of guacd_proc instances, returns the guacd_proc having the
+ * guac_client with the given ID, or NULL if no such client is stored.
+ *
+ * @param bucket
+ *     The bucket of guacd_proc instances to search, represented as a
+ *     guac_common_list.
+ *
+ * @param id
+ *     The ID of the guac_client whose corresponding guacd_proc instance should
+ *     be located within the bucket.
+ *
+ * @return
+ *     The guac_common_list_element containing the guacd_proc instance
+ *     corresponding to the guac_client having the given ID, or NULL of no such
+ *     element exists.
  */
-static guac_common_list_element* __guacd_proc_find(guac_common_list* bucket, const char* id) {
+static guac_common_list_element* __guacd_proc_find(guac_common_list* bucket,
+        const char* id) {
 
     guac_common_list_element* current = bucket->head;
 
