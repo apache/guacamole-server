@@ -318,6 +318,7 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
     png_info = png_create_info_struct(png);
     if (!png_info) {
         png_destroy_write_struct(&png, NULL);
+        guac_palette_free(palette);
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = "libpng failed to create info structure";
         return -1;
@@ -326,6 +327,7 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
     /* Set error handler */
     if (setjmp(png_jmpbuf(png))) {
         png_destroy_write_struct(&png, &png_info);
+        guac_palette_free(palette);
         guac_error = GUAC_STATUS_IO_ERROR;
         guac_error_message = "libpng output error";
         return -1;
