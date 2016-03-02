@@ -449,6 +449,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     if (current_address == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                 "Unable to connect to any addresses.");
+        freeaddrinfo(addresses);
         close(fd);
         return NULL;
     }
