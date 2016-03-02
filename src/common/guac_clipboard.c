@@ -52,6 +52,16 @@ void guac_common_clipboard_free(guac_common_clipboard* clipboard) {
 /**
  * Callback for guac_client_foreach_user() which sends clipboard data to each
  * connected client.
+ *
+ * @param user
+ *     The user to send the clipboard data to.
+ *
+ * @param
+ *     A pointer to the guac_common_clipboard structure containing the
+ *     clipboard data that should be sent to the given user.
+ *
+ * @return
+ *     Always NULL.
  */
 static void* __send_user_clipboard(guac_user* user, void* data) {
 

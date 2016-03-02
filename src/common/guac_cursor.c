@@ -148,6 +148,21 @@ void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
 /**
  * Ensures the cursor image buffer has enough room to fit an image with the 
  * given characteristics. Existing image buffer data may be destroyed.
+ *
+ * @param cursor
+ *     The cursor whose buffer size should be checked. If this cursor lacks
+ *     sufficient space to contain a cursor image of the specified width,
+ *     height, and stride, the current contents of this cursor will be
+ *     destroyed and replaced with an new buffer having sufficient space.
+ *
+ * @param width
+ *     The required cursor width, in pixels.
+ *
+ * @param height
+ *     The required cursor height, in pixels.
+ *
+ * @param stride
+ *     The number of bytes in each row of image data.
  */
 static void guac_common_cursor_resize(guac_common_cursor* cursor,
         int width, int height, int stride) {
@@ -171,6 +186,16 @@ static void guac_common_cursor_resize(guac_common_cursor* cursor,
 /**
  * Callback for guac_client_foreach_user() which sends the current cursor image
  * as PNG data to each connected client.
+ *
+ * @param user
+ *     The user to send the cursor image to.
+ *
+ * @param data
+ *     A pointer to the guac_common_cursor structure containing the cursor
+ *     image that should be sent to the given user.
+ *
+ * @return
+ *     Always NULL.
  */
 static void* __send_user_cursor_image(guac_user* user, void* data) {
 
