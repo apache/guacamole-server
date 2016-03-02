@@ -107,10 +107,17 @@ typedef struct guac_common_display {
  * operations of the given guac_client such that client state can be easily
  * synchronized to joining users.
  *
- * @param client The guac_client to associate with this display.
- * @param width The initial width of the display, in pixels.
- * @param height The initial height of the display, in pixels.
- * @return The newly-allocated display.
+ * @param client
+ *     The guac_client to associate with this display.
+ *
+ * @param width
+ *     The initial width of the display, in pixels.
+ *
+ * @param height
+ *     The initial height of the display, in pixels.
+ *
+ * @return
+ *     The newly-allocated display.
  */
 guac_common_display* guac_common_display_alloc(guac_client* client,
         int width, int height);
@@ -119,7 +126,8 @@ guac_common_display* guac_common_display_alloc(guac_client* client,
  * Frees the given display, and any associated resources, including any
  * allocated buffers/layers.
  *
- * @param display The display to free.
+ * @param display
+ *     The display to free.
  */
 void guac_common_display_free(guac_common_display* display);
 
@@ -143,7 +151,8 @@ void guac_common_display_dup(guac_common_display* display, guac_user* user,
  * Flushes pending changes to the given display. All pending operations will
  * become visible to any connected users.
  *
- * @param display The display to flush.
+ * @param display
+ *     The display to flush.
  */
 void guac_common_display_flush(guac_common_display* display);
 
@@ -152,10 +161,17 @@ void guac_common_display_flush(guac_common_display* display);
  * surface. The layer may be reused from a previous allocation, if that layer
  * has since been freed.
  *
- * @param display The display to allocate a new layer from.
- * @param width The width of the layer to allocate, in pixels.
- * @param height The height of the layer to allocate, in pixels.
- * @return A newly-allocated layer.
+ * @param display
+ *     The display to allocate a new layer from.
+ *
+ * @param width
+ *     The width of the layer to allocate, in pixels.
+ *
+ * @param height
+ *     The height of the layer to allocate, in pixels.
+ *
+ * @return
+ *     A newly-allocated layer.
  */
 guac_common_display_layer* guac_common_display_alloc_layer(
         guac_common_display* display, int width, int height);
@@ -165,10 +181,17 @@ guac_common_display_layer* guac_common_display_alloc_layer(
  * surface. The buffer may be reused from a previous allocation, if that buffer
  * has since been freed.
  *
- * @param display The display to allocate a new buffer from.
- * @param width The width of the buffer to allocate, in pixels.
- * @param height The height of the buffer to allocate, in pixels.
- * @return A newly-allocated buffer.
+ * @param display
+ *     The display to allocate a new buffer from.
+ *
+ * @param width
+ *     The width of the buffer to allocate, in pixels.
+ *
+ * @param height
+ *     The height of the buffer to allocate, in pixels.
+ *
+ * @return
+ *     A newly-allocated buffer.
  */
 guac_common_display_layer* guac_common_display_alloc_buffer(
         guac_common_display* display, int width, int height);

@@ -112,15 +112,19 @@ typedef struct guac_common_cursor {
  * Allocates a new cursor object which maintains and synchronizes the current
  * mouse cursor state across all users of the given client.
  *
- * @param client The client for which this object shall maintain the mouse
- *               cursor.
+ * @param client
+ *     The client for which this object shall maintain the mouse cursor.
+ *
+ * @return
+ *     The newly-allocated mouse cursor.
  */
 guac_common_cursor* guac_common_cursor_alloc(guac_client* client);
 
 /**
  * Frees the given cursor.
  *
- * @param cursor The cursor to free.
+ * @param cursor
+ *     The cursor to free.
  */
 void guac_common_cursor_free(guac_common_cursor* cursor);
 
@@ -146,10 +150,17 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
  * the mouse. The remote mouse cursor will be hidden for this user and shown
  * for all others.
  *
- * @param cursor The cursor being moved.
- * @param user The user that moved the cursor.
- * @param x The new X coordinate of the cursor.
- * @param y The new Y coordinate of the cursor.
+ * @param cursor
+ *     The cursor being moved.
+ *
+ * @param user
+ *     The user that moved the cursor.
+ *
+ * @param x
+ *     The new X coordinate of the cursor.
+ *
+ * @param y
+ *     The new Y coordinate of the cursor.
  */
 void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
         int x, int y);
@@ -160,13 +171,26 @@ void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
  * alpha component is stored in the high-order 8 bits, and blue is stored
  * in the low-order 8 bits.
  *
- * @param cursor The cursor to set the image of.
- * @param hx The X coordinate of the hotspot of the new cursor image.
- * @param hy The Y coordinate of the hotspot of the new cursor image.
- * @param data A pointer to raw 32-bit ARGB image data.
- * @param width The width of the given image data, in pixels.
- * @param height The height of the given image data, in pixels.
- * @param stride The number of bytes in a single row of image data.
+ * @param cursor
+ *     The cursor to set the image of.
+ *
+ * @param hx
+ *     The X coordinate of the hotspot of the new cursor image.
+ *
+ * @param hy
+ *     The Y coordinate of the hotspot of the new cursor image.
+ *
+ * @param data
+ *     A pointer to raw 32-bit ARGB image data.
+ *
+ * @param width
+ *     The width of the given image data, in pixels.
+ *
+ * @param height
+ *     The height of the given image data, in pixels.
+ *
+ * @param stride
+ *     The number of bytes in a single row of image data.
  */
 void guac_common_cursor_set_argb(guac_common_cursor* cursor, int hx, int hy,
     unsigned const char* data, int width, int height, int stride);
@@ -176,10 +200,17 @@ void guac_common_cursor_set_argb(guac_common_cursor* cursor, int hx, int hy,
  * contents of the surface are used, and the dimensions of the resulting
  * cursor will be the dimensions of the given surface.
  *
- * @param cursor The cursor to set the image of.
- * @param hx The X coordinate of the hotspot of the new cursor image.
- * @param hy The Y coordinate of the hotspot of the new cursor image.
- * @param surface The surface containing the cursor image.
+ * @param cursor
+ *     The cursor to set the image of.
+ *
+ * @param hx
+ *     The X coordinate of the hotspot of the new cursor image.
+ *
+ * @param hy
+ *     The Y coordinate of the hotspot of the new cursor image.
+ *
+ * @param surface
+ *     The surface containing the cursor image.
  */
 void guac_common_cursor_set_surface(guac_common_cursor* cursor, int hx, int hy,
     guac_common_surface* surface);
@@ -188,7 +219,8 @@ void guac_common_cursor_set_surface(guac_common_cursor* cursor, int hx, int hy,
  * Set the cursor of the remote display to the embedded "pointer" graphic. The
  * pointer graphic is a black arrow with white border.
  *
- * @param cursor The cursor to set the image of.
+ * @param cursor
+ *     The cursor to set the image of.
  */
 void guac_common_cursor_set_pointer(guac_common_cursor* cursor);
 
@@ -196,7 +228,8 @@ void guac_common_cursor_set_pointer(guac_common_cursor* cursor);
  * Set the cursor of the remote display to the embedded "dot" graphic. The dot
  * graphic is a small black square with white border.
  *
- * @param cursor The cursor to set the image of.
+ * @param cursor
+ *     The cursor to set the image of.
  */
 void guac_common_cursor_set_dot(guac_common_cursor* cursor);
 
@@ -225,8 +258,11 @@ void guac_common_cursor_set_blank(guac_common_cursor* cursor);
  * connection and this is not called, the corresponding guac_user and socket
  * may cease to be valid, and future synchronization attempts will segfault.
  *
- * @param cursor The cursor to remove the user from.
- * @param user The user to remove.
+ * @param cursor
+ *     The cursor to remove the user from.
+ *
+ * @param user
+ *     The user to remove.
  */
 void guac_common_cursor_remove_user(guac_common_cursor* cursor,
         guac_user* user);
