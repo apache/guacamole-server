@@ -63,16 +63,27 @@ typedef struct guacd_proc {
 } guacd_proc;
 
 /**
- * Creates a new process for handling the given protocol, returning the process
- * created. The created process runs in the background relative to the calling
- * process. Within the child process, this function does not return - the
+ * Creates a new background process for handling the given protocol, returning
+ * a structure allowing communication with and monitoring of the process
+ * created. Within the child process, this function does not return - the
  * entire child process simply terminates instead.
+ *
+ * @param protocol
+ *     The protocol for which this process is client being created.
+ *
+ * @return
+ *     A newly-allocated process structure pointing to the file descriptor of
+ *     the background process specific to the specified protocol, or NULL of
+ *     the process could not be created.
  */
-guacd_proc* guacd_create_proc(guac_parser* parser, const char* protocol);
+guacd_proc* guacd_create_proc(const char* protocol);
 
 /**
  * Signals the given process to stop accepting new users and clean up. This
  * will eventually cause the child process to exit.
+ *
+ * @param proc
+ *     The process to stop.
  */
 void guacd_proc_stop(guacd_proc* proc);
 

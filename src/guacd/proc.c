@@ -102,7 +102,17 @@ static void guacd_free_mimetypes(char** mimetypes) {
 }
 
 /**
- * Handles the initial handshake of a user and all subsequent I/O.
+ * Handles the initial handshake of a user and all subsequent I/O. This
+ * function blocks until the user disconnects.
+ *
+ * @param user
+ *     The user whose handshake and entire Guacamole protocol exchange should
+ *     be handled.
+ *
+ * @return
+ *     Zero if the user's Guacamole connection was successfully handled and
+ *     the user has disconnected, or non-zero if an error prevented the user's
+ *     connection from being handled properly.
  */
 static int guacd_handle_user(guac_user* user) {
 
@@ -267,8 +277,17 @@ typedef struct guacd_user_thread_params {
 
 /**
  * Handles a user's entire connection and socket lifecycle.
+ *
+ * @param data
+ *     A pointer to a guacd_user_thread_params structure describing the user's
+ *     associated file descriptor, whether that user is the connection owner
+ *     (the first person to join), as well as the process associated with the
+ *     connection being joined.
+ *
+ * @return
+ *     Always NULL.
  */
-void* guacd_user_thread(void* data) {
+static void* guacd_user_thread(void* data) {
 
     guacd_user_thread_params* params = (guacd_user_thread_params*) data;
     guacd_proc* proc = params->proc;
@@ -305,7 +324,19 @@ void* guacd_user_thread(void* data) {
 
 /**
  * Begins a new user connection under a given process, using the given file
- * descriptor.
+ * descriptor. The connection will be managed by a separate and detached thread
+ * which is started by this function.
+ *
+ * @param proc
+ *     The process that the user is being added to.
+ *
+ * @param fd
+ *     The file descriptor associated with the user's network connection to
+ *     guacd.
+ *
+ * @param owner
+ *     Non-zero if the user is the owner of the connection being joined (they
+ *     are the first user to join), or zero otherwise.
  */
 static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
 
@@ -322,9 +353,18 @@ static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
 }
 
 /**
- * Starts protocol-specific handling on the given process. This function does
- * NOT return. It initializes the process with protocol-specific handlers and
- * then runs until the fd_socket is closed.
+ * Starts protocol-specific handling on the given process by loading the client
+ * plugin for that protocol. This function does NOT return. It initializes the
+ * process with protocol-specific handlers and then runs until the guacd_proc's
+ * fd_socket is closed, adding any file descriptors received along fd_socket as
+ * new users.
+ *
+ * @param proc
+ *     The process that any new users received along fd_socket should be added
+ *     to (after the process has been initialized for the given protocol).
+ *
+ * @param protocol
+ *     The protocol to initialize the given process for.
  */
 static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
 
@@ -370,7 +410,7 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
 
 }
 
-guacd_proc* guacd_create_proc(guac_parser* parser, const char* protocol) {
+guacd_proc* guacd_create_proc(const char* protocol) {
 
     int sockets[2];
 

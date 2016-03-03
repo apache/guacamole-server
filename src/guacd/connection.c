@@ -291,7 +291,7 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
     else {
 
         guacd_log(GUAC_LOG_INFO, "Creating new client for protocol \"%s\"", identifier);
-        proc = guacd_create_proc(parser, identifier);
+        proc = guacd_create_proc(identifier);
 
         new_process = 1;
 
