@@ -25,13 +25,9 @@
 
 #include "config.h"
 
-#include "guac_clipboard.h"
-
 #include <guacamole/client.h>
-#include <guacamole/stream.h>
 #include <guacamole/user.h>
 #include <rfb/rfbclient.h>
-#include <rfb/rfbproto.h>
 
 /**
  * Sets the encoding of clipboard data exchanged with the VNC server to the
@@ -55,17 +51,17 @@ int guac_vnc_set_clipboard_encoding(guac_client* client,
 /**
  * Handler for inbound clipboard data from Guacamole users.
  */
-int guac_vnc_clipboard_handler(guac_user* user, guac_stream* stream, char* mimetype);
+guac_user_clipboard_handler guac_vnc_clipboard_handler;
 
 /**
  * Handler for stream data related to clipboard.
  */
-int guac_vnc_clipboard_blob_handler(guac_user* user, guac_stream* stream, void* data, int length);
+guac_user_blob_handler guac_vnc_clipboard_blob_handler;
 
 /**
  * Handler for end-of-stream related to clipboard.
  */
-int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream);
+guac_user_end_handler guac_vnc_clipboard_end_handler;
 
 /**
  * Handler for clipboard data received via VNC.

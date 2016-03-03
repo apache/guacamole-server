@@ -25,31 +25,13 @@
 
 #include "config.h"
 
-#include <guacamole/stream.h>
 #include <guacamole/user.h>
 
 /**
  * Handles an incoming stream from a Guacamole "file" instruction, saving the
  * contents of that stream to the file having the given name.
- *
- * @param user
- *     The user uploading the file.
- *
- * @param stream
- *     The stream through which the uploaded file data will be received.
- *
- * @param mimetype
- *     The mimetype of the data being received.
- *
- * @param filename
- *     The filename of the file to write to.
- *
- * @return
- *     Zero if the incoming stream has been handled successfully, non-zero on
- *     failure.
  */
-int guac_vnc_sftp_file_handler(guac_user* user, guac_stream* stream,
-        char* mimetype, char* filename);
+guac_user_file_handler guac_vnc_sftp_file_handler;
 
 #endif
 

@@ -51,7 +51,7 @@
 /**
  * Handler which frees all data associated with the guac_client.
  */
-int guac_vnc_client_free_handler(guac_client* client);
+guac_client_free_handler guac_vnc_client_free_handler;
 
 #endif
 

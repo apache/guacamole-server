@@ -25,19 +25,17 @@
 
 #include "config.h"
 
-#include "guac_clipboard.h"
-
 #include <guacamole/user.h>
 
 /**
  * Handler for joining users.
  */
-int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv);
+guac_user_join_handler guac_vnc_user_join_handler;
 
 /**
  * Handler for leaving users.
  */
-int guac_vnc_user_leave_handler(guac_user* user);
+guac_user_leave_handler guac_vnc_user_leave_handler;
 
 #endif
 

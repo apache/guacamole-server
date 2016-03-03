@@ -31,12 +31,12 @@
 /**
  * Handler for Guacamole user mouse events.
  */
-int guac_vnc_user_mouse_handler(guac_user* user, int x, int y, int mask);
+guac_user_mouse_handler guac_vnc_user_mouse_handler;
 
 /**
  * Handler for Guacamole user key events.
  */
-int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed);
+guac_user_key_handler guac_vnc_user_key_handler;
 
 #endif
 
