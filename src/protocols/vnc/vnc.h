@@ -134,12 +134,28 @@ typedef struct guac_vnc_client {
 /**
  * Allocates a new rfbClient instance given the parameters stored within the
  * client, returning NULL on failure.
+ *
+ * @param client
+ *     The guac_client associated with the settings of the desired VNC
+ *     connection.
+ *
+ * @return
+ *     A new rfbClient instance allocated and connected according to the
+ *     parameters stored within the given client, or NULL if connecting to the
+ *     VNC server fails.
  */
 rfbClient* guac_vnc_get_client(guac_client* client);
 
 /**
- * VNC client thread. This thread runs throughout the duration of the client,
- * existing as a single instance, shared by all users.
+ * VNC client thread. This thread initiates the VNC connection and ultimately
+ * runs throughout the duration of the client, existing as a single instance,
+ * shared by all users.
+ *
+ * @param data
+ *     The guac_client instance associated with the requested VNC connection.
+ *
+ * @return
+ *     Always NULL.
  */
 void* guac_vnc_client_thread(void* data);
 
