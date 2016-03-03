@@ -43,12 +43,27 @@
 #include <syslog.h>
 
 /**
- * Log handler for informational messages from the VNC client library.
+ * Callback invoked by libVNCServer when an informational message needs to be
+ * logged.
+ *
+ * @param format
+ *     A printf-style format string to log.
+ *
+ * @param ...
+ *     The values to use when filling the conversion specifiers within the
+ *     format string.
  */
 void guac_vnc_client_log_info(const char* format, ...);
 
 /**
- * Log handler for error messages from the VNC client library.
+ * Callback invoked by libVNCServer when an error message needs to be logged.
+ *
+ * @param format
+ *     A printf-style format string to log.
+ *
+ * @param ...
+ *     The values to use when filling the conversion specifiers within the
+ *     format string.
  */
 void guac_vnc_client_log_error(const char* format, ...);
 
