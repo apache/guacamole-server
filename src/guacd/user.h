@@ -68,13 +68,32 @@ typedef struct guacd_user_input_thread_params {
 
 /**
  * Starts the input/output threads of a new user. This function will block
- * until the user disconnects.
+ * until the user disconnects. If an error prevents the input/output threads
+ * from starting, guac_user_stop() will be invoked on the given user.
+ *
+ * @param parser
+ *     The guac_parser to use to handle all input from the given user.
+ *
+ * @param user
+ *     The user whose associated I/O transfer threads should be started.
+ *
+ * @return
+ *     Zero if the I/O threads started successfully and user has disconnected,
+ *     or non-zero if the I/O threads could not be started.
  */
 int guacd_user_start(guac_parser* parser, guac_user* user);
 
 /**
  * The thread which handles all user input, calling event handlers for received
  * instructions.
+ *
+ * @param data
+ *     A pointer to a guacd_user_input_thread_params structure describing the
+ *     user whose input is being handled and the guac_parser with which to
+ *     handle it.
+ *
+ * @return
+ *     Always NULL.
  */
 void* guacd_user_input_thread(void* data);
 
