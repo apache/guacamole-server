@@ -64,7 +64,18 @@ guac_user_blob_handler guac_vnc_clipboard_blob_handler;
 guac_user_end_handler guac_vnc_clipboard_end_handler;
 
 /**
- * Handler for clipboard data received via VNC.
+ * Handler for clipboard data received via VNC, invoked by libVNCServer
+ * whenever text has been copied or cut within the VNC session.
+ *
+ * @param client
+ *     The VNC client associated with the session in which the user cut or
+ *     copied text.
+ *
+ * @param text
+ *     The string of cut/copied text.
+ *
+ * @param textlen
+ *     The number of bytes in the string of cut/copied text.
  */
 void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen);
 
