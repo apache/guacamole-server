@@ -160,9 +160,9 @@ void* guacd_connection_io_thread(void* data) {
 
 /**
  * Adds the given socket as a new user to the given process, automatically
- * reading/writing from the socket via read/write threads. The given socket and
- * any associated resources will be freed unless the user is not added
- * successfully.
+ * reading/writing from the socket via read/write threads. The given socket,
+ * parser, and any associated resources will be freed unless the user is not
+ * added successfully.
  *
  * If adding the user fails for any reason, non-zero is returned. Zero is
  * returned upon success.
@@ -278,25 +278,31 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
     if (identifier[0] == GUAC_CLIENT_ID_PREFIX) {
 
         proc = guacd_proc_map_retrieve(map, identifier);
-        if (proc == NULL)
-            guacd_log(GUAC_LOG_INFO, "Connection \"%s\" does not exist.", identifier);
-        else
-            guacd_log(GUAC_LOG_INFO, "Joining existing connection \"%s\"", identifier);
-
         new_process = 0;
+
+        /* Warn if requested connection does not exist */
+        if (proc == NULL)
+            guacd_log(GUAC_LOG_INFO, "Connection \"%s\" does not exist.",
+                    identifier);
+        else
+            guacd_log(GUAC_LOG_INFO, "Joining existing connection \"%s\"",
+                    identifier);
 
     }
 
     /* Otherwise, create new client */
     else {
 
-        guacd_log(GUAC_LOG_INFO, "Creating new client for protocol \"%s\"", identifier);
-        proc = guacd_create_proc(identifier);
+        guacd_log(GUAC_LOG_INFO, "Creating new client for protocol \"%s\"",
+                identifier);
 
+        /* Create new process */
+        proc = guacd_create_proc(identifier);
         new_process = 1;
 
     }
 
+    /* Abort if no process exists for the requested connection */
     if (proc == NULL) {
         guacd_log_guac_error(GUAC_LOG_INFO, "Connection did not succeed");
         guac_parser_free(parser);
@@ -304,13 +310,17 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
     }
 
     /* Add new user (in the case of a new process, this will be the owner */
-    if (guacd_add_user(proc, parser, socket) == 0) {
+    int add_user_failed = guacd_add_user(proc, parser, socket);
 
-        /* If new process was created, manage that process */
-        if (new_process) {
+    /* If new process was created, manage that process */
+    if (new_process) {
+
+        /* The new process will only be active if the user was added */
+        if (!add_user_failed) {
 
             /* Log connection ID */
-            guacd_log(GUAC_LOG_INFO, "Connection ID is \"%s\"", proc->client->connection_id);
+            guacd_log(GUAC_LOG_INFO, "Connection ID is \"%s\"",
+                    proc->client->connection_id);
 
             /* Store process, allowing other users to join */
             guacd_proc_map_add(map, proc);
@@ -320,28 +330,33 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
 
             /* Remove client */
             if (guacd_proc_map_remove(map, proc->client->connection_id) == NULL)
-                guacd_log(GUAC_LOG_ERROR, "Internal failure removing client \"%s\". Client record will never be freed.",
+                guacd_log(GUAC_LOG_ERROR, "Internal failure removing "
+                        "client \"%s\". Client record will never be freed.",
                         proc->client->connection_id);
             else
-                guacd_log(GUAC_LOG_INFO, "Connection \"%s\" removed.", proc->client->connection_id);
-
-            /* Free skeleton client */
-            guac_client_free(proc->client);
-
-            /* Clean up */
-            close(proc->fd_socket);
-            free(proc);
+                guacd_log(GUAC_LOG_INFO, "Connection \"%s\" removed.",
+                        proc->client->connection_id);
 
         }
 
-        return 0;
+        /* Parser must be manually freed if the process did not start */
+        else
+            guac_parser_free(parser);
+
+        /* Force process to stop and clean up */
+        guacd_proc_stop(proc);
+
+        /* Free skeleton client */
+        guac_client_free(proc->client);
+
+        /* Clean up */
+        close(proc->fd_socket);
+        free(proc);
+
     }
 
-    /* Add of user failed */
-    else {
-        guac_parser_free(parser);
-        return 1;
-    }
+    /* Routing succeeded only if the user was added to a process */
+    return add_user_failed;
 
 }
 
