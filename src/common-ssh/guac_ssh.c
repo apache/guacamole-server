@@ -445,17 +445,16 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
     }
 
+    /* Free addrinfo */
+    freeaddrinfo(addresses);
+
     /* If unable to connect to anything, fail */
     if (current_address == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                 "Unable to connect to any addresses.");
-        freeaddrinfo(addresses);
         close(fd);
         return NULL;
     }
-
-    /* Free addrinfo */
-    freeaddrinfo(addresses);
 
     /* Allocate new session */
     guac_common_ssh_session* common_session =
