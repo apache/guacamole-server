@@ -113,6 +113,9 @@ static int __guac_socket_ssl_free_handler(guac_socket* socket) {
     guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
     SSL_shutdown(data->ssl);
 
+    /* Close file descriptor */
+    close(data->fd);
+
     free(data);
     return 0;
 }

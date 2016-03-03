@@ -29,21 +29,27 @@ man_MANS =           \
     man/guacd.conf.5
 
 noinst_HEADERS =  \
-    client.h      \
-    client-map.h  \
     conf-args.h   \
     conf-file.h   \
     conf-parse.h  \
-    log.h
+    connection.h  \
+    log.h         \
+    move-fd.h     \
+    proc.h        \
+    proc-map.h    \
+    user.h
 
-guacd_SOURCES =   \
-    daemon.c      \
-    client.c      \
-    client-map.c  \
-    conf-args.c   \
-    conf-file.c   \
-    conf-parse.c  \
-    log.c
+guacd_SOURCES =  \
+    conf-args.c  \
+    conf-file.c  \
+    conf-parse.c \
+    connection.c \
+    daemon.c     \
+    log.c        \
+    move-fd.c    \
+    proc.c       \
+    proc-map.c   \
+    user.c
 
 guacd_CFLAGS =              \
     -Werror -Wall -pedantic \
