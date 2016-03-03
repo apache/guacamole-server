@@ -687,6 +687,7 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
     if (dlerror() != NULL) {
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = dlerror();
+        dlclose(client_plugin_handle);
         return -1;
     }
 
