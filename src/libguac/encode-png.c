@@ -310,6 +310,7 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
     /* Set up PNG writer */
     png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (!png) {
+        guac_palette_free(palette);
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = "libpng failed to create write structure";
         return -1;
