@@ -29,23 +29,88 @@
 #include <rfb/rfbproto.h>
 
 /**
- * Called for normal binary VNC image data.
+ * Callback invoked by libVNCServer when it receives a new binary image data.
+ * the VNC server. The image itself will be stored in the designated sub-
+ * rectangle of client->framebuffer.
+ *
+ * @param client
+ *     The VNC client associated with the VNC session in which the new image
+ *     was received.
+ *
+ * @param x
+ *     The X coordinate of the upper-left corner of the destination rectangle
+ *     in which the image should be drawn, in pixels.
+ *
+ * @param y
+ *     The Y coordinate of the upper-left corner of the destination rectangle
+ *     in which the image should be drawn, in pixels.
+ *
+ * @param w
+ *     The width of the image, in pixels.
+ *
+ * @param h
+ *     The height of the image, in pixels.
  */
 void guac_vnc_update(rfbClient* client, int x, int y, int w, int h);
 
 /**
- * Called for updates which contain data from existing rectangles of the
- * display.
+ * Callback invoked by libVNCServer when it receives a CopyRect message.
+ * CopyRect specified a rectangle of source data within the display and a
+ * set of X/Y coordinates to which that rectangle should be copied.
+ *
+ * @param client
+ *     The VNC client associated with the VNC session in which the CopyRect
+ *     was received.
+ *
+ * @param src_x
+ *     The X coordinate of the upper-left corner of the source rectangle
+ *     from which the image data should be copied, in pixels.
+ *
+ * @param src_y
+ *     The Y coordinate of the upper-left corner of the source rectangle
+ *     from which the image data should be copied, in pixels.
+ *
+ * @param w
+ *     The width of the source and destination rectangles, in pixels.
+ *
+ * @param h
+ *     The height of the source and destination rectangles, in pixels.
+ *
+ * @param dest_x
+ *     The X coordinate of the upper-left corner of the destination rectangle
+ *     in which the copied image data should be drawn, in pixels.
+ *
+ * @param dest_y
+ *     The Y coordinate of the upper-left corner of the destination rectangle
+ *     in which the copied image data should be drawn, in pixels.
  */
-void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
+void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h,
+        int dest_x, int dest_y);
 
 /**
- * Called when the pixel format of future updates is changing.
+ * Callback invoked by libVNCServer when the pixel format of future graphical
+ * updates is changing.
+ *
+ * @param client
+ *     The VNC client associated with the VNC session whose pixel format is
+ *     changing.
+ *
+ * @param color_depth
+ *     The new color depth, in bits per pixel. Valid values are 8, 16, 24, and
+ *     32.
  */
 void guac_vnc_set_pixel_format(rfbClient* client, int color_depth);
 
 /**
- * Called when the display is being resized (or initially allocated).
+ * Overridden implementation of the rfb_MallocFrameBuffer function invoked by
+ * libVNCServer when the display is being resized (or initially allocated).
+ *
+ * @param client
+ *     The VNC client associated with the VNC session whose display needs to be
+ *     allocated or reallocated.
+ *
+ * @return
+ *     The original value returned by rfb_MallocFrameBuffer().
  */
 rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client);
 

@@ -43,6 +43,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <syslog.h>
 
@@ -85,15 +86,15 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
             /* Read current pixel value */
             switch (bpp) {
                 case 4:
-                    v = *((unsigned int*)   fb_current);
+                    v = *((uint32_t*) fb_current);
                     break;
 
                 case 2:
-                    v = *((unsigned short*) fb_current);
+                    v = *((uint16_t*) fb_current);
                     break;
 
                 default:
-                    v = *((unsigned char*)  fb_current);
+                    v = *((uint8_t*)  fb_current);
             }
 
             /* Translate mask to alpha */
