@@ -387,9 +387,13 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
 
     /* Free settings strings */
     free(settings->clipboard_encoding);
-    free(settings->dest_host);
     free(settings->encodings);
     free(settings->hostname);
+
+#ifdef ENABLE_VNC_REPEATER
+    /* Free VNC repeater settings */
+    free(settings->dest_host);
+#endif
 
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP settings */
