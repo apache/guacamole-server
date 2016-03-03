@@ -56,6 +56,17 @@ typedef struct guac_socket_ssl_data {
 /**
  * Creates a new guac_socket which will use SSL for all communication. Freeing
  * this guac_socket will automatically close the associated file descriptor.
+ *
+ * @param context
+ *     The SSL_CTX structure describing the desired SSL configuration.
+ *
+ * @param fd
+ *     The file descriptor to use for the SSL connection underlying the
+ *     created guac_socket.
+ *
+ * @return
+ *     A newly-allocated guac_socket which will transparently use SSL for
+ *     all communication.
  */
 guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd);
 
