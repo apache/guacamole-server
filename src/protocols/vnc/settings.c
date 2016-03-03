@@ -76,40 +76,155 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
 
 enum VNC_ARGS_IDX {
 
+    /**
+     * The hostname of the VNC server (or repeater) to connect to.
+     */
     IDX_HOSTNAME,
+
+    /**
+     * The port of the VNC server (or repeater) to connect to.
+     */
     IDX_PORT,
+
+    /**
+     * "true" if this connection should be read-only (user input should be
+     * dropped), "false" or blank otherwise.
+     */
     IDX_READ_ONLY,
+
+    /**
+     * Space-separated list of encodings to use within the VNC session. If not
+     * specified, this will be:
+     *
+     *     "zrle ultra copyrect hextile zlib corre rre raw".
+     */
     IDX_ENCODINGS,
+
+    /**
+     * The password to send to the VNC server if authentication is requested.
+     */
     IDX_PASSWORD,
+
+    /**
+     * "true" if the red and blue components of each color should be swapped,
+     * "false" or blank otherwise. This is mainly used for VNC servers that do
+     * not properly handle colors.
+     */
     IDX_SWAP_RED_BLUE,
+
+    /**
+     * The color depth to request, in bits.
+     */
     IDX_COLOR_DEPTH,
+
+    /**
+     * "remote" if the cursor should be rendered on the server instead of the
+     * client. All other values will default to local rendering.
+     */
     IDX_CURSOR,
+
+    /**
+     * The number of connection attempts to make before giving up. By default,
+     * this will be 0.
+     */
     IDX_AUTORETRY,
+
+    /**
+     * The encoding to use for clipboard data sent to the VNC server if we are
+     * going to be deviating from the standard (which mandates ISO 8829-1).
+     * Valid values are "ISO8829-1" (the only legal value with respect to the
+     * VNC standard), "UTF-8", "UTF-16", and "CP2252".
+     */
     IDX_CLIPBOARD_ENCODING,
 
 #ifdef ENABLE_VNC_REPEATER
+    /**
+     * The VNC host to connect to, if using a repeater.
+     */
     IDX_DEST_HOST,
+
+    /**
+     * The VNC port to connect to, if using a repeater.
+     */
     IDX_DEST_PORT,
 #endif
 
 #ifdef ENABLE_PULSE
+    /**
+     * "true" if audio should be enabled, "false" or blank otherwise.
+     */
     IDX_ENABLE_AUDIO,
+
+    /**
+     * The name of the PulseAudio server to connect to. If left blank, the
+     * default sink of the local machine will be used as the source for audio.
+     */
     IDX_AUDIO_SERVERNAME,
 #endif
 
 #ifdef ENABLE_VNC_LISTEN
+    /**
+     * "true" if not actually connecting to a VNC server, but rather listening
+     * for a connection from the VNC server (reverse connection), "false" or
+     * blank otherwise.
+     */
     IDX_REVERSE_CONNECT,
+
+    /**
+     * The maximum amount of time to wait when listening for connections, in
+     * milliseconds. If unspecified, this will default to 5000.
+     */
     IDX_LISTEN_TIMEOUT,
 #endif
 
 #ifdef ENABLE_COMMON_SSH
+    /**
+     * "true" if SFTP should be enabled for the VNC connection, "false" or
+     * blank otherwise.
+     */
     IDX_ENABLE_SFTP,
+
+    /**
+     * The hostname of the SSH server to connect to for SFTP. If blank, the
+     * hostname of the VNC server will be used.
+     */
     IDX_SFTP_HOSTNAME,
+
+    /**
+     * The port of the SSH server to connect to for SFTP. If blank, the default
+     * SSH port of "22" will be used.
+     */
     IDX_SFTP_PORT,
+
+    /**
+     * The username to provide when authenticating with the SSH server for
+     * SFTP.
+     */
     IDX_SFTP_USERNAME,
+
+    /**
+     * The password to provide when authenticating with the SSH server for
+     * SFTP (if not using a private key).
+     */
     IDX_SFTP_PASSWORD,
+
+    /**
+     * The base64-encoded private key to use when authenticating with the SSH
+     * server for SFTP (if not using a password).
+     */
     IDX_SFTP_PRIVATE_KEY,
+
+    /**
+     * The passphrase to use to decrypt the provided base64-encoded private
+     * key.
+     */
     IDX_SFTP_PASSPHRASE,
+
+    /**
+     * The default location for file uploads within the SSH server. This will
+     * apply only to uploads which do not use the filesystem guac_object (where
+     * the destination directory is otherwise ambiguous).
+     */
     IDX_SFTP_DIRECTORY,
 #endif
 
@@ -183,7 +298,8 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     /* Set encodings if specified */
     settings->encodings =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_ENCODINGS, NULL);
+                IDX_ENCODINGS,
+                "zrle ultra copyrect hextile zlib corre rre raw");
 
     /* Parse autoretry */
     settings->retries =

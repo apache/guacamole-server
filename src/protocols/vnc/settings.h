@@ -70,6 +70,7 @@ typedef struct guac_vnc_settings {
      */
     bool read_only;
 
+#ifdef ENABLE_VNC_REPEATER
     /**
      * The VNC host to connect to, if using a repeater.
      */
@@ -79,6 +80,7 @@ typedef struct guac_vnc_settings {
      * The VNC port to connect to, if using a repeater.
      */
     int dest_port;
+#endif
 
 #ifdef ENABLE_VNC_LISTEN
     /**
@@ -99,13 +101,13 @@ typedef struct guac_vnc_settings {
      * client (local).
      */
     int remote_cursor;
-
+   
+#ifdef ENABLE_PULSE
     /**
      * Whether audio is enabled.
      */
     bool audio_enabled;
-    
-#ifdef ENABLE_PULSE
+ 
     /**
      * The name of the PulseAudio server to connect to.
      */
@@ -124,20 +126,50 @@ typedef struct guac_vnc_settings {
     char* clipboard_encoding;
 
 #ifdef ENABLE_COMMON_SSH
+    /**
+     * Whether SFTP should be enabled for the VNC connection.
+     */
     bool enable_sftp;
 
+    /**
+     * The hostname of the SSH server to connect to for SFTP.
+     */
     char* sftp_hostname;
 
+    /**
+     * The port of the SSH server to connect to for SFTP.
+     */
     char* sftp_port;
 
+    /**
+     * The username to provide when authenticating with the SSH server for
+     * SFTP.
+     */
     char* sftp_username;
 
+    /**
+     * The password to provide when authenticating with the SSH server for
+     * SFTP (if not using a private key).
+     */
     char* sftp_password;
 
+    /**
+     * The base64-encoded private key to use when authenticating with the SSH
+     * server for SFTP (if not using a password).
+     */
     char* sftp_private_key;
 
+    /**
+     * The passphrase to use to decrypt the provided base64-encoded private
+     * key.
+     */
     char* sftp_passphrase;
 
+    /**
+     * The default location for file uploads within the SSH server. This will
+     * apply only to uploads which do not use the filesystem guac_object (where
+     * the destination directory is otherwise ambiguous).
+     */
     char* sftp_directory;
 #endif
 
