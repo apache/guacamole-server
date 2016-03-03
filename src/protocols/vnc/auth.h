@@ -29,7 +29,15 @@
 #include <rfb/rfbproto.h>
 
 /**
- * Handler which returns the configured password.
+ * Callback which is invoked by libVNCServer when it needs to read the user's
+ * VNC password. As ths user's password, if any, will be stored in the
+ * connection settings, this function does nothing more than return that value.
+ *
+ * @param client
+ *     The rfbClient associated with the VNC connection requiring the password.
+ *
+ * @return
+ *     The password to provide to the VNC server.
  */
 char* guac_vnc_get_password(rfbClient* client);
 
