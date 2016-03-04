@@ -39,6 +39,15 @@
 #define GUAC_VNC_FRAME_TIMEOUT 10
 
 /**
+ * The amount of time to wait for a new message from the VNC server when
+ * beginning a new frame. This value must be kept reasonably small such that
+ * a slow VNC server will not prevent external events from being handled (such
+ * as the stop signal from guac_client_stop()), but large enough that the
+ * message handling loop does not eat up CPU spinning.
+ */
+#define GUAC_VNC_FRAME_START_TIMEOUT 1000000
+
+/**
  * The number of milliseconds to wait between connection attempts.
  */
 #define GUAC_VNC_CONNECT_INTERVAL 1000

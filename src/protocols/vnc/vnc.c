@@ -341,7 +341,8 @@ void* guac_vnc_client_thread(void* data) {
     while (client->state == GUAC_CLIENT_RUNNING) {
 
         /* Wait for start of frame */
-        int wait_result = guac_vnc_wait_for_messages(rfb_client, 1000000);
+        int wait_result = guac_vnc_wait_for_messages(rfb_client,
+                GUAC_VNC_FRAME_START_TIMEOUT);
         if (wait_result > 0) {
 
             guac_timestamp frame_start = guac_timestamp_current();
