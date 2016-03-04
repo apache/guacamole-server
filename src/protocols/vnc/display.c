@@ -127,9 +127,11 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
         }
     }
 
-    /* For now, only use default layer */
-    surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24, w, h, stride);
+    /* Create surface from decoded buffer */
+    surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
+            w, h, stride);
 
+    /* Draw directly to default layer */
     guac_common_surface_draw(vnc_client->display->default_surface,
             x, y, surface);
 
@@ -144,7 +146,7 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
-    /* For now, only use default layer */
+    /* Copy specified rectangle within default layer */
     guac_common_surface_copy(vnc_client->display->default_surface,
             src_x, src_y, w, h,
             vnc_client->display->default_surface, dest_x, dest_y);
