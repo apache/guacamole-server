@@ -97,8 +97,9 @@ void guac_svc_process_connect(rdpSvcPlugin* plugin) {
 
     /* Create pipe */
     svc->output_pipe = guac_client_alloc_stream(svc->client);
-    guac_protocol_send_pipe(svc->client->socket, svc->output_pipe,
-            "application/octet-stream", svc->name);
+
+    /* Notify of pipe's existence */
+    guac_rdp_svc_send_pipe(svc->client->socket, svc);
 
     /* Log connection to static channel */
     guac_client_log(svc->client, GUAC_LOG_INFO,

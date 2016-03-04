@@ -28,6 +28,7 @@
 #include "rdp.h"
 #include "rdp_settings.h"
 #include "rdp_stream.h"
+#include "rdp_svc.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "sftp.h"
@@ -75,6 +76,9 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
         /* Synchronize an audio stream */
         if (rdp_client->audio)
             guac_audio_stream_add_user(rdp_client->audio, user);
+
+        /* Bring user up to date with any registered static channels */
+        guac_rdp_svc_send_pipes(user);
 
         /* Synchronize with current display */
         guac_common_display_dup(rdp_client->display, user, user->socket);
