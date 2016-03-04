@@ -88,16 +88,18 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h,
         int dest_x, int dest_y);
 
 /**
- * Callback invoked by libVNCServer when the pixel format of future graphical
- * updates is changing.
+ * Sets the pixel format to request of the VNC server. The request will be made
+ * during the connection handshake with the VNC server using the values
+ * specified by this function. Note that the VNC server is not required to
+ * honor this request.
  *
  * @param client
- *     The VNC client associated with the VNC session whose pixel format is
- *     changing.
+ *     The VNC client associated with the VNC session whose desired pixel
+ *     format should be set.
  *
  * @param color_depth
- *     The new color depth, in bits per pixel. Valid values are 8, 16, 24, and
- *     32.
+ *     The desired new color depth, in bits per pixel. Valid values are 8, 16,
+ *     24, and 32.
  */
 void guac_vnc_set_pixel_format(rfbClient* client, int color_depth);
 
