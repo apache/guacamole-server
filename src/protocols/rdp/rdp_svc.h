@@ -56,12 +56,6 @@ typedef struct guac_rdp_svc {
     char name[GUAC_RDP_SVC_MAX_LENGTH+1];
 
     /**
-     * The pipe opened by the Guacamole client, if any. This should be
-     * opened in response to the output pipe.
-     */
-    guac_stream* input_pipe;
-
-    /**
      * The output pipe, opened when the RDP server receives a connection to
      * the static channel.
      */

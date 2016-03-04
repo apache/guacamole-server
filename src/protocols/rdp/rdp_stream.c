@@ -157,7 +157,6 @@ int guac_rdp_svc_pipe_handler(guac_user* user, guac_stream* stream,
     stream->blob_handler = guac_rdp_svc_blob_handler;
     rdp_stream->type = GUAC_RDP_INBOUND_SVC_STREAM;
     rdp_stream->svc = svc;
-    svc->input_pipe = stream;
 
     return 0;
 

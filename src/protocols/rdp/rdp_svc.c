@@ -45,7 +45,6 @@ guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
     /* Init SVC */
     svc->client = client;
     svc->plugin = NULL;
-    svc->input_pipe = NULL;
     svc->output_pipe = NULL;
 
     /* Warn about name length */
