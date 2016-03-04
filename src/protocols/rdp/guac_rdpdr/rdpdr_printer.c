@@ -282,9 +282,9 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
         (guac_rdpdr_printer_data*) device->data;
 
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
-            completion_id, STATUS_SUCCESS, 1);
+            completion_id, STATUS_SUCCESS, 4);
 
-    Stream_Write_UINT32(output_stream, 0); /* padding*/
+    Stream_Write_UINT32(output_stream, 0); /* Padding */
 
     /* Close input and wait for output thread to finish */
     close(printer_data->printer_input);
