@@ -100,7 +100,7 @@ typedef struct guac_vnc_settings {
      * Whether the cursor should be rendered on the server (remote) or on the
      * client (local).
      */
-    int remote_cursor;
+    bool remote_cursor;
    
 #ifdef ENABLE_PULSE
     /**
