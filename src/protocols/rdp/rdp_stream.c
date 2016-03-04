@@ -298,7 +298,7 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     guac_common_clipboard_append(rdp_client->clipboard, "", 1);
 
     /* Notify server that text data is now available */
-    format_list->formats = (UINT32*) malloc(sizeof(UINT32));
+    format_list->formats = (UINT32*) malloc(sizeof(UINT32) * 2);
     format_list->formats[0] = CB_FORMAT_TEXT;
     format_list->formats[1] = CB_FORMAT_UNICODETEXT;
     format_list->num_formats = 2;
