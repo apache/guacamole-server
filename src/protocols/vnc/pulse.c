@@ -22,8 +22,8 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "pulse.h"
+#include "vnc.h"
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
@@ -66,8 +66,8 @@ static void __stream_read_callback(pa_stream* stream, size_t length,
         void* data) {
 
     guac_client* client = (guac_client*) data;
-    vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
-    guac_audio_stream* audio = client_data->audio;
+    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
+    guac_audio_stream* audio = vnc_client->audio;
 
     const void* buffer;
 
@@ -231,35 +231,37 @@ static void __context_state_callback(pa_context* context, void* data) {
 
 void guac_pa_start_stream(guac_client* client) {
 
-    vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
+    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
+    guac_vnc_settings* settings = vnc_client->settings;
+
     pa_context* context;
 
     guac_client_log(client, GUAC_LOG_INFO, "Starting audio stream");
 
     /* Init main loop */
-    client_data->pa_mainloop = pa_threaded_mainloop_new();
+    vnc_client->pa_mainloop = pa_threaded_mainloop_new();
 
     /* Create context */
     context = pa_context_new(
-            pa_threaded_mainloop_get_api(client_data->pa_mainloop),
+            pa_threaded_mainloop_get_api(vnc_client->pa_mainloop),
             "Guacamole Audio");
 
     /* Set up context */
     pa_context_set_state_callback(context, __context_state_callback, client);
-    pa_context_connect(context, client_data->pa_servername,
+    pa_context_connect(context, settings->pa_servername,
             PA_CONTEXT_NOAUTOSPAWN, NULL);
 
     /* Start loop */
-    pa_threaded_mainloop_start(client_data->pa_mainloop);
+    pa_threaded_mainloop_start(vnc_client->pa_mainloop);
 
 }
 
 void guac_pa_stop_stream(guac_client* client) {
 
-    vnc_guac_client_data* client_data = (vnc_guac_client_data*) client->data;
+    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
 
     /* Stop loop */
-    pa_threaded_mainloop_stop(client_data->pa_mainloop);
+    pa_threaded_mainloop_stop(vnc_client->pa_mainloop);
 
     guac_client_log(client, GUAC_LOG_INFO, "Audio stream finished");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,26 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __GUAC_VNC_GUAC_HANDLERS_H
-#define __GUAC_VNC_GUAC_HANDLERS_H
+#ifndef GUAC_VNC_AUTH_H
+#define GUAC_VNC_AUTH_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include <rfb/rfbclient.h>
+#include <rfb/rfbproto.h>
 
-int vnc_guac_client_handle_messages(guac_client* client);
-int vnc_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int vnc_guac_client_free_handler(guac_client* client);
+/**
+ * Callback which is invoked by libVNCServer when it needs to read the user's
+ * VNC password. As ths user's password, if any, will be stored in the
+ * connection settings, this function does nothing more than return that value.
+ *
+ * @param client
+ *     The rfbClient associated with the VNC connection requiring the password.
+ *
+ * @return
+ *     The password to provide to the VNC server.
+ */
+char* guac_vnc_get_password(rfbClient* client);
 
 #endif
 

@@ -26,16 +26,28 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libguac-client-vnc.la
 
 libguac_client_vnc_la_SOURCES = \
+    auth.c                      \
     client.c                    \
     clipboard.c                 \
-    guac_handlers.c             \
-    vnc_handlers.c              
+    cursor.c                    \
+    display.c                   \
+    input.c                     \
+    log.c                       \
+    settings.c                  \
+    user.c                      \
+    vnc.c
     
 noinst_HEADERS =      \
+    auth.h            \
     client.h          \
     clipboard.h       \
-    guac_handlers.h   \
-    vnc_handlers.h    
+    cursor.h          \
+    display.h         \
+    input.h           \
+    log.h             \
+    settings.h        \
+    user.h            \
+    vnc.h
 
 # Optional PulseAudio support
 if ENABLE_PULSE

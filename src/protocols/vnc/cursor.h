@@ -20,54 +20,42 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __GUAC_VNC_PULSE_H
-#define __GUAC_VNC_PULSE_H
+#ifndef GUAC_VNC_CURSOR_H
+#define GUAC_VNC_CURSOR_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include <rfb/rfbclient.h>
+#include <rfb/rfbproto.h>
 
 /**
- * The number of bytes to request for the audio fragments received from
- * PulseAudio.
- */
-#define GUAC_VNC_AUDIO_FRAGMENT_SIZE 8192
-
-/**
- * The minimum number of PCM bytes to wait for before flushing an audio
- * packet. The current value is 48K, which works out to be around 280ms.
- */
-#define GUAC_VNC_PCM_WRITE_RATE 49152
-
-/**
- * Rate of audio to stream, in Hz.
- */
-#define GUAC_VNC_AUDIO_RATE     44100
-
-/**
- * The number of channels to stream.
- */
-#define GUAC_VNC_AUDIO_CHANNELS 2
-
-/**
- * The number of bits per sample.
- */
-#define GUAC_VNC_AUDIO_BPS      16
-
-/**
- * Starts streaming audio from PulseAudio to the given Guacamole client.
+ * Callback invoked by libVNCServer when it receives a new cursor image from
+ * the VNC server. The cursor image itself will be split across
+ * client->rcSource and client->rcMask, where rcSource is an image buffer of
+ * the format natively used by the current VNC connection, and rcMask is an
+ * array if bitmasks. Each bit within rcMask corresponds to a pixel within
+ * rcSource, where a 0 denotes full transparency and a 1 denotes full opacity.
  *
- * @param client The client to stream data to.
- */
-void guac_pa_start_stream(guac_client* client);
-
-/**
- * Stops streaming audio from PulseAudio to the given Guacamole client.
+ * @param client
+ *     The VNC client associated with the VNC session in which the new cursor
+ *     image was received.
  *
- * @param client The client to stream data to.
+ * @param x
+ *     The X coordinate of the new cursor image's hotspot, in pixels.
+ *
+ * @param y
+ *     The Y coordinate of the new cursor image's hotspot, in pixels.
+ *
+ * @param w
+ *     The width of the cursor image, in pixels.
+ *
+ * @param h
+ *     The height of the cursor image, in pixels.
+ *
+ * @param bpp
+ *     The number of bytes in each pixel, which must be either 4, 2, or 1.
  */
-void guac_pa_stop_stream(guac_client* client);
+void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp);
 
 #endif
 
