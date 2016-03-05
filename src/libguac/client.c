@@ -637,6 +637,43 @@ void* guac_client_for_owner(guac_client* client, guac_user_callback* callback,
 
 }
 
+void* guac_client_for_user(guac_client* client, guac_user* user,
+        guac_user_callback* callback, void* data) {
+
+    guac_user* current;
+
+    int user_valid = 0;
+    void* retval;
+
+    pthread_rwlock_rdlock(&(client->__users_lock));
+
+    /* Loop through all users, searching for a pointer to the given user */
+    current = client->__users;
+    while (current != NULL) {
+
+        /* If the user's pointer exists in the list, they are indeed valid */
+        if (current == user) {
+            user_valid = 1;
+            break;
+        }
+
+        current = current->__next;
+    }
+
+    /* Use NULL if user does not actually exist */
+    if (!user_valid)
+        user = NULL;
+
+    /* Invoke callback with requested user (if they exist) */
+    retval = callback(user, data);
+
+    pthread_rwlock_unlock(&(client->__users_lock));
+
+    /* Return value from callback */
+    return retval;
+
+}
+
 int guac_client_end_frame(guac_client* client) {
 
     /* Update and send timestamp */
