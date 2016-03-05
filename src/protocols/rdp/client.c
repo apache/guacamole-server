@@ -95,6 +95,9 @@ int guac_rdp_client_free_handler(guac_client* client) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
+    /* Wait for client thread */
+    pthread_join(rdp_client->client_thread, NULL);
+
     freerdp* rdp_inst = rdp_client->rdp_inst;
     if (rdp_inst != NULL) {
         rdpChannels* channels = rdp_inst->context->channels;
