@@ -478,7 +478,7 @@ void guac_client_foreach_user(guac_client* client,
  *
  * @param callback
  *     The callback to invoke on the user marked as the owner of the
- *     connection.. NULL will be passed to this callback instead if there is no
+ *     connection. NULL will be passed to this callback instead if there is no
  *     owner.
  *
  * @param data
