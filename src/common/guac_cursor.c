@@ -104,6 +104,36 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
 
 }
 
+/**
+ * Callback for guac_client_for_user() which shows the cursor layer for the
+ * given user (if they exist). The cursor layer is normally hidden when a user
+ * is moving the mouse, and will only be shown if a DIFFERENT user is moving
+ * the mouse.
+ *
+ * @param user
+ *     The user to show the cursor to, or NULL if that user does not exist.
+ *
+ * @param data
+ *     A pointer to the guac_common_cursor structure describing the cursor to
+ *     be shown.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_common_cursor_show(guac_user* user, void* data) {
+
+    guac_common_cursor* cursor = (guac_common_cursor*) data;
+
+    /* Make cursor layer visible to given user */
+    if (user != NULL) {
+        guac_protocol_send_shade(user->socket, cursor->layer, 255);
+        guac_socket_flush(user->socket);
+    }
+
+    return NULL;
+
+}
+
 void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
         int x, int y) {
 
@@ -115,10 +145,8 @@ void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
         cursor->user = user;
 
         /* Make cursor layer visible to previous user */
-        if (last_user != NULL) {
-            guac_protocol_send_shade(last_user->socket, cursor->layer, 255);
-            guac_socket_flush(last_user->socket);
-        }
+        guac_client_for_user(cursor->client, last_user,
+                guac_common_cursor_show, cursor);
 
         /* Show hardware cursor */
         guac_protocol_send_cursor(user->socket,
@@ -208,6 +236,40 @@ static void* __send_user_cursor_image(guac_user* user, void* data) {
 
 }
 
+/**
+ * Callback for guac_client_for_user() which updates the hardware cursor and
+ * hotspot for the given user (if they exist). The hardware cursor image is
+ * normally hidden when a user is not moving the mouse, and will only be shown
+ * if that user begins moving the mouse.
+ *
+ * @param user
+ *     The user whose hardware cursor should be updated, or NULL if that user
+ *     does not exist.
+ *
+ * @param data
+ *     A pointer to the guac_common_cursor structure describing the cursor to
+ *     be sent as the hardware cursor.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_common_cursor_update(guac_user* user, void* data) {
+
+    guac_common_cursor* cursor = (guac_common_cursor*) data;
+
+    /* Update hardware cursor of current user */
+    if (user != NULL) {
+        guac_protocol_send_cursor(user->socket,
+                cursor->hotspot_x, cursor->hotspot_y,
+                cursor->layer, 0, 0, cursor->width, cursor->height);
+
+        guac_socket_flush(user->socket);
+    }
+
+    return NULL;
+
+}
+
 void guac_common_cursor_set_argb(guac_common_cursor* cursor, int hx, int hy,
     unsigned const char* data, int width, int height, int stride) {
 
@@ -242,13 +304,10 @@ void guac_common_cursor_set_argb(guac_common_cursor* cursor, int hx, int hy,
 
     guac_socket_flush(cursor->client->socket);
 
-    /* Update hardware cursor of current user */
-    if (cursor->user != NULL) {
-        guac_protocol_send_cursor(cursor->user->socket, hx, hy,
-                cursor->layer, 0, 0, width, height);
-
-        guac_socket_flush(cursor->user->socket);
-    }
+    /* Update hardware cursor of current user (if they are indeed valid) */
+    if (cursor->user != NULL)
+        guac_client_for_user(cursor->client, cursor->user,
+                guac_common_cursor_update, cursor);
 
 }
 
