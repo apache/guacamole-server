@@ -32,10 +32,5 @@
  */
 guac_user_join_handler guac_vnc_user_join_handler;
 
-/**
- * Handler for leaving users.
- */
-guac_user_leave_handler guac_vnc_user_leave_handler;
-
 #endif
 

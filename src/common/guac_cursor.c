@@ -362,12 +362,3 @@ void guac_common_cursor_set_blank(guac_common_cursor* cursor) {
 
 }
 
-void guac_common_cursor_remove_user(guac_common_cursor* cursor,
-        guac_user* user) {
-
-    /* Disassociate from given user */
-    if (cursor->user == user)
-        cursor->user = NULL;
-
-}
-

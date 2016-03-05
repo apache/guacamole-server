@@ -100,12 +100,3 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
 
 }
 
-int guac_vnc_user_leave_handler(guac_user* user) {
-
-    guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
-
-    guac_common_cursor_remove_user(vnc_client->display->cursor, user);
-
-    return 0;
-}
-
