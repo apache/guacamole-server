@@ -457,14 +457,10 @@ void guac_client_foreach_user(guac_client* client,
         guac_user_callback* callback, void* data);
 
 /**
- * Retrieves the connected user that is marked as the owner. The owner of a
- * connection is the user that established the initial connection that created
- * the connection (the first user to connect and join).
- *
- * Calls the given function on with the currently-connected user that is marked
- * as the owner. The owner of a connection is the user that established the
+ * Calls the given function with the currently-connected user that is marked as
+ * the owner. The owner of a connection is the user that established the
  * initial connection that created the connection (the first user to connect
- * and join). The function will be given a reference to a guac_user and the
+ * and join). The function will be given a reference to the guac_user and the
  * specified arbitrary data. If the owner has since left the connection, the
  * function will instead be invoked with NULL as the guac_user. The value
  * returned by the callback will be returned by this function.
@@ -480,11 +476,57 @@ void guac_client_foreach_user(guac_client* client,
  * @param client
  *     The client to retrieve the owner from.
  *
+ * @param callback
+ *     The callback to invoke on the user marked as the owner of the
+ *     connection.. NULL will be passed to this callback instead if there is no
+ *     owner.
+ *
+ * @param data
+ *     Arbitrary data to pass to the given callback.
+ *
  * @return
  *     The value returned by the callback.
  */
 void* guac_client_for_owner(guac_client* client, guac_user_callback* callback,
         void* data);
+
+/**
+ * Calls the given function with the given user ONLY if they are currently
+ * connected. The function will be given a reference to the guac_user and the
+ * specified arbitrary data. If the provided user doesn't exist or has since
+ * left the connection, the function will instead be invoked with NULL as the
+ * guac_user. The value returned by the callback will be returned by this
+ * function.
+ *
+ * This function is reentrant, but the user list MUST NOT be manipulated
+ * within the same thread as a callback to this function.
+ *
+ * Because this function depends on a consistent list of connected users, this
+ * function MUST NOT be invoked within the same thread as a "leave" or "join"
+ * handler. Doing so results in undefined behavior, including possible
+ * segfaults.
+ *
+ * @param client
+ *     The client that the given user is expected to be associated with.
+ *
+ * @param user
+ *     The user to provide to the given callback if valid. The pointer need not
+ *     even point to properly allocated memory; the user will only be passed to
+ *     the callback function if they are valid, and the provided user pointer
+ *     will not be dereferenced during this process.
+ *
+ * @param callback
+ *     The callback to invoke on the given user if they are valid. NULL will be
+ *     passed to this callback instead if the user is not valid.
+ *
+ * @param data
+ *     Arbitrary data to pass to the given callback.
+ *
+ * @return
+ *     The value returned by the callback.
+ */
+void* guac_client_for_user(guac_client* client, guac_user* user,
+        guac_user_callback* callback, void* data);
 
 /**
  * Marks the end of the current frame by sending a "sync" instruction to
