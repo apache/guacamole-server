@@ -113,8 +113,11 @@ typedef int guac_rdp_keysym_state_map[0x200][0x100];
  * Simple macro for determing whether a keysym can be stored (or retrieved)
  * from any keymap.
  *
- * @param keysym The keysym to check.
- * @return Non-zero if the keysym can be stored or retrieved, zero otherwise.
+ * @param keysym
+ *     The keysym to check.
+ *
+ * @return
+ *     Non-zero if the keysym can be stored or retrieved, zero otherwise.
  */
 #define GUAC_RDP_KEYSYM_STORABLE(keysym) ((keysym) <= 0xFFFF || ((keysym) & 0xFFFF0000) == 0x01000000)
 
@@ -128,7 +131,8 @@ typedef int guac_rdp_keysym_state_map[0x200][0x100];
  *     A 512-entry array of 256-entry arrays of arbitrary values, where the
  *     location of each array and value is determined by the given keysym.
  *
- * @param keysym The keysym of the entry to look up.
+ * @param keysym
+ *     The keysym of the entry to look up.
  */
 #define GUAC_RDP_KEYSYM_LOOKUP(keysym_mapping, keysym) (          \
             (keysym_mapping)                                      \
@@ -206,8 +210,11 @@ extern const guac_rdp_keymap* GUAC_KEYMAPS[];
 /**
  * Return the keymap having the given name, if any, or NULL otherwise.
  *
- * @param name The name of the keymap to find.
- * @return The keymap having the given name, or NULL if no such keymap exists.
+ * @param name
+ *     The name of the keymap to find.
+ *
+ * @return
+ *     The keymap having the given name, or NULL if no such keymap exists.
  */
 const guac_rdp_keymap* guac_rdp_keymap_find(const char* name);
 

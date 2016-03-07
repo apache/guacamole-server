@@ -113,7 +113,8 @@ void* guac_rdp_fs_expose(guac_user* user, void* data) {
  * on the path provided, which is assumed to have already been normalized and
  * validated as absolute.
  *
- * @param fs The filesystem containing the file whose path is being translated.
+ * @param fs
+ *     The filesystem containing the file whose path is being translated.
  *
  * @param virtual_path
  *     The absolute path to the file on the simulated filesystem, relative to

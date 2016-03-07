@@ -344,7 +344,8 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
  * Updates the palette within a FreeRDP CLRCONV object using the new palette
  * entries provided by an RDP palette update.
  *
- * @param clrconv The FreeRDP CLRCONV object to update.
+ * @param clrconv
+ *     The FreeRDP CLRCONV object to update.
  *
  * @param palette
  *     An RDP palette update message containing the palette to store within the

@@ -29,9 +29,14 @@
  * Returns whether the given resolution is reasonable for the given user,
  * based on arbitrary criteria for reasonability.
  *
- * @param user The guac_user to test the given resolution against.
- * @param resolution The resolution to test, in DPI.
- * @return Non-zero if the resolution is reasonable, zero otherwise.
+ * @param user
+ *     The guac_user to test the given resolution against.
+ *
+ * @param resolution
+ *     The resolution to test, in DPI.
+ *
+ * @return
+ *     Non-zero if the resolution is reasonable, zero otherwise.
  */
 int guac_rdp_resolution_reasonable(guac_user* user, int resolution);
 
@@ -39,9 +44,12 @@ int guac_rdp_resolution_reasonable(guac_user* user, int resolution);
  * Returns a reasonable resolution for the remote display, given the size and
  * resolution of a guac_user.
  *
- * @param user The guac_user whose size and resolution shall be used to
- *             determine an appropriate remote display resolution.
- * @return A reasonable resolution for the remote display, in DPI.
+ * @param user
+ *     The guac_user whose size and resolution shall be used to determine an
+ *     appropriate remote display resolution.
+ *
+ * @return
+ *     A reasonable resolution for the remote display, in DPI.
  */
 int guac_rdp_suggest_resolution(guac_user* user);
 

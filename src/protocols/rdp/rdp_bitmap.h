@@ -64,16 +64,22 @@ typedef struct guac_rdp_bitmap {
  * destroyed, we defer actual remote-side caching of RDP bitmaps until they are
  * used at least once.
  *
- * @param context The rdpContext associated with the current RDP session.
- * @param bitmap The bitmap to cache.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param bitmap
+ *     The bitmap to cache.
  */
 void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap);
 
 /**
  * Initializes the given newly-created rdpBitmap.
  *
- * @param context The rdpContext associated with the current RDP session.
- * @param bitmap The bitmap to initialize.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param bitmap
+ *     The bitmap to initialize.
  */
 void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);
 
@@ -82,7 +88,8 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);
  * operation does NOT draw to the "current" surface set by calls to
  * guac_rdp_bitmap_setsurface().
  *
- * @param context The rdpContext associated with the current RDP session.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
  *
  * @param bitmap
  *     The bitmap to paint. This structure will also contain the specifics of
@@ -94,8 +101,11 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap);
 /**
  * Frees any Guacamole-specific data associated with the given rdpBitmap.
  *
- * @param context The rdpContext associated with the current RDP session.
- * @param bitmap The bitmap whose Guacamole-specific data is to be freed.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param bitmap
+ *     The bitmap whose Guacamole-specific data is to be freed.
  */
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap);
 
@@ -104,7 +114,8 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap);
  * if the primary flag is set, resets the current drawing surface to the
  * primary drawing surface of the remote display.
  *
- * @param context The rdpContext associated with the current RDP session.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
  *
  * @param bitmap
  *     The rdpBitmap to set as the current drawing surface. This parameter is
@@ -125,17 +136,29 @@ void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap,
  * received data is not compressed, it is the duty of this function to also
  * flip received data, if the row order is backwards.
  *
- * @param context The rdpContext associated with the current RDP session.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
  *
  * @param bitmap
  *     The bitmap in which the decompressed/copied data should be stored.
  *
- * @param data Possibly-compressed image data.
- * @param width The width of the image data, in pixels.
- * @param height The height of the image data, in pixels.
- * @param bpp The number of bits per pixel in the image data.
- * @param length The length of the image data, in bytes.
- * @param compressed TRUE if the image data is compressed, FALSE otherwise.
+ * @param data
+ *     Possibly-compressed image data.
+ *
+ * @param width
+ *     The width of the image data, in pixels.
+ *
+ * @param height
+ *     The height of the image data, in pixels.
+ *
+ * @param bpp
+ *     The number of bits per pixel in the image data.
+ *
+ * @param length
+ *     The length of the image data, in bytes.
+ *
+ * @param compressed
+ *     TRUE if the image data is compressed, FALSE otherwise.
  */
 void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap,
         UINT8* data, int width, int height, int bpp, int length,
@@ -147,17 +170,29 @@ void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap,
  * received data is not compressed, it is the duty of this function to also
  * flip received data, if the row order is backwards.
  *
- * @param context The rdpContext associated with the current RDP session.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
  *
  * @param bitmap
  *     The bitmap in which the decompressed/copied data should be stored.
  *
- * @param data Possibly-compressed image data.
- * @param width The width of the image data, in pixels.
- * @param height The height of the image data, in pixels.
- * @param bpp The number of bits per pixel in the image data.
- * @param length The length of the image data, in bytes.
- * @param compressed TRUE if the image data is compressed, FALSE otherwise.
+ * @param data
+ *     Possibly-compressed image data.
+ *
+ * @param width
+ *     The width of the image data, in pixels.
+ *
+ * @param height
+ *     The height of the image data, in pixels.
+ *
+ * @param bpp
+ *     The number of bits per pixel in the image data.
+ *
+ * @param length
+ *     The length of the image data, in bytes.
+ *
+ * @param compressed
+ *     TRUE if the image data is compressed, FALSE otherwise.
  *
  * @param codec_id
  *     The ID of the codec used to compress the image data. This parameter is

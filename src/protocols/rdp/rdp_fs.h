@@ -340,7 +340,8 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
 /**
  * Frees the given filesystem.
  *
- * @param fs The filesystem to free.
+ * @param fs
+ *     The filesystem to free.
  */
 void guac_rdp_fs_free(guac_rdp_fs* fs);
 
@@ -392,9 +393,14 @@ void* guac_rdp_fs_expose(guac_user* user, void* data);
  * Converts the given relative path to an absolute path based on the given
  * parent path. If the path cannot be converted, non-zero is returned.
  *
- * @param parent The parent directory of the relative path.
- * @param rel_path The relative path to convert.
- * @return Zero if the path was converted successfully, non-zero otherwise.
+ * @param parent
+ *     The parent directory of the relative path.
+ *
+ * @param rel_path
+ *     The relative path to convert.
+ *
+ * @return
+ *     Zero if the path was converted successfully, non-zero otherwise.
  */
 int guac_rdp_fs_convert_path(const char* parent, const char* rel_path,
         char* abs_path);
@@ -402,7 +408,8 @@ int guac_rdp_fs_convert_path(const char* parent, const char* rel_path,
 /**
  * Translates the given errno error code to a GUAC_RDP_FS error code.
  *
- * @param err The error code, as returned within errno by a system call.
+ * @param err
+ *     The error code, as returned within errno by a system call.
  *
  * @return
  *     A GUAC_RDP_FS error code, such as GUAC_RDP_FS_ENFILE,
@@ -428,8 +435,11 @@ int guac_rdp_fs_get_status(int err);
  * than zero if an error occurs. The given path MUST be absolute, and will be
  * translated to be relative to the drive path of the simulated filesystem.
  *
- * @param fs The filesystem to use when opening the file.
- * @param path The absolute path to the file within the simulated filesystem.
+ * @param fs
+ *     The filesystem to use when opening the file.
+ *
+ * @param path
+ *     The absolute path to the file within the simulated filesystem.
  *
  * @param access
  *     A bitwise-OR of various RDPDR access flags, such as ACCESS_GENERIC_ALL
@@ -466,14 +476,20 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
  * file having the given ID. Returns the number of bytes read, zero on EOF,
  * and an error code if an error occurs.
  *
- * @param fs The filesystem containing the file from which data is to be read.
+ * @param fs
+ *     The filesystem containing the file from which data is to be read.
  *
  * @param file_id
  *     The ID of the file to read data from, as returned by guac_rdp_fs_open().
  *
- * @param offset The byte offset within the file to start reading from.
- * @param buffer The buffer to fill with data from the file.
- * @param length The maximum number of bytes to read from the file.
+ * @param offset
+ *     The byte offset within the file to start reading from.
+ *
+ * @param buffer
+ *     The buffer to fill with data from the file.
+ *
+ * @param length
+ *     The maximum number of bytes to read from the file.
  *
  * @return
  *     The number of bytes actually read, zero on EOF, or an error code if an
@@ -488,14 +504,20 @@ int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
  * file having the given ID. Returns the number of bytes written, and an
  * error code if an error occurs.
  *
- * @param fs The filesystem containing the file to which data is to be written.
+ * @param fs
+ *     The filesystem containing the file to which data is to be written.
  *
  * @param file_id
  *     The ID of the file to write data to, as returned by guac_rdp_fs_open().
  *
- * @param offset The byte offset within the file to start writinging at.
- * @param buffer The buffer containing the data to write.
- * @param length The maximum number of bytes to write to the file.
+ * @param offset
+ *     The byte offset within the file to start writinging at.
+ *
+ * @param buffer
+ *     The buffer containing the data to write.
+ *
+ * @param length
+ *     The maximum number of bytes to write to the file.
  *
  * @return
  *     The number of bytes actually written, or an error code if an error
@@ -509,12 +531,14 @@ int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, int offset,
  * Renames (moves) the file with the given ID to the new path specified.
  * Returns zero on success, or an error code if an error occurs.
  *
- * @param fs The filesystem containing the file to rename.
+ * @param fs
+ *     The filesystem containing the file to rename.
  *
  * @param file_id
  *     The ID of the file to rename, as returned by guac_rdp_fs_open().
  *
- * @param new_path The absolute path to move the file to.
+ * @param new_path
+ *     The absolute path to move the file to.
  *
  * @return
  *     Zero if the rename succeeded, or an error code if an error occurs. All
@@ -527,7 +551,8 @@ int guac_rdp_fs_rename(guac_rdp_fs* fs, int file_id,
 /**
  * Deletes the file with the given ID.
  *
- * @param fs The filesystem containing the file to delete.
+ * @param fs
+ *     The filesystem containing the file to delete.
  *
  * @param file_id
  *     The ID of the file to delete, as returned by guac_rdp_fs_open().
@@ -543,7 +568,8 @@ int guac_rdp_fs_delete(guac_rdp_fs* fs, int file_id);
  * Truncates the file with the given ID to the given length (in bytes), which
  * may be larger.
  *
- * @param fs The filesystem containing the file to truncate.
+ * @param fs
+ *     The filesystem containing the file to truncate.
  *
  * @param file_id
  *     The ID of the file to truncate, as returned by guac_rdp_fs_open().
@@ -562,7 +588,8 @@ int guac_rdp_fs_truncate(guac_rdp_fs* fs, int file_id, int length);
 /**
  * Frees the given file ID, allowing future open operations to reuse it.
  *
- * @param fs The filesystem containing the file to close.
+ * @param fs
+ *     The filesystem containing the file to close.
  *
  * @param file_id
  *     The ID of the file to close, as returned by guac_rdp_fs_open().
@@ -574,12 +601,15 @@ void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id);
  * absolute path which does NOT contain ".." or ".". The given path MUST
  * be absolute.
  *
- * @param path The absolute path to normalize.
+ * @param path
+ *     The absolute path to normalize.
+ *
  * @param abs_path
  *     The buffer to populate with the normalized path. The normalized path
  *     will not contain relative path components like ".." or ".".
  *
- * @return Zero if normalization succeeded, non-zero otherwise.
+ * @return
+ *     Zero if normalization succeeded, non-zero otherwise.
  */
 int guac_rdp_fs_normalize_path(const char* path, char* abs_path);
 
@@ -590,14 +620,16 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path);
  * @param parent 
  *     The absolute path of the parent directory of the relative path.
  *
- * @param rel_path The relative path to convert.
+ * @param rel_path
+ *     The relative path to convert.
  *
  * @param abs_path
  *     The buffer to populate with the absolute, normalized path. The
  *     normalized path will not contain relative path components like ".." or
  *     ".".
  *
- * @return Zero if conversion succeeded, non-zero otherwise.
+ * @return
+ *     Zero if conversion succeeded, non-zero otherwise.
  */
 int guac_rdp_fs_convert_path(const char* parent, const char* rel_path,
         char* abs_path);
@@ -606,7 +638,8 @@ int guac_rdp_fs_convert_path(const char* parent, const char* rel_path,
  * Returns the next filename within the directory having the given file ID,
  * or NULL if no more files.
  *
- * @param fs The filesystem containing the file to read directory entries from.
+ * @param fs
+ *     The filesystem containing the file to read directory entries from.
  *
  * @param file_id
  *     The ID of the file to read directory entries from, as returned by
@@ -621,9 +654,14 @@ const char* guac_rdp_fs_read_dir(guac_rdp_fs* fs, int file_id);
 /**
  * Returns the file having the given ID, or NULL if no such file exists.
  *
- * @param fs The filesystem containing the desired file.
- * @param file_id The ID of the desired, as returned by guac_rdp_fs_open().
- * @return The file having the given ID, or NULL is no such file exists.
+ * @param fs
+ *     The filesystem containing the desired file.
+ *
+ * @param file_id
+ *     The ID of the desired, as returned by guac_rdp_fs_open().
+ *
+ * @return
+ *     The file having the given ID, or NULL is no such file exists.
  */
 guac_rdp_fs_file* guac_rdp_fs_get_file(guac_rdp_fs* fs, int file_id);
 
@@ -633,9 +671,14 @@ guac_rdp_fs_file* guac_rdp_fs_get_file(guac_rdp_fs* fs, int file_id);
  * function. Backslashes will be interpreted as literal backslashes, not
  * escape characters.
  *
- * @param filename The filename to check
- * @param pattern The pattern to check the filename against.
- * @return Non-zero if the pattern matches, zero otherwise.
+ * @param filename
+ *     The filename to check
+ *
+ * @param pattern
+ *     The pattern to check the filename against.
+ *
+ * @return
+ *     Non-zero if the pattern matches, zero otherwise.
  */
 int guac_rdp_fs_matches(const char* filename, const char* pattern);
 
@@ -643,8 +686,11 @@ int guac_rdp_fs_matches(const char* filename, const char* pattern);
  * Populates the given structure with information about the filesystem,
  * particularly the amount of space available.
  *
- * @param fs The filesystem to obtain information from.
- * @param info The guac_rdp_fs_info structure to populate.
+ * @param fs
+ *     The filesystem to obtain information from.
+ *
+ * @param info
+ *     The guac_rdp_fs_info structure to populate.
  *
  * @return 
  *     Zero if information retrieval succeeded, or an error code if an error

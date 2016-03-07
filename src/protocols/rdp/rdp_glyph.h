@@ -56,8 +56,11 @@ typedef struct guac_rdp_glyph {
  * Caches the given glyph. Note that this caching currently only occurs server-
  * side, as it is more efficient to transmit the text as PNG.
  *
- * @param context The rdpContext associated with the current RDP session.
- * @param glyph The glyph to cache.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param glyph
+ *     The glyph to cache.
  */
 void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph);
 
@@ -65,10 +68,17 @@ void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph);
  * Draws a previously-cached glyph at the given coordinates within the current
  * drawing surface.
  *
- * @param context The rdpContext associated with the current RDP session.
- * @param glyph The cached glyph to draw.
- * @param x The destination X coordinate of the upper-left corner of the glyph.
- * @param y The destination Y coordinate of the upper-left corner of the glyph.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param glyph
+ *     The cached glyph to draw.
+ *
+ * @param x
+ *     The destination X coordinate of the upper-left corner of the glyph.
+ *
+ * @param y
+ *     The destination Y coordinate of the upper-left corner of the glyph.
  */
 void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y);
 
@@ -76,8 +86,11 @@ void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y);
  * Frees any Guacamole-specific data associated with the given glyph, such that
  * it can be safely freed by FreeRDP.
  *
- * @param context The rdpContext associated with the current RDP session.
- * @param glyph The cached glyph to free.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param glyph
+ *     The cached glyph to free.
  */
 void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph);
 
@@ -86,7 +99,8 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph);
  * called, the glyphs will be individually rendered by calls to
  * guac_rdp_glyph_draw().
  *
- * @param context The rdpContext associated with the current RDP session.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
  *
  * @param x
  *     The X coordinate of the upper-left corner of the background rectangle of
@@ -124,7 +138,8 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
  * of this function whether the background color is opaque or transparent. We
  * currently do NOT implement this function.
  *
- * @param context The rdpContext associated with the current RDP session.
+ * @param context
+ *     The rdpContext associated with the current RDP session.
  *
  * @param x
  *     The X coordinate of the upper-left corner of the background rectangle of

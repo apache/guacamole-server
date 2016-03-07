@@ -55,8 +55,11 @@
  * received. This function will dispatch that message to an appropriate
  * function, specific to that message type.
  *
- * @param client The guac_client associated with the current RDP session.
- * @param event The received CLIPRDR message.
+ * @param client
+ *     The guac_client associated with the current RDP session.
+ *
+ * @param event
+ *     The received CLIPRDR message.
  */
 void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event);
 
@@ -65,7 +68,8 @@ void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event);
  * is the responsibility of this function to respond to the Monitor Ready
  * event with a list of supported clipboard formats.
  *
- * @param client The guac_client associated with the current RDP session.
+ * @param client
+ *     The guac_client associated with the current RDP session.
  *
  * @param event
  *     The received CLIPRDR message, which must be a Monitor Ready event.
@@ -78,7 +82,8 @@ void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event);
  * event with a request for clipboard data in one of the enumerated formats.
  * This event is fired whenever remote clipboard data is available.
  *
- * @param client The guac_client associated with the current RDP session.
+ * @param client
+ *     The guac_client associated with the current RDP session.
  *
  * @param event
  *     The received CLIPRDR message, which must be a Format List event.
@@ -91,7 +96,8 @@ void guac_rdp_process_cb_format_list(guac_client* client,
  * is the responsibility of this function to respond to the Data Request
  * event with a data response containing the current clipoard contents.
  *
- * @param client The guac_client associated with the current RDP session.
+ * @param client
+ *     The guac_client associated with the current RDP session.
  *
  * @param event
  *     The received CLIPRDR message, which must be a Data Request event.
@@ -104,7 +110,8 @@ void guac_rdp_process_cb_data_request(guac_client* client,
  * is the responsibility of this function to read and forward the received
  * clipboard data to connected clients.
  *
- * @param client The guac_client associated with the current RDP session.
+ * @param client
+ *     The guac_client associated with the current RDP session.
  *
  * @param event
  *     The received CLIPRDR message, which must be a Data Response event.
