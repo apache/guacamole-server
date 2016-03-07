@@ -94,50 +94,262 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
 enum RDP_ARGS_IDX {
 
+    /**
+     * The hostname to connect to.
+     */
     IDX_HOSTNAME,
+
+    /**
+     * The port to connect to. If omitted, the default RDP port of 3389 will be
+     * used.
+     */
     IDX_PORT,
+
+    /**
+     * The domain of the user logging in.
+     */
     IDX_DOMAIN,
+
+    /**
+     * The username of the user logging in.
+     */
     IDX_USERNAME,
+
+    /**
+     * The password of the user logging in.
+     */
     IDX_PASSWORD,
+
+    /**
+     * The width of the display to request, in pixels. If omitted, a reasonable
+     * value will be calculated based on the user's own display size and
+     * resolution.
+     */
     IDX_WIDTH,
+
+    /**
+     * The height of the display to request, in pixels. If omitted, a
+     * reasonable value will be calculated based on the user's own display
+     * size and resolution.
+     */
     IDX_HEIGHT,
+
+    /**
+     * The resolution of the display to request, in DPI. If omitted, a
+     * reasonable value will be calculated based on the user's own display
+     * size and resolution.
+     */
     IDX_DPI,
+
+    /**
+     * The initial program to run, if any.
+     */
     IDX_INITIAL_PROGRAM,
+
+    /**
+     * The color depth of the display to request, in bits.
+     */
     IDX_COLOR_DEPTH,
+
+    /**
+     * "true" if audio should be disabled, "false" or blank to leave audio
+     * enabled.
+     */
     IDX_DISABLE_AUDIO,
+
+    /**
+     * "true" if printing should be enabled, "false" or blank otherwise.
+     */
     IDX_ENABLE_PRINTING,
+
+    /**
+     * "true" if the virtual drive should be enabled, "false" or blank
+     * otherwise.
+     */
     IDX_ENABLE_DRIVE,
+
+    /**
+     * The local system path which will be used to persist the
+     * virtual drive. This must be specified if the virtual drive is enabled.
+     */
     IDX_DRIVE_PATH,
+
+    /**
+     * "true" to automatically create the local system path used by the virtual
+     * drive if it does not yet exist, "false" or blank otherwise.
+     */
     IDX_CREATE_DRIVE_PATH,
+
+    /**
+     * "true" if this session is a console session, "false" or blank otherwise.
+     */
     IDX_CONSOLE,
+
+    /**
+     * "true" if audio should be allowed in console sessions, "false" or blank
+     * otherwise.
+     */
     IDX_CONSOLE_AUDIO,
+
+    /**
+     * The name of the keymap chosen as the layout of the server. Legal names
+     * are defined within the *.keymap files in the "keymaps" directory of the
+     * source for Guacamole's RDP support.
+     */
     IDX_SERVER_LAYOUT,
+
+    /**
+     * The type of security to use for the connection. Valid values are "rdp",
+     * "tls", "nla", or "any". By default, "rdp" security is used.
+     */
     IDX_SECURITY,
+
+    /**
+     * "true" if validity of the RDP server's certificate should be ignored,
+     * "false" or blank if invalid certificates should result in a failure to
+     * connect.
+     */
     IDX_IGNORE_CERT,
+
+    /**
+     * "true" if authentication should be disabled, "false" or blank otherwise.
+     * This is different from the authentication that takes place when a user
+     * provides their username and password. Authentication is required by
+     * definition for NLA.
+     */
     IDX_DISABLE_AUTH,
+
+    /**
+     * The application to launch, if RemoteApp is in use.
+     */
     IDX_REMOTE_APP,
+
+    /**
+     * The working directory of the remote application, if RemoteApp is in use.
+     */
     IDX_REMOTE_APP_DIR,
+
+    /**
+     * The arguments to pass to the remote application, if RemoteApp is in use.
+     */
     IDX_REMOTE_APP_ARGS,
+
+    /**
+     * Comma-separated list of the names of all static virtual channels that
+     * should be connected to and exposed as Guacamole pipe streams, or blank
+     * if no static virtual channels should be used. 
+     */
     IDX_STATIC_CHANNELS,
+
+    /**
+     * The name of the client to submit to the RDP server upon connection.
+     */
     IDX_CLIENT_NAME,
+
+    /**
+     * "true" if the desktop wallpaper should be visible, "false" or blank if
+     * the desktop wallpaper should be hidden.
+     */
     IDX_ENABLE_WALLPAPER,
+
+    /**
+     * "true" if desktop and window theming should be allowed, "false" or blank
+     * if theming should be temporarily disabled on the desktop of the RDP
+     * server for the sake of performance.
+     */
     IDX_ENABLE_THEMING,
+
+    /**
+     * "true" if glyphs should be smoothed with antialiasing (ClearType),
+     * "false" or blank if glyphs should be rendered with sharp edges and using
+     * single colors, effectively 1-bit images.
+     */
     IDX_ENABLE_FONT_SMOOTHING,
+
+    /**
+     * "true" if windows' contents should be shown as they are moved, "false"
+     * or blank if only a window border should be shown during window move
+     * operations.
+     */
     IDX_ENABLE_FULL_WINDOW_DRAG,
+
+    /**
+     * "true" if desktop composition (Aero) should be enabled during the
+     * session, "false" or blank otherwise.  As desktop composition provides
+     * alpha blending and other special effects, this increases the amount of
+     * bandwidth used.
+     */
     IDX_ENABLE_DESKTOP_COMPOSITION,
+
+    /**
+     * "true" if menu animations should be shown, "false" or blank menus should
+     * not be animated.
+     */
     IDX_ENABLE_MENU_ANIMATIONS,
+
+    /**
+     * The preconnection ID to send within the preconnection PDU when
+     * initiating an RDP connection, if any.
+     */
     IDX_PRECONNECTION_ID,
+
+    /**
+     * The preconnection BLOB (PCB) to send to the RDP server prior to full RDP
+     * connection negotiation. This value is used by Hyper-V to select the
+     * destination VM.
+     */
     IDX_PRECONNECTION_BLOB,
 
 #ifdef ENABLE_COMMON_SSH
+    /**
+     * "true" if SFTP should be enabled for the RDP connection, "false" or
+     * blank otherwise.
+     */
     IDX_ENABLE_SFTP,
+
+    /**
+     * The hostname of the SSH server to connect to for SFTP. If blank, the
+     * hostname of the RDP server will be used.
+     */
     IDX_SFTP_HOSTNAME,
+
+    /**
+     * The port of the SSH server to connect to for SFTP. If blank, the default
+     * SSH port of "22" will be used.
+     */
     IDX_SFTP_PORT,
+
+    /**
+     * The username to provide when authenticating with the SSH server for
+     * SFTP. If blank, the username provided for the RDP user will be used.
+     */
     IDX_SFTP_USERNAME,
+
+    /**
+     * The password to provide when authenticating with the SSH server for
+     * SFTP (if not using a private key).
+     */
     IDX_SFTP_PASSWORD,
+
+    /**
+     * The base64-encoded private key to use when authenticating with the SSH
+     * server for SFTP (if not using a password).
+     */
     IDX_SFTP_PRIVATE_KEY,
+
+    /**
+     * The passphrase to use to decrypt the provided base64-encoded private
+     * key.
+     */
     IDX_SFTP_PASSPHRASE,
+
+    /**
+     * The default location for file uploads within the SSH server. This will
+     * apply only to uploads which do not use the filesystem guac_object (where
+     * the destination directory is otherwise ambiguous).
+     */
     IDX_SFTP_DIRECTORY,
+
 #endif
 
     RDP_ARGS_COUNT
