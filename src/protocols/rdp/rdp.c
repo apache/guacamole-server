@@ -106,12 +106,55 @@
 #include <sys/time.h>
 #include <time.h>
 
-#if defined(FREERDP_VERSION_MAJOR) && (FREERDP_VERSION_MAJOR > 1 || FREERDP_VERSION_MINOR >= 2)
-int __guac_receive_channel_data(freerdp* rdp_inst, UINT16 channelId, BYTE* data, int size, int flags, int total_size) {
+/**
+ * Callback invoked by FreeRDP for data received along a channel. This is the
+ * most recent version of the callback and uses a 16-bit unsigned integer for
+ * the channel ID, as well as different type naming for the datatype of the
+ * data itself. This function does nothing more than invoke
+ * freerdp_channels_data() with the given arguments. The prototypes of these
+ * functions are compatible in 1.2 and later, but not necessarily prior to
+ * that, hence the conditional compilation of differing prototypes.
+ *
+ * Beware that the official purpose of these parameters is an undocumented
+ * mystery. The meanings below are derived from looking at how the function is
+ * used within FreeRDP.
+ *
+ * @param rdp_inst
+ *     The RDP client instance associated with the channel receiving the data.
+ *
+ * @param channelId
+ *     The integer ID of the channel that received the data.
+ *
+ * @param data
+ *     A buffer containing the received data.
+ *
+ * @param size
+ *     The number of bytes received and contained in the given buffer (the
+ *     number of bytes received within the PDU that resulted in this function
+ *     being inboked).
+ *
+ * @param flags
+ *     Channel control flags, as defined by the CHANNEL_PDU_HEADER in the RDP
+ *     specification.
+ *
+ * @param total_size
+ *     The total length of the chanel data being received, which may span
+ *     multiple PDUs (see the "length" field of CHANNEL_PDU_HEADER).
+ *
+ * @return
+ *     Zero if the received channel data was successfully handled, non-zero
+ *     otherwise. Note that this return value is discarded in practice.
+ */
+#if defined(FREERDP_VERSION_MAJOR) \
+    && (FREERDP_VERSION_MAJOR > 1 || FREERDP_VERSION_MINOR >= 2)
+static int __guac_receive_channel_data(freerdp* rdp_inst, UINT16 channelId,
+        BYTE* data, int size, int flags, int total_size) {
 #else
-int __guac_receive_channel_data(freerdp* rdp_inst, int channelId, UINT8* data, int size, int flags, int total_size) {
+static int __guac_receive_channel_data(freerdp* rdp_inst, int channelId,
+        UINT8* data, int size, int flags, int total_size) {
 #endif
-    return freerdp_channels_data(rdp_inst, channelId, data, size, flags, total_size);
+    return freerdp_channels_data(rdp_inst, channelId,
+            data, size, flags, total_size);
 }
 
 #ifdef HAVE_FREERDP_EVENT_PUBSUB
