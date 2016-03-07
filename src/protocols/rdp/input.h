@@ -31,10 +31,17 @@
  * events to the RDP server. The key events sent will depend on the current
  * keymap.
  *
- * @param client The guac_client associated with the current RDP session.
- * @param keysym The keysym being pressed or released.
- * @param pressed Zero if the keysym is being released, non-zero otherwise.
- * @return Zero if the keys were successfully sent, non-zero otherwise.
+ * @param client
+ *     The guac_client associated with the current RDP session.
+ *
+ * @param keysym
+ *     The keysym being pressed or released.
+ *
+ * @param pressed
+ *     Zero if the keysym is being released, non-zero otherwise.
+ *
+ * @return
+ *     Zero if the keys were successfully sent, non-zero otherwise.
  */
 int guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);
 
@@ -44,7 +51,8 @@ int guac_rdp_send_keysym(guac_client* client, int keysym, int pressed);
  * state (0 being released and 1 being pressed), that key will be updated
  * to the "to" state.
  *
- * @param client The guac_client associated with the current RDP session.
+ * @param client
+ *     The guac_client associated with the current RDP session.
  *
  * @param keysym_string
  *     A NULL-terminated array of keysyms, each of which will be updated.
