@@ -27,28 +27,15 @@
 
 /**
  * Handler for joining users.
- *
- * @param user The user joining the connection.
- *
- * @param argc
- *     The number of arguments provided by the user during the connection
- *     handshake.
- *
- * @param argv
- *     Array of values of each argument provided by the user during the
- *     connection handshake.
- *
- * @return Zero if the join operation succeeded, non-zero otherwise.
  */
-int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv);
+guac_user_join_handler guac_rdp_user_join_handler;
 
 /**
  * Handler for received simple file uploads. This handler will automatically
  * select between RDPDR and SFTP depending on which is available and which has
  * priority given associated settings.
  */
-int guac_rdp_user_file_handler(guac_user* user, guac_stream* stream,
-        char* mimetype, char* filename);
+guac_user_file_handler guac_rdp_user_file_handler;
 
 #endif
 

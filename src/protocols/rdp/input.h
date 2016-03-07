@@ -62,41 +62,18 @@ void guac_rdp_update_keysyms(guac_client* client, const int* keysym_string,
 
 /**
  * Handler for Guacamole user mouse events.
- *
- * @param user The guac_user originating the mouse event.
- * @param x The current X location of the mouse pointer.
- * @param y The current Y location of the mouse pointer.
- *
- * @param mask
- *     Button mask denoting the pressed/released state of each mouse button.
- *     The lowest-order bit represents button 0 (the left mouse button), and
- *     so on through the higher-order bits. Most mice have no more than 5
- *     mouse buttons.
- *
- * @return
- *     Zero if the mouse event was successfully handled, non-zero otherwise.
  */
-int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask);
+guac_user_mouse_handler guac_rdp_user_mouse_handler;
 
 /**
  * Handler for Guacamole user key events.
- *
- * @param user The guac_user originating the key event.
- * @param keysym The keysym being pressed or released.
- * @param pressed Zero if the keysym is being released, non-zero otherwise.
- * @return Zero if the key event was successfully handled, non-zero otherwise.
  */
-int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed);
+guac_user_key_handler guac_rdp_user_key_handler;
 
 /**
  * Handler for Guacamole user size events.
- *
- * @param user The guac_user originating the size event.
- * @param width The new display width, in pixels.
- * @param height The new display height, in pixels.
- * @return Zero if the size event was successfully handled, non-zero otherwise.
  */
-int guac_rdp_user_size_handler(guac_user* user, int width, int height);
+guac_user_size_handler guac_rdp_user_size_handler;
 
 #endif
 

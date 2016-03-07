@@ -85,10 +85,7 @@
 
 /**
  * Handler which frees all data associated with the guac_client.
- *
- * @param client The guac_client whose data should be freed.
- * @return Zero if the client was successfully freed, non-zero otherwise.
  */
-int guac_rdp_client_free_handler(guac_client* client);
+guac_client_free_handler guac_rdp_client_free_handler;
 
 #endif
