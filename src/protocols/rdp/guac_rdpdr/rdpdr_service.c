@@ -224,7 +224,7 @@ wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
 
 /**
  * Callback invoked on the current connection owner (if any) when a file
- * download is being initiated through the terminal.
+ * download is being initiated using the magic "Download" folder.
  *
  * @param owner
  *     The guac_user that is the owner of the connection, or NULL if the
