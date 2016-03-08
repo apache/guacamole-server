@@ -23,38 +23,38 @@
 #include "client.h"
 #include "resolution.h"
 
-#include <guacamole/client.h>
+#include <guacamole/user.h>
 
-int guac_rdp_resolution_reasonable(guac_client* client, int resolution) {
+int guac_rdp_resolution_reasonable(guac_user* user, int resolution) {
 
-    int width  = client->info.optimal_width;
-    int height = client->info.optimal_height;
+    int width  = user->info.optimal_width;
+    int height = user->info.optimal_height;
 
-    /* Convert client pixels to remote pixels */
-    width  = width  * resolution / client->info.optimal_resolution;
-    height = height * resolution / client->info.optimal_resolution;
+    /* Convert user pixels to remote pixels */
+    width  = width  * resolution / user->info.optimal_resolution;
+    height = height * resolution / user->info.optimal_resolution;
 
     /*
-     * Resolution is reasonable if the same as the client optimal resolution
+     * Resolution is reasonable if the same as the user optimal resolution
      * OR if the resulting display area is reasonable
      */
-    return client->info.optimal_resolution == resolution
+    return user->info.optimal_resolution == resolution
         || width*height >= GUAC_RDP_REASONABLE_AREA;
 
 }
 
-int guac_rdp_suggest_resolution(guac_client* client) {
+int guac_rdp_suggest_resolution(guac_user* user) {
 
     /* Prefer RDP's native resolution */
-    if (guac_rdp_resolution_reasonable(client, GUAC_RDP_NATIVE_RESOLUTION))
+    if (guac_rdp_resolution_reasonable(user, GUAC_RDP_NATIVE_RESOLUTION))
         return GUAC_RDP_NATIVE_RESOLUTION;
 
     /* If native resolution is too tiny, try higher resolution */
-    if (guac_rdp_resolution_reasonable(client, GUAC_RDP_HIGH_RESOLUTION))
+    if (guac_rdp_resolution_reasonable(user, GUAC_RDP_HIGH_RESOLUTION))
         return GUAC_RDP_HIGH_RESOLUTION;
 
-    /* Fallback to client-suggested resolution */
-    return client->info.optimal_resolution;
+    /* Fallback to user-suggested resolution */
+    return user->info.optimal_resolution;
 
 }
 

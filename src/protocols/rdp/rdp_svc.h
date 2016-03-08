@@ -56,12 +56,6 @@ typedef struct guac_rdp_svc {
     char name[GUAC_RDP_SVC_MAX_LENGTH+1];
 
     /**
-     * The pipe opened by the Guacamole client, if any. This should be
-     * opened in response to the output pipe.
-     */
-    guac_stream* input_pipe;
-
-    /**
      * The output pipe, opened when the RDP server receives a connection to
      * the static channel.
      */
@@ -71,31 +65,104 @@ typedef struct guac_rdp_svc {
 
 /**
  * Allocate a new SVC with the given name.
+ *
+ * @param client
+ *     The guac_client associated with the current RDP session.
+ *
+ * @param name
+ *     The name of the virtual channel to allocate.
+ *
+ * @return
+ *     A newly-allocated static virtual channel.
  */
 guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name);
 
 /**
  * Free the given SVC.
+ *
+ * @param svc
+ *     The static virtual channel to free.
  */
 void guac_rdp_free_svc(guac_rdp_svc* svc);
 
 /**
+ * Sends the "pipe" instruction describing the given static virtual channel
+ * along the given socket. This pipe instruction will relate the SVC's
+ * underlying output stream with the SVC's name and the mimetype
+ * "application/octet-stream".
+ *
+ * @param socket
+ *     The socket along which the "pipe" instruction should be sent.
+ *
+ * @param svc
+ *     The static virtual channel that the "pipe" instruction should describe.
+ */
+void guac_rdp_svc_send_pipe(guac_socket* socket, guac_rdp_svc* svc);
+
+/**
+ * Sends the "pipe" instructions describing all static virtual channels
+ * available to the given user along that user's socket. Each pipe instruction
+ * will relate the associated SVC's underlying output stream with the SVC's
+ * name and the mimetype "application/octet-stream".
+ *
+ * @param user
+ *     The user to send the "pipe" instructions to.
+ */
+void guac_rdp_svc_send_pipes(guac_user* user);
+
+/**
  * Add the given SVC to the list of all available SVCs.
+ *
+ * @param client
+ *     The guac_client associated with the current RDP session.
+ *
+ * @param svc
+ *     The static virtual channel to add to the list of all such channels
+ *     available.
  */
 void guac_rdp_add_svc(guac_client* client, guac_rdp_svc* svc);
 
 /**
  * Retrieve the SVC with the given name from the list stored in the client.
+ *
+ * @param client
+ *     The guac_client associated with the current RDP session.
+ *
+ * @param name
+ *     The name of the static virtual channel to retrieve.
+ *
+ * @return
+ *     The static virtual channel with the given name, or NULL if no such
+ *     virtual channel exists.
  */
 guac_rdp_svc* guac_rdp_get_svc(guac_client* client, const char* name);
 
 /**
  * Remove the SVC with the given name from the list stored in the client.
+ *
+ * @param client
+ *     The guac_client associated with the current RDP session.
+ *
+ * @param name
+ *     The name of the static virtual channel to remove.
+ *
+ * @return
+ *     The static virtual channel that was removed, or NULL if no such virtual
+ *     channel exists.
  */
 guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, const char* name);
 
 /**
  * Write the given blob of data to the virtual channel.
+ *
+ * @param svc
+ *     The static virtual channel to write data to.
+ *
+ * @param data
+ *     The data to write.
+ *
+ * @param length
+ *     The number of bytes to write.
  */
 void guac_rdp_svc_write(guac_rdp_svc* svc, void* data, int length);
 

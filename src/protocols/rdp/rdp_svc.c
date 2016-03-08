@@ -23,6 +23,7 @@
 #include "config.h"
 #include "client.h"
 #include "guac_list.h"
+#include "rdp.h"
 #include "rdp_svc.h"
 
 #include <freerdp/utils/svc_plugin.h>
@@ -44,7 +45,6 @@ guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
     /* Init SVC */
     svc->client = client;
     svc->plugin = NULL;
-    svc->input_pipe = NULL;
     svc->output_pipe = NULL;
 
     /* Warn about name length */
@@ -65,26 +65,52 @@ void guac_rdp_free_svc(guac_rdp_svc* svc) {
     free(svc);
 }
 
+void guac_rdp_svc_send_pipe(guac_socket* socket, guac_rdp_svc* svc) {
+
+    /* Send pipe instruction for the SVC's output stream */
+    guac_protocol_send_pipe(socket, svc->output_pipe,
+            "application/octet-stream", svc->name);
+
+}
+
+void guac_rdp_svc_send_pipes(guac_user* user) {
+
+    guac_client* client = user->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    guac_common_list_lock(rdp_client->available_svc);
+
+    /* Send pipe for each allocated SVC's output stream */
+    guac_common_list_element* current = rdp_client->available_svc->head;
+    while (current != NULL) {
+        guac_rdp_svc_send_pipe(user->socket, (guac_rdp_svc*) current->data);
+        current = current->next;
+    }
+
+    guac_common_list_unlock(rdp_client->available_svc);
+
+}
+
 void guac_rdp_add_svc(guac_client* client, guac_rdp_svc* svc) {
 
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Add to list of available SVC */
-    guac_common_list_lock(client_data->available_svc);
-    guac_common_list_add(client_data->available_svc, svc);
-    guac_common_list_unlock(client_data->available_svc);
+    guac_common_list_lock(rdp_client->available_svc);
+    guac_common_list_add(rdp_client->available_svc, svc);
+    guac_common_list_unlock(rdp_client->available_svc);
 
 }
 
 guac_rdp_svc* guac_rdp_get_svc(guac_client* client, const char* name) {
 
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_common_list_element* current;
     guac_rdp_svc* found = NULL;
 
     /* For each available SVC */
-    guac_common_list_lock(client_data->available_svc);
-    current = client_data->available_svc->head;
+    guac_common_list_lock(rdp_client->available_svc);
+    current = rdp_client->available_svc->head;
     while (current != NULL) {
 
         /* If name matches, found */
@@ -97,7 +123,7 @@ guac_rdp_svc* guac_rdp_get_svc(guac_client* client, const char* name) {
         current = current->next;
 
     }
-    guac_common_list_unlock(client_data->available_svc);
+    guac_common_list_unlock(rdp_client->available_svc);
 
     return found;
 
@@ -105,19 +131,19 @@ guac_rdp_svc* guac_rdp_get_svc(guac_client* client, const char* name) {
 
 guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, const char* name) {
 
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_common_list_element* current;
     guac_rdp_svc* found = NULL;
 
     /* For each available SVC */
-    guac_common_list_lock(client_data->available_svc);
-    current = client_data->available_svc->head;
+    guac_common_list_lock(rdp_client->available_svc);
+    current = rdp_client->available_svc->head;
     while (current != NULL) {
 
         /* If name matches, remove entry */
         guac_rdp_svc* current_svc = (guac_rdp_svc*) current->data;
         if (strcmp(current_svc->name, name) == 0) {
-            guac_common_list_remove(client_data->available_svc, current);
+            guac_common_list_remove(rdp_client->available_svc, current);
             found = current_svc;
             break;
         }
@@ -125,7 +151,7 @@ guac_rdp_svc* guac_rdp_remove_svc(guac_client* client, const char* name) {
         current = current->next;
 
     }
-    guac_common_list_unlock(client_data->available_svc);
+    guac_common_list_unlock(rdp_client->available_svc);
 
     /* Return removed entry, if any */
     return found;

@@ -25,15 +25,15 @@
 
 #include "config.h"
 
-#include <guacamole/client.h>
 #include <guacamole/stream.h>
+#include <guacamole/user.h>
 
 /**
  * Handles an incoming stream from a Guacamole "file" instruction, saving the
  * contents of that stream to the file having the given name.
  *
- * @param client
- *     The client receiving the uploaded file.
+ * @param user
+ *     The user uploading the file.
  *
  * @param stream
  *     The stream through which the uploaded file data will be received.
@@ -48,7 +48,7 @@
  *     Zero if the incoming stream has been handled successfully, non-zero on
  *     failure.
  */
-int guac_rdp_sftp_file_handler(guac_client* client, guac_stream* stream,
+int guac_rdp_sftp_file_handler(guac_user* user, guac_stream* stream,
         char* mimetype, char* filename);
 
 #endif

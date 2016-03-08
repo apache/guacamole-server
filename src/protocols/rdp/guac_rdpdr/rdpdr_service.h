@@ -166,7 +166,7 @@ wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
 /**
  * Begins streaming the given file to the user via a Guacamole file stream.
  */
-void guac_rdpdr_start_download(guac_rdpdr_device* device, const char* path);
+void guac_rdpdr_start_download(guac_rdpdr_device* device, char* path);
 
 #endif
 

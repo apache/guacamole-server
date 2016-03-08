@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "rdp.h"
 #include "rdp_rail.h"
 #include "rdp_settings.h"
 
@@ -88,8 +89,8 @@ void guac_rdp_process_rail_get_sysparam(guac_client* client, wMessage* event) {
     RAIL_SYSPARAM_ORDER* sysparam;
 
     /* Get channels */
-    rdp_guac_client_data* client_data = (rdp_guac_client_data*) client->data;
-    rdpChannels* channels = client_data->rdp_inst->context->channels;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    rdpChannels* channels = rdp_client->rdp_inst->context->channels;
 
     /* Get sysparam structure */
 #ifdef LEGACY_EVENT
@@ -106,8 +107,8 @@ void guac_rdp_process_rail_get_sysparam(guac_client* client, wMessage* event) {
     /* Work area */
     sysparam->workArea.left   = 0;
     sysparam->workArea.top    = 0;
-    sysparam->workArea.right  = client_data->settings.width;
-    sysparam->workArea.bottom = client_data->settings.height;
+    sysparam->workArea.right  = rdp_client->settings->width;
+    sysparam->workArea.bottom = rdp_client->settings->height;
 
     /* Taskbar */
     sysparam->taskbarPos.left   = 0;

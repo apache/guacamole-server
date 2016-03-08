@@ -22,10 +22,15 @@
 
 #include "config.h"
 
+#include "client.h"
+#include "guac_string.h"
+#include "rdp.h"
 #include "rdp_settings.h"
+#include "resolution.h"
 
 #include <freerdp/constants.h>
 #include <freerdp/settings.h>
+#include <guacamole/user.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
@@ -35,6 +40,677 @@
 
 #include <stddef.h>
 #include <string.h>
+
+/* Client plugin arguments */
+const char* GUAC_RDP_CLIENT_ARGS[] = {
+    "hostname",
+    "port",
+    "domain",
+    "username",
+    "password",
+    "width",
+    "height",
+    "dpi",
+    "initial-program",
+    "color-depth",
+    "disable-audio",
+    "enable-printing",
+    "enable-drive",
+    "drive-path",
+    "create-drive-path",
+    "console",
+    "console-audio",
+    "server-layout",
+    "security",
+    "ignore-cert",
+    "disable-auth",
+    "remote-app",
+    "remote-app-dir",
+    "remote-app-args",
+    "static-channels",
+    "client-name",
+    "enable-wallpaper",
+    "enable-theming",
+    "enable-font-smoothing",
+    "enable-full-window-drag",
+    "enable-desktop-composition",
+    "enable-menu-animations",
+    "preconnection-id",
+    "preconnection-blob",
+
+#ifdef ENABLE_COMMON_SSH
+    "enable-sftp",
+    "sftp-hostname",
+    "sftp-port",
+    "sftp-username",
+    "sftp-password",
+    "sftp-private-key",
+    "sftp-passphrase",
+    "sftp-directory",
+#endif
+
+    NULL
+};
+
+enum RDP_ARGS_IDX {
+
+    /**
+     * The hostname to connect to.
+     */
+    IDX_HOSTNAME,
+
+    /**
+     * The port to connect to. If omitted, the default RDP port of 3389 will be
+     * used.
+     */
+    IDX_PORT,
+
+    /**
+     * The domain of the user logging in.
+     */
+    IDX_DOMAIN,
+
+    /**
+     * The username of the user logging in.
+     */
+    IDX_USERNAME,
+
+    /**
+     * The password of the user logging in.
+     */
+    IDX_PASSWORD,
+
+    /**
+     * The width of the display to request, in pixels. If omitted, a reasonable
+     * value will be calculated based on the user's own display size and
+     * resolution.
+     */
+    IDX_WIDTH,
+
+    /**
+     * The height of the display to request, in pixels. If omitted, a
+     * reasonable value will be calculated based on the user's own display
+     * size and resolution.
+     */
+    IDX_HEIGHT,
+
+    /**
+     * The resolution of the display to request, in DPI. If omitted, a
+     * reasonable value will be calculated based on the user's own display
+     * size and resolution.
+     */
+    IDX_DPI,
+
+    /**
+     * The initial program to run, if any.
+     */
+    IDX_INITIAL_PROGRAM,
+
+    /**
+     * The color depth of the display to request, in bits.
+     */
+    IDX_COLOR_DEPTH,
+
+    /**
+     * "true" if audio should be disabled, "false" or blank to leave audio
+     * enabled.
+     */
+    IDX_DISABLE_AUDIO,
+
+    /**
+     * "true" if printing should be enabled, "false" or blank otherwise.
+     */
+    IDX_ENABLE_PRINTING,
+
+    /**
+     * "true" if the virtual drive should be enabled, "false" or blank
+     * otherwise.
+     */
+    IDX_ENABLE_DRIVE,
+
+    /**
+     * The local system path which will be used to persist the
+     * virtual drive. This must be specified if the virtual drive is enabled.
+     */
+    IDX_DRIVE_PATH,
+
+    /**
+     * "true" to automatically create the local system path used by the virtual
+     * drive if it does not yet exist, "false" or blank otherwise.
+     */
+    IDX_CREATE_DRIVE_PATH,
+
+    /**
+     * "true" if this session is a console session, "false" or blank otherwise.
+     */
+    IDX_CONSOLE,
+
+    /**
+     * "true" if audio should be allowed in console sessions, "false" or blank
+     * otherwise.
+     */
+    IDX_CONSOLE_AUDIO,
+
+    /**
+     * The name of the keymap chosen as the layout of the server. Legal names
+     * are defined within the *.keymap files in the "keymaps" directory of the
+     * source for Guacamole's RDP support.
+     */
+    IDX_SERVER_LAYOUT,
+
+    /**
+     * The type of security to use for the connection. Valid values are "rdp",
+     * "tls", "nla", or "any". By default, "rdp" security is used.
+     */
+    IDX_SECURITY,
+
+    /**
+     * "true" if validity of the RDP server's certificate should be ignored,
+     * "false" or blank if invalid certificates should result in a failure to
+     * connect.
+     */
+    IDX_IGNORE_CERT,
+
+    /**
+     * "true" if authentication should be disabled, "false" or blank otherwise.
+     * This is different from the authentication that takes place when a user
+     * provides their username and password. Authentication is required by
+     * definition for NLA.
+     */
+    IDX_DISABLE_AUTH,
+
+    /**
+     * The application to launch, if RemoteApp is in use.
+     */
+    IDX_REMOTE_APP,
+
+    /**
+     * The working directory of the remote application, if RemoteApp is in use.
+     */
+    IDX_REMOTE_APP_DIR,
+
+    /**
+     * The arguments to pass to the remote application, if RemoteApp is in use.
+     */
+    IDX_REMOTE_APP_ARGS,
+
+    /**
+     * Comma-separated list of the names of all static virtual channels that
+     * should be connected to and exposed as Guacamole pipe streams, or blank
+     * if no static virtual channels should be used. 
+     */
+    IDX_STATIC_CHANNELS,
+
+    /**
+     * The name of the client to submit to the RDP server upon connection.
+     */
+    IDX_CLIENT_NAME,
+
+    /**
+     * "true" if the desktop wallpaper should be visible, "false" or blank if
+     * the desktop wallpaper should be hidden.
+     */
+    IDX_ENABLE_WALLPAPER,
+
+    /**
+     * "true" if desktop and window theming should be allowed, "false" or blank
+     * if theming should be temporarily disabled on the desktop of the RDP
+     * server for the sake of performance.
+     */
+    IDX_ENABLE_THEMING,
+
+    /**
+     * "true" if glyphs should be smoothed with antialiasing (ClearType),
+     * "false" or blank if glyphs should be rendered with sharp edges and using
+     * single colors, effectively 1-bit images.
+     */
+    IDX_ENABLE_FONT_SMOOTHING,
+
+    /**
+     * "true" if windows' contents should be shown as they are moved, "false"
+     * or blank if only a window border should be shown during window move
+     * operations.
+     */
+    IDX_ENABLE_FULL_WINDOW_DRAG,
+
+    /**
+     * "true" if desktop composition (Aero) should be enabled during the
+     * session, "false" or blank otherwise.  As desktop composition provides
+     * alpha blending and other special effects, this increases the amount of
+     * bandwidth used.
+     */
+    IDX_ENABLE_DESKTOP_COMPOSITION,
+
+    /**
+     * "true" if menu animations should be shown, "false" or blank menus should
+     * not be animated.
+     */
+    IDX_ENABLE_MENU_ANIMATIONS,
+
+    /**
+     * The preconnection ID to send within the preconnection PDU when
+     * initiating an RDP connection, if any.
+     */
+    IDX_PRECONNECTION_ID,
+
+    /**
+     * The preconnection BLOB (PCB) to send to the RDP server prior to full RDP
+     * connection negotiation. This value is used by Hyper-V to select the
+     * destination VM.
+     */
+    IDX_PRECONNECTION_BLOB,
+
+#ifdef ENABLE_COMMON_SSH
+    /**
+     * "true" if SFTP should be enabled for the RDP connection, "false" or
+     * blank otherwise.
+     */
+    IDX_ENABLE_SFTP,
+
+    /**
+     * The hostname of the SSH server to connect to for SFTP. If blank, the
+     * hostname of the RDP server will be used.
+     */
+    IDX_SFTP_HOSTNAME,
+
+    /**
+     * The port of the SSH server to connect to for SFTP. If blank, the default
+     * SSH port of "22" will be used.
+     */
+    IDX_SFTP_PORT,
+
+    /**
+     * The username to provide when authenticating with the SSH server for
+     * SFTP. If blank, the username provided for the RDP user will be used.
+     */
+    IDX_SFTP_USERNAME,
+
+    /**
+     * The password to provide when authenticating with the SSH server for
+     * SFTP (if not using a private key).
+     */
+    IDX_SFTP_PASSWORD,
+
+    /**
+     * The base64-encoded private key to use when authenticating with the SSH
+     * server for SFTP (if not using a password).
+     */
+    IDX_SFTP_PRIVATE_KEY,
+
+    /**
+     * The passphrase to use to decrypt the provided base64-encoded private
+     * key.
+     */
+    IDX_SFTP_PASSPHRASE,
+
+    /**
+     * The default location for file uploads within the SSH server. This will
+     * apply only to uploads which do not use the filesystem guac_object (where
+     * the destination directory is otherwise ambiguous).
+     */
+    IDX_SFTP_DIRECTORY,
+
+#endif
+
+    RDP_ARGS_COUNT
+};
+
+guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
+        int argc, const char** argv) {
+
+    /* Validate arg count */
+    if (argc != RDP_ARGS_COUNT) {
+        guac_user_log(user, GUAC_LOG_WARNING, "Incorrect number of connection "
+                "parameters provided: expected %i, got %i.",
+                RDP_ARGS_COUNT, argc);
+        return NULL;
+    }
+
+    guac_rdp_settings* settings = calloc(1, sizeof(guac_rdp_settings));
+
+    /* Use console */
+    settings->console =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_CONSOLE, 0);
+
+    /* Enable/disable console audio */
+    settings->console_audio =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_CONSOLE_AUDIO, 0);
+
+    /* Ignore SSL/TLS certificate */
+    settings->ignore_certificate =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_IGNORE_CERT, 0);
+
+    /* Disable authentication */
+    settings->disable_authentication =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_AUTH, 0);
+
+    /* NLA security */
+    if (strcmp(argv[IDX_SECURITY], "nla") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Security mode: NLA");
+        settings->security_mode = GUAC_SECURITY_NLA;
+    }
+
+    /* TLS security */
+    else if (strcmp(argv[IDX_SECURITY], "tls") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Security mode: TLS");
+        settings->security_mode = GUAC_SECURITY_TLS;
+    }
+
+    /* RDP security */
+    else if (strcmp(argv[IDX_SECURITY], "rdp") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Security mode: RDP");
+        settings->security_mode = GUAC_SECURITY_RDP;
+    }
+
+    /* ANY security (allow server to choose) */
+    else if (strcmp(argv[IDX_SECURITY], "any") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Security mode: ANY");
+        settings->security_mode = GUAC_SECURITY_ANY;
+    }
+
+    /* If nothing given, default to RDP */
+    else {
+        guac_user_log(user, GUAC_LOG_INFO, "No security mode specified. Defaulting to RDP.");
+        settings->security_mode = GUAC_SECURITY_RDP;
+    }
+
+    /* Set hostname */
+    settings->hostname =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_HOSTNAME, "");
+
+    /* If port specified, use it */
+    settings->port =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_PORT, RDP_DEFAULT_PORT);
+
+    guac_user_log(user, GUAC_LOG_DEBUG,
+            "User resolution is %ix%i at %i DPI",
+            user->info.optimal_width,
+            user->info.optimal_height,
+            user->info.optimal_resolution);
+
+    /* Use suggested resolution unless overridden */
+    settings->resolution =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DPI, guac_rdp_suggest_resolution(user));
+
+    /* Use optimal width unless overridden */
+    settings->width = user->info.optimal_width
+                    * settings->resolution
+                    / user->info.optimal_resolution;
+
+    if (argv[IDX_WIDTH][0] != '\0')
+        settings->width = atoi(argv[IDX_WIDTH]);
+
+    /* Use default width if given width is invalid. */
+    if (settings->width <= 0) {
+        settings->width = RDP_DEFAULT_WIDTH;
+        guac_user_log(user, GUAC_LOG_ERROR,
+                "Invalid width: \"%s\". Using default of %i.",
+                argv[IDX_WIDTH], settings->width);
+    }
+
+    /* Round width down to nearest multiple of 4 */
+    settings->width = settings->width & ~0x3;
+
+    /* Use optimal height unless overridden */
+    settings->height = user->info.optimal_height
+                     * settings->resolution
+                     / user->info.optimal_resolution;
+
+    if (argv[IDX_HEIGHT][0] != '\0')
+        settings->height = atoi(argv[IDX_HEIGHT]);
+
+    /* Use default height if given height is invalid. */
+    if (settings->height <= 0) {
+        settings->height = RDP_DEFAULT_HEIGHT;
+        guac_user_log(user, GUAC_LOG_ERROR,
+                "Invalid height: \"%s\". Using default of %i.",
+                argv[IDX_WIDTH], settings->height);
+    }
+
+    guac_user_log(user, GUAC_LOG_DEBUG,
+            "Using resolution of %ix%i at %i DPI",
+            settings->width,
+            settings->height,
+            settings->resolution);
+
+    /* Domain */
+    settings->domain =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DOMAIN, NULL);
+
+    /* Username */
+    settings->username =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_USERNAME, NULL);
+
+    /* Password */
+    settings->password =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_PASSWORD, NULL);
+
+    /* Client name */
+    settings->client_name =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_CLIENT_NAME, NULL);
+
+    /* Initial program */
+    settings->initial_program =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_INITIAL_PROGRAM, NULL);
+
+    /* RemoteApp program */
+    settings->remote_app =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_REMOTE_APP, NULL);
+
+    /* RemoteApp working directory */
+    settings->remote_app_dir =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_REMOTE_APP_DIR, NULL);
+
+    /* RemoteApp arguments */
+    settings->remote_app_args =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_REMOTE_APP_ARGS, NULL);
+
+    /* Static virtual channels */
+    settings->svc_names = NULL;
+    if (argv[IDX_STATIC_CHANNELS][0] != '\0')
+        settings->svc_names = guac_split(argv[IDX_STATIC_CHANNELS], ',');
+
+    /*
+     * Performance flags
+     */
+
+    settings->wallpaper_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_WALLPAPER, 0);
+
+    settings->theming_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_THEMING, 0);
+
+    settings->font_smoothing_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_FONT_SMOOTHING, 0);
+
+    settings->full_window_drag_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_FULL_WINDOW_DRAG, 0);
+
+    settings->desktop_composition_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_DESKTOP_COMPOSITION, 0);
+
+    settings->menu_animations_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_MENU_ANIMATIONS, 0);
+
+    /* Session color depth */
+    settings->color_depth = 
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_COLOR_DEPTH, RDP_DEFAULT_DEPTH);
+
+    /* Preconnection ID */
+    settings->preconnection_id = -1;
+    if (argv[IDX_PRECONNECTION_ID][0] != '\0') {
+
+        /* Parse preconnection ID, warn if invalid */
+        int preconnection_id = atoi(argv[IDX_PRECONNECTION_ID]);
+        if (preconnection_id < 0)
+            guac_user_log(user, GUAC_LOG_WARNING,
+                    "Ignoring invalid preconnection ID: %i",
+                    preconnection_id);
+
+        /* Otherwise, assign specified ID */
+        else {
+            settings->preconnection_id = preconnection_id;
+            guac_user_log(user, GUAC_LOG_DEBUG,
+                    "Preconnection ID: %i", settings->preconnection_id);
+        }
+
+    }
+
+    /* Preconnection BLOB */
+    settings->preconnection_blob = NULL;
+    if (argv[IDX_PRECONNECTION_BLOB][0] != '\0') {
+        settings->preconnection_blob = strdup(argv[IDX_PRECONNECTION_BLOB]);
+        guac_user_log(user, GUAC_LOG_DEBUG,
+                "Preconnection BLOB: \"%s\"", settings->preconnection_blob);
+    }
+
+#ifndef HAVE_RDPSETTINGS_SENDPRECONNECTIONPDU
+    /* Warn if support for the preconnection BLOB / ID is absent */
+    if (settings->preconnection_blob != NULL
+            || settings->preconnection_id != -1) {
+        guac_user_log(user, GUAC_LOG_WARNING,
+                "Installed version of FreeRDP lacks support for the "
+                "preconnection PDU. The specified preconnection BLOB and/or "
+                "ID will be ignored.");
+    }
+#endif
+
+    /* Audio enable/disable */
+    settings->audio_enabled =
+        !guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_AUDIO, 0);
+
+    /* Printing enable/disable */
+    settings->printing_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_PRINTING, 0);
+
+    /* Drive enable/disable */
+    settings->drive_enabled =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_DRIVE, 0);
+
+    settings->drive_path =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DRIVE_PATH, "");
+
+    settings->create_drive_path =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_CREATE_DRIVE_PATH, 0);
+
+    /* Pick keymap based on argument */
+    settings->server_layout = NULL;
+    if (argv[IDX_SERVER_LAYOUT][0] != '\0')
+        settings->server_layout =
+            guac_rdp_keymap_find(argv[IDX_SERVER_LAYOUT]);
+
+    /* If no keymap requested, use default */
+    if (settings->server_layout == NULL)
+        settings->server_layout = guac_rdp_keymap_find(GUAC_DEFAULT_KEYMAP);
+
+#ifdef ENABLE_COMMON_SSH
+    /* SFTP enable/disable */
+    settings->enable_sftp =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_SFTP, 0);
+
+    /* Hostname for SFTP connection */
+    settings->sftp_hostname =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_HOSTNAME, settings->hostname);
+
+    /* Port for SFTP connection */
+    settings->sftp_port =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_PORT, "22");
+
+    /* Username for SSH/SFTP authentication */
+    settings->sftp_username =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_USERNAME,
+                settings->username != NULL ? settings->username : "");
+
+    /* Password for SFTP (if not using private key) */
+    settings->sftp_password =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_PASSWORD, "");
+
+    /* Private key for SFTP (if not using password) */
+    settings->sftp_private_key =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_PRIVATE_KEY, NULL);
+
+    /* Passphrase for decrypting the SFTP private key (if applicable */
+    settings->sftp_passphrase =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_PASSPHRASE, "");
+
+    /* Default upload directory */
+    settings->sftp_directory =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_DIRECTORY, NULL);
+#endif
+
+    /* Success */
+    return settings;
+
+}
+
+void guac_rdp_settings_free(guac_rdp_settings* settings) {
+
+    /* Free settings strings */
+    free(settings->client_name);
+    free(settings->domain);
+    free(settings->drive_path);
+    free(settings->hostname);
+    free(settings->initial_program);
+    free(settings->password);
+    free(settings->preconnection_blob);
+    free(settings->remote_app);
+    free(settings->remote_app_args);
+    free(settings->remote_app_dir);
+    free(settings->username);
+
+    /* Free channel name array */
+    free(settings->svc_names);
+
+#ifdef ENABLE_COMMON_SSH
+    /* Free SFTP settings */
+    free(settings->sftp_directory);
+    free(settings->sftp_hostname);
+    free(settings->sftp_passphrase);
+    free(settings->sftp_password);
+    free(settings->sftp_port);
+    free(settings->sftp_private_key);
+    free(settings->sftp_username);
+#endif
+
+    /* Free settings structure */
+    free(settings);
+
+}
 
 int guac_rdp_get_width(freerdp* rdp) {
 #ifdef LEGACY_RDPSETTINGS

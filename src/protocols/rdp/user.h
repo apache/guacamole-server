@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,19 +20,22 @@
  * THE SOFTWARE.
  */
 
+#ifndef GUAC_RDP_USER_H
+#define GUAC_RDP_USER_H
 
-#ifndef _GUAC_RDP_GUAC_HANDLERS_H
-#define _GUAC_RDP_GUAC_HANDLERS_H
+#include <guacamole/user.h>
 
-#include "config.h"
+/**
+ * Handler for joining users.
+ */
+guac_user_join_handler guac_rdp_user_join_handler;
 
-#include <guacamole/client.h>
-
-int rdp_guac_client_free_handler(guac_client* client);
-int rdp_guac_client_handle_messages(guac_client* client);
-int rdp_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int rdp_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int rdp_guac_client_size_handler(guac_client* client, int width, int height);
+/**
+ * Handler for received simple file uploads. This handler will automatically
+ * select between RDPDR and SFTP depending on which is available and which has
+ * priority given associated settings.
+ */
+guac_user_file_handler guac_rdp_user_file_handler;
 
 #endif
 
