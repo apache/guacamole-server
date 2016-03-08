@@ -843,7 +843,8 @@ void* guac_rdp_client_thread(void* data) {
 #endif
 
         /* Wait for data and construct a reasonable frame */
-        int wait_result = rdp_guac_client_wait_for_messages(client, 250000);
+        int wait_result = rdp_guac_client_wait_for_messages(client,
+                GUAC_RDP_FRAME_START_TIMEOUT);
         guac_timestamp frame_start = guac_timestamp_current();
         while (wait_result > 0) {
 
