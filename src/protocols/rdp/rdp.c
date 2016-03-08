@@ -162,10 +162,12 @@ static int __guac_receive_channel_data(freerdp* rdp_inst, int channelId,
  * Called whenever a channel connects via the PubSub event system within
  * FreeRDP.
  *
- * @param context The rdpContext associated with the active RDP session.
- * @param e Event-specific arguments, mainly the name of the channel, and a
- *          reference to the associated plugin loaded for that channel by
- *          FreeRDP.
+ * @param context
+ *     The rdpContext associated with the active RDP session.
+ *
+ * @param e
+ *     Event-specific arguments, mainly the name of the channel, and a
+ *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_channel_connected(rdpContext* context,
         ChannelConnectedEventArgs* e) {
@@ -416,7 +418,18 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
 }
 
-BOOL rdp_freerdp_post_connect(freerdp* instance) {
+/**
+ * Callback invoked by FreeRDP just after the connection is established with
+ * the RDP server. Implementations are required to manually invoke
+ * freerdp_channels_post_connect().
+ *
+ * @param instance
+ *     The FreeRDP instance that has just connected.
+ *
+ * @return
+ *     TRUE if successful, FALSE if an error occurs.
+ */
+static BOOL rdp_freerdp_post_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -432,7 +445,30 @@ BOOL rdp_freerdp_post_connect(freerdp* instance) {
 
 }
 
-BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
+/**
+ * Callback invoked by FreeRDP when authentication is required but a username
+ * and password has not already been given. In the case of Guacamole, this
+ * function always succeeds but does not populate the usename or password. The
+ * username/password must be given within the connection parameters.
+ *
+ * @param instance
+ *     The FreeRDP instance associated with the RDP session requesting
+ *     credentials.
+ *
+ * @param username
+ *     Pointer to a string which will receive the user's username.
+ *
+ * @param password
+ *     Pointer to a string which will receive the user's password.
+ *
+ * @param domain
+ *     Pointer to a string which will receive the domain associated with the
+ *     user's account.
+ *
+ * @return
+ *     Always TRUE.
+ */
+static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
         char** password, char** domain) {
 
     rdpContext* context = instance->context;
@@ -445,7 +481,29 @@ BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
 
 }
 
-BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
+/**
+ * Callback invoked by FreeRDP when the SSL/TLS certificate of the RDP server
+ * needs to be verified. If this ever happens, this function implementation
+ * will always fail unless the connection has been configured to ignore
+ * certificate validity.
+ *
+ * @param instance
+ *     The FreeRDP instance associated with the RDP session whose SSL/TLS
+ *     certificate needs to be verified.
+ *
+ * @param subject
+ *     The subject to whom the certificate was issued.
+ *
+ * @param issuer
+ *     The authority that issued the certificate,
+ *
+ * @param fingerprint
+ *     The cryptographic fingerprint of the certificate.
+ *
+ * @return
+ *     TRUE if the certificate passes verification, FALSE otherwise.
+ */
+static BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
         char* issuer, char* fingerprint) {
 
     rdpContext* context = instance->context;
@@ -464,15 +522,51 @@ BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
 
 }
 
-void rdp_freerdp_context_new(freerdp* instance, rdpContext* context) {
+/**
+ * Callback invoked by FreeRDP after a new rdpContext has been allocated and
+ * associated with the current FreeRDP instance. Implementations are required
+ * to manually invoke freerdp_channels_new() at this point.
+ *
+ * @param instance
+ *     The FreeRDP instance whose context has just been allocated.
+ *
+ * @param context
+ *     The newly-allocated FreeRDP context.
+ */
+static void rdp_freerdp_context_new(freerdp* instance, rdpContext* context) {
     context->channels = freerdp_channels_new();
 }
 
-void rdp_freerdp_context_free(freerdp* instance, rdpContext* context) {
+/**
+ * Callback invoked by FreeRDP when the rdpContext is being freed. This must be
+ * provided, but there is no Guacamole-specific data associated with the
+ * FreeRDP context, so nothing is done here.
+ *
+ * @param instance
+ *     The FreeRDP instance whose context is being freed.
+ *
+ * @param context
+ *     The FreeRDP context being freed.
+ */
+static void rdp_freerdp_context_free(freerdp* instance, rdpContext* context) {
     /* EMPTY */
 }
 
-void __guac_rdp_client_load_keymap(guac_client* client,
+/**
+ * Loads all keysym/scancode mappings declared within the given keymap and its
+ * parent keymap, if any. These mappings are stored within the guac_rdp_client
+ * structure associated with the given guac_client for future use in
+ * translating keysyms to the scancodes required by RDP key events.
+ *
+ * @param client
+ *     The guac_client whose associated guac_rdp_client should be initialized
+ *     with the keysym/scancode mapping defined in the given keymap.
+ *
+ * @param keymap
+ *     The keymap to use to populate the given client's keysym/scancode
+ *     mapping.
+ */
+static void __guac_rdp_client_load_keymap(guac_client* client,
         const guac_rdp_keymap* keymap) {
 
     guac_rdp_client* rdp_client =
@@ -505,8 +599,11 @@ void __guac_rdp_client_load_keymap(guac_client* client,
 /**
  * Waits for messages from the RDP server for the given number of microseconds.
  *
- * @param client The client associated with the current RDP session.
- * @param timeout_usecs The maximum amount of time to wait, in microseconds.
+ * @param client
+ *     The client associated with the current RDP session.
+ *
+ * @param timeout_usecs
+ *     The maximum amount of time to wait, in microseconds.
  *
  * @return
  *     A positive value if messages are ready, zero if the specified timeout
