@@ -347,14 +347,6 @@ void* guac_vnc_client_thread(void* data) {
 
             guac_timestamp frame_start = guac_timestamp_current();
 
-            /* Calculate time since last frame */
-            int time_elapsed = frame_start - last_frame_end;
-            int processing_lag = guac_client_get_processing_lag(client);
-
-            /* Force roughly-equal length of server and client frames */
-            if (time_elapsed < processing_lag)
-                guac_timestamp_msleep(processing_lag - time_elapsed);
-
             /* Read server messages until frame is built */
             do {
 
@@ -383,18 +375,28 @@ void* guac_vnc_client_thread(void* data) {
 
             } while (wait_result > 0);
 
-            /* Record end of frame */
-            last_frame_end = guac_timestamp_current();
-
         }
 
         /* If an error occurs, log it and fail */
         if (wait_result < 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed.");
 
+        /* Flush frame */
         guac_common_surface_flush(vnc_client->display->default_surface);
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
+
+        /* Calculate time since previous frame ended */
+        int current_frame_end = guac_timestamp_current();
+        int time_elapsed = current_frame_end - last_frame_end;
+        int processing_lag = guac_client_get_processing_lag(client);
+
+        /* Insert delays as necessary to allow client to catch up */
+        if (time_elapsed < processing_lag)
+            guac_timestamp_msleep(processing_lag - time_elapsed);
+
+        /* Record end of frame */
+        last_frame_end = current_frame_end;
 
     }
 
