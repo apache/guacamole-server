@@ -829,8 +829,9 @@ void* guac_rdp_client_thread(void* data) {
 
     /* Connection complete */
     rdp_client->rdp_inst = rdp_inst;
-
     rdpChannels* channels = rdp_inst->context->channels;
+
+    guac_timestamp last_frame_end = guac_timestamp_current();
 
     /* Handle messages from RDP server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING) {
@@ -845,72 +846,88 @@ void* guac_rdp_client_thread(void* data) {
         /* Wait for data and construct a reasonable frame */
         int wait_result = rdp_guac_client_wait_for_messages(client,
                 GUAC_RDP_FRAME_START_TIMEOUT);
-        guac_timestamp frame_start = guac_timestamp_current();
-        while (wait_result > 0) {
+        if (wait_result > 0) {
 
-            guac_timestamp frame_end;
-            int frame_remaining;
+            int processing_lag = guac_client_get_processing_lag(client);
+            guac_timestamp frame_start = guac_timestamp_current();
 
-            pthread_mutex_lock(&(rdp_client->rdp_lock));
+            /* Read server messages until frame is built */
+            do {
 
-            /* Check the libfreerdp fds */
-            if (!freerdp_check_fds(rdp_inst)) {
-                guac_client_log(client, GUAC_LOG_DEBUG,
-                        "Error handling RDP file descriptors");
-                pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                return NULL;
-            }
+                guac_timestamp frame_end;
+                int frame_remaining;
 
-            /* Check channel fds */
-            if (!freerdp_channels_check_fds(channels, rdp_inst)) {
-                guac_client_log(client, GUAC_LOG_DEBUG,
-                        "Error handling RDP channel file descriptors");
-                pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                return NULL;
-            }
+                pthread_mutex_lock(&(rdp_client->rdp_lock));
 
-            /* Check for channel events */
-            wMessage* event = freerdp_channels_pop_event(channels);
-            if (event) {
+                /* Check the libfreerdp fds */
+                if (!freerdp_check_fds(rdp_inst)) {
+                    guac_client_log(client, GUAC_LOG_DEBUG,
+                            "Error handling RDP file descriptors");
+                    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+                    return NULL;
+                }
 
-                /* Handle channel events (clipboard and RAIL) */
+                /* Check channel fds */
+                if (!freerdp_channels_check_fds(channels, rdp_inst)) {
+                    guac_client_log(client, GUAC_LOG_DEBUG,
+                            "Error handling RDP channel file descriptors");
+                    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+                    return NULL;
+                }
+
+                /* Check for channel events */
+                wMessage* event = freerdp_channels_pop_event(channels);
+                if (event) {
+
+                    /* Handle channel events (clipboard and RAIL) */
 #ifdef LEGACY_EVENT
-                if (event->event_class == CliprdrChannel_Class)
-                    guac_rdp_process_cliprdr_event(client, event);
-                else if (event->event_class == RailChannel_Class)
-                    guac_rdp_process_rail_event(client, event);
+                    if (event->event_class == CliprdrChannel_Class)
+                        guac_rdp_process_cliprdr_event(client, event);
+                    else if (event->event_class == RailChannel_Class)
+                        guac_rdp_process_rail_event(client, event);
 #else
-                if (GetMessageClass(event->id) == CliprdrChannel_Class)
-                    guac_rdp_process_cliprdr_event(client, event);
-                else if (GetMessageClass(event->id) == RailChannel_Class)
-                    guac_rdp_process_rail_event(client, event);
+                    if (GetMessageClass(event->id) == CliprdrChannel_Class)
+                        guac_rdp_process_cliprdr_event(client, event);
+                    else if (GetMessageClass(event->id) == RailChannel_Class)
+                        guac_rdp_process_rail_event(client, event);
 #endif
 
-                freerdp_event_free(event);
+                    freerdp_event_free(event);
 
-            }
+                }
 
-            /* Handle RDP disconnect */
-            if (freerdp_shall_disconnect(rdp_inst)) {
-                guac_client_log(client, GUAC_LOG_INFO,
-                        "RDP server closed connection");
+                /* Handle RDP disconnect */
+                if (freerdp_shall_disconnect(rdp_inst)) {
+                    guac_client_log(client, GUAC_LOG_INFO,
+                            "RDP server closed connection");
+                    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+                    return NULL;
+                }
+
                 pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                return NULL;
-            }
 
-            pthread_mutex_unlock(&(rdp_client->rdp_lock));
+                /* Calculate time remaining in frame */
+                frame_end = guac_timestamp_current();
+                frame_remaining = frame_start + GUAC_RDP_FRAME_DURATION
+                                - frame_end;
 
-            /* Calculate time remaining in frame */
-            frame_end = guac_timestamp_current();
-            frame_remaining = frame_start + GUAC_RDP_FRAME_DURATION - frame_end;
+                /* Calculate time that client needs to catch up */
+                int time_elapsed = frame_end - last_frame_end;
+                int required_wait = processing_lag - time_elapsed;
 
-            /* Wait again if frame remaining */
-            if (frame_remaining > 0)
-                wait_result = rdp_guac_client_wait_for_messages(client,
-                        GUAC_RDP_FRAME_TIMEOUT*1000);
-            else
-                break;
+                /* Increase the duration of this frame if client is lagging */
+                if (required_wait > GUAC_RDP_FRAME_TIMEOUT)
+                    wait_result = rdp_guac_client_wait_for_messages(client,
+                            required_wait*1000);
 
+                /* Wait again if frame remaining */
+                else if (frame_remaining > 0)
+                    wait_result = rdp_guac_client_wait_for_messages(client,
+                            GUAC_RDP_FRAME_TIMEOUT*1000);
+                else
+                    break;
+
+            } while (wait_result > 0);
         }
 
         /* If an error occurred, fail */
@@ -922,6 +939,9 @@ void* guac_rdp_client_thread(void* data) {
         guac_common_display_flush(rdp_client->display);
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
+
+        /* Record end of frame */
+        last_frame_end = guac_timestamp_current();
 
     }
 
