@@ -73,13 +73,15 @@ endif
 
 guacenc_CFLAGS =            \
     -Werror -Wall -pedantic \
+    @AVCODEC_CFLAGS@        \
     @LIBGUAC_INCLUDE@
 
 guacenc_LDADD =     \
     @LIBGUAC_LTLIB@
 
-guacenc_LDFLAGS = \
-    @CAIRO_LIBS@  \
-    @JPEG_LIBS@   \
+guacenc_LDFLAGS =  \
+    @AVCODEC_LIBS@ \
+    @CAIRO_LIBS@   \
+    @JPEG_LIBS@    \
     @WEBP_LIBS@
 
