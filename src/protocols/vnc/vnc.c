@@ -345,6 +345,7 @@ void* guac_vnc_client_thread(void* data) {
                 GUAC_VNC_FRAME_START_TIMEOUT);
         if (wait_result > 0) {
 
+            int processing_lag = guac_client_get_processing_lag(client);
             guac_timestamp frame_start = guac_timestamp_current();
 
             /* Read server messages until frame is built */
@@ -366,8 +367,17 @@ void* guac_vnc_client_thread(void* data) {
                 frame_remaining = frame_start + GUAC_VNC_FRAME_DURATION
                                 - frame_end;
 
+                /* Calculate time that client needs to catch up */
+                int time_elapsed = frame_end - last_frame_end;
+                int required_wait = processing_lag - time_elapsed;
+
+                /* Increase the duration of this frame if client is lagging */
+                if (required_wait > GUAC_VNC_FRAME_TIMEOUT)
+                    wait_result = guac_vnc_wait_for_messages(rfb_client,
+                            required_wait*1000);
+
                 /* Wait again if frame remaining */
-                if (frame_remaining > 0)
+                else if (frame_remaining > 0)
                     wait_result = guac_vnc_wait_for_messages(rfb_client,
                             GUAC_VNC_FRAME_TIMEOUT*1000);
                 else
@@ -386,17 +396,8 @@ void* guac_vnc_client_thread(void* data) {
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
 
-        /* Calculate time since previous frame ended */
-        int current_frame_end = guac_timestamp_current();
-        int time_elapsed = current_frame_end - last_frame_end;
-        int processing_lag = guac_client_get_processing_lag(client);
-
-        /* Insert delays as necessary to allow client to catch up */
-        if (time_elapsed < processing_lag)
-            guac_timestamp_msleep(processing_lag - time_elapsed);
-
         /* Record end of frame */
-        last_frame_end = current_frame_end;
+        last_frame_end = guac_timestamp_current();
 
     }
 
