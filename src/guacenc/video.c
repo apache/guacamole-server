@@ -26,6 +26,8 @@
 #include "video.h"
 
 #include <libavcodec/avcodec.h>
+#include <libavutil/common.h>
+#include <libavutil/imgutils.h>
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
 
@@ -64,19 +66,35 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     /* Open codec for use */
     if (avcodec_open2(context, codec, NULL) < 0) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to open codec \"%s\".", codec_name);
-        avcodec_free_context(&context);
-        return NULL;
+        goto fail_context;
+    }
+
+    /* Allocate corresponding frame */
+    AVFrame* frame = av_frame_alloc();
+    if (frame == NULL) {
+        goto fail_context;
+    }
+
+    /* Copy necessary data for frame from context */
+    frame->format = context->pix_fmt;
+    frame->width = context->width;
+    frame->height = context->height;
+
+    /* Allocate actual backing data for frame */
+    if (av_image_alloc(frame->data, frame->linesize, frame->width,
+                frame->height, frame->format, 32) < 0) {
+        goto fail_frame;
     }
 
     /* Allocate video structure */
     guacenc_video* video = malloc(sizeof(guacenc_video));
     if (video == NULL) {
-        avcodec_free_context(&context);
-        return NULL;
+        goto fail_frame_data;
     }
 
     /* Init properties of video */
     video->context = context;
+    video->frame = frame;
     video->width = width;
     video->height = height;
     video->frame_duration = 1000 / framerate;
@@ -88,6 +106,17 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     video->next_frame = NULL;
 
     return video;
+
+    /* Free all allocated data in case of failure */
+fail_frame_data:
+    av_freep(&frame->data[0]);
+
+fail_frame:
+    av_frame_free(&frame);
+
+fail_context:
+    avcodec_free_context(&context);
+    return NULL;
 
 }
 
@@ -108,6 +137,14 @@ static int guacenc_video_flush_frame(guacenc_video* video) {
     guacenc_buffer* buffer = video->next_frame;
     if (buffer == NULL)
         return 0;
+
+    /* Init video packet */
+    AVPacket packet;
+    av_init_packet(&packet);
+
+    /* Request that encoder allocate data for packet */
+    packet.data = NULL;
+    packet.size = 0;
 
     /* STUB: Write frame to video */
     guacenc_log(GUAC_LOG_DEBUG, "Writing frame @ %" PRId64 "ms",
@@ -159,6 +196,10 @@ int guacenc_video_free(guacenc_video* video) {
 
     /* Write final frame */
     guacenc_video_flush_frame(video);
+
+    /* Free frame encoding data */
+    av_freep(&video->frame->data[0]);
+    av_frame_free(&video->frame);
 
     /* Clean up encoding context */
     avcodec_close(video->context);

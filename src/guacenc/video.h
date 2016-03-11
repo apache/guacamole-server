@@ -43,6 +43,12 @@ typedef struct guacenc_video {
     AVCodecContext* context;
 
     /**
+     * An image data area, containing YCbCr image data in the format required
+     * by avcodec_encode_video2(), for use and re-use as frames are rendered.
+     */
+    AVFrame* frame;
+
+    /**
      * The width of the video, in pixels.
      */
     int width;
