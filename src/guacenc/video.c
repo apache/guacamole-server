@@ -36,7 +36,7 @@
 #include <stdlib.h>
 
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
-        int width, int height, int framerate, int bitrate) {
+        int width, int height, int bitrate) {
 
     /* Pull codec based on name */
     AVCodec* codec = avcodec_find_encoder_by_name(codec_name);
@@ -58,7 +58,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     context->bit_rate = bitrate;
     context->width = width;
     context->height = height;
-    context->time_base = (AVRational) { 1, framerate };
+    context->time_base = (AVRational) { 1, GUACENC_VIDEO_FRAMERATE };
     context->gop_size = 10;
     context->max_b_frames = 1;
     context->pix_fmt = AV_PIX_FMT_YUV420P;
@@ -97,7 +97,6 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     video->frame = frame;
     video->width = width;
     video->height = height;
-    video->frame_duration = 1000 / framerate;
     video->bitrate = bitrate;
 
     /* No frames have been written or prepared yet */
@@ -164,7 +163,7 @@ int guacenc_video_advance_timeline(guacenc_video* video,
 
         /* Calculate the number of frames that should have been written */
         int elapsed = (timestamp - video->last_timestamp)
-                    / video->frame_duration;
+                    * GUACENC_VIDEO_FRAMERATE / 1000;
 
         /* Keep previous timestamp if insufficient time has elapsed */
         if (elapsed == 0)

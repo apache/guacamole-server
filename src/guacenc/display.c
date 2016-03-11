@@ -89,7 +89,7 @@ guacenc_display* guacenc_display_alloc() {
 
     /* STUB: Prepare video encoding */
     guacenc_video* video = guacenc_video_alloc("/tmp/test.mpg", "mpeg4",
-            640, 480, 25, 400000);
+            640, 480, 400000);
     if (video == NULL)
         return NULL;
 

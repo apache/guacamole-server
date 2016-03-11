@@ -32,6 +32,11 @@
 #include <stdint.h>
 
 /**
+ * The framerate at which video should be encoded, in frames per second.
+ */
+#define GUACENC_VIDEO_FRAMERATE 25
+
+/**
  * A video which is actively being encoded. Frames can be added to the video
  * as they are generated, along with their associated timestamps, and the
  * corresponding video will be continuously written as it is encoded.
@@ -59,11 +64,6 @@ typedef struct guacenc_video {
      * The height of the video, in pixels.
      */
     int height;
-
-    /**
-     * The duration of a single frame in milliseconds.
-     */
-    int frame_duration;
 
     /**
      * The desired output bitrate of the video, in bits per second.
@@ -112,16 +112,12 @@ typedef struct guacenc_video {
  * @param height
  *     The height of the desired video, in pixels.
  *
- * @param framerate
- *     The rate at which frames should be encoded within the video, in frames
- *     per second.
- *
  * @param bitrate
  *     The desired overall bitrate of the resulting encoded video, in kilobits
  *     per second.
  */
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
-        int width, int height, int framerate, int bitrate);
+        int width, int height, int bitrate);
 
 /**
  * Advances the timeline of the encoding process to the given timestamp, such
