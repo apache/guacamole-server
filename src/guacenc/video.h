@@ -113,8 +113,8 @@ typedef struct guacenc_video {
  *     The height of the desired video, in pixels.
  *
  * @param bitrate
- *     The desired overall bitrate of the resulting encoded video, in kilobits
- *     per second.
+ *     The desired overall bitrate of the resulting encoded video, in bits per
+ *     second.
  */
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         int width, int height, int bitrate);

@@ -129,11 +129,29 @@ int guacenc_display_flatten(guacenc_display* display);
  * representation of encoding state, as well as the state of the Guacamole
  * display as instructions are read and handled.
  *
+ * @param path
+ *     The full path to the file in which encoded video should be written.
+ *
+ * @param codec
+ *     The name of the codec to use for the video encoding, as defined by
+ *     ffmpeg / libavcodec.
+ *
+ * @param width
+ *     The width of the desired video, in pixels.
+ *
+ * @param height
+ *     The height of the desired video, in pixels.
+ *
+ * @param bitrate
+ *     The desired overall bitrate of the resulting encoded video, in bits per
+ *     second.
+ *
  * @return
  *     The newly-allocated Guacamole video encoder display, or NULL if the
  *     display could not be allocated.
  */
-guacenc_display* guacenc_display_alloc();
+guacenc_display* guacenc_display_alloc(const char* path, const char* codec,
+        int width, int height, int bitrate);
 
 /**
  * Frees all memory associated with the given Guacamole video encoder display,

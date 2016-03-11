@@ -85,11 +85,11 @@ cairo_operator_t guacenc_display_cairo_operator(guac_composite_mode mask) {
 
 }
 
-guacenc_display* guacenc_display_alloc() {
+guacenc_display* guacenc_display_alloc(const char* path, const char* codec,
+        int width, int height, int bitrate) {
 
     /* STUB: Prepare video encoding */
-    guacenc_video* video = guacenc_video_alloc("/tmp/test.mpg", "mpeg4",
-            640, 480, 400000);
+    guacenc_video* video = guacenc_video_alloc(path, codec, width, height, bitrate);
     if (video == NULL)
         return NULL;
 

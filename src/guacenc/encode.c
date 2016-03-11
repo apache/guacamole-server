@@ -83,10 +83,12 @@ static int guacenc_read_instructions(guacenc_display* display,
 
 }
 
-int guacenc_encode(const char* path) {
+int guacenc_encode(const char* path, const char* out_path, const char* codec,
+        int width, int height, int bitrate) {
 
     /* Allocate display for encoding process */
-    guacenc_display* display = guacenc_display_alloc();
+    guacenc_display* display = guacenc_display_alloc(out_path, codec,
+            width, height, bitrate);
     if (display == NULL)
         return 1;
 
@@ -108,7 +110,7 @@ int guacenc_encode(const char* path) {
         return 1;
     }
 
-    guacenc_log(GUAC_LOG_INFO, "Encoding \"%s\" ...", path);
+    guacenc_log(GUAC_LOG_INFO, "Encoding \"%s\" to \"%s\" ...", path, out_path);
 
     /* Attempt to read all instructions in the file */
     if (guacenc_read_instructions(display, path, socket)) {

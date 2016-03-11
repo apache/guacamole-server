@@ -28,6 +28,7 @@ noinst_HEADERS =   \
     buffer.h       \
     display.h      \
     encode.h       \
+    guacenc.h      \
     image-stream.h \
     instructions.h \
     jpeg.h         \

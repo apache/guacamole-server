@@ -20,40 +20,43 @@
  * THE SOFTWARE.
  */
 
-#ifndef GUACENC_ENCODE_H
-#define GUACENC_ENCODE_H
+#ifndef GUACENC_H
+#define GUACENC_H
 
 #include "config.h"
 
 /**
- * Encodes the given Guacamole protocol dump as video.
- *
- * @param path
- *     The path to the file containing the raw Guacamole protocol dump.
- *
- * @param out_path
- *     The full path to the file in which encoded video should be written.
- *
- * @param codec
- *     The name of the codec to use for the video encoding, as defined by
- *     ffmpeg / libavcodec.
- *
- * @param width
- *     The width of the desired video, in pixels.
- *
- * @param height
- *     The height of the desired video, in pixels.
- *
- * @param bitrate
- *     The desired overall bitrate of the resulting encoded video, in bits per
- *     second.
- *
- * @return
- *     Zero on success, non-zero if an error prevented successful encoding of
- *     the video.
+ * The name of the codec to use by default, if no other codec is specified on
+ * the command line. This name is dictated by ffmpeg / libavcodec.
  */
-int guacenc_encode(const char* path, const char* out_path, const char* codec,
-        int width, int height, int bitrate);
+#define GUACENC_DEFAULT_CODEC "mpeg4"
+
+/**
+ * The extension to append to the end of the input file to produce the output
+ * file name, excluding the separating period, if no other suffix is specified
+ * on the command line.
+ */
+#define GUACENC_DEFAULT_SUFFIX "mpg"
+
+/**
+ * The width of the output video, in pixels, if no other width is given on the
+ * command line. Note that different codecs will have different restrictions
+ * regarding legal widths.
+ */
+#define GUACENC_DEFAULT_WIDTH 640
+
+/**
+ * The height of the output video, in pixels, if no other height is given on the
+ * command line. Note that different codecs will have different restrictions
+ * regarding legal heights.
+ */
+#define GUACENC_DEFAULT_HEIGHT 480
+
+/**
+ * The desired bitrate of the output video, in bits per second, if no other
+ * bitrate is given on the command line.
+ */
+#define GUACENC_DEFAULT_BITRATE 400000
 
 #endif
 

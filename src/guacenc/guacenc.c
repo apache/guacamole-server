@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "encode.h"
+#include "guacenc.h"
 #include "log.h"
 
 #include <libavcodec/avcodec.h>
@@ -41,6 +42,15 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    /* Load defaults */
+    const char* codec = GUACENC_DEFAULT_CODEC;
+    const char* suffix = GUACENC_DEFAULT_SUFFIX;
+    int width = GUACENC_DEFAULT_WIDTH;
+    int height = GUACENC_DEFAULT_HEIGHT;
+    int bitrate = GUACENC_DEFAULT_BITRATE;
+
+    /* TODO: Override defaults via command-line arguments */
+
     /* Prepare libavcodec */
     avcodec_register_all();
 
@@ -54,8 +64,19 @@ int main(int argc, char* argv[]) {
         /* Get current filename */
         const char* path = argv[i];
 
+        /* Generate output filename */
+        char out_path[4096];
+        int len = snprintf(out_path, sizeof(out_path), "%s.%s", path, suffix);
+
+        /* Do not write if filename exceeds maximum length */
+        if (len >= sizeof(out_path)) {
+            guacenc_log(GUAC_LOG_ERROR, "Cannot write output file \"%s.%s\": "
+                    "Name too long", path, suffix);
+            continue;
+        }
+
         /* Attempt encoding, log granular success/failure at debug level */
-        if (guacenc_encode(path)) {
+        if (guacenc_encode(path, out_path, codec, width, height, bitrate)) {
             failures++;
             guacenc_log(GUAC_LOG_DEBUG,
                     "%s was NOT successfully encoded.", path);
