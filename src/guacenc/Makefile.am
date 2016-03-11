@@ -76,6 +76,7 @@ endif
 guacenc_CFLAGS =            \
     -Werror -Wall -pedantic \
     @AVCODEC_CFLAGS@        \
+    @AVUTIL_CFLAGS@         \
     @LIBGUAC_INCLUDE@
 
 guacenc_LDADD =     \
@@ -83,6 +84,7 @@ guacenc_LDADD =     \
 
 guacenc_LDFLAGS =  \
     @AVCODEC_LIBS@ \
+    @AVUTIL_LIBS@  \
     @CAIRO_LIBS@   \
     @JPEG_LIBS@    \
     @WEBP_LIBS@

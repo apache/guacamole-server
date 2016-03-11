@@ -165,6 +165,26 @@ fi
 
 AM_CONDITIONAL([ENABLE_AVCODEC], [test "x${have_libavcodec}" = "xyes"])
 
+
+#
+# libavutil
+#
+
+have_libavutil=disabled
+AC_ARG_WITH([libavutil],
+            [AS_HELP_STRING([--with-libavutil],
+                            [use libavutil when encoding video @<:@default=check@:>@])],
+            [],
+            [with_libavutil=check])
+
+if test "x$with_libavutil" != "xno"
+then
+    have_libavutil=yes
+    PKG_CHECK_MODULES([AVUTIL], [libavutil],, [have_libavutil=no]);
+fi
+
+AM_CONDITIONAL([ENABLE_AVUTIL], [test "x${have_libavutil}" = "xyes"])
+
 #
 # libssl
 #
@@ -1008,7 +1028,8 @@ AC_ARG_ENABLE([guacenc],
               [enable_guacenc=yes])
 
 AM_CONDITIONAL([ENABLE_GUACENC], [test "x${enable_guacenc}"  = "xyes" \
-                                    -a "x${have_libavcodec}" = "xyes"])
+                                    -a "x${have_libavcodec}" = "xyes" \
+                                    -a "x${have_libavutil}"  = "xyes"])
 
 #
 # Output Makefiles
@@ -1064,6 +1085,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      freerdp ............. ${have_freerdp}
      pango ............... ${have_pango}
      libavcodec .......... ${have_libavcodec}
+     libavutil ........... ${have_libavutil}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
      libtelnet ........... ${have_libtelnet}
