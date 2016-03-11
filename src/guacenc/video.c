@@ -94,7 +94,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
 
     /* Init properties of video */
     video->context = context;
-    video->frame = frame;
+    video->next_frame = frame;
     video->width = width;
     video->height = height;
     video->bitrate = bitrate;
@@ -102,7 +102,6 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     /* No frames have been written or prepared yet */
     video->last_timestamp = 0;
     video->next_pts = 0;
-    video->next_frame = NULL;
 
     return video;
 
@@ -120,6 +119,63 @@ fail_context:
 }
 
 /**
+ * Flushes the specied frame as a new frame of video, updating the internal
+ * video timestamp by one frame's worth of time. The pts member of the given
+ * frame structure will be updated with the current presentation timestamp of
+ * the video. If pending frames of the video are being flushed, the given frame
+ * may be NULL (as required by avcodec_encode_video2()).
+ *
+ * @param video
+ *     The video to write the given frame to.
+ *
+ * @param frame
+ *     The frame to write to the video, or NULL if previously-written frames
+ *     are being flushed.
+ *
+ * @return
+ *     A positive value if the frame was successfully written, zero if the
+ *     frame has been saved for later writing / reordering, negative if an
+ *     error occurs.
+ */
+static int guacenc_video_write_frame(guacenc_video* video, AVFrame* frame) {
+
+    /* Init video packet */
+    AVPacket packet;
+    av_init_packet(&packet);
+
+    /* Request that encoder allocate data for packet */
+    packet.data = NULL;
+    packet.size = 0;
+
+    /* Set timestamp of frame, if frame given */
+    if (frame != NULL)
+        frame->pts = video->next_pts;
+
+    /* Write frame to video */
+    int got_data;
+    if (avcodec_encode_video2(video->context, &packet, frame, &got_data) < 0) {
+        guacenc_log(GUAC_LOG_WARNING, "Error encoding frame #%" PRId64,
+                video->next_pts);
+        return -1;
+    }
+
+    /* Write corresponding data to file */
+    if (got_data) {
+        guacenc_log(GUAC_LOG_DEBUG, "Frame #%08" PRId64 ": wrote %i bytes",
+                video->next_pts, packet.size);
+        /* TODO: Write frame to file */
+        av_packet_unref(&packet);
+    }
+
+    /* Update presentation timestamp for next frame */
+    video->next_pts++;
+
+    /* Write was successful */
+    return got_data;
+
+}
+
+/**
  * Flushes the frame previously specified by guacenc_video_prepare_frame() as a
  * new frame of video, updating the internal video timestamp by one frame's
  * worth of time.
@@ -132,26 +188,8 @@ fail_context:
  */
 static int guacenc_video_flush_frame(guacenc_video* video) {
 
-    /* Ignore empty frames */
-    guacenc_buffer* buffer = video->next_frame;
-    if (buffer == NULL)
-        return 0;
-
-    /* Init video packet */
-    AVPacket packet;
-    av_init_packet(&packet);
-
-    /* Request that encoder allocate data for packet */
-    packet.data = NULL;
-    packet.size = 0;
-
-    /* TODO: Write frame to video */
-    guacenc_log(GUAC_LOG_DEBUG, "Encoding frame #%08" PRId64, video->next_pts);
-
-    /* Update presentation timestamp for next frame */
-    video->next_pts++;
-
-    return 0;
+    /* Write frame to video */
+    return guacenc_video_write_frame(video, video->next_frame) < 0;
 
 }
 
@@ -183,7 +221,9 @@ int guacenc_video_advance_timeline(guacenc_video* video,
 }
 
 void guacenc_video_prepare_frame(guacenc_video* video, guacenc_buffer* buffer) {
-    video->next_frame = buffer;
+
+    /* TODO: Convert frame buffer to video->next_frame */
+
 }
 
 int guacenc_video_free(guacenc_video* video) {
@@ -195,9 +235,19 @@ int guacenc_video_free(guacenc_video* video) {
     /* Write final frame */
     guacenc_video_flush_frame(video);
 
+    /* Init video packet for final flush of encoded data */
+    AVPacket packet;
+    av_init_packet(&packet);
+
+    /* Flush any unwritten frames */
+    int retval;
+    do {
+        retval = guacenc_video_write_frame(video, NULL);
+    } while (retval > 0);
+
     /* Free frame encoding data */
-    av_freep(&video->frame->data[0]);
-    av_frame_free(&video->frame);
+    av_freep(&video->next_frame->data[0]);
+    av_frame_free(&video->next_frame);
 
     /* Clean up encoding context */
     avcodec_close(video->context);

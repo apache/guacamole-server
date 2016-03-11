@@ -50,12 +50,6 @@ typedef struct guacenc_video {
     AVCodecContext* context;
 
     /**
-     * An image data area, containing YCbCr image data in the format required
-     * by avcodec_encode_video2(), for use and re-use as frames are rendered.
-     */
-    AVFrame* frame;
-
-    /**
      * The width of the video, in pixels.
      */
     int width;
@@ -71,11 +65,11 @@ typedef struct guacenc_video {
     int bitrate;
 
     /**
-     * A pointer to the buffer containing the most recent frame submitted via
-     * guacenc_video_prepare_frame(). This buffer MUST not be freed prior to
-     * the call to guacenc_video_free().
+     * An image data area containing the next frame to be written, encoded as
+     * YCbCr image data in the format required by avcodec_encode_video2(), for
+     * use and re-use as frames are rendered.
      */
-    guacenc_buffer* next_frame;
+    AVFrame* next_frame;
 
     /**
      * The presentation timestamp that should be used for the next frame. This
@@ -95,9 +89,7 @@ typedef struct guacenc_video {
  * Allocates a new guacenc_video which encodes video according to the given
  * specifications, saving the output in the given file. The output file will be
  * created if necessary and truncated if it already exists. Frames will be
- * scaled up or down as necessary to fit the given width and height. Note that
- * frames written to this guacenc_video may be buffered, and are not guaranteed
- * to be written until guacenc_video_free() is called.
+ * scaled up or down as necessary to fit the given width and height.
  *
  * @param path
  *     The full path to the file in which encoded video should be written.
@@ -157,25 +149,20 @@ int guacenc_video_advance_timeline(guacenc_video* video,
  * timeline or through reaching the end of the encoding process
  * (guacenc_video_free()).
  *
- * Any given buffer MUST NOT be freed prior to the call to guacenc_video_free()
- * which ultimately ends the encoding process.
- *
  * @param video
  *     The video in which the given buffer should be queued for possible
  *     writing (depending on timing vs. video framerate).
  *
  * @param buffer
  *     The guacenc_buffer representing the image data of the frame that should
- *     be queued. This buffer MUST NOT be freed prior to the call to
- *     guacenc_video_free() which ultimately ends the encoding process.
+ *     be queued.
  */
 void guacenc_video_prepare_frame(guacenc_video* video, guacenc_buffer* buffer);
 
 /**
  * Frees all resources associated with the given video, finalizing the encoding
  * process. Any buffered frames which have not yet been written will be written
- * at this point. Once this function is invoked, it is safe to resume freeing
- * any buffers provided to guacenc_video_prepare_frame().
+ * at this point.
  *
  * @return
  *     Zero if the video was successfully written and freed, non-zero if the
