@@ -87,13 +87,18 @@ cairo_operator_t guacenc_display_cairo_operator(guac_composite_mode mask) {
 
 guacenc_display* guacenc_display_alloc() {
 
+    /* STUB: Prepare video encoding */
+    guacenc_video* video =
+        guacenc_video_alloc("/tmp/test.mpg", 640, 480, 25, 400000);
+    if (video == NULL)
+        return NULL;
+
     /* Allocate display */
     guacenc_display* display =
         (guacenc_display*) calloc(1, sizeof(guacenc_display));
 
-    /* STUB: Prepare video encoding */
-    display->output = guacenc_video_alloc("/tmp/test.mpg",
-            640, 480, 25, 400000);
+    /* Associate display with video output */
+    display->output = video;
 
     return display;
 
