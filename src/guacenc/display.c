@@ -22,6 +22,7 @@
 
 #include "config.h"
 #include "display.h"
+#include "video.h"
 
 #include <cairo/cairo.h>
 
@@ -85,7 +86,17 @@ cairo_operator_t guacenc_display_cairo_operator(guac_composite_mode mask) {
 }
 
 guacenc_display* guacenc_display_alloc() {
-    return (guacenc_display*) calloc(1, sizeof(guacenc_display));
+
+    /* Allocate display */
+    guacenc_display* display =
+        (guacenc_display*) calloc(1, sizeof(guacenc_display));
+
+    /* STUB: Prepare video encoding */
+    display->output = guacenc_video_alloc("/tmp/test.mpg",
+            640, 480, 25, 400000);
+
+    return display;
+
 }
 
 int guacenc_display_free(guacenc_display* display) {
@@ -95,6 +106,9 @@ int guacenc_display_free(guacenc_display* display) {
     /* Ignore NULL display */
     if (display == NULL)
         return 0;
+
+    /* Finalize video */
+    int retval = guacenc_video_free(display->output);
 
     /* Free all buffers */
     for (i = 0; i < GUACENC_DISPLAY_MAX_BUFFERS; i++)
@@ -109,7 +123,7 @@ int guacenc_display_free(guacenc_display* display) {
         guacenc_image_stream_free(display->image_streams[i]);
 
     free(display);
-    return 0;
+    return retval;
 
 }
 

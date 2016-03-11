@@ -27,6 +27,7 @@
 #include "buffer.h"
 #include "image-stream.h"
 #include "layer.h"
+#include "video.h"
 
 #include <guacamole/protocol.h>
 #include <guacamole/timestamp.h>
@@ -83,6 +84,11 @@ typedef struct guacenc_display {
      * yet been read.
      */
     guac_timestamp last_sync;
+
+    /**
+     * The video that this display is recording to.
+     */
+    guacenc_video* output;
 
 } guacenc_display;
 

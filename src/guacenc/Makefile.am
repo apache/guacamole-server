@@ -33,7 +33,8 @@ noinst_HEADERS =   \
     jpeg.h         \
     layer.h        \
     log.h          \
-    png.h
+    png.h          \
+    video.h
 
 guacenc_SOURCES =           \
     buffer.c                \
@@ -63,7 +64,8 @@ guacenc_SOURCES =           \
     jpeg.c                  \
     layer.c                 \
     log.c                   \
-    png.c
+    png.c                   \
+    video.c
 
 # Compile WebP support if available
 if ENABLE_WEBP

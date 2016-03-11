@@ -24,14 +24,12 @@
 #include "display.h"
 #include "layer.h"
 #include "log.h"
+#include "video.h"
 
-#include <cairo/cairo.h>
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
 
 #include <assert.h>
-#include <inttypes.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
@@ -53,13 +51,12 @@ int guacenc_display_sync(guacenc_display* display, guac_timestamp timestamp) {
     guacenc_layer* def_layer = guacenc_display_get_layer(display, 0);
     assert(def_layer != NULL);
 
-    /* STUB: Write frame as PNG */
-    char filename[256];
-    sprintf(filename, "frame-%" PRId64 ".png", timestamp);
-    cairo_surface_t* surface = def_layer->frame->surface;
-    if (surface != NULL)
-        cairo_surface_write_to_png(surface, filename);
+    /* Update video timeline */
+    if (guacenc_video_advance_timeline(display->output, timestamp))
+        return 1;
 
+    /* Prepare frame for write upon next flush */
+    guacenc_video_prepare_frame(display->output, def_layer->frame);
     return 0;
 
 }
