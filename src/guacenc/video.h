@@ -29,6 +29,8 @@
 #include <guacamole/timestamp.h>
 #include <libavcodec/avcodec.h>
 
+#include <stdint.h>
+
 /**
  * A video which is actively being encoded. Frames can be added to the video
  * as they are generated, along with their associated timestamps, and the
@@ -76,17 +78,16 @@ typedef struct guacenc_video {
     guacenc_buffer* next_frame;
 
     /**
+     * The presentation timestamp that should be used for the next frame. This
+     * is equivalent to the frame number.
+     */
+    int64_t next_pts;
+
+    /**
      * The timestamp associated with the last frame, or 0 if no frames have yet
      * been added.
      */
     guac_timestamp last_timestamp;
-
-    /**
-     * The relative position within the current video timeline, where 0 is the
-     * first frame of video, in milliseconds. This value will be incremented as
-     * frames are output.
-     */
-    guac_timestamp current_time;
 
 } guacenc_video;
 

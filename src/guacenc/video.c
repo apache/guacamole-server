@@ -102,7 +102,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
 
     /* No frames have been written or prepared yet */
     video->last_timestamp = 0;
-    video->current_time = 0;
+    video->next_pts = 0;
     video->next_frame = NULL;
 
     return video;
@@ -146,12 +146,11 @@ static int guacenc_video_flush_frame(guacenc_video* video) {
     packet.data = NULL;
     packet.size = 0;
 
-    /* STUB: Write frame to video */
-    guacenc_log(GUAC_LOG_DEBUG, "Writing frame @ %" PRId64 "ms",
-            video->current_time);
+    /* TODO: Write frame to video */
+    guacenc_log(GUAC_LOG_DEBUG, "Encoding frame #%08" PRId64, video->next_pts);
 
-    /* Update internal timestamp */
-    video->current_time += video->frame_duration;
+    /* Update presentation timestamp for next frame */
+    video->next_pts++;
 
     return 0;
 
