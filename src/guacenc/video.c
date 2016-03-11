@@ -22,21 +22,31 @@
 
 #include "config.h"
 #include "buffer.h"
+#include "log.h"
 #include "video.h"
 
+#include <libavcodec/avcodec.h>
+#include <guacamole/client.h>
 #include <guacamole/timestamp.h>
 
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-guacenc_video* guacenc_video_alloc(const char* path, int width, int height,
-        int framerate, int bitrate) {
+guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
+        int width, int height, int framerate, int bitrate) {
 
     /* Allocate video structure */
     guacenc_video* video = malloc(sizeof(guacenc_video));
     if (video == NULL)
         return NULL;
+
+    AVCodec* codec = avcodec_find_encoder_by_name(codec_name);
+    if (codec == NULL) {
+        guacenc_log(GUAC_LOG_ERROR, "Failed to locate codec: \"%s\"",
+                codec_name);
+        return NULL;
+    }
 
     /* Init properties of video */
     video->width = width;

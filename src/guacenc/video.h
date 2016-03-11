@@ -88,6 +88,10 @@ typedef struct guacenc_video {
  * @param path
  *     The full path to the file in which encoded video should be written.
  *
+ * @param codec_name
+ *     The name of the codec to use for the video encoding, as defined by
+ *     ffmpeg / libavcodec.
+ *
  * @param width
  *     The width of the desired video, in pixels.
  *
@@ -102,8 +106,8 @@ typedef struct guacenc_video {
  *     The desired overall bitrate of the resulting encoded video, in kilobits
  *     per second.
  */
-guacenc_video* guacenc_video_alloc(const char* path, int width, int height,
-        int framerate, int bitrate);
+guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
+        int width, int height, int framerate, int bitrate);
 
 /**
  * Advances the timeline of the encoding process to the given timestamp, such

@@ -25,6 +25,8 @@
 #include "encode.h"
 #include "log.h"
 
+#include <libavcodec/avcodec.h>
+
 int main(int argc, char* argv[]) {
 
     int i;
@@ -38,6 +40,9 @@ int main(int argc, char* argv[]) {
         guacenc_log(GUAC_LOG_INFO, "No input files specified. Nothing to do.");
         return 0;
     }
+
+    /* Prepare libavcodec */
+    avcodec_register_all();
 
     /* Track number of overall failures */
     int total_files = argc - 1;
