@@ -36,19 +36,47 @@
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         int width, int height, int framerate, int bitrate) {
 
-    /* Allocate video structure */
-    guacenc_video* video = malloc(sizeof(guacenc_video));
-    if (video == NULL)
-        return NULL;
-
+    /* Pull codec based on name */
     AVCodec* codec = avcodec_find_encoder_by_name(codec_name);
     if (codec == NULL) {
-        guacenc_log(GUAC_LOG_ERROR, "Failed to locate codec: \"%s\"",
+        guacenc_log(GUAC_LOG_ERROR, "Failed to locate codec \"%s\".",
                 codec_name);
         return NULL;
     }
 
+    /* Retrieve encoding context */
+    AVCodecContext* context = avcodec_alloc_context3(codec);
+    if (context == NULL) {
+        guacenc_log(GUAC_LOG_ERROR, "Failed to allocate context for "
+                "codec \"%s\".", codec_name);
+        return NULL;
+    }
+
+    /* Init context with encoding parameters */
+    context->bit_rate = bitrate;
+    context->width = width;
+    context->height = height;
+    context->time_base = (AVRational) { 1, framerate };
+    context->gop_size = 10;
+    context->max_b_frames = 1;
+    context->pix_fmt = AV_PIX_FMT_YUV420P;
+
+    /* Open codec for use */
+    if (avcodec_open2(context, codec, NULL) < 0) {
+        guacenc_log(GUAC_LOG_ERROR, "Failed to open codec \"%s\".", codec_name);
+        avcodec_free_context(&context);
+        return NULL;
+    }
+
+    /* Allocate video structure */
+    guacenc_video* video = malloc(sizeof(guacenc_video));
+    if (video == NULL) {
+        avcodec_free_context(&context);
+        return NULL;
+    }
+
     /* Init properties of video */
+    video->context = context;
     video->width = width;
     video->height = height;
     video->frame_duration = 1000 / framerate;
@@ -81,12 +109,9 @@ static int guacenc_video_flush_frame(guacenc_video* video) {
     if (buffer == NULL)
         return 0;
 
-    /* STUB: Write frame as PNG */
-    char filename[256];
-    sprintf(filename, "frame-%012" PRId64 ".png", video->current_time);
-    cairo_surface_t* surface = buffer->surface;
-    if (surface != NULL)
-        cairo_surface_write_to_png(surface, filename);
+    /* STUB: Write frame to video */
+    guacenc_log(GUAC_LOG_DEBUG, "Writing frame @ %" PRId64 "ms",
+            video->current_time);
 
     /* Update internal timestamp */
     video->current_time += video->frame_duration;
@@ -134,6 +159,10 @@ int guacenc_video_free(guacenc_video* video) {
 
     /* Write final frame */
     guacenc_video_flush_frame(video);
+
+    /* Clean up encoding context */
+    avcodec_close(video->context);
+    avcodec_free_context(&(video->context));
 
     free(video);
     return 0;

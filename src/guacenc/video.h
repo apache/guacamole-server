@@ -27,6 +27,7 @@
 #include "buffer.h"
 
 #include <guacamole/timestamp.h>
+#include <libavcodec/avcodec.h>
 
 /**
  * A video which is actively being encoded. Frames can be added to the video
@@ -34,6 +35,12 @@
  * corresponding video will be continuously written as it is encoded.
  */
 typedef struct guacenc_video {
+
+    /**
+     * The open encoding context from libavcodec, created for the codec
+     * specified when this guacenc_video was created.
+     */
+    AVCodecContext* context;
 
     /**
      * The width of the video, in pixels.
