@@ -135,7 +135,8 @@ invalid_options:
 
     fprintf(stderr, "USAGE: %s"
             " [-s WIDTHxHEIGHT]"
-            " [-r BITRATE]\n", argv[0]);
+            " [-r BITRATE]"
+            " [FILE]...\n", argv[0]);
 
     return 1;
 
