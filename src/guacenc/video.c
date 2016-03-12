@@ -348,6 +348,7 @@ void guacenc_video_prepare_frame(guacenc_video* video, guacenc_buffer* buffer) {
         return;
     }
 
+    /* Apply scaling, copying the source frame to the destination */
     sws_scale(sws, (const uint8_t* const*) src->data, src->linesize,
             0, src->height, dst->data, dst->linesize);
 
