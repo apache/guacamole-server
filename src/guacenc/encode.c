@@ -86,17 +86,18 @@ static int guacenc_read_instructions(guacenc_display* display,
 int guacenc_encode(const char* path, const char* out_path, const char* codec,
         int width, int height, int bitrate) {
 
-    /* Allocate display for encoding process */
-    guacenc_display* display = guacenc_display_alloc(out_path, codec,
-            width, height, bitrate);
-    if (display == NULL)
-        return 1;
-
     /* Open input file */
     int fd = open(path, O_RDONLY);
     if (fd < 0) {
         guacenc_log(GUAC_LOG_ERROR, "%s: %s", path, strerror(errno));
-        guacenc_display_free(display);
+        return 1;
+    }
+
+    /* Allocate display for encoding process */
+    guacenc_display* display = guacenc_display_alloc(out_path, codec,
+            width, height, bitrate);
+    if (display == NULL) {
+        close(fd);
         return 1;
     }
 
