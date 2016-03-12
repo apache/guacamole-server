@@ -25,12 +25,15 @@
 #include "log.h"
 #include "video.h"
 
+#include <cairo/cairo.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/common.h>
 #include <libavutil/imgutils.h>
+#include <libswscale/swscale.h>
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -250,9 +253,110 @@ int guacenc_video_advance_timeline(guacenc_video* video,
 
 }
 
+/**
+ * Converts the given Guacamole video encoder buffer to a frame in the format
+ * required by libavcodec / libswscale. No scaling is performed; the image data
+ * is copied verbatim.
+ *
+ * @param buffer
+ *     The guacenc_buffer to copy as a new AVFrame.
+ *
+ * @return
+ *     A pointer to a newly-allocated AVFrame containing exactly the same image
+ *     data as the given buffer. The image data within the frame and the frame
+ *     itself must be manually freed later.
+ */
+static AVFrame* guacenc_video_frame_convert(guacenc_buffer* buffer) {
+
+    /* Prepare source frame for buffer */
+    AVFrame* frame = av_frame_alloc();
+    if (frame == NULL)
+        return NULL;
+
+    /* Copy buffer properties to frame */
+    frame->format = AV_PIX_FMT_RGB32;
+    frame->width = buffer->width;
+    frame->height = buffer->height;
+
+    /* Allocate actual backing data for frame */
+    if (av_image_alloc(frame->data, frame->linesize, frame->width,
+                frame->height, frame->format, 32) < 0) {
+        av_frame_free(&frame);
+        return NULL;
+    }
+
+    /* Flush any pending operations */
+    cairo_surface_flush(buffer->surface);
+
+    /* Get pointer to source image data */
+    unsigned char* src_data = buffer->image;
+    int src_stride = buffer->stride;
+
+    /* Get pointer to destination image data */
+    unsigned char* dst_data = frame->data[0];
+    int dst_stride = frame->linesize[0];
+
+    /* Get source/destination dimensions */
+    int width = buffer->width;
+    int height = buffer->height;
+
+    /* Source buffer and destination frame dimensions are identical */
+    assert(width == frame->width);
+    assert(height == frame->height);
+
+    /* Copy all data from source buffer to destination frame */
+    while (height > 0) {
+        memcpy(dst_data, src_data, width * 4);
+        dst_data += dst_stride;
+        src_data += src_stride;
+        height--;
+    }
+
+    /* Frame converted */
+    return frame;
+
+}
+
 void guacenc_video_prepare_frame(guacenc_video* video, guacenc_buffer* buffer) {
 
-    /* TODO: Convert frame buffer to video->next_frame */
+    /* Ignore NULL buffers */
+    if (buffer == NULL || buffer->surface == NULL)
+        return;
+
+    /* Prepare source frame for buffer */
+    AVFrame* src = guacenc_video_frame_convert(buffer);
+    if (src == NULL) {
+        guacenc_log(GUAC_LOG_WARNING, "Failed to allocate source frame. "
+                "Frame dropped.");
+        return;
+    }
+
+    /* Obtain destination frame */
+    AVFrame* dst = video->next_frame;
+
+    /* Prepare scaling context */
+    struct SwsContext* sws = sws_getContext(src->width, src->height,
+            PIX_FMT_RGB32, dst->width, dst->height, PIX_FMT_YUV420P,
+            SWS_BICUBIC, NULL, NULL, NULL);
+
+    /* Abort if scaling context could not be created */
+    if (sws == NULL) {
+        guacenc_log(GUAC_LOG_WARNING, "Failed to allocate software scaling "
+                "context. Frame dropped.");
+        av_freep(&src->data[0]);
+        av_frame_free(&src);
+        return;
+    }
+
+    sws_scale(sws, (const uint8_t* const*) src->data, src->linesize,
+            0, src->height, dst->data, dst->linesize);
+
+    /* Free scaling context */
+    sws_freeContext(sws);
+
+    /* Free source frame */
+    av_freep(&src->data[0]);
+    av_frame_free(&src);
 
 }
 
