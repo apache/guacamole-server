@@ -56,7 +56,7 @@
  * The desired bitrate of the output video, in bits per second, if no other
  * bitrate is given on the command line.
  */
-#define GUACENC_DEFAULT_BITRATE 400000
+#define GUACENC_DEFAULT_BITRATE 2000000
 
 #endif
 
