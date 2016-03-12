@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <guacamole/client.h>
+
 /**
  * The name of the codec to use by default, if no other codec is specified on
  * the command line. This name is dictated by ffmpeg / libavcodec.
@@ -57,6 +59,11 @@
  * bitrate is given on the command line.
  */
 #define GUACENC_DEFAULT_BITRATE 2000000
+
+/**
+ * The default log level below which no messages should be logged.
+ */
+#define GUACENC_DEFAULT_LOG_LEVEL GUAC_LOG_INFO
 
 #endif
 

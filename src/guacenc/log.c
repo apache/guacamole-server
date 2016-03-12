@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include "guacenc.h"
 #include "log.h"
 
 #include <guacamole/client.h>
@@ -29,7 +30,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-int guacenc_log_level = GUAC_LOG_DEBUG;
+int guacenc_log_level = GUACENC_DEFAULT_LOG_LEVEL;
 
 void vguacenc_log(guac_client_log_level level, const char* format,
         va_list args) {
