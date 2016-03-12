@@ -82,11 +82,6 @@ int main(int argc, char* argv[]) {
     guacenc_log(GUAC_LOG_INFO, "Guacamole video encoder (guacenc) "
             "version " VERSION);
 
-    guacenc_log(GUAC_LOG_INFO, "Video will be encoded as \"%s\" at %ix%i "
-            "and %i bps.", codec, width, height, bitrate);
-
-    guacenc_log(GUAC_LOG_INFO, "Output files will end with \".%s\".", suffix);
-
     /* Prepare libavcodec */
     avcodec_register_all();
 
@@ -99,6 +94,14 @@ int main(int argc, char* argv[]) {
         guacenc_log(GUAC_LOG_INFO, "No input files specified. Nothing to do.");
         return 0;
     }
+
+    guacenc_log(GUAC_LOG_INFO, "%i input file(s) provided.", total_files);
+
+    guacenc_log(GUAC_LOG_INFO, "Video will be encoded as \"%s\" at %ix%i "
+            "and %i bps.", codec, width, height, bitrate);
+
+    guacenc_log(GUAC_LOG_INFO, "Output files will end with \".%s\".", suffix);
+
 
     /* Encode all input files */
     for (i = optind; i < argc; i++) {
