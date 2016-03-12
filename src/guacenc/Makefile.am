@@ -34,6 +34,7 @@ noinst_HEADERS =   \
     jpeg.h         \
     layer.h        \
     log.h          \
+    parse.h        \
     png.h          \
     video.h
 
@@ -65,6 +66,7 @@ guacenc_SOURCES =           \
     jpeg.c                  \
     layer.c                 \
     log.c                   \
+    parse.c                 \
     png.c                   \
     video.c
 

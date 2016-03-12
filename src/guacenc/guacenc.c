@@ -25,22 +25,16 @@
 #include "encode.h"
 #include "guacenc.h"
 #include "log.h"
+#include "parse.h"
 
 #include <libavcodec/avcodec.h>
+
+#include <getopt.h>
+#include <stdio.h>
 
 int main(int argc, char* argv[]) {
 
     int i;
-
-    /* Log start */
-    guacenc_log(GUAC_LOG_INFO, "Guacamole video encoder (guacenc) "
-            "version " VERSION);
-
-    /* Abort if no files given */
-    if (argc <= 1) {
-        guacenc_log(GUAC_LOG_INFO, "No input files specified. Nothing to do.");
-        return 0;
-    }
 
     /* Load defaults */
     const char* codec = GUACENC_DEFAULT_CODEC;
@@ -49,17 +43,65 @@ int main(int argc, char* argv[]) {
     int height = GUACENC_DEFAULT_HEIGHT;
     int bitrate = GUACENC_DEFAULT_BITRATE;
 
-    /* TODO: Override defaults via command-line arguments */
+    /* Parse arguments */
+    int opt;
+    while ((opt = getopt(argc, argv, "V:s:d:r:")) != -1) {
+
+        /* -V: Video codec */
+        if (opt == 'V')
+            codec = optarg;
+
+        /* -s: Output file suffix */
+        else if (opt == 's')
+            suffix = optarg;
+
+        /* -d: Dimensions */
+        else if (opt == 'd') {
+            if (guacenc_parse_dimensions(optarg, &width, &height)) {
+                guacenc_log(GUAC_LOG_ERROR, "Invalid dimensions.");
+                goto invalid_options;
+            }
+        }
+
+        /* -r: Bitrate (bits per second) */
+        else if (opt == 'r') {
+            if (guacenc_parse_int(optarg, &bitrate)) {
+                guacenc_log(GUAC_LOG_ERROR, "Invalid bitrate.");
+                goto invalid_options;
+            }
+        }
+
+        /* Invalid option */
+        else {
+            goto invalid_options;
+        }
+
+    }
+
+    /* Log start */
+    guacenc_log(GUAC_LOG_INFO, "Guacamole video encoder (guacenc) "
+            "version " VERSION);
+
+    guacenc_log(GUAC_LOG_INFO, "Video will be encoded as \"%s\" at %ix%i "
+            "and %i bps.", codec, width, height, bitrate);
+
+    guacenc_log(GUAC_LOG_INFO, "Output files will end with \".%s\".", suffix);
 
     /* Prepare libavcodec */
     avcodec_register_all();
 
     /* Track number of overall failures */
-    int total_files = argc - 1;
+    int total_files = argc - optind;
     int failures = 0;
 
+    /* Abort if no files given */
+    if (total_files <= 0) {
+        guacenc_log(GUAC_LOG_INFO, "No input files specified. Nothing to do.");
+        return 0;
+    }
+
     /* Encode all input files */
-    for (i = 1; i < argc; i++) {
+    for (i = optind; i < argc; i++) {
 
         /* Get current filename */
         const char* path = argv[i];
@@ -97,6 +139,18 @@ int main(int argc, char* argv[]) {
 
     /* Encoding complete */
     return 0;
+
+    /* Display usage and exit with error if options are invalid */
+invalid_options:
+
+    fprintf(stderr, "USAGE: %s"
+            " [-d WIDTHxHEIGHT]"
+            " [-s SUFFIX]"
+            " [-V CODEC]"
+            " [-b BITRATE]"
+            " [-f]\n", argv[0]);
+
+    return 1;
 
 }
 
