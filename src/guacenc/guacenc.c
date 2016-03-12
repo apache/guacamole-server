@@ -150,8 +150,7 @@ invalid_options:
             " [-d WIDTHxHEIGHT]"
             " [-s SUFFIX]"
             " [-V CODEC]"
-            " [-b BITRATE]"
-            " [-f]\n", argv[0]);
+            " [-b BITRATE]\n", argv[0]);
 
     return 1;
 
