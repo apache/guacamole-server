@@ -37,26 +37,16 @@ int main(int argc, char* argv[]) {
     int i;
 
     /* Load defaults */
-    const char* codec = GUACENC_DEFAULT_CODEC;
-    const char* suffix = GUACENC_DEFAULT_SUFFIX;
     int width = GUACENC_DEFAULT_WIDTH;
     int height = GUACENC_DEFAULT_HEIGHT;
     int bitrate = GUACENC_DEFAULT_BITRATE;
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "V:s:d:r:")) != -1) {
-
-        /* -V: Video codec */
-        if (opt == 'V')
-            codec = optarg;
-
-        /* -s: Output file suffix */
-        else if (opt == 's')
-            suffix = optarg;
+    while ((opt = getopt(argc, argv, "s:r:")) != -1) {
 
         /* -d: Dimensions */
-        else if (opt == 'd') {
+        if (opt == 's') {
             if (guacenc_parse_dimensions(optarg, &width, &height)) {
                 guacenc_log(GUAC_LOG_ERROR, "Invalid dimensions.");
                 goto invalid_options;
@@ -97,11 +87,8 @@ int main(int argc, char* argv[]) {
 
     guacenc_log(GUAC_LOG_INFO, "%i input file(s) provided.", total_files);
 
-    guacenc_log(GUAC_LOG_INFO, "Video will be encoded as \"%s\" at %ix%i "
-            "and %i bps.", codec, width, height, bitrate);
-
-    guacenc_log(GUAC_LOG_INFO, "Output files will end with \".%s\".", suffix);
-
+    guacenc_log(GUAC_LOG_INFO, "Video will be encoded at %ix%i "
+            "and %i bps.", width, height, bitrate);
 
     /* Encode all input files */
     for (i = optind; i < argc; i++) {
@@ -111,17 +98,17 @@ int main(int argc, char* argv[]) {
 
         /* Generate output filename */
         char out_path[4096];
-        int len = snprintf(out_path, sizeof(out_path), "%s.%s", path, suffix);
+        int len = snprintf(out_path, sizeof(out_path), "%s.mpg", path);
 
         /* Do not write if filename exceeds maximum length */
         if (len >= sizeof(out_path)) {
-            guacenc_log(GUAC_LOG_ERROR, "Cannot write output file \"%s.%s\": "
-                    "Name too long", path, suffix);
+            guacenc_log(GUAC_LOG_ERROR, "Cannot write output file for \"%s\": "
+                    "Name too long", path);
             continue;
         }
 
         /* Attempt encoding, log granular success/failure at debug level */
-        if (guacenc_encode(path, out_path, codec, width, height, bitrate)) {
+        if (guacenc_encode(path, out_path, "mpeg4", width, height, bitrate)) {
             failures++;
             guacenc_log(GUAC_LOG_DEBUG,
                     "%s was NOT successfully encoded.", path);
@@ -147,10 +134,8 @@ int main(int argc, char* argv[]) {
 invalid_options:
 
     fprintf(stderr, "USAGE: %s"
-            " [-d WIDTHxHEIGHT]"
-            " [-s SUFFIX]"
-            " [-V CODEC]"
-            " [-b BITRATE]\n", argv[0]);
+            " [-s WIDTHxHEIGHT]"
+            " [-r BITRATE]\n", argv[0]);
 
     return 1;
 
