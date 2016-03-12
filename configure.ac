@@ -165,7 +165,6 @@ fi
 
 AM_CONDITIONAL([ENABLE_AVCODEC], [test "x${have_libavcodec}" = "xyes"])
 
-
 #
 # libavutil
 #
@@ -184,6 +183,25 @@ then
 fi
 
 AM_CONDITIONAL([ENABLE_AVUTIL], [test "x${have_libavutil}" = "xyes"])
+
+#
+# libswscale
+#
+
+have_libswscale=disabled
+AC_ARG_WITH([libswscale],
+            [AS_HELP_STRING([--with-libswscale],
+                            [use libswscale when encoding video @<:@default=check@:>@])],
+            [],
+            [with_libswscale=check])
+
+if test "x$with_libswscale" != "xno"
+then
+    have_libswscale=yes
+    PKG_CHECK_MODULES([SWSCALE], [libswscale],, [have_libswscale=no]);
+fi
+
+AM_CONDITIONAL([ENABLE_SWSCALE], [test "x${have_libswscale}" = "xyes"])
 
 #
 # libssl
@@ -1029,7 +1047,8 @@ AC_ARG_ENABLE([guacenc],
 
 AM_CONDITIONAL([ENABLE_GUACENC], [test "x${enable_guacenc}"  = "xyes" \
                                     -a "x${have_libavcodec}" = "xyes" \
-                                    -a "x${have_libavutil}"  = "xyes"])
+                                    -a "x${have_libavutil}"  = "xyes" \
+                                    -a "x${have_libswscale}" = "xyes"])
 
 #
 # Output Makefiles
@@ -1088,6 +1107,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libavutil ........... ${have_libavutil}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
+     libswscale .......... ${have_libswscale}
      libtelnet ........... ${have_libtelnet}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}

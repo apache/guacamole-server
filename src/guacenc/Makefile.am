@@ -78,7 +78,8 @@ guacenc_CFLAGS =            \
     -Werror -Wall -pedantic \
     @AVCODEC_CFLAGS@        \
     @AVUTIL_CFLAGS@         \
-    @LIBGUAC_INCLUDE@
+    @LIBGUAC_INCLUDE@       \
+    @SWSCALE_CFLAGS@
 
 guacenc_LDADD =     \
     @LIBGUAC_LTLIB@
@@ -88,5 +89,6 @@ guacenc_LDFLAGS =  \
     @AVUTIL_LIBS@  \
     @CAIRO_LIBS@   \
     @JPEG_LIBS@    \
+    @SWSCALE_LIBS@ \
     @WEBP_LIBS@
 
