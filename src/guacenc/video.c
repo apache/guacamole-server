@@ -43,7 +43,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     if (codec == NULL) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to locate codec \"%s\".",
                 codec_name);
-        return NULL;
+        goto fail_codec;
     }
 
     /* Retrieve encoding context */
@@ -51,7 +51,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     if (context == NULL) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to allocate context for "
                 "codec \"%s\".", codec_name);
-        return NULL;
+        goto fail_context;
     }
 
     /* Init context with encoding parameters */
@@ -66,13 +66,13 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     /* Open codec for use */
     if (avcodec_open2(context, codec, NULL) < 0) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to open codec \"%s\".", codec_name);
-        goto fail_context;
+        goto fail_codec_open;
     }
 
     /* Allocate corresponding frame */
     AVFrame* frame = av_frame_alloc();
     if (frame == NULL) {
-        goto fail_context;
+        goto fail_frame;
     }
 
     /* Copy necessary data for frame from context */
@@ -83,16 +83,25 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     /* Allocate actual backing data for frame */
     if (av_image_alloc(frame->data, frame->linesize, frame->width,
                 frame->height, frame->format, 32) < 0) {
-        goto fail_frame;
+        goto fail_frame_data;
+    }
+
+    /* Open output file */
+    FILE* output = fopen(path, "wb");
+    if (output == NULL) {
+        guacenc_log(GUAC_LOG_ERROR, "Failed to open output file \"%s\": %s",
+                path, strerror(errno));
+        goto fail_output_file;
     }
 
     /* Allocate video structure */
     guacenc_video* video = malloc(sizeof(guacenc_video));
     if (video == NULL) {
-        goto fail_frame_data;
+        goto fail_video;
     }
 
     /* Init properties of video */
+    video->output = output;
     video->context = context;
     video->next_frame = frame;
     video->width = width;
@@ -106,14 +115,21 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     return video;
 
     /* Free all allocated data in case of failure */
-fail_frame_data:
+fail_video:
+    fclose(output);
+
+fail_output_file:
     av_freep(&frame->data[0]);
 
-fail_frame:
+fail_frame_data:
     av_frame_free(&frame);
 
-fail_context:
+fail_frame:
+fail_codec_open:
     avcodec_free_context(&context);
+
+fail_context:
+fail_codec:
     return NULL;
 
 }
@@ -161,11 +177,25 @@ static int guacenc_video_write_frame(guacenc_video* video, AVFrame* frame) {
 
     /* Write corresponding data to file */
     if (got_data) {
+
+        /* Write data, logging any errors */
+        if (fwrite(packet.data, 1, packet.size, video->output) == 0) {
+            guacenc_log(GUAC_LOG_ERROR, "Unable to write frame "
+                    "#%" PRId64 ": %s", video->next_pts, strerror(errno));
+            return -1;
+        }
+
+        /* Data was written successfully */
         guacenc_log(GUAC_LOG_DEBUG, "Frame #%08" PRId64 ": wrote %i bytes",
                 video->next_pts, packet.size);
-        /* TODO: Write frame to file */
         av_packet_unref(&packet);
+
     }
+
+    /* Frame may have been queued for later writing / reordering */
+    else
+        guacenc_log(GUAC_LOG_DEBUG, "Frame #%08" PRId64 ": queued for later",
+                video->next_pts);
 
     /* Update presentation timestamp for next frame */
     video->next_pts++;
@@ -244,6 +274,9 @@ int guacenc_video_free(guacenc_video* video) {
     do {
         retval = guacenc_video_write_frame(video, NULL);
     } while (retval > 0);
+
+    /* File is now completely written */
+    fclose(video->output);
 
     /* Free frame encoding data */
     av_freep(&video->next_frame->data[0]);

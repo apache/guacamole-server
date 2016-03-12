@@ -30,6 +30,7 @@
 #include <libavcodec/avcodec.h>
 
 #include <stdint.h>
+#include <stdio.h>
 
 /**
  * The framerate at which video should be encoded, in frames per second.
@@ -42,6 +43,11 @@
  * corresponding video will be continuously written as it is encoded.
  */
 typedef struct guacenc_video {
+
+    /**
+     * Output file stream.
+     */
+    FILE* output;
 
     /**
      * The open encoding context from libavcodec, created for the codec
