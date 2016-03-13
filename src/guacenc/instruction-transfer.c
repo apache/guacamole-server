@@ -47,10 +47,11 @@ int guacenc_handle_transfer(guacenc_display* display, int argc, char** argv) {
     int dst_x = atoi(argv[7]);
     int dst_y = atoi(argv[8]);
 
-    /* STUB */
+    /* TODO: Unimplemented for now (rarely used) */
     guacenc_log(GUAC_LOG_DEBUG, "transform: src_layer=%i (%i, %i) %ix%i "
             "function=0x%X dst_layer=%i (%i, %i)", src_index, src_x, src_y,
             src_w, src_h, function, dst_index, dst_x, dst_y);
+
     return 0;
 
 }
