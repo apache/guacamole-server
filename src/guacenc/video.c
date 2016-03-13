@@ -255,18 +255,39 @@ int guacenc_video_advance_timeline(guacenc_video* video,
 
 /**
  * Converts the given Guacamole video encoder buffer to a frame in the format
- * required by libavcodec / libswscale. No scaling is performed; the image data
- * is copied verbatim.
+ * required by libavcodec / libswscale. Black margins of the specified sizes
+ * will be added. No scaling is performed; the image data is copied verbatim.
  *
  * @param buffer
  *     The guacenc_buffer to copy as a new AVFrame.
+ *
+ * @param lsize
+ *     The size of the letterboxes to add, in pixels. Letterboxes are the
+ *     horizontal black boxes added to images which are scaled down to fit the
+ *     destination because they are too wide (the width is scaled to exactly
+ *     fit the destination, resulting in extra space at the top and bottom).
+ *
+ * @param psize
+ *     The size of the pillarboxes to add, in pixels. Pillarboxes are the
+ *     vertical black boxes added to images which are scaled down to fit the
+ *     destination because they are too tall (the height is scaled to exactly
+ *     fit the destination, resulting in extra space on the sides).
  *
  * @return
  *     A pointer to a newly-allocated AVFrame containing exactly the same image
  *     data as the given buffer. The image data within the frame and the frame
  *     itself must be manually freed later.
  */
-static AVFrame* guacenc_video_frame_convert(guacenc_buffer* buffer) {
+static AVFrame* guacenc_video_frame_convert(guacenc_buffer* buffer, int lsize,
+        int psize) {
+
+    /* Init size of left/right pillarboxes */
+    int left = psize;
+    int right = psize;
+
+    /* Init size of top/bottom letterboxes */
+    int top = lsize;
+    int bottom = lsize;
 
     /* Prepare source frame for buffer */
     AVFrame* frame = av_frame_alloc();
@@ -275,8 +296,8 @@ static AVFrame* guacenc_video_frame_convert(guacenc_buffer* buffer) {
 
     /* Copy buffer properties to frame */
     frame->format = AV_PIX_FMT_RGB32;
-    frame->width = buffer->width;
-    frame->height = buffer->height;
+    frame->width = buffer->width + left + right;
+    frame->height = buffer->height + top + bottom;
 
     /* Allocate actual backing data for frame */
     if (av_image_alloc(frame->data, frame->linesize, frame->width,
@@ -300,16 +321,46 @@ static AVFrame* guacenc_video_frame_convert(guacenc_buffer* buffer) {
     int width = buffer->width;
     int height = buffer->height;
 
-    /* Source buffer and destination frame dimensions are identical */
-    assert(width == frame->width);
-    assert(height == frame->height);
+    /* Source buffer is guaranteed to fit within destination buffer */
+    assert(width <= frame->width);
+    assert(height <= frame->height);
+
+    /* Add top margin */
+    while (top > 0) {
+        memset(dst_data, 0, frame->width * 4);
+        dst_data += dst_stride;
+        top--;
+    }
 
     /* Copy all data from source buffer to destination frame */
     while (height > 0) {
-        memcpy(dst_data, src_data, width * 4);
+
+        /* Calculate size of margin and data regions */
+        int left_size = left * 4;
+        int data_size = width * 4;
+        int right_size = right * 4;
+
+        /* Add left margin */
+        memset(dst_data, 0, left_size);
+
+        /* Copy data */
+        memcpy(dst_data + left_size, src_data, data_size);
+
+        /* Add right margin */
+        memset(dst_data + left_size + data_size, 0, right_size);
+
         dst_data += dst_stride;
         src_data += src_stride;
+
         height--;
+
+    }
+
+    /* Add bottom margin */
+    while (bottom > 0) {
+        memset(dst_data, 0, frame->width * 4);
+        dst_data += dst_stride;
+        bottom--;
     }
 
     /* Frame converted */
@@ -319,20 +370,44 @@ static AVFrame* guacenc_video_frame_convert(guacenc_buffer* buffer) {
 
 void guacenc_video_prepare_frame(guacenc_video* video, guacenc_buffer* buffer) {
 
+    int lsize;
+    int psize;
+
     /* Ignore NULL buffers */
     if (buffer == NULL || buffer->surface == NULL)
         return;
 
+    /* Obtain destination frame */
+    AVFrame* dst = video->next_frame;
+
+    /* Determine width of image if height is scaled to match destination */
+    int scaled_width = buffer->width * dst->height / buffer->height;
+
+    /* Determine height of image if width is scaled to match destination */
+    int scaled_height = buffer->height * dst->width / buffer->width;
+
+    /* If height-based scaling results in a fit width, add pillarboxes */
+    if (scaled_width <= dst->width) {
+        lsize = 0;
+        psize = (dst->width - scaled_width)
+               * buffer->height / dst->height / 2;
+    }
+
+    /* If width-based scaling results in a fit width, add letterboxes */
+    else {
+        assert(scaled_height <= dst->height);
+        psize = 0;
+        lsize = (dst->height - scaled_height)
+               * buffer->width / dst->width / 2;
+    }
+
     /* Prepare source frame for buffer */
-    AVFrame* src = guacenc_video_frame_convert(buffer);
+    AVFrame* src = guacenc_video_frame_convert(buffer, lsize, psize);
     if (src == NULL) {
         guacenc_log(GUAC_LOG_WARNING, "Failed to allocate source frame. "
                 "Frame dropped.");
         return;
     }
-
-    /* Obtain destination frame */
-    AVFrame* dst = video->next_frame;
 
     /* Prepare scaling context */
     struct SwsContext* sws = sws_getContext(src->width, src->height,
