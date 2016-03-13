@@ -24,6 +24,9 @@ AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = guacenc
 
+man_MANS =        \
+    man/guacenc.1
+
 noinst_HEADERS =   \
     buffer.h       \
     display.h      \

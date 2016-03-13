@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
 
         /* Generate output filename */
         char out_path[4096];
-        int len = snprintf(out_path, sizeof(out_path), "%s.mpg", path);
+        int len = snprintf(out_path, sizeof(out_path), "%s.m4v", path);
 
         /* Do not write if filename exceeds maximum length */
         if (len >= sizeof(out_path)) {
