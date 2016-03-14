@@ -27,18 +27,19 @@ bin_PROGRAMS = guacenc
 man_MANS =        \
     man/guacenc.1
 
-noinst_HEADERS =   \
-    buffer.h       \
-    display.h      \
-    encode.h       \
-    guacenc.h      \
-    image-stream.h \
-    instructions.h \
-    jpeg.h         \
-    layer.h        \
-    log.h          \
-    parse.h        \
-    png.h          \
+noinst_HEADERS =    \
+    buffer.h        \
+    display.h       \
+    encode.h        \
+    ffmpeg-compat.h \
+    guacenc.h       \
+    image-stream.h  \
+    instructions.h  \
+    jpeg.h          \
+    layer.h         \
+    log.h           \
+    parse.h         \
+    png.h           \
     video.h
 
 guacenc_SOURCES =           \
