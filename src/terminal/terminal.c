@@ -1910,6 +1910,7 @@ void guac_terminal_add_user(guac_terminal* term, guac_user* user,
 
     /* Synchronize display state with new user */
     guac_common_display_dup(term->display, user, socket);
+    guac_terminal_scrollbar_dup(term->scrollbar, user, socket);
 
 }
 

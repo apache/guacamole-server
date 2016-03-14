@@ -90,6 +90,142 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
 }
 
 /**
+ * Moves the main scrollbar layer to the position indicated within the given
+ * scrollbar render state, sending any necessary Guacamole instructions over
+ * the given socket.
+ *
+ * @param scrollbar
+ *     The scrollbar to reposition.
+ *
+ * @param state
+ *     The guac_terminal_scrollbar_render_state describing the new scrollbar
+ *     position.
+ *
+ * @param socket
+ *     The guac_socket over which any instructions necessary to perform the
+ *     render operation should be sent.
+ */
+static void guac_terminal_scrollbar_move_container(
+        guac_terminal_scrollbar* scrollbar,
+        guac_terminal_scrollbar_render_state* state,
+        guac_socket* socket) {
+
+    /* Send scrollbar position */
+    guac_protocol_send_move(socket,
+            scrollbar->container, scrollbar->parent,
+            state->container_x,
+            state->container_y,
+            0);
+
+}
+
+/**
+ * Resizes and redraws the main scrollbar layer according to the given
+ * scrollbar render state, sending any necessary Guacamole instructions over
+ * the given socket.
+ *
+ * @param scrollbar
+ *     The scrollbar to resize and redraw.
+ *
+ * @param state
+ *     The guac_terminal_scrollbar_render_state describing the new scrollbar
+ *     size and appearance.
+ *
+ * @param socket
+ *     The guac_socket over which any instructions necessary to perform the
+ *     render operation should be sent.
+ */
+static void guac_terminal_scrollbar_draw_container(
+        guac_terminal_scrollbar* scrollbar,
+        guac_terminal_scrollbar_render_state* state,
+        guac_socket* socket) {
+
+    /* Set container size */
+    guac_protocol_send_size(socket, scrollbar->container,
+            state->container_width,
+            state->container_height);
+
+    /* Fill container with solid color */
+    guac_protocol_send_rect(socket, scrollbar->container, 0, 0,
+            state->container_width,
+            state->container_height);
+
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->container,
+            0x80, 0x80, 0x80, 0x40);
+
+}
+
+/**
+ * Moves the handle layer of the scrollbar to the position indicated within the
+ * given scrollbar render state, sending any necessary Guacamole instructions
+ * over the given socket. The handle is the portion of the scrollbar that
+ * indicates the current scroll value and which the user can click and drag to
+ * change the value.
+ *
+ * @param scrollbar
+ *     The scrollbar associated with the handle being repositioned.
+ *
+ * @param state
+ *     The guac_terminal_scrollbar_render_state describing the new scrollbar
+ *     handle position.
+ *
+ * @param socket
+ *     The guac_socket over which any instructions necessary to perform the
+ *     render operation should be sent.
+ */
+static void guac_terminal_scrollbar_move_handle(
+        guac_terminal_scrollbar* scrollbar,
+        guac_terminal_scrollbar_render_state* state,
+        guac_socket* socket) {
+
+    /* Send handle position */
+    guac_protocol_send_move(socket,
+            scrollbar->handle, scrollbar->container,
+            state->handle_x,
+            state->handle_y,
+            0);
+
+}
+
+/**
+ * Resizes and redraws the handle layer of the scrollbar according to the given
+ * scrollbar render state, sending any necessary Guacamole instructions over
+ * the given socket. The handle is the portion of the scrollbar that indicates
+ * the current scroll value and which the user can click and drag to change the
+ * value.
+ *
+ * @param scrollbar
+ *     The scrollbar associated with the handle being resized and redrawn.
+ *
+ * @param state
+ *     The guac_terminal_scrollbar_render_state describing the new scrollbar
+ *     handle size and appearance.
+ *
+ * @param socket
+ *     The guac_socket over which any instructions necessary to perform the
+ *     render operation should be sent.
+ */
+static void guac_terminal_scrollbar_draw_handle(
+        guac_terminal_scrollbar* scrollbar,
+        guac_terminal_scrollbar_render_state* state,
+        guac_socket* socket) {
+
+    /* Set handle size */
+    guac_protocol_send_size(socket, scrollbar->handle,
+            state->handle_width,
+            state->handle_height);
+
+    /* Fill handle with solid color */
+    guac_protocol_send_rect(socket, scrollbar->handle, 0, 0,
+            state->handle_width,
+            state->handle_height);
+
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->handle,
+            0xA0, 0xA0, 0xA0, 0x8F);
+
+}
+
+/**
  * Calculates the state of the scroll bar, given its minimum, maximum, current
  * values, and the state of any dragging operation. The resulting render state
  * will not be reflected graphically unless the scrollbar is flushed, and any
@@ -199,6 +335,22 @@ static void calculate_state(guac_terminal_scrollbar* scrollbar,
 
 }
 
+void guac_terminal_scrollbar_dup(guac_terminal_scrollbar* scrollbar,
+        guac_user* user, guac_socket* socket) {
+
+    /* Get old state */
+    guac_terminal_scrollbar_render_state* state = &scrollbar->render_state;
+
+    /* Send scrollbar container */
+    guac_terminal_scrollbar_draw_container(scrollbar, state, socket);
+    guac_terminal_scrollbar_move_container(scrollbar, state, socket);
+
+    /* Send handle */
+    guac_terminal_scrollbar_draw_handle(scrollbar, state, socket);
+    guac_terminal_scrollbar_move_handle(scrollbar, state, socket);
+
+}
+
 void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
 
     guac_socket* socket = scrollbar->client->socket;
@@ -219,63 +371,25 @@ void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
     /* Reposition container if moved */
     if (old_state->container_x != new_state.container_x
      || old_state->container_y != new_state.container_y) {
-
-        guac_protocol_send_move(socket,
-                scrollbar->container, scrollbar->parent,
-                new_state.container_x,
-                new_state.container_y,
-                0);
-
+        guac_terminal_scrollbar_move_container(scrollbar, &new_state, socket);
     }
 
     /* Resize and redraw container if size changed */
     if (old_state->container_width  != new_state.container_width
      || old_state->container_height != new_state.container_height) {
-
-        /* Set new size */
-        guac_protocol_send_size(socket, scrollbar->container,
-                new_state.container_width,
-                new_state.container_height);
-
-        /* Fill container with solid color */
-        guac_protocol_send_rect(socket, scrollbar->container, 0, 0,
-                new_state.container_width,
-                new_state.container_height);
-
-        guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->container,
-                0x80, 0x80, 0x80, 0x40);
-
+        guac_terminal_scrollbar_draw_container(scrollbar, &new_state, socket);
     }
 
     /* Reposition handle if moved */
     if (old_state->handle_x != new_state.handle_x
      || old_state->handle_y != new_state.handle_y) {
-
-        guac_protocol_send_move(socket,
-                scrollbar->handle, scrollbar->container,
-                new_state.handle_x,
-                new_state.handle_y,
-                0);
-
+        guac_terminal_scrollbar_move_handle(scrollbar, &new_state, socket);
     }
 
     /* Resize and redraw handle if size changed */
     if (old_state->handle_width  != new_state.handle_width
      || old_state->handle_height != new_state.handle_height) {
-
-        /* Send new size */
-        guac_protocol_send_size(socket, scrollbar->handle,
-                new_state.handle_width,
-                new_state.handle_height);
-
-        /* Fill and stroke handle with solid color */
-        guac_protocol_send_rect(socket, scrollbar->handle, 0, 0,
-                new_state.handle_width,
-                new_state.handle_height);
-
-        guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->handle,
-                0xA0, 0xA0, 0xA0, 0x8F);
-
+        guac_terminal_scrollbar_draw_handle(scrollbar, &new_state, socket);
     }
 
     /* Store current render state */
