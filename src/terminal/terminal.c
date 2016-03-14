@@ -200,6 +200,10 @@ void guac_terminal_reset(guac_terminal* term) {
  * @param terminal
  *     The terminal whose background should be painted or repainted.
  *
+ * @param socket
+ *     The socket over which instructions required to paint / repaint the
+ *     terminal background should be send.
+ *
  * @param width
  *     The width of the background to draw, in pixels.
  *
@@ -207,11 +211,9 @@ void guac_terminal_reset(guac_terminal* term) {
  *     The height of the background to draw, in pixels.
  */
 static void guac_terminal_paint_background(guac_terminal* terminal,
-        int width, int height) {
+        guac_socket* socket, int width, int height) {
 
     guac_terminal_display* display = terminal->term_display;
-    guac_client* client = display->client;
-    guac_socket* socket = client->socket;
 
     /* Get background color */
     const guac_terminal_color* color =
@@ -371,7 +373,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     pthread_mutex_init(&(term->lock), NULL);
 
     /* Size display */
-    guac_terminal_paint_background(term, width, height);
+    guac_terminal_paint_background(term, client->socket, width, height);
     guac_terminal_display_resize(term->term_display,
             term->term_width, term->term_height);
 
@@ -1369,7 +1371,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 
     /* Resize default layer to given pixel dimensions */
     guac_common_surface_resize(terminal->display->default_surface, width, height);
-    guac_terminal_paint_background(terminal, width, height);
+    guac_terminal_paint_background(terminal, client->socket, width, height);
 
     /* Notify scrollbar of resize */
     guac_terminal_scrollbar_parent_resized(terminal->scrollbar, width, height, rows);
@@ -1910,7 +1912,13 @@ void guac_terminal_add_user(guac_terminal* term, guac_user* user,
 
     /* Synchronize display state with new user */
     guac_common_display_dup(term->display, user, socket);
+    guac_terminal_display_dup(term->term_display, user, socket);
     guac_terminal_scrollbar_dup(term->scrollbar, user, socket);
+
+    /* Paint background for joining user */
+    guac_common_surface* default_surface = term->display->default_surface;
+    guac_terminal_paint_background(term, socket, default_surface->width,
+            default_surface->height);
 
 }
 
