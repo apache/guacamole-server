@@ -38,6 +38,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Define av_frame_alloc() / av_frame_free() if libavcodec is old */
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
+#define av_frame_alloc avcodec_alloc_frame
+#define av_frame_free avcodec_free_frame
+#endif
+
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         int width, int height, int bitrate) {
 
