@@ -1915,7 +1915,7 @@ int guac_terminal_create_typescript(guac_terminal* term, const char* path,
 
 }
 
-void guac_terminal_add_user(guac_terminal* term, guac_user* user,
+void guac_terminal_dup(guac_terminal* term, guac_user* user,
         guac_socket* socket) {
 
     /* Synchronize display state with new user */
