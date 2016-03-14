@@ -855,6 +855,11 @@ void guac_terminal_display_dup(guac_terminal_display* display, guac_user* user,
     guac_protocol_send_move(socket, display->select_layer,
             display->display_layer, 0, 0, 0);
 
+    /* Send select layer size */
+    guac_protocol_send_size(socket, display->select_layer,
+            display->char_width  * display->width,
+            display->char_height * display->height);
+
 }
 
 void guac_terminal_display_commit_select(guac_terminal_display* display) {
