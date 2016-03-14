@@ -27,7 +27,6 @@
 #include "display.h"
 #include "guac_clipboard.h"
 #include "guac_cursor.h"
-#include "guac_display.h"
 #include "packet.h"
 #include "scrollbar.h"
 #include "terminal.h"
@@ -58,7 +57,7 @@
 static void __guac_terminal_set_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, guac_terminal_char* character) {
 
-    guac_terminal_display_set_columns(terminal->term_display, row + terminal->scroll_offset,
+    guac_terminal_display_set_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, character);
 
     guac_terminal_buffer_set_columns(terminal->buffer, row,
@@ -203,21 +202,20 @@ void guac_terminal_reset(guac_terminal* term) {
  * @param socket
  *     The socket over which instructions required to paint / repaint the
  *     terminal background should be send.
- *
- * @param width
- *     The width of the background to draw, in pixels.
- *
- * @param height
- *     The height of the background to draw, in pixels.
  */
-static void guac_terminal_paint_background(guac_terminal* terminal,
-        guac_socket* socket, int width, int height) {
+static void guac_terminal_repaint_default_layer(guac_terminal* terminal,
+        guac_socket* socket) {
 
-    guac_terminal_display* display = terminal->term_display;
+    int width = terminal->width;
+    int height = terminal->height;
+    guac_terminal_display* display = terminal->display;
 
     /* Get background color */
     const guac_terminal_color* color =
         &guac_terminal_palette[display->default_background];
+
+    /* Reset size */
+    guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, width, height);
 
     /* Paint background color */
     guac_protocol_send_rect(socket, GUAC_DEFAULT_LAYER, 0, 0, width, height);
@@ -320,7 +318,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     guac_terminal* term = malloc(sizeof(guac_terminal));
     term->client = client;
-    term->display = guac_common_display_alloc(client, width, height);
     term->upload_path_handler = NULL;
     term->file_download_handler = NULL;
 
@@ -328,24 +325,32 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->buffer = guac_terminal_buffer_alloc(1000, &default_char);
 
     /* Init display */
-    term->term_display = guac_terminal_display_alloc(client,
+    term->display = guac_terminal_display_alloc(client,
             font_name, font_size, dpi,
             default_char.attributes.foreground,
             default_char.attributes.background);
 
     /* Fail if display init failed */
-    if (term->term_display == NULL) {
+    if (term->display == NULL) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Display initialization failed");
         free(term);
         return NULL;
     }
 
+    /* Init common cursor */
+    term->cursor = guac_common_cursor_alloc(client);
+
     /* Init terminal state */
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
 
-    term->term_width   = available_width / term->term_display->char_width;
-    term->term_height  = height / term->term_display->char_height;
+    /* Set pixel size */
+    term->width = width;
+    term->height = height;
+
+    /* Calculate character size */
+    term->term_width   = available_width / term->display->char_width;
+    term->term_height  = height / term->display->char_height;
 
     /* Open STDOUT pipe */
     if (pipe(term->stdout_pipe_fd)) {
@@ -372,9 +377,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init terminal lock */
     pthread_mutex_init(&(term->lock), NULL);
 
-    /* Size display */
-    guac_terminal_paint_background(term, client->socket, width, height);
-    guac_terminal_display_resize(term->term_display,
+    /* Repaint and resize overall display */
+    guac_terminal_repaint_default_layer(term, client->socket);
+    guac_terminal_display_resize(term->display,
             term->term_width, term->term_height);
 
     /* Allocate scrollbar */
@@ -394,7 +399,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Initialize mouse cursor */
     term->current_cursor = GUAC_TERMINAL_CURSOR_BLANK;
-    guac_common_cursor_set_blank(term->display->cursor);
+    guac_common_cursor_set_blank(term->cursor);
 
     /* Allocate clipboard */
     term->clipboard = guac_common_clipboard_alloc(GUAC_TERMINAL_CLIPBOARD_MAX_LENGTH);
@@ -430,7 +435,7 @@ void guac_terminal_free(guac_terminal* term) {
     guac_terminal_typescript_free(term->typescript);
 
     /* Free display */
-    guac_terminal_display_free(term->term_display);
+    guac_terminal_display_free(term->display);
 
     /* Free buffer */
     guac_terminal_buffer_free(term->buffer);
@@ -695,13 +700,13 @@ void guac_terminal_commit_cursor(guac_terminal* term) {
     /* Clear cursor */
     guac_char = &(old_row->characters[term->visible_cursor_col]);
     guac_char->attributes.cursor = false;
-    guac_terminal_display_set_columns(term->term_display, term->visible_cursor_row + term->scroll_offset,
+    guac_terminal_display_set_columns(term->display, term->visible_cursor_row + term->scroll_offset,
             term->visible_cursor_col, term->visible_cursor_col, guac_char);
 
     /* Set cursor */
     guac_char = &(new_row->characters[term->cursor_col]);
     guac_char->attributes.cursor = true;
-    guac_terminal_display_set_columns(term->term_display, term->cursor_row + term->scroll_offset,
+    guac_terminal_display_set_columns(term->display, term->cursor_row + term->scroll_offset,
             term->cursor_col, term->cursor_col, guac_char);
 
     term->visible_cursor_row = term->cursor_row;
@@ -739,7 +744,7 @@ int guac_terminal_scroll_up(guac_terminal* term,
     if (start_row == 0 && end_row == term->term_height - 1) {
 
         /* Scroll up visibly */
-        guac_terminal_display_copy_rows(term->term_display, start_row + amount, end_row, -amount);
+        guac_terminal_display_copy_rows(term->display, start_row + amount, end_row, -amount);
 
         /* Advance by scroll amount */
         term->buffer->top += amount;
@@ -862,7 +867,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
     /* Shift screen up */
     if (terminal->term_height > scroll_amount)
-        guac_terminal_display_copy_rows(terminal->term_display,
+        guac_terminal_display_copy_rows(terminal->display,
                 scroll_amount, terminal->term_height - 1,
                 -scroll_amount);
 
@@ -883,8 +888,8 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
             guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
         /* Clear row */
-        guac_terminal_display_set_columns(terminal->term_display,
-                dest_row, 0, terminal->term_display->width, &(terminal->default_char));
+        guac_terminal_display_set_columns(terminal->display,
+                dest_row, 0, terminal->display->width, &(terminal->default_char));
 
         /* Draw row */
         guac_terminal_char* current = buffer_row->characters;
@@ -892,7 +897,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
 
             /* Only draw if not blank */
             if (guac_terminal_has_glyph(current->value))
-                guac_terminal_display_set_columns(terminal->term_display, dest_row, column, column, current);
+                guac_terminal_display_set_columns(terminal->display, dest_row, column, column, current);
 
             current++;
 
@@ -924,7 +929,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
     /* Shift screen down */
     if (terminal->term_height > scroll_amount)
-        guac_terminal_display_copy_rows(terminal->term_display,
+        guac_terminal_display_copy_rows(terminal->display,
                 0, terminal->term_height - scroll_amount - 1,
                 scroll_amount);
 
@@ -945,8 +950,8 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
             guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
         /* Clear row */
-        guac_terminal_display_set_columns(terminal->term_display,
-                dest_row, 0, terminal->term_display->width, &(terminal->default_char));
+        guac_terminal_display_set_columns(terminal->display,
+                dest_row, 0, terminal->display->width, &(terminal->default_char));
 
         /* Draw row */
         guac_terminal_char* current = buffer_row->characters;
@@ -954,7 +959,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
             /* Only draw if not blank */
             if (guac_terminal_has_glyph(current->value))
-                guac_terminal_display_set_columns(terminal->term_display, dest_row, column, column, current);
+                guac_terminal_display_set_columns(terminal->display, dest_row, column, column, current);
 
             current++;
 
@@ -983,7 +988,7 @@ void guac_terminal_select_redraw(guac_terminal* terminal) {
     else
         end_column += terminal->selection_end_width - 1;
 
-    guac_terminal_display_select(terminal->term_display, start_row, start_column, end_row, end_column);
+    guac_terminal_display_select(terminal->display, start_row, start_column, end_row, end_column);
 
 }
 
@@ -1081,7 +1086,7 @@ void guac_terminal_select_end(guac_terminal* terminal, char* string) {
 
     /* Deselect */
     terminal->text_selected = false;
-    guac_terminal_display_commit_select(terminal->term_display);
+    guac_terminal_display_commit_select(terminal->display);
 
     guac_terminal_buffer_row* buffer_row;
 
@@ -1150,7 +1155,7 @@ void guac_terminal_select_end(guac_terminal* terminal, char* string) {
 void guac_terminal_copy_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, int offset) {
 
-    guac_terminal_display_copy_columns(terminal->term_display, row + terminal->scroll_offset,
+    guac_terminal_display_copy_columns(terminal->display, row + terminal->scroll_offset,
             start_column, end_column, offset);
 
     guac_terminal_buffer_copy_columns(terminal->buffer, row,
@@ -1171,7 +1176,7 @@ void guac_terminal_copy_columns(guac_terminal* terminal, int row,
 void guac_terminal_copy_rows(guac_terminal* terminal,
         int start_row, int end_row, int offset) {
 
-    guac_terminal_display_copy_rows(terminal->term_display,
+    guac_terminal_display_copy_rows(terminal->display,
             start_row + terminal->scroll_offset, end_row + terminal->scroll_offset, offset);
 
     guac_terminal_buffer_copy_rows(terminal->buffer,
@@ -1220,7 +1225,7 @@ static void __guac_terminal_redraw_rect(guac_terminal* term, int start_row, int 
             guac_terminal_buffer_get_row(term->buffer, row - term->scroll_offset, 0);
 
         /* Clear row */
-        guac_terminal_display_set_columns(term->term_display,
+        guac_terminal_display_set_columns(term->display,
                 row, start_col, end_col, &(term->default_char));
 
         /* Copy characters */
@@ -1229,7 +1234,7 @@ static void __guac_terminal_redraw_rect(guac_terminal* term, int start_row, int 
             /* Only redraw if not blank */
             guac_terminal_char* c = &(buffer_row->characters[col]);
             if (guac_terminal_has_glyph(c->value))
-                guac_terminal_display_set_columns(term->term_display, row, col, col, c);
+                guac_terminal_display_set_columns(term->display, row, col, col, c);
 
         }
 
@@ -1258,8 +1263,8 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
         /* If the new terminal bottom covers N rows, shift up N rows */
         if (shift_amount > 0) {
 
-            guac_terminal_display_copy_rows(term->term_display,
-                    shift_amount, term->term_display->height - 1, -shift_amount);
+            guac_terminal_display_copy_rows(term->display,
+                    shift_amount, term->display->height - 1, -shift_amount);
 
             /* Update buffer top and cursor row based on shift */
             term->buffer->top += shift_amount;
@@ -1274,8 +1279,8 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
     }
 
     /* Resize display */
-    guac_terminal_display_flush(term->term_display);
-    guac_terminal_display_resize(term->term_display, width, height);
+    guac_terminal_display_flush(term->display);
+    guac_terminal_display_resize(term->display, width, height);
 
     /* Reraw any characters on right if widening */
     if (width > term->term_width)
@@ -1326,8 +1331,8 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
                 /* If anything remains, move screen as necessary */
                 if (shift_amount > 0) {
 
-                    guac_terminal_display_copy_rows(term->term_display,
-                            0, term->term_display->height - shift_amount - 1, shift_amount);
+                    guac_terminal_display_copy_rows(term->display,
+                            0, term->display->height - shift_amount - 1, shift_amount);
 
                     /* Draw characters at top from scroll */
                     __guac_terminal_redraw_rect(term, 0, 0, shift_amount - 1, width-1);
@@ -1354,7 +1359,7 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
 
 int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
 
-    guac_terminal_display* display = terminal->term_display;
+    guac_terminal_display* display = terminal->display;
     guac_client* client = display->client;
 
     /* Acquire exclusive access to terminal */
@@ -1369,9 +1374,12 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     int rows    = height / display->char_height;
     int columns = available_width / display->char_width;
 
+    /* Set pixel sizes */
+    terminal->width = width;
+    terminal->height = height;
+
     /* Resize default layer to given pixel dimensions */
-    guac_common_surface_resize(terminal->display->default_surface, width, height);
-    guac_terminal_paint_background(terminal, client->socket, width, height);
+    guac_terminal_repaint_default_layer(terminal, client->socket);
 
     /* Notify scrollbar of resize */
     guac_terminal_scrollbar_parent_resized(terminal->scrollbar, width, height, rows);
@@ -1407,7 +1415,7 @@ void guac_terminal_flush(guac_terminal* terminal) {
 
     /* Flush display state */
     guac_terminal_commit_cursor(terminal);
-    guac_terminal_display_flush(terminal->term_display);
+    guac_terminal_display_flush(terminal->display);
     guac_terminal_scrollbar_flush(terminal->scrollbar);
 
 }
@@ -1433,7 +1441,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     /* Hide mouse cursor if not already hidden */
     if (term->current_cursor != GUAC_TERMINAL_CURSOR_BLANK) {
         term->current_cursor = GUAC_TERMINAL_CURSOR_BLANK;
-        guac_common_cursor_set_blank(term->display->cursor);
+        guac_common_cursor_set_blank(term->cursor);
         guac_terminal_notify(term);
     }
 
@@ -1601,7 +1609,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
     int pressed_mask  = ~term->mouse_mask &  mask;
 
     /* Store current mouse location */
-    guac_common_cursor_move(term->display->cursor, user, x, y);
+    guac_common_cursor_move(term->cursor, user, x, y);
 
     /* Notify scrollbar, do not handle anything handled by scrollbar */
     if (guac_terminal_scrollbar_handle_mouse(term->scrollbar, x, y, mask)) {
@@ -1609,7 +1617,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         /* Set pointer cursor if mouse is over scrollbar */
         if (term->current_cursor != GUAC_TERMINAL_CURSOR_POINTER) {
             term->current_cursor = GUAC_TERMINAL_CURSOR_POINTER;
-            guac_common_cursor_set_pointer(term->display->cursor);
+            guac_common_cursor_set_pointer(term->cursor);
             guac_terminal_notify(term);
         }
 
@@ -1623,7 +1631,7 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
     /* Show mouse cursor if not already shown */
     if (term->current_cursor != GUAC_TERMINAL_CURSOR_IBAR) {
         term->current_cursor = GUAC_TERMINAL_CURSOR_IBAR;
-        guac_common_cursor_set_ibar(term->display->cursor);
+        guac_common_cursor_set_ibar(term->cursor);
         guac_terminal_notify(term);
     }
 
@@ -1660,8 +1668,8 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         /* Otherwise, just update */
         else
             guac_terminal_select_update(term,
-                    y / term->term_display->char_height - term->scroll_offset,
-                    x / term->term_display->char_width);
+                    y / term->display->char_height - term->scroll_offset,
+                    x / term->display->char_width);
 
     }
 
@@ -1669,8 +1677,8 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
     else if (!(pressed_mask & GUAC_CLIENT_MOUSE_LEFT) &&
                mask         & GUAC_CLIENT_MOUSE_LEFT)
         guac_terminal_select_start(term,
-                y / term->term_display->char_height - term->scroll_offset,
-                x / term->term_display->char_width);
+                y / term->display->char_height - term->scroll_offset,
+                x / term->display->char_width);
 
     /* Scroll up if wheel moved up */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_UP)
@@ -1911,14 +1919,14 @@ void guac_terminal_add_user(guac_terminal* term, guac_user* user,
         guac_socket* socket) {
 
     /* Synchronize display state with new user */
-    guac_common_display_dup(term->display, user, socket);
-    guac_terminal_display_dup(term->term_display, user, socket);
-    guac_terminal_scrollbar_dup(term->scrollbar, user, socket);
+    guac_terminal_repaint_default_layer(term, socket);
+    guac_terminal_display_dup(term->display, user, socket);
 
-    /* Paint background for joining user */
-    guac_common_surface* default_surface = term->display->default_surface;
-    guac_terminal_paint_background(term, socket, default_surface->width,
-            default_surface->height);
+    /* Synchronize mouse cursor */
+    guac_common_cursor_dup(term->cursor, user, socket);
+
+    /* Paint scrollbar for joining user */
+    guac_terminal_scrollbar_dup(term->scrollbar, user, socket);
 
 }
 

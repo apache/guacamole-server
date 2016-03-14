@@ -29,7 +29,7 @@
 #include "buffer.h"
 #include "display.h"
 #include "guac_clipboard.h"
-#include "guac_display.h"
+#include "guac_cursor.h"
 #include "scrollbar.h"
 #include "types.h"
 #include "typescript.h"
@@ -144,12 +144,6 @@ struct guac_terminal {
     pthread_t thread;
 
     /**
-     * The display associated with the Guacamole client this terminal emulator
-     * will use for rendering.
-     */
-    guac_common_display* display;
-
-    /**
      * Called whenever the necessary terminal codes are sent to change
      * the path for future file uploads.
      */
@@ -210,6 +204,11 @@ struct guac_terminal {
     guac_terminal_typescript* typescript;
 
     /**
+     * Terminal-wide mouse cursor, synchronized across all users.
+     */
+    guac_common_cursor* cursor;
+
+    /**
      * Graphical representation of the current scroll state.
      */
     guac_terminal_scrollbar* scrollbar;
@@ -220,6 +219,16 @@ struct guac_terminal {
      * scrolling has occurred. Negative values are illegal.
      */
     int scroll_offset;
+
+    /**
+     * The width of the terminal, in pixels.
+     */
+    int width;
+
+    /**
+     * The height of the terminal, in pixels.
+     */
+    int height;
 
     /**
      * The width of the terminal, in characters.
@@ -293,7 +302,7 @@ struct guac_terminal {
      * The difference between the currently-rendered screen and the current
      * state of the terminal.
      */
-    guac_terminal_display* term_display;
+    guac_terminal_display* display;
 
     /**
      * Current terminal display state. All characters present on the screen
