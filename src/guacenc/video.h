@@ -93,9 +93,10 @@ typedef struct guacenc_video {
 
 /**
  * Allocates a new guacenc_video which encodes video according to the given
- * specifications, saving the output in the given file. The output file will be
- * created if necessary and truncated if it already exists. Frames will be
- * scaled up or down as necessary to fit the given width and height.
+ * specifications, saving the output in the given file. If the output file
+ * already exists, encoding will be aborted, and the original file contents
+ * will be preserved. Frames will be scaled up or down as necessary to fit the
+ * given width and height.
  *
  * @param path
  *     The full path to the file in which encoded video should be written.

@@ -34,10 +34,14 @@
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <assert.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         int width, int height, int bitrate) {
@@ -91,10 +95,18 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     }
 
     /* Open output file */
-    FILE* output = fopen(path, "wb");
-    if (output == NULL) {
+    int fd = open(path, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR);
+    if (fd == -1) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to open output file \"%s\": %s",
                 path, strerror(errno));
+        goto fail_output_fd;
+    }
+
+    /* Create stream for output file */
+    FILE* output = fdopen(fd, "wb");
+    if (output == NULL) {
+        guacenc_log(GUAC_LOG_ERROR, "Failed to allocate stream for output "
+                "file \"%s\": %s", path, strerror(errno));
         goto fail_output_file;
     }
 
@@ -123,6 +135,9 @@ fail_video:
     fclose(output);
 
 fail_output_file:
+    close(fd);
+
+fail_output_fd:
     av_freep(&frame->data[0]);
 
 fail_frame_data:
