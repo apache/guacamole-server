@@ -28,16 +28,20 @@ lib_LTLIBRARIES = libguac-client-ssh.la
 libguac_client_ssh_la_SOURCES = \
     client.c                    \
     clipboard.c                 \
-    guac_handlers.c             \
+    input.c                     \
+    settings.c                  \
     sftp.c                      \
-    ssh_client.c
+    ssh.c                       \
+    user.c
 
 noinst_HEADERS =                \
     client.h                    \
     clipboard.h                 \
-    guac_handlers.h             \
+    input.h                     \
+    settings.h                  \
     sftp.h                      \
-    ssh_client.h
+    ssh.h                       \
+    user.h
 
 # Add agent sources if enabled
 if ENABLE_SSH_AGENT

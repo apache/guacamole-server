@@ -54,7 +54,7 @@ SUBDIRS += src/protocols/rdp
 endif
 
 if ENABLE_SSH
-#SUBDIRS += src/protocols/ssh
+SUBDIRS += src/protocols/ssh
 endif
 
 if ENABLE_TELNET

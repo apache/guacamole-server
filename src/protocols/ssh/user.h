@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Glyptodon LLC
+ * Copyright (C) 2014 Glyptodon LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,17 @@
  * THE SOFTWARE.
  */
 
-
-#ifndef __SSH_CLIENT_H
-#define __SSH_CLIENT_H
+#ifndef GUAC_VNC_USER_H
+#define GUAC_VNC_USER_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
+#include <guacamole/user.h>
 
 /**
- * Main SSH client thread, handling transfer of SSH output to STDOUT.
+ * Handler for joining users.
  */
-void* ssh_client_thread(void* data);
+guac_user_join_handler guac_ssh_user_join_handler;
 
 #endif
 

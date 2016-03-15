@@ -22,10 +22,11 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "guac_sftp.h"
 #include "guac_ssh.h"
+#include "settings.h"
 #include "sftp.h"
+#include "ssh.h"
 #include "terminal.h"
 
 #ifdef ENABLE_SSH_AGENT
@@ -35,8 +36,6 @@
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 #include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
@@ -70,27 +69,28 @@
  */
 static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
 
-    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
+    guac_ssh_settings* settings = ssh_client->settings;
 
     guac_common_ssh_user* user;
 
     /* Get username */
-    if (client_data->username[0] == 0)
-        guac_terminal_prompt(client_data->term, "Login as: ",
-                client_data->username, sizeof(client_data->username), true);
+    if (settings->username == NULL)
+        settings->username = guac_terminal_prompt(ssh_client->term,
+                "Login as: ", true);
 
     /* Create user object from username */
-    user = guac_common_ssh_create_user(client_data->username);
+    user = guac_common_ssh_create_user(settings->username);
 
     /* If key specified, import */
-    if (client_data->key_base64[0] != 0) {
+    if (settings->key_base64 != NULL) {
 
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "Attempting private key import (WITHOUT passphrase)");
 
         /* Attempt to read key without passphrase */
         if (guac_common_ssh_user_import_key(user,
-                    client_data->key_base64, NULL)) {
+                    settings->key_base64, NULL)) {
 
             /* Log failure of initial attempt */
             guac_client_log(client, GUAC_LOG_DEBUG,
@@ -101,15 +101,15 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
                     "Re-attempting private key import (WITH passphrase)");
 
             /* Prompt for passphrase if missing */
-            if (client_data->key_passphrase[0] == 0)
-                guac_terminal_prompt(client_data->term, "Key passphrase: ",
-                        client_data->key_passphrase,
-                        sizeof(client_data->key_passphrase), false);
+            if (settings->key_passphrase == NULL)
+                settings->key_passphrase =
+                    guac_terminal_prompt(ssh_client->term,
+                            "Key passphrase: ", false);
 
             /* Reattempt import with passphrase */
             if (guac_common_ssh_user_import_key(user,
-                        client_data->key_base64,
-                        client_data->key_passphrase)) {
+                        settings->key_base64,
+                        settings->key_passphrase)) {
 
                 /* If still failing, give up */
                 guac_client_abort(client,
@@ -134,18 +134,17 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
     else {
 
         /* Get password if not provided */
-        if (client_data->password[0] == 0)
-            guac_terminal_prompt(client_data->term, "Password: ",
-                    client_data->password, sizeof(client_data->password),
-                    false);
+        if (settings->password == NULL)
+            settings->password = guac_terminal_prompt(ssh_client->term,
+                    "Password: ", false);
 
         /* Set provided password */
-        guac_common_ssh_user_set_password(user, client_data->password);
+        guac_common_ssh_user_set_password(user, settings->password);
 
     }
 
     /* Clear screen of any prompts */
-    guac_terminal_printf(client_data->term, "\x1B[H\x1B[J");
+    guac_terminal_printf(ssh_client->term, "\x1B[H\x1B[J");
 
     return user;
 
@@ -154,16 +153,16 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
 void* ssh_input_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
-    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
 
     char buffer[8192];
     int bytes_read;
 
     /* Write all data read */
-    while ((bytes_read = guac_terminal_read_stdin(client_data->term, buffer, sizeof(buffer))) > 0) {
-        pthread_mutex_lock(&(client_data->term_channel_lock));
-        libssh2_channel_write(client_data->term_channel, buffer, bytes_read);
-        pthread_mutex_unlock(&(client_data->term_channel_lock));
+    while ((bytes_read = guac_terminal_read_stdin(ssh_client->term, buffer, sizeof(buffer))) > 0) {
+        pthread_mutex_lock(&(ssh_client->term_channel_lock));
+        libssh2_channel_write(ssh_client->term_channel, buffer, bytes_read);
+        pthread_mutex_unlock(&(ssh_client->term_channel_lock));
     }
 
     return NULL;
@@ -173,9 +172,9 @@ void* ssh_input_thread(void* data) {
 void* ssh_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
-    ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
+    guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
+    guac_ssh_settings* settings = ssh_client->settings;
 
-    guac_socket* socket = client->socket;
     char buffer[8192];
 
     pthread_t input_thread;
@@ -184,29 +183,44 @@ void* ssh_client_thread(void* data) {
     if (guac_common_ssh_init(client))
         return NULL;
 
-    /* Get user and credentials */
-    client_data->user = guac_ssh_get_user(client);
+    /* Create terminal */
+    ssh_client->term = guac_terminal_create(client,
+            settings->font_name, settings->font_size,
+            settings->resolution, settings->width, settings->height,
+            settings->color_scheme);
 
-    /* Send new name */
-    char name[1024];
-    snprintf(name, sizeof(name)-1, "%s@%s",
-            client_data->username, client_data->hostname);
-    guac_protocol_send_name(socket, name);
+    /* Fail if terminal init failed */
+    if (ssh_client->term == NULL) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Terminal initialization failed");
+        return NULL;
+    }
+
+    /* Set up typescript, if requested */
+    if (settings->typescript_path != NULL) {
+        guac_terminal_create_typescript(ssh_client->term,
+                settings->typescript_path,
+                settings->typescript_name,
+                settings->create_typescript_path);
+    }
+
+    /* Get user and credentials */
+    ssh_client->user = guac_ssh_get_user(client);
 
     /* Open SSH session */
-    client_data->session = guac_common_ssh_create_session(client,
-            client_data->hostname, client_data->port, client_data->user);
-    if (client_data->session == NULL) {
+    ssh_client->session = guac_common_ssh_create_session(client,
+            settings->hostname, settings->port, ssh_client->user);
+    if (ssh_client->session == NULL) {
         /* Already aborted within guac_common_ssh_create_session() */
         return NULL;
     }
 
-    pthread_mutex_init(&client_data->term_channel_lock, NULL);
+    pthread_mutex_init(&ssh_client->term_channel_lock, NULL);
 
     /* Open channel for terminal */
-    client_data->term_channel =
-        libssh2_channel_open_session(client_data->session->session);
-    if (client_data->term_channel == NULL) {
+    ssh_client->term_channel =
+        libssh2_channel_open_session(ssh_client->session->session);
+    if (ssh_client->term_channel == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                 "Unable to open terminal channel.");
         return NULL;
@@ -214,59 +228,60 @@ void* ssh_client_thread(void* data) {
 
 #ifdef ENABLE_SSH_AGENT
     /* Start SSH agent forwarding, if enabled */
-    if (client_data->enable_agent) {
-        libssh2_session_callback_set(client_data->session,
+    if (ssh_client->enable_agent) {
+        libssh2_session_callback_set(ssh_client->session,
                 LIBSSH2_CALLBACK_AUTH_AGENT, (void*) ssh_auth_agent_callback);
 
         /* Request agent forwarding */
-        if (libssh2_channel_request_auth_agent(client_data->term_channel))
+        if (libssh2_channel_request_auth_agent(ssh_client->term_channel))
             guac_client_log(client, GUAC_LOG_ERROR, "Agent forwarding request failed");
         else
             guac_client_log(client, GUAC_LOG_INFO, "Agent forwarding enabled.");
     }
 
-    client_data->auth_agent = NULL;
+    ssh_client->auth_agent = NULL;
 #endif
 
     /* Start SFTP session as well, if enabled */
-    if (client_data->enable_sftp) {
+    if (settings->enable_sftp) {
 
         /* Create SSH session specific for SFTP */
         guac_client_log(client, GUAC_LOG_DEBUG, "Reconnecting for SFTP...");
-        client_data->sftp_session =
-            guac_common_ssh_create_session(client, client_data->hostname,
-                    client_data->port, client_data->user);
-        if (client_data->sftp_session == NULL) {
+        ssh_client->sftp_session =
+            guac_common_ssh_create_session(client, settings->hostname,
+                    settings->port, ssh_client->user);
+        if (ssh_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             return NULL;
         }
 
         /* Request SFTP */
-        client_data->sftp_filesystem =
-            guac_common_ssh_create_sftp_filesystem(
-                    client_data->sftp_session, "/");
+        ssh_client->sftp_filesystem = guac_common_ssh_create_sftp_filesystem(
+                    ssh_client->sftp_session, "/");
 
-        /* Set generic (non-filesystem) file upload handler */
-        client->file_handler = guac_sftp_file_handler;
+        /* Expose filesystem to connection owner */
+        guac_client_for_owner(client,
+                guac_common_ssh_expose_sftp_filesystem,
+                ssh_client->sftp_filesystem);
 
         /* Init handlers for Guacamole-specific console codes */
-        client_data->term->upload_path_handler = guac_sftp_set_upload_path;
-        client_data->term->file_download_handler = guac_sftp_download_file;
+        ssh_client->term->upload_path_handler = guac_sftp_set_upload_path;
+        ssh_client->term->file_download_handler = guac_sftp_download_file;
 
         guac_client_log(client, GUAC_LOG_DEBUG, "SFTP session initialized");
 
     }
 
     /* Request PTY */
-    if (libssh2_channel_request_pty_ex(client_data->term_channel, "linux", sizeof("linux")-1, NULL, 0,
-            client_data->term->term_width, client_data->term->term_height, 0, 0)) {
+    if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1, NULL, 0,
+            ssh_client->term->term_width, ssh_client->term->term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
     }
 
     /* If a command is specified, run that instead of a shell */
-    if (client_data->command != NULL) {
-        if (libssh2_channel_exec(client_data->term_channel, client_data->command)) {
+    if (settings->command != NULL) {
+        if (libssh2_channel_exec(ssh_client->term_channel, settings->command)) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                     "Unable to execute command.");
             return NULL;
@@ -274,7 +289,7 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Otherwise, request a shell */
-    else if (libssh2_channel_shell(client_data->term_channel)) {
+    else if (libssh2_channel_shell(ssh_client->term_channel)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                 "Unable to associate shell with PTY.");
         return NULL;
@@ -290,7 +305,7 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Set non-blocking */
-    libssh2_session_set_blocking(client_data->session->session, 0);
+    libssh2_session_set_blocking(ssh_client->session->session, 0);
 
     /* While data available, write to terminal */
     int bytes_read = 0;
@@ -299,23 +314,23 @@ void* ssh_client_thread(void* data) {
         /* Track total amount of data read */
         int total_read = 0;
 
-        pthread_mutex_lock(&(client_data->term_channel_lock));
+        pthread_mutex_lock(&(ssh_client->term_channel_lock));
 
         /* Stop reading at EOF */
-        if (libssh2_channel_eof(client_data->term_channel)) {
-            pthread_mutex_unlock(&(client_data->term_channel_lock));
+        if (libssh2_channel_eof(ssh_client->term_channel)) {
+            pthread_mutex_unlock(&(ssh_client->term_channel_lock));
             break;
         }
 
         /* Read terminal data */
-        bytes_read = libssh2_channel_read(client_data->term_channel,
+        bytes_read = libssh2_channel_read(ssh_client->term_channel,
                 buffer, sizeof(buffer));
 
-        pthread_mutex_unlock(&(client_data->term_channel_lock));
+        pthread_mutex_unlock(&(ssh_client->term_channel_lock));
 
         /* Attempt to write data received. Exit on failure. */
         if (bytes_read > 0) {
-            int written = guac_terminal_write_stdout(client_data->term, buffer, bytes_read);
+            int written = guac_terminal_write_stdout(ssh_client->term, buffer, bytes_read);
             if (written < 0)
                 break;
 
@@ -327,12 +342,12 @@ void* ssh_client_thread(void* data) {
 
 #ifdef ENABLE_SSH_AGENT
         /* If agent open, handle any agent packets */
-        if (client_data->auth_agent != NULL) {
-            bytes_read = ssh_auth_agent_read(client_data->auth_agent);
+        if (ssh_client->auth_agent != NULL) {
+            bytes_read = ssh_auth_agent_read(ssh_client->auth_agent);
             if (bytes_read > 0)
                 total_read += bytes_read;
             else if (bytes_read < 0 && bytes_read != LIBSSH2_ERROR_EAGAIN)
-                client_data->auth_agent = NULL;
+                ssh_client->auth_agent = NULL;
         }
 #endif
 
@@ -342,13 +357,13 @@ void* ssh_client_thread(void* data) {
             struct timeval timeout;
 
             FD_ZERO(&fds);
-            FD_SET(client_data->session->fd, &fds);
+            FD_SET(ssh_client->session->fd, &fds);
 
             /* Wait for one second */
             timeout.tv_sec = 1;
             timeout.tv_usec = 0;
 
-            if (select(client_data->session->fd + 1, &fds,
+            if (select(ssh_client->session->fd + 1, &fds,
                         NULL, NULL, &timeout) < 0)
                 break;
         }
@@ -359,7 +374,7 @@ void* ssh_client_thread(void* data) {
     guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
-    pthread_mutex_destroy(&client_data->term_channel_lock);
+    pthread_mutex_destroy(&ssh_client->term_channel_lock);
 
     guac_client_log(client, GUAC_LOG_INFO, "SSH connection ended.");
     return NULL;

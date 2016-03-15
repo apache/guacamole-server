@@ -344,19 +344,48 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     /* Authenticate with password, if provided */
     else if (password != NULL) {
 
-        /* Authenticate with password */
+        /* Check if password auth is supported on the server */
         if (strstr(user_authlist, "password") != NULL) {
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Using password authentication method");
-            return libssh2_userauth_password(session, username, password);
+
+            /* Attempt password authentication */
+            if (libssh2_userauth_password(session, username, password)) {
+
+                /* Abort on failure */
+                char* error_message;
+                libssh2_session_last_error(session, &error_message, NULL, 0);
+                guac_client_abort(client,
+                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                        "Password authentication failed: %s", error_message);
+
+                return 1;
+            }
+
+            /* Password authentication succeeded */
+            return 0;
+
         }
 
-        /* Authenticate with password via keyboard-interactive auth */
+        /* Check if keyboard-interactive auth is supported on the server */
         if (strstr(user_authlist, "keyboard-interactive") != NULL) {
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Using keyboard-interactive authentication method");
-            return libssh2_userauth_keyboard_interactive(session, username,
-                    &guac_common_ssh_kbd_callback);
+
+            /* Attempt keyboard-interactive auth using provided password */
+            if (libssh2_userauth_keyboard_interactive(session, username,
+                        &guac_common_ssh_kbd_callback)) {
+
+                /* Abort on failure */
+                char* error_message;
+                libssh2_session_last_error(session, &error_message, NULL, 0);
+                guac_client_abort(client,
+                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                        "Keyboard-interactive authentication failed: %s",
+                        error_message);
+
+                return 1;
+            }
+
+            /* Keyboard-interactive authentication succeeded */
+            return 0;
+
         }
 
         /* No known authentication types available */
