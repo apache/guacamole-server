@@ -41,6 +41,10 @@ int guac_telnet_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     guac_telnet_settings* settings = telnet_client->settings;
     guac_terminal* term = telnet_client->term;
 
+    /* Skip if terminal not yet ready */
+    if (term == NULL)
+        return 0;
+
     /* Send mouse if not searching for password or username */
     if (settings->password_regex == NULL && settings->username_regex == NULL)
         guac_terminal_send_mouse(term, user, x, y, mask);
@@ -55,6 +59,10 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
     guac_terminal* term = telnet_client->term;
+
+    /* Skip if terminal not yet ready */
+    if (term == NULL)
+        return 0;
 
     /* Stop searching for password */
     if (settings->password_regex != NULL) {
@@ -106,6 +114,10 @@ int guac_telnet_user_size_handler(guac_user* user, int width, int height) {
     guac_client* client = user->client;
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_terminal* terminal = telnet_client->term;
+
+    /* Skip if terminal not yet ready */
+    if (terminal == NULL)
+        return 0;
 
     /* Resize terminal */
     guac_terminal_resize(terminal, width, height);
