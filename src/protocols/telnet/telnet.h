@@ -20,14 +20,60 @@
  * THE SOFTWARE.
  */
 
-#ifndef GUAC_TELNET__TELNET_CLIENT_H
-#define GUAC_TELNET__TELNET_CLIENT_H
+#ifndef GUAC_TELNET_H
+#define GUAC_TELNET_H
 
 #include "config.h"
+#include "settings.h"
+#include "terminal.h"
 
 #include <libtelnet.h>
 
 #include <stdint.h>
+
+/**
+ * Telnet-specific client data.
+ */
+typedef struct guac_telnet_client {
+
+    /**
+     * Telnet connection settings.
+     */
+    guac_telnet_settings* settings;
+
+    /**
+     * The telnet client thread.
+     */
+    pthread_t client_thread;
+
+    /**
+     * The file descriptor of the socket connected to the telnet server,
+     * or -1 if no connection has been established.
+     */
+    int socket_fd;
+
+    /**
+     * Telnet connection, used by the telnet client thread.
+     */
+    telnet_t* telnet;
+
+    /**
+     * Whether window size should be sent when the window is resized.
+     */
+    int naws_enabled;
+
+    /**
+     * Whether all user input should be automatically echoed to the
+     * terminal.
+     */
+    int echo_enabled;
+
+    /**
+     * The terminal which will render all output from the telnet client.
+     */
+    guac_terminal* term;
+   
+} guac_telnet_client;
 
 /**
  * Main telnet client thread, handling transfer of telnet output to STDOUT.

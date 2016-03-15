@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Glyptodon LLC
+ * Copyright (C) 2016 Glyptodon, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,30 +20,27 @@
  * THE SOFTWARE.
  */
 
-#ifndef GUAC_TELNET__CLIPBOARD_H
-#define GUAC_TELNET__CLIPBOARD_H
+#ifndef GUAC_TELNET_CLIPBOARD_H
+#define GUAC_TELNET_CLIPBOARD_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
-#include <guacamole/stream.h>
+#include <guacamole/user.h>
 
 /**
- * Handler for inbound clipboard data.
+ * Handler for inbound clipboard streams.
  */
-int guac_telnet_clipboard_handler(guac_client* client, guac_stream* stream,
-        char* mimetype);
+guac_user_clipboard_handler guac_telnet_clipboard_handler;
 
 /**
- * Handler for stream data related to clipboard.
+ * Handler for data received along clipboard streams.
  */
-int guac_telnet_clipboard_blob_handler(guac_client* client, guac_stream* stream,
-        void* data, int length);
+guac_user_blob_handler guac_telnet_clipboard_blob_handler;
 
 /**
  * Handler for end-of-stream related to clipboard.
  */
-int guac_telnet_clipboard_end_handler(guac_client* client, guac_stream* stream);
+guac_user_end_handler guac_telnet_clipboard_end_handler;
 
 #endif
 
