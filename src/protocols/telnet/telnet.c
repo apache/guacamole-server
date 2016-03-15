@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include "guac_recording.h"
 #include "telnet.h"
 #include "terminal.h"
 
@@ -467,6 +468,14 @@ void* guac_telnet_client_thread(void* data) {
     pthread_t input_thread;
     char buffer[8192];
     int wait_result;
+
+    /* Set up screen recording, if requested */
+    if (settings->recording_path != NULL) {
+        guac_common_recording_create(client,
+                settings->recording_path,
+                settings->recording_name,
+                settings->create_recording_path);
+    }
 
     /* Create terminal */
     telnet_client->term = guac_terminal_create(client,
