@@ -125,6 +125,17 @@ enum TELNET_ARGS_IDX {
 
 /**
  * Compiles the given regular expression, returning NULL if compilation fails.
+ * The returned regex_t must be freed with regfree() AND free().
+ *
+ * @param user
+ *     The user who provided the setting associated with the given regex
+ *     pattern. Error messages will be logged on behalf of this user.
+ *
+ * @param pattern
+ *     The regular expression pattern to compile.
+ *
+ * @return
+ *     The compiled regular expression, or NULL if compilation fails.
  */
 static regex_t* guac_telnet_compile_regex(guac_user* user, char* pattern) {
 
