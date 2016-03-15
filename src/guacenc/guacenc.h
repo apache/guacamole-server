@@ -28,19 +28,6 @@
 #include <guacamole/client.h>
 
 /**
- * The name of the codec to use by default, if no other codec is specified on
- * the command line. This name is dictated by ffmpeg / libavcodec.
- */
-#define GUACENC_DEFAULT_CODEC "mpeg4"
-
-/**
- * The extension to append to the end of the input file to produce the output
- * file name, excluding the separating period, if no other suffix is specified
- * on the command line.
- */
-#define GUACENC_DEFAULT_SUFFIX "mpg"
-
-/**
  * The width of the output video, in pixels, if no other width is given on the
  * command line. Note that different codecs will have different restrictions
  * regarding legal widths.
