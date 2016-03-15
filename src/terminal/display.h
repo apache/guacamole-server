@@ -334,6 +334,23 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
 void guac_terminal_display_flush(guac_terminal_display* display);
 
 /**
+ * Initializes and syncs the current terminal display state for the given user
+ * that has just joined the connection, sending the necessary instructions to
+ * completely recreate and redraw the terminal rendering over the given socket.
+ *
+ * @param display
+ *     The terminal display to sync to the given user.
+ *
+ * @param user
+ *     The user that has just joined the connection.
+ *
+ * @param socket
+ *     The socket over which any necessary instructions should be sent.
+ */
+void guac_terminal_display_dup(guac_terminal_display* display, guac_user* user,
+        guac_socket* socket);
+
+/**
  * Draws the text selection rectangle from the given coordinates to the given end coordinates.
  */
 void guac_terminal_display_select(guac_terminal_display* display,

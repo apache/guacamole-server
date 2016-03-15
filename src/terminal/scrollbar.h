@@ -253,6 +253,24 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar);
 void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar);
 
 /**
+ * Forces a complete redraw / resync of scrollbar state for the given user that
+ * has just joined the connection, sending the necessary instructions to
+ * completely recreate and redraw the scrollbar rendering over the given
+ * socket.
+ *
+ * @param scrollbar
+ *     The scrollbar to sync to the given user.
+ *
+ * @param user
+ *     The user that has just joined the connection.
+ *
+ * @param socket
+ *     The socket over which any necessary instructions should be sent.
+ */
+void guac_terminal_scrollbar_dup(guac_terminal_scrollbar* scrollbar,
+        guac_user* user, guac_socket* socket);
+
+/**
  * Sets the minimum and maximum allowed scroll values of the given scrollbar
  * to the given values. If necessary, the current value of the scrollbar will
  * be adjusted to fit within the new bounds.

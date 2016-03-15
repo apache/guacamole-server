@@ -75,7 +75,7 @@ static void __guac_terminal_display_clear_select(guac_terminal_display* display)
     guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
             0x00, 0x00, 0x00, 0x00);
 
-    guac_protocol_send_sync(socket, display->client->last_sent_timestamp);
+    guac_client_end_frame(display->client);
     guac_socket_flush(socket);
 
     /* Text is no longer selected */
@@ -845,6 +845,23 @@ void guac_terminal_display_flush(guac_terminal_display* display) {
 
 }
 
+void guac_terminal_display_dup(guac_terminal_display* display, guac_user* user,
+        guac_socket* socket) {
+
+    /* Create default surface */
+    guac_common_surface_dup(display->display_surface, user, socket);
+
+    /* Select layer is a child of the display layer */
+    guac_protocol_send_move(socket, display->select_layer,
+            display->display_layer, 0, 0, 0);
+
+    /* Send select layer size */
+    guac_protocol_send_size(socket, display->select_layer,
+            display->char_width  * display->width,
+            display->char_height * display->height);
+
+}
+
 void guac_terminal_display_commit_select(guac_terminal_display* display) {
     display->selection_committed = true;
 }
@@ -935,7 +952,7 @@ void guac_terminal_display_select(guac_terminal_display* display,
     guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
             0x00, 0x80, 0xFF, 0x60);
 
-    guac_protocol_send_sync(socket, display->client->last_sent_timestamp);
+    guac_client_end_frame(display->client);
     guac_socket_flush(socket);
 
 }
