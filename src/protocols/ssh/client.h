@@ -29,15 +29,8 @@
  * Handler which is invoked when the SSH client needs to be disconnected (if
  * connected) and freed. This can happen if initialization fails, or all users
  * have left the connection.
- *
- * @param client
- *     The client associated with the SSH client to be freed.
- *
- * @return
- *     Zero on success, non-zero if an error occurs preventing the client from
- *     being entirely freed.
  */
-int guac_ssh_client_free_handler(guac_client* client);
+guac_client_free_handler guac_ssh_client_free_handler;
 
 #endif
 

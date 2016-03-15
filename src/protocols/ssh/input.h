@@ -30,17 +30,17 @@
 /**
  * Handler for Guacamole user mouse events.
  */
-int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask);
+guac_user_mouse_handler guac_ssh_user_mouse_handler;
 
 /**
  * Handler for Guacamole user key events.
  */
-int guac_ssh_user_key_handler(guac_user* user, int keysym, int pressed);
+guac_user_key_handler guac_ssh_user_key_handler;
 
 /**
  * Handler for Guacamole user size events.
  */
-int guac_ssh_user_size_handler(guac_user* user, int width, int height);
+guac_user_size_handler guac_ssh_user_size_handler;
 
 #endif
 

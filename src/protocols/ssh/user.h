@@ -30,7 +30,7 @@
 /**
  * Handler for joining users.
  */
-int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv);
+guac_user_join_handler guac_ssh_user_join_handler;
 
 #endif
 

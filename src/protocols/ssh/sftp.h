@@ -34,27 +34,8 @@
  * Handles an incoming stream from a Guacamole "file" instruction, saving the
  * contents of that stream to the file having the given name within the
  * upload directory set by guac_sftp_set_upload_path().
- *
- * @param user
- *     The user receiving the uploaded file.
- *
- * @param stream
- *     The stream through which the uploaded file data will be received.
- *
- * @param mimetype
- *     The mimetype of the data being received.
- *
- * @param filename
- *     The filename of the file to write to. This filename will always be taken
- *     relative to the upload path set by
- *     guac_common_ssh_sftp_set_upload_path().
- *
- * @return
- *     Zero if the incoming stream has been handled successfully, non-zero on
- *     failure.
  */
-int guac_sftp_file_handler(guac_user* user, guac_stream* stream,
-        char* mimetype, char* filename);
+guac_user_file_handler guac_sftp_file_handler;
 
 /**
  * Initiates an SFTP file download to the user via the Guacamole "file"

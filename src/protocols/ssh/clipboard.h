@@ -29,21 +29,19 @@
 #include <guacamole/stream.h>
 
 /**
- * Handler for inbound clipboard data.
+ * Handler for inbound clipboard streams.
  */
-int guac_ssh_clipboard_handler(guac_user* user, guac_stream* stream,
-        char* mimetype);
+guac_user_clipboard_handler guac_ssh_clipboard_handler;
 
 /**
- * Handler for stream data related to clipboard.
+ * Handler for data received along clipboard streams.
  */
-int guac_ssh_clipboard_blob_handler(guac_user* user, guac_stream* stream,
-        void* data, int length);
+guac_user_blob_handler guac_ssh_clipboard_blob_handler;
 
 /**
  * Handler for end-of-stream related to clipboard.
  */
-int guac_ssh_clipboard_end_handler(guac_user* user, guac_stream* stream);
+guac_user_end_handler guac_ssh_clipboard_end_handler;
 
 #endif
 
