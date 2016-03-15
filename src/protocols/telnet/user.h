@@ -20,45 +20,17 @@
  * THE SOFTWARE.
  */
 
-#include "config.h"
-#include "clipboard.h"
-#include "telnet.h"
-#include "terminal.h"
+#ifndef GUAC_TELNET_USER_H
+#define GUAC_TELNET_USER_H
 
-#include <guacamole/client.h>
-#include <guacamole/stream.h>
+#include "config.h"
+
 #include <guacamole/user.h>
 
-int guac_telnet_clipboard_handler(guac_user* user, guac_stream* stream,
-        char* mimetype) {
+/**
+ * Handler for joining users.
+ */
+guac_user_join_handler guac_telnet_user_join_handler;
 
-    /* Clear clipboard and prepare for new data */
-    guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_terminal_clipboard_reset(telnet_client->term, mimetype);
-
-    /* Set handlers for clipboard stream */
-    stream->blob_handler = guac_telnet_clipboard_blob_handler;
-    stream->end_handler = guac_telnet_clipboard_end_handler;
-
-    return 0;
-}
-
-int guac_telnet_clipboard_blob_handler(guac_user* user, guac_stream* stream,
-        void* data, int length) {
-
-    /* Append new data */
-    guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_terminal_clipboard_append(telnet_client->term, data, length);
-
-    return 0;
-}
-
-int guac_telnet_clipboard_end_handler(guac_user* user, guac_stream* stream) {
-
-    /* Nothing to do - clipboard is implemented within client */
-
-    return 0;
-}
+#endif
 

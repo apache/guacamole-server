@@ -58,7 +58,7 @@ SUBDIRS += src/protocols/ssh
 endif
 
 if ENABLE_TELNET
-#SUBDIRS += src/protocols/telnet
+SUBDIRS += src/protocols/telnet
 endif
 
 if ENABLE_VNC

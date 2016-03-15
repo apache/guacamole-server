@@ -20,43 +20,30 @@
  * THE SOFTWARE.
  */
 
-#ifndef GUAC_TELNET__GUAC_HANDLERS_H
-#define GUAC_TELNET__GUAC_HANDLERS_H
+#ifndef GUAC_TELNET_INPUT_H
+#define GUAC_TELNET_INPUT_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
-
-/**
- * Generic handler for sending outbound messages. Required by libguac and
- * called periodically by guacd when the client is ready for more graphical
- * updates.
- */
-int guac_telnet_client_handle_messages(guac_client* client);
+#include <guacamole/user.h>
 
 /**
  * Handler for key events. Required by libguac and called whenever key events
  * are received.
  */
-int guac_telnet_client_key_handler(guac_client* client, int keysym, int pressed);
+guac_user_key_handler guac_telnet_user_key_handler;
 
 /**
  * Handler for mouse events. Required by libguac and called whenever mouse
  * events are received.
  */
-int guac_telnet_client_mouse_handler(guac_client* client, int x, int y, int mask);
+guac_user_mouse_handler guac_telnet_user_mouse_handler;
 
 /**
  * Handler for size events. Required by libguac and called whenever the remote
  * display (window) is resized.
  */
-int guac_telnet_client_size_handler(guac_client* client, int width, int height);
-
-/**
- * Free handler. Required by libguac and called when the guac_client is
- * disconnected and must be cleaned up.
- */
-int guac_telnet_client_free_handler(guac_client* client);
+guac_user_size_handler guac_telnet_user_size_handler;
 
 #endif
 

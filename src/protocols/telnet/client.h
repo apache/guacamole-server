@@ -32,91 +32,11 @@
 
 #include <libtelnet.h>
 
-#define GUAC_TELNET_DEFAULT_USERNAME_REGEX "[Ll]ogin:"
-#define GUAC_TELNET_DEFAULT_PASSWORD_REGEX "[Pp]assword:"
-
 /**
- * Telnet-specific client data.
+ * Free handler. Required by libguac and called when the guac_client is
+ * disconnected and must be cleaned up.
  */
-typedef struct guac_telnet_client_data {
-
-    /**
-     * The hostname of the telnet server to connect to.
-     */
-    char hostname[1024];
-
-    /**
-     * The port of the telnet server to connect to.
-     */
-    char port[64];
-
-    /**
-     * The name of the user to login as.
-     */
-    char username[1024];
-
-    /**
-     * The regular expression to use when searching for the username
-     * prompt. This will be NULL unless the telnet client is currently
-     * searching for the username prompt.
-     */
-    regex_t* username_regex;
-
-    /**
-     * The password to give when authenticating.
-     */
-    char password[1024];
-
-    /**
-     * The regular expression to use when searching for the password
-     * prompt. This will be NULL unless the telnet client is currently
-     * searching for the password prompt.
-     */
-    regex_t* password_regex;
-
-    /**
-     * The name of the font to use for display rendering.
-     */
-    char font_name[1024];
-
-    /**
-     * The size of the font to use, in points.
-     */
-    int font_size;
-
-    /**
-     * The telnet client thread.
-     */
-    pthread_t client_thread;
-
-    /**
-     * The file descriptor of the socket connected to the telnet server,
-     * or -1 if no connection has been established.
-     */
-    int socket_fd;
-
-    /**
-     * Telnet connection, used by the telnet client thread.
-     */
-    telnet_t* telnet;
-
-    /**
-     * Whether window size should be sent when the window is resized.
-     */
-    int naws_enabled;
-
-    /**
-     * Whether all user input should be automatically echoed to the
-     * terminal.
-     */
-    int echo_enabled;
-
-    /**
-     * The terminal which will render all output from the telnet client.
-     */
-    guac_terminal* term;
-   
-} guac_telnet_client_data;
+guac_client_free_handler guac_telnet_client_free_handler;
 
 #endif
 

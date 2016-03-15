@@ -28,14 +28,18 @@ lib_LTLIBRARIES = libguac-client-telnet.la
 libguac_client_telnet_la_SOURCES = \
     client.c                       \
     clipboard.c                    \
-    guac_handlers.c                \
-    telnet_client.c
+    input.c                        \
+    settings.c                     \
+    telnet.c                       \
+    user.c
 
-noinst_HEADERS =                \
-    client.h                    \
-    clipboard.h                 \
-    guac_handlers.h             \
-    telnet_client.h
+noinst_HEADERS = \
+    client.h     \
+    clipboard.h  \
+    input.h      \
+    settings.h   \
+    telnet.h     \
+    user.h
 
 libguac_client_telnet_la_CFLAGS = \
     -Werror -Wall -Iinclude       \
