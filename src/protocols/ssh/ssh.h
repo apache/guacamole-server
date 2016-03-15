@@ -100,6 +100,14 @@ typedef struct guac_ssh_client {
 
 /**
  * Main SSH client thread, handling transfer of SSH output to STDOUT.
+ *
+ * @param data
+ *     The guac_client to associate with a new SSH session, once the SSH
+ *     connection succeeds.
+ *
+ * @return
+ *     NULL in all cases. The return value of this thread is expected to be
+ *     ignored.
  */
 void* ssh_client_thread(void* data);
 
