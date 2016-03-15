@@ -30,7 +30,7 @@
 
 /**
  * The initial number of bytes to allocate for the image data buffer. If this
- * buffer is not sufficiently larged, it will be dynamically reallocated as it
+ * buffer is not sufficiently large, it will be dynamically reallocated as it
  * grows.
  */
 #define GUACENC_IMAGE_STREAM_INITIAL_LENGTH 4096

@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     int opt;
     while ((opt = getopt(argc, argv, "s:r:")) != -1) {
 
-        /* -d: Dimensions */
+        /* -s: Dimensions (WIDTHxHEIGHT) */
         if (opt == 's') {
             if (guacenc_parse_dimensions(optarg, &width, &height)) {
                 guacenc_log(GUAC_LOG_ERROR, "Invalid dimensions.");
