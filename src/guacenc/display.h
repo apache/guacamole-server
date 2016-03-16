@@ -293,7 +293,7 @@ guacenc_buffer* guacenc_display_get_related_buffer(guacenc_display* display,
  *     when drawing the image.
  *
  * @param layer_index
- *     The index of the layer or bugger that the image should be drawn to.
+ *     The index of the layer or buffer that the image should be drawn to.
  *
  * @param mimetype
  *     The mimetype of the image data that will be received along this stream.

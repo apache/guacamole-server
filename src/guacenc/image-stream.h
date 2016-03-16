@@ -154,7 +154,7 @@ guacenc_decoder* guacenc_get_decoder(const char* mimetype);
  *     when drawing the image.
  *
  * @param index
- *     The index of the layer or bugger that the image should be drawn to.
+ *     The index of the layer or buffer that the image should be drawn to.
  *
  * @param mimetype
  *     The mimetype of the image data that will be received along this stream.
