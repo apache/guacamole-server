@@ -44,7 +44,7 @@ guac_rdp_disp* guac_rdp_disp_alloc() {
 #endif
 
     /* No requests have been made */
-    disp->last_request = 0;
+    disp->last_request = guac_timestamp_current();
     disp->requested_width  = 0;
     disp->requested_height = 0;
     disp->reconnect_needed = 0;
@@ -157,8 +157,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
     guac_timestamp now = guac_timestamp_current();
 
     /* Limit display update frequency */
-    if (disp->last_request != 0
-            && now - disp->last_request <= GUAC_RDP_DISP_UPDATE_INTERVAL)
+    if (now - disp->last_request <= GUAC_RDP_DISP_UPDATE_INTERVAL)
         return;
 
     /* Do NOT send requests unless the size will change */
