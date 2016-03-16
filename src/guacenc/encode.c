@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -84,7 +85,7 @@ static int guacenc_read_instructions(guacenc_display* display,
 }
 
 int guacenc_encode(const char* path, const char* out_path, const char* codec,
-        int width, int height, int bitrate) {
+        int width, int height, int bitrate, bool force) {
 
     /* Open input file */
     int fd = open(path, O_RDONLY);
@@ -103,12 +104,13 @@ int guacenc_encode(const char* path, const char* out_path, const char* codec,
     };
 
     /* Abort if file cannot be locked for reading */
-    if (fcntl(fd, F_SETLK, &file_lock) == -1) {
+    if (!force && fcntl(fd, F_SETLK, &file_lock) == -1) {
 
         /* Warn if lock cannot be acquired */
         if (errno == EACCES || errno == EAGAIN)
             guacenc_log(GUAC_LOG_WARNING, "Refusing to encode in-progress "
-                    "recording \"%s\".", path);
+                    "recording \"%s\" (specify the -f option to override "
+                    "this behavior).", path);
 
         /* Log an error if locking fails in an unexpected way */
         else

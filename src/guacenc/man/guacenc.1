@@ -7,6 +7,7 @@ guacenc \- Guacamole video encoder
 .B guacenc
 [\fB-s\fR \fIWIDTH\fRx\fIHEIGHT\fR]
 [\fB-r\fR \fIBITRATE\fR]
+[\fB-f\fR]
 [\fIFILE\fR]...
 .
 .SH DESCRIPTION
@@ -23,7 +24,18 @@ Each \fIFILE\fR specified will be encoded as a raw MPEG-4 video stream to a new
 file named \fIFILE\fR.m4v, encoded according to the other options specified. By
 default, the output video will be \fI640\fRx\fI480\fR pixels, and will be saved
 with a bitrate of \fI2000000\fR bits per second (2 Mbps). These defaults can be
-overridden with the \fB-s\fR and \fB-r\fR options respectively.
+overridden with the \fB-s\fR and \fB-r\fR options respectively. Existing files
+will not be overwritten; the encoding process for any input file will be
+aborted if it would result in overwriting an existing file.
+.P
+Guacamole acquires a write lock on recordings as they are being written. By
+default,
+.B guacenc
+will check whether the each input file is locked and will refuse to read and
+encode an input file if it appears to be an in-progress recording. This
+behavior can be overridden by specifying the \fB-f\fR option. Encoding an
+in-progress recording will still result in a valid video; the video will simply
+cover the user's session only up to the current point in time.
 .
 .SH OPTIONS
 .TP
@@ -39,6 +51,12 @@ will use for the saved video. This is specified in bits per second. By default,
 this will be \fI2000000\fR (2 Mbps). Higher values will result in larger but
 higher-quality video files. Lower values will result in smaller but
 lower-quality video files.
+.TP
+\fB-f\fR
+Overrides the default behavior of
+.B guacenc
+such that input files will be encoded even if they appear to be recordings of
+in-progress Guacamole sessions.
 .
 .SH AUTHOR
 Written by Michael Jumper <mike.jumper@guac-dev.org>

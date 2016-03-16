@@ -25,8 +25,13 @@
 
 #include "config.h"
 
+#include <stdbool.h>
+
 /**
- * Encodes the given Guacamole protocol dump as video.
+ * Encodes the given Guacamole protocol dump as video. A read lock will be
+ * acquired on the input file to ensure that in-progress recordings are not
+ * encoded. This behavior can be overridden by specifying true for the force
+ * parameter.
  *
  * @param path
  *     The path to the file containing the raw Guacamole protocol dump.
@@ -48,12 +53,16 @@
  *     The desired overall bitrate of the resulting encoded video, in bits per
  *     second.
  *
+ * @param force
+ *     Perform the encoding, even if the input file appears to be an
+ *     in-progress recording (has an associated lock).
+ *
  * @return
  *     Zero on success, non-zero if an error prevented successful encoding of
  *     the video.
  */
 int guacenc_encode(const char* path, const char* out_path, const char* codec,
-        int width, int height, int bitrate);
+        int width, int height, int bitrate, bool force);
 
 #endif
 
