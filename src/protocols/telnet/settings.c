@@ -130,7 +130,7 @@ enum TELNET_ARGS_IDX {
     IDX_RECORDING_PATH,
 
     /**
-     * The name that should be given to screen recording which are written in
+     * The name that should be given to screen recordings which are written in
      * the given path.
      */
     IDX_RECORDING_NAME,
