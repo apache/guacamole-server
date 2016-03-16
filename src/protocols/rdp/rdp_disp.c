@@ -209,5 +209,6 @@ int guac_rdp_disp_reconnect_needed(guac_rdp_disp* disp) {
 
 void guac_rdp_disp_reconnect_complete(guac_rdp_disp* disp) {
     disp->reconnect_needed = 0;
+    disp->last_request = guac_timestamp_current();
 }
 
