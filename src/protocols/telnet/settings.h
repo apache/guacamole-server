@@ -54,6 +54,11 @@
 #define GUAC_TELNET_DEFAULT_TYPESCRIPT_NAME "typescript" 
 
 /**
+ * The filename to use for the screen recording, if not specified.
+ */
+#define GUAC_TELNET_DEFAULT_RECORDING_NAME "recording"
+
+/**
  * The regular expression to use when searching for the username/login prompt
  * if no other regular expression is specified.
  */
@@ -156,6 +161,23 @@ typedef struct guac_telnet_settings {
      * not already exist.
      */
     bool create_typescript_path;
+
+    /**
+     * The path in which the screen recording should be saved, if enabled. If
+     * no screen recording should be saved, this will be NULL.
+     */
+    char* recording_path;
+
+    /**
+     * The filename to use for the screen recording, if enabled.
+     */
+    char* recording_name;
+
+    /**
+     * Whether the screen recording path should be automatically created if it
+     * does not already exist.
+     */
+    bool create_recording_path;
 
 } guac_telnet_settings;
 

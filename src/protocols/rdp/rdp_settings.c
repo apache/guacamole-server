@@ -89,6 +89,10 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "sftp-directory",
 #endif
 
+    "recording-path",
+    "recording-name",
+    "create-recording-path",
+
     NULL
 };
 
@@ -351,6 +355,10 @@ enum RDP_ARGS_IDX {
     IDX_SFTP_DIRECTORY,
 
 #endif
+
+    IDX_RECORDING_PATH,
+    IDX_RECORDING_NAME,
+    IDX_CREATE_RECORDING_PATH,
 
     RDP_ARGS_COUNT
 };
@@ -673,6 +681,21 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 IDX_SFTP_DIRECTORY, NULL);
 #endif
 
+    /* Read recording path */
+    settings->recording_path =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_RECORDING_PATH, NULL);
+
+    /* Read recording name */
+    settings->recording_name =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_RECORDING_NAME, GUAC_RDP_DEFAULT_RECORDING_NAME);
+
+    /* Parse path creation flag */
+    settings->create_recording_path =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_CREATE_RECORDING_PATH, 0);
+
     /* Success */
     return settings;
 
@@ -688,6 +711,8 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     free(settings->initial_program);
     free(settings->password);
     free(settings->preconnection_blob);
+    free(settings->recording_name);
+    free(settings->recording_path);
     free(settings->remote_app);
     free(settings->remote_app_args);
     free(settings->remote_app_dir);

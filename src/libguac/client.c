@@ -462,6 +462,9 @@ void guac_client_free(guac_client* client) {
 
     }
 
+    /* Free socket */
+    guac_socket_free(client->socket);
+
     /* Free layer pools */
     guac_pool_free(client->__buffer_pool);
     guac_pool_free(client->__layer_pool);

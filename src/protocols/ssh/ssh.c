@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include "guac_recording.h"
 #include "guac_sftp.h"
 #include "guac_ssh.h"
 #include "settings.h"
@@ -182,6 +183,14 @@ void* ssh_client_thread(void* data) {
     /* Init SSH base libraries */
     if (guac_common_ssh_init(client))
         return NULL;
+
+    /* Set up screen recording, if requested */
+    if (settings->recording_path != NULL) {
+        guac_common_recording_create(client,
+                settings->recording_path,
+                settings->recording_name,
+                settings->create_recording_path);
+    }
 
     /* Create terminal */
     ssh_client->term = guac_terminal_create(client,

@@ -25,6 +25,7 @@
 #include "client.h"
 #include "guac_cursor.h"
 #include "guac_display.h"
+#include "guac_recording.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"
 #include "rdp_cliprdr.h"
@@ -698,6 +699,14 @@ void* guac_rdp_client_thread(void* data) {
 
     /* Init random number generator */
     srandom(time(NULL));
+
+    /* Set up screen recording, if requested */
+    if (settings->recording_path != NULL) {
+        guac_common_recording_create(client,
+                settings->recording_path,
+                settings->recording_name,
+                settings->create_recording_path);
+    }
 
     /* Create display */
     rdp_client->display = guac_common_display_alloc(client,

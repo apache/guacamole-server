@@ -29,6 +29,7 @@ DIST_SUBDIRS =           \
     src/common-ssh       \
     src/terminal         \
     src/guacd            \
+    src/guacenc          \
     src/protocols/rdp    \
     src/protocols/ssh    \
     src/protocols/telnet \
@@ -38,7 +39,6 @@ DIST_SUBDIRS =           \
 SUBDIRS =       \
     src/libguac \
     src/common  \
-    src/guacd   \
     tests
 
 if ENABLE_COMMON_SSH
@@ -63,6 +63,14 @@ endif
 
 if ENABLE_VNC
 SUBDIRS += src/protocols/vnc
+endif
+
+if ENABLE_GUACD
+SUBDIRS += src/guacd
+endif
+
+if ENABLE_GUACENC
+SUBDIRS += src/guacenc
 endif
 
 EXTRA_DIST =     \

@@ -192,6 +192,38 @@ guac_socket* guac_socket_open(int fd);
 guac_socket* guac_socket_nest(guac_socket* parent, int index);
 
 /**
+ * Allocates and initializes a new guac_socket which delegates all socket
+ * operations to the given primary socket, while simultaneously duplicating all
+ * written data to the secondary socket. Freeing the returned guac_socket will
+ * free both primary and secondary sockets.
+ *
+ * Return values (error codes) will come only from the primary socket. Locks
+ * (like those used by guac_socket_instruction_begin() and
+ * guac_socket_instruction_end()) will affect only the primary socket.
+ *
+ * If an error occurs while allocating the guac_socket object, NULL is returned,
+ * and guac_error is set appropriately.
+ *
+ * @param primary
+ *     The primary guac_socket to which all socket operations should be
+ *     delegated. The error codes returned by socket operations, if any, will
+ *     always come from this socket. This socket will also be the only socket
+ *     locked when instructions begin (or unlocked when instructions end).
+ *
+ * @param secondary
+ *     The secondary guac_socket to which all data written to the primary
+ *     guac_socket should be copied. If an error prevents the write from
+ *     succeeding, that error will be ignored. Only errors from the primary
+ *     guac_socket will be acknowledged.
+ *
+ * @return
+ *     A newly allocated guac_socket object associated with the given primary
+ *     and secondary sockets, or NULL if an error occurs while allocating the
+ *     guac_socket object.
+ */
+guac_socket* guac_socket_tee(guac_socket* primary, guac_socket* secondary);
+
+/**
  * Writes the given unsigned int to the given guac_socket object. The data
  * written may be buffered until the buffer is flushed automatically or
  * manually.

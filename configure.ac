@@ -147,6 +147,63 @@ AC_ARG_WITH(guacd_conf,
 AC_DEFINE_UNQUOTED([GUACD_CONF_FILE], ["$guacd_conf"], [The full path to the guacd config file])
 
 #
+# libavcodec
+#
+
+have_libavcodec=disabled
+AC_ARG_WITH([libavcodec],
+            [AS_HELP_STRING([--with-libavcodec],
+                            [use libavcodec when encoding video @<:@default=check@:>@])],
+            [],
+            [with_libavcodec=check])
+
+if test "x$with_libavcodec" != "xno"
+then
+    have_libavcodec=yes
+    PKG_CHECK_MODULES([AVCODEC], [libavcodec],, [have_libavcodec=no]);
+fi
+
+AM_CONDITIONAL([ENABLE_AVCODEC], [test "x${have_libavcodec}" = "xyes"])
+
+#
+# libavutil
+#
+
+have_libavutil=disabled
+AC_ARG_WITH([libavutil],
+            [AS_HELP_STRING([--with-libavutil],
+                            [use libavutil when encoding video @<:@default=check@:>@])],
+            [],
+            [with_libavutil=check])
+
+if test "x$with_libavutil" != "xno"
+then
+    have_libavutil=yes
+    PKG_CHECK_MODULES([AVUTIL], [libavutil],, [have_libavutil=no]);
+fi
+
+AM_CONDITIONAL([ENABLE_AVUTIL], [test "x${have_libavutil}" = "xyes"])
+
+#
+# libswscale
+#
+
+have_libswscale=disabled
+AC_ARG_WITH([libswscale],
+            [AS_HELP_STRING([--with-libswscale],
+                            [use libswscale when encoding video @<:@default=check@:>@])],
+            [],
+            [with_libswscale=check])
+
+if test "x$with_libswscale" != "xno"
+then
+    have_libswscale=yes
+    PKG_CHECK_MODULES([SWSCALE], [libswscale],, [have_libswscale=no]);
+fi
+
+AM_CONDITIONAL([ENABLE_SWSCALE], [test "x${have_libswscale}" = "xyes"])
+
+#
 # libssl
 #
 
@@ -966,6 +1023,36 @@ fi
 AM_CONDITIONAL([ENABLE_WEBP], [test "x${have_webp}" = "xyes"])
 AC_SUBST(WEBP_LIBS)
 
+#
+# guacd
+#
+
+AC_ARG_ENABLE([guacd],
+              [AS_HELP_STRING([--disable-guacd],
+                              [do not build the Guacamole proxy daemon])],
+              [],
+              [enable_guacd=yes])
+
+AM_CONDITIONAL([ENABLE_GUACD], [test "x${enable_guacd}"  = "xyes"])
+
+#
+# guacenc
+#
+
+AC_ARG_ENABLE([guacenc],
+              [AS_HELP_STRING([--disable-guacenc],
+                              [do not build the Guacamole video encoding tool])],
+              [],
+              [enable_guacenc=yes])
+
+AM_CONDITIONAL([ENABLE_GUACENC], [test "x${enable_guacenc}"  = "xyes" \
+                                    -a "x${have_libavcodec}" = "xyes" \
+                                    -a "x${have_libavutil}"  = "xyes" \
+                                    -a "x${have_libswscale}" = "xyes"])
+
+#
+# Output Makefiles
+#
 
 AC_CONFIG_FILES([Makefile
                  tests/Makefile
@@ -974,18 +1061,38 @@ AC_CONFIG_FILES([Makefile
                  src/terminal/Makefile
                  src/libguac/Makefile
                  src/guacd/Makefile
+                 src/guacenc/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
                  src/protocols/vnc/Makefile])
 AC_OUTPUT
 
+#
+# Protocol build status
+#
+
 AM_COND_IF([ENABLE_RDP],    [build_rdp=yes],    [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],    [build_ssh=yes],    [build_ssh=no])
 AM_COND_IF([ENABLE_TELNET], [build_telnet=yes], [build_telnet=no])
 AM_COND_IF([ENABLE_VNC],    [build_vnc=yes],    [build_vnc=no])
 
+#
+# Service / tool build status
+#
+
+AM_COND_IF([ENABLE_GUACD],   [build_guacd=yes],   [build_guacd=no])
+AM_COND_IF([ENABLE_GUACENC], [build_guacenc=yes], [build_guacenc=no])
+
+#
+# Init scripts
+#
+
 AM_COND_IF([ENABLE_INIT], [build_init="${init_dir}"], [build_init=no])
+
+#
+# Display summary
+#
 
 echo "
 ------------------------------------------------
@@ -996,8 +1103,11 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
      freerdp ............. ${have_freerdp}
      pango ............... ${have_pango}
+     libavcodec .......... ${have_libavcodec}
+     libavutil ........... ${have_libavutil}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
+     libswscale .......... ${have_libswscale}
      libtelnet ........... ${have_libtelnet}
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
@@ -1010,6 +1120,11 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       SSH ....... ${build_ssh}
       Telnet .... ${build_telnet}
       VNC ....... ${build_vnc}
+
+   Services / tools:
+
+      guacd ...... ${build_guacd}
+      guacenc .... ${build_guacenc}
 
    Init scripts: ${build_init}
 

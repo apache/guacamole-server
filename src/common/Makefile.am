@@ -37,6 +37,7 @@ noinst_HEADERS =          \
     guac_json.h           \
     guac_list.h           \
     guac_pointer_cursor.h \
+    guac_recording.h      \
     guac_rect.h           \
     guac_string.h         \
     guac_surface.h
@@ -53,6 +54,7 @@ libguac_common_la_SOURCES = \
     guac_json.c             \
     guac_list.c             \
     guac_pointer_cursor.c   \
+    guac_recording.c        \
     guac_rect.c             \
     guac_string.c           \
     guac_surface.c

@@ -50,6 +50,9 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "typescript-path",
     "typescript-name",
     "create-typescript-path",
+    "recording-path",
+    "recording-name",
+    "create-recording-path",
     NULL
 };
 
@@ -139,6 +142,24 @@ enum SSH_ARGS_IDX {
      * if it does not yet exist.
      */
     IDX_CREATE_TYPESCRIPT_PATH,
+
+    /**
+     * The full absolute path to the directory in which screen recordings
+     * should be written.
+     */
+    IDX_RECORDING_PATH,
+
+    /**
+     * The name that should be given to screen recording which are written in
+     * the given path.
+     */
+    IDX_RECORDING_NAME,
+
+    /**
+     * Whether the specified screen recording path should automatically be
+     * created if it does not yet exist.
+     */
+    IDX_CREATE_RECORDING_PATH,
 
     SSH_ARGS_COUNT
 };
@@ -234,6 +255,21 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_CREATE_TYPESCRIPT_PATH, false);
 
+    /* Read recording path */
+    settings->recording_path =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_RECORDING_PATH, NULL);
+
+    /* Read recording name */
+    settings->recording_name =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_RECORDING_NAME, GUAC_SSH_DEFAULT_RECORDING_NAME);
+
+    /* Parse path creation flag */
+    settings->create_recording_path =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_CREATE_RECORDING_PATH, false);
+
     /* Parsing was successful */
     return settings;
 
@@ -261,6 +297,10 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
     /* Free typescript settings */
     free(settings->typescript_name);
     free(settings->typescript_path);
+
+    /* Free screen recording settings */
+    free(settings->recording_name);
+    free(settings->recording_path);
 
     /* Free overall structure */
     free(settings);
