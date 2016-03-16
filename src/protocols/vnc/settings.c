@@ -232,8 +232,22 @@ enum VNC_ARGS_IDX {
     IDX_SFTP_DIRECTORY,
 #endif
 
+    /**
+     * The full absolute path to the directory in which screen recordings
+     * should be written.
+     */
     IDX_RECORDING_PATH,
+
+    /**
+     * The name that should be given to screen recording which are written in
+     * the given path.
+     */
     IDX_RECORDING_NAME,
+
+    /**
+     * Whether the specified screen recording path should automatically be
+     * created if it does not yet exist.
+     */
     IDX_CREATE_RECORDING_PATH,
 
     VNC_ARGS_COUNT
