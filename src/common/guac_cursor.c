@@ -29,6 +29,7 @@
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
+#include <guacamole/layer.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
@@ -70,13 +71,20 @@ guac_common_cursor* guac_common_cursor_alloc(guac_client* client) {
 
 void guac_common_cursor_free(guac_common_cursor* cursor) {
 
+    guac_client* client = cursor->client;
+    guac_layer* layer = cursor->layer;
+    cairo_surface_t* surface = cursor->surface;
+
     /* Free image buffer and surface */
     free(cursor->image_buffer);
-    if (cursor->surface != NULL)
-        cairo_surface_destroy(cursor->surface);
+    if (surface != NULL)
+        cairo_surface_destroy(surface);
+
+    /* Destroy layer within remotely-connected client */
+    guac_protocol_send_dispose(client->socket, layer);
 
     /* Return layer to pool */
-    guac_client_free_layer(cursor->client, cursor->layer);
+    guac_client_free_layer(client, layer);
 
     free(cursor);
 
