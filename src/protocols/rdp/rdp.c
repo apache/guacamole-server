@@ -201,16 +201,18 @@ static void guac_rdp_channel_connected(rdpContext* context,
 BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
     rdpChannels* channels = context->channels;
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+
     rdpBitmap* bitmap;
     rdpGlyph* glyph;
     rdpPointer* pointer;
     rdpPrimaryUpdate* primary;
     CLRCONV* clrconv;
 
-    guac_rdp_client* rdp_client =
-        (guac_rdp_client*) client->data;
 
 #ifdef HAVE_FREERDP_REGISTER_ADDIN_PROVIDER
     /* Init FreeRDP add-in provider */
@@ -229,8 +231,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load drdynvc plugin.");
 
-    /* Init display update plugin (if available) */
-    guac_rdp_disp_load_plugin(instance->context);
+    /* Init display update plugin (if available and required) */
+    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
+        guac_rdp_disp_load_plugin(instance->context);
 
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
@@ -239,7 +242,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
                 "Failed to load cliprdr plugin. Clipboard will not work.");
 
     /* If audio enabled, choose an encoder */
-    if (rdp_client->settings->audio_enabled) {
+    if (settings->audio_enabled) {
 
         rdp_client->audio = guac_audio_stream_alloc(client, NULL,
                 GUAC_RDP_AUDIO_RATE,
@@ -254,15 +257,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     } /* end if audio enabled */
 
     /* Load filesystem if drive enabled */
-    if (rdp_client->settings->drive_enabled)
+    if (settings->drive_enabled)
         rdp_client->filesystem =
-            guac_rdp_fs_alloc(client, rdp_client->settings->drive_path,
-                    rdp_client->settings->create_drive_path);
+            guac_rdp_fs_alloc(client, settings->drive_path,
+                    settings->create_drive_path);
 
     /* If RDPSND/RDPDR required, load them */
-    if (rdp_client->settings->printing_enabled
-        || rdp_client->settings->drive_enabled
-        || rdp_client->settings->audio_enabled) {
+    if (settings->printing_enabled
+        || settings->drive_enabled
+        || settings->audio_enabled) {
 
         /* Load RDPDR plugin */
         if (freerdp_channels_load_plugin(channels, instance->settings,
@@ -282,15 +285,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     }
 
     /* Load RAIL plugin if RemoteApp in use */
-    if (rdp_client->settings->remote_app != NULL) {
+    if (settings->remote_app != NULL) {
 
 #ifdef LEGACY_FREERDP
         RDP_PLUGIN_DATA* plugin_data = malloc(sizeof(RDP_PLUGIN_DATA) * 2);
 
         plugin_data[0].size = sizeof(RDP_PLUGIN_DATA);
-        plugin_data[0].data[0] = rdp_client->settings->remote_app;
-        plugin_data[0].data[1] = rdp_client->settings->remote_app_dir;
-        plugin_data[0].data[2] = rdp_client->settings->remote_app_args; 
+        plugin_data[0].data[0] = settings->remote_app;
+        plugin_data[0].data[1] = settings->remote_app_dir;
+        plugin_data[0].data[2] = settings->remote_app_args;
         plugin_data[0].data[3] = NULL;
 
         plugin_data[1].size = 0;
@@ -311,9 +314,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     }
 
     /* Load SVC plugin instances for all static channels */
-    if (rdp_client->settings->svc_names != NULL) {
+    if (settings->svc_names != NULL) {
 
-        char** current = rdp_client->settings->svc_names;
+        char** current = settings->svc_names;
         do {
 
             guac_rdp_svc* svc = guac_rdp_alloc_svc(client, *current);
