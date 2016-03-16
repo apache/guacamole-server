@@ -25,15 +25,12 @@
 #include "client.h"
 #include "input.h"
 #include "rdp.h"
+#include "rdp_disp.h"
 #include "rdp_keymap.h"
 
 #include <freerdp/freerdp.h>
 #include <freerdp/input.h>
 #include <guacamole/client.h>
-
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
-#include "rdp_disp.h"
-#endif
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -41,11 +38,6 @@
 int guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    freerdp* rdp_inst = rdp_client->rdp_inst;
-
-    /* Skip if not yet connected */
-    if (rdp_inst == NULL)
-        return 0;
 
     /* If keysym can be in lookup table */
     if (GUAC_RDP_KEYSYM_STORABLE(keysym)) {
@@ -74,6 +66,13 @@ int guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
                 pressed_flags = KBD_FLAGS_DOWN;
             else
                 pressed_flags = KBD_FLAGS_RELEASE;
+
+            /* Skip if not yet connected */
+            freerdp* rdp_inst = rdp_client->rdp_inst;
+            if (rdp_inst == NULL) {
+                pthread_mutex_unlock(&(rdp_client->rdp_lock));
+                return 0;
+            }
 
             /* Send actual key */
             rdp_inst->input->KeyboardEvent(rdp_inst->input, keysym_desc->flags | pressed_flags,
@@ -118,6 +117,13 @@ int guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
 
         pthread_mutex_lock(&(rdp_client->rdp_lock));
 
+        /* Skip if not yet connected */
+        freerdp* rdp_inst = rdp_client->rdp_inst;
+        if (rdp_inst == NULL) {
+            pthread_mutex_unlock(&(rdp_client->rdp_lock));
+            return 0;
+        }
+
         /* Send Unicode event */
         rdp_inst->input->UnicodeKeyboardEvent(
                 rdp_inst->input,
@@ -156,16 +162,18 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    freerdp* rdp_inst = rdp_client->rdp_inst;
+
+    pthread_mutex_lock(&(rdp_client->rdp_lock));
 
     /* Store current mouse location */
     guac_common_cursor_move(rdp_client->display->cursor, user, x, y);
 
     /* Skip if not yet connected */
-    if (rdp_inst == NULL)
+    freerdp* rdp_inst = rdp_client->rdp_inst;
+    if (rdp_inst == NULL) {
+        pthread_mutex_unlock(&(rdp_client->rdp_lock));
         return 0;
-
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
+    }
 
     /* If button mask unchanged, just send move event */
     if (mask == rdp_client->mouse_button_mask)
@@ -251,28 +259,19 @@ int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed) {
 
 int guac_rdp_user_size_handler(guac_user* user, int width, int height) {
 
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
+    guac_rdp_settings* settings = rdp_client->settings;
     freerdp* rdp_inst = rdp_client->rdp_inst;
 
-    /* Skip if not yet connected */
-    if (rdp_inst == NULL)
-        return 0;
-
     /* Convert client pixels to remote pixels */
-    width  = width  * rdp_client->settings->resolution
-                    / user->info.optimal_resolution;
-
-    height = height * rdp_client->settings->resolution
-                    / user->info.optimal_resolution;
+    width  = width  * settings->resolution / user->info.optimal_resolution;
+    height = height * settings->resolution / user->info.optimal_resolution;
 
     /* Send display update */
     pthread_mutex_lock(&(rdp_client->rdp_lock));
-    guac_rdp_disp_set_size(rdp_client->disp, rdp_inst->context, width, height);
+    guac_rdp_disp_set_size(rdp_client->disp, settings, rdp_inst, width, height);
     pthread_mutex_unlock(&(rdp_client->rdp_lock));
-#endif
 
     return 0;
 

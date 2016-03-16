@@ -23,6 +23,8 @@
 #ifndef GUAC_RDP_DISP_H
 #define GUAC_RDP_DISP_H
 
+#include "rdp_settings.h"
+
 #include <freerdp/client/disp.h>
 #include <freerdp/freerdp.h>
 
@@ -67,6 +69,12 @@ typedef struct guac_rdp_disp {
      * The last requested screen height, in pixels.
      */
     int requested_height;
+
+    /**
+     * Whether the size has changed and the RDP connection must be closed and
+     * reestablished.
+     */
+    int reconnect_needed;
 
 } guac_rdp_disp;
 
@@ -113,30 +121,72 @@ void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, DispClientContext* disp);
  * be automatically altered to comply with the restrictions imposed by the
  * display update channel.
  *
- * @param disp The display update module which should maintain the requested
- *             size, sending the corresponding display update request when
- *             appropriate.
- * @param context The rdpContext associated with the active RDP session.
- * @param width The desired display width, in pixels. Due to the restrictions
- *              of the RDP display update channel, this will be contrained to
- *              the range of 200 through 8192 inclusive, and rounded down to
- *              the nearest even number.
- * @param height The desired display height, in pixels. Due to the restrictions
- *               of the RDP display update channel, this will be contrained to
- *               the range of 200 through 8192 inclusive.
+ * @param disp
+ *     The display update module which should maintain the requested size,
+ *     sending the corresponding display update request when appropriate.
+ *
+ * @param settings
+ *     The RDP client settings associated with the current or pending RDP
+ *     session. These settings will be automatically adjusted to match the new
+ *     screen size.
+ *
+ * @param rdp_inst
+ *     The FreeRDP instance associated with the current or pending RDP session,
+ *     if any. If no RDP session is active, this should be NULL.
+ *
+ * @param width
+ *     The desired display width, in pixels. Due to the restrictions of the RDP
+ *     display update channel, this will be contrained to the range of 200
+ *     through 8192 inclusive, and rounded down to the nearest even number.
+ *
+ * @param height
+ *     The desired display height, in pixels. Due to the restrictions of the
+ *     RDP display update channel, this will be contrained to the range of 200
+ *     through 8192 inclusive.
  */
-void guac_rdp_disp_set_size(guac_rdp_disp* disp, rdpContext* context,
-        int width, int height);
+void guac_rdp_disp_set_size(guac_rdp_disp* disp, guac_rdp_settings* settings,
+        freerdp* rdp_inst, int width, int height);
 
 /**
  * Sends an actual display update request to the RDP server based on previous
  * calls to guac_rdp_disp_set_size(). If an update was recently sent, the
- * update may be delayed until a future call to this function.
+ * update may be delayed until a future call to this function. If the RDP
+ * session has not yet been established, the request will be delayed until the
+ * session exists.
  *
- * @param disp The display update module which should track the update request.
- * @param context The rdpContext associated with the active RDP session.
+ * @param disp
+ *     The display update module which should track the update request.
+ *
+ * @param settings
+ *     The RDP client settings associated with the current or pending RDP
+ *     session. These settings will be automatically adjusted to match the new
+ *     screen size.
+ *
+ * @param rdp_inst
+ *     The FreeRDP instance associated with the current or pending RDP session,
+ *     if any. If no RDP session is active, this should be NULL.
  */
-void guac_rdp_disp_update_size(guac_rdp_disp* disp, rdpContext* context);
+void guac_rdp_disp_update_size(guac_rdp_disp* disp,
+        guac_rdp_settings* settings, freerdp* rdp_inst);
+
+/**
+ * Signals the given display update module that the requested reconnect has
+ * been performed.
+ *
+ * @param disp
+ *     The display update module that should be signaled regarding the state
+ *     of reconnection.
+ */
+void guac_rdp_disp_reconnect_complete(guac_rdp_disp* disp);
+
+/**
+ * Returns whether a full RDP reconnect is required for display update changes
+ * to take effect.
+ *
+ * @return
+ *     Non-zero if a reconnect is needed, zero otherwise.
+ */
+int guac_rdp_disp_reconnect_needed(guac_rdp_disp* disp);
 
 #endif
 

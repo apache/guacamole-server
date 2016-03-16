@@ -29,6 +29,7 @@
 #include "rdp.h"
 #include "rdp_bitmap.h"
 #include "rdp_cliprdr.h"
+#include "rdp_disp.h"
 #include "rdp_gdi.h"
 #include "rdp_glyph.h"
 #include "rdp_keymap.h"
@@ -41,10 +42,6 @@
 #include <guac_sftp.h>
 #include <guac_ssh.h>
 #include <guac_ssh_user.h>
-#endif
-
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
-#include "rdp_disp.h"
 #endif
 
 #include <freerdp/cache/bitmap.h>
@@ -183,8 +180,8 @@ static void guac_rdp_channel_connected(rdpContext* context,
         guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
         /* Init module with current display size */
-        guac_rdp_disp_set_size(rdp_client->disp, context,
-                guac_rdp_get_width(context->instance),
+        guac_rdp_disp_set_size(rdp_client->disp, rdp_client->settings,
+                context->instance, guac_rdp_get_width(context->instance),
                 guac_rdp_get_height(context->instance));
 
         /* Store connected channel */
@@ -223,17 +220,14 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             (pChannelConnectedEventHandler) guac_rdp_channel_connected);
 #endif
 
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /* Load virtual channel management plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
                 "drdynvc", instance->settings))
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load drdynvc plugin.");
 
-    /* Init display update plugin */
-    rdp_client->disp = guac_rdp_disp_alloc();
+    /* Init display update plugin (if available) */
     guac_rdp_disp_load_plugin(instance->context);
-#endif
 
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
@@ -691,9 +685,8 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
 
 }
 
-void* guac_rdp_client_thread(void* data) {
+static int guac_rdp_handle_connection(guac_client* client) {
 
-    guac_client* client = (guac_client*) data;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
@@ -714,6 +707,9 @@ void* guac_rdp_client_thread(void* data) {
             rdp_client->settings->height);
 
     rdp_client->current_surface = rdp_client->display->default_surface;
+
+    rdp_client->requested_clipboard_format = CB_FORMAT_TEXT;
+    rdp_client->available_svc = guac_common_list_alloc();
 
 #ifdef HAVE_FREERDP_CHANNELS_GLOBAL_INIT
     freerdp_channels_global_init();
@@ -750,7 +746,7 @@ void* guac_rdp_client_thread(void* data) {
 
         /* Abort if username is missing */
         if (settings->sftp_username == NULL)
-            return NULL;
+            return 1;
 
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "Connecting via SSH for SFTP filesystem access.");
@@ -769,7 +765,7 @@ void* guac_rdp_client_thread(void* data) {
                         settings->sftp_private_key,
                         settings->sftp_passphrase)) {
                 guac_common_ssh_destroy_user(rdp_client->sftp_user);
-                return NULL;
+                return 1;
             }
 
         }
@@ -794,7 +790,7 @@ void* guac_rdp_client_thread(void* data) {
         if (rdp_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             guac_common_ssh_destroy_user(rdp_client->sftp_user);
-            return NULL;
+            return 1;
         }
 
         /* Load and expose filesystem */
@@ -811,7 +807,7 @@ void* guac_rdp_client_thread(void* data) {
         if (rdp_client->sftp_filesystem == NULL) {
             guac_common_ssh_destroy_session(rdp_client->sftp_session);
             guac_common_ssh_destroy_user(rdp_client->sftp_user);
-            return NULL;
+            return 1;
         }
 
         guac_client_log(client, GUAC_LOG_DEBUG,
@@ -833,7 +829,7 @@ void* guac_rdp_client_thread(void* data) {
     if (!freerdp_connect(rdp_inst)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                 "Error connecting to RDP server");
-        return NULL;
+        return 1;
     }
 
     /* Connection complete */
@@ -842,15 +838,17 @@ void* guac_rdp_client_thread(void* data) {
 
     guac_timestamp last_frame_end = guac_timestamp_current();
 
-    /* Handle messages from RDP server while client is running */
-    while (client->state == GUAC_CLIENT_RUNNING) {
+    /* Signal that reconnect has been completed */
+    guac_rdp_disp_reconnect_complete(rdp_client->disp);
 
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+    /* Handle messages from RDP server while client is running */
+    while (client->state == GUAC_CLIENT_RUNNING
+            && !guac_rdp_disp_reconnect_needed(rdp_client->disp)) {
+
         /* Update remote display size */
         pthread_mutex_lock(&(rdp_client->rdp_lock));
-        guac_rdp_disp_update_size(rdp_client->disp, rdp_inst->context);
+        guac_rdp_disp_update_size(rdp_client->disp, settings, rdp_inst);
         pthread_mutex_unlock(&(rdp_client->rdp_lock));
-#endif
 
         /* Wait for data and construct a reasonable frame */
         int wait_result = rdp_guac_client_wait_for_messages(client,
@@ -873,7 +871,7 @@ void* guac_rdp_client_thread(void* data) {
                     guac_client_log(client, GUAC_LOG_DEBUG,
                             "Error handling RDP file descriptors");
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                    return NULL;
+                    return 1;
                 }
 
                 /* Check channel fds */
@@ -881,7 +879,7 @@ void* guac_rdp_client_thread(void* data) {
                     guac_client_log(client, GUAC_LOG_DEBUG,
                             "Error handling RDP channel file descriptors");
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                    return NULL;
+                    return 1;
                 }
 
                 /* Check for channel events */
@@ -910,7 +908,7 @@ void* guac_rdp_client_thread(void* data) {
                     guac_client_log(client, GUAC_LOG_INFO,
                             "RDP server closed connection");
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                    return NULL;
+                    return 1;
                 }
 
                 pthread_mutex_unlock(&(rdp_client->rdp_lock));
@@ -955,6 +953,62 @@ void* guac_rdp_client_thread(void* data) {
     }
 
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
+
+    pthread_mutex_lock(&(rdp_client->rdp_lock));
+
+    /* Clean up RDP client */
+    freerdp_channels_close(channels, rdp_inst);
+    freerdp_channels_free(channels);
+    freerdp_disconnect(rdp_inst);
+    freerdp_clrconv_free(((rdp_freerdp_context*) rdp_inst->context)->clrconv);
+    cache_free(rdp_inst->context->cache);
+    freerdp_free(rdp_inst);
+
+    /* Clean up filesystem, if allocated */
+    if (rdp_client->filesystem != NULL)
+        guac_rdp_fs_free(rdp_client->filesystem);
+
+#ifdef ENABLE_COMMON_SSH
+    /* Free SFTP filesystem, if loaded */
+    if (rdp_client->sftp_filesystem)
+        guac_common_ssh_destroy_sftp_filesystem(rdp_client->sftp_filesystem);
+
+    /* Free SFTP session */
+    if (rdp_client->sftp_session)
+        guac_common_ssh_destroy_session(rdp_client->sftp_session);
+
+    /* Free SFTP user */
+    if (rdp_client->sftp_user)
+        guac_common_ssh_destroy_user(rdp_client->sftp_user);
+
+    guac_common_ssh_uninit();
+#endif
+
+    /* Free SVC list */
+    guac_common_list_free(rdp_client->available_svc);
+
+    /* Free display */
+    guac_common_display_free(rdp_client->display);
+
+    /* Mark FreeRDP instance as freed */
+    rdp_client->rdp_inst = NULL;
+
+    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+    return 0;
+
+}
+
+void* guac_rdp_client_thread(void* data) {
+
+    guac_client* client = (guac_client*) data;
+
+    while (client->state == GUAC_CLIENT_RUNNING) {
+
+        if (guac_rdp_handle_connection(client))
+            return NULL;
+
+    }
+
     return NULL;
 
 }
