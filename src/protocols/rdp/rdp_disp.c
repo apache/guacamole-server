@@ -38,8 +38,10 @@ guac_rdp_disp* guac_rdp_disp_alloc() {
 
     guac_rdp_disp* disp = malloc(sizeof(guac_rdp_disp));
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /* Not yet connected */
     disp->disp = NULL;
+#endif
 
     /* No requests have been made */
     disp->last_request = 0;
@@ -174,7 +176,9 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
         /* Signal reconnect */
         disp->reconnect_needed = 1;
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
         disp->disp = NULL;
+#endif
         return;
     }
 
