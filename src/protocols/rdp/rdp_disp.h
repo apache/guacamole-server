@@ -25,8 +25,11 @@
 
 #include "rdp_settings.h"
 
-#include <freerdp/client/disp.h>
 #include <freerdp/freerdp.h>
+
+#ifdef HAVE_FREERDP_CLIENT_DISP_H
+#include <freerdp/client/disp.h>
+#endif
 
 /**
  * The minimum value for width or height, in pixels.
@@ -49,10 +52,12 @@
  */
 typedef struct guac_rdp_disp {
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /**
      * Display control interface.
      */
     DispClientContext* disp;
+#endif
 
     /**
      * The timestamp of the last display update request, or 0 if no request

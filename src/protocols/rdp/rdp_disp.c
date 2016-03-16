@@ -27,9 +27,12 @@
 #include "rdp_settings.h"
 
 #include <freerdp/freerdp.h>
-#include <freerdp/client/disp.h>
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
+
+#ifdef HAVE_FREERDP_CLIENT_DISP_H
+#include <freerdp/client/disp.h>
+#endif
 
 guac_rdp_disp* guac_rdp_disp_alloc() {
 
