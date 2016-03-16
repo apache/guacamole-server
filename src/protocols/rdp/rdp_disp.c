@@ -169,37 +169,37 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 
     disp->last_request = now;
 
-    if (1) {
+    if (settings->resize_method == GUAC_RESIZE_RECONNECT) {
+
         /* Update settings with new dimensions */
         settings->width = width;
         settings->height = height;
 
         /* Signal reconnect */
         disp->reconnect_needed = 1;
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
-        disp->disp = NULL;
-#endif
-        return;
+
     }
 
+    else if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
-    DISPLAY_CONTROL_MONITOR_LAYOUT monitors[1] = {{
-        .Flags  = 0x1, /* DISPLAYCONTROL_MONITOR_PRIMARY */
-        .Left = 0,
-        .Top = 0,
-        .Width  = width,
-        .Height = height,
-        .PhysicalWidth = 0,
-        .PhysicalHeight = 0,
-        .Orientation = 0,
-        .DesktopScaleFactor = 0,
-        .DeviceScaleFactor = 0
-    }};
+        DISPLAY_CONTROL_MONITOR_LAYOUT monitors[1] = {{
+            .Flags  = 0x1, /* DISPLAYCONTROL_MONITOR_PRIMARY */
+            .Left = 0,
+            .Top = 0,
+            .Width  = width,
+            .Height = height,
+            .PhysicalWidth = 0,
+            .PhysicalHeight = 0,
+            .Orientation = 0,
+            .DesktopScaleFactor = 0,
+            .DeviceScaleFactor = 0
+        }};
 
-    /* Send display update notification if display channel is connected */
-    if (disp->disp != NULL)
-        disp->disp->SendMonitorLayout(disp->disp, 1, monitors);
+        /* Send display update notification if display channel is connected */
+        if (disp->disp != NULL)
+            disp->disp->SendMonitorLayout(disp->disp, 1, monitors);
 #endif
+    }
 
 }
 

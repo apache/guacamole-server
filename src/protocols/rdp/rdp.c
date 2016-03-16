@@ -170,27 +170,30 @@ static int __guac_receive_channel_data(freerdp* rdp_inst, int channelId,
 static void guac_rdp_channel_connected(rdpContext* context,
         ChannelConnectedEventArgs* e) {
 
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+
+    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
 #ifdef HAVE_RDPSETTINGS_SUPPORTDISPLAYCONTROL
-    /* Store reference to the display update plugin once it's connected */
-    if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0) {
+        /* Store reference to the display update plugin once it's connected */
+        if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0) {
 
-        DispClientContext* disp = (DispClientContext*) e->pInterface;
+            DispClientContext* disp = (DispClientContext*) e->pInterface;
 
-        guac_client* client = ((rdp_freerdp_context*) context)->client;
-        guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+            /* Init module with current display size */
+            guac_rdp_disp_set_size(rdp_client->disp, rdp_client->settings,
+                    context->instance, guac_rdp_get_width(context->instance),
+                    guac_rdp_get_height(context->instance));
 
-        /* Init module with current display size */
-        guac_rdp_disp_set_size(rdp_client->disp, rdp_client->settings,
-                context->instance, guac_rdp_get_width(context->instance),
-                guac_rdp_get_height(context->instance));
+            /* Store connected channel */
+            guac_rdp_disp_connect(rdp_client->disp, disp);
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Display update channel connected.");
 
-        /* Store connected channel */
-        guac_rdp_disp_connect(rdp_client->disp, disp);
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Display update channel connected.");
-
-    }
+        }
 #endif
+    }
 
 }
 #endif
