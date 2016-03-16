@@ -71,7 +71,7 @@ int guacenc_display_free_buffer(guacenc_display* display,
     /* Transform index to buffer space */
     int internal_index = -index - 1;
 
-    /* Do not lookup / allocate if index is invalid */
+    /* Do not lookup / free if index is invalid */
     if (internal_index < 0 || internal_index > GUACENC_DISPLAY_MAX_BUFFERS) {
         guacenc_log(GUAC_LOG_WARNING, "Buffer index out of bounds: %i", index);
         return 1;

@@ -84,7 +84,7 @@ int guacenc_display_get_depth(guacenc_display* display, guacenc_layer* layer) {
 int guacenc_display_free_layer(guacenc_display* display,
         int index) {
 
-    /* Do not lookup / allocate if index is invalid */
+    /* Do not lookup / free if index is invalid */
     if (index < 0 || index > GUACENC_DISPLAY_MAX_LAYERS) {
         guacenc_log(GUAC_LOG_WARNING, "Layer index out of bounds: %i", index);
         return 1;
