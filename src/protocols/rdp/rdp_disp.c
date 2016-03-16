@@ -72,9 +72,11 @@ void guac_rdp_disp_load_plugin(rdpContext* context) {
 
 }
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, DispClientContext* disp) {
     guac_disp->disp = disp;
 }
+#endif
 
 /**
  * Fits a given dimension within the allowed bounds for Display Update

@@ -107,6 +107,7 @@ void guac_rdp_disp_free(guac_rdp_disp* disp);
  */
 void guac_rdp_disp_load_plugin(rdpContext* context);
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 /**
  * Stores the given DispClientContext within the given guac_rdp_disp, such that
  * display updates can be properly sent. Until this is called, changes to the
@@ -118,6 +119,7 @@ void guac_rdp_disp_load_plugin(rdpContext* context);
  *             display update channel.
  */
 void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, DispClientContext* disp);
+#endif
 
 /**
  * Requests a display size update, which may then be sent immediately to the
