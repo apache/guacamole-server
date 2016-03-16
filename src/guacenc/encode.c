@@ -30,10 +30,10 @@
 #include <guacamole/parser.h>
 #include <guacamole/socket.h>
 
-#include <errno.h>
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -90,6 +90,32 @@ int guacenc_encode(const char* path, const char* out_path, const char* codec,
     int fd = open(path, O_RDONLY);
     if (fd < 0) {
         guacenc_log(GUAC_LOG_ERROR, "%s: %s", path, strerror(errno));
+        return 1;
+    }
+
+    /* Lock entire input file for reading by the current process */
+    struct flock file_lock = {
+        .l_type   = F_RDLCK,
+        .l_whence = SEEK_SET,
+        .l_start  = 0,
+        .l_len    = 0,
+        .l_pid    = getpid()
+    };
+
+    /* Abort if file cannot be locked for reading */
+    if (fcntl(fd, F_SETLK, &file_lock) == -1) {
+
+        /* Warn if lock cannot be acquired */
+        if (errno == EACCES || errno == EAGAIN)
+            guacenc_log(GUAC_LOG_WARNING, "Refusing to encode in-progress "
+                    "recording \"%s\".", path);
+
+        /* Log an error if locking fails in an unexpected way */
+        else
+            guacenc_log(GUAC_LOG_ERROR, "Cannot lock \"%s\" for reading: %s",
+                    path, strerror(errno));
+
+        close(fd);
         return 1;
     }
 
