@@ -25,13 +25,14 @@
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <unistd.h>
 
 /**
  * Attempts to open a new recording within the given path and having the given
@@ -104,6 +105,21 @@ static int guac_common_recording_open(const char* path,
         }
 
     } /* end if open succeeded */
+
+    /* Lock entire output file for writing by the current process */
+    struct flock file_lock = {
+        .l_type   = F_WRLCK,
+        .l_whence = SEEK_SET,
+        .l_start  = 0,
+        .l_len    = 0,
+        .l_pid    = getpid()
+    };
+
+    /* Abort if file cannot be locked for reading */
+    if (fcntl(fd, F_SETLK, &file_lock) == -1) {
+        close(fd);
+        return -1;
+    }
 
     return fd;
 
