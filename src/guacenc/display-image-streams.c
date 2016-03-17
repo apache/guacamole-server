@@ -33,7 +33,7 @@ int guacenc_display_create_image_stream(guacenc_display* display, int index,
         int mask, int layer_index, const char* mimetype, int x, int y) {
 
     /* Do not lookup / allocate if index is invalid */
-    if (index < 0 || index > GUACENC_DISPLAY_MAX_STREAMS) {
+    if (index < 0 || index >= GUACENC_DISPLAY_MAX_STREAMS) {
         guacenc_log(GUAC_LOG_WARNING, "Stream index out of bounds: %i", index);
         return 1;
     }
@@ -54,7 +54,7 @@ guacenc_image_stream* guacenc_display_get_image_stream(
         guacenc_display* display, int index) {
 
     /* Do not lookup / allocate if index is invalid */
-    if (index < 0 || index > GUACENC_DISPLAY_MAX_STREAMS) {
+    if (index < 0 || index >= GUACENC_DISPLAY_MAX_STREAMS) {
         guacenc_log(GUAC_LOG_WARNING, "Stream index out of bounds: %i", index);
         return NULL;
     }
@@ -67,7 +67,7 @@ guacenc_image_stream* guacenc_display_get_image_stream(
 int guacenc_display_free_image_stream(guacenc_display* display, int index) {
 
     /* Do not lookup / allocate if index is invalid */
-    if (index < 0 || index > GUACENC_DISPLAY_MAX_STREAMS) {
+    if (index < 0 || index >= GUACENC_DISPLAY_MAX_STREAMS) {
         guacenc_log(GUAC_LOG_WARNING, "Stream index out of bounds: %i", index);
         return 1;
     }
