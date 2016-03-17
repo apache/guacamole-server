@@ -765,7 +765,19 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     free(settings->username);
 
     /* Free channel name array */
-    free(settings->svc_names);
+    if (settings->svc_names != NULL) {
+
+        /* Free all elements of array */
+        char** current = &(settings->svc_names[0]);
+        while (*current != NULL) {
+            free(*current);
+            current++;
+        }
+
+        /* Free array itself */
+        free(settings->svc_names);
+
+    }
 
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP settings */
