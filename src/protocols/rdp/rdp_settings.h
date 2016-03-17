@@ -89,6 +89,32 @@ typedef enum guac_rdp_security {
 } guac_rdp_security;
 
 /**
+ * All supported combinations screen resize methods.
+ */
+typedef enum guac_rdp_resize_method {
+
+    /**
+     * Dynamic resizing of the display will not be attempted.
+     */
+    GUAC_RESIZE_NONE,
+
+    /**
+     * Dynamic resizing will be attempted through sending requests along the
+     * Display Update channel. This will only work with recent versions of
+     * Windows and relatively-recent versions of FreeRDP.
+     */
+    GUAC_RESIZE_DISPLAY_UPDATE,
+
+    /**
+     * Guacamole will automatically disconnect and reconnect to the RDP server
+     * whenever the screen size changes, requesting the new size during
+     * reconnect.
+     */
+    GUAC_RESIZE_RECONNECT
+
+} guac_rdp_resize_method;
+
+/**
  * All settings supported by the Guacamole RDP client.
  */
 typedef struct guac_rdp_settings {
@@ -349,6 +375,11 @@ typedef struct guac_rdp_settings {
      * does not already exist.
      */
     int create_recording_path;
+
+    /**
+     * The method to apply when the user's display changes size.
+     */
+    guac_rdp_resize_method resize_method;
 
 } guac_rdp_settings;
 

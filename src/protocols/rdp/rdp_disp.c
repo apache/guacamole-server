@@ -24,23 +24,30 @@
 #include "client.h"
 #include "rdp.h"
 #include "rdp_disp.h"
+#include "rdp_settings.h"
 
 #include <freerdp/freerdp.h>
-#include <freerdp/client/disp.h>
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
+
+#ifdef HAVE_FREERDP_CLIENT_DISP_H
+#include <freerdp/client/disp.h>
+#endif
 
 guac_rdp_disp* guac_rdp_disp_alloc() {
 
     guac_rdp_disp* disp = malloc(sizeof(guac_rdp_disp));
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /* Not yet connected */
     disp->disp = NULL;
+#endif
 
     /* No requests have been made */
-    disp->last_request = 0;
+    disp->last_request = guac_timestamp_current();
     disp->requested_width  = 0;
     disp->requested_height = 0;
+    disp->reconnect_needed = 0;
 
     return disp;
 
@@ -52,6 +59,7 @@ void guac_rdp_disp_free(guac_rdp_disp* disp) {
 
 void guac_rdp_disp_load_plugin(rdpContext* context) {
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 #ifdef HAVE_RDPSETTINGS_SUPPORTDISPLAYCONTROL
     context->settings->SupportDisplayControl = TRUE;
 #endif
@@ -62,12 +70,15 @@ void guac_rdp_disp_load_plugin(rdpContext* context) {
     args->argv = malloc(sizeof(char**) * 1);
     args->argv[0] = strdup("disp");
     freerdp_dynamic_channel_collection_add(context->settings, args);
+#endif
 
 }
 
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, DispClientContext* disp) {
     guac_disp->disp = disp;
 }
+#endif
 
 /**
  * Fits a given dimension within the allowed bounds for Display Update
@@ -111,8 +122,8 @@ static void guac_rdp_disp_fit(int* a, int* b) {
 
 }
 
-void guac_rdp_disp_set_size(guac_rdp_disp* disp, rdpContext* context,
-        int width, int height) {
+void guac_rdp_disp_set_size(guac_rdp_disp* disp, guac_rdp_settings* settings,
+        freerdp* rdp_inst, int width, int height) {
 
     /* Fit width within bounds, adjusting height to maintain aspect ratio */
     guac_rdp_disp_fit(&width, &height);
@@ -129,52 +140,74 @@ void guac_rdp_disp_set_size(guac_rdp_disp* disp, rdpContext* context,
     disp->requested_height = height;
 
     /* Send display update notification if possible */
-    guac_rdp_disp_update_size(disp, context);
+    guac_rdp_disp_update_size(disp, settings, rdp_inst);
 
 }
 
-void guac_rdp_disp_update_size(guac_rdp_disp* disp, rdpContext* context) {
-
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-
-    /* Send display update notification if display channel is connected */
-    if (disp->disp == NULL)
-        return;
+void guac_rdp_disp_update_size(guac_rdp_disp* disp,
+        guac_rdp_settings* settings, freerdp* rdp_inst) {
 
     int width = disp->requested_width;
     int height = disp->requested_height;
 
-    DISPLAY_CONTROL_MONITOR_LAYOUT monitors[1] = {{
-        .Flags  = 0x1, /* DISPLAYCONTROL_MONITOR_PRIMARY */
-        .Left = 0,
-        .Top = 0,
-        .Width  = width,
-        .Height = height,
-        .PhysicalWidth = 0,
-        .PhysicalHeight = 0,
-        .Orientation = 0,
-        .DesktopScaleFactor = 0,
-        .DeviceScaleFactor = 0
-    }};
+    /* Do not update size if no requests have been received */
+    if (width == 0 || height == 0)
+        return;
 
     guac_timestamp now = guac_timestamp_current();
 
     /* Limit display update frequency */
-    if (disp->last_request != 0
-            && now - disp->last_request <= GUAC_RDP_DISP_UPDATE_INTERVAL)
+    if (now - disp->last_request <= GUAC_RDP_DISP_UPDATE_INTERVAL)
         return;
 
     /* Do NOT send requests unless the size will change */
-    if (width == guac_rdp_get_width(context->instance)
-            && height == guac_rdp_get_height(context->instance))
+    if (rdp_inst != NULL
+            && width == guac_rdp_get_width(rdp_inst)
+            && height == guac_rdp_get_height(rdp_inst))
         return;
 
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "Resizing remote display to %ix%i",
-            width, height);
-
     disp->last_request = now;
-    disp->disp->SendMonitorLayout(disp->disp, 1, monitors);
 
+    if (settings->resize_method == GUAC_RESIZE_RECONNECT) {
+
+        /* Update settings with new dimensions */
+        settings->width = width;
+        settings->height = height;
+
+        /* Signal reconnect */
+        disp->reconnect_needed = 1;
+
+    }
+
+    else if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+        DISPLAY_CONTROL_MONITOR_LAYOUT monitors[1] = {{
+            .Flags  = 0x1, /* DISPLAYCONTROL_MONITOR_PRIMARY */
+            .Left = 0,
+            .Top = 0,
+            .Width  = width,
+            .Height = height,
+            .PhysicalWidth = 0,
+            .PhysicalHeight = 0,
+            .Orientation = 0,
+            .DesktopScaleFactor = 0,
+            .DeviceScaleFactor = 0
+        }};
+
+        /* Send display update notification if display channel is connected */
+        if (disp->disp != NULL)
+            disp->disp->SendMonitorLayout(disp->disp, 1, monitors);
+#endif
+    }
+
+}
+
+int guac_rdp_disp_reconnect_needed(guac_rdp_disp* disp) {
+    return disp->reconnect_needed;
+}
+
+void guac_rdp_disp_reconnect_complete(guac_rdp_disp* disp) {
+    disp->reconnect_needed = 0;
+    disp->last_request = guac_timestamp_current();
 }
 

@@ -84,6 +84,9 @@ static void guac_common_display_free_layers(guac_common_display_layer* layers,
         /* Free surface */
         guac_common_surface_free(current->surface);
 
+        /* Destroy layer within remotely-connected client */
+        guac_protocol_send_dispose(client->socket, layer);
+
         /* Free layer or buffer depending on index */
         if (layer->index < 0)
             guac_client_free_buffer(client, layer);

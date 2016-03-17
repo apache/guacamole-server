@@ -29,6 +29,7 @@
 #include "guac_display.h"
 #include "guac_surface.h"
 #include "guac_list.h"
+#include "rdp_disp.h"
 #include "rdp_fs.h"
 #include "rdp_keymap.h"
 #include "rdp_settings.h"
@@ -42,10 +43,6 @@
 #include "guac_sftp.h"
 #include "guac_ssh.h"
 #include "guac_ssh_user.h"
-#endif
-
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
-#include "rdp_disp.h"
 #endif
 
 #include <pthread.h>
@@ -148,12 +145,10 @@ typedef struct guac_rdp_client {
     guac_common_ssh_sftp_filesystem* sftp_filesystem;
 #endif
 
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /**
      * Display size update module.
      */
     guac_rdp_disp* disp;
-#endif
 
     /**
      * List of all available static virtual channels.
@@ -161,7 +156,9 @@ typedef struct guac_rdp_client {
     guac_common_list* available_svc;
 
     /**
-     * Lock which is locked and unlocked for each RDP message.
+     * Lock which is locked and unlocked for each RDP message, and for each
+     * part of the RDP client instance which may be dynamically freed and
+     * reallocated during reconnection.
      */
     pthread_mutex_t rdp_lock;
 

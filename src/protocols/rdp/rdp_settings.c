@@ -92,6 +92,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-path",
     "recording-name",
     "create-recording-path",
+    "resize-method",
 
     NULL
 };
@@ -373,6 +374,12 @@ enum RDP_ARGS_IDX {
      * created if it does not yet exist.
      */
     IDX_CREATE_RECORDING_PATH,
+
+    /**
+     * The method to use to apply screen size changes requested by the user.
+     * Valid values are blank, "display-update", and "reconnect".
+     */
+    IDX_RESIZE_METHOD,
 
     RDP_ARGS_COUNT
 };
@@ -709,6 +716,31 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, 0);
+
+    /* No resize method */
+    if (strcmp(argv[IDX_RESIZE_METHOD], "") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Resize method: none");
+        settings->resize_method = GUAC_RESIZE_NONE;
+    }
+
+    /* Resize method: "reconnect" */
+    else if (strcmp(argv[IDX_RESIZE_METHOD], "reconnect") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Resize method: reconnect");
+        settings->resize_method = GUAC_RESIZE_RECONNECT;
+    }
+
+    /* Resize method: "display-update" */
+    else if (strcmp(argv[IDX_RESIZE_METHOD], "display-update") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Resize method: display-update");
+        settings->resize_method = GUAC_RESIZE_DISPLAY_UPDATE;
+    }
+
+    /* Default to no resize method if invalid */
+    else {
+        guac_user_log(user, GUAC_LOG_INFO, "Resize method \"%s\" invalid. ",
+                "Defaulting to no resize method.", argv[IDX_RESIZE_METHOD]);
+        settings->resize_method = GUAC_RESIZE_NONE;
+    }
 
     /* Success */
     return settings;

@@ -437,7 +437,6 @@ if test "x$with_rdp" != "xno"
 then
     have_winpr=yes
     have_freerdp=yes
-    have_disp=yes
     legacy_freerdp_extensions=no
     rdpsettings_interface=unknown
     rdpsettings_audioplayback=yes
@@ -554,8 +553,7 @@ then
                      [AC_DEFINE([HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT],,
                                 [Whether FreeRDP supports the display update channel])]
                      [AC_CHECK_MEMBERS([rdpSettings.SupportDisplayControl],,,
-                                       [[#include <freerdp/freerdp.h>]])],
-                     have_disp=no,
+                                       [[#include <freerdp/freerdp.h>]])],,
                      [#include <winpr/wtypes.h>
                       #include <winpr/collections.h>])
 fi
@@ -869,7 +867,6 @@ then
 fi
 
 AM_CONDITIONAL([LEGACY_FREERDP_EXTENSIONS], [test "x${legacy_freerdp_extensions}" = "xyes"])
-AM_CONDITIONAL([ENABLE_DISPLAY_UPDATE], [test "x${have_disp}" = "xyes"])
 AM_CONDITIONAL([ENABLE_WINPR], [test "x${have_winpr}"   = "xyes"])
 AM_CONDITIONAL([ENABLE_RDP],   [test "x${have_freerdp}" = "xyes"])
 
