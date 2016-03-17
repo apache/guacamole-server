@@ -104,6 +104,10 @@ static int guac_common_recording_open(const char* path,
 
         }
 
+        /* Abort if we've run out of filenames */
+        if (fd == -1)
+            return -1;
+
     } /* end if open succeeded */
 
     /* Lock entire output file for writing by the current process */
