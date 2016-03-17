@@ -482,6 +482,7 @@ void guac_client_free(guac_client* client) {
     }
 
     pthread_rwlock_destroy(&(client->__users_lock));
+    free(client->connection_id);
     free(client);
 }
 
