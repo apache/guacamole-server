@@ -174,47 +174,14 @@ fail_codec:
  */
 static int guacenc_video_write_frame(guacenc_video* video, AVFrame* frame) {
 
-    /* Init video packet */
-    AVPacket packet;
-    av_init_packet(&packet);
-
-    /* Request that encoder allocate data for packet */
-    packet.data = NULL;
-    packet.size = 0;
-
     /* Set timestamp of frame, if frame given */
     if (frame != NULL)
         frame->pts = video->next_pts;
 
     /* Write frame to video */
-    int got_data;
-    if (avcodec_encode_video2(video->context, &packet, frame, &got_data) < 0) {
-        guacenc_log(GUAC_LOG_WARNING, "Error encoding frame #%" PRId64,
-                video->next_pts);
+    int got_data = guacenc_avcodec_encode_video(video, frame);
+    if (got_data < 0)
         return -1;
-    }
-
-    /* Write corresponding data to file */
-    if (got_data) {
-
-        /* Write data, logging any errors */
-        if (fwrite(packet.data, 1, packet.size, video->output) == 0) {
-            guacenc_log(GUAC_LOG_ERROR, "Unable to write frame "
-                    "#%" PRId64 ": %s", video->next_pts, strerror(errno));
-            return -1;
-        }
-
-        /* Data was written successfully */
-        guacenc_log(GUAC_LOG_DEBUG, "Frame #%08" PRId64 ": wrote %i bytes",
-                video->next_pts, packet.size);
-        av_packet_unref(&packet);
-
-    }
-
-    /* Frame may have been queued for later writing / reordering */
-    else
-        guacenc_log(GUAC_LOG_DEBUG, "Frame #%08" PRId64 ": queued for later",
-                video->next_pts);
 
     /* Update presentation timestamp for next frame */
     video->next_pts++;

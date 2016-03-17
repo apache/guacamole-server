@@ -51,6 +51,7 @@ guacenc_SOURCES =           \
     display-layers.c        \
     display-sync.c          \
     encode.c                \
+    ffmpeg-compat.c         \
     guacenc.c               \
     image-stream.c          \
     instructions.c          \
