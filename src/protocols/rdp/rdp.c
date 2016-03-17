@@ -691,6 +691,25 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
 
 }
 
+/**
+ * Connects to an RDP server as described by the guac_rdp_settings structure
+ * associated with the given client, allocating and freeing all objects
+ * directly related to the RDP connection. It is expected that all objects
+ * which are independent of FreeRDP's state (the clipboard, display update
+ * management, etc.) will already be allocated and associated with the
+ * guac_rdp_client associated with the given guac_client. This function blocks
+ * for the duration of the RDP session, returning only after the session has
+ * completely disconnected.
+ *
+ * @param client
+ *     The guac_client associated with the RDP settings describing the
+ *     connection that should be established.
+ *
+ * @return
+ *     Zero if the connection successfully terminated and a reconnect is
+ *     desired, non-zero if an error occurs or the connection was disconnected
+ *     and a reconnect is NOT desired.
+ */
 static int guac_rdp_handle_connection(guac_client* client) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
