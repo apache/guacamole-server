@@ -981,17 +981,26 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     pthread_mutex_lock(&(rdp_client->rdp_lock));
 
-    /* Clean up RDP client */
+    /* Disconnect client and channels */
     freerdp_channels_close(channels, rdp_inst);
     freerdp_channels_free(channels);
     freerdp_disconnect(rdp_inst);
+
+    /* Clean up RDP client context */
     freerdp_clrconv_free(((rdp_freerdp_context*) rdp_inst->context)->clrconv);
     cache_free(rdp_inst->context->cache);
+    freerdp_context_free(rdp_inst);
+
+    /* Clean up RDP client */
     freerdp_free(rdp_inst);
 
     /* Clean up filesystem, if allocated */
     if (rdp_client->filesystem != NULL)
         guac_rdp_fs_free(rdp_client->filesystem);
+
+    /* Clean up audio stream, if allocated */
+    if (rdp_client->audio != NULL)
+        guac_audio_stream_free(rdp_client->audio);
 
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP filesystem, if loaded */
