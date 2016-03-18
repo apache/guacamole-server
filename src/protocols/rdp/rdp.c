@@ -764,8 +764,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     __guac_rdp_client_load_keymap(client, settings->server_layout);
 
 #ifdef ENABLE_COMMON_SSH
-    guac_common_ssh_init(client);
-
     /* Connect via SSH if SFTP is enabled */
     if (settings->enable_sftp) {
 
@@ -981,17 +979,27 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     pthread_mutex_lock(&(rdp_client->rdp_lock));
 
-    /* Clean up RDP client */
+    /* Disconnect client and channels */
     freerdp_channels_close(channels, rdp_inst);
     freerdp_channels_free(channels);
     freerdp_disconnect(rdp_inst);
+
+    /* Clean up RDP client context */
     freerdp_clrconv_free(((rdp_freerdp_context*) rdp_inst->context)->clrconv);
     cache_free(rdp_inst->context->cache);
+    freerdp_context_free(rdp_inst);
+
+    /* Clean up RDP client */
     freerdp_free(rdp_inst);
+    rdp_client->rdp_inst = NULL;
 
     /* Clean up filesystem, if allocated */
     if (rdp_client->filesystem != NULL)
         guac_rdp_fs_free(rdp_client->filesystem);
+
+    /* Clean up audio stream, if allocated */
+    if (rdp_client->audio != NULL)
+        guac_audio_stream_free(rdp_client->audio);
 
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP filesystem, if loaded */
@@ -1005,8 +1013,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Free SFTP user */
     if (rdp_client->sftp_user)
         guac_common_ssh_destroy_user(rdp_client->sftp_user);
-
-    guac_common_ssh_uninit();
 #endif
 
     /* Free SVC list */
@@ -1014,9 +1020,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Free display */
     guac_common_display_free(rdp_client->display);
-
-    /* Mark FreeRDP instance as freed */
-    rdp_client->rdp_inst = NULL;
 
     pthread_mutex_unlock(&(rdp_client->rdp_lock));
     return 0;
@@ -1027,12 +1030,19 @@ void* guac_rdp_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
 
+#ifdef ENABLE_COMMON_SSH
+    guac_common_ssh_init(client);
+#endif
+
+    /* Continue handling connections until error or client disconnect */
     while (client->state == GUAC_CLIENT_RUNNING) {
-
         if (guac_rdp_handle_connection(client))
-            return NULL;
-
+            break;
     }
+
+#ifdef ENABLE_COMMON_SSH
+    guac_common_ssh_uninit();
+#endif
 
     return NULL;
 

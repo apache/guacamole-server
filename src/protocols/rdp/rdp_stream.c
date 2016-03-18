@@ -286,24 +286,31 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
 
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    rdpChannels* channels = rdp_client->rdp_inst->context->channels;
-
-    RDP_CB_FORMAT_LIST_EVENT* format_list =
-        (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
-            CliprdrChannel_Class,
-            CliprdrChannel_FormatList,
-            NULL, NULL);
 
     /* Terminate clipboard data with NULL */
     guac_common_clipboard_append(rdp_client->clipboard, "", 1);
 
-    /* Notify server that text data is now available */
-    format_list->formats = (UINT32*) malloc(sizeof(UINT32) * 2);
-    format_list->formats[0] = CB_FORMAT_TEXT;
-    format_list->formats[1] = CB_FORMAT_UNICODETEXT;
-    format_list->num_formats = 2;
+    /* Notify RDP server of new data, if connected */
+    freerdp* rdp_inst = rdp_client->rdp_inst;
+    if (rdp_inst != NULL) {
 
-    freerdp_channels_send_event(channels, (wMessage*) format_list);
+        rdpChannels* channels = rdp_inst->context->channels;
+
+        RDP_CB_FORMAT_LIST_EVENT* format_list =
+            (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
+                CliprdrChannel_Class,
+                CliprdrChannel_FormatList,
+                NULL, NULL);
+
+        /* Notify server that text data is now available */
+        format_list->formats = (UINT32*) malloc(sizeof(UINT32) * 2);
+        format_list->formats[0] = CB_FORMAT_TEXT;
+        format_list->formats[1] = CB_FORMAT_UNICODETEXT;
+        format_list->num_formats = 2;
+
+        freerdp_channels_send_event(channels, (wMessage*) format_list);
+
+    }
 
     return 0;
 }

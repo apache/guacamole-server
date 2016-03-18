@@ -150,6 +150,7 @@ void guac_common_ssh_key_free(guac_common_ssh_key* key) {
     else if (key->type == SSH_KEY_DSA)
         DSA_free(key->dsa);
 
+    free(key->private_key);
     free(key->public_key);
     free(key);
 }
