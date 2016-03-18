@@ -128,6 +128,9 @@ static void guac_common_ssh_openssl_free_locks(int count) {
     for (i=0; i < count; i++)
         pthread_mutex_destroy(&(guac_common_ssh_openssl_locks[i]));
 
+    /* Free lock array */
+    free(guac_common_ssh_openssl_locks);
+
 }
 
 int guac_common_ssh_init(guac_client* client) {
