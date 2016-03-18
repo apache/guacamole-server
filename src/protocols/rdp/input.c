@@ -165,15 +165,15 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     pthread_mutex_lock(&(rdp_client->rdp_lock));
 
-    /* Store current mouse location */
-    guac_common_cursor_move(rdp_client->display->cursor, user, x, y);
-
     /* Skip if not yet connected */
     freerdp* rdp_inst = rdp_client->rdp_inst;
     if (rdp_inst == NULL) {
         pthread_mutex_unlock(&(rdp_client->rdp_lock));
         return 0;
     }
+
+    /* Store current mouse location */
+    guac_common_cursor_move(rdp_client->display->cursor, user, x, y);
 
     /* If button mask unchanged, just send move event */
     if (mask == rdp_client->mouse_button_mask)
