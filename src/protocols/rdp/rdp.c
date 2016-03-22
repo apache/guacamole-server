@@ -225,15 +225,23 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             (pChannelConnectedEventHandler) guac_rdp_channel_connected);
 #endif
 
-    /* Load virtual channel management plugin */
-    if (freerdp_channels_load_plugin(channels, instance->settings,
-                "drdynvc", instance->settings))
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Failed to load drdynvc plugin.");
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+    /* Load required plugins if display update is enabled */
+    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
 
-    /* Init display update plugin (if available and required) */
-    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
-        guac_rdp_disp_load_plugin(instance->context);
+        /* Load virtual channel management plugin (needed by display update) */
+        if (freerdp_channels_load_plugin(channels, instance->settings,
+                    "drdynvc", instance->settings))
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "Failed to load drdynvc plugin. Display update support "
+                    "will be disabled.");
+
+        /* Init display update plugin if "drdynvc" was loaded successfully */
+        else
+            guac_rdp_disp_load_plugin(instance->context);
+
+    }
+#endif
 
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
