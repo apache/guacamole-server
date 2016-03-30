@@ -27,6 +27,7 @@
 #include "rdp_bitmap.h"
 #include "rdp_cliprdr.h"
 #include "rdp_disp.h"
+#include "rdp_fs.h"
 #include "rdp_gdi.h"
 #include "rdp_glyph.h"
 #include "rdp_keymap.h"
@@ -260,12 +261,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
                     "No available audio encoding. Sound disabled.");
 
     } /* end if audio enabled */
-
-    /* Load filesystem if drive enabled */
-    if (settings->drive_enabled)
-        rdp_client->filesystem =
-            guac_rdp_fs_alloc(client, settings->drive_path,
-                    settings->create_drive_path);
 
     /* If RDPSND/RDPDR required, load them */
     if (settings->printing_enabled
@@ -768,82 +763,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Load keymap into client */
     __guac_rdp_client_load_keymap(client, settings->server_layout);
 
-#ifdef ENABLE_COMMON_SSH
-    /* Connect via SSH if SFTP is enabled */
-    if (settings->enable_sftp) {
-
-        /* Abort if username is missing */
-        if (settings->sftp_username == NULL)
-            return 1;
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Connecting via SSH for SFTP filesystem access.");
-
-        rdp_client->sftp_user =
-            guac_common_ssh_create_user(settings->sftp_username);
-
-        /* Import private key, if given */
-        if (settings->sftp_private_key != NULL) {
-
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Authenticating with private key.");
-
-            /* Abort if private key cannot be read */
-            if (guac_common_ssh_user_import_key(rdp_client->sftp_user,
-                        settings->sftp_private_key,
-                        settings->sftp_passphrase)) {
-                guac_common_ssh_destroy_user(rdp_client->sftp_user);
-                return 1;
-            }
-
-        }
-
-        /* Otherwise, use specified password */
-        else {
-
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Authenticating with password.");
-
-            guac_common_ssh_user_set_password(rdp_client->sftp_user,
-                    settings->sftp_password);
-
-        }
-
-        /* Attempt SSH connection */
-        rdp_client->sftp_session =
-            guac_common_ssh_create_session(client, settings->sftp_hostname,
-                    settings->sftp_port, rdp_client->sftp_user);
-
-        /* Fail if SSH connection does not succeed */
-        if (rdp_client->sftp_session == NULL) {
-            /* Already aborted within guac_common_ssh_create_session() */
-            guac_common_ssh_destroy_user(rdp_client->sftp_user);
-            return 1;
-        }
-
-        /* Load and expose filesystem */
-        rdp_client->sftp_filesystem =
-            guac_common_ssh_create_sftp_filesystem(
-                    rdp_client->sftp_session, "/");
-
-        /* Expose filesystem to connection owner */
-        guac_client_for_owner(client,
-                guac_common_ssh_expose_sftp_filesystem,
-                rdp_client->sftp_filesystem);
-
-        /* Abort if SFTP connection fails */
-        if (rdp_client->sftp_filesystem == NULL) {
-            guac_common_ssh_destroy_session(rdp_client->sftp_session);
-            guac_common_ssh_destroy_user(rdp_client->sftp_user);
-            return 1;
-        }
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "SFTP connection succeeded.");
-
-    }
-#endif
-
     /* Send connection name */
     guac_protocol_send_name(client->socket, settings->hostname);
 
@@ -998,27 +917,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
     freerdp_free(rdp_inst);
     rdp_client->rdp_inst = NULL;
 
-    /* Clean up filesystem, if allocated */
-    if (rdp_client->filesystem != NULL)
-        guac_rdp_fs_free(rdp_client->filesystem);
-
     /* Clean up audio stream, if allocated */
     if (rdp_client->audio != NULL)
         guac_audio_stream_free(rdp_client->audio);
-
-#ifdef ENABLE_COMMON_SSH
-    /* Free SFTP filesystem, if loaded */
-    if (rdp_client->sftp_filesystem)
-        guac_common_ssh_destroy_sftp_filesystem(rdp_client->sftp_filesystem);
-
-    /* Free SFTP session */
-    if (rdp_client->sftp_session)
-        guac_common_ssh_destroy_session(rdp_client->sftp_session);
-
-    /* Free SFTP user */
-    if (rdp_client->sftp_user)
-        guac_common_ssh_destroy_user(rdp_client->sftp_user);
-#endif
 
     /* Free SVC list */
     guac_common_list_free(rdp_client->available_svc);
@@ -1034,9 +935,97 @@ static int guac_rdp_handle_connection(guac_client* client) {
 void* guac_rdp_client_thread(void* data) {
 
     guac_client* client = (guac_client*) data;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+
+    /* Load filesystem if drive enabled */
+    if (settings->drive_enabled) {
+
+        /* Allocate actual emulated filesystem */
+        rdp_client->filesystem =
+            guac_rdp_fs_alloc(client, settings->drive_path,
+                    settings->create_drive_path);
+
+        /* Expose filesystem to owner */
+        guac_client_for_owner(client, guac_rdp_fs_expose,
+                rdp_client->filesystem);
+
+    }
 
 #ifdef ENABLE_COMMON_SSH
-    guac_common_ssh_init(client);
+    /* Connect via SSH if SFTP is enabled */
+    if (settings->enable_sftp) {
+
+        /* Abort if username is missing */
+        if (settings->sftp_username == NULL)
+            return NULL;
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "Connecting via SSH for SFTP filesystem access.");
+
+        rdp_client->sftp_user =
+            guac_common_ssh_create_user(settings->sftp_username);
+
+        /* Import private key, if given */
+        if (settings->sftp_private_key != NULL) {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating with private key.");
+
+            /* Abort if private key cannot be read */
+            if (guac_common_ssh_user_import_key(rdp_client->sftp_user,
+                        settings->sftp_private_key,
+                        settings->sftp_passphrase)) {
+                guac_common_ssh_destroy_user(rdp_client->sftp_user);
+                return NULL;
+            }
+
+        }
+
+        /* Otherwise, use specified password */
+        else {
+
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Authenticating with password.");
+
+            guac_common_ssh_user_set_password(rdp_client->sftp_user,
+                    settings->sftp_password);
+
+        }
+
+        /* Attempt SSH connection */
+        rdp_client->sftp_session =
+            guac_common_ssh_create_session(client, settings->sftp_hostname,
+                    settings->sftp_port, rdp_client->sftp_user);
+
+        /* Fail if SSH connection does not succeed */
+        if (rdp_client->sftp_session == NULL) {
+            /* Already aborted within guac_common_ssh_create_session() */
+            guac_common_ssh_destroy_user(rdp_client->sftp_user);
+            return NULL;
+        }
+
+        /* Load and expose filesystem */
+        rdp_client->sftp_filesystem =
+            guac_common_ssh_create_sftp_filesystem(
+                    rdp_client->sftp_session, "/");
+
+        /* Expose filesystem to connection owner */
+        guac_client_for_owner(client,
+                guac_common_ssh_expose_sftp_filesystem,
+                rdp_client->sftp_filesystem);
+
+        /* Abort if SFTP connection fails */
+        if (rdp_client->sftp_filesystem == NULL) {
+            guac_common_ssh_destroy_session(rdp_client->sftp_session);
+            guac_common_ssh_destroy_user(rdp_client->sftp_user);
+            return NULL;
+        }
+
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                "SFTP connection succeeded.");
+
+    }
 #endif
 
     /* Continue handling connections until error or client disconnect */
@@ -1044,10 +1033,6 @@ void* guac_rdp_client_thread(void* data) {
         if (guac_rdp_handle_connection(client))
             break;
     }
-
-#ifdef ENABLE_COMMON_SSH
-    guac_common_ssh_uninit();
-#endif
 
     return NULL;
 

@@ -152,8 +152,5 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
     /* Init data */
     device->data = rdp_client->filesystem;
 
-    /* Announce filesystem to owner */
-    guac_client_for_owner(client, guac_rdp_fs_expose, rdp_client->filesystem);
-
 }
 
