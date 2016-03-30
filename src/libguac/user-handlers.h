@@ -93,6 +93,13 @@ __guac_instruction_handler __guac_handle_mouse;
 __guac_instruction_handler __guac_handle_key;
 
 /**
+ * Internal initial handler for the audio instruction. When a audio
+ * instruction is received, this handler will be called. The client's audio
+ * handler will be invoked if defined.
+ */
+__guac_instruction_handler __guac_handle_audio;
+
+/**
  * Internal initial handler for the clipboard instruction. When a clipboard
  * instruction is received, this handler will be called. The client's clipboard
  * handler will be invoked if defined.
