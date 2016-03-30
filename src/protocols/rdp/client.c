@@ -82,6 +82,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->join_handler = guac_rdp_user_join_handler;
     client->free_handler = guac_rdp_client_free_handler;
 
+#ifdef ENABLE_COMMON_SSH
+    guac_common_ssh_init(client);
+#endif
+
     return 0;
 
 }
@@ -99,6 +103,26 @@ int guac_rdp_client_free_handler(guac_client* client) {
 
     /* Free display update module */
     guac_rdp_disp_free(rdp_client->disp);
+
+    /* Clean up filesystem, if allocated */
+    if (rdp_client->filesystem != NULL)
+        guac_rdp_fs_free(rdp_client->filesystem);
+
+#ifdef ENABLE_COMMON_SSH
+    /* Free SFTP filesystem, if loaded */
+    if (rdp_client->sftp_filesystem)
+        guac_common_ssh_destroy_sftp_filesystem(rdp_client->sftp_filesystem);
+
+    /* Free SFTP session */
+    if (rdp_client->sftp_session)
+        guac_common_ssh_destroy_session(rdp_client->sftp_session);
+
+    /* Free SFTP user */
+    if (rdp_client->sftp_user)
+        guac_common_ssh_destroy_user(rdp_client->sftp_user);
+
+    guac_common_ssh_uninit();
+#endif
 
     /* Free client data */
     guac_common_clipboard_free(rdp_client->clipboard);
