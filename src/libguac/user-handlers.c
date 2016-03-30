@@ -47,6 +47,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"end",        __guac_handle_end},
    {"get",        __guac_handle_get},
    {"put",        __guac_handle_put},
+   {"audio",      __guac_handle_audio},
    {NULL,         NULL}
 };
 
@@ -264,6 +265,29 @@ static guac_stream* __init_input_stream(guac_user* user, int stream_index) {
     stream->end_handler = NULL;
 
     return stream;
+
+}
+
+int __guac_handle_audio(guac_user* user, int argc, char** argv) {
+
+    /* Pull corresponding stream */
+    int stream_index = atoi(argv[0]);
+    guac_stream* stream = __init_input_stream(user, stream_index);
+    if (stream == NULL)
+        return 0;
+
+    /* If supported, call handler */
+    if (user->audio_handler)
+        return user->audio_handler(
+            user,
+            stream,
+            argv[1] /* mimetype */
+        );
+
+    /* Otherwise, abort */
+    guac_protocol_send_ack(user->socket, stream,
+            "Audio input unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
+    return 0;
 
 }
 
