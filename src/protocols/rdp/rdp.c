@@ -247,21 +247,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load cliprdr plugin. Clipboard will not work.");
 
-    /* If audio enabled, choose an encoder */
-    if (settings->audio_enabled) {
-
-        rdp_client->audio = guac_audio_stream_alloc(client, NULL,
-                GUAC_RDP_AUDIO_RATE,
-                GUAC_RDP_AUDIO_CHANNELS,
-                GUAC_RDP_AUDIO_BPS);
-
-        /* Warn if no audio encoding is available */
-        if (rdp_client->audio == NULL)
-            guac_client_log(client, GUAC_LOG_INFO,
-                    "No available audio encoding. Sound disabled.");
-
-    } /* end if audio enabled */
-
     /* If RDPSND/RDPDR required, load them */
     if (settings->printing_enabled
         || settings->drive_enabled
@@ -917,10 +902,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     freerdp_free(rdp_inst);
     rdp_client->rdp_inst = NULL;
 
-    /* Clean up audio stream, if allocated */
-    if (rdp_client->audio != NULL)
-        guac_audio_stream_free(rdp_client->audio);
-
     /* Free SVC list */
     guac_common_list_free(rdp_client->available_svc);
 
@@ -937,6 +918,21 @@ void* guac_rdp_client_thread(void* data) {
     guac_client* client = (guac_client*) data;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
+
+    /* If audio enabled, choose an encoder */
+    if (settings->audio_enabled) {
+
+        rdp_client->audio = guac_audio_stream_alloc(client, NULL,
+                GUAC_RDP_AUDIO_RATE,
+                GUAC_RDP_AUDIO_CHANNELS,
+                GUAC_RDP_AUDIO_BPS);
+
+        /* Warn if no audio encoding is available */
+        if (rdp_client->audio == NULL)
+            guac_client_log(client, GUAC_LOG_INFO,
+                    "No available audio encoding. Sound disabled.");
+
+    } /* end if audio enabled */
 
     /* Load filesystem if drive enabled */
     if (settings->drive_enabled) {
