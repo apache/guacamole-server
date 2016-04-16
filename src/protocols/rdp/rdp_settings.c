@@ -90,6 +90,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-name",
     "create-recording-path",
     "resize-method",
+    "enable-audio-input",
 
     NULL
 };
@@ -377,6 +378,12 @@ enum RDP_ARGS_IDX {
      * Valid values are blank, "display-update", and "reconnect".
      */
     IDX_RESIZE_METHOD,
+
+    /**
+     * "true" if audio input (microphone) should be enabled for the RDP
+     * connection, "false" or blank otherwise.
+     */
+    IDX_ENABLE_AUDIO_INPUT,
 
     RDP_ARGS_COUNT
 };
@@ -738,6 +745,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 "Defaulting to no resize method.", argv[IDX_RESIZE_METHOD]);
         settings->resize_method = GUAC_RESIZE_NONE;
     }
+
+    /* Audio input enable/disable */
+    settings->enable_audio_input =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_AUDIO_INPUT, 0);
 
     /* Success */
     return settings;

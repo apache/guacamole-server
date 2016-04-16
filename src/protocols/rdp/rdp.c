@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "audio_input.h"
 #include "client.h"
 #include "guac_cursor.h"
 #include "guac_display.h"
@@ -223,23 +224,32 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             (pChannelConnectedEventHandler) guac_rdp_channel_connected);
 #endif
 
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
-    /* Load required plugins if display update is enabled */
-    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
+    /* Load DRDYNVC plugin if required */
+    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE
+            || settings->enable_audio_input) {
 
-        /* Load virtual channel management plugin (needed by display update) */
+        /* Load virtual channel management plugin */
         if (freerdp_channels_load_plugin(channels, instance->settings,
                     "drdynvc", instance->settings))
             guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load drdynvc plugin. Display update support "
-                    "will be disabled.");
+                    "Failed to load drdynvc plugin. Display update and audio "
+                    "input support will be disabled.");
 
         /* Init display update plugin if "drdynvc" was loaded successfully */
-        else
-            guac_rdp_disp_load_plugin(instance->context);
-
-    }
+        else {
+#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
+            /* Load "disp" plugin for display update */
+            if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
+                guac_rdp_disp_load_plugin(instance->context);
 #endif
+
+            /* Load "AUDIO_INPUT" plugin for audio input*/
+            if (settings->enable_audio_input)
+                guac_rdp_audio_load_plugin(instance->context);
+
+        }
+
+    } /* end if drdynvc required */
 
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,

@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "audio_input.h"
 #include "input.h"
 #include "guac_display.h"
 #include "user.h"
@@ -64,6 +65,10 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
                     "Unable to start VNC client thread.");
             return 1;
         }
+
+        /* Handle inbound audio streams if audio input is enabled */
+        if (settings->enable_audio_input)
+            user->audio_handler = guac_rdp_audio_handler;
 
     }
 
