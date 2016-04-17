@@ -32,6 +32,12 @@
 #endif
 
 /**
+ * The format tag associated with raw wave audio (WAVE_FORMAT_PCM). This format
+ * is required to be supported by all RDP servers.
+ */
+#define GUAC_RDP_WAVE_FORMAT_PCM 0x01
+
+/**
  * The message ID associated with the AUDIO_INPUT Version PDU. The Version PDU
  * is sent by both the client and the server to indicate their version of the
  * AUDIO_INPUT channel protocol (which must always be 1).
@@ -78,6 +84,59 @@
  * by the server to request a different sound format.
  */
 #define GUAC_RDP_MSG_SNDIN_FORMATCHANGE 0x07
+
+/**
+ * An AUDIO_INPUT format, analogous to the AUDIO_FORMAT structure defined
+ * within Microsoft's RDP documentation.
+ */
+typedef struct guac_rdp_ai_format {
+
+    /**
+     * The "format tag" denoting the overall format of audio data received,
+     * such as WAVE_FORMAT_PCM.
+     */
+    UINT16 tag;
+
+    /**
+     * The number of audio channels.
+     */
+    UINT16 channels;
+
+    /**
+     * The number of samples per second.
+     */
+    UINT32 rate;
+
+    /**
+     * The average number of bytes required for one second of audio.
+     */
+    UINT32 bytes_per_sec;
+
+    /**
+     * The absolute minimum number of bytes required to process audio in this
+     * format.
+     */
+    UINT16 block_align;
+
+    /**
+     * The number of bits per sample.
+     */
+    UINT16 bps;
+
+    /**
+     * The size of the arbitrary data block, if any. The meaning of the data
+     * within the arbitrary data block is determined by the format tag.
+     * WAVE_FORMAT_PCM audio has no associated arbitrary data.
+     */
+    UINT16 data_size;
+
+    /**
+     * Optional arbitrary data whose meaning is determined by the format tag.
+     * WAVE_FORMAT_PCM audio has no associated arbitrary data.
+     */
+    BYTE* data;
+
+} guac_rdp_ai_format;
 
 /**
  * Processes a Version PDU received from the RDP server. The Version PDU is
