@@ -69,8 +69,8 @@ void guac_rdp_audio_load_plugin(rdpContext* context) {
 
     /* Add "AUDIO_INPUT" channel */
     ADDIN_ARGV* args = malloc(sizeof(ADDIN_ARGV));
-    args->argc = 1;
-    args->argv = malloc(sizeof(char**) * 1);
+    args->argc = 2;
+    args->argv = malloc(sizeof(char**) * 2);
     args->argv[0] = strdup("guacai");
     args->argv[1] = guac_rdp_ptr_to_string(client);
     freerdp_dynamic_channel_collection_add(context->settings, args);
