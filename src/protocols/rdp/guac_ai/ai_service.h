@@ -17,13 +17,86 @@
  * under the License.
  */
 
-
 #ifndef GUAC_RDP_AI_SERVICE_H
 #define GUAC_RDP_AI_SERVICE_H
 
 #include "config.h"
 
-/* STUB */
+#include <freerdp/freerdp.h>
+#include <freerdp/constants.h>
+#include <freerdp/dvc.h>
+#include <guacamole/client.h>
+
+/**
+ * Extended version of the IWTSListenerCallback structure, providing additional
+ * access to Guacamole-specific data. The IWTSListenerCallback provides access
+ * to callbacks related to the receipt of new connections to the AUDIO_INPUT
+ * channel.
+ */
+typedef struct guac_rdp_ai_listener_callback {
+
+    /**
+     * The parent IWTSListenerCallback structure that this structure extends.
+     * THIS MEMBER MUST BE FIRST!
+     */
+    IWTSListenerCallback parent;
+
+    /**
+     * The guac_client instance associated with the RDP connection using the
+     * AUDIO_INPUT plugin.
+     */
+    guac_client* client;
+
+} guac_rdp_ai_listener_callback;
+
+/**
+ * Extended version of the IWTSVirtualChannelCallback structure, providing
+ * additional access to Guacamole-specific data. The IWTSVirtualChannelCallback
+ * provides access to callbacks related to an active connection to the
+ * AUDIO_INPUT channel, including receipt of data. 
+ */
+typedef struct guac_rdp_ai_channel_callback {
+
+    /**
+     * The parent IWTSVirtualChannelCallback structure that this structure
+     * extends. THIS MEMBER MUST BE FIRST!
+     */
+    IWTSVirtualChannelCallback parent;
+
+    /**
+     * The guac_client instance associated with the RDP connection using the
+     * AUDIO_INPUT plugin.
+     */
+    guac_client* client;
+
+} guac_rdp_ai_channel_callback;
+
+/**
+ * All data associated with Guacamole's AUDIO_INPUT plugin for FreeRDP.
+ */
+typedef struct guac_rdp_ai_plugin {
+
+    /**
+     * The parent IWTSPlugin structure that this structure extends. THIS
+     * MEMBER MUST BE FIRST!
+     */
+    IWTSPlugin parent;
+
+    /**
+     * The listener callback structure allocated when the AUDIO_INPUT plugin
+     * was loaded, if any. If the plugin did not fully load, this will be NULL.
+     * If non-NULL, this callback structure must be freed when the plugin is
+     * terminated.
+     */
+    guac_rdp_ai_listener_callback* listener_callback;
+
+    /**
+     * The guac_client instance associated with the RDP connection using the
+     * AUDIO_INPUT plugin.
+     */
+    guac_client* client;
+
+} guac_rdp_ai_plugin;
 
 #endif
 
