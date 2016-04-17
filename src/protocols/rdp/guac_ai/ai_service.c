@@ -62,6 +62,7 @@ static void guac_rdp_ai_handle_data(guac_client* client, wStream* stream) {
 
 }
 
+#if LEGACY_IWTSVIRTUALCHANNELCALLBACK
 /**
  * Callback which is invoked when data is received along a connection to the
  * AUDIO_INPUT plugin. This callback is specific to FreeRDP 1.1 and older.
@@ -93,6 +94,34 @@ static int guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
     return 0;
 
 }
+#else
+/**
+ * Callback which is invoked when data is received along a connection to the
+ * AUDIO_INPUT plugin. This callback is specific to FreeRDP 1.2 and newer.
+ *
+ * @param channel_callback
+ *     The IWTSVirtualChannelCallback structure to which this callback was
+ *     originally assigned.
+ *
+ * @param stream
+ *     The data received.
+ *
+ * @return
+ *     Always zero.
+ */
+static int guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
+        wStream* stream) {
+
+    guac_rdp_ai_channel_callback* ai_channel_callback =
+        (guac_rdp_ai_channel_callback*) channel_callback;
+
+    /* Invoke generalized (API-independent) data handler */
+    guac_rdp_ai_handle_data(ai_channel_callback->client, stream);
+
+    return 0;
+
+}
+#endif
 
 /**
  * Callback which is invoked when a connection to the AUDIO_INPUT plugin is

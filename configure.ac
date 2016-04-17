@@ -765,6 +765,28 @@ then
 fi
 
 #
+# FreeRDP: IWTSVirtualChannelCallback
+#
+
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([whether IWTSVirtualChannelCallback.OnDataReceived() uses a wStream])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
+                                        #include <freerdp/dvc.h>
+                                        #include <freerdp/freerdp.h>
+                                        int __data_received(
+                                            IWTSVirtualChannelCallback* channel_callback,
+                                            wStream* stream);
+                                        IWTSVirtualChannelCallback cb = {
+                                            .OnDataReceived = __data_received
+                                        };]])],
+                      [AC_MSG_RESULT([yes])],
+                      [AC_MSG_RESULT([no])
+                       AC_DEFINE([LEGACY_IWTSVIRTUALCHANNELCALLBACK],,
+                                 [Whether the legacy IWTSVirtualChannelCallback API was found])])
+fi
+
+#
 # FreeRDP: Decompression function variants
 #
 
