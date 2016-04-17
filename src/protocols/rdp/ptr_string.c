@@ -18,38 +18,38 @@
  */
 
 #include "config.h"
-
-#include "ai_service.h"
 #include "ptr_string.h"
-#include "rdp.h"
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <freerdp/freerdp.h>
-#include <freerdp/constants.h>
-#include <freerdp/dvc.h>
 #include <guacamole/client.h>
 
-#ifdef ENABLE_WINPR
-#include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
+#include <stdio.h>
+#include <stdlib.h>
 
 /**
- * Entry point for AUDIO_INPUT dynamic virtual channel.
+ * The maximum number of bytes required to represent a pointer printed using
+ * printf()'s "%p". This will be the size of the hex prefix ("0x"), null
+ * terminator, plus two bytes for every byte required by a pointer.
  */
-int DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints) {
+#define GUAC_RDP_PTR_STRING_LENGTH (sizeof("0x") + (sizeof(void*) * 2))
 
-    ADDIN_ARGV* args = pEntryPoints->GetPluginData(pEntryPoints);
-    guac_client* client = (guac_client*) guac_rdp_string_to_ptr(args->argv[1]);
+char* guac_rdp_ptr_to_string(void* data) {
 
-    /* STUB */
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "STUB: AUDIO_INPUT DVC (entry point)");
+    /* Convert pointer to string */
+    char* str = malloc(GUAC_RDP_PTR_STRING_LENGTH);
+    sprintf(str, "%p", data);
 
-    return 1;
+    return str;
+
+}
+
+void* guac_rdp_string_to_ptr(const char* str) {
+
+    void* data;
+
+    /* Convert string to pointer */
+    sscanf(str, "%p", &data);
+
+    return data;
 
 }
 

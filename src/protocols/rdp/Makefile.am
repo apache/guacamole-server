@@ -27,6 +27,7 @@ libguac_client_rdp_la_SOURCES = \
     audio_input.c               \
     client.c                    \
     input.c                     \
+    ptr_string.c                \
     rdp.c                       \
     rdp_bitmap.c                \
     rdp_cliprdr.c               \
@@ -46,7 +47,8 @@ libguac_client_rdp_la_SOURCES = \
     user.c
 
 guacai_sources =         \
-    guac_ai/ai_service.c
+    guac_ai/ai_service.c \
+	ptr_string.c
 
 guacsvc_sources =          \
     guac_svc/svc_service.c \
@@ -87,6 +89,7 @@ noinst_HEADERS =                             \
     audio_input.h                            \
     client.h                                 \
     input.h                                  \
+    ptr_string.h                             \
     rdp.h                                    \
     rdp_bitmap.h                             \
     rdp_cliprdr.h                            \
