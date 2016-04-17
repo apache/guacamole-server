@@ -995,6 +995,17 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 #endif
 #endif
 
+    /* Audio capture */
+#ifdef LEGACY_RDPSETTINGS
+#ifdef HAVE_RDPSETTINGS_AUDIOCAPTURE
+    rdp_settings->audio_capture = guac_settings->enable_audio_input;
+#endif
+#else
+#ifdef HAVE_RDPSETTINGS_AUDIOCAPTURE
+    rdp_settings->AudioCapture = guac_settings->enable_audio_input;
+#endif
+#endif
+
     /* Device redirection */
 #ifdef LEGACY_RDPSETTINGS
 #ifdef HAVE_RDPSETTINGS_DEVICEREDIRECTION

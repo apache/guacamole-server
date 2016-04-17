@@ -436,6 +436,7 @@ then
     have_freerdp=yes
     legacy_freerdp_extensions=no
     rdpsettings_interface=unknown
+    rdpsettings_audiocapture=yes
     rdpsettings_audioplayback=yes
     rdpsettings_deviceredirection=yes
     freerdp_interface=unknown
@@ -686,6 +687,11 @@ then
                          [rdpsettings_audioplayback=no],
                          [[#include <freerdp/freerdp.h>]])
 
+        # Legacy interface may not have AudioCapture settings
+        AC_CHECK_MEMBERS([rdpSettings.audio_capture],,
+                         [rdpsettings_audiocapture=no],
+                         [[#include <freerdp/freerdp.h>]])
+
         # Legacy interface may not have DeviceRedirection settings
         AC_CHECK_MEMBERS([rdpSettings.device_redirection],,
                          [rdpsettings_deviceredirection=no],
@@ -705,6 +711,12 @@ fi
 if test "x${have_freerdp}" = "xyes" -a "x${rdpsettings_audioplayback}" = "xyes"; then
     AC_DEFINE([HAVE_RDPSETTINGS_AUDIOPLAYBACK],,
               [Whether the rdpSettings structure has AudioPlayback settings])
+fi
+
+# Activate audio capture settings if present
+if test "x${have_freerdp}" = "xyes" -a "x${rdpsettings_audiocapture}" = "xyes"; then
+    AC_DEFINE([HAVE_RDPSETTINGS_AUDIOCAPTURE],,
+              [Whether the rdpSettings structure has AudioCapture settings])
 fi
 
 # Activate device redirection settings if present
