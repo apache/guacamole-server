@@ -101,14 +101,14 @@ static void guac_rdp_ai_write_format(wStream* stream,
  */
 static void guac_rdp_ai_send_incoming_data(IWTSVirtualChannel* channel) {
 
-    /* Build response version PDU */
-    wStream* response = Stream_New(NULL, 1);
-    Stream_Write_UINT8(response, GUAC_RDP_MSG_SNDIN_DATA_INCOMING); /* MessageId */
+    /* Build data incoming PDU */
+    wStream* stream = Stream_New(NULL, 1);
+    Stream_Write_UINT8(stream, GUAC_RDP_MSG_SNDIN_DATA_INCOMING); /* MessageId */
 
-    /* Send response */
-    channel->Write(channel, (UINT32) Stream_GetPosition(response),
-            Stream_Buffer(response), NULL);
-    Stream_Free(response, TRUE);
+    /* Send stream */
+    channel->Write(channel, (UINT32) Stream_GetPosition(stream),
+            Stream_Buffer(stream), NULL);
+    Stream_Free(stream, TRUE);
 
 }
 
@@ -149,6 +149,60 @@ static void guac_rdp_ai_send_formats(IWTSVirtualChannel* channel,
         guac_rdp_ai_write_format(stream, &(formats[index]));
 
     /* Send PDU */
+    channel->Write(channel, (UINT32) Stream_GetPosition(stream),
+            Stream_Buffer(stream), NULL);
+    Stream_Free(stream, TRUE);
+
+}
+
+/**
+ * Sends an Open Reply PDU along the given channel. An Open Reply PDU is
+ * used by the client to acknowledge the successful opening of the AUDIO_INPUT
+ * channel.
+ *
+ * @param channel
+ *     The channel along which the PDU should be sent.
+ *
+ * @param result
+ *     The HRESULT code to send to the server indicating success, failure, etc.
+ */
+static void guac_rdp_ai_send_open_reply(IWTSVirtualChannel* channel,
+        UINT32 result) {
+
+    /* Build open reply PDU */
+    wStream* stream = Stream_New(NULL, 5);
+    Stream_Write_UINT8(stream, GUAC_RDP_MSG_SNDIN_OPEN_REPLY); /* MessageId */
+    Stream_Write_UINT32(stream, result); /* Result */
+
+    /* Send stream */
+    channel->Write(channel, (UINT32) Stream_GetPosition(stream),
+            Stream_Buffer(stream), NULL);
+    Stream_Free(stream, TRUE);
+
+}
+
+/**
+ * Sends a Format Change PDU along the given channel. A Format Change PDU is
+ * used by the client to acknowledge the format being used for data sent
+ * along the AUDIO_INPUT channel.
+ *
+ * @param channel
+ *     The channel along which the PDU should be sent.
+ *
+ * @param format
+ *     The index of the format being acknowledged, which must be the index of
+ *     the format within the original Sound Formats PDU received from the
+ *     server.
+ */
+static void guac_rdp_ai_send_formatchange(IWTSVirtualChannel* channel,
+        UINT32 format) {
+
+    /* Build format change PDU */
+    wStream* stream = Stream_New(NULL, 5);
+    Stream_Write_UINT8(stream, GUAC_RDP_MSG_SNDIN_FORMATCHANGE); /* MessageId */
+    Stream_Write_UINT32(stream, format); /* NewFormat */
+
+    /* Send stream */
     channel->Write(channel, (UINT32) Stream_GetPosition(stream),
             Stream_Buffer(stream), NULL);
     Stream_Free(stream, TRUE);
@@ -212,8 +266,20 @@ void guac_rdp_ai_process_formats(guac_client* client,
 void guac_rdp_ai_process_open(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
 
+    UINT32 packet_frames;
+    UINT32 initial_format;
+
+    Stream_Read_UINT32(stream, packet_frames); /* FramesPerPacket */
+    Stream_Read_UINT32(stream, initial_format); /* InitialFormat */
+
     /* STUB */
-    guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT: open");
+    guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT: open: "
+            "packet_frames=%i, initial_format=%i",
+            packet_frames, initial_format);
+
+    /* Success */
+    guac_rdp_ai_send_formatchange(channel, initial_format);
+    guac_rdp_ai_send_open_reply(channel, 0);
 
 }
 
