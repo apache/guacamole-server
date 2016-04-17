@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "ai_messages.h"
 #include "ai_service.h"
 #include "ptr_string.h"
 #include "rdp.h"
@@ -47,18 +48,49 @@
  *     The guac_client associated with RDP connection having the AUDIO_INPUT
  *     connection along which the given data was received.
  *
+ * @param channel
+ *     A reference to the IWTSVirtualChannel instance along which responses
+ *     should be sent.
+ *
  * @param stream
  *     The data received along the AUDIO_INPUT channel.
  */
-static void guac_rdp_ai_handle_data(guac_client* client, wStream* stream) {
+static void guac_rdp_ai_handle_data(guac_client* client,
+        IWTSVirtualChannel* channel, wStream* stream) {
 
     /* Read message ID from received PDU */
     BYTE message_id;
     Stream_Read_UINT8(stream, message_id);
 
-    /* STUB */
-    guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT data received: 0x%x",
-            message_id);
+    /* Invoke appropriate message processor based on ID */
+    switch (message_id) {
+
+        /* Version PDU */
+        case GUAC_RDP_MSG_SNDIN_VERSION:
+            guac_rdp_ai_process_version(client, channel, stream);
+            break;
+
+        /* Sound Formats PDU */
+        case GUAC_RDP_MSG_SNDIN_FORMATS:
+            guac_rdp_ai_process_formats(client, channel, stream);
+            break;
+
+        /* Open PDU */
+        case GUAC_RDP_MSG_SNDIN_OPEN:
+            guac_rdp_ai_process_open(client, channel, stream);
+            break;
+
+        /* Format Change PDU */
+        case GUAC_RDP_MSG_SNDIN_FORMATCHANGE:
+            guac_rdp_ai_process_formatchange(client, channel, stream);
+            break;
+
+        /* Log unknown message IDs */
+        default:
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Unknown AUDIO_INPUT message ID: 0x%x", message_id);
+
+    }
 
 }
 
@@ -85,10 +117,11 @@ static int guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
 
     guac_rdp_ai_channel_callback* ai_channel_callback =
         (guac_rdp_ai_channel_callback*) channel_callback;
+    IWTSVirtualChannel* channel = ai_channel_callback->channel;
 
     /* Invoke generalized (API-independent) data handler */
     wStream* stream = Stream_New(buffer, size);
-    guac_rdp_ai_handle_data(ai_channel_callback->client, stream);
+    guac_rdp_ai_handle_data(ai_channel_callback->client, channel, stream);
     Stream_Free(stream, FALSE);
 
     return 0;
@@ -114,9 +147,10 @@ static int guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
 
     guac_rdp_ai_channel_callback* ai_channel_callback =
         (guac_rdp_ai_channel_callback*) channel_callback;
+    IWTSVirtualChannel* channel = ai_channel_callback->channel;
 
     /* Invoke generalized (API-independent) data handler */
-    guac_rdp_ai_handle_data(ai_channel_callback->client, stream);
+    guac_rdp_ai_handle_data(ai_channel_callback->client, channel, stream);
 
     return 0;
 
@@ -197,6 +231,7 @@ static int guac_rdp_ai_new_connection(
 
     /* Init listener callback with data from plugin */
     ai_channel_callback->client = ai_listener_callback->client;
+    ai_channel_callback->channel = channel;
     ai_channel_callback->parent.OnDataReceived = guac_rdp_ai_data;
     ai_channel_callback->parent.OnClose = guac_rdp_ai_close;
 

@@ -46,9 +46,10 @@ libguac_client_rdp_la_SOURCES = \
     unicode.c                   \
     user.c
 
-guacai_sources =         \
-    guac_ai/ai_service.c \
-	ptr_string.c
+guacai_sources =          \
+    guac_ai/ai_messages.c \
+    guac_ai/ai_service.c  \
+    ptr_string.c
 
 guacsvc_sources =          \
     guac_svc/svc_service.c \
@@ -74,6 +75,7 @@ guacdr_sources =                             \
 noinst_HEADERS =                             \
     compat/client-cliprdr.h                  \
     compat/rail.h                            \
+    guac_ai/ai_messages.h                    \
     guac_ai/ai_service.h                     \
     guac_rdpdr/rdpdr_fs_messages.h           \
     guac_rdpdr/rdpdr_fs_messages_dir_info.h  \

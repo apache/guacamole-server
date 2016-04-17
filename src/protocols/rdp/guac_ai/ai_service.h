@@ -64,6 +64,12 @@ typedef struct guac_rdp_ai_channel_callback {
     IWTSVirtualChannelCallback parent;
 
     /**
+     * The actual virtual channel instance along which the AUDIO_INPUT plugin
+     * should send any responses.
+     */
+    IWTSVirtualChannel* channel;
+
+    /**
      * The guac_client instance associated with the RDP connection using the
      * AUDIO_INPUT plugin.
      */
