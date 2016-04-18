@@ -21,6 +21,7 @@
 
 #include "ai_messages.h"
 #include "ai_service.h"
+#include "audio_input.h"
 #include "ptr_string.h"
 #include "rdp.h"
 
@@ -173,10 +174,15 @@ static int guac_rdp_ai_close(IWTSVirtualChannelCallback* channel_callback) {
     guac_rdp_ai_channel_callback* ai_channel_callback =
         (guac_rdp_ai_channel_callback*) channel_callback;
 
+    guac_client* client = ai_channel_callback->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_audio_buffer* audio_buffer = rdp_client->audio_input;
+
     /* Log closure of AUDIO_INPUT channel */
-    guac_client_log(ai_channel_callback->client, GUAC_LOG_DEBUG,
+    guac_client_log(client, GUAC_LOG_DEBUG,
             "AUDIO_INPUT channel connection closed");
 
+    guac_rdp_audio_buffer_end(audio_buffer);
     free(ai_channel_callback);
     return 0;
 

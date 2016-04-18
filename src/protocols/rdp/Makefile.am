@@ -47,6 +47,7 @@ libguac_client_rdp_la_SOURCES = \
     user.c
 
 guacai_sources =          \
+    audio_input.c         \
     guac_ai/ai_messages.c \
     guac_ai/ai_service.c  \
     ptr_string.c

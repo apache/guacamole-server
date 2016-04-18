@@ -51,14 +51,19 @@ int guac_rdp_audio_handler(guac_user* user, guac_stream* stream,
 int guac_rdp_audio_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
-    /* STUB */
+    guac_client* client = user->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    /* Write blob to audio stream, buffering if necessary */
+    guac_rdp_audio_buffer_write(rdp_client->audio_input, data, length);
+
     return 0;
 
 }
 
 int guac_rdp_audio_end_handler(guac_user* user, guac_stream* stream) {
 
-    /* STUB */
+    /* Ignore - the AUDIO_INPUT channel will simply not receive anything */
     return 0;
 
 }
@@ -75,5 +80,86 @@ void guac_rdp_audio_load_plugin(rdpContext* context) {
     args->argv[1] = guac_rdp_ptr_to_string(client);
     freerdp_dynamic_channel_collection_add(context->settings, args);
 
+}
+
+guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc() {
+    return calloc(1, sizeof(guac_rdp_audio_buffer));
+}
+
+void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
+        int packet_size, guac_rdp_audio_buffer_flush_handler* flush_handler,
+        void* data) {
+
+    /* Reset buffer state to provided values */
+    audio_buffer->bytes_written = 0;
+    audio_buffer->packet_size = packet_size;
+    audio_buffer->flush_handler = flush_handler;
+    audio_buffer->data = data;
+
+    /* Allocate new buffer */
+    free(audio_buffer->packet);
+    audio_buffer->packet = malloc(packet_size);
+
+}
+
+void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
+        char* buffer, int length) {
+
+    /* Ignore packet if there is no buffer */
+    if (audio_buffer->packet_size == 0 || audio_buffer->packet == NULL)
+        return;
+
+    /* Continuously write packets until no data remains */
+    while (length > 0) {
+
+        /* Calculate ideal size of chunk based on available space */
+        int chunk_size = audio_buffer->packet_size
+                       - audio_buffer->bytes_written;
+
+        /* Shrink chunk size if insufficient bytes are provided */
+        if (length < chunk_size)
+            chunk_size = length;
+
+        /* Append buffer */
+        memcpy(audio_buffer->packet + audio_buffer->bytes_written,
+                buffer, chunk_size);
+
+        /* Update byte counters */
+        length -= chunk_size;
+        audio_buffer->bytes_written += chunk_size;
+
+        /* Invoke flush handler if full */
+        if (audio_buffer->bytes_written == audio_buffer->packet_size) {
+
+            /* Only actually invoke if defined */
+            if (audio_buffer->flush_handler)
+                audio_buffer->flush_handler(audio_buffer->packet,
+                        audio_buffer->bytes_written, audio_buffer->data);
+
+            /* Reset buffer in all cases */
+            audio_buffer->bytes_written = 0;
+
+        }
+
+    } /* end packet write loop */
+
+}
+
+void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer) {
+
+    /* Reset buffer state */
+    audio_buffer->bytes_written = 0;
+    audio_buffer->packet_size = 0;
+    audio_buffer->flush_handler = NULL;
+
+    /* Free packet (if any) */
+    free(audio_buffer->packet);
+    audio_buffer->packet = NULL;
+
+}
+
+void guac_rdp_audio_buffer_free(guac_rdp_audio_buffer* audio_buffer) {
+    free(audio_buffer->packet);
+    free(audio_buffer);
 }
 

@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include "audio_input.h"
 #include "guac_clipboard.h"
 #include "guac_display.h"
 #include "guac_surface.h"
@@ -119,6 +120,11 @@ typedef struct guac_rdp_client {
      * Audio output, if any.
      */
     guac_audio_stream* audio;
+
+    /**
+     * Audio input buffer, if audio input is enabled.
+     */
+    guac_rdp_audio_buffer* audio_input;
 
     /**
      * The filesystem being shared, if any.

@@ -244,8 +244,10 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 #endif
 
             /* Load "AUDIO_INPUT" plugin for audio input*/
-            if (settings->enable_audio_input)
+            if (settings->enable_audio_input) {
+                rdp_client->audio_input = guac_rdp_audio_buffer_alloc();
                 guac_rdp_audio_load_plugin(instance->context);
+            }
 
         }
 

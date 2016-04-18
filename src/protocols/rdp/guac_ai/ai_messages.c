@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "ai_messages.h"
+#include "audio_input.h"
 #include "rdp.h"
 
 #include <stdlib.h>
@@ -104,6 +105,21 @@ static void guac_rdp_ai_send_incoming_data(IWTSVirtualChannel* channel) {
     /* Build data incoming PDU */
     wStream* stream = Stream_New(NULL, 1);
     Stream_Write_UINT8(stream, GUAC_RDP_MSG_SNDIN_DATA_INCOMING); /* MessageId */
+
+    /* Send stream */
+    channel->Write(channel, (UINT32) Stream_GetPosition(stream),
+            Stream_Buffer(stream), NULL);
+    Stream_Free(stream, TRUE);
+
+}
+
+static void guac_rdp_ai_send_data(IWTSVirtualChannel* channel,
+        char* buffer, int length) {
+
+    /* Build data PDU */
+    wStream* stream = Stream_New(NULL, length + 1);
+    Stream_Write_UINT8(stream, GUAC_RDP_MSG_SNDIN_DATA); /* MessageId */
+    Stream_Write(stream, buffer, length); /* Data */
 
     /* Send stream */
     channel->Write(channel, (UINT32) Stream_GetPosition(stream),
@@ -263,8 +279,21 @@ void guac_rdp_ai_process_formats(guac_client* client,
 
 }
 
+static void guac_rdp_ai_flush_packet(char* buffer, int length, void* data) {
+
+    IWTSVirtualChannel* channel = (IWTSVirtualChannel*) data;
+
+    /* Send data over channel */
+    guac_rdp_ai_send_incoming_data(channel);
+    guac_rdp_ai_send_data(channel, buffer, length);
+
+}
+
 void guac_rdp_ai_process_open(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
+
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_audio_buffer* audio_buffer = rdp_client->audio_input;
 
     UINT32 packet_frames;
     UINT32 initial_format;
@@ -281,12 +310,16 @@ void guac_rdp_ai_process_open(guac_client* client,
     guac_rdp_ai_send_formatchange(channel, initial_format);
     guac_rdp_ai_send_open_reply(channel, 0);
 
+    /* FIXME: Assuming mimetype of 16-bit 44100 Hz stereo PCM */
+    guac_rdp_audio_buffer_begin(audio_buffer, packet_frames * 2 * 2,
+            guac_rdp_ai_flush_packet, channel);
+
 }
 
 void guac_rdp_ai_process_formatchange(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
 
-    /* STUB */
+    /* STUB: Should not be called as we only accept one format */
     guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT: formatchange");
 
 }
