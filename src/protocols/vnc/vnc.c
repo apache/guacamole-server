@@ -241,6 +241,13 @@ void* guac_vnc_client_thread(void* data) {
     /* Connect via SSH if SFTP is enabled */
     if (settings->enable_sftp) {
 
+        /* Abort if username is missing */
+        if (settings->sftp_username == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "SFTP username is required if SFTP is enabled.");
+            return NULL;
+        }
+
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "Connecting via SSH for SFTP filesystem access.");
 
@@ -258,6 +265,8 @@ void* guac_vnc_client_thread(void* data) {
                         settings->sftp_private_key,
                         settings->sftp_passphrase)) {
                 guac_common_ssh_destroy_user(vnc_client->sftp_user);
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "Private key unreadable.");
                 return NULL;
             }
 
@@ -297,6 +306,8 @@ void* guac_vnc_client_thread(void* data) {
         if (vnc_client->sftp_filesystem == NULL) {
             guac_common_ssh_destroy_session(vnc_client->sftp_session);
             guac_common_ssh_destroy_user(vnc_client->sftp_user);
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                    "SFTP connection failed.");
             return NULL;
         }
 
@@ -407,6 +418,8 @@ void* guac_vnc_client_thread(void* data) {
 
     }
 
+    /* Kill client and finish connection */
+    guac_client_stop(client);
     guac_client_log(client, GUAC_LOG_INFO, "Internal VNC client disconnected");
     return NULL;
 

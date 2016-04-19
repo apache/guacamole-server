@@ -178,8 +178,11 @@ void* ssh_client_thread(void* data) {
     pthread_t input_thread;
 
     /* Init SSH base libraries */
-    if (guac_common_ssh_init(client))
+    if (guac_common_ssh_init(client)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "SSH library initialization failed");
         return NULL;
+    }
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {

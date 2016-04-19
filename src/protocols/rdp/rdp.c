@@ -800,7 +800,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
                 /* Check the libfreerdp fds */
                 if (!freerdp_check_fds(rdp_inst)) {
-                    guac_client_log(client, GUAC_LOG_DEBUG,
+                    guac_client_abort(client,
+                            GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                             "Error handling RDP file descriptors");
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
                     return 1;
@@ -808,7 +809,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
                 /* Check channel fds */
                 if (!freerdp_channels_check_fds(channels, rdp_inst)) {
-                    guac_client_log(client, GUAC_LOG_DEBUG,
+                    guac_client_abort(client,
+                            GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                             "Error handling RDP channel file descriptors");
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
                     return 1;
@@ -837,6 +839,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
                 /* Handle RDP disconnect */
                 if (freerdp_shall_disconnect(rdp_inst)) {
+                    guac_client_stop(client);
                     guac_client_log(client, GUAC_LOG_INFO,
                             "RDP server closed connection");
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
@@ -884,6 +887,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     }
 
+    /* Kill client and finish connection */
+    guac_client_stop(client);
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
 
     pthread_mutex_lock(&(rdp_client->rdp_lock));
@@ -953,8 +958,12 @@ void* guac_rdp_client_thread(void* data) {
     if (settings->enable_sftp) {
 
         /* Abort if username is missing */
-        if (settings->sftp_username == NULL)
+        if (settings->sftp_username == NULL) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "A username or SFTP-specific username is required if "
+                    "SFTP is enabled.");
             return NULL;
+        }
 
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "Connecting via SSH for SFTP filesystem access.");
@@ -973,6 +982,8 @@ void* guac_rdp_client_thread(void* data) {
                         settings->sftp_private_key,
                         settings->sftp_passphrase)) {
                 guac_common_ssh_destroy_user(rdp_client->sftp_user);
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                        "Private key unreadable.");
                 return NULL;
             }
 
@@ -1015,6 +1026,8 @@ void* guac_rdp_client_thread(void* data) {
         if (rdp_client->sftp_filesystem == NULL) {
             guac_common_ssh_destroy_session(rdp_client->sftp_session);
             guac_common_ssh_destroy_user(rdp_client->sftp_user);
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+                    "SFTP connection failed.");
             return NULL;
         }
 
