@@ -249,4 +249,19 @@ void guac_common_cursor_set_ibar(guac_common_cursor* cursor);
  */
 void guac_common_cursor_set_blank(guac_common_cursor* cursor);
 
+/**
+ * Removes the given user, such that future synchronization will not occur.
+ * This is necessary when a user leaves the connection. If a user leaves the
+ * connection and this is not called, the corresponding guac_user and socket
+ * may cease to be valid, and future synchronization attempts will segfault.
+ *
+ * @param cursor
+ *     The cursor to remove the user from.
+ *
+ * @param user
+ *     The user to remove.
+ */
+void guac_common_cursor_remove_user(guac_common_cursor* cursor,
+        guac_user* user);
+
 #endif
