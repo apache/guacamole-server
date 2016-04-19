@@ -122,3 +122,12 @@ int guac_rdp_user_file_handler(guac_user* user, guac_stream* stream,
     return 0;
 }
 
+int guac_rdp_user_leave_handler(guac_user* user) {
+
+    guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
+
+    guac_common_cursor_remove_user(rdp_client->display->cursor, user);
+
+    return 0;
+}
+

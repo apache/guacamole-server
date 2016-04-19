@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_VNC_USER_H
-#define GUAC_VNC_USER_H
+#ifndef GUAC_SSH_USER_H
+#define GUAC_SSH_USER_H
 
 #include "config.h"
 
@@ -28,6 +28,11 @@
  * Handler for joining users.
  */
 guac_user_join_handler guac_ssh_user_join_handler;
+
+/**
+ * Handler for leaving users.
+ */
+guac_user_leave_handler guac_ssh_user_leave_handler;
 
 #endif
 
