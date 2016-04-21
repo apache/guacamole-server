@@ -779,7 +779,11 @@ then
                                             wStream* stream);
                                         IWTSVirtualChannelCallback cb = {
                                             .OnDataReceived = __data_received
-                                        };]])],
+                                        };
+                                        int main() {
+                                            return
+                                                cb.OnDataReceived(NULL, NULL);
+                                        }]])],
                       [AC_MSG_RESULT([yes])],
                       [AC_MSG_RESULT([no])
                        AC_DEFINE([LEGACY_IWTSVIRTUALCHANNELCALLBACK],,

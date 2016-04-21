@@ -95,7 +95,7 @@ static void guac_rdp_ai_handle_data(guac_client* client,
 
 }
 
-#if LEGACY_IWTSVIRTUALCHANNELCALLBACK
+#ifdef LEGACY_IWTSVIRTUALCHANNELCALLBACK
 /**
  * Callback which is invoked when data is received along a connection to the
  * AUDIO_INPUT plugin. This callback is specific to FreeRDP 1.1 and older.
