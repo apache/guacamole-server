@@ -128,6 +128,9 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
         length -= chunk_size;
         audio_buffer->bytes_written += chunk_size;
 
+        /* Advance to next chunk */
+        buffer += chunk_size;
+
         /* Invoke flush handler if full */
         if (audio_buffer->bytes_written == audio_buffer->packet_size) {
 
