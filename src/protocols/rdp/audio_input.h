@@ -23,7 +23,10 @@
 #include "config.h"
 
 #include <freerdp/freerdp.h>
+#include <guacamole/stream.h>
 #include <guacamole/user.h>
+
+#include <pthread.h>
 
 /**
  * Handler which is invoked when a guac_rdp_audio_buffer's internal packet
@@ -50,6 +53,24 @@ typedef void guac_rdp_audio_buffer_flush_handler(char* buffer, int length,
  * internal buffer reaches capacity.
  */
 typedef struct guac_rdp_audio_buffer {
+
+    /**
+     * Lock which is acquired/released to ensure accesses to the audio buffer
+     * are atomic.
+     */
+    pthread_mutex_t lock;
+
+    /**
+     * The user from which this audio buffer will receive data. If no user has
+     * yet opened an associated audio stream, this will be NULL.
+     */
+    guac_user* user;
+
+    /**
+     * The stream from which this audio buffer will receive data. If no user
+     * has yet opened an associated audio stream, this will be NULL.
+     */
+    guac_stream* stream;
 
     /**
      * The size that each audio packet must be, in bytes. The packet buffer
@@ -90,6 +111,24 @@ typedef struct guac_rdp_audio_buffer {
  *     A newly-allocated audio buffer.
  */
 guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc();
+
+/**
+ * Associates the given audio buffer with the underlying audio stream which
+ * has been received from the given Guacamole user. Once both the Guacamole
+ * audio stream and the RDP audio stream are ready, an appropriate "ack"
+ * message will be sent.
+ *
+ * @param audio_buffer
+ *     The audio buffer associated with the audio stream just received.
+ *
+ * @param user
+ *     The Guacamole user that created the audio stream.
+ *
+ * @param stream
+ *     The guac_stream object representing the audio stream.
+ */
+void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
+        guac_user* user, guac_stream* stream);
 
 /**
  * Begins handling of audio data received via guac_rdp_audio_buffer_write() and
