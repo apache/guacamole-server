@@ -22,17 +22,26 @@
 #include "winpr-stream.h"
 #include "winpr-wtypes.h"
 
-/*
- * NOTE: Because the old API did not support local allocation of the buffer
- *       for each stream, these compatibility implementations ignore
- *       the parameters of Stream_New() and Stream_Free() that provide them.
- */
-
 wStream* Stream_New(BYTE* buffer, size_t size) {
-    return stream_new(size);
+
+    /* If no buffer is provided, allocate a new stream of the given size */
+    if (buffer == NULL)
+       return stream_new(size);
+
+    /* Otherwise allocate an empty stream and assign the given buffer */
+    wStream* stream = stream_new(0);
+    stream_attach(stream, buffer, size);
+    return stream;
+
 }
 
 void Stream_Free(wStream* s, BOOL bFreeBuffer) {
+
+    /* Disassociate buffer if it will be freed externally */
+    if (!bFreeBuffer)
+        stream_detach(s);
+
     stream_free(s);
+
 }
 
