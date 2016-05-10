@@ -314,8 +314,14 @@ static int guac_rdp_ai_terminated(IWTSPlugin* plugin) {
  */
 int DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints) {
 
+    /* Pull guac_client from arguments */
+#ifdef HAVE_ADDIN_ARGV
     ADDIN_ARGV* args = pEntryPoints->GetPluginData(pEntryPoints);
     guac_client* client = (guac_client*) guac_rdp_string_to_ptr(args->argv[1]);
+#else
+    RDP_PLUGIN_DATA* data = pEntryPoints->GetPluginData(pEntryPoints);
+    guac_client* client = (guac_client*) guac_rdp_string_to_ptr(data->data[1]);
+#endif
 
     /* Pull previously-allocated plugin */
     guac_rdp_ai_plugin* ai_plugin = (guac_rdp_ai_plugin*)

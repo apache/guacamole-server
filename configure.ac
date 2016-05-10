@@ -579,6 +579,15 @@ then
         [#include <freerdp/channels/channels.h>])
 fi
 
+# Availability of ADDIN_ARGV structure for configuring plugins
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_TYPE([ADDIN_ARGV],
+        [AC_DEFINE([HAVE_ADDIN_ARGV],,
+                   [Whether the ADDIN_ARGV type is available])],,
+        [#include <freerdp/settings.h>])
+fi
+
 #
 # FreeRDP: WinPR
 #
