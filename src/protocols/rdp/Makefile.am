@@ -26,6 +26,7 @@ libguac_client_rdp_la_SOURCES = \
     _generated_keymaps.c        \
     audio_input.c               \
     client.c                    \
+    dvc.c                       \
     input.c                     \
     ptr_string.c                \
     rdp.c                       \
@@ -91,6 +92,7 @@ noinst_HEADERS =                             \
     guac_svc/svc_service.h                   \
     audio_input.h                            \
     client.h                                 \
+    dvc.h                                    \
     input.h                                  \
     ptr_string.h                             \
     rdp.h                                    \

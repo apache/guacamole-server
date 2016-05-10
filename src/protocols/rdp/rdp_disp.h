@@ -20,6 +20,7 @@
 #ifndef GUAC_RDP_DISP_H
 #define GUAC_RDP_DISP_H
 
+#include "dvc.h"
 #include "rdp_settings.h"
 
 #include <freerdp/freerdp.h>
@@ -102,7 +103,7 @@ void guac_rdp_disp_free(guac_rdp_disp* disp);
  *
  * @param context The rdpContext associated with the active RDP session.
  */
-void guac_rdp_disp_load_plugin(rdpContext* context);
+void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list);
 
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 /**

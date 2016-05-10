@@ -21,6 +21,7 @@
 #define GUAC_RDP_AUDIO_INPUT_H
 
 #include "config.h"
+#include "dvc.h"
 
 #include <freerdp/freerdp.h>
 #include <guacamole/stream.h>
@@ -213,7 +214,7 @@ guac_user_end_handler guac_rdp_audio_end_handler;
  * @param context
  *     The rdpContext associated with the active RDP session.
  */
-void guac_rdp_audio_load_plugin(rdpContext* context);
+void guac_rdp_audio_load_plugin(rdpContext* context, guac_rdp_dvc_list* list);
 
 #endif
 
