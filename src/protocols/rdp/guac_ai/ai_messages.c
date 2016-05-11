@@ -312,7 +312,7 @@ void guac_rdp_ai_process_open(guac_client* client,
 
     /* FIXME: Assuming mimetype of 16-bit 44100 Hz stereo PCM */
     guac_rdp_audio_buffer_begin(audio_buffer, packet_frames * 2 * 2,
-            guac_rdp_ai_flush_packet, channel);
+            44100, 2, 2, guac_rdp_ai_flush_packet, channel);
 
 }
 

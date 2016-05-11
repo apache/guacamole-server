@@ -118,7 +118,7 @@ static int guac_rdp_audio_parse_mimetype(const char* mimetype,
     } while (mimetype != NULL);
 
     /* Mimetype is invalid if rate was not specified */
-    if (rate == -1)
+    if (parsed_rate == -1)
         return 1;
 
     /* Parse success */
@@ -142,17 +142,11 @@ int guac_rdp_audio_handler(guac_user* user, guac_stream* stream,
 
     /* Parse mimetype, abort on parse error */
     if (guac_rdp_audio_parse_mimetype(mimetype, &rate, &channels, &bps)) {
-        guac_user_log(user, GUAC_LOG_WARN, "Denying user audio stream with "
+        guac_user_log(user, GUAC_LOG_WARNING, "Denying user audio stream with "
                 "unsupported mimetype: \"%s\"", mimetype);
         guac_protocol_send_ack(user->socket, stream, "Unsupported audio "
                 "mimetype", GUAC_PROTOCOL_STATUS_CLIENT_BAD_TYPE);
         return 0;
-    }
-
-    /* FIXME: Assuming mimetype of "audio/L16;rate=44100,channels=2" */
-    else {
-        guac_user_log(user, GUAC_LOG_DEBUG, "rate=%i, channels=%i, bps=%i",
-                rate, channels, bps);
     }
 
     /* Init stream data */
@@ -160,7 +154,8 @@ int guac_rdp_audio_handler(guac_user* user, guac_stream* stream,
     stream->end_handler = guac_rdp_audio_end_handler;
 
     /* Associate stream with audio buffer */
-    guac_rdp_audio_buffer_set_stream(rdp_client->audio_input, user, stream);
+    guac_rdp_audio_buffer_set_stream(rdp_client->audio_input, user, stream,
+            rate, channels, bps);
 
     return 0;
 
@@ -240,13 +235,16 @@ static void guac_rdp_audio_buffer_ack(guac_rdp_audio_buffer* audio_buffer,
 }
 
 void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
-        guac_user* user, guac_stream* stream) {
+        guac_user* user, guac_stream* stream, int rate, int channels, int bps) {
 
     pthread_mutex_lock(&(audio_buffer->lock));
 
     /* Associate received stream */
     audio_buffer->user = user;
     audio_buffer->stream = stream;
+    audio_buffer->in_rate = rate;
+    audio_buffer->in_channels = channels;
+    audio_buffer->in_bps = bps;
 
     /* Acknowledge stream creation (if buffer is ready to receive) */
     guac_rdp_audio_buffer_ack(audio_buffer,
@@ -257,13 +255,16 @@ void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
 }
 
 void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
-        int packet_size, guac_rdp_audio_buffer_flush_handler* flush_handler,
-        void* data) {
+        int rate, int channels, int bps, int packet_size,
+        guac_rdp_audio_buffer_flush_handler* flush_handler, void* data) {
 
     pthread_mutex_lock(&(audio_buffer->lock));
 
     /* Reset buffer state to provided values */
     audio_buffer->bytes_written = 0;
+    audio_buffer->out_rate = rate;
+    audio_buffer->out_channels = channels;
+    audio_buffer->out_bps = bps;
     audio_buffer->packet_size = packet_size;
     audio_buffer->flush_handler = flush_handler;
     audio_buffer->data = data;
@@ -284,6 +285,8 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
         char* buffer, int length) {
 
     pthread_mutex_lock(&(audio_buffer->lock));
+
+    /* FIXME: Assuming mimetype of "audio/L16;rate=44100,channels=2" */
 
     /* Ignore packet if there is no buffer */
     if (audio_buffer->packet_size == 0 || audio_buffer->packet == NULL) {
