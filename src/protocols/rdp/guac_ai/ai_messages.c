@@ -319,8 +319,10 @@ void guac_rdp_ai_process_open(guac_client* client,
 void guac_rdp_ai_process_formatchange(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
 
-    /* STUB: Should not be called as we only accept one format */
-    guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT: formatchange");
+    /* Should not be called as we only accept one format */
+    guac_client_log(client, GUAC_LOG_DEBUG,
+            "RDP server requesting AUDIO_INPUT format change despite only one "
+            "format available.");
 
 }
 
