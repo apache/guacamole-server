@@ -28,6 +28,11 @@
 guac_user_join_handler guac_rdp_user_join_handler;
 
 /**
+ * Handler for leaving users.
+ */
+guac_user_leave_handler guac_rdp_user_leave_handler;
+
+/**
  * Handler for received simple file uploads. This handler will automatically
  * select between RDPDR and SFTP depending on which is available and which has
  * priority given associated settings.

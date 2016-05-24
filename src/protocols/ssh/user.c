@@ -82,3 +82,12 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
 
 }
 
+int guac_ssh_user_leave_handler(guac_user* user) {
+
+    guac_ssh_client* ssh_client = (guac_ssh_client*) user->client->data;
+
+    guac_common_cursor_remove_user(ssh_client->term->cursor, user);
+
+    return 0;
+}
+

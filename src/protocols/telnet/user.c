@@ -78,3 +78,13 @@ int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
 
 }
 
+int guac_telnet_user_leave_handler(guac_user* user) {
+
+    guac_telnet_client* telnet_client =
+        (guac_telnet_client*) user->client->data;
+
+    guac_common_cursor_remove_user(telnet_client->term->cursor, user);
+
+    return 0;
+}
+
