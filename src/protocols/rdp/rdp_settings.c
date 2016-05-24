@@ -925,9 +925,31 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     /* Performance flags */
 #ifdef LEGACY_RDPSETTINGS
+
+    /* Explicitly set flag value */
     rdp_settings->performance_flags = guac_rdp_get_performance_flags(guac_settings);
+
+    /* Set individual flags - some FreeRDP versions overwrite the above */
+    rdp_settings->smooth_fonts = guac_settings->font_smoothing_enabled;
+    rdp_settings->disable_wallpaper = !guac_settings->wallpaper_enabled;
+    rdp_settings->disable_full_window_drag = !guac_settings->full_window_drag_enabled;
+    rdp_settings->disable_menu_animations = !guac_settings->menu_animations_enabled;
+    rdp_settings->disable_theming = !guac_settings->theming_enabled;
+    rdp_settings->desktop_composition = guac_settings->desktop_composition_enabled;
+
 #else
+
+    /* Explicitly set flag value */
     rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
+
+    /* Set individual flags - some FreeRDP versions overwrite the above */
+    rdp_settings->AllowFontSmoothing = guac_settings->font_smoothing_enabled;
+    rdp_settings->DisableWallpaper = !guac_settings->wallpaper_enabled;
+    rdp_settings->DisableFullWindowDrag = !guac_settings->full_window_drag_enabled;
+    rdp_settings->DisableMenuAnims = !guac_settings->menu_animations_enabled;
+    rdp_settings->DisableThemes = !guac_settings->theming_enabled;
+    rdp_settings->AllowDesktopComposition = guac_settings->desktop_composition_enabled;
+
 #endif
 
     /* Client name */
