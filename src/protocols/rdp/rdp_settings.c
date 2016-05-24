@@ -935,7 +935,7 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->disable_full_window_drag = !guac_settings->full_window_drag_enabled;
     rdp_settings->disable_menu_animations = !guac_settings->menu_animations_enabled;
     rdp_settings->disable_theming = !guac_settings->theming_enabled;
-    rdp_settings->desktop_composition = !guac_settings->desktop_composition_enabled;
+    rdp_settings->desktop_composition = guac_settings->desktop_composition_enabled;
 
 #else
 
