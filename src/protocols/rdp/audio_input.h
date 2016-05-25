@@ -49,6 +49,29 @@ typedef void guac_rdp_audio_buffer_flush_handler(char* buffer, int length,
         void* data);
 
 /**
+ * A description of an arbitrary PCM audio format.
+ */
+typedef struct guac_rdp_audio_format {
+
+    /**
+     * The rate of the audio data in samples per second.
+     */
+    int rate;
+
+    /**
+     * The number of channels included in the audio data. This will be 1 for
+     * monaural audio and 2 for stereo.
+     */
+    int channels;
+
+    /**
+     * The size of each sample within the audio data, in bytes.
+     */
+    int bps;
+
+} guac_rdp_audio_format;
+
+/**
  * A buffer of arbitrary audio data. Received audio data can be written to this
  * buffer, and will automatically be flushed via a given handler once the
  * internal buffer reaches capacity.
@@ -74,43 +97,18 @@ typedef struct guac_rdp_audio_buffer {
     guac_stream* stream;
 
     /**
-     * The rate of the audio stream being received from the user, if any, in
-     * samples per second. If no stream is yet associated, this value is
+     * The PCM format of the audio stream being received from the user, if any.
+     * If no stream is yet associated, the values stored within this format are
      * undefined.
      */
-    int in_rate;
+    guac_rdp_audio_format in_format;
 
     /**
-     * The number of channels included in the audio stream being received from
-     * the user, if any. If no stream is yet associated, this value is
-     * undefined.
+     * The PCM format of the audio stream expected by RDP, if any. If no audio
+     * stream has yet been requested by the RDP server, the values stored
+     * within this format are undefined.
      */
-    int in_channels;
-
-    /**
-     * The size of each sample within the audio stream being received from the
-     * user, if any, in bytes. If no stream is yet associated, this value is
-     * undefined.
-     */
-    int in_bps;
-
-    /**
-     * The rate of the audio stream expected by RDP, if any, in samples per
-     * second. If no stream is yet associated, this value is undefined.
-     */
-    int out_rate;
-
-    /**
-     * The number of channels included in the audio stream expected by RDP, if
-     * any. If no stream is yet associated, this value is undefined.
-     */
-    int out_channels;
-
-    /**
-     * The size of each sample within the audio stream expected by RDP, if any,
-     * in bytes. If no stream is yet associated, this value is undefined.
-     */
-    int out_bps;
+    guac_rdp_audio_format out_format;
 
     /**
      * The size that each audio packet must be, in bytes. The packet buffer

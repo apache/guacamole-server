@@ -242,9 +242,9 @@ void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
     /* Associate received stream */
     audio_buffer->user = user;
     audio_buffer->stream = stream;
-    audio_buffer->in_rate = rate;
-    audio_buffer->in_channels = channels;
-    audio_buffer->in_bps = bps;
+    audio_buffer->in_format.rate = rate;
+    audio_buffer->in_format.channels = channels;
+    audio_buffer->in_format.bps = bps;
 
     /* Acknowledge stream creation (if buffer is ready to receive) */
     guac_rdp_audio_buffer_ack(audio_buffer,
@@ -262,9 +262,9 @@ void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
 
     /* Reset buffer state to provided values */
     audio_buffer->bytes_written = 0;
-    audio_buffer->out_rate = rate;
-    audio_buffer->out_channels = channels;
-    audio_buffer->out_bps = bps;
+    audio_buffer->out_format.rate = rate;
+    audio_buffer->out_format.channels = channels;
+    audio_buffer->out_format.bps = bps;
     audio_buffer->packet_size = packet_size;
     audio_buffer->flush_handler = flush_handler;
     audio_buffer->data = data;
