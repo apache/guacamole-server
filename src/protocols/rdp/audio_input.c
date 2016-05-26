@@ -250,28 +250,49 @@ void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
     guac_rdp_audio_buffer_ack(audio_buffer,
             "OK", GUAC_PROTOCOL_STATUS_SUCCESS);
 
+    guac_user_log(user, GUAC_LOG_DEBUG, "User is requesting to provide audio "
+            "input as %i-channel, %i Hz PCM audio at %i bytes/sample.",
+            audio_buffer->in_format.channels,
+            audio_buffer->in_format.rate,
+            audio_buffer->in_format.bps);
+
+    pthread_mutex_unlock(&(audio_buffer->lock));
+
+}
+
+void guac_rdp_audio_buffer_set_output(guac_rdp_audio_buffer* audio_buffer,
+        int rate, int channels, int bps) {
+
+    pthread_mutex_lock(&(audio_buffer->lock));
+
+    /* Set output format */
+    audio_buffer->out_format.rate = rate;
+    audio_buffer->out_format.channels = channels;
+    audio_buffer->out_format.bps = bps;
+
     pthread_mutex_unlock(&(audio_buffer->lock));
 
 }
 
 void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
-        int rate, int channels, int bps, int packet_size,
-        guac_rdp_audio_buffer_flush_handler* flush_handler, void* data) {
+        int packet_frames, guac_rdp_audio_buffer_flush_handler* flush_handler,
+        void* data) {
 
     pthread_mutex_lock(&(audio_buffer->lock));
 
     /* Reset buffer state to provided values */
     audio_buffer->bytes_written = 0;
-    audio_buffer->out_format.rate = rate;
-    audio_buffer->out_format.channels = channels;
-    audio_buffer->out_format.bps = bps;
-    audio_buffer->packet_size = packet_size;
     audio_buffer->flush_handler = flush_handler;
     audio_buffer->data = data;
 
+    /* Calculate size of each packet in bytes */
+    audio_buffer->packet_size = packet_frames
+                              * audio_buffer->out_format.channels
+                              * audio_buffer->out_format.bps;
+
     /* Allocate new buffer */
     free(audio_buffer->packet);
-    audio_buffer->packet = malloc(packet_size);
+    audio_buffer->packet = malloc(audio_buffer->packet_size);
 
     /* Acknowledge stream creation (if stream is ready to receive) */
     guac_rdp_audio_buffer_ack(audio_buffer,

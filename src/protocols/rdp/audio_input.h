@@ -181,28 +181,42 @@ void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
         guac_user* user, guac_stream* stream, int rate, int channels, int bps);
 
 /**
+ * Defines the output format that should be used by the audio buffer when
+ * flushing packets of audio data received via guac_rdp_audio_buffer_write().
+ * As this format determines how the underlying packet buffer will be
+ * allocated, this function MUST be called prior to the call to
+ * guac_rdp_audio_buffer_begin().
+ *
+ * @param audio_buffer
+ *     The audio buffer to set the output format of.
+ *
+ * @param rate
+ *     The rate of the audio stream expected by RDP, in samples per second.
+ *
+ * @param channels
+ *     The number of channels included in the audio stream expected by RDP.
+ *
+ * @param bps
+ *     The size of each sample within the audio stream expected by RDP, in
+ *     bytes.
+ */
+void guac_rdp_audio_buffer_set_output(guac_rdp_audio_buffer* audio_buffer,
+        int rate, int channels, int bps);
+
+/**
  * Begins handling of audio data received via guac_rdp_audio_buffer_write() and
- * allocates the necessary underlying packet buffer. Audio packets of exactly
- * packet_size bytes will be flushed as available using the provided
- * flush_handler.
+ * allocates the necessary underlying packet buffer. Audio packets having
+ * exactly packet_frames frames will be flushed as available using the provided
+ * flush_handler. An audio frame is a set of single samples, one sample per
+ * channel. The guac_rdp_audio_buffer_set_output() function MUST have
+ * been invoked first.
  *
  * @param audio_buffer
  *     The audio buffer to begin.
  *
- * @param rate
- *     The rate of the audio stream expected by RDP, if any, in samples per
- *     second.
- *
- * @param channels
- *     The number of channels included in the audio stream expected by RDP, if
- *     any.
- *
- * @param bps
- *     The size of each sample within the audio stream expected by RDP, if any,
- *     in bytes.
- *
- * @param packet_size
- *     The number of bytes to include in all audio packets provided to the
+ * @param packet_frames
+ *     The exact number of frames (a set of samples, one for each channel)
+ *     which MUST be included in all audio packets provided to the
  *     given flush_handler.
  *
  * @param flush_handler
@@ -213,8 +227,8 @@ void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
  *     needs to be flushed.
  */
 void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
-        int rate, int channels, int bps, int packet_size,
-        guac_rdp_audio_buffer_flush_handler* flush_handler, void* data);
+        int packet_frames, guac_rdp_audio_buffer_flush_handler* flush_handler,
+        void* data);
 
 /**
  * Writes the given buffer of audio data to the given audio buffer. A new

@@ -251,6 +251,9 @@ void guac_rdp_ai_process_version(guac_client* client,
 void guac_rdp_ai_process_formats(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
 
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_audio_buffer* audio_buffer = rdp_client->audio_input;
+
     UINT32 num_formats;
     Stream_Read_UINT32(stream, num_formats); /* NumFormats */
     Stream_Seek_UINT32(stream); /* cbSizeFormatsPacket (MUST BE IGNORED) */
@@ -264,6 +267,10 @@ void guac_rdp_ai_process_formats(guac_client* client,
         /* Ignore anything but WAVE_FORMAT_PCM */
         if (format.tag != GUAC_RDP_WAVE_FORMAT_PCM)
             continue;
+
+        /* Set output format of internal audio buffer to match RDP server */
+        guac_rdp_audio_buffer_set_output(audio_buffer, format.rate,
+                format.channels, format.bps / 8);
 
         /* Accept single format */
         guac_rdp_ai_send_incoming_data(channel);
@@ -301,18 +308,19 @@ void guac_rdp_ai_process_open(guac_client* client,
     Stream_Read_UINT32(stream, packet_frames); /* FramesPerPacket */
     Stream_Read_UINT32(stream, initial_format); /* InitialFormat */
 
-    /* STUB */
-    guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT: open: "
-            "packet_frames=%i, initial_format=%i",
-            packet_frames, initial_format);
+    guac_client_log(client, GUAC_LOG_DEBUG, "RDP server is accepting audio "
+            "input as %i-channel, %i Hz PCM audio at %i bytes/sample.",
+            audio_buffer->out_format.channels,
+            audio_buffer->out_format.rate,
+            audio_buffer->out_format.bps);
 
     /* Success */
     guac_rdp_ai_send_formatchange(channel, initial_format);
     guac_rdp_ai_send_open_reply(channel, 0);
 
-    /* FIXME: Assuming mimetype of 16-bit 44100 Hz stereo PCM */
-    guac_rdp_audio_buffer_begin(audio_buffer, packet_frames * 2 * 2,
-            44100, 2, 2, guac_rdp_ai_flush_packet, channel);
+    /* Begin receiving audio data */
+    guac_rdp_audio_buffer_begin(audio_buffer, packet_frames,
+            guac_rdp_ai_flush_packet, channel);
 
 }
 
