@@ -122,6 +122,18 @@ typedef struct guac_rdp_audio_buffer {
     int bytes_written;
 
     /**
+     * The total number of bytes having ever been received by the Guacamole
+     * server for the current audio stream.
+     */
+    int total_bytes_received;
+
+    /**
+     * The total number of bytes having ever been sent to the RDP server for
+     * the current audio stream.
+     */
+    int total_bytes_sent;
+
+    /**
      * All audio data being prepared for sending to the AUDIO_INPUT channel.
      */
     char* packet;

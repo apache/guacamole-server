@@ -30,6 +30,7 @@
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -246,6 +247,9 @@ void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
     audio_buffer->in_format.channels = channels;
     audio_buffer->in_format.bps = bps;
 
+    /* Reset input counter */
+    audio_buffer->total_bytes_received = 0;
+
     /* Acknowledge stream creation (if buffer is ready to receive) */
     guac_rdp_audio_buffer_ack(audio_buffer,
             "OK", GUAC_PROTOCOL_STATUS_SUCCESS);
@@ -269,6 +273,9 @@ void guac_rdp_audio_buffer_set_output(guac_rdp_audio_buffer* audio_buffer,
     audio_buffer->out_format.rate = rate;
     audio_buffer->out_format.channels = channels;
     audio_buffer->out_format.bps = bps;
+
+    /* Reset output counter */
+    audio_buffer->total_bytes_sent = 0;
 
     pthread_mutex_unlock(&(audio_buffer->lock));
 
@@ -302,12 +309,99 @@ void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
 
 }
 
+/**
+ * Reads a single sample from the given buffer of data, using the input
+ * format defined within the given audio buffer. Each read sample is
+ * translated to a signed 16-bit value, even if the input format is 8-bit.
+ * The offset into the given buffer will be determined according to the
+ * input and output formats, the number of bytes sent thus far, and the
+ * number of bytes received (excluding the contents of the buffer).
+ *
+ * @param audio_buffer
+ *     The audio buffer dictating the format of the given data buffer, as
+ *     well as the offset from which the sample should be read.
+ *
+ * @param buffer
+ *     The buffer of raw PCM audio data from which the sample should be read.
+ *     This buffer MUST NOT contain data already taken into account by the
+ *     audio buffer's total_bytes_received counter.
+ *
+ * @param length
+ *     The number of bytes within the given buffer of PCM data.
+ *
+ * @param sample
+ *     A pointer to the int16_t in which the read sample should be stored. If
+ *     the input format is 8-bit, the sample will be shifted left by 8 bits
+ *     to produce a 16-bit sample.
+ *
+ * @return
+ *     Non-zero if a sample was successfully read, zero if no data remains
+ *     within the given buffer that has not already been mapped to an
+ *     output sample.
+ */
+static int guac_rdp_audio_buffer_read_sample(
+        guac_rdp_audio_buffer* audio_buffer, const char* buffer, int length,
+        int16_t* sample) {
+
+    int in_bps = audio_buffer->in_format.bps;
+    int in_rate = audio_buffer->in_format.rate;
+    int in_channels = audio_buffer->in_format.channels;
+
+    int out_bps = audio_buffer->out_format.bps;
+    int out_rate = audio_buffer->out_format.rate;
+    int out_channels = audio_buffer->out_format.channels;
+
+    /* Calculate position within audio output */
+    int current_sample  = audio_buffer->total_bytes_sent / out_bps;
+    int current_frame   = current_sample / out_channels;
+    int current_channel = current_sample % out_channels;
+
+    /* Map output channel to input channel */
+    if (current_channel >= in_channels)
+        current_channel = in_channels - 1;
+
+    /* Transform output position to input position */
+    current_frame = (int) current_frame * ((double) in_rate / out_rate);
+    current_sample = current_frame * in_channels + current_channel;
+
+    /* Calculate offset within given buffer from absolute input position */
+    int offset = current_sample * in_bps
+               - audio_buffer->total_bytes_received;
+
+    /* It should be impossible for the offset to ever go negative */
+    assert(offset >= 0);
+
+    /* Apply offset to buffer */
+    buffer += offset;
+    length -= offset;
+
+    /* Read only if sufficient data is present in the given buffer */
+    if (length < in_bps)
+        return 0;
+
+    /* Simply read sample directly if input is 16-bit */
+    if (in_bps == 2) {
+        *sample = *((int16_t*) buffer);
+        return 1;
+    }
+
+    /* Translate to 16-bit if input is 8-bit */
+    if (in_bps == 1) {
+        *sample = *buffer << 8;
+        return 1;
+    }
+
+    /* Accepted audio formats are required to be 8- or 16-bit */
+    return 0;
+
+}
+
 void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
         char* buffer, int length) {
 
-    pthread_mutex_lock(&(audio_buffer->lock));
+    int16_t sample;
 
-    /* FIXME: Assuming mimetype of "audio/L16;rate=44100,channels=2" */
+    pthread_mutex_lock(&(audio_buffer->lock));
 
     /* Ignore packet if there is no buffer */
     if (audio_buffer->packet_size == 0 || audio_buffer->packet == NULL) {
@@ -315,27 +409,27 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
         return;
     }
 
+    int out_bps = audio_buffer->out_format.bps;
+
     /* Continuously write packets until no data remains */
-    while (length > 0) {
+    while (guac_rdp_audio_buffer_read_sample(audio_buffer,
+                buffer, length, &sample) > 0) {
 
-        /* Calculate ideal size of chunk based on available space */
-        int chunk_size = audio_buffer->packet_size
-                       - audio_buffer->bytes_written;
+        char* current = audio_buffer->packet + audio_buffer->bytes_written;
 
-        /* Shrink chunk size if insufficient bytes are provided */
-        if (length < chunk_size)
-            chunk_size = length;
+        /* Store as 16-bit or 8-bit, depending on output format */
+        if (out_bps == 2)
+            *((int16_t*) current) = sample;
+        else if (out_bps == 1)
+            *current = sample >> 8;
 
-        /* Append buffer */
-        memcpy(audio_buffer->packet + audio_buffer->bytes_written,
-                buffer, chunk_size);
+        /* Accepted audio formats are required to be 8- or 16-bit */
+        else
+            assert(0);
 
         /* Update byte counters */
-        length -= chunk_size;
-        audio_buffer->bytes_written += chunk_size;
-
-        /* Advance to next chunk */
-        buffer += chunk_size;
+        audio_buffer->bytes_written += out_bps;
+        audio_buffer->total_bytes_sent += out_bps;
 
         /* Invoke flush handler if full */
         if (audio_buffer->bytes_written == audio_buffer->packet_size) {
@@ -351,6 +445,9 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
         }
 
     } /* end packet write loop */
+
+    /* Track current position in audio stream */
+    audio_buffer->total_bytes_received += length;
 
     pthread_mutex_unlock(&(audio_buffer->lock));
 
