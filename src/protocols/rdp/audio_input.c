@@ -247,9 +247,6 @@ void guac_rdp_audio_buffer_set_stream(guac_rdp_audio_buffer* audio_buffer,
     audio_buffer->in_format.channels = channels;
     audio_buffer->in_format.bps = bps;
 
-    /* Reset input counter */
-    audio_buffer->total_bytes_received = 0;
-
     /* Acknowledge stream creation (if buffer is ready to receive) */
     guac_rdp_audio_buffer_ack(audio_buffer,
             "OK", GUAC_PROTOCOL_STATUS_SUCCESS);
@@ -273,9 +270,6 @@ void guac_rdp_audio_buffer_set_output(guac_rdp_audio_buffer* audio_buffer,
     audio_buffer->out_format.rate = rate;
     audio_buffer->out_format.channels = channels;
     audio_buffer->out_format.bps = bps;
-
-    /* Reset output counter */
-    audio_buffer->total_bytes_sent = 0;
 
     pthread_mutex_unlock(&(audio_buffer->lock));
 
@@ -469,6 +463,10 @@ void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer) {
     audio_buffer->bytes_written = 0;
     audio_buffer->packet_size = 0;
     audio_buffer->flush_handler = NULL;
+
+    /* Reset I/O counters */
+    audio_buffer->total_bytes_sent = 0;
+    audio_buffer->total_bytes_received = 0;
 
     /* Free packet (if any) */
     free(audio_buffer->packet);
