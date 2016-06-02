@@ -436,6 +436,7 @@ then
     have_freerdp=yes
     legacy_freerdp_extensions=no
     rdpsettings_interface=unknown
+    rdpsettings_audiocapture=yes
     rdpsettings_audioplayback=yes
     rdpsettings_deviceredirection=yes
     freerdp_interface=unknown
@@ -578,6 +579,15 @@ then
         [#include <freerdp/channels/channels.h>])
 fi
 
+# Availability of ADDIN_ARGV structure for configuring plugins
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_TYPE([ADDIN_ARGV],
+        [AC_DEFINE([HAVE_ADDIN_ARGV],,
+                   [Whether the ADDIN_ARGV type is available])],,
+        [#include <freerdp/settings.h>])
+fi
+
 #
 # FreeRDP: WinPR
 #
@@ -686,6 +696,11 @@ then
                          [rdpsettings_audioplayback=no],
                          [[#include <freerdp/freerdp.h>]])
 
+        # Legacy interface may not have AudioCapture settings
+        AC_CHECK_MEMBERS([rdpSettings.audio_capture],,
+                         [rdpsettings_audiocapture=no],
+                         [[#include <freerdp/freerdp.h>]])
+
         # Legacy interface may not have DeviceRedirection settings
         AC_CHECK_MEMBERS([rdpSettings.device_redirection],,
                          [rdpsettings_deviceredirection=no],
@@ -705,6 +720,12 @@ fi
 if test "x${have_freerdp}" = "xyes" -a "x${rdpsettings_audioplayback}" = "xyes"; then
     AC_DEFINE([HAVE_RDPSETTINGS_AUDIOPLAYBACK],,
               [Whether the rdpSettings structure has AudioPlayback settings])
+fi
+
+# Activate audio capture settings if present
+if test "x${have_freerdp}" = "xyes" -a "x${rdpsettings_audiocapture}" = "xyes"; then
+    AC_DEFINE([HAVE_RDPSETTINGS_AUDIOCAPTURE],,
+              [Whether the rdpSettings structure has AudioCapture settings])
 fi
 
 # Activate device redirection settings if present
@@ -750,6 +771,32 @@ then
                       [AC_MSG_RESULT([no])
                        AC_DEFINE([LEGACY_RDPBITMAP],,
                                  [Whether the legacy rdpBitmap API was found])])
+fi
+
+#
+# FreeRDP: IWTSVirtualChannelCallback
+#
+
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_MSG_CHECKING([whether IWTSVirtualChannelCallback.OnDataReceived() uses a wStream])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <winpr/wtypes.h>
+                                        #include <freerdp/dvc.h>
+                                        #include <freerdp/freerdp.h>
+                                        int __data_received(
+                                            IWTSVirtualChannelCallback* channel_callback,
+                                            wStream* stream);
+                                        IWTSVirtualChannelCallback cb = {
+                                            .OnDataReceived = __data_received
+                                        };
+                                        int main() {
+                                            return
+                                                cb.OnDataReceived(NULL, NULL);
+                                        }]])],
+                      [AC_MSG_RESULT([yes])],
+                      [AC_MSG_RESULT([no])
+                       AC_DEFINE([LEGACY_IWTSVIRTUALCHANNELCALLBACK],,
+                                 [Whether the legacy IWTSVirtualChannelCallback API was found])])
 fi
 
 #

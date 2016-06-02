@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include "client.h"
+#include "dvc.h"
 #include "rdp.h"
 #include "rdp_disp.h"
 #include "rdp_settings.h"
@@ -54,20 +55,14 @@ void guac_rdp_disp_free(guac_rdp_disp* disp) {
     free(disp);
 }
 
-void guac_rdp_disp_load_plugin(rdpContext* context) {
+void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list) {
 
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 #ifdef HAVE_RDPSETTINGS_SUPPORTDISPLAYCONTROL
     context->settings->SupportDisplayControl = TRUE;
 #endif
 
     /* Add "disp" channel */
-    ADDIN_ARGV* args = malloc(sizeof(ADDIN_ARGV));
-    args->argc = 1;
-    args->argv = malloc(sizeof(char**) * 1);
-    args->argv[0] = strdup("disp");
-    freerdp_dynamic_channel_collection_add(context->settings, args);
-#endif
+    guac_rdp_dvc_list_add(list, "disp", NULL);
 
 }
 

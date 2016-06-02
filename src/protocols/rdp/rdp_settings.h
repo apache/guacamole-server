@@ -378,6 +378,11 @@ typedef struct guac_rdp_settings {
      */
     guac_rdp_resize_method resize_method;
 
+    /**
+     * Whether audio input (microphone) is enabled.
+     */
+    int enable_audio_input;
+
 } guac_rdp_settings;
 
 /**

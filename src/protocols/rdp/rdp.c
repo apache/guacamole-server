@@ -19,7 +19,9 @@
 
 #include "config.h"
 
+#include "audio_input.h"
 #include "client.h"
+#include "dvc.h"
 #include "guac_cursor.h"
 #include "guac_display.h"
 #include "guac_recording.h"
@@ -211,6 +213,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     rdpPrimaryUpdate* primary;
     CLRCONV* clrconv;
 
+    guac_rdp_dvc_list* dvc_list = guac_rdp_dvc_list_alloc();
 
 #ifdef HAVE_FREERDP_REGISTER_ADDIN_PROVIDER
     /* Init FreeRDP add-in provider */
@@ -224,22 +227,16 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 #endif
 
 #ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
-    /* Load required plugins if display update is enabled */
-    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
-
-        /* Load virtual channel management plugin (needed by display update) */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
-                    "drdynvc", instance->settings))
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load drdynvc plugin. Display update support "
-                    "will be disabled.");
-
-        /* Init display update plugin if "drdynvc" was loaded successfully */
-        else
-            guac_rdp_disp_load_plugin(instance->context);
-
-    }
+    /* Load "disp" plugin for display update */
+    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
+        guac_rdp_disp_load_plugin(instance->context, dvc_list);
 #endif
+
+    /* Load "AUDIO_INPUT" plugin for audio input*/
+    if (settings->enable_audio_input) {
+        rdp_client->audio_input = guac_rdp_audio_buffer_alloc();
+        guac_rdp_audio_load_plugin(instance->context, dvc_list);
+    }
 
     /* Load clipboard plugin */
     if (freerdp_channels_load_plugin(channels, instance->settings,
@@ -325,6 +322,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         } while (*(++current) != NULL);
 
     }
+
+    /* Load DRDYNVC plugin if required */
+    if (guac_rdp_load_drdynvc(instance->context, dvc_list))
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Failed to load drdynvc plugin. Display update and audio "
+                "input support will be disabled.");
+
+    /* Dynamic virtual channel list is no longer needed */
+    guac_rdp_dvc_list_free(dvc_list);
 
     /* Init color conversion structure */
     clrconv = calloc(1, sizeof(CLRCONV));

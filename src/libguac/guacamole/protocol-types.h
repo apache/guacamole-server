@@ -88,6 +88,12 @@ typedef enum guac_protocol_status {
     GUAC_PROTOCOL_STATUS_RESOURCE_CONFLICT = 0x205,
 
     /**
+     * The operation could not be performed as the requested resource is now
+     * closed.
+     */
+    GUAC_PROTOCOL_STATUS_RESOURCE_CLOSED = 0x0206,
+
+    /**
      * The operation could not be performed because bad parameters were
      * given.
      */

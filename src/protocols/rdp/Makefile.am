@@ -24,8 +24,11 @@ lib_LTLIBRARIES = libguac-client-rdp.la
 
 libguac_client_rdp_la_SOURCES = \
     _generated_keymaps.c        \
+    audio_input.c               \
     client.c                    \
+    dvc.c                       \
     input.c                     \
+    ptr_string.c                \
     rdp.c                       \
     rdp_bitmap.c                \
     rdp_cliprdr.c               \
@@ -43,6 +46,12 @@ libguac_client_rdp_la_SOURCES = \
     resolution.c                \
     unicode.c                   \
     user.c
+
+guacai_sources =          \
+    audio_input.c         \
+    guac_ai/ai_messages.c \
+    guac_ai/ai_service.c  \
+    ptr_string.c
 
 guacsvc_sources =          \
     guac_svc/svc_service.c \
@@ -68,6 +77,8 @@ guacdr_sources =                             \
 noinst_HEADERS =                             \
     compat/client-cliprdr.h                  \
     compat/rail.h                            \
+    guac_ai/ai_messages.h                    \
+    guac_ai/ai_service.h                     \
     guac_rdpdr/rdpdr_fs_messages.h           \
     guac_rdpdr/rdpdr_fs_messages_dir_info.h  \
     guac_rdpdr/rdpdr_fs_messages_file_info.h \
@@ -79,8 +90,11 @@ noinst_HEADERS =                             \
     guac_rdpsnd/rdpsnd_messages.h            \
     guac_rdpsnd/rdpsnd_service.h             \
     guac_svc/svc_service.h                   \
+    audio_input.h                            \
     client.h                                 \
+    dvc.h                                    \
     input.h                                  \
+    ptr_string.h                             \
     rdp.h                                    \
     rdp_bitmap.h                             \
     rdp_cliprdr.h                            \
@@ -104,6 +118,7 @@ noinst_HEADERS =                             \
 if ! ENABLE_WINPR
 noinst_HEADERS  += compat/winpr-stream.h compat/winpr-wtypes.h
 libguac_client_rdp_la_SOURCES += compat/winpr-stream.c
+guacai_sources  += compat/winpr-stream.c
 guacsvc_sources += compat/winpr-stream.c
 guacsnd_sources += compat/winpr-stream.c
 guacdr_sources  += compat/winpr-stream.c
@@ -145,6 +160,25 @@ guacdr_ldflags =                   \
     @RDP_LIBS@
 
 guacdr_libadd =     \
+    @COMMON_LTLIB@  \
+    @LIBGUAC_LTLIB@
+
+#
+# Audio Input
+#
+
+guacai_cflags               =  \
+    -Werror -Wall -Iinclude    \
+    @COMMON_INCLUDE@           \
+    @COMMON_SSH_INCLUDE@       \
+    @LIBGUAC_INCLUDE@
+
+guacai_ldflags =                   \
+    -module -avoid-version -shared \
+    @PTHREAD_LIBS@                 \
+    @RDP_LIBS@
+
+guacai_libadd =     \
     @COMMON_LTLIB@  \
     @LIBGUAC_LTLIB@
 
@@ -224,9 +258,15 @@ if LEGACY_FREERDP_EXTENSIONS
 
 # FreeRDP 1.0-style extensions
 freerdp_LTLIBRARIES = \
+    guacai.la         \
     guacdr.la         \
     guacsnd.la        \
     guacsvc.la
+
+guacai_la_SOURCES = ${guacai_sources}
+guacai_la_CFLAGS  = ${guacai_cflags}
+guacai_la_LDFLAGS = ${guacai_ldflags}
+guacai_la_LIBADD  = ${guacai_libadd}
 
 guacdr_la_SOURCES = ${guacdr_sources}
 guacdr_la_CFLAGS  = ${guacdr_cflags}
@@ -247,9 +287,15 @@ else
 
 # FreeRDP 1.1 (and hopefully onward) extensions
 freerdp_LTLIBRARIES = \
+    guacai-client.la  \
     guacdr-client.la  \
     guacsnd-client.la \
     guacsvc-client.la
+
+guacai_client_la_SOURCES = ${guacai_sources}
+guacai_client_la_CFLAGS  = ${guacai_cflags}
+guacai_client_la_LDFLAGS = ${guacai_ldflags}
+guacai_client_la_LIBADD  = ${guacai_libadd}
 
 guacdr_client_la_SOURCES = ${guacdr_sources}
 guacdr_client_la_CFLAGS  = ${guacdr_cflags}

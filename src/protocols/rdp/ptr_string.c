@@ -18,30 +18,38 @@
  */
 
 #include "config.h"
+#include "ptr_string.h"
 
-#include "winpr-stream.h"
-#include "winpr-wtypes.h"
+#include <guacamole/client.h>
 
-wStream* Stream_New(BYTE* buffer, size_t size) {
+#include <stdio.h>
+#include <stdlib.h>
 
-    /* If no buffer is provided, allocate a new stream of the given size */
-    if (buffer == NULL)
-       return stream_new(size);
+/**
+ * The maximum number of bytes required to represent a pointer printed using
+ * printf()'s "%p". This will be the size of the hex prefix ("0x"), null
+ * terminator, plus two bytes for every byte required by a pointer.
+ */
+#define GUAC_RDP_PTR_STRING_LENGTH (sizeof("0x") + (sizeof(void*) * 2))
 
-    /* Otherwise allocate an empty stream and assign the given buffer */
-    wStream* stream = stream_new(0);
-    stream_attach(stream, buffer, size);
-    return stream;
+char* guac_rdp_ptr_to_string(void* data) {
+
+    /* Convert pointer to string */
+    char* str = malloc(GUAC_RDP_PTR_STRING_LENGTH);
+    sprintf(str, "%p", data);
+
+    return str;
 
 }
 
-void Stream_Free(wStream* s, BOOL bFreeBuffer) {
+void* guac_rdp_string_to_ptr(const char* str) {
 
-    /* Disassociate buffer if it will be freed externally */
-    if (!bFreeBuffer)
-        stream_detach(s);
+    void* data;
 
-    stream_free(s);
+    /* Convert string to pointer */
+    sscanf(str, "%p", &data);
+
+    return data;
 
 }
 
