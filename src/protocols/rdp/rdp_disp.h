@@ -97,11 +97,23 @@ guac_rdp_disp* guac_rdp_disp_alloc();
 void guac_rdp_disp_free(guac_rdp_disp* disp);
 
 /**
- * Loads the "disp" plugin for FreeRDP. It is still up to external code to
- * detect when the "disp" channel is connected, and update the guac_rdp_disp
- * with a call to guac_rdp_disp_connect().
- *
  * @param context The rdpContext associated with the active RDP session.
+ */
+/**
+ * Adds FreeRDP's "disp" plugin to the list of dynamic virtual channel plugins
+ * to be loaded by FreeRDP's "drdynvc" plugin. The plugin will only be loaded
+ * once guac_rdp_load_drdynvc() is invoked with the guac_rdp_dvc_list passed to
+ * this function. The "disp" plugin ultimately adds support for the Display
+ * Update channel. NOTE: It is still up to external code to detect when the
+ * "disp" channel is connected, and update the guac_rdp_disp with a call to
+ * guac_rdp_disp_connect().
+ *
+ * @param context
+ *     The rdpContext associated with the active RDP session.
+ *
+ * @param list
+ *     The guac_rdp_dvc_list to which the "disp" plugin should be added, such
+ *     that it may later be loaded by guac_rdp_load_drdynvc().
  */
 void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list);
 
