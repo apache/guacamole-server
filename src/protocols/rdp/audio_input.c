@@ -185,9 +185,11 @@ int guac_rdp_audio_end_handler(guac_user* user, guac_stream* stream) {
 void guac_rdp_audio_load_plugin(rdpContext* context, guac_rdp_dvc_list* list) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
+    char client_ref[GUAC_RDP_PTR_STRING_LENGTH];
 
     /* Add "AUDIO_INPUT" channel */
-    guac_rdp_dvc_list_add(list, "guacai", guac_rdp_ptr_to_string(client), NULL);
+    guac_rdp_ptr_to_string(client, client_ref);
+    guac_rdp_dvc_list_add(list, "guacai", client_ref, NULL);
 
 }
 

@@ -25,6 +25,13 @@
 #include <guacamole/client.h>
 
 /**
+ * The maximum number of bytes required to represent a pointer printed using
+ * printf()'s "%p". This will be the size of the hex prefix ("0x"), null
+ * terminator, plus two bytes for every byte required by a pointer.
+ */
+#define GUAC_RDP_PTR_STRING_LENGTH (sizeof("0x") + (sizeof(void*) * 2))
+
+/**
  * Converts the given string back into a void pointer. The string MUST have
  * been produced via guac_rdp_ptr_to_string().
  *
@@ -40,18 +47,17 @@ void* guac_rdp_string_to_ptr(const char* str);
 /**
  * Converts a void pointer into a string representation, safe for use with
  * parts of the FreeRDP API which provide only for passing arbitrary strings,
- * despite being within the same memory area. The returned string must
- * eventually be freed with a call to free().
+ * despite being within the same memory area.
  *
  * @param data
  *     The void pointer to convert to a string.
  *
- * @return
- *     A newly-allocated string containing the string representation of the
- *     given void pointer. This string must eventually be freed with a call to
- *     free().
+ * @param str
+ *     The buffer in which the string representation of the given void pointer
+ *     should be stored. This buffer must have at least
+ *     GUAC_RDP_PTR_STRING_LENGTH bytes available.
  */
-char* guac_rdp_ptr_to_string(void* data);
+void guac_rdp_ptr_to_string(void* data, char* str);
 
 #endif
 

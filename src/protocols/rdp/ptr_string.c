@@ -25,20 +25,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/**
- * The maximum number of bytes required to represent a pointer printed using
- * printf()'s "%p". This will be the size of the hex prefix ("0x"), null
- * terminator, plus two bytes for every byte required by a pointer.
- */
-#define GUAC_RDP_PTR_STRING_LENGTH (sizeof("0x") + (sizeof(void*) * 2))
-
-char* guac_rdp_ptr_to_string(void* data) {
+void guac_rdp_ptr_to_string(void* data, char* str) {
 
     /* Convert pointer to string */
-    char* str = malloc(GUAC_RDP_PTR_STRING_LENGTH);
     sprintf(str, "%p", data);
-
-    return str;
 
 }
 
