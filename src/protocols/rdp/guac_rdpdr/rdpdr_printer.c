@@ -27,6 +27,9 @@
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+#include <guacamole/stream.h>
+#include <guacamole/user.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -35,6 +38,7 @@
 #endif
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -57,24 +61,71 @@ char* const guac_rdpdr_pdf_filter_command[] = {
     NULL
 };
 
-static void* guac_rdpdr_print_filter_output_thread(void* data) {
+/**
+ * Handler for "ack" messages received in response to printed data. Additional
+ * data will be sent as a result or, if no data remains, the stream will be
+ * terminated. It is required that the data pointer of the provided stream be
+ * set to the file descriptor from which the printed data should be read.
+ *
+ * @param user
+ *     The user to whom the printed data is being sent.
+ *
+ * @param stream
+ *     The stream along which the printed data is to be sent. The data pointer
+ *     of this stream MUST be set to the file descriptor from which the data
+ *     being sent is to be read.
+ *
+ * @param message
+ *     An arbitrary, human-readable message describing the success/failure of
+ *     the operation being acknowledged (either stream creation or receipt of
+ *     a blob).
+ *
+ * @param status
+ *     The status code describing the success/failure of the operation being
+ *     acknowledged (either stream creation or receipt of a blob).
+ *
+ * @return
+ *     Always zero.
+ */
+static int guac_rdpdr_print_filter_ack_handler(guac_user* user,
+        guac_stream* stream, char* message, guac_protocol_status status) {
 
-    guac_rdpdr_device* device = (guac_rdpdr_device*) data;
-    guac_rdpdr_printer_data* printer_data = (guac_rdpdr_printer_data*) device->data;
+    char buffer[6048];
 
-    int length;
-    char buffer[8192];
+    /* Pull file descriptor from stream data */
+    int fd = (intptr_t) stream->data;
 
-    /* Write all output as blobs */
-    while ((length = read(printer_data->printer_output, buffer, sizeof(buffer))) > 0)
-        guac_protocol_send_blob(device->rdpdr->client->socket,
-                printer_data->stream, buffer, length);
+    /* Reading only if ack reports success */
+    if (status == GUAC_PROTOCOL_STATUS_SUCCESS) {
 
-    /* Log any error */
-    if (length < 0)
-        guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "Error reading from filter: %s", strerror(errno));
+        /* Write a single blob of output */
+        int length = read(fd, buffer, sizeof(buffer));
+        if (length > 0) {
+            guac_protocol_send_blob(user->socket, stream, buffer, length);
+            guac_socket_flush(user->socket);
+            return 0;
+        }
 
-    return NULL;
+        /* Warn of read errors, fall through to termination */
+        else if (length < 0)
+            guac_user_log(user, GUAC_LOG_ERROR,
+                    "Error reading from filter: %s", strerror(errno));
+
+    }
+
+    /* Note if stream aborted by user, fall through to termination */
+    else
+        guac_user_log(user, GUAC_LOG_INFO, "Print stream aborted.");
+
+    /* Explicitly close down stream */
+    guac_protocol_send_end(user->socket, stream);
+    guac_socket_flush(user->socket);
+
+    /* Clean up our end of the stream */
+    guac_user_free_stream(user, stream);
+    close(fd);
+
+    return 0;
 
 }
 
@@ -105,16 +156,6 @@ static int guac_rdpdr_create_print_process(guac_rdpdr_device* device) {
     /* Store our side of stdin/stdout */
     printer_data->printer_input  = stdin_pipe[1];
     printer_data->printer_output = stdout_pipe[0];
-
-    /* Start output thread */
-    if (pthread_create(&(printer_data->printer_output_thread), NULL, guac_rdpdr_print_filter_output_thread, device)) {
-        guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "Unable to fork PDF filter process");
-        close(stdin_pipe[0]);
-        close(stdin_pipe[1]);
-        close(stdout_pipe[0]);
-        close(stdout_pipe[1]);
-        return 1;
-    }
 
     /* Fork child process */
     child_pid = fork();
@@ -180,6 +221,50 @@ void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
 
 }
 
+/**
+ * Given data representing a print device with a pending pring job, allocates a
+ * new stream for the given user, associating it with the provided data and
+ * returning the resulting guac_stream. The stream will be pre-configured to
+ * send blobs of print data in response to "ack" messages received from the
+ * user. If the given user is NULL, no stream will be allocated, and the
+ * print job will be immediately aborted.
+ *
+ * @param user
+ *     The user to whom the print job is being sent, or NULL if no stream
+ *     should be allocated.
+ *
+ * @param data
+ *     A pointer to the guac_rdpdr_device instance associated with the new
+ *     print job.
+ *
+ * @return
+ *     The guac_stream allocated for the new print job, or NULL if no stream
+ *     could be allocated.
+ */
+static void* guac_rdpdr_alloc_printer_stream(guac_user* owner, void* data) {
+
+    guac_rdpdr_device* device = (guac_rdpdr_device*) data;
+    guac_rdpdr_printer_data* printer_data =
+        (guac_rdpdr_printer_data*) device->data;
+
+    /* Abort immediately if there is no owner */
+    if (owner == NULL) {
+        close(printer_data->printer_output);
+        close(printer_data->printer_input);
+        printer_data->printer_output = -1;
+        printer_data->printer_input = -1;
+        return NULL;
+    }
+
+    /* Allocate stream for owner */
+    guac_stream* stream = guac_user_alloc_stream(owner);
+    stream->ack_handler = guac_rdpdr_print_filter_ack_handler;
+    stream->data = (void*) (intptr_t) printer_data->printer_output;
+
+    return stream;
+
+}
+
 void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {
 
@@ -234,18 +319,31 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
 
         }
 
-        /* Begin file */
-        guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Print job created");
-        guac_protocol_send_file(device->rdpdr->client->socket,
-                printer_data->stream, "application/pdf", filename);
-
         /* Start print process */
         if (guac_rdpdr_create_print_process(device) != 0) {
             status = STATUS_DEVICE_OFF_LINE;
             length = 0;
         }
 
-    }
+        /* If print started successfully, create outbound stream */
+        else {
+
+            guac_client_log(device->rdpdr->client, GUAC_LOG_INFO,
+                    "Print job created");
+
+            /* Allocate stream */
+            guac_stream* stream = (guac_stream*) guac_client_for_owner(
+                    device->rdpdr->client, guac_rdpdr_alloc_printer_stream,
+                    device);
+
+            /* Begin file if stream allocation was successful */
+            if (stream != NULL)
+                guac_protocol_send_file(device->rdpdr->client->socket, stream,
+                        "application/pdf", filename);
+
+        }
+
+    } /* end if print job beginning */
 
     printer_data->bytes_received += length;
 
@@ -283,17 +381,11 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
 
     Stream_Write_UINT32(output_stream, 0); /* Padding */
 
-    /* Close input and wait for output thread to finish */
+    /* Close input - the Guacamole stream will continue while output remains */
     close(printer_data->printer_input);
-    pthread_join(printer_data->printer_output_thread, NULL);
+    printer_data->printer_input = -1;
 
-    /* Close file descriptors */
-    close(printer_data->printer_output);
-
-    /* Close file */
     guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Print job closed");
-    guac_protocol_send_end(device->rdpdr->client->socket, printer_data->stream);
-
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
 }
@@ -354,9 +446,21 @@ static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* devic
 }
 
 static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
-    guac_rdpdr_printer_data* printer_data = (guac_rdpdr_printer_data*) device->data;
-    guac_client_free_stream(device->rdpdr->client, printer_data->stream);
+
+    guac_rdpdr_printer_data* printer_data =
+        (guac_rdpdr_printer_data*) device->data;
+
+    /* Close print job input (STDIN for filter process) if open */
+    if (printer_data->printer_input != -1)
+        close(printer_data->printer_input);
+
+    /* Close print job output (STDOUT for filter process) if open */
+    if (printer_data->printer_output != -1)
+        close(printer_data->printer_output);
+
+    /* Free underlying data */
     free(device->data);
+
 }
 
 void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
@@ -379,7 +483,8 @@ void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
 
     /* Init data */
     printer_data = malloc(sizeof(guac_rdpdr_printer_data));
-    printer_data->stream = guac_client_alloc_stream(rdpdr->client);
+    printer_data->printer_input = -1;
+    printer_data->printer_output = -1;
     device->data = printer_data;
 
 }

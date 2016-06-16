@@ -25,15 +25,11 @@
 
 #include "rdpdr_service.h"
 
-#include <guacamole/stream.h>
-
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-#include <pthread.h>
 
 /**
  * Data specific to an instance of the printer device.
@@ -41,26 +37,16 @@
 typedef struct guac_rdpdr_printer_data {
 
     /**
-     * Stream for receiving printed files.
-     */
-    guac_stream* stream;
-
-    /**
      * File descriptor that should be written to when sending documents to the
-     * printer.
+     * printer. If no print job is in progress, this will be -1.
      */
     int printer_input;
 
     /**
      * File descriptor that should be read from when receiving output from the
-     * printer.
+     * printer. If no print job is in progress, this will be -1.
      */
     int printer_output;
-
-    /**
-     * Thread which transfers data from the printer to the Guacamole client.
-     */
-    pthread_t printer_output_thread;
 
     /**
      * The number of bytes received in the current print job.
