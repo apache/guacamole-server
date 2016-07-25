@@ -46,6 +46,7 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "recording-path",
     "recording-name",
     "create-recording-path",
+    "read-only",
     NULL
 };
 
@@ -138,6 +139,12 @@ enum TELNET_ARGS_IDX {
      */
     IDX_CREATE_RECORDING_PATH,
 
+    /**
+     * "true" if this connection should be read-only (user input should be
+     * dropped), "false" or blank otherwise.
+     */
+    IDX_READ_ONLY,
+
     TELNET_ARGS_COUNT
 };
 
@@ -216,6 +223,11 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
             guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
                     IDX_PASSWORD_REGEX, GUAC_TELNET_DEFAULT_PASSWORD_REGEX));
     }
+
+    /* Read-only mode */
+    settings->read_only =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_READ_ONLY, false);
 
     /* Read font name */
     settings->font_name =

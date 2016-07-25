@@ -142,6 +142,11 @@ typedef struct guac_rdp_settings {
     char* password;
 
     /**
+     * Whether this connection is read-only, and user input should be dropped.
+     */
+    int read_only;
+
+    /**
      * The color depth of the display to request, in bits.
      */
     int color_depth;

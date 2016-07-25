@@ -91,6 +91,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "create-recording-path",
     "resize-method",
     "enable-audio-input",
+    "read-only",
 
     NULL
 };
@@ -385,6 +386,12 @@ enum RDP_ARGS_IDX {
      */
     IDX_ENABLE_AUDIO_INPUT,
 
+    /**
+     * "true" if this connection should be read-only (user input should be
+     * dropped), "false" or blank otherwise.
+     */
+    IDX_READ_ONLY,
+
     RDP_ARGS_COUNT
 };
 
@@ -527,6 +534,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->password =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_PASSWORD, NULL);
+
+    /* Read-only mode */
+    settings->read_only =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_READ_ONLY, 0);
 
     /* Client name */
     settings->client_name =

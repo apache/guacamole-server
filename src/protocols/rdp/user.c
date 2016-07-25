@@ -94,12 +94,24 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
     }
 
-    user->file_handler = guac_rdp_user_file_handler;
-    user->mouse_handler = guac_rdp_user_mouse_handler;
-    user->key_handler = guac_rdp_user_key_handler;
-    user->size_handler = guac_rdp_user_size_handler;
-    user->pipe_handler = guac_rdp_svc_pipe_handler;
-    user->clipboard_handler = guac_rdp_clipboard_handler;
+    /* Only handle events if not read-only */
+    if (!settings->read_only) {
+
+        /* General mouse/keyboard/clipboard events */
+        user->mouse_handler     = guac_rdp_user_mouse_handler;
+        user->key_handler       = guac_rdp_user_key_handler;
+        user->clipboard_handler = guac_rdp_clipboard_handler;
+
+        /* Display size change events */
+        user->size_handler = guac_rdp_user_size_handler;
+
+        /* Set generic (non-filesystem) file upload handler */
+        user->file_handler = guac_rdp_user_file_handler;
+
+        /* Inbound arbitrary named pipes */
+        user->pipe_handler = guac_rdp_svc_pipe_handler;
+
+    }
 
     return 0;
 

@@ -74,11 +74,18 @@ int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
         guac_socket_flush(user->socket);
     }
 
-    /* Set per-user event handlers */
-    user->key_handler       = guac_telnet_user_key_handler;
-    user->mouse_handler     = guac_telnet_user_mouse_handler;
-    user->size_handler      = guac_telnet_user_size_handler;
-    user->clipboard_handler = guac_telnet_clipboard_handler;
+    /* Only handle events if not read-only */
+    if (!settings->read_only) {
+
+        /* General mouse/keyboard/clipboard events */
+        user->key_handler       = guac_telnet_user_key_handler;
+        user->mouse_handler     = guac_telnet_user_mouse_handler;
+        user->clipboard_handler = guac_telnet_clipboard_handler;
+
+        /* Display size change events */
+        user->size_handler = guac_telnet_user_size_handler;
+
+    }
 
     return 0;
 
