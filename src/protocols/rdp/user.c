@@ -44,19 +44,25 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
 
+    /* Parse provided arguments */
+    guac_rdp_settings* settings = guac_rdp_parse_args(user,
+            argc, (const char**) argv);
+
+    /* Fail if settings cannot be parsed */
+    if (settings == NULL) {
+        guac_user_log(user, GUAC_LOG_INFO,
+                "Badly formatted client arguments.");
+        return 1;
+    }
+
+    /* Store settings at user level */
+    user->data = settings;
+
     /* Connect via RDP if owner */
     if (user->owner) {
 
-        /* Parse arguments into client */
-        guac_rdp_settings* settings = rdp_client->settings =
-            guac_rdp_parse_args(user, argc, (const char**) argv);
-
-        /* Fail if settings cannot be parsed */
-        if (settings == NULL) {
-            guac_user_log(user, GUAC_LOG_INFO,
-                    "Badly formatted client arguments.");
-            return 1;
-        }
+        /* Store owner's settings at client level */
+        rdp_client->settings = settings;
 
         /* Start client thread */
         if (pthread_create(&rdp_client->client_thread, NULL,
@@ -88,12 +94,24 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
     }
 
-    user->file_handler = guac_rdp_user_file_handler;
-    user->mouse_handler = guac_rdp_user_mouse_handler;
-    user->key_handler = guac_rdp_user_key_handler;
-    user->size_handler = guac_rdp_user_size_handler;
-    user->pipe_handler = guac_rdp_svc_pipe_handler;
-    user->clipboard_handler = guac_rdp_clipboard_handler;
+    /* Only handle events if not read-only */
+    if (!settings->read_only) {
+
+        /* General mouse/keyboard/clipboard events */
+        user->mouse_handler     = guac_rdp_user_mouse_handler;
+        user->key_handler       = guac_rdp_user_key_handler;
+        user->clipboard_handler = guac_rdp_clipboard_handler;
+
+        /* Display size change events */
+        user->size_handler = guac_rdp_user_size_handler;
+
+        /* Set generic (non-filesystem) file upload handler */
+        user->file_handler = guac_rdp_user_file_handler;
+
+        /* Inbound arbitrary named pipes */
+        user->pipe_handler = guac_rdp_svc_pipe_handler;
+
+    }
 
     return 0;
 
@@ -131,7 +149,14 @@ int guac_rdp_user_leave_handler(guac_user* user) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
 
+    /* Update shared cursor state */
     guac_common_cursor_remove_user(rdp_client->display->cursor, user);
+
+    /* Free settings if not owner (owner settings will be freed with client) */
+    if (!user->owner) {
+        guac_rdp_settings* settings = (guac_rdp_settings*) user->data;
+        guac_rdp_settings_free(settings);
+    }
 
     return 0;
 }

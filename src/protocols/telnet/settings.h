@@ -113,6 +113,11 @@ typedef struct guac_telnet_settings {
     regex_t* password_regex;
 
     /**
+     * Whether this connection is read-only, and user input should be dropped.
+     */
+    bool read_only;
+
+    /**
      * The name of the font to use for display rendering.
      */
     char* font_name;

@@ -95,6 +95,11 @@ typedef struct guac_ssh_settings {
     char* key_passphrase;
 
     /**
+     * Whether this connection is read-only, and user input should be dropped.
+     */
+    bool read_only;
+
+    /**
      * The command to run instead of the default shell. If a normal shell
      * session is desired, this will be NULL.
      */

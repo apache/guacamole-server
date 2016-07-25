@@ -39,19 +39,25 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
     guac_client* client = user->client;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
 
+    /* Parse provided arguments */
+    guac_ssh_settings* settings = guac_ssh_parse_args(user,
+            argc, (const char**) argv);
+
+    /* Fail if settings cannot be parsed */
+    if (settings == NULL) {
+        guac_user_log(user, GUAC_LOG_INFO,
+                "Badly formatted client arguments.");
+        return 1;
+    }
+
+    /* Store settings at user level */
+    user->data = settings;
+
     /* Connect via SSH if owner */
     if (user->owner) {
 
-        /* Parse arguments into client */
-        guac_ssh_settings* settings = ssh_client->settings =
-            guac_ssh_parse_args(user, argc, (const char**) argv);
-
-        /* Fail if settings cannot be parsed */
-        if (settings == NULL) {
-            guac_user_log(user, GUAC_LOG_INFO,
-                    "Badly formatted client arguments.");
-            return 1;
-        }
+        /* Store owner's settings at client level */
+        ssh_client->settings = settings;
 
         /* Start client thread */
         if (pthread_create(&(ssh_client->client_thread), NULL,
@@ -69,14 +75,21 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
         guac_socket_flush(user->socket);
     }
 
-    /* Set per-user event handlers */
-    user->key_handler       = guac_ssh_user_key_handler;
-    user->mouse_handler     = guac_ssh_user_mouse_handler;
-    user->size_handler      = guac_ssh_user_size_handler;
-    user->clipboard_handler = guac_ssh_clipboard_handler;
+    /* Only handle events if not read-only */
+    if (!settings->read_only) {
 
-    /* Set generic (non-filesystem) file upload handler */
-    user->file_handler = guac_sftp_file_handler;
+        /* General mouse/keyboard/clipboard events */
+        user->key_handler       = guac_ssh_user_key_handler;
+        user->mouse_handler     = guac_ssh_user_mouse_handler;
+        user->clipboard_handler = guac_ssh_clipboard_handler;
+
+        /* Display size change events */
+        user->size_handler = guac_ssh_user_size_handler;
+
+        /* Set generic (non-filesystem) file upload handler */
+        user->file_handler = guac_sftp_file_handler;
+
+    }
 
     return 0;
 
@@ -86,7 +99,14 @@ int guac_ssh_user_leave_handler(guac_user* user) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) user->client->data;
 
+    /* Update shared cursor state */
     guac_common_cursor_remove_user(ssh_client->term->cursor, user);
+
+    /* Free settings if not owner (owner settings will be freed with client) */
+    if (!user->owner) {
+        guac_ssh_settings* settings = (guac_ssh_settings*) user->data;
+        guac_ssh_settings_free(settings);
+    }
 
     return 0;
 }

@@ -50,6 +50,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "recording-path",
     "recording-name",
     "create-recording-path",
+    "read-only",
     NULL
 };
 
@@ -158,6 +159,12 @@ enum SSH_ARGS_IDX {
      */
     IDX_CREATE_RECORDING_PATH,
 
+    /**
+     * "true" if this connection should be read-only (user input should be
+     * dropped), "false" or blank otherwise.
+     */
+    IDX_READ_ONLY,
+
     SSH_ARGS_COUNT
 };
 
@@ -231,6 +238,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->port =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_PORT, GUAC_SSH_DEFAULT_PORT);
+
+    /* Read-only mode */
+    settings->read_only =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_READ_ONLY, false);
 
     /* Read command, if any */
     settings->command =

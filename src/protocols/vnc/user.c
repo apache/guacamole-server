@@ -41,19 +41,25 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
 
     guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
 
+    /* Parse provided arguments */
+    guac_vnc_settings* settings = guac_vnc_parse_args(user,
+            argc, (const char**) argv);
+
+    /* Fail if settings cannot be parsed */
+    if (settings == NULL) {
+        guac_user_log(user, GUAC_LOG_INFO,
+                "Badly formatted client arguments.");
+        return 1;
+    }
+
+    /* Store settings at user level */
+    user->data = settings;
+
     /* Connect via VNC if owner */
     if (user->owner) {
 
-        /* Parse arguments into client */
-        guac_vnc_settings* settings = vnc_client->settings =
-            guac_vnc_parse_args(user, argc, (const char**) argv);
-
-        /* Fail if settings cannot be parsed */
-        if (settings == NULL) {
-            guac_user_log(user, GUAC_LOG_INFO,
-                    "Badly formatted client arguments.");
-            return 1;
-        }
+        /* Store owner's settings at client level */
+        vnc_client->settings = settings;
 
         /* Start client thread */
         if (pthread_create(&vnc_client->client_thread, NULL, guac_vnc_client_thread, user->client)) {
@@ -79,7 +85,7 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
     }
 
     /* Only handle events if not read-only */
-    if (vnc_client->settings->read_only == 0) {
+    if (!settings->read_only) {
 
         /* General mouse/keyboard/clipboard events */
         user->mouse_handler     = guac_vnc_user_mouse_handler;
@@ -101,7 +107,14 @@ int guac_vnc_user_leave_handler(guac_user* user) {
 
     guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
 
+    /* Update shared cursor state */
     guac_common_cursor_remove_user(vnc_client->display->cursor, user);
+
+    /* Free settings if not owner (owner settings will be freed with client) */
+    if (!user->owner) {
+        guac_vnc_settings* settings = (guac_vnc_settings*) user->data;
+        guac_vnc_settings_free(settings);
+    }
 
     return 0;
 }
