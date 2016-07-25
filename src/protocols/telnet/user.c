@@ -38,19 +38,25 @@ int guac_telnet_user_join_handler(guac_user* user, int argc, char** argv) {
     guac_client* client = user->client;
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
 
+    /* Parse provided arguments */
+    guac_telnet_settings* settings = guac_telnet_parse_args(user,
+            argc, (const char**) argv);
+
+    /* Fail if settings cannot be parsed */
+    if (settings == NULL) {
+        guac_user_log(user, GUAC_LOG_INFO,
+                "Badly formatted client arguments.");
+        return 1;
+    }
+
+    /* Store settings at user level */
+    user->data = settings;
+
     /* Connect via telnet if owner */
     if (user->owner) {
 
-        /* Parse arguments into client */
-        guac_telnet_settings* settings = telnet_client->settings =
-            guac_telnet_parse_args(user, argc, (const char**) argv);
-
-        /* Fail if settings cannot be parsed */
-        if (settings == NULL) {
-            guac_user_log(user, GUAC_LOG_INFO,
-                    "Badly formatted client arguments.");
-            return 1;
-        }
+        /* Store owner's settings at client level */
+        telnet_client->settings = settings;
 
         /* Start client thread */
         if (pthread_create(&(telnet_client->client_thread), NULL,
@@ -83,7 +89,14 @@ int guac_telnet_user_leave_handler(guac_user* user) {
     guac_telnet_client* telnet_client =
         (guac_telnet_client*) user->client->data;
 
+    /* Update shared cursor state */
     guac_common_cursor_remove_user(telnet_client->term->cursor, user);
+
+    /* Free settings if not owner (owner settings will be freed with client) */
+    if (!user->owner) {
+        guac_telnet_settings* settings = (guac_telnet_settings*) user->data;
+        guac_telnet_settings_free(settings);
+    }
 
     return 0;
 }
