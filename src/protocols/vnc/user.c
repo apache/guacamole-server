@@ -85,7 +85,7 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
     }
 
     /* Only handle events if not read-only */
-    if (vnc_client->settings->read_only == 0) {
+    if (!settings->read_only) {
 
         /* General mouse/keyboard/clipboard events */
         user->mouse_handler     = guac_vnc_user_mouse_handler;
