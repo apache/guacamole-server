@@ -25,6 +25,7 @@
 #include "guac_cursor.h"
 #include "guac_display.h"
 #include "guac_recording.h"
+#include "keyboard.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"
 #include "rdp_cliprdr.h"
@@ -32,7 +33,6 @@
 #include "rdp_fs.h"
 #include "rdp_gdi.h"
 #include "rdp_glyph.h"
-#include "rdp_keymap.h"
 #include "rdp_pointer.h"
 #include "rdp_rail.h"
 #include "rdp_stream.h"
@@ -545,50 +545,6 @@ static void rdp_freerdp_context_free(freerdp* instance, rdpContext* context) {
 }
 
 /**
- * Loads all keysym/scancode mappings declared within the given keymap and its
- * parent keymap, if any. These mappings are stored within the guac_rdp_client
- * structure associated with the given guac_client for future use in
- * translating keysyms to the scancodes required by RDP key events.
- *
- * @param client
- *     The guac_client whose associated guac_rdp_client should be initialized
- *     with the keysym/scancode mapping defined in the given keymap.
- *
- * @param keymap
- *     The keymap to use to populate the given client's keysym/scancode
- *     mapping.
- */
-static void __guac_rdp_client_load_keymap(guac_client* client,
-        const guac_rdp_keymap* keymap) {
-
-    guac_rdp_client* rdp_client =
-        (guac_rdp_client*) client->data;
-
-    /* Get mapping */
-    const guac_rdp_keysym_desc* mapping = keymap->mapping;
-
-    /* If parent exists, load parent first */
-    if (keymap->parent != NULL)
-        __guac_rdp_client_load_keymap(client, keymap->parent);
-
-    /* Log load */
-    guac_client_log(client, GUAC_LOG_INFO, "Loading keymap \"%s\"", keymap->name);
-
-    /* Load mapping into keymap */
-    while (mapping->keysym != 0) {
-
-        /* Copy mapping */
-        GUAC_RDP_KEYSYM_LOOKUP(rdp_client->keymap, mapping->keysym) =
-            *mapping;
-
-        /* Next keysym */
-        mapping++;
-
-    }
-
-}
-
-/**
  * Waits for messages from the RDP server for the given number of microseconds.
  *
  * @param client
@@ -752,7 +708,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
 
     /* Load keymap into client */
-    __guac_rdp_client_load_keymap(client, settings->server_layout);
+    rdp_client->keyboard = guac_rdp_keyboard_alloc(client,
+            settings->server_layout);
 
     /* Send connection name */
     guac_protocol_send_name(client->socket, settings->hostname);
@@ -915,6 +872,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Free SVC list */
     guac_common_list_free(rdp_client->available_svc);
+
+    /* Free RDP keyboard state */
+    guac_rdp_keyboard_free(rdp_client->keyboard);
 
     /* Free display */
     guac_common_display_free(rdp_client->display);

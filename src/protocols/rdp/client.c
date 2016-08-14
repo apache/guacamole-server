@@ -23,7 +23,6 @@
 #include "client.h"
 #include "rdp.h"
 #include "rdp_disp.h"
-#include "rdp_keymap.h"
 #include "user.h"
 
 #ifdef ENABLE_COMMON_SSH
@@ -75,10 +74,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Init RDP lock */
     pthread_mutex_init(&(rdp_client->rdp_lock), &(rdp_client->attributes));
-
-    /* Clear keysym state mapping and keymap */
-    memset(rdp_client->keysym_state, 0, sizeof(guac_rdp_keysym_state_map));
-    memset(rdp_client->keymap, 0, sizeof(guac_rdp_static_keymap));
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;

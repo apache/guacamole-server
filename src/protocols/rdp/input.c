@@ -21,9 +21,9 @@
 
 #include "client.h"
 #include "input.h"
+#include "keyboard.h"
 #include "rdp.h"
 #include "rdp_disp.h"
-#include "rdp_keymap.h"
 
 #include <freerdp/freerdp.h>
 #include <freerdp/input.h>
@@ -31,129 +31,6 @@
 
 #include <pthread.h>
 #include <stdlib.h>
-
-int guac_rdp_send_keysym(guac_client* client, int keysym, int pressed) {
-
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
-    /* If keysym can be in lookup table */
-    if (GUAC_RDP_KEYSYM_STORABLE(keysym)) {
-
-        int pressed_flags;
-
-        /* Look up scancode mapping */
-        const guac_rdp_keysym_desc* keysym_desc =
-            &GUAC_RDP_KEYSYM_LOOKUP(rdp_client->keymap, keysym);
-
-        /* If defined, send event */
-        if (keysym_desc->scancode != 0) {
-
-            pthread_mutex_lock(&(rdp_client->rdp_lock));
-
-            /* If defined, send any prerequesite keys that must be set */
-            if (keysym_desc->set_keysyms != NULL)
-                guac_rdp_update_keysyms(client, keysym_desc->set_keysyms, 0, 1);
-
-            /* If defined, release any keys that must be cleared */
-            if (keysym_desc->clear_keysyms != NULL)
-                guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 0);
-
-            /* Determine proper event flag for pressed state */
-            if (pressed)
-                pressed_flags = KBD_FLAGS_DOWN;
-            else
-                pressed_flags = KBD_FLAGS_RELEASE;
-
-            /* Skip if not yet connected */
-            freerdp* rdp_inst = rdp_client->rdp_inst;
-            if (rdp_inst == NULL) {
-                pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                return 0;
-            }
-
-            /* Send actual key */
-            rdp_inst->input->KeyboardEvent(rdp_inst->input, keysym_desc->flags | pressed_flags,
-                    keysym_desc->scancode);
-
-            /* If defined, release any keys that were originally released */
-            if (keysym_desc->set_keysyms != NULL)
-                guac_rdp_update_keysyms(client, keysym_desc->set_keysyms, 0, 0);
-
-            /* If defined, send any keys that were originally set */
-            if (keysym_desc->clear_keysyms != NULL)
-                guac_rdp_update_keysyms(client, keysym_desc->clear_keysyms, 1, 1);
-
-            pthread_mutex_unlock(&(rdp_client->rdp_lock));
-
-            return 0;
-
-        }
-    }
-
-    /* Fall back to unicode events if undefined inside current keymap */
-
-    /* Only send when key pressed - Unicode events do not have
-     * DOWN/RELEASE flags */
-    if (pressed) {
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Sending keysym 0x%x as Unicode", keysym);
-
-        /* Translate keysym into codepoint */
-        int codepoint;
-        if (keysym <= 0xFF)
-            codepoint = keysym;
-        else if (keysym >= 0x1000000)
-            codepoint = keysym & 0xFFFFFF;
-        else {
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Unmapped keysym has no equivalent unicode "
-                    "value: 0x%x", keysym);
-            return 0;
-        }
-
-        pthread_mutex_lock(&(rdp_client->rdp_lock));
-
-        /* Skip if not yet connected */
-        freerdp* rdp_inst = rdp_client->rdp_inst;
-        if (rdp_inst == NULL) {
-            pthread_mutex_unlock(&(rdp_client->rdp_lock));
-            return 0;
-        }
-
-        /* Send Unicode event */
-        rdp_inst->input->UnicodeKeyboardEvent(
-                rdp_inst->input,
-                0, codepoint);
-
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
-
-    }
-    
-    return 0;
-}
-
-void guac_rdp_update_keysyms(guac_client* client, const int* keysym_string, int from, int to) {
-
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    int keysym;
-
-    /* Send all keysyms in string, NULL terminated */
-    while ((keysym = *keysym_string) != 0) {
-
-        /* Get current keysym state */
-        int current_state = GUAC_RDP_KEYSYM_LOOKUP(rdp_client->keysym_state, keysym);
-
-        /* If key is currently in given state, send event for changing it to specified "to" state */
-        if (current_state == from)
-            guac_rdp_send_keysym(client, *keysym_string, to);
-
-        /* Next keysym */
-        keysym_string++;
-
-    }
-
-}
 
 int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
@@ -246,11 +123,13 @@ int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed) {
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    /* Update keysym state */
-    if (GUAC_RDP_KEYSYM_STORABLE(keysym))
-        GUAC_RDP_KEYSYM_LOOKUP(rdp_client->keysym_state, keysym) = pressed;
+    /* Skip if keyboard not yet ready */
+    if (rdp_client->keyboard == NULL)
+        return 0;
 
-    return guac_rdp_send_keysym(client, keysym, pressed);
+    /* Update keysym state */
+    return guac_rdp_keyboard_update_keysym(rdp_client->keyboard,
+            keysym, pressed);
 
 }
 

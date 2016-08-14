@@ -28,6 +28,7 @@ libguac_client_rdp_la_SOURCES = \
     client.c                    \
     dvc.c                       \
     input.c                     \
+    keyboard.c                  \
     ptr_string.c                \
     rdp.c                       \
     rdp_bitmap.c                \
@@ -94,6 +95,7 @@ noinst_HEADERS =                             \
     client.h                                 \
     dvc.h                                    \
     input.h                                  \
+    keyboard.h                               \
     ptr_string.h                             \
     rdp.h                                    \
     rdp_bitmap.h                             \
