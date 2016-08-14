@@ -32,6 +32,88 @@
 #include <stdlib.h>
 
 /**
+ * Immediately sends an RDP key event having the given scancode and flags.
+ *
+ * @param rdp_client
+ *     The RDP client instance associated with the RDP session along which the
+ *     key event should be sent.
+ *
+ * @param scancode
+ *     The scancode of the key to press or release via the RDP key event.
+ *
+ * @param flags
+ *     Any RDP-specific flags required for the provided scancode to have the
+ *     intended meaning, such as KBD_FLAGS_EXTENDED. The possible flags and
+ *     their meanings are dictated by RDP. KBD_FLAGS_DOWN and KBD_FLAGS_UP
+ *     need not be specified here - they will automatically be added depending
+ *     on the value specified for the pressed parameter.
+ *
+ * @param pressed
+ *     Non-zero if the key is being pressed, zero if the key is being released.
+ */
+static void guac_rdp_send_key_event(guac_rdp_client* rdp_client,
+        int scancode, int flags, int pressed) {
+
+    /* Determine proper event flag for pressed state */
+    int pressed_flags;
+    if (pressed)
+        pressed_flags = KBD_FLAGS_DOWN;
+    else
+        pressed_flags = KBD_FLAGS_RELEASE;
+
+    pthread_mutex_lock(&(rdp_client->rdp_lock));
+
+    /* Skip if not yet connected */
+    freerdp* rdp_inst = rdp_client->rdp_inst;
+    if (rdp_inst == NULL) {
+        pthread_mutex_unlock(&(rdp_client->rdp_lock));
+        return;
+    }
+
+    /* Send actual key */
+    rdp_inst->input->KeyboardEvent(rdp_inst->input,
+            flags | pressed_flags, scancode);
+
+    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+
+}
+
+/**
+ * Immediately sends an RDP Unicode event having the given Unicode codepoint.
+ * Unlike key events, RDP Unicode events do have not a pressed or released
+ * state. They represent strictly the input of a single character, and are
+ * technically independent of the keyboard.
+ *
+ * @param rdp_client
+ *     The RDP client instance associated with the RDP session along which the
+ *     Unicode event should be sent.
+ *
+ * @param codepoint
+ *     The Unicode codepoint of the character being input via the Unicode
+ *     event.
+ */
+static void guac_rdp_send_unicode_event(guac_rdp_client* rdp_client,
+        int codepoint) {
+
+    pthread_mutex_lock(&(rdp_client->rdp_lock));
+
+    /* Skip if not yet connected */
+    freerdp* rdp_inst = rdp_client->rdp_inst;
+    if (rdp_inst == NULL) {
+        pthread_mutex_unlock(&(rdp_client->rdp_lock));
+        return;
+    }
+
+    /* Send Unicode event */
+    rdp_inst->input->UnicodeKeyboardEvent(
+            rdp_inst->input,
+            0, codepoint);
+
+    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+
+}
+
+/**
  * Loads all keysym/scancode mappings declared within the given keymap and its
  * parent keymap, if any. These mappings are stored within the given
  * guac_rdp_keyboard structure for future use in translating keysyms to the
@@ -105,8 +187,6 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
         /* If defined, send event */
         if (keysym_desc->scancode != 0) {
 
-            pthread_mutex_lock(&(rdp_client->rdp_lock));
-
             /* If defined, send any prerequesite keys that must be set */
             if (keysym_desc->set_keysyms != NULL)
                 guac_rdp_keyboard_send_events(keyboard,
@@ -117,24 +197,9 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
                 guac_rdp_keyboard_send_events(keyboard,
                         keysym_desc->clear_keysyms, 1, 0);
 
-            /* Determine proper event flag for pressed state */
-            int pressed_flags;
-            if (pressed)
-                pressed_flags = KBD_FLAGS_DOWN;
-            else
-                pressed_flags = KBD_FLAGS_RELEASE;
-
-            /* Skip if not yet connected */
-            freerdp* rdp_inst = rdp_client->rdp_inst;
-            if (rdp_inst == NULL) {
-                pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                return 0;
-            }
-
-            /* Send actual key */
-            rdp_inst->input->KeyboardEvent(rdp_inst->input,
-                    keysym_desc->flags | pressed_flags,
-                    keysym_desc->scancode);
+            /* Fire actual key event for target key */
+            guac_rdp_send_key_event(rdp_client, keysym_desc->scancode,
+                    keysym_desc->flags, pressed);
 
             /* If defined, release any keys that were originally released */
             if (keysym_desc->set_keysyms != NULL)
@@ -145,8 +210,6 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
             if (keysym_desc->clear_keysyms != NULL)
                 guac_rdp_keyboard_send_events(keyboard,
                         keysym_desc->clear_keysyms, 1, 1);
-
-            pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
             return 0;
 
@@ -175,21 +238,8 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
             return 0;
         }
 
-        pthread_mutex_lock(&(rdp_client->rdp_lock));
-
-        /* Skip if not yet connected */
-        freerdp* rdp_inst = rdp_client->rdp_inst;
-        if (rdp_inst == NULL) {
-            pthread_mutex_unlock(&(rdp_client->rdp_lock));
-            return 0;
-        }
-
-        /* Send Unicode event */
-        rdp_inst->input->UnicodeKeyboardEvent(
-                rdp_inst->input,
-                0, codepoint);
-
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
+        /* Send as Unicode event */
+        guac_rdp_send_unicode_event(rdp_client, codepoint);
 
     }
     
