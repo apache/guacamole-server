@@ -62,6 +62,22 @@ typedef struct guac_rdp_keysym_desc {
      */
     const int* clear_keysyms;
 
+    /**
+     * Bitwise OR of the flags of all lock keys (ie: Caps lock, Num lock, etc.)
+     * which must be active for this keysym to be properly typed. Legal flags
+     * are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
+     * KBD_SYNC_KANA_LOCK.
+     */
+    int set_locks;
+
+    /**
+     * Bitwise OR of the flags of all lock keys (ie: Caps lock, Num lock, etc.)
+     * which must be inactive for this keysym to be properly typed. Legal flags
+     * are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
+     * KBD_SYNC_KANA_LOCK.
+     */
+    int clear_locks;
+
 } guac_rdp_keysym_desc;
 
 /**

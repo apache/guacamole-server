@@ -36,6 +36,19 @@ typedef struct guac_rdp_keyboard {
     guac_client* client;
 
     /**
+     * The local state of all known lock keys, as a bitwise OR of all RDP lock
+     * key flags. Legal flags are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK,
+     * KBD_SYNC_CAPS_LOCK, and KBD_SYNC_KANA_LOCK.
+     */
+    int lock_flags;
+
+    /**
+     * Whether the states of remote lock keys (Caps lock, Num lock, etc.) have
+     * been synchronized with local lock key states.
+     */
+    int synchronized;
+
+    /**
      * The keymap to use when translating keysyms into scancodes or sequences
      * of scancodes for RDP.
      */
@@ -126,6 +139,26 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
  */
 void guac_rdp_keyboard_send_events(guac_rdp_keyboard* keyboard,
         const int* keysym_string, int from, int to);
+
+/**
+ * Updates the local state of the lock keys (such as Caps lock or Num lock),
+ * synchronizing the remote state of those keys if it is expected to differ.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param set_flags
+ *     The lock key flags which should be set. Legal flags are
+ *     KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
+ *     KBD_SYNC_KANA_LOCK.
+ *
+ * @param clear_flags
+ *     The lock key flags which should be cleared. Legal flags are
+ *     KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
+ *     KBD_SYNC_KANA_LOCK.
+ */
+void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
+        int set_flags, int clear_flags);
 
 /**
  * Updates the local state of the given keysym, sending the key events required
