@@ -97,9 +97,11 @@ for my $filename (@ARGV) {
             my $ext_flags = 0;
             my $set_shift = 0;
             my $set_altgr = 0;
+            my $set_num   = 0;
 
             my $clear_shift = 0;
             my $clear_altgr = 0;
+            my $clear_num   = 0;
 
             # Parse ranges and options
             foreach $_ (split(/\s+/, $range)) {
@@ -108,6 +110,7 @@ for my $filename (@ARGV) {
                 if ((my $opt) = m/^\+([a-z]+)$/) {
                     if    ($opt eq "shift") { $set_shift = 1; }
                     elsif ($opt eq "altgr") { $set_altgr = 1; }
+                    elsif ($opt eq "num")   { $set_num   = 1; }
                     elsif ($opt eq "ext")   { $ext_flags = 1; }
                     else {
                         die "$filename: $.: ERROR: "
@@ -119,6 +122,7 @@ for my $filename (@ARGV) {
                 elsif ((my $opt) = m/^-([a-z]+)$/) {
                     if    ($opt eq "shift") { $clear_shift = 1; }
                     elsif ($opt eq "altgr") { $clear_altgr = 1; }
+                    elsif ($opt eq "num")   { $clear_num   = 1; }
                     else {
                         die "$filename: $.: ERROR: "
                           . "Invalid clear option\n";
@@ -196,6 +200,16 @@ for my $filename (@ARGV) {
                 }
                 elsif ($clear_shift && $clear_altgr) {
                     $content .= ", .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT_ALTGR";
+                }
+
+                # Set locks
+                if ($set_num) {
+                    $content .= ", .set_locks = KBD_SYNC_NUM_LOCK";
+                }
+
+                # Clear locks
+                if ($clear_num) {
+                    $content .= ", .clear_locks = KBD_SYNC_NUM_LOCK";
                 }
 
                 # Flags
