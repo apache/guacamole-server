@@ -103,7 +103,7 @@ libguac_la_CFLAGS = \
     -Werror -Wall -pedantic -Iguacamole
 
 libguac_la_LDFLAGS =     \
-    -version-info 11:0:0 \
+    -version-info 12:0:0 \
     @CAIRO_LIBS@         \
     @JPEG_LIBS@          \
     @PNG_LIBS@           \
