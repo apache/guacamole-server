@@ -19,48 +19,36 @@
 #
 
 ##
-## @fn download-guacd.sh
+## @fn build-guacd.sh
 ##
-## Downloads and builds the given version of guacamole-server, automatically
-## creating any required symbolic links for the proper loading of FreeRDP
-## plugins.
+## Builds the source of guacamole-server, automatically creating any required
+## symbolic links for the proper loading of FreeRDP plugins.
 ##
-## @param VERSION
-##     The version of guacamole-server to download, such as "0.9.6".
+## @param BUILD_DIR
+##     The directory which currently contains the guacamole-server source and
+##     in which the build should be performed.
 ##
 
-VERSION="$1"
-BUILD_DIR="/tmp"
+BUILD_DIR="$1"
 
 ##
 ## Locates the directory in which the FreeRDP libraries (.so files) are
 ## located, printing the result to STDOUT.
 ##
 where_is_freerdp() {
-    dirname `rpm -ql freerdp-devel | grep 'libfreerdp.*\.so' | head -n1`
+    dirname `rpm -ql freerdp-libs | grep 'libfreerdp.*\.so' | head -n1`
 }
-
-#
-# Download latest guacamole-server
-#
-
-curl -L "http://sourceforge.net/projects/guacamole/files/current/source/guacamole-server-$VERSION.tar.gz" | tar -xz -C "$BUILD_DIR"
 
 #
 # Build guacamole-server
 #
 
-cd "$BUILD_DIR/guacamole-server-$VERSION"
+cd "$BUILD_DIR"
+autoreconf -fi
 ./configure
 make
 make install
 ldconfig
-
-#
-# Clean up after build
-#
-
-rm -Rf "$BUILD_DIR/guacamole-server-$VERSION"
 
 #
 # Add FreeRDP plugins to proper path

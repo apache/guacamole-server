@@ -27,39 +27,61 @@ MAINTAINER Michael Jumper <mike.jumper@guac-dev.org>
 
 # Environment variables
 ENV \
-    GUAC_VERSION=0.9.9 \
-    LC_ALL=en_US.UTF-8
+    BUILD_DIR=/tmp/guacd-docker-BUILD \
+    LC_ALL=en_US.UTF-8                \
+    RUNTIME_DEPENDENCIES="            \
+        cairo                         \
+        dejavu-sans-mono-fonts        \
+        freerdp                       \
+        freerdp-plugins               \
+        ghostscript                   \
+        libjpeg-turbo                 \
+        libssh2                       \
+        liberation-mono-fonts         \
+        libtelnet                     \
+        libvorbis                     \
+        libvncserver                  \
+        libwebp                       \
+        pango                         \
+        pulseaudio-libs               \
+        terminus-fonts                \
+        uuid"                         \
+    BUILD_DEPENDENCIES="              \
+        autoconf                      \
+        automake                      \
+        cairo-devel                   \
+        freerdp-devel                 \
+        gcc                           \
+        libjpeg-turbo-devel           \
+        libssh2-devel                 \
+        libtool                       \
+        libtelnet-devel               \
+        libvorbis-devel               \
+        libvncserver-devel            \
+        libwebp-devel                 \
+        make                          \
+        pango-devel                   \
+        pulseaudio-libs-devel         \
+        uuid-devel"
 
-# Bring environment up-to-date, install guacamole-server build dependencies
-RUN yum -y update i             && \
-    yum -y install epel-release && \
-    yum -y install             \
-        cairo-devel            \
-        dejavu-sans-mono-fonts \
-        freerdp-devel          \
-        freerdp-plugins        \
-        gcc                    \
-        ghostscript            \
-        libjpeg-turbo-devel    \
-        libssh2-devel          \
-        liberation-mono-fonts  \
-        libtelnet-devel        \
-        libvorbis-devel        \
-        libvncserver-devel     \
-        libwebp-devel          \
-        make                   \
-        pango-devel            \
-        pulseaudio-libs-devel  \
-        tar                    \
-        terminus-fonts         \
-        uuid-devel              && \
+# Bring environment up-to-date and install guacamole-server dependencies
+RUN yum -y update                        && \
+    yum -y install epel-release          && \
+    yum -y install $RUNTIME_DEPENDENCIES && \
     yum clean all
 
 # Add configuration scripts
-COPY bin /opt/guacd/bin/
+COPY src/guacd-docker/bin /opt/guacd/bin/
 
-# Download and install latest guacamole-server
-RUN /opt/guacd/bin/download-guacd.sh "$GUAC_VERSION"
+# Copy source to container for sake of build
+COPY . "$BUILD_DIR"
+
+# Build guacamole-server from local source
+RUN yum -y install $BUILD_DEPENDENCIES         && \
+    /opt/guacd/bin/build-guacd.sh "$BUILD_DIR" && \
+    rm -Rf "$BUILD_DIR"                        && \
+    yum -y autoremove $BUILD_DEPENDENCIES      && \
+    yum clean all
 
 # Start guacd, listening on port 0.0.0.0:4822
 EXPOSE 4822
