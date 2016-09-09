@@ -19,60 +19,32 @@
 
 AUTOMAKE_OPTIONS = foreign 
 
-sbin_PROGRAMS = guacd
-
-man_MANS =           \
-    man/guacd.8      \
-    man/guacd.conf.5
+noinst_LTLIBRARIES = libguacd.la
 
 noinst_HEADERS =  \
-    conf-args.h   \
-    conf-file.h   \
-    conf-parse.h  \
-    connection.h  \
-    move-fd.h     \
-    proc.h        \
-    proc-map.h
+    log.h         \
+    user.h
 
-guacd_SOURCES =  \
-    conf-args.c  \
-    conf-file.c  \
-    conf-parse.c \
-    connection.c \
-    daemon.c     \
-    move-fd.c    \
-    proc.c       \
-    proc-map.c
+libguacd_la_SOURCES = \
+    log.c             \
+    user.c
 
-guacd_CFLAGS =              \
+libguacd_la_CFLAGS =        \
     -Werror -Wall -pedantic \
     @COMMON_INCLUDE@        \
-    @LIBGUACD_INCLUDE@      \
     @LIBGUAC_INCLUDE@
 
-guacd_LDADD =        \
+libguacd_la_LIBADD = \
     @COMMON_LTLIB@   \
-    @LIBGUACD_LTLIB@ \
     @LIBGUAC_LTLIB@
 
-guacd_LDFLAGS =    \
-    @PTHREAD_LIBS@ \
+libguacd_la_LDFLAGS = \
+    @PTHREAD_LIBS@    \
     @SSL_LIBS@
 
-EXTRA_DIST =         \
-    init.d/guacd.in  \
-    man/guacd.8      \
-    man/guacd.conf.5
-
-CLEANFILES = $(init_SCRIPTS)
-
-# Init script
-if ENABLE_INIT
-initdir = @init_dir@
-init_SCRIPTS = init.d/guacd
-
-init.d/guacd: init.d/guacd.in
-	sed -e 's,[@]sbindir[@],$(sbindir),g' < init.d/guacd.in > init.d/guacd
-	chmod +x init.d/guacd
+# SSL support
+if ENABLE_SSL
+noinst_HEADERS      += socket-ssl.h
+libguacd_la_SOURCES += socket-ssl.c
 endif
 

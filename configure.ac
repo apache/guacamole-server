@@ -119,6 +119,10 @@ AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/src/libguac')
 AC_SUBST([COMMON_LTLIB],   '$(top_builddir)/src/common/libguac_common.la')
 AC_SUBST([COMMON_INCLUDE], '-I$(top_srcdir)/src/common')
 
+# Common utility library for guacd implementations
+AC_SUBST([LIBGUACD_LTLIB],   '$(top_builddir)/src/libguacd/libguacd.la')
+AC_SUBST([LIBGUACD_INCLUDE], '-I$(top_srcdir)/src/libguacd')
+
 # Common base SSH client
 AC_SUBST([COMMON_SSH_LTLIB],   '$(top_builddir)/src/common-ssh/libguac_common_ssh.la')
 AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
@@ -1101,6 +1105,7 @@ AC_CONFIG_FILES([Makefile
                  src/common-ssh/Makefile
                  src/terminal/Makefile
                  src/libguac/Makefile
+                 src/libguacd/Makefile
                  src/guacd/Makefile
                  src/guacenc/Makefile
                  src/protocols/rdp/Makefile
