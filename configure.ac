@@ -17,8 +17,15 @@
 # under the License.
 #
 
+# Version definitions
+m4_define([guac_major],   [1])
+m4_define([guac_minor],   [5])
+m4_define([guac_patch],   [0])
+m4_define([guac_version], [guac_major.guac_minor.guac_patch])
+
+# Init
 AC_PREREQ([2.61])
-AC_INIT([guacamole-server], [1.5.0])
+AC_INIT([guacamole-server], [guac_version])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
@@ -31,6 +38,12 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Use TAP test driver for tests (part of automake)
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
+
+# Version definitions
+AC_DEFINE([GUAC_MAJOR],   [guac_major],   [Guacamole major version number])
+AC_DEFINE([GUAC_MINOR],   [guac_minor],   [Guacamole minor version number])
+AC_DEFINE([GUAC_PATCH],   [guac_patch],   [Guacamole patch version number])
+AC_DEFINE([GUAC_VERSION], [guac_version], [Guacamole version number])
 
 # Programs
 AC_PROG_CC
@@ -1123,6 +1136,34 @@ AM_CONDITIONAL([ENABLE_KUBERNETES], [test "x${enable_kubernetes}"  = "xyes" \
                                        -a "x${have_terminal}"      = "xyes"])
 
 #
+# X.Org video driver
+#
+
+have_xorg=disabled
+AC_ARG_WITH([xorg],
+            [AS_HELP_STRING([--with-xorg],
+                            [support X.Org @<:@default=check@:>@])],
+            [],
+            [with_xorg=check])
+
+# X.Org module directory
+AC_ARG_WITH(xorg-module-dir,
+            AS_HELP_STRING([--with-xorg-module-dir=DIR],
+                           [Install directory for X.Org modules]),
+            [XORG_MODULE_DIR="$withval"],
+            [XORG_MODULE_DIR="$libdir/xorg/modules"])
+
+if test "x$with_xorg" != "xno"
+then
+    have_xorg=yes
+    PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto],, [have_xorg=no])
+fi
+
+AM_CONDITIONAL([ENABLE_XORG], [test "x${have_xorg}"  = "xyes" ])
+AC_SUBST([XORG_MODULE_DIR])
+AC_SUBST([XORG_CFLAGS])
+
+#
 # guacd
 #
 
@@ -1190,7 +1231,8 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
-                 src/protocols/vnc/Makefile])
+                 src/protocols/vnc/Makefile
+                 src/drivers/xf86-video-guac/Makefile])
 AC_OUTPUT
 
 #
@@ -1230,6 +1272,14 @@ AM_COND_IF([ENABLE_SYSTEMD], [build_systemd="${systemd_dir}"], [build_systemd=no
 AM_COND_IF([ENABLE_RDP], [build_rdp_plugins="${FREERDP2_PLUGIN_DIR}"], [build_rdp_plugins=no])
 
 #
+# X.Org driver
+#
+
+AM_COND_IF([ENABLE_XORG],
+           [build_xorg="yes ($XORG_MODULE_DIR)"],
+           [build_xorg=no])
+
+#
 # Display summary
 #
 
@@ -1242,6 +1292,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
      freerdp2 ............ ${have_freerdp2}
      pango ............... ${have_pango}
+     xorg-server ......... ${have_xorg}
      libavcodec .......... ${have_libavcodec}
      libavformat.......... ${have_libavformat}
      libavutil ........... ${have_libavutil}
@@ -1264,6 +1315,10 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       Telnet ........ ${build_telnet}
       VNC ........... ${build_vnc}
 
+   Drivers:
+
+      X.Org .... ${build_xorg}
+
    Services / tools:
 
       guacd ...... ${build_guacd}
@@ -1276,4 +1331,3 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
-
