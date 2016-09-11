@@ -31,6 +31,65 @@
 
 #include <pthread.h>
 #include <stdlib.h>
+#include <string.h>
+
+/**
+ * Copies the given array of mimetypes (strings) into a newly-allocated NULL-
+ * terminated array of strings. Both the array and the strings within the array
+ * are newly-allocated and must be later freed via guacd_free_mimetypes().
+ *
+ * @param mimetypes
+ *     The array of mimetypes to copy.
+ *
+ * @param count
+ *     The number of mimetypes in the given array.
+ *
+ * @return
+ *     A newly-allocated, NULL-terminated array containing newly-allocated
+ *     copies of each of the mimetypes provided in the original mimetypes
+ *     array.
+ */
+static char** guacd_copy_mimetypes(char** mimetypes, int count) {
+
+    int i;
+
+    /* Allocate sufficient space for NULL-terminated array of mimetypes */
+    char** mimetypes_copy = malloc(sizeof(char*) * (count+1));
+
+    /* Copy each provided mimetype */
+    for (i = 0; i < count; i++)
+        mimetypes_copy[i] = strdup(mimetypes[i]);
+
+    /* Terminate with NULL */
+    mimetypes_copy[count] = NULL;
+
+    return mimetypes_copy;
+
+}
+
+/**
+ * Frees the given array of mimetypes, including the space allocated to each
+ * mimetype string within the array. The provided array of mimetypes MUST have
+ * been allocated with guacd_copy_mimetypes().
+ *
+ * @param mimetypes
+ *     The NULL-terminated array of mimetypes to free. This array MUST have
+ *     been previously allocated with guacd_copy_mimetypes().
+ */
+static void guacd_free_mimetypes(char** mimetypes) {
+
+    char** current_mimetype = mimetypes;
+
+    /* Free all strings within NULL-terminated mimetype array */
+    while (*current_mimetype != NULL) {
+        free(*current_mimetype);
+        current_mimetype++;
+    }
+
+    /* Free the array itself, now that its contents have been freed */
+    free(mimetypes);
+
+}
 
 void* guacd_user_input_thread(void* data) {
 
@@ -107,6 +166,155 @@ int guacd_user_start(guac_parser* parser, guac_user* user) {
     guac_socket_flush(user->socket);
 
     /* Done */
+    return 0;
+
+}
+
+int guacd_handle_user(guac_user* user) {
+
+    guac_socket* socket = user->socket;
+    guac_client* client = user->client;
+
+    /* Send args */
+    if (guac_protocol_send_args(socket, client->args)
+            || guac_socket_flush(socket)) {
+
+        /* Log error */
+        guacd_client_log_handshake_failure(client);
+        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+                "Error sending \"args\" to new user");
+
+        return 1;
+    }
+
+    guac_parser* parser = guac_parser_alloc();
+
+    /* Get optimal screen size */
+    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "size")) {
+
+        /* Log error */
+        guacd_client_log_handshake_failure(client);
+        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+                "Error reading \"size\"");
+
+        guac_parser_free(parser);
+        return 1;
+    }
+
+    /* Validate content of size instruction */
+    if (parser->argc < 2) {
+        guac_client_log(client, GUAC_LOG_ERROR, "Received \"size\" "
+                "instruction lacked required arguments.");
+        guac_parser_free(parser);
+        return 1;
+    }
+
+    /* Parse optimal screen dimensions from size instruction */
+    user->info.optimal_width  = atoi(parser->argv[0]);
+    user->info.optimal_height = atoi(parser->argv[1]);
+
+    /* If DPI given, set the client resolution */
+    if (parser->argc >= 3)
+        user->info.optimal_resolution = atoi(parser->argv[2]);
+
+    /* Otherwise, use a safe default for rough backwards compatibility */
+    else
+        user->info.optimal_resolution = 96;
+
+    /* Get supported audio formats */
+    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "audio")) {
+
+        /* Log error */
+        guacd_client_log_handshake_failure(client);
+        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+                "Error reading \"audio\"");
+
+        guac_parser_free(parser);
+        return 1;
+    }
+
+    /* Store audio mimetypes */
+    char** audio_mimetypes = guacd_copy_mimetypes(parser->argv, parser->argc);
+    user->info.audio_mimetypes = (const char**) audio_mimetypes;
+
+    /* Get supported video formats */
+    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "video")) {
+
+        /* Log error */
+        guacd_client_log_handshake_failure(client);
+        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+                "Error reading \"video\"");
+
+        guac_parser_free(parser);
+        return 1;
+    }
+
+    /* Store video mimetypes */
+    char** video_mimetypes = guacd_copy_mimetypes(parser->argv, parser->argc);
+    user->info.video_mimetypes = (const char**) video_mimetypes;
+
+    /* Get supported image formats */
+    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "image")) {
+
+        /* Log error */
+        guacd_client_log_handshake_failure(client);
+        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+                "Error reading \"image\"");
+
+        guac_parser_free(parser);
+        return 1;
+    }
+
+    /* Store image mimetypes */
+    char** image_mimetypes = guacd_copy_mimetypes(parser->argv, parser->argc);
+    user->info.image_mimetypes = (const char**) image_mimetypes;
+
+    /* Get args from connect instruction */
+    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "connect")) {
+
+        /* Log error */
+        guacd_client_log_handshake_failure(client);
+        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+                "Error reading \"connect\"");
+
+        guac_parser_free(parser);
+        return 1;
+    }
+
+    /* Acknowledge connection availability */
+    guac_protocol_send_ready(socket, client->connection_id);
+    guac_socket_flush(socket);
+
+    /* Attempt join */
+    if (guac_client_add_user(client, user, parser->argc, parser->argv))
+        guac_client_log(client, GUAC_LOG_ERROR, "User \"%s\" could NOT "
+                "join connection \"%s\"", user->user_id, client->connection_id);
+
+    /* Begin user connection if join successful */
+    else {
+
+        guac_client_log(client, GUAC_LOG_INFO, "User \"%s\" joined connection "
+                "\"%s\" (%i users now present)", user->user_id,
+                client->connection_id, client->connected_users);
+
+        /* Handle user I/O, wait for connection to terminate */
+        guacd_user_start(parser, user);
+
+        /* Remove/free user */
+        guac_client_remove_user(client, user);
+        guac_client_log(client, GUAC_LOG_INFO, "User \"%s\" disconnected (%i "
+                "users remain)", user->user_id, client->connected_users);
+
+    }
+
+    /* Free mimetype lists */
+    guacd_free_mimetypes(audio_mimetypes);
+    guacd_free_mimetypes(video_mimetypes);
+    guacd_free_mimetypes(image_mimetypes);
+
+    guac_parser_free(parser);
+
+    /* Successful disconnect */
     return 0;
 
 }

@@ -53,3 +53,20 @@ void guacd_client_log_guac_error(guac_client* client,
 
 }
 
+void guacd_client_log_handshake_failure(guac_client* client) {
+
+    if (guac_error == GUAC_STATUS_CLOSED)
+        guac_client_log(client, GUAC_LOG_INFO,
+                "Guacamole connection closed during handshake");
+    else if (guac_error == GUAC_STATUS_PROTOCOL_ERROR)
+        guac_client_log(client, GUAC_LOG_ERROR,
+                "Guacamole protocol violation. Perhaps the version of "
+                "guacamole-client is incompatible with this version of "
+                "guacd?");
+    else
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Guacamole handshake failed: %s",
+                guac_status_string(guac_error));
+
+}
+

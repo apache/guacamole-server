@@ -81,6 +81,21 @@ typedef struct guacd_user_input_thread_params {
 int guacd_user_start(guac_parser* parser, guac_user* user);
 
 /**
+ * Handles the initial handshake of a user and all subsequent I/O. This
+ * function blocks until the user disconnects.
+ *
+ * @param user
+ *     The user whose handshake and entire Guacamole protocol exchange should
+ *     be handled.
+ *
+ * @return
+ *     Zero if the user's Guacamole connection was successfully handled and
+ *     the user has disconnected, or non-zero if an error prevented the user's
+ *     connection from being handled properly.
+ */
+int guacd_handle_user(guac_user* user);
+
+/**
  * The thread which handles all user input, calling event handlers for received
  * instructions.
  *
