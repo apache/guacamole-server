@@ -17,39 +17,20 @@
  * under the License.
  */
 
+#ifndef LIBGUACD_LOG_H
+#define LIBGUACD_LOG_H
+
 #include "config.h"
-#include "libguacd/log.h"
 
 #include <guacamole/client.h>
-#include <guacamole/error.h>
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <syslog.h>
-#include <unistd.h>
-
+/**
+ * Prints an error message using the logging facilities of the given client,
+ * automatically including any information present in guac_error. This function
+ * accepts parameters identically to printf.
+ */
 void guacd_client_log_guac_error(guac_client* client,
-        guac_client_log_level level, const char* message) {
+        guac_client_log_level level, const char* message);
 
-    if (guac_error != GUAC_STATUS_SUCCESS) {
-
-        /* If error message provided, include in log */
-        if (guac_error_message != NULL)
-            guac_client_log(client, level, "%s: %s",
-                    message,
-                    guac_error_message);
-
-        /* Otherwise just log with standard status string */
-        else
-            guac_client_log(client, level, "%s: %s",
-                    message,
-                    guac_status_string(guac_error));
-
-    }
-
-    /* Just log message if no status code */
-    else
-        guac_client_log(client, level, "%s", message);
-
-}
+#endif
 

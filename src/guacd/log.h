@@ -63,14 +63,6 @@ void guacd_client_log(guac_client* client, guac_client_log_level level,
 void guacd_log_guac_error(guac_client_log_level level, const char* message);
 
 /**
- * Prints an error message using the logging facilities of the given client,
- * automatically including any information present in guac_error. This function
- * accepts parameters identically to printf.
- */
-void guacd_client_log_guac_error(guac_client* client,
-        guac_client_log_level level, const char* message);
-
-/**
  * Logs a reasonable explanatory message regarding handshake failure based on
  * the current value of guac_error.
  */

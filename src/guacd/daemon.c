@@ -22,9 +22,9 @@
 #include "connection.h"
 #include "conf-args.h"
 #include "conf-file.h"
+#include "libguacd/user.h"
 #include "log.h"
 #include "proc-map.h"
-#include "user.h"
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>

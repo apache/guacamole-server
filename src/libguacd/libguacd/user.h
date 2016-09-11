@@ -18,8 +18,8 @@
  */
 
 
-#ifndef _GUACD_USER_H
-#define _GUACD_USER_H
+#ifndef LIBGUACD_USER_H
+#define LIBGUACD_USER_H
 
 #include "config.h"
 

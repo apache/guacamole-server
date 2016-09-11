@@ -19,9 +19,9 @@
 
 #include "config.h"
 #include "common/list.h"
+#include "libguacd/user.h"
 #include "proc.h"
 #include "proc-map.h"
-#include "user.h"
 
 #include <guacamole/client.h>
 

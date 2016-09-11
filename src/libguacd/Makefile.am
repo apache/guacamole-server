@@ -21,9 +21,9 @@ AUTOMAKE_OPTIONS = foreign
 
 noinst_LTLIBRARIES = libguacd.la
 
-noinst_HEADERS =  \
-    log.h         \
-    user.h
+noinst_HEADERS =    \
+    libguacd/log.h  \
+    libguacd/user.h
 
 libguacd_la_SOURCES = \
     log.c             \
@@ -44,7 +44,7 @@ libguacd_la_LDFLAGS = \
 
 # SSL support
 if ENABLE_SSL
-noinst_HEADERS      += socket-ssl.h
+noinst_HEADERS      += libguacd/socket-ssl.h
 libguacd_la_SOURCES += socket-ssl.c
 endif
 

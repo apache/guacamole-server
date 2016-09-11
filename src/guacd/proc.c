@@ -19,11 +19,11 @@
 
 #include "config.h"
 
+#include "libguacd/user.h"
 #include "log.h"
 #include "move-fd.h"
 #include "proc.h"
 #include "proc-map.h"
-#include "user.h"
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>

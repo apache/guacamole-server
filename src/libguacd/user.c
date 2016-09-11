@@ -19,8 +19,8 @@
 
 #include "config.h"
 
-#include "log.h"
-#include "user.h"
+#include "libguacd/log.h"
+#include "libguacd/user.h"
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>

@@ -30,6 +30,7 @@ noinst_HEADERS =  \
     conf-file.h   \
     conf-parse.h  \
     connection.h  \
+    log.h         \
     move-fd.h     \
     proc.h        \
     proc-map.h
@@ -40,6 +41,7 @@ guacd_SOURCES =  \
     conf-parse.c \
     connection.c \
     daemon.c     \
+    log.c        \
     move-fd.c    \
     proc.c       \
     proc-map.c
