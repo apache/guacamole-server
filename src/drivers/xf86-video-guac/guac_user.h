@@ -18,43 +18,39 @@
  * under the License.
  */
 
-#ifndef _GUAC_DEFAULT_POINTER_H
-#define _GUAC__DEFAULT_POINTER_H
+#ifndef __GUAC_DRV_USER_H
+#define __GUAC_DRV_USER_H
 
-#include <cairo/cairo.h>
+#include "config.h"
+
 #include <guacamole/user.h>
 
 /**
- * Width of the embedded mouse cursor graphic.
+ * Guacamole user-specific data.
  */
-extern const int guac_drv_default_pointer_width;
+typedef struct guac_drv_user_data {
+
+    /**
+     * The old button mask state.
+     */
+    int button_mask;
+
+} guac_drv_user_data;
 
 /**
- * Height of the embedded mouse cursor graphic.
+ * Handler for joining users.
  */
-extern const int guac_drv_default_pointer_height;
+guac_user_join_handler guac_drv_user_join_handler;
 
 /**
- * Number of bytes in each row of the embedded mouse cursor graphic.
+ * Handler for leaving users.
  */
-extern const int guac_drv_default_pointer_stride;
+guac_user_leave_handler guac_drv_user_leave_handler;
 
 /**
- * The Cairo grapic format of the mouse cursor graphic.
+ * Handler for mouse events.
  */
-extern const cairo_format_t guac_drv_default_pointer_format;
-
-/**
- * Embedded mouse cursor graphic.
- */
-extern unsigned char guac_drv_default_pointer[];
-
-/**
- * Set the cursor of the remote display to the embedded cursor graphic.
- *
- * @param user
- *     The guac_user to send the cursor to.
- */
-void guac_drv_set_default_pointer(guac_user* user);
+guac_user_mouse_handler guac_drv_user_mouse_handler;
 
 #endif
+

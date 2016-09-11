@@ -26,7 +26,6 @@ guac_drv_ladir = @XORG_MODULE_DIR@/drivers
 noinst_HEADERS =      \
     daemon.h          \
     default_pointer.h \
-    guac_client.h     \
     guac_copy.h       \
     guac_cursor.h     \
     guac_display.h    \
@@ -36,13 +35,14 @@ noinst_HEADERS =      \
     guac_image.h      \
     guac_image_text.h \
     guac_input.h      \
-    guac_multicast.h  \
     guac_pixmap.h     \
     guac_poly.h       \
     guac_poly_text.h  \
+    guac_protocol.h   \
     guac_rect.h       \
     guac_screen.h     \
     guac_spans.h      \
+    guac_user.h       \
     guac_window.h     \
     io.h              \
     list.h            \
@@ -51,7 +51,6 @@ noinst_HEADERS =      \
 guac_drv_la_SOURCES = \
     daemon.c          \
     default_pointer.c \
-    guac_client.c     \
     guac_copy.c       \
     guac_cursor.c     \
     guac_display.c    \
@@ -61,13 +60,14 @@ guac_drv_la_SOURCES = \
     guac_image.c      \
     guac_image_text.c \
     guac_input.c      \
-    guac_multicast.c  \
     guac_pixmap.c     \
     guac_poly.c       \
     guac_poly_text.c  \
+    guac_protocol.c   \
     guac_rect.c       \
     guac_screen.c     \
     guac_spans.c      \
+    guac_user.c       \
     guac_window.c     \
     io.c              \
     list.c            \
@@ -75,13 +75,11 @@ guac_drv_la_SOURCES = \
 
 guac_drv_la_CFLAGS =        \
     -Werror -Wall -pedantic \
-    @COMMON_INCLUDE@        \
     @LIBGUACD_INCLUDE@      \
     @LIBGUAC_INCLUDE@       \
     @XORG_CFLAGS@
 
 guac_drv_la_LIBADD = \
-    @COMMON_LTLIB@   \
     @LIBGUACD_LTLIB@ \
     @LIBGUAC_LTLIB@
 

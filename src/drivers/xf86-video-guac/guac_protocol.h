@@ -18,78 +18,86 @@
  * under the License.
  */
 
-#ifndef __GUAC_MULTICAST_H
-#define __GUAC_MULTICAST_H
+#ifndef GUAC_DRV_PROTOCOL_H
+#define GUAC_DRV_PROTOCOL_H
 
 #include "config.h"
-#include "list.h"
+#include "guac_drawable.h"
 
-#include <xf86.h>
-#include <xf86str.h>
+#include <guacamole/client.h>
+#include <guacamole/socket.h>
+#include <guacamole/user.h>
 
 /**
- * Creates the given drawable on all clients.
+ * Creates the given drawable on the given socket.
  */
-void guac_drv_multicast_create_drawable(guac_drv_list* clients,
+void guac_drv_send_create_drawable(guac_socket* socket,
         guac_drv_drawable* drawable);
 
 /**
- * Alters the visibility of the given drawable on all clients.
+ * Alters the visibility of the given drawable on the given socket.
  */
-void guac_drv_multicast_shade_drawable(guac_drv_list* clients,
+void guac_drv_send_shade_drawable(guac_socket* socket,
         guac_drv_drawable* drawable);
 
 /**
- * Destroys the given drawable on all clients.
+ * Destroys the given drawable on the given socket.
  */
-void guac_drv_multicast_destroy_drawable(guac_drv_list* clients,
+void guac_drv_send_destroy_drawable(guac_socket* socket,
         guac_drv_drawable* drawable);
 
 /**
- * Moves the given drawable on all clients.
+ * Moves the given drawable on the given socket.
  */
-void guac_drv_multicast_move_drawable(guac_drv_list* clients,
+void guac_drv_send_move_drawable(guac_socket* socket,
         guac_drv_drawable* drawable);
 
 /**
- * Resizes the given drawable on all clients.
+ * Resizes the given drawable on the given socket.
  */
-void guac_drv_multicast_resize_drawable(guac_drv_list* clients,
+void guac_drv_send_resize_drawable(guac_socket* socket,
         guac_drv_drawable* drawable);
 
 /**
  * Copies a rectangle of image data between the given drawables on the given
- * client.
+ * socket.
  */
-void guac_drv_multicast_copy(guac_drv_list* clients,
+void guac_drv_send_copy(guac_socket* socket,
         guac_drv_drawable* src, int srcx, int srcy, int w, int h,
         guac_drv_drawable* dst, int dstx, int dsty);
+
+/**
+ * Sends the the given colored rectangle to the given socket.
+ */
+void guac_drv_send_crect(guac_socket* socket,
+        guac_drv_drawable* drawable, int x, int y, int w, int h,
+        int r, int g, int b, int a);
+
+/**
+ * Sends the the given drawable-filled rectangle to the given socket.
+ */
+void guac_drv_send_drect(guac_socket* socket,
+        guac_drv_drawable* drawable, int x, int y, int w, int h,
+        guac_drv_drawable* fill);
+
+/**
+ * Sends the contents of the given rectangle of the given drawable to the given
+ * user.
+ */
+void guac_drv_user_draw(guac_user* user,
+        guac_drv_drawable* drawable, int x, int y, int w, int h);
 
 /**
  * Sends the contents of the given rectangle of the given drawable to the given
  * client.
  */
-void guac_drv_multicast_draw(guac_drv_list* clients,
+void guac_drv_client_draw(guac_client* client,
         guac_drv_drawable* drawable, int x, int y, int w, int h);
-
-/**
- * Sends the the given colored rectangle to all clients.
- */
-void guac_drv_multicast_crect(guac_drv_list* clients,
-        guac_drv_drawable* drawable, int x, int y, int w, int h,
-        int r, int g, int b, int a);
-
-/**
- * Sends the the given drawable-filled rectangle to all clients.
- */
-void guac_drv_multicast_drect(guac_drv_list* clients,
-        guac_drv_drawable* drawable, int x, int y, int w, int h,
-        guac_drv_drawable* fill);
 
 /**
  * Completes the current frame, flushing all buffers and sending syncs.
  */
-void guac_drv_multicast_end_frame(guac_drv_list* clients);
+void guac_drv_client_end_frame(guac_client* client);
 
 #endif
 

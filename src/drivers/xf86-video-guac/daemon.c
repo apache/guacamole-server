@@ -20,9 +20,9 @@
 
 #include "config.h"
 #include "daemon.h"
-#include "guac_client.h"
 #include "guac_display.h"
 #include "guac_input.h"
+#include "libguacd/user.h"
 #include "list.h"
 
 #include <xorg-server.h>
@@ -49,158 +49,115 @@
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
-#include <guacamole/instruction.h>
+#include <guacamole/parser.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/user.h>
 
 #include "log.h"
 
 /**
- * All arguments for the client (currently empty).
+ * Parameters used by the connection thread created for each new user.
  */
-static const char* GUAC_DRV_CLIENT_ARGS[] = { NULL };
+typedef struct guac_drv_connection_thread_params {
 
-guac_client* guac_drv_handle_connection(guac_socket* socket) {
-
+    /**
+     * The guac_client representing the connection being joined by the new
+     * user.
+     */
     guac_client* client;
-    guac_drv_client_data* client_data;
-    guac_instruction* select;
-    guac_instruction* size;
-    guac_instruction* audio;
-    guac_instruction* video;
-    guac_instruction* connect;
+
+    /**
+     * The file descriptor of the socket of the inbound connection of the
+     * joining user.
+     */
+    int fd;
+
+} guac_drv_connection_thread_params;
+
+/**
+ * Connection thread which is created for each user joining the current X11
+ * session. The thread takes care of the entire Guacamole protocol handshake
+ * (except for the initial "select").
+ *
+ * @param data
+ *     An instance of guac_drv_connection_thread_params describing the
+ *     guac_client being joined, and the file descriptor of the new user's
+ *     connection.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_drv_connection_thread(void* data) {
+
+    guac_drv_connection_thread_params* params =
+        (guac_drv_connection_thread_params*) data;
+
+    guac_client* client = params->client;
+    int fd = params->fd;
+
+    /* Open guac_socket */
+    guac_socket* socket = guac_socket_open(fd);
+    if (socket == NULL)
+        return NULL;
+
+    /* Create parser for new connection */
+    guac_parser* parser = guac_parser_alloc();
+
+    /* Reset guac_error */
+    guac_error = GUAC_STATUS_SUCCESS;
+    guac_error_message = NULL;
 
     /* Get protocol from select instruction */
-    select = guac_instruction_expect(
-            socket, GUACD_USEC_TIMEOUT, "select");
-    if (select == NULL) {
+    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "select")) {
 
         /* Log error */
-        guac_drv_log_guac_error(GUAC_LOG_ERROR, "Error reading \"select\"");
+        guac_drv_log_handshake_failure();
+        guac_drv_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"select\"");
 
-        /* Free resources */
-        guac_socket_free(socket);
-        return NULL;
+        goto handshake_failed;
     }
 
     /* Validate args to select */
-    if (select->argc != 1) {
+    if (parser->argc != 1) {
 
         /* Log error */
+        guac_drv_log_handshake_failure();
         guac_drv_log(GUAC_LOG_ERROR, "Bad number of arguments "
-                "to \"select\" (%i)", select->argc);
+                "to \"select\" (%i)", parser->argc);
 
-        /* Free resources */
-        guac_socket_free(socket);
-        return NULL;
+        goto handshake_failed;
     }
 
-    guac_drv_log(GUAC_LOG_INFO, "Protocol \"%s\" selected", select->argv[0]);
-    if (strcmp(select->argv[0], "x11") != 0) {
+    const char* identifier = parser->argv[0];
+
+    guac_drv_log(GUAC_LOG_INFO, "Protocol \"%s\" selected", identifier);
+    if (strcmp(identifier, "x11") != 0) {
 
         /* Log error */
         guac_drv_log_guac_error(GUAC_LOG_ERROR,
                 "Requested protocol must be \"x11\".");
 
-        /* Free resources */
-        guac_socket_free(socket);
-        return NULL;
+        goto handshake_failed;
     }
 
-    guac_instruction_free(select);
+    /* Init user */
+    guac_user* user = guac_user_alloc();
+    user->client = client;
+    user->socket = socket;
 
-    /* Send args response */
-    if (guac_protocol_send_args(socket, GUAC_DRV_CLIENT_ARGS)
-            || guac_socket_flush(socket)) {
+    /* Handle entire user connection, free user once complete */
+    guacd_handle_user(user);
+    guac_user_free(user);
 
-        /* Log error */
-        guac_drv_log_handshake_failure();
-        guac_drv_log_guac_error(GUAC_LOG_DEBUG, "Error sending \"args\" to new user");
+    /* Fall through to free remaining resources */
 
-        guac_socket_free(socket);
-        return NULL;
-    }
+handshake_failed:
+    guac_parser_free(parser);
+    guac_socket_free(socket);
 
-    /* Get optimal screen size */
-    size = guac_instruction_expect(socket, GUACD_USEC_TIMEOUT, "size");
-    if (size == NULL) {
-
-        /* Log error */
-        guac_drv_log_handshake_failure();
-        guac_drv_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"size\"");
-
-        /* Free resources */
-        guac_socket_free(socket);
-        return NULL;
-    }
-
-    /* Get supported audio formats */
-    audio = guac_instruction_expect(socket, GUACD_USEC_TIMEOUT, "audio");
-    if (audio == NULL) {
-
-        /* Log error */
-        guac_drv_log_handshake_failure();
-        guac_drv_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"audio\"");
-
-        /* Free resources */
-        guac_socket_free(socket);
-        return NULL;
-    }
-
-    /* Get supported video formats */
-    video = guac_instruction_expect(socket, GUACD_USEC_TIMEOUT, "video");
-    if (video == NULL) {
-
-        /* Log error */
-        guac_drv_log_handshake_failure();
-        guac_drv_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"video\"");
-
-        /* Free resources */
-        guac_socket_free(socket);
-        return NULL;
-    }
-
-    /* Get args from connect instruction */
-    connect = guac_instruction_expect(socket, GUACD_USEC_TIMEOUT, "connect");
-    if (connect == NULL) {
-
-        /* Log error */
-        guac_drv_log_handshake_failure();
-        guac_drv_log_guac_error(GUAC_LOG_DEBUG, "Error reading \"connect\"");
-
-        /* Free resources */
-        guac_socket_free(socket);
-        return NULL;
-
-    }
-
-    /* Get client */
-    client = guac_client_alloc();
-    client->socket = socket;
-    client->log_handler = guac_drv_client_log;
-
-    /* Parse optimal screen dimensions from size instruction */
-    client->info.optimal_width  = atoi(size->argv[0]);
-    client->info.optimal_height = atoi(size->argv[1]);
-
-    /* Init data */
-    client_data = client->data = malloc(sizeof(guac_drv_client_data));
-    client_data->button_mask = 0;
-
-    /* Start event thread */
-    if (pthread_create(&(client_data->input_thread), NULL,
-            guac_drv_client_input_thread, client)) {
-        guac_drv_log(GUAC_LOG_ERROR, "Unable to start client event thread.");
-        return NULL;
-    }
-
-    /* Free parsed instructions */
-    guac_instruction_free(connect);
-    guac_instruction_free(audio);
-    guac_instruction_free(video);
-    guac_instruction_free(size);
-
-    return client;
+    free(data);
+    return NULL;
 
 }
 
@@ -319,9 +276,6 @@ void* guac_drv_listen_thread(void* arg) {
     /* Daemon loop */
     for (;;) {
 
-        guac_socket* socket;
-        guac_client* client;
-
         /* Listen for connections */
         if (listen(socket_fd, 5) < 0) {
             guac_drv_log(GUAC_LOG_ERROR, "Could not listen on socket: %s",
@@ -345,16 +299,25 @@ void* guac_drv_listen_thread(void* arg) {
             return NULL;
         }
 
-        /* Open guac_socket */
-        socket = guac_socket_open(connected_socket_fd);
+        /* Handle Guacamole protocol over new connection */
+        guac_drv_connection_thread_params* params =
+            malloc(sizeof(guac_drv_connection_thread_params));
 
-        /* Init client */
-        client = guac_drv_handle_connection(socket);
-        client->mouse_handler = guac_drv_client_mouse_handler;
-        client->free_handler  = guac_drv_client_free_handler;
+        params->client = display->client;
+        params->fd = connected_socket_fd;
 
-        /* Insert client into list */
-        guac_drv_display_add_client(display, client);
+        /* Start connection thread */
+        pthread_t connection_thread;
+        if (!pthread_create(&connection_thread, NULL,
+                    guac_drv_connection_thread, params))
+            pthread_detach(connection_thread);
+
+        /* Log thread creation failures */
+        else {
+            guac_drv_log(GUAC_LOG_ERROR,
+                    "Could not start connection thread: %s", strerror(errno));
+            free(params);
+        }
 
     }
 

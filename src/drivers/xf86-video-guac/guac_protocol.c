@@ -19,35 +19,36 @@
  */
 
 #include "config.h"
-#include "guac_client.h"
 #include "guac_drawable.h"
 #include "guac_drv.h"
 #include "guac_input.h"
+#include "guac_protocol.h"
 #include "io.h"
 #include "log.h"
 
 #include <guacamole/error.h>
 #include <guacamole/client.h>
+#include <guacamole/layer.h>
 #include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/user.h>
 
-void guac_drv_client_create_drawable(guac_client* client,
+void guac_drv_send_create_drawable(guac_socket* socket,
         guac_drv_drawable* drawable) {
 
     /* Initialize drawable */
-    guac_drv_client_move_drawable(client, drawable);
-    guac_drv_client_shade_drawable(client, drawable);
-    guac_drv_client_resize_drawable(client, drawable);
+    guac_drv_send_move_drawable(socket, drawable);
+    guac_drv_send_shade_drawable(socket, drawable);
+    guac_drv_send_resize_drawable(socket, drawable);
 
 }
 
-void guac_drv_client_shade_drawable(guac_client* client,
+void guac_drv_send_shade_drawable(guac_socket* socket,
         guac_drv_drawable* drawable) {
 
     /* Only applies to non-default layers */
     if (drawable->index > 0) {
-
-        guac_socket* socket = client->socket;
 
         /* Create layer representation of drawable */
         guac_layer layer;
@@ -59,10 +60,8 @@ void guac_drv_client_shade_drawable(guac_client* client,
 
 }
 
-void guac_drv_client_destroy_drawable(guac_client* client,
+void guac_drv_send_destroy_drawable(guac_socket* socket,
         guac_drv_drawable* drawable) {
-
-    guac_socket* socket = client->socket;
 
     /* Create layer representation of drawable */
     guac_layer layer;
@@ -85,13 +84,11 @@ void guac_drv_client_destroy_drawable(guac_client* client,
 
 }
 
-void guac_drv_client_move_drawable(guac_client* client,
+void guac_drv_send_move_drawable(guac_socket* socket,
         guac_drv_drawable* drawable) {
 
     /* Only applies to non-default layers */
     if (drawable->index > 0) {
-
-        guac_socket* socket = client->socket;
 
         /* Create layer representation of drawable */
         guac_layer layer;
@@ -113,10 +110,8 @@ void guac_drv_client_move_drawable(guac_client* client,
 
 }
 
-void guac_drv_client_resize_drawable(guac_client* client,
+void guac_drv_send_resize_drawable(guac_socket* socket,
         guac_drv_drawable* drawable) {
-
-    guac_socket* socket = client->socket;
 
     /* Create layer representation of window */
     guac_layer layer;
@@ -128,11 +123,9 @@ void guac_drv_client_resize_drawable(guac_client* client,
 
 }
 
-void guac_drv_client_copy(guac_client* client,
+void guac_drv_send_copy(guac_socket* socket,
         guac_drv_drawable* src, int srcx, int srcy, int w, int h,
         guac_drv_drawable* dst, int dstx, int dsty) {
-
-    guac_socket* socket = client->socket;
 
     /* Create layer representations of src/dst drawables */
     guac_layer src_layer, dst_layer;
@@ -145,11 +138,9 @@ void guac_drv_client_copy(guac_client* client,
 
 }
 
-void guac_drv_client_crect(guac_client* client,
+void guac_drv_send_crect(guac_socket* socket,
         guac_drv_drawable* drawable, int x, int y, int w, int h,
         int r, int g, int b, int a) {
-
-    guac_socket* socket = client->socket;
 
     /* Create layer representation of drawable */
     guac_layer layer;
@@ -161,11 +152,9 @@ void guac_drv_client_crect(guac_client* client,
 
 }
 
-void guac_drv_client_drect(guac_client* client,
+void guac_drv_send_drect(guac_socket* socket,
         guac_drv_drawable* drawable, int x, int y, int w, int h,
         guac_drv_drawable* fill) {
-
-    guac_socket* socket = client->socket;
 
     /* Create layer representations of drawables */
     guac_layer layer, fill_layer;
@@ -180,67 +169,11 @@ void guac_drv_client_drect(guac_client* client,
 
 void guac_drv_client_end_frame(guac_client* client) {
 
-    guac_socket* socket = client->socket;
-    guac_timestamp current = guac_timestamp_current();
-
     /* Send sync */
-    guac_protocol_send_sync(socket, current);
-    client->last_sent_timestamp = current;
+    guac_client_end_frame(client);
 
     /* Flush buffer */
-    guac_socket_flush(socket);
-
-}
-
-void* guac_drv_client_input_thread(void* arg) {
-
-    guac_client* client = (guac_client*) arg;
-    guac_socket* socket = client->socket;
-
-    /* Guacamole client input loop */
-    while (client->state == GUAC_CLIENT_RUNNING) {
-
-        /* Read instruction */
-        guac_instruction* instruction =
-            guac_instruction_read(socket, GUAC_DRV_USEC_TIMEOUT);
-
-        /* Stop on error */
-        if (instruction == NULL) {
-            guac_drv_client_log_guac_error(client, GUAC_LOG_ERROR,
-                    "Error reading instruction");
-            guac_client_stop(client);
-            break;
-        }
-
-        /* Reset guac_error and guac_error_message (client handlers are not
-         * guaranteed to set these) */
-        guac_error = GUAC_STATUS_SUCCESS;
-        guac_error_message = NULL;
-
-        /* Call handler, stop on error */
-        if (guac_client_handle_instruction(client, instruction) < 0) {
-
-            /* Log error */
-            guac_drv_client_log_guac_error(client, GUAC_LOG_ERROR,
-                    "Client instruction handler error");
-
-            /* Log handler details */
-            guac_client_log(client, GUAC_LOG_INFO,
-                    "Failing instruction handler in client was \"%s\"",
-                    instruction->opcode);
-
-            guac_instruction_free(instruction);
-            guac_client_stop(client);
-            break;
-        }
-
-        /* Free allocated instruction */
-        guac_instruction_free(instruction);
-
-    }
-
-    guac_client_free(client);
-    return NULL;
+    guac_socket_flush(client->socket);
 
 }
 
@@ -265,62 +198,37 @@ void guac_drv_client_draw(guac_client* client,
             w, h, drawable->image_stride);
 
     /* Send rectangle */
-    guac_protocol_send_png(socket, GUAC_COMP_OVER, &layer, x, y, surface);
+    guac_client_stream_png(client, socket, GUAC_COMP_OVER, &layer, x, y, surface);
 
     /* Done */
     cairo_surface_destroy(surface);
 
 }
+void guac_drv_user_draw(guac_user* user,
+        guac_drv_drawable* drawable, int x, int y, int w, int h) {
 
-int guac_drv_client_mouse_handler(guac_client* client,
-        int x, int y, int mask) {
+    unsigned char* data;
+    cairo_surface_t* surface;
+    guac_socket* socket = user->socket;
 
-    guac_drv_client_data* client_data = (guac_drv_client_data*) client->data;
+    /* Create layer representation of drawable */
+    guac_layer layer;
+    layer.index = drawable->index;
 
-    /* If events can be written, send packet */
-    if (GUAC_DRV_INPUT_WRITE_FD != -1) {
+    /* Don't bother if image has no dimension */
+    if (w == 0 || h == 0)
+        return;
 
-        /* Calculate button difference */
-        int change = mask ^ client_data->button_mask;
+    /* Create temporary surface */
+    data = drawable->image_data + (y*drawable->image_stride) + x*4;
+    surface = cairo_image_surface_create_for_data(data, CAIRO_FORMAT_RGB24,
+            w, h, drawable->image_stride);
 
-        /* Build event packet */
-        guac_drv_input_event event;
-        event.type = GUAC_DRV_INPUT_EVENT_MOUSE;
-        event.data.mouse.mask = mask;
-        event.data.mouse.change_mask = change;
-        event.data.mouse.x = x;
-        event.data.mouse.y = y;
+    /* Send rectangle */
+    guac_user_stream_png(user, socket, GUAC_COMP_OVER, &layer, x, y, surface);
 
-        /* Send packet */
-        client_data->button_mask = mask;
-        guac_drv_write(GUAC_DRV_INPUT_WRITE_FD, &event, sizeof(event));
-
-    }
-
-    return 0;
+    /* Done */
+    cairo_surface_destroy(surface);
 
 }
-
-int guac_drv_client_free_handler(guac_client* client) {
-
-    /* Get client data */
-    guac_drv_client_data* client_data = (guac_drv_client_data*) client->data;
-
-    /* Remove client from list */
-    guac_drv_list_lock(client_data->clients);
-    guac_drv_list_remove(client_data->clients, client_data->self);
-    guac_drv_list_unlock(client_data->clients);
-
-    return 0;
-
-}
-
-void vguac_drv_client_debug(guac_client* client, const char* format,
-        va_list args) {
-
-    guac_socket* socket = client->socket;
-    vguac_protocol_send_log(socket, format, args);
-
-}
-
 

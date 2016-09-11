@@ -20,9 +20,10 @@
 
 #include "config.h"
 #include "guac_drawable.h"
-#include "guac_multicast.h"
 #include "guac_rect.h"
 #include "list.h"
+
+#include <xf86.h>
 
 #include <pthread.h>
 #include <stdlib.h>

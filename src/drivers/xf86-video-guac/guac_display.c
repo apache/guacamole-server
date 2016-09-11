@@ -23,14 +23,16 @@
 #include "default_pointer.h"
 #include "guac_display.h"
 #include "guac_drawable.h"
-#include "guac_client.h"
-#include "guac_multicast.h"
+#include "guac_protocol.h"
+#include "guac_user.h"
 #include "list.h"
+#include "log.h"
 
 #include <xf86.h>
 #include <xf86str.h>
 #include <guacamole/client.h>
 #include <guacamole/pool.h>
+#include <guacamole/timestamp.h>
 
 #include <sys/time.h>
 
@@ -56,47 +58,6 @@ static void _get_absolute_time(struct timespec* ts, int offset_sec, int offset_u
     /* Convert to timespec */
     ts->tv_sec  = tv.tv_sec;
     ts->tv_nsec = tv.tv_usec * 1000;
-
-}
-
-static int __get_lag(guac_drv_list* clients) {
-
-    int lag;
-    guac_drv_list_element* current;
-
-    guac_drv_list_lock(clients);
-
-    /* If at least one client, calculate lag */
-    current = clients->head;
-    if (current != NULL) {
-
-        /* Calculate lag of first client */
-        guac_client* client = (guac_client*) current->data;
-        lag = client->last_sent_timestamp - client->last_received_timestamp;
-
-        /* Compare against lag of all other clients */
-        current = current->next;
-        while (current != NULL) {
-
-            /* If lag of next client is the largest so far, store that */
-            int next_lag;
-            client = (guac_client*) current->data;
-            next_lag = client->last_sent_timestamp - client->last_received_timestamp;
-            if (next_lag > lag)
-                lag = next_lag;
-
-            current = current->next;
-        }
-
-    }
-
-    /* No clients = no lag */
-    else
-        lag = 0;
-
-    guac_drv_list_unlock(clients);
-
-    return lag;
 
 }
 
@@ -134,7 +95,7 @@ void* guac_drv_render_thread(void* arg) {
             do {
 
                 /* Compute lag */
-                lag = __get_lag(display->clients);
+                lag = guac_client_get_processing_lag(display->client);
 
                 /* Construct timeout until frame end */
                 _get_absolute_time(&timeout, frame_timeout_sec, frame_timeout_usec);
@@ -159,8 +120,12 @@ guac_drv_display* guac_drv_display_alloc() {
 
     guac_drv_display* display = malloc(sizeof(guac_drv_display));
 
-    /* Init client list */
-    display->clients = guac_drv_list_alloc();
+    /* Init underlying client */
+    guac_client* client = guac_client_alloc();
+    client->join_handler = guac_drv_user_join_handler;
+    client->log_handler = guac_drv_client_log;
+    client->data = display;
+    display->client = client;
 
     /* Init drawables */
     display->drawables= guac_drv_list_alloc();
@@ -190,55 +155,6 @@ guac_drv_display* guac_drv_display_alloc() {
     }
 
     return display;
-
-}
-
-void guac_drv_display_add_client(guac_drv_display* display,
-        guac_client* client) {
-
-    /* Get client data */
-    guac_drv_client_data* client_data = (guac_drv_client_data*) client->data;
-
-    /* Add to list, store new element in data */
-    guac_drv_list_lock(display->clients);
-    client_data->self = guac_drv_list_add(display->clients, client);
-    client_data->clients = display->clients;
-    guac_drv_list_unlock(display->clients);
-
-    /* Init client */
-    guac_drv_set_default_pointer(client);
-    guac_drv_display_sync_client(display, client);
-
-    /* Done */
-    guac_client_log_info(client, "New client added.");
-
-}
-
-void guac_drv_display_sync_client(guac_drv_display* display,
-        guac_client* client) {
-
-    guac_drv_list_element* current;
-
-    /* For each drawable */
-    guac_drv_list_lock(display->drawables);
-    current = display->drawables->head;
-    while (current != NULL) {
-
-        /* Create drawable on the client */
-        guac_drv_drawable* drawable = (guac_drv_drawable*) current->data;
-        if (drawable->sync_state == GUAC_DRV_DRAWABLE_SYNCED) {
-            guac_drv_client_create_drawable(client, drawable);
-            guac_drv_client_draw(client, drawable, 0, 0,
-                    drawable->pending.rect.width, drawable->pending.rect.height);
-        }
-
-        current = current->next;
-
-    }
-    guac_drv_list_unlock(display->drawables);
-
-    /* End initial frame */
-    guac_drv_client_end_frame(client);
 
 }
 
@@ -369,7 +285,7 @@ void guac_drv_display_flush(guac_drv_display* display) {
     }
 
     /* End frame */
-    guac_drv_multicast_end_frame(display->clients);
+    guac_drv_client_end_frame(display->client);
 
     guac_drv_list_unlock(display->drawables);
 
@@ -507,7 +423,7 @@ static void guac_drv_display_flush_copy(guac_drv_display* display,
 
         guac_drv_display_copy_operation* update = &(updates[i]);
 
-        guac_drv_multicast_copy(display->clients,
+        guac_drv_send_copy(display->client->socket,
                 update->source,
                 update->source_rect.x, update->source_rect.y,
                 update->source_rect.width, update->source_rect.height,
@@ -627,7 +543,7 @@ static void guac_drv_display_flush_set(guac_drv_display* display,
                 /* Otherwise, flush now */
                 else {
                     xf86Msg(X_INFO, "guac: condense: too many\n");
-                    guac_drv_multicast_draw(display->clients, drawable,
+                    guac_drv_client_draw(display->client, drawable,
                         update.x, update.y, update.width, update.height);
                 }
 
@@ -676,7 +592,7 @@ static void guac_drv_display_flush_set(guac_drv_display* display,
 
             /* If unable to combine with anything, send now */
             if (!combined)
-                guac_drv_multicast_draw(display->clients, drawable,
+                guac_drv_client_draw(display->client, drawable,
                     current->x, current->y, current->width, current->height);
 
         }
@@ -693,7 +609,7 @@ void guac_drv_display_flush_drawable(guac_drv_display* display,
     /* If new, create on all clients */
     if (drawable->sync_state == GUAC_DRV_DRAWABLE_NEW) {
 
-        guac_drv_multicast_create_drawable(display->clients, drawable);
+        guac_drv_send_create_drawable(display->client->socket, drawable);
         drawable->sync_state = GUAC_DRV_DRAWABLE_SYNCED;
 
         /* Flush draw operations */
@@ -711,7 +627,7 @@ void guac_drv_display_flush_drawable(guac_drv_display* display,
 
     /* If destroyed, destroy on all clients */
     else if (drawable->sync_state == GUAC_DRV_DRAWABLE_DESTROYED) {
-        guac_drv_multicast_destroy_drawable(display->clients, drawable);
+        guac_drv_send_destroy_drawable(display->client->socket, drawable);
         guac_drv_display_unrealize_drawable(display, drawable);
         guac_drv_list_remove(display->drawables,
                 (guac_drv_list_element*) drawable->data);
@@ -726,16 +642,16 @@ void guac_drv_display_flush_drawable(guac_drv_display* display,
             || drawable->pending.rect.y != drawable->current.rect.y
             || drawable->pending.z      != drawable->current.z
             || drawable->pending.parent != drawable->current.parent)
-            guac_drv_multicast_move_drawable(display->clients, drawable);
+            guac_drv_send_move_drawable(display->client->socket, drawable);
 
         /* Update change in size */
         if (   drawable->pending.rect.width  != drawable->current.rect.width
             || drawable->pending.rect.height != drawable->current.rect.height)
-            guac_drv_multicast_resize_drawable(display->clients, drawable);
+            guac_drv_send_resize_drawable(display->client->socket, drawable);
 
         /* Update change in opacity*/
         if (drawable->pending.opacity != drawable->current.opacity)
-            guac_drv_multicast_shade_drawable(display->clients, drawable);
+            guac_drv_send_shade_drawable(display->client->socket, drawable);
 
         /* Flush draw operations */
         if (drawable->dirty.width > 0 && drawable->dirty.height > 0) {

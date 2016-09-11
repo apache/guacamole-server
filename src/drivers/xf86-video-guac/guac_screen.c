@@ -20,7 +20,6 @@
 
 #include "config.h"
 #include "guac_drv.h"
-#include "guac_client.h"
 #include "guac_cursor.h"
 #include "guac_display.h"
 #include "guac_gc.h"

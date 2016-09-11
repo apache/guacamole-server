@@ -107,7 +107,7 @@ typedef struct guac_drv_display {
      * Watchdog thread which waits for drawing operations to stop for some
      * arbitrary timeout period, or for a maximum frame duration to be reached,
      * before automatically flushing buffers and sending syncs to connected
-     * clients.
+     * users.
      */
     pthread_t render_thread;
 
@@ -124,9 +124,10 @@ typedef struct guac_drv_display {
     pthread_mutex_t modified_lock;
 
     /**
-     * List of all connected clients.
+     * The guac_client representing the pseudo-connection to the local X11
+     * display.
      */
-    guac_drv_list* clients;
+    guac_client* client;
 
     /**
      * Pool of layer indices.
@@ -149,18 +150,6 @@ typedef struct guac_drv_display {
  * Allocates a new multicast display.
  */
 guac_drv_display* guac_drv_display_alloc();
-
-/**
- * Adds the given client to the multicast display.
- */
-void guac_drv_display_add_client(guac_drv_display* display,
-        guac_client* client);
-
-/**
- * Synchronizes the given client with the current display state.
- */
-void guac_drv_display_sync_client(guac_drv_display* display,
-        guac_client* client);
 
 /**
  * Creates a new layer, returning the new drawable representing that layer.
@@ -196,13 +185,13 @@ void guac_drv_display_unrealize_drawable(guac_drv_display* display,
 void guac_drv_display_touch(guac_drv_display* display);
 
 /**
- * Ends the current frame, flushing pending display state to all clients.
+ * Ends the current frame, flushing pending display state to all users.
  */
 void guac_drv_display_flush(guac_drv_display* display);
 
 /**
  * Flush all pending operations, causing those operations to draw to all
- * connected clients.
+ * connected users.
  */
 void guac_drv_display_flush_drawable(guac_drv_display* display,
         guac_drv_drawable* drawable);
