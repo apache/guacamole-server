@@ -22,7 +22,7 @@
 #define _GUAC_RDP_RDP_POINTER_H
 
 #include "config.h"
-#include "guac_display.h"
+#include "common/display.h"
 
 #include <freerdp/freerdp.h>
 

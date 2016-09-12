@@ -20,8 +20,8 @@
 #include "config.h"
 
 #include "clipboard.h"
+#include "common/display.h"
 #include "input.h"
-#include "guac_display.h"
 #include "user.h"
 #include "sftp.h"
 #include "ssh.h"

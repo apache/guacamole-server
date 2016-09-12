@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "guac_recording.h"
+#include "common/recording.h"
 #include "guac_sftp.h"
 #include "guac_ssh.h"
 #include "settings.h"

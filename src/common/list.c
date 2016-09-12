@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "guac_list.h"
+#include "common/list.h"
 
 #include <stdlib.h>
 #include <pthread.h>

@@ -20,8 +20,8 @@
 #include "config.h"
 
 #include "client.h"
-#include "guac_iconv.h"
-#include "guac_surface.h"
+#include "common/iconv.h"
+#include "common/surface.h"
 #include "vnc.h"
 
 #include <cairo/cairo.h>

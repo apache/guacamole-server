@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "guac_recording.h"
+#include "common/recording.h"
 
 #include <guacamole/client.h>
 #include <guacamole/socket.h>

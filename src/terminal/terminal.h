@@ -24,9 +24,9 @@
 #include "config.h"
 
 #include "buffer.h"
+#include "common/clipboard.h"
+#include "common/cursor.h"
 #include "display.h"
-#include "guac_clipboard.h"
-#include "guac_cursor.h"
 #include "scrollbar.h"
 #include "types.h"
 #include "typescript.h"

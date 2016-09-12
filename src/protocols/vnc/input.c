@@ -19,8 +19,8 @@
 
 #include "config.h"
 
-#include "guac_cursor.h"
-#include "guac_display.h"
+#include "common/cursor.h"
+#include "common/display.h"
 #include "vnc.h"
 
 #include <guacamole/user.h>

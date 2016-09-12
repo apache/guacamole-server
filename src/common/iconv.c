@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "guac_iconv.h"
+#include "common/iconv.h"
 
 #include <guacamole/unicode.h>
 #include <stdint.h>

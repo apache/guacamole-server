@@ -20,7 +20,7 @@
 #include "config.h"
 
 #include "client.h"
-#include "guac_string.h"
+#include "common/string.h"
 #include "rdp.h"
 #include "rdp_settings.h"
 #include "resolution.h"

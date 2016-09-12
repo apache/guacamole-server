@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "guac_list.h"
+#include "common/list.h"
 #include "proc.h"
 #include "proc-map.h"
 #include "user.h"

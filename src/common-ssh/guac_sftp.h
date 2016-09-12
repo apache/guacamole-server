@@ -20,7 +20,7 @@
 #ifndef GUAC_COMMON_SSH_SFTP_H
 #define GUAC_COMMON_SSH_SFTP_H
 
-#include "guac_json.h"
+#include "common/json.h"
 #include "guac_ssh.h"
 
 #include <guacamole/object.h>

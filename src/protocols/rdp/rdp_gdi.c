@@ -20,7 +20,7 @@
 #include "config.h"
 
 #include "client.h"
-#include "guac_surface.h"
+#include "common/surface.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"
 #include "rdp_color.h"

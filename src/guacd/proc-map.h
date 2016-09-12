@@ -22,7 +22,7 @@
 #define _GUACD_PROC_MAP_H
 
 #include "config.h"
-#include "guac_list.h"
+#include "common/list.h"
 #include "proc.h"
 #include "user.h"
 

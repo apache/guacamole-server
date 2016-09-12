@@ -21,10 +21,9 @@
 
 #include "buffer.h"
 #include "common.h"
+#include "common/clipboard.h"
+#include "common/cursor.h"
 #include "display.h"
-#include "guac_clipboard.h"
-#include "guac_cursor.h"
-#include "scrollbar.h"
 #include "terminal.h"
 #include "terminal_handlers.h"
 #include "types.h"

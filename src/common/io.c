@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "guac_io.h"
+#include "common/io.h"
 
 #include <unistd.h>
 

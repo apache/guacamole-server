@@ -21,7 +21,7 @@
 #define __GUAC_COMMON_SURFACE_H
 
 #include "config.h"
-#include "guac_rect.h"
+#include "rect.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>

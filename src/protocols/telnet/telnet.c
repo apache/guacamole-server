@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "guac_recording.h"
+#include "common/recording.h"
 #include "telnet.h"
 #include "terminal.h"
 

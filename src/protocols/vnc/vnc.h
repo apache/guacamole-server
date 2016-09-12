@@ -22,10 +22,10 @@
 
 #include "config.h"
 
-#include "guac_clipboard.h"
-#include "guac_display.h"
-#include "guac_iconv.h"
-#include "guac_surface.h"
+#include "common/clipboard.h"
+#include "common/display.h"
+#include "common/iconv.h"
+#include "common/surface.h"
 #include "settings.h"
 
 #include <guacamole/client.h>

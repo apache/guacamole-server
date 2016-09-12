@@ -21,10 +21,10 @@
 
 #include "audio_input.h"
 #include "client.h"
+#include "common/cursor.h"
+#include "common/display.h"
+#include "common/recording.h"
 #include "dvc.h"
-#include "guac_cursor.h"
-#include "guac_display.h"
-#include "guac_recording.h"
 #include "keyboard.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"

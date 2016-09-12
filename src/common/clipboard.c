@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "guac_clipboard.h"
+#include "common/clipboard.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>

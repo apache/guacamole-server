@@ -21,7 +21,7 @@
 #ifndef GUAC_COMMON_CURSOR_H
 #define GUAC_COMMON_CURSOR_H
 
-#include "guac_surface.h"
+#include "surface.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>

@@ -20,8 +20,8 @@
 #ifndef GUAC_COMMON_DISPLAY_H
 #define GUAC_COMMON_DISPLAY_H
 
-#include "guac_cursor.h"
-#include "guac_surface.h"
+#include "cursor.h"
+#include "surface.h"
 
 #include <guacamole/client.h>
 #include <guacamole/socket.h>

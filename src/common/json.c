@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "guac_json.h"
+#include "common/json.h"
 
 #include <assert.h>
 #include <stdlib.h>
