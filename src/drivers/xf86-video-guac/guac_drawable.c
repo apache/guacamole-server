@@ -83,171 +83,30 @@ void guac_drv_drawable_resize(guac_drv_drawable* drawable,
 
 }
 
-#if 0
-/**
- * 32bpp-specific PutImage
- */
-static void _guac_drv_drawable_put32(guac_drv_drawable* drawable,
-        char* data, int stride, int dx, int dy, int w, int h,
-        guac_drv_rect* dirty) {
-
-    int x, y;
-    unsigned char* row = (unsigned char*) drawable->operations
-                       + dy*drawable->operations_stride
-                       + dx*sizeof(guac_drv_drawable_operation);
-
-    uint32_t* pixel = (uint32_t*) data;
-
-    /* Overall bounds */
-    int max_x = 0;
-    int max_y = 0;
-    int min_x = w;
-    int min_y = h;
- 
-    /* Copy each pixel as a new SET operation */
-    for (y=0; y<h; y++) {
-
-        guac_drv_drawable_operation* current = (guac_drv_drawable_operation*) row;
-        for (x=0; x<w; x++) {
-
-            int new_color = *pixel;
-            int old_color = current->old_color;
-
-            /* If color different, set as SET */
-            if (new_color != old_color) {
-                current->type = GUAC_DRV_DRAWABLE_SET;
-                current->order = drawable->operations_pending;
-                current->color = new_color;
-
-                /* Update bounds */
-                if (x > max_x) max_x = x;
-                if (x < min_x) min_x = x;
-                if (y > max_y) max_y = y;
-                if (y < min_y) min_y = y;
-
-            }
-
-            /* Otherwise, no operation */
-            else {
-                current->type = GUAC_DRV_DRAWABLE_NOP;
-                current->order = drawable->operations_pending;
-                current->color = old_color;
-            }
-
-            /* Next pixel/operation */
-            pixel++;
-            current++;
-
-        }
-
-        row += drawable->operations_stride;
-
-    }
-
-    /* Save real dirty rect */
-    if (max_x > min_x && max_y > min_y)
-        guac_drv_rect_init(dirty,
-                dx+min_x, dy+min_y,
-                max_x - min_x + 1, max_y - min_y + 1);
-    else
-        guac_drv_rect_clear(dirty);
-
-}
-
-/**
- * 24bpp-specific PutImage
- */
-static void _guac_drv_drawable_put24(guac_drv_drawable* drawable,
-        char* data, int stride, int dx, int dy, int w, int h,
-        guac_drv_rect* dirty) {
-
-    int x, y;
-    unsigned char* row = (unsigned char*) drawable->operations
-                       + dy*drawable->operations_stride
-                       + dx*sizeof(guac_drv_drawable_operation);
-
-    uint32_t* pixel = (uint32_t*) data;
-
-    /* Overall bounds */
-    int max_x = 0;
-    int max_y = 0;
-    int min_x = w;
-    int min_y = h;
-
-    /* Copy each pixel as a new SET operation */
-    for (y=0; y<h; y++) {
-
-        guac_drv_drawable_operation* current = (guac_drv_drawable_operation*) row;
-        for (x=0; x<w; x++) {
-
-            int new_color = *pixel | 0xFF000000;
-            int old_color = current->old_color;
-
-            /* If color different, set as SET */
-            if (new_color != old_color) {
-                current->type = GUAC_DRV_DRAWABLE_SET;
-                current->order = drawable->operations_pending;
-                current->color = new_color;
-
-                /* Update bounds */
-                if (x > max_x) max_x = x;
-                if (x < min_x) min_x = x;
-                if (y > max_y) max_y = y;
-                if (y < min_y) min_y = y;
-
-            }
-
-            /* Otherwise, no operation */
-            else {
-                current->type = GUAC_DRV_DRAWABLE_NOP;
-                current->color = old_color;
-            }
-
-            /* Next pixel/operation */
-            pixel++;
-            current++;
-
-        }
-
-        row += drawable->operations_stride;
-
-    }
-
-    /* Save real dirty rect */
-    if (max_x > min_x && max_y > min_y)
-        guac_drv_rect_init(dirty,
-                dx+min_x, dy+min_y,
-                max_x - min_x + 1, max_y - min_y + 1);
-    else
-        guac_drv_rect_clear(dirty);
-
-}
-#endif
-
 void guac_drv_drawable_put(guac_drv_drawable* drawable,
         char* data, guac_drv_drawable_format format, int stride,
         int dx, int dy, int w, int h) {
 
     guac_drv_drawable_lock(drawable);
 
+    cairo_surface_t* surface;
+
     /* Call appropriate format-specific implementation */
     switch (format) {
 
-#if 0
         /* 32bpp */
         case GUAC_DRV_DRAWABLE_ARGB_32:
-            _guac_drv_drawable_put32(drawable, data, stride,
-                    dst_rect.x, dst_rect.y, dst_rect.width, dst_rect.height,
-                    &dirty);
+            surface = cairo_image_surface_create_for_data((unsigned char*) data,
+                    CAIRO_FORMAT_ARGB32, w, h, stride);
+            guac_common_surface_draw(drawable->layer->surface, dx, dy, surface);
             break;
 
         /* 24bpp */
         case GUAC_DRV_DRAWABLE_RGB_24:
-            _guac_drv_drawable_put24(drawable, data, stride,
-                    dst_rect.x, dst_rect.y, dst_rect.width, dst_rect.height,
-                    &dirty);
+            surface = cairo_image_surface_create_for_data((unsigned char*) data,
+                    CAIRO_FORMAT_RGB24, w, h, stride);
+            guac_common_surface_draw(drawable->layer->surface, dx, dy, surface);
             break;
-#endif
 
         /* Use stub by default */
         default:
