@@ -59,65 +59,101 @@ static void _get_absolute_time(struct timespec* ts, int offset_sec, int offset_u
 
 }
 
-void* guac_drv_render_thread(void* arg) {
+/**
+ * Waits until changes have been made to visible content of the given
+ * guac_drv_display, and thus those changes should be flushed to connected
+ * users. If the timeout elapses before data is available, zero is returned.
+ *
+ * IMPORTANT: The modified_lock mutex of the guac_drv_display MUST be locked by
+ * the calling thread first! This function depends on that mutex being locked
+ * (due to the requirements of pthread_cond_timedwait()). When this function
+ * returns, that mutex will remain locked. 
+ *
+ * @param display
+ *     The guac_drv_display to wait for.
+ *
+ * @param timeout
+ *     The maximum amount of time to wait, in microseconds.
+ *
+ * @returns
+ *     A non-zero value if changes were made to the display, or zero if the
+ *     timeout elapses prior to any such changes.
+ */
+static int guac_drv_wait_for_changes(guac_drv_display* display, int msecs) {
 
-    int frame_timeout_sec  =  GUAC_DRV_FRAME_TIMEOUT / 1000;
-    int frame_timeout_usec = (GUAC_DRV_FRAME_TIMEOUT % 1000) * 1000;
-
-    int sync_sec  =  GUAC_DRV_SYNC_INTERVAL / 1000;
-    int sync_usec = (GUAC_DRV_SYNC_INTERVAL % 1000) * 1000;
-
-    struct timespec timeout;
-
-    /* Get guac_drv_display */
-    guac_drv_display* display = (guac_drv_display*) arg;
     pthread_mutex_t* mod_lock = &(display->modified_lock);
     pthread_cond_t* mod_cond = &(display->modified);
 
-    pthread_mutex_lock(mod_lock);
+    /* Split provided milliseconds into microseconds and whole seconds */
+    int secs  =  msecs / 1000;
+    int usecs = (msecs % 1000) * 1000;
 
-    for (;;) {
+    /* Calculate absolute timestamp from provided relative timeout */
+    struct timespec timeout;
+    _get_absolute_time(&timeout, secs, usecs);
 
-        /* Construct timeout until sync */
-        _get_absolute_time(&timeout, sync_sec, sync_usec);
+    /* Wait for display modification condition to be signaled */
+    return pthread_cond_timedwait(mod_cond, mod_lock, &timeout) != ETIMEDOUT;
 
-        /* Wait indefinitely for display to be modified */
-        if (pthread_cond_timedwait(mod_cond, mod_lock, &timeout)
-                != ETIMEDOUT) {
+}
 
-            /* Get frame start */
-            guac_timestamp start = guac_timestamp_current();
+void* guac_drv_render_thread(void* arg) {
 
-            /* Continue until lag is reasonable and timeout or frame duration exceeded */
-            int lag;
+    guac_drv_display* display = (guac_drv_display*) arg;
+    guac_client* client = display->client;
+
+    /* Acquire modified_lock for sake of future calls to
+     * guac_drv_wait_for_changes() */
+    pthread_mutex_lock(&(display->modified_lock));
+
+    guac_timestamp last_frame_end = guac_timestamp_current();
+
+    /* Handle display changes while client is running */
+    while (client->state == GUAC_CLIENT_RUNNING) {
+
+        /* Wait for start of frame */
+        int display_changed = guac_drv_wait_for_changes(display,
+                GUAC_DRV_FRAME_START_TIMEOUT);
+        if (display_changed) {
+
+            int processing_lag = guac_client_get_processing_lag(client);
+            guac_timestamp frame_start = guac_timestamp_current();
+
+            /* Continue waiting until frame is complete */
             do {
 
-                /* Compute lag */
-                lag = guac_client_get_processing_lag(display->client);
+                /* Calculate time remaining in frame */
+                guac_timestamp frame_end = guac_timestamp_current();
+                int frame_remaining = frame_start + GUAC_DRV_FRAME_MAX_DURATION
+                                    - frame_end;
 
-                /* Construct timeout until frame end */
-                _get_absolute_time(&timeout, frame_timeout_sec, frame_timeout_usec);
+                /* Calculate time that client needs to catch up */
+                int time_elapsed = frame_end - last_frame_end;
+                int required_wait = processing_lag - time_elapsed;
 
-                if (pthread_cond_timedwait(mod_cond, mod_lock, &timeout) == ETIMEDOUT
-                        && lag < GUAC_DRV_MAX_LAG)
-                        break;
+                /* Increase the duration of this frame if client is lagging */
+                if (required_wait > GUAC_DRV_FRAME_TIMEOUT)
+                    display_changed = guac_drv_wait_for_changes(display,
+                            required_wait);
 
-            } while (guac_timestamp_current() - start < GUAC_DRV_FRAME_MAX_DURATION
-                        || lag >= GUAC_DRV_MAX_LAG);
+                /* Wait again if frame remaining */
+                else if (frame_remaining > 0)
+                    display_changed = guac_drv_wait_for_changes(display,
+                            GUAC_DRV_FRAME_TIMEOUT);
 
-            /* End frame */
-            guac_drv_display_flush(display);
-            guac_drv_log(GUAC_LOG_INFO, "FRAME");
+                else
+                    break;
+
+            } while (display_changed);
 
         } /* end if display modified in time */
 
-        else {
-            guac_drv_log(GUAC_LOG_INFO, "NOP");
-            guac_protocol_send_nop(display->client->socket);
-            guac_socket_flush(display->client->socket);
-        }
+        /* End frame */
+        guac_drv_display_flush(display);
 
     }
+
+    return NULL;
 
 }
 

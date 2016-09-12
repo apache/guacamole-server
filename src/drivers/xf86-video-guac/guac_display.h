@@ -35,30 +35,24 @@
 #include <guacamole/pool.h>
 
 /**
- * Amount of time to wait between syncs, in milliseconds.
+ * The amount of time to wait for display changes before beginning a new frame,
+ * in milliseconds. This value must be kept reasonably small such that a
+ * infrequent updates will not prevent external events from being handled (such
+ * as the stop signal from guac_client_stop()), but large enough that the
+ * render loop does not eat up CPU spinning.
  */
-#define GUAC_DRV_SYNC_INTERVAL 5000
+#define GUAC_DRV_FRAME_START_TIMEOUT 1000
 
 /**
  * Maximum frame duration, in milliseconds.
  */
-#define GUAC_DRV_FRAME_MAX_DURATION 30
+#define GUAC_DRV_FRAME_MAX_DURATION 40
 
 /**
  * Maximum amount of time to wait between render operations before considering
- * the frame complete.
+ * the frame complete, in milliseconds.
  */
-#define GUAC_DRV_FRAME_TIMEOUT 10
-
-/**
- * Maximum amount of lag allowed before flushing is postponed.
- */
-#define GUAC_DRV_MAX_LAG 200
-
-/**
- * The maximum number of update rects to store in the update queue.
- */
-#define GUAC_DRV_MAX_QUEUE 64
+#define GUAC_DRV_FRAME_TIMEOUT 0
 
 /**
  * A flushed copy operation.
