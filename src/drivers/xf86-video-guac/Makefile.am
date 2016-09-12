@@ -38,7 +38,6 @@ noinst_HEADERS =      \
     guac_pixmap.h     \
     guac_poly.h       \
     guac_poly_text.h  \
-    guac_protocol.h   \
     guac_rect.h       \
     guac_screen.h     \
     guac_spans.h      \
@@ -63,7 +62,6 @@ guac_drv_la_SOURCES = \
     guac_pixmap.c     \
     guac_poly.c       \
     guac_poly_text.c  \
-    guac_protocol.c   \
     guac_rect.c       \
     guac_screen.c     \
     guac_spans.c      \
@@ -75,6 +73,7 @@ guac_drv_la_SOURCES = \
 
 guac_drv_la_CFLAGS =        \
     -Werror -Wall -pedantic \
+    @COMMON_INCLUDE@        \
     @LIBGUACD_INCLUDE@      \
     @LIBGUAC_INCLUDE@       \
     @XORG_CFLAGS@

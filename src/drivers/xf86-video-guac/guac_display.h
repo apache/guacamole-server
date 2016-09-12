@@ -22,6 +22,7 @@
 #define __GUAC_DISPLAY_H
 
 #include "config.h"
+#include "common/display.h"
 #include "guac_drawable.h"
 #include "list.h"
 
@@ -130,14 +131,10 @@ typedef struct guac_drv_display {
     guac_client* client;
 
     /**
-     * Pool of layer indices.
+     * The internal display state which should be replicated across all
+     * connected users.
      */
-    guac_pool* layer_pool;
-
-    /**
-     * Pool of buffer indices.
-     */
-    guac_pool* buffer_pool;
+    guac_common_display* display;
 
     /**
      * All drawables on the display.
@@ -165,21 +162,6 @@ guac_drv_drawable* guac_drv_display_create_buffer(guac_drv_display* display,
         int width, int height);
 
 /**
- * Populates the index of the given drawable, effectively bringing it into
- * true existence. This should normally ONLY be called from within the display
- * flush routine.
- */
-void guac_drv_display_realize_drawable(guac_drv_display* display,
-        guac_drv_drawable* drawable);
-
-/**
- * Removes the given drawable from memory and frees its associated index.
- * This should normally ONLY be called from within the display flush routine.
- */
-void guac_drv_display_unrealize_drawable(guac_drv_display* display,
-        guac_drv_drawable* drawable);
-
-/**
  * Signal modification of the display.
  */
 void guac_drv_display_touch(guac_drv_display* display);
@@ -188,18 +170,6 @@ void guac_drv_display_touch(guac_drv_display* display);
  * Ends the current frame, flushing pending display state to all users.
  */
 void guac_drv_display_flush(guac_drv_display* display);
-
-/**
- * Flush all pending operations, causing those operations to draw to all
- * connected users.
- */
-void guac_drv_display_flush_drawable(guac_drv_display* display,
-        guac_drv_drawable* drawable);
-
-/**
- * Compare two copy operations.
- */
-int guac_drv_display_copy_operation_compare(const void* a, const void* b);
 
 #endif
 

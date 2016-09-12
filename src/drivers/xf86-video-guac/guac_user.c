@@ -19,11 +19,11 @@
  */
 
 #include "config.h"
+#include "common/display.h"
 #include "default_pointer.h"
 #include "guac_display.h"
 #include "guac_drv.h"
 #include "guac_input.h"
-#include "guac_protocol.h"
 #include "guac_user.h"
 #include "io.h"
 
@@ -37,24 +37,9 @@ void guac_drv_display_sync_user(guac_drv_display* display, guac_user* user) {
     guac_client* client = user->client;
     guac_socket* socket = user->socket;
 
-    guac_drv_list_element* current;
-
-    /* For each drawable */
+    /* Synchronize display */
     guac_drv_list_lock(display->drawables);
-    current = display->drawables->head;
-    while (current != NULL) {
-
-        /* Create drawable on the user */
-        guac_drv_drawable* drawable = (guac_drv_drawable*) current->data;
-        if (drawable->sync_state == GUAC_DRV_DRAWABLE_SYNCED) {
-            guac_drv_send_create_drawable(socket, drawable);
-            guac_drv_user_draw(user, drawable, 0, 0,
-                    drawable->pending.rect.width, drawable->pending.rect.height);
-        }
-
-        current = current->next;
-
-    }
+    guac_common_display_dup(display->display, user, user->socket);
     guac_drv_list_unlock(display->drawables);
 
     /* Synchronize pointer */

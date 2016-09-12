@@ -58,7 +58,7 @@ void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,
         guac_format = GUAC_DRV_DRAWABLE_UNSUPPORTED;
         xf86Msg(X_INFO, "guac: unsupported PutImage: layer=%i format=0x%x"
                         " depth=%i left_pad=%i\n",
-                        guac_drawable->index, format, depth, left_pad);
+                        guac_drawable->layer->layer->index, format, depth, left_pad);
     }
 
     /* Perform draw operation */
@@ -87,8 +87,8 @@ void guac_drv_pushpixels(GCPtr gc, PixmapPtr bitmap, DrawablePtr dst,
 
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s src_layer=%i dst_layer=%i\n", __func__,
-        guac_drv_get_drawable((DrawablePtr) bitmap)->index,
-        guac_drv_get_drawable(dst)->index);
+        guac_drv_get_drawable((DrawablePtr) bitmap)->layer->layer->index,
+        guac_drv_get_drawable(dst)->layer->layer->index);
     fbPushPixels(gc, bitmap, dst, w, h, x, y);
 }
 

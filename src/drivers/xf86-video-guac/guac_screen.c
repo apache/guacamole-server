@@ -216,7 +216,7 @@ static Bool guac_drv_create_window(WindowPtr window) {
         guac_drv_drawable* sibling_drawable = (guac_drv_drawable*)
             dixGetPrivate(&(window->nextSib->devPrivates), GUAC_WINDOW_PRIVATE);
 
-        z = sibling_drawable->pending.z + 1;
+        z = sibling_drawable->layer->surface->z + 1;
 
     }
 
@@ -527,7 +527,7 @@ static void guac_drv_restack_window(WindowPtr window, WindowPtr old_next) {
     guac_drv_drawable* bottom_drawable = (guac_drv_drawable*)
         dixGetPrivate(&(bottom_sib->devPrivates), GUAC_WINDOW_PRIVATE);
 
-    int last_z = bottom_drawable->pending.z;
+    int last_z = bottom_drawable->layer->surface->z;
 
     /* Correct stacking order for all windows in stack */
     WindowPtr current = bottom_sib->prevSib;
@@ -538,13 +538,13 @@ static void guac_drv_restack_window(WindowPtr window, WindowPtr old_next) {
             dixGetPrivate(&(current->devPrivates), GUAC_WINDOW_PRIVATE);
 
         /* Set stacking order if necessary */
-        if (cur_drawable->pending.z <= last_z) {
+        if (cur_drawable->layer->surface->z <= last_z) {
             guac_drv_drawable_stack(cur_drawable, last_z+1);
             guac_drv_display_touch(guac_screen->display);
         }
 
         /* Advance to next window up */
-        last_z = cur_drawable->pending.z;
+        last_z = cur_drawable->layer->surface->z;
         current = current->prevSib;
 
     }

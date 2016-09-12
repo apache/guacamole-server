@@ -35,7 +35,7 @@ void guac_drv_polypoint(DrawablePtr drawable, GCPtr gc, int mode, int npt,
         DDXPointPtr init) {
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->index);
+        guac_drv_get_drawable(drawable)->layer->layer->index);
     fbPolyPoint(drawable, gc, mode, npt, init);
 }
 
@@ -43,7 +43,7 @@ void guac_drv_polyline(DrawablePtr drawable, GCPtr gc, int mode, int npt,
         DDXPointPtr init) {
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->index);
+        guac_drv_get_drawable(drawable)->layer->layer->index);
     fbPolyLine(drawable, gc, mode, npt, init);
 }
 
@@ -51,7 +51,7 @@ void guac_drv_polysegment(DrawablePtr drawable, GCPtr gc, int nseg,
         xSegment* segs) {
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->index);
+        guac_drv_get_drawable(drawable)->layer->layer->index);
     fbPolySegment(drawable, gc, nseg, segs);
 }
 
@@ -59,7 +59,7 @@ void guac_drv_polyrectangle(DrawablePtr drawable, GCPtr gc, int nrects,
         xRectangle* rects) {
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->index);
+        guac_drv_get_drawable(drawable)->layer->layer->index);
     fbPolyRectangle(drawable, gc, nrects, rects);
 }
 
@@ -67,7 +67,7 @@ void guac_drv_polyarc(DrawablePtr drawable, GCPtr gc, int narcs,
         xArc* arcs) {
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->index);
+        guac_drv_get_drawable(drawable)->layer->layer->index);
     fbPolyArc(drawable, gc, narcs, arcs);
 }
 
@@ -75,7 +75,7 @@ void guac_drv_fillpolygon(DrawablePtr drawable, GCPtr gc, int shape, int mode,
         int count, DDXPointPtr pts) {
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->index);
+        guac_drv_get_drawable(drawable)->layer->layer->index);
     fbFillPolygon(drawable, gc, shape, mode, count, pts);
 }
 
@@ -131,7 +131,7 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
 
     /* STUB */
     /*xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-            guac_drv_get_drawable(drawable)->index);*/
+            guac_drv_get_drawable(drawable)->layer->layer->index);*/
     fbPolyFillRect(drawable, gc, nrects, rects);
 }
 
@@ -139,7 +139,7 @@ void guac_drv_polyfillarc(DrawablePtr drawable, GCPtr gc, int narcs,
         xArc* arcs) {
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->index);
+        guac_drv_get_drawable(drawable)->layer->layer->index);
     fbPolyFillArc(drawable, gc, narcs, arcs);
 }
 
