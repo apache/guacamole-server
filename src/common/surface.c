@@ -1718,15 +1718,20 @@ void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
     guac_protocol_send_size(socket, surface->layer,
             surface->width, surface->height);
 
-    /* Get entire surface */
-    cairo_surface_t* rect = cairo_image_surface_create_for_data(
-            surface->buffer, CAIRO_FORMAT_RGB24,
-            surface->width, surface->height, surface->stride);
+    /* Send contents of layer, if non-empty */
+    if (surface->width > 0 && surface->height > 0) {
 
-    /* Send PNG for rect */
-    guac_user_stream_png(user, socket, GUAC_COMP_OVER, surface->layer,
-            0, 0, rect);
-    cairo_surface_destroy(rect);
+        /* Get entire surface */
+        cairo_surface_t* rect = cairo_image_surface_create_for_data(
+                surface->buffer, CAIRO_FORMAT_RGB24,
+                surface->width, surface->height, surface->stride);
+
+        /* Send PNG for rect */
+        guac_user_stream_png(user, socket, GUAC_COMP_OVER, surface->layer,
+                0, 0, rect);
+        cairo_surface_destroy(rect);
+
+    }
 
 complete:
     pthread_mutex_unlock(&surface->_lock);
