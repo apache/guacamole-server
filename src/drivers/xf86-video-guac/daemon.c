@@ -131,13 +131,18 @@ static void* guac_drv_connection_thread(void* data) {
 
     const char* identifier = parser->argv[0];
 
-    guac_drv_log(GUAC_LOG_INFO, "Protocol \"%s\" selected", identifier);
-    if (strcmp(identifier, "x11") != 0) {
+    /* Accept connections for the X11 protocol */
+    if (strcmp(identifier, "x11") == 0)
+        guac_drv_log(GUAC_LOG_INFO, "Protocol \"%s\" selected", identifier);
 
-        /* Log error */
-        guac_drv_log_guac_error(GUAC_LOG_ERROR,
-                "Requested protocol must be \"x11\".");
+    /* Allow the overall connection to be joined (there is only one) */
+    else if (strcmp(identifier, client->connection_id) == 0)
+        guac_drv_log(GUAC_LOG_INFO, "Connection \"%s\" selected", identifier);
 
+    /* Fail all other connection attempts */
+    else {
+        guac_drv_log(GUAC_LOG_ERROR, "Unknown protocol or "
+                "connection ID: \"%s\".", identifier);
         goto handshake_failed;
     }
 
