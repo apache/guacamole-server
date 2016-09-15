@@ -77,7 +77,6 @@ void guac_drv_drawable_resize(guac_drv_drawable* drawable,
 
     /* Set new dimensions */
     guac_common_surface_resize(drawable->layer->surface, width, height);
-    guac_drv_drawable_stub(drawable, 0, 0, width, height);
 
     guac_drv_drawable_unlock(drawable);
 
@@ -116,6 +115,13 @@ void guac_drv_drawable_put(guac_drv_drawable* drawable,
 
     guac_drv_drawable_unlock(drawable);
 
+}
+
+void guac_drv_drawable_drect(guac_drv_drawable* drawable, int x, int y,
+        int w, int h, guac_drv_drawable* fill) {
+    guac_drv_drawable_lock(drawable);
+    guac_drv_drawable_stub(drawable, x, y, w, h);
+    guac_drv_drawable_unlock(drawable);
 }
 
 void guac_drv_drawable_copy(guac_drv_drawable* src, int srcx, int srcy,

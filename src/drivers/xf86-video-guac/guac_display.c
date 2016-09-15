@@ -205,7 +205,6 @@ guac_drv_drawable* guac_drv_display_create_layer(guac_drv_display* display,
         guac_common_display_alloc_layer(display->display, width, height);
 
     guac_drv_drawable* drawable = guac_drv_drawable_alloc(layer);
-    guac_drv_drawable_stub(drawable, 0, 0, width, height);
 
     guac_drv_drawable_move(drawable, x, y);
     guac_drv_drawable_stack(drawable, z);
@@ -239,7 +238,6 @@ guac_drv_drawable* guac_drv_display_create_buffer(guac_drv_display* display,
         guac_common_display_alloc_buffer(display->display, width, height);
 
     guac_drv_drawable* drawable = guac_drv_drawable_alloc(buffer);
-    guac_drv_drawable_stub(drawable, 0, 0, width, height);
 
     drawable->data = display;
 

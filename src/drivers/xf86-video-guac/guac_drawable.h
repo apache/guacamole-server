@@ -124,6 +124,9 @@ void guac_drv_drawable_copy(
         guac_drv_drawable* src, int srcx, int srcy, int w, int h,
         guac_drv_drawable* dst, int dstx, int dsty);
 
+void guac_drv_drawable_drect(guac_drv_drawable* drawable, int x, int y,
+        int w, int h, guac_drv_drawable* fill);
+
 /**
  * Change the opacity of the given drawable.
  */

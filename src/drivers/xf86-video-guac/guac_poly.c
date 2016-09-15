@@ -82,8 +82,6 @@ void guac_drv_fillpolygon(DrawablePtr drawable, GCPtr gc, int shape, int mode,
 void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
         xRectangle* rects) {
 
-    /* Rect temporarily unimplemented */
-#if 0
     int i;
 
     /* Get guac_drv_screen */
@@ -98,9 +96,6 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
     for (i=0; i<nrects; i++) {
         xRectangle* rect = &(rects[i]);
 
-        guac_drv_drawable_stub(guac_drawable,
-                rect->x, rect->y, rect->width, rect->height);
-
         /* If tiled, fill with pixmap */
         if ((gc->fillStyle == FillTiled || gc->fillStyle == FillOpaqueStippled)
                 && !gc->tileIsPixel) {
@@ -108,26 +103,20 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
             guac_drv_drawable* guac_fill_drawable =
                 guac_drv_get_drawable((DrawablePtr) gc->tile.pixmap);
 
-            guac_drv_screen_drect(guac_screen, guac_drawable,
-                    rect->x, rect->y, rect->width, rect->height,
-                    guac_fill_drawable);
+            guac_drv_drawable_drect(guac_drawable, rect->x, rect->y,
+                    rect->width, rect->height, guac_fill_drawable);
 
         }
 
         /* Otherwise, STUB with color */
         else
-            guac_drv_screen_crect(guac_screen, guac_drawable,
-                    rect->x, rect->y, rect->width, rect->height,
-                    rand() & 0xFF,
-                    rand() & 0xFF,
-                    rand() & 0xFF,
-                    0xFF);
+            guac_drv_drawable_stub(guac_drawable,
+                    rect->x, rect->y, rect->width, rect->height);
 
     }
 
     /* Signal change */
     guac_drv_display_touch(guac_screen->display);
-#endif
 
     /* STUB */
     /*xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
