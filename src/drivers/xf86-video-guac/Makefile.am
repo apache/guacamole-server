@@ -44,7 +44,6 @@ noinst_HEADERS =      \
     guac_user.h       \
     guac_window.h     \
     io.h              \
-    list.h            \
     log.h
 
 guac_drv_la_SOURCES = \
@@ -68,7 +67,6 @@ guac_drv_la_SOURCES = \
     guac_user.c       \
     guac_window.c     \
     io.c              \
-    list.c            \
     log.c
 
 guac_drv_la_CFLAGS =        \

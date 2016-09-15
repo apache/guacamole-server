@@ -170,9 +170,6 @@ guac_drv_display* guac_drv_display_alloc() {
     display->display = guac_common_display_alloc(client, 1024, 768);
     display->client = client;
 
-    /* Init drawables */
-    display->drawables = guac_drv_list_alloc();
-
     /* Init watchdog condition */
     if (pthread_cond_init(&(display->modified), NULL)) {
         return NULL;
@@ -203,9 +200,6 @@ guac_drv_drawable* guac_drv_display_create_layer(guac_drv_display* display,
         guac_drv_drawable* parent, int x, int y, int z,
         int width, int height, int opacity) {
 
-    guac_drv_list_element* drawable_element;
-    guac_drv_list_lock(display->drawables);
-
     /* Create drawable */
     guac_common_display_layer* layer =
         guac_common_display_alloc_layer(display->display, width, height);
@@ -218,20 +212,14 @@ guac_drv_drawable* guac_drv_display_create_layer(guac_drv_display* display,
     guac_drv_drawable_reparent(drawable, parent);
     guac_drv_drawable_shade(drawable, opacity);
 
-    /* Add to list */
-    drawable_element = guac_drv_list_add(display->drawables, drawable);
-    drawable->data = drawable_element;
+    drawable->data = display;
 
-    guac_drv_list_unlock(display->drawables);
     return drawable;
 
 }
 
 guac_drv_drawable* guac_drv_display_create_buffer(guac_drv_display* display,
         int width, int height) {
-
-    guac_drv_list_element* drawable_element;
-    guac_drv_list_lock(display->drawables);
 
     /* Create drawable */
     guac_common_display_layer* buffer =
@@ -240,11 +228,8 @@ guac_drv_drawable* guac_drv_display_create_buffer(guac_drv_display* display,
     guac_drv_drawable* drawable = guac_drv_drawable_alloc(buffer);
     guac_drv_drawable_stub(drawable, 0, 0, width, height);
 
-    /* Add to list */
-    drawable_element = guac_drv_list_add(display->drawables, drawable);
-    drawable->data = drawable_element;
+    drawable->data = display;
 
-    guac_drv_list_unlock(display->drawables);
     return drawable;
 
 }
@@ -255,16 +240,12 @@ void guac_drv_display_touch(guac_drv_display* display) {
 
 void guac_drv_display_flush(guac_drv_display* display) {
 
-    guac_drv_list_lock(display->drawables);
-
     /* Flush entire display */
     guac_common_display_flush(display->display);
 
     /* End frame */
     guac_client_end_frame(display->client);
     guac_socket_flush(display->client->socket);
-
-    guac_drv_list_unlock(display->drawables);
 
 }
 

@@ -24,7 +24,6 @@
 #include "config.h"
 #include "common/display.h"
 #include "guac_drawable.h"
-#include "list.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -129,11 +128,6 @@ typedef struct guac_drv_display {
      * connected users.
      */
     guac_common_display* display;
-
-    /**
-     * All drawables on the display.
-     */
-    guac_drv_list* drawables;
 
 } guac_drv_display;
 

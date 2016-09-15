@@ -38,9 +38,7 @@ void guac_drv_display_sync_user(guac_drv_display* display, guac_user* user) {
     guac_socket* socket = user->socket;
 
     /* Synchronize display */
-    guac_drv_list_lock(display->drawables);
     guac_common_display_dup(display->display, user, user->socket);
-    guac_drv_list_unlock(display->drawables);
 
     /* Synchronize pointer */
     guac_drv_set_default_pointer(user);
