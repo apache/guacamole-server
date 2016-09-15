@@ -170,9 +170,3 @@ void guac_drv_drawable_reparent(guac_drv_drawable* drawable,
     guac_drv_drawable_unlock(drawable);
 }
 
-void guac_drv_drawable_destroy(guac_drv_drawable* drawable) {
-    guac_drv_drawable_lock(drawable);
-    /* FIXME: Destroy */
-    guac_drv_drawable_unlock(drawable);
-}
-

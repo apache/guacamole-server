@@ -145,10 +145,5 @@ void guac_drv_drawable_stack(guac_drv_drawable* drawable, int z);
 void guac_drv_drawable_reparent(guac_drv_drawable* drawable,
         guac_drv_drawable* parent);
 
-/**
- * Destroys the given drawable, but does not free any server-side resources.
- */
-void guac_drv_drawable_destroy(guac_drv_drawable* drawable);
-
 #endif
 

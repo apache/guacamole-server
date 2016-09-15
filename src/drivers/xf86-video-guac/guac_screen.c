@@ -357,7 +357,7 @@ static Bool guac_drv_destroy_pixmap(PixmapPtr pixmap) {
         dixSetPrivate(&(pixmap->devPrivates), GUAC_PIXMAP_PRIVATE, NULL);
 
         /* Update clients */
-        guac_drv_drawable_destroy(drawable);
+        guac_drv_display_destroy_buffer(guac_screen->display, drawable);
         guac_drv_display_touch(guac_screen->display);
 
     }
@@ -585,7 +585,7 @@ static Bool guac_drv_destroy_window(WindowPtr window) {
         dixSetPrivate(&(window->devPrivates), GUAC_WINDOW_PRIVATE, NULL);
 
         /* Destroy drawable */
-        guac_drv_drawable_destroy(drawable);
+        guac_drv_display_destroy_layer(guac_screen->display, drawable);
         guac_drv_display_touch(guac_screen->display);
 
     }

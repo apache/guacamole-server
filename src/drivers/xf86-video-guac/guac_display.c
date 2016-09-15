@@ -218,6 +218,19 @@ guac_drv_drawable* guac_drv_display_create_layer(guac_drv_display* display,
 
 }
 
+void guac_drv_display_destroy_layer(guac_drv_display* display,
+        guac_drv_drawable* drawable) {
+
+    /* Get underlying layer from drawable */
+    guac_common_display_layer* layer = drawable->layer;
+    guac_drv_drawable_free(drawable);
+
+    /* Free layer */
+    guac_common_display_free_layer(display->display, layer);
+
+}
+
+
 guac_drv_drawable* guac_drv_display_create_buffer(guac_drv_display* display,
         int width, int height) {
 
@@ -231,6 +244,18 @@ guac_drv_drawable* guac_drv_display_create_buffer(guac_drv_display* display,
     drawable->data = display;
 
     return drawable;
+
+}
+
+void guac_drv_display_destroy_buffer(guac_drv_display* display,
+        guac_drv_drawable* drawable) {
+
+    /* Get underlying buffer from drawable */
+    guac_common_display_layer* buffer = drawable->layer;
+    guac_drv_drawable_free(drawable);
+
+    /* Free buffer */
+    guac_common_display_free_buffer(display->display, buffer);
 
 }
 
