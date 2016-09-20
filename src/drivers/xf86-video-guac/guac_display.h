@@ -28,8 +28,10 @@
 #include <errno.h>
 #include <pthread.h>
 
+#include <xorg-server.h>
 #include <xf86.h>
 #include <xf86str.h>
+
 #include <guacamole/client.h>
 #include <guacamole/pool.h>
 

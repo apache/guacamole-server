@@ -25,6 +25,7 @@
 #include "guac_display.h"
 #include "list.h"
 
+#include <xorg-server.h>
 #include <xf86.h>
 #include <xf86str.h>
 
