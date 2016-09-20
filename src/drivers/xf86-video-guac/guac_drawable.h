@@ -31,6 +31,81 @@
 
 #include <cairo/cairo.h>
 
+#include <xorg-server.h>
+#include <xf86.h>
+#include <fb.h>
+
+/**
+ * Repeatedly calls the given function with the given arguments, once for each
+ * clipping rectangle. For each clipping rectangle, the clipping rectangle will
+ * be applied to the guac_common_surface associated with the given
+ * guac_drv_drawable, the provided function will be invoked, and the clipping
+ * rectangle will be unset.
+ *
+ * @param guac_drawable
+ *     A pointer to the guac_drv_drawable associated with the destination
+ *     drawable. This is the drawable which will be temporarily clipped
+ *     according to the given clipping rectangles.
+ *
+ * @param drawable
+ *     A DrawablePtr pointing to the destination drawable.
+ *
+ * @param clip
+ *     A collection of clipping rectangles, as returned by
+ *     fbGetCompositeClip().
+ *
+ * @param fn
+ *     The function to invoke for each clipping rectangle.
+ *
+ * @param ...
+ *     The parameters to pass to the function when it is invoked for each
+ *     clipping rectangle.
+ */
+#define GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable, clip, fn, ...)        \
+    do {                                                                      \
+                                                                              \
+        /* Get underlying surface of drawable */                              \
+        guac_common_surface* GUAC_DRV_DRAWABLE_CLIP__surface =                \
+                guac_drawable->layer->surface;                                \
+                                                                              \
+        /* Get clipping rectangles */                                         \
+        int GUAC_DRV_DRAWABLE_CLIP__num_rects = REGION_NUM_RECTS(clip);       \
+        BoxPtr GUAC_DRV_DRAWABLE_CLIP__rect = REGION_RECTS(clip);             \
+                                                                              \
+        /* Get screen-absolute coordinates of drawablw */                     \
+        int GUAC_DRV_DRAWABLE_CLIP__screen_x = drawable->x;                   \
+        int GUAC_DRV_DRAWABLE_CLIP__screen_y = drawable->y;                   \
+                                                                              \
+        /* Clip operation by defined clipping path */                         \
+        while (GUAC_DRV_DRAWABLE_CLIP__num_rects > 0) {                       \
+                                                                              \
+            {                                                                 \
+                /* Get clipping rectangle bounds (screen-absolute) */         \
+                int x1 = GUAC_DRV_DRAWABLE_CLIP__rect->x1;                    \
+                int y1 = GUAC_DRV_DRAWABLE_CLIP__rect->y1;                    \
+                int x2 = GUAC_DRV_DRAWABLE_CLIP__rect->x2;                    \
+                int y2 = GUAC_DRV_DRAWABLE_CLIP__rect->y2;                    \
+                                                                              \
+                /* Clip draw operation (drawable-relative) */                 \
+                guac_common_surface_clip(GUAC_DRV_DRAWABLE_CLIP__surface,     \
+                        x1 - GUAC_DRV_DRAWABLE_CLIP__screen_x,                \
+                        y1 - GUAC_DRV_DRAWABLE_CLIP__screen_y,                \
+                        x2 - x1,                                              \
+                        y2 - y1);                                             \
+            }                                                                 \
+                                                                              \
+            fn(__VA_ARGS__);                                                  \
+                                                                              \
+            /* Reset clip for next rectangle */                               \
+            guac_common_surface_reset_clip(GUAC_DRV_DRAWABLE_CLIP__surface);  \
+                                                                              \
+            GUAC_DRV_DRAWABLE_CLIP__rect++;                                   \
+            GUAC_DRV_DRAWABLE_CLIP__num_rects--;                              \
+                                                                              \
+        }                                                                     \
+                                                                              \
+    } while (0)
+
 /**
  * All supported types of drawables.
  */

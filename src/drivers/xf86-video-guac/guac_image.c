@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "guac_display.h"
+#include "guac_drawable.h"
 #include "guac_gc.h"
 #include "guac_image.h"
 #include "guac_pixmap.h"
@@ -27,20 +28,11 @@
 #include "guac_window.h"
 #include "list.h"
 
-#include <xorg-server.h>
-#include <xf86.h>
-#include <fb.h>
-
 void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,
         int x, int y, int w, int h, int left_pad, int format,
         char* bits) {
 
     guac_drv_drawable_format guac_format;
-
-    int i;
-    RegionPtr clip = fbGetCompositeClip(gc);
-    int num_rects = REGION_NUM_RECTS(clip);
-    BoxPtr current_rect = REGION_RECTS(clip);
 
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen = 
@@ -66,31 +58,10 @@ void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,
                         guac_drawable->layer->layer->index, format, depth, left_pad);
     }
 
-    /* Clip operation by defined clipping path */
-    for (i=0; i<num_rects; i++) {
-
-        /* Translate clipping rectangle coordinates to drawable-relative */
-        int clip_x1 = current_rect->x1 - drawable->x;
-        int clip_y1 = current_rect->y1 - drawable->y;
-        int clip_x2 = current_rect->x2 - drawable->x;
-        int clip_y2 = current_rect->y2 - drawable->y;
-
-        /* Clip draw operation by current rectangle */
-        guac_common_surface_clip(guac_drawable->layer->surface,
-                clip_x1, clip_y1,
-                clip_x2 - clip_x1,
-                clip_y2 - clip_y1);
-
-        /* Perform draw operation */
-        guac_drv_drawable_put(guac_drawable, bits, guac_format, w*4,
-                x, y, w, h);
-
-        /* Reset clip for next rectangle */
-        guac_common_surface_reset_clip(guac_drawable->layer->surface);
-
-        current_rect++;
-
-    }
+    /* Perform draw operation, clipped by current clipping path */
+    GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable, fbGetCompositeClip(gc),
+            guac_drv_drawable_put, guac_drawable, bits, guac_format, w*4,
+            x, y, w, h);
 
     guac_drv_display_touch(guac_screen->display);
 
