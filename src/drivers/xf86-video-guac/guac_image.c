@@ -82,14 +82,13 @@ void guac_drv_pushpixels(GCPtr gc, PixmapPtr bitmap, DrawablePtr dst,
     guac_drv_drawable* guac_src = guac_drv_get_drawable((DrawablePtr) bitmap);
     guac_drv_drawable* guac_dst = guac_drv_get_drawable(dst);
 
-    /* Perform operation */
-    guac_drv_drawable_copy(guac_src, 0, 0, w, h, guac_dst, x, y);
+    /* Perform operation, clipped by current clipping path */
+    GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
+            guac_drv_drawable_copy, guac_src, 0, 0, w, h, guac_dst, x, y);
+
     guac_drv_display_touch(guac_screen->display);
 
-    /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s src_layer=%i dst_layer=%i\n", __func__,
-        guac_drv_get_drawable((DrawablePtr) bitmap)->layer->layer->index,
-        guac_drv_get_drawable(dst)->layer->layer->index);
     fbPushPixels(gc, bitmap, dst, w, h, x, y);
+
 }
 

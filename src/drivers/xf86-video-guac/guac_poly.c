@@ -106,22 +106,26 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
             /* Represent with a simple copy whenever possible */
             if (rect->width <= guac_fill_drawable->layer->surface->width
                     && rect->height <= guac_fill_drawable->layer->surface->height)
-                guac_drv_drawable_copy(guac_fill_drawable,
-                        gc->patOrg.x + rect->x, gc->patOrg.y + rect->y,
-                        rect->width, rect->height, guac_drawable,
-                        rect->x, rect->y);
+                GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+                    fbGetCompositeClip(gc), guac_drv_drawable_copy,
+                    guac_fill_drawable, gc->patOrg.x + rect->x,
+                    gc->patOrg.y + rect->y, rect->width, rect->height,
+                    guac_drawable, rect->x, rect->y);
 
             /* Otherwise, use an actual pattern fill */
             else
-                guac_drv_drawable_drect(guac_drawable, rect->x, rect->y,
-                        rect->width, rect->height, guac_fill_drawable);
+                GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+                    fbGetCompositeClip(gc), guac_drv_drawable_drect,
+                    guac_drawable, rect->x, rect->y, rect->width, rect->height,
+                    guac_fill_drawable);
 
         }
 
         /* Otherwise, STUB with color */
         else
-            guac_drv_drawable_stub(guac_drawable,
-                    rect->x, rect->y, rect->width, rect->height);
+            GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+                fbGetCompositeClip(gc), guac_drv_drawable_stub, guac_drawable,
+                rect->x, rect->y, rect->width, rect->height);
 
     }
 
