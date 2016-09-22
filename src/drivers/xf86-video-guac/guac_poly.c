@@ -103,14 +103,21 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
             guac_drv_drawable* guac_fill_drawable =
                 guac_drv_get_drawable((DrawablePtr) gc->tile.pixmap);
 
+            /* Get dimensions of tile drawable */
+            int tile_w = guac_fill_drawable->layer->surface->width;
+            int tile_h = guac_fill_drawable->layer->surface->height;
+
+            /* Calculate coordinates of pattern within tile given GC origin */
+            int tile_x = GUAC_DRV_DRAWABLE_WRAP(rect->x - gc->patOrg.x, tile_w);
+            int tile_y = GUAC_DRV_DRAWABLE_WRAP(rect->y - gc->patOrg.y, tile_h);
+
             /* Represent with a simple copy whenever possible */
-            if (rect->width <= guac_fill_drawable->layer->surface->width
-                    && rect->height <= guac_fill_drawable->layer->surface->height)
+            if (tile_x + rect->width <= tile_w
+                    && tile_y + rect->height <= tile_h)
                 GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
                     fbGetCompositeClip(gc), guac_drv_drawable_copy,
-                    guac_fill_drawable, gc->patOrg.x + rect->x,
-                    gc->patOrg.y + rect->y, rect->width, rect->height,
-                    guac_drawable, rect->x, rect->y);
+                    guac_fill_drawable, tile_x, tile_y, rect->width,
+                    rect->height, guac_drawable, rect->x, rect->y);
 
             /* Otherwise, use an actual pattern fill */
             else

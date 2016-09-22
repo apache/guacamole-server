@@ -107,6 +107,38 @@
     } while (0)
 
 /**
+ * Wraps the given integer value such that it fits between 0 and max - 1,
+ * inclusive. The behavior of this macro for non-integer types is undefined.
+ * This is essentially equivalent to the modulo operator, except when negative
+ * values are involved. For example, the following relations are true:
+ *
+ *     GUAC_DRV_DRAWABLE_WRAP(-6, 5) == 4
+ *     GUAC_DRV_DRAWABLE_WRAP(-5, 5) == 0
+ *     GUAC_DRV_DRAWABLE_WRAP(-4, 5) == 1
+ *     GUAC_DRV_DRAWABLE_WRAP(-3, 5) == 2
+ *     GUAC_DRV_DRAWABLE_WRAP(-2, 5) == 3
+ *     GUAC_DRV_DRAWABLE_WRAP(-1, 5) == 4
+ *     GUAC_DRV_DRAWABLE_WRAP(0, 5) == 0
+ *     GUAC_DRV_DRAWABLE_WRAP(1, 5) == 1
+ *     GUAC_DRV_DRAWABLE_WRAP(2, 5) == 2
+ *     GUAC_DRV_DRAWABLE_WRAP(3, 5) == 3
+ *     GUAC_DRV_DRAWABLE_WRAP(4, 5) == 4
+ *     GUAC_DRV_DRAWABLE_WRAP(5, 5) == 0
+ *     GUAC_DRV_DRAWABLE_WRAP(6, 5) == 1
+ *
+ * @param val
+ *     The value to wrap between 0 and max - 1, inclusive.
+ *
+ * @param max
+ *     The maximum against which all given values will be wrapped.
+ *
+ * @return
+ *     The given value, wrapped as necessary to fit between 0 and max - 1,
+ *     inclusive.
+ */
+#define GUAC_DRV_DRAWABLE_WRAP(val, max) ((((val) % (max)) + (max)) % (max));
+
+/**
  * All supported types of drawables.
  */
 typedef enum guac_drv_drawable_format {
