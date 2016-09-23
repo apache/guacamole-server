@@ -328,10 +328,43 @@ static PixmapPtr guac_drv_create_pixmap(ScreenPtr screen, int width, int height,
     /* Store in pixmap */
     dixSetPrivate(&(pixmap->devPrivates), GUAC_PIXMAP_PRIVATE, drawable);
 
-    /* Update clients */
-    guac_drv_display_touch(guac_screen->display);
-
     return pixmap;
+
+}
+
+static Bool guac_drv_modify_pixmap_header(PixmapPtr pixmap, int width,
+        int height, int depth, int bpp, int kind, void* pixel_data) {
+
+    Bool ret = TRUE;
+
+    /* Get guac_drv_screen */
+    ScreenPtr screen = pixmap->drawable.pScreen;
+    guac_drv_screen* guac_screen =
+        (guac_drv_screen*) dixGetPrivate(&(screen->devPrivates),
+                                         GUAC_SCREEN_PRIVATE);
+
+    /* Get drawable */
+    guac_drv_drawable* drawable =
+        (guac_drv_drawable*) dixGetPrivate(&(pixmap->devPrivates),
+                                         GUAC_PIXMAP_PRIVATE);
+
+    /* Resize as necessary */
+    guac_drv_drawable_resize(drawable, width, height);
+
+    /* Call wrapped function */
+    if (guac_screen->wrapped_modify_pixmap_header) {
+        GUAC_DRV_UNWRAP(screen->ModifyPixmapHeader,
+                        guac_screen->wrapped_modify_pixmap_header);
+
+        ret = screen->ModifyPixmapHeader(pixmap, width, height, depth, bpp,
+                kind, pixel_data);
+
+        GUAC_DRV_WRAP(screen->ModifyPixmapHeader,
+                      guac_screen->wrapped_modify_pixmap_header,
+                      guac_drv_modify_pixmap_header);
+    }
+
+    return ret;
 
 }
 
@@ -358,7 +391,6 @@ static Bool guac_drv_destroy_pixmap(PixmapPtr pixmap) {
 
         /* Update clients */
         guac_drv_display_destroy_buffer(guac_screen->display, drawable);
-        guac_drv_display_touch(guac_screen->display);
 
     }
 
@@ -726,6 +758,9 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
 
     guac_screen->wrapped_create_pixmap = screen->CreatePixmap;
     screen->CreatePixmap = guac_drv_create_pixmap;
+
+    guac_screen->wrapped_modify_pixmap_header = screen->ModifyPixmapHeader;
+    screen->ModifyPixmapHeader = guac_drv_modify_pixmap_header;
 
     guac_screen->wrapped_destroy_pixmap = screen->DestroyPixmap;
     screen->DestroyPixmap = guac_drv_destroy_pixmap;

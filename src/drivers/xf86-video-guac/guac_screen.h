@@ -59,6 +59,11 @@ typedef struct guac_drv_screen {
     CreatePixmapProcPtr wrapped_create_pixmap;
 
     /**
+     * Wrapped ModifyPixmapHeader implementation.
+     */
+    ModifyPixmapHeaderProcPtr wrapped_modify_pixmap_header;
+
+    /**
      * Wrapped DestroyPixmap implementation.
      */
     DestroyPixmapProcPtr wrapped_destroy_pixmap;
