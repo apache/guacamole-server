@@ -57,9 +57,7 @@ RegionPtr guac_drv_copyplane(DrawablePtr src, DrawablePtr dst, GCPtr gc,
         int srcx, int srcy, int w, int h, int dstx, int dsty,
         unsigned long bitplane) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s src_layer=%i dst_layer=%i\n", __func__,
-        guac_drv_get_drawable(src)->layer->layer->index,
-        guac_drv_get_drawable(dst)->layer->layer->index);
+    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
     return fbCopyPlane(src, dst, gc, srcx, srcy, w, h, dstx, dsty, bitplane);
 }
 

@@ -53,9 +53,9 @@ void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,
     }
     else {
         guac_format = GUAC_DRV_DRAWABLE_UNSUPPORTED;
-        xf86Msg(X_INFO, "guac: unsupported PutImage: layer=%i format=0x%x"
+        xf86Msg(X_INFO, "guac: unsupported PutImage: format=0x%x"
                         " depth=%i left_pad=%i\n",
-                        guac_drawable->layer->layer->index, format, depth, left_pad);
+                        format, depth, left_pad);
     }
 
     /* Perform draw operation, clipped by current clipping path */

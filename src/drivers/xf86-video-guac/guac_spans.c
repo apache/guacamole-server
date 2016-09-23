@@ -29,16 +29,14 @@
 void guac_drv_fillspans(DrawablePtr drawable, GCPtr gc, int npoints,
         DDXPointPtr points, int* width, int sorted) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->layer->layer->index);
+    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
     fbFillSpans(drawable, gc, npoints, points, width, sorted);
 }
 
 void guac_drv_setspans(DrawablePtr drawable, GCPtr gc, char* src,
         DDXPointPtr points, int* width, int nspans, int sorted) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s layer=%i\n", __func__,
-        guac_drv_get_drawable(drawable)->layer->layer->index);
+    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
     fbSetSpans(drawable, gc, src, points, width, nspans, sorted);
 }
 
