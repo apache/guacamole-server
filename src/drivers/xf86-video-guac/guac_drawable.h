@@ -210,8 +210,8 @@ void guac_drv_drawable_resize(guac_drv_drawable* drawable,
         int width, int height);
 
 /**
- * Initializes the contents of a drawable to a checkerboard pattern having a
- * random base color.
+ * Draws a bright magenta rectangle within the given drawable, representing an
+ * unimplemented operation.
  */
 void guac_drv_drawable_stub(guac_drv_drawable* drawable, int dx, int dy,
         int w, int h);

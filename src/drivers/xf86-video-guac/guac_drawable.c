@@ -34,12 +34,9 @@
 void guac_drv_drawable_stub(guac_drv_drawable* drawable, int dx, int dy,
         int w, int h) {
 
-    int r = rand() & 0xFF;
-    int g = rand() & 0xFF;
-    int b = rand() & 0xFF;
-
-    /* Draw rectangle with random color */
-    guac_common_surface_rect(drawable->layer->surface, dx, dy, w, h, r, g, b);
+    /* Draw rectangle with The Magenta of Failure */
+    guac_common_surface_rect(drawable->layer->surface, dx, dy, w, h,
+            0xFF, 0x00, 0xFF);
 
 }
 
