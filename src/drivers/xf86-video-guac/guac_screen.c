@@ -351,6 +351,29 @@ static Bool guac_drv_modify_pixmap_header(PixmapPtr pixmap, int width,
     /* Resize as necessary */
     guac_drv_drawable_resize(drawable, width, height);
 
+    /* Assign contents of pixmap, if given */
+    if (pixel_data != NULL) {
+
+        guac_drv_drawable_format guac_format;
+
+        /* Find appropriate drawable format */
+        if (bpp == 32) {
+            if (depth == 32)
+                guac_format = GUAC_DRV_DRAWABLE_ARGB_32;
+            else if (depth == 24)
+                guac_format = GUAC_DRV_DRAWABLE_RGB_24;
+            else
+                guac_format = GUAC_DRV_DRAWABLE_UNSUPPORTED;
+        }
+        else
+            guac_format = GUAC_DRV_DRAWABLE_UNSUPPORTED;
+
+        /* Update contents of pixmap */
+        guac_drv_drawable_put(drawable, pixel_data, guac_format,
+                width*4, 0, 0, width, height);
+
+    }
+
     /* Call wrapped function */
     if (guac_screen->wrapped_modify_pixmap_header) {
         GUAC_DRV_UNWRAP(screen->ModifyPixmapHeader,
