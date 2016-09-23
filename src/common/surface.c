@@ -29,6 +29,7 @@
 #include <guacamole/timestamp.h>
 #include <guacamole/user.h>
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -117,26 +118,50 @@
 #define GUAC_SURFACE_WEBP_BLOCK_SIZE 8
 
 void guac_common_surface_move(guac_common_surface* surface, int x, int y) {
+
+    pthread_mutex_lock(&surface->_lock);
+
     surface->x = x;
     surface->y = y;
     surface->location_dirty = 1;
+
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
 void guac_common_surface_stack(guac_common_surface* surface, int z) {
+
+    pthread_mutex_lock(&surface->_lock);
+
     surface->z = z;
     surface->location_dirty = 1;
+
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
 void guac_common_surface_set_parent(guac_common_surface* surface,
         const guac_layer* parent) {
+
+    pthread_mutex_lock(&surface->_lock);
+
     surface->parent = parent;
     surface->location_dirty = 1;
+
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
 void guac_common_surface_set_opacity(guac_common_surface* surface,
         int opacity) {
+
+    pthread_mutex_lock(&surface->_lock);
+
     surface->opacity = opacity;
     surface->opacity_dirty = 1;
+
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
 /**
@@ -586,16 +611,34 @@ static void __guac_common_surface_flush_to_queue(guac_common_surface* surface) {
 
 }
 
-void guac_common_surface_flush_deferred(guac_common_surface* surface) {
+/**
+ * Flushes the given surface, drawing any pending operations on the remote
+ * display. Surface properties are not flushed.
+ *
+ * @param surface
+ *     The surface to flush.
+ */
+static void __guac_common_surface_flush(guac_common_surface* surface);
+
+/**
+ * Schedules a deferred flush of the given surface. This will not immediately
+ * flush the surface to the client. Instead, the result of the flush is
+ * added to a queue which is reinspected and combined (if possible) with other
+ * deferred flushes during the call to guac_common_surface_flush().
+ *
+ * @param surface The surface to flush.
+ */
+static void __guac_common_surface_flush_deferred(guac_common_surface* surface) {
 
     /* Do not flush if not dirty */
     if (!surface->dirty)
         return;
 
-    /* Flush if queue size has reached maximum (space is reserved for the final dirty rect,
-     * as guac_common_surface_flush() MAY add an additional rect to the queue */
+    /* Flush if queue size has reached maximum (space is reserved for the final
+     * dirty rect, as __guac_common_surface_flush() MAY add an additional rect
+     * to the queue */
     if (surface->bitmap_queue_length == GUAC_COMMON_SURFACE_QUEUE_SIZE-1)
-        guac_common_surface_flush(surface);
+        __guac_common_surface_flush(surface);
 
     /* Append dirty rect to queue */
     __guac_common_surface_flush_to_queue(surface);
@@ -1017,6 +1060,8 @@ guac_common_surface* guac_common_surface_alloc(guac_client* client,
     surface->width = w;
     surface->height = h;
 
+    pthread_mutex_init(&surface->_lock, NULL);
+
     /* Create corresponding Cairo surface */
     surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
     surface->buffer = calloc(h, surface->stride);
@@ -1047,6 +1092,8 @@ void guac_common_surface_free(guac_common_surface* surface) {
     if (surface->realized)
         guac_protocol_send_dispose(surface->socket, surface->layer);
 
+    pthread_mutex_destroy(&surface->_lock);
+
     free(surface->heat_map);
     free(surface->buffer);
     free(surface);
@@ -1054,6 +1101,8 @@ void guac_common_surface_free(guac_common_surface* surface) {
 }
 
 void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
+
+    pthread_mutex_lock(&surface->_lock);
 
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
@@ -1104,9 +1153,13 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     if (surface->realized)
         guac_protocol_send_size(socket, layer, w, h);
 
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
 void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src) {
+
+    pthread_mutex_lock(&surface->_lock);
 
     unsigned char* buffer = cairo_image_surface_get_data(src);
     cairo_format_t format = cairo_image_surface_get_format(src);
@@ -1123,12 +1176,12 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
     /* Clip operation */
     __guac_common_clip_rect(surface, &rect, &sx, &sy);
     if (rect.width <= 0 || rect.height <= 0)
-        return;
+        goto complete;
 
     /* Update backing surface */
     __guac_common_surface_put(buffer, stride, &sx, &sy, surface, &rect, format != CAIRO_FORMAT_ARGB32);
     if (rect.width <= 0 || rect.height <= 0)
-        return;
+        goto complete;
 
     /* Update the heat map for the update rectangle. */
     guac_timestamp time = guac_timestamp_current();
@@ -1136,15 +1189,20 @@ void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_
 
     /* Flush if not combining */
     if (!__guac_common_should_combine(surface, &rect, 0))
-        guac_common_surface_flush_deferred(surface);
+        __guac_common_surface_flush_deferred(surface);
 
     /* Always defer draws */
     __guac_common_mark_dirty(surface, &rect);
 
+complete:
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
-void guac_common_surface_paint(guac_common_surface* surface, int x, int y, cairo_surface_t* src,
-                               int red, int green, int blue) {
+void guac_common_surface_paint(guac_common_surface* surface, int x, int y,
+        cairo_surface_t* src, int red, int green, int blue) {
+
+    pthread_mutex_lock(&surface->_lock);
 
     unsigned char* buffer = cairo_image_surface_get_data(src);
     int stride = cairo_image_surface_get_stride(src);
@@ -1160,22 +1218,30 @@ void guac_common_surface_paint(guac_common_surface* surface, int x, int y, cairo
     /* Clip operation */
     __guac_common_clip_rect(surface, &rect, &sx, &sy);
     if (rect.width <= 0 || rect.height <= 0)
-        return;
+        goto complete;
 
     /* Update backing surface */
     __guac_common_surface_fill_mask(buffer, stride, sx, sy, surface, &rect, red, green, blue);
 
     /* Flush if not combining */
     if (!__guac_common_should_combine(surface, &rect, 0))
-        guac_common_surface_flush_deferred(surface);
+        __guac_common_surface_flush_deferred(surface);
 
     /* Always defer draws */
     __guac_common_mark_dirty(surface, &rect);
 
+complete:
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
-void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, int h,
-                              guac_common_surface* dst, int dx, int dy) {
+void guac_common_surface_copy(guac_common_surface* src, int sx, int sy,
+        int w, int h, guac_common_surface* dst, int dx, int dy) {
+
+    /* Lock both surfaces */
+    pthread_mutex_lock(&dst->_lock);
+    if (src != dst)
+        pthread_mutex_lock(&src->_lock);
 
     guac_socket* socket = dst->socket;
     const guac_layer* src_layer = src->layer;
@@ -1187,13 +1253,13 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     /* Clip operation */
     __guac_common_clip_rect(dst, &rect, &sx, &sy);
     if (rect.width <= 0 || rect.height <= 0)
-        return;
+        goto complete;
 
     /* Update backing surface first only if destination rect cannot intersect source rect */
     if (src != dst) {
         __guac_common_surface_transfer(src, &sx, &sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
         if (rect.width <= 0 || rect.height <= 0)
-            return;
+            goto complete;
     }
 
     /* Defer if combining */
@@ -1202,8 +1268,8 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
 
     /* Otherwise, flush and draw immediately */
     else {
-        guac_common_surface_flush(dst);
-        guac_common_surface_flush(src);
+        __guac_common_surface_flush(dst);
+        __guac_common_surface_flush(src);
         guac_protocol_send_copy(socket, src_layer, sx, sy, rect.width, rect.height,
                                 GUAC_COMP_OVER, dst_layer, rect.x, rect.y);
         dst->realized = 1;
@@ -1213,10 +1279,22 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy, int w, i
     if (src == dst)
         __guac_common_surface_transfer(src, &sx, &sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
 
+complete:
+
+    /* Unlock both surfaces */
+    pthread_mutex_unlock(&dst->_lock);
+    if (src != dst)
+        pthread_mutex_unlock(&src->_lock);
+
 }
 
 void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int w, int h,
                                   guac_transfer_function op, guac_common_surface* dst, int dx, int dy) {
+
+    /* Lock both surfaces */
+    pthread_mutex_lock(&dst->_lock);
+    if (src != dst)
+        pthread_mutex_lock(&src->_lock);
 
     guac_socket* socket = dst->socket;
     const guac_layer* src_layer = src->layer;
@@ -1228,13 +1306,13 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     /* Clip operation */
     __guac_common_clip_rect(dst, &rect, &sx, &sy);
     if (rect.width <= 0 || rect.height <= 0)
-        return;
+        goto complete;
 
     /* Update backing surface first only if destination rect cannot intersect source rect */
     if (src != dst) {
         __guac_common_surface_transfer(src, &sx, &sy, op, dst, &rect);
         if (rect.width <= 0 || rect.height <= 0)
-            return;
+            goto complete;
     }
 
     /* Defer if combining */
@@ -1243,9 +1321,10 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
 
     /* Otherwise, flush and draw immediately */
     else {
-        guac_common_surface_flush(dst);
-        guac_common_surface_flush(src);
-        guac_protocol_send_transfer(socket, src_layer, sx, sy, rect.width, rect.height, op, dst_layer, rect.x, rect.y);
+        __guac_common_surface_flush(dst);
+        __guac_common_surface_flush(src);
+        guac_protocol_send_transfer(socket, src_layer, sx, sy, rect.width,
+                rect.height, op, dst_layer, rect.x, rect.y);
         dst->realized = 1;
     }
 
@@ -1253,11 +1332,19 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     if (src == dst)
         __guac_common_surface_transfer(src, &sx, &sy, op, dst, &rect);
 
+complete:
+
+    /* Unlock both surfaces */
+    pthread_mutex_unlock(&dst->_lock);
+    if (src != dst)
+        pthread_mutex_unlock(&src->_lock);
+
 }
 
 void guac_common_surface_rect(guac_common_surface* surface,
-                              int x, int y, int w, int h,
-                              int red, int green, int blue) {
+        int x, int y, int w, int h, int red, int green, int blue) {
+
+    pthread_mutex_lock(&surface->_lock);
 
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
@@ -1268,12 +1355,12 @@ void guac_common_surface_rect(guac_common_surface* surface,
     /* Clip operation */
     __guac_common_clip_rect(surface, &rect, NULL, NULL);
     if (rect.width <= 0 || rect.height <= 0)
-        return;
+        goto complete;
 
     /* Update backing surface */
     __guac_common_surface_rect(surface, &rect, red, green, blue);
     if (rect.width <= 0 || rect.height <= 0)
-        return;
+        goto complete;
 
     /* Defer if combining */
     if (__guac_common_should_combine(surface, &rect, 1))
@@ -1281,15 +1368,20 @@ void guac_common_surface_rect(guac_common_surface* surface,
 
     /* Otherwise, flush and draw immediately */
     else {
-        guac_common_surface_flush(surface);
+        __guac_common_surface_flush(surface);
         guac_protocol_send_rect(socket, layer, rect.x, rect.y, rect.width, rect.height);
         guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
         surface->realized = 1;
     }
 
+complete:
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
 void guac_common_surface_clip(guac_common_surface* surface, int x, int y, int w, int h) {
+
+    pthread_mutex_lock(&surface->_lock);
 
     guac_common_rect clip;
 
@@ -1302,10 +1394,14 @@ void guac_common_surface_clip(guac_common_surface* surface, int x, int y, int w,
     guac_common_rect_init(&clip, x, y, w, h);
     guac_common_rect_constrain(&surface->clip_rect, &clip);
 
+    pthread_mutex_unlock(&surface->_lock);
+
 }
 
 void guac_common_surface_reset_clip(guac_common_surface* surface) {
+    pthread_mutex_lock(&surface->_lock);
     surface->clipped = 0;
+    pthread_mutex_unlock(&surface->_lock);
 }
 
 /**
@@ -1443,7 +1539,6 @@ static void __guac_common_surface_flush_to_webp(guac_common_surface* surface) {
 
 }
 
-
 /**
  * Comparator for instances of guac_common_surface_bitmap_rect, the elements
  * which make up a surface's bitmap buffer.
@@ -1467,7 +1562,16 @@ static int __guac_common_surface_bitmap_rect_compare(const void* a, const void* 
 
 }
 
-void guac_common_surface_flush_properties(guac_common_surface* surface) {
+/**
+ * Flushes only the properties of the given surface, such as layer location or
+ * opacity. Image state is not flushed. If the surface represents a buffer or
+ * the default layer, this function has no effect.
+ *
+ * @param surface
+ *     The surface to flush.
+ */
+static void __guac_common_surface_flush_properties(
+        guac_common_surface* surface) {
 
     guac_socket* socket = surface->socket;
 
@@ -1490,7 +1594,7 @@ void guac_common_surface_flush_properties(guac_common_surface* surface) {
 
 }
 
-void guac_common_surface_flush(guac_common_surface* surface) {
+static void __guac_common_surface_flush(guac_common_surface* surface) {
 
     /* Flush final dirty rectangle to queue. */
     __guac_common_surface_flush_to_queue(surface);
@@ -1570,20 +1674,33 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
     }
 
-    /* Flush any applicable layer properties */
-    guac_common_surface_flush_properties(surface);
-
     /* Flush complete */
     surface->bitmap_queue_length = 0;
+
+}
+
+void guac_common_surface_flush(guac_common_surface* surface) {
+
+    pthread_mutex_lock(&surface->_lock);
+
+    /* Flush any applicable layer properties */
+    __guac_common_surface_flush_properties(surface);
+
+    /* Flush surface contents */
+    __guac_common_surface_flush(surface);
+
+    pthread_mutex_unlock(&surface->_lock);
 
 }
 
 void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
         guac_socket* socket) {
 
+    pthread_mutex_lock(&surface->_lock);
+
     /* Do nothing if not realized */
     if (!surface->realized)
-        return;
+        goto complete;
 
     /* Synchronize layer-specific properties if applicable */
     if (surface->layer->index > 0) {
@@ -1610,6 +1727,9 @@ void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
     guac_user_stream_png(user, socket, GUAC_COMP_OVER, surface->layer,
             0, 0, rect);
     cairo_surface_destroy(rect);
+
+complete:
+    pthread_mutex_unlock(&surface->_lock);
 
 }
 

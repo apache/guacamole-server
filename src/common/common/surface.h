@@ -29,6 +29,8 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
+#include <pthread.h>
+
 /**
  * The maximum number of updates to allow within the bitmap queue.
  */
@@ -226,6 +228,13 @@ typedef struct guac_common_surface {
      */
     guac_common_surface_heat_cell* heat_map;
 
+    /**
+     * Mutex which is locked internally when access to the surface must be
+     * synchronized. All public functions of guac_common_surface should be
+     * considered threadsafe.
+     */
+    pthread_mutex_t _lock;
+
 } guac_common_surface;
 
 /**
@@ -419,16 +428,6 @@ void guac_common_surface_set_parent(guac_common_surface* surface,
 void guac_common_surface_set_opacity(guac_common_surface* surface, int opacity);
 
 /**
- * Flushes only the properties of the given surface, such as layer location or
- * opacity. Image state is not flushed. If the surface represents a buffer or
- * the default layer, this function has no effect.
- *
- * @param surface
- *     The surface to flush.
- */
-void guac_common_surface_flush_properties(guac_common_surface* surface);
-
-/**
  * Flushes the given surface, including any applicable properties, drawing any
  * pending operations on the remote display.
  *
@@ -436,16 +435,6 @@ void guac_common_surface_flush_properties(guac_common_surface* surface);
  *     The surface to flush.
  */
 void guac_common_surface_flush(guac_common_surface* surface);
-
-/**
- * Schedules a deferred flush of the given surface. This will not immediately
- * flush the surface to the client. Instead, the result of the flush is
- * added to a queue which is reinspected and combined (if possible) with other
- * deferred flushes during the call to guac_common_surface_flush().
- *
- * @param surface The surface to flush.
- */
-void guac_common_surface_flush_deferred(guac_common_surface* surface);
 
 /**
  * Duplicates the contents of the current surface to the given socket. Pending
