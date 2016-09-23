@@ -26,7 +26,6 @@
 #include "guac_rect.h"
 #include "list.h"
 
-#include <pthread.h>
 #include <stdint.h>
 
 #include <cairo/cairo.h>
@@ -172,11 +171,6 @@ typedef struct guac_drv_drawable {
     guac_common_display_layer* layer;
 
     /**
-     * Mutex protecting this drawable from simultaneous access.
-     */
-    pthread_mutex_t lock;
-
-    /**
      * Arbitrary data associated with this drawable.
      */
     void* data;
@@ -192,16 +186,6 @@ guac_drv_drawable* guac_drv_drawable_alloc(guac_common_display_layer* layer);
  * Frees the given drawable and any associated resources.
  */
 void guac_drv_drawable_free(guac_drv_drawable* drawable);
-
-/**
- * Locks this drawable, preventing access from other threads.
- */
-void guac_drv_drawable_lock(guac_drv_drawable* drawable);
-
-/**
- * Unlocks this drawable, allowing access from other threads.
- */
-void guac_drv_drawable_unlock(guac_drv_drawable* drawable);
 
 /**
  * Resizes the given drawable to the given width and height.

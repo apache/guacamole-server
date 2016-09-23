@@ -25,7 +25,6 @@
 
 #include <xf86.h>
 
-#include <pthread.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -47,43 +46,25 @@ guac_drv_drawable* guac_drv_drawable_alloc(guac_common_display_layer* layer) {
     /* Init underlying layer */
     drawable->layer = layer;
 
-    /* Init mutex */
-    pthread_mutex_init(&(drawable->lock), NULL);
-
     return drawable;
 
 }
 
 void guac_drv_drawable_free(guac_drv_drawable* drawable) {
-    pthread_mutex_destroy(&(drawable->lock));
     free(drawable);
-}
-
-void guac_drv_drawable_lock(guac_drv_drawable* drawable) {
-    pthread_mutex_lock(&(drawable->lock));
-}
-
-void guac_drv_drawable_unlock(guac_drv_drawable* drawable) {
-    pthread_mutex_unlock(&(drawable->lock));
 }
 
 void guac_drv_drawable_resize(guac_drv_drawable* drawable,
         int width, int height) {
 
-    guac_drv_drawable_lock(drawable);
-
     /* Set new dimensions */
     guac_common_surface_resize(drawable->layer->surface, width, height);
-
-    guac_drv_drawable_unlock(drawable);
 
 }
 
 void guac_drv_drawable_put(guac_drv_drawable* drawable,
         char* data, guac_drv_drawable_format format, int stride,
         int dx, int dy, int w, int h) {
-
-    guac_drv_drawable_lock(drawable);
 
     cairo_surface_t* surface;
 
@@ -110,57 +91,36 @@ void guac_drv_drawable_put(guac_drv_drawable* drawable,
 
     }
 
-    guac_drv_drawable_unlock(drawable);
-
 }
 
 void guac_drv_drawable_drect(guac_drv_drawable* drawable, int x, int y,
         int w, int h, guac_drv_drawable* fill) {
-    guac_drv_drawable_lock(drawable);
     guac_drv_drawable_stub(drawable, x, y, w, h);
-    guac_drv_drawable_unlock(drawable);
 }
 
 void guac_drv_drawable_copy(guac_drv_drawable* src, int srcx, int srcy,
         int w, int h, guac_drv_drawable* dst, int dstx, int dsty) {
 
-    /* Lock surfaces */
-    guac_drv_drawable_lock(dst);
-    if (src != dst)
-        guac_drv_drawable_lock(src);
-
     /* Perform copy */
     guac_common_surface_copy(src->layer->surface, srcx, srcy, w, h,
             dst->layer->surface, dstx, dsty);
 
-    /* Unlock surfaces */
-    guac_drv_drawable_unlock(dst);
-    if (src != dst)
-        guac_drv_drawable_unlock(src);
-
 }
 
 void guac_drv_drawable_shade(guac_drv_drawable* drawable, int opacity) {
-    guac_drv_drawable_lock(drawable);
     guac_common_surface_set_opacity(drawable->layer->surface, opacity);
-    guac_drv_drawable_unlock(drawable);
 }
 
 void guac_drv_drawable_move(guac_drv_drawable* drawable, int x, int y) {
-    guac_drv_drawable_lock(drawable);
     guac_common_surface_move(drawable->layer->surface, x, y);
-    guac_drv_drawable_unlock(drawable);
 }
 
 void guac_drv_drawable_stack(guac_drv_drawable* drawable, int z) {
-    guac_drv_drawable_lock(drawable);
     guac_common_surface_stack(drawable->layer->surface, z);
-    guac_drv_drawable_unlock(drawable);
 }
 
 void guac_drv_drawable_reparent(guac_drv_drawable* drawable,
         guac_drv_drawable* parent) {
-    guac_drv_drawable_lock(drawable);
 
     if (parent != NULL)
         guac_common_surface_set_parent(drawable->layer->surface,
@@ -170,6 +130,5 @@ void guac_drv_drawable_reparent(guac_drv_drawable* drawable,
         guac_common_surface_set_parent(drawable->layer->surface,
                 GUAC_DEFAULT_LAYER);
 
-    guac_drv_drawable_unlock(drawable);
 }
 
