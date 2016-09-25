@@ -187,8 +187,8 @@ static Bool guac_drv_create_window(WindowPtr window) {
     /* Get window rect */
     x = window->origin.x;
     y = window->origin.y;
-    width  = window->borderSize.extents.x2 - window->borderSize.extents.x1;
-    height = window->borderSize.extents.y2 - window->borderSize.extents.y1;
+    width  = window->drawable.width;
+    height = window->drawable.height;
 
     /* If root window, no parent, index is 0 */
     if (window->parent == NULL)
