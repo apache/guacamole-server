@@ -138,6 +138,87 @@
 #define GUAC_DRV_DRAWABLE_WRAP(val, max) ((((val) % (max)) + (max)) % (max));
 
 /**
+ * Draws a rectangle of color within the clipping area of the given drawable
+ * and GC, logging an appropriate "STUB" message to the X.Org logs noting the
+ * location of the macro invocation. The color of the rectangle is derived from
+ * the location of the macro invocation, and thus should be unique for each
+ * context.
+ *
+ * @param drawable
+ *     The drawable being drawn to.
+ *
+ * @param gc
+ *     The graphical context applying to the drawing operation.
+ *
+ * @param x
+ *     The destination X coordinate of the draw operation within the given
+ *     drawable.
+ *
+ * @param y
+ *     The destination Y coordinate of the draw operation within the given
+ *     drawable.
+ *
+ * @param w
+ *     The width of the draw operation within the given drawable.
+ *
+ * @param h
+ *     The height of the draw operation within the given drawable.
+ */
+#define GUAC_DRV_DRAWABLE_STUB_RECT(drawable, gc, x, y, w, h)                 \
+    do {                                                                      \
+                                                                              \
+        int GUAC_DRV_DRAWABLE_STUB_RECT__color = 53 ^ __LINE__;               \
+        {                                                                     \
+                                                                              \
+            const char* current;                                              \
+                                                                              \
+            for (current = __func__; *current != 0; current++) {              \
+                GUAC_DRV_DRAWABLE_STUB_RECT__color *= 113;                    \
+                GUAC_DRV_DRAWABLE_STUB_RECT__color ^= *current;               \
+            }                                                                 \
+                                                                              \
+            for (current = __FILE__; *current != 0; current++) {              \
+                GUAC_DRV_DRAWABLE_STUB_RECT__color *= 113;                    \
+                GUAC_DRV_DRAWABLE_STUB_RECT__color ^= *current;               \
+            }                                                                 \
+                                                                              \
+            GUAC_DRV_DRAWABLE_STUB_RECT__color &= 0xFFFFFF;                   \
+                                                                              \
+        }                                                                     \
+                                                                              \
+        xf86Msg(X_INFO, "guac: STUB %06X: %s:%d: %s()\n",                     \
+                GUAC_DRV_DRAWABLE_STUB_RECT__color,                           \
+                __FILE__, __LINE__, __func__);                                \
+                                                                              \
+        guac_drv_drawable* GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable =       \
+            guac_drv_get_drawable(drawable);                                  \
+                                                                              \
+        GUAC_DRV_DRAWABLE_CLIP(GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable,    \
+            drawable, fbGetCompositeClip(gc), guac_drv_drawable_stub,         \
+            GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable, x, y, w, h,           \
+            GUAC_DRV_DRAWABLE_STUB_RECT__color);                              \
+                                                                              \
+    } while (0)
+
+/**
+ * Fills the entire clipping area of the given drawable and GC with color,
+ * logging an appropriate "STUB" message to the X.Org logs noting the location
+ * of the macro invocation. The color is derived from the location of the macro
+ * invocation, and thus should be unique for each context.
+ *
+ * @param drawable
+ *     The drawable being drawn to.
+ *
+ * @param gc
+ *     The graphical context applying to the drawing operation.
+ */
+#define GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc)                               \
+    do {                                                                      \
+        GUAC_DRV_DRAWABLE_STUB_RECT(drawable, gc, 0, 0,                       \
+                drawable->width, drawable->height);                           \
+    } while (0)
+
+/**
  * All supported types of drawables.
  */
 typedef enum guac_drv_drawable_format {
@@ -198,7 +279,7 @@ void guac_drv_drawable_resize(guac_drv_drawable* drawable,
  * unimplemented operation.
  */
 void guac_drv_drawable_stub(guac_drv_drawable* drawable, int dx, int dy,
-        int w, int h);
+        int w, int h, uint32_t color);
 
 /**
  * Copies the contents of the given buffer having the given stride to the

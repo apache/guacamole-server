@@ -34,42 +34,42 @@
 void guac_drv_polypoint(DrawablePtr drawable, GCPtr gc, int mode, int npt,
         DDXPointPtr init) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbPolyPoint(drawable, gc, mode, npt, init);
 }
 
 void guac_drv_polyline(DrawablePtr drawable, GCPtr gc, int mode, int npt,
         DDXPointPtr init) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbPolyLine(drawable, gc, mode, npt, init);
 }
 
 void guac_drv_polysegment(DrawablePtr drawable, GCPtr gc, int nseg,
         xSegment* segs) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbPolySegment(drawable, gc, nseg, segs);
 }
 
 void guac_drv_polyrectangle(DrawablePtr drawable, GCPtr gc, int nrects,
         xRectangle* rects) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbPolyRectangle(drawable, gc, nrects, rects);
 }
 
 void guac_drv_polyarc(DrawablePtr drawable, GCPtr gc, int narcs,
         xArc* arcs) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbPolyArc(drawable, gc, narcs, arcs);
 }
 
 void guac_drv_fillpolygon(DrawablePtr drawable, GCPtr gc, int shape, int mode,
         int count, DDXPointPtr pts) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbFillPolygon(drawable, gc, shape, mode, count, pts);
 }
 
@@ -93,6 +93,8 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
         /* If tiled, fill with pixmap */
         if ((gc->fillStyle == FillTiled || gc->fillStyle == FillOpaqueStippled)
                 && !gc->tileIsPixel) {
+
+            /* STUB: Stipple is ignored */
 
             guac_drv_drawable* guac_fill_drawable =
                 guac_drv_get_drawable((DrawablePtr) gc->tile.pixmap);
@@ -122,11 +124,15 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
 
         }
 
-        /* Otherwise, STUB with color */
+        /* If solid, fill with color */
+        else if (gc->fillStyle == FillSolid)
+            GUAC_DRV_DRAWABLE_STUB_RECT(drawable, gc,
+                    rect->x, rect->y, rect->width, rect->height);
+
+        /* Otherwise, not yet implemented */
         else
-            GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
-                fbGetCompositeClip(gc), guac_drv_drawable_stub, guac_drawable,
-                rect->x, rect->y, rect->width, rect->height);
+            GUAC_DRV_DRAWABLE_STUB_RECT(drawable, gc,
+                    rect->x, rect->y, rect->width, rect->height);
 
     }
 
@@ -134,14 +140,13 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
     guac_drv_display_touch(guac_screen->display);
 
     /* STUB */
-    /*xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);*/
     fbPolyFillRect(drawable, gc, nrects, rects);
 }
 
 void guac_drv_polyfillarc(DrawablePtr drawable, GCPtr gc, int narcs,
         xArc* arcs) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbPolyFillArc(drawable, gc, narcs, arcs);
 }
 

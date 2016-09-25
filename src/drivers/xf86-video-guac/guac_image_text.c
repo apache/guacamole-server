@@ -29,21 +29,21 @@
 void guac_drv_imagetext8(DrawablePtr drawable, GCPtr gc, int x, int y,
         int count, char* chars) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     miImageText8(drawable, gc, x, y, count, chars);
 }
 
 void guac_drv_imagetext16(DrawablePtr drawable, GCPtr gc, int x, int y,
         int count, unsigned short* chars) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     miImageText16(drawable, gc, x, y, count, chars);
 }
 
 void guac_drv_imageglyphblt(DrawablePtr drawable, GCPtr gc, int x, int y,
         unsigned int nglyph, CharInfoPtr* char_info, pointer glyph_base) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbImageGlyphBlt(drawable, gc, x, y, nglyph, char_info, glyph_base);
 }
 

@@ -31,11 +31,14 @@
 #include <cairo/cairo.h>
 
 void guac_drv_drawable_stub(guac_drv_drawable* drawable, int dx, int dy,
-        int w, int h) {
+        int w, int h, uint32_t color) {
+
+    int r = (color >> 16) & 0xFF;
+    int g = (color >> 8)  & 0xFF;
+    int b = color         & 0xFF;
 
     /* Draw rectangle with The Magenta of Failure */
-    guac_common_surface_rect(drawable->layer->surface, dx, dy, w, h,
-            0xFF, 0x00, 0xFF);
+    guac_common_surface_rect(drawable->layer->surface, dx, dy, w, h, r, g, b);
 
 }
 
@@ -87,7 +90,9 @@ void guac_drv_drawable_put(guac_drv_drawable* drawable,
 
         /* Use stub by default */
         default:
-            guac_drv_drawable_stub(drawable, dx, dy, w, h);
+            xf86Msg(X_INFO, "guac: STUB FFFF00: %s:%d: %s()\n",
+                    __FILE__, __LINE__, __func__);
+            guac_drv_drawable_stub(drawable, dx, dy, w, h, 0xFFFF00);
 
     }
 
@@ -95,7 +100,9 @@ void guac_drv_drawable_put(guac_drv_drawable* drawable,
 
 void guac_drv_drawable_drect(guac_drv_drawable* drawable, int x, int y,
         int w, int h, guac_drv_drawable* fill) {
-    guac_drv_drawable_stub(drawable, x, y, w, h);
+    xf86Msg(X_INFO, "guac: STUB 00FFFF: %s:%d: %s()\n",
+            __FILE__, __LINE__, __func__);
+    guac_drv_drawable_stub(drawable, x, y, w, h, 0x00FFFF);
 }
 
 void guac_drv_drawable_copy(guac_drv_drawable* src, int srcx, int srcy,

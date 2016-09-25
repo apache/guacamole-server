@@ -29,22 +29,21 @@
 int guac_drv_polytext8(DrawablePtr drawable, GCPtr gc, int x, int y,
         int count, char* chars) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     return miPolyText8(drawable, gc, x, y, count, chars);
 }
 
 int guac_drv_polytext16(DrawablePtr drawable, GCPtr gc, int x, int y,
         int count, unsigned short* chars) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     return miPolyText16(drawable, gc, x, y, count, chars);
 }
 
 void guac_drv_polyglyphblt(DrawablePtr drawable, GCPtr gc, int x, int y,
         unsigned int nglyph, CharInfoPtr* char_info, pointer glyph_base) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
     fbPolyGlyphBlt(drawable, gc, x, y, nglyph, char_info, glyph_base);
 }
-
 
