@@ -1247,37 +1247,52 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy,
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
 
-    guac_common_rect rect;
-    guac_common_rect_init(&rect, dx, dy, w, h);
+    guac_common_rect srect;
+    guac_common_rect_init(&srect, sx, sy, w, h);
 
-    /* Clip operation */
-    __guac_common_clip_rect(dst, &rect, &sx, &sy);
-    if (rect.width <= 0 || rect.height <= 0)
+    /* Clip operation source rect */
+    __guac_common_clip_rect(src, &srect, &dx, &dy);
+    if (srect.width <= 0 || srect.height <= 0)
         goto complete;
 
-    /* Update backing surface first only if destination rect cannot intersect source rect */
+    guac_common_rect drect;
+    guac_common_rect_init(&drect, dx, dy,
+            srect.width, srect.height);
+
+    /* Clip operation destination rect */
+    __guac_common_clip_rect(dst, &drect, &srect.x, &srect.y);
+    if (drect.width <= 0 || drect.height <= 0)
+        goto complete;
+
+    /* NOTE: Being the last rectangle to be adjusted, only the width/height of
+     * drect is now correct! */
+
+    /* Update backing surface first only if drect cannot intersect srect */
     if (src != dst) {
-        __guac_common_surface_transfer(src, &sx, &sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
-        if (rect.width <= 0 || rect.height <= 0)
+        __guac_common_surface_transfer(src, &srect.x, &srect.y,
+                GUAC_TRANSFER_BINARY_SRC, dst, &drect);
+        if (drect.width <= 0 || drect.height <= 0)
             goto complete;
     }
 
     /* Defer if combining */
-    if (__guac_common_should_combine(dst, &rect, 1))
-        __guac_common_mark_dirty(dst, &rect);
+    if (__guac_common_should_combine(dst, &drect, 1))
+        __guac_common_mark_dirty(dst, &drect);
 
     /* Otherwise, flush and draw immediately */
     else {
         __guac_common_surface_flush(dst);
         __guac_common_surface_flush(src);
-        guac_protocol_send_copy(socket, src_layer, sx, sy, rect.width, rect.height,
-                                GUAC_COMP_OVER, dst_layer, rect.x, rect.y);
+        guac_protocol_send_copy(socket, src_layer, srect.x, srect.y,
+                drect.width, drect.height, GUAC_COMP_OVER, dst_layer,
+                drect.x, drect.y);
         dst->realized = 1;
     }
 
-    /* Update backing surface last if destination rect can intersect source rect */
+    /* Update backing surface last if drect can intersect srect */
     if (src == dst)
-        __guac_common_surface_transfer(src, &sx, &sy, GUAC_TRANSFER_BINARY_SRC, dst, &rect);
+        __guac_common_surface_transfer(src, &sx, &sy,
+                GUAC_TRANSFER_BINARY_SRC, dst, &drect);
 
 complete:
 
@@ -1300,37 +1315,49 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     const guac_layer* src_layer = src->layer;
     const guac_layer* dst_layer = dst->layer;
 
-    guac_common_rect rect;
-    guac_common_rect_init(&rect, dx, dy, w, h);
+    guac_common_rect srect;
+    guac_common_rect_init(&srect, sx, sy, w, h);
 
-    /* Clip operation */
-    __guac_common_clip_rect(dst, &rect, &sx, &sy);
-    if (rect.width <= 0 || rect.height <= 0)
+    /* Clip operation source rect */
+    __guac_common_clip_rect(src, &srect, &dx, &dy);
+    if (srect.width <= 0 || srect.height <= 0)
         goto complete;
 
-    /* Update backing surface first only if destination rect cannot intersect source rect */
+    guac_common_rect drect;
+    guac_common_rect_init(&drect, dx, dy,
+            srect.width, srect.height);
+
+    /* Clip operation destination rect */
+    __guac_common_clip_rect(dst, &drect, &srect.x, &srect.y);
+    if (drect.width <= 0 || drect.height <= 0)
+        goto complete;
+
+    /* NOTE: Being the last rectangle to be adjusted, only the width/height of
+     * drect is now correct! */
+
+    /* Update backing surface first only if drect cannot intersect srect */
     if (src != dst) {
-        __guac_common_surface_transfer(src, &sx, &sy, op, dst, &rect);
-        if (rect.width <= 0 || rect.height <= 0)
+        __guac_common_surface_transfer(src, &srect.x, &srect.y, op, dst, &drect);
+        if (drect.width <= 0 || drect.height <= 0)
             goto complete;
     }
 
     /* Defer if combining */
-    if (__guac_common_should_combine(dst, &rect, 1))
-        __guac_common_mark_dirty(dst, &rect);
+    if (__guac_common_should_combine(dst, &drect, 1))
+        __guac_common_mark_dirty(dst, &drect);
 
     /* Otherwise, flush and draw immediately */
     else {
         __guac_common_surface_flush(dst);
         __guac_common_surface_flush(src);
-        guac_protocol_send_transfer(socket, src_layer, sx, sy, rect.width,
-                rect.height, op, dst_layer, rect.x, rect.y);
+        guac_protocol_send_transfer(socket, src_layer, srect.x, srect.y,
+                drect.width, drect.height, op, dst_layer, drect.x, drect.y);
         dst->realized = 1;
     }
 
-    /* Update backing surface last if destination rect can intersect source rect */
+    /* Update backing surface last if drect can intersect srect */
     if (src == dst)
-        __guac_common_surface_transfer(src, &sx, &sy, op, dst, &rect);
+        __guac_common_surface_transfer(src, &srect.x, &srect.y, op, dst, &drect);
 
 complete:
 
