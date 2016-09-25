@@ -296,6 +296,17 @@ void guac_drv_drawable_copy(
         guac_drv_drawable* src, int srcx, int srcy, int w, int h,
         guac_drv_drawable* dst, int dstx, int dsty);
 
+/**
+ * Fills the given rectangular region of the given drawable with the provided
+ * color.
+ */
+void guac_drv_drawable_crect(guac_drv_drawable* drawable, int x, int y,
+        int w, int h, int fill);
+
+/**
+ * Fills the given rectangular region of the given drawable with the provided
+ * pattern.
+ */
 void guac_drv_drawable_drect(guac_drv_drawable* drawable, int x, int y,
         int w, int h, guac_drv_drawable* fill);
 

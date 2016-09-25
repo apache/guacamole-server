@@ -126,8 +126,10 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
 
         /* If solid, fill with color */
         else if (gc->fillStyle == FillSolid)
-            GUAC_DRV_DRAWABLE_STUB_RECT(drawable, gc,
-                    rect->x, rect->y, rect->width, rect->height);
+            GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+                fbGetCompositeClip(gc), guac_drv_drawable_crect,
+                guac_drawable, rect->x, rect->y, rect->width, rect->height,
+                gc->fgPixel);
 
         /* Otherwise, not yet implemented */
         else

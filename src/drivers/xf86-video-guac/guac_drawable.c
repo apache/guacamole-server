@@ -32,14 +32,7 @@
 
 void guac_drv_drawable_stub(guac_drv_drawable* drawable, int dx, int dy,
         int w, int h, uint32_t color) {
-
-    int r = (color >> 16) & 0xFF;
-    int g = (color >> 8)  & 0xFF;
-    int b = color         & 0xFF;
-
-    /* Draw rectangle with The Magenta of Failure */
-    guac_common_surface_rect(drawable->layer->surface, dx, dy, w, h, r, g, b);
-
+    guac_drv_drawable_crect(drawable, dx, dy, w, h, color);
 }
 
 guac_drv_drawable* guac_drv_drawable_alloc(guac_common_display_layer* layer) {
@@ -95,6 +88,19 @@ void guac_drv_drawable_put(guac_drv_drawable* drawable,
             guac_drv_drawable_stub(drawable, dx, dy, w, h, 0xFFFF00);
 
     }
+
+}
+
+void guac_drv_drawable_crect(guac_drv_drawable* drawable, int x, int y,
+        int w, int h, int fill) {
+
+    /* Pull RGB components from color */
+    int r = (fill >> 16) & 0xFF;
+    int g = (fill >> 8)  & 0xFF;
+    int b =  fill        & 0xFF;
+
+    /* Draw rectangle with requested color */
+    guac_common_surface_rect(drawable->layer->surface, x, y, w, h, r, g, b);
 
 }
 
