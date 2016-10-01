@@ -152,18 +152,6 @@ void guac_drv_display_destroy_layer(guac_drv_display* display,
         guac_drv_drawable* drawable);
 
 /**
- * Creates a new buffer, returning the new drawable representing that buffer.
- */
-guac_drv_drawable* guac_drv_display_create_buffer(guac_drv_display* display,
-        int width, int height);
-
-/**
- * Destroys and frees the buffer represented by the given drawable.
- */
-void guac_drv_display_destroy_buffer(guac_drv_display* display,
-        guac_drv_drawable* drawable);
-
-/**
  * Destroys the given drawable, but does not free any server-side resources.
  */
 void guac_drv_display_destroy_drawable(guac_drv_drawable* drawable);

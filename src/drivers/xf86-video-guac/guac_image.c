@@ -35,20 +35,25 @@ void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,
     /* Call framebuffer version */
     fbPutImage(drawable, gc, depth, x, y, w, h, left_pad, format, bits);
 
-    /* Get guac_drv_screen */
-    guac_drv_screen* guac_screen = 
-        (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
-                                     GUAC_GC_PRIVATE);
-
     /* Get drawable */
     guac_drv_drawable* guac_drawable = guac_drv_get_drawable(drawable);
 
-    /* Copy framebuffer state within clipping area */
-    GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable, fbGetCompositeClip(gc),
-            guac_drv_drawable_copy_fb, drawable, x, y, w, h,
-            guac_drawable, x, y);
+    /* Draw to windows only */
+    if (guac_drawable != NULL) {
 
-    guac_drv_display_touch(guac_screen->display);
+        /* Get guac_drv_screen */
+        guac_drv_screen* guac_screen =
+            (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
+                                         GUAC_GC_PRIVATE);
+
+        /* Copy framebuffer state within clipping area */
+        GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable, fbGetCompositeClip(gc),
+                guac_drv_drawable_copy_fb, drawable, x, y, w, h,
+                guac_drawable, x, y);
+
+        guac_drv_display_touch(guac_screen->display);
+
+    }
 
 }
 
@@ -58,20 +63,25 @@ void guac_drv_pushpixels(GCPtr gc, PixmapPtr bitmap, DrawablePtr dst,
     /* Call framebuffer version */
     fbPushPixels(gc, bitmap, dst, w, h, x, y);
 
-    /* Get guac_drv_screen */
-    guac_drv_screen* guac_screen = 
-        (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
-                                     GUAC_GC_PRIVATE);
-
     /* Get destination drawable */
     guac_drv_drawable* guac_dst = guac_drv_get_drawable(dst);
 
-    /* Copy framebuffer state within clipping area */
-    GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
-            guac_drv_drawable_copy_fb, (DrawablePtr) bitmap, 0, 0, w, h,
-            guac_dst, x, y);
+    /* Draw to windows only */
+    if (guac_dst != NULL) {
 
-    guac_drv_display_touch(guac_screen->display);
+        /* Get guac_drv_screen */
+        guac_drv_screen* guac_screen =
+            (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
+                                         GUAC_GC_PRIVATE);
+
+        /* Copy framebuffer state within clipping area */
+        GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
+                guac_drv_drawable_copy_fb, (DrawablePtr) bitmap, 0, 0, w, h,
+                guac_dst, x, y);
+
+        guac_drv_display_touch(guac_screen->display);
+
+    }
 
 }
 

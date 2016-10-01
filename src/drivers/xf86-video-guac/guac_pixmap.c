@@ -27,35 +27,16 @@
 #include <xf86.h>
 #include <fb.h>
 
-static DevPrivateKeyRec __GUAC_PIXMAP_PRIVATE;
-
-const DevPrivateKey GUAC_PIXMAP_PRIVATE = &__GUAC_PIXMAP_PRIVATE;
-
-PixmapPtr guac_drv_get_pixmap(DrawablePtr drawable) {
-
-    if (drawable->type != DRAWABLE_PIXMAP)
-        return fbGetWindowPixmap(drawable);
-
-    return (PixmapPtr) drawable;
-
-}
-
 guac_drv_drawable* guac_drv_get_drawable(DrawablePtr drawable) {
 
-    if (drawable->type != DRAWABLE_PIXMAP) {
+    /* Changes to pixmaps are not tracked */
+    if (drawable->type == DRAWABLE_PIXMAP)
+        return NULL;
 
-        WindowPtr window = (WindowPtr) drawable;
-        return (guac_drv_drawable*)
-            dixGetPrivate(&(window->devPrivates), GUAC_WINDOW_PRIVATE);
-
-    }
-
-    else {
-
-        PixmapPtr pixmap = (PixmapPtr) drawable;
-        return (guac_drv_drawable*)
-            dixGetPrivate(&(pixmap->devPrivates), GUAC_PIXMAP_PRIVATE);
-
-    }
+    /* Retrieve surface for window */
+    WindowPtr window = (WindowPtr) drawable;
+    return (guac_drv_drawable*)
+        dixGetPrivate(&(window->devPrivates), GUAC_WINDOW_PRIVATE);
 
 }
+

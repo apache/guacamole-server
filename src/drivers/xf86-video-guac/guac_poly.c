@@ -76,73 +76,88 @@ void guac_drv_fillpolygon(DrawablePtr drawable, GCPtr gc, int shape, int mode,
 void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
         xRectangle* rects) {
 
-    int i;
-
-    /* Get guac_drv_screen */
-    guac_drv_screen* guac_screen = 
-        (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
-                                     GUAC_GC_PRIVATE);
+    /* Call framebuffer version */
+    fbPolyFillRect(drawable, gc, nrects, rects);
 
     /* Get drawable */
     guac_drv_drawable* guac_drawable = guac_drv_get_drawable(drawable);
 
-    /* Draw all rects */
-    for (i=0; i<nrects; i++) {
-        xRectangle* rect = &(rects[i]);
+    /* Draw to windows only */
+    if (guac_drawable != NULL) {
 
-        /* If tiled, fill with pixmap */
-        if ((gc->fillStyle == FillTiled || gc->fillStyle == FillOpaqueStippled)
-                && !gc->tileIsPixel) {
+        int i;
 
-            /* STUB: Stipple is ignored */
+        /* Get guac_drv_screen */
+        guac_drv_screen* guac_screen =
+            (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
+                                         GUAC_GC_PRIVATE);
 
-            guac_drv_drawable* guac_fill_drawable =
-                guac_drv_get_drawable((DrawablePtr) gc->tile.pixmap);
+        /* Draw all rects */
+        for (i=0; i<nrects; i++) {
+            xRectangle* rect = &(rects[i]);
 
-            /* Get dimensions of tile drawable */
-            int tile_w = guac_fill_drawable->layer->surface->width;
-            int tile_h = guac_fill_drawable->layer->surface->height;
+            /* If tiled, fill with pixmap */
+            if (gc->fillStyle == FillTiled && !gc->tileIsPixel) {
 
-            /* Calculate coordinates of pattern within tile given GC origin */
-            int tile_x = GUAC_DRV_DRAWABLE_WRAP(rect->x - gc->patOrg.x, tile_w);
-            int tile_y = GUAC_DRV_DRAWABLE_WRAP(rect->y - gc->patOrg.y, tile_h);
+                guac_drv_drawable* guac_fill_drawable =
+                    guac_drv_get_drawable((DrawablePtr) gc->tile.pixmap);
 
-            /* Represent with a simple copy whenever possible */
-            if (tile_x + rect->width <= tile_w
-                    && tile_y + rect->height <= tile_h)
+                if (guac_fill_drawable != NULL) {
+
+                    /* Get dimensions of tile drawable */
+                    int tile_w = guac_fill_drawable->layer->surface->width;
+                    int tile_h = guac_fill_drawable->layer->surface->height;
+
+                    /* Calculate coordinates of pattern within tile given GC origin */
+                    int tile_x = GUAC_DRV_DRAWABLE_WRAP(rect->x - gc->patOrg.x, tile_w);
+                    int tile_y = GUAC_DRV_DRAWABLE_WRAP(rect->y - gc->patOrg.y, tile_h);
+
+                    /* Represent with a simple copy whenever possible */
+                    if (tile_x + rect->width <= tile_w
+                            && tile_y + rect->height <= tile_h)
+                        GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+                            fbGetCompositeClip(gc), guac_drv_drawable_copy,
+                            guac_fill_drawable, tile_x, tile_y, rect->width,
+                            rect->height, guac_drawable, rect->x, rect->y);
+
+                    /* Otherwise, use an actual pattern fill */
+                    else
+                        GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+                            fbGetCompositeClip(gc), guac_drv_drawable_drect,
+                            guac_drawable, rect->x, rect->y, rect->width, rect->height,
+                            guac_fill_drawable);
+
+                }
+
+                else
+                    GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+                        fbGetCompositeClip(gc), guac_drv_drawable_copy_fb,
+                        drawable, rect->x, rect->y, rect->width, rect->height,
+                        guac_drawable, rect->x, rect->y);
+
+            }
+
+            /* If solid, fill with color */
+            else if (gc->fillStyle == FillSolid)
                 GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
-                    fbGetCompositeClip(gc), guac_drv_drawable_copy,
-                    guac_fill_drawable, tile_x, tile_y, rect->width,
-                    rect->height, guac_drawable, rect->x, rect->y);
+                    fbGetCompositeClip(gc), guac_drv_drawable_crect,
+                    guac_drawable, rect->x, rect->y, rect->width, rect->height,
+                    gc->fgPixel);
 
-            /* Otherwise, use an actual pattern fill */
+            /* Otherwise, not yet implemented */
             else
                 GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
-                    fbGetCompositeClip(gc), guac_drv_drawable_drect,
-                    guac_drawable, rect->x, rect->y, rect->width, rect->height,
-                    guac_fill_drawable);
+                    fbGetCompositeClip(gc), guac_drv_drawable_copy_fb,
+                    drawable, rect->x, rect->y, rect->width, rect->height,
+                    guac_drawable, rect->x, rect->y);
 
         }
 
-        /* If solid, fill with color */
-        else if (gc->fillStyle == FillSolid)
-            GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
-                fbGetCompositeClip(gc), guac_drv_drawable_crect,
-                guac_drawable, rect->x, rect->y, rect->width, rect->height,
-                gc->fgPixel);
-
-        /* Otherwise, not yet implemented */
-        else
-            GUAC_DRV_DRAWABLE_STUB_RECT(drawable, gc,
-                    rect->x, rect->y, rect->width, rect->height);
+        /* Signal change */
+        guac_drv_display_touch(guac_screen->display);
 
     }
 
-    /* Signal change */
-    guac_drv_display_touch(guac_screen->display);
-
-    /* STUB */
-    fbPolyFillRect(drawable, gc, nrects, rects);
 }
 
 void guac_drv_polyfillarc(DrawablePtr drawable, GCPtr gc, int narcs,

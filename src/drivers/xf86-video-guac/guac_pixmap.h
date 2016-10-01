@@ -28,19 +28,9 @@
 #include <xf86.h>
 
 /**
- * Returns the pixmap associated with the given drawable.
- */
-PixmapPtr guac_drv_get_pixmap(DrawablePtr drawable);
-
-/**
  * Return the index of the layer associated with the draw operation.
  */
 guac_drv_drawable* guac_drv_get_drawable(DrawablePtr drawable);
-
-/**
- * Key for retrieving/setting Guacamole-specific information.
- */
-extern const DevPrivateKey GUAC_PIXMAP_PRIVATE;
 
 #endif
 

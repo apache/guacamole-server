@@ -193,10 +193,11 @@
         guac_drv_drawable* GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable =       \
             guac_drv_get_drawable(drawable);                                  \
                                                                               \
-        GUAC_DRV_DRAWABLE_CLIP(GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable,    \
-            drawable, fbGetCompositeClip(gc), guac_drv_drawable_stub,         \
-            GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable, x, y, w, h,           \
-            GUAC_DRV_DRAWABLE_STUB_RECT__color);                              \
+        if (GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable != NULL)               \
+            GUAC_DRV_DRAWABLE_CLIP(GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable,\
+                drawable, fbGetCompositeClip(gc), guac_drv_drawable_stub,     \
+                GUAC_DRV_DRAWABLE_STUB_RECT__guac_drawable, x, y, w, h,       \
+                GUAC_DRV_DRAWABLE_STUB_RECT__color);                          \
                                                                               \
     } while (0)
 

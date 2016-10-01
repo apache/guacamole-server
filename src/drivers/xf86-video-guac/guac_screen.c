@@ -303,136 +303,6 @@ static Bool guac_drv_create_gc(GCPtr gc) {
 
 }
 
-static PixmapPtr guac_drv_create_pixmap(ScreenPtr screen, int width, int height,
-        int depth, unsigned int usage_hint) {
-
-    PixmapPtr pixmap;
-    guac_drv_drawable* drawable;
-
-    /* Get guac_drv_screen */
-    guac_drv_screen* guac_screen = 
-        (guac_drv_screen*) dixGetPrivate(&(screen->devPrivates),
-                                         GUAC_SCREEN_PRIVATE);
-
-    /* Call wrapped function */
-    if (guac_screen->wrapped_create_pixmap)
-        pixmap = guac_screen->wrapped_create_pixmap(screen, width, height,
-                depth, usage_hint);
-    else
-        pixmap = NULL;
-
-    /* Create drawable */
-    drawable = guac_drv_display_create_buffer(guac_screen->display,
-            width, height);
-
-    /* Store in pixmap */
-    dixSetPrivate(&(pixmap->devPrivates), GUAC_PIXMAP_PRIVATE, drawable);
-
-    return pixmap;
-
-}
-
-static Bool guac_drv_modify_pixmap_header(PixmapPtr pixmap, int width,
-        int height, int depth, int bpp, int kind, void* pixel_data) {
-
-    Bool ret = TRUE;
-
-    /* Get guac_drv_screen */
-    ScreenPtr screen = pixmap->drawable.pScreen;
-    guac_drv_screen* guac_screen =
-        (guac_drv_screen*) dixGetPrivate(&(screen->devPrivates),
-                                         GUAC_SCREEN_PRIVATE);
-
-    /* Get drawable */
-    guac_drv_drawable* drawable =
-        (guac_drv_drawable*) dixGetPrivate(&(pixmap->devPrivates),
-                                         GUAC_PIXMAP_PRIVATE);
-
-    /* Resize as necessary */
-    guac_drv_drawable_resize(drawable, width, height);
-
-    /* Assign contents of pixmap, if given */
-    if (pixel_data != NULL) {
-
-        guac_drv_drawable_format guac_format;
-
-        /* Find appropriate drawable format */
-        if (bpp == 32) {
-            if (depth == 32)
-                guac_format = GUAC_DRV_DRAWABLE_ARGB_32;
-            else if (depth == 24)
-                guac_format = GUAC_DRV_DRAWABLE_RGB_24;
-            else
-                guac_format = GUAC_DRV_DRAWABLE_UNSUPPORTED;
-        }
-        else
-            guac_format = GUAC_DRV_DRAWABLE_UNSUPPORTED;
-
-        /* Update contents of pixmap */
-        guac_drv_drawable_put(drawable, pixel_data, guac_format,
-                width*4, 0, 0, width, height);
-
-    }
-
-    /* Call wrapped function */
-    if (guac_screen->wrapped_modify_pixmap_header) {
-        GUAC_DRV_UNWRAP(screen->ModifyPixmapHeader,
-                        guac_screen->wrapped_modify_pixmap_header);
-
-        ret = screen->ModifyPixmapHeader(pixmap, width, height, depth, bpp,
-                kind, pixel_data);
-
-        GUAC_DRV_WRAP(screen->ModifyPixmapHeader,
-                      guac_screen->wrapped_modify_pixmap_header,
-                      guac_drv_modify_pixmap_header);
-    }
-
-    return ret;
-
-}
-
-static Bool guac_drv_destroy_pixmap(PixmapPtr pixmap) {
-
-    Bool ret = TRUE;
-
-    /* Get guac_drv_screen */
-    ScreenPtr screen = pixmap->drawable.pScreen;
-    guac_drv_screen* guac_screen = 
-        (guac_drv_screen*) dixGetPrivate(&(screen->devPrivates),
-                                         GUAC_SCREEN_PRIVATE);
-
-    /* Get drawable */
-    guac_drv_drawable* drawable = 
-        (guac_drv_drawable*) dixGetPrivate(&(pixmap->devPrivates),
-                                         GUAC_PIXMAP_PRIVATE);
-
-    /* If pixmap defined, remove and handle */
-    if (drawable != NULL && pixmap->refcnt == 1) {
-
-        /* Remove from private */
-        dixSetPrivate(&(pixmap->devPrivates), GUAC_PIXMAP_PRIVATE, NULL);
-
-        /* Update clients */
-        guac_drv_display_destroy_buffer(guac_screen->display, drawable);
-
-    }
-
-    /* Call wrapped function */
-    if (guac_screen->wrapped_destroy_pixmap) {
-        GUAC_DRV_UNWRAP(screen->DestroyPixmap,
-                        guac_screen->wrapped_destroy_pixmap);
-
-        ret = screen->DestroyPixmap(pixmap);
-
-        GUAC_DRV_WRAP(screen->DestroyPixmap,
-                      guac_screen->wrapped_destroy_pixmap,
-                      guac_drv_destroy_pixmap);
-    }
-
-    return ret;
-
-}
-
 static Bool guac_drv_unrealize_window(WindowPtr window) {
 
     /* Get guac_drv_screen */
@@ -690,7 +560,6 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
     /* Register private keys */
     dixRegisterPrivateKey(GUAC_SCREEN_PRIVATE, PRIVATE_SCREEN, 0);
     dixRegisterPrivateKey(GUAC_WINDOW_PRIVATE, PRIVATE_WINDOW, 0);
-    dixRegisterPrivateKey(GUAC_PIXMAP_PRIVATE, PRIVATE_PIXMAP, 0);
     dixRegisterPrivateKey(GUAC_GC_PRIVATE,     PRIVATE_GC,     0);
 
     /* Allocate screen */
@@ -778,15 +647,6 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
 
     guac_screen->wrapped_create_gc = screen->CreateGC;
     screen->CreateGC = guac_drv_create_gc;
-
-    guac_screen->wrapped_create_pixmap = screen->CreatePixmap;
-    screen->CreatePixmap = guac_drv_create_pixmap;
-
-    guac_screen->wrapped_modify_pixmap_header = screen->ModifyPixmapHeader;
-    screen->ModifyPixmapHeader = guac_drv_modify_pixmap_header;
-
-    guac_screen->wrapped_destroy_pixmap = screen->DestroyPixmap;
-    screen->DestroyPixmap = guac_drv_destroy_pixmap;
 
     guac_screen->wrapped_realize_window = screen->RealizeWindow;
     screen->RealizeWindow = guac_drv_realize_window;

@@ -37,29 +37,33 @@ RegionPtr guac_drv_copyarea(DrawablePtr src, DrawablePtr dst, GCPtr gc,
     /* Call framebuffer version */
     RegionPtr ret = fbCopyArea(src, dst, gc, srcx, srcy, w, h, dstx, dsty);
 
-    /* Get guac_drv_screen */
-    guac_drv_screen* guac_screen = 
-        (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
-                                     GUAC_GC_PRIVATE);
-
-    /* Get source and destination drawables */
-    guac_drv_drawable* guac_src = guac_drv_get_drawable(src);
+    /* Get destination drawable */
     guac_drv_drawable* guac_dst = guac_drv_get_drawable(dst);
 
-    /* Perform operation only if simple */
-    if (src->type == DRAWABLE_WINDOW && dst->type == DRAWABLE_WINDOW
-            && gc->subWindowMode == ClipByChildren)
-        GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
-                guac_drv_drawable_copy, guac_src, srcx, srcy, w, h,
-                guac_dst, dstx, dsty);
+    /* Draw to windows only */
+    if (guac_dst != NULL) {
 
-    /* Otherwise copy framebuffer state */
-    else
-        GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
-                guac_drv_drawable_copy_fb, src, srcx, srcy, w, h,
-                guac_dst, dstx, dsty);
+        /* Get guac_drv_screen */
+        guac_drv_screen* guac_screen =
+            (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
+                                         GUAC_GC_PRIVATE);
 
-    guac_drv_display_touch(guac_screen->display);
+        /* Perform operation only if simple */
+        guac_drv_drawable* guac_src = guac_drv_get_drawable(src);
+        if (guac_src != NULL && gc->subWindowMode == ClipByChildren)
+            GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
+                    guac_drv_drawable_copy, guac_src, srcx, srcy, w, h,
+                    guac_dst, dstx, dsty);
+
+        /* Otherwise copy framebuffer state */
+        else
+            GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
+                    guac_drv_drawable_copy_fb, src, srcx, srcy, w, h,
+                    guac_dst, dstx, dsty);
+
+        guac_drv_display_touch(guac_screen->display);
+
+    }
 
     return ret;
 

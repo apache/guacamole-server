@@ -229,34 +229,6 @@ void guac_drv_display_destroy_layer(guac_drv_display* display,
 
 }
 
-
-guac_drv_drawable* guac_drv_display_create_buffer(guac_drv_display* display,
-        int width, int height) {
-
-    /* Create drawable */
-    guac_common_display_layer* buffer =
-        guac_common_display_alloc_local_buffer(display->display, width, height);
-
-    guac_drv_drawable* drawable = guac_drv_drawable_alloc(buffer);
-
-    drawable->data = display;
-
-    return drawable;
-
-}
-
-void guac_drv_display_destroy_buffer(guac_drv_display* display,
-        guac_drv_drawable* drawable) {
-
-    /* Get underlying buffer from drawable */
-    guac_common_display_layer* buffer = drawable->layer;
-    guac_drv_drawable_free(drawable);
-
-    /* Free buffer */
-    guac_common_display_free_local_buffer(display->display, buffer);
-
-}
-
 void guac_drv_display_touch(guac_drv_display* display) {
     pthread_cond_signal(&(display->modified));
 }
