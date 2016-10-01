@@ -32,7 +32,8 @@ void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,
         int x, int y, int w, int h, int left_pad, int format,
         char* bits) {
 
-    guac_drv_drawable_format guac_format;
+    /* Call framebuffer version */
+    fbPutImage(drawable, gc, depth, x, y, w, h, left_pad, format, bits);
 
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen = 
@@ -42,53 +43,35 @@ void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,
     /* Get drawable */
     guac_drv_drawable* guac_drawable = guac_drv_get_drawable(drawable);
 
-    /* Find appropriate drawable format */
-    if (format == PIXMAN_TYPE_ARGB && left_pad == 0) {
-        if (depth == 32)
-            guac_format = GUAC_DRV_DRAWABLE_ARGB_32;
-        else if (depth == 24)
-            guac_format = GUAC_DRV_DRAWABLE_RGB_24;
-        else
-            guac_format = GUAC_DRV_DRAWABLE_UNSUPPORTED;
-    }
-    else {
-        guac_format = GUAC_DRV_DRAWABLE_UNSUPPORTED;
-        xf86Msg(X_INFO, "guac: unsupported PutImage: format=0x%x"
-                        " depth=%i left_pad=%i\n",
-                        format, depth, left_pad);
-    }
-
-    /* Perform draw operation, clipped by current clipping path */
+    /* Copy framebuffer state within clipping area */
     GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable, fbGetCompositeClip(gc),
-            guac_drv_drawable_put, guac_drawable, bits, guac_format, w*4,
-            x, y, w, h);
+            guac_drv_drawable_copy_fb, drawable, x, y, w, h,
+            guac_drawable, x, y);
 
     guac_drv_display_touch(guac_screen->display);
-
-    /* Call framebuffer version */
-    fbPutImage(drawable, gc, depth, x, y, w, h, left_pad, format, bits);
 
 }
 
 void guac_drv_pushpixels(GCPtr gc, PixmapPtr bitmap, DrawablePtr dst,
         int w, int h, int x, int y) {
 
+    /* Call framebuffer version */
+    fbPushPixels(gc, bitmap, dst, w, h, x, y);
+
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen = 
         (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
                                      GUAC_GC_PRIVATE);
 
-    /* Get source and destination drawables */
-    guac_drv_drawable* guac_src = guac_drv_get_drawable((DrawablePtr) bitmap);
+    /* Get destination drawable */
     guac_drv_drawable* guac_dst = guac_drv_get_drawable(dst);
 
-    /* Perform operation, clipped by current clipping path */
+    /* Copy framebuffer state within clipping area */
     GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
-            guac_drv_drawable_copy, guac_src, 0, 0, w, h, guac_dst, x, y);
+            guac_drv_drawable_copy_fb, (DrawablePtr) bitmap, 0, 0, w, h,
+            guac_dst, x, y);
 
     guac_drv_display_touch(guac_screen->display);
-
-    fbPushPixels(gc, bitmap, dst, w, h, x, y);
 
 }
 

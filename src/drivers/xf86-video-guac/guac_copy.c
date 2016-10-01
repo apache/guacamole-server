@@ -34,6 +34,9 @@
 RegionPtr guac_drv_copyarea(DrawablePtr src, DrawablePtr dst, GCPtr gc,
         int srcx, int srcy, int w, int h, int dstx, int dsty) {
 
+    /* Call framebuffer version */
+    RegionPtr ret = fbCopyArea(src, dst, gc, srcx, srcy, w, h, dstx, dsty);
+
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen = 
         (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
@@ -43,14 +46,23 @@ RegionPtr guac_drv_copyarea(DrawablePtr src, DrawablePtr dst, GCPtr gc,
     guac_drv_drawable* guac_src = guac_drv_get_drawable(src);
     guac_drv_drawable* guac_dst = guac_drv_get_drawable(dst);
 
-    /* Perform operation, clipped by current clipping path */
-    GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
-            guac_drv_drawable_copy, guac_src, srcx, srcy, w, h,
-            guac_dst, dstx, dsty);
+    /* Perform operation only if simple */
+    if (src->type == DRAWABLE_WINDOW && dst->type == DRAWABLE_WINDOW
+            && gc->subWindowMode == ClipByChildren)
+        GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
+                guac_drv_drawable_copy, guac_src, srcx, srcy, w, h,
+                guac_dst, dstx, dsty);
+
+    /* Otherwise copy framebuffer state */
+    else
+        GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
+                guac_drv_drawable_copy_fb, src, srcx, srcy, w, h,
+                guac_dst, dstx, dsty);
 
     guac_drv_display_touch(guac_screen->display);
 
-    return fbCopyArea(src, dst, gc, srcx, srcy, w, h, dstx, dsty);
+    return ret;
+
 }
 
 RegionPtr guac_drv_copyplane(DrawablePtr src, DrawablePtr dst, GCPtr gc,
