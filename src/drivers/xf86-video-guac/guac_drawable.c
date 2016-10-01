@@ -35,6 +35,22 @@ void guac_drv_drawable_stub(guac_drv_drawable* drawable, int dx, int dy,
     guac_drv_drawable_crect(drawable, dx, dy, w, h, color);
 }
 
+void guac_drv_drawable_copy_fb(DrawablePtr src, int srcx, int srcy,
+        int srcw, int srch, guac_drv_drawable* dst, int dstx, int dsty) {
+
+    /* Retrieve image contents */
+    char* buffer = malloc(srcw * srch * 4);
+    fbGetImage(src, srcx, srcy, srcw, srch, ZPixmap, FB_ALLONES, buffer);
+
+    /* Draw to destination surface */
+    guac_drv_drawable_put(dst, buffer, GUAC_DRV_DRAWABLE_RGB_24, srcw * 4,
+            dstx, dsty, srcw, srch);
+
+    /* Buffer no longer needed */
+    free(buffer);
+
+}
+
 guac_drv_drawable* guac_drv_drawable_alloc(guac_common_display_layer* layer) {
 
     guac_drv_drawable* drawable = malloc(sizeof(guac_drv_drawable));

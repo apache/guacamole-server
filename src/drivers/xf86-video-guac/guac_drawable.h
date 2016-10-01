@@ -282,6 +282,15 @@ void guac_drv_drawable_stub(guac_drv_drawable* drawable, int dx, int dy,
         int w, int h, uint32_t color);
 
 /**
+ * Copies a rectangle of image data from a given source drawable, drawing it
+ * to the given Guacamole-specific drawable via a normal image update. The
+ * image data is copied from the "fb" module, and is thus independent of any
+ * Guacamole-specific image state.
+ */
+void guac_drv_drawable_copy_fb(DrawablePtr src, int srcx, int srcy,
+        int srcw, int srch, guac_drv_drawable* dst, int dstx, int dsty);
+
+/**
  * Copies the contents of the given buffer having the given stride to the
  * given location.
  */
