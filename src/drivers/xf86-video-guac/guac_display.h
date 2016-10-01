@@ -139,6 +139,11 @@ typedef struct guac_drv_display {
 guac_drv_display* guac_drv_display_alloc();
 
 /**
+ * Resizes the display to the given width and height.
+ */
+void guac_drv_display_resize(guac_drv_display* display, int w, int h);
+
+/**
  * Creates a new layer, returning the new drawable representing that layer.
  */
 guac_drv_drawable* guac_drv_display_create_layer(guac_drv_display* display,

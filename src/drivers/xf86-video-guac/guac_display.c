@@ -196,6 +196,10 @@ guac_drv_display* guac_drv_display_alloc() {
 
 }
 
+void guac_drv_display_resize(guac_drv_display* display, int w, int h) {
+    guac_common_surface_resize(display->display->default_surface, w, h);
+}
+
 guac_drv_drawable* guac_drv_display_create_layer(guac_drv_display* display,
         guac_drv_drawable* parent, int x, int y, int z,
         int width, int height, int opacity) {
