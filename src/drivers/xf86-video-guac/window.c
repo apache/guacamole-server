@@ -18,19 +18,13 @@
  * under the License.
  */
 
-#ifndef __GUAC_PIXMAP_H
-#define __GUAC_PIXMAP_H
-
 #include "config.h"
-#include "guac_drawable.h"
+#include "window.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
 
-/**
- * Return the index of the layer associated with the draw operation.
- */
-guac_drv_drawable* guac_drv_get_drawable(DrawablePtr drawable);
+static DevPrivateKeyRec __GUAC_WINDOW_PRIVATE;
 
-#endif
+const DevPrivateKey GUAC_WINDOW_PRIVATE = &__GUAC_WINDOW_PRIVATE;
 

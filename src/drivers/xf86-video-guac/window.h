@@ -22,7 +22,7 @@
 #define __GUAC_WINDOW_H
 
 #include "config.h"
-#include "guac_drawable.h"
+#include "drawable.h"
 
 #include <xorg-server.h>
 #include <xf86.h>

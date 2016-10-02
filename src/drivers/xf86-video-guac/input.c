@@ -19,7 +19,7 @@
  */
 
 #include "config.h"
-#include "guac_input.h"
+#include "input.h"
 #include "io.h"
 #include "log.h"
 

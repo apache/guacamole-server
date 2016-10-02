@@ -19,12 +19,12 @@
  */
 
 #include "config.h"
-#include "guac_display.h"
-#include "guac_drawable.h"
-#include "guac_gc.h"
-#include "guac_pixmap.h"
-#include "guac_poly.h"
-#include "guac_screen.h"
+#include "display.h"
+#include "drawable.h"
+#include "gc.h"
+#include "pixmap.h"
+#include "poly.h"
+#include "screen.h"
 #include "list.h"
 
 #include <xorg-server.h>

@@ -19,9 +19,9 @@
  */
 
 #include "config.h"
-#include "guac_drv.h"
-#include "guac_input.h"
-#include "guac_screen.h"
+#include "drv.h"
+#include "input.h"
+#include "screen.h"
 
 #include <xorg-server.h>
 #include <xf86.h>

@@ -18,45 +18,19 @@
  * under the License.
  */
 
+#ifndef __GUAC_PIXMAP_H
+#define __GUAC_PIXMAP_H
+
 #include "config.h"
-#include "guac_copy.h"
-#include "guac_gc.h"
-#include "guac_image.h"
-#include "guac_image_text.h"
-#include "guac_pixmap.h"
-#include "guac_poly.h"
-#include "guac_poly_text.h"
-#include "guac_spans.h"
-#include "list.h"
+#include "drawable.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
-#include <gcstruct.h>
 
-static DevPrivateKeyRec __GUAC_GC_PRIVATE;
+/**
+ * Return the index of the layer associated with the draw operation.
+ */
+guac_drv_drawable* guac_drv_get_drawable(DrawablePtr drawable);
 
-const DevPrivateKey GUAC_GC_PRIVATE = &__GUAC_GC_PRIVATE;
-
-GCOps guac_drv_gcops = {
-    guac_drv_fillspans,
-    guac_drv_setspans,
-    guac_drv_putimage,
-    guac_drv_copyarea,
-    guac_drv_copyplane,
-    guac_drv_polypoint,
-    guac_drv_polyline,
-    guac_drv_polysegment,
-    guac_drv_polyrectangle,
-    guac_drv_polyarc,
-    guac_drv_fillpolygon,
-    guac_drv_polyfillrect,
-    guac_drv_polyfillarc,
-    guac_drv_polytext8,
-    guac_drv_polytext16,
-    guac_drv_imagetext8,
-    guac_drv_imagetext16,
-    guac_drv_imageglyphblt,
-    guac_drv_polyglyphblt,
-    guac_drv_pushpixels
-};
+#endif
 

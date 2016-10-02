@@ -22,7 +22,7 @@
 #define __GUAC_INPUT_H
 
 #include "config.h"
-#include "guac_drv.h"
+#include "drv.h"
 
 #include <xorg-server.h>
 #include <xf86.h>

@@ -19,24 +19,24 @@
  */
 
 #include "config.h"
-#include "guac_pixmap.h"
-#include "guac_spans.h"
+#include "pixmap.h"
+#include "window.h"
+#include "list.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
 #include <fb.h>
 
-void guac_drv_fillspans(DrawablePtr drawable, GCPtr gc, int npoints,
-        DDXPointPtr points, int* width, int sorted) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
-    fbFillSpans(drawable, gc, npoints, points, width, sorted);
-}
+guac_drv_drawable* guac_drv_get_drawable(DrawablePtr drawable) {
 
-void guac_drv_setspans(DrawablePtr drawable, GCPtr gc, char* src,
-        DDXPointPtr points, int* width, int nspans, int sorted) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
-    fbSetSpans(drawable, gc, src, points, width, nspans, sorted);
+    /* Changes to pixmaps are not tracked */
+    if (drawable->type == DRAWABLE_PIXMAP)
+        return NULL;
+
+    /* Retrieve surface for window */
+    WindowPtr window = (WindowPtr) drawable;
+    return (guac_drv_drawable*)
+        dixGetPrivate(&(window->devPrivates), GUAC_WINDOW_PRIVATE);
+
 }
 

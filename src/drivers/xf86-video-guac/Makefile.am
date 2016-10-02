@@ -24,50 +24,50 @@ guac_drv_la_LTLIBRARIES = guac_drv.la
 guac_drv_ladir = @XORG_MODULE_DIR@/drivers
 
 noinst_HEADERS =      \
+    copy.h            \
+    cursor.h          \
     daemon.h          \
     default_pointer.h \
-    guac_copy.h       \
-    guac_cursor.h     \
-    guac_display.h    \
-    guac_drawable.h   \
-    guac_drv.h        \
-    guac_gc.h         \
-    guac_image.h      \
-    guac_image_text.h \
-    guac_input.h      \
-    guac_pixmap.h     \
-    guac_poly.h       \
-    guac_poly_text.h  \
-    guac_rect.h       \
-    guac_screen.h     \
-    guac_spans.h      \
-    guac_user.h       \
-    guac_window.h     \
+    display.h         \
+    drawable.h        \
+    drv.h             \
+    gc.h              \
+    image.h           \
+    image_text.h      \
+    input.h           \
     io.h              \
-    log.h
+    log.h             \
+    pixmap.h          \
+    poly.h            \
+    poly_text.h       \
+    rect.h            \
+    screen.h          \
+    spans.h           \
+    user.h            \
+    window.h
 
 guac_drv_la_SOURCES = \
+    copy.c            \
+    cursor.c          \
     daemon.c          \
     default_pointer.c \
-    guac_copy.c       \
-    guac_cursor.c     \
-    guac_display.c    \
-    guac_drawable.c   \
-    guac_drv.c        \
-    guac_gc.c         \
-    guac_image.c      \
-    guac_image_text.c \
-    guac_input.c      \
-    guac_pixmap.c     \
-    guac_poly.c       \
-    guac_poly_text.c  \
-    guac_rect.c       \
-    guac_screen.c     \
-    guac_spans.c      \
-    guac_user.c       \
-    guac_window.c     \
+    display.c         \
+    drawable.c        \
+    drv.c             \
+    gc.c              \
+    image.c           \
+    image_text.c      \
+    input.c           \
     io.c              \
-    log.c
+    log.c             \
+    pixmap.c          \
+    poly.c            \
+    poly_text.c       \
+    rect.c            \
+    screen.c          \
+    spans.c           \
+    user.c            \
+    window.c
 
 guac_drv_la_CFLAGS =        \
     -Werror -Wall -pedantic \

@@ -19,31 +19,24 @@
  */
 
 #include "config.h"
-#include "guac_pixmap.h"
-#include "guac_poly_text.h"
+#include "pixmap.h"
+#include "spans.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
 #include <fb.h>
 
-int guac_drv_polytext8(DrawablePtr drawable, GCPtr gc, int x, int y,
-        int count, char* chars) {
+void guac_drv_fillspans(DrawablePtr drawable, GCPtr gc, int npoints,
+        DDXPointPtr points, int* width, int sorted) {
     /* STUB */
     GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
-    return miPolyText8(drawable, gc, x, y, count, chars);
+    fbFillSpans(drawable, gc, npoints, points, width, sorted);
 }
 
-int guac_drv_polytext16(DrawablePtr drawable, GCPtr gc, int x, int y,
-        int count, unsigned short* chars) {
+void guac_drv_setspans(DrawablePtr drawable, GCPtr gc, char* src,
+        DDXPointPtr points, int* width, int nspans, int sorted) {
     /* STUB */
     GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
-    return miPolyText16(drawable, gc, x, y, count, chars);
-}
-
-void guac_drv_polyglyphblt(DrawablePtr drawable, GCPtr gc, int x, int y,
-        unsigned int nglyph, CharInfoPtr* char_info, pointer glyph_base) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
-    fbPolyGlyphBlt(drawable, gc, x, y, nglyph, char_info, glyph_base);
+    fbSetSpans(drawable, gc, src, points, width, nspans, sorted);
 }
 

@@ -19,12 +19,31 @@
  */
 
 #include "config.h"
-#include "guac_window.h"
+#include "pixmap.h"
+#include "poly_text.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
+#include <fb.h>
 
-static DevPrivateKeyRec __GUAC_WINDOW_PRIVATE;
+int guac_drv_polytext8(DrawablePtr drawable, GCPtr gc, int x, int y,
+        int count, char* chars) {
+    /* STUB */
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
+    return miPolyText8(drawable, gc, x, y, count, chars);
+}
 
-const DevPrivateKey GUAC_WINDOW_PRIVATE = &__GUAC_WINDOW_PRIVATE;
+int guac_drv_polytext16(DrawablePtr drawable, GCPtr gc, int x, int y,
+        int count, unsigned short* chars) {
+    /* STUB */
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
+    return miPolyText16(drawable, gc, x, y, count, chars);
+}
+
+void guac_drv_polyglyphblt(DrawablePtr drawable, GCPtr gc, int x, int y,
+        unsigned int nglyph, CharInfoPtr* char_info, pointer glyph_base) {
+    /* STUB */
+    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
+    fbPolyGlyphBlt(drawable, gc, x, y, nglyph, char_info, glyph_base);
+}
 

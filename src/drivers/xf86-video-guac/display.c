@@ -21,9 +21,9 @@
 #include "config.h"
 #include "daemon.h"
 #include "default_pointer.h"
-#include "guac_display.h"
-#include "guac_drawable.h"
-#include "guac_user.h"
+#include "display.h"
+#include "drawable.h"
+#include "user.h"
 #include "list.h"
 #include "log.h"
 

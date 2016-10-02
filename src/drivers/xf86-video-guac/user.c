@@ -21,10 +21,10 @@
 #include "config.h"
 #include "common/display.h"
 #include "default_pointer.h"
-#include "guac_display.h"
-#include "guac_drv.h"
-#include "guac_input.h"
-#include "guac_user.h"
+#include "display.h"
+#include "drv.h"
+#include "input.h"
+#include "user.h"
 #include "io.h"
 
 #include <guacamole/client.h>

@@ -19,8 +19,8 @@
  */
 
 #include "config.h"
-#include "guac_image_text.h"
-#include "guac_pixmap.h"
+#include "image_text.h"
+#include "pixmap.h"
 
 #include <xorg-server.h>
 #include <xf86.h>

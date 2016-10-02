@@ -19,8 +19,8 @@
  */
 
 #include "config.h"
-#include "guac_drawable.h"
-#include "guac_rect.h"
+#include "drawable.h"
+#include "rect.h"
 #include "list.h"
 
 #include <xf86.h>

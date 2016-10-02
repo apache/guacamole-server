@@ -19,13 +19,13 @@
  */
 
 #include "config.h"
-#include "guac_display.h"
-#include "guac_drawable.h"
-#include "guac_gc.h"
-#include "guac_image.h"
-#include "guac_pixmap.h"
-#include "guac_screen.h"
-#include "guac_window.h"
+#include "display.h"
+#include "drawable.h"
+#include "gc.h"
+#include "image.h"
+#include "pixmap.h"
+#include "screen.h"
+#include "window.h"
 #include "list.h"
 
 void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,

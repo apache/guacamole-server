@@ -23,7 +23,7 @@
 
 #include "config.h"
 #include "common/display.h"
-#include "guac_rect.h"
+#include "rect.h"
 #include "list.h"
 
 #include <stdint.h>

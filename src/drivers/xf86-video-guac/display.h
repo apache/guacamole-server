@@ -23,7 +23,7 @@
 
 #include "config.h"
 #include "common/display.h"
-#include "guac_drawable.h"
+#include "drawable.h"
 
 #include <errno.h>
 #include <pthread.h>

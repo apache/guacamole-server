@@ -19,24 +19,44 @@
  */
 
 #include "config.h"
-#include "guac_pixmap.h"
-#include "guac_window.h"
+#include "copy.h"
+#include "gc.h"
+#include "image.h"
+#include "image_text.h"
+#include "pixmap.h"
+#include "poly.h"
+#include "poly_text.h"
+#include "spans.h"
 #include "list.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
-#include <fb.h>
+#include <gcstruct.h>
 
-guac_drv_drawable* guac_drv_get_drawable(DrawablePtr drawable) {
+static DevPrivateKeyRec __GUAC_GC_PRIVATE;
 
-    /* Changes to pixmaps are not tracked */
-    if (drawable->type == DRAWABLE_PIXMAP)
-        return NULL;
+const DevPrivateKey GUAC_GC_PRIVATE = &__GUAC_GC_PRIVATE;
 
-    /* Retrieve surface for window */
-    WindowPtr window = (WindowPtr) drawable;
-    return (guac_drv_drawable*)
-        dixGetPrivate(&(window->devPrivates), GUAC_WINDOW_PRIVATE);
-
-}
+GCOps guac_drv_gcops = {
+    guac_drv_fillspans,
+    guac_drv_setspans,
+    guac_drv_putimage,
+    guac_drv_copyarea,
+    guac_drv_copyplane,
+    guac_drv_polypoint,
+    guac_drv_polyline,
+    guac_drv_polysegment,
+    guac_drv_polyrectangle,
+    guac_drv_polyarc,
+    guac_drv_fillpolygon,
+    guac_drv_polyfillrect,
+    guac_drv_polyfillarc,
+    guac_drv_polytext8,
+    guac_drv_polytext16,
+    guac_drv_imagetext8,
+    guac_drv_imagetext16,
+    guac_drv_imageglyphblt,
+    guac_drv_polyglyphblt,
+    guac_drv_pushpixels
+};
 

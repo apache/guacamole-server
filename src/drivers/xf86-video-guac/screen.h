@@ -22,7 +22,7 @@
 #define __GUAC_SCREEN_H
 
 #include "config.h"
-#include "guac_display.h"
+#include "display.h"
 #include "list.h"
 
 #include <xorg-server.h>

@@ -20,8 +20,8 @@
 
 #include "config.h"
 #include "daemon.h"
-#include "guac_display.h"
-#include "guac_input.h"
+#include "display.h"
+#include "input.h"
 #include "libguacd/user.h"
 #include "list.h"
 

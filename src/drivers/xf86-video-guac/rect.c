@@ -19,7 +19,7 @@
  */
 
 #include "config.h"
-#include "guac_rect.h"
+#include "rect.h"
 
 void guac_drv_rect_clear(guac_drv_rect* rect) {
     guac_drv_rect_init(rect, 0, 0, 0, 0);

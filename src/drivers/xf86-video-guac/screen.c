@@ -19,13 +19,13 @@
  */
 
 #include "config.h"
-#include "guac_drv.h"
-#include "guac_cursor.h"
-#include "guac_display.h"
-#include "guac_gc.h"
-#include "guac_pixmap.h"
-#include "guac_screen.h"
-#include "guac_window.h"
+#include "drv.h"
+#include "cursor.h"
+#include "display.h"
+#include "gc.h"
+#include "pixmap.h"
+#include "screen.h"
+#include "window.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
