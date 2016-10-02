@@ -569,15 +569,6 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
     /* Allocate framebuffer */
     guac_screen->framebuffer = malloc(screen_info->videoRam * 1024);
 
-    /* Init display */
-    guac_screen->display = guac_drv_display_alloc();
-
-    /*
-    guac_drv_switch_mode(screen_index, screen->currentMode, 0);
-
-    guac_drv_adjust_frame(screen_index, screen->frameX0, screen->frameY0, 0);
-    */
-
     miClearVisualTypes();
     if (!miSetVisualTypes(screen_info->depth,
                 miGetDefaultVisualMask(screen_info->depth),
@@ -633,6 +624,10 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
 
     screen->width = screen_info->currentMode->HDisplay;
     screen->height = screen_info->currentMode->VDisplay;
+
+    /* Init display */
+    guac_screen->display =
+        guac_drv_display_alloc(screen->width, screen->height);
 
     screen->SaveScreen = guac_drv_save_screen;
 

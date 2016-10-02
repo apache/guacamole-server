@@ -136,7 +136,7 @@ typedef struct guac_drv_display {
 /**
  * Allocates a new multicast display.
  */
-guac_drv_display* guac_drv_display_alloc();
+guac_drv_display* guac_drv_display_alloc(int width, int height);
 
 /**
  * Resizes the display to the given width and height.
