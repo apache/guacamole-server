@@ -76,7 +76,7 @@ void guac_drv_pushpixels(GCPtr gc, PixmapPtr bitmap, DrawablePtr dst,
 
         /* Copy framebuffer state within clipping area */
         GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
-                guac_drv_drawable_copy_fb, (DrawablePtr) bitmap, 0, 0, w, h,
+                guac_drv_drawable_copy_fb, dst, x, y, w, h,
                 guac_dst, x, y);
 
         guac_drv_display_touch(guac_screen->display);

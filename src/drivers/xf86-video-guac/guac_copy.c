@@ -58,7 +58,7 @@ RegionPtr guac_drv_copyarea(DrawablePtr src, DrawablePtr dst, GCPtr gc,
         /* Otherwise copy framebuffer state */
         else
             GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
-                    guac_drv_drawable_copy_fb, src, srcx, srcy, w, h,
+                    guac_drv_drawable_copy_fb, dst, dstx, dsty, w, h,
                     guac_dst, dstx, dsty);
 
         guac_drv_display_touch(guac_screen->display);
