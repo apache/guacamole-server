@@ -19,8 +19,9 @@
  */
 
 #include "config.h"
+#include "common/cursor.h"
+#include "common/display.h"
 #include "daemon.h"
-#include "default_pointer.h"
 #include "display.h"
 #include "drawable.h"
 #include "user.h"
@@ -169,6 +170,9 @@ guac_drv_display* guac_drv_display_alloc() {
 
     display->display = guac_common_display_alloc(client, 1024, 768);
     display->client = client;
+
+    /* Set default pointer */
+    guac_common_cursor_set_pointer(display->display->cursor);
 
     /* Init watchdog condition */
     if (pthread_cond_init(&(display->modified), NULL)) {

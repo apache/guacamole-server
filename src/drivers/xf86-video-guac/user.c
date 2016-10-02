@@ -19,8 +19,8 @@
  */
 
 #include "config.h"
+#include "common/cursor.h"
 #include "common/display.h"
-#include "default_pointer.h"
 #include "display.h"
 #include "drv.h"
 #include "input.h"
@@ -40,9 +40,6 @@ void guac_drv_display_sync_user(guac_drv_display* display, guac_user* user) {
     /* Synchronize display */
     guac_common_display_dup(display->display, user, user->socket);
 
-    /* Synchronize pointer */
-    guac_drv_set_default_pointer(user);
-
     /* End initial frame */
     guac_protocol_send_sync(socket, client->last_sent_timestamp);
     guac_socket_flush(socket);
@@ -57,6 +54,7 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
     /* Init data */
     guac_drv_user_data* user_data;
     user_data = user->data = malloc(sizeof(guac_drv_user_data));
+    user_data->display = display;
     user_data->button_mask = 0;
 
     /* Init user display state */
@@ -72,8 +70,13 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
 
 int guac_drv_user_leave_handler(guac_user* user) {
 
+    guac_drv_user_data* user_data = (guac_drv_user_data*) user->data;
+
+    /* Update shared cursor state */
+    guac_common_cursor_remove_user(user_data->display->display->cursor, user);
+
     /* Free user-specific data */
-    free(user->data);
+    free(user_data);
 
     return 0;
 
@@ -83,6 +86,9 @@ int guac_drv_user_mouse_handler(guac_user* user,
         int x, int y, int mask) {
 
     guac_drv_user_data* user_data = (guac_drv_user_data*) user->data;
+
+    /* Store current mouse location */
+    guac_common_cursor_move(user_data->display->display->cursor, user, x, y);
 
     /* If events can be written, send packet */
     if (GUAC_DRV_INPUT_WRITE_FD != -1) {

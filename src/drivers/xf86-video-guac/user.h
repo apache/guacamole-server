@@ -22,6 +22,7 @@
 #define __GUAC_DRV_USER_H
 
 #include "config.h"
+#include "display.h"
 
 #include <guacamole/user.h>
 
@@ -29,6 +30,11 @@
  * Guacamole user-specific data.
  */
 typedef struct guac_drv_user_data {
+
+    /**
+     * The display to which the user is connected.
+     */
+    guac_drv_display* display;
 
     /**
      * The old button mask state.

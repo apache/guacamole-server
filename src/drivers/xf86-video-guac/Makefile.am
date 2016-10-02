@@ -27,7 +27,6 @@ noinst_HEADERS =      \
     copy.h            \
     cursor.h          \
     daemon.h          \
-    default_pointer.h \
     display.h         \
     drawable.h        \
     drv.h             \
@@ -50,7 +49,6 @@ guac_drv_la_SOURCES = \
     copy.c            \
     cursor.c          \
     daemon.c          \
-    default_pointer.c \
     display.c         \
     drawable.c        \
     drv.c             \
