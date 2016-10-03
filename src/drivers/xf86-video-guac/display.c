@@ -152,6 +152,9 @@ void* guac_drv_render_thread(void* arg) {
         /* End frame */
         guac_drv_display_flush(display);
 
+        /* Record end of frame */
+        last_frame_end = guac_timestamp_current();
+
     }
 
     return NULL;
