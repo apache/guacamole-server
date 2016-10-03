@@ -209,6 +209,8 @@ static int guacenc_video_flush_frame(guacenc_video* video) {
 int guacenc_video_advance_timeline(guacenc_video* video,
         guac_timestamp timestamp) {
 
+    guac_timestamp next_timestamp = timestamp;
+
     /* Flush frames as necessary if previously updated */
     if (video->last_timestamp != 0) {
 
@@ -220,6 +222,10 @@ int guacenc_video_advance_timeline(guacenc_video* video,
         if (elapsed == 0)
             return 0;
 
+        /* Use frame time as last_timestamp */
+        next_timestamp = video->last_timestamp
+                        + elapsed * 1000 / GUACENC_VIDEO_FRAMERATE;
+
         /* Flush frames to bring timeline in sync, duplicating if necessary */
         do {
             guacenc_video_flush_frame(video);
@@ -228,7 +234,7 @@ int guacenc_video_advance_timeline(guacenc_video* video,
     }
 
     /* Update timestamp */
-    video->last_timestamp = timestamp;
+    video->last_timestamp = next_timestamp;
     return 0;
 
 }
