@@ -11,10 +11,10 @@ copy of guacd running.
 How to use this image
 =====================
 
-Running guacd for use by the [Guacamole Docker image](https://registry.hub.docker.com/u/glyptodon/guacamole/)
+Running guacd for use by the [Guacamole Docker image](https://registry.hub.docker.com/u/guacamole/guacamole/)
 -----------------------------------------------------
 
-    docker run --name some-guacd -d glyptodon/guacd
+    docker run --name some-guacd -d guacamole/guacd
 
 guacd will be listening on port 4822, but this port will only be available to
 Docker containers that have been explicitly linked to `some-guacd`.
@@ -22,7 +22,7 @@ Docker containers that have been explicitly linked to `some-guacd`.
 Running guacd for use services by outside Docker
 ------------------------------------------------
 
-    docker run --name some-guacd -d -p 4822:4822 glyptodon/guacd
+    docker run --name some-guacd -d -p 4822:4822 guacamole/guacd
 
 guacd will be listening on port 4822, and Docker will expose this port on the
 same server hosting Docker. Other services, such as an instance of Tomcat
