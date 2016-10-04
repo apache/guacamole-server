@@ -115,7 +115,8 @@ typedef struct guac_drv_display {
 
     /**
      * The mutex associated with the modified condition, locked whenever
-     * a thread is waiting on the modified condition.
+     * a thread is waiting on the modified condition, or when the modified
+     * condition is being signalled.
      */
     pthread_mutex_t modified_lock;
 

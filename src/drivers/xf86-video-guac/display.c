@@ -65,11 +65,6 @@ static void _get_absolute_time(struct timespec* ts, int offset_sec, int offset_u
  * guac_drv_display, and thus those changes should be flushed to connected
  * users. If the timeout elapses before data is available, zero is returned.
  *
- * IMPORTANT: The modified_lock mutex of the guac_drv_display MUST be locked by
- * the calling thread first! This function depends on that mutex being locked
- * (due to the requirements of pthread_cond_timedwait()). When this function
- * returns, that mutex will remain locked. 
- *
  * @param display
  *     The guac_drv_display to wait for.
  *
@@ -81,6 +76,8 @@ static void _get_absolute_time(struct timespec* ts, int offset_sec, int offset_u
  *     timeout elapses prior to any such changes.
  */
 static int guac_drv_wait_for_changes(guac_drv_display* display, int msecs) {
+
+    int retval;
 
     pthread_mutex_t* mod_lock = &(display->modified_lock);
     pthread_cond_t* mod_cond = &(display->modified);
@@ -94,7 +91,11 @@ static int guac_drv_wait_for_changes(guac_drv_display* display, int msecs) {
     _get_absolute_time(&timeout, secs, usecs);
 
     /* Wait for display modification condition to be signaled */
-    return pthread_cond_timedwait(mod_cond, mod_lock, &timeout) != ETIMEDOUT;
+    pthread_mutex_lock(&(display->modified_lock));
+    retval = pthread_cond_timedwait(mod_cond, mod_lock, &timeout) != ETIMEDOUT;
+    pthread_mutex_unlock(&(display->modified_lock));
+
+    return retval;
 
 }
 
@@ -102,10 +103,6 @@ void* guac_drv_render_thread(void* arg) {
 
     guac_drv_display* display = (guac_drv_display*) arg;
     guac_client* client = display->client;
-
-    /* Acquire modified_lock for sake of future calls to
-     * guac_drv_wait_for_changes() */
-    pthread_mutex_lock(&(display->modified_lock));
 
     guac_timestamp last_frame_end = guac_timestamp_current();
 
@@ -241,7 +238,9 @@ void guac_drv_display_destroy_layer(guac_drv_display* display,
 }
 
 void guac_drv_display_touch(guac_drv_display* display) {
+    pthread_mutex_lock(&(display->modified_lock));
     pthread_cond_signal(&(display->modified));
+    pthread_mutex_unlock(&(display->modified_lock));
 }
 
 void guac_drv_display_flush(guac_drv_display* display) {
