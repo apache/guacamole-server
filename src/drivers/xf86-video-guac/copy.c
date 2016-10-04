@@ -72,8 +72,32 @@ RegionPtr guac_drv_copyarea(DrawablePtr src, DrawablePtr dst, GCPtr gc,
 RegionPtr guac_drv_copyplane(DrawablePtr src, DrawablePtr dst, GCPtr gc,
         int srcx, int srcy, int w, int h, int dstx, int dsty,
         unsigned long bitplane) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_RECT(dst, gc, dstx, dsty, w, h);
-    return fbCopyPlane(src, dst, gc, srcx, srcy, w, h, dstx, dsty, bitplane);
+
+    /* Call framebuffer version */
+    RegionPtr ret = fbCopyPlane(src, dst, gc, srcx, srcy, w, h,
+            dstx, dsty, bitplane);
+
+    /* Get destination drawable */
+    guac_drv_drawable* guac_dst = guac_drv_get_drawable(dst);
+
+    /* Draw to windows only */
+    if (guac_dst != NULL) {
+
+        /* Get guac_drv_screen */
+        guac_drv_screen* guac_screen =
+            (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
+                                         GUAC_GC_PRIVATE);
+
+        /* Copy framebuffer state */
+        GUAC_DRV_DRAWABLE_CLIP(guac_dst, dst, fbGetCompositeClip(gc),
+                guac_drv_drawable_copy_fb, dst, dstx, dsty, w, h,
+                guac_dst, dstx, dsty);
+
+        guac_drv_display_touch(guac_screen->display);
+
+    }
+
+    return ret;
+
 }
 
