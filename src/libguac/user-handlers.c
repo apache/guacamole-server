@@ -104,9 +104,8 @@ int __guac_handle_sync(guac_user* user, int argc, char** argv) {
     /* Update lag statistics if at least one frame has been rendered */
     if (user->last_frame_duration != 0) {
 
-        /* Approximate processing lag by summing the frame duration deltas */
-        int processing_lag = user->processing_lag + frame_duration
-                           - user->last_frame_duration;
+        /* Calculate lag using the previous frame as a baseline */
+        int processing_lag = frame_duration - user->last_frame_duration;
 
         /* Adjust back to zero if cumulative error leads to a negative value */
         if (processing_lag < 0)
@@ -116,8 +115,8 @@ int __guac_handle_sync(guac_user* user, int argc, char** argv) {
 
     }
 
-    /* Record duration of frame */
-    user->last_frame_duration = frame_duration;
+    /* Record baseline duration of frame by excluding lag */
+    user->last_frame_duration = frame_duration - user->processing_lag;
 
     if (user->sync_handler)
         return user->sync_handler(user, timestamp);
