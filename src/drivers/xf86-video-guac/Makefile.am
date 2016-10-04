@@ -31,14 +31,13 @@ noinst_HEADERS =      \
     drawable.h        \
     drv.h             \
     gc.h              \
+    glyph.h           \
     image.h           \
-    image_text.h      \
     input.h           \
     io.h              \
     log.h             \
     pixmap.h          \
     poly.h            \
-    poly_text.h       \
     rect.h            \
     screen.h          \
     spans.h           \
@@ -53,14 +52,13 @@ guac_drv_la_SOURCES = \
     drawable.c        \
     drv.c             \
     gc.c              \
+    glyph.c           \
     image.c           \
-    image_text.c      \
     input.c           \
     io.c              \
     log.c             \
     pixmap.c          \
     poly.c            \
-    poly_text.c       \
     rect.c            \
     screen.c          \
     spans.c           \

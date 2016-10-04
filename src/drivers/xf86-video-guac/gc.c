@@ -21,11 +21,10 @@
 #include "config.h"
 #include "copy.h"
 #include "gc.h"
+#include "glyph.h"
 #include "image.h"
-#include "image_text.h"
 #include "pixmap.h"
 #include "poly.h"
-#include "poly_text.h"
 #include "spans.h"
 #include "list.h"
 
@@ -51,10 +50,10 @@ GCOps guac_drv_gcops = {
     guac_drv_fillpolygon,
     guac_drv_polyfillrect,
     guac_drv_polyfillarc,
-    guac_drv_polytext8,
-    guac_drv_polytext16,
-    guac_drv_imagetext8,
-    guac_drv_imagetext16,
+    miPolyText8,
+    miPolyText16,
+    miImageText8,
+    miImageText16,
     guac_drv_imageglyphblt,
     guac_drv_polyglyphblt,
     guac_drv_pushpixels

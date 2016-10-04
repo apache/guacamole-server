@@ -18,8 +18,8 @@
  * under the License.
  */
 
-#ifndef __GUAC_POLY_TEXT_H
-#define __GUAC_POLY_TEXT_H
+#ifndef GUAC_DRV_GLYPH_H
+#define GUAC_DRV_GLYPH_H
 
 #include "config.h"
 
@@ -27,16 +27,10 @@
 #include <xf86.h>
 
 /**
- * Guacamole implementation of PolyText8.
+ * Guacamole implementation of ImageGlyphBlt.
  */
-int guac_drv_polytext8(DrawablePtr drawable, GCPtr gc, int x, int y,
-        int count, char* chars);
-
-/**
- * Guacamole implementation of PolyText16.
- */
-int guac_drv_polytext16(DrawablePtr drawable, GCPtr gc, int x, int y,
-        int count, unsigned short* chars);
+void guac_drv_imageglyphblt(DrawablePtr drawable, GCPtr gc, int x, int y,
+        unsigned int nglyph, CharInfoPtr* char_info, pointer glyph_base);
 
 /**
  * Guacamole implementation of PolyGlyphBlt.
