@@ -273,11 +273,11 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
 
     int retval = 0;
 
-    pthread_rwlock_wrlock(&(client->__users_lock));
-
     /* Call handler, if defined */
     if (client->join_handler)
         retval = client->join_handler(user, argc, argv);
+
+    pthread_rwlock_wrlock(&(client->__users_lock));
 
     /* Add to list if join was successful */
     if (retval == 0) {
@@ -307,12 +307,6 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
 
     pthread_rwlock_wrlock(&(client->__users_lock));
 
-    /* Call handler, if defined */
-    if (user->leave_handler)
-        user->leave_handler(user);
-    else if (client->leave_handler)
-        client->leave_handler(user);
-
     /* Update prev / head */
     if (user->__prev != NULL)
         user->__prev->__next = user->__next;
@@ -330,6 +324,12 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
         client->__owner = NULL;
 
     pthread_rwlock_unlock(&(client->__users_lock));
+
+    /* Call handler, if defined */
+    if (user->leave_handler)
+        user->leave_handler(user);
+    else if (client->leave_handler)
+        client->leave_handler(user);
 
 }
 
