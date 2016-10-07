@@ -108,15 +108,22 @@ typedef struct guac_drv_display {
     pthread_t render_thread;
 
     /**
-     * Condition which is signalled when an operation has affected the display 
-     * in a way that will require a frame flush.
+     * Flag set whenever an operation has affected the display in a way that
+     * will require a frame flush. When this flag is set, the modified_cond
+     * condition will be signalled. The modified_lock will always be
+     * acquired before this flag is altered.
      */
-    pthread_cond_t modified;
+    int modified;
 
     /**
-     * The mutex associated with the modified condition, locked whenever
-     * a thread is waiting on the modified condition, or when the modified
-     * condition is being signalled.
+     * Condition which is signalled when the modified flag has been set
+     */
+    pthread_cond_t modified_cond;
+
+    /**
+     * The mutex associated with the modified condition and flag, locked
+     * whenever a thread is waiting on the modified condition, the modified
+     * condition is being signalled, or the modified flag is being changed.
      */
     pthread_mutex_t modified_lock;
 
