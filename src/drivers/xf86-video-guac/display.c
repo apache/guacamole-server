@@ -152,11 +152,14 @@ void* guac_drv_render_thread(void* arg) {
 
         } /* end if display modified in time */
 
+        /* Record end of frame, excluding server-side rendering time (we assume
+         * server-side rendering time will be consistent between any two
+         * subsequent frames, and that this time should thus be excluded from
+         * the required wait period of the next frame). */
+        last_frame_end = guac_timestamp_current();
+
         /* End frame */
         guac_drv_display_flush(display);
-
-        /* Record end of frame */
-        last_frame_end = guac_timestamp_current();
 
     }
 
