@@ -38,7 +38,6 @@ noinst_HEADERS =      \
     log.h             \
     pixmap.h          \
     poly.h            \
-    rect.h            \
     screen.h          \
     spans.h           \
     user.h            \
@@ -59,7 +58,6 @@ guac_drv_la_SOURCES = \
     log.c             \
     pixmap.c          \
     poly.c            \
-    rect.c            \
     screen.c          \
     spans.c           \
     user.c            \

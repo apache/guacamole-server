@@ -20,7 +20,6 @@
 
 #include "config.h"
 #include "drawable.h"
-#include "rect.h"
 #include "list.h"
 
 #include <xf86.h>

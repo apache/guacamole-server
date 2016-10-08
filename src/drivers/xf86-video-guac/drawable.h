@@ -23,8 +23,6 @@
 
 #include "config.h"
 #include "common/display.h"
-#include "rect.h"
-#include "list.h"
 
 #include <stdint.h>
 

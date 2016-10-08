@@ -23,7 +23,6 @@
 
 #include "config.h"
 #include "display.h"
-#include "list.h"
 
 #include <xorg-server.h>
 #include <xf86.h>

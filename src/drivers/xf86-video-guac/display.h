@@ -56,39 +56,6 @@
 #define GUAC_DRV_FRAME_TIMEOUT 0
 
 /**
- * A flushed copy operation.
- */
-typedef struct guac_drv_display_copy_operation {
-
-    /**
-     * The order of the originating copy pixel. This is preserved
-     * to ensure that the regerated copies run in a safe order.
-     */
-    int order;
-
-    /**
-     * The source drawable.
-     */
-    guac_drv_drawable* source;
-
-    /**
-     * The source rectangle.
-     */
-    guac_drv_rect source_rect;
-
-    /**
-     * Destination X coordinate.
-     */
-    int dx;
-
-    /**
-     * Destination Y coordinate.
-     */
-    int dy;
-
-} guac_drv_display_copy_operation;
-
-/**
  * Private data for each screen, containing handlers for wrapped functions
  * and structures required for Guacamole protocol communication.
  */
