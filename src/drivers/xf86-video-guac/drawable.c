@@ -86,22 +86,31 @@ void guac_drv_drawable_put(guac_drv_drawable* drawable,
         case GUAC_DRV_DRAWABLE_ARGB_32:
             surface = cairo_image_surface_create_for_data((unsigned char*) data,
                     CAIRO_FORMAT_ARGB32, w, h, stride);
-            guac_common_surface_draw(drawable->layer->surface, dx, dy, surface);
             break;
 
         /* 24bpp */
         case GUAC_DRV_DRAWABLE_RGB_24:
             surface = cairo_image_surface_create_for_data((unsigned char*) data,
                     CAIRO_FORMAT_RGB24, w, h, stride);
-            guac_common_surface_draw(drawable->layer->surface, dx, dy, surface);
             break;
 
-        /* Use stub by default */
+        /* Unsupported format */
         default:
-            xf86Msg(X_INFO, "guac: STUB FFFF00: %s:%d: %s()\n",
-                    __FILE__, __LINE__, __func__);
-            guac_drv_drawable_stub(drawable, dx, dy, w, h, 0xFFFF00);
+            surface = NULL;
 
+    }
+
+    /* Draw surface if conversion was successful */
+    if (surface != NULL) {
+        guac_common_surface_draw(drawable->layer->surface, dx, dy, surface);
+        cairo_surface_destroy(surface);
+    }
+
+    /* Otherwise use stub */
+    else {
+        xf86Msg(X_INFO, "guac: STUB FFFF00: %s:%d: %s()\n",
+                __FILE__, __LINE__, __func__);
+        guac_drv_drawable_stub(drawable, dx, dy, w, h, 0xFFFF00);
     }
 
 }
