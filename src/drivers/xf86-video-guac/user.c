@@ -61,6 +61,7 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
     guac_drv_display_sync_user(display, user);
 
     /* Set user event handlers */
+    user->key_handler   = guac_drv_user_key_handler;
     user->mouse_handler = guac_drv_user_mouse_handler;
     user->leave_handler = guac_drv_user_leave_handler;
 
@@ -82,6 +83,45 @@ int guac_drv_user_leave_handler(guac_user* user) {
 
 }
 
+/**
+ * Sends the given event along the file descriptor used by the Guacamole X.Org
+ * input driver. If the X.Org server has not yet finished initializing, and the
+ * file descriptor is not yet defined, this function has no effect.
+ *
+ * @param user
+ *     The user associated with the event being sent.
+ *
+ * @param event
+ *     The input event to send.
+ */
+static void guac_drv_user_send_event(guac_user* user,
+        guac_drv_input_event* event) {
+
+    /* Do not send packet if input file descriptor not yet ready */
+    if (GUAC_DRV_INPUT_WRITE_FD == -1)
+        return;
+
+    /* Send packet */
+    guac_drv_write(GUAC_DRV_INPUT_WRITE_FD, event,
+            sizeof(guac_drv_input_event));
+
+}
+
+int guac_drv_user_key_handler(guac_user* user, int keysym, int pressed) {
+
+    /* Build keyboard event packet */
+    guac_drv_input_event event;
+    event.type = GUAC_DRV_INPUT_EVENT_KEYBOARD;
+    event.data.keyboard.keysym = keysym;
+    event.data.keyboard.pressed = pressed;
+
+    /* Send packet */
+    guac_drv_user_send_event(user, &event);
+
+    return 0;
+
+}
+
 int guac_drv_user_mouse_handler(guac_user* user,
         int x, int y, int mask) {
 
@@ -90,25 +130,20 @@ int guac_drv_user_mouse_handler(guac_user* user,
     /* Store current mouse location */
     guac_common_cursor_move(user_data->display->display->cursor, user, x, y);
 
-    /* If events can be written, send packet */
-    if (GUAC_DRV_INPUT_WRITE_FD != -1) {
+    /* Calculate button difference */
+    int change = mask ^ user_data->button_mask;
 
-        /* Calculate button difference */
-        int change = mask ^ user_data->button_mask;
+    /* Build mouse event packet */
+    guac_drv_input_event event;
+    event.type = GUAC_DRV_INPUT_EVENT_MOUSE;
+    event.data.mouse.mask = mask;
+    event.data.mouse.change_mask = change;
+    event.data.mouse.x = x;
+    event.data.mouse.y = y;
 
-        /* Build event packet */
-        guac_drv_input_event event;
-        event.type = GUAC_DRV_INPUT_EVENT_MOUSE;
-        event.data.mouse.mask = mask;
-        event.data.mouse.change_mask = change;
-        event.data.mouse.x = x;
-        event.data.mouse.y = y;
-
-        /* Send packet */
-        user_data->button_mask = mask;
-        guac_drv_write(GUAC_DRV_INPUT_WRITE_FD, &event, sizeof(event));
-
-    }
+    /* Send packet */
+    user_data->button_mask = mask;
+    guac_drv_user_send_event(user, &event);
 
     return 0;
 

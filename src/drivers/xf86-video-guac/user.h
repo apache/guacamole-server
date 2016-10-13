@@ -54,6 +54,11 @@ guac_user_join_handler guac_drv_user_join_handler;
 guac_user_leave_handler guac_drv_user_leave_handler;
 
 /**
+ * Handler for key events.
+ */
+guac_user_key_handler guac_drv_user_key_handler;
+
+/**
  * Handler for mouse events.
  */
 guac_user_mouse_handler guac_drv_user_mouse_handler;

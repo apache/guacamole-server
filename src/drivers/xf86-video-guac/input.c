@@ -108,6 +108,9 @@ int guac_input_device_control(DeviceIntPtr device, int what) {
                 (PtrCtrlProcPtr)NoopDDA, GetMotionHistorySize(),
                 2, axis_labels);
 
+        /* Init keyboard device */
+        InitKeyboardDeviceStruct(device, NULL, NULL, NULL);
+
     }
 
     /* Enable device */
@@ -156,6 +159,19 @@ void guac_input_read_input(InputInfoPtr info) {
             }
 
         } /* end if mouse event */
+
+        /* Handle keyboard events */
+        else if (event.type == GUAC_DRV_INPUT_EVENT_KEYBOARD) {
+
+            /* STUB */
+            xf86Msg(X_INFO, "guac: STUB: keysym=%#x pressed=%i\n",
+                    event.data.keyboard.keysym, event.data.keyboard.pressed);
+
+            /* MEGA STUB - Send the 'a' key */
+            xf86PostKeyboardEvent(GUAC_DRV_INPUT_DEVICE->dev, 38,
+                    event.data.keyboard.pressed);
+
+        } /* end if keyboard event */
 
     } /* end while events available */
 
