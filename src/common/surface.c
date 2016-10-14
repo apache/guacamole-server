@@ -1250,8 +1250,8 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy,
     guac_common_rect srect;
     guac_common_rect_init(&srect, sx, sy, w, h);
 
-    /* Clip operation source rect */
-    __guac_common_clip_rect(src, &srect, &dx, &dy);
+    /* Clip operation source rect to bounds */
+    __guac_common_bound_rect(src, &srect, &dx, &dy);
     if (srect.width <= 0 || srect.height <= 0)
         goto complete;
 
@@ -1291,7 +1291,7 @@ void guac_common_surface_copy(guac_common_surface* src, int sx, int sy,
 
     /* Update backing surface last if drect can intersect srect */
     if (src == dst)
-        __guac_common_surface_transfer(src, &sx, &sy,
+        __guac_common_surface_transfer(src, &srect.x, &srect.y,
                 GUAC_TRANSFER_BINARY_SRC, dst, &drect);
 
 complete:
@@ -1318,8 +1318,8 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
     guac_common_rect srect;
     guac_common_rect_init(&srect, sx, sy, w, h);
 
-    /* Clip operation source rect */
-    __guac_common_clip_rect(src, &srect, &dx, &dy);
+    /* Clip operation source rect to bounds */
+    __guac_common_bound_rect(src, &srect, &dx, &dy);
     if (srect.width <= 0 || srect.height <= 0)
         goto complete;
 
