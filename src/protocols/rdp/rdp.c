@@ -832,6 +832,13 @@ static int guac_rdp_handle_connection(guac_client* client) {
                     break;
 
             } while (wait_result > 0);
+
+            /* Record end of frame, excluding server-side rendering time (we
+             * assume server-side rendering time will be consistent between any
+             * two subsequent frames, and that this time should thus be
+             * excluded from the required wait period of the next frame). */
+            last_frame_end = frame_start;
+
         }
 
         /* If an error occurred, fail */
@@ -839,14 +846,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                     "Connection closed.");
 
-        /* Record end of frame, excluding server-side rendering time (we assume
-         * server-side rendering time will be consistent between any two
-         * subsequent frames, and that this time should thus be excluded from
-         * the required wait period of the next frame). */
-        last_frame_end = guac_timestamp_current();
-
         /* Flush frame */
-        /* End of frame */
         guac_common_display_flush(rdp_client->display);
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
