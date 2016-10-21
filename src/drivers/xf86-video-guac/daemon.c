@@ -131,9 +131,9 @@ static void* guac_drv_connection_thread(void* data) {
 
     const char* identifier = parser->argv[0];
 
-    /* Accept connections for the X11 protocol */
-    if (strcmp(identifier, "x11") == 0)
-        guac_drv_log(GUAC_LOG_INFO, "Protocol \"%s\" selected", identifier);
+    /* Accept connections for this driver only */
+    if (strcmp(identifier, "xorg") == 0)
+        guac_drv_log(GUAC_LOG_INFO, "X.Org video driver selected", identifier);
 
     /* Allow the overall connection to be joined (there is only one) */
     else if (strcmp(identifier, client->connection_id) == 0)
