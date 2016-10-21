@@ -27,6 +27,7 @@
 #include <xf86.h>
 #include <xf86_OSproc.h>
 #include <xf86Xinput.h>
+#include <xkbsrv.h>
 #include <xserver-properties.h>
 #include <exevents.h>
 
@@ -126,6 +127,61 @@ int guac_input_device_control(DeviceIntPtr device, int what) {
     return Success;
 }
 
+/**
+ * Translates the given keysym to the corresponding X11 keycode using the map
+ * defined via XKB, posting an event which presses/releases that key. If no
+ * keycode is defined for the given keysym, a warning will be logged to the
+ * X.Org logs.
+ *
+ * @param syms
+ *     The map of keysyms returned from XKB, such as from XkbGetCoreMap().
+ *
+ * @param keysym
+ *     The keysym which represents the key which was pressed or released.
+ *
+ * @param pressed
+ *     Non-zero if the key was pressed, zero if the key was released.
+ */
+static void guac_input_translate_keysym(KeySymsPtr syms, int keysym,
+        int pressed) {
+
+    int i;
+
+    /* Calculate number of keysyms within the map */
+    int length = (syms->maxKeyCode - syms->minKeyCode + 1) * syms->mapWidth;
+
+    /* Search entire map for the pressed keysym */
+    for (i = 0; i < length; i++) {
+
+        /* Post keycode(s) if keysym matches */
+        if (syms->map[i] == keysym) {
+
+            /* Calculate actual keycode and modifier states which correspond to
+             * the mapped key */
+            int keycode = i / syms->mapWidth + syms->minKeyCode;
+            int modifiers = i % syms->mapWidth;
+
+            /* STUB: We're ignoring modifier state entirely */
+            xf86Msg(X_INFO, "guac: STUB: keycode=%i (ignored modifiers=%#x)\n",
+                    keycode, modifiers);
+
+            /* Send key event */
+            xf86PostKeyboardEvent(GUAC_DRV_INPUT_DEVICE->dev,
+                    keycode, pressed);
+
+            /* Successfully mapped */
+            return;
+
+        }
+
+    }
+
+    /* Warn if the keysym couldn't be found */
+    xf86Msg(X_WARNING, "guac: Unable to translate keysym %#x\n. Keyboard "
+            "event dropped!", keysym);
+
+}
+
 void guac_input_read_input(InputInfoPtr info) {
 
     /* Wait for data */
@@ -163,13 +219,25 @@ void guac_input_read_input(InputInfoPtr info) {
         /* Handle keyboard events */
         else if (event.type == GUAC_DRV_INPUT_EVENT_KEYBOARD) {
 
-            /* STUB */
-            xf86Msg(X_INFO, "guac: STUB: keysym=%#x pressed=%i\n",
-                    event.data.keyboard.keysym, event.data.keyboard.pressed);
+            /* Get keyboard layout from XKB */
+            KeySymsPtr syms = XkbGetCoreMap(GUAC_DRV_INPUT_DEVICE->dev);
+            if (syms == NULL)
+                xf86Msg(X_WARNING, "Unable to read server keyboard layout. "
+                        "All keyboard events from Guacamole will be "
+                        "dropped!\n");
 
-            /* MEGA STUB - Send the 'a' key */
-            xf86PostKeyboardEvent(GUAC_DRV_INPUT_DEVICE->dev, 38,
-                    event.data.keyboard.pressed);
+            else {
+
+                /* Translate keysyms into keycodes via XKB layout */
+                guac_input_translate_keysym(syms,
+                        event.data.keyboard.keysym,
+                        event.data.keyboard.pressed);
+
+                /* Free keyboard layout */
+                free(syms->map);
+                free(syms);
+
+            }
 
         } /* end if keyboard event */
 
