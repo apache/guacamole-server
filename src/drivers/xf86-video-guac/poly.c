@@ -69,9 +69,48 @@ void guac_drv_polypoint(DrawablePtr drawable, GCPtr gc, int mode, int npt,
 
 void guac_drv_polyline(DrawablePtr drawable, GCPtr gc, int mode, int npt,
         DDXPointPtr init) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
+
+    /* Call framebuffer version */
     fbPolyLine(drawable, gc, mode, npt, init);
+
+    /* If less than two points, nothing to do */
+    if (npt < 2)
+        return;
+
+    /* Retrieve first point in list */
+    int x1 = init->x;
+    int y1 = init->y;
+
+    /* Iterate over remaining points only */
+    DDXPointPtr current = &init[1];
+    int remaining = npt - 1;
+
+    /* Draw one line between each pair of points */
+    while (remaining > 0) {
+
+        /* Get coordinates of current point in series */
+        int x2 = current->x;
+        int y2 = current->y;
+
+        /* Use previous point as origin, if requested */
+        if (mode == CoordModePrevious) {
+            x2 += x1;
+            y2 += y1;
+        }
+
+        /* Draw line between previous and current points */
+        guac_drv_copy_line(drawable, gc, x1, y1, x2, y2);
+
+        /* Start next line at current point */
+        x1 = x2;
+        y1 = y2;
+
+        /* Advance to ext point in series */
+        current++;
+        remaining--;
+
+    }
+
 }
 
 void guac_drv_polysegment(DrawablePtr drawable, GCPtr gc, int nseg,
