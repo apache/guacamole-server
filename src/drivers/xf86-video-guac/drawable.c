@@ -37,6 +37,30 @@ void guac_drv_drawable_stub(guac_drv_drawable* drawable, int dx, int dy,
 void guac_drv_drawable_copy_fb(DrawablePtr src, int srcx, int srcy,
         int srcw, int srch, guac_drv_drawable* dst, int dstx, int dsty) {
 
+    /* Ensure left edge of source rect does not exceed bounds */
+    if (srcx < 0) {
+        srcw += srcx;
+        srcx = 0;
+    }
+
+    /* Ensure top edge of source rect does not exceed bounds */
+    if (srcy < 0) {
+        srch += srcy;
+        srcy = 0;
+    }
+
+    /* Ensure right edge of source rect does not exceed bounds */
+    if (srcx + srcw > src->width)
+        srcw -= srcx + srcw - src->width;
+
+    /* Ensure bottom edge of source rect does not exceed bounds */
+    if (srcy + srch > src->height)
+        srch -= srcy + srch - src->height;
+
+    /* Do not copy empty rectangles */
+    if (srcw <= 0 || srch <= 0)
+        return;
+
     /* Retrieve image contents */
     char* buffer = malloc(srcw * srch * 4);
     fbGetImage(src, srcx, srcy, srcw, srch, ZPixmap, FB_ALLONES, buffer);
