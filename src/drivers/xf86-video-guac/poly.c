@@ -151,9 +151,76 @@ void guac_drv_polyrectangle(DrawablePtr drawable, GCPtr gc, int nrects,
 
 void guac_drv_fillpolygon(DrawablePtr drawable, GCPtr gc, int shape, int mode,
         int count, DDXPointPtr pts) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
+
+    /* Call framebuffer version */
     fbFillPolygon(drawable, gc, shape, mode, count, pts);
+
+    /* Get drawable */
+    guac_drv_drawable* guac_drawable = guac_drv_get_drawable(drawable);
+
+    /* Draw to windows only */
+    if (guac_drawable == NULL)
+        return;
+
+    /* If less than two points, nothing to do */
+    if (count < 2)
+        return;
+
+    /* Get guac_drv_screen */
+    guac_drv_screen* guac_screen =
+        (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
+                                     GUAC_GC_PRIVATE);
+
+    /* Retrieve first point in list */
+    int x = pts->x;
+    int y = pts->y;
+
+    /* Init extents to first point in the list */
+    int x1 = x;
+    int y1 = y;
+    int x2 = x;
+    int y2 = y;
+
+    /* Iterate over remaining points only */
+    DDXPointPtr current = &pts[1];
+    int remaining = count - 1;
+
+    while (remaining > 0) {
+
+        /* Use previous point as origin, if requested */
+        if (mode == CoordModePrevious) {
+            x += current->x;
+            y += current->y;
+        }
+
+        /* Otherwise coordinates are absolute */
+        else {
+            x = current->x;
+            y = current->y;
+        }
+
+        /* Expand left/right of region to contain point */
+        if (x < x1) x1 = x;
+        if (x > x2) x2 = x;
+
+        /* Expand top/bottom of region to contain point */
+        if (y < y1) y1 = y;
+        if (y > y2) y2 = y;
+
+        /* Advance to ext point in series */
+        current++;
+        remaining--;
+
+    }
+
+    /* Copy region from framebuffer */
+    GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+        fbGetCompositeClip(gc), guac_drv_drawable_copy_fb,
+        drawable, x1, y1, x2 - x1, y2 - y1, guac_drawable, x1, y1);
+
+    /* Signal change */
+    guac_drv_display_touch(guac_screen->display);
+
 }
 
 void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
