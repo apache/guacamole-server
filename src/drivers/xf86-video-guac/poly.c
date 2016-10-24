@@ -31,6 +31,35 @@
 #include <xf86.h>
 #include <fb.h>
 
+/**
+ * Copies the region of the framebuffer which corresponds to the line having
+ * the given coordinates, taking into account the stroke width, etc.
+ */
+static void guac_drv_copy_line(DrawablePtr drawable, GCPtr gc, int x1, int y1,
+        int x2, int y2) {
+
+    /* Get drawable */
+    guac_drv_drawable* guac_drawable = guac_drv_get_drawable(drawable);
+
+    /* Draw to windows only */
+    if (guac_drawable == NULL)
+        return;
+
+    /* Get guac_drv_screen */
+    guac_drv_screen* guac_screen =
+        (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
+                                     GUAC_GC_PRIVATE);
+
+    /* Copy region from framebuffer */
+    GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+        fbGetCompositeClip(gc), guac_drv_drawable_copy_fb,
+        drawable, x1, y1, x2 - x1, y2 - y1, guac_drawable, x1, y1);
+
+    /* Signal change */
+    guac_drv_display_touch(guac_screen->display);
+
+}
+
 void guac_drv_polypoint(DrawablePtr drawable, GCPtr gc, int mode, int npt,
         DDXPointPtr init) {
     /* STUB */
@@ -54,9 +83,31 @@ void guac_drv_polysegment(DrawablePtr drawable, GCPtr gc, int nseg,
 
 void guac_drv_polyrectangle(DrawablePtr drawable, GCPtr gc, int nrects,
         xRectangle* rects) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
+
+    int i;
+
+    /* Call framebuffer version */
     fbPolyRectangle(drawable, gc, nrects, rects);
+
+    /* Draw all rects */
+    for (i = 0; i < nrects; i++) {
+
+        xRectangle* rect = &(rects[i]);
+
+        /* Determine rectangle extents */
+        int left   = rect->x;
+        int top    = rect->y;
+        int right  = rect->x + rect->width;
+        int bottom = rect->y + rect->width;
+
+        /* Copy all four lines of the rectangle */
+        guac_drv_copy_line(drawable, gc, left,  top,    right, top);
+        guac_drv_copy_line(drawable, gc, right, top,    right, bottom);
+        guac_drv_copy_line(drawable, gc, right, bottom, left,  bottom);
+        guac_drv_copy_line(drawable, gc, left,  bottom, left,  top);
+
+    }
+
 }
 
 void guac_drv_polyarc(DrawablePtr drawable, GCPtr gc, int narcs,
