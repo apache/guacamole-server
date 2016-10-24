@@ -115,9 +115,22 @@ void guac_drv_polyline(DrawablePtr drawable, GCPtr gc, int mode, int npt,
 
 void guac_drv_polysegment(DrawablePtr drawable, GCPtr gc, int nseg,
         xSegment* segs) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
+
+    int i;
+
+    /* Call framebuffer version */
     fbPolySegment(drawable, gc, nseg, segs);
+
+    /* Draw all segments */
+    for (i = 0; i < nseg; i++) {
+
+        xSegment* seg = &(segs[i]);
+
+        /* Copy region from framebuffer */
+        guac_drv_copy_line(drawable, gc, seg->x1, seg->y1, seg->x2, seg->y2);
+
+    }
+
 }
 
 void guac_drv_polyrectangle(DrawablePtr drawable, GCPtr gc, int nrects,
