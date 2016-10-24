@@ -44,7 +44,6 @@ const DevPrivateKey GUAC_SCREEN_PRIVATE = &__GUAC_SCREEN_PRIVATE;
 
 Bool guac_drv_pre_init(ScrnInfoPtr screen, int flags) {
 
-    OptionInfoRec read_options[1];
     ClockRangePtr clock_range;
     Gamma ZERO_GAMMA = { 0.0, 0.0, 0.0 };
     rgb ZERO_RGB = { 0, 0, 0 };
@@ -70,11 +69,6 @@ Bool guac_drv_pre_init(ScrnInfoPtr screen, int flags) {
     /* Set gamma */
     if (!xf86SetGamma(screen, ZERO_GAMMA))
         return FALSE;
-
-    /* Read options */
-    xf86CollectOptions(screen, NULL);
-    memcpy(read_options, GUAC_OPTIONS, sizeof(GUAC_OPTIONS));
-    xf86ProcessOptions(screen->scrnIndex, screen->options, read_options);
 
     /* VRAM (in kilobytes) */
     screen->videoRam = GUAC_DRV_VRAM;
@@ -625,9 +619,19 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
     screen->width = screen_info->currentMode->HDisplay;
     screen->height = screen_info->currentMode->VDisplay;
 
+    /* Init options to defaults */
+    OptionInfoRec options[GUAC_DRV_OPTIONINFOREC_SIZE];
+    memcpy(options, GUAC_OPTIONS, sizeof(GUAC_OPTIONS));
+
+    /* Read options from xorg.conf */
+    xf86CollectOptions(screen_info, NULL);
+    xf86ProcessOptions(screen_info->scrnIndex, screen_info->options, options);
+
     /* Init display */
-    guac_screen->display =
-        guac_drv_display_alloc(screen->width, screen->height);
+    guac_screen->display = guac_drv_display_alloc(
+            options[GUAC_DRV_OPTION_LISTEN_ADDRESS].value.str,
+            options[GUAC_DRV_OPTION_LISTEN_PORT].value.str,
+            screen->width, screen->height);
 
     screen->SaveScreen = guac_drv_save_screen;
 

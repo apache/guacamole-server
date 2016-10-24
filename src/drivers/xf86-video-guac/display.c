@@ -167,7 +167,8 @@ void* guac_drv_render_thread(void* arg) {
 
 }
 
-guac_drv_display* guac_drv_display_alloc(int width, int height) {
+guac_drv_display* guac_drv_display_alloc(const char* address, const char* port,
+        int width, int height) {
 
     guac_drv_display* display = malloc(sizeof(guac_drv_display));
 
@@ -177,6 +178,8 @@ guac_drv_display* guac_drv_display_alloc(int width, int height) {
     client->log_handler = guac_drv_client_log;
     client->data = display;
 
+    display->listen_address = address;
+    display->listen_port = port;
     display->display = guac_common_display_alloc(client, width, height);
     display->client = client;
     display->modified = 0;

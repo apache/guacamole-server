@@ -191,10 +191,6 @@ void* guac_drv_listen_thread(void* arg) {
     socklen_t client_addr_len;
     int connected_socket_fd;
 
-    /* Arguments */
-    char* listen_address = NULL; /* Default address of INADDR_ANY */
-    char* listen_port = "4822";  /* Default port */
-
     /* General */
     int retval;
 
@@ -203,7 +199,7 @@ void* guac_drv_listen_thread(void* arg) {
             "version " VERSION);
 
     /* Get addresses for binding */
-    if ((retval = getaddrinfo(listen_address, listen_port,
+    if ((retval = getaddrinfo(display->listen_address, display->listen_port,
                     &hints, &addresses))) {
 
         guac_drv_log(GUAC_LOG_ERROR, "Error parsing given address or port: %s",

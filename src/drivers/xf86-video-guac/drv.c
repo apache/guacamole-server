@@ -50,8 +50,23 @@ _X_EXPORT DriverRec GUAC = {
  * Options.
  */
 
-const OptionInfoRec GUAC_OPTIONS[1] = {
+const OptionInfoRec GUAC_OPTIONS[GUAC_DRV_OPTIONINFOREC_SIZE] = {
+
+    /* Listen host/address */
+    {
+        GUAC_DRV_OPTION_LISTEN_ADDRESS,
+        "ListenAddress", OPTV_STRING,  { .str = NULL }, FALSE
+    },
+
+    /* Listen port */
+    {
+        GUAC_DRV_OPTION_LISTEN_PORT,
+        "ListenPort", OPTV_STRING, { .str = "4823" }, FALSE
+    },
+
+    /* End of options */
     { -1, NULL, OPTV_NONE, {0}, FALSE }
+
 };
 
 /*

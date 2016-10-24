@@ -62,6 +62,18 @@
 typedef struct guac_drv_display {
 
     /**
+     * The host or address that the instance of guacd built into the Guacamole
+     * X.Org driver should listen on.
+     */
+    const char* listen_address;
+
+    /**
+     * The port that the instance of guacd built into the Guacamole X.Org
+     * driver should listen on.
+     */
+    const char* listen_port;
+
+    /**
      * The thread which listens for incoming Guacamole connections.
      */
     pthread_t listen_thread;
@@ -111,7 +123,8 @@ typedef struct guac_drv_display {
 /**
  * Allocates a new multicast display.
  */
-guac_drv_display* guac_drv_display_alloc(int width, int height);
+guac_drv_display* guac_drv_display_alloc(const char* address, const char* port,
+        int width, int height);
 
 /**
  * Resizes the display to the given width and height.

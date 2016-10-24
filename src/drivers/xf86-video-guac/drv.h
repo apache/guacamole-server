@@ -60,6 +60,45 @@
 #define GUAC_DRV_USEC_TIMEOUT (GUAC_DRV_TIMEOUT*1000)
 
 /**
+ * The unique indices of all available options for the Guacamole X.Org driver.
+ * These indices correspond to the storage locations for options which can be
+ * specified within xorg.conf to configure the Guacamole X.Org driver.
+ */
+enum {
+
+    /**
+     * The host or address that the instance of guacd built into the Guacamole
+     * X.Org driver should listen on.
+     */
+    GUAC_DRV_OPTION_LISTEN_ADDRESS,
+
+    /**
+     * The port that the instance of guacd built into the Guacamole X.Org
+     * driver should listen on.
+     */
+    GUAC_DRV_OPTION_LISTEN_PORT,
+
+    /**
+     * The total number of options defined for the Guacamole X.Org driver.
+     */
+    GUAC_DRV_OPTION_COUNT,
+
+    /**
+     * The total number of elements which must exist in an OptionInfoRec array
+     * describing all available options defined for the Guacamole X.Org driver,
+     * including terminator.
+     */
+    GUAC_DRV_OPTIONINFOREC_SIZE
+
+};
+
+
+/**
+ * The unique index of the driver option which specifies the port that the
+ * instance of guacd built into the Guacamole X.Org driver should listen on.
+ */
+
+/**
  * Temporarily remove the Guacamole wrapper function, restoring the previous
  * state.
  */
@@ -99,7 +138,7 @@ Bool guac_drv_probe(DriverPtr drv, int flags);
 /**
  * All available options for the driver.
  */
-extern const OptionInfoRec GUAC_OPTIONS[1];
+extern const OptionInfoRec GUAC_OPTIONS[GUAC_DRV_OPTIONINFOREC_SIZE];
 
 #endif
 
