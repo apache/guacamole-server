@@ -149,13 +149,6 @@ void guac_drv_polyrectangle(DrawablePtr drawable, GCPtr gc, int nrects,
 
 }
 
-void guac_drv_polyarc(DrawablePtr drawable, GCPtr gc, int narcs,
-        xArc* arcs) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
-    fbPolyArc(drawable, gc, narcs, arcs);
-}
-
 void guac_drv_fillpolygon(DrawablePtr drawable, GCPtr gc, int shape, int mode,
         int count, DDXPointPtr pts) {
     /* STUB */
@@ -250,10 +243,72 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
 
 }
 
+void guac_drv_polyarc(DrawablePtr drawable, GCPtr gc, int narcs,
+        xArc* arcs) {
+
+    int i;
+
+    /* Call framebuffer version */
+    fbPolyArc(drawable, gc, narcs, arcs);
+
+    /* Draw all arcs */
+    for (i = 0; i < narcs; i++) {
+
+        xArc* arc = &(arcs[i]);
+
+        /* Determine arc extents */
+        int x1 = arc->x;
+        int y1 = arc->y;
+        int x2 = x1 + arc->width;
+        int y2 = y1 + arc->height;
+
+        /* Copy region from framebuffer */
+        guac_drv_copy_line(drawable, gc, x1, y1, x2, y2);
+
+    }
+
+}
+
 void guac_drv_polyfillarc(DrawablePtr drawable, GCPtr gc, int narcs,
         xArc* arcs) {
-    /* STUB */
-    GUAC_DRV_DRAWABLE_STUB_OP(drawable, gc);
+
+    int i;
+
+    /* Call framebuffer version */
     fbPolyFillArc(drawable, gc, narcs, arcs);
+
+    /* Get drawable */
+    guac_drv_drawable* guac_drawable = guac_drv_get_drawable(drawable);
+
+    /* Draw to windows only */
+    if (guac_drawable == NULL)
+        return;
+
+    /* Get guac_drv_screen */
+    guac_drv_screen* guac_screen =
+        (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
+                                     GUAC_GC_PRIVATE);
+
+    /* Draw all arcs */
+    for (i = 0; i < narcs; i++) {
+
+        /* Determine arc extents */
+        xArc* arc = &(arcs[i]);
+
+        int x1 = arc->x;
+        int y1 = arc->y;
+        int x2 = x1 + arc->width;
+        int y2 = y1 + arc->height;
+
+        /* Copy region from framebuffer */
+        GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
+            fbGetCompositeClip(gc), guac_drv_drawable_copy_fb,
+            drawable, x1, y1, x2 - x1, y2 - y1, guac_drawable, x1, y1);
+
+    }
+
+    /* Signal change */
+    guac_drv_display_touch(guac_screen->display);
+
 }
 
