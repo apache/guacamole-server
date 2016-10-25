@@ -30,6 +30,7 @@
 #include <xorg-server.h>
 #include <xf86.h>
 #include <fb.h>
+#include <miline.h>
 
 /**
  * Copies the region of the framebuffer which corresponds to the line having
@@ -37,6 +38,10 @@
  */
 static void guac_drv_copy_line(DrawablePtr drawable, GCPtr gc, int x1, int y1,
         int x2, int y2) {
+
+    /* Swap coordinates such that x2 >= x1 and y2 >= y1 */
+    if (x2 < x1) SWAPINT(x1, x2);
+    if (y2 < y1) SWAPINT(y1, y2);
 
     /* Get drawable */
     guac_drv_drawable* guac_drawable = guac_drv_get_drawable(drawable);
