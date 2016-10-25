@@ -163,8 +163,8 @@ void guac_drv_polyrectangle(DrawablePtr drawable, GCPtr gc, int nrects,
         /* Determine rectangle extents */
         int left   = rect->x;
         int top    = rect->y;
-        int right  = rect->x + rect->width;
-        int bottom = rect->y + rect->width;
+        int right  = left + rect->width;
+        int bottom = top  + rect->height;
 
         /* Copy all four lines of the rectangle */
         guac_drv_copy_line(drawable, gc, left,  top,    right, top);
