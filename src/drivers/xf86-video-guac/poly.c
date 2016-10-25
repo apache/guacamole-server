@@ -55,10 +55,19 @@ static void guac_drv_copy_line(DrawablePtr drawable, GCPtr gc, int x1, int y1,
         (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
                                      GUAC_GC_PRIVATE);
 
+    /* Calculate padding required to cover thickness/style of line */
+    int padding = gc->lineWidth;
+
+    /* Increase size of region to take into account line style */
+    x1 -= padding;
+    y1 -= padding;
+    x2 += padding;
+    y2 += padding;
+
     /* Copy region from framebuffer */
     GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
         fbGetCompositeClip(gc), guac_drv_drawable_copy_fb,
-        drawable, x1, y1, x2 - x1, y2 - y1, guac_drawable, x1, y1);
+        drawable, x1, y1, x2 - x1 + 1, y2 - y1 + 1, guac_drawable, x1, y1);
 
     /* Signal change */
     guac_drv_display_touch(guac_screen->display);
@@ -234,7 +243,7 @@ void guac_drv_fillpolygon(DrawablePtr drawable, GCPtr gc, int shape, int mode,
     /* Copy region from framebuffer */
     GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
         fbGetCompositeClip(gc), guac_drv_drawable_copy_fb,
-        drawable, x1, y1, x2 - x1, y2 - y1, guac_drawable, x1, y1);
+        drawable, x1, y1, x2 - x1 + 1, y2 - y1 + 1, guac_drawable, x1, y1);
 
     /* Signal change */
     guac_drv_display_touch(guac_screen->display);
@@ -377,18 +386,13 @@ void guac_drv_polyfillarc(DrawablePtr drawable, GCPtr gc, int narcs,
     /* Draw all arcs */
     for (i = 0; i < narcs; i++) {
 
-        /* Determine arc extents */
         xArc* arc = &(arcs[i]);
-
-        int x1 = arc->x;
-        int y1 = arc->y;
-        int x2 = x1 + arc->width;
-        int y2 = y1 + arc->height;
 
         /* Copy region from framebuffer */
         GUAC_DRV_DRAWABLE_CLIP(guac_drawable, drawable,
             fbGetCompositeClip(gc), guac_drv_drawable_copy_fb,
-            drawable, x1, y1, x2 - x1, y2 - y1, guac_drawable, x1, y1);
+            drawable, arc->x, arc->y, arc->width, arc->height,
+            guac_drawable, arc->x, arc->y);
 
     }
 
