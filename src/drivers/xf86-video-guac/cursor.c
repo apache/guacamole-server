@@ -23,6 +23,7 @@
 #include <xorg-server.h>
 #include <xf86.h>
 #include <xf86Cursor.h>
+#include <cursorstr.h>
 
 static void guac_drv_set_cursor_colors(ScrnInfoPtr screen, int bg, int fg) {
     xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
@@ -49,6 +50,19 @@ static Bool guac_drv_use_hw_cursor(ScreenPtr screen, CursorPtr cursor) {
     return TRUE;
 }
 
+static Bool guac_drv_use_hw_cursor_argb(ScreenPtr screen, CursorPtr cursor) {
+    return TRUE;
+}
+
+static void guac_drv_load_cursor_argb(ScrnInfoPtr screen_info,
+        CursorPtr cursor) {
+    xf86Msg(X_INFO, "guac: STUB: %s: (%i, %i) %ix%i\n", __func__,
+            cursor->bits->xhot,
+            cursor->bits->yhot,
+            cursor->bits->width,
+            cursor->bits->height);
+}
+
 Bool guac_drv_init_cursor(ScreenPtr screen) {
 
     /* Get cursor info struct */
@@ -59,15 +73,23 @@ Bool guac_drv_init_cursor(ScreenPtr screen) {
     /* Init cursor info */
     cursor_info->MaxHeight = 64;
     cursor_info->MaxWidth = 64;
-    cursor_info->Flags = HARDWARE_CURSOR_ARGB;
+    cursor_info->Flags =
+          HARDWARE_CURSOR_ARGB
+        | HARDWARE_CURSOR_UPDATE_UNHIDDEN;
 
     /* Set handlers */
-    cursor_info->SetCursorColors = guac_drv_set_cursor_colors;
     cursor_info->SetCursorPosition = guac_drv_set_cursor_position;
-    cursor_info->LoadCursorImage = guac_drv_load_cursor_image;
     cursor_info->HideCursor = guac_drv_hide_cursor;
     cursor_info->ShowCursor = guac_drv_show_cursor;
+
+    /* Legacy cursors */
+    cursor_info->SetCursorColors = guac_drv_set_cursor_colors;
     cursor_info->UseHWCursor = guac_drv_use_hw_cursor;
+    cursor_info->LoadCursorImage = guac_drv_load_cursor_image;
+
+    /* Full ARGB cursors */
+    cursor_info->UseHWCursorARGB = guac_drv_use_hw_cursor_argb;
+    cursor_info->LoadCursorARGB = guac_drv_load_cursor_argb;
 
     return xf86InitCursor(screen, cursor_info);
 
