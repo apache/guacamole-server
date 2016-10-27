@@ -4,15 +4,15 @@
 ------------------------------------------------------------
 
 This README is intended to provide quick and to-the-point documentation for
-technical users intending to compile parts of Guacamole themselves.
+technical users intending to compile parts of Apache Guacamole themselves.
 
-Source archives are available from the files section of the main project page:
+Source archives are available from the downloads section of the project website:
  
-    http://sourceforge.net/projects/guacamole/files/
+    http://guacamole.incubator.apache.org/
 
-A full manual is provided on the Guacamole web site:
+A full manual is available as well:
 
-    http://guac-dev.org/
+    http://guacamole.incubator.apache.org/doc/gug/
 
 
 ------------------------------------------------------------
@@ -38,7 +38,7 @@ proxy which translates between arbitrary protocols and the Guacamole protocol.
 All software within guacamole-server is built using the popular GNU Automake,
 and thus provides the standard configure script. Before compiling, you need to
 have compiled and installed libguac, the core Guacamole library. This is
-available from the main Guacamole site at http://guac-dev.org/.
+available from the main Apache Guacamole site at http://guacamole.incubator.apache.org/.
 
 1) Run configure
 
@@ -126,5 +126,5 @@ Additional information can be found in the guacd man page:
 Please report any bugs encountered by opening a new issue in the JIRA system
 hosted at:
     
-    http://glyptodon.org/jira/
+    https://issues.apache.org/jira/browse/GUACAMOLE
 
