@@ -6,7 +6,11 @@
 This README is intended to provide quick and to-the-point documentation for
 technical users intending to compile parts of Apache Guacamole themselves.
 
-A full manual is provided on the Apache Guacamole web site:
+Source archives are available from the downloads section of the project website:
+ 
+    http://guacamole.incubator.apache.org/
+
+A full manual is available as well:
 
     http://guacamole.incubator.apache.org/doc/gug/
 
