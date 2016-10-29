@@ -850,10 +850,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     }
 
-    /* Kill client and finish connection */
-    guac_client_stop(client);
-    guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
-
     pthread_mutex_lock(&(rdp_client->rdp_lock));
 
     /* Disconnect client and channels */
@@ -880,6 +876,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_common_display_free(rdp_client->display);
 
     pthread_mutex_unlock(&(rdp_client->rdp_lock));
+
+    /* Client is now disconnected */
+    guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
+
     return 0;
 
 }
