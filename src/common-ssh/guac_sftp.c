@@ -373,18 +373,29 @@ static int guac_common_ssh_sftp_ack_handler(guac_user* user,
 
         }
 
-        /* If EOF, send end */
-        else if (bytes_read == 0) {
-            guac_user_log(user, GUAC_LOG_DEBUG, "File sent");
-            guac_protocol_send_end(user->socket, stream);
-            guac_user_free_stream(user, stream);
-        }
-
-        /* Otherwise, fail stream */
+        /* If bytes could not be read, handle EOF or error condition */
         else {
-            guac_user_log(user, GUAC_LOG_INFO, "Error reading file");
-            guac_protocol_send_end(user->socket, stream);
-            guac_user_free_stream(user, stream);
+
+            /* If EOF, send end */
+            if (bytes_read == 0) {
+                guac_user_log(user, GUAC_LOG_DEBUG, "File sent");
+                guac_protocol_send_end(user->socket, stream);
+                guac_user_free_stream(user, stream);
+            }
+
+            /* Otherwise, fail stream */
+            else {
+                guac_user_log(user, GUAC_LOG_INFO, "Error reading file");
+                guac_protocol_send_end(user->socket, stream);
+                guac_user_free_stream(user, stream);
+            }
+
+            /* Close file */
+            if (libssh2_sftp_close(file) == 0)
+                guac_user_log(user, GUAC_LOG_DEBUG, "File closed");
+            else
+                guac_user_log(user, GUAC_LOG_INFO, "Unable to close file");
+
         }
 
         guac_socket_flush(user->socket);
