@@ -102,6 +102,10 @@ int guacd_user_start(guac_parser* parser, guac_user* user) {
     /* Wait for I/O threads */
     pthread_join(input_thread, NULL);
 
+    /* Explicitly signal disconnect */
+    guac_protocol_send_disconnect(user->socket);
+    guac_socket_flush(user->socket);
+
     /* Done */
     return 0;
 
