@@ -101,6 +101,10 @@ Bool guac_drv_pre_init(ScrnInfoPtr screen, int flags) {
     /* Prune any invalid modes */
     xf86PruneDriverModes(screen);
 
+    /* Allocate screen */
+    guac_drv_screen* guac_screen = malloc(sizeof(guac_drv_screen));
+    screen->driverPrivate = guac_screen;
+
     /* Set CRTC parameters */
     xf86SetCrtcForModes(screen, 0);
 
@@ -556,8 +560,8 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
     dixRegisterPrivateKey(GUAC_WINDOW_PRIVATE, PRIVATE_WINDOW, 0);
     dixRegisterPrivateKey(GUAC_GC_PRIVATE,     PRIVATE_GC,     0);
 
-    /* Allocate screen */
-    guac_screen = malloc(sizeof(guac_drv_screen));
+    /* Pull allocated guac_drv_screen from screen info */
+    guac_screen = (guac_drv_screen*) screen_info->driverPrivate;
     dixSetPrivate(&(screen->devPrivates), GUAC_SCREEN_PRIVATE, guac_screen);
 
     /* Allocate framebuffer */
