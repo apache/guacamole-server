@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "drv.h"
+#include "crtc.h"
 #include "cursor.h"
 #include "display.h"
 #include "gc.h"
@@ -105,11 +106,25 @@ Bool guac_drv_pre_init(ScrnInfoPtr screen, int flags) {
     guac_drv_screen* guac_screen = malloc(sizeof(guac_drv_screen));
     screen->driverPrivate = guac_screen;
 
-    /* Set CRTC parameters */
-    xf86SetCrtcForModes(screen, 0);
+    /* Set CRTC config handlers */
+    xf86CrtcConfigInit(screen, &guac_drv_crtc_configfuncs);
+
+    /* Init screen size limits */
+    xf86CrtcSetSizeRange(screen, 256, 256, 2048, 2048);
+
+    /* Allocate CRTC and corresponding output */
+    guac_screen->crtc = xf86CrtcCreate(screen, &guac_drv_crtc_funcs);
+    guac_screen->output = xf86OutputCreate(screen,
+            &guac_drv_output_funcs, "guac-0");
+
+    guac_screen->output->possible_crtcs = 1;
+    guac_screen->output->possible_clones = 0;
 
     /* Use first mode available */
     screen->currentMode = screen->modes;
+
+    /* Set CRTC parameters */
+    xf86InitialConfiguration(screen, TRUE);
 
     /* Print modes being used */
     xf86PrintModes(screen);
@@ -622,6 +637,8 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
 
     screen->width = screen_info->currentMode->HDisplay;
     screen->height = screen_info->currentMode->VDisplay;
+
+    xf86CrtcScreenInit(screen);
 
     /* Init options to defaults */
     OptionInfoRec options[GUAC_DRV_OPTIONINFOREC_SIZE];

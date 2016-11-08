@@ -27,6 +27,7 @@
 #include <xorg-server.h>
 #include <xf86.h>
 #include <xf86str.h>
+#include <xf86Crtc.h>
 
 #include <guacamole/client.h>
 #include <guacamole/pool.h>
@@ -46,6 +47,18 @@ typedef struct guac_drv_screen {
      * The framebuffer backing the screen.
      */
     unsigned char* framebuffer;
+
+    /**
+     * The CRTC (yes, that stands for Cathode Ray Tube Controller) created by
+     * the Guacamole X.Org driver for the sake of hooking into RANDR, mouse
+     * cursor changes, etc.
+     */
+    xf86CrtcPtr crtc;
+
+    /**
+     * The output associated with the CRTC.
+     */
+    xf86OutputPtr output;
 
     /**
      * Wrapped CloseScreen implementation.
