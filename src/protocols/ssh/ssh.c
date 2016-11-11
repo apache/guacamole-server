@@ -44,13 +44,13 @@
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 
@@ -362,19 +362,18 @@ void* ssh_client_thread(void* data) {
 
         /* Wait for more data if reads turn up empty */
         if (total_read == 0) {
-            fd_set fds;
-            struct timeval timeout;
 
-            FD_ZERO(&fds);
-            FD_SET(ssh_client->session->fd, &fds);
+            /* Wait on the SSH session file descriptor only */
+            struct pollfd fds[] = {{
+                .fd      = ssh_client->session->fd,
+                .events  = POLLIN,
+                .revents = 0,
+            }};
 
-            /* Wait for one second */
-            timeout.tv_sec = 1;
-            timeout.tv_usec = 0;
-
-            if (select(ssh_client->session->fd + 1, &fds,
-                        NULL, NULL, &timeout) < 0)
+            /* Wait up to one second */
+            if (poll(fds, 1, 1000) < 0)
                 break;
+
         }
 
     }
