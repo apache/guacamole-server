@@ -32,12 +32,12 @@
 #include "typescript.h"
 
 #include <errno.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <wchar.h>
@@ -463,19 +463,15 @@ void guac_terminal_free(guac_terminal* term) {
  */
 static int guac_terminal_wait_for_data(int fd, int msec_timeout) {
 
-    /* Build fd_set */
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
-
-    /* Split millisecond timeout into seconds and microseconds */
-    struct timeval timeout = {
-        .tv_sec  =  msec_timeout / 1000,
-        .tv_usec = (msec_timeout % 1000) * 1000
-    };
+    /* Build array of file descriptors */
+    struct pollfd fds[] = {{
+        .fd      = fd,
+        .events  = POLLIN,
+        .revents = 0,
+    }};
 
     /* Wait for data */
-    return select(fd+1, &fds, NULL, NULL, &timeout);
+    return poll(fds, 1, msec_timeout);
 
 }
 
