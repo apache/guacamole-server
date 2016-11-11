@@ -29,10 +29,10 @@
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -442,17 +442,15 @@ void guac_telnet_send_user(telnet_t* telnet, const char* username) {
  */
 static int __guac_telnet_wait(int socket_fd) {
 
-    fd_set fds;
-    struct timeval timeout;
-
-    FD_ZERO(&fds);
-    FD_SET(socket_fd, &fds);
+    /* Build array of file descriptors */
+    struct pollfd fds[] = {{
+        .fd      = socket_fd,
+        .events  = POLLIN,
+        .revents = 0,
+    }};
 
     /* Wait for one second */
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
-
-    return select(socket_fd+1, &fds, NULL, NULL, &timeout);
+    return poll(fds, 1, 1000);
 
 }
 
