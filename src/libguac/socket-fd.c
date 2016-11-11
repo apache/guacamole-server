@@ -22,6 +22,7 @@
 #include "error.h"
 #include "socket.h"
 
+#include <poll.h>
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -29,12 +30,6 @@
 #include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
-
-#ifdef __MINGW32__
-#include <winsock2.h>
-#else
-#include <sys/select.h>
-#endif
 
 /**
  * Data associated with an open socket which writes to a file descriptor.
@@ -337,24 +332,22 @@ static int guac_socket_fd_select_handler(guac_socket* socket,
 
     guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
 
-    fd_set fds;
-    struct timeval timeout;
     int retval;
 
-    /* Initialize fd_set with single underlying file descriptor */
-    FD_ZERO(&fds);
-    FD_SET(data->fd, &fds);
+    /* Initialize with single underlying file descriptor */
+    struct pollfd fds[1] = {{
+        .fd      = data->fd,
+        .events  = POLLIN,
+        .revents = 0,
+    }};
 
     /* No timeout if usec_timeout is negative */
     if (usec_timeout < 0)
-        retval = select(data->fd + 1, &fds, NULL, NULL, NULL); 
+        retval = poll(fds, 1, -1);
 
-    /* Handle timeout if specified */
-    else {
-        timeout.tv_sec = usec_timeout/1000000;
-        timeout.tv_usec = usec_timeout%1000000;
-        retval = select(data->fd + 1, &fds, NULL, NULL, &timeout);
-    }
+    /* Handle timeout if specified, rounding up to poll()'s granularity */
+    else
+        retval = poll(fds, 1, (usec_timeout + 999) / 1000);
 
     /* Properly set guac_error */
     if (retval <  0) {
