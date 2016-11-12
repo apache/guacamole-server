@@ -97,10 +97,10 @@
 #endif
 
 #include <errno.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -545,20 +545,20 @@ static void rdp_freerdp_context_free(freerdp* instance, rdpContext* context) {
 }
 
 /**
- * Waits for messages from the RDP server for the given number of microseconds.
+ * Waits for messages from the RDP server for the given number of milliseconds.
  *
  * @param client
  *     The client associated with the current RDP session.
  *
- * @param timeout_usecs
- *     The maximum amount of time to wait, in microseconds.
+ * @param timeout_msecs
+ *     The maximum amount of time to wait, in milliseconds.
  *
  * @return
  *     A positive value if messages are ready, zero if the specified timeout
  *     period elapsed, or a negative value if an error occurs.
  */
 static int rdp_guac_client_wait_for_messages(guac_client* client,
-        int timeout_usecs) {
+        int timeout_msecs) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     freerdp* rdp_inst = rdp_client->rdp_inst;
@@ -566,58 +566,56 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
 
     int result;
     int index;
-    int max_fd, fd;
-    void* read_fds[32];
-    void* write_fds[32];
+
+    /* List of all file descriptors which we may read data from */
+    void* read_fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
     int read_count = 0;
+
+    /* List of all file descriptors which data may be written to. These will
+     * ultimately be ignored, but FreeRDP requires that both read and write
+     * file descriptors be retrieved simultaneously. */
+    void* write_fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
     int write_count = 0;
-    fd_set rfds, wfds;
 
-    struct timeval timeout = {
-        .tv_sec  = 0,
-        .tv_usec = timeout_usecs
-    };
+    struct pollfd fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
 
-    /* Get RDP fds */
-    if (!freerdp_get_fds(rdp_inst, read_fds, &read_count, write_fds, &write_count)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to read RDP file descriptors.");
+    /* Get RDP file descriptors */
+    if (!freerdp_get_fds(rdp_inst, read_fds, &read_count,
+                write_fds, &write_count)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Unable to read RDP file descriptors.");
         return -1;
     }
 
-    /* Get channel fds */
-    if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count, write_fds,
-                &write_count)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to read RDP channel file descriptors.");
+    /* Get RDP channel file descriptors */
+    if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count,
+                write_fds, &write_count)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Unable to read RDP channel file descriptors.");
         return -1;
-    }
-
-    /* Construct read fd_set */
-    max_fd = 0;
-    FD_ZERO(&rfds);
-    for (index = 0; index < read_count; index++) {
-        fd = (int)(long) (read_fds[index]);
-        if (fd > max_fd)
-            max_fd = fd;
-        FD_SET(fd, &rfds);
-    }
-
-    /* Construct write fd_set */
-    FD_ZERO(&wfds);
-    for (index = 0; index < write_count; index++) {
-        fd = (int)(long) (write_fds[index]);
-        if (fd > max_fd)
-            max_fd = fd;
-        FD_SET(fd, &wfds);
     }
 
     /* If no file descriptors, error */
-    if (max_fd == 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "No file descriptors associated with RDP connection.");
+    if (read_count == 0) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "No file descriptors associated with RDP connection.");
         return -1;
     }
 
-    /* Wait for all RDP file descriptors */
-    result = select(max_fd + 1, &rfds, &wfds, NULL, &timeout);
+    /* Populate poll() array of read file descriptors */
+    for (index = 0; index < read_count; index++) {
+
+        struct pollfd* current = &fds[index];
+
+        /* Init poll() array element with RDP file descriptor */
+        current->fd      = (int)(long) (read_fds[index]);
+        current->events  = POLLIN;
+        current->revents = 0;
+
+    }
+
+    /* Wait until data can be read from RDP file descriptors */
+    result = poll(fds, read_count, timeout_msecs);
     if (result < 0) {
 
         /* If error ignorable, pretend timout occurred */
@@ -628,7 +626,8 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
             return 0;
 
         /* Otherwise, return as error */
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error waiting for file descriptor.");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Error waiting for file descriptor.");
         return -1;
 
     }
@@ -823,12 +822,12 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 /* Increase the duration of this frame if client is lagging */
                 if (required_wait > GUAC_RDP_FRAME_TIMEOUT)
                     wait_result = rdp_guac_client_wait_for_messages(client,
-                            required_wait*1000);
+                            required_wait);
 
                 /* Wait again if frame remaining */
                 else if (frame_remaining > 0)
                     wait_result = rdp_guac_client_wait_for_messages(client,
-                            GUAC_RDP_FRAME_TIMEOUT*1000);
+                            GUAC_RDP_FRAME_TIMEOUT);
                 else
                     break;
 

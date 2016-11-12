@@ -38,12 +38,12 @@
 
 /**
  * The amount of time to wait for a new message from the RDP server when
- * beginning a new frame. This value must be kept reasonably small such that
- * a slow RDP server will not prevent external events from being handled (such
- * as the stop signal from guac_client_stop()), but large enough that the
- * message handling loop does not eat up CPU spinning.
+ * beginning a new frame, in milliseconds. This value must be kept reasonably
+ * small such that a slow RDP server will not prevent external events from
+ * being handled (such as the stop signal from guac_client_stop()), but large
+ * enough that the message handling loop does not eat up CPU spinning.
  */
-#define GUAC_RDP_FRAME_START_TIMEOUT 250000
+#define GUAC_RDP_FRAME_START_TIMEOUT 250
 
 /**
  * The native resolution of most RDP connections. As Windows and other systems
@@ -88,6 +88,12 @@
  * appropriately.
  */
 #define GUAC_RDP_AUDIO_BPS 16
+
+/**
+ * The maximum number of file descriptors which can be associated with an RDP
+ * connection.
+ */
+#define GUAC_RDP_MAX_FILE_DESCRIPTORS 32
 
 /**
  * Handler which frees all data associated with the guac_client.

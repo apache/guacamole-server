@@ -21,8 +21,8 @@
 
 #include "socket-ssl.h"
 
+#include <poll.h>
 #include <stdlib.h>
-#include <sys/select.h>
 
 #include <guacamole/error.h>
 #include <guacamole/socket.h>
@@ -70,24 +70,22 @@ static int __guac_socket_ssl_select_handler(guac_socket* socket, int usec_timeou
 
     guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
 
-    fd_set fds;
-    struct timeval timeout;
     int retval;
 
-    /* Initialize fd_set with single underlying file descriptor */
-    FD_ZERO(&fds);
-    FD_SET(data->fd, &fds);
+    /* Initialize with single underlying file descriptor */
+    struct pollfd fds[1] = {{
+        .fd      = data->fd,
+        .events  = POLLIN,
+        .revents = 0,
+    }};
 
     /* No timeout if usec_timeout is negative */
     if (usec_timeout < 0)
-        retval = select(data->fd + 1, &fds, NULL, NULL, NULL); 
+        retval = poll(fds, 1, -1);
 
-    /* Handle timeout if specified */
-    else {
-        timeout.tv_sec = usec_timeout/1000000;
-        timeout.tv_usec = usec_timeout%1000000;
-        retval = select(data->fd + 1, &fds, NULL, NULL, &timeout);
-    }
+    /* Handle timeout if specified, rounding up to poll()'s granularity */
+    else
+        retval = poll(fds, 1, (usec_timeout + 999) / 1000);
 
     /* Properly set guac_error */
     if (retval <  0) {
