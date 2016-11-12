@@ -377,6 +377,7 @@ void* guacd_connection_thread(void* data) {
         socket = guac_socket_open_secure(ssl_context, connected_socket_fd);
         if (socket == NULL) {
             guacd_log_guac_error(GUAC_LOG_ERROR, "Unable to set up SSL/TLS");
+            close(connected_socket_fd);
             free(params);
             return NULL;
         }
