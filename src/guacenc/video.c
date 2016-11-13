@@ -397,7 +397,7 @@ void guacenc_video_prepare_frame(guacenc_video* video, guacenc_buffer* buffer) {
 
     /* Prepare scaling context */
     struct SwsContext* sws = sws_getContext(src->width, src->height,
-            PIX_FMT_RGB32, dst->width, dst->height, PIX_FMT_YUV420P,
+            AV_PIX_FMT_RGB32, dst->width, dst->height, AV_PIX_FMT_YUV420P,
             SWS_BICUBIC, NULL, NULL, NULL);
 
     /* Abort if scaling context could not be created */
