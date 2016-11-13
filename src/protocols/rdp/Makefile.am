@@ -22,8 +22,10 @@ ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac-client-rdp.la
 
+nodist_libguac_client_rdp_la_SOURCES = \
+    _generated_keymaps.c
+
 libguac_client_rdp_la_SOURCES = \
-    _generated_keymaps.c        \
     audio_input.c               \
     client.c                    \
     dvc.c                       \
