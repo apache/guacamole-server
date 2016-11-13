@@ -46,7 +46,7 @@ libguac_terminal_la_SOURCES =   \
     typescript.c
 
 libguac_terminal_la_CFLAGS = \
-    -Werror -Wall -pedantic  \
+    -Werror -Wall            \
     @COMMON_INCLUDE@         \
     @LIBGUAC_INCLUDE@        \
     @PANGO_CFLAGS@           \
