@@ -56,14 +56,17 @@ static Bool guac_drv_crtc_lock(xf86CrtcPtr crtc) {
 
 static void guac_drv_crtc_unlock(xf86CrtcPtr crtc) {
     /* Do nothing */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
 }
 
 static void guac_drv_crtc_set_cursor_colors(xf86CrtcPtr crtc, int bg, int fg) {
     /* Do nothing */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
 }
 
 static void guac_drv_crtc_set_cursor_position(xf86CrtcPtr crtc, int x, int y) {
     /* Do nothing */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
 }
 
 static void guac_drv_crtc_hide_cursor(xf86CrtcPtr crtc) {
@@ -83,6 +86,7 @@ static void guac_drv_crtc_load_cursor_argb(xf86CrtcPtr crtc, CARD32* image) {
 
 static void guac_drv_crtc_destroy(xf86CrtcPtr crtc) {
     /* Do nothing */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
 }
 
 xf86CrtcFuncsRec guac_drv_crtc_funcs = {
@@ -100,6 +104,7 @@ static Bool guac_drv_output_mode_valid(xf86OutputPtr output,
         DisplayModePtr modes) {
 
     /* Accept all modes */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
     return MODE_OK;
 
 }
@@ -107,6 +112,7 @@ static Bool guac_drv_output_mode_valid(xf86OutputPtr output,
 static xf86OutputStatus guac_drv_output_detect(xf86OutputPtr output) {
 
     /* Output is always connected */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
     return XF86OutputStatusConnected;
 
 }
@@ -130,15 +136,18 @@ static DisplayModePtr guac_drv_output_get_modes(xf86OutputPtr output) {
 
 static Bool guac_drv_output_set_property(xf86OutputPtr output, Atom property,
         RRPropertyValuePtr value) {
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
     return TRUE;
 }
 
 static Bool guac_drv_output_get_property(xf86OutputPtr output, Atom property) {
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
     return TRUE;
 }
 
 static void guac_drv_output_destroy(xf86OutputPtr output) {
     /* Do nothing */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
 }
 
 xf86OutputFuncsRec guac_drv_output_funcs = {
