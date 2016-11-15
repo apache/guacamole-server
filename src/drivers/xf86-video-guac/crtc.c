@@ -50,6 +50,11 @@ xf86CrtcConfigFuncsRec guac_drv_crtc_configfuncs = {
     .resize = guac_drv_crtc_resize
 };
 
+static void guac_drv_crtc_dpms(xf86CrtcPtr crtc, int mode) {
+    /* Do nothing */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+}
+
 static Bool guac_drv_crtc_lock(xf86CrtcPtr crtc) {
     return TRUE;
 }
@@ -89,7 +94,15 @@ static void guac_drv_crtc_destroy(xf86CrtcPtr crtc) {
     xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
 }
 
+static Bool guac_drv_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
+        Rotation rotation, int x, int y) {
+    /* Do nothing */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    return TRUE;
+}
+
 xf86CrtcFuncsRec guac_drv_crtc_funcs = {
+    .dpms = guac_drv_crtc_dpms,
     .lock = guac_drv_crtc_lock,
     .unlock = guac_drv_crtc_unlock,
     .set_cursor_colors = guac_drv_crtc_set_cursor_colors,
@@ -97,8 +110,14 @@ xf86CrtcFuncsRec guac_drv_crtc_funcs = {
     .show_cursor = guac_drv_crtc_show_cursor,
     .hide_cursor = guac_drv_crtc_hide_cursor,
     .load_cursor_argb = guac_drv_crtc_load_cursor_argb,
-    .destroy = guac_drv_crtc_destroy
+    .destroy = guac_drv_crtc_destroy,
+    .set_mode_major = guac_drv_crtc_set_mode_major
 };
+
+static void guac_drv_output_dpms(xf86OutputPtr output, int mode) {
+    /* Do nothing */
+    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+}
 
 static Bool guac_drv_output_mode_valid(xf86OutputPtr output,
         DisplayModePtr modes) {
@@ -151,6 +170,7 @@ static void guac_drv_output_destroy(xf86OutputPtr output) {
 }
 
 xf86OutputFuncsRec guac_drv_output_funcs = {
+    .dpms = guac_drv_output_dpms,
     .mode_valid = guac_drv_output_mode_valid,
     .detect = guac_drv_output_detect,
     .get_modes = guac_drv_output_get_modes,
