@@ -225,7 +225,7 @@ then
     have_ssl=yes
 
     AC_CHECK_HEADER(openssl/ssl.h,, [have_ssl=no])
-    AC_CHECK_LIB([ssl], [SSL_CTX_new], [SSL_LIBS="$SSL_LIBS -lssl"], [have_ssl=no])
+    AC_CHECK_LIB([ssl], [SSL_CTX_new], [SSL_LIBS="$SSL_LIBS -lssl -lcrypto"], [have_ssl=no])
 
     if test "x${have_ssl}" = "xno"
     then
