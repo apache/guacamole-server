@@ -107,6 +107,7 @@ static int __guac_socket_ssl_free_handler(guac_socket* socket) {
     /* Shutdown SSL */
     guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
     SSL_shutdown(data->ssl);
+    SSL_free(data->ssl);
 
     /* Close file descriptor */
     close(data->fd);
@@ -117,23 +118,29 @@ static int __guac_socket_ssl_free_handler(guac_socket* socket) {
 
 guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd) {
 
+    /* Create new SSL structure */
+    SSL* ssl = SSL_new(context);
+    if (ssl == NULL)
+        return NULL;
+
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
     guac_socket_ssl_data* data = malloc(sizeof(guac_socket_ssl_data));
 
     /* Init SSL */
     data->context = context;
-    data->ssl = SSL_new(context);
+    data->ssl = ssl;
     SSL_set_fd(data->ssl, fd);
 
     /* Accept SSL connection, handle errors */
-    if (SSL_accept(data->ssl) <= 0) {
+    if (SSL_accept(ssl) <= 0) {
 
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = "SSL accept failed";
 
         free(data);
         guac_socket_free(socket);
+        SSL_free(ssl);
         return NULL;
     }
 
