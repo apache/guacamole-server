@@ -36,6 +36,13 @@ static Bool guac_drv_crtc_resize(ScrnInfoPtr screen_info,
         (guac_drv_screen*) dixGetPrivate(&(screen->devPrivates),
                                          GUAC_SCREEN_PRIVATE);
 
+    /* Resize underlying pixmap of screen */
+    PixmapPtr pixmap = screen->GetScreenPixmap(screen);
+    if (pixmap != NULL)
+        screen->ModifyPixmapHeader(pixmap, width, height, -1, -1,
+                width * 4, guac_screen->framebuffer);
+
+    /* Resize Guacamole display */
     guac_drv_display* display = guac_screen->display;
     guac_drv_display_resize(display, width, height);
 
