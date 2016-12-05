@@ -46,6 +46,36 @@ void guac_drv_display_sync_user(guac_drv_display* display, guac_user* user) {
 
 }
 
+/**
+ * Resizes the display to the given width and height, taking into account the
+ * user's reported optimal DPI.
+ *
+ * @param user
+ *     The user for whom the display is being resized.
+ *
+ * @param w
+ *     The desired display width, in pixels.
+ *
+ * @param h
+ *     The desired display height, in pixels.
+ */
+static void guac_drv_user_resize_display(guac_user* user, int w, int h) {
+
+    guac_client* client = user->client;
+    guac_drv_display* display = (guac_drv_display*) client->data;
+
+    /* Get user's optimal DPI */
+    int dpi = user->info.optimal_resolution;
+
+    /* Scale width/height back to 96 DPI */
+    w = w * 96 / dpi;
+    h = h * 96 / dpi;
+
+    /* Request screen resize */
+    guac_drv_display_request_resize(display, w, h);
+
+}
+
 int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
 
     guac_client* client = user->client;
@@ -63,8 +93,8 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
     user->mouse_handler = guac_drv_user_mouse_handler;
     user->leave_handler = guac_drv_user_leave_handler;
 
-    /* Request screen resize */
-    guac_drv_display_request_resize(display, user->info.optimal_width,
+    /* Resize screen based on declared optimal settings */
+    guac_drv_user_resize_display(user, user->info.optimal_width,
             user->info.optimal_height);
 
     /* Init user display state */
@@ -114,11 +144,8 @@ static void guac_drv_user_send_event(guac_user* user,
 
 int guac_drv_user_size_handler(guac_user* user, int width, int height) {
 
-    guac_client* client = user->client;
-    guac_drv_display* display = (guac_drv_display*) client->data;
-
-    /* Request screen resize */
-    guac_drv_display_request_resize(display, width, height);
+    /* Resize display resize */
+    guac_drv_user_resize_display(user, width, height);
 
     return 0;
 
