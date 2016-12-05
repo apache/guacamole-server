@@ -47,6 +47,7 @@ static Bool guac_drv_crtc_resize(ScrnInfoPtr screen_info,
     /* Resize Guacamole display */
     guac_drv_display* display = guac_screen->display;
     guac_drv_display_resize(display, width, height);
+    guac_drv_display_touch(display);
 
     /* Get root drawable */
     guac_drv_drawable* root =

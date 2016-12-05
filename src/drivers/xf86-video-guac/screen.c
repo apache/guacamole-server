@@ -649,10 +649,9 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
     xf86ProcessOptions(screen_info->scrnIndex, screen_info->options, options);
 
     /* Init display */
-    guac_screen->display = guac_drv_display_alloc(
+    guac_screen->display = guac_drv_display_alloc(screen,
             options[GUAC_DRV_OPTION_LISTEN_ADDRESS].value.str,
-            options[GUAC_DRV_OPTION_LISTEN_PORT].value.str,
-            screen->width, screen->height);
+            options[GUAC_DRV_OPTION_LISTEN_PORT].value.str);
 
     screen->SaveScreen = guac_drv_save_screen;
 

@@ -30,6 +30,7 @@
 
 #include <xf86.h>
 #include <xf86str.h>
+#include <randrstr.h>
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
 
@@ -167,8 +168,8 @@ void* guac_drv_render_thread(void* arg) {
 
 }
 
-guac_drv_display* guac_drv_display_alloc(const char* address, const char* port,
-        int width, int height) {
+guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
+        const char* address, const char* port) {
 
     guac_drv_display* display = malloc(sizeof(guac_drv_display));
 
@@ -180,7 +181,9 @@ guac_drv_display* guac_drv_display_alloc(const char* address, const char* port,
 
     display->listen_address = address;
     display->listen_port = port;
-    display->display = guac_common_display_alloc(client, width, height);
+    display->screen = screen;
+    display->display = guac_common_display_alloc(client,
+            screen->width, screen->height);
     display->client = client;
     display->modified = 0;
 
@@ -214,7 +217,13 @@ guac_drv_display* guac_drv_display_alloc(const char* address, const char* port,
 }
 
 void guac_drv_display_resize(guac_drv_display* display, int w, int h) {
+    xf86Msg(X_INFO, "guac: Resizing surface to %ix%i\n", w, h);
     guac_common_surface_resize(display->display->default_surface, w, h);
+}
+
+void guac_drv_display_request_resize(guac_drv_display* display, int w, int h) {
+    xf86Msg(X_INFO, "guac: Requesting resize to %ix%i\n", w, h);
+    RRScreenSizeSet(display->screen, w, h, 0, 0);
 }
 
 guac_drv_drawable* guac_drv_display_create_layer(guac_drv_display* display,

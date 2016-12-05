@@ -57,13 +57,18 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
     user_data->display = display;
     user_data->button_mask = 0;
 
-    /* Init user display state */
-    guac_drv_display_sync_user(display, user);
-
     /* Set user event handlers */
+    user->size_handler  = guac_drv_user_size_handler;
     user->key_handler   = guac_drv_user_key_handler;
     user->mouse_handler = guac_drv_user_mouse_handler;
     user->leave_handler = guac_drv_user_leave_handler;
+
+    /* Request screen resize */
+    guac_drv_display_request_resize(display, user->info.optimal_width,
+            user->info.optimal_height);
+
+    /* Init user display state */
+    guac_drv_display_sync_user(display, user);
 
     return 0;
 
@@ -104,6 +109,18 @@ static void guac_drv_user_send_event(guac_user* user,
     /* Send packet */
     guac_drv_write(GUAC_DRV_INPUT_WRITE_FD, event,
             sizeof(guac_drv_input_event));
+
+}
+
+int guac_drv_user_size_handler(guac_user* user, int width, int height) {
+
+    guac_client* client = user->client;
+    guac_drv_display* display = (guac_drv_display*) client->data;
+
+    /* Request screen resize */
+    guac_drv_display_request_resize(display, width, height);
+
+    return 0;
 
 }
 

@@ -118,18 +118,33 @@ typedef struct guac_drv_display {
      */
     guac_common_display* display;
 
+    /**
+     * The X.Org screen with which the Guacamole X.Org driver is associated.
+     */
+    ScreenPtr screen;
+
 } guac_drv_display;
 
 /**
  * Allocates a new multicast display.
  */
-guac_drv_display* guac_drv_display_alloc(const char* address, const char* port,
-        int width, int height);
+guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
+        const char* address, const char* port);
 
 /**
- * Resizes the display to the given width and height.
+ * Immediately resizes the Guacamole display to the given width and height.
+ * This operation is performed independently of the X.Org server, and will NOT
+ * update X.Org resources.
  */
 void guac_drv_display_resize(guac_drv_display* display, int w, int h);
+
+/**
+ * Requests that the X.Org server resize the display to the given width and
+ * height via the RANDR extension. If the resize request succeeds, X.Org
+ * resources will be updated as necessary, and guac_drv_display_resize() will
+ * be invoked.
+ */
+void guac_drv_display_request_resize(guac_drv_display* display, int w, int h);
 
 /**
  * Creates a new layer, returning the new drawable representing that layer.
