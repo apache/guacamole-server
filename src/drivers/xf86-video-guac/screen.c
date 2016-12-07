@@ -117,7 +117,7 @@ Bool guac_drv_pre_init(ScrnInfoPtr screen, int flags) {
     guac_screen->output = xf86OutputCreate(screen,
             &guac_drv_output_funcs, "guac-0");
 
-    guac_screen->output->possible_crtcs = 1;
+    guac_screen->output->possible_crtcs = 2; /* 1 << total_number_of_crtcs */
     guac_screen->output->possible_clones = 0;
 
     /* Use first mode available */
