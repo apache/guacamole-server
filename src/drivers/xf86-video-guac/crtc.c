@@ -21,7 +21,9 @@
 #include "config.h"
 #include "crtc.h"
 #include "display.h"
+#include "drawable.h"
 #include "screen.h"
+#include "window.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
@@ -45,6 +47,14 @@ static Bool guac_drv_crtc_resize(ScrnInfoPtr screen_info,
     /* Resize Guacamole display */
     guac_drv_display* display = guac_screen->display;
     guac_drv_display_resize(display, width, height);
+
+    /* Get root drawable */
+    guac_drv_drawable* root =
+        (guac_drv_drawable*) dixGetPrivate(&(screen->root->devPrivates),
+                                         GUAC_WINDOW_PRIVATE);
+
+    /* Resize root drawable to fit display */
+    guac_drv_drawable_resize(root, width, height);
 
     /* STUB */
     xf86Msg(X_INFO, "guac: STUB: %s %ix%i\n", __func__, width, height);
