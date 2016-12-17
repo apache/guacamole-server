@@ -1136,6 +1136,51 @@ AM_CONDITIONAL([ENABLE_KUBERNETES], [test "x${enable_kubernetes}"  = "xyes" \
                                        -a "x${have_terminal}"      = "xyes"])
 
 #
+# X protocol C-language Binding
+#
+
+have_xcb=disabled
+XCB_LIBS=
+AC_ARG_WITH([xcb],
+            [AS_HELP_STRING([--with-xcb],
+                            [support X protocol with XCB @<:@default=check@:>@])],
+            [],
+            [with_xcb=check])
+
+if test "x$with_xcb" != "xno"
+then
+    have_xcb=yes
+    AC_CHECK_LIB([xcb], [xcb_connect],
+                 [XCB_LIBS="$XCB_LIBS -lxcb"], [have_xcb=no])
+fi
+
+AM_CONDITIONAL([ENABLE_XCB], [test "x${have_xcb}" = "xyes"])
+AC_SUBST(XCB_LIBS)
+
+#
+# X protocol C-language Binding - support for RANDR
+#
+
+have_xcb_randr=disabled
+XCB_RANDR_LIBS=
+AC_ARG_WITH([xcb-randr],
+            [AS_HELP_STRING([--with-xcb-randr],
+                            [support X11 RANDR extension with XCB @<:@default=check@:>@])],
+            [],
+            [with_xcb_randr=check])
+
+if test "x$with_xcb_randr" != "xno"
+then
+    have_xcb_randr=yes
+    AC_CHECK_LIB([xcb-randr], [xcb_randr_set_screen_size],
+                 [XCB_RANDR_LIBS="$XCB_RANDR_LIBS -lxcb-randr"],
+                 [have_xcb_randr=no])
+fi
+
+AM_CONDITIONAL([ENABLE_XCB_RANDR], [test "x${have_xcb_randr}" = "xyes"])
+AC_SUBST(XCB_RANDR_LIBS)
+
+#
 # X.Org video driver
 #
 
@@ -1159,7 +1204,9 @@ then
     PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto],, [have_xorg=no])
 fi
 
-AM_CONDITIONAL([ENABLE_XORG], [test "x${have_xorg}"  = "xyes" ])
+AM_CONDITIONAL([ENABLE_XORG], [test "x${have_xorg}"      = "xyes" \
+                                 -a "x${have_xcb}"       = "xyes" \
+                                 -a "x${have_xcb_randr}" = "xyes"])
 AC_SUBST([XORG_MODULE_DIR])
 AC_SUBST([XORG_CFLAGS])
 
@@ -1305,6 +1352,8 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libpulse ............ ${have_pulse}
      libwebsockets ....... ${have_libwebsockets}
      libwebp ............. ${have_webp}
+     libxcb .............. ${have_xcb}
+     libxcb-randr ........ ${have_xcb_randr}
      wsock32 ............. ${have_winsock}
 
    Protocol support:

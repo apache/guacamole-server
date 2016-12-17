@@ -42,7 +42,8 @@ noinst_HEADERS =      \
     screen.h          \
     spans.h           \
     user.h            \
-    window.h
+    window.h          \
+    xclient.h
 
 guac_drv_la_SOURCES = \
     copy.c            \
@@ -63,7 +64,8 @@ guac_drv_la_SOURCES = \
     screen.c          \
     spans.c           \
     user.c            \
-    window.c
+    window.c          \
+    xclient.c
 
 guac_drv_la_CFLAGS =        \
     -Werror -Wall -pedantic \
@@ -78,5 +80,7 @@ guac_drv_la_LIBADD = \
 
 guac_drv_la_LDFLAGS =      \
     -module -avoid-version \
-    @PTHREAD_LIBS@
+    @PTHREAD_LIBS@         \
+    @XCB_LIBS@             \
+    @XCB_RANDR_LIBS@
 

@@ -139,14 +139,6 @@ guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
 void guac_drv_display_resize(guac_drv_display* display, int w, int h);
 
 /**
- * Requests that the X.Org server resize the display to the given width and
- * height via the RANDR extension. If the resize request succeeds, X.Org
- * resources will be updated as necessary, and guac_drv_display_resize() will
- * be invoked.
- */
-void guac_drv_display_request_resize(guac_drv_display* display, int w, int h);
-
-/**
  * Creates a new layer, returning the new drawable representing that layer.
  */
 guac_drv_drawable* guac_drv_display_create_layer(guac_drv_display* display,

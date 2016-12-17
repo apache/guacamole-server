@@ -26,6 +26,8 @@
 
 #include <guacamole/user.h>
 
+#include <xcb/xcb.h>
+
 /**
  * Guacamole user-specific data.
  */
@@ -40,6 +42,16 @@ typedef struct guac_drv_user_data {
      * The old button mask state.
      */
     int button_mask;
+
+    /**
+     * Client connection to the X server.
+     */
+    xcb_connection_t* connection;
+
+    /**
+     * Dummy window to associate with X client requests.
+     */
+    xcb_window_t dummy;
 
 } guac_drv_user_data;
 
