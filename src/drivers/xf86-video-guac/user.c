@@ -119,33 +119,47 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
     user->mouse_handler = guac_drv_user_mouse_handler;
     user->leave_handler = guac_drv_user_leave_handler;
 
-    /* Connect to X server as a client */
-    xcb_connection_t* connection = guac_drv_get_connection();
+    /* Attempt to authorize with X server */
+    xcb_auth_info_t* auth = guac_drv_authorize();
+    if (auth == NULL)
+        guac_user_log(user, GUAC_LOG_WARNING, "Unable to generate X "
+                "authorization. Automatic screen resizing will NOT work.");
 
-    /* Warn if X connection fails */
-    if (connection == NULL)
-        guac_user_log(user, GUAC_LOG_WARNING, "Unable to connect to X.Org "
-                "display as a client. Automatic screen resizing will NOT "
-                "work.");
-
-    /* Otherwise init X client resources */
+    /* Connect to X server if authorization succeeds */
     else {
 
-        /* Get screen */
-        const xcb_setup_t* setup = xcb_get_setup(connection);
-        xcb_screen_t* screen = xcb_setup_roots_iterator(setup).data;
+        /* Connect to X server as a client */
+        xcb_connection_t* connection = guac_drv_get_connection(auth);
 
-        /* Create dummy window for future X requests */
-        user_data->dummy = xcb_generate_id(connection);
-        xcb_create_window(connection,  0, user_data->dummy, screen->root,
-                0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
-                XCB_COPY_FROM_PARENT, 0, NULL);
+        /* Warn if X connection fails */
+        if (connection == NULL) {
+            guac_drv_revoke_authorization(auth);
+            guac_user_log(user, GUAC_LOG_WARNING, "Unable to connect to X.Org "
+                    "display as a client. Automatic screen resizing will NOT "
+                    "work.");
+        }
 
-        /* Flush pending requests */
-        xcb_flush(connection);
+        /* Otherwise init X client resources */
+        else {
 
-        /* Store successful connection */
-        user_data->connection = connection;
+            /* Get screen */
+            const xcb_setup_t* setup = xcb_get_setup(connection);
+            xcb_screen_t* screen = xcb_setup_roots_iterator(setup).data;
+
+            /* Create dummy window for future X requests */
+            user_data->dummy = xcb_generate_id(connection);
+            xcb_create_window(connection,  0, user_data->dummy, screen->root,
+                    0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
+                    XCB_COPY_FROM_PARENT, 0, NULL);
+
+            /* Flush pending requests */
+            xcb_flush(connection);
+
+            /* Store successful connection and authorization */
+            user_data->connection = connection;
+            user_data->auth = auth;
+
+        }
 
     }
 
@@ -170,6 +184,10 @@ int guac_drv_user_leave_handler(guac_user* user) {
     /* Disconnect from X.Org (if connected) */
     if (user_data->connection != NULL)
         xcb_disconnect(user_data->connection);
+
+    /* Revoke X authorization */
+    if (user_data->auth != NULL)
+        guac_drv_revoke_authorization(user_data->auth);
 
     /* Free user-specific data */
     free(user_data);

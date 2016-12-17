@@ -24,6 +24,29 @@
 #include <xcb/xcb.h>
 
 /**
+ * Allocates a new xcb_auth_info_t structure containing newly-generated and
+ * valid X authorization data. Future connections to the X server will be
+ * authorized if they use this data. The allocated xcb_auth_info_t structure
+ * MUST eventually be freed with guac_drv_revoke_authorization().
+ *
+ * @return
+ *     A pointer to a newly-allocated xcb_auth_info_t structure, or NULL if
+ *     authorization fails for any reason.
+ */
+xcb_auth_info_t* guac_drv_authorize();
+
+/**
+ * Revokes the authorization described by the given xcb_auth_info_t structure,
+ * freeing any associated memory. The xcb_auth_info_t structure MUST have been
+ * previously allocated by guac_drv_authorize().
+ *
+ * @param auth
+ *     A pointer to an xcb_auth_info_t structure allocated by
+ *     guac_drv_authorize().
+ */
+void guac_drv_revoke_authorization(xcb_auth_info_t* auth);
+
+/**
  * Creates a new client connection to display associated with the Guacamole
  * X.Org driver using XCB.
  *
@@ -31,7 +54,7 @@
  *     A new XCB connection to the display associated with the Guacamole
  *     X.Org driver, or NULL if the connection cannot be established.
  */
-xcb_connection_t* guac_drv_get_connection();
+xcb_connection_t* guac_drv_get_connection(xcb_auth_info_t* auth);
 
 #endif
 

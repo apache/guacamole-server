@@ -44,6 +44,12 @@ typedef struct guac_drv_user_data {
     int button_mask;
 
     /**
+     * User-specific X authorization which should be supplied when connecting
+     * to the X server as a client.
+     */
+    xcb_auth_info_t* auth;
+
+    /**
      * Client connection to the X server.
      */
     xcb_connection_t* connection;
