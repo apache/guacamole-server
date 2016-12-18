@@ -71,6 +71,7 @@ SUBDIRS += src/guacenc
 endif
 
 EXTRA_DIST =     \
+    CONTRIBUTING \
     DISCLAIMER   \
     LICENSE      \
     NOTICE       \
