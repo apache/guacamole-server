@@ -71,7 +71,9 @@ SUBDIRS += src/guacenc
 endif
 
 EXTRA_DIST =     \
+    DISCLAIMER   \
     LICENSE      \
+    NOTICE       \
     bin/guacctl  \
     doc/Doxyfile
 
