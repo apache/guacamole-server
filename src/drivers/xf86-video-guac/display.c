@@ -27,6 +27,7 @@
 #include "user.h"
 #include "list.h"
 #include "log.h"
+#include "xclient.h"
 
 #include <xf86.h>
 #include <xf86str.h>
@@ -210,6 +211,12 @@ guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
             guac_drv_listen_thread, display)) {
         return NULL;
     }
+
+    /* Attempt to authorize with X server */
+    display->auth = guac_drv_authorize();
+    if (display->auth == NULL)
+        guac_client_log(client, GUAC_LOG_WARNING, "Unable to generate X "
+                "authorization. Automatic screen resizing will NOT work.");
 
     return display;
 

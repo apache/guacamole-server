@@ -35,6 +35,8 @@
 #include <guacamole/client.h>
 #include <guacamole/pool.h>
 
+#include <xcb/xcb.h>
+
 /**
  * The amount of time to wait for display changes before beginning a new frame,
  * in milliseconds. This value must be kept reasonably small such that a
@@ -122,6 +124,12 @@ typedef struct guac_drv_display {
      * The X.Org screen with which the Guacamole X.Org driver is associated.
      */
     ScreenPtr screen;
+
+    /**
+     * X authorization which should be supplied when connecting to the X server
+     * as a client. If authorization fails, this will be NULL.
+     */
+    xcb_auth_info_t* auth;
 
 } guac_drv_display;
 

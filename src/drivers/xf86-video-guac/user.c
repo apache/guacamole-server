@@ -105,12 +105,12 @@ static void guac_drv_user_resize_display(guac_user* user, int w, int h) {
 int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
 
     guac_client* client = user->client;
-    guac_drv_display* guac_display = (guac_drv_display*) client->data;
+    guac_drv_display* display = (guac_drv_display*) client->data;
 
     /* Init data */
     guac_drv_user_data* user_data;
     user_data = user->data = malloc(sizeof(guac_drv_user_data));
-    user_data->display = guac_display;
+    user_data->display = display;
     user_data->button_mask = 0;
 
     /* Set user event handlers */
@@ -119,25 +119,17 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
     user->mouse_handler = guac_drv_user_mouse_handler;
     user->leave_handler = guac_drv_user_leave_handler;
 
-    /* Attempt to authorize with X server */
-    xcb_auth_info_t* auth = guac_drv_authorize();
-    if (auth == NULL)
-        guac_user_log(user, GUAC_LOG_WARNING, "Unable to generate X "
-                "authorization. Automatic screen resizing will NOT work.");
-
     /* Connect to X server if authorization succeeds */
-    else {
+    if (display->auth != NULL) {
 
         /* Connect to X server as a client */
-        xcb_connection_t* connection = guac_drv_get_connection(auth);
+        xcb_connection_t* connection = guac_drv_get_connection(display->auth);
 
         /* Warn if X connection fails */
-        if (connection == NULL) {
-            guac_drv_revoke_authorization(auth);
+        if (connection == NULL)
             guac_user_log(user, GUAC_LOG_WARNING, "Unable to connect to X.Org "
                     "display as a client. Automatic screen resizing will NOT "
                     "work.");
-        }
 
         /* Otherwise init X client resources */
         else {
@@ -155,9 +147,8 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
             /* Flush pending requests */
             xcb_flush(connection);
 
-            /* Store successful connection and authorization */
+            /* Store successful connection */
             user_data->connection = connection;
-            user_data->auth = auth;
 
         }
 
@@ -168,7 +159,7 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
             user->info.optimal_height);
 
     /* Init user display state */
-    guac_drv_display_sync_user(guac_display, user);
+    guac_drv_display_sync_user(display, user);
 
     return 0;
 
@@ -184,10 +175,6 @@ int guac_drv_user_leave_handler(guac_user* user) {
     /* Disconnect from X.Org (if connected) */
     if (user_data->connection != NULL)
         xcb_disconnect(user_data->connection);
-
-    /* Revoke X authorization */
-    if (user_data->auth != NULL)
-        guac_drv_revoke_authorization(user_data->auth);
 
     /* Free user-specific data */
     free(user_data);
