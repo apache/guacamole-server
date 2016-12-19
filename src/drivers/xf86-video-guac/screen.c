@@ -517,22 +517,27 @@ static void guac_drv_set_shape(WindowPtr window, int kind) {
     /* Only changes to the bounding shape need to be drawn */
     if (kind == ShapeBounding) {
 
-        /* Create a region which contains the inverse of the bounding shape */
-        RegionPtr region = RegionCreate(NullBox, 1);
-        RegionInverse(region, &window->borderClip,
-                RegionRects(&window->winSize));
+        RegionPtr bounding_shape = window->optional->boundingShape;
+        if (bounding_shape != NULL) {
 
-        /* STUB: Fill outside bounding shape with transparency */
-        GUAC_DRV_DRAWABLE_CLIP(drawable, (DrawablePtr) window, region,
-            guac_drv_drawable_crect, drawable, 0, 0,
-            drawable->layer->surface->width,
-            drawable->layer->surface->height,
-            0xFF00FF);
+            /* Create region from inverse of bounding shape */
+            RegionPtr region = RegionCreate(NullBox, 1);
+            RegionInverse(region, bounding_shape,
+                    RegionRects(&window->borderSize));
 
-        /* Destroy temporary region */
-        RegionDestroy(region);
+            /* STUB: Fill outside bounding shape with transparency */
+            GUAC_DRV_DRAWABLE_CLIP(drawable, (DrawablePtr) window, region,
+                guac_drv_drawable_crect, drawable, 0, 0,
+                drawable->layer->surface->width,
+                drawable->layer->surface->height,
+                0xFF00FF);
 
-        guac_drv_display_touch(guac_screen->display);
+            /* Destroy temporary region */
+            RegionDestroy(region);
+
+            guac_drv_display_touch(guac_screen->display);
+
+        }
 
     }
 
