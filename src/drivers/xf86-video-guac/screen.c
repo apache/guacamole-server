@@ -389,40 +389,34 @@ static void guac_drv_move_window(WindowPtr window, int x, int y,
 
 }
 
-static void guac_drv_clear_boundary(WindowPtr window) {
-
-    /* Get guac_drv_screen */
-    ScreenPtr screen = window->drawable.pScreen;
-    guac_drv_screen* guac_screen =
-        (guac_drv_screen*) dixGetPrivate(&(screen->devPrivates),
-                                         GUAC_SCREEN_PRIVATE);
+static void guac_drv_clear_outside(WindowPtr window) {
 
     /* Get drawable */
     guac_drv_drawable* drawable =
         (guac_drv_drawable*) dixGetPrivate(&(window->devPrivates),
                                          GUAC_WINDOW_PRIVATE);
 
-    RegionPtr bounding_shape = window->optional->boundingShape;
-    if (bounding_shape != NULL) {
+    /* Produce box encompassing entire drawable */
+    BoxRec bounds = {
+        .x1 = 0,
+        .y1 = 0,
+        .x2 = drawable->layer->surface->width,
+        .y2 = drawable->layer->surface->height
+    };
 
-        /* Create region from inverse of bounding shape */
-        RegionPtr region = RegionCreate(NullBox, 1);
-        RegionInverse(region, bounding_shape,
-                RegionRects(&window->borderSize));
+    /* Create region from inverse of bounding shape */
+    RegionPtr region = RegionCreate(NullBox, 1);
+    RegionInverse(region, &window->borderClip, &bounds);
 
-        /* STUB: Fill outside bounding shape with transparency */
-        GUAC_DRV_DRAWABLE_CLIP(drawable, (DrawablePtr) window, region,
-            guac_drv_drawable_crect, drawable, 0, 0,
-            drawable->layer->surface->width,
-            drawable->layer->surface->height,
-            0xFF00FF);
+    /* STUB: Fill outside bounding shape with transparency */
+    GUAC_DRV_DRAWABLE_CLIP(drawable, (DrawablePtr) window, region,
+        guac_drv_drawable_crect, drawable, 0, 0,
+        drawable->layer->surface->width,
+        drawable->layer->surface->height,
+        0xFF00FF);
 
-        /* Destroy temporary region */
-        RegionDestroy(region);
-
-        guac_drv_display_touch(guac_screen->display);
-
-    }
+    /* Destroy temporary region */
+    RegionDestroy(region);
 
 }
 
@@ -443,9 +437,8 @@ static void guac_drv_resize_window(WindowPtr window, int x, int y,
     /* Update window */
     guac_drv_drawable_move(drawable, x, y);
     guac_drv_drawable_resize(drawable, w, h);
+    guac_drv_clear_outside(window);
     guac_drv_display_touch(guac_screen->display);
-
-    guac_drv_clear_boundary(window);
 
     /* Call wrapped function */
     if (guac_screen->wrapped_resize_window)
@@ -548,9 +541,9 @@ static void guac_drv_set_shape(WindowPtr window, int kind) {
         (guac_drv_screen*) dixGetPrivate(&(screen->devPrivates),
                                          GUAC_SCREEN_PRIVATE);
 
-    /* Only changes to the bounding shape need to be drawn */
-    if (kind == ShapeBounding)
-        guac_drv_clear_boundary(window);
+    /* Clear region outside border */
+    guac_drv_clear_outside(window);
+    guac_drv_display_touch(guac_screen->display);
 
     /* Call wrapped function */
     if (guac_screen->wrapped_set_shape)
