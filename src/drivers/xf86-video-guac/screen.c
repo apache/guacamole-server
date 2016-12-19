@@ -501,6 +501,47 @@ static void guac_drv_restack_window(WindowPtr window, WindowPtr old_next) {
 
 }
 
+static void guac_drv_set_shape(WindowPtr window, int kind) {
+
+    /* Get guac_drv_screen */
+    ScreenPtr screen = window->drawable.pScreen;
+    guac_drv_screen* guac_screen =
+        (guac_drv_screen*) dixGetPrivate(&(screen->devPrivates),
+                                         GUAC_SCREEN_PRIVATE);
+
+    /* Get drawable */
+    guac_drv_drawable* drawable =
+        (guac_drv_drawable*) dixGetPrivate(&(window->devPrivates),
+                                         GUAC_WINDOW_PRIVATE);
+
+    /* Only changes to the bounding shape need to be drawn */
+    if (kind == ShapeBounding) {
+
+        /* Create a region which contains the inverse of the bounding shape */
+        RegionPtr region = RegionCreate(NullBox, 1);
+        RegionInverse(region, &window->borderClip,
+                RegionRects(&window->winSize));
+
+        /* STUB: Fill outside bounding shape with transparency */
+        GUAC_DRV_DRAWABLE_CLIP(drawable, (DrawablePtr) window, region,
+            guac_drv_drawable_crect, drawable, 0, 0,
+            drawable->layer->surface->width,
+            drawable->layer->surface->height,
+            0xFF00FF);
+
+        /* Destroy temporary region */
+        RegionDestroy(region);
+
+        guac_drv_display_touch(guac_screen->display);
+
+    }
+
+    /* Call wrapped function */
+    if (guac_screen->wrapped_set_shape)
+        guac_screen->wrapped_set_shape(window, kind);
+
+}
+
 static Bool guac_drv_destroy_window(WindowPtr window) {
 
     Bool ret = TRUE;
@@ -684,6 +725,9 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
 
     guac_screen->wrapped_restack_window = screen->RestackWindow;
     screen->RestackWindow = guac_drv_restack_window;
+
+    guac_screen->wrapped_set_shape = screen->SetShape;
+    screen->SetShape = guac_drv_set_shape;
 
     guac_screen->wrapped_destroy_window = screen->DestroyWindow;
     screen->DestroyWindow = guac_drv_destroy_window;

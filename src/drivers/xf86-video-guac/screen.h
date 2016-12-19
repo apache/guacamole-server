@@ -106,6 +106,11 @@ typedef struct guac_drv_screen {
     RestackWindowProcPtr wrapped_restack_window;
 
     /**
+     * Wrapped SetShape implementation.
+     */
+    SetShapeProcPtr wrapped_set_shape;
+
+    /**
      * Wrapped DestroyWindow implementation.
      */
     DestroyWindowProcPtr wrapped_destroy_window;

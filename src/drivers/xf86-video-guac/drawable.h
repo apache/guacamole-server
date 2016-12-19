@@ -63,15 +63,15 @@
                                                                               \
         /* Get underlying surface of drawable */                              \
         guac_common_surface* GUAC_DRV_DRAWABLE_CLIP__surface =                \
-                guac_drawable->layer->surface;                                \
+                (guac_drawable)->layer->surface;                              \
                                                                               \
         /* Get clipping rectangles */                                         \
         int GUAC_DRV_DRAWABLE_CLIP__num_rects = REGION_NUM_RECTS(clip);       \
         BoxPtr GUAC_DRV_DRAWABLE_CLIP__rect = REGION_RECTS(clip);             \
                                                                               \
         /* Get screen-absolute coordinates of drawablw */                     \
-        int GUAC_DRV_DRAWABLE_CLIP__screen_x = drawable->x;                   \
-        int GUAC_DRV_DRAWABLE_CLIP__screen_y = drawable->y;                   \
+        int GUAC_DRV_DRAWABLE_CLIP__screen_x = (drawable)->x;                 \
+        int GUAC_DRV_DRAWABLE_CLIP__screen_y = (drawable)->y;                 \
                                                                               \
         /* Clip operation by defined clipping path */                         \
         while (GUAC_DRV_DRAWABLE_CLIP__num_rects > 0) {                       \
@@ -91,7 +91,7 @@
                         y2 - y1);                                             \
             }                                                                 \
                                                                               \
-            fn(__VA_ARGS__);                                                  \
+            (fn)(__VA_ARGS__);                                                \
                                                                               \
             /* Reset clip for next rectangle */                               \
             guac_common_surface_reset_clip(GUAC_DRV_DRAWABLE_CLIP__surface);  \
