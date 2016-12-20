@@ -773,13 +773,14 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                 }
 
                 /* Send rect */
-                guac_common_surface_rect(
+                guac_common_surface_set(
                         display->display_surface,
                         col * display->char_width,
                         row * display->char_height,
                         rect_width * display->char_width,
                         rect_height * display->char_height,
-                        guac_color->red, guac_color->green, guac_color->blue);
+                        guac_color->red, guac_color->green, guac_color->blue,
+                        0xFF);
 
             } /* end if clear operation */
 
