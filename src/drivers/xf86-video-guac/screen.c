@@ -408,12 +408,11 @@ static void guac_drv_clear_outside(WindowPtr window) {
     RegionPtr region = RegionCreate(NullBox, 1);
     RegionInverse(region, &window->borderClip, &bounds);
 
-    /* STUB: Fill outside bounding shape with transparency */
+    /* Clear outside bounding shape */
     GUAC_DRV_DRAWABLE_CLIP(drawable, (DrawablePtr) window, region,
-        guac_drv_drawable_crect, drawable, 0, 0,
+        guac_drv_drawable_clear, drawable, 0, 0,
         drawable->layer->surface->width,
-        drawable->layer->surface->height,
-        0xFF00FF);
+        drawable->layer->surface->height);
 
     /* Destroy temporary region */
     RegionDestroy(region);

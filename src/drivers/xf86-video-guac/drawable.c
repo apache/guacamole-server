@@ -148,7 +148,17 @@ void guac_drv_drawable_crect(guac_drv_drawable* drawable, int x, int y,
     int b =  fill        & 0xFF;
 
     /* Draw rectangle with requested color */
-    guac_common_surface_rect(drawable->layer->surface, x, y, w, h, r, g, b);
+    guac_common_surface_set(drawable->layer->surface, x, y, w, h,
+            r, g, b, 0xFF);
+
+}
+
+void guac_drv_drawable_clear(guac_drv_drawable* drawable, int x, int y,
+        int w, int h) {
+
+    /* Clear contents of rectangle */
+    guac_common_surface_set(drawable->layer->surface, x, y, w, h,
+            0x00, 0x00, 0x00, 0x00);
 
 }
 

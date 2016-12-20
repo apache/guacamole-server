@@ -312,6 +312,13 @@ void guac_drv_drawable_crect(guac_drv_drawable* drawable, int x, int y,
         int w, int h, int fill);
 
 /**
+ * Clears the contents of the given rectangular region of the given drawable,
+ * setting all pixels to transparent black (0x00000000).
+ */
+void guac_drv_drawable_clear(guac_drv_drawable* drawable, int x, int y,
+        int w, int h);
+
+/**
  * Fills the given rectangular region of the given drawable with the provided
  * pattern.
  */
