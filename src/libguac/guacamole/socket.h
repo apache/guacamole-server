@@ -26,6 +26,7 @@
  * @file socket.h
  */
 
+#include "client-types.h"
 #include "socket-constants.h"
 #include "socket-fntypes.h"
 #include "socket-types.h"
@@ -219,6 +220,32 @@ guac_socket* guac_socket_nest(guac_socket* parent, int index);
  *     guac_socket object.
  */
 guac_socket* guac_socket_tee(guac_socket* primary, guac_socket* secondary);
+
+/**
+ * Allocates and initializes a new guac_socket which duplicates all
+ * instructions written across the sockets of each connected user of the given
+ * guac_client. The returned socket is a write-only socket. Attempts to read
+ * from the socket will fail.  If a write occurs while no users are connected,
+ * that write will simply be dropped.
+ *
+ * Return values (error codes) from each user's socket will not affect the
+ * in-progress write, but each failing user will be forcibly stopped with
+ * guac_user_stop().
+ *
+ * If an error occurs while allocating the guac_socket object, NULL is returned,
+ * and guac_error is set appropriately.
+ *
+ * @param client
+ *     The client associated with the group of connected users across which
+ *     duplicates of all instructions should be written.
+ *
+ * @return
+ *     A write-only guac_socket object which broadcasts copies of all
+ *     instructions written across all connected users of the given
+ *     guac_client, or NULL if an error occurs while allocating the guac_socket
+ *     object.
+ */
+guac_socket* guac_socket_broadcast(guac_client* client);
 
 /**
  * Writes the given unsigned int to the given guac_socket object. The data

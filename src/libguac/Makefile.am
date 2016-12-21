@@ -70,26 +70,27 @@ noinst_HEADERS =      \
     user-handlers.h   \
     raw_encoder.h
 
-libguac_la_SOURCES =  \
-    audio.c           \
-    client.c          \
-    encode-jpeg.c     \
-    encode-png.c      \
-    error.c           \
-    hash.c            \
-    id.c              \
-    palette.c         \
-    parser.c          \
-    pool.c            \
-    protocol.c        \
-    raw_encoder.c     \
-    socket.c          \
-    socket-fd.c       \
-    socket-nest.c     \
-    socket-tee.c      \
-    timestamp.c       \
-    unicode.c         \
-    user.c            \
+libguac_la_SOURCES =   \
+    audio.c            \
+    client.c           \
+    encode-jpeg.c      \
+    encode-png.c       \
+    error.c            \
+    hash.c             \
+    id.c               \
+    palette.c          \
+    parser.c           \
+    pool.c             \
+    protocol.c         \
+    raw_encoder.c      \
+    socket.c           \
+    socket-broadcast.c \
+    socket-fd.c        \
+    socket-nest.c      \
+    socket-tee.c       \
+    timestamp.c        \
+    unicode.c          \
+    user.c             \
     user-handlers.c
 
 # Compile WebP support if available
