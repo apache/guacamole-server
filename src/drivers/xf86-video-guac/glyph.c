@@ -26,10 +26,8 @@
 
 #include <xorg-server.h>
 #include <xf86.h>
+#include <dixfont.h>
 #include <fb.h>
-
-#include <X11/fonts/fontstruct.h>
-#include <X11/fonts/fontutil.h>
 
 /**
  * Common base implementation of ImageGlyphBlt / PolyGlyphBlt (both use the
