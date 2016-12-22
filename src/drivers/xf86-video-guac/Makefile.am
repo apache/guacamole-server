@@ -68,7 +68,7 @@ guac_drv_la_SOURCES = \
     xclient.c
 
 guac_drv_la_CFLAGS =        \
-    -Werror -Wall -pedantic \
+    -Werror -Wall           \
     @COMMON_INCLUDE@        \
     @LIBGUACD_INCLUDE@      \
     @LIBGUAC_INCLUDE@       \
