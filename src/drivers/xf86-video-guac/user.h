@@ -22,11 +22,10 @@
 #define __GUAC_DRV_USER_H
 
 #include "config.h"
+#include "agent.h"
 #include "display.h"
 
 #include <guacamole/user.h>
-
-#include <xcb/xcb.h>
 
 /**
  * Guacamole user-specific data.
@@ -44,15 +43,11 @@ typedef struct guac_drv_user_data {
     int button_mask;
 
     /**
-     * Client connection to the X server. If connecting to the X server fails,
-     * this will be NULL.
+     * Agent X which acts on behalf of the Guacamole X.Org driver. If the agent
+     * could not be started (a connection to the X server could not be
+     * established), this will be NULL.
      */
-    xcb_connection_t* connection;
-
-    /**
-     * Dummy window to associate with X client requests.
-     */
-    xcb_window_t dummy;
+    guac_drv_agent* agent;
 
 } guac_drv_user_data;
 
