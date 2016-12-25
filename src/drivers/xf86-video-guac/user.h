@@ -24,6 +24,7 @@
 #include "config.h"
 #include "agent.h"
 #include "display.h"
+#include "settings.h"
 
 #include <guacamole/user.h>
 
@@ -41,6 +42,12 @@ typedef struct guac_drv_user_data {
      * The old button mask state.
      */
     int button_mask;
+
+    /**
+     * The settings provided by the user during the connection handshake when
+     * they joined the connection.
+     */
+    guac_drv_settings* settings;
 
     /**
      * Agent X which acts on behalf of the Guacamole X.Org driver. If the agent

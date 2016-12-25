@@ -25,6 +25,7 @@
 #include "drv.h"
 #include "input.h"
 #include "io.h"
+#include "settings.h"
 #include "user.h"
 #include "xclient.h"
 
@@ -55,27 +56,39 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
     guac_client* client = user->client;
     guac_drv_display* display = (guac_drv_display*) client->data;
 
+    /* Parse provided arguments */
+    guac_drv_settings* settings = guac_drv_parse_args(user,
+            argc, (const char**) argv);
+
     /* Init data */
     guac_drv_user_data* user_data;
     user_data = user->data = malloc(sizeof(guac_drv_user_data));
+    user_data->settings = settings;
     user_data->display = display;
     user_data->button_mask = 0;
 
-    /* Set user event handlers */
-    user->size_handler  = guac_drv_user_size_handler;
-    user->key_handler   = guac_drv_user_key_handler;
-    user->mouse_handler = guac_drv_user_mouse_handler;
+    /* Set handler for user cleanup */
     user->leave_handler = guac_drv_user_leave_handler;
 
-    /* Connect agent X client if authorization is available */
-    if (display->auth != NULL)
-        user_data->agent = guac_drv_agent_alloc(user, display->auth);
+    /* Accept input only if not read-only */
+    if (!settings->read_only) {
 
-    /* Resize screen based on declared optimal settings */
-    if (user_data->agent != NULL)
-        guac_drv_agent_resize_display(user_data->agent,
-                user->info.optimal_width,
-                user->info.optimal_height);
+        /* Set user event handlers */
+        user->size_handler  = guac_drv_user_size_handler;
+        user->key_handler   = guac_drv_user_key_handler;
+        user->mouse_handler = guac_drv_user_mouse_handler;
+
+        /* Connect agent X client if authorization is available */
+        if (display->auth != NULL)
+            user_data->agent = guac_drv_agent_alloc(user, display->auth);
+
+        /* Resize screen based on declared optimal settings */
+        if (user_data->agent != NULL)
+            guac_drv_agent_resize_display(user_data->agent,
+                    user->info.optimal_width,
+                    user->info.optimal_height);
+
+    }
 
     /* Init user display state */
     guac_drv_display_sync_user(display, user);
@@ -94,6 +107,9 @@ int guac_drv_user_leave_handler(guac_user* user) {
 
     /* Update shared cursor state */
     guac_common_cursor_remove_user(user_data->display->display->cursor, user);
+
+    /* Clean up settings */
+    guac_drv_settings_free(user_data->settings);
 
     /* Free user-specific data */
     free(user_data);

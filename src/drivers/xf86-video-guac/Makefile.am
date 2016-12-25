@@ -41,6 +41,7 @@ noinst_HEADERS =      \
     pixmap.h          \
     poly.h            \
     screen.h          \
+    settings.h        \
     spans.h           \
     user.h            \
     window.h          \
@@ -64,6 +65,7 @@ guac_drv_la_SOURCES = \
     pixmap.c          \
     poly.c            \
     screen.c          \
+    settings.c        \
     spans.c           \
     user.c            \
     window.c          \

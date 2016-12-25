@@ -27,6 +27,7 @@
 #include "user.h"
 #include "list.h"
 #include "log.h"
+#include "settings.h"
 #include "xclient.h"
 
 #include <xf86.h>
@@ -175,6 +176,7 @@ guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
 
     /* Init underlying client */
     guac_client* client = guac_client_alloc();
+    client->args = GUAC_DRV_CLIENT_ARGS;
     client->join_handler = guac_drv_user_join_handler;
     client->log_handler = guac_drv_client_log;
     client->data = display;
