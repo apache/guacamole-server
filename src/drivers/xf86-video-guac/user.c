@@ -29,6 +29,10 @@
 #include "user.h"
 #include "xclient.h"
 
+#ifdef ENABLE_PULSE
+#include "pulse/pulse.h"
+#endif
+
 #include <xf86.h>
 #include <xf86str.h>
 
@@ -69,6 +73,12 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
 
     /* Set handler for user cleanup */
     user->leave_handler = guac_drv_user_leave_handler;
+
+#ifdef ENABLE_PULSE
+    /* Synchronize audio stream */
+    if (display->audio)
+        guac_pa_stream_add_user(display->audio, user);
+#endif
 
     /* Accept input only if not read-only */
     if (!settings->read_only) {

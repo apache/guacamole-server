@@ -31,11 +31,6 @@
 const char* GUAC_DRV_CLIENT_ARGS[] = {
     "read-only",
 
-#ifdef ENABLE_PULSE
-    "enable-audio",
-    "audio-servername",
-#endif
-
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
     "sftp-hostname",
@@ -57,19 +52,6 @@ enum GUAC_DRV_ARGS_IDX {
      * dropped), "false" or blank otherwise.
      */
     IDX_READ_ONLY,
-
-#ifdef ENABLE_PULSE
-    /**
-     * "true" if audio should be enabled, "false" or blank otherwise.
-     */
-    IDX_ENABLE_AUDIO,
-
-    /**
-     * The name of the PulseAudio server to connect to. If left blank, the
-     * default sink of the local machine will be used as the source for audio.
-     */
-    IDX_AUDIO_SERVERNAME,
-#endif
 
 #ifdef ENABLE_COMMON_SSH
     /**
@@ -143,19 +125,6 @@ guac_drv_settings* guac_drv_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_DRV_CLIENT_ARGS, argv,
                 IDX_READ_ONLY, false);
 
-#ifdef ENABLE_PULSE
-    /* Audio enable/disable */
-    settings->audio_enabled =
-        guac_user_parse_args_boolean(user, GUAC_DRV_CLIENT_ARGS, argv,
-                IDX_ENABLE_AUDIO, false);
-
-    /* Load servername if specified and applicable */
-    if (settings->audio_enabled)
-        settings->pa_servername =
-            guac_user_parse_args_string(user, GUAC_DRV_CLIENT_ARGS, argv,
-                    IDX_AUDIO_SERVERNAME, NULL);
-#endif
-
 #ifdef ENABLE_COMMON_SSH
     /* SFTP enable/disable */
     settings->enable_sftp =
@@ -213,11 +182,6 @@ void guac_drv_settings_free(guac_drv_settings* settings) {
     free(settings->sftp_port);
     free(settings->sftp_private_key);
     free(settings->sftp_username);
-#endif
-
-#ifdef ENABLE_PULSE
-    /* Free PulseAudio settings */
-    free(settings->pa_servername);
 #endif
 
     /* Free settings structure */

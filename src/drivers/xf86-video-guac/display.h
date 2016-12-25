@@ -25,6 +25,10 @@
 #include "common/display.h"
 #include "drawable.h"
 
+#ifdef ENABLE_PULSE
+#include "pulse/pulse.h"
+#endif
+
 #include <errno.h>
 #include <pthread.h>
 
@@ -130,6 +134,13 @@ typedef struct guac_drv_display {
      * as a client. If authorization fails, this will be NULL.
      */
     xcb_auth_info_t* auth;
+
+#ifdef ENABLE_PULSE
+    /**
+     * PulseAudio output, if any.
+     */
+    guac_pa_stream* audio;
+#endif
 
 } guac_drv_display;
 

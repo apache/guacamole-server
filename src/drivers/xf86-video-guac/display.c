@@ -30,6 +30,10 @@
 #include "settings.h"
 #include "xclient.h"
 
+#ifdef ENABLE_PULSE
+#include "pulse/pulse.h"
+#endif
+
 #include <xf86.h>
 #include <xf86str.h>
 #include <guacamole/client.h>
@@ -219,6 +223,14 @@ guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
     if (display->auth == NULL)
         guac_client_log(client, GUAC_LOG_WARNING, "Unable to generate X "
                 "authorization. Automatic screen resizing will NOT work.");
+
+#ifdef ENABLE_PULSE
+    /* Attempt to connect to local PulseAudio service */
+    display->audio = guac_pa_stream_alloc(client, NULL);
+    if (display->audio == NULL)
+        guac_client_log(client, GUAC_LOG_WARNING, "Unable to connect to "
+                "PulseAudio.");
+#endif
 
     return display;
 

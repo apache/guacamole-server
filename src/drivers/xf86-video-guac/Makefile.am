@@ -76,6 +76,7 @@ guac_drv_la_CFLAGS =        \
     @COMMON_INCLUDE@        \
     @LIBGUACD_INCLUDE@      \
     @LIBGUAC_INCLUDE@       \
+    @PULSE_INCLUDE@         \
     @XORG_CFLAGS@
 
 guac_drv_la_LIBADD = \
@@ -87,4 +88,9 @@ guac_drv_la_LDFLAGS =      \
     @PTHREAD_LIBS@         \
     @XCB_LIBS@             \
     @XCB_RANDR_LIBS@
+
+# Optional PulseAudio support
+if ENABLE_PULSE
+guac_drv_la_LIBADD += @PULSE_LTLIB@
+endif
 

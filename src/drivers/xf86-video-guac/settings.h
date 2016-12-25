@@ -37,18 +37,6 @@ typedef struct guac_drv_settings {
      */
     bool read_only;
 
-#ifdef ENABLE_PULSE
-    /**
-     * Whether audio is enabled.
-     */
-    bool audio_enabled;
-
-    /**
-     * The name of the PulseAudio server to connect to.
-     */
-    char* pa_servername;
-#endif
-
 #ifdef ENABLE_COMMON_SSH
     /**
      * Whether SFTP should be enabled for the X.Org connection.
