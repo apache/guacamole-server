@@ -18,8 +18,8 @@
  * under the License.
  */
 
-#ifndef __GUAC_INPUT_H
-#define __GUAC_INPUT_H
+#ifndef GUAC_DRV_INPUT_H
+#define GUAC_DRV_INPUT_H
 
 #include "config.h"
 #include "drv.h"
@@ -39,21 +39,6 @@
  * Input driver record.
  */
 extern InputDriverRec GUAC_INPUT;
-
-/**
- * Statically-stored input device.
- */
-extern InputInfoPtr GUAC_DRV_INPUT_DEVICE;
-
-/**
- * The file descriptor to read input events from.
- */
-extern int GUAC_DRV_INPUT_READ_FD;
-
-/**
- * The file descriptor to write input events to.
- */
-extern int GUAC_DRV_INPUT_WRITE_FD;
 
 /**
  * All possible event types.
@@ -147,19 +132,43 @@ typedef struct guac_drv_input_event {
 } guac_drv_input_event;
 
 /**
- * Called by Xorg to initialize the input driver.
+ * The current state of the Guacamole X.Org driver input device.
  */
-int guac_input_pre_init(InputDriverPtr driver, InputInfoPtr info, int flags);
+typedef struct guac_drv_input_device {
+
+    /**
+     * The file descriptor from which guac_drv_input_event structures should be
+     * read when processing previously-signalled input events.
+     */
+    int read_fd;
+
+    /**
+     * The file descriptor to which guac_drv_input_event structures should be
+     * written to signal a new input event.
+     */
+    int write_fd;
+
+    /**
+     * The X coordinate of the last mouse event.
+     */
+    int mouse_x;
+
+    /**
+     * The Y coordinate of the last mouse event.
+     */
+    int mouse_y;
+
+} guac_drv_input_device;
 
 /**
- * Called by Xorg to enable/disable the device.
+ * Sends the given event along the file descriptor used by the Guacamole X.Org
+ * input driver. If the X.Org server has not yet finished initializing, and the
+ * file descriptor is not yet defined, this function has no effect.
+ *
+ * @param event
+ *     The input event to send.
  */
-int guac_input_device_control(DeviceIntPtr device, int onoff);
-
-/**
- * Called by Xorg when there is data to be read.
- */
-void guac_input_read_input(InputInfoPtr info);
+void guac_drv_input_send_event(guac_drv_input_event* event);
 
 #endif
 

@@ -183,30 +183,6 @@ int guac_drv_user_leave_handler(guac_user* user) {
 
 }
 
-/**
- * Sends the given event along the file descriptor used by the Guacamole X.Org
- * input driver. If the X.Org server has not yet finished initializing, and the
- * file descriptor is not yet defined, this function has no effect.
- *
- * @param user
- *     The user associated with the event being sent.
- *
- * @param event
- *     The input event to send.
- */
-static void guac_drv_user_send_event(guac_user* user,
-        guac_drv_input_event* event) {
-
-    /* Do not send packet if input file descriptor not yet ready */
-    if (GUAC_DRV_INPUT_WRITE_FD == -1)
-        return;
-
-    /* Send packet */
-    guac_drv_write(GUAC_DRV_INPUT_WRITE_FD, event,
-            sizeof(guac_drv_input_event));
-
-}
-
 int guac_drv_user_size_handler(guac_user* user, int width, int height) {
 
     /* Resize display resize */
@@ -225,7 +201,7 @@ int guac_drv_user_key_handler(guac_user* user, int keysym, int pressed) {
     event.data.keyboard.pressed = pressed;
 
     /* Send packet */
-    guac_drv_user_send_event(user, &event);
+    guac_drv_input_send_event(&event);
 
     return 0;
 
@@ -252,7 +228,7 @@ int guac_drv_user_mouse_handler(guac_user* user,
 
     /* Send packet */
     user_data->button_mask = mask;
-    guac_drv_user_send_event(user, &event);
+    guac_drv_input_send_event(&event);
 
     return 0;
 
