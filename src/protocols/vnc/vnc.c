@@ -33,7 +33,7 @@
 #include "vnc.h"
 
 #ifdef ENABLE_PULSE
-#include "pulse.h"
+#include "pulse/pulse.h"
 #endif
 
 #ifdef ENABLE_COMMON_SSH
@@ -207,32 +207,10 @@ void* guac_vnc_client_thread(void* data) {
     }
 
 #ifdef ENABLE_PULSE
-    /* If an encoding is available, load an audio stream */
-    if (settings->audio_enabled) {
-
-        vnc_client->audio = guac_audio_stream_alloc(client, NULL,
-                GUAC_VNC_AUDIO_RATE,
-                GUAC_VNC_AUDIO_CHANNELS,
-                GUAC_VNC_AUDIO_BPS);
-
-        /* If successful, init audio system */
-        if (vnc_client->audio != NULL) {
-            
-            guac_client_log(client, GUAC_LOG_INFO,
-                    "Audio will be encoded as %s",
-                    vnc_client->audio->encoder->mimetype);
-
-            /* Start audio stream */
-            guac_pa_start_stream(client);
-            
-        }
-
-        /* Otherwise, audio loading failed */
-        else
-            guac_client_log(client, GUAC_LOG_INFO,
-                    "No available audio encoding. Sound disabled.");
-
-    } /* end if audio enabled */
+    /* If audio is enabled, start streaming via PulseAudio */
+    if (settings->audio_enabled)
+        vnc_client->audio = guac_pa_stream_alloc(client, 
+                settings->pa_servername);
 #endif
 
 #ifdef ENABLE_COMMON_SSH

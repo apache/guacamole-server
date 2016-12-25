@@ -28,6 +28,10 @@
 #include "sftp.h"
 #include "vnc.h"
 
+#ifdef ENABLE_PULSE
+#include "pulse/pulse.h"
+#endif
+
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
@@ -75,7 +79,7 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
 #ifdef ENABLE_PULSE
         /* Synchronize an audio stream */
         if (vnc_client->audio)
-            guac_audio_stream_add_user(vnc_client->audio, user);
+            guac_pa_stream_add_user(vnc_client->audio, user);
 #endif
 
         /* Synchronize with current display */

@@ -46,22 +46,16 @@ noinst_HEADERS =      \
     user.h            \
     vnc.h
 
-# Optional PulseAudio support
-if ENABLE_PULSE
-libguac_client_vnc_la_SOURCES += pulse.c
-noinst_HEADERS += pulse.h
-endif
-
 libguac_client_vnc_la_CFLAGS =        \
     -Werror -Wall -pedantic -Iinclude \
     @COMMON_INCLUDE@                  \
     @COMMON_SSH_INCLUDE@              \
-    @LIBGUAC_INCLUDE@
+    @LIBGUAC_INCLUDE@                 \
+    @PULSE_INCLUDE@
 
 libguac_client_vnc_la_LDFLAGS = \
     -version-info 0:0:0         \
     @CAIRO_LIBS@                \
-    @PULSE_LIBS@                \
     @VNC_LIBS@ 
 
 libguac_client_vnc_la_LIBADD = \
@@ -73,5 +67,10 @@ if ENABLE_COMMON_SSH
 libguac_client_vnc_la_SOURCES += sftp.c
 noinst_HEADERS                += sftp.h
 libguac_client_vnc_la_LIBADD  += @COMMON_SSH_LTLIB@
+endif
+
+# Optional PulseAudio support
+if ENABLE_PULSE
+libguac_client_vnc_la_LIBADD += @PULSE_LTLIB@
 endif
 

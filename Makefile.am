@@ -28,6 +28,7 @@ DIST_SUBDIRS =           \
     src/terminal         \
     src/guacd            \
     src/guacenc          \
+    src/pulse            \
     src/protocols/rdp    \
     src/protocols/ssh    \
     src/protocols/telnet \
@@ -46,6 +47,10 @@ endif
 
 if ENABLE_TERMINAL
 SUBDIRS += src/terminal
+endif
+
+if ENABLE_PULSE
+SUBDIRS += src/pulse
 endif
 
 if ENABLE_RDP
