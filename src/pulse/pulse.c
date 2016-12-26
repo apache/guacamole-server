@@ -236,9 +236,6 @@ guac_pa_stream* guac_pa_stream_alloc(guac_client* client,
     if (audio == NULL)
         return NULL;
 
-    guac_client_log(client, GUAC_LOG_INFO, "Audio will be encoded as %s",
-            audio->encoder->mimetype);
-
     /* Init main loop */
     guac_pa_stream* stream = malloc(sizeof(guac_pa_stream));
     stream->client = client;

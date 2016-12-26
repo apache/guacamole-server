@@ -114,7 +114,7 @@ struct guac_audio_stream {
  * Allocates a new audio stream at the client level which encodes audio data
  * using the given encoder. If NULL is specified for the encoder, an
  * appropriate encoder will be selected based on the encoders built into
- * libguac and the level of support declared by the owner associated with the
+ * libguac and the level of support declared by users associated with the
  * given guac_client. The PCM format specified here (via rate, channels, and
  * bps) must be the format used for all PCM data provided to the audio stream.
  * The format may only be changed using guac_audio_stream_reset().
@@ -125,10 +125,10 @@ struct guac_audio_stream {
  * for the new user.
  *
  * @param client
- *     The guac_client for which this audio stream is being allocated. Only the
- *     connection owner is used to determine the level of audio support, and it
- *     is currently assumed that all other joining users on the connection will
- *     have the same level of audio support.
+ *     The guac_client for which this audio stream is being allocated. The
+ *     connection owner is given priority when determining the level of audio
+ *     support. It is currently assumed that all other joining users on the
+ *     connection will have the same level of audio support.
  *
  * @param encoder
  *     The guac_audio_encoder to use when encoding audio, or NULL if libguac
