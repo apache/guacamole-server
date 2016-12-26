@@ -174,7 +174,7 @@ void* guac_drv_render_thread(void* arg) {
 }
 
 guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
-        const char* address, const char* port) {
+        const char* address, const char* port, const char* pa_server_name) {
 
     guac_drv_display* display = malloc(sizeof(guac_drv_display));
 
@@ -226,7 +226,7 @@ guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
 
 #ifdef ENABLE_PULSE
     /* Attempt to connect to local PulseAudio service */
-    display->audio = guac_pa_stream_alloc(client, NULL);
+    display->audio = guac_pa_stream_alloc(client, pa_server_name);
     if (display->audio == NULL)
         guac_client_log(client, GUAC_LOG_WARNING, "Unable to connect to "
                 "PulseAudio.");

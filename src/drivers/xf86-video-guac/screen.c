@@ -700,7 +700,8 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
     /* Init display */
     guac_screen->display = guac_drv_display_alloc(screen,
             options[GUAC_DRV_OPTION_LISTEN_ADDRESS].value.str,
-            options[GUAC_DRV_OPTION_LISTEN_PORT].value.str);
+            options[GUAC_DRV_OPTION_LISTEN_PORT].value.str,
+            options[GUAC_DRV_OPTION_PULSE_AUDIO_SERVER_NAME].value.str);
 
     screen->SaveScreen = guac_drv_save_screen;
 

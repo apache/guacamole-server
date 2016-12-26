@@ -79,6 +79,12 @@ enum {
     GUAC_DRV_OPTION_LISTEN_PORT,
 
     /**
+     * The hostname of the PulseAudio server that the Guacamole X.Org driver
+     * should connect to for audio.
+     */
+    GUAC_DRV_OPTION_PULSE_AUDIO_SERVER_NAME,
+
+    /**
      * The total number of options defined for the Guacamole X.Org driver.
      */
     GUAC_DRV_OPTION_COUNT,

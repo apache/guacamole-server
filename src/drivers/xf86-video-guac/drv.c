@@ -64,6 +64,12 @@ const OptionInfoRec GUAC_OPTIONS[GUAC_DRV_OPTIONINFOREC_SIZE] = {
         "ListenPort", OPTV_STRING, { .str = "4823" }, FALSE
     },
 
+    /* PulseAudio server name */
+    {
+        GUAC_DRV_OPTION_PULSE_AUDIO_SERVER_NAME,
+        "PulseAudioServerName", OPTV_STRING, { .str = NULL }, FALSE
+    },
+
     /* End of options */
     { -1, NULL, OPTV_NONE, {0}, FALSE }
 

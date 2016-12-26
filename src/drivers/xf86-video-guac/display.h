@@ -148,7 +148,7 @@ typedef struct guac_drv_display {
  * Allocates a new multicast display.
  */
 guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
-        const char* address, const char* port);
+        const char* address, const char* port, const char* pa_server_name);
 
 /**
  * Immediately resizes the Guacamole display to the given width and height.
