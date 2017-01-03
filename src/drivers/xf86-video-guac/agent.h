@@ -25,6 +25,8 @@
 
 #include <guacamole/user.h>
 
+#include <pthread.h>
+
 /**
  * The X client which acts as an agent on behalf of a particular connected
  * user, sending requests which would otherwise not be possible within scope of
@@ -46,6 +48,17 @@ typedef struct guac_drv_agent {
      * Dummy window to associate with X client requests.
      */
     xcb_window_t dummy;
+
+    /**
+     * Flag indicating whether the event loop thread should continue running.
+     * When the event loop thread needs to die, this is set to 0.
+     */
+    int thread_running;
+
+    /**
+     * The X client's event loop thread.
+     */
+    pthread_t thread;
 
 } guac_drv_agent;
 
