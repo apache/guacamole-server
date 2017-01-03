@@ -87,7 +87,8 @@ guac_drv_la_LDFLAGS =      \
     -module -avoid-version \
     @PTHREAD_LIBS@         \
     @XCB_LIBS@             \
-    @XCB_RANDR_LIBS@
+    @XCB_RANDR_LIBS@       \
+    @XCB_XFIXES_LIBS@
 
 # Optional PulseAudio support
 if ENABLE_PULSE

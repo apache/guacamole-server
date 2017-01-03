@@ -1181,6 +1181,29 @@ AM_CONDITIONAL([ENABLE_XCB_RANDR], [test "x${have_xcb_randr}" = "xyes"])
 AC_SUBST(XCB_RANDR_LIBS)
 
 #
+# X protocol C-language Binding - support for XFixes
+#
+
+have_xcb_xfixes=disabled
+XCB_XFIXES_LIBS=
+AC_ARG_WITH([xcb-xfixes],
+            [AS_HELP_STRING([--with-xcb-xfixes],
+                            [support X11 XFixes extension with XCB @<:@default=check@:>@])],
+            [],
+            [with_xcb_xfixes=check])
+
+if test "x$with_xcb_xfixes" != "xno"
+then
+    have_xcb_xfixes=yes
+    AC_CHECK_LIB([xcb-xfixes], [xcb_xfixes_query_version],
+                 [XCB_XFIXES_LIBS="$XCB_XFIXES_LIBS -lxcb-xfixes"],
+                 [have_xcb_xfixes=no])
+fi
+
+AM_CONDITIONAL([ENABLE_XCB_XFIXES], [test "x${have_xcb_xfixes}" = "xyes"])
+AC_SUBST(XCB_XFIXES_LIBS)
+
+#
 # X.Org video driver
 #
 
@@ -1204,9 +1227,10 @@ then
     PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto],, [have_xorg=no])
 fi
 
-AM_CONDITIONAL([ENABLE_XORG], [test "x${have_xorg}"      = "xyes" \
-                                 -a "x${have_xcb}"       = "xyes" \
-                                 -a "x${have_xcb_randr}" = "xyes"])
+AM_CONDITIONAL([ENABLE_XORG], [test "x${have_xorg}"       = "xyes" \
+                                 -a "x${have_xcb}"        = "xyes" \
+                                 -a "x${have_xcb_randr}"  = "xyes" \
+                                 -a "x${have_xcb_xfixes}" = "xyes"])
 AC_SUBST([XORG_MODULE_DIR])
 AC_SUBST([XORG_CFLAGS])
 
@@ -1354,6 +1378,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libwebp ............. ${have_webp}
      libxcb .............. ${have_xcb}
      libxcb-randr ........ ${have_xcb_randr}
+     libxcb-xfixes ....... ${have_xcb_xfixes}
      wsock32 ............. ${have_winsock}
 
    Protocol support:
