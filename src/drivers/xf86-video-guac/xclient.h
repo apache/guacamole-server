@@ -50,11 +50,32 @@ void guac_drv_revoke_authorization(xcb_auth_info_t* auth);
  * Creates a new client connection to display associated with the Guacamole
  * X.Org driver using XCB.
  *
+ * @param auth
+ *     A pointer to the xcb_auth_info_t structure that should be used to
+ *     authorize with the X server.
+ *
  * @return
  *     A new XCB connection to the display associated with the Guacamole
  *     X.Org driver, or NULL if the connection cannot be established.
  */
 xcb_connection_t* guac_drv_get_connection(xcb_auth_info_t* auth);
+
+/**
+ * Looks up the definition of the atom having the given name. If no such atom
+ * is defined, XCB_ATOM_NONE is returned.
+ *
+ * @param connection
+ *     The connection to use to look up the atom definition.
+ *
+ * @param name
+ *     The name of the atom to look up.
+ *
+ * @return
+ *     The atom having the given name, or XCB_ATOM_NONE if no such atom is
+ *     defined.
+ */
+xcb_atom_t guac_drv_get_atom(xcb_connection_t* connection,
+        const char* name);
 
 #endif
 

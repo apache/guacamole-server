@@ -155,3 +155,26 @@ xcb_connection_t* guac_drv_get_connection(xcb_auth_info_t* auth) {
 
 }
 
+xcb_atom_t guac_drv_get_atom(xcb_connection_t* connection,
+        const char* name) {
+
+    /* Request definition of atom */
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(connection, 0,
+            strlen(name), name);
+
+    /* Wait for reply */
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(connection,
+            cookie, NULL);
+
+    /* If request succeeds, returned defined atom */
+    if (reply) {
+        xcb_atom_t atom = reply->atom;
+        free(reply);
+        return atom;
+    }
+
+    /* Otherwise, return XCB_ATOM_NONE */
+    return XCB_ATOM_NONE;
+
+}
+
