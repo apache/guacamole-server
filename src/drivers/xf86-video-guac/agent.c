@@ -22,11 +22,70 @@
 #include "agent.h"
 #include "xclient.h"
 
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+#include <guacamole/stream.h>
 #include <guacamole/user.h>
 
 #include <xcb/xcb.h>
 #include <xcb/randr.h>
+#include <xcb/xfixes.h>
 #include <stdlib.h>
+
+/**
+ * Sends the contents of a window property to the given user over the Guacamole
+ * connection as a text clipboard stream.
+ *
+ * @param user
+ *     The user to send the window property to.
+ *
+ * @param connection
+ *     The X connection associated with the window from which the property is
+ *     being read.
+ *
+ * @param window
+ *     The window from which the property is being read.
+ *
+ * @param property
+ *     The property being read.
+ *
+ * @param type
+ *     The type of the property being read.
+ */
+static void guac_drv_send_property_value_as_clipboard(guac_user* user,
+        xcb_connection_t* connection, xcb_window_t window,
+        xcb_atom_t property, xcb_atom_t type) {
+
+    xcb_generic_error_t* error;
+
+    /* Request property contents */
+    xcb_get_property_cookie_t property_cookie = xcb_get_property(connection, 1,
+            window, property, type, 0, 1024 /* = 4096 bytes */);
+
+    /* Wait for response */
+    xcb_get_property_reply_t* property_reply = xcb_get_property_reply(
+            connection, property_cookie, &error);
+
+    /* Bail out if request fails */
+    if (error != NULL || property_reply->format != 8)
+        return;
+
+    /* Begin clipboard stream */
+    guac_stream* stream = guac_user_alloc_stream(user);
+    guac_protocol_send_clipboard(user->socket, stream, "text/plain");
+
+    /* STUB: Need to repeat request if not all data is available */
+    guac_protocol_send_blob(user->socket, stream,
+            xcb_get_property_value(property_reply),
+            xcb_get_property_value_length(property_reply));
+
+    /* Clipboard stream ended */
+    guac_protocol_send_end(user->socket, stream);
+    guac_user_free_stream(user, stream);
+
+    guac_socket_flush(user->socket);
+
+}
 
 /**
  * The event loop thread of the agent X client. This thread listens for X
@@ -60,6 +119,24 @@ static void* guac_drv_agent_thread(void* data) {
         return NULL;
     }
 
+    /* Init XFixes extension */
+    const xcb_query_extension_reply_t* xfixes =
+        guac_drv_init_xfixes(connection);
+
+    /* Agent thread is useless if XFixes is absent */
+    if (xfixes == NULL) {
+        guac_user_log(agent->user, GUAC_LOG_WARNING, "X server does not "
+                "have the XFixes extension. Clipboard will not work.");
+        return NULL;
+    }
+
+    /* Request XFixes to inform us of selection changes */
+    xcb_xfixes_select_selection_input_checked(connection, agent->dummy,
+            XCB_ATOM_PRIMARY,
+            XCB_XFIXES_SELECTION_EVENT_MASK_SELECTION_CLIENT_CLOSE
+            | XCB_XFIXES_SELECTION_EVENT_MASK_SELECTION_WINDOW_DESTROY
+            | XCB_XFIXES_SELECTION_EVENT_MASK_SET_SELECTION_OWNER);
+
     /* Process events until signalled to stop */
     while (agent->thread_running) {
 
@@ -71,10 +148,28 @@ static void* guac_drv_agent_thread(void* data) {
         /* Derive event type from response type */
         uint8_t event_type = event->response_type & 0x7F;
 
-        /* STUB */
-        guac_user_log(agent->user, GUAC_LOG_DEBUG, "Event: %i", event_type);
+        /* If notified of a selection change, request conversion to UTF8 */
+        if (event_type == xfixes->first_event + XCB_XFIXES_SELECTION_NOTIFY) {
+            xcb_convert_selection(connection, agent->dummy, XCB_ATOM_PRIMARY,
+                    utf8_string, xsel_data, XCB_CURRENT_TIME);
+            xcb_flush(connection);
+        }
 
-    }
+        /* If we've received the converted UTF8 data, resend as clipboard */
+        else if (event_type == XCB_SELECTION_NOTIFY) {
+
+            xcb_selection_notify_event_t* selection_notify =
+                (xcb_selection_notify_event_t*) event;
+
+            guac_drv_send_property_value_as_clipboard(agent->user, connection,
+                    selection_notify->requestor, selection_notify->property,
+                    utf8_string);
+
+        }
+
+    } /* end event loop */
+
+    guac_user_log(agent->user, GUAC_LOG_INFO, "End of agent thread.");
 
     return NULL;
 

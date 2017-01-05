@@ -31,6 +31,7 @@
 #include <opaque.h>
 
 #include <xcb/xcb.h>
+#include <xcb/xfixes.h>
 
 #include <string.h>
 
@@ -175,6 +176,42 @@ xcb_atom_t guac_drv_get_atom(xcb_connection_t* connection,
 
     /* Otherwise, return XCB_ATOM_NONE */
     return XCB_ATOM_NONE;
+
+}
+
+const xcb_query_extension_reply_t* guac_drv_init_xfixes(
+        xcb_connection_t* connection) {
+
+    xcb_generic_error_t* error;
+
+    /* Query existence of the XFixes extension */
+    const xcb_query_extension_reply_t* xfixes_reply = xcb_get_extension_data(
+            connection, &xcb_xfixes_id);
+
+    /* If XFixes is not present, initialization failed */
+    if (!xfixes_reply->present)
+        return NULL;
+
+    /* Query version of XFixes extension */
+    xcb_xfixes_query_version_cookie_t version_cookie =
+        xcb_xfixes_query_version(connection, XCB_XFIXES_MAJOR_VERSION,
+                XCB_XFIXES_MINOR_VERSION);
+
+    /* Wait for version to be reported */
+    xcb_xfixes_query_version_reply_t* version =
+        xcb_xfixes_query_version_reply(connection, version_cookie, &error);
+
+    /* Version response is ignored */
+    free(version);
+
+    /* If an error occurred, XFixes initialization failed */
+    if (error != NULL) {
+        free(error);
+        return NULL;
+    }
+
+    /* Initialization succeeded */
+    return xfixes_reply;
 
 }
 

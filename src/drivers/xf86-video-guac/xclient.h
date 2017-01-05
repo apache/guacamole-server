@@ -22,6 +22,7 @@
 #define GUAC_DRV_XCLIENT_H
 
 #include <xcb/xcb.h>
+#include <xcb/xfixes.h>
 
 /**
  * Allocates a new xcb_auth_info_t structure containing newly-generated and
@@ -76,6 +77,21 @@ xcb_connection_t* guac_drv_get_connection(xcb_auth_info_t* auth);
  */
 xcb_atom_t guac_drv_get_atom(xcb_connection_t* connection,
         const char* name);
+
+/**
+ * Initializes the XFixes extension, if present, returning an
+ * xcb_query_extension_reply_t describing the extension. If the XFixes
+ * extension is absent or failed to initialize, NULL is returned.
+ *
+ * @param connection
+ *     The connection which intends to use the XFixes extension.
+ *
+ * @return
+ *     An xcb_query_extension_reply_t describing the extension, or NULL if the
+ *     XFixes extension is absent or failed to initialize.
+ */
+const xcb_query_extension_reply_t* guac_drv_init_xfixes(
+        xcb_connection_t* connection);
 
 #endif
 
