@@ -247,6 +247,7 @@ rdp_keymaps =                   \
     keymaps/de_de_qwertz.keymap \
     keymaps/en_us_qwerty.keymap \
     keymaps/fr_fr_azerty.keymap \
+    keymaps/fr_ch_qwertz.keymap \
     keymaps/it_it_qwerty.keymap \
     keymaps/ja_jp_qwerty.keymap \
     keymaps/sv_se_qwerty.keymap
