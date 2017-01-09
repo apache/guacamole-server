@@ -39,11 +39,11 @@ map -altgr +shift 0x56 0x2C..0x35      		~ ">YXCVBNM;:_"
 # Keys requiring AltGr
 #
 
-map +altgr -shift 0x02..0x04  			~ "¦@#"
+map +altgr -shift 0x02..0x04  			    ~ "¦@#"
 map +altgr -shift 0x06..0x08 0x0C 0x0D	~ "¬|¢´~"
-map +altgr -shift 0x1A 0x1B  			~ "[]"
-map +altgr -shift 0x28 0x2B  			~ "{}"
-map +altgr -shift 0x56 		 			~ "\"
+map +altgr -shift 0x1A 0x1B  			      ~ "[]"
+map +altgr -shift 0x28 0x2B  			      ~ "{}"
+map +altgr -shift 0x56 		 			        ~ "\"
 
 map +altgr -shift 0x12 ~ "€"
 
