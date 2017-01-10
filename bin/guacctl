@@ -105,7 +105,7 @@ error() {
 ##
 usage() {
     cat >&2 <<END
-guacctl 0.9.10-incubating, Guacamole terminal session control utility.
+guacctl 0.9.11-incubating, Guacamole terminal session control utility.
 Usage: guacctl [OPTION] [FILE or NAME]...
 
     -d, --download         download each of the files listed.
