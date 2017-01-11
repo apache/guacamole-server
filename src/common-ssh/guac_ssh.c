@@ -48,7 +48,7 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 /**
  * Array of mutexes, used by OpenSSL.
  */
-static pthread_mutex_t* guac_common_ssh_openssl_locks;
+static pthread_mutex_t* guac_common_ssh_openssl_locks = NULL;
 
 /**
  * Called by OpenSSL when locking or unlocking the Nth mutex.
@@ -103,7 +103,7 @@ static void guac_common_ssh_openssl_init_locks(int count) {
 
     /* Allocate required number of locks */
     guac_common_ssh_openssl_locks =
-        malloc(sizeof(pthread_mutex_t) * CRYPTO_num_locks());
+        malloc(sizeof(pthread_mutex_t) * count);
 
     /* Initialize each lock */
     for (i=0; i < count; i++)
@@ -120,6 +120,10 @@ static void guac_common_ssh_openssl_init_locks(int count) {
 static void guac_common_ssh_openssl_free_locks(int count) {
 
     int i;
+
+    /* SSL lock array was not initialized */
+    if (guac_common_ssh_openssl_locks == NULL)
+        return;
 
     /* Free all locks */
     for (i=0; i < count; i++)
