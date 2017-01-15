@@ -95,28 +95,34 @@ int __guac_handle_sync(guac_user* user, int argc, char** argv) {
     if (timestamp > user->client->last_sent_timestamp)
         return -1;
 
-    /* Update stored timestamp */
-    user->last_received_timestamp = timestamp;
+    /* Only update lag calculations if timestamp is sane */
+    if (timestamp >= user->last_received_timestamp) {
 
-    /* Calculate length of frame, including network and processing lag */
-    frame_duration = current - timestamp;
+        /* Update stored timestamp */
+        user->last_received_timestamp = timestamp;
 
-    /* Update lag statistics if at least one frame has been rendered */
-    if (user->last_frame_duration != 0) {
+        /* Calculate length of frame, including network and processing lag */
+        frame_duration = current - timestamp;
 
-        /* Calculate lag using the previous frame as a baseline */
-        int processing_lag = frame_duration - user->last_frame_duration;
+        /* Update lag statistics if at least one frame has been rendered */
+        if (user->last_frame_duration != 0) {
 
-        /* Adjust back to zero if cumulative error leads to a negative value */
-        if (processing_lag < 0)
-            processing_lag = 0;
+            /* Calculate lag using the previous frame as a baseline */
+            int processing_lag = frame_duration - user->last_frame_duration;
 
-        user->processing_lag = processing_lag;
+            /* Adjust back to zero if cumulative error leads to a negative
+             * value */
+            if (processing_lag < 0)
+                processing_lag = 0;
+
+            user->processing_lag = processing_lag;
+
+        }
+
+        /* Record baseline duration of frame by excluding lag */
+        user->last_frame_duration = frame_duration - user->processing_lag;
 
     }
-
-    /* Record baseline duration of frame by excluding lag */
-    user->last_frame_duration = frame_duration - user->processing_lag;
 
     if (user->sync_handler)
         return user->sync_handler(user, timestamp);
