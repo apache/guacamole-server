@@ -150,7 +150,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
         /* Terminal output received */
         case TELNET_EV_DATA:
-            guac_terminal_write_stdout(telnet_client->term, event->data.buffer, event->data.size);
+            guac_terminal_write(telnet_client->term, event->data.buffer, event->data.size);
 
             /* Continue search for username prompt */
             if (settings->username_regex != NULL) {
@@ -267,7 +267,7 @@ static void* __guac_telnet_input_thread(void* data) {
     while ((bytes_read = guac_terminal_read_stdin(telnet_client->term, buffer, sizeof(buffer))) > 0) {
         telnet_send(telnet_client->telnet, buffer, bytes_read);
         if (telnet_client->echo_enabled)
-            guac_terminal_write_stdout(telnet_client->term, buffer, bytes_read);
+            guac_terminal_write(telnet_client->term, buffer, bytes_read);
     }
 
     return NULL;
