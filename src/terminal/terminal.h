@@ -159,13 +159,24 @@ struct guac_terminal {
     pthread_mutex_t lock;
 
     /**
-     * Pipe which should be written to (and read from) to provide output to
-     * this terminal. Another thread should read from this pipe when writing
-     * data to the terminal. It would make sense for the terminal to provide
-     * this thread, but for simplicity, that logic is left to the guac
-     * message handler (to give the message handler something to block with).
+     * The mutex associated with the modified condition and flag, locked
+     * whenever a thread is waiting on the modified condition, the modified
+     * condition is being signalled, or the modified flag is being changed.
      */
-    int stdout_pipe_fd[2];
+    pthread_mutex_t modified_lock;
+
+    /**
+     * Flag set whenever an operation has affected the terminal in a way that
+     * will require a frame flush. When this flag is set, the modified_cond
+     * condition will be signalled. The modified_lock will always be
+     * acquired before this flag is altered.
+     */
+    int modified;
+
+    /**
+     * Condition which is signalled when the modified flag has been set
+     */
+    pthread_cond_t modified_cond;
 
     /**
      * Pipe which will be the source of user input. When a terminal code
@@ -474,23 +485,13 @@ int guac_terminal_render_frame(guac_terminal* terminal);
 int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size);
 
 /**
- * Writes to this terminal's STDOUT. This function may block until space
- * is freed in the output buffer by guac_terminal_render_frame().
- */
-int guac_terminal_write_stdout(guac_terminal* terminal, const char* c, int size);
-
-/**
  * Notifies the terminal that an event has occurred and the terminal should
  * flush itself when reasonable.
  *
  * @param terminal
  *     The terminal to notify.
- *
- * @return
- *     Zero if notification succeeded, non-zero if an error occurred while
- *     notifying the terminal.
  */
-int guac_terminal_notify(guac_terminal* terminal);
+void guac_terminal_notify(guac_terminal* terminal);
 
 /**
  * Reads a single line from this terminal's STDIN, storing the result in a

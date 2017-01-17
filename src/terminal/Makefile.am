@@ -27,7 +27,6 @@ noinst_HEADERS =                \
     char_mappings.h             \
     common.h                    \
     display.h                   \
-    packet.h                    \
     scrollbar.h                 \
     terminal.h                  \
     terminal_handlers.h         \
@@ -39,7 +38,6 @@ libguac_terminal_la_SOURCES =   \
     char_mappings.c             \
     common.c                    \
     display.c                   \
-    packet.c                    \
     scrollbar.c                 \
     terminal.c                  \
     terminal_handlers.c         \
