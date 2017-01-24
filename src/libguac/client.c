@@ -41,6 +41,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * Empty NULL-terminated array of argument names.
+ */
+const char* __GUAC_CLIENT_NO_ARGS[] = { NULL };
+
 guac_layer __GUAC_DEFAULT_LAYER = {
     .index = 0
 };
@@ -399,6 +404,7 @@ guac_client* guac_client_alloc() {
     /* Init new client */
     memset(client, 0, sizeof(guac_client));
 
+    client->args = __GUAC_CLIENT_NO_ARGS;
     client->state = GUAC_CLIENT_RUNNING;
     client->last_sent_timestamp = guac_timestamp_current();
 
@@ -683,11 +689,6 @@ int guac_client_end_frame(guac_client* client) {
 
 }
 
-/**
- * Empty NULL-terminated array of argument names.
- */
-const char* __GUAC_CLIENT_NO_ARGS[] = { NULL };
-
 int guac_client_load_plugin(guac_client* client, const char* protocol) {
 
     /* Reference to dlopen()'d plugin */
@@ -730,7 +731,6 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
     }
 
     /* Init client */
-    client->args = __GUAC_CLIENT_NO_ARGS;
     client->__plugin_handle = client_plugin_handle;
 
     return alias.client_init(client);
