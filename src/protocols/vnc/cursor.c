@@ -20,9 +20,9 @@
 #include "config.h"
 
 #include "client.h"
-#include "guac_cursor.h"
-#include "guac_display.h"
-#include "guac_surface.h"
+#include "common/cursor.h"
+#include "common/display.h"
+#include "common/surface.h"
 #include "vnc.h"
 
 #include <cairo/cairo.h>

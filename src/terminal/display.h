@@ -23,7 +23,7 @@
 
 #include "config.h"
 
-#include "guac_surface.h"
+#include "common/surface.h"
 #include "types.h"
 
 #include <guacamole/client.h>

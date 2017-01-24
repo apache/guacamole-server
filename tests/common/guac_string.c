@@ -20,7 +20,7 @@
 #include "config.h"
 
 #include "common_suite.h"
-#include "guac_string.h"
+#include "common/string.h"
 
 #include <stdlib.h>
 #include <CUnit/Basic.h>

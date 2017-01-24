@@ -17,12 +17,12 @@
  * under the License.
  */
 
-#include "guac_blank_cursor.h"
-#include "guac_dot_cursor.h"
-#include "guac_cursor.h"
-#include "guac_ibar_cursor.h"
-#include "guac_pointer_cursor.h"
-#include "guac_surface.h"
+#include "common/blank_cursor.h"
+#include "common/dot_cursor.h"
+#include "common/cursor.h"
+#include "common/ibar_cursor.h"
+#include "common/pointer_cursor.h"
+#include "common/surface.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>

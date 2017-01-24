@@ -20,7 +20,7 @@
 
 #include "config.h"
 #include "client.h"
-#include "guac_clipboard.h"
+#include "common/clipboard.h"
 #include "rdp.h"
 #include "rdp_fs.h"
 #include "rdp_svc.h"

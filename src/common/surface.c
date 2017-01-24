@@ -18,8 +18,8 @@
  */
 
 #include "config.h"
-#include "guac_rect.h"
-#include "guac_surface.h"
+#include "common/rect.h"
+#include "common/surface.h"
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>

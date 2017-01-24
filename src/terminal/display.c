@@ -20,8 +20,8 @@
 #include "config.h"
 
 #include "common.h"
+#include "common/surface.h"
 #include "display.h"
-#include "guac_surface.h"
 #include "types.h"
 
 #include <math.h>

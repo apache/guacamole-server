@@ -17,9 +17,9 @@
  * under the License.
  */
 
-#include "guac_cursor.h"
-#include "guac_display.h"
-#include "guac_surface.h"
+#include "common/cursor.h"
+#include "common/display.h"
+#include "common/surface.h"
 
 #include <guacamole/client.h>
 #include <guacamole/socket.h>

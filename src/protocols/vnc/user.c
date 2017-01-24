@@ -21,9 +21,9 @@
 
 #include "clipboard.h"
 #include "input.h"
-#include "guac_display.h"
-#include "guac_dot_cursor.h"
-#include "guac_pointer_cursor.h"
+#include "common/display.h"
+#include "common/dot_cursor.h"
+#include "common/pointer_cursor.h"
 #include "user.h"
 #include "sftp.h"
 #include "vnc.h"

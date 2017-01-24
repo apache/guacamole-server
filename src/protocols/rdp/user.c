@@ -20,8 +20,8 @@
 #include "config.h"
 
 #include "audio_input.h"
+#include "common/display.h"
 #include "input.h"
-#include "guac_display.h"
 #include "user.h"
 #include "rdp.h"
 #include "rdp_settings.h"

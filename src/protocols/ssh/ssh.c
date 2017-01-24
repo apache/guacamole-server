@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "guac_recording.h"
+#include "common/recording.h"
 #include "guac_sftp.h"
 #include "guac_ssh.h"
 #include "settings.h"
@@ -339,7 +339,7 @@ void* ssh_client_thread(void* data) {
 
         /* Attempt to write data received. Exit on failure. */
         if (bytes_read > 0) {
-            int written = guac_terminal_write_stdout(ssh_client->term, buffer, bytes_read);
+            int written = guac_terminal_write(ssh_client->term, buffer, bytes_read);
             if (written < 0)
                 break;
 

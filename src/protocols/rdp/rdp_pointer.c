@@ -20,8 +20,8 @@
 #include "config.h"
 
 #include "client.h"
-#include "guac_cursor.h"
-#include "guac_display.h"
+#include "common/cursor.h"
+#include "common/display.h"
 #include "rdp.h"
 #include "rdp_pointer.h"
 

@@ -20,7 +20,7 @@
 #include "config.h"
 
 #include "common_suite.h"
-#include "guac_iconv.h"
+#include "common/iconv.h"
 
 #include <stdlib.h>
 #include <CUnit/Basic.h>
