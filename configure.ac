@@ -119,6 +119,10 @@ AC_SUBST([LIBGUAC_INCLUDE], '-I$(top_srcdir)/src/libguac')
 AC_SUBST([COMMON_LTLIB],   '$(top_builddir)/src/common/libguac_common.la')
 AC_SUBST([COMMON_INCLUDE], '-I$(top_srcdir)/src/common')
 
+# Common PulseAudio utility library
+AC_SUBST([PULSE_LTLIB],   '$(top_builddir)/src/pulse/libguac_pulse.la')
+AC_SUBST([PULSE_INCLUDE], '-I$(top_srcdir)/src/pulse')
+
 # Common utility library for guacd implementations
 AC_SUBST([LIBGUACD_LTLIB],   '$(top_builddir)/src/libguacd/libguacd.la')
 AC_SUBST([LIBGUACD_INCLUDE], '-I$(top_srcdir)/src/libguacd')
@@ -1108,6 +1112,7 @@ AC_CONFIG_FILES([Makefile
                  src/libguacd/Makefile
                  src/guacd/Makefile
                  src/guacenc/Makefile
+                 src/pulse/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile

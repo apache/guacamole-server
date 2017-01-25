@@ -33,8 +33,7 @@
 #include <rfb/rfbclient.h>
 
 #ifdef ENABLE_PULSE
-#include <guacamole/audio.h>
-#include <pulse/pulseaudio.h>
+#include "pulse/pulse.h"
 #endif
 
 #ifdef ENABLE_COMMON_SSH
@@ -89,14 +88,9 @@ typedef struct guac_vnc_client {
 
 #ifdef ENABLE_PULSE
     /**
-     * Audio output, if any.
+     * PulseAudio output, if any.
      */
-    guac_audio_stream* audio;
-
-    /**
-     * PulseAudio event loop.
-     */
-    pa_threaded_mainloop* pa_mainloop;
+    guac_pa_stream* audio;
 #endif
 
 #ifdef ENABLE_COMMON_SSH

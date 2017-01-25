@@ -19,12 +19,11 @@
 
 #include "config.h"
 
-#include "pulse.h"
-#include "vnc.h"
+#include "pulse/pulse.h"
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
-#include <guacamole/socket.h>
+#include <guacamole/user.h>
 #include <pulse/pulseaudio.h>
 
 /**
@@ -62,9 +61,8 @@ static int guac_pa_is_silence(const void* buffer, size_t length) {
 static void __stream_read_callback(pa_stream* stream, size_t length,
         void* data) {
 
-    guac_client* client = (guac_client*) data;
-    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
-    guac_audio_stream* audio = vnc_client->audio;
+    guac_pa_stream* guac_stream = (guac_pa_stream*) data;
+    guac_audio_stream* audio = guac_stream->audio;
 
     const void* buffer;
 
@@ -86,7 +84,8 @@ static void __stream_read_callback(pa_stream* stream, size_t length,
 
 static void __stream_state_callback(pa_stream* stream, void* data) {
 
-    guac_client* client = (guac_client*) data;
+    guac_pa_stream* guac_stream = (guac_pa_stream*) data;
+    guac_client* client = guac_stream->client;
 
     switch (pa_stream_get_state(stream)) {
 
@@ -137,11 +136,11 @@ static void __context_get_sink_info_callback(pa_context* context,
 
     /* Set format */
     spec.format   = PA_SAMPLE_S16LE;
-    spec.rate     = GUAC_VNC_AUDIO_RATE;
-    spec.channels = GUAC_VNC_AUDIO_CHANNELS;
+    spec.rate     = GUAC_PULSE_AUDIO_RATE;
+    spec.channels = GUAC_PULSE_AUDIO_CHANNELS;
 
     attr.maxlength = -1;
-    attr.fragsize  = GUAC_VNC_AUDIO_FRAGMENT_SIZE;
+    attr.fragsize  = GUAC_PULSE_AUDIO_FRAGMENT_SIZE;
 
     /* Create stream */
     stream = pa_stream_new(context, "Guacamole Audio", &spec, NULL);
@@ -226,41 +225,54 @@ static void __context_state_callback(pa_context* context, void* data) {
 
 }
 
-void guac_pa_start_stream(guac_client* client) {
+guac_pa_stream* guac_pa_stream_alloc(guac_client* client,
+        const char* server_name) {
 
-    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
-    guac_vnc_settings* settings = vnc_client->settings;
+    guac_audio_stream* audio = guac_audio_stream_alloc(client, NULL,
+            GUAC_PULSE_AUDIO_RATE, GUAC_PULSE_AUDIO_CHANNELS,
+            GUAC_PULSE_AUDIO_BPS);
 
-    pa_context* context;
-
-    guac_client_log(client, GUAC_LOG_INFO, "Starting audio stream");
+    /* Abort if audio stream cannot be created */
+    if (audio == NULL)
+        return NULL;
 
     /* Init main loop */
-    vnc_client->pa_mainloop = pa_threaded_mainloop_new();
+    guac_pa_stream* stream = malloc(sizeof(guac_pa_stream));
+    stream->client = client;
+    stream->audio = audio;
+    stream->pa_mainloop = pa_threaded_mainloop_new();
 
     /* Create context */
-    context = pa_context_new(
-            pa_threaded_mainloop_get_api(vnc_client->pa_mainloop),
+    pa_context* context = pa_context_new(
+            pa_threaded_mainloop_get_api(stream->pa_mainloop),
             "Guacamole Audio");
 
     /* Set up context */
-    pa_context_set_state_callback(context, __context_state_callback, client);
-    pa_context_connect(context, settings->pa_servername,
-            PA_CONTEXT_NOAUTOSPAWN, NULL);
+    pa_context_set_state_callback(context, __context_state_callback, stream);
+    pa_context_connect(context, server_name, PA_CONTEXT_NOAUTOSPAWN, NULL);
 
     /* Start loop */
-    pa_threaded_mainloop_start(vnc_client->pa_mainloop);
+    pa_threaded_mainloop_start(stream->pa_mainloop);
+
+    return stream;
 
 }
 
-void guac_pa_stop_stream(guac_client* client) {
+void guac_pa_stream_add_user(guac_pa_stream* stream, guac_user* user) {
+    guac_audio_stream_add_user(stream->audio, user);
+}
 
-    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
+void guac_pa_stream_free(guac_pa_stream* stream) {
 
     /* Stop loop */
-    pa_threaded_mainloop_stop(vnc_client->pa_mainloop);
+    pa_threaded_mainloop_stop(stream->pa_mainloop);
 
-    guac_client_log(client, GUAC_LOG_INFO, "Audio stream finished");
+    /* Free underlying audio stream */
+    guac_audio_stream_free(stream->audio);
+
+    /* Stream now ended */
+    guac_client_log(stream->client, GUAC_LOG_INFO, "Audio stream finished");
+    free(stream);
 
 }
 
