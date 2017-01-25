@@ -31,6 +31,7 @@
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -94,7 +95,7 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
     guac_protocol_send_move(socket, cursor->layer, GUAC_DEFAULT_LAYER,
             cursor->x - cursor->hotspot_x,
             cursor->y - cursor->hotspot_y,
-            0);
+            INT_MAX);
 
     /* Synchronize cursor image */
     if (cursor->surface != NULL) {
@@ -172,7 +173,7 @@ void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
             GUAC_DEFAULT_LAYER,
             x - cursor->hotspot_x,
             y - cursor->hotspot_y,
-            0);
+            INT_MAX);
 
     guac_socket_flush(cursor->client->socket);
 
@@ -299,7 +300,7 @@ void guac_common_cursor_set_argb(guac_common_cursor* cursor, int hx, int hy,
             GUAC_DEFAULT_LAYER,
             cursor->x - hx,
             cursor->y - hy,
-            0);
+            INT_MAX);
 
     /* Broadcast new cursor image to all users */
     guac_protocol_send_size(cursor->client->socket, cursor->layer,
