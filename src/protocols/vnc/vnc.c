@@ -380,6 +380,12 @@ void* guac_vnc_client_thread(void* data) {
 
             } while (wait_result > 0);
 
+            /* Record end of frame, excluding server-side rendering time (we
+             * assume server-side rendering time will be consistent between any
+             * two subsequent frames, and that this time should thus be
+             * excluded from the required wait period of the next frame). */
+            last_frame_end = frame_start;
+
         }
 
         /* If an error occurs, log it and fail */
@@ -390,9 +396,6 @@ void* guac_vnc_client_thread(void* data) {
         guac_common_surface_flush(vnc_client->display->default_surface);
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
-
-        /* Record end of frame */
-        last_frame_end = guac_timestamp_current();
 
     }
 
