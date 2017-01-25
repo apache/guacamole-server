@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "socket-ssl.h"
+#include "libguacd/socket-ssl.h"
 
 #include <poll.h>
 #include <stdlib.h>
