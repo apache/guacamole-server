@@ -24,6 +24,7 @@
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -106,6 +107,8 @@ guac_common_display* guac_common_display_alloc(guac_client* client,
     if (display == NULL)
         return NULL;
 
+    pthread_mutex_init(&display->_lock, NULL);
+
     /* Associate display with given client */
     display->client = client;
 
@@ -135,12 +138,15 @@ void guac_common_display_free(guac_common_display* display) {
     guac_common_display_free_layers(display->buffers, display->client);
     guac_common_display_free_layers(display->layers, display->client);
 
+    pthread_mutex_destroy(&display->_lock);
     free(display);
 
 }
 
 void guac_common_display_dup(guac_common_display* display, guac_user* user,
         guac_socket* socket) {
+
+    pthread_mutex_lock(&display->_lock);
 
     /* Sunchronize shared cursor */
     guac_common_cursor_dup(display->cursor, user, socket);
@@ -152,9 +158,13 @@ void guac_common_display_dup(guac_common_display* display, guac_user* user,
     guac_common_display_dup_layers(display->layers, user, socket);
     guac_common_display_dup_layers(display->buffers, user, socket);
 
+    pthread_mutex_unlock(&display->_lock);
+
 }
 
 void guac_common_display_flush(guac_common_display* display) {
+
+    pthread_mutex_lock(&display->_lock);
 
     guac_common_display_layer* current = display->layers;
 
@@ -165,6 +175,8 @@ void guac_common_display_flush(guac_common_display* display) {
     }
 
     guac_common_surface_flush(display->default_surface);
+
+    pthread_mutex_unlock(&display->_lock);
 
 }
 
@@ -246,41 +258,49 @@ static void guac_common_display_remove_layer(guac_common_display_layer** head,
 guac_common_display_layer* guac_common_display_alloc_layer(
         guac_common_display* display, int width, int height) {
 
-    guac_layer* layer;
-    guac_common_surface* surface;
+    pthread_mutex_lock(&display->_lock);
 
     /* Allocate Guacamole layer */
-    layer = guac_client_alloc_layer(display->client);
+    guac_layer* layer = guac_client_alloc_layer(display->client);
 
     /* Allocate corresponding surface */
-    surface = guac_common_surface_alloc(display->client,
+    guac_common_surface* surface = guac_common_surface_alloc(display->client,
             display->client->socket, layer, width, height);
 
     /* Add layer and surface to list */
-    return guac_common_display_add_layer(&display->layers, layer, surface);
+    guac_common_display_layer* display_layer =
+        guac_common_display_add_layer(&display->layers, layer, surface);
+
+    pthread_mutex_unlock(&display->_lock);
+    return display_layer;
 
 }
 
 guac_common_display_layer* guac_common_display_alloc_buffer(
         guac_common_display* display, int width, int height) {
 
-    guac_layer* buffer;
-    guac_common_surface* surface;
+    pthread_mutex_lock(&display->_lock);
 
     /* Allocate Guacamole buffer */
-    buffer = guac_client_alloc_buffer(display->client);
+    guac_layer* buffer = guac_client_alloc_buffer(display->client);
 
     /* Allocate corresponding surface */
-    surface = guac_common_surface_alloc(display->client,
+    guac_common_surface* surface = guac_common_surface_alloc(display->client,
             display->client->socket, buffer, width, height);
 
     /* Add buffer and surface to list */
-    return guac_common_display_add_layer(&display->buffers, buffer, surface);
+    guac_common_display_layer* display_layer =
+        guac_common_display_add_layer(&display->buffers, buffer, surface);
+
+    pthread_mutex_unlock(&display->_lock);
+    return display_layer;
 
 }
 
 void guac_common_display_free_layer(guac_common_display* display,
         guac_common_display_layer* display_layer) {
+
+    pthread_mutex_lock(&display->_lock);
 
     /* Remove list element from list */
     guac_common_display_remove_layer(&display->layers, display_layer);
@@ -292,10 +312,14 @@ void guac_common_display_free_layer(guac_common_display* display,
     /* Free list element */
     free(display_layer);
 
+    pthread_mutex_unlock(&display->_lock);
+
 }
 
 void guac_common_display_free_buffer(guac_common_display* display,
         guac_common_display_layer* display_buffer) {
+
+    pthread_mutex_lock(&display->_lock);
 
     /* Remove list element from list */
     guac_common_display_remove_layer(&display->buffers, display_buffer);
@@ -306,6 +330,8 @@ void guac_common_display_free_buffer(guac_common_display* display,
 
     /* Free list element */
     free(display_buffer);
+
+    pthread_mutex_unlock(&display->_lock);
 
 }
 

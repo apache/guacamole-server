@@ -26,6 +26,8 @@
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
 
+#include <pthread.h>
+
 /**
  * A list element representing a pairing of a Guacamole layer with a
  * corresponding guac_common_surface which wraps that layer. Adjacent layers
@@ -96,6 +98,13 @@ typedef struct guac_common_display {
      * buffers, or NULL if no buffers are currently allocated.
      */
     guac_common_display_layer* buffers;
+
+    /**
+     * Mutex which is locked internally when access to the display must be
+     * synchronized. All public functions of guac_common_display should be
+     * considered threadsafe.
+     */
+    pthread_mutex_t _lock;
 
 } guac_common_display;
 
