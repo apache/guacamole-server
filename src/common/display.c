@@ -155,7 +155,17 @@ void guac_common_display_dup(guac_common_display* display, guac_user* user,
 }
 
 void guac_common_display_flush(guac_common_display* display) {
+
+    guac_common_display_layer* current = display->layers;
+
+    /* Flush all surfaces */
+    while (current != NULL) {
+        guac_common_surface_flush(current->surface);
+        current = current->next;
+    }
+
     guac_common_surface_flush(display->default_surface);
+
 }
 
 /**

@@ -116,6 +116,29 @@
  */
 #define GUAC_SURFACE_WEBP_BLOCK_SIZE 8
 
+void guac_common_surface_move(guac_common_surface* surface, int x, int y) {
+    surface->x = x;
+    surface->y = y;
+    surface->location_dirty = 1;
+}
+
+void guac_common_surface_stack(guac_common_surface* surface, int z) {
+    surface->z = z;
+    surface->location_dirty = 1;
+}
+
+void guac_common_surface_set_parent(guac_common_surface* surface,
+        const guac_layer* parent) {
+    surface->parent = parent;
+    surface->location_dirty = 1;
+}
+
+void guac_common_surface_set_opacity(guac_common_surface* surface,
+        int opacity) {
+    surface->opacity = opacity;
+    surface->opacity_dirty = 1;
+}
+
 /**
  * Updates the coordinates of the given rectangle to be within the bounds of
  * the given surface.
@@ -990,6 +1013,7 @@ guac_common_surface* guac_common_surface_alloc(guac_client* client,
     surface->client = client;
     surface->socket = socket;
     surface->layer = layer;
+    surface->parent = GUAC_DEFAULT_LAYER;
     surface->width = w;
     surface->height = h;
 
@@ -1443,6 +1467,29 @@ static int __guac_common_surface_bitmap_rect_compare(const void* a, const void* 
 
 }
 
+void guac_common_surface_flush_properties(guac_common_surface* surface) {
+
+    guac_socket* socket = surface->socket;
+
+    /* Only applicable to non-default visible layers */
+    if (surface->layer->index <= 0)
+        return;
+
+    /* Flush opacity */
+    if (surface->opacity_dirty) {
+        guac_protocol_send_shade(socket, surface->layer, surface->opacity);
+        surface->opacity_dirty = 0;
+    }
+
+    /* Flush location and hierarchy */
+    if (surface->location_dirty) {
+        guac_protocol_send_move(socket, surface->layer,
+                surface->parent, surface->x, surface->y, surface->z);
+        surface->location_dirty = 0;
+    }
+
+}
+
 void guac_common_surface_flush(guac_common_surface* surface) {
 
     /* Flush final dirty rectangle to queue. */
@@ -1523,6 +1570,9 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
     }
 
+    /* Flush any applicable layer properties */
+    guac_common_surface_flush_properties(surface);
+
     /* Flush complete */
     surface->bitmap_queue_length = 0;
 
@@ -1535,8 +1585,21 @@ void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
     if (!surface->realized)
         return;
 
+    /* Synchronize layer-specific properties if applicable */
+    if (surface->layer->index > 0) {
+
+        /* Synchronize opacity */
+        guac_protocol_send_shade(socket, surface->layer, surface->opacity);
+
+        /* Synchronize location and hierarchy */
+        guac_protocol_send_move(socket, surface->layer,
+                surface->parent, surface->x, surface->y, surface->z);
+
+    }
+
     /* Sync size to new socket */
-    guac_protocol_send_size(socket, surface->layer, surface->width, surface->height);
+    guac_protocol_send_size(socket, surface->layer,
+            surface->width, surface->height);
 
     /* Get entire surface */
     cairo_surface_t* rect = cairo_image_surface_create_for_data(

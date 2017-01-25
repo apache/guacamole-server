@@ -119,6 +119,40 @@ typedef struct guac_common_surface {
     guac_socket* socket;
 
     /**
+     * The X coordinate of the upper-left corner of this layer, in pixels,
+     * relative to its parent layer. This is only applicable to visible
+     * (non-buffer) layers which are not the default layer.
+     */
+    int x;
+
+    /**
+     * The Y coordinate of the upper-left corner of this layer, in pixels,
+     * relative to its parent layer. This is only applicable to visible
+     * (non-buffer) layers which are not the default layer.
+     */
+    int y;
+
+    /**
+     * The Z-order of this layer, relative to sibling layers. This is only
+     * applicable to visible (non-buffer) layers which are not the default
+     * layer.
+     */
+    int z;
+
+    /**
+     * The level of opacity applied to this layer. Fully opaque is 255, while
+     * fully transparent is 0. This is only applicable to visible (non-buffer)
+     * layers which are not the default layer.
+     */
+    int opacity;
+
+    /**
+     * The layer which contains this layer. This is only applicable to visible
+     * (non-buffer) layers which are not the default layer.
+     */
+    const guac_layer* parent;
+
+    /**
      * The width of this layer, in pixels.
      */
     int width;
@@ -137,6 +171,18 @@ typedef struct guac_common_surface {
      * The underlying buffer of the Cairo surface.
      */
     unsigned char* buffer;
+
+    /**
+     * Non-zero if the location or parent layer of this surface has been
+     * changed and needs to be flushed, 0 otherwise.
+     */
+    int location_dirty;
+
+    /**
+     * Non-zero if the opacity of this surface has been changed and needs to be
+     * flushed, 0 otherwise.
+     */
+    int opacity_dirty;
 
     /**
      * Non-zero if this surface is dirty and needs to be flushed, 0 otherwise.
@@ -317,10 +363,77 @@ void guac_common_surface_clip(guac_common_surface* surface, int x, int y, int w,
 void guac_common_surface_reset_clip(guac_common_surface* surface);
 
 /**
- * Flushes the given surface, drawing any pending operations on the remote
- * display.
+ * Changes the location of the surface relative to its parent layer. If the
+ * surface does not represent a non-default visible layer, then this function
+ * has no effect.
  *
- * @param surface The surface to flush.
+ * @param surface
+ *     The surface to move relative to its parent layer.
+ *
+ * @param x
+ *     The new X coordinate for the upper-left corner of the layer, in pixels.
+ *
+ * @param y
+ *     The new Y coordinate for the upper-left corner of the layer, in pixels.
+ */
+void guac_common_surface_move(guac_common_surface* surface, int x, int y);
+
+/**
+ * Changes the stacking order of the surface relative to other surfaces within
+ * the same parent layer. If the surface does not represent a non-default
+ * visible layer, then this function has no effect.
+ *
+ * @param surface
+ *     The surface to reorder relative to sibling layers.
+ *
+ * @param z
+ *     The new Z-order for this layer, relative to sibling layers.
+ */
+void guac_common_surface_stack(guac_common_surface* surface, int z);
+
+/**
+ * Changes the parent layer of ths given surface. By default, layers will be
+ * children of the default layer. If the surface does not represent a
+ * non-default visible layer, then this function has no effect.
+ *
+ * @param surface
+ *     The surface whose parent layer should be changed.
+ *
+ * @param parent
+ *     The layer which should be set as the new parent of the given surface.
+ */
+void guac_common_surface_set_parent(guac_common_surface* surface,
+        const guac_layer* parent);
+
+/**
+ * Sets the opacity of the surface. If the surface does not represent a
+ * non-default visible layer, then this function has no effect.
+ *
+ * @param surface
+ *     The surface whose opacity should be changed.
+ *
+ * @param opacity
+ *     The level of opacity applied to this surface, where fully opaque is 255,
+ *     and fully transparent is 0.
+ */
+void guac_common_surface_set_opacity(guac_common_surface* surface, int opacity);
+
+/**
+ * Flushes only the properties of the given surface, such as layer location or
+ * opacity. Image state is not flushed. If the surface represents a buffer or
+ * the default layer, this function has no effect.
+ *
+ * @param surface
+ *     The surface to flush.
+ */
+void guac_common_surface_flush_properties(guac_common_surface* surface);
+
+/**
+ * Flushes the given surface, including any applicable properties, drawing any
+ * pending operations on the remote display.
+ *
+ * @param surface
+ *     The surface to flush.
  */
 void guac_common_surface_flush(guac_common_surface* surface);
 
