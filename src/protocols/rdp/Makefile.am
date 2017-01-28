@@ -249,7 +249,8 @@ rdp_keymaps =                   \
     keymaps/fr_fr_azerty.keymap \
     keymaps/it_it_qwerty.keymap \
     keymaps/ja_jp_qwerty.keymap \
-    keymaps/sv_se_qwerty.keymap
+    keymaps/sv_se_qwerty.keymap \
+    keymaps/ch-fr-qwertz.keymap
 
 _generated_keymaps.c: $(rdp_keymaps)
 	keymaps/generate.pl $(rdp_keymaps)
