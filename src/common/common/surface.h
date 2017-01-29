@@ -336,20 +336,43 @@ void guac_common_surface_transfer(guac_common_surface* src, int sx, int sy, int 
                                   guac_transfer_function op, guac_common_surface* dst, int dx, int dy);
 
 /**
- * Draws a solid color rectangle at the given coordinates on the given surface.
+ * Assigns the given value to all pixels within a rectangle of the given
+ * surface. The color of all pixels within the rectangle, including the alpha
+ * component, is entirely replaced.
  *
- * @param surface The surface to draw upon.
- * @param x The X coordinate of the upper-left corner of the rectangle.
- * @param y The Y coordinate of the upper-left corner of the rectangle.
- * @param w The width of the rectangle.
- * @param h The height of the rectangle.
- * @param red The red component of the color of the rectangle.
- * @param green The green component of the color of the rectangle.
- * @param blue The blue component of the color of the rectangle.
+ * @param surface
+ *     The surface to draw upon.
+ *
+ * @param x
+ *     The X coordinate of the upper-left corner of the rectangle.
+ *
+ * @param y
+ *     The Y coordinate of the upper-left corner of the rectangle.
+ *
+ * @param w
+ *     The width of the rectangle.
+ *
+ * @param h
+ *     The height of the rectangle.
+ *
+ * @param red
+ *     The red component of the color value to assign to all pixels within the
+ *     rectangle.
+ *
+ * @param green
+ *     The green component of the color value to assign to all pixels within
+ *     the rectangle.
+ *
+ * @param blue 
+ *     The blue component of the color value to assign to all pixels within the
+ *     rectangle.
+ *
+ * @param alpha 
+ *     The alpha component of the color value to assign to all pixels within
+ *     the rectangle.
  */
-void guac_common_surface_rect(guac_common_surface* surface,
-                              int x, int y, int w, int h,
-                              int red, int green, int blue);
+void guac_common_surface_set(guac_common_surface* surface, int x, int y,
+        int w, int h, int red, int green, int blue, int alpha);
 
 /**
  * Given the coordinates and dimensions of a rectangle, clips all future

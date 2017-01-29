@@ -113,7 +113,8 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
         case 0:
 
             /* Send black rectangle */
-            guac_common_surface_rect(current_surface, x, y, w, h, 0, 0, 0);
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    0x00, 0x00, 0x00, 0xFF);
             break;
 
         /* DSTINVERT */
@@ -128,7 +129,8 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
 
         /* Whiteness */
         case 0xFF:
-            guac_common_surface_rect(current_surface, x, y, w, h, 0xFF, 0xFF, 0xFF);
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    0xFF, 0xFF, 0xFF, 0xFF);
             break;
 
         /* Unsupported ROP3 */
@@ -175,7 +177,8 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
 
         /* If blackness, send black rectangle */
         case 0x00:
-            guac_common_surface_rect(current_surface, x, y, w, h, 0, 0, 0);
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    0x00, 0x00, 0x00, 0xFF);
             break;
 
         /* If NOP, do nothing */
@@ -185,15 +188,17 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
         /* If operation is just a copy, send foreground only */
         case 0xCC:
         case 0xF0:
-            guac_common_surface_rect(current_surface, x, y, w, h,
+            guac_common_surface_set(current_surface, x, y, w, h,
                     (patblt->foreColor >> 16) & 0xFF,
                     (patblt->foreColor >> 8 ) & 0xFF,
-                    (patblt->foreColor      ) & 0xFF);
+                    (patblt->foreColor      ) & 0xFF,
+                    0xFF);
             break;
 
         /* If whiteness, send white rectangle */
         case 0xFF:
-            guac_common_surface_rect(current_surface, x, y, w, h, 0xFF, 0xFF, 0xFF);
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    0xFF, 0xFF, 0xFF, 0xFF);
             break;
 
         /* Otherwise, invert entire rect */
@@ -250,7 +255,8 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
         /* If blackness, send black rectangle */
         case 0x00:
-            guac_common_surface_rect(current_surface, x, y, w, h, 0, 0, 0);
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    0x00, 0x00, 0x00, 0xFF);
             break;
 
         /* If NOP, do nothing */
@@ -294,7 +300,8 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
         /* If whiteness, send white rectangle */
         case 0xFF:
-            guac_common_surface_rect(current_surface, x, y, w, h, 0xFF, 0xFF, 0xFF);
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    0xFF, 0xFF, 0xFF, 0xFF);
             break;
 
         /* Otherwise, use transfer */
@@ -330,10 +337,11 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
     int w = opaque_rect->nWidth;
     int h = opaque_rect->nHeight;
 
-    guac_common_surface_rect(current_surface, x, y, w, h,
+    guac_common_surface_set(current_surface, x, y, w, h,
             (color >> 16) & 0xFF,
             (color >> 8 ) & 0xFF,
-            (color      ) & 0xFF);
+            (color      ) & 0xFF,
+            0xFF);
 
 }
 

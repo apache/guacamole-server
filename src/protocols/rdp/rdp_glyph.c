@@ -136,10 +136,12 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
         /* Convert background color */
         bgcolor = guac_rdp_convert_color(context, bgcolor);
 
-        guac_common_surface_rect(rdp_client->current_surface, x, y, width, height,
-                                 (bgcolor & 0xFF0000) >> 16,
-                                 (bgcolor & 0x00FF00) >> 8,
-                                  bgcolor & 0x0000FF);
+        guac_common_surface_set(rdp_client->current_surface,
+                x, y, width, height,
+                (bgcolor & 0xFF0000) >> 16,
+                (bgcolor & 0x00FF00) >> 8,
+                (bgcolor & 0x0000FF),
+                0xFF);
 
     }
 

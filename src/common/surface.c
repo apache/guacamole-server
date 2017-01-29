@@ -225,6 +225,54 @@ static void __guac_common_clip_rect(guac_common_surface* surface,
 }
 
 /**
+ * Returns whether a rectangle within the given surface contains only fully
+ * opaque pixels.
+ *
+ * @param surface
+ *     The surface to check.
+ *
+ * @param rect
+ *     The rectangle to check.
+ *
+ * @return
+ *     Non-zero if the rectangle contains only fully opaque pixels, zero
+ *     otherwise.
+ */
+static int __guac_common_surface_is_opaque(guac_common_surface* surface,
+        guac_common_rect* rect) {
+
+    int x, y;
+
+    int stride = surface ->stride;
+    unsigned char* buffer =
+        surface->buffer + (stride * rect->y) + (4 * rect->x);
+
+    /* For each row */
+    for (y = 0; y < rect->height; y++) {
+
+        /* Search for a non-opaque pixel */
+        uint32_t* current = (uint32_t*) buffer;
+        for (x=0; x < rect->width; x++) {
+
+            /* Rectangle is non-opaque if a single non-opaque pixel is found */
+            uint32_t color = *(current++);
+            if ((color & 0xFF000000) != 0xFF000000)
+                return 0;
+
+        }
+
+        /* Next row */
+        buffer += stride;
+
+    }
+
+    /* Rectangle is opaque */
+    return 1;
+
+}
+
+
+/**
  * Returns whether the given rectangle should be combined into the existing
  * dirty rectangle, to be eventually flushed as a "png" instruction.
  *
@@ -730,24 +778,41 @@ static int __guac_common_surface_transfer_int(guac_transfer_function op, uint32_
 }
 
 /**
- * Draws a rectangle of solid color within the backing surface of the
- * given destination surface.
+ * Assigns the given value to all pixels within a rectangle of the backing
+ * surface of the given destination surface. The color of all pixels within the
+ * rectangle, including the alpha component, is entirely replaced.
  *
- * @param dst The destination surface.
- * @param rect The rectangle to draw.
- * @param red The red component of the color of the rectangle.
- * @param green The green component of the color of the rectangle.
- * @param blue The blue component of the color of the rectangle.
+ * @param dst
+ *     The destination surface.
+ *
+ * @param rect
+ *     The rectangle to draw.
+ *
+ * @param red
+ *     The red component of the color value to assign to all pixels within the
+ *     rectangle.
+ *
+ * @param green
+ *     The green component of the color value to assign to all pixels within
+ *     the rectangle.
+ *
+ * @param blue 
+ *     The blue component of the color value to assign to all pixels within the
+ *     rectangle.
+ *
+ * @param alpha 
+ *     The alpha component of the color value to assign to all pixels within
+ *     the rectangle.
  */
-static void __guac_common_surface_rect(guac_common_surface* dst, guac_common_rect* rect,
-                                       int red, int green, int blue) {
+static void __guac_common_surface_set(guac_common_surface* dst,
+        guac_common_rect* rect, int red, int green, int blue, int alpha) {
 
     int x, y;
 
     int dst_stride;
     unsigned char* dst_buffer;
 
-    uint32_t color = 0xFF000000 | (red << 16) | (green << 8) | blue;
+    uint32_t color = (alpha << 24) | (red << 16) | (green << 8) | blue;
 
     int min_x = rect->width - 1;
     int min_y = rect->height - 1;
@@ -1063,7 +1128,7 @@ guac_common_surface* guac_common_surface_alloc(guac_client* client,
     pthread_mutex_init(&surface->_lock, NULL);
 
     /* Create corresponding Cairo surface */
-    surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
+    surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
     surface->buffer = calloc(h, surface->stride);
 
     /* Create corresponding heat map */
@@ -1130,7 +1195,7 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     /* Re-initialize at new size */
     surface->width  = w;
     surface->height = h;
-    surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
+    surface->stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
     surface->buffer = calloc(h, surface->stride);
     __guac_common_bound_rect(surface, &surface->clip_rect, NULL, NULL);
 
@@ -1373,8 +1438,8 @@ complete:
 
 }
 
-void guac_common_surface_rect(guac_common_surface* surface,
-        int x, int y, int w, int h, int red, int green, int blue) {
+void guac_common_surface_set(guac_common_surface* surface,
+        int x, int y, int w, int h, int red, int green, int blue, int alpha) {
 
     pthread_mutex_lock(&surface->_lock);
 
@@ -1390,19 +1455,31 @@ void guac_common_surface_rect(guac_common_surface* surface,
         goto complete;
 
     /* Update backing surface */
-    __guac_common_surface_rect(surface, &rect, red, green, blue);
+    __guac_common_surface_set(surface, &rect, red, green, blue, alpha);
     if (rect.width <= 0 || rect.height <= 0)
         goto complete;
 
+    /* Handle as normal draw if non-opaque */
+    if (alpha != 0xFF) {
+
+        /* Flush if not combining */
+        if (!__guac_common_should_combine(surface, &rect, 0))
+            __guac_common_surface_flush_deferred(surface);
+
+        /* Always defer draws */
+        __guac_common_mark_dirty(surface, &rect);
+
+    }
+
     /* Defer if combining */
-    if (__guac_common_should_combine(surface, &rect, 1))
+    else if (__guac_common_should_combine(surface, &rect, 1))
         __guac_common_mark_dirty(surface, &rect);
 
     /* Otherwise, flush and draw immediately */
     else {
         __guac_common_surface_flush(surface);
         guac_protocol_send_rect(socket, layer, rect.x, rect.y, rect.width, rect.height);
-        guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, 0xFF);
+        guac_protocol_send_cfill(socket, GUAC_COMP_OVER, layer, red, green, blue, alpha);
         surface->realized = 1;
     }
 
@@ -1444,8 +1521,12 @@ void guac_common_surface_reset_clip(guac_common_surface* surface) {
  *
  * @param surface
  *     The surface to flush.
+ *
+ * @param opaque
+ *     Whether the rectangle being flushed contains only fully-opaque pixels.
  */
-static void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
+static void __guac_common_surface_flush_to_png(guac_common_surface* surface,
+        int opaque) {
 
     if (surface->dirty) {
 
@@ -1457,9 +1538,29 @@ static void __guac_common_surface_flush_to_png(guac_common_surface* surface) {
                               + surface->dirty_rect.y * surface->stride
                               + surface->dirty_rect.x * 4;
 
-        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
-                CAIRO_FORMAT_RGB24, surface->dirty_rect.width,
-                surface->dirty_rect.height, surface->stride);
+        cairo_surface_t* rect;
+
+        /* Use RGB24 if the image is fully opaque */
+        if (opaque)
+            rect = cairo_image_surface_create_for_data(buffer,
+                    CAIRO_FORMAT_RGB24, surface->dirty_rect.width,
+                    surface->dirty_rect.height, surface->stride);
+
+        /* Otherwise ARGB32 is needed */
+        else {
+
+            rect = cairo_image_surface_create_for_data(buffer,
+                    CAIRO_FORMAT_ARGB32, surface->dirty_rect.width,
+                    surface->dirty_rect.height, surface->stride);
+
+            /* Clear destination rect first */
+            guac_protocol_send_rect(socket, layer,
+                    surface->dirty_rect.x, surface->dirty_rect.y,
+                    surface->dirty_rect.width, surface->dirty_rect.height);
+            guac_protocol_send_cfill(socket, GUAC_COMP_ROUT, layer,
+                    0x00, 0x00, 0x00, 0xFF);
+
+        }
 
         /* Send PNG for rect */
         guac_client_stream_png(surface->client, socket, GUAC_COMP_OVER,
@@ -1531,8 +1632,12 @@ static void __guac_common_surface_flush_to_jpeg(guac_common_surface* surface) {
  *
  * @param surface
  *     The surface to flush.
+ *
+ * @param opaque
+ *     Whether the rectangle being flushed contains only fully-opaque pixels.
  */
-static void __guac_common_surface_flush_to_webp(guac_common_surface* surface) {
+static void __guac_common_surface_flush_to_webp(guac_common_surface* surface,
+        int opaque) {
 
     if (surface->dirty) {
 
@@ -1552,9 +1657,19 @@ static void __guac_common_surface_flush_to_webp(guac_common_surface* surface) {
                               + surface->dirty_rect.y * surface->stride
                               + surface->dirty_rect.x * 4;
 
-        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
-                CAIRO_FORMAT_RGB24, surface->dirty_rect.width,
-                surface->dirty_rect.height, surface->stride);
+        cairo_surface_t* rect;
+
+        /* Use RGB24 if the image is fully opaque */
+        if (opaque)
+            rect = cairo_image_surface_create_for_data(buffer,
+                    CAIRO_FORMAT_RGB24, surface->dirty_rect.width,
+                    surface->dirty_rect.height, surface->stride);
+
+        /* Otherwise ARGB32 is needed */
+        else
+            rect = cairo_image_surface_create_for_data(buffer,
+                    CAIRO_FORMAT_ARGB32, surface->dirty_rect.width,
+                    surface->dirty_rect.height, surface->stride);
 
         /* Send WebP for rect */
         guac_client_stream_webp(surface->client, socket, GUAC_COMP_OVER, layer,
@@ -1684,19 +1799,22 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
 
                 flushed++;
 
+                int opaque = __guac_common_surface_is_opaque(surface,
+                            &surface->dirty_rect);
+
                 /* Prefer WebP when reasonable */
                 if (__guac_common_surface_should_use_webp(surface,
                             &surface->dirty_rect))
-                    __guac_common_surface_flush_to_webp(surface);
+                    __guac_common_surface_flush_to_webp(surface, opaque);
 
                 /* If not WebP, JPEG is the next best (lossy) choice */
-                else if (__guac_common_surface_should_use_jpeg(surface,
-                            &surface->dirty_rect))
+                else if (opaque && __guac_common_surface_should_use_jpeg(
+                            surface, &surface->dirty_rect))
                     __guac_common_surface_flush_to_jpeg(surface);
 
                 /* Use PNG if no lossy formats are appropriate */
                 else
-                    __guac_common_surface_flush_to_png(surface);
+                    __guac_common_surface_flush_to_png(surface, opaque);
 
             }
 
@@ -1755,7 +1873,7 @@ void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
 
         /* Get entire surface */
         cairo_surface_t* rect = cairo_image_surface_create_for_data(
-                surface->buffer, CAIRO_FORMAT_RGB24,
+                surface->buffer, CAIRO_FORMAT_ARGB32,
                 surface->width, surface->height, surface->stride);
 
         /* Send PNG for rect */
