@@ -217,12 +217,6 @@ typedef struct guac_rdp_fs_file {
     DIR* dir;
 
     /**
-     * The last read dirent structure. This is used if traversing the contents
-     * of a directory.
-     */
-    struct dirent __dirent;
-
-    /**
      * The pattern the check directory contents against, if any.
      */
     char dir_pattern[GUAC_RDP_FS_MAX_PATH];
