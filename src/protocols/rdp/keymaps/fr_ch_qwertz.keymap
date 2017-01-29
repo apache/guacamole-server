@@ -1,0 +1,45 @@
+parent  "base"
+name    "fr-ch-qwertz"
+freerdp "KBD_SWISS_FRENCH"
+
+#
+# Basic keys
+#
+
+map -altgr -shift 0x29 0x02..0x0C      ~ "§1234567890'"
+map -altgr -shift      0x10..0x1A      ~ "qwertzuiopè"
+map -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjkléà$"
+map -altgr -shift 0x56 0x2C..0x35      ~ "<yxcvbnm,.-"
+
+map -altgr +shift 0x29 0x02..0x0C      ~ "°+"*ç%&/()=?"
+map -altgr +shift      0x10..0x1B      ~ "QWERTZUIOPü!"
+map -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLöä£"
+map -altgr +shift 0x56 0x2C..0x35      ~ ">YXCVBNM;:_"
+
+#
+# Keys requiring AltGr
+#
+
+map +altgr -shift 0x02..0x04 ~ "|@#"
+map +altgr -shift 0x07..0x09 ~ "¬¦¢"
+
+map +altgr -shift 0x1A..0x1B ~ "[]"
+
+map +altgr -shift 0x28 ~ "{"
+map +altgr -shift 0x2B ~ "}"
+
+map +altgr -shift 0x56 ~ "\"
+
+map +altgr -shift 0x12 ~ "€"
+
+#
+# Dead keys
+#
+
+map +altgr -shift 0x0C ~ 0xFE51 # Dead acute
+
+map -altgr -shift 0x0D ~ 0xFE52 # Dead circumflex
+map -altgr +shift 0x0D ~ 0xFE50 # Dead grave
+map +altgr -shift 0x0D ~ 0xFE53 # Dead tilde
+
+map -altgr -shift 0x1B ~ 0xFE57 # Dead umlaut
