@@ -1104,6 +1104,10 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
 
     pthread_mutex_lock(&surface->_lock);
 
+    /* Ignore if resize will have no effect */
+    if (w == surface->width && h == surface->height)
+        goto complete;
+
     guac_socket* socket = surface->socket;
     const guac_layer* layer = surface->layer;
 
@@ -1153,6 +1157,7 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
     if (surface->realized)
         guac_protocol_send_size(socket, layer, w, h);
 
+complete:
     pthread_mutex_unlock(&surface->_lock);
 
 }
