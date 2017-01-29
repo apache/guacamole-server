@@ -47,6 +47,48 @@
  */
 #define GUAC_TERMINAL_OK          "\x1B[0n"
 
+/**
+ * Advances the cursor to the next row, scrolling if the cursor would otherwise
+ * leave the scrolling region. If the cursor is already outside the scrolling
+ * region, the cursor is prevented from leaving the terminal bounds.
+ *
+ * @param term
+ *     The guac_terminal whose cursor should be advanced to the next row.
+ */
+static void guac_terminal_linefeed(guac_terminal* term) {
+
+    /* Scroll up if necessary */
+    if (term->cursor_row == term->scroll_end)
+        guac_terminal_scroll_up(term, term->scroll_start,
+                term->scroll_end, 1);
+
+    /* Otherwise, just advance to next row if space remains */
+    else if (term->cursor_row < term->term_height - 1)
+        term->cursor_row++;
+
+}
+
+/**
+ * Moves the cursor backward to the previous row, scrolling if the cursor would
+ * otherwise leave the scrolling region. If the cursor is already outside the
+ * scrolling region, the cursor is prevented from leaving the terminal bounds.
+ *
+ * @param term
+ *     The guac_terminal whose cursor should be moved backward by one row.
+ */
+static void guac_terminal_reverse_linefeed(guac_terminal* term) {
+
+    /* Scroll down if necessary */
+    if (term->cursor_row == term->scroll_start)
+        guac_terminal_scroll_down(term, term->scroll_start,
+                term->scroll_end, 1);
+
+    /* Otherwise, move back one row if space remains */
+    else if (term->cursor_row > 0)
+        term->cursor_row--;
+
+}
+
 int guac_terminal_echo(guac_terminal* term, unsigned char c) {
 
     int width;
@@ -134,17 +176,9 @@ int guac_terminal_echo(guac_terminal* term, unsigned char c) {
         case '\n':
         case 0x0B: /* VT */
         case 0x0C: /* FF */
-            term->cursor_row++;
 
-            /* Scroll up if necessary */
-            if (term->cursor_row > term->scroll_end) {
-                term->cursor_row = term->scroll_end;
-
-                /* Scroll up by one row */        
-                guac_terminal_scroll_up(term, term->scroll_start,
-                        term->scroll_end, 1);
-
-            }
+            /* Advance to next row */
+            guac_terminal_linefeed(term);
 
             /* If automatic carriage return, fall through to CR handler */
             if (!term->automatic_carriage_return)
@@ -193,17 +227,7 @@ int guac_terminal_echo(guac_terminal* term, unsigned char c) {
             /* Wrap if necessary */
             if (term->cursor_col >= term->term_width) {
                 term->cursor_col = 0;
-                term->cursor_row++;
-            }
-
-            /* Scroll up if necessary */
-            if (term->cursor_row > term->scroll_end) {
-                term->cursor_row = term->scroll_end;
-
-                /* Scroll up by one row */        
-                guac_terminal_scroll_up(term, term->scroll_start,
-                        term->scroll_end, 1);
-
+                guac_terminal_linefeed(term);
             }
 
             /* If insert mode, shift other characters right by 1 */
@@ -278,36 +302,14 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
 
         /* Index (IND) */
         case 'D':
-            term->cursor_row++;
-
-            /* Scroll up if necessary */
-            if (term->cursor_row > term->scroll_end) {
-                term->cursor_row = term->scroll_end;
-
-                /* Scroll up by one row */        
-                guac_terminal_scroll_up(term, term->scroll_start,
-                        term->scroll_end, 1);
-
-            }
-
+            guac_terminal_linefeed(term);
             term->char_handler = guac_terminal_echo; 
             break;
 
         /* Next Line (NEL) */
         case 'E':
             term->cursor_col = 0;
-            term->cursor_row++;
-
-            /* Scroll up if necessary */
-            if (term->cursor_row > term->scroll_end) {
-                term->cursor_row = term->scroll_end;
-
-                /* Scroll up by one row */        
-                guac_terminal_scroll_up(term, term->scroll_start,
-                        term->scroll_end, 1);
-
-            }
-
+            guac_terminal_linefeed(term);
             term->char_handler = guac_terminal_echo; 
             break;
 
@@ -319,19 +321,7 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
 
         /* Reverse Linefeed */
         case 'M':
-
-            term->cursor_row--;
-
-            /* Scroll down if necessary */
-            if (term->cursor_row < term->scroll_start) {
-                term->cursor_row = term->scroll_start;
-
-                /* Scroll down by one row */        
-                guac_terminal_scroll_down(term, term->scroll_start,
-                        term->scroll_end, 1);
-
-            }
-
+            guac_terminal_reverse_linefeed(term);
             term->char_handler = guac_terminal_echo; 
             break;
 
