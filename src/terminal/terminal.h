@@ -259,12 +259,18 @@ struct guac_terminal {
     int scroll_end;
 
     /**
-     * The current row location of the cursor.
+     * The current row location of the cursor. Note that while most terminal
+     * operations will clip the cursor location within the bounds of the
+     * terminal, this is not guaranteed.
      */
     int cursor_row;
 
     /**
-     * The current column location of the cursor.
+     * The current column location of the cursor. Note that while most
+     * terminal operations will clip the cursor location within the bounds
+     * of the terminal, this is not guaranteed. There are times when the
+     * cursor is legitimately outside the terminal bounds (such as when the
+     * end of a line is reached, but it is not yet necessary to scroll up).
      */
     int cursor_col;
 
