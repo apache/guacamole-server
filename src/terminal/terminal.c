@@ -847,6 +847,45 @@ int guac_terminal_clear_range(guac_terminal* term,
 
 }
 
+/**
+ * Returns whether the given character would be visible relative to the
+ * background of the given terminal.
+ *
+ * @param term
+ *     The guac_terminal to test the character against.
+ *
+ * @param c
+ *     The character being tested.
+ *
+ * @return
+ *     true if the given character is different from the terminal background,
+ *     false otherwise.
+ */
+static bool guac_terminal_is_visible(guac_terminal* term,
+        guac_terminal_char* c) {
+
+    /* Continuation characters are NEVER visible */
+    if (c->value == GUAC_CHAR_CONTINUATION)
+        return false;
+
+    /* Characters with glyphs are ALWAYS visible */
+    if (guac_terminal_has_glyph(c->value))
+        return true;
+
+    int background;
+
+    /* Determine actual background color of character */
+    if (c->attributes.reverse != c->attributes.cursor)
+        background = c->attributes.foreground;
+    else
+        background = c->attributes.background;
+
+    /* Blank characters are visible if their background color differs from that
+     * of the terminal */
+    return background != term->default_char.attributes.background;
+
+}
+
 void guac_terminal_scroll_display_down(guac_terminal* terminal,
         int scroll_amount) {
 
@@ -893,7 +932,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
         for (column=0; column<buffer_row->length; column++) {
 
             /* Only draw if not blank */
-            if (guac_terminal_has_glyph(current->value))
+            if (guac_terminal_is_visible(terminal, current))
                 guac_terminal_display_set_columns(terminal->display, dest_row, column, column, current);
 
             current++;
@@ -955,7 +994,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
         for (column=0; column<buffer_row->length; column++) {
 
             /* Only draw if not blank */
-            if (guac_terminal_has_glyph(current->value))
+            if (guac_terminal_is_visible(terminal, current))
                 guac_terminal_display_set_columns(terminal->display, dest_row, column, column, current);
 
             current++;
@@ -1230,7 +1269,7 @@ static void __guac_terminal_redraw_rect(guac_terminal* term, int start_row, int 
 
             /* Only redraw if not blank */
             guac_terminal_char* c = &(buffer_row->characters[col]);
-            if (guac_terminal_has_glyph(c->value))
+            if (guac_terminal_is_visible(term, c))
                 guac_terminal_display_set_columns(term->display, row, col, col, c);
 
         }
