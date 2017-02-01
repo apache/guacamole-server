@@ -182,6 +182,10 @@ void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
     int i, j;
     guac_terminal_char* current;
 
+    /* Do nothing if glyph is empty */
+    if (character->width == 0)
+        return;
+
     /* Build continuation char (for multicolumn characters) */
     guac_terminal_char continuation_char;
     continuation_char.value = GUAC_CHAR_CONTINUATION;

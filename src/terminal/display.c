@@ -438,6 +438,10 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
     int i;
     guac_terminal_operation* current;
 
+    /* Do nothing if glyph is empty */
+    if (character->width == 0)
+        return;
+
     /* Ignore operations outside display bounds */
     if (row < 0 || row >= display->height)
         return;
