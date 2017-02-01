@@ -657,18 +657,21 @@ char* guac_terminal_prompt(guac_terminal* terminal, const char* title,
 
 int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint) {
 
-    int width;
-
-    /* Build character with current attributes */
-    guac_terminal_char guac_char;
-    guac_char.value = codepoint;
-    guac_char.attributes = term->current_attributes;
-
-    width = wcwidth(codepoint);
+    /* Calculate width in columns */
+    int width = wcwidth(codepoint);
     if (width < 0)
         width = 1;
 
-    guac_char.width = width;
+    /* Do nothing if glyph is empty */
+    else if (width == 0)
+        return 0;
+
+    /* Build character with current attributes */
+    guac_terminal_char guac_char = {
+        .value      = codepoint,
+        .attributes = term->current_attributes,
+        .width      = width
+    };
 
     guac_terminal_set_columns(term, row, col, col + width - 1, &guac_char);
 
