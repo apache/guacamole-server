@@ -29,6 +29,7 @@ libguac_client_rdp_la_SOURCES = \
     audio_input.c               \
     client.c                    \
     dvc.c                       \
+    error.c                     \
     input.c                     \
     keyboard.c                  \
     ptr_string.c                \
@@ -96,6 +97,7 @@ noinst_HEADERS =                             \
     audio_input.h                            \
     client.h                                 \
     dvc.h                                    \
+    error.h                                  \
     input.h                                  \
     keyboard.h                               \
     ptr_string.h                             \
