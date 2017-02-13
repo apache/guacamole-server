@@ -72,6 +72,7 @@ guacdr_sources =                             \
     guac_rdpdr/rdpdr_fs_service.c            \
     guac_rdpdr/rdpdr_messages.c              \
     guac_rdpdr/rdpdr_printer.c               \
+    guac_rdpdr/rdpdr_print_job.c             \
     guac_rdpdr/rdpdr_service.c               \
     rdp_fs.c                                 \
     rdp_stream.c                             \
@@ -89,6 +90,7 @@ noinst_HEADERS =                             \
     guac_rdpdr/rdpdr_fs_service.h            \
     guac_rdpdr/rdpdr_messages.h              \
     guac_rdpdr/rdpdr_printer.h               \
+    guac_rdpdr/rdpdr_print_job.h             \
     guac_rdpdr/rdpdr_service.h               \
     guac_rdpsnd/rdpsnd_messages.h            \
     guac_rdpsnd/rdpsnd_service.h             \

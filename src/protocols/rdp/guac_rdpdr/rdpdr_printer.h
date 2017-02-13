@@ -32,41 +32,10 @@
 #endif
 
 /**
- * Data specific to an instance of the printer device.
- */
-typedef struct guac_rdpdr_printer_data {
-
-    /**
-     * File descriptor that should be written to when sending documents to the
-     * printer. If no print job is in progress, this will be -1.
-     */
-    int printer_input;
-
-    /**
-     * File descriptor that should be read from when receiving output from the
-     * printer. If no print job is in progress, this will be -1.
-     */
-    int printer_output;
-
-    /**
-     * The number of bytes received in the current print job.
-     */
-    int bytes_received;
-
-} guac_rdpdr_printer_data;
-
-/**
  * Registers a new printer device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
  */
 void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr);
-
-/**
- * The command to run when filtering postscript to produce PDF. This must be
- * a NULL-terminated array of arguments, where the first argument is the name
- * of the file to run.
- */
-extern char* const guac_rdpdr_pdf_filter_command[];
 
 #endif
 
