@@ -498,54 +498,124 @@ void* guac_rdpdr_print_job_alloc(guac_user* user, void* data) {
 
 }
 
+/**
+ * Attempts to parse the given PostScript "%%Title:" header, storing the
+ * contents within the filename of the given print job. If the given buffer
+ * does not immediately begin with the "%%Title:" header, this function has no
+ * effect.
+ *
+ * @param job
+ *     The job whose filename should be set if the "%%Title:" header is
+ *     successfully parsed.
+ *
+ * @param buffer
+ *     The buffer to parse as the "%%Title:" header.
+ *
+ * @param length
+ *     The number of bytes within the buffer.
+ *
+ * @return
+ *     Non-zero if the given buffer began with the "%%Title:" header and this
+ *     header was successfully parsed, zero otherwise.
+ */
+static int guac_rdpdr_print_job_parse_title_header(guac_rdpdr_print_job* job,
+        void* buffer, int length) {
+
+    int i;
+    char* current = buffer;
+    char* filename = job->filename;
+
+    /* Verify that the buffer begins with "%%Title: " */
+    if (strncmp(current, "%%Title: ", 9) != 0)
+        return 0;
+
+    /* Skip past "%%Title: " */
+    current += 9;
+    length -= 9;
+
+    /* Calculate space remaining in filename */
+    int remaining = sizeof(job->filename) - 5 /* ".pdf\0" */;
+
+    /* Do not exceed bounds of provided buffer */
+    if (length < remaining)
+        remaining = length;
+
+    /* Copy as much of title as reasonable */
+    for (i = 0; i < remaining; i++) {
+
+        /* Get character, stop at EOL */
+        char c = *(current++);
+        if (c == '\r' || c == '\n')
+            break;
+
+        /* Copy to filename */
+        *(filename++) = c;
+
+    }
+
+    /* Append extension to filename */
+    strcpy(filename, ".pdf");
+
+    /* Title successfully parsed */
+    return 1;
+
+}
+
+/**
+ * Searches through the given buffer for PostScript headers denoting the title
+ * of the document, assigning the filename of the given print job using the
+ * discovered title. If no title can be found within
+ * GUAC_RDPDR_PRINT_JOB_TITLE_SEARCH_LENGTH bytes, this function has no effect.
+ *
+ * @param job
+ *     The job whose filename should be set if the document title can be found
+ *     within the given buffer.
+ *
+ * @param buffer
+ *     The buffer to search for the document title.
+ *
+ * @param length
+ *     The number of bytes within the buffer.
+ */
+static void guac_rdpdr_print_job_read_filename(guac_rdpdr_print_job* job,
+        void* buffer, int length) {
+
+    char* current = buffer;
+    int i;
+
+    /* Restrict search area */
+    if (length > GUAC_RDPDR_PRINT_JOB_TITLE_SEARCH_LENGTH)
+        length = GUAC_RDPDR_PRINT_JOB_TITLE_SEARCH_LENGTH;
+
+    /* Search for document title within buffer */
+    for (i = 0; i < length; i++) {
+
+        /* If document title has been found, we're done */
+        if (guac_rdpdr_print_job_parse_title_header(job, current, length))
+            break;
+
+        /* Advance to next character */
+        length--;
+        current++;
+
+    }
+
+}
+
 int guac_rdpdr_print_job_write(guac_rdpdr_print_job* job,
         void* buffer, int length) {
 
     /* Create print job, if not yet created */
     if (job->bytes_received == 0) {
 
-        char* filename = job->filename;
-        unsigned char* search = buffer;
-        int i;
-
-        /* Search for filename within buffer */
-        for (i=0; i<length-9 && i < 2048; i++) {
-
-            /* If title. use as filename */
-            if (memcmp(search, "%%Title: ", 9) == 0) {
-
-                /* Skip past "%%Title: " */
-                search += 9;
-
-                /* Copy as much of title as reasonable */
-                int j;
-                for (j=0; j < GUAC_RDPDR_PRINT_JOB_FILENAME_MAX_LENGTH - 5 /* extension + 1 */ && i<length; i++, j++) {
-
-                    /* Get character, stop at EOL */
-                    char c = *(search++);
-                    if (c == '\r' || c == '\n')
-                        break;
-
-                    /* Copy to filename */
-                    filename[j] = c;
-
-                }
-
-                /* Append filename with extension */
-                strcpy(&(filename[j]), ".pdf");
-                break;
-            }
-
-            /* Next character */
-            search++;
-
-        }
+        /* Attempt to read document title from first buffer of data */
+        guac_rdpdr_print_job_read_filename(job, buffer, length);
 
         /* Begin print stream */
         guac_client_for_user(job->client, job->user,
                 guac_rdpdr_print_job_begin_stream, job);
 
-    } /* end if print job beginning */
+    }
 
     /* Update counter of bytes received */
     job->bytes_received += length;

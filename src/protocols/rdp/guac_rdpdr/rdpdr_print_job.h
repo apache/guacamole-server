@@ -42,6 +42,12 @@
 #define GUAC_RDPDR_PRINT_JOB_DEFAULT_FILENAME "guacamole-print.pdf"
 
 /**
+ * The maximum number of bytes to search through at the beginning of a
+ * PostScript document when locating the document title.
+ */
+#define GUAC_RDPDR_PRINT_JOB_TITLE_SEARCH_LENGTH 2048
+
+/**
  * The current state of an RDPDR print job.
  */
 typedef enum guac_rdpdr_print_job_state {
