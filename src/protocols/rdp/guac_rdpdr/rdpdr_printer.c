@@ -179,10 +179,12 @@ static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* devic
 
 static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
 
-    /* Close print job if open */
+    /* Terminate and free print job if open */
     guac_rdpdr_print_job* job = (guac_rdpdr_print_job*) device->data;
-    if (job != NULL)
+    if (job != NULL) {
+        guac_rdpdr_print_job_kill(job);
         guac_rdpdr_print_job_free(job);
+    }
 
 }
 
