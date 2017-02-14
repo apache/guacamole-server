@@ -21,8 +21,8 @@
 
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"
-#include "rdpdr_print_job.h"
 #include "rdpdr_service.h"
+#include "rdp_print_job.h"
 #include "rdp_status.h"
 
 #include <freerdp/utils/svc_plugin.h>
@@ -53,7 +53,7 @@ void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
 
     /* Create print job */
     device->data = guac_client_for_owner(device->rdpdr->client,
-            guac_rdpdr_print_job_alloc, NULL);
+            guac_rdp_print_job_alloc, NULL);
 
     /* Respond with success */
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
@@ -67,7 +67,7 @@ void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
 void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {
 
-    guac_rdpdr_print_job* job = (guac_rdpdr_print_job*) device->data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) device->data;
 
     unsigned char* buffer;
     int length;
@@ -80,7 +80,7 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
     buffer = Stream_Pointer(input_stream);
 
     /* Write data only if job exists, translating status for RDP */
-    if (job != NULL && (length = guac_rdpdr_print_job_write(job,
+    if (job != NULL && (length = guac_rdp_print_job_write(job,
                     buffer, length)) >= 0) {
         status = STATUS_SUCCESS;
     }
@@ -105,9 +105,9 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {
 
     /* End print job */
-    guac_rdpdr_print_job* job = (guac_rdpdr_print_job*) device->data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) device->data;
     if (job != NULL) {
-        guac_rdpdr_print_job_free(job);
+        guac_rdp_print_job_free(job);
         device->data = NULL;
     }
 
@@ -180,10 +180,10 @@ static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* devic
 static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
 
     /* Terminate and free print job if open */
-    guac_rdpdr_print_job* job = (guac_rdpdr_print_job*) device->data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) device->data;
     if (job != NULL) {
-        guac_rdpdr_print_job_kill(job);
-        guac_rdpdr_print_job_free(job);
+        guac_rdp_print_job_kill(job);
+        guac_rdp_print_job_free(job);
     }
 
 }

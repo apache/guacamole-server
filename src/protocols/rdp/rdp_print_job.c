@@ -19,7 +19,7 @@
 
 
 #include "config.h"
-#include "rdpdr_print_job.h"
+#include "rdp_print_job.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -38,7 +38,7 @@
  * a NULL-terminated array of arguments, where the first argument is the name
  * of the file to run.
  */
-char* const guac_rdpdr_pdf_filter_command[] = {
+char* const guac_rdp_pdf_filter_command[] = {
     "gs",
     "-q",
     "-dNOPAUSE",
@@ -57,7 +57,7 @@ char* const guac_rdpdr_pdf_filter_command[] = {
 
 /**
  * Updates the state of the given print job. Any threads currently blocked by a
- * call to guac_rdpdr_print_job_wait_for_ack() will be unblocked.
+ * call to guac_rdp_print_job_wait_for_ack() will be unblocked.
  *
  * @param job
  *     The print job whose state should be updated.
@@ -65,8 +65,8 @@ char* const guac_rdpdr_pdf_filter_command[] = {
  * @param state
  *     The new state to assign to the given print job.
  */
-static void guac_rdpdr_print_job_set_state(guac_rdpdr_print_job* job,
-        guac_rdpdr_print_job_state state) {
+static void guac_rdp_print_job_set_state(guac_rdp_print_job* job,
+        guac_rdp_print_job_state state) {
 
     pthread_mutex_lock(&(job->state_lock));
 
@@ -80,29 +80,29 @@ static void guac_rdpdr_print_job_set_state(guac_rdpdr_print_job* job,
 
 /**
  * Suspends execution of the current thread until the state of the given print
- * job is not GUAC_RDPDR_PRINT_JOB_WAITING_FOR_ACK. If the state of the print
- * job is GUAC_RDPDR_PRINT_JOB_ACK_RECEIVED, the state is automatically reset
- * back to GUAC_RDPDR_PRINT_JOB_WAITING_FOR_ACK prior to returning.
+ * job is not GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK. If the state of the print
+ * job is GUAC_RDP_PRINT_JOB_ACK_RECEIVED, the state is automatically reset
+ * back to GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK prior to returning.
  *
  * @param job
  *     The print job to wait for.
  *
  * @return
- *     Zero if the state of the print job is GUAC_RDPDR_PRINT_JOB_CLOSED,
- *     non-zero if the state was GUAC_RDPDR_PRINT_JOB_ACK_RECEIVED and has been
- *     automatically reset to GUAC_RDPDR_PRINT_JOB_WAITING_FOR_ACK.
+ *     Zero if the state of the print job is GUAC_RDP_PRINT_JOB_CLOSED,
+ *     non-zero if the state was GUAC_RDP_PRINT_JOB_ACK_RECEIVED and has been
+ *     automatically reset to GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK.
  */
-static int guac_rdpdr_print_job_wait_for_ack(guac_rdpdr_print_job* job) {
+static int guac_rdp_print_job_wait_for_ack(guac_rdp_print_job* job) {
 
     /* Wait for ack if stream open and not yet received */
     pthread_mutex_lock(&(job->state_lock));
-    if (job->state == GUAC_RDPDR_PRINT_JOB_WAITING_FOR_ACK)
+    if (job->state == GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK)
         pthread_cond_wait(&job->state_modified, &job->state_lock);
 
     /* Reset state if ack received */
-    int got_ack = (job->state == GUAC_RDPDR_PRINT_JOB_ACK_RECEIVED);
+    int got_ack = (job->state == GUAC_RDP_PRINT_JOB_ACK_RECEIVED);
     if (got_ack)
-        job->state = GUAC_RDPDR_PRINT_JOB_WAITING_FOR_ACK;
+        job->state = GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK;
 
     /* Return whether ack was successfully received */
     pthread_mutex_unlock(&(job->state_lock));
@@ -119,21 +119,21 @@ static int guac_rdpdr_print_job_wait_for_ack(guac_rdpdr_print_job* job) {
  *     The user receiving the "file" instruction.
  *
  * @param data
- *     A pointer to the guac_rdpdr_print_job representing the print job being
+ *     A pointer to the guac_rdp_print_job representing the print job being
  *     streamed.
  *
  * @return
  *     Always NULL.
  */
-static void* guac_rdpdr_print_job_begin_stream(guac_user* user, void* data) {
+static void* guac_rdp_print_job_begin_stream(guac_user* user, void* data) {
 
-    guac_rdpdr_print_job* job = (guac_rdpdr_print_job*) data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) data;
     guac_client_log(job->client, GUAC_LOG_DEBUG, "Beginning print stream: %s",
             job->filename);
 
     /* Kill job and do nothing if user no longer exists */
     if (user == NULL) {
-        guac_rdpdr_print_job_kill(job);
+        guac_rdp_print_job_kill(job);
         return NULL;
     }
 
@@ -155,24 +155,24 @@ static void* guac_rdpdr_print_job_begin_stream(guac_user* user, void* data) {
  *     The user receiving the "blob" instruction.
  *
  * @param data
- *     A pointer to an guac_rdpdr_print_blob structure containing the data to
+ *     A pointer to an guac_rdp_print_blob structure containing the data to
  *     be written, the number of bytes being written, and the print job being
  *     streamed.
  *
  * @return
  *     Always NULL.
  */
-static void* guac_rdpdr_print_job_send_blob(guac_user* user, void* data) {
+static void* guac_rdp_print_job_send_blob(guac_user* user, void* data) {
 
-    guac_rdpdr_print_blob* blob = (guac_rdpdr_print_blob*) data;
-    guac_rdpdr_print_job* job = blob->job;
+    guac_rdp_print_blob* blob = (guac_rdp_print_blob*) data;
+    guac_rdp_print_job* job = blob->job;
 
     guac_client_log(job->client, GUAC_LOG_DEBUG, "Sending %i byte(s) "
             "of filtered output.", blob->length);
 
     /* Kill job and do nothing if user no longer exists */
     if (user == NULL) {
-        guac_rdpdr_print_job_kill(job);
+        guac_rdp_print_job_kill(job);
         return NULL;
     }
 
@@ -194,20 +194,20 @@ static void* guac_rdpdr_print_job_send_blob(guac_user* user, void* data) {
  *     The user receiving the "end" instruction.
  *
  * @param data
- *     A pointer to the guac_rdpdr_print_job representing the print job being
+ *     A pointer to the guac_rdp_print_job representing the print job being
  *     streamed.
  *
  * @return
  *     Always NULL.
  */
-static void* guac_rdpdr_print_job_end_stream(guac_user* user, void* data) {
+static void* guac_rdp_print_job_end_stream(guac_user* user, void* data) {
 
-    guac_rdpdr_print_job* job = (guac_rdpdr_print_job*) data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) data;
     guac_client_log(job->client, GUAC_LOG_DEBUG, "End of print stream.");
 
     /* Kill job and do nothing if user no longer exists */
     if (user == NULL) {
-        guac_rdpdr_print_job_kill(job);
+        guac_rdp_print_job_kill(job);
         return NULL;
     }
 
@@ -248,14 +248,14 @@ static void* guac_rdpdr_print_job_end_stream(guac_user* user, void* data) {
  * @return
  *     Always zero.
  */
-static int guac_rdpdr_print_filter_ack_handler(guac_user* user,
+static int guac_rdp_print_filter_ack_handler(guac_user* user,
         guac_stream* stream, char* message, guac_protocol_status status) {
 
-    guac_rdpdr_print_job* job = (guac_rdpdr_print_job*) stream->data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) stream->data;
 
     /* Update state for successful acks */
     if (status == GUAC_PROTOCOL_STATUS_SUCCESS)
-        guac_rdpdr_print_job_set_state(job, GUAC_RDPDR_PRINT_JOB_ACK_RECEIVED);
+        guac_rdp_print_job_set_state(job, GUAC_RDP_PRINT_JOB_ACK_RECEIVED);
 
     /* Terminate stream if ack signals an error */
     else {
@@ -265,7 +265,7 @@ static int guac_rdpdr_print_filter_ack_handler(guac_user* user,
                 "print stream.");
 
         /* Kill job (the results will no longer be received) */
-        guac_rdpdr_print_job_kill(job);
+        guac_rdp_print_job_kill(job);
 
     }
 
@@ -298,7 +298,7 @@ static int guac_rdpdr_print_filter_ack_handler(guac_user* user,
  *     created. If the filter process could not be created, the values assigned
  *     through input_fd and output_fd are undefined.
  */
-static pid_t guac_rdpdr_create_filter_process(guac_client* client,
+static pid_t guac_rdp_create_filter_process(guac_client* client,
         int* input_fd, int* output_fd) {
 
     int child_pid;
@@ -352,9 +352,9 @@ static pid_t guac_rdpdr_create_filter_process(guac_client* client,
 
         /* Run PDF filter */
         guac_client_log(client, GUAC_LOG_INFO, "Running %s",
-                guac_rdpdr_pdf_filter_command[0]);
-        if (execvp(guac_rdpdr_pdf_filter_command[0],
-                    guac_rdpdr_pdf_filter_command) < 0)
+                guac_rdp_pdf_filter_command[0]);
+        if (execvp(guac_rdp_pdf_filter_command[0],
+                    guac_rdp_pdf_filter_command) < 0)
             guac_client_log(client, GUAC_LOG_ERROR, "Unable to execute PDF "
                     "filter command: %s", strerror(errno));
         else
@@ -384,18 +384,18 @@ static pid_t guac_rdpdr_create_filter_process(guac_client* client,
  * processing or the associated Guacamole stream has closed.
  *
  * @param data
- *     A pointer to the guac_rdpdr_print_job representing the print job that
+ *     A pointer to the guac_rdp_print_job representing the print job that
  *     should be read.
  *
  * @return
  *     Always NULL.
  */
-static void* guac_rdpdr_print_job_output_thread(void* data) {
+static void* guac_rdp_print_job_output_thread(void* data) {
 
     int length;
     char buffer[6048];
 
-    guac_rdpdr_print_job* job = (guac_rdpdr_print_job*) data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) data;
     guac_client_log(job->client, GUAC_LOG_DEBUG, "Reading output from filter "
             "process...");
 
@@ -403,9 +403,9 @@ static void* guac_rdpdr_print_job_output_thread(void* data) {
     while ((length = read(job->output_fd, buffer, sizeof(buffer))) > 0) {
 
         /* Wait for client to be ready for blob */
-        if (guac_rdpdr_print_job_wait_for_ack(job)) {
+        if (guac_rdp_print_job_wait_for_ack(job)) {
 
-            guac_rdpdr_print_blob blob = {
+            guac_rdp_print_blob blob = {
                 .job    = job,
                 .buffer = buffer,
                 .length = length
@@ -413,7 +413,7 @@ static void* guac_rdpdr_print_job_output_thread(void* data) {
 
             /* Write a single blob of output */
             guac_client_for_user(job->client, job->user,
-                    guac_rdpdr_print_job_send_blob, &blob);
+                    guac_rdp_print_job_send_blob, &blob);
 
         }
 
@@ -433,7 +433,7 @@ static void* guac_rdpdr_print_job_output_thread(void* data) {
 
     /* Terminate stream */
     guac_client_for_user(job->client, job->user,
-            guac_rdpdr_print_job_end_stream, job);
+            guac_rdp_print_job_end_stream, job);
 
     /* Ensure all associated file descriptors are closed */
     close(job->input_fd);
@@ -444,7 +444,7 @@ static void* guac_rdpdr_print_job_output_thread(void* data) {
 
 }
 
-void* guac_rdpdr_print_job_alloc(guac_user* user, void* data) {
+void* guac_rdp_print_job_alloc(guac_user* user, void* data) {
 
     /* Allocate nothing if user does not exist */
     if (user == NULL)
@@ -456,7 +456,7 @@ void* guac_rdpdr_print_job_alloc(guac_user* user, void* data) {
         return NULL;
 
     /* Bail early if allocation fails */
-    guac_rdpdr_print_job* job = malloc(sizeof(guac_rdpdr_print_job));
+    guac_rdp_print_job* job = malloc(sizeof(guac_rdp_print_job));
     if (job == NULL)
         return NULL;
 
@@ -467,14 +467,14 @@ void* guac_rdpdr_print_job_alloc(guac_user* user, void* data) {
     job->bytes_received = 0;
 
     /* Set default filename for job */
-    strcpy(job->filename, GUAC_RDPDR_PRINT_JOB_DEFAULT_FILENAME);
+    strcpy(job->filename, GUAC_RDP_PRINT_JOB_DEFAULT_FILENAME);
 
     /* Prepare stream for receipt of acks */
-    stream->ack_handler = guac_rdpdr_print_filter_ack_handler;
+    stream->ack_handler = guac_rdp_print_filter_ack_handler;
     stream->data = job;
 
     /* Create print filter process */
-    job->filter_pid = guac_rdpdr_create_filter_process(job->client,
+    job->filter_pid = guac_rdp_create_filter_process(job->client,
             &job->input_fd, &job->output_fd);
 
     /* Abort if print filter process cannot be created */
@@ -485,13 +485,13 @@ void* guac_rdpdr_print_job_alloc(guac_user* user, void* data) {
     }
 
     /* Init stream state signal and lock */
-    job->state = GUAC_RDPDR_PRINT_JOB_WAITING_FOR_ACK;
+    job->state = GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK;
     pthread_cond_init(&job->state_modified, NULL);
     pthread_mutex_init(&job->state_lock, NULL);
 
     /* Start output thread */
     pthread_create(&job->output_thread, NULL,
-            guac_rdpdr_print_job_output_thread, job);
+            guac_rdp_print_job_output_thread, job);
 
     /* Print job allocated successfully */
     return job;
@@ -518,7 +518,7 @@ void* guac_rdpdr_print_job_alloc(guac_user* user, void* data) {
  *     Non-zero if the given buffer began with the "%%Title:" header and this
  *     header was successfully parsed, zero otherwise.
  */
-static int guac_rdpdr_print_job_parse_title_header(guac_rdpdr_print_job* job,
+static int guac_rdp_print_job_parse_title_header(guac_rdp_print_job* job,
         void* buffer, int length) {
 
     int i;
@@ -565,7 +565,7 @@ static int guac_rdpdr_print_job_parse_title_header(guac_rdpdr_print_job* job,
  * Searches through the given buffer for PostScript headers denoting the title
  * of the document, assigning the filename of the given print job using the
  * discovered title. If no title can be found within
- * GUAC_RDPDR_PRINT_JOB_TITLE_SEARCH_LENGTH bytes, this function has no effect.
+ * GUAC_RDP_PRINT_JOB_TITLE_SEARCH_LENGTH bytes, this function has no effect.
  *
  * @param job
  *     The job whose filename should be set if the document title can be found
@@ -577,21 +577,21 @@ static int guac_rdpdr_print_job_parse_title_header(guac_rdpdr_print_job* job,
  * @param length
  *     The number of bytes within the buffer.
  */
-static void guac_rdpdr_print_job_read_filename(guac_rdpdr_print_job* job,
+static void guac_rdp_print_job_read_filename(guac_rdp_print_job* job,
         void* buffer, int length) {
 
     char* current = buffer;
     int i;
 
     /* Restrict search area */
-    if (length > GUAC_RDPDR_PRINT_JOB_TITLE_SEARCH_LENGTH)
-        length = GUAC_RDPDR_PRINT_JOB_TITLE_SEARCH_LENGTH;
+    if (length > GUAC_RDP_PRINT_JOB_TITLE_SEARCH_LENGTH)
+        length = GUAC_RDP_PRINT_JOB_TITLE_SEARCH_LENGTH;
 
     /* Search for document title within buffer */
     for (i = 0; i < length; i++) {
 
         /* If document title has been found, we're done */
-        if (guac_rdpdr_print_job_parse_title_header(job, current, length))
+        if (guac_rdp_print_job_parse_title_header(job, current, length))
             break;
 
         /* Advance to next character */
@@ -602,18 +602,18 @@ static void guac_rdpdr_print_job_read_filename(guac_rdpdr_print_job* job,
 
 }
 
-int guac_rdpdr_print_job_write(guac_rdpdr_print_job* job,
+int guac_rdp_print_job_write(guac_rdp_print_job* job,
         void* buffer, int length) {
 
     /* Create print job, if not yet created */
     if (job->bytes_received == 0) {
 
         /* Attempt to read document title from first buffer of data */
-        guac_rdpdr_print_job_read_filename(job, buffer, length);
+        guac_rdp_print_job_read_filename(job, buffer, length);
 
         /* Begin print stream */
         guac_client_for_user(job->client, job->user,
-                guac_rdpdr_print_job_begin_stream, job);
+                guac_rdp_print_job_begin_stream, job);
 
     }
 
@@ -625,7 +625,7 @@ int guac_rdpdr_print_job_write(guac_rdpdr_print_job* job,
 
 }
 
-void guac_rdpdr_print_job_free(guac_rdpdr_print_job* job) {
+void guac_rdp_print_job_free(guac_rdp_print_job* job) {
 
     /* No more input will be provided */
     close(job->input_fd);
@@ -638,14 +638,14 @@ void guac_rdpdr_print_job_free(guac_rdpdr_print_job* job) {
 
 }
 
-void guac_rdpdr_print_job_kill(guac_rdpdr_print_job* job) {
+void guac_rdp_print_job_kill(guac_rdp_print_job* job) {
 
     /* Stop all handling of I/O */
     close(job->input_fd);
     close(job->output_fd);
 
     /* Mark stream as closed */
-    guac_rdpdr_print_job_set_state(job, GUAC_RDPDR_PRINT_JOB_CLOSED);
+    guac_rdp_print_job_set_state(job, GUAC_RDP_PRINT_JOB_CLOSED);
 
 }
 

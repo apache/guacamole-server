@@ -41,6 +41,7 @@ libguac_client_rdp_la_SOURCES = \
     rdp_gdi.c                   \
     rdp_glyph.c                 \
     rdp_keymap.c                \
+    rdp_print_job.c             \
     rdp_pointer.c               \
     rdp_rail.c                  \
     rdp_settings.c              \
@@ -72,9 +73,9 @@ guacdr_sources =                             \
     guac_rdpdr/rdpdr_fs_service.c            \
     guac_rdpdr/rdpdr_messages.c              \
     guac_rdpdr/rdpdr_printer.c               \
-    guac_rdpdr/rdpdr_print_job.c             \
     guac_rdpdr/rdpdr_service.c               \
     rdp_fs.c                                 \
+    rdp_print_job.c                          \
     rdp_stream.c                             \
     unicode.c
 
@@ -90,7 +91,6 @@ noinst_HEADERS =                             \
     guac_rdpdr/rdpdr_fs_service.h            \
     guac_rdpdr/rdpdr_messages.h              \
     guac_rdpdr/rdpdr_printer.h               \
-    guac_rdpdr/rdpdr_print_job.h             \
     guac_rdpdr/rdpdr_service.h               \
     guac_rdpsnd/rdpsnd_messages.h            \
     guac_rdpsnd/rdpsnd_service.h             \
@@ -111,6 +111,7 @@ noinst_HEADERS =                             \
     rdp_glyph.h                              \
     rdp_keymap.h                             \
     rdp_pointer.h                            \
+    rdp_print_job.h                          \
     rdp_rail.h                               \
     rdp_settings.h                           \
     rdp_status.h                             \

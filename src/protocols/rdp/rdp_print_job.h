@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_RDPDR_PRINT_JOB_H
-#define GUAC_RDPDR_PRINT_JOB_H
+#ifndef GUAC_RDP_PRINT_JOB_H
+#define GUAC_RDP_PRINT_JOB_H
 
 #include "config.h"
 
@@ -30,33 +30,33 @@
 #include <unistd.h>
 
 /**
- * The maximum number of bytes in the filename of an RDPDR print job sent as a
+ * The maximum number of bytes in the filename of an RDP print job sent as a
  * file over the Guacamole protocol, including NULL terminator.
  */
-#define GUAC_RDPDR_PRINT_JOB_FILENAME_MAX_LENGTH 1024
+#define GUAC_RDP_PRINT_JOB_FILENAME_MAX_LENGTH 1024
 
 /**
- * The default filename to use for the PDF output of an RDPDR print job if no
+ * The default filename to use for the PDF output of an RDP print job if no
  * document title can be found within the printed data.
  */
-#define GUAC_RDPDR_PRINT_JOB_DEFAULT_FILENAME "guacamole-print.pdf"
+#define GUAC_RDP_PRINT_JOB_DEFAULT_FILENAME "guacamole-print.pdf"
 
 /**
  * The maximum number of bytes to search through at the beginning of a
  * PostScript document when locating the document title.
  */
-#define GUAC_RDPDR_PRINT_JOB_TITLE_SEARCH_LENGTH 2048
+#define GUAC_RDP_PRINT_JOB_TITLE_SEARCH_LENGTH 2048
 
 /**
- * The current state of an RDPDR print job.
+ * The current state of an RDP print job.
  */
-typedef enum guac_rdpdr_print_job_state {
+typedef enum guac_rdp_print_job_state {
 
     /**
      * The print stream has been opened with the Guacamole client, but the
      * client has not yet confirmed that it is ready to receive data.
      */
-    GUAC_RDPDR_PRINT_JOB_WAITING_FOR_ACK,
+    GUAC_RDP_PRINT_JOB_WAITING_FOR_ACK,
 
     /**
      * The print stream has been opened with the Guacamole client, and the
@@ -64,20 +64,20 @@ typedef enum guac_rdpdr_print_job_state {
      * receive data (or that data has been received and it is ready to receive
      * more).
      */
-    GUAC_RDPDR_PRINT_JOB_ACK_RECEIVED,
+    GUAC_RDP_PRINT_JOB_ACK_RECEIVED,
 
     /**
      * The print stream has been closed or the printer is terminating, and no
      * further data should be sent to the client.
      */
-    GUAC_RDPDR_PRINT_JOB_CLOSED
+    GUAC_RDP_PRINT_JOB_CLOSED
 
-} guac_rdpdr_print_job_state;
+} guac_rdp_print_job_state;
 
 /**
  * Data specific to an instance of the printer device.
  */
-typedef struct guac_rdpdr_print_job {
+typedef struct guac_rdp_print_job {
 
     guac_client* client;
 
@@ -101,7 +101,7 @@ typedef struct guac_rdpdr_print_job {
      * streamed to the Guacamole user. This value will be automatically
      * determined based on the contents of the printed document.
      */
-    char filename[GUAC_RDPDR_PRINT_JOB_FILENAME_MAX_LENGTH];
+    char filename[GUAC_RDP_PRINT_JOB_FILENAME_MAX_LENGTH];
 
     /**
      * File descriptor that should be written to when sending documents to the
@@ -121,7 +121,7 @@ typedef struct guac_rdpdr_print_job {
      * acknowledged receipt of data along the steam, and whether the print
      * stream itself has closed.
      */
-    guac_rdpdr_print_job_state state;
+    guac_rdp_print_job_state state;
 
     /**
      * Lock which is acquired prior to modifying the state property or waiting
@@ -145,17 +145,17 @@ typedef struct guac_rdpdr_print_job {
      */
     int bytes_received;
 
-} guac_rdpdr_print_job;
+} guac_rdp_print_job;
 
 /**
  * A blob of print data being sent to the Guacamole user.
  */
-typedef struct guac_rdpdr_print_blob {
+typedef struct guac_rdp_print_blob {
 
     /**
      * The print job which generated the data being sent.
      */
-    guac_rdpdr_print_job* job;
+    guac_rdp_print_job* job;
 
     /**
      * The data being sent.
@@ -167,7 +167,7 @@ typedef struct guac_rdpdr_print_blob {
      */
     int length;
 
-} guac_rdpdr_print_blob;
+} guac_rdp_print_blob;
 
 /**
  * Allocates a new print job for the given user. It is expected that this
@@ -183,10 +183,10 @@ typedef struct guac_rdpdr_print_blob {
  *     always be NULL.
  *
  * @return
- *     A pointer to a newly-allocated guac_rdpdr_print_job, or NULL if the
+ *     A pointer to a newly-allocated guac_rdp_print_job, or NULL if the
  *     print job could not be created.
  */
-void* guac_rdpdr_print_job_alloc(guac_user* user, void* data);
+void* guac_rdp_print_job_alloc(guac_user* user, void* data);
 
 /**
  * Writes PostScript print data to the given active print job. The print job
@@ -204,7 +204,7 @@ void* guac_rdpdr_print_job_alloc(guac_user* user, void* data);
  *     The number of bytes written, or -1 if an error occurs which prevents
  *     further writes.
  */
-int guac_rdpdr_print_job_write(guac_rdpdr_print_job* job,
+int guac_rdp_print_job_write(guac_rdp_print_job* job,
         void* buffer, int length);
 
 /**
@@ -216,17 +216,17 @@ int guac_rdpdr_print_job_write(guac_rdpdr_print_job* job,
  * @param job
  *     The print job to free.
  */
-void guac_rdpdr_print_job_free(guac_rdpdr_print_job* job);
+void guac_rdp_print_job_free(guac_rdp_print_job* job);
 
 /**
  * Forcibly kills the given print job, stopping all associated processing and
  * streaming. The memory associated with the print job will still need to be
- * reclaimed via guac_rdpdr_print_job_free().
+ * reclaimed via guac_rdp_print_job_free().
  *
  * @param job
  *     The print job to kill.
  */
-void guac_rdpdr_print_job_kill(guac_rdpdr_print_job* job);
+void guac_rdp_print_job_kill(guac_rdp_print_job* job);
 
 #endif
 
