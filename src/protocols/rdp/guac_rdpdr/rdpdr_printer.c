@@ -22,6 +22,7 @@
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"
 #include "rdpdr_service.h"
+#include "rdp.h"
 #include "rdp_print_job.h"
 #include "rdp_status.h"
 
@@ -48,11 +49,14 @@
 void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {
 
+    guac_client* client = device->rdpdr->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
     /* Log creation of print job */
-    guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Print job created");
+    guac_client_log(client, GUAC_LOG_INFO, "Print job created");
 
     /* Create print job */
-    device->data = guac_client_for_owner(device->rdpdr->client,
+    rdp_client->active_job = guac_client_for_owner(client,
             guac_rdp_print_job_alloc, NULL);
 
     /* Respond with success */
@@ -67,7 +71,9 @@ void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
 void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {
 
-    guac_rdp_print_job* job = (guac_rdp_print_job*) device->data;
+    guac_client* client = device->rdpdr->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) rdp_client->active_job;
 
     unsigned char* buffer;
     int length;
@@ -104,8 +110,11 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
 void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
         wStream* input_stream, int completion_id) {
 
+    guac_client* client = device->rdpdr->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_print_job* job = (guac_rdp_print_job*) rdp_client->active_job;
+
     /* End print job */
-    guac_rdp_print_job* job = (guac_rdp_print_job*) device->data;
     if (job != NULL) {
         guac_rdp_print_job_free(job);
         device->data = NULL;
@@ -118,7 +127,7 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
     /* Log end of print job */
-    guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Print job closed");
+    guac_client_log(client, GUAC_LOG_INFO, "Print job closed");
 
 }
 
@@ -178,14 +187,7 @@ static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* devic
 }
 
 static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
-
-    /* Terminate and free print job if open */
-    guac_rdp_print_job* job = (guac_rdp_print_job*) device->data;
-    if (job != NULL) {
-        guac_rdp_print_job_kill(job);
-        guac_rdp_print_job_free(job);
-    }
-
+    /* Do nothing */
 }
 
 void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
@@ -204,9 +206,6 @@ void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
     device->announce_handler  = guac_rdpdr_device_printer_announce_handler;
     device->iorequest_handler = guac_rdpdr_device_printer_iorequest_handler;
     device->free_handler      = guac_rdpdr_device_printer_free_handler;
-
-    /* No active print job yet */
-    device->data = NULL;
 
 }
 

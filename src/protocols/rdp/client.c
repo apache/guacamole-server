@@ -23,6 +23,8 @@
 #include "client.h"
 #include "rdp.h"
 #include "rdp_disp.h"
+#include "rdp_fs.h"
+#include "rdp_print_job.h"
 #include "user.h"
 
 #ifdef ENABLE_COMMON_SSH
@@ -104,6 +106,12 @@ int guac_rdp_client_free_handler(guac_client* client) {
     /* Clean up filesystem, if allocated */
     if (rdp_client->filesystem != NULL)
         guac_rdp_fs_free(rdp_client->filesystem);
+
+    /* Clean up print job, if active */
+    if (rdp_client->active_job != NULL) {
+        guac_rdp_print_job_kill(rdp_client->active_job);
+        guac_rdp_print_job_free(rdp_client->active_job);
+    }
 
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP filesystem, if loaded */
