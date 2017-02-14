@@ -31,6 +31,7 @@
 #include "rdp_cliprdr.h"
 #include "rdp_disp.h"
 #include "rdp_fs.h"
+#include "rdp_print_job.h"
 #include "rdp_gdi.h"
 #include "rdp_glyph.h"
 #include "rdp_pointer.h"
@@ -851,6 +852,12 @@ static int guac_rdp_handle_connection(guac_client* client) {
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
 
+    }
+
+    /* Clean up print job, if active */
+    if (rdp_client->active_job != NULL) {
+        guac_rdp_print_job_kill(rdp_client->active_job);
+        guac_rdp_print_job_free(rdp_client->active_job);
     }
 
     pthread_mutex_lock(&(rdp_client->rdp_lock));
