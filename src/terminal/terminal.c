@@ -1522,7 +1522,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
         /* If alt being held, also send escape character */
         if (term->mod_alt)
-            return guac_terminal_send_string(term, "\x1B");
+            guac_terminal_send_string(term, "\x1B");
 
         /* Translate Ctrl+letter to control code */ 
         if (term->mod_ctrl) {
