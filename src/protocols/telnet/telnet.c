@@ -352,7 +352,8 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
 
     /* If unable to connect to anything, fail */
     if (current_address == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to connect to any addresses.");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
+                "Unable to connect to any addresses.");
         return NULL;
     }
 
