@@ -194,6 +194,9 @@ void* guac_rdp_print_job_alloc(guac_user* user, void* data);
  * Guacamole user associated with the print job. This function may block if
  * the print job is not yet ready for more data.
  *
+ * @param job
+ *     The print job to write to.
+ *
  * @param buffer
  *     The PostScript print data to write to the given print job.
  *
