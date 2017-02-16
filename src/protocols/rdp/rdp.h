@@ -30,6 +30,7 @@
 #include "keyboard.h"
 #include "rdp_disp.h"
 #include "rdp_fs.h"
+#include "rdp_print_job.h"
 #include "rdp_settings.h"
 
 #include <freerdp/freerdp.h>
@@ -119,6 +120,11 @@ typedef struct guac_rdp_client {
      * The filesystem being shared, if any.
      */
     guac_rdp_fs* filesystem;
+
+    /**
+     * The currently-active print job, or NULL if no print job is active.
+     */
+    guac_rdp_print_job* active_job;
 
 #ifdef ENABLE_COMMON_SSH
     /**
