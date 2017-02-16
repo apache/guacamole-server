@@ -117,7 +117,7 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
     /* End print job */
     if (job != NULL) {
         guac_rdp_print_job_free(job);
-        device->data = NULL;
+        rdp_client->active_job = NULL;
     }
 
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
