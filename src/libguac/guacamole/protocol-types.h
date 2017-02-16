@@ -35,8 +35,8 @@
  *
  *     0x0000 - 0x00FF: Successful operations.
  *     0x0100 - 0x01FF: Operations that failed due to implementation status.
- *     0x0200 - 0x02FF: Operations that failed due to environmental.
- *     0x0300 - 0x03FF: Operations that failed due to user action.
+ *     0x0200 - 0x02FF: Operations that failed due to remote state/environment.
+ *     0x0300 - 0x03FF: Operations that failed due to user/client action.
  *
  * There is a general correspondence of these status codes with HTTP response
  * codes.
@@ -67,31 +67,60 @@ typedef enum guac_protocol_status {
      * The operation could not be performed because the upstream server
      * is not responding.
      */
-    GUAC_PROTOCOL_STATUS_UPSTREAM_TIMEOUT = 0x202,
+    GUAC_PROTOCOL_STATUS_UPSTREAM_TIMEOUT = 0x0202,
 
     /**
      * The operation was unsuccessful due to an error or otherwise
      * unexpected condition of the upstream server.
      */
-    GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR = 0x203,
+    GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR = 0x0203,
 
     /**
      * The operation could not be performed as the requested resource
      * does not exist.
      */
-    GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND = 0x204,
+    GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND = 0x0204,
 
     /**
      * The operation could not be performed as the requested resource is
      * already in use.
      */
-    GUAC_PROTOCOL_STATUS_RESOURCE_CONFLICT = 0x205,
+    GUAC_PROTOCOL_STATUS_RESOURCE_CONFLICT = 0x0205,
 
     /**
      * The operation could not be performed as the requested resource is now
      * closed.
      */
     GUAC_PROTOCOL_STATUS_RESOURCE_CLOSED = 0x0206,
+
+    /**
+     * The operation could not be performed because the upstream server does
+     * not appear to exist.
+     */
+    GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND = 0x0207,
+
+    /**
+     * The operation could not be performed because the upstream server is not
+     * available to service the request.
+     */
+    GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE = 0x0208,
+
+    /**
+     * The session within the upstream server has ended because it conflicted
+     * with another session.
+     */
+    GUAC_PROTOCOL_STATUS_SESSION_CONFLICT = 0x0209,
+
+    /**
+     * The session within the upstream server has ended because it appeared to
+     * be inactive.
+     */
+    GUAC_PROTOCOL_STATUS_SESSION_TIMEOUT = 0x020A,
+
+    /**
+     * The session within the upstream server has been forcibly terminated.
+     */
+    GUAC_PROTOCOL_STATUS_SESSION_CLOSED = 0x020B,
 
     /**
      * The operation could not be performed because bad parameters were

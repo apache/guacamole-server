@@ -202,7 +202,8 @@ void* guac_vnc_client_thread(void* data) {
 
     /* If the final connect attempt fails, return error */
     if (!rfb_client) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to connect to VNC server.");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
+                "Unable to connect to VNC server.");
         return NULL;
     }
 

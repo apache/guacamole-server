@@ -483,7 +483,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
     /* If unable to connect to anything, fail */
     if (current_address == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
                 "Unable to connect to any addresses.");
         close(fd);
         return NULL;
