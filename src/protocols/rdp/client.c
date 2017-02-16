@@ -23,6 +23,7 @@
 #include "client.h"
 #include "rdp.h"
 #include "rdp_disp.h"
+#include "rdp_fs.h"
 #include "user.h"
 
 #ifdef ENABLE_COMMON_SSH
