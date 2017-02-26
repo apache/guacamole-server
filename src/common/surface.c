@@ -880,7 +880,15 @@ static void __guac_common_surface_set(guac_common_surface* dst,
  *     given source and destination components.
  */
 static int guac_common_surface_blend_component(int dst, int src, int alpha) {
-    return src + dst * (0xFF - alpha);
+
+    int blended = src + dst * (0xFF - alpha);
+
+    /* Do not exceed maximum component value */
+    if (blended > 0xFF)
+        return 0xFF;
+
+    return blended;
+
 }
 
 /**
