@@ -863,6 +863,83 @@ static void __guac_common_surface_set(guac_common_surface* dst,
 }
 
 /**
+ * Applies the Porter-Duff "over" composite operator, blending the two given
+ * color components using the given alpha value.
+ *
+ * @param dst
+ *     The destination color component.
+ *
+ * @param src
+ *     The source color component.
+ *
+ * @param alpha
+ *     The alpha value which applies to the blending operation.
+ *
+ * @return
+ *     The result of applying the Porter-Duff "over" composite operator to the
+ *     given source and destination components.
+ */
+static int guac_common_surface_blend_component(int dst, int src, int alpha) {
+
+    int blended = src + dst * (0xFF - alpha);
+
+    /* Do not exceed maximum component value */
+    if (blended > 0xFF)
+        return 0xFF;
+
+    return blended;
+
+}
+
+/**
+ * Applies the Porter-Duff "over" composite operator, blending each component
+ * of the two given ARGB colors.
+ *
+ * @param dst
+ *     The destination ARGB color.
+ *
+ * @param src
+ *     The source ARGB color.
+ *
+ * @return
+ *     The result of applying the Porter-Duff "over" composite operator to the
+ *     given source and destination colors.
+ */
+static uint32_t guac_common_surface_argb_blend(uint32_t dst, uint32_t src) {
+
+    /* Separate destination ARGB color into its components */
+    int dst_a = (dst >> 24) & 0xFF;
+    int dst_r = (dst >> 16) & 0xFF;
+    int dst_g = (dst >>  8) & 0xFF;
+    int dst_b =  dst        & 0xFF;
+
+    /* Separate source ARGB color into its components */
+    int src_a = (src >> 24) & 0xFF;
+    int src_r = (src >> 16) & 0xFF;
+    int src_g = (src >>  8) & 0xFF;
+    int src_b =  src        & 0xFF;
+
+    /* If source is fully opaque (or destination is fully transparent), the
+     * blended result is the source */
+    if (src_a == 0xFF || dst_a == 0x00)
+        return src;
+
+    /* If source is fully transparent, the blended result is the destination */
+    if (src_a == 0x00)
+        return dst;
+
+    /* Otherwise, blend each ARGB component, assuming pre-multiplied alpha */
+    int r = guac_common_surface_blend_component(dst_r, src_r, src_a);
+    int g = guac_common_surface_blend_component(dst_g, src_g, src_a);
+    int b = guac_common_surface_blend_component(dst_b, src_b, src_a);
+    int a = guac_common_surface_blend_component(dst_a, src_a, src_a);
+
+    /* Recombine blended components */
+    return (a << 24) | (r << 16) | (g << 8) | b;
+
+}
+
+/**
  * Copies data from the given buffer to the surface at the given coordinates.
  * The dimensions and location of the destination rectangle will be altered
  * to remove as many unchanged pixels as possible.
@@ -906,22 +983,34 @@ static void __guac_common_surface_put(unsigned char* src_buffer, int src_stride,
         /* Copy row */
         for (x=0; x < rect->width; x++) {
 
-            if (opaque || (*src_current & 0xFF000000)) {
+            uint32_t color;
 
-                uint32_t new_color = *src_current | 0xFF000000;
-                uint32_t old_color = *dst_current;
+            /* Get source and destination color values */
+            uint32_t src_color = *src_current;
+            uint32_t dst_color = *dst_current;
 
-                if (old_color != new_color) {
-                    if (x < min_x) min_x = x;
-                    if (y < min_y) min_y = y;
-                    if (x > max_x) max_x = x;
-                    if (y > max_y) max_y = y;
-                    *dst_current = new_color;
-                }
+            /* Ignore alpha channel if opaque */
+            if (opaque)
+                color = src_color | 0xFF000000;
+
+            /* Otherwise, perform alpha blending operation */
+            else
+                color = guac_common_surface_argb_blend(dst_color, src_color);
+
+            /* If the destination color is changing, update rectangle bounds
+             * and store the new color */
+            if (dst_color != color) {
+                if (x < min_x) min_x = x;
+                if (y < min_y) min_y = y;
+                if (x > max_x) max_x = x;
+                if (y > max_y) max_y = y;
+                *dst_current = color;
             }
 
+            /* Advance to next pixel */
             src_current++;
             dst_current++;
+
         }
 
         /* Next row */
