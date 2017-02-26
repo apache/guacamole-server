@@ -111,8 +111,8 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
     packet.data = NULL;
     packet.size = 0;
 
-/* For libavcodec < 57.16.0: input/output was not decoupled */
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,16,0)
+/* For libavcodec < 57.37.100: input/output was not decoupled */
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,37,100)
     /* Write frame to video */
     int got_data;
     if (avcodec_encode_video2(video->context, &packet, frame, &got_data) < 0) {
