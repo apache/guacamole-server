@@ -279,14 +279,25 @@ void guac_common_surface_free(guac_common_surface* surface);
 void guac_common_surface_resize(guac_common_surface* surface, int w, int h);
 
 /**
- * Draws the given data to the given guac_common_surface.
+ * Draws the given data to the given guac_common_surface. If the source surface
+ * is ARGB, the draw operation will be performed using the Porter-Duff "over"
+ * composite operator. If the source surface is RGB (no alpha channel), no
+ * compositing is performed and destination pixels are ignored.
  *
- * @param surface The surface to draw to.
- * @param x The X coordinate of the draw location.
- * @param y The Y coordinate of the draw location.
- * @param src The Cairo surface to retrieve data from.
+ * @param surface
+ *     The surface to draw to.
+ *
+ * @param x
+ *     The X coordinate of the draw location.
+ *
+ * @param y
+ *     The Y coordinate of the draw location.
+ *
+ * @param src
+ *     The Cairo surface to retrieve data from.
  */
-void guac_common_surface_draw(guac_common_surface* surface, int x, int y, cairo_surface_t* src);
+void guac_common_surface_draw(guac_common_surface* surface, int x, int y,
+        cairo_surface_t* src);
 
 /**
  * Paints to the given guac_common_surface using the given data as a stencil,
