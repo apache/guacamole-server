@@ -20,7 +20,9 @@
 #include "config.h"
 
 #include "common-ssh/buffer.h"
+#include "common-ssh/dsa-compat.h"
 #include "common-ssh/key.h"
+#include "common-ssh/rsa-compat.h"
 
 #include <openssl/bio.h>
 #include <openssl/bn.h>
@@ -73,12 +75,7 @@ guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
         pos = public_key;
 
         /* Retrieve public key */
-#ifdef HAVE_RSA_GET0_KEY
         RSA_get0_key(rsa_key, &key_n, &key_e, NULL);
-#else
-        key_n = rsa_key->n;
-        key_e = rsa_key->e;
-#endif
 
         /* Send public key formatted for SSH */
         guac_common_ssh_buffer_write_string(&pos, "ssh-rsa", sizeof("ssh-rsa")-1);
@@ -119,21 +116,9 @@ guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
         public_key = malloc(4096);
         pos = public_key;
 
-        /* Retrieve public key parameters */
-#ifdef HAVE_DSA_GET0_PQG
-        DSA_get0_pqg(dsa_key, &key_p, &key_q, &key_g);
-#else
-        key_p = dsa_key->p;
-        key_q = dsa_key->q;
-        key_g = dsa_key->g;
-#endif
-
         /* Retrieve public key */
-#ifdef HAVE_DSA_GET0_KEY
+        DSA_get0_pqg(dsa_key, &key_p, &key_q, &key_g);
         DSA_get0_key(dsa_key, &pub_key, NULL);
-#else
-        pub_key = dsa_key->pub_key;
-#endif
 
         /* Send public key formatted for SSH */
         guac_common_ssh_buffer_write_string(&pos, "ssh-dss", sizeof("ssh-dss")-1);
@@ -226,12 +211,7 @@ int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
                 const BIGNUM* sig_s;
 
                 /* Retrieve DSA signature values */
-#ifdef HAVE_DSA_SIG_GET0
                 DSA_SIG_get0(dsa_sig, &sig_r, &sig_s);
-#else
-                sig_r = dsa_sig->r;
-                sig_s = dsa_sig->s;
-#endif
 
                 /* Compute size of each half of signature */
                 int rlen = BN_num_bytes(sig_r);

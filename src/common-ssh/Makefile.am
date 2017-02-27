@@ -24,16 +24,20 @@ noinst_LTLIBRARIES = libguac_common_ssh.la
 
 libguac_common_ssh_la_SOURCES = \
     buffer.c                    \
+    dsa-compat.c                \
+    rsa-compat.c                \
     sftp.c                      \
     ssh.c                       \
     key.c                       \
     user.c
 
-noinst_HEADERS =        \
-    common-ssh/buffer.h \
-    common-ssh/key.h    \
-    common-ssh/sftp.h   \
-    common-ssh/ssh.h    \
+noinst_HEADERS =            \
+    common-ssh/buffer.h     \
+    common-ssh/dsa-compat.h \
+    common-ssh/rsa-compat.h \
+    common-ssh/key.h        \
+    common-ssh/sftp.h       \
+    common-ssh/ssh.h        \
     common-ssh/user.h
 
 libguac_common_ssh_la_CFLAGS = \
