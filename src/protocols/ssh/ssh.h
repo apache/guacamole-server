@@ -26,7 +26,7 @@
 #include "common-ssh/ssh.h"
 #include "common-ssh/user.h"
 #include "settings.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"

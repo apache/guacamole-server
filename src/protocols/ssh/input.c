@@ -22,7 +22,7 @@
 #include "common/cursor.h"
 #include "common/display.h"
 #include "ssh.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 
 #include <guacamole/client.h>
 #include <guacamole/user.h>

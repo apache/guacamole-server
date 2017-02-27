@@ -22,7 +22,7 @@
 #include "client.h"
 #include "common-ssh/sftp.h"
 #include "ssh.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "user.h"
 
 #include <langinfo.h>
