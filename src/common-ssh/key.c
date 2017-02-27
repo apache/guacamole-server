@@ -19,8 +19,8 @@
 
 #include "config.h"
 
-#include "guac_ssh_buffer.h"
-#include "guac_ssh_key.h"
+#include "common-ssh/buffer.h"
+#include "common-ssh/key.h"
 
 #include <openssl/bio.h>
 #include <openssl/bn.h>

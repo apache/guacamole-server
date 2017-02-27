@@ -20,8 +20,8 @@
 #include "config.h"
 
 #include "common/recording.h"
-#include "guac_sftp.h"
-#include "guac_ssh.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
 #include "settings.h"
 #include "sftp.h"
 #include "ssh.h"

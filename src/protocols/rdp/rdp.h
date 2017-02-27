@@ -39,9 +39,9 @@
 #include <guacamole/client.h>
 
 #ifdef ENABLE_COMMON_SSH
-#include "guac_sftp.h"
-#include "guac_ssh.h"
-#include "guac_ssh_user.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/user.h"
 #endif
 
 #include <pthread.h>

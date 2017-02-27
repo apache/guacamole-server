@@ -37,8 +37,8 @@
 #endif
 
 #ifdef ENABLE_COMMON_SSH
-#include "guac_sftp.h"
-#include "guac_ssh.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
 #include "sftp.h"
 #endif
 

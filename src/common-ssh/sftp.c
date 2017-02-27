@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#include "guac_sftp.h"
-#include "guac_ssh.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
 
 #include <guacamole/client.h>
 #include <guacamole/object.h>
