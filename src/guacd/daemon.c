@@ -153,6 +153,7 @@ static int daemonize() {
 }
 
 #ifdef ENABLE_SSL
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 /**
  * Array of mutexes, used by OpenSSL.
  */
@@ -241,6 +242,7 @@ static void guacd_openssl_free_locks(int count) {
     free(guacd_openssl_locks);
 
 }
+#endif
 #endif
 
 int main(int argc, char* argv[]) {
@@ -359,10 +361,12 @@ int main(int argc, char* argv[]) {
 
         guacd_log(GUAC_LOG_INFO, "Communication will require SSL/TLS.");
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         /* Init threadsafety in OpenSSL */
         guacd_openssl_init_locks(CRYPTO_num_locks());
         CRYPTO_set_id_callback(guacd_openssl_id_callback);
         CRYPTO_set_locking_callback(guacd_openssl_locking_callback);
+#endif
 
         /* Init SSL */
         SSL_library_init();
@@ -490,7 +494,9 @@ int main(int argc, char* argv[]) {
 
 #ifdef ENABLE_SSL
     if (ssl_context != NULL) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         guacd_openssl_free_locks(CRYPTO_num_locks());
+#endif
         SSL_CTX_free(ssl_context);
     }
 #endif
