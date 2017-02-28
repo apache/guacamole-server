@@ -956,7 +956,6 @@ void* guac_rdp_client_thread(void* data) {
             if (guac_common_ssh_user_import_key(rdp_client->sftp_user,
                         settings->sftp_private_key,
                         settings->sftp_passphrase)) {
-                guac_common_ssh_destroy_user(rdp_client->sftp_user);
                 guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                         "Private key unreadable.");
                 return NULL;
@@ -983,7 +982,6 @@ void* guac_rdp_client_thread(void* data) {
         /* Fail if SSH connection does not succeed */
         if (rdp_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
-            guac_common_ssh_destroy_user(rdp_client->sftp_user);
             return NULL;
         }
 
@@ -999,8 +997,6 @@ void* guac_rdp_client_thread(void* data) {
 
         /* Abort if SFTP connection fails */
         if (rdp_client->sftp_filesystem == NULL) {
-            guac_common_ssh_destroy_session(rdp_client->sftp_session);
-            guac_common_ssh_destroy_user(rdp_client->sftp_user);
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                     "SFTP connection failed.");
             return NULL;
