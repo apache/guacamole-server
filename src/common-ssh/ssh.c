@@ -17,9 +17,9 @@
  * under the License.
  */
 
-#include "guac_ssh.h"
-#include "guac_ssh_key.h"
-#include "guac_ssh_user.h"
+#include "common-ssh/key.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/user.h"
 
 #include <guacamole/client.h>
 #include <libssh2.h>

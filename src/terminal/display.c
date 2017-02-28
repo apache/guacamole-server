@@ -19,10 +19,10 @@
 
 #include "config.h"
 
-#include "common.h"
 #include "common/surface.h"
-#include "display.h"
-#include "types.h"
+#include "terminal/common.h"
+#include "terminal/display.h"
+#include "terminal/types.h"
 
 #include <math.h>
 #include <stdlib.h>

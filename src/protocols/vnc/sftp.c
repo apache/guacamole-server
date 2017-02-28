@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "guac_sftp.h"
+#include "common-ssh/sftp.h"
 #include "sftp.h"
 #include "vnc.h"
 

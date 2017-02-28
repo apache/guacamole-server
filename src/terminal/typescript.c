@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include "common/io.h"
-#include "typescript.h"
+#include "terminal/typescript.h"
 
 #include <guacamole/timestamp.h>
 

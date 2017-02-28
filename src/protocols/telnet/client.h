@@ -21,7 +21,7 @@
 #define GUAC_TELNET__CLIENT_H
 
 #include "config.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 
 #include <pthread.h>
 #include <regex.h>

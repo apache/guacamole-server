@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "types.h"
+#include "terminal/types.h"
 
 #include <stdbool.h>
 #include <unistd.h>

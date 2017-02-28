@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "scrollbar.h"
+#include "terminal/scrollbar.h"
 
 #include <guacamole/client.h>
 #include <guacamole/layer.h>

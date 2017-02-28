@@ -21,7 +21,7 @@
 #include "client.h"
 #include "settings.h"
 #include "telnet.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "user.h"
 
 #include <langinfo.h>
