@@ -45,7 +45,7 @@
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
 /**
  * Array of mutexes, used by OpenSSL.
  */
@@ -147,7 +147,7 @@ int guac_common_ssh_init(guac_client* client) {
     }
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
     /* Init threadsafety in OpenSSL */
     guac_common_ssh_openssl_init_locks(CRYPTO_num_locks());
     CRYPTO_set_id_callback(guac_common_ssh_openssl_id_callback);
@@ -167,7 +167,7 @@ int guac_common_ssh_init(guac_client* client) {
 }
 
 void guac_common_ssh_uninit() {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
     guac_common_ssh_openssl_free_locks(CRYPTO_num_locks());
 #endif
 }

@@ -261,6 +261,26 @@ then
                        [Whether libssl provides RSA_get0_key()])],,
             [#include <openssl/rsa.h>])
 
+        # OpenSSL 1.1 does away with explicit threading callbacks
+        AC_MSG_CHECKING([whether libssl requires threading callbacks])
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+
+            #include <openssl/opensslv.h>
+
+            #if OPENSSL_VERSION_NUMBER < 0x10100000L
+            #error Threading callbacks required.
+            #endif
+
+            int main() {
+                return 0;
+            }
+
+          ]])],
+          [AC_MSG_RESULT([no])],
+          [AC_MSG_RESULT([yes])
+           AC_DEFINE([OPENSSL_REQUIRES_THREADING_CALLBACKS],,
+                     [Whether OpenSSL requires explicit threading callbacks for threadsafety])])
+
     fi
 fi
 
