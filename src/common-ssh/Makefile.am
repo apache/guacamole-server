@@ -23,18 +23,18 @@ ACLOCAL_AMFLAGS = -I m4
 noinst_LTLIBRARIES = libguac_common_ssh.la
 
 libguac_common_ssh_la_SOURCES = \
-    guac_sftp.c                 \
-    guac_ssh.c                  \
-    guac_ssh_buffer.c           \
-    guac_ssh_key.c              \
-    guac_ssh_user.c
+    buffer.c                    \
+    sftp.c                      \
+    ssh.c                       \
+    key.c                       \
+    user.c
 
-noinst_HEADERS =      \
-    guac_sftp.h       \
-    guac_ssh.h        \
-    guac_ssh_buffer.h \
-    guac_ssh_key.h    \
-    guac_ssh_user.h
+noinst_HEADERS =        \
+    common-ssh/buffer.h \
+    common-ssh/key.h    \
+    common-ssh/sftp.h   \
+    common-ssh/ssh.h    \
+    common-ssh/user.h
 
 libguac_common_ssh_la_CFLAGS = \
     -Werror -Wall -pedantic    \

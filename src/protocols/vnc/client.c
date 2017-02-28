@@ -24,9 +24,9 @@
 #include "vnc.h"
 
 #ifdef ENABLE_COMMON_SSH
-#include "guac_sftp.h"
-#include "guac_ssh.h"
-#include "sftp.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/user.h"
 #endif
 
 #ifdef ENABLE_PULSE

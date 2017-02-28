@@ -20,7 +20,7 @@
 #ifndef GUAC_COMMON_SSH_H
 #define GUAC_COMMON_SSH_H
 
-#include "guac_ssh_user.h"
+#include "user.h"
 
 #include <guacamole/client.h>
 #include <libssh2.h>

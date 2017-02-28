@@ -20,7 +20,7 @@
 #ifndef GUAC_COMMON_SSH_USER_H
 #define GUAC_COMMON_SSH_USER_H
 
-#include "guac_ssh_key.h"
+#include "key.h"
 
 /**
  * Data describing an SSH user, including their credentials.

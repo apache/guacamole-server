@@ -22,7 +22,7 @@
 
 #include "config.h"
 #include "settings.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 
 #include <libtelnet.h>
 

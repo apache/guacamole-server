@@ -22,11 +22,11 @@
 
 #include "config.h"
 
-#include "guac_sftp.h"
-#include "guac_ssh.h"
-#include "guac_ssh_user.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/user.h"
 #include "settings.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"

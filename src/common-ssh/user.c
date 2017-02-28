@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#include "guac_ssh_key.h"
-#include "guac_ssh_user.h"
+#include "common-ssh/key.h"
+#include "common-ssh/user.h"
 
 #include <stdlib.h>
 #include <string.h>

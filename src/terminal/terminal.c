@@ -19,15 +19,15 @@
 
 #include "config.h"
 
-#include "buffer.h"
-#include "common.h"
 #include "common/clipboard.h"
 #include "common/cursor.h"
-#include "display.h"
-#include "terminal.h"
-#include "terminal_handlers.h"
-#include "types.h"
-#include "typescript.h"
+#include "terminal/buffer.h"
+#include "terminal/common.h"
+#include "terminal/display.h"
+#include "terminal/terminal.h"
+#include "terminal/terminal_handlers.h"
+#include "terminal/types.h"
+#include "terminal/typescript.h"
 
 #include <errno.h>
 #include <pthread.h>
