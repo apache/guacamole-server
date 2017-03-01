@@ -76,7 +76,7 @@ void guac_common_ssh_buffer_write_string(char** buffer, const char* string,
  * @param value
  *     The value to write.
  */
-void guac_common_ssh_buffer_write_bignum(char** buffer, BIGNUM* value);
+void guac_common_ssh_buffer_write_bignum(char** buffer, const BIGNUM* value);
 
 /**
  * Writes the given data the given buffer, advancing the buffer pointer by the

@@ -236,6 +236,51 @@ then
   --------------------------------------------])
     else
         AC_DEFINE([ENABLE_SSL],, [Whether SSL-related support is enabled])
+
+        # OpenSSL 1.1 accessor function for DSA signature values
+        AC_CHECK_DECL([DSA_SIG_get0],
+            [AC_DEFINE([HAVE_DSA_SIG_GET0],,
+                       [Whether libssl provides DSA_SIG_get0()])],,
+            [#include <openssl/dsa.h>])
+
+        # OpenSSL 1.1 accessor function for DSA public key parameters
+        AC_CHECK_DECL([DSA_get0_pqg],
+            [AC_DEFINE([HAVE_DSA_GET0_PQG],,
+                       [Whether libssl provides DSA_get0_pqg()])],,
+            [#include <openssl/dsa.h>])
+
+        # OpenSSL 1.1 accessor function for DSA public/private key values
+        AC_CHECK_DECL([DSA_get0_key],
+            [AC_DEFINE([HAVE_DSA_GET0_KEY],,
+                       [Whether libssl provides DSA_get0_key()])],,
+            [#include <openssl/dsa.h>])
+
+        # OpenSSL 1.1 accessor function for RSA public/private key values
+        AC_CHECK_DECL([RSA_get0_key],
+            [AC_DEFINE([HAVE_RSA_GET0_KEY],,
+                       [Whether libssl provides RSA_get0_key()])],,
+            [#include <openssl/rsa.h>])
+
+        # OpenSSL 1.1 does away with explicit threading callbacks
+        AC_MSG_CHECKING([whether libssl requires threading callbacks])
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+
+            #include <openssl/opensslv.h>
+
+            #if OPENSSL_VERSION_NUMBER < 0x10100000L
+            #error Threading callbacks required.
+            #endif
+
+            int main() {
+                return 0;
+            }
+
+          ]])],
+          [AC_MSG_RESULT([no])],
+          [AC_MSG_RESULT([yes])
+           AC_DEFINE([OPENSSL_REQUIRES_THREADING_CALLBACKS],,
+                     [Whether OpenSSL requires explicit threading callbacks for threadsafety])])
+
     fi
 fi
 

@@ -54,7 +54,7 @@ void guac_common_ssh_buffer_write_data(char** buffer, const char* data,
     *buffer += length;
 }
 
-void guac_common_ssh_buffer_write_bignum(char** buffer, BIGNUM* value) {
+void guac_common_ssh_buffer_write_bignum(char** buffer, const BIGNUM* value) {
 
     unsigned char* bn_buffer;
     int length;
