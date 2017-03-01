@@ -1211,6 +1211,7 @@ guac_common_surface* guac_common_surface_alloc(guac_client* client,
     surface->socket = socket;
     surface->layer = layer;
     surface->parent = GUAC_DEFAULT_LAYER;
+    surface->opacity = 0xFF;
     surface->width = w;
     surface->height = h;
 
