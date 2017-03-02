@@ -20,10 +20,10 @@
 #include "config.h"
 
 #include "client.h"
+#include "common/clipboard.h"
+#include "common/iconv.h"
 #include "rdp.h"
 #include "rdp_cliprdr.h"
-#include "guac_clipboard.h"
-#include "guac_iconv.h"
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>

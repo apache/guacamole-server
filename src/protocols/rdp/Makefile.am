@@ -29,6 +29,7 @@ libguac_client_rdp_la_SOURCES = \
     audio_input.c               \
     client.c                    \
     dvc.c                       \
+    error.c                     \
     input.c                     \
     keyboard.c                  \
     ptr_string.c                \
@@ -41,6 +42,7 @@ libguac_client_rdp_la_SOURCES = \
     rdp_gdi.c                   \
     rdp_glyph.c                 \
     rdp_keymap.c                \
+    rdp_print_job.c             \
     rdp_pointer.c               \
     rdp_rail.c                  \
     rdp_settings.c              \
@@ -74,6 +76,7 @@ guacdr_sources =                             \
     guac_rdpdr/rdpdr_printer.c               \
     guac_rdpdr/rdpdr_service.c               \
     rdp_fs.c                                 \
+    rdp_print_job.c                          \
     rdp_stream.c                             \
     unicode.c
 
@@ -96,6 +99,7 @@ noinst_HEADERS =                             \
     audio_input.h                            \
     client.h                                 \
     dvc.h                                    \
+    error.h                                  \
     input.h                                  \
     keyboard.h                               \
     ptr_string.h                             \
@@ -109,6 +113,7 @@ noinst_HEADERS =                             \
     rdp_glyph.h                              \
     rdp_keymap.h                             \
     rdp_pointer.h                            \
+    rdp_print_job.h                          \
     rdp_rail.h                               \
     rdp_settings.h                           \
     rdp_status.h                             \
@@ -247,6 +252,7 @@ rdp_keymaps =                   \
     keymaps/de_de_qwertz.keymap \
     keymaps/en_us_qwerty.keymap \
     keymaps/fr_fr_azerty.keymap \
+    keymaps/fr_ch_qwertz.keymap \
     keymaps/it_it_qwerty.keymap \
     keymaps/ja_jp_qwerty.keymap \
     keymaps/sv_se_qwerty.keymap

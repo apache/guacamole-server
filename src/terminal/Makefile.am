@@ -22,24 +22,22 @@ ACLOCAL_AMFLAGS = -I m4
 
 noinst_LTLIBRARIES = libguac_terminal.la
 
-noinst_HEADERS =                \
-    buffer.h                    \
-    char_mappings.h             \
-    common.h                    \
-    display.h                   \
-    packet.h                    \
-    scrollbar.h                 \
-    terminal.h                  \
-    terminal_handlers.h         \
-    types.h                     \
-    typescript.h
+noinst_HEADERS =                 \
+    terminal/buffer.h            \
+    terminal/char_mappings.h     \
+    terminal/common.h            \
+    terminal/display.h           \
+    terminal/scrollbar.h         \
+    terminal/terminal.h          \
+    terminal/terminal_handlers.h \
+    terminal/types.h             \
+    terminal/typescript.h
 
 libguac_terminal_la_SOURCES =   \
     buffer.c                    \
     char_mappings.c             \
     common.c                    \
     display.c                   \
-    packet.c                    \
     scrollbar.c                 \
     terminal.c                  \
     terminal_handlers.c         \

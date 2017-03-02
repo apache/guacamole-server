@@ -19,8 +19,8 @@
 
 #include "config.h"
 
-#include "buffer.h"
-#include "common.h"
+#include "terminal/buffer.h"
+#include "terminal/common.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -181,6 +181,10 @@ void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
 
     int i, j;
     guac_terminal_char* current;
+
+    /* Do nothing if glyph is empty */
+    if (character->width == 0)
+        return;
 
     /* Build continuation char (for multicolumn characters) */
     guac_terminal_char continuation_char;

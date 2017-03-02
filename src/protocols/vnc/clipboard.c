@@ -20,8 +20,8 @@
 #include "config.h"
 #include "client.h"
 #include "clipboard.h"
-#include "guac_clipboard.h"
-#include "guac_iconv.h"
+#include "common/clipboard.h"
+#include "common/iconv.h"
 #include "user.h"
 #include "vnc.h"
 

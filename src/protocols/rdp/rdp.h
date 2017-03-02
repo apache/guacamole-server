@@ -23,13 +23,14 @@
 #include "config.h"
 
 #include "audio_input.h"
-#include "guac_clipboard.h"
-#include "guac_display.h"
-#include "guac_surface.h"
-#include "guac_list.h"
+#include "common/clipboard.h"
+#include "common/display.h"
+#include "common/list.h"
+#include "common/surface.h"
 #include "keyboard.h"
 #include "rdp_disp.h"
 #include "rdp_fs.h"
+#include "rdp_print_job.h"
 #include "rdp_settings.h"
 
 #include <freerdp/freerdp.h>
@@ -38,9 +39,9 @@
 #include <guacamole/client.h>
 
 #ifdef ENABLE_COMMON_SSH
-#include "guac_sftp.h"
-#include "guac_ssh.h"
-#include "guac_ssh_user.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/user.h"
 #endif
 
 #include <pthread.h>
@@ -119,6 +120,11 @@ typedef struct guac_rdp_client {
      * The filesystem being shared, if any.
      */
     guac_rdp_fs* filesystem;
+
+    /**
+     * The currently-active print job, or NULL if no print job is active.
+     */
+    guac_rdp_print_job* active_job;
 
 #ifdef ENABLE_COMMON_SSH
     /**

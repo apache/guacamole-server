@@ -21,16 +21,18 @@
 
 #include "audio_input.h"
 #include "client.h"
+#include "common/cursor.h"
+#include "common/display.h"
+#include "common/recording.h"
 #include "dvc.h"
-#include "guac_cursor.h"
-#include "guac_display.h"
-#include "guac_recording.h"
+#include "error.h"
 #include "keyboard.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"
 #include "rdp_cliprdr.h"
 #include "rdp_disp.h"
 #include "rdp_fs.h"
+#include "rdp_print_job.h"
 #include "rdp_gdi.h"
 #include "rdp_glyph.h"
 #include "rdp_pointer.h"
@@ -39,9 +41,9 @@
 #include "rdp_svc.h"
 
 #ifdef ENABLE_COMMON_SSH
-#include <guac_sftp.h>
-#include <guac_ssh.h>
-#include <guac_ssh_user.h>
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/user.h"
 #endif
 
 #include <freerdp/cache/bitmap.h>
@@ -626,7 +628,7 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
             return 0;
 
         /* Otherwise, return as error */
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                 "Error waiting for file descriptor.");
         return -1;
 
@@ -721,7 +723,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
                 "Error connecting to RDP server");
         return 1;
     }
@@ -763,7 +765,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 /* Check the libfreerdp fds */
                 if (!freerdp_check_fds(rdp_inst)) {
                     guac_client_abort(client,
-                            GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                            GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                             "Error handling RDP file descriptors");
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
                     return 1;
@@ -772,7 +774,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 /* Check channel fds */
                 if (!freerdp_channels_check_fds(channels, rdp_inst)) {
                     guac_client_abort(client,
-                            GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                            GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                             "Error handling RDP channel file descriptors");
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
                     return 1;
@@ -801,9 +803,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
                 /* Handle RDP disconnect */
                 if (freerdp_shall_disconnect(rdp_inst)) {
-                    guac_client_stop(client);
-                    guac_client_log(client, GUAC_LOG_INFO,
-                            "RDP server closed connection");
+                    guac_rdp_client_abort(client);
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
                     return 1;
                 }
@@ -832,21 +832,31 @@ static int guac_rdp_handle_connection(guac_client* client) {
                     break;
 
             } while (wait_result > 0);
+
+            /* Record end of frame, excluding server-side rendering time (we
+             * assume server-side rendering time will be consistent between any
+             * two subsequent frames, and that this time should thus be
+             * excluded from the required wait period of the next frame). */
+            last_frame_end = frame_start;
+
         }
 
         /* If an error occurred, fail */
         if (wait_result < 0)
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                     "Connection closed.");
 
-        /* End of frame */
+        /* Flush frame */
         guac_common_display_flush(rdp_client->display);
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
 
-        /* Record end of frame */
-        last_frame_end = guac_timestamp_current();
+    }
 
+    /* Clean up print job, if active */
+    if (rdp_client->active_job != NULL) {
+        guac_rdp_print_job_kill(rdp_client->active_job);
+        guac_rdp_print_job_free(rdp_client->active_job);
     }
 
     pthread_mutex_lock(&(rdp_client->rdp_lock));
@@ -946,7 +956,6 @@ void* guac_rdp_client_thread(void* data) {
             if (guac_common_ssh_user_import_key(rdp_client->sftp_user,
                         settings->sftp_private_key,
                         settings->sftp_passphrase)) {
-                guac_common_ssh_destroy_user(rdp_client->sftp_user);
                 guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                         "Private key unreadable.");
                 return NULL;
@@ -973,7 +982,6 @@ void* guac_rdp_client_thread(void* data) {
         /* Fail if SSH connection does not succeed */
         if (rdp_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
-            guac_common_ssh_destroy_user(rdp_client->sftp_user);
             return NULL;
         }
 
@@ -989,9 +997,7 @@ void* guac_rdp_client_thread(void* data) {
 
         /* Abort if SFTP connection fails */
         if (rdp_client->sftp_filesystem == NULL) {
-            guac_common_ssh_destroy_session(rdp_client->sftp_session);
-            guac_common_ssh_destroy_user(rdp_client->sftp_user);
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                     "SFTP connection failed.");
             return NULL;
         }

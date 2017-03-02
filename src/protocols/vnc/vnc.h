@@ -22,10 +22,10 @@
 
 #include "config.h"
 
-#include "guac_clipboard.h"
-#include "guac_display.h"
-#include "guac_iconv.h"
-#include "guac_surface.h"
+#include "common/clipboard.h"
+#include "common/display.h"
+#include "common/iconv.h"
+#include "common/surface.h"
 #include "settings.h"
 
 #include <guacamole/client.h>
@@ -33,14 +33,13 @@
 #include <rfb/rfbclient.h>
 
 #ifdef ENABLE_PULSE
-#include <guacamole/audio.h>
-#include <pulse/pulseaudio.h>
+#include "pulse/pulse.h"
 #endif
 
 #ifdef ENABLE_COMMON_SSH
-#include "guac_sftp.h"
-#include "guac_ssh.h"
-#include "guac_ssh_user.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/user.h"
 #endif
 
 #include <pthread.h>
@@ -89,14 +88,9 @@ typedef struct guac_vnc_client {
 
 #ifdef ENABLE_PULSE
     /**
-     * Audio output, if any.
+     * PulseAudio output, if any.
      */
-    guac_audio_stream* audio;
-
-    /**
-     * PulseAudio event loop.
-     */
-    pa_threaded_mainloop* pa_mainloop;
+    guac_pa_stream* audio;
 #endif
 
 #ifdef ENABLE_COMMON_SSH

@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "types.h"
+#include "terminal/types.h"
 
 #include <stdbool.h>
 #include <unistd.h>
@@ -96,26 +96,6 @@ int guac_terminal_write_all(int fd, const char* buffer, int size) {
             return -1;
 
         /* If successful, contine with what data remains (if any) */
-        remaining -= ret_val;
-        buffer += ret_val;
-
-    }
-
-    return size;
-
-}
-
-int guac_terminal_fill_buffer(int fd, char* buffer, int size) {
-
-    int remaining = size;
-    while (remaining > 0) {
-
-        /* Attempt to read data */
-        int ret_val = read(fd, buffer, remaining);
-        if (ret_val <= 0)
-            return -1;
-
-        /* If successful, continue with what space remains (if any) */
         remaining -= ret_val;
         buffer += ret_val;
 

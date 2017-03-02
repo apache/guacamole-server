@@ -22,20 +22,23 @@ ACLOCAL_AMFLAGS = -I m4
 # Subprojects
 DIST_SUBDIRS =           \
     src/libguac          \
+    src/libguacd         \
     src/common           \
     src/common-ssh       \
     src/terminal         \
     src/guacd            \
     src/guacenc          \
+    src/pulse            \
     src/protocols/rdp    \
     src/protocols/ssh    \
     src/protocols/telnet \
     src/protocols/vnc    \
     tests
 
-SUBDIRS =       \
-    src/libguac \
-    src/common  \
+SUBDIRS =        \
+    src/libguac  \
+    src/common   \
+    src/libguacd \
     tests
 
 if ENABLE_COMMON_SSH
@@ -44,6 +47,10 @@ endif
 
 if ENABLE_TERMINAL
 SUBDIRS += src/terminal
+endif
+
+if ENABLE_PULSE
+SUBDIRS += src/pulse
 endif
 
 if ENABLE_RDP
@@ -70,8 +77,14 @@ if ENABLE_GUACENC
 SUBDIRS += src/guacenc
 endif
 
-EXTRA_DIST =     \
-    LICENSE      \
-    bin/guacctl  \
-    doc/Doxyfile
+EXTRA_DIST =      \
+    .dockerignore \
+    CONTRIBUTING  \
+    DISCLAIMER    \
+    Dockerfile    \
+    LICENSE       \
+    NOTICE        \
+    bin/guacctl   \
+    doc/Doxyfile  \
+    src/guacd-docker
 

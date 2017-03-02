@@ -58,6 +58,9 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
     /* Get audio stream from client data */
     guac_audio_stream* audio = rdp_client->audio;
 
+    /* Reset own format count */
+    rdpsnd->format_count = 0;
+
     /* Format header */
     Stream_Seek(input_stream, 14);
     Stream_Read_UINT16(input_stream, server_format_count);

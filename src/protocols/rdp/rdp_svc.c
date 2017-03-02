@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include "client.h"
-#include "guac_list.h"
+#include "common/list.h"
 #include "rdp.h"
 #include "rdp_svc.h"
 

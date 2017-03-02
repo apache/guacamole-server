@@ -24,13 +24,13 @@
 #include "vnc.h"
 
 #ifdef ENABLE_COMMON_SSH
-#include "guac_sftp.h"
-#include "guac_ssh.h"
-#include "sftp.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/user.h"
 #endif
 
 #ifdef ENABLE_PULSE
-#include "pulse.h"
+#include "pulse/pulse.h"
 #endif
 
 #include <guacamole/client.h>
@@ -110,19 +110,15 @@ int guac_vnc_client_free_handler(guac_client* client) {
     if (vnc_client->display != NULL)
         guac_common_display_free(vnc_client->display);
 
-    /* Free settings-dependend data */
-    if (settings != NULL) {
-
 #ifdef ENABLE_PULSE
-        /* If audio enabled, stop streaming */
-        if (settings->audio_enabled)
-            guac_pa_stop_stream(client);
+    /* If audio enabled, stop streaming */
+    if (vnc_client->audio)
+        guac_pa_stream_free(vnc_client->audio);
 #endif
 
-        /* Free parsed settings */
+    /* Free parsed settings */
+    if (settings != NULL)
         guac_vnc_settings_free(settings);
-
-    }
 
     /* Free generic data struct */
     free(client->data);

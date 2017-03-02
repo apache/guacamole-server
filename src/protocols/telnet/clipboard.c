@@ -20,7 +20,7 @@
 #include "config.h"
 #include "clipboard.h"
 #include "telnet.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 
 #include <guacamole/client.h>
 #include <guacamole/stream.h>

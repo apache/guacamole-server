@@ -18,8 +18,8 @@
  */
 
 #include "config.h"
-#include "guac_io.h"
-#include "typescript.h"
+#include "common/io.h"
+#include "terminal/typescript.h"
 
 #include <guacamole/timestamp.h>
 

@@ -124,31 +124,6 @@ void guacd_log_guac_error(guac_client_log_level level, const char* message) {
 
 }
 
-void guacd_client_log_guac_error(guac_client* client,
-        guac_client_log_level level, const char* message) {
-
-    if (guac_error != GUAC_STATUS_SUCCESS) {
-
-        /* If error message provided, include in log */
-        if (guac_error_message != NULL)
-            guac_client_log(client, level, "%s: %s",
-                    message,
-                    guac_error_message);
-
-        /* Otherwise just log with standard status string */
-        else
-            guac_client_log(client, level, "%s: %s",
-                    message,
-                    guac_status_string(guac_error));
-
-    }
-
-    /* Just log message if no status code */
-    else
-        guac_client_log(client, level, "%s", message);
-
-}
-
 void guacd_log_handshake_failure() {
 
     if (guac_error == GUAC_STATUS_CLOSED)

@@ -33,8 +33,7 @@ noinst_HEADERS =  \
     log.h         \
     move-fd.h     \
     proc.h        \
-    proc-map.h    \
-    user.h
+    proc-map.h
 
 guacd_SOURCES =  \
     conf-args.c  \
@@ -45,16 +44,17 @@ guacd_SOURCES =  \
     log.c        \
     move-fd.c    \
     proc.c       \
-    proc-map.c   \
-    user.c
+    proc-map.c
 
 guacd_CFLAGS =              \
     -Werror -Wall -pedantic \
     @COMMON_INCLUDE@        \
+    @LIBGUACD_INCLUDE@      \
     @LIBGUAC_INCLUDE@
 
-guacd_LDADD =       \
-    @COMMON_LTLIB@  \
+guacd_LDADD =        \
+    @COMMON_LTLIB@   \
+    @LIBGUACD_LTLIB@ \
     @LIBGUAC_LTLIB@
 
 guacd_LDFLAGS =    \
@@ -67,12 +67,6 @@ EXTRA_DIST =         \
     man/guacd.conf.5
 
 CLEANFILES = $(init_SCRIPTS)
-
-# SSL support
-if ENABLE_SSL
-noinst_HEADERS += socket-ssl.h
-guacd_SOURCES  += socket-ssl.c
-endif
 
 # Init script
 if ENABLE_INIT

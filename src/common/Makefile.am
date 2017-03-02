@@ -22,39 +22,39 @@ ACLOCAL_AMFLAGS = -I m4
 
 noinst_LTLIBRARIES = libguac_common.la
 
-noinst_HEADERS =          \
-    guac_io.h             \
-    guac_blank_cursor.h   \
-    guac_clipboard.h      \
-    guac_cursor.h         \
-    guac_display.h        \
-    guac_dot_cursor.h     \
-    guac_ibar_cursor.h    \
-    guac_iconv.h          \
-    guac_json.h           \
-    guac_list.h           \
-    guac_pointer_cursor.h \
-    guac_recording.h      \
-    guac_rect.h           \
-    guac_string.h         \
-    guac_surface.h
+noinst_HEADERS =            \
+    common/io.h             \
+    common/blank_cursor.h   \
+    common/clipboard.h      \
+    common/cursor.h         \
+    common/display.h        \
+    common/dot_cursor.h     \
+    common/ibar_cursor.h    \
+    common/iconv.h          \
+    common/json.h           \
+    common/list.h           \
+    common/pointer_cursor.h \
+    common/recording.h      \
+    common/rect.h           \
+    common/string.h         \
+    common/surface.h
 
 libguac_common_la_SOURCES = \
-    guac_io.c               \
-    guac_blank_cursor.c     \
-    guac_clipboard.c        \
-    guac_cursor.c           \
-    guac_display.c          \
-    guac_dot_cursor.c       \
-    guac_ibar_cursor.c      \
-    guac_iconv.c            \
-    guac_json.c             \
-    guac_list.c             \
-    guac_pointer_cursor.c   \
-    guac_recording.c        \
-    guac_rect.c             \
-    guac_string.c           \
-    guac_surface.c
+    io.c                    \
+    blank_cursor.c          \
+    clipboard.c             \
+    cursor.c                \
+    display.c               \
+    dot_cursor.c            \
+    ibar_cursor.c           \
+    iconv.c                 \
+    json.c                  \
+    list.c                  \
+    pointer_cursor.c        \
+    recording.c             \
+    rect.c                  \
+    string.c                \
+    surface.c
 
 libguac_common_la_CFLAGS =  \
     -Werror -Wall -pedantic \

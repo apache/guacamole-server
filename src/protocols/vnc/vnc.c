@@ -22,23 +22,23 @@
 #include "auth.h"
 #include "client.h"
 #include "clipboard.h"
+#include "common/clipboard.h"
+#include "common/cursor.h"
+#include "common/display.h"
+#include "common/recording.h"
 #include "cursor.h"
 #include "display.h"
-#include "guac_clipboard.h"
-#include "guac_cursor.h"
-#include "guac_display.h"
-#include "guac_recording.h"
 #include "log.h"
 #include "settings.h"
 #include "vnc.h"
 
 #ifdef ENABLE_PULSE
-#include "pulse.h"
+#include "pulse/pulse.h"
 #endif
 
 #ifdef ENABLE_COMMON_SSH
-#include "guac_sftp.h"
-#include "guac_ssh.h"
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
 #include "sftp.h"
 #endif
 
@@ -202,37 +202,16 @@ void* guac_vnc_client_thread(void* data) {
 
     /* If the final connect attempt fails, return error */
     if (!rfb_client) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to connect to VNC server.");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
+                "Unable to connect to VNC server.");
         return NULL;
     }
 
 #ifdef ENABLE_PULSE
-    /* If an encoding is available, load an audio stream */
-    if (settings->audio_enabled) {
-
-        vnc_client->audio = guac_audio_stream_alloc(client, NULL,
-                GUAC_VNC_AUDIO_RATE,
-                GUAC_VNC_AUDIO_CHANNELS,
-                GUAC_VNC_AUDIO_BPS);
-
-        /* If successful, init audio system */
-        if (vnc_client->audio != NULL) {
-            
-            guac_client_log(client, GUAC_LOG_INFO,
-                    "Audio will be encoded as %s",
-                    vnc_client->audio->encoder->mimetype);
-
-            /* Start audio stream */
-            guac_pa_start_stream(client);
-            
-        }
-
-        /* Otherwise, audio loading failed */
-        else
-            guac_client_log(client, GUAC_LOG_INFO,
-                    "No available audio encoding. Sound disabled.");
-
-    } /* end if audio enabled */
+    /* If audio is enabled, start streaming via PulseAudio */
+    if (settings->audio_enabled)
+        vnc_client->audio = guac_pa_stream_alloc(client, 
+                settings->pa_servername);
 #endif
 
 #ifdef ENABLE_COMMON_SSH
@@ -264,7 +243,6 @@ void* guac_vnc_client_thread(void* data) {
             if (guac_common_ssh_user_import_key(vnc_client->sftp_user,
                         settings->sftp_private_key,
                         settings->sftp_passphrase)) {
-                guac_common_ssh_destroy_user(vnc_client->sftp_user);
                 guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                         "Private key unreadable.");
                 return NULL;
@@ -288,7 +266,6 @@ void* guac_vnc_client_thread(void* data) {
         /* Fail if SSH connection does not succeed */
         if (vnc_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
-            guac_common_ssh_destroy_user(vnc_client->sftp_user);
             return NULL;
         }
 
@@ -304,8 +281,6 @@ void* guac_vnc_client_thread(void* data) {
 
         /* Abort if SFTP connection fails */
         if (vnc_client->sftp_filesystem == NULL) {
-            guac_common_ssh_destroy_session(vnc_client->sftp_session);
-            guac_common_ssh_destroy_user(vnc_client->sftp_user);
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                     "SFTP connection failed.");
             return NULL;
@@ -402,6 +377,12 @@ void* guac_vnc_client_thread(void* data) {
 
             } while (wait_result > 0);
 
+            /* Record end of frame, excluding server-side rendering time (we
+             * assume server-side rendering time will be consistent between any
+             * two subsequent frames, and that this time should thus be
+             * excluded from the required wait period of the next frame). */
+            last_frame_end = frame_start;
+
         }
 
         /* If an error occurs, log it and fail */
@@ -412,9 +393,6 @@ void* guac_vnc_client_thread(void* data) {
         guac_common_surface_flush(vnc_client->display->default_surface);
         guac_client_end_frame(client);
         guac_socket_flush(client->socket);
-
-        /* Record end of frame */
-        last_frame_end = guac_timestamp_current();
 
     }
 

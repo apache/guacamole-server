@@ -22,7 +22,7 @@
 #define _GUAC_RDP_STREAM_H
 
 #include "config.h"
-#include "guac_json.h"
+#include "common/json.h"
 #include "rdp_svc.h"
 
 #include <guacamole/user.h>

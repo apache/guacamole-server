@@ -19,20 +19,17 @@
 
 #include "config.h"
 
-#include "buffer.h"
-#include "common.h"
-#include "display.h"
-#include "guac_clipboard.h"
-#include "guac_cursor.h"
-#include "packet.h"
-#include "scrollbar.h"
-#include "terminal.h"
-#include "terminal_handlers.h"
-#include "types.h"
-#include "typescript.h"
+#include "common/clipboard.h"
+#include "common/cursor.h"
+#include "terminal/buffer.h"
+#include "terminal/common.h"
+#include "terminal/display.h"
+#include "terminal/terminal.h"
+#include "terminal/terminal_handlers.h"
+#include "terminal/types.h"
+#include "terminal/typescript.h"
 
 #include <errno.h>
-#include <poll.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -318,6 +315,11 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->upload_path_handler = NULL;
     term->file_download_handler = NULL;
 
+    /* Init modified flag and conditional */
+    term->modified = 0;
+    pthread_cond_init(&(term->modified_cond), NULL);
+    pthread_mutex_init(&(term->modified_lock), NULL);
+
     /* Init buffer */
     term->buffer = guac_terminal_buffer_alloc(1000, &default_char);
 
@@ -348,14 +350,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Calculate character size */
     term->term_width   = available_width / term->display->char_width;
     term->term_height  = height / term->display->char_height;
-
-    /* Open STDOUT pipe */
-    if (pipe(term->stdout_pipe_fd)) {
-        guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Unable to open pipe for STDOUT";
-        free(term);
-        return NULL;
-    }
 
     /* Open STDIN pipe */
     if (pipe(term->stdin_pipe_fd)) {
@@ -414,10 +408,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
 void guac_terminal_free(guac_terminal* term) {
 
-    /* Close terminal output pipe */
-    close(term->stdout_pipe_fd[1]);
-    close(term->stdout_pipe_fd[0]);
-
     /* Close user input pipe */
     close(term->stdin_pipe_fd[1]);
     close(term->stdin_pipe_fd[0]);
@@ -449,84 +439,110 @@ void guac_terminal_free(guac_terminal* term) {
 }
 
 /**
- * Waits for data to become available on the given file descriptor.
+ * Populate the given timespec with the current time, plus the given offset.
  *
- * @param fd
- *    The file descriptor to wait on.
+ * @param ts
+ *     The timespec structure to populate.
+ *
+ * @param offset_sec
+ *     The offset from the current time to use when populating the given
+ *     timespec, in seconds.
+ *
+ * @param offset_usec
+ *     The offset from the current time to use when populating the given
+ *     timespec, in microseconds.
+ */
+static void guac_terminal_get_absolute_time(struct timespec* ts,
+        int offset_sec, int offset_usec) {
+
+    /* Get timeval */
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    /* Update with offset */
+    tv.tv_sec  += offset_sec;
+    tv.tv_usec += offset_usec;
+
+    /* Wrap to next second if necessary */
+    if (tv.tv_usec >= 1000000) {
+        tv.tv_sec++;
+        tv.tv_usec -= 1000000;
+    }
+
+    /* Convert to timespec */
+    ts->tv_sec  = tv.tv_sec;
+    ts->tv_nsec = tv.tv_usec * 1000;
+
+}
+
+/**
+ * Waits for the terminal state to be modified, returning only when the
+ * specified timeout has elapsed or a frame flush is desired. Note that the
+ * modified flag of the terminal will only be reset if no data remains to be
+ * read from STDOUT.
+ *
+ * @param terminal
+ *    The terminal to wait on.
  *
  * @param msec_timeout
  *    The maximum amount of time to wait, in milliseconds.
  *
  * @return
- *    A positive if data is available, zero if the timeout has elapsed without
- *    data becoming available, or negative if an error occurred.
+ *    Non-zero if the terminal has been modified, zero if the timeout has
+ *    elapsed without the terminal being modified.
  */
-static int guac_terminal_wait_for_data(int fd, int msec_timeout) {
+static int guac_terminal_wait(guac_terminal* terminal, int msec_timeout) {
 
-    /* Build array of file descriptors */
-    struct pollfd fds[] = {{
-        .fd      = fd,
-        .events  = POLLIN,
-        .revents = 0,
-    }};
+    int retval = 1;
 
-    /* Wait for data */
-    return poll(fds, 1, msec_timeout);
+    pthread_mutex_t* mod_lock = &(terminal->modified_lock);
+    pthread_cond_t* mod_cond = &(terminal->modified_cond);
+
+    /* Split provided milliseconds into microseconds and whole seconds */
+    int secs  =  msec_timeout / 1000;
+    int usecs = (msec_timeout % 1000) * 1000;
+
+    /* Calculate absolute timestamp from provided relative timeout */
+    struct timespec timeout;
+    guac_terminal_get_absolute_time(&timeout, secs, usecs);
+
+    /* Test for terminal modification */
+    pthread_mutex_lock(mod_lock);
+    if (terminal->modified)
+        goto wait_complete;
+
+    /* If not yet modified, wait for modification condition to be signaled */
+    retval = pthread_cond_timedwait(mod_cond, mod_lock, &timeout) != ETIMEDOUT;
+
+wait_complete:
+
+    /* Terminal is no longer modified */
+    terminal->modified = 0;
+    pthread_mutex_unlock(mod_lock);
+    return retval;
 
 }
 
 int guac_terminal_render_frame(guac_terminal* terminal) {
 
-    guac_client* client = terminal->client;
-    char buffer[GUAC_TERMINAL_PACKET_SIZE];
-
     int wait_result;
-    int fd = terminal->stdout_pipe_fd[0];
 
     /* Wait for data to be available */
-    wait_result = guac_terminal_wait_for_data(fd, 1000);
-    if (wait_result > 0) {
+    wait_result = guac_terminal_wait(terminal, 1000);
+    if (wait_result) {
 
-        guac_terminal_lock(terminal);
         guac_timestamp frame_start = guac_timestamp_current();
 
         do {
 
-            guac_timestamp frame_end;
-            int frame_remaining;
-
-            int bytes_read;
-
-            /* Read data, write to terminal */
-            if ((bytes_read = guac_terminal_packet_read(fd,
-                            buffer, sizeof(buffer))) > 0) {
-
-                if (guac_terminal_write(terminal, buffer, bytes_read)) {
-                    guac_client_abort(client,
-                            GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                            "Error writing data");
-                    guac_terminal_unlock(terminal);
-                    return 1;
-                }
-
-            }
-
-            /* Notify on error */
-            if (bytes_read < 0) {
-                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                        "Error reading data");
-                guac_terminal_unlock(terminal);
-                return 1;
-            }
-
             /* Calculate time remaining in frame */
-            frame_end = guac_timestamp_current();
-            frame_remaining = frame_start + GUAC_TERMINAL_FRAME_DURATION
-                            - frame_end;
+            guac_timestamp frame_end = guac_timestamp_current();
+            int frame_remaining = frame_start + GUAC_TERMINAL_FRAME_DURATION
+                                - frame_end;
 
             /* Wait again if frame remaining */
             if (frame_remaining > 0)
-                wait_result = guac_terminal_wait_for_data(fd,
+                wait_result = guac_terminal_wait(terminal,
                         GUAC_TERMINAL_FRAME_TIMEOUT);
             else
                 break;
@@ -534,16 +550,10 @@ int guac_terminal_render_frame(guac_terminal* terminal) {
         } while (wait_result > 0);
 
         /* Flush terminal */
+        guac_terminal_lock(terminal);
         guac_terminal_flush(terminal);
         guac_terminal_unlock(terminal);
 
-    }
-
-    /* Notify of any errors */
-    if (wait_result < 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Error waiting for data");
-        return 1;
     }
 
     return 0;
@@ -555,28 +565,19 @@ int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size) {
     return read(stdin_fd, c, size);
 }
 
-int guac_terminal_write_stdout(guac_terminal* terminal, const char* c,
-        int size) {
+void guac_terminal_notify(guac_terminal* terminal) {
 
-    /* Write maximally-sized packets until only one packet remains */
-    while (size > GUAC_TERMINAL_PACKET_SIZE) {
+    pthread_mutex_t* mod_lock = &(terminal->modified_lock);
+    pthread_cond_t* mod_cond = &(terminal->modified_cond);
 
-        /* Write maximally-sized packet */
-        if (guac_terminal_packet_write(terminal->stdout_pipe_fd[1], c,
-                GUAC_TERMINAL_PACKET_SIZE) < 0)
-            return -1;
+    pthread_mutex_lock(mod_lock);
 
-        /* Advance to next packet */
-        c    += GUAC_TERMINAL_PACKET_SIZE;
-        size -= GUAC_TERMINAL_PACKET_SIZE;
+    /* Signal modification */
+    terminal->modified = 1;
+    pthread_cond_signal(mod_cond);
 
-    }
+    pthread_mutex_unlock(mod_lock);
 
-    return guac_terminal_packet_write(terminal->stdout_pipe_fd[1], c, size);
-}
-
-int guac_terminal_notify(guac_terminal* terminal) {
-    return guac_terminal_packet_write(terminal->stdout_pipe_fd[1], NULL, 0);
 }
 
 int guac_terminal_printf(guac_terminal* terminal, const char* format, ...) {
@@ -595,7 +596,7 @@ int guac_terminal_printf(guac_terminal* terminal, const char* format, ...) {
         return written;
 
     /* Write to STDOUT */
-    return guac_terminal_write_stdout(terminal, buffer, written);
+    return guac_terminal_write(terminal, buffer, written);
 
 }
 
@@ -656,18 +657,21 @@ char* guac_terminal_prompt(guac_terminal* terminal, const char* title,
 
 int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint) {
 
-    int width;
-
-    /* Build character with current attributes */
-    guac_terminal_char guac_char;
-    guac_char.value = codepoint;
-    guac_char.attributes = term->current_attributes;
-
-    width = wcwidth(codepoint);
+    /* Calculate width in columns */
+    int width = wcwidth(codepoint);
     if (width < 0)
         width = 1;
 
-    guac_char.width = width;
+    /* Do nothing if glyph is empty */
+    else if (width == 0)
+        return 0;
+
+    /* Build character with current attributes */
+    guac_terminal_char guac_char = {
+        .value      = codepoint,
+        .attributes = term->current_attributes,
+        .width      = width
+    };
 
     guac_terminal_set_columns(term, row, col, col + width - 1, &guac_char);
 
@@ -711,6 +715,7 @@ void guac_terminal_commit_cursor(guac_terminal* term) {
 
 int guac_terminal_write(guac_terminal* term, const char* c, int size) {
 
+    guac_terminal_lock(term);
     while (size > 0) {
 
         /* Read and advance to next character */
@@ -725,7 +730,9 @@ int guac_terminal_write(guac_terminal* term, const char* c, int size) {
         term->char_handler(term, current);
 
     }
+    guac_terminal_unlock(term);
 
+    guac_terminal_notify(term);
     return 0;
 
 }
@@ -843,6 +850,45 @@ int guac_terminal_clear_range(guac_terminal* term,
 
 }
 
+/**
+ * Returns whether the given character would be visible relative to the
+ * background of the given terminal.
+ *
+ * @param term
+ *     The guac_terminal to test the character against.
+ *
+ * @param c
+ *     The character being tested.
+ *
+ * @return
+ *     true if the given character is different from the terminal background,
+ *     false otherwise.
+ */
+static bool guac_terminal_is_visible(guac_terminal* term,
+        guac_terminal_char* c) {
+
+    /* Continuation characters are NEVER visible */
+    if (c->value == GUAC_CHAR_CONTINUATION)
+        return false;
+
+    /* Characters with glyphs are ALWAYS visible */
+    if (guac_terminal_has_glyph(c->value))
+        return true;
+
+    int background;
+
+    /* Determine actual background color of character */
+    if (c->attributes.reverse != c->attributes.cursor)
+        background = c->attributes.foreground;
+    else
+        background = c->attributes.background;
+
+    /* Blank characters are visible if their background color differs from that
+     * of the terminal */
+    return background != term->default_char.attributes.background;
+
+}
+
 void guac_terminal_scroll_display_down(guac_terminal* terminal,
         int scroll_amount) {
 
@@ -889,7 +935,7 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal,
         for (column=0; column<buffer_row->length; column++) {
 
             /* Only draw if not blank */
-            if (guac_terminal_has_glyph(current->value))
+            if (guac_terminal_is_visible(terminal, current))
                 guac_terminal_display_set_columns(terminal->display, dest_row, column, column, current);
 
             current++;
@@ -951,7 +997,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
         for (column=0; column<buffer_row->length; column++) {
 
             /* Only draw if not blank */
-            if (guac_terminal_has_glyph(current->value))
+            if (guac_terminal_is_visible(terminal, current))
                 guac_terminal_display_set_columns(terminal->display, dest_row, column, column, current);
 
             current++;
@@ -1226,7 +1272,7 @@ static void __guac_terminal_redraw_rect(guac_terminal* term, int start_row, int 
 
             /* Only redraw if not blank */
             guac_terminal_char* c = &(buffer_row->characters[col]);
-            if (guac_terminal_has_glyph(c->value))
+            if (guac_terminal_is_visible(term, c))
                 guac_terminal_display_set_columns(term->display, row, col, col, c);
 
         }
@@ -1476,7 +1522,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
         /* If alt being held, also send escape character */
         if (term->mod_alt)
-            return guac_terminal_send_string(term, "\x1B");
+            guac_terminal_send_string(term, "\x1B");
 
         /* Translate Ctrl+letter to control code */ 
         if (term->mod_ctrl) {

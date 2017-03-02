@@ -19,10 +19,10 @@
 
 #include "config.h"
 
-#include "common.h"
-#include "display.h"
-#include "guac_surface.h"
-#include "types.h"
+#include "common/surface.h"
+#include "terminal/common.h"
+#include "terminal/display.h"
+#include "terminal/types.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -438,6 +438,10 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
     int i;
     guac_terminal_operation* current;
 
+    /* Do nothing if glyph is empty */
+    if (character->width == 0)
+        return;
+
     /* Ignore operations outside display bounds */
     if (row < 0 || row >= display->height)
         return;
@@ -773,13 +777,14 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                 }
 
                 /* Send rect */
-                guac_common_surface_rect(
+                guac_common_surface_set(
                         display->display_surface,
                         col * display->char_width,
                         row * display->char_height,
                         rect_width * display->char_width,
                         rect_height * display->char_height,
-                        guac_color->red, guac_color->green, guac_color->blue);
+                        guac_color->red, guac_color->green, guac_color->blue,
+                        0xFF);
 
             } /* end if clear operation */
 

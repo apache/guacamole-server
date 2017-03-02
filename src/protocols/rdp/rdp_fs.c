@@ -595,16 +595,12 @@ const char* guac_rdp_fs_read_dir(guac_rdp_fs* fs, int file_id) {
             return NULL;
     }
 
-    /* Read next entry, stop if error */
-    if (readdir_r(file->dir, &(file->__dirent), &result))
-        return NULL;
-
-    /* If no more entries, return NULL */
-    if (result == NULL)
+    /* Read next entry, stop if error or no more entries */
+    if ((result = readdir(file->dir)) == NULL)
         return NULL;
 
     /* Return filename */
-    return file->__dirent.d_name;
+    return result->d_name;
 
 }
 

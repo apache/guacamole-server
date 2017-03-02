@@ -18,8 +18,8 @@
  */
 
 #include "config.h"
+#include "common/list.h"
 #include "dvc.h"
-#include "guac_list.h"
 #include "rdp.h"
 
 #include <freerdp/channels/channels.h>

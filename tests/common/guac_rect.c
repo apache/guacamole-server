@@ -20,7 +20,7 @@
 #include "config.h"
 
 #include "common_suite.h"
-#include "guac_rect.h"
+#include "common/rect.h"
 
 #include <stdlib.h>
 #include <stdio.h>

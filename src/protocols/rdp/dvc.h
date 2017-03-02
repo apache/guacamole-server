@@ -21,7 +21,7 @@
 #define GUAC_RDP_DVC_H
 
 #include "config.h"
-#include "guac_list.h"
+#include "common/list.h"
 
 #include <freerdp/freerdp.h>
 

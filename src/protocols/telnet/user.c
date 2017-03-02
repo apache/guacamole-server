@@ -23,7 +23,7 @@
 #include "input.h"
 #include "settings.h"
 #include "telnet.h"
-#include "terminal.h"
+#include "terminal/terminal.h"
 #include "user.h"
 
 #include <guacamole/client.h>
