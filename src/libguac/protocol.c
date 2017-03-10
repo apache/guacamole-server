@@ -684,6 +684,23 @@ int guac_protocol_send_lstroke(guac_socket* socket,
 
 }
 
+int guac_protocol_send_mouse(guac_socket* socket, int x, int y) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "5.mouse,")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_move(guac_socket* socket, const guac_layer* layer,
         const guac_layer* parent, int x, int y, int z) {
 
