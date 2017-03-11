@@ -110,6 +110,32 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
 
 }
 
+/**
+ * Callback for guac_client_foreach_user() which sends the current cursor
+ * position to any given user except the user that moved the cursor last.
+ *
+ * @param data
+ *     A pointer to the guac_common_cursor whose position should be broadcast
+ *     to all users except the user that moved the cursor last.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_common_cursor_broadcast_position(guac_user* user,
+        void* data) {
+
+    guac_common_cursor* cursor = (guac_common_cursor*) data;
+
+    /* Send cursor position only if the user is not moving the cursor */
+    if (user != cursor->user) {
+        guac_protocol_send_mouse(user->socket, cursor->x, cursor->y);
+        guac_socket_flush(user->socket);
+    }
+
+    return NULL;
+
+}
+
 void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
         int x, int y) {
 
@@ -120,9 +146,9 @@ void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
     cursor->x = x;
     cursor->y = y;
 
-    /* Notify of change in cursor position */
-    guac_protocol_send_mouse(cursor->client->socket, x, y);
-    guac_socket_flush(cursor->client->socket);
+    /* Notify all other users of change in cursor position */
+    guac_client_foreach_user(cursor->client,
+            guac_common_cursor_broadcast_position, cursor);
 
 }
 
