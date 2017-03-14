@@ -1746,7 +1746,6 @@ int guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
     result = __guac_terminal_send_mouse(term, user, x, y, mask);
     guac_terminal_unlock(term);
 
-    guac_terminal_notify(term);
     return result;
 
 }

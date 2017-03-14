@@ -145,6 +145,26 @@ int vguac_protocol_send_log(guac_socket* socket, const char* format,
         va_list args);
 
 /**
+ * Sends a mouse instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param x
+ *     The X coordinate of the current mouse position.
+ *
+ * @param y
+ *     The Y coordinate of the current mouse position.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_mouse(guac_socket* socket, int x, int y);
+
+/**
  * Sends a nest instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
