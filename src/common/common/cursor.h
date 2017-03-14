@@ -45,10 +45,9 @@ typedef struct guac_common_cursor {
     guac_client* client;
 
     /**
-     * The cursor layer. This layer will be available to all connected users,
-     * but will be visible only to those users who are not moving the mouse.
+     * The buffer containing the current cursor image.
      */
-    guac_layer* layer;
+    guac_layer* buffer;
 
     /**
      * The width of the cursor image, in pixels.
