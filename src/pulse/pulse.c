@@ -58,6 +58,20 @@ static int guac_pa_is_silence(const void* buffer, size_t length) {
 
 }
 
+/**
+ * Callback invoked by PulseAudio when PCM data is available for reading
+ * from the given stream. The PCM data can be read using pa_stream_peek().
+ *
+ * @param stream
+ *     The PulseAudio stream which has PCM data available.
+ *
+ * @param length
+ *     The number of bytes of PCM data available on the given stream.
+ *
+ * @param data
+ *     A pointer to the guac_pa_stream structure associated with the Guacamole
+ *     stream receiving audio data from PulseAudio.
+ */
 static void __stream_read_callback(pa_stream* stream, size_t length,
         void* data) {
 
@@ -82,6 +96,17 @@ static void __stream_read_callback(pa_stream* stream, size_t length,
 
 }
 
+/**
+ * Callback invoked by PulseAudio when the audio stream has changed state. The
+ * new state can be retrieved using pa_stream_get_state().
+ *
+ * @param stream
+ *     The PulseAudio stream which has changed state.
+ *
+ * @param data
+ *     A pointer to the guac_pa_stream structure associated with the Guacamole
+ *     stream receiving audio data from PulseAudio.
+ */
 static void __stream_state_callback(pa_stream* stream, void* data) {
 
     guac_pa_stream* guac_stream = (guac_pa_stream*) data;
@@ -119,6 +144,28 @@ static void __stream_state_callback(pa_stream* stream, void* data) {
 
 }
 
+/**
+ * Callback invoked by PulseAudio when the audio sink information has been
+ * retrieved. The callback is invoked repeatedly, once for each available
+ * sink, followed by one final invocation with the is_last flag set. The final
+ * invocation (with is_last set) does not describe a sink; it serves as a
+ * terminator only.
+ *
+ * @param context 
+ *     The PulseAudio context which is providing the sink information.
+ *
+ * @param info
+ *     Information describing an available audio sink.
+ *
+ * @param is_last
+ *     Non-zero if this invocation is the final invocation of this callback for
+ *     all currently-available sinks (and this invocation does not describe a
+ *     sink), zero otherwise.
+ *
+ * @param data
+ *     A pointer to the guac_pa_stream structure associated with the Guacamole
+ *     stream receiving audio data from PulseAudio.
+ */
 static void __context_get_sink_info_callback(pa_context* context,
         const pa_sink_info* info, int is_last, void* data) {
 
@@ -158,6 +205,19 @@ static void __context_get_sink_info_callback(pa_context* context,
 
 }
 
+/**
+ * Callback invoked by PulseAudio when server information has been retrieved.
+ *
+ * @param context 
+ *     The PulseAudio context which is providing the sink information.
+ *
+ * @param info
+ *     Information describing the PulseAudio server.
+ *
+ * @param data
+ *     A pointer to the guac_pa_stream structure associated with the Guacamole
+ *     stream receiving audio data from PulseAudio.
+ */
 static void __context_get_server_info_callback(pa_context* context,
         const pa_server_info* info, void* data) {
 
@@ -181,6 +241,17 @@ static void __context_get_server_info_callback(pa_context* context,
 
 }
 
+/**
+ * Callback invoked by PulseAudio when the overall audio context has changed
+ * state. The new state can be retrieved using pa_context_get_state().
+ *
+ * @param context 
+ *     The PulseAudio context which has changed state.
+ *
+ * @param data
+ *     A pointer to the guac_pa_stream structure associated with the Guacamole
+ *     stream receiving audio data from PulseAudio.
+ */
 static void __context_state_callback(pa_context* context, void* data) {
 
     guac_pa_stream* guac_stream = (guac_pa_stream*) data;
