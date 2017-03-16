@@ -122,7 +122,9 @@ static void __stream_state_callback(pa_stream* stream, void* data) {
 static void __context_get_sink_info_callback(pa_context* context,
         const pa_sink_info* info, int is_last, void* data) {
 
-    guac_client* client = (guac_client*) data;
+    guac_pa_stream* guac_stream = (guac_pa_stream*) data;
+    guac_client* client = guac_stream->client;
+
     pa_stream* stream;
     pa_sample_spec spec;
     pa_buffer_attr attr;
@@ -146,8 +148,8 @@ static void __context_get_sink_info_callback(pa_context* context,
     stream = pa_stream_new(context, "Guacamole Audio", &spec, NULL);
 
     /* Set stream callbacks */
-    pa_stream_set_state_callback(stream, __stream_state_callback, client);
-    pa_stream_set_read_callback(stream, __stream_read_callback, client);
+    pa_stream_set_state_callback(stream, __stream_state_callback, guac_stream);
+    pa_stream_set_read_callback(stream, __stream_read_callback, guac_stream);
 
     /* Start stream */
     pa_stream_connect_record(stream, info->monitor_source_name, &attr,
@@ -159,7 +161,8 @@ static void __context_get_sink_info_callback(pa_context* context,
 static void __context_get_server_info_callback(pa_context* context,
         const pa_server_info* info, void* data) {
 
-    guac_client* client = (guac_client*) data;
+    guac_pa_stream* guac_stream = (guac_pa_stream*) data;
+    guac_client* client = guac_stream->client;
 
     /* If no default sink, cannot continue */
     if (info->default_sink_name == NULL) {
@@ -174,13 +177,14 @@ static void __context_get_server_info_callback(pa_context* context,
     pa_operation_unref(
             pa_context_get_sink_info_by_name(context,
                 info->default_sink_name, __context_get_sink_info_callback,
-                client));
+                guac_stream));
 
 }
 
 static void __context_state_callback(pa_context* context, void* data) {
 
-    guac_client* client = (guac_client*) data;
+    guac_pa_stream* guac_stream = (guac_pa_stream*) data;
+    guac_client* client = guac_stream->client;
 
     switch (pa_context_get_state(context)) {
 
@@ -205,7 +209,7 @@ static void __context_state_callback(pa_context* context, void* data) {
         case PA_CONTEXT_READY:
             guac_client_log(client, GUAC_LOG_INFO, "PulseAudio now ready");
             pa_operation_unref(pa_context_get_server_info(context,
-                        __context_get_server_info_callback, client));
+                        __context_get_server_info_callback, guac_stream));
             break;
 
         case PA_CONTEXT_FAILED:
