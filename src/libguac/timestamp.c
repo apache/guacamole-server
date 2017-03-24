@@ -33,9 +33,13 @@ guac_timestamp guac_timestamp_current() {
 
     struct timespec current;
 
-    /* Get current time */
+    /* Get current time, monotonically increasing */ 
+#ifdef CLOCK_MONOTONIC
+    clock_gettime(CLOCK_MONOTONIC, &current);
+#else
     clock_gettime(CLOCK_REALTIME, &current);
-    
+#endif    
+
     /* Calculate milliseconds */
     return (guac_timestamp) current.tv_sec * 1000 + current.tv_nsec / 1000000;
 
