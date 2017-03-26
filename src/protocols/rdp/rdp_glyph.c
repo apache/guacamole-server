@@ -44,7 +44,7 @@
 #define cairo_format_stride_for_width(format, width) (width*4)
 #endif
 
-void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph) {
+BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph) {
 
     int x, y, i;
     int stride;
@@ -95,9 +95,13 @@ void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph) {
     ((guac_rdp_glyph*) glyph)->surface = cairo_image_surface_create_for_data(
             image_buffer, CAIRO_FORMAT_ARGB32, width, height, stride);
 
+    return TRUE;
+
 }
 
-void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y) {
+BOOL guac_rdp_glyph_draw(rdpContext* context, const rdpGlyph* glyph,
+        UINT32 x, UINT32 y, UINT32 w, UINT32 h, UINT32 sx, UINT32 sy,
+        BOOL redundant);
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -109,6 +113,8 @@ void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y) {
                                (fgcolor & 0xFF0000) >> 16,
                                (fgcolor & 0x00FF00) >> 8,
                                 fgcolor & 0x0000FF);
+
+    return TRUE;
 
 }
 
@@ -123,8 +129,8 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph) {
 
 }
 
-void guac_rdp_glyph_begindraw(rdpContext* context,
-        int x, int y, int width, int height, UINT32 fgcolor, UINT32 bgcolor) {
+BOOL guac_rdp_glyph_begindraw(rdpContext* context,
+        UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 fgcolor, UINT32 bgcolor, BOOL redundant) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client =
@@ -148,10 +154,13 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
     /* Convert foreground color */
     rdp_client->glyph_color = guac_rdp_convert_color(context, fgcolor);
 
+    return TRUE;
+
 }
 
-void guac_rdp_glyph_enddraw(rdpContext* context,
-        int x, int y, int width, int height, UINT32 fgcolor, UINT32 bgcolor) {
+BOOL guac_rdp_glyph_enddraw(rdpContext* context,
+        UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 fgcolor, UINT32 bgcolor) {
     /* IGNORE */
+    return TRUE;
 }
 

@@ -59,7 +59,7 @@ typedef struct guac_rdp_glyph {
  * @param glyph
  *     The glyph to cache.
  */
-void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph);
+BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph);
 
 /**
  * Draws a previously-cached glyph at the given coordinates within the current
@@ -77,7 +77,9 @@ void guac_rdp_glyph_new(rdpContext* context, rdpGlyph* glyph);
  * @param y
  *     The destination Y coordinate of the upper-left corner of the glyph.
  */
-void guac_rdp_glyph_draw(rdpContext* context, rdpGlyph* glyph, int x, int y);
+BOOL guac_rdp_glyph_draw(rdpContext* context, const rdpGlyph* glyph,
+        UINT32 x, UINT32 y, UINT32 w, UINT32 h, UINT32 sx, UINT32 sy,
+        BOOL redundant);
 
 /**
  * Frees any Guacamole-specific data associated with the given glyph, such that
@@ -126,8 +128,8 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph);
  *     be translated via guac_rdp_convert_color(). If the background is
  *     transparent, this value is undefined.
  */
-void guac_rdp_glyph_begindraw(rdpContext* context,
-        int x, int y, int width, int height, UINT32 fgcolor, UINT32 bgcolor);
+BOOL guac_rdp_glyph_begindraw(rdpContext* context,
+        UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 fgcolor, UINT32 bgcolor, BOOL redundant);
 
 /**
  * Called immediately after rendering a series of glyphs. Unlike
@@ -163,7 +165,7 @@ void guac_rdp_glyph_begindraw(rdpContext* context,
  *     be translated via guac_rdp_convert_color(). If the background is
  *     transparent, this value is undefined.
  */
-void guac_rdp_glyph_enddraw(rdpContext* context,
-        int x, int y, int width, int height, UINT32 fgcolor, UINT32 bgcolor);
+BOOL guac_rdp_glyph_enddraw(rdpContext* context,
+        UINT32 x, UINT32 y, UINT32 width, UINT32 height, UINT32 fgcolor, UINT32 bgcolor);
 
 #endif

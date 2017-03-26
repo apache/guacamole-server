@@ -38,7 +38,9 @@
 #include "rdp_pointer.h"
 #include "rdp_rail.h"
 #include "rdp_stream.h"
+#if 0
 #include "rdp_svc.h"
+#endif
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"

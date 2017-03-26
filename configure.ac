@@ -554,11 +554,11 @@ then
     # libfreerdp-core / libfreerdp
     AC_CHECK_LIB([freerdp-core], [freerdp_new],
                  [RDP_LIBS="$RDP_LIBS -lfreerdp-core"],
-                 [AC_CHECK_LIB([freerdp], [freerdp_new],
-                               [RDP_LIBS="$RDP_LIBS -lfreerdp -lfreerdp-client"],
+                 [AC_CHECK_LIB([freerdp2], [freerdp_new],
+                               [RDP_LIBS="$RDP_LIBS -lfreerdp2 -lfreerdp-client2"],
                                [AC_MSG_WARN([
   --------------------------------------------
-   Unable to find libfreerdp-core / libfreerdp
+   Unable to find libfreerdp2
    RDP will be disabled.
   --------------------------------------------])
                   have_freerdp=no])])

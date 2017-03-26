@@ -55,7 +55,6 @@ libguac_client_rdp_la_SOURCES = \
     rdp_rail.c                  \
     rdp_settings.c              \
     rdp_stream.c                \
-    rdp_svc.c                   \
     resolution.c                \
     unicode.c                   \
     user.c
@@ -127,7 +126,6 @@ noinst_HEADERS =                             \
     rdp_settings.h                           \
     rdp_status.h                             \
     rdp_stream.h                             \
-    rdp_svc.h                                \
     resolution.h                             \
     unicode.h                                \
     user.h
@@ -283,59 +281,59 @@ if LEGACY_FREERDP_EXTENSIONS
 
 # FreeRDP 1.0-style extensions
 freerdp_LTLIBRARIES = \
-    guacai.la         \
-    guacdr.la         \
-    guacsnd.la        \
-    guacsvc.la
+    guacai.la
+#    guacdr.la         \
+#    guacsnd.la        \
+#    guacsvc.la
 
 guacai_la_SOURCES = ${guacai_sources}
 guacai_la_CFLAGS  = ${guacai_cflags}
 guacai_la_LDFLAGS = ${guacai_ldflags}
 guacai_la_LIBADD  = ${guacai_libadd}
 
-guacdr_la_SOURCES = ${guacdr_sources}
-guacdr_la_CFLAGS  = ${guacdr_cflags}
-guacdr_la_LDFLAGS = ${guacdr_ldflags}
-guacdr_la_LIBADD  = ${guacdr_libadd}
+#guacdr_la_SOURCES = ${guacdr_sources}
+#guacdr_la_CFLAGS  = ${guacdr_cflags}
+#guacdr_la_LDFLAGS = ${guacdr_ldflags}
+#guacdr_la_LIBADD  = ${guacdr_libadd}
 
-guacsnd_la_SOURCES = ${guacsnd_sources}
-guacsnd_la_CFLAGS  = ${guacsnd_cflags}
-guacsnd_la_LDFLAGS = ${guacsnd_ldflags}
-guacsnd_la_LIBADD  = ${guacsnd_libadd}
+#guacsnd_la_SOURCES = ${guacsnd_sources}
+#guacsnd_la_CFLAGS  = ${guacsnd_cflags}
+#guacsnd_la_LDFLAGS = ${guacsnd_ldflags}
+#guacsnd_la_LIBADD  = ${guacsnd_libadd}
 
-guacsvc_la_SOURCES = ${guacsvc_sources}
-guacsvc_la_CFLAGS  = ${guacsvc_cflags}
-guacsvc_la_LDFLAGS = ${guacsvc_ldflags}
-guacsvc_la_LIBADD  = ${guacsvc_libadd}
+#guacsvc_la_SOURCES = ${guacsvc_sources}
+#guacsvc_la_CFLAGS  = ${guacsvc_cflags}
+#guacsvc_la_LDFLAGS = ${guacsvc_ldflags}
+#guacsvc_la_LIBADD  = ${guacsvc_libadd}
 
 else
 
 # FreeRDP 1.1 (and hopefully onward) extensions
 freerdp_LTLIBRARIES = \
-    guacai-client.la  \
-    guacdr-client.la  \
-    guacsnd-client.la \
-    guacsvc-client.la
+    guacai-client.la
+#    guacdr-client.la  \
+#    guacsnd-client.la \
+#    guacsvc-client.la
 
 guacai_client_la_SOURCES = ${guacai_sources}
 guacai_client_la_CFLAGS  = ${guacai_cflags}
 guacai_client_la_LDFLAGS = ${guacai_ldflags}
 guacai_client_la_LIBADD  = ${guacai_libadd}
 
-guacdr_client_la_SOURCES = ${guacdr_sources}
-guacdr_client_la_CFLAGS  = ${guacdr_cflags}
-guacdr_client_la_LDFLAGS = ${guacdr_ldflags}
-guacdr_client_la_LIBADD  = ${guacdr_libadd}
+#guacdr_client_la_SOURCES = ${guacdr_sources}
+#guacdr_client_la_CFLAGS  = ${guacdr_cflags}
+#guacdr_client_la_LDFLAGS = ${guacdr_ldflags}
+#guacdr_client_la_LIBADD  = ${guacdr_libadd}
 
-guacsnd_client_la_SOURCES = ${guacsnd_sources}
-guacsnd_client_la_CFLAGS  = ${guacsnd_cflags}
-guacsnd_client_la_LDFLAGS = ${guacsnd_ldflags}
-guacsnd_client_la_LIBADD  = ${guacsnd_libadd}
+#guacsnd_client_la_SOURCES = ${guacsnd_sources}
+#guacsnd_client_la_CFLAGS  = ${guacsnd_cflags}
+#guacsnd_client_la_LDFLAGS = ${guacsnd_ldflags}
+#guacsnd_client_la_LIBADD  = ${guacsnd_libadd}
 
-guacsvc_client_la_SOURCES = ${guacsvc_sources}
-guacsvc_client_la_CFLAGS  = ${guacsvc_cflags}
-guacsvc_client_la_LDFLAGS = ${guacsvc_ldflags}
-guacsvc_client_la_LIBADD  = ${guacsvc_libadd}
+#guacsvc_client_la_SOURCES = ${guacsvc_sources}
+#guacsvc_client_la_CFLAGS  = ${guacsvc_cflags}
+#guacsvc_client_la_LDFLAGS = ${guacsvc_ldflags}
+#guacsvc_client_la_LIBADD  = ${guacsvc_libadd}
 
 endif
 

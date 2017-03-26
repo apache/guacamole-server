@@ -42,7 +42,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
+BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -70,9 +70,11 @@ void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
     /* Store buffer reference in bitmap */
     ((guac_rdp_bitmap*) bitmap)->layer = buffer;
 
+    return TRUE;
+
 }
 
-void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
+BOOL guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Convert image data if present */
     if (bitmap->data != NULL && bitmap->bpp != 32) {
@@ -103,9 +105,11 @@ void guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
     /* Start at zero usage */
     ((guac_rdp_bitmap*) bitmap)->used = 0;
 
+    return TRUE;
+
 }
 
-void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
+BOOL guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -145,6 +149,8 @@ void guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
     /* Increment usage counter */
     ((guac_rdp_bitmap*) bitmap)->used++;
 
+    return TRUE;
+
 }
 
 void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
@@ -159,7 +165,7 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
 
 }
 
-void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL primary) {
+BOOL guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL primary) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -184,14 +190,16 @@ void guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL pri
 
     }
 
+    return TRUE;
+
 }
 
 #ifdef LEGACY_RDPBITMAP
 void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* data,
         int width, int height, int bpp, int length, BOOL compressed) {
 #else
-void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* data,
-        int width, int height, int bpp, int length, BOOL compressed, int codec_id) {
+BOOL guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, const BYTE* data,
+        UINT32 width, UINT32 height, UINT32 bpp, UINT32 length, BOOL compressed, UINT32 codec_id) {
 #endif
 
     int size = width * height * 4;

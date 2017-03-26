@@ -143,7 +143,7 @@ static int guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
  * @return
  *     Always zero.
  */
-static int guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
+static UINT guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
         wStream* stream) {
 
     guac_rdp_ai_channel_callback* ai_channel_callback =
@@ -169,7 +169,7 @@ static int guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
  * @return
  *     Always zero.
  */
-static int guac_rdp_ai_close(IWTSVirtualChannelCallback* channel_callback) {
+static UINT guac_rdp_ai_close(IWTSVirtualChannelCallback* channel_callback) {
 
     guac_rdp_ai_channel_callback* ai_channel_callback =
         (guac_rdp_ai_channel_callback*) channel_callback;
@@ -219,7 +219,7 @@ static int guac_rdp_ai_close(IWTSVirtualChannelCallback* channel_callback) {
  * @return
  *     Always zero.
  */
-static int guac_rdp_ai_new_connection(
+static UINT guac_rdp_ai_new_connection(
         IWTSListenerCallback* listener_callback, IWTSVirtualChannel* channel,
         BYTE* data, int* accept,
         IWTSVirtualChannelCallback** channel_callback) {
@@ -261,7 +261,7 @@ static int guac_rdp_ai_new_connection(
  * @return
  *     Always zero.
  */
-static int guac_rdp_ai_initialize(IWTSPlugin* plugin,
+static UINT guac_rdp_ai_initialize(IWTSPlugin* plugin,
         IWTSVirtualChannelManager* manager) {
 
     /* Allocate new listener callback */
@@ -295,7 +295,7 @@ static int guac_rdp_ai_initialize(IWTSPlugin* plugin,
  * @return
  *     Always zero.
  */
-static int guac_rdp_ai_terminated(IWTSPlugin* plugin) {
+static UINT guac_rdp_ai_terminated(IWTSPlugin* plugin) {
 
     guac_rdp_ai_plugin* ai_plugin = (guac_rdp_ai_plugin*) plugin;
     guac_client* client = ai_plugin->client;

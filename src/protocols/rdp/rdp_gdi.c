@@ -345,6 +345,7 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
 
 }
 
+#if 0
 /**
  * Updates the palette within a FreeRDP CLRCONV object using the new palette
  * entries provided by an RDP palette update.
@@ -368,6 +369,7 @@ static void guac_rdp_update_clrconv(CLRCONV* clrconv,
 #endif
 
 }
+#endif
 
 /**
  * Updates a raw ARGB32 palette using the new palette entries provided by an
@@ -402,14 +404,14 @@ static void guac_rdp_update_palette(UINT32* guac_palette,
 }
 
 void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette) {
-
+#if 0
     CLRCONV* clrconv = ((rdp_freerdp_context*) context)->clrconv;
     UINT32* guac_palette = ((rdp_freerdp_context*) context)->palette;
 
     /* Update internal palette representations */
     guac_rdp_update_clrconv(clrconv, palette);
     guac_rdp_update_palette(guac_palette, palette);
-
+#endif
 }
 
 void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {

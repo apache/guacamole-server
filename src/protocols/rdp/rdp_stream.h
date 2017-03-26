@@ -23,7 +23,9 @@
 
 #include "config.h"
 #include "common/json.h"
+#if 0
 #include "rdp_svc.h"
+#endif
 
 #include <guacamole/user.h>
 #include <guacamole/protocol.h>
@@ -150,10 +152,12 @@ typedef struct guac_rdp_stream {
      */
     guac_rdp_ls_status ls_status;
 
+#if 0
     /**
      * Associated SVC instance. Only valid for GUAC_RDP_INBOUND_SVC_STREAM.
      */
     guac_rdp_svc* svc;
+#endif
 
 } guac_rdp_stream;
 
