@@ -23,7 +23,6 @@
 
 # Start from CentOS base image
 FROM centos:centos7
-MAINTAINER Michael Jumper <mike.jumper@guac-dev.org>
 
 # Environment variables
 ENV \
