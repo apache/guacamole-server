@@ -98,7 +98,8 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
 
 #ifdef ENABLE_COMMON_SSH
         /* Set generic (non-filesystem) file upload handler */
-        user->file_handler = guac_vnc_sftp_file_handler;
+        if (settings->enable_sftp)
+            user->file_handler = guac_vnc_sftp_file_handler;
 #endif
 
     }
