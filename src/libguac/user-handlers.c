@@ -27,6 +27,7 @@
 #include "user.h"
 #include "user-handlers.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -123,6 +124,12 @@ int __guac_handle_sync(guac_user* user, int argc, char** argv) {
         user->last_frame_duration = frame_duration - user->processing_lag;
 
     }
+
+    /* Log received timestamp and calculated lag (at TRACE level only) */
+    guac_user_log(user, GUAC_LOG_TRACE,
+            "User confirmation of frame %" PRIu64 "ms received "
+            "at %" PRIu64 "ms (processing_lag=%ims)",
+            timestamp, current, user->processing_lag);
 
     if (user->sync_handler)
         return user->sync_handler(user, timestamp);
