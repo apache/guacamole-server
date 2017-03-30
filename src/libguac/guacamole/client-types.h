@@ -56,8 +56,8 @@ typedef enum guac_client_state {
 
 /**
  * All supported log levels used by the logging subsystem of each Guacamole
- * client. These log levels correspond to a subset of the log levels defined by
- * RFC 5424.
+ * client. With the exception of GUAC_LOG_TRACE, these log levels correspond to
+ * a subset of the log levels defined by RFC 5424.
  */
 typedef enum guac_client_log_level {
 
@@ -78,9 +78,18 @@ typedef enum guac_client_log_level {
 
     /**
      * Informational messages which can be useful for debugging, but are
-     * otherwise not useful to users or administrators.
+     * otherwise not useful to users or administrators. It is expected that
+     * debug level messages, while verbose, will not negatively affect
+     * performance.
      */
-    GUAC_LOG_DEBUG = 7
+    GUAC_LOG_DEBUG = 7,
+
+    /**
+     * Informational messages which can be useful for debugging, like
+     * GUAC_LOG_DEBUG, but which are so low-level that they may affect
+     * performance.
+     */
+    GUAC_LOG_TRACE = 8
 
 } guac_client_log_level;
 

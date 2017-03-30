@@ -527,6 +527,7 @@ int guacd_parse_log_level(const char* name) {
     if (strcmp(name, "error")   == 0) return GUAC_LOG_ERROR;
     if (strcmp(name, "warning") == 0) return GUAC_LOG_WARNING;
     if (strcmp(name, "debug")   == 0) return GUAC_LOG_DEBUG;
+    if (strcmp(name, "trace")   == 0) return GUAC_LOG_TRACE;
 
     /* No such log level */
     return -1;
