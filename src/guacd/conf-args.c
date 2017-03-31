@@ -63,7 +63,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
             /* Validate and parse log level */
             int level = guacd_parse_log_level(optarg);
             if (level == -1) {
-                fprintf(stderr, "Invalid log level. Valid levels are: \"debug\", \"info\", \"warning\", and \"error\".\n");
+                fprintf(stderr, "Invalid log level. Valid levels are: \"trace\", \"debug\", \"info\", \"warning\", and \"error\".\n");
                 return 1;
             }
 

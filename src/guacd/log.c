@@ -72,6 +72,12 @@ void vguacd_log(guac_client_log_level level, const char* format,
             priority_name = "DEBUG";
             break;
 
+        /* Trace log level */
+        case GUAC_LOG_TRACE:
+            priority = LOG_DEBUG;
+            priority_name = "TRACE";
+            break;
+
         /* Any unknown/undefined log level */
         default:
             priority = LOG_INFO;

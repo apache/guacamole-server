@@ -78,7 +78,7 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
 
             /* Invalid log level */
             if (level < 0) {
-                guacd_conf_parse_error = "Invalid log level. Valid levels are: \"debug\", \"info\", \"warning\", and \"error\".";
+                guacd_conf_parse_error = "Invalid log level. Valid levels are: \"trace\", \"debug\", \"info\", \"warning\", and \"error\".";
                 return 1;
             }
 
