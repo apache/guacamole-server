@@ -60,8 +60,9 @@ void vguac_drv_log(guac_client_log_level level, const char* format,
             type = X_INFO;
             break;
 
-        /* Info */
+        /* Debug / trace */
         case GUAC_LOG_DEBUG:
+        case GUAC_LOG_TRACE:
             type = X_DEBUG;
             break;
 
