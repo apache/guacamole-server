@@ -19,6 +19,7 @@
  */
 
 #include "config.h"
+#include "log.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
@@ -26,10 +27,16 @@
 #include <guacamole/client.h>
 #include <guacamole/error.h>
 
+int guac_drv_log_level = GUAC_LOG_INFO;
+
 void vguac_drv_log(guac_client_log_level level, const char* format,
         va_list args) {
 
     MessageType type;
+
+    /* Don't bother if the log level is too high */
+    if (level > guac_drv_log_level)
+        return;
 
     /* Copy log message into buffer */
     char message[2048];
@@ -64,7 +71,7 @@ void vguac_drv_log(guac_client_log_level level, const char* format,
 
     }
 
-    xf86Msg(type, "guac: %s\n", message);
+    xf86Msg(type, "%s: %s\n", GUAC_DRV_LOG_NAME, message);
 
 }
 

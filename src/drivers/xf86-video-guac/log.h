@@ -24,6 +24,17 @@
 #include <guacamole/client.h>
 
 /**
+ * The maximum level at which to log messages. All other messages will be
+ * dropped.
+ */
+extern int guac_drv_log_level;
+
+/**
+ * The string to prepend to all log messages.
+ */
+#define GUAC_DRV_LOG_NAME "guac"
+
+/**
  * Logs an arbitrary message at the given log level. The X server's own logging
  * system will be used.
  *
