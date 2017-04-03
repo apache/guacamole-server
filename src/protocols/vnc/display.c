@@ -153,6 +153,7 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
 }
 
 void guac_vnc_set_pixel_format(rfbClient* client, int color_depth) {
+    client->format.trueColour = 1;
     switch(color_depth) {
         case 8:
             client->format.depth        = 8;
