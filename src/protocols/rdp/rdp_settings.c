@@ -1249,6 +1249,34 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     }
 #endif
 
+#ifdef HAVE_FREERDP_GATEWAY_SUPPORT
+    /* Enable use of RD gateway if a gateway hostname is provided */
+    if (guac_settings->gateway_hostname != NULL) {
+
+        /* Enable RD gateway */
+        rdp_settings->GatewayEnabled = TRUE;
+
+        /* RD gateway connection details */
+        rdp_settings->GatewayHostname = guac_rdp_strdup(guac_settings->gateway_hostname);
+        rdp_settings->GatewayPort = guac_settings->gateway_port;
+
+        /* RD gateway credentials */
+        rdp_settings->GatewayUseSameCredentials = FALSE;
+        rdp_settings->GatewayDomain = guac_rdp_strdup(guac_settings->gateway_domain);
+        rdp_settings->GatewayUsername = guac_rdp_strdup(guac_settings->gateway_username);
+        rdp_settings->GatewayPassword = guac_rdp_strdup(guac_settings->gateway_password);
+
+    }
+#endif
+
+#ifdef HAVE_FREERDP_LOAD_BALANCER_SUPPORT
+    /* Store load balance info (and calculate length) if provided */
+    if (guac_settings->load_balance_info != NULL) {
+        rdp_settings->LoadBalanceInfo = (BYTE*) guac_rdp_strdup(guac_settings->load_balance_info);
+        rdp_settings->LoadBalanceInfoLength = strlen(guac_settings->load_balance_info);
+    }
+#endif
+
     /* Order support */
 #ifdef LEGACY_RDPSETTINGS
     bitmap_cache = rdp_settings->bitmap_cache;
