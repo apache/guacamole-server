@@ -229,7 +229,7 @@ typedef struct guac_rdp_fs_file {
     /**
      * The size of this file, in bytes.
      */
-    int size;
+    uint64_t size;
 
     /**
      * The time this file was created, as a Windows timestamp.
