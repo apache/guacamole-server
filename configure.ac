@@ -609,6 +609,24 @@ then
                       #include <winpr/collections.h>])
 fi
 
+# Support for RDP gateways 
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_MEMBERS([rdpSettings.GatewayEnabled],
+                     [AC_DEFINE([HAVE_FREERDP_GATEWAY_SUPPORT],,
+                                [Whether FreeRDP supports RDP gateways])],,
+                     [[#include <freerdp/freerdp.h>]])
+fi
+
+# Support for load balancing via connection brokers 
+if test "x${have_freerdp}" = "xyes"
+then
+    AC_CHECK_MEMBERS([rdpSettings.LoadBalanceInfo],
+                     [AC_DEFINE([HAVE_FREERDP_LOAD_BALANCER_SUPPORT],,
+                                [Whether FreeRDP supports load balancers])],,
+                     [[#include <freerdp/freerdp.h>]])
+fi
+
 # Support for "PubSub" event system
 if test "x${have_freerdp}" = "xyes"
 then
