@@ -24,6 +24,7 @@
 #include "terminal/buffer.h"
 #include "terminal/common.h"
 #include "terminal/display.h"
+#include "terminal/palette.h"
 #include "terminal/terminal.h"
 #include "terminal/terminal_handlers.h"
 #include "terminal/types.h"

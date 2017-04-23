@@ -22,6 +22,7 @@
 #include "common/surface.h"
 #include "terminal/common.h"
 #include "terminal/display.h"
+#include "terminal/palette.h"
 #include "terminal/types.h"
 
 #include <math.h>
@@ -35,30 +36,6 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <pango/pangocairo.h>
-
-const guac_terminal_color guac_terminal_palette[16] = {
-
-    /* Normal colors */
-    {0, 0x00, 0x00, 0x00}, /* Black   */
-    {1, 0x99, 0x3E, 0x3E}, /* Red     */
-    {2, 0x3E, 0x99, 0x3E}, /* Green   */
-    {3, 0x99, 0x99, 0x3E}, /* Brown   */
-    {4, 0x3E, 0x3E, 0x99}, /* Blue    */
-    {5, 0x99, 0x3E, 0x99}, /* Magenta */
-    {6, 0x3E, 0x99, 0x99}, /* Cyan    */
-    {7, 0x99, 0x99, 0x99}, /* White   */
-
-    /* Intense colors */
-    {8,  0x3E, 0x3E, 0x3E}, /* Black   */
-    {9,  0xFF, 0x67, 0x67}, /* Red     */
-    {10, 0x67, 0xFF, 0x67}, /* Green   */
-    {11, 0xFF, 0xFF, 0x67}, /* Brown   */
-    {12, 0x67, 0x67, 0xFF}, /* Blue    */
-    {13, 0xFF, 0x67, 0xFF}, /* Magenta */
-    {14, 0x67, 0xFF, 0xFF}, /* Cyan    */
-    {15, 0xFF, 0xFF, 0xFF}, /* White   */
-
-};
 
 /**
  * Clears the currently-selected region, removing the highlight.

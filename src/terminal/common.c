@@ -105,23 +105,3 @@ int guac_terminal_write_all(int fd, const char* buffer, int size) {
 
 }
 
-int guac_terminal_colorcmp(const guac_terminal_color* a,
-        const guac_terminal_color* b) {
-
-    /* Consider red component highest order ... */
-    if (a->red != b->red)
-        return a->red - b->red;
-
-    /* ... followed by green ... */
-    if (a->green != b->green)
-        return a->green - b->green;
-
-    /* ... followed by blue */
-    if (a->blue != b->blue)
-        return a->blue - b->blue;
-
-    /* If all components match, colors are equal */
-    return 0;
-
-}
-

@@ -50,26 +50,5 @@ bool guac_terminal_has_glyph(int codepoint);
  */
 int guac_terminal_write_all(int fd, const char* buffer, int size);
 
-/**
- * Compares two colors, returning a negative value if the first color is less
- * than the second, a positive value if the first color is greater than the
- * second, and zero if the colors are identical. Only the color components are
- * compared (not the palette index). The red component is considered the
- * highest order component, followed by green, followed by blue.
- *
- * @param a
- *     The first color to compare.
- *
- * @param b
- *     The second color to compare.
- *
- * @return
- *    A negative value if the first color is less than the second, a positive
- *    value if the first color is greater than the second, and zero if the
- *    colors are identical.
- */
-int guac_terminal_colorcmp(const guac_terminal_color* a,
-        const guac_terminal_color* b);
-
 #endif
 
