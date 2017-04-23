@@ -24,6 +24,7 @@
 #include "config.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 
 /**
  * A character which is not truly a character, but rather part of an
@@ -40,19 +41,25 @@
 typedef struct guac_terminal_color {
 
     /**
+     * The index of this color within the terminal palette, or -1 if the color
+     * does not exist within the terminal palette.
+     */
+    int palette_index;
+
+    /**
      * The red component of this color.
      */
-    int red;
+    uint8_t red;
 
     /**
      * The green component of this color.
      */
-    int green;
+    uint8_t green;
 
     /**
      * The blue component of this color.
      */
-    int blue;
+    uint8_t blue;
 
 } guac_terminal_color;
 
@@ -83,14 +90,14 @@ typedef struct guac_terminal_attributes {
     bool underscore;
 
     /**
-     * The foreground color of this character, as a palette index.
+     * The foreground color of this character.
      */
-    int foreground;
+    guac_terminal_color foreground;
 
     /**
-     * The background color of this character, as a palette index.
+     * The background color of this character.
      */
-    int background;
+    guac_terminal_color background;
 
 } guac_terminal_attributes;
 

@@ -220,22 +220,24 @@ typedef struct guac_terminal_display {
     /**
      * Default foreground color for all glyphs.
      */
-    int default_foreground;
+    guac_terminal_color default_foreground;
 
     /**
      * Default background color for all glyphs and the terminal itself.
      */
-    int default_background;
+    guac_terminal_color default_background;
 
     /**
-     * Color of glyphs in copy buffer
+     * The foreground color to be used for the next glyph rendered to the
+     * terminal.
      */
-    int glyph_foreground;
+    guac_terminal_color glyph_foreground;
 
     /**
-     * Color of glyphs in copy buffer
+     * The background color to be used for the next glyph rendered to the
+     * terminal.
      */
-    int glyph_background;
+    guac_terminal_color glyph_background;
 
     /**
      * The surface containing the actual terminal.
@@ -292,7 +294,7 @@ typedef struct guac_terminal_display {
  */
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
         const char* font_name, int font_size, int dpi,
-        int foreground, int background);
+        guac_terminal_color* foreground, guac_terminal_color* background);
 
 /**
  * Frees the given display.

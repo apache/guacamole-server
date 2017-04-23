@@ -779,7 +779,8 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                     /* Foreground */
                     else if (value >= 30 && value <= 37)
-                        term->current_attributes.foreground = value - 30;
+                        term->current_attributes.foreground =
+                            guac_terminal_palette[value - 30];
 
                     /* Underscore on, default foreground */
                     else if (value == 38) {
@@ -797,7 +798,8 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                     /* Background */
                     else if (value >= 40 && value <= 47)
-                        term->current_attributes.background = value - 40;
+                        term->current_attributes.background =
+                            guac_terminal_palette[value - 40];
 
                     /* Reset background */
                     else if (value == 49)
