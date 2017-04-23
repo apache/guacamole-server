@@ -157,7 +157,7 @@ int guac_terminal_colorcmp(const guac_terminal_color* a,
 /**
  * The terminal color palette.
  */
-extern const guac_terminal_color guac_terminal_palette[16];
+extern const guac_terminal_color guac_terminal_palette[256];
 
 #endif
 
