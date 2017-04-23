@@ -139,6 +139,18 @@ int guac_terminal_open_pipe_stream(guac_terminal* term, unsigned char c);
 int guac_terminal_close_pipe_stream(guac_terminal* term, unsigned char c);
 
 /**
+ * Parses the remainder of xterm's OSC sequence for redefining the terminal
+ * emulator's palette.
+ *
+ * @param term
+ *     The terminal that received the given character of data.
+ *
+ * @param c
+ *     The character that was received by the given terminal.
+ */
+int guac_terminal_xterm_palette(guac_terminal* term, unsigned char c);
+
+/**
  * Handles the remaining characters of an Operating System Code (OSC) sequence,
  * typically initiated with "ESC ]".
  *

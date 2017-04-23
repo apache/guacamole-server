@@ -1156,6 +1156,19 @@ int guac_terminal_close_pipe_stream(guac_terminal* term, unsigned char c) {
 
 }
 
+int guac_terminal_xterm_palette(guac_terminal* term, unsigned char c) {
+
+    /* NOTE: Currently unimplemented. Attempts to set the 256-color palette
+     * are ignored. */
+
+    /* Stop on ECMA-48 ST (String Terminator */
+    if (c == 0x9C || c == 0x5C || c == 0x07)
+        term->char_handler = guac_terminal_echo;
+
+    return 0;
+
+}
+
 int guac_terminal_osc(guac_terminal* term, unsigned char c) {
 
     static int operation = 0;
@@ -1182,6 +1195,10 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
         /* Close pipe stream OSC */
         else if (operation == 482203)
             term->char_handler = guac_terminal_close_pipe_stream;
+
+        /* xterm 256-color palette redefinition */
+        else if (operation == 4)
+            term->char_handler = guac_terminal_xterm_palette;
 
         /* Reset parameter for next OSC */
         operation = 0;
