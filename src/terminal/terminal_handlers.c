@@ -461,10 +461,21 @@ static int guac_terminal_parse_xterm256_rgb(int argc, const int* argv,
     if (argc < 3)
         return 0;
 
+    /* Read RGB components from arguments */
+    int red   = argv[0];
+    int green = argv[1];
+    int blue  = argv[2];
+
+    /* Ignore if components are out of range */
+    if (   red   < 0 || red   > 255
+        || green < 0 || green > 255
+        || blue  < 0 || blue  > 255)
+        return 3;
+
     /* Store RGB components */
-    color->red   = (uint8_t) argv[0];
-    color->green = (uint8_t) argv[1];
-    color->blue  = (uint8_t) argv[2];
+    color->red   = (uint8_t) red;
+    color->green = (uint8_t) green;
+    color->blue  = (uint8_t) blue;
 
     /* Color is not from the palette */
     color->palette_index = -1;
@@ -491,7 +502,7 @@ static int guac_terminal_parse_xterm256_rgb(int argc, const int* argv,
  *
  * @return
  *     The number of arguments parsed, or zero if the palette index is
- *     out of range or absent.
+ *     absent.
  */
 static int guac_terminal_parse_xterm256_index(int argc, const int* argv,
         guac_terminal_color* color) {
@@ -500,10 +511,10 @@ static int guac_terminal_parse_xterm256_index(int argc, const int* argv,
     if (argc < 1)
         return 0;
 
-    /* Verify palette index bounds */
+    /* Ignore if palette index is out of bounds */
     int index = argv[0];
     if (index < 0 || index > 255)
-        return 0;
+        return 1;
 
     /* Copy palette entry */
     *color = guac_terminal_palette[index];
