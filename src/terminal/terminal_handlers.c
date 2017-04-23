@@ -435,6 +435,133 @@ static bool* __guac_terminal_get_flag(guac_terminal* term, int num, char private
 
 }
 
+/**
+ * Parses an xterm SGR sequence specifying the RGB values of a color.
+ *
+ * @param argc
+ *     The number of arguments within the argv array.
+ *
+ * @param argv
+ *     The SGR arguments to parse, with the first relevant argument the
+ *     red component of the RGB color.
+ *
+ * @param color
+ *     The guac_terminal_color structure which should receive the parsed
+ *     color values.
+ *
+ * @return
+ *     The number of arguments parsed, or zero if argv does not contain
+ *     enough elements to represent an RGB color.
+ */
+static int guac_terminal_parse_xterm256_rgb(int argc, const int* argv,
+        guac_terminal_color* color) {
+
+    /* RGB color palette entries require three arguments */
+    if (argc < 3)
+        return 0;
+
+    /* Store RGB components */
+    color->red   = (uint8_t) argv[0];
+    color->green = (uint8_t) argv[1];
+    color->blue  = (uint8_t) argv[2];
+
+    /* Color is not from the palette */
+    color->palette_index = -1;
+
+    /* Done */
+    return 3;
+
+}
+
+/**
+ * Parses an xterm SGR sequence specifying the index of a color within the
+ * 256-color palette.
+ *
+ * @param argc
+ *     The number of arguments within the argv array.
+ *
+ * @param argv
+ *     The SGR arguments to parse, with the first relevant argument being
+ *     the index of the color.
+ *
+ * @param color
+ *     The guac_terminal_color structure which should receive the parsed
+ *     color values.
+ *
+ * @return
+ *     The number of arguments parsed, or zero if the palette index is
+ *     out of range or absent.
+ */
+static int guac_terminal_parse_xterm256_index(int argc, const int* argv,
+        guac_terminal_color* color) {
+
+    /* 256-color palette entries require only one argument */
+    if (argc < 1)
+        return 0;
+
+    /* Verify palette index bounds */
+    int index = argv[0];
+    if (index < 0 || index > 255)
+        return 0;
+
+    /* Copy palette entry */
+    *color = guac_terminal_palette[index];
+
+    /* Done */
+    return 1;
+
+}
+
+/**
+ * Parses an xterm SGR sequence specifying the index of a color within the
+ * 256-color palette, or specfying the RGB values of a color. The number of
+ * arguments required by these sequences varies. If a 256-color sequence is
+ * recognized, the number of arguments parsed is returned.
+ *
+ * @param argc
+ *     The number of arguments within the argv array.
+ *
+ * @param argv
+ *     The SGR arguments to parse, with the first relevant argument being
+ *     the first element of the array. In the case of an xterm 256-color
+ *     SGR sequence, the first element here will be either 2, for an
+ *     RGB color, or 5, for a 256-color palette index. All other values
+ *     are invalid and will not be parsed.
+ *
+ * @param color
+ *     The guac_terminal_color structure which should receive the parsed
+ *     color values.
+ *
+ * @return
+ *     The number of arguments parsed, or zero if argv does not point to
+ *     the first element of an xterm 256-color SGR sequence.
+ */
+static int guac_terminal_parse_xterm256(int argc, const int* argv,
+        guac_terminal_color* color) {
+
+    /* All 256-color codes must have at least a type */
+    if (argc < 1)
+        return 0;
+
+    switch (argv[0]) {
+
+        /* RGB */
+        case 2:
+            return guac_terminal_parse_xterm256_rgb(
+                    argc - 1, &argv[1], color) + 1;
+
+        /* Palette index */
+        case 5:
+            return guac_terminal_parse_xterm256_index(
+                    argc - 1, &argv[1], color) + 1;
+
+    }
+
+    /* Invalid type */
+    return 0;
+
+}
+
 int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
     /* CSI function arguments */
@@ -783,11 +910,27 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                         term->current_attributes.foreground =
                             guac_terminal_palette[value - 30];
 
-                    /* Underscore on, default foreground */
+                    /* Underscore on, default foreground OR 256-color
+                     * foreground */
                     else if (value == 38) {
-                        term->current_attributes.underscore = true;
-                        term->current_attributes.foreground =
-                            term->default_char.attributes.foreground;
+
+                        /* Attempt to set foreground with 256-color entry */
+                        int xterm256_length =
+                            guac_terminal_parse_xterm256(argc - 1, &argv[i + 1],
+                                    &term->current_attributes.foreground);
+
+                        /* If valid 256-color entry, foreground has been set */
+                        if (xterm256_length > 0)
+                            i += xterm256_length;
+
+                        /* Otherwise interpret as underscore and default
+                         * foreground  */
+                        else {
+                            term->current_attributes.underscore = true;
+                            term->current_attributes.foreground =
+                                term->default_char.attributes.foreground;
+                        }
+
                     }
 
                     /* Underscore off, default foreground */
@@ -801,6 +944,11 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                     else if (value >= 40 && value <= 47)
                         term->current_attributes.background =
                             guac_terminal_palette[value - 40];
+
+                    /* 256-color background */
+                    else if (value == 48)
+                        i += guac_terminal_parse_xterm256(argc - 1, &argv[i + 1],
+                                    &term->current_attributes.background);
 
                     /* Reset background */
                     else if (value == 49)
