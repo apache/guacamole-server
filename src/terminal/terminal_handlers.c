@@ -367,7 +367,8 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
             break;
 
         default:
-            guac_client_log(term->client, GUAC_LOG_INFO, "Unhandled ESC sequence: %c", c);
+            guac_client_log(term->client, GUAC_LOG_DEBUG,
+                    "Unhandled ESC sequence: %c", c);
             term->char_handler = guac_terminal_echo; 
 
     }
@@ -1011,11 +1012,11 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
             default:
                 if (c != ';') {
 
-                    guac_client_log(term->client, GUAC_LOG_INFO,
+                    guac_client_log(term->client, GUAC_LOG_DEBUG,
                             "Unhandled CSI sequence: %c", c);
 
                     for (i=0; i<argc; i++)
-                        guac_client_log(term->client, GUAC_LOG_INFO,
+                        guac_client_log(term->client, GUAC_LOG_DEBUG,
                                 " -> argv[%i] = %i", i, argv[i]);
 
                 }
@@ -1182,7 +1183,8 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
 
     /* Stop on unrecognized character */
     else {
-        guac_client_log(term->client, GUAC_LOG_INFO, "Unexpected character in OSC: 0x%X", c);
+        guac_client_log(term->client, GUAC_LOG_DEBUG,
+                "Unexpected character in OSC: 0x%X", c);
         term->char_handler = guac_terminal_echo;
     }
 
