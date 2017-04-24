@@ -118,9 +118,11 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
     }
 
     /* Handle bold */
-    if (attributes->bold && foreground->palette_index >= 0
-            && foreground->palette_index <= 7) {
-        foreground = &guac_terminal_palette[foreground->palette_index + 8];
+    if (attributes->bold
+            && foreground->palette_index >= GUAC_TERMINAL_FIRST_DARK
+            && foreground->palette_index <= GUAC_TERMINAL_LAST_DARK) {
+        foreground = &guac_terminal_palette[foreground->palette_index
+            + GUAC_TERMINAL_INTENSE_OFFSET];
     }
 
     display->glyph_foreground = *foreground;

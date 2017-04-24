@@ -106,6 +106,36 @@
 #define GUAC_TERMINAL_COLOR_WHITE 15
 
 /**
+ * The index of the first low-intensity color in the 16-color portion of the
+ * palette.
+ */
+#define GUAC_TERMINAL_FIRST_DARK 0
+
+/**
+ * The index of the last low-intensity color in the 16-color portion of the
+ * palette.
+ */
+#define GUAC_TERMINAL_LAST_DARK 7
+
+/**
+ * The index of the first high-intensity color in the 16-color portion of the
+ * palette.
+ */
+#define GUAC_TERMINAL_FIRST_INTENSE 8
+
+/**
+ * The index of the last high-intensity color in the 16-color portion of the
+ * palette.
+ */
+#define GUAC_TERMINAL_LAST_INTENSE 15
+
+/**
+ * The distance between the palette indices of the dark colors (0 through 7)
+ * and the bright colors (8 - 15) in the 16-color portion of the palette.
+ */
+#define GUAC_TERMINAL_INTENSE_OFFSET 8
+
+/**
  * An RGB color, where each component ranges from 0 to 255.
  */
 typedef struct guac_terminal_color {
