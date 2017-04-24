@@ -967,6 +967,18 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                         term->current_attributes.background =
                             term->default_char.attributes.background;
 
+                    /* Intense foreground */
+                    else if (value >= 90 && value <= 97)
+                        term->current_attributes.foreground =
+                            guac_terminal_palette[value - 90
+                                + GUAC_TERMINAL_FIRST_INTENSE];
+
+                    /* Intense background */
+                    else if (value >= 100 && value <= 107)
+                        term->current_attributes.background =
+                            guac_terminal_palette[value - 100
+                                + GUAC_TERMINAL_FIRST_INTENSE];
+
                 }
 
                 break;
