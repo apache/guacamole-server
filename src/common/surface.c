@@ -724,51 +724,51 @@ static int __guac_common_surface_transfer_int(guac_transfer_function op, uint32_
             break;
 
         case GUAC_TRANSFER_BINARY_NSRC:
-            *dst = ~(*src);
+            *dst = *src ^ 0x00FFFFFF;
             break;
 
         case GUAC_TRANSFER_BINARY_NDEST:
-            *dst = ~(*dst);
+            *dst = *dst ^ 0x00FFFFFF;
             break;
 
         case GUAC_TRANSFER_BINARY_AND:
-            *dst = (*dst) & (*src);
+            *dst = ((*dst) & (0xFF000000 | *src));
             break;
 
         case GUAC_TRANSFER_BINARY_NAND:
-            *dst = ~((*dst) & (*src));
+            *dst = ((*dst) & (0xFF000000 | *src)) ^ 0x00FFFFFF;
             break;
 
         case GUAC_TRANSFER_BINARY_OR:
-            *dst = (*dst) | (*src);
+            *dst = ((*dst) | (0x00FFFFFF & *src));
             break;
 
         case GUAC_TRANSFER_BINARY_NOR:
-            *dst = ~((*dst) | (*src));
+            *dst = ((*dst) | (0x00FFFFFF & *src)) ^ 0x00FFFFFF;
             break;
 
         case GUAC_TRANSFER_BINARY_XOR:
-            *dst = (*dst) ^ (*src);
+            *dst = ((*dst) ^ (0x00FFFFFF & *src));
             break;
 
         case GUAC_TRANSFER_BINARY_XNOR:
-            *dst = ~((*dst) ^ (*src));
+            *dst = ((*dst) ^ (0x00FFFFFF & *src)) ^ 0x00FFFFFF;
             break;
 
         case GUAC_TRANSFER_BINARY_NSRC_AND:
-            *dst = (*dst) & ~(*src);
+            *dst = ((*dst) & (0xFF000000 | (*src ^ 0x00FFFFFF)));
             break;
 
         case GUAC_TRANSFER_BINARY_NSRC_NAND:
-            *dst = ~((*dst) & ~(*src));
+            *dst = ((*dst) & (0xFF000000 | (*src ^ 0x00FFFFFF))) ^ 0x00FFFFFF;
             break;
 
         case GUAC_TRANSFER_BINARY_NSRC_OR:
-            *dst = (*dst) | ~(*src);
+            *dst = ((*dst) | (0x00FFFFFF & (*src ^ 0x00FFFFFF)));
             break;
 
         case GUAC_TRANSFER_BINARY_NSRC_NOR:
-            *dst = ~((*dst) | ~(*src));
+            *dst = ((*dst) | (0x00FFFFFF & (*src ^ 0x00FFFFFF))) ^ 0x00FFFFFF;
             break;
 
     }
