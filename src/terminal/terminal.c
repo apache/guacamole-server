@@ -24,6 +24,7 @@
 #include "terminal/buffer.h"
 #include "terminal/common.h"
 #include "terminal/display.h"
+#include "terminal/palette.h"
 #include "terminal/terminal.h"
 #include "terminal/terminal_handlers.h"
 #include "terminal/types.h"
@@ -205,8 +206,7 @@ static void guac_terminal_repaint_default_layer(guac_terminal* terminal,
     guac_terminal_display* display = terminal->display;
 
     /* Get background color */
-    const guac_terminal_color* color =
-        &guac_terminal_palette[display->default_background];
+    const guac_terminal_color* color = &display->default_background;
 
     /* Reset size */
     guac_protocol_send_size(socket, GUAC_DEFAULT_LAYER, width, height);
@@ -296,8 +296,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     guac_terminal_char default_char = {
         .value = 0,
         .attributes = {
-            .foreground = default_foreground,
-            .background = default_background,
+            .foreground = guac_terminal_palette[default_foreground],
+            .background = guac_terminal_palette[default_background],
             .bold       = false,
             .reverse    = false,
             .underscore = false
@@ -326,8 +326,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init display */
     term->display = guac_terminal_display_alloc(client,
             font_name, font_size, dpi,
-            default_char.attributes.foreground,
-            default_char.attributes.background);
+            &default_char.attributes.foreground,
+            &default_char.attributes.background);
 
     /* Fail if display init failed */
     if (term->display == NULL) {
@@ -875,17 +875,18 @@ static bool guac_terminal_is_visible(guac_terminal* term,
     if (guac_terminal_has_glyph(c->value))
         return true;
 
-    int background;
+    const guac_terminal_color* background;
 
     /* Determine actual background color of character */
     if (c->attributes.reverse != c->attributes.cursor)
-        background = c->attributes.foreground;
+        background = &c->attributes.foreground;
     else
-        background = c->attributes.background;
+        background = &c->attributes.background;
 
     /* Blank characters are visible if their background color differs from that
      * of the terminal */
-    return background != term->default_char.attributes.background;
+    return guac_terminal_colorcmp(background,
+            &term->default_char.attributes.background) != 0;
 
 }
 

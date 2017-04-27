@@ -22,6 +22,7 @@
 #define _GUAC_TERMINAL_COMMON_H
 
 #include "config.h"
+#include "types.h"
 
 #include <stdbool.h>
 

@@ -22,8 +22,10 @@
 #define _GUAC_TERMINAL_TYPES_H
 
 #include "config.h"
+#include "palette.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 
 /**
  * A character which is not truly a character, but rather part of an
@@ -33,28 +35,6 @@
  * GUAC_CHAR_CONTINUATION characters.
  */
 #define GUAC_CHAR_CONTINUATION -1
-
-/**
- * An RGB color, where each component ranges from 0 to 255.
- */
-typedef struct guac_terminal_color {
-
-    /**
-     * The red component of this color.
-     */
-    int red;
-
-    /**
-     * The green component of this color.
-     */
-    int green;
-
-    /**
-     * The blue component of this color.
-     */
-    int blue;
-
-} guac_terminal_color;
 
 /**
  * Terminal attributes, as can be applied to a single character.
@@ -83,14 +63,14 @@ typedef struct guac_terminal_attributes {
     bool underscore;
 
     /**
-     * The foreground color of this character, as a palette index.
+     * The foreground color of this character.
      */
-    int foreground;
+    guac_terminal_color foreground;
 
     /**
-     * The background color of this character, as a palette index.
+     * The background color of this character.
      */
-    int background;
+    guac_terminal_color background;
 
 } guac_terminal_attributes;
 
