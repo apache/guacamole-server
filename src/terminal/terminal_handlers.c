@@ -1156,6 +1156,36 @@ int guac_terminal_close_pipe_stream(guac_terminal* term, unsigned char c) {
 
 }
 
+int guac_terminal_window_title(guac_terminal* term, unsigned char c) {
+
+    static int position = 0;
+    static char title[4096];
+
+    guac_socket* socket = term->client->socket;
+
+    /* Stop on ECMA-48 ST (String Terminator */
+    if (c == 0x9C || c == 0x5C || c == 0x07) {
+
+        /* Terminate and reset stored title */
+        title[position] = '\0';
+        position = 0;
+
+        /* Send title as connection name */
+        guac_protocol_send_name(socket, title);
+        guac_socket_flush(socket);
+
+        term->char_handler = guac_terminal_echo;
+
+    }
+
+    /* Store all other characters within title, space permitting */
+    else if (position < sizeof(title) - 1)
+        title[position++] = (char) c;
+
+    return 0;
+
+}
+
 int guac_terminal_xterm_palette(guac_terminal* term, unsigned char c) {
 
     /* NOTE: Currently unimplemented. Attempts to set the 256-color palette
@@ -1195,6 +1225,10 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
         /* Close pipe stream OSC */
         else if (operation == 482203)
             term->char_handler = guac_terminal_close_pipe_stream;
+
+        /* Set window title OSC */
+        else if (operation == 0 || operation == 2)
+            term->char_handler = guac_terminal_window_title;
 
         /* xterm 256-color palette redefinition */
         else if (operation == 4)

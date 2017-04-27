@@ -139,6 +139,19 @@ int guac_terminal_open_pipe_stream(guac_terminal* term, unsigned char c);
 int guac_terminal_close_pipe_stream(guac_terminal* term, unsigned char c);
 
 /**
+ * Parses the remainder of an OSC sequence setting the window title. The
+ * window title is everything after the window title sequence begins, up to
+ * the end of the OSC sequence itself.
+ *
+ * @param term
+ *     The terminal that received the given character of data.
+ *
+ * @param c
+ *     The character that was received by the given terminal.
+ */
+int guac_terminal_window_title(guac_terminal* term, unsigned char c);
+
+/**
  * Parses the remainder of xterm's OSC sequence for redefining the terminal
  * emulator's palette.
  *
