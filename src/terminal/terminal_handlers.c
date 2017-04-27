@@ -928,7 +928,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                         /* Attempt to set foreground with 256-color entry */
                         int xterm256_length =
-                            guac_terminal_parse_xterm256(argc - 1, &argv[i + 1],
+                            guac_terminal_parse_xterm256(argc - i - 1, &argv[i + 1],
                                     &term->current_attributes.foreground);
 
                         /* If valid 256-color entry, foreground has been set */
@@ -959,7 +959,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                     /* 256-color background */
                     else if (value == 48)
-                        i += guac_terminal_parse_xterm256(argc - 1, &argv[i + 1],
+                        i += guac_terminal_parse_xterm256(argc - i - 1, &argv[i + 1],
                                     &term->current_attributes.background);
 
                     /* Reset background */
