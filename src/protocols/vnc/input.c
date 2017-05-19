@@ -30,11 +30,14 @@ int guac_vnc_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     guac_client* client = user->client;
     guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
+    rfbClient* rfb_client = vnc_client->rfb_client;
 
     /* Store current mouse location */
     guac_common_cursor_move(vnc_client->display->cursor, user, x, y);
 
-    SendPointerEvent(vnc_client->rfb_client, x, y, mask);
+    /* Send VNC event only if finished connecting */
+    if (rfb_client != NULL)
+        SendPointerEvent(rfb_client, x, y, mask);
 
     return 0;
 }
@@ -42,8 +45,11 @@ int guac_vnc_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
+    rfbClient* rfb_client = vnc_client->rfb_client;
 
-    SendKeyEvent(vnc_client->rfb_client, keysym, pressed);
+    /* Send VNC event only if finished connecting */
+    if (rfb_client != NULL)
+        SendKeyEvent(rfb_client, keysym, pressed);
 
     return 0;
 }
