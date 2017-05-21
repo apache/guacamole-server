@@ -128,6 +128,13 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
     display->glyph_foreground = *foreground;
     display->glyph_background = *background;
 
+    /* Modify color if half-bright (low intensity) */
+    if (attributes->half_bright) {
+        display->glyph_foreground.red   /= 2;
+        display->glyph_foreground.green /= 2;
+        display->glyph_foreground.blue  /= 2;
+    }
+
     return 0;
 
 }

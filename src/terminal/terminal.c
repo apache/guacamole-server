@@ -296,11 +296,12 @@ guac_terminal* guac_terminal_create(guac_client* client,
     guac_terminal_char default_char = {
         .value = 0,
         .attributes = {
-            .foreground = guac_terminal_palette[default_foreground],
-            .background = guac_terminal_palette[default_background],
-            .bold       = false,
-            .reverse    = false,
-            .underscore = false
+            .foreground  = guac_terminal_palette[default_foreground],
+            .background  = guac_terminal_palette[default_background],
+            .bold        = false,
+            .half_bright = false,
+            .reverse     = false,
+            .underscore  = false
         },
         .width = 1
     };
