@@ -118,7 +118,7 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
     }
 
     /* Handle bold */
-    if (attributes->bold
+    if (attributes->bold && !attributes->half_bright
             && foreground->palette_index >= GUAC_TERMINAL_FIRST_DARK
             && foreground->palette_index <= GUAC_TERMINAL_LAST_DARK) {
         foreground = &guac_terminal_palette[foreground->palette_index
@@ -127,6 +127,13 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
 
     display->glyph_foreground = *foreground;
     display->glyph_background = *background;
+
+    /* Modify color if half-bright (low intensity) */
+    if (attributes->half_bright && !attributes->bold) {
+        display->glyph_foreground.red   /= 2;
+        display->glyph_foreground.green /= 2;
+        display->glyph_foreground.blue  /= 2;
+    }
 
     return 0;
 

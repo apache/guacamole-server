@@ -47,6 +47,12 @@ typedef struct guac_terminal_attributes {
     bool bold;
 
     /**
+     * Whether the character should be rendered with half brightness (faint
+     * or low intensity).
+     */
+    bool half_bright;
+
+    /**
      * Whether the character should be rendered with reversed colors
      * (background becomes foreground and vice-versa).
      */

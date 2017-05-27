@@ -897,6 +897,10 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                     else if (value == 1)
                         term->current_attributes.bold = true;
 
+                    /* Faint (low intensity) */
+                    else if (value == 2)
+                        term->current_attributes.half_bright = true;
+
                     /* Underscore on */
                     else if (value == 4)
                         term->current_attributes.underscore = true;
@@ -906,8 +910,10 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                         term->current_attributes.reverse = true;
 
                     /* Normal intensity (not bold) */
-                    else if (value == 21 || value == 22)
+                    else if (value == 21 || value == 22) {
                         term->current_attributes.bold = false;
+                        term->current_attributes.half_bright = false;
+                    }
 
                     /* Reset underscore */
                     else if (value == 24)
