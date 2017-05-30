@@ -181,6 +181,11 @@ typedef struct guac_ssh_settings {
      */
     bool create_recording_path;
 
+    /**
+     * The number of seconds between sending server alive messages.
+     */
+    int server_alive_interval;
+
 } guac_ssh_settings;
 
 /**
