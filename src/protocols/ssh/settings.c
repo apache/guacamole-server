@@ -168,7 +168,8 @@ enum SSH_ARGS_IDX {
 
     /**
      * Number of seconds between sending alive packets.  A default of 0
-     * tells SSH not to send these packets.
+     * tells SSH not to send these packets.  A value of 1 is automatically
+     * changed by libssh2 to 2 to avoid busy-loop corner cases.
      */
     IDX_SERVER_ALIVE_INTERVAL,
 
