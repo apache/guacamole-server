@@ -346,10 +346,12 @@ void* ssh_client_thread(void* data) {
         /* Send keepalive at configured interval */
         if (settings->server_alive_interval > 0) {
             alive = libssh2_keepalive_send(ssh_client->session->session, &timeout);
+            /* Sending the keepalive failed, so we break out */
             if (alive > 0)
                 break;
             sleep = timeout * 1000;
         }
+        /* If keepalive is not configured, sleep for the default of 1 second */
         else
             sleep = 1000;
 
