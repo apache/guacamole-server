@@ -224,6 +224,11 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
+    /* Set keepalive configuration for session */
+    if (settings->server_alive_interval > 0) {
+        libssh2_keepalive_config(ssh_client->session->session, 1, settings->server_alive_interval);
+    }
+
     pthread_mutex_init(&ssh_client->term_channel_lock, NULL);
 
     /* Open channel for terminal */
@@ -318,10 +323,17 @@ void* ssh_client_thread(void* data) {
 
     /* While data available, write to terminal */
     int bytes_read = 0;
+    int timeout = 0;
     for (;;) {
 
         /* Track total amount of data read */
         int total_read = 0;
+
+        /* Set up return value for keepalives */
+        int alive = 0;
+
+        /* Timer for keepalives */
+        int sleep = 0;
 
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
 
@@ -330,6 +342,16 @@ void* ssh_client_thread(void* data) {
             pthread_mutex_unlock(&(ssh_client->term_channel_lock));
             break;
         }
+
+        /* Send keepalive at configured interval */
+        if (settings->server_alive_interval > 0) {
+            alive = libssh2_keepalive_send(ssh_client->session->session, &timeout);
+            if (alive > 0)
+                break;
+            sleep = timeout * 1000;
+        }
+        else
+            sleep = 1000;
 
         /* Read terminal data */
         bytes_read = libssh2_channel_read(ssh_client->term_channel,
@@ -370,8 +392,8 @@ void* ssh_client_thread(void* data) {
                 .revents = 0,
             }};
 
-            /* Wait up to one second */
-            if (poll(fds, 1, 1000) < 0)
+            /* Wait up to computed sleep time */
+            if (poll(fds, 1, sleep) < 0)
                 break;
 
         }
