@@ -225,9 +225,8 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Set keepalive configuration for session */
-    if (settings->server_alive_interval > 0) {
+    if (settings->server_alive_interval > 1)
         libssh2_keepalive_config(ssh_client->session->session, 1, settings->server_alive_interval);
-    }
 
     pthread_mutex_init(&ssh_client->term_channel_lock, NULL);
 
@@ -323,17 +322,13 @@ void* ssh_client_thread(void* data) {
 
     /* While data available, write to terminal */
     int bytes_read = 0;
-    int timeout = 0;
     for (;;) {
 
         /* Track total amount of data read */
         int total_read = 0;
 
-        /* Set up return value for keepalives */
-        int alive = 0;
-
-        /* Timer for keepalives */
-        int sleep = 0;
+        /* Timer for polling socket activity */
+        int timer;
 
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
 
@@ -344,16 +339,15 @@ void* ssh_client_thread(void* data) {
         }
 
         /* Send keepalive at configured interval */
-        if (settings->server_alive_interval > 0) {
-            alive = libssh2_keepalive_send(ssh_client->session->session, &timeout);
-            /* Sending the keepalive failed, so we break out */
-            if (alive > 0)
+        if (settings->server_alive_interval > 1) {
+            int timeout = 0;
+            if(libssh2_keepalive_send(ssh_client->session->session, &timeout) > 0)
                 break;
-            sleep = timeout * 1000;
+            timer = timeout * 1000;
         }
         /* If keepalive is not configured, sleep for the default of 1 second */
         else
-            sleep = 1000;
+            timer = GUAC_SSH_DEFAULT_POLL_TIMER;
 
         /* Read terminal data */
         bytes_read = libssh2_channel_read(ssh_client->term_channel,
@@ -394,8 +388,8 @@ void* ssh_client_thread(void* data) {
                 .revents = 0,
             }};
 
-            /* Wait up to computed sleep time */
-            if (poll(fds, 1, sleep) < 0)
+            /* Wait up to computed timer */
+            if (poll(fds, 1, timer) < 0)
                 break;
 
         }

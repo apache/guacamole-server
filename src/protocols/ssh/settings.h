@@ -54,6 +54,11 @@
 #define GUAC_SSH_DEFAULT_RECORDING_NAME "recording"
 
 /**
+ * The default polling timer for SSH activity in milliseconds.
+ */
+#define GUAC_SSH_DEFAULT_POLL_TIMER 1000
+
+/**
  * Settings for the SSH connection. The values for this structure are parsed
  * from the arguments given during the Guacamole protocol handshake using the
  * guac_ssh_parse_args() function.
