@@ -225,7 +225,7 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Set keepalive configuration for session */
-    if (settings->server_alive_interval > 1)
+    if (settings->server_alive_interval > 0)
         libssh2_keepalive_config(ssh_client->session->session, 1, settings->server_alive_interval);
 
     pthread_mutex_init(&ssh_client->term_channel_lock, NULL);
@@ -339,7 +339,7 @@ void* ssh_client_thread(void* data) {
         }
 
         /* Send keepalive at configured interval */
-        if (settings->server_alive_interval > 1) {
+        if (settings->server_alive_interval > 0) {
             int timeout = 0;
             if(libssh2_keepalive_send(ssh_client->session->session, &timeout) > 0)
                 break;

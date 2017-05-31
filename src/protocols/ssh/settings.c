@@ -291,6 +291,9 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->server_alive_interval =
         guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_SERVER_ALIVE_INTERVAL, 0);
+    if (settings->server_alive_interval == 1)
+        guac_user_log(user, GUAC_LOG_WARNING, "Minimum keepalive interval "
+                " for libssh2 is 2 seconds.");
 
     /* Parsing was successful */
     return settings;
