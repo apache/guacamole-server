@@ -108,6 +108,11 @@ typedef struct guac_vnc_client {
      * An SFTP-based filesystem.
      */
     guac_common_ssh_sftp_filesystem* sftp_filesystem;
+
+    /**
+     * The interval at which to send SSH keepalive messages for SFTP.
+     */
+    int sftp_keepalive;
 #endif
 
     /**
