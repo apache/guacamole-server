@@ -66,6 +66,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "sftp-private-key",
     "sftp-passphrase",
     "sftp-directory",
+    "sftp-keepalive",
 #endif
 
     "recording-path",
@@ -227,6 +228,14 @@ enum VNC_ARGS_IDX {
      * the destination directory is otherwise ambiguous).
      */
     IDX_SFTP_DIRECTORY,
+
+    /**
+     * The interval at which SSH keepalive messages are sent to the server for
+     * SFTP connections.  The default is 0 (disabling keepalives), and a value
+     * of 1 is automatically increased to 2 by libssh2 to avoid busy loop corner
+     * cases.
+     */
+    IDX_SFTP_KEEPALIVE,
 #endif
 
     /**
@@ -395,6 +404,14 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->sftp_directory =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_SFTP_DIRECTORY, NULL);
+
+    /* Default keepalive value */
+    settings->sftp_keepalive =
+        guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SFTP_KEEPALIVE, 0);
+    if (settings->sftp_keepalive == 1)
+        guac_user_log(user, GUAC_LOG_WARNING, "The minimum allowed "
+                "value for keepalives by libssh2 is 2 seconds.");
 #endif
 
     /* Read recording path */

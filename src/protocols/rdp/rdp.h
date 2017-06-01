@@ -141,11 +141,6 @@ typedef struct guac_rdp_client {
      * An SFTP-based filesystem.
      */
     guac_common_ssh_sftp_filesystem* sftp_filesystem;
-
-    /**
-     * A keepalive interval for SFTP connections.
-     */
-    int sftp_keepalive;
 #endif
 
     /**
