@@ -218,15 +218,11 @@ void* ssh_client_thread(void* data) {
 
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,
-            settings->hostname, settings->port, ssh_client->user);
+            settings->hostname, settings->port, ssh_client->user, settings->server_alive_interval);
     if (ssh_client->session == NULL) {
         /* Already aborted within guac_common_ssh_create_session() */
         return NULL;
     }
-
-    /* Set keepalive configuration for session */
-    if (settings->server_alive_interval > 0)
-        libssh2_keepalive_config(ssh_client->session->session, 1, settings->server_alive_interval);
 
     pthread_mutex_init(&ssh_client->term_channel_lock, NULL);
 
@@ -262,7 +258,7 @@ void* ssh_client_thread(void* data) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Reconnecting for SFTP...");
         ssh_client->sftp_session =
             guac_common_ssh_create_session(client, settings->hostname,
-                    settings->port, ssh_client->user);
+                    settings->port, ssh_client->user, settings->server_alive_interval);
         if (ssh_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             return NULL;

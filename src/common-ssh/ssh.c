@@ -414,7 +414,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 }
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
-        const char* hostname, const char* port, guac_common_ssh_user* user) {
+        const char* hostname, const char* port, guac_common_ssh_user* user, const int keepalive) {
 
     int retval;
 
@@ -531,6 +531,10 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         close(fd);
         return NULL;
     }
+
+    /* Configure session keepalive */
+    if (keepalive > 0)
+        libssh2_keepalive_config(common_session->session, 1, keepalive);
 
     /* Return created session */
     return common_session;
