@@ -654,6 +654,10 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
 
         } /* end if separator */
 
+        /* We do not currently support named streams */
+        else if (c == ':')
+            return 1;
+
     } /* end for each character */
 
     /* If no components, the path is simply root */
