@@ -977,34 +977,26 @@ void* guac_rdp_client_thread(void* data) {
         /* Attempt SSH connection */
         rdp_client->sftp_session =
             guac_common_ssh_create_session(client, settings->sftp_hostname,
-                    settings->sftp_port, rdp_client->sftp_user);
+                    settings->sftp_port, rdp_client->sftp_user, 0);
 
         /* Fail if SSH connection does not succeed */
-        if (rdp_client->sftp_session == NULL) {
-            /* Already aborted within guac_common_ssh_create_session() */
-            return NULL;
+        if (rdp_client->sftp_session != NULL) {
+            /* Load and expose filesystem */
+            rdp_client->sftp_filesystem =
+                guac_common_ssh_create_sftp_filesystem(
+                        rdp_client->sftp_session, "/");
+
+            /* Expose filesystem to connection owner */
+            guac_client_for_owner(client,
+                    guac_common_ssh_expose_sftp_filesystem,
+                    rdp_client->sftp_filesystem);
+
+            /* Abort if SFTP connection fails */
+            if (rdp_client->sftp_filesystem != NULL) {
+                guac_client_log(client, GUAC_LOG_DEBUG,
+                        "SFTP connection succeeded.");
+            }
         }
-
-        /* Load and expose filesystem */
-        rdp_client->sftp_filesystem =
-            guac_common_ssh_create_sftp_filesystem(
-                    rdp_client->sftp_session, "/");
-
-        /* Expose filesystem to connection owner */
-        guac_client_for_owner(client,
-                guac_common_ssh_expose_sftp_filesystem,
-                rdp_client->sftp_filesystem);
-
-        /* Abort if SFTP connection fails */
-        if (rdp_client->sftp_filesystem == NULL) {
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
-                    "SFTP connection failed.");
-            return NULL;
-        }
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "SFTP connection succeeded.");
-
     }
 #endif
 

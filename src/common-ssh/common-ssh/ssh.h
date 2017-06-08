@@ -76,10 +76,11 @@ void guac_common_ssh_uninit();
 /**
  * Connects to the SSH server running at the given hostname and port, and
  * authenticates as the given user. If an error occurs while connecting or
- * authenticating, the Guacamole client will automatically and fatally abort.
- * The user object provided must eventually be explicitly destroyed, but should
- * not be destroyed until this session is destroyed, assuming the session is
- * successfully created.
+ * authenticating, the Guacamole client will only automatically and fatally 
+ * abort if the abort_on_error parameter is non-zero. Errors will always be
+ * logged. The user object provided must eventually be explicitly destroyed,
+ * but should not be destroyed until this session is destroyed, assuming the 
+ * session is successfully created.
  *
  * @param client
  *     The Guacamole client that will be using SSH.
@@ -93,12 +94,17 @@ void guac_common_ssh_uninit();
  * @param user
  *     The user to authenticate as, once connected.
  *
+ * @param abort_on_error
+ *     Whether to automatically and fatally abort if an error occurs whil
+ *     connecting or authenticating.
+ *
  * @return
  *     A new SSH session if the connection and authentication succeed, or NULL
  *     if the connection or authentication were not successful.
  */
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
-        const char* hostname, const char* port, guac_common_ssh_user* user);
+        const char* hostname, const char* port, guac_common_ssh_user* user,
+        int abort_on_error);
 
 /**
  * Disconnects and destroys the given SSH session, freeing all associated
