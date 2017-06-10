@@ -31,11 +31,9 @@ libguacd_la_SOURCES = \
 
 libguacd_la_CFLAGS =        \
     -Werror -Wall -pedantic \
-    @COMMON_INCLUDE@        \
     @LIBGUAC_INCLUDE@
 
 libguacd_la_LIBADD = \
-    @COMMON_LTLIB@   \
     @LIBGUAC_LTLIB@
 
 libguacd_la_LDFLAGS = \
