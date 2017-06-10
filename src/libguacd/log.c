@@ -25,7 +25,6 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <syslog.h>
 #include <unistd.h>
 
 void guacd_client_log_guac_error(guac_client* client,
