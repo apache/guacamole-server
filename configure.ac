@@ -63,6 +63,13 @@ AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
               AC_DEFINE([HAVE_LIBPTHREAD],,
                         [Whether libpthread was found])])
 
+# Include libdl for dlopen() if necessary
+AC_CHECK_LIB([dl], [dlopen],
+             [DL_LIBS=-ldl],
+             [AC_CHECK_DECL([dlopen],,
+                            AC_MSG_ERROR("libdl is required on systems which do not otherwise provide dlopen()"),
+                            [#include <dlfcn.h>])])
+
 # OSSP UUID
 AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
              AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
@@ -85,7 +92,7 @@ AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
 # WinSock
 AC_CHECK_LIB([wsock32], [main])
 
-AC_SUBST(LIBADD_DLOPEN)
+AC_SUBST(DL_LIBS)
 AC_SUBST(MATH_LIBS)
 AC_SUBST(PNG_LIBS)
 AC_SUBST(JPEG_LIBS)

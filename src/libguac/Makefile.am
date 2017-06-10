@@ -114,6 +114,7 @@ libguac_la_CFLAGS = \
 libguac_la_LDFLAGS =     \
     -version-info 14:0:2 \
     @CAIRO_LIBS@         \
+    @DL_LIBS@            \
     @JPEG_LIBS@          \
     @PNG_LIBS@           \
     @PTHREAD_LIBS@       \
@@ -122,5 +123,3 @@ libguac_la_LDFLAGS =     \
     @VORBIS_LIBS@        \
     @WEBP_LIBS@
 
-libguac_la_LIBADD = \
-    @LIBADD_DLOPEN@ 
