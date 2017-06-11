@@ -146,8 +146,15 @@ static ssize_t guac_socket_fd_read_handler(guac_socket* socket,
 
     guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
 
-    /* Read from socket */
-    int retval = read(data->fd, buf, count);
+    int retval;
+
+#ifdef __MINGW32__
+    /* MINGW32 WINSOCK only works with recv() */
+    retval = recv(data->fd, buf, count, 0);
+#else
+    /* Use read() for all other platforms */
+    retval = read(data->fd, buf, count);
+#endif
 
     /* Record errors in guac_error */
     if (retval < 0) {
