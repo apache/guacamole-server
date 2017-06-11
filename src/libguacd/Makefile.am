@@ -40,8 +40,10 @@ libguacd_la_CFLAGS =        \
 libguacd_la_LIBADD = \
     @LIBGUAC_LTLIB@
 
-libguacd_la_LDFLAGS = \
-    @PTHREAD_LIBS@    \
+libguacd_la_LDFLAGS =    \
+    -version-info 0:0:0  \
+    -no-undefined        \
+    @PTHREAD_LIBS@       \
     @SSL_LIBS@
 
 # SSL support
