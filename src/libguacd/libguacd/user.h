@@ -21,8 +21,6 @@
 #ifndef LIBGUACD_USER_H
 #define LIBGUACD_USER_H
 
-#include "config.h"
-
 #include <guacamole/parser.h>
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
