@@ -23,9 +23,11 @@ lib_LTLIBRARIES = libguacd.la
 
 libguacdincdir = $(includedir)/libguacd
 
-libguacdinc_HEADERS =    \
-    libguacd/log.h       \
+libguacdinc_HEADERS = \
     libguacd/user.h
+
+noinst_HEADERS = \
+    log.h
 
 libguacd_la_SOURCES = \
     log.c             \

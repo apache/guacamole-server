@@ -19,8 +19,8 @@
 
 #include "config.h"
 
-#include "libguacd/log.h"
 #include "libguacd/user.h"
+#include "log.h"
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
@@ -32,6 +32,23 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+
+/**
+ * Parameters required by the user input thread.
+ */
+typedef struct guacd_user_input_thread_params {
+
+    /**
+     * The parser which will be used throughout the user's session.
+     */
+    guac_parser* parser;
+
+    /**
+     * A reference to the connected user.
+     */
+    guac_user* user;
+
+} guacd_user_input_thread_params;
 
 /**
  * Copies the given array of mimetypes (strings) into a newly-allocated NULL-
@@ -91,7 +108,19 @@ static void guacd_free_mimetypes(char** mimetypes) {
 
 }
 
-void* guacd_user_input_thread(void* data) {
+/**
+ * The thread which handles all user input, calling event handlers for received
+ * instructions.
+ *
+ * @param data
+ *     A pointer to a guacd_user_input_thread_params structure describing the
+ *     user whose input is being handled and the guac_parser with which to
+ *     handle it.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guacd_user_input_thread(void* data) {
 
     guacd_user_input_thread_params* params = (guacd_user_input_thread_params*) data;
     guac_user* user = params->user;
@@ -143,7 +172,22 @@ void* guacd_user_input_thread(void* data) {
 
 }
 
-int guacd_user_start(guac_parser* parser, guac_user* user) {
+/**
+ * Starts the input/output threads of a new user. This function will block
+ * until the user disconnects. If an error prevents the input/output threads
+ * from starting, guac_user_stop() will be invoked on the given user.
+ *
+ * @param parser
+ *     The guac_parser to use to handle all input from the given user.
+ *
+ * @param user
+ *     The user whose associated I/O transfer threads should be started.
+ *
+ * @return
+ *     Zero if the I/O threads started successfully and user has disconnected,
+ *     or non-zero if the I/O threads could not be started.
+ */
+static int guacd_user_start(guac_parser* parser, guac_user* user) {
 
     guacd_user_input_thread_params params = {
         .parser = parser,
