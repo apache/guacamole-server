@@ -22,6 +22,10 @@
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
 
+#ifdef __MINGW32__
+#include <direct.h>
+#endif
+
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -107,6 +111,8 @@ static int guac_common_recording_open(const char* path,
 
     } /* end if open succeeded */
 
+/* Explicit file locks are required only on POSIX platforms */
+#ifndef __MINGW32__
     /* Lock entire output file for writing by the current process */
     struct flock file_lock = {
         .l_type   = F_WRLCK,
@@ -121,6 +127,7 @@ static int guac_common_recording_open(const char* path,
         close(fd);
         return -1;
     }
+#endif
 
     return fd;
 
@@ -132,7 +139,11 @@ int guac_common_recording_create(guac_client* client, const char* path,
     char filename[GUAC_COMMON_RECORDING_MAX_NAME_LENGTH];
 
     /* Create path if it does not exist, fail if impossible */
+#ifndef __MINGW32__
     if (create_path && mkdir(path, S_IRWXU) && errno != EEXIST) {
+#else
+    if (create_path && _mkdir(path) && errno != EEXIST) {
+#endif
         guac_client_log(client, GUAC_LOG_ERROR,
                 "Creation of recording failed: %s", strerror(errno));
         return 1;
