@@ -36,7 +36,7 @@
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
-#include "libguacd/socket-ssl.h"
+#include <guacamole/socket-ssl.h>
 #endif
 
 #include <errno.h>
