@@ -22,8 +22,8 @@
 #include "error.h"
 #include "socket-ssl.h"
 #include "socket.h"
+#include "wait-fd.h"
 
-#include <poll.h>
 #include <stdlib.h>
 
 #include <openssl/ssl.h>
@@ -69,23 +69,7 @@ static ssize_t __guac_socket_ssl_write_handler(guac_socket* socket,
 static int __guac_socket_ssl_select_handler(guac_socket* socket, int usec_timeout) {
 
     guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
-
-    int retval;
-
-    /* Initialize with single underlying file descriptor */
-    struct pollfd fds[1] = {{
-        .fd      = data->fd,
-        .events  = POLLIN,
-        .revents = 0,
-    }};
-
-    /* No timeout if usec_timeout is negative */
-    if (usec_timeout < 0)
-        retval = poll(fds, 1, -1);
-
-    /* Handle timeout if specified, rounding up to poll()'s granularity */
-    else
-        retval = poll(fds, 1, (usec_timeout + 999) / 1000);
+    int retval = guac_wait_for_fd(data->fd, usec_timeout);
 
     /* Properly set guac_error */
     if (retval <  0) {

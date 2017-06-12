@@ -21,8 +21,8 @@
 
 #include "error.h"
 #include "socket.h"
+#include "wait-fd.h"
 
-#include <poll.h>
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -30,6 +30,10 @@
 #include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#ifdef __MINGW32__
+#include <winsock2.h>
+#endif
 
 /**
  * Data associated with an open socket which writes to a file descriptor.
@@ -330,24 +334,9 @@ static ssize_t guac_socket_fd_write_handler(guac_socket* socket,
 static int guac_socket_fd_select_handler(guac_socket* socket,
         int usec_timeout) {
 
+    /* Wait for data on socket */
     guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
-
-    int retval;
-
-    /* Initialize with single underlying file descriptor */
-    struct pollfd fds[1] = {{
-        .fd      = data->fd,
-        .events  = POLLIN,
-        .revents = 0,
-    }};
-
-    /* No timeout if usec_timeout is negative */
-    if (usec_timeout < 0)
-        retval = poll(fds, 1, -1);
-
-    /* Handle timeout if specified, rounding up to poll()'s granularity */
-    else
-        retval = poll(fds, 1, (usec_timeout + 999) / 1000);
+    int retval = guac_wait_for_fd(data->fd, usec_timeout);
 
     /* Properly set guac_error */
     if (retval <  0) {
@@ -355,7 +344,7 @@ static int guac_socket_fd_select_handler(guac_socket* socket,
         guac_error_message = "Error while waiting for data on socket";
     }
 
-    if (retval == 0) {
+    else if (retval == 0) {
         guac_error = GUAC_STATUS_TIMEOUT;
         guac_error_message = "Timeout while waiting for data on socket";
     }

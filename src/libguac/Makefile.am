@@ -68,7 +68,8 @@ noinst_HEADERS =      \
     encode-png.h      \
     palette.h         \
     user-handlers.h   \
-    raw_encoder.h
+    raw_encoder.h     \
+    wait-fd.h
 
 libguac_la_SOURCES =   \
     audio.c            \
@@ -92,7 +93,8 @@ libguac_la_SOURCES =   \
     unicode.c          \
     user.c             \
     user-handlers.c    \
-    user-handshake.c
+    user-handshake.c   \
+    wait-fd.c
 
 # Compile WebP support if available
 if ENABLE_WEBP
