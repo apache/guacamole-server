@@ -108,6 +108,12 @@ libguac_la_SOURCES += socket-ssl.c
 libguacinc_HEADERS += guacamole/socket-ssl.h
 endif
 
+# Winsock support
+if ENABLE_WINSOCK
+libguac_la_SOURCES += socket-wsa.c
+libguacinc_HEADERS += guacamole/socket-wsa.h
+endif
+
 libguac_la_CFLAGS = \
     -Werror -Wall -pedantic -Iguacamole
 
