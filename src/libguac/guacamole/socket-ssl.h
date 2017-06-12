@@ -21,7 +21,8 @@
 #ifndef __GUACD_SOCKET_SSL_H
 #define __GUACD_SOCKET_SSL_H
 
-#include <guacamole/socket.h>
+#include "socket-types.h"
+
 #include <openssl/ssl.h>
 
 /**
