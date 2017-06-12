@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#ifdef __MINGW32__
+#ifdef ENABLE_WINSOCK
 #    include <winsock2.h>
 #else
 #    ifdef HAVE_POLL
