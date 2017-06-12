@@ -89,9 +89,6 @@ AC_CHECK_DECL([uuid_make],,
 # cunit
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
 
-# WinSock
-AC_CHECK_LIB([wsock32], [main])
-
 AC_SUBST(DL_LIBS)
 AC_SUBST(MATH_LIBS)
 AC_SUBST(PNG_LIBS)
@@ -295,6 +292,30 @@ fi
 AM_CONDITIONAL([ENABLE_SSL], [test "x${have_ssl}" = "xyes"])
 AC_SUBST(SSL_LIBS)
 
+#
+# Winsock
+#
+
+have_winsock=disabled
+WINSOCK_LIBS=
+AC_ARG_WITH([winsock],
+            [AS_HELP_STRING([--with-winsock],
+                            [support Windows Sockets API @<:@default=check@:>@])],
+            [],
+            [with_winsock=check])
+
+if test "x$with_winsock" != "xno"
+then
+    have_winsock=yes
+    AC_CHECK_LIB([wsock32], [main],
+                 [WINSOCK_LIBS="-lwsock32"]
+                 [AC_DEFINE([ENABLE_WINSOCK],,
+                            [Whether Windows Socket API support is enabled])],
+                 [have_winsock=no])
+fi
+
+AM_CONDITIONAL([ENABLE_WINSOCK], [test "x${have_winsock}" = "xyes"])
+AC_SUBST(WINSOCK_LIBS)
 
 #
 # Ogg Vorbis
@@ -1234,6 +1255,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
      libwebp ............. ${have_webp}
+     wsock32 ............. ${have_winsock}
 
    Protocol support:
 

@@ -31,7 +31,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#ifdef __MINGW32__
+#ifdef ENABLE_WINSOCK
 #include <winsock2.h>
 #endif
 
@@ -100,8 +100,8 @@ ssize_t guac_socket_fd_write(guac_socket* socket,
 
         int retval;
 
-#ifdef __MINGW32__
-        /* MINGW32 WINSOCK only works with send() */
+#ifdef ENABLE_WINSOCK
+        /* WSA only works with send() */
         retval = send(data->fd, buf, count, 0);
 #else
         /* Use write() for all other platforms */
@@ -148,8 +148,8 @@ static ssize_t guac_socket_fd_read_handler(guac_socket* socket,
 
     int retval;
 
-#ifdef __MINGW32__
-    /* MINGW32 WINSOCK only works with recv() */
+#ifdef ENABLE_WINSOCK
+    /* Winsock only works with recv() */
     retval = recv(data->fd, buf, count, 0);
 #else
     /* Use read() for all other platforms */

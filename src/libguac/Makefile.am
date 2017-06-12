@@ -122,5 +122,6 @@ libguac_la_LDFLAGS =     \
     @SSL_LIBS@           \
     @UUID_LIBS@          \
     @VORBIS_LIBS@        \
-    @WEBP_LIBS@
+    @WEBP_LIBS@          \
+    @WINSOCK_LIBS@
 
