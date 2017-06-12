@@ -43,12 +43,5 @@ libguacd_la_LIBADD = \
 libguacd_la_LDFLAGS =    \
     -version-info 0:0:0  \
     -no-undefined        \
-    @PTHREAD_LIBS@       \
-    @SSL_LIBS@
-
-# SSL support
-if ENABLE_SSL
-libguacdinc_HEADERS += libguacd/socket-ssl.h
-libguacd_la_SOURCES += socket-ssl.c
-endif
+    @PTHREAD_LIBS@
 

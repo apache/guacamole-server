@@ -19,13 +19,13 @@
 
 #include "config.h"
 
-#include "libguacd/socket-ssl.h"
+#include "error.h"
+#include "socket-ssl.h"
+#include "socket.h"
 
 #include <poll.h>
 #include <stdlib.h>
 
-#include <guacamole/error.h>
-#include <guacamole/socket.h>
 #include <openssl/ssl.h>
 
 static ssize_t __guac_socket_ssl_read_handler(guac_socket* socket,
@@ -93,7 +93,7 @@ static int __guac_socket_ssl_select_handler(guac_socket* socket, int usec_timeou
         guac_error_message = "Error while waiting for data on secure socket";
     }
 
-    if (retval == 0) {
+    else if (retval == 0) {
         guac_error = GUAC_STATUS_TIMEOUT;
         guac_error_message = "Timeout while waiting for data on secure socket";
     }

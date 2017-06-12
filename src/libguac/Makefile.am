@@ -99,6 +99,11 @@ libguac_la_SOURCES += encode-webp.c
 noinst_HEADERS += encode-webp.h
 endif
 
+# SSL support
+if ENABLE_SSL
+libguac_la_SOURCES += socket-ssl.c
+libguacinc_HEADERS += guacamole/socket-ssl.h
+endif
 
 libguac_la_CFLAGS = \
     -Werror -Wall -pedantic -Iguacamole
@@ -109,6 +114,7 @@ libguac_la_LDFLAGS =     \
     @JPEG_LIBS@          \
     @PNG_LIBS@           \
     @PTHREAD_LIBS@       \
+    @SSL_LIBS@           \
     @UUID_LIBS@          \
     @VORBIS_LIBS@        \
     @WEBP_LIBS@
