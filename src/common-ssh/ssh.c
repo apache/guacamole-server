@@ -538,7 +538,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
     /* Warn if keepalive below minimum value */
     if (keepalive == 1) {
-        guac_user_log(user, GUAC_LOG_WARNING, "keepalive interval will "
+        guac_client_log(client, GUAC_LOG_WARNING, "keepalive interval will "
             "be rounded up to minimum value of 2.");
     }
 
