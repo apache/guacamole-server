@@ -343,7 +343,7 @@ void* ssh_client_thread(void* data) {
         }
         /* If keepalive is not configured, sleep for the default of 1 second */
         else
-            timer = GUAC_SSH_DEFAULT_POLL_TIMER;
+            timer = GUAC_SSH_DEFAULT_POLL_TIMEOUT;
 
         /* Read terminal data */
         bytes_read = libssh2_channel_read(ssh_client->term_channel,

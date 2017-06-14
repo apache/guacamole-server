@@ -54,9 +54,9 @@
 #define GUAC_SSH_DEFAULT_RECORDING_NAME "recording"
 
 /**
- * The default polling timer for SSH activity in milliseconds.
+ * The default polling timeout for SSH activity in milliseconds.
  */
-#define GUAC_SSH_DEFAULT_POLL_TIMER 1000
+#define GUAC_SSH_DEFAULT_POLL_TIMEOUT 1000
 
 /**
  * Settings for the SSH connection. The values for this structure are parsed
