@@ -788,9 +788,6 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->sftp_server_alive_interval =
         guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_SERVER_ALIVE_INTERVAL, 0);
-    if (settings->sftp_server_alive_interval == 1)
-        guac_user_log(user, GUAC_LOG_WARNING, "The minimum allowed "
-                "value for keepalives is 2 seconds, this will be rounded up.");
 #endif
 
     /* Read recording path */
