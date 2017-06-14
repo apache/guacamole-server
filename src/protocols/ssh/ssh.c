@@ -337,7 +337,7 @@ void* ssh_client_thread(void* data) {
         /* Send keepalive at configured interval */
         if (settings->server_alive_interval > 0) {
             int timeout = 0;
-            if(libssh2_keepalive_send(ssh_client->session->session, &timeout) > 0)
+            if (libssh2_keepalive_send(ssh_client->session->session, &timeout) > 0)
                 break;
             timer = timeout * 1000;
         }
