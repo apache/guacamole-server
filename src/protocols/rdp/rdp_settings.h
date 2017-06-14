@@ -366,7 +366,7 @@ typedef struct guac_rdp_settings {
      * of 1 is automatically increased to 2 by libssh2 to avoid busy loop corner
      * cases.
      */
-    int sftp_keepalive;
+    unsigned sftp_server_alive_interval;
 #endif
 
     /**

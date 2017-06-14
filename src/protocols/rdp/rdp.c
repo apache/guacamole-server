@@ -977,7 +977,7 @@ void* guac_rdp_client_thread(void* data) {
         /* Attempt SSH connection */
         rdp_client->sftp_session =
             guac_common_ssh_create_session(client, settings->sftp_hostname,
-                    settings->sftp_port, rdp_client->sftp_user, settings->sftp_keepalive);
+                    settings->sftp_port, rdp_client->sftp_user, settings->sftp_server_alive_interval);
 
         /* Fail if SSH connection does not succeed */
         if (rdp_client->sftp_session == NULL) {
