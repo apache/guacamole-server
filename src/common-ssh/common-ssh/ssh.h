@@ -95,7 +95,7 @@ void guac_common_ssh_uninit();
  *     The user to authenticate as, once connected.
  *
  * @param abort_on_error
- *     Whether to automatically and fatally abort if an error occurs whil
+ *     Whether to automatically and fatally abort if an error occurs while
  *     connecting or authenticating.
  *
  * @return

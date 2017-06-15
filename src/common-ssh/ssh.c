@@ -285,24 +285,24 @@ static void guac_common_ssh_kbd_callback(const char *name, int name_len,
 }
 
 /**
- *  * A handler for SSH client errors which logs the error and can optionally
- *   * abort the given guac_client with the given guac_protocol_status.
- *    *
- *     * @param client
- *      *     Guacamole client instance to use when logging or aborting.
- *       *
- *        * @param status
- *         *      Protocol status to return if aborting the connection. This is only
- *          *      used if abort_on_error is set to true.
- *           *
- *            * @param abort_on_error
- *             *     Whether to abort the connection as well as log the error.
- *              *     
- *               * @param format
- *                *     Format string for log messages. This is also used when aborting 
- *                 *     the connection.
- *                  *
- *                   */
+ * A handler for SSH client errors which logs the error and can optionally
+ * abort the given guac_client with the given guac_protocol_status.
+ *
+ * @param client
+ *     Guacamole client instance to use when logging or aborting.
+ *
+ * @param status
+ *      Protocol status to return if aborting the connection. This is only
+ *      used if abort_on_error is set to true.
+ *
+ * @param abort_on_error
+ *     Whether to abort the connection as well as log the error.
+ *    
+ * @param format
+ *     Format string for log messages. This is also used when aborting 
+ *     the connection.
+ *
+ **/
 static void guac_common_ssh_client_error(guac_client* client,
         guac_protocol_status status, int abort_on_error, const char* format, ...) {
     va_list args;
