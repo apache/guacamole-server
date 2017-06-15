@@ -261,40 +261,32 @@ void* guac_vnc_client_thread(void* data) {
         /* Attempt SSH connection */
         vnc_client->sftp_session =
             guac_common_ssh_create_session(client, settings->sftp_hostname,
-                    settings->sftp_port, vnc_client->sftp_user);
+                    settings->sftp_port, vnc_client->sftp_user, 0);
 
         /* Fail if SSH connection does not succeed */
-        if (vnc_client->sftp_session == NULL) {
-            /* Already aborted within guac_common_ssh_create_session() */
-            return NULL;
+        if (vnc_client->sftp_session != NULL) {
+            /* Load filesystem */
+            vnc_client->sftp_filesystem =
+                guac_common_ssh_create_sftp_filesystem(
+                        vnc_client->sftp_session, "/");
+
+            /* Expose filesystem to connection owner */
+            guac_client_for_owner(client,
+                    guac_common_ssh_expose_sftp_filesystem,
+                    vnc_client->sftp_filesystem);
+
+            /* Abort if SFTP connection fails */
+            if (vnc_client->sftp_filesystem != NULL) {
+                /* Configure destination for basic uploads, if specified */
+                if (settings->sftp_directory != NULL)
+                    guac_common_ssh_sftp_set_upload_path(
+                            vnc_client->sftp_filesystem,
+                            settings->sftp_directory);
+
+                guac_client_log(client, GUAC_LOG_DEBUG,
+                        "SFTP connection succeeded.");
+            }
         }
-
-        /* Load filesystem */
-        vnc_client->sftp_filesystem =
-            guac_common_ssh_create_sftp_filesystem(
-                    vnc_client->sftp_session, "/");
-
-        /* Expose filesystem to connection owner */
-        guac_client_for_owner(client,
-                guac_common_ssh_expose_sftp_filesystem,
-                vnc_client->sftp_filesystem);
-
-        /* Abort if SFTP connection fails */
-        if (vnc_client->sftp_filesystem == NULL) {
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
-                    "SFTP connection failed.");
-            return NULL;
-        }
-
-        /* Configure destination for basic uploads, if specified */
-        if (settings->sftp_directory != NULL)
-            guac_common_ssh_sftp_set_upload_path(
-                    vnc_client->sftp_filesystem,
-                    settings->sftp_directory);
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "SFTP connection succeeded.");
-
     }
 #endif
 
