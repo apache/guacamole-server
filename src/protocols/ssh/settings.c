@@ -51,6 +51,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "recording-name",
     "create-recording-path",
     "read-only",
+    "server-alive-interval",
     NULL
 };
 
@@ -165,6 +166,13 @@ enum SSH_ARGS_IDX {
      */
     IDX_READ_ONLY,
 
+    /**
+     * Number of seconds between sending alive packets.  A default of 0
+     * tells SSH not to send these packets.  A value of 1 is automatically
+     * changed by libssh2 to 2 to avoid busy-loop corner cases.
+     */
+    IDX_SERVER_ALIVE_INTERVAL,
+
     SSH_ARGS_COUNT
 };
 
@@ -278,6 +286,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, false);
+
+    /* Parse server alive interval */
+    settings->server_alive_interval =
+        guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_SERVER_ALIVE_INTERVAL, 0);
 
     /* Parsing was successful */
     return settings;

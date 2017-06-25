@@ -218,7 +218,7 @@ void* ssh_client_thread(void* data) {
 
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,
-            settings->hostname, settings->port, ssh_client->user);
+            settings->hostname, settings->port, ssh_client->user, settings->server_alive_interval);
     if (ssh_client->session == NULL) {
         /* Already aborted within guac_common_ssh_create_session() */
         return NULL;
@@ -258,7 +258,7 @@ void* ssh_client_thread(void* data) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Reconnecting for SFTP...");
         ssh_client->sftp_session =
             guac_common_ssh_create_session(client, settings->hostname,
-                    settings->port, ssh_client->user);
+                    settings->port, ssh_client->user, settings->server_alive_interval);
         if (ssh_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             return NULL;
@@ -323,6 +323,9 @@ void* ssh_client_thread(void* data) {
         /* Track total amount of data read */
         int total_read = 0;
 
+        /* Timeout for polling socket activity */
+        int timeout;
+
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
 
         /* Stop reading at EOF */
@@ -330,6 +333,17 @@ void* ssh_client_thread(void* data) {
             pthread_mutex_unlock(&(ssh_client->term_channel_lock));
             break;
         }
+
+        /* Send keepalive at configured interval */
+        if (settings->server_alive_interval > 0) {
+            timeout = 0;
+            if (libssh2_keepalive_send(ssh_client->session->session, &timeout) > 0)
+                break;
+            timeout *= 1000;
+        }
+        /* If keepalive is not configured, sleep for the default of 1 second */
+        else
+            timeout = GUAC_SSH_DEFAULT_POLL_TIMEOUT;
 
         /* Read terminal data */
         bytes_read = libssh2_channel_read(ssh_client->term_channel,
@@ -370,8 +384,8 @@ void* ssh_client_thread(void* data) {
                 .revents = 0,
             }};
 
-            /* Wait up to one second */
-            if (poll(fds, 1, 1000) < 0)
+            /* Wait up to computed timeout */
+            if (poll(fds, 1, timeout) < 0)
                 break;
 
         }

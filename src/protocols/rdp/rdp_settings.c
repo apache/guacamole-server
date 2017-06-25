@@ -84,6 +84,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "sftp-private-key",
     "sftp-passphrase",
     "sftp-directory",
+    "sftp-server-alive-interval",
 #endif
 
     "recording-path",
@@ -366,6 +367,13 @@ enum RDP_ARGS_IDX {
      */
     IDX_SFTP_DIRECTORY,
 
+    /**
+     * The interval at which SSH keepalive messages are sent to the server for
+     * SFTP connections.  The default is 0 (disabling keepalives), and a value
+     * of 1 is automatically increased to 2 by libssh2 to avoid busy loop corner
+     * cases.
+     */
+    IDX_SFTP_SERVER_ALIVE_INTERVAL,
 #endif
 
     /**
@@ -775,6 +783,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->sftp_directory =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_DIRECTORY, NULL);
+
+    /* Default keepalive value */
+    settings->sftp_server_alive_interval =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_SERVER_ALIVE_INTERVAL, 0);
 #endif
 
     /* Read recording path */
