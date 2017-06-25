@@ -532,15 +532,19 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         return NULL;
     }
 
-    /* Configure session keepalive */
-    if (keepalive > 0)
-        libssh2_keepalive_config(common_session->session, 1, keepalive);
-
     /* Warn if keepalive below minimum value */
-    if (keepalive == 1) {
+    if (keepalive < 0) {
+        keepalive = 0;
+        guac_client_log(client, GUAC_LOG_WARNING, "negative keepalive intervals "
+            "are converted to 0, disabling keepalive.");
+    }
+    else if(keepalive == 1) {
         guac_client_log(client, GUAC_LOG_WARNING, "keepalive interval will "
             "be rounded up to minimum value of 2.");
     }
+
+    /* Configure session keepalive */
+    libssh2_keepalive_config(common_session->session, 1, keepalive);
 
     /* Return created session */
     return common_session;
