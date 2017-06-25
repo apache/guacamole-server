@@ -414,7 +414,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 }
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
-        const char* hostname, const char* port, guac_common_ssh_user* user, const int keepalive) {
+        const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive) {
 
     int retval;
 
