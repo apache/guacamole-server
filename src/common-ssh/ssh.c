@@ -538,7 +538,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         guac_client_log(client, GUAC_LOG_WARNING, "negative keepalive intervals "
             "are converted to 0, disabling keepalive.");
     }
-    else if(keepalive == 1) {
+    else if (keepalive == 1) {
         guac_client_log(client, GUAC_LOG_WARNING, "keepalive interval will "
             "be rounded up to minimum value of 2.");
     }
