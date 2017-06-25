@@ -189,7 +189,7 @@ typedef struct guac_ssh_settings {
     /**
      * The number of seconds between sending server alive messages.
      */
-    unsigned server_alive_interval;
+    int server_alive_interval;
 
 } guac_ssh_settings;
 

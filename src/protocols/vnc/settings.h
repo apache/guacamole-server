@@ -180,7 +180,7 @@ typedef struct guac_vnc_settings {
      * of 1 is automatically increased to 2 by libssh2 to avoid busy loop corner
      * cases.
      */
-    unsigned sftp_server_alive_interval;
+    int sftp_server_alive_interval;
 #endif
 
     /**
