@@ -323,8 +323,8 @@ void* ssh_client_thread(void* data) {
         /* Track total amount of data read */
         int total_read = 0;
 
-        /* Timer for polling socket activity */
-        int timer;
+        /* Timeout for polling socket activity */
+        int timeout;
 
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
 
@@ -336,14 +336,14 @@ void* ssh_client_thread(void* data) {
 
         /* Send keepalive at configured interval */
         if (settings->server_alive_interval > 0) {
-            int timeout = 0;
+            timeout = 0;
             if (libssh2_keepalive_send(ssh_client->session->session, &timeout) > 0)
                 break;
-            timer = timeout * 1000;
+            timeout *= 1000;
         }
         /* If keepalive is not configured, sleep for the default of 1 second */
         else
-            timer = GUAC_SSH_DEFAULT_POLL_TIMEOUT;
+            timeout = GUAC_SSH_DEFAULT_POLL_TIMEOUT;
 
         /* Read terminal data */
         bytes_read = libssh2_channel_read(ssh_client->term_channel,
@@ -384,8 +384,8 @@ void* ssh_client_thread(void* data) {
                 .revents = 0,
             }};
 
-            /* Wait up to computed timer */
-            if (poll(fds, 1, timer) < 0)
+            /* Wait up to computed timeout */
+            if (poll(fds, 1, timeout) < 0)
                 break;
 
         }
