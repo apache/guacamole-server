@@ -414,7 +414,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 }
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
-        const char* hostname, const char* port, guac_common_ssh_user* user) {
+        const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive) {
 
     int retval;
 
@@ -531,6 +531,20 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         close(fd);
         return NULL;
     }
+
+    /* Warn if keepalive below minimum value */
+    if (keepalive < 0) {
+        keepalive = 0;
+        guac_client_log(client, GUAC_LOG_WARNING, "negative keepalive intervals "
+            "are converted to 0, disabling keepalive.");
+    }
+    else if (keepalive == 1) {
+        guac_client_log(client, GUAC_LOG_WARNING, "keepalive interval will "
+            "be rounded up to minimum value of 2.");
+    }
+
+    /* Configure session keepalive */
+    libssh2_keepalive_config(common_session->session, 1, keepalive);
 
     /* Return created session */
     return common_session;

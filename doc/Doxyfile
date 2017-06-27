@@ -22,7 +22,7 @@
 #
 
 PROJECT_NAME   = libguac
-PROJECT_NUMBER = 0.9.12-incubating
+PROJECT_NUMBER = 0.9.13-incubating
 
 #
 # Warn about undocumented parameters and return values, but do not fill output

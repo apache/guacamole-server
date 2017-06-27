@@ -54,6 +54,11 @@
 #define GUAC_SSH_DEFAULT_RECORDING_NAME "recording"
 
 /**
+ * The default polling timeout for SSH activity in milliseconds.
+ */
+#define GUAC_SSH_DEFAULT_POLL_TIMEOUT 1000
+
+/**
  * Settings for the SSH connection. The values for this structure are parsed
  * from the arguments given during the Guacamole protocol handshake using the
  * guac_ssh_parse_args() function.
@@ -180,6 +185,11 @@ typedef struct guac_ssh_settings {
      * does not already exist.
      */
     bool create_recording_path;
+
+    /**
+     * The number of seconds between sending server alive messages.
+     */
+    int server_alive_interval;
 
 } guac_ssh_settings;
 
