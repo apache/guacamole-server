@@ -145,6 +145,12 @@ typedef struct guac_ssh_settings {
      */
     bool enable_sftp;
 
+    /**
+     * The path of the directory within the SSH server to expose as a
+     * filesystem guac_object.
+     */
+    char* sftp_root_directory;
+
 #ifdef ENABLE_SSH_AGENT
     /**
      * Whether the SSH agent is enabled.
