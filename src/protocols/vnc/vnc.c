@@ -272,7 +272,7 @@ void* guac_vnc_client_thread(void* data) {
         /* Load filesystem */
         vnc_client->sftp_filesystem =
             guac_common_ssh_create_sftp_filesystem(
-                    vnc_client->sftp_session, "/");
+                    vnc_client->sftp_session, "/", NULL);
 
         /* Expose filesystem to connection owner */
         guac_client_for_owner(client,

@@ -34,6 +34,11 @@
 #define GUAC_COMMON_SSH_SFTP_MAX_PATH 2048
 
 /**
+ * Maximum number of path components per path.
+ */
+#define GUAC_COMMON_SSH_SFTP_MAX_DEPTH 1024
+
+/**
  * Representation of an SFTP-driven filesystem object. Unlike guac_object, this
  * structure is not tied to any particular user.
  */
@@ -53,6 +58,11 @@ typedef struct guac_common_ssh_sftp_filesystem {
      * SFTP session, used for file transfers.
      */
     LIBSSH2_SFTP* sftp_session;
+
+    /**
+     * The path to the directory to expose to the user as a filesystem object.
+     */
+    char root_path[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
     /**
      * The path files will be sent to, if uploaded directly via a "file"
@@ -103,15 +113,22 @@ typedef struct guac_common_ssh_sftp_ls_state {
  *     The session to use to provide SFTP. This session will automatically be
  *     destroyed when this filesystem is destroyed.
  *
+ * @param root_path
+ *     The path accessible via SFTP to consider the root path of the filesystem
+ *     exposed to the user. Only the contents of this path will be available
+ *     via the filesystem object.
+ *
  * @param name
  *     The name to send as the name of the filesystem whenever it is exposed
- *     to a user.
+ *     to a user, or NULL to automatically generate a name from the provided
+ *     root_path.
  *
  * @return
  *     A new SFTP filesystem object, not yet exposed to users.
  */
 guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
-        guac_common_ssh_session* session, const char* name);
+        guac_common_ssh_session* session, const char* root_path,
+        const char* name);
 
 /**
  * Destroys the given filesystem object, disconnecting from SFTP and freeing
