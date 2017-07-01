@@ -26,25 +26,6 @@
 #include <guacamole/user.h>
 
 /**
- * The number of milliseconds to wait for messages in any phase before
- * timing out and closing the connection with an error.
- */
-#define GUACD_TIMEOUT      15000
-
-/**
- * The number of microseconds to wait for messages in any phase before
- * timing out and closing the conncetion with an error. This is always
- * equal to GUACD_TIMEOUT * 1000.
- */
-#define GUACD_USEC_TIMEOUT (GUACD_TIMEOUT*1000)
-
-/**
- * The maximum number of concurrent connections to a single instance
- * of guacd.
- */
-#define GUACD_CLIENT_MAX_CONNECTIONS 65536
-
-/**
  * Handles the initial handshake of a user and all subsequent I/O. This
  * function blocks until the user disconnects.
  *
@@ -52,12 +33,16 @@
  *     The user whose handshake and entire Guacamole protocol exchange should
  *     be handled.
  *
+ * @param usec_timeout
+ *     The number of microseconds to wait for instructions from the given
+ *     user before closing the connection with an error.
+ *
  * @return
  *     Zero if the user's Guacamole connection was successfully handled and
  *     the user has disconnected, or non-zero if an error prevented the user's
  *     connection from being handled properly.
  */
-int guacd_handle_user(guac_user* user);
+int guacd_handle_user(guac_user* user, int usec_timeout);
 
 #endif
 
