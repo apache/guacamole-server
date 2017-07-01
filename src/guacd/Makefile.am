@@ -49,12 +49,10 @@ guacd_SOURCES =  \
 guacd_CFLAGS =              \
     -Werror -Wall -pedantic \
     @COMMON_INCLUDE@        \
-    @LIBGUACD_INCLUDE@      \
     @LIBGUAC_INCLUDE@
 
 guacd_LDADD =        \
     @COMMON_LTLIB@   \
-    @LIBGUACD_LTLIB@ \
     @LIBGUAC_LTLIB@
 
 guacd_LDFLAGS =    \

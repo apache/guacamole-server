@@ -19,15 +19,12 @@
 
 #include "config.h"
 
-#include "libguacd/user.h"
-#include "log.h"
-
-#include <guacamole/client.h>
-#include <guacamole/error.h>
-#include <guacamole/parser.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-#include <guacamole/user.h>
+#include "client.h"
+#include "error.h"
+#include "parser.h"
+#include "protocol.h"
+#include "socket.h"
+#include "user.h"
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -36,7 +33,7 @@
 /**
  * Parameters required by the user input thread.
  */
-typedef struct guacd_user_input_thread_params {
+typedef struct guac_user_input_thread_params {
 
     /**
      * The parser which will be used throughout the user's session.
@@ -54,12 +51,72 @@ typedef struct guacd_user_input_thread_params {
      */
     int usec_timeout;
 
-} guacd_user_input_thread_params;
+} guac_user_input_thread_params;
+
+/**
+ * Prints an error message using the logging facilities of the given user,
+ * automatically including any information present in guac_error.
+ *
+ * @param user
+ *     The guac_user associated with the error that occurred.
+ *
+ * @param level
+ *     The level at which to log this message.
+ *
+ * @param message
+ *     The message to log.
+ */
+static void guac_user_log_guac_error(guac_user* user,
+        guac_client_log_level level, const char* message) {
+
+    if (guac_error != GUAC_STATUS_SUCCESS) {
+
+        /* If error message provided, include in log */
+        if (guac_error_message != NULL)
+            guac_user_log(user, level, "%s: %s", message,
+                    guac_error_message);
+
+        /* Otherwise just log with standard status string */
+        else
+            guac_user_log(user, level, "%s: %s", message,
+                    guac_status_string(guac_error));
+
+    }
+
+    /* Just log message if no status code */
+    else
+        guac_user_log(user, level, "%s", message);
+
+}
+
+/**
+ * Logs a reasonable explanatory message regarding handshake failure based on
+ * the current value of guac_error.
+ *
+ * @param user
+ *     The guac_user associated with the failed Guacamole protocol handshake.
+ */
+static void guac_user_log_handshake_failure(guac_user* user) {
+
+    if (guac_error == GUAC_STATUS_CLOSED)
+        guac_user_log(user, GUAC_LOG_INFO,
+                "Guacamole connection closed during handshake");
+    else if (guac_error == GUAC_STATUS_PROTOCOL_ERROR)
+        guac_user_log(user, GUAC_LOG_ERROR,
+                "Guacamole protocol violation. Perhaps the version of "
+                "guacamole-client is incompatible with this version of "
+                "libguac?");
+    else
+        guac_user_log(user, GUAC_LOG_WARNING,
+                "Guacamole handshake failed: %s",
+                guac_status_string(guac_error));
+
+}
 
 /**
  * Copies the given array of mimetypes (strings) into a newly-allocated NULL-
  * terminated array of strings. Both the array and the strings within the array
- * are newly-allocated and must be later freed via guacd_free_mimetypes().
+ * are newly-allocated and must be later freed via guac_free_mimetypes().
  *
  * @param mimetypes
  *     The array of mimetypes to copy.
@@ -72,7 +129,7 @@ typedef struct guacd_user_input_thread_params {
  *     copies of each of the mimetypes provided in the original mimetypes
  *     array.
  */
-static char** guacd_copy_mimetypes(char** mimetypes, int count) {
+static char** guac_copy_mimetypes(char** mimetypes, int count) {
 
     int i;
 
@@ -93,13 +150,13 @@ static char** guacd_copy_mimetypes(char** mimetypes, int count) {
 /**
  * Frees the given array of mimetypes, including the space allocated to each
  * mimetype string within the array. The provided array of mimetypes MUST have
- * been allocated with guacd_copy_mimetypes().
+ * been allocated with guac_copy_mimetypes().
  *
  * @param mimetypes
  *     The NULL-terminated array of mimetypes to free. This array MUST have
- *     been previously allocated with guacd_copy_mimetypes().
+ *     been previously allocated with guac_copy_mimetypes().
  */
-static void guacd_free_mimetypes(char** mimetypes) {
+static void guac_free_mimetypes(char** mimetypes) {
 
     char** current_mimetype = mimetypes;
 
@@ -119,17 +176,17 @@ static void guacd_free_mimetypes(char** mimetypes) {
  * instructions.
  *
  * @param data
- *     A pointer to a guacd_user_input_thread_params structure describing the
+ *     A pointer to a guac_user_input_thread_params structure describing the
  *     user whose input is being handled and the guac_parser with which to
  *     handle it.
  *
  * @return
  *     Always NULL.
  */
-static void* guacd_user_input_thread(void* data) {
+static void* guac_user_input_thread(void* data) {
 
-    guacd_user_input_thread_params* params =
-        (guacd_user_input_thread_params*) data;
+    guac_user_input_thread_params* params =
+        (guac_user_input_thread_params*) data;
 
     int usec_timeout = params->usec_timeout;
     guac_user* user = params->user;
@@ -148,7 +205,7 @@ static void* guacd_user_input_thread(void* data) {
 
             else {
                 if (guac_error != GUAC_STATUS_CLOSED)
-                    guacd_client_log_guac_error(client, GUAC_LOG_WARNING,
+                    guac_user_log_guac_error(user, GUAC_LOG_WARNING,
                             "Guacamole connection failure");
                 guac_user_stop(user);
             }
@@ -165,7 +222,7 @@ static void* guacd_user_input_thread(void* data) {
         if (guac_user_handle_instruction(user, parser->opcode, parser->argc, parser->argv) < 0) {
 
             /* Log error */
-            guacd_client_log_guac_error(client, GUAC_LOG_WARNING,
+            guac_user_log_guac_error(user, GUAC_LOG_WARNING,
                     "User connection aborted");
 
             /* Log handler details */
@@ -200,10 +257,10 @@ static void* guacd_user_input_thread(void* data) {
  *     Zero if the I/O threads started successfully and user has disconnected,
  *     or non-zero if the I/O threads could not be started.
  */
-static int guacd_user_start(guac_parser* parser, guac_user* user,
+static int guac_user_start(guac_parser* parser, guac_user* user,
         int usec_timeout) {
 
-    guacd_user_input_thread_params params = {
+    guac_user_input_thread_params params = {
         .parser = parser,
         .user = user,
         .usec_timeout = usec_timeout
@@ -211,7 +268,7 @@ static int guacd_user_start(guac_parser* parser, guac_user* user,
 
     pthread_t input_thread;
 
-    if (pthread_create(&input_thread, NULL, guacd_user_input_thread, (void*) &params)) {
+    if (pthread_create(&input_thread, NULL, guac_user_input_thread, (void*) &params)) {
         guac_user_log(user, GUAC_LOG_ERROR, "Unable to start input thread");
         guac_user_stop(user);
         return -1;
@@ -229,7 +286,7 @@ static int guacd_user_start(guac_parser* parser, guac_user* user,
 
 }
 
-int guacd_handle_user(guac_user* user, int usec_timeout) {
+int guac_user_handle_connection(guac_user* user, int usec_timeout) {
 
     guac_socket* socket = user->socket;
     guac_client* client = user->client;
@@ -239,8 +296,8 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
             || guac_socket_flush(socket)) {
 
         /* Log error */
-        guacd_client_log_handshake_failure(client);
-        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+        guac_user_log_handshake_failure(user);
+        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
                 "Error sending \"args\" to new user");
 
         return 1;
@@ -252,8 +309,8 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
     if (guac_parser_expect(parser, socket, usec_timeout, "size")) {
 
         /* Log error */
-        guacd_client_log_handshake_failure(client);
-        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+        guac_user_log_handshake_failure(user);
+        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
                 "Error reading \"size\"");
 
         guac_parser_free(parser);
@@ -262,7 +319,7 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
 
     /* Validate content of size instruction */
     if (parser->argc < 2) {
-        guac_client_log(client, GUAC_LOG_ERROR, "Received \"size\" "
+        guac_user_log(user, GUAC_LOG_ERROR, "Received \"size\" "
                 "instruction lacked required arguments.");
         guac_parser_free(parser);
         return 1;
@@ -272,7 +329,7 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
     user->info.optimal_width  = atoi(parser->argv[0]);
     user->info.optimal_height = atoi(parser->argv[1]);
 
-    /* If DPI given, set the client resolution */
+    /* If DPI given, set the user resolution */
     if (parser->argc >= 3)
         user->info.optimal_resolution = atoi(parser->argv[2]);
 
@@ -284,8 +341,8 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
     if (guac_parser_expect(parser, socket, usec_timeout, "audio")) {
 
         /* Log error */
-        guacd_client_log_handshake_failure(client);
-        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+        guac_user_log_handshake_failure(user);
+        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
                 "Error reading \"audio\"");
 
         guac_parser_free(parser);
@@ -293,15 +350,15 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
     }
 
     /* Store audio mimetypes */
-    char** audio_mimetypes = guacd_copy_mimetypes(parser->argv, parser->argc);
+    char** audio_mimetypes = guac_copy_mimetypes(parser->argv, parser->argc);
     user->info.audio_mimetypes = (const char**) audio_mimetypes;
 
     /* Get supported video formats */
     if (guac_parser_expect(parser, socket, usec_timeout, "video")) {
 
         /* Log error */
-        guacd_client_log_handshake_failure(client);
-        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+        guac_user_log_handshake_failure(user);
+        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
                 "Error reading \"video\"");
 
         guac_parser_free(parser);
@@ -309,15 +366,15 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
     }
 
     /* Store video mimetypes */
-    char** video_mimetypes = guacd_copy_mimetypes(parser->argv, parser->argc);
+    char** video_mimetypes = guac_copy_mimetypes(parser->argv, parser->argc);
     user->info.video_mimetypes = (const char**) video_mimetypes;
 
     /* Get supported image formats */
     if (guac_parser_expect(parser, socket, usec_timeout, "image")) {
 
         /* Log error */
-        guacd_client_log_handshake_failure(client);
-        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+        guac_user_log_handshake_failure(user);
+        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
                 "Error reading \"image\"");
 
         guac_parser_free(parser);
@@ -325,15 +382,15 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
     }
 
     /* Store image mimetypes */
-    char** image_mimetypes = guacd_copy_mimetypes(parser->argv, parser->argc);
+    char** image_mimetypes = guac_copy_mimetypes(parser->argv, parser->argc);
     user->info.image_mimetypes = (const char**) image_mimetypes;
 
     /* Get args from connect instruction */
     if (guac_parser_expect(parser, socket, usec_timeout, "connect")) {
 
         /* Log error */
-        guacd_client_log_handshake_failure(client);
-        guacd_client_log_guac_error(client, GUAC_LOG_DEBUG,
+        guac_user_log_handshake_failure(user);
+        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
                 "Error reading \"connect\"");
 
         guac_parser_free(parser);
@@ -357,7 +414,7 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
                 client->connection_id, client->connected_users);
 
         /* Handle user I/O, wait for connection to terminate */
-        guacd_user_start(parser, user, usec_timeout);
+        guac_user_start(parser, user, usec_timeout);
 
         /* Remove/free user */
         guac_client_remove_user(client, user);
@@ -367,9 +424,9 @@ int guacd_handle_user(guac_user* user, int usec_timeout) {
     }
 
     /* Free mimetype lists */
-    guacd_free_mimetypes(audio_mimetypes);
-    guacd_free_mimetypes(video_mimetypes);
-    guacd_free_mimetypes(image_mimetypes);
+    guac_free_mimetypes(audio_mimetypes);
+    guac_free_mimetypes(video_mimetypes);
+    guac_free_mimetypes(image_mimetypes);
 
     guac_parser_free(parser);
 

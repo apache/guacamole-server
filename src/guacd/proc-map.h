@@ -23,7 +23,6 @@
 
 #include "config.h"
 #include "common/list.h"
-#include "libguacd/user.h"
 #include "proc.h"
 
 #include <guacamole/client.h>

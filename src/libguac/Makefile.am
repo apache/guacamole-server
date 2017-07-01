@@ -91,7 +91,8 @@ libguac_la_SOURCES =   \
     timestamp.c        \
     unicode.c          \
     user.c             \
-    user-handlers.c
+    user-handlers.c    \
+    user-handshake.c
 
 # Compile WebP support if available
 if ENABLE_WEBP

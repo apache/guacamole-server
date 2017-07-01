@@ -22,7 +22,6 @@
 #include "connection.h"
 #include "conf-args.h"
 #include "conf-file.h"
-#include "libguacd/user.h"
 #include "log.h"
 #include "proc-map.h"
 

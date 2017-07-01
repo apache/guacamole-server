@@ -493,6 +493,30 @@ guac_user* guac_user_alloc();
 void guac_user_free(guac_user* user);
 
 /**
+ * Handles the portion of a user's Guacamole protocol handshake following the
+ * "select" instruction all subsequent I/O, automatically populating the
+ * handshake-related properties of the given guac_user and invoking
+ * guac_user_handle_instruction() for received instructions after the handshake
+ * has completed. This function blocks until the connection/user is aborted or
+ * the user disconnects.
+ *
+ * @param user
+ *     The user whose handshake and entire Guacamole protocol exchange should
+ *     be handled. The user must already be associated with a guac_socket and
+ *     guac_client, and the guac_client must already be fully initialized.
+ *
+ * @param usec_timeout
+ *     The number of microseconds to wait for instructions from the given
+ *     user before closing the connection with an error.
+ *
+ * @return
+ *     Zero if the user's Guacamole connection was successfully handled and
+ *     the user has disconnected, or non-zero if an error prevented the user's
+ *     connection from being handled properly.
+ */
+int guac_user_handle_connection(guac_user* user, int usec_timeout);
+
+/**
  * Call the appropriate handler defined by the given user for the given
  * instruction. A comparison is made between the instruction opcode and the
  * initial handler lookup table defined in user-handlers.c. The intial handlers
