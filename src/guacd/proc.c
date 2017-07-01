@@ -92,7 +92,7 @@ static void* guacd_user_thread(void* data) {
     user->owner  = params->owner;
 
     /* Handle user connection from handshake until disconnect/completion */
-    guacd_handle_user(user);
+    guacd_handle_user(user, GUACD_USEC_TIMEOUT);
 
     /* Stop client and prevent future users if all users are disconnected */
     if (client->connected_users == 0) {

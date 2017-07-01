@@ -48,6 +48,12 @@ typedef struct guacd_user_input_thread_params {
      */
     guac_user* user;
 
+    /**
+     * The number of microseconds to wait for instructions from a connected
+     * user before closing the connection with an error.
+     */
+    int usec_timeout;
+
 } guacd_user_input_thread_params;
 
 /**
@@ -122,7 +128,10 @@ static void guacd_free_mimetypes(char** mimetypes) {
  */
 static void* guacd_user_input_thread(void* data) {
 
-    guacd_user_input_thread_params* params = (guacd_user_input_thread_params*) data;
+    guacd_user_input_thread_params* params =
+        (guacd_user_input_thread_params*) data;
+
+    int usec_timeout = params->usec_timeout;
     guac_user* user = params->user;
     guac_parser* parser = params->parser;
     guac_client* client = user->client;
@@ -132,7 +141,7 @@ static void* guacd_user_input_thread(void* data) {
     while (client->state == GUAC_CLIENT_RUNNING && user->active) {
 
         /* Read instruction, stop on error */
-        if (guac_parser_read(parser, socket, GUACD_USEC_TIMEOUT)) {
+        if (guac_parser_read(parser, socket, usec_timeout)) {
 
             if (guac_error == GUAC_STATUS_TIMEOUT)
                 guac_user_abort(user, GUAC_PROTOCOL_STATUS_CLIENT_TIMEOUT, "User is not responding.");
@@ -183,15 +192,21 @@ static void* guacd_user_input_thread(void* data) {
  * @param user
  *     The user whose associated I/O transfer threads should be started.
  *
+ * @param usec_timeout
+ *     The number of microseconds to wait for instructions from the given
+ *     user before closing the connection with an error.
+ *
  * @return
  *     Zero if the I/O threads started successfully and user has disconnected,
  *     or non-zero if the I/O threads could not be started.
  */
-static int guacd_user_start(guac_parser* parser, guac_user* user) {
+static int guacd_user_start(guac_parser* parser, guac_user* user,
+        int usec_timeout) {
 
     guacd_user_input_thread_params params = {
         .parser = parser,
-        .user = user
+        .user = user,
+        .usec_timeout = usec_timeout
     };
 
     pthread_t input_thread;
@@ -214,7 +229,7 @@ static int guacd_user_start(guac_parser* parser, guac_user* user) {
 
 }
 
-int guacd_handle_user(guac_user* user) {
+int guacd_handle_user(guac_user* user, int usec_timeout) {
 
     guac_socket* socket = user->socket;
     guac_client* client = user->client;
@@ -234,7 +249,7 @@ int guacd_handle_user(guac_user* user) {
     guac_parser* parser = guac_parser_alloc();
 
     /* Get optimal screen size */
-    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "size")) {
+    if (guac_parser_expect(parser, socket, usec_timeout, "size")) {
 
         /* Log error */
         guacd_client_log_handshake_failure(client);
@@ -266,7 +281,7 @@ int guacd_handle_user(guac_user* user) {
         user->info.optimal_resolution = 96;
 
     /* Get supported audio formats */
-    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "audio")) {
+    if (guac_parser_expect(parser, socket, usec_timeout, "audio")) {
 
         /* Log error */
         guacd_client_log_handshake_failure(client);
@@ -282,7 +297,7 @@ int guacd_handle_user(guac_user* user) {
     user->info.audio_mimetypes = (const char**) audio_mimetypes;
 
     /* Get supported video formats */
-    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "video")) {
+    if (guac_parser_expect(parser, socket, usec_timeout, "video")) {
 
         /* Log error */
         guacd_client_log_handshake_failure(client);
@@ -298,7 +313,7 @@ int guacd_handle_user(guac_user* user) {
     user->info.video_mimetypes = (const char**) video_mimetypes;
 
     /* Get supported image formats */
-    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "image")) {
+    if (guac_parser_expect(parser, socket, usec_timeout, "image")) {
 
         /* Log error */
         guacd_client_log_handshake_failure(client);
@@ -314,7 +329,7 @@ int guacd_handle_user(guac_user* user) {
     user->info.image_mimetypes = (const char**) image_mimetypes;
 
     /* Get args from connect instruction */
-    if (guac_parser_expect(parser, socket, GUACD_USEC_TIMEOUT, "connect")) {
+    if (guac_parser_expect(parser, socket, usec_timeout, "connect")) {
 
         /* Log error */
         guacd_client_log_handshake_failure(client);
@@ -342,7 +357,7 @@ int guacd_handle_user(guac_user* user) {
                 client->connection_id, client->connected_users);
 
         /* Handle user I/O, wait for connection to terminate */
-        guacd_user_start(parser, user);
+        guacd_user_start(parser, user, usec_timeout);
 
         /* Remove/free user */
         guac_client_remove_user(client, user);

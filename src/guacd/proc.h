@@ -28,6 +28,19 @@
 #include <unistd.h>
 
 /**
+ * The number of milliseconds to wait for messages in any phase before
+ * timing out and closing the connection with an error.
+ */
+#define GUACD_TIMEOUT 15000
+
+/**
+ * The number of microseconds to wait for messages in any phase before
+ * timing out and closing the conncetion with an error. This is always
+ * equal to GUACD_TIMEOUT * 1000.
+ */
+#define GUACD_USEC_TIMEOUT (GUACD_TIMEOUT*1000)
+
+/**
  * Process information of the internal remote desktop client.
  */
 typedef struct guacd_proc {
