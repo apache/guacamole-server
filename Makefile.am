@@ -22,7 +22,6 @@ ACLOCAL_AMFLAGS = -I m4
 # Subprojects
 DIST_SUBDIRS =           \
     src/libguac          \
-    src/libguacd         \
     src/common           \
     src/common-ssh       \
     src/terminal         \
@@ -38,7 +37,6 @@ DIST_SUBDIRS =           \
 SUBDIRS =        \
     src/libguac  \
     src/common   \
-    src/libguacd \
     tests
 
 if ENABLE_COMMON_SSH

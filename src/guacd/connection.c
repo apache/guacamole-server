@@ -22,7 +22,6 @@
 #include "connection.h"
 #include "log.h"
 #include "move-fd.h"
-#include "libguacd/user.h"
 #include "proc.h"
 #include "proc-map.h"
 
