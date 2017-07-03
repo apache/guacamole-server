@@ -266,7 +266,8 @@ void* ssh_client_thread(void* data) {
 
         /* Request SFTP */
         ssh_client->sftp_filesystem = guac_common_ssh_create_sftp_filesystem(
-                    ssh_client->sftp_session, "/");
+                    ssh_client->sftp_session, settings->sftp_root_directory,
+                    NULL);
 
         /* Expose filesystem to connection owner */
         guac_client_for_owner(client,

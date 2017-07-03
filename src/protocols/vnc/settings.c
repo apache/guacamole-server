@@ -66,6 +66,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "sftp-private-key",
     "sftp-passphrase",
     "sftp-directory",
+    "sftp-root-directory",
     "sftp-server-alive-interval",
 #endif
 
@@ -228,6 +229,12 @@ enum VNC_ARGS_IDX {
      * the destination directory is otherwise ambiguous).
      */
     IDX_SFTP_DIRECTORY,
+
+    /**
+     * The path of the directory within the SSH server to expose as a
+     * filesystem guac_object. If omitted, "/" will be used by default.
+     */
+    IDX_SFTP_ROOT_DIRECTORY,
 
     /**
      * The interval at which SSH keepalive messages are sent to the server for
@@ -405,6 +412,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_SFTP_DIRECTORY, NULL);
 
+    /* SFTP root directory */
+    settings->sftp_root_directory =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SFTP_ROOT_DIRECTORY, "/");
+
     /* Default keepalive value */
     settings->sftp_server_alive_interval =
         guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
@@ -447,6 +459,7 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP settings */
     free(settings->sftp_directory);
+    free(settings->sftp_root_directory);
     free(settings->sftp_hostname);
     free(settings->sftp_passphrase);
     free(settings->sftp_password);

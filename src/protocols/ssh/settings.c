@@ -37,6 +37,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "font-name",
     "font-size",
     "enable-sftp",
+    "sftp-root-directory",
     "private-key",
     "passphrase",
 #ifdef ENABLE_SSH_AGENT
@@ -91,6 +92,12 @@ enum SSH_ARGS_IDX {
      * Whether SFTP should be enabled.
      */
     IDX_ENABLE_SFTP,
+
+    /**
+     * The path of the directory within the SSH server to expose as a
+     * filesystem guac_object. If omitted, "/" will be used by default.
+     */
+    IDX_SFTP_ROOT_DIRECTORY,
 
     /**
      * The private key to use for authentication, if any.
@@ -236,6 +243,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_ENABLE_SFTP, false);
 
+    /* SFTP root directory */
+    settings->sftp_root_directory =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_SFTP_ROOT_DIRECTORY, "/");
+
 #ifdef ENABLE_SSH_AGENT
     settings->enable_agent =
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
@@ -315,6 +327,9 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
 
     /* Free requested command */
     free(settings->command);
+
+    /* Free SFTP settings */
+    free(settings->sftp_root_directory);
 
     /* Free typescript settings */
     free(settings->typescript_name);

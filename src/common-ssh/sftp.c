@@ -33,6 +33,111 @@
 #include <string.h>
 
 /**
+ * Given an arbitrary absolute path, which may contain "..", ".", and
+ * backslashes, creates an equivalent absolute path which does NOT contain
+ * relative path components (".." or "."), backslashes, or empty path
+ * components. With the exception of paths referring to the root directory, the
+ * resulting path is guaranteed to not contain trailing slashes.
+ *
+ * Normalization will fail if the given path is not absolute, is too long, or
+ * contains more than GUAC_COMMON_SSH_SFTP_MAX_DEPTH path components.
+ *
+ * @param fullpath
+ *     The buffer to populate with the normalized path. The normalized path
+ *     will not contain relative path components like ".." or ".", nor will it
+ *     contain backslashes. This buffer MUST be at least
+ *     GUAC_COMMON_SSH_SFTP_MAX_PATH bytes in size.
+ *
+ * @param path
+ *     The absolute path to normalize.
+ *
+ * @return
+ *     Non-zero if normalization succeeded, zero otherwise.
+ */
+static int guac_common_ssh_sftp_normalize_path(char* fullpath,
+        const char* path) {
+
+    int i;
+
+    int path_depth = 0;
+    char path_component_data[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+    const char* path_components[GUAC_COMMON_SSH_SFTP_MAX_DEPTH];
+
+    const char** current_path_component      = &(path_components[0]);
+    const char*  current_path_component_data = &(path_component_data[0]);
+
+    /* If original path is not absolute, normalization fails */
+    if (path[0] != '\\' && path[0] != '/')
+        return 1;
+
+    /* Skip past leading slash */
+    path++;
+
+    /* Copy path into component data for parsing */
+    strncpy(path_component_data, path, sizeof(path_component_data) - 1);
+
+    /* Find path components within path */
+    for (i = 0; i < sizeof(path_component_data); i++) {
+
+        /* If current character is a path separator, parse as component */
+        char c = path_component_data[i];
+        if (c == '/' || c == '\\' || c == '\0') {
+
+            /* Terminate current component */
+            path_component_data[i] = '\0';
+
+            /* If component refers to parent, just move up in depth */
+            if (strcmp(current_path_component_data, "..") == 0) {
+                if (path_depth > 0)
+                    path_depth--;
+            }
+
+            /* Otherwise, if component not current directory, add to list */
+            else if (strcmp(current_path_component_data,   ".") != 0
+                     && strcmp(current_path_component_data, "") != 0)
+                path_components[path_depth++] = current_path_component_data;
+
+            /* If end of string, stop */
+            if (c == '\0')
+                break;
+
+            /* Update start of next component */
+            current_path_component_data = &(path_component_data[i+1]);
+
+        } /* end if separator */
+
+    } /* end for each character */
+
+    /* If no components, the path is simply root */
+    if (path_depth == 0) {
+        strcpy(fullpath, "/");
+        return 1;
+    }
+
+    /* Ensure last component is null-terminated */
+    path_component_data[i] = 0;
+
+    /* Convert components back into path */
+    for (; path_depth > 0; path_depth--) {
+
+        const char* filename = *(current_path_component++);
+
+        /* Add separator */
+        *(fullpath++) = '/';
+
+        /* Copy string */
+        while (*filename != 0)
+            *(fullpath++) = *(filename++);
+
+    }
+
+    /* Terminate absolute path */
+    *(fullpath++) = 0;
+    return 1;
+
+}
+
+/**
  * Translates the last error message received by the SFTP layer of an SSH
  * session into a Guacamole protocol status code.
  *
@@ -167,6 +272,73 @@ static int guac_ssh_append_filename(char* fullpath, const char* path,
             return 0;
 
         /* Append each character within filename */
+        fullpath[i] = c;
+
+    }
+
+    /* Verify path length is within maximum */
+    if (i == GUAC_COMMON_SSH_SFTP_MAX_PATH)
+        return 0;
+
+    /* Terminate path string */
+    fullpath[i] = '\0';
+
+    /* Append was successful */
+    return 1;
+
+}
+
+/**
+ * Concatenates the given paths, separating the two with a single forward
+ * slash. The full result must be no more than GUAC_COMMON_SSH_SFTP_MAX_PATH
+ * bytes long, counting null terminator.
+ *
+ * @param fullpath
+ *     The buffer to store the result within. This buffer must be at least
+ *     GUAC_COMMON_SSH_SFTP_MAX_PATH bytes long.
+ *
+ * @param path_a
+ *     The path to place at the beginning of the resulting path.
+ *
+ * @param path_b
+ *     The path to append after path_a within the resulting path.
+ *
+ * @return
+ *     Non-zero if the paths were successfully concatenated together, zero
+ *     otherwise.
+ */
+static int guac_ssh_append_path(char* fullpath, const char* path_a,
+        const char* path_b) {
+
+    int i;
+
+    /* Copy path, appending a trailing slash */
+    for (i = 0; i < GUAC_COMMON_SSH_SFTP_MAX_PATH; i++) {
+
+        char c = path_a[i];
+        if (c == '\0') {
+            if (i > 0 && path_a[i-1] != '/')
+                fullpath[i++] = '/';
+            break;
+        }
+
+        /* Copy character if not end of string */
+        fullpath[i] = c;
+
+    }
+
+    /* Skip past leading slashes in second path */
+    while (*path_b == '/')
+       path_b++;
+
+    /* Append path */
+    for (; i < GUAC_COMMON_SSH_SFTP_MAX_PATH; i++) {
+
+        char c = *(path_b++);
+        if (c == '\0')
+            break;
+
+        /* Append each character within path */
         fullpath[i] = c;
 
     }
@@ -568,6 +740,38 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
 }
 
 /**
+ * Translates a stream name for the given SFTP filesystem object into the
+ * absolute path corresponding to the actual file it represents.
+ *
+ * @param fullpath
+ *     The buffer to populate with the translated path. This buffer MUST be at
+ *     least GUAC_COMMON_SSH_SFTP_MAX_PATH bytes in size.
+ *
+ * @param object
+ *     The Guacamole protocol object associated with the SFTP filesystem.
+ *
+ * @param name
+ *     The name of the stream (file) to translate into an absolute path.
+ *
+ * @return
+ *     Non-zero if translation succeeded, zero otherwise.
+ */
+static int guac_common_ssh_sftp_translate_name(char* fullpath,
+        guac_object* object, char* name) {
+
+    char normalized_name[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+
+    guac_common_ssh_sftp_filesystem* filesystem =
+        (guac_common_ssh_sftp_filesystem*) object->data;
+
+    /* Normalize stream name into a path, and append to the root path */
+    return guac_common_ssh_sftp_normalize_path(normalized_name, name)
+        && guac_ssh_append_path(fullpath, filesystem->root_path,
+                normalized_name);
+
+}
+
+/**
  * Handler for get messages. In context of SFTP and the filesystem exposed via
  * the Guacamole protocol, get messages request the body of a file within the
  * filesystem.
@@ -587,16 +791,25 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
 static int guac_common_ssh_sftp_get_handler(guac_user* user,
         guac_object* object, char* name) {
 
+    char fullpath[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+
     guac_common_ssh_sftp_filesystem* filesystem =
         (guac_common_ssh_sftp_filesystem*) object->data;
 
     LIBSSH2_SFTP* sftp = filesystem->sftp_session;
     LIBSSH2_SFTP_ATTRIBUTES attributes;
 
+    /* Translate stream name into filesystem path */
+    if (!guac_common_ssh_sftp_translate_name(fullpath, object, name)) {
+        guac_user_log(user, GUAC_LOG_INFO, "Unable to generate real path "
+                "for stream \"%s\"", name);
+        return 0;
+    }
+
     /* Attempt to read file information */
-    if (libssh2_sftp_stat(sftp, name, &attributes)) {
+    if (libssh2_sftp_stat(sftp, fullpath, &attributes)) {
         guac_user_log(user, GUAC_LOG_INFO, "Unable to read file \"%s\"",
-                name);
+                fullpath);
         return 0;
     }
 
@@ -604,10 +817,10 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
     if (LIBSSH2_SFTP_S_ISDIR(attributes.permissions)) {
 
         /* Open as directory */
-        LIBSSH2_SFTP_HANDLE* dir = libssh2_sftp_opendir(sftp, name);
+        LIBSSH2_SFTP_HANDLE* dir = libssh2_sftp_opendir(sftp, fullpath);
         if (dir == NULL) {
             guac_user_log(user, GUAC_LOG_INFO,
-                    "Unable to read directory \"%s\"", name);
+                    "Unable to read directory \"%s\"", fullpath);
             return 0;
         }
 
@@ -638,11 +851,11 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
     else {
 
         /* Open as normal file */
-        LIBSSH2_SFTP_HANDLE* file = libssh2_sftp_open(sftp, name,
+        LIBSSH2_SFTP_HANDLE* file = libssh2_sftp_open(sftp, fullpath,
             LIBSSH2_FXF_READ, 0);
         if (file == NULL) {
             guac_user_log(user, GUAC_LOG_INFO,
-                    "Unable to read file \"%s\"", name);
+                    "Unable to read file \"%s\"", fullpath);
             return 0;
         }
 
@@ -688,19 +901,28 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
 static int guac_common_ssh_sftp_put_handler(guac_user* user,
         guac_object* object, guac_stream* stream, char* mimetype, char* name) {
 
+    char fullpath[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+
     guac_common_ssh_sftp_filesystem* filesystem =
         (guac_common_ssh_sftp_filesystem*) object->data;
 
     LIBSSH2_SFTP* sftp = filesystem->sftp_session;
 
+    /* Translate stream name into filesystem path */
+    if (!guac_common_ssh_sftp_translate_name(fullpath, object, name)) {
+        guac_user_log(user, GUAC_LOG_INFO, "Unable to generate real path "
+                "for stream \"%s\"", name);
+        return 0;
+    }
+
     /* Open file via SFTP */
-    LIBSSH2_SFTP_HANDLE* file = libssh2_sftp_open(sftp, name,
+    LIBSSH2_SFTP_HANDLE* file = libssh2_sftp_open(sftp, fullpath,
             LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC,
             S_IRUSR | S_IWUSR);
 
     /* Acknowledge stream if successful */
     if (file != NULL) {
-        guac_user_log(user, GUAC_LOG_DEBUG, "File \"%s\" opened", name);
+        guac_user_log(user, GUAC_LOG_DEBUG, "File \"%s\" opened", fullpath);
         guac_protocol_send_ack(user->socket, stream, "SFTP: File opened",
                 GUAC_PROTOCOL_STATUS_SUCCESS);
     }
@@ -708,7 +930,7 @@ static int guac_common_ssh_sftp_put_handler(guac_user* user,
     /* Abort on failure */
     else {
         guac_user_log(user, GUAC_LOG_INFO,
-                "Unable to open file \"%s\"", name);
+                "Unable to open file \"%s\"", fullpath);
         guac_protocol_send_ack(user->socket, stream, "SFTP: Open failed",
                 guac_sftp_get_status(filesystem));
     }
@@ -756,7 +978,8 @@ guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
 }
 
 guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
-        guac_common_ssh_session* session, const char* name) {
+        guac_common_ssh_session* session, const char* root_path,
+        const char* name) {
 
     /* Request SFTP */
     LIBSSH2_SFTP* sftp_session = libssh2_sftp_init(session->session);
@@ -768,9 +991,23 @@ guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
         malloc(sizeof(guac_common_ssh_sftp_filesystem));
 
     /* Associate SSH session with SFTP data and user */
-    filesystem->name = strdup(name);
     filesystem->ssh_session = session;
     filesystem->sftp_session = sftp_session;
+
+    /* Normalize and store the provided root path */
+    if (!guac_common_ssh_sftp_normalize_path(filesystem->root_path,
+                root_path)) {
+        guac_client_log(session->client, GUAC_LOG_WARNING, "Cannot create "
+                "SFTP filesystem - \"%s\" is not a valid path.", root_path);
+        free(filesystem);
+        return NULL;
+    }
+
+    /* Generate filesystem name from root path if no name is provided */
+    if (name != NULL)
+        filesystem->name = strdup(name);
+    else
+        filesystem->name = strdup(filesystem->root_path);
 
     /* Initially upload files to current directory */
     strcpy(filesystem->upload_path, ".");
