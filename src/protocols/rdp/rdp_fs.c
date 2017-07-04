@@ -622,10 +622,10 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
     path++;
 
     /* Copy path into component data for parsing */
-    strncpy(path_component_data, path, GUAC_RDP_FS_MAX_PATH-1);
+    strncpy(path_component_data, path, sizeof(path_component_data) - 1);
 
     /* Find path components within path */
-    for (i=0; i<GUAC_RDP_FS_MAX_PATH; i++) {
+    for (i = 0; i < sizeof(path_component_data) - 1; i++) {
 
         /* If current character is a path separator, parse as component */
         char c = path_component_data[i];

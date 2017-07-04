@@ -77,7 +77,7 @@ static int guac_common_ssh_sftp_normalize_path(char* fullpath,
     strncpy(path_component_data, path, sizeof(path_component_data) - 1);
 
     /* Find path components within path */
-    for (i = 0; i < sizeof(path_component_data); i++) {
+    for (i = 0; i < sizeof(path_component_data) - 1; i++) {
 
         /* If current character is a path separator, parse as component */
         char c = path_component_data[i];
