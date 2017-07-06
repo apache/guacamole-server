@@ -21,9 +21,15 @@
 #ifndef __GUACD_SOCKET_SSL_H
 #define __GUACD_SOCKET_SSL_H
 
-#include "config.h"
+/**
+ * Provides an SSL/TLS implementation of guac_socket. This header will only be
+ * available if libguac was built with SSL support.
+ *
+ * @file socket-ssl.h
+ */
 
-#include <guacamole/socket.h>
+#include "socket-types.h"
+
 #include <openssl/ssl.h>
 
 /**

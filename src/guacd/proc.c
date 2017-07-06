@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include "libguacd/user.h"
 #include "log.h"
 #include "move-fd.h"
 #include "proc.h"
@@ -92,7 +91,7 @@ static void* guacd_user_thread(void* data) {
     user->owner  = params->owner;
 
     /* Handle user connection from handshake until disconnect/completion */
-    guacd_handle_user(user);
+    guac_user_handle_connection(user, GUACD_USEC_TIMEOUT);
 
     /* Stop client and prevent future users if all users are disconnected */
     if (client->connected_users == 0) {

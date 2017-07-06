@@ -23,10 +23,15 @@
 
 #include "config.h"
 #include "common/list.h"
-#include "libguacd/user.h"
 #include "proc.h"
 
 #include <guacamole/client.h>
+
+/**
+ * The maximum number of concurrent connections to a single instance
+ * of guacd.
+ */
+#define GUACD_CLIENT_MAX_CONNECTIONS 65536
 
 /**
  * The number of hash buckets in each process map.

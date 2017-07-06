@@ -22,7 +22,6 @@
 #include "connection.h"
 #include "log.h"
 #include "move-fd.h"
-#include "libguacd/user.h"
 #include "proc.h"
 #include "proc-map.h"
 
@@ -36,7 +35,7 @@
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
-#include "libguacd/socket-ssl.h"
+#include <guacamole/socket-ssl.h>
 #endif
 
 #include <errno.h>
