@@ -493,12 +493,12 @@ guac_user* guac_user_alloc();
 void guac_user_free(guac_user* user);
 
 /**
- * Handles the portion of a user's Guacamole protocol handshake following the
- * "select" instruction all subsequent I/O, automatically populating the
- * handshake-related properties of the given guac_user and invoking
- * guac_user_handle_instruction() for received instructions after the handshake
- * has completed. This function blocks until the connection/user is aborted or
- * the user disconnects.
+ * Handles all I/O for the portion of a user's Guacamole connection following
+ * the initial "select" instruction, including the rest of the handshake. The
+ * handshake-related properties of the given guac_user are automatically
+ * populated, and guac_user_handle_instruction() is invoked for all
+ * instructions received after the handshake has completed. This function
+ * blocks until the connection/user is aborted or the user disconnects.
  *
  * @param user
  *     The user whose handshake and entire Guacamole protocol exchange should
