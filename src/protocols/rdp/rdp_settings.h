@@ -361,6 +361,12 @@ typedef struct guac_rdp_settings {
     char* sftp_directory;
 
     /**
+     * The path of the directory within the SSH server to expose as a
+     * filesystem guac_object.
+     */
+    char* sftp_root_directory;
+
+    /**
      * The interval at which SSH keepalive messages are sent to the server for
      * SFTP connections.  The default is 0 (disabling keepalives), and a value
      * of 1 is automatically increased to 2 by libssh2 to avoid busy loop corner

@@ -987,8 +987,8 @@ void* guac_rdp_client_thread(void* data) {
 
         /* Load and expose filesystem */
         rdp_client->sftp_filesystem =
-            guac_common_ssh_create_sftp_filesystem(
-                    rdp_client->sftp_session, "/");
+            guac_common_ssh_create_sftp_filesystem(rdp_client->sftp_session,
+                    settings->sftp_root_directory, NULL);
 
         /* Expose filesystem to connection owner */
         guac_client_for_owner(client,
