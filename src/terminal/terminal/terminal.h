@@ -314,7 +314,8 @@ struct guac_terminal {
 
     /**
      * The difference between the currently-rendered screen and the current
-     * state of the terminal.
+     * state of the terminal, and the contextual information necessary to
+     * interpret and render those differences.
      */
     guac_terminal_display* display;
 
