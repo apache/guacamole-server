@@ -185,9 +185,11 @@ int guac_terminal_colorcmp(const guac_terminal_color* a,
         const guac_terminal_color* b);
 
 /**
- * The terminal color palette.
+ * The initial state of the terminal color palette. The color palette used by
+ * the terminal may modified after the terminal is created through console
+ * codes.
  */
-extern const guac_terminal_color guac_terminal_palette[256];
+extern const guac_terminal_color GUAC_TERMINAL_INITIAL_PALETTE[256];
 
 #endif
 

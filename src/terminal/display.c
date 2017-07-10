@@ -26,6 +26,7 @@
 #include "terminal/types.h"
 
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
@@ -121,7 +122,7 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
     if (attributes->bold && !attributes->half_bright
             && foreground->palette_index >= GUAC_TERMINAL_FIRST_DARK
             && foreground->palette_index <= GUAC_TERMINAL_LAST_DARK) {
-        foreground = &guac_terminal_palette[foreground->palette_index
+        foreground = &display->palette[foreground->palette_index
             + GUAC_TERMINAL_INTENSE_OFFSET];
     }
 
@@ -320,6 +321,44 @@ void guac_terminal_display_free(guac_terminal_display* display) {
 
     /* Free display */
     free(display);
+
+}
+
+void guac_terminal_display_reset_palette(guac_terminal_display* display) {
+
+    /* Reinitialize palette with default values */
+    memcpy(display->palette, GUAC_TERMINAL_INITIAL_PALETTE,
+            sizeof(GUAC_TERMINAL_INITIAL_PALETTE));
+
+}
+
+int guac_terminal_display_assign_color(guac_terminal_display* display,
+        int index, uint8_t red, uint8_t green, uint8_t blue) {
+
+    /* Assignment fails if out-of-bounds */
+    if (index < 0 || index > 255)
+        return 1;
+
+    /* Copy color components */
+    display->palette[index].red   = red;
+    display->palette[index].green = green;
+    display->palette[index].blue  = blue;
+
+    /* Color successfully stored */
+    return 0;
+
+}
+
+int guac_terminal_display_lookup_color(guac_terminal_display* display,
+        int index, guac_terminal_color* color) {
+
+    /* Lookup fails if out-of-bounds */
+    if (index < 0 || index > 255)
+        return 1;
+
+    /* Copy color definition */
+    *color = display->palette[index];
+    return 0;
 
 }
 

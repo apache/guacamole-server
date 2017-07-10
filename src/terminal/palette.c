@@ -20,7 +20,7 @@
 #include "config.h"
 #include "terminal/palette.h"
 
-const guac_terminal_color guac_terminal_palette[256] = {
+const guac_terminal_color GUAC_TERMINAL_INITIAL_PALETTE[256] = {
 
     /* Normal colors */
     {0, 0x00, 0x00, 0x00}, /* Black   */
