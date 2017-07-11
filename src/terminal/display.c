@@ -26,7 +26,6 @@
 #include "terminal/types.h"
 
 #include <math.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
@@ -333,16 +332,16 @@ void guac_terminal_display_reset_palette(guac_terminal_display* display) {
 }
 
 int guac_terminal_display_assign_color(guac_terminal_display* display,
-        int index, uint8_t red, uint8_t green, uint8_t blue) {
+        int index, const guac_terminal_color* color) {
 
     /* Assignment fails if out-of-bounds */
     if (index < 0 || index > 255)
         return 1;
 
     /* Copy color components */
-    display->palette[index].red   = red;
-    display->palette[index].green = green;
-    display->palette[index].blue  = blue;
+    display->palette[index].red   = color->red;
+    display->palette[index].green = color->green;
+    display->palette[index].blue  = color->blue;
 
     /* Color successfully stored */
     return 0;

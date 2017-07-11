@@ -232,9 +232,8 @@ void guac_terminal_display_free(guac_terminal_display* display);
 void guac_terminal_display_reset_palette(guac_terminal_display* display);
 
 /**
- * Replaces the color in the palette at the given index with a new color having
- * the given RGB components. If the index is invalid, the assignment is
- * ignored.
+ * Replaces the color in the palette at the given index with the given color.
+ * If the index is invalid, the assignment is ignored.
  *
  * @param display
  *     The display whose palette is being changed.
@@ -242,24 +241,15 @@ void guac_terminal_display_reset_palette(guac_terminal_display* display);
  * @param index
  *     The index of the palette entry to change.
  *
- * @param red
- *     The red color component of the color to assign to the palette entry
- *     having the given index.
- *
- * @param green
- *     The green color component of the color to assign to the palette entry
- *     having the given index.
- *
- * @param blue
- *     The blue color component of the color to assign to the palette entry
- *     having the given index.
+ * @param color
+ *     The color to assign to the palette entry having the given index.
  *
  * @returns
  *     Zero if the assignment was successful, non-zero if the assignment
  *     failed.
  */
 int guac_terminal_display_assign_color(guac_terminal_display* display,
-        int index, uint8_t red, uint8_t green, uint8_t blue);
+        int index, const guac_terminal_color* color);
 
 /**
  * Retrieves the color within the palette at the given index, if such a color
