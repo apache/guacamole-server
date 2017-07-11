@@ -63,8 +63,8 @@ int guac_terminal_xparsecolor(const char* spec,
         return 0;
     }
 
-    /* Invalid color spec */
-    return 1;
+    /* If not RGB, search for color by name */
+    return guac_terminal_find_color(spec, color);
 
 }
 

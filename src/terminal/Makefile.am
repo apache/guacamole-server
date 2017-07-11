@@ -27,6 +27,7 @@ noinst_HEADERS =                 \
     terminal/char_mappings.h     \
     terminal/common.h            \
     terminal/display.h           \
+    terminal/named-colors.h      \
     terminal/palette.h           \
     terminal/scrollbar.h         \
     terminal/terminal.h          \
@@ -40,6 +41,7 @@ libguac_terminal_la_SOURCES =   \
     char_mappings.c             \
     common.c                    \
     display.c                   \
+    named-colors.c              \
     palette.c                   \
     scrollbar.c                 \
     terminal.c                  \
