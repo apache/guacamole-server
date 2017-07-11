@@ -32,7 +32,8 @@ noinst_HEADERS =                 \
     terminal/terminal.h          \
     terminal/terminal_handlers.h \
     terminal/types.h             \
-    terminal/typescript.h
+    terminal/typescript.h        \
+    terminal/xparsecolor.h
 
 libguac_terminal_la_SOURCES =   \
     buffer.c                    \
@@ -43,7 +44,8 @@ libguac_terminal_la_SOURCES =   \
     scrollbar.c                 \
     terminal.c                  \
     terminal_handlers.c         \
-    typescript.c
+    typescript.c                \
+    xparsecolor.c
 
 libguac_terminal_la_CFLAGS = \
     -Werror -Wall            \
