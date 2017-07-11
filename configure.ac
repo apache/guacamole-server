@@ -695,7 +695,7 @@ fi
 # Check for stream support via WinPR
 if test "x${have_freerdp}" = "xyes"
 then
-    AC_CHECK_HEADER(winpr/stream.h,,
+    AC_CHECK_HEADER(winpr/stream.h,[RDP_LIBS="$RDP_LIBS -lwinpr-utils"],
                     [have_winpr=no,
                      AC_CHECK_DECL([stream_write_uint8],,
                                   [AC_MSG_WARN([
