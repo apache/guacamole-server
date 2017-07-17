@@ -76,12 +76,7 @@ COPY . "$BUILD_DIR"
 
 # Build guacamole-server from local source
 RUN yum -y install $BUILD_DEPENDENCIES         && \
-    curl -L https://codeload.github.com/LibVNC/libvncserver/tar.gz/LibVNCServer-0.9.11 | tar -zx && \
-    cd libvncserver-LibVNCServer-0.9.11 && \
-    ./autogen.sh && \
-    make install && \
-    cd .. && \
-    rm -fr libvncserver-LibVNCServer-0.9.11 && \
+    /opt/guacd/bin/build-libvncserver.sh "$BUILD_DIR" &&
     /opt/guacd/bin/build-guacd.sh "$BUILD_DIR" && \
     rm -Rf "$BUILD_DIR"                        && \
     yum -y autoremove $BUILD_DEPENDENCIES      && \
