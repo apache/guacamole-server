@@ -178,6 +178,9 @@ void guac_terminal_reset(guac_terminal* term) {
     term->tab_interval = 8;
     memset(term->custom_tabs, 0, sizeof(term->custom_tabs));
 
+    /* Reset display palette */
+    guac_terminal_display_reset_palette(term->display);
+
     /* Clear terminal */
     for (row=0; row<term->term_height; row++)
         guac_terminal_set_columns(term, row, 0, term->term_width, &(term->default_char));
@@ -296,8 +299,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     guac_terminal_char default_char = {
         .value = 0,
         .attributes = {
-            .foreground  = guac_terminal_palette[default_foreground],
-            .background  = guac_terminal_palette[default_background],
+            .foreground  = GUAC_TERMINAL_INITIAL_PALETTE[default_foreground],
+            .background  = GUAC_TERMINAL_INITIAL_PALETTE[default_background],
             .bold        = false,
             .half_bright = false,
             .reverse     = false,

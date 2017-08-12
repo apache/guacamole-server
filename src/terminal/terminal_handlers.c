@@ -489,6 +489,9 @@ static int guac_terminal_parse_xterm256_rgb(int argc, const int* argv,
  * Parses an xterm SGR sequence specifying the index of a color within the
  * 256-color palette.
  *
+ * @param terminal
+ *     The terminal associated with the palette.
+ *
  * @param argc
  *     The number of arguments within the argv array.
  *
@@ -504,20 +507,15 @@ static int guac_terminal_parse_xterm256_rgb(int argc, const int* argv,
  *     The number of arguments parsed, or zero if the palette index is
  *     absent.
  */
-static int guac_terminal_parse_xterm256_index(int argc, const int* argv,
-        guac_terminal_color* color) {
+static int guac_terminal_parse_xterm256_index(guac_terminal* terminal,
+        int argc, const int* argv, guac_terminal_color* color) {
 
     /* 256-color palette entries require only one argument */
     if (argc < 1)
         return 0;
 
-    /* Ignore if palette index is out of bounds */
-    int index = argv[0];
-    if (index < 0 || index > 255)
-        return 1;
-
     /* Copy palette entry */
-    *color = guac_terminal_palette[index];
+    guac_terminal_display_lookup_color(terminal->display, argv[0], color);
 
     /* Done */
     return 1;
@@ -529,6 +527,10 @@ static int guac_terminal_parse_xterm256_index(int argc, const int* argv,
  * 256-color palette, or specfying the RGB values of a color. The number of
  * arguments required by these sequences varies. If a 256-color sequence is
  * recognized, the number of arguments parsed is returned.
+ *
+ * @param terminal
+ *     The terminal whose palette state should be used when parsing the xterm
+ *     256-color SGR sequence.
  *
  * @param argc
  *     The number of arguments within the argv array.
@@ -548,8 +550,8 @@ static int guac_terminal_parse_xterm256_index(int argc, const int* argv,
  *     The number of arguments parsed, or zero if argv does not point to
  *     the first element of an xterm 256-color SGR sequence.
  */
-static int guac_terminal_parse_xterm256(int argc, const int* argv,
-        guac_terminal_color* color) {
+static int guac_terminal_parse_xterm256(guac_terminal* terminal,
+        int argc, const int* argv, guac_terminal_color* color) {
 
     /* All 256-color codes must have at least a type */
     if (argc < 1)
@@ -564,7 +566,7 @@ static int guac_terminal_parse_xterm256(int argc, const int* argv,
 
         /* Palette index */
         case 5:
-            return guac_terminal_parse_xterm256_index(
+            return guac_terminal_parse_xterm256_index(terminal,
                     argc - 1, &argv[1], color) + 1;
 
     }
@@ -925,8 +927,9 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                     /* Foreground */
                     else if (value >= 30 && value <= 37)
-                        term->current_attributes.foreground =
-                            guac_terminal_palette[value - 30];
+                        guac_terminal_display_lookup_color(term->display,
+                                value - 30,
+                                &term->current_attributes.foreground);
 
                     /* Underscore on, default foreground OR 256-color
                      * foreground */
@@ -934,7 +937,8 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                         /* Attempt to set foreground with 256-color entry */
                         int xterm256_length =
-                            guac_terminal_parse_xterm256(argc - i - 1, &argv[i + 1],
+                            guac_terminal_parse_xterm256(term,
+                                    argc - i - 1, &argv[i + 1],
                                     &term->current_attributes.foreground);
 
                         /* If valid 256-color entry, foreground has been set */
@@ -960,13 +964,15 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                     /* Background */
                     else if (value >= 40 && value <= 47)
-                        term->current_attributes.background =
-                            guac_terminal_palette[value - 40];
+                        guac_terminal_display_lookup_color(term->display,
+                                value - 40,
+                                &term->current_attributes.background);
 
                     /* 256-color background */
                     else if (value == 48)
-                        i += guac_terminal_parse_xterm256(argc - i - 1, &argv[i + 1],
-                                    &term->current_attributes.background);
+                        i += guac_terminal_parse_xterm256(term,
+                                argc - i - 1, &argv[i + 1],
+                                &term->current_attributes.background);
 
                     /* Reset background */
                     else if (value == 49)
@@ -975,15 +981,15 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                     /* Intense foreground */
                     else if (value >= 90 && value <= 97)
-                        term->current_attributes.foreground =
-                            guac_terminal_palette[value - 90
-                                + GUAC_TERMINAL_FIRST_INTENSE];
+                        guac_terminal_display_lookup_color(term->display,
+                                value - 90 + GUAC_TERMINAL_FIRST_INTENSE,
+                                &term->current_attributes.foreground);
 
                     /* Intense background */
                     else if (value >= 100 && value <= 107)
-                        term->current_attributes.background =
-                            guac_terminal_palette[value - 100
-                                + GUAC_TERMINAL_FIRST_INTENSE];
+                        guac_terminal_display_lookup_color(term->display,
+                                value - 100 + GUAC_TERMINAL_FIRST_INTENSE,
+                                &term->current_attributes.background);
 
                 }
 
