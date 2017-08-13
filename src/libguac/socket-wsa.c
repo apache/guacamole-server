@@ -17,33 +17,27 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "error.h"
 #include "socket.h"
-#include "wait-fd.h"
 
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
 #include <unistd.h>
 
-#ifdef ENABLE_WINSOCK
 #include <winsock2.h>
-#endif
 
 /**
- * Data associated with an open socket which writes to a file descriptor.
+ * Data associated with an open socket which uses the Windows Socket API.
  */
-typedef struct guac_socket_fd_data {
+typedef struct guac_socket_wsa_data {
 
     /**
-     * The associated file descriptor;
+     * The associated Windows socket handle.
      */
-    int fd;
+    SOCKET sock;
 
     /**
      * The number of bytes currently in the main write buffer.
@@ -52,7 +46,7 @@ typedef struct guac_socket_fd_data {
 
     /**
      * The main write buffer. Bytes written go here before being flushed
-     * to the open file descriptor.
+     * to the open socket.
      */
     char out_buf[GUAC_SOCKET_OUTPUT_BUFFER_SIZE];
 
@@ -68,15 +62,15 @@ typedef struct guac_socket_fd_data {
      */
     pthread_mutex_t buffer_lock;
 
-} guac_socket_fd_data;
+} guac_socket_wsa_data;
 
 /**
- * Writes the entire contents of the given buffer to the file descriptor
+ * Writes the entire contents of the given buffer to the SOCKET handle
  * associated with the given socket, retrying as necessary until the whole
  * buffer is written, and aborting if an error occurs.
  *
  * @param socket
- *     The guac_socket associated with the file descriptor to which the given
+ *     The guac_socket associated with the SOCKET handle to which the given
  *     buffer should be written.
  *
  * @param buf
@@ -89,24 +83,16 @@ typedef struct guac_socket_fd_data {
  *     The number of bytes written, which will be exactly the size of the given
  *     buffer, or a negative value if an error occurs.
  */
-ssize_t guac_socket_fd_write(guac_socket* socket,
+ssize_t guac_socket_wsa_write(guac_socket* socket,
         const void* buf, size_t count) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
     const char* buffer = buf;
 
     /* Write until completely written */
     while (count > 0) {
 
-        int retval;
-
-#ifdef ENABLE_WINSOCK
-        /* WSA only works with send() */
-        retval = send(data->fd, buf, count, 0);
-#else
-        /* Use write() for all other platforms */
-        retval = write(data->fd, buf, count);
-#endif
+        int retval = send(data->sock, buffer, count, 0);
 
         /* Record errors in guac_error */
         if (retval < 0) {
@@ -126,8 +112,8 @@ ssize_t guac_socket_fd_write(guac_socket* socket,
 }
 
 /**
- * Attempts to read from the underlying file descriptor of the given
- * guac_socket, populating the given buffer.
+ * Attempts to read from the underlying SOCKET handle of the given guac_socket,
+ * populating the given buffer.
  *
  * @param socket
  *     The guac_socket being read from.
@@ -141,20 +127,13 @@ ssize_t guac_socket_fd_write(guac_socket* socket,
  * @return
  *     The number of bytes read, or -1 if an error occurs.
  */
-static ssize_t guac_socket_fd_read_handler(guac_socket* socket,
+static ssize_t guac_socket_wsa_read_handler(guac_socket* socket,
         void* buf, size_t count) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
 
-    int retval;
-
-#ifdef ENABLE_WINSOCK
-    /* Winsock only works with recv() */
-    retval = recv(data->fd, buf, count, 0);
-#else
-    /* Use read() for all other platforms */
-    retval = read(data->fd, buf, count);
-#endif
+    /* Read from socket */
+    int retval = recv(data->sock, buf, count, 0);
 
     /* Record errors in guac_error */
     if (retval < 0) {
@@ -177,15 +156,15 @@ static ssize_t guac_socket_fd_read_handler(guac_socket* socket,
  * @return
  *     Zero if the flush operation was successful, non-zero otherwise.
  */
-static ssize_t guac_socket_fd_flush(guac_socket* socket) {
+static ssize_t guac_socket_wsa_flush(guac_socket* socket) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
 
     /* Flush remaining bytes in buffer */
     if (data->written > 0) {
 
         /* Write ALL bytes in buffer immediately */
-        if (guac_socket_fd_write(socket, data->out_buf, data->written))
+        if (guac_socket_wsa_write(socket, data->out_buf, data->written))
             return 1;
 
         data->written = 0;
@@ -197,7 +176,7 @@ static ssize_t guac_socket_fd_flush(guac_socket* socket) {
 
 /**
  * Flushes the internal buffer of the given guac_socket, writing all data
- * to the underlying file descriptor.
+ * to the underlying SOCKET handle.
  *
  * @param socket
  *     The guac_socket to flush.
@@ -205,16 +184,16 @@ static ssize_t guac_socket_fd_flush(guac_socket* socket) {
  * @return
  *     Zero if the flush operation was successful, non-zero otherwise.
  */
-static ssize_t guac_socket_fd_flush_handler(guac_socket* socket) {
+static ssize_t guac_socket_wsa_flush_handler(guac_socket* socket) {
 
     int retval;
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
 
     /* Acquire exclusive access to buffer */
     pthread_mutex_lock(&(data->buffer_lock));
 
     /* Flush contents of buffer */
-    retval = guac_socket_fd_flush(socket);
+    retval = guac_socket_wsa_flush(socket);
 
     /* Relinquish exclusive access to buffer */
     pthread_mutex_unlock(&(data->buffer_lock));
@@ -242,12 +221,12 @@ static ssize_t guac_socket_fd_flush_handler(guac_socket* socket) {
  *     The number of bytes written, or a negative value if an error occurs
  *     during write.
  */
-static ssize_t guac_socket_fd_write_buffered(guac_socket* socket,
+static ssize_t guac_socket_wsa_write_buffered(guac_socket* socket,
         const void* buf, size_t count) {
 
     size_t original_count = count;
     const char* current = buf;
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
 
     /* Append to buffer, flush if necessary */
     while (count > 0) {
@@ -259,7 +238,7 @@ static ssize_t guac_socket_fd_write_buffered(guac_socket* socket,
         if (remaining == 0) {
 
             /* Abort if error occurs during flush */
-            if (guac_socket_fd_flush(socket))
+            if (guac_socket_wsa_flush(socket))
                 return -1;
 
             /* Retry buffer append */
@@ -304,17 +283,17 @@ static ssize_t guac_socket_fd_write_buffered(guac_socket* socket,
  * @return
  *     The number of bytes written, or -1 if an error occurs.
  */
-static ssize_t guac_socket_fd_write_handler(guac_socket* socket,
+static ssize_t guac_socket_wsa_write_handler(guac_socket* socket,
         const void* buf, size_t count) {
 
     int retval;
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
     
     /* Acquire exclusive access to buffer */
     pthread_mutex_lock(&(data->buffer_lock));
 
     /* Write provided data to buffer */
-    retval = guac_socket_fd_write_buffered(socket, buf, count);
+    retval = guac_socket_wsa_write_buffered(socket, buf, count);
 
     /* Relinquish exclusive access to buffer */
     pthread_mutex_unlock(&(data->buffer_lock));
@@ -324,7 +303,7 @@ static ssize_t guac_socket_fd_write_handler(guac_socket* socket,
 }
 
 /**
- * Waits for data on the underlying file desriptor of the given socket to
+ * Waits for data on the underlying SOCKET handle of the given socket to
  * become available such that the next read operation will not block.
  *
  * @param socket
@@ -338,12 +317,29 @@ static ssize_t guac_socket_fd_write_handler(guac_socket* socket,
  *     A positive value on success, zero if the timeout elapsed and no data is
  *     available, or a negative value if an error occurs.
  */
-static int guac_socket_fd_select_handler(guac_socket* socket,
+static int guac_socket_wsa_select_handler(guac_socket* socket,
         int usec_timeout) {
 
-    /* Wait for data on socket */
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
-    int retval = guac_wait_for_fd(data->fd, usec_timeout);
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
+
+    fd_set sockets;
+    struct timeval timeout;
+    int retval;
+
+    /* Initialize fd_set with single underlying socket handle */
+    FD_ZERO(&sockets);
+    FD_SET(data->sock, &sockets);
+
+    /* No timeout if usec_timeout is negative */
+    if (usec_timeout < 0)
+        retval = select(0, &sockets, NULL, NULL, NULL);
+
+    /* Handle timeout if specified */
+    else {
+        timeout.tv_sec  = usec_timeout / 1000000;
+        timeout.tv_usec = usec_timeout % 1000000;
+        retval = select(0, &sockets, NULL, NULL, &timeout);
+    }
 
     /* Properly set guac_error */
     if (retval <  0) {
@@ -351,7 +347,7 @@ static int guac_socket_fd_select_handler(guac_socket* socket,
         guac_error_message = "Error while waiting for data on socket";
     }
 
-    else if (retval == 0) {
+    if (retval == 0) {
         guac_error = GUAC_STATUS_TIMEOUT;
         guac_error_message = "Timeout while waiting for data on socket";
     }
@@ -371,16 +367,16 @@ static int guac_socket_fd_select_handler(guac_socket* socket,
  *     Zero if the data was successfully freed, non-zero otherwise. This
  *     implementation always succeeds, and will always return zero.
  */
-static int guac_socket_fd_free_handler(guac_socket* socket) {
+static int guac_socket_wsa_free_handler(guac_socket* socket) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
 
     /* Destroy locks */
     pthread_mutex_destroy(&(data->socket_lock));
     pthread_mutex_destroy(&(data->buffer_lock));
 
-    /* Close file descriptor */
-    close(data->fd);
+    /* Close socket */
+    closesocket(data->sock);
 
     free(data);
     return 0;
@@ -393,9 +389,9 @@ static int guac_socket_fd_free_handler(guac_socket* socket) {
  * @param socket
  *     The guac_socket to which exclusive access is required.
  */
-static void guac_socket_fd_lock_handler(guac_socket* socket) {
+static void guac_socket_wsa_lock_handler(guac_socket* socket) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
 
     /* Acquire exclusive access to socket */
     pthread_mutex_lock(&(data->socket_lock));
@@ -408,25 +404,25 @@ static void guac_socket_fd_lock_handler(guac_socket* socket) {
  * @param socket
  *     The guac_socket to which exclusive access is no longer required.
  */
-static void guac_socket_fd_unlock_handler(guac_socket* socket) {
+static void guac_socket_wsa_unlock_handler(guac_socket* socket) {
 
-    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    guac_socket_wsa_data* data = (guac_socket_wsa_data*) socket->data;
 
     /* Relinquish exclusive access to socket */
     pthread_mutex_unlock(&(data->socket_lock));
 
 }
 
-guac_socket* guac_socket_open(int fd) {
+guac_socket* guac_socket_open_wsa(SOCKET sock) {
 
     pthread_mutexattr_t lock_attributes;
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
-    guac_socket_fd_data* data = malloc(sizeof(guac_socket_fd_data));
+    guac_socket_wsa_data* data = malloc(sizeof(guac_socket_wsa_data));
 
-    /* Store file descriptor as socket data */
-    data->fd = fd;
+    /* Store socket as socket data */
+    data->sock = sock;
     data->written = 0;
     socket->data = data;
 
@@ -438,13 +434,13 @@ guac_socket* guac_socket_open(int fd) {
     pthread_mutex_init(&(data->buffer_lock), &lock_attributes);
     
     /* Set read/write handlers */
-    socket->read_handler   = guac_socket_fd_read_handler;
-    socket->write_handler  = guac_socket_fd_write_handler;
-    socket->select_handler = guac_socket_fd_select_handler;
-    socket->lock_handler   = guac_socket_fd_lock_handler;
-    socket->unlock_handler = guac_socket_fd_unlock_handler;
-    socket->flush_handler  = guac_socket_fd_flush_handler;
-    socket->free_handler   = guac_socket_fd_free_handler;
+    socket->read_handler   = guac_socket_wsa_read_handler;
+    socket->write_handler  = guac_socket_wsa_write_handler;
+    socket->select_handler = guac_socket_wsa_select_handler;
+    socket->lock_handler   = guac_socket_wsa_lock_handler;
+    socket->unlock_handler = guac_socket_wsa_unlock_handler;
+    socket->flush_handler  = guac_socket_wsa_flush_handler;
+    socket->free_handler   = guac_socket_wsa_free_handler;
 
     return socket;
 

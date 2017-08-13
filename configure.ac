@@ -63,6 +63,13 @@ AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
               AC_DEFINE([HAVE_LIBPTHREAD],,
                         [Whether libpthread was found])])
 
+# Include libdl for dlopen() if necessary
+AC_CHECK_LIB([dl], [dlopen],
+             [DL_LIBS=-ldl],
+             [AC_CHECK_DECL([dlopen],,
+                            AC_MSG_ERROR("libdl is required on systems which do not otherwise provide dlopen()"),
+                            [#include <dlfcn.h>])])
+
 # OSSP UUID
 AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
              AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
@@ -82,10 +89,7 @@ AC_CHECK_DECL([uuid_make],,
 # cunit
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
 
-# WinSock
-AC_CHECK_LIB([wsock32], [main])
-
-AC_SUBST(LIBADD_DLOPEN)
+AC_SUBST(DL_LIBS)
 AC_SUBST(MATH_LIBS)
 AC_SUBST(PNG_LIBS)
 AC_SUBST(JPEG_LIBS)
@@ -106,6 +110,11 @@ AC_CHECK_DECL([cairo_format_stride_for_width],
 	[AC_DEFINE([HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH],,
                [Whether cairo_format_stride_for_width() is defined])],,
 	[#include <cairo/cairo.h>])
+
+AC_CHECK_DECL([poll],
+	[AC_DEFINE([HAVE_POLL],,
+               [Whether poll() is defined])],,
+	[#include <poll.h>])
 
 # Typedefs
 AC_TYPE_SIZE_T
@@ -283,6 +292,30 @@ fi
 AM_CONDITIONAL([ENABLE_SSL], [test "x${have_ssl}" = "xyes"])
 AC_SUBST(SSL_LIBS)
 
+#
+# Winsock
+#
+
+have_winsock=disabled
+WINSOCK_LIBS=
+AC_ARG_WITH([winsock],
+            [AS_HELP_STRING([--with-winsock],
+                            [support Windows Sockets API @<:@default=check@:>@])],
+            [],
+            [with_winsock=check])
+
+if test "x$with_winsock" != "xno"
+then
+    have_winsock=yes
+    AC_CHECK_LIB([wsock32], [main],
+                 [WINSOCK_LIBS="-lwsock32"]
+                 [AC_DEFINE([ENABLE_WINSOCK],,
+                            [Whether Windows Socket API support is enabled])],
+                 [have_winsock=no])
+fi
+
+AM_CONDITIONAL([ENABLE_WINSOCK], [test "x${have_winsock}" = "xyes"])
+AC_SUBST(WINSOCK_LIBS)
 
 #
 # Ogg Vorbis
@@ -1222,6 +1255,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
      libwebp ............. ${have_webp}
+     wsock32 ............. ${have_winsock}
 
    Protocol support:
 
