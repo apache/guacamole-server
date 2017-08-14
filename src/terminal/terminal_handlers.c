@@ -24,6 +24,7 @@
 #include "terminal/terminal.h"
 #include "terminal/terminal_handlers.h"
 #include "terminal/types.h"
+#include "terminal/xparsecolor.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -1212,8 +1213,76 @@ int guac_terminal_window_title(guac_terminal* term, unsigned char c) {
 
 int guac_terminal_xterm_palette(guac_terminal* term, unsigned char c) {
 
-    /* NOTE: Currently unimplemented. Attempts to set the 256-color palette
-     * are ignored. */
+    /**
+     * Whether we are currently reading the color spec. If false, we are
+     * currently reading the color index.
+     */
+    static bool read_color_spec = false;
+
+    /**
+     * The index of the palette entry being modified.
+     */
+    static int index = 0;
+
+    /**
+     * The color spec string, valid only if read_color_spec is true.
+     */
+    static char color_spec[256];
+
+    /**
+     * The current position within the color spec string, valid only if
+     * read_color_spec is true.
+     */
+    static int color_spec_pos = 0;
+
+    /* If not reading the color spec, parse the index */
+    if (!read_color_spec) {
+
+        /* If digit, append to index */
+        if (c >= '0' && c <= '9')
+            index = index * 10 + c - '0';
+
+        /* If end of parameter, switch to reading the color */
+        else if (c == ';') {
+            read_color_spec = true;
+            color_spec_pos = 0;
+        }
+
+    }
+
+    /* Once the index has been parsed, read the color spec */
+    else {
+
+        /* Modify palette once index/spec pair has been read */
+        if (c == ';' || c == 0x9C || c == 0x5C || c == 0x07) {
+
+            guac_terminal_color color;
+
+            /* Terminate color spec string */
+            color_spec[color_spec_pos] = '\0';
+
+            /* Modify palette if color spec is valid */
+            if (!guac_terminal_xparsecolor(color_spec, &color))
+                guac_terminal_display_assign_color(term->display,
+                        index, &color);
+            else
+                guac_client_log(term->client, GUAC_LOG_DEBUG,
+                        "Invalid XParseColor() color spec: \"%s\"",
+                        color_spec);
+
+            /* Resume parsing index */
+            read_color_spec = false;
+            index = 0;
+
+        }
+
+        /* Append characters to color spec as long as available space is not
+         * exceeded */
+        else if (color_spec_pos < 255) {
+            color_spec[color_spec_pos++] = c;
+        }
+
+    }
 
     /* Stop on ECMA-48 ST (String Terminator */
     if (c == 0x9C || c == 0x5C || c == 0x07)
