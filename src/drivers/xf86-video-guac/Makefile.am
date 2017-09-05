@@ -74,13 +74,12 @@ guac_drv_la_SOURCES = \
 guac_drv_la_CFLAGS =        \
     -Werror -Wall           \
     @COMMON_INCLUDE@        \
-    @LIBGUACD_INCLUDE@      \
     @LIBGUAC_INCLUDE@       \
     @PULSE_INCLUDE@         \
     @XORG_CFLAGS@
 
 guac_drv_la_LIBADD = \
-    @LIBGUACD_LTLIB@ \
+    @COMMON_LTLIB@   \
     @LIBGUAC_LTLIB@
 
 guac_drv_la_LDFLAGS =      \

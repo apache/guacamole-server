@@ -22,7 +22,6 @@
 #include "daemon.h"
 #include "display.h"
 #include "input.h"
-#include "libguacd/user.h"
 #include "list.h"
 
 #include <xorg-server.h>
@@ -152,7 +151,7 @@ static void* guac_drv_connection_thread(void* data) {
     user->socket = socket;
 
     /* Handle entire user connection, free user once complete */
-    guacd_handle_user(user);
+    guac_user_handle_connection(user, GUACD_USEC_TIMEOUT);
     guac_user_free(user);
 
     /* Fall through to free remaining resources */
