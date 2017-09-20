@@ -280,6 +280,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     font = pango_font_map_load_font(font_map, context, display->font_desc);
     if (font == NULL) {
         guac_client_abort(display->client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to get font \"%s\"", font_name);
+        free(display);
         return NULL;
     }
 
@@ -287,6 +288,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     if (metrics == NULL) {
         guac_client_abort(display->client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Unable to get font metrics for font \"%s\"", font_name);
+        free(display);
         return NULL;
     }
 

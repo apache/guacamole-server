@@ -203,6 +203,7 @@ guacd_config* guacd_conf_load() {
     /* Notify of errors preventing reading */
     else if (errno != ENOENT) {
         fprintf(stderr, "Unable to open \"" GUACD_CONF_FILE "\": %s\n", strerror(errno));
+        free(conf);
         return NULL;
     }
 
