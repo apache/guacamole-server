@@ -202,6 +202,7 @@ void guac_rdp_process_cb_data_request(guac_client* client,
         default:
             guac_client_log(client, GUAC_LOG_ERROR, 
                     "Server requested unsupported clipboard data type");
+            free(output);
             return;
 
     }
