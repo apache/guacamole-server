@@ -195,6 +195,7 @@ guacd_config* guacd_conf_load() {
 
         if (retval != 0) {
             fprintf(stderr, "Unable to parse \"" GUACD_CONF_FILE "\".\n");
+            free(conf);
             return NULL;
         }
 
