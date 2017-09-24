@@ -1,0 +1,20 @@
+sudo: required
+dist: trusty
+
+os: linux
+
+language: c
+
+addons:
+  apt:
+    packages: [ libcunit1-dev, libogg-dev, libvorbis-dev, libpulse-dev, libfreerdp-dev, libwebp-dev ]
+
+compiler:
+  - gcc
+  - clang
+
+script:
+  - autoreconf -iv
+  - ./configure
+  - make
+  - make check
