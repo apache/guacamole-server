@@ -457,6 +457,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         if (fd < 0) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                     "Unable to create socket: %s", strerror(errno));
+            freeaddrinfo(addresses);
             return NULL;
         }
 
