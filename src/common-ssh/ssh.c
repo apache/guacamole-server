@@ -431,20 +431,11 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         .ai_protocol = IPPROTO_TCP
     };
 
-    /* Get socket */
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd < 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Unable to create socket: %s", strerror(errno));
-        return NULL;
-    }
-
     /* Get addresses connection */
     if ((retval = getaddrinfo(hostname, port, &hints, &addresses))) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Error parsing given address or port: %s",
                 gai_strerror(retval));
-        close(fd);
         return NULL;
     }
 
@@ -461,6 +452,14 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
             guac_client_log(client, GUAC_LOG_DEBUG,
                     "Unable to resolve host: %s", gai_strerror(retval));
 
+        /* Get socket */
+        fd = socket(current_address->ai_family, SOCK_STREAM, 0);
+        if (fd < 0) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to create socket: %s", strerror(errno));
+            return NULL;
+        }
+
         /* Connect */
         if (connect(fd, current_address->ai_addr,
                         current_address->ai_addrlen) == 0) {
@@ -475,11 +474,11 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         }
 
         /* Otherwise log information regarding bind failure */
-        else
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
-                    "host %s, port %s: %s",
-                    connected_address, connected_port, strerror(errno));
+        guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
+                "host %s, port %s: %s",
+                connected_address, connected_port, strerror(errno));
 
+        close(fd);
         current_address = current_address->ai_next;
 
     }
@@ -491,7 +490,6 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     if (current_address == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
                 "Unable to connect to any addresses.");
-        close(fd);
         return NULL;
     }
 
