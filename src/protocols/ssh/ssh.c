@@ -63,7 +63,8 @@
  *     terminal to use when prompting the user.
  *
  * @return
- *     A new user object containing the user's username and other credentials.
+ *     A new user object containing the user's username and other credentials,
+ *     or NULL if fails to import key.
  */
 static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
 
@@ -215,6 +216,10 @@ void* ssh_client_thread(void* data) {
 
     /* Get user and credentials */
     ssh_client->user = guac_ssh_get_user(client);
+    if (ssh_client->user == NULL) {
+        /* Already aborted within guac_ssh_get_user() */
+        return NULL;
+    }
 
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,
