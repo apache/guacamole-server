@@ -44,7 +44,7 @@ int guacd_send_fd(int sock, int fd) {
     message.msg_iovlen = 1;
 
     /* Assign ancillary data buffer */
-    char buffer[CMSG_SPACE(sizeof(fd))];
+    char buffer[CMSG_SPACE(sizeof(fd))] = {0};
     message.msg_control = buffer;
     message.msg_controllen = sizeof(buffer);
 
