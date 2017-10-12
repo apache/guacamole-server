@@ -247,18 +247,18 @@ CLEANFILES = _generated_keymaps.c
 BUILT_SOURCES = _generated_keymaps.c
 
 rdp_keymaps =                   \
-    keymaps/base.keymap         \
-    keymaps/failsafe.keymap     \
-    keymaps/de_de_qwertz.keymap \
-    keymaps/en_us_qwerty.keymap \
-    keymaps/fr_fr_azerty.keymap \
-    keymaps/fr_ch_qwertz.keymap \
-    keymaps/it_it_qwerty.keymap \
-    keymaps/ja_jp_qwerty.keymap \
-    keymaps/sv_se_qwerty.keymap
+    $(srcdir)/keymaps/base.keymap         \
+    $(srcdir)/keymaps/failsafe.keymap     \
+    $(srcdir)/keymaps/de_de_qwertz.keymap \
+    $(srcdir)/keymaps/en_us_qwerty.keymap \
+    $(srcdir)/keymaps/fr_fr_azerty.keymap \
+    $(srcdir)/keymaps/fr_ch_qwertz.keymap \
+    $(srcdir)/keymaps/it_it_qwerty.keymap \
+    $(srcdir)/keymaps/ja_jp_qwerty.keymap \
+    $(srcdir)/keymaps/sv_se_qwerty.keymap
 
 _generated_keymaps.c: $(rdp_keymaps)
-	keymaps/generate.pl $(rdp_keymaps)
+	$(srcdir)/keymaps/generate.pl $(rdp_keymaps)
 
 EXTRA_DIST =            \
     $(rdp_keymaps)      \
