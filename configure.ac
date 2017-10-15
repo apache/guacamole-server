@@ -506,6 +506,7 @@ fi
 
 have_freerdp=disabled
 RDP_LIBS=
+WINPR_LIBS=
 AC_ARG_WITH([rdp],
             [AS_HELP_STRING([--with-rdp],
                             [support RDP @<:@default=check@:>@])],
@@ -695,7 +696,7 @@ fi
 # Check for stream support via WinPR
 if test "x${have_freerdp}" = "xyes"
 then
-    AC_CHECK_HEADER(winpr/stream.h,,
+    AC_CHECK_HEADER(winpr/stream.h,[WINPR_LIBS="$WINPR_LIBS -lwinpr-utils"],
                     [have_winpr=no,
                      AC_CHECK_DECL([stream_write_uint8],,
                                   [AC_MSG_WARN([
@@ -1015,6 +1016,7 @@ AM_CONDITIONAL([ENABLE_WINPR], [test "x${have_winpr}"   = "xyes"])
 AM_CONDITIONAL([ENABLE_RDP],   [test "x${have_freerdp}" = "xyes"])
 
 AC_SUBST(RDP_LIBS)
+AC_SUBST(WINPR_LIBS)
 
 #
 # libssh2
