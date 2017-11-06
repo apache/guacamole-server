@@ -185,8 +185,7 @@ guacai_cflags               =  \
 guacai_ldflags =                   \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@                     \
-    @WINPR_LIBS@
+    @RDP_LIBS@
 
 guacai_libadd =     \
     @COMMON_LTLIB@  \
