@@ -251,6 +251,7 @@ rdp_keymaps =                   \
     $(srcdir)/keymaps/failsafe.keymap     \
     $(srcdir)/keymaps/de_de_qwertz.keymap \
     $(srcdir)/keymaps/en_us_qwerty.keymap \
+    $(srcdir)/keymaps/es_es_qwerty.keymap \
     $(srcdir)/keymaps/fr_fr_azerty.keymap \
     $(srcdir)/keymaps/fr_ch_qwertz.keymap \
     $(srcdir)/keymaps/it_it_qwerty.keymap \
