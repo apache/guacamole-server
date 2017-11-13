@@ -34,6 +34,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+/**
+ * Allocates a cursor as well as an image buffer where the cursor is rendered.
+ * If the allocation fails then the function returns NULL.
+ *
+ * @param client
+ *     The client owning the cursor.
+ */
 guac_common_cursor* guac_common_cursor_alloc(guac_client* client) {
 
     guac_common_cursor* cursor = malloc(sizeof(guac_common_cursor));
