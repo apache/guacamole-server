@@ -42,7 +42,6 @@ map -altgr +shift 0x56 0x2C..0x36            ~ "|ZXCVBNM<>:?"
 map +altgr -shift 0x02..0x07 0x0D ~ "¹²³£¢¬§"
 map +altgr -shift 0x10..0x11 ~ "/?"
 map +altgr -shift 0x12 ~ "°"
-map +altgr -shift 0x12 ~ "€" # map € to ° so Mac behaves the same as PC
 map +altgr -shift 0x1B ~ "ª"
 map +altgr -shift 0x2B ~ "º"
 map +altgr -shift 0x2E ~ "₢"
