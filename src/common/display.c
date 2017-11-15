@@ -101,7 +101,7 @@ static void guac_common_display_free_layers(guac_common_display_layer* layers,
 
 /**
  * Allocates a display and a cursor which are used to represent the remote
- * display and cursor. If the allocation fails then the function returns NULL.
+ * display and cursor.
  *
  * @param client
  *     The client owning the cursor.
@@ -111,6 +111,9 @@ static void guac_common_display_free_layers(guac_common_display_layer* layers,
  *
  * @param height
  *     The desired height of the display.
+ *
+ * @return
+ *     The newly-allocated display or NULL if display cannot be allocated.
  */
 guac_common_display* guac_common_display_alloc(guac_client* client,
         int width, int height) {

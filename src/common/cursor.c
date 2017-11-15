@@ -37,10 +37,12 @@
 
 /**
  * Allocates a cursor as well as an image buffer where the cursor is rendered.
- * If the allocation fails then the function returns NULL.
  *
  * @param client
  *     The client owning the cursor.
+ *
+ * @return
+ *     The newly-allocated cursor or NULL if cursor cannot be allocated.
  */
 guac_common_cursor* guac_common_cursor_alloc(guac_client* client) {
 
