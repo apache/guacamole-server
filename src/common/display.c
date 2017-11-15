@@ -99,6 +99,22 @@ static void guac_common_display_free_layers(guac_common_display_layer* layers,
 
 }
 
+/**
+ * Allocates a display and a cursor which are used to represent the remote
+ * display and cursor.
+ *
+ * @param client
+ *     The client owning the cursor.
+ *
+ * @param width
+ *     The desired width of the display.
+ *
+ * @param height
+ *     The desired height of the display.
+ *
+ * @return
+ *     The newly-allocated display or NULL if display cannot be allocated.
+ */
 guac_common_display* guac_common_display_alloc(guac_client* client,
         int width, int height) {
 
@@ -107,13 +123,17 @@ guac_common_display* guac_common_display_alloc(guac_client* client,
     if (display == NULL)
         return NULL;
 
+    /* Allocate shared cursor */
+    display->cursor = guac_common_cursor_alloc(client);
+    if (display->cursor == NULL) {
+        free(display);
+        return NULL;
+    }
+
     pthread_mutex_init(&display->_lock, NULL);
 
     /* Associate display with given client */
     display->client = client;
-
-    /* Allocate shared cursor */
-    display->cursor = guac_common_cursor_alloc(client);
 
     display->default_surface = guac_common_surface_alloc(client,
             client->socket, GUAC_DEFAULT_LAYER, width, height);
