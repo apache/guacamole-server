@@ -1192,6 +1192,18 @@ AM_CONDITIONAL([ENABLE_GUACENC], [test "x${enable_guacenc}"  = "xyes" \
                                     -a "x${have_libswscale}" = "xyes"])
 
 #
+# guaclog
+#
+
+AC_ARG_ENABLE([guaclog],
+              [AS_HELP_STRING([--disable-guaclog],
+                              [do not build the Guacamole input logging tool])],
+              [],
+              [enable_guaclog=yes])
+
+AM_CONDITIONAL([ENABLE_GUACLOG], [test "x${enable_guaclog}"  = "xyes"])
+
+#
 # Output Makefiles
 #
 
@@ -1207,6 +1219,8 @@ AC_CONFIG_FILES([Makefile
                  src/guacd/man/guacd.conf.5
                  src/guacenc/Makefile
                  src/guacenc/man/guacenc.1
+                 src/guaclog/Makefile
+                 src/guaclog/man/guaclog.1
                  src/pulse/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/ssh/Makefile
@@ -1229,6 +1243,7 @@ AM_COND_IF([ENABLE_VNC],    [build_vnc=yes],    [build_vnc=no])
 
 AM_COND_IF([ENABLE_GUACD],   [build_guacd=yes],   [build_guacd=no])
 AM_COND_IF([ENABLE_GUACENC], [build_guacenc=yes], [build_guacenc=no])
+AM_COND_IF([ENABLE_GUACLOG], [build_guaclog=yes], [build_guaclog=no])
 
 #
 # Init scripts
@@ -1272,6 +1287,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
       guacd ...... ${build_guacd}
       guacenc .... ${build_guacenc}
+      guaclog .... ${build_guaclog}
 
    Init scripts: ${build_init}
 

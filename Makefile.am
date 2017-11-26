@@ -27,6 +27,7 @@ DIST_SUBDIRS =           \
     src/terminal         \
     src/guacd            \
     src/guacenc          \
+    src/guaclog          \
     src/pulse            \
     src/protocols/rdp    \
     src/protocols/ssh    \
@@ -73,6 +74,10 @@ endif
 
 if ENABLE_GUACENC
 SUBDIRS += src/guacenc
+endif
+
+if ENABLE_GUACLOG
+SUBDIRS += src/guaclog
 endif
 
 EXTRA_DIST =         \
