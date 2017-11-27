@@ -26,6 +26,29 @@
 #include <stdio.h>
 
 /**
+ * The maximum number of keys which may be tracked at any one time before
+ * newly-pressed keys are ignored.
+ */
+#define GUACLOG_MAX_KEYS 256
+
+/**
+ * The current state of a single key.
+ */
+typedef struct guaclog_key_state {
+
+    /**
+     * The X11 keysym of the key.
+     */
+    int keysym;
+
+    /**
+     * Whether the key is currently pressed (true) or released (false).
+     */
+    bool pressed;
+
+} guaclog_key_state;
+
+/**
  * The current state of the Guacamole input log interpreter.
  */
 typedef struct guaclog_state {
@@ -34,6 +57,18 @@ typedef struct guaclog_state {
      * Output file stream.
      */
     FILE* output;
+
+    /**
+     * The number of keys currently being tracked within the key_states array.
+     */
+    int active_keys;
+
+    /**
+     * Array of all keys currently being tracked. A key is added to the array
+     * when it is pressed for the first time. Released keys at the end of the
+     * array are automatically removed from tracking.
+     */
+    guaclog_key_state key_states[GUACLOG_MAX_KEYS];
 
 } guaclog_state;
 
