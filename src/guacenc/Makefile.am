@@ -26,6 +26,7 @@ man_MANS =        \
 
 noinst_HEADERS =    \
     buffer.h        \
+    cursor.h        \
     display.h       \
     encode.h        \
     ffmpeg-compat.h \
@@ -41,6 +42,7 @@ noinst_HEADERS =    \
 
 guacenc_SOURCES =           \
     buffer.c                \
+    cursor.c                \
     display.c               \
     display-buffers.c       \
     display-image-streams.c \
