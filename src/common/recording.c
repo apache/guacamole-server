@@ -20,6 +20,7 @@
 #include "common/recording.h"
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 
 #ifdef __MINGW32__
@@ -175,5 +176,13 @@ guac_common_recording* guac_common_recording_create(guac_client* client,
 
 void guac_common_recording_free(guac_common_recording* recording) {
     free(recording);
+}
+
+void guac_common_recording_report_mouse(guac_common_recording* recording,
+        int x, int y) {
+
+    /* Report mouse location */
+    guac_protocol_send_mouse(recording->socket, x, y);
+
 }
 

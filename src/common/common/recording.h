@@ -101,5 +101,20 @@ guac_common_recording* guac_common_recording_create(guac_client* client,
  */
 void guac_common_recording_free(guac_common_recording* recording);
 
+/**
+ * Reports the current mouse position within the recording.
+ *
+ * @param recording
+ *     The guac_common_recording associated with the mouse that has moved.
+ *
+ * @param x
+ *     The new X coordinate of the mouse cursor, in pixels.
+ *
+ * @param y
+ *     The new Y coordinate of the mouse cursor, in pixels.
+ */
+void guac_common_recording_report_mouse(guac_common_recording* recording,
+        int x, int y);
+
 #endif
 

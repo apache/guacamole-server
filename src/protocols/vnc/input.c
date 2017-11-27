@@ -21,6 +21,7 @@
 
 #include "common/cursor.h"
 #include "common/display.h"
+#include "common/recording.h"
 #include "vnc.h"
 
 #include <guacamole/user.h>
@@ -34,6 +35,10 @@ int guac_vnc_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     /* Store current mouse location */
     guac_common_cursor_move(vnc_client->display->cursor, user, x, y);
+
+    /* Report mouse position within recording */
+    if (vnc_client->recording != NULL)
+        guac_common_recording_report_mouse(vnc_client->recording, x, y);
 
     /* Send VNC event only if finished connecting */
     if (rfb_client != NULL)

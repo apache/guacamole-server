@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "common/recording.h"
 #include "input.h"
 #include "terminal/terminal.h"
 #include "telnet.h"
@@ -41,6 +42,10 @@ int guac_telnet_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     /* Skip if terminal not yet ready */
     if (term == NULL)
         return 0;
+
+    /* Report mouse position within recording */
+    if (telnet_client->recording != NULL)
+        guac_common_recording_report_mouse(telnet_client->recording, x, y);
 
     /* Send mouse if not searching for password or username */
     if (settings->password_regex == NULL && settings->username_regex == NULL)
