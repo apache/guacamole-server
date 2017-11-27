@@ -115,6 +115,11 @@ guacenc_instruction_handler guacenc_handle_img;
 guacenc_instruction_handler guacenc_handle_end;
 
 /**
+ * Handler for the Guacamole "mouse" instruction.
+ */
+guacenc_instruction_handler guacenc_handle_mouse;
+
+/**
  * Handler for the Guacamole "sync" instruction.
  */
 guacenc_instruction_handler guacenc_handle_sync;

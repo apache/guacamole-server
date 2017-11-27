@@ -61,6 +61,7 @@ guacenc_SOURCES =           \
     instruction-dispose.c   \
     instruction-end.c       \
     instruction-img.c       \
+    instruction-mouse.c     \
     instruction-move.c      \
     instruction-rect.c      \
     instruction-shade.c     \
