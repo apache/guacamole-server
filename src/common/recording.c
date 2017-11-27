@@ -133,8 +133,8 @@ static int guac_common_recording_open(const char* path,
 
 }
 
-int guac_common_recording_create(guac_client* client, const char* path,
-        const char* name, int create_path) {
+guac_common_recording* guac_common_recording_create(guac_client* client,
+        const char* path, const char* name, int create_path) {
 
     char filename[GUAC_COMMON_RECORDING_MAX_NAME_LENGTH];
 
@@ -146,7 +146,7 @@ int guac_common_recording_create(guac_client* client, const char* path,
 #endif
         guac_client_log(client, GUAC_LOG_ERROR,
                 "Creation of recording failed: %s", strerror(errno));
-        return 1;
+        return NULL;
     }
 
     /* Attempt to open recording file */
@@ -154,18 +154,26 @@ int guac_common_recording_create(guac_client* client, const char* path,
     if (fd == -1) {
         guac_client_log(client, GUAC_LOG_ERROR,
                 "Creation of recording failed: %s", strerror(errno));
-        return 1;
+        return NULL;
     }
 
-    /* Replace client socket with wrapped socket */
-    client->socket = guac_socket_tee(client->socket, guac_socket_open(fd));
+    /* Create recording structure with reference to underlying socket */
+    guac_common_recording* recording = malloc(sizeof(guac_common_recording));
+    recording->socket = guac_socket_open(fd);
+
+    /* Replace client socket with wrapped recording socket */
+    client->socket = guac_socket_tee(client->socket, recording->socket);
 
     /* Recording creation succeeded */
     guac_client_log(client, GUAC_LOG_INFO,
             "Recording of session will be saved to \"%s\".",
             filename);
 
-    return 0;
+    return recording;
 
+}
+
+void guac_common_recording_free(guac_common_recording* recording) {
+    free(recording);
 }
 

@@ -303,7 +303,7 @@ void* guac_vnc_client_thread(void* data) {
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
-        guac_common_recording_create(client,
+        vnc_client->recording = guac_common_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,
                 settings->create_recording_path);

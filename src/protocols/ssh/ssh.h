@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include "common/recording.h"
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
 #include "common-ssh/user.h"
@@ -93,6 +94,12 @@ typedef struct guac_ssh_client {
      */
     guac_terminal* term;
    
+    /**
+     * The in-progress session recording, or NULL if no recording is in
+     * progress.
+     */
+    guac_common_recording* recording;
+
 } guac_ssh_client ;
 
 /**
