@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "key-name.h"
 #include "log.h"
 #include "state.h"
 
@@ -174,15 +175,28 @@ int guaclog_state_update_key(guaclog_state* state, int keysym, bool pressed) {
     /* Output new log entries only when keys are pressed */
     if (pressed) {   
 
-        /* STUB: Output raw hex log entry */
+        /* Compose log entry by inspecting the state of each tracked key */
         for (i = 0; i < state->active_keys; i++) {
 
+            guaclog_key_state* key = &state->key_states[i];
+
+            /* Translate keysym into human-readable name */
+            char key_name[GUACLOG_MAX_KEY_NAME_LENGTH];
+            int name_length = guaclog_key_name(key_name, key->keysym);
+
+            /* If not the final key, omit the name (it was printed earlier) */
+            if (i < state->active_keys - 1) {
+                memset(key_name, ' ', name_length);
+                if (key->pressed)
+                    key_name[name_length / 2] = '*';
+            }
+
+            /* Separate each key by a single space */
             if (i != 0)
                 fprintf(state->output, " ");
 
-            guaclog_key_state* key = &state->key_states[i];
-            fprintf(state->output, "0x%X:%s", key->keysym,
-                    key->pressed ? "*" : " ");
+            /* Print name of key */
+            fprintf(state->output, "%s", key_name);
 
         }
 
