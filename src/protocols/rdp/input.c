@@ -128,6 +128,11 @@ int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed) {
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
+    /* Report key state within recording */
+    if (rdp_client->recording != NULL)
+        guac_common_recording_report_key(rdp_client->recording,
+                keysym, pressed);
+
     /* Skip if keyboard not yet ready */
     if (rdp_client->keyboard == NULL)
         return 0;

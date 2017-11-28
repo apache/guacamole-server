@@ -129,5 +129,22 @@ void guac_common_recording_free(guac_common_recording* recording);
 void guac_common_recording_report_mouse(guac_common_recording* recording,
         int x, int y, int button_mask);
 
+/**
+ * Reports a change in the state of an individual key within the recording.
+ *
+ * @param recording
+ *     The guac_common_recording associated with the key that was pressed or
+ *     released.
+ *
+ * @param keysym
+ *     The X11 keysym of the key that was pressed or released.
+ *
+ * @param pressed
+ *     Non-zero if the key represented by the given keysym is currently
+ *     pressed, zero if it is released.
+ */
+void guac_common_recording_report_key(guac_common_recording* recording,
+        int keysym, int pressed);
+
 #endif
 

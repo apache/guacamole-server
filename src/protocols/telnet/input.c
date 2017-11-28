@@ -63,6 +63,11 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
     guac_telnet_settings* settings = telnet_client->settings;
     guac_terminal* term = telnet_client->term;
 
+    /* Report key state within recording */
+    if (telnet_client->recording != NULL)
+        guac_common_recording_report_key(telnet_client->recording,
+                keysym, pressed);
+
     /* Skip if terminal not yet ready */
     if (term == NULL)
         return 0;

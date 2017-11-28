@@ -188,3 +188,12 @@ void guac_common_recording_report_mouse(guac_common_recording* recording,
 
 }
 
+void guac_common_recording_report_key(guac_common_recording* recording,
+        int keysym, int pressed) {
+
+    /* Report key state */
+    guac_protocol_send_key(recording->socket, keysym, pressed,
+            guac_timestamp_current());
+
+}
+
