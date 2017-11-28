@@ -107,6 +107,32 @@ int guac_protocol_send_error(guac_socket* socket, const char* error,
         guac_protocol_status status);
 
 /**
+ * Sends a key instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param keysym
+ *     The X11 keysym of the key that was pressed or released.
+ *
+ * @param pressed
+ *     Non-zero if the key represented by the given keysym is currently
+ *     pressed, zero if it is released.
+ *
+ * @param timestamp
+ *     The server timestamp (in milliseconds) at the point in time this key
+ *     event was acknowledged.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_key(guac_socket* socket, int keysym, int pressed,
+        guac_timestamp timestamp);
+
+/**
  * Sends a log instruction over the given guac_socket connection. This is
  * mainly useful in debugging.
  *
