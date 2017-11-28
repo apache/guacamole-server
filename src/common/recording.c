@@ -22,6 +22,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/timestamp.h>
 
 #ifdef __MINGW32__
 #include <direct.h>
@@ -182,7 +183,8 @@ void guac_common_recording_report_mouse(guac_common_recording* recording,
         int x, int y) {
 
     /* Report mouse location */
-    guac_protocol_send_mouse(recording->socket, x, y);
+    guac_protocol_send_mouse(recording->socket, x, y,
+            guac_timestamp_current());
 
 }
 

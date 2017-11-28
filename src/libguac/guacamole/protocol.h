@@ -159,10 +159,15 @@ int vguac_protocol_send_log(guac_socket* socket, const char* format,
  * @param y
  *     The Y coordinate of the current mouse position.
  *
+ * @param timestamp
+ *     The server timestamp (in milliseconds) at the point in time this mouse
+ *     position was acknowledged.
+ *
  * @return
  *     Zero on success, non-zero on error.
  */
-int guac_protocol_send_mouse(guac_socket* socket, int x, int y);
+int guac_protocol_send_mouse(guac_socket* socket, int x, int y,
+        guac_timestamp timestamp);
 
 /**
  * Sends a nest instruction over the given guac_socket connection.

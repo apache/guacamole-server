@@ -102,6 +102,12 @@ typedef struct guac_common_cursor {
      */
     int y;
 
+    /**
+     * The server timestamp representing the point in time when the mousr
+     * location was last updated.
+     */
+    guac_timestamp timestamp;
+
 } guac_common_cursor;
 
 /**

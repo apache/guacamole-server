@@ -28,6 +28,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/timestamp.h>
 #include <guacamole/user.h>
 
 #include <limits.h>
@@ -67,6 +68,7 @@ guac_common_cursor* guac_common_cursor_alloc(guac_client* client) {
 
     /* No user has moved the mouse yet */
     cursor->user = NULL;
+    cursor->timestamp = guac_timestamp_current();
 
     /* Start cursor in upper-left */
     cursor->x = 0;
@@ -101,7 +103,8 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
         guac_socket* socket) {
 
     /* Synchronize location */
-    guac_protocol_send_mouse(socket, cursor->x, cursor->y);
+    guac_protocol_send_mouse(socket, cursor->x, cursor->y,
+            cursor->timestamp);
 
     /* Synchronize cursor image */
     if (cursor->surface != NULL) {
@@ -138,7 +141,8 @@ static void* guac_common_cursor_broadcast_position(guac_user* user,
 
     /* Send cursor position only if the user is not moving the cursor */
     if (user != cursor->user) {
-        guac_protocol_send_mouse(user->socket, cursor->x, cursor->y);
+        guac_protocol_send_mouse(user->socket, cursor->x, cursor->y,
+                cursor->timestamp);
         guac_socket_flush(user->socket);
     }
 
@@ -155,6 +159,9 @@ void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
     /* Update cursor position */
     cursor->x = x;
     cursor->y = y;
+
+    /* Store time at which cursor position was updated */
+    cursor->timestamp = guac_timestamp_current();
 
     /* Notify all other users of change in cursor position */
     guac_client_foreach_user(cursor->client,
