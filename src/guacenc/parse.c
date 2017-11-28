@@ -19,6 +19,8 @@
 
 #include "config.h"
 
+#include <guacamole/timestamp.h>
+
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
@@ -64,6 +66,27 @@ int guacenc_parse_dimensions(char* arg, int* width, int* height) {
     *height = h;
 
     return 0;
+
+}
+
+guac_timestamp guacenc_parse_timestamp(const char* str) {
+
+    int sign = 1;
+    int64_t num = 0;
+
+    for (; *str != '\0'; str++) {
+
+        /* Flip sign for each '-' encountered */
+        if (*str == '-')
+            sign = -sign;
+
+        /* If not '-', assume the character is a digit */
+        else
+            num = num * 10 + (*str - '0');
+
+    }
+
+    return (guac_timestamp) (num * sign);
 
 }
 

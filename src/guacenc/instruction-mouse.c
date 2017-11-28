@@ -21,6 +21,7 @@
 #include "cursor.h"
 #include "display.h"
 #include "log.h"
+#include "parse.h"
 
 #include <guacamole/client.h>
 
@@ -43,7 +44,13 @@ int guacenc_handle_mouse(guacenc_display* display, int argc, char** argv) {
     cursor->x = x;
     cursor->y = y;
 
-    return 0;
+    /* If no timestamp provided, nothing further to do */
+    if (argc < 3)
+        return 0;
+
+    /* Leverage timestamp to render frame */
+    guac_timestamp timestamp = guacenc_parse_timestamp(argv[2]);
+    return guacenc_display_sync(display, timestamp);
 
 }
 
