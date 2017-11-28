@@ -26,8 +26,7 @@
 guacenc_cursor* guacenc_cursor_alloc() {
 
     /* Allocate new cursor */
-    guacenc_cursor* cursor = (guacenc_cursor*) calloc(1,
-            sizeof(guacenc_cursor));
+    guacenc_cursor* cursor = (guacenc_cursor*) malloc(sizeof(guacenc_cursor));
     if (cursor == NULL)
         return NULL;
 
@@ -37,6 +36,9 @@ guacenc_cursor* guacenc_cursor_alloc() {
         free(cursor);
         return NULL;
     }
+
+    /* Do not initially render cursor, unless it moves */
+    cursor->x = cursor->y = -1;
 
     return cursor;
 

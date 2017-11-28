@@ -33,12 +33,16 @@
 typedef struct guacenc_cursor {
 
     /**
-     * The current X coordinate of the mouse cursor, in pixels.
+     * The current X coordinate of the mouse cursor, in pixels. Valid values
+     * are non-negative. Negative values indicate that the cursor should not
+     * be rendered.
      */
     int x;
 
     /**
-     * The current Y coordinate of the mouse cursor, in pixels.
+     * The current Y coordinate of the mouse cursor, in pixels. Valid values
+     * are non-negative. Negative values indicate that the cursor should not
+     * be rendered.
      */
     int y;
 

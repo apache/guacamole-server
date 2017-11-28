@@ -93,6 +93,10 @@ static int guacenc_display_render_cursor(guacenc_display* display) {
 
     guacenc_cursor* cursor = display->cursor;
 
+    /* Do not render cursor if coordinates are negative */
+    if (cursor->x < 0 || cursor->y < 0)
+        return 0;
+
     /* Retrieve default layer (guaranteed to not be NULL) */
     guacenc_layer* def_layer = guacenc_display_get_layer(display, 0);
     assert(def_layer != NULL);
