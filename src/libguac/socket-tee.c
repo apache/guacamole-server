@@ -135,8 +135,9 @@ static void __guac_socket_tee_lock_handler(guac_socket* socket) {
 
     guac_socket_tee_data* data = (guac_socket_tee_data*) socket->data;
 
-    /* Delegate lock to wrapped socket */
+    /* Delegate lock to wrapped sockets */
     guac_socket_instruction_begin(data->primary);
+    guac_socket_instruction_begin(data->secondary);
 
 }
 
@@ -151,7 +152,8 @@ static void __guac_socket_tee_unlock_handler(guac_socket* socket) {
 
     guac_socket_tee_data* data = (guac_socket_tee_data*) socket->data;
 
-    /* Delegate unlock to wrapped socket */
+    /* Delegate unlock to wrapped sockets */
+    guac_socket_instruction_end(data->secondary);
     guac_socket_instruction_end(data->primary);
 
 }
