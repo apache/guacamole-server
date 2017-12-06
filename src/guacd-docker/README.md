@@ -1,11 +1,11 @@
 What is guacd?
 ==============
 
-[guacd](https://github.com/apache/incubator/guacamole-server/) is the native
+[guacd](https://github.com/apache/guacamole-server/) is the native
 server-side proxy used by the [Apache Guacamole web
-application](http://guacamole.incubator.apache.org/).  If you wish to deploy
+application](http://guacamole.apache.org/).  If you wish to deploy
 Guacamole, or an application using the [Guacamole core
-APIs](http://guacamole.incubator.apache.org/api-documentation), you will need a
+APIs](http://guacamole.apache.org/api-documentation), you will need a
 copy of guacd running.
 
 How to use this image

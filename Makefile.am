@@ -78,7 +78,6 @@ endif
 EXTRA_DIST =      \
     .dockerignore \
     CONTRIBUTING  \
-    DISCLAIMER    \
     Dockerfile    \
     LICENSE       \
     NOTICE        \
