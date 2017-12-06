@@ -16,7 +16,7 @@
 .\" specific language governing permissions and limitations
 .\" under the License.
 .\"
-.TH guacd.conf 5 "1 Jun 2017" "version 0.9.13-incubating" "Guacamole"
+.TH guacd.conf 5 "1 Jun 2017" "version @PACKAGE_VERSION@" "Apache Guacamole"
 .
 .SH NAME
 /etc/guacamole/guacd.conf \- Configuration file for guacd
@@ -176,6 +176,3 @@ server_certificate = /etc/ssl/certs/guacd.crt
 server_key = /etc/ssl/private/guacd.key
 .RE
 .fi
-.
-.SH AUTHOR
-Written by Michael Jumper <mike.jumper@guac-dev.org>
