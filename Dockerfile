@@ -21,31 +21,20 @@
 # Dockerfile for guacamole-server
 #
 
-# Start from CentOS base image
-FROM centos:centos7
 
-# Environment variables
-ENV \
-    BUILD_DIR=/tmp/guacd-docker-BUILD \
-    LC_ALL=en_US.UTF-8                \
-    RUNTIME_DEPENDENCIES="            \
-        cairo                         \
-        dejavu-sans-mono-fonts        \
-        freerdp                       \
-        freerdp-plugins               \
-        ghostscript                   \
-        libjpeg-turbo                 \
-        libssh2                       \
-        liberation-mono-fonts         \
-        libtelnet                     \
-        libvorbis                     \
-        libvncserver                  \
-        libwebp                       \
-        pango                         \
-        pulseaudio-libs               \
-        terminus-fonts                \
-        uuid"                         \
-    BUILD_DEPENDENCIES="              \
+# Use CentOS as base for the build
+ARG CENTOS_VERSION=centos7
+FROM centos:${CENTOS_VERSION} AS builder
+
+# Base directory for installed build artifacts.
+# Due to limitations of the Docker image build process, this value is
+# duplicated in an ARG in the second stage of the build.
+#
+ARG PREFIX_DIR=/usr/local/guacamole
+
+# Build arguments
+ARG BUILD_DIR=/tmp/guacd-docker-BUILD
+ARG BUILD_DEPENDENCIES="              \
         autoconf                      \
         automake                      \
         cairo-devel                   \
@@ -63,10 +52,13 @@ ENV \
         pulseaudio-libs-devel         \
         uuid-devel"
 
-# Bring environment up-to-date and install guacamole-server dependencies
+# Build time environment
+ENV LC_ALL=en_US.UTF-8
+
+# Bring build environment up to date and install build dependencies
 RUN yum -y update                        && \
     yum -y install epel-release          && \
-    yum -y install $RUNTIME_DEPENDENCIES && \
+    yum -y install $BUILD_DEPENDENCIES   && \
     yum clean all
 
 # Add configuration scripts
@@ -76,13 +68,63 @@ COPY src/guacd-docker/bin /opt/guacd/bin/
 COPY . "$BUILD_DIR"
 
 # Build guacamole-server from local source
-RUN yum -y install $BUILD_DEPENDENCIES         && \
-    /opt/guacd/bin/build-guacd.sh "$BUILD_DIR" && \
-    rm -Rf "$BUILD_DIR"                        && \
-    yum -y autoremove $BUILD_DEPENDENCIES      && \
-    yum clean all
+RUN /opt/guacd/bin/build-guacd.sh "$BUILD_DIR" "$PREFIX_DIR"
+
+# Use same CentOS as the base for the runtime image
+FROM centos:${CENTOS_VERSION}
+
+# Base directory for installed build artifacts.
+# Due to limitations of the Docker image build process, this value is
+# duplicated in an ARG in the first stage of the build. See also the
+# CMD directive at the end of this build stage.
+#
+ARG PREFIX_DIR=/usr/local/guacamole
+
+# Runtime environment
+ENV LC_ALL=en_US.UTF-8
+
+ARG RUNTIME_DEPENDENCIES="            \
+        cairo                         \
+        dejavu-sans-mono-fonts        \
+        freerdp                       \
+        freerdp-plugins               \
+        ghostscript                   \
+        libjpeg-turbo                 \
+        libssh2                       \
+        liberation-mono-fonts         \
+        libtelnet                     \
+        libvorbis                     \
+        libvncserver                  \
+        libwebp                       \
+        pango                         \
+        pulseaudio-libs               \
+        terminus-fonts                \
+        uuid"
+
+# Bring runtime environment up to date and install runtime dependencies
+RUN yum -y update                          && \
+    yum -y install epel-release            && \
+    yum -y install $RUNTIME_DEPENDENCIES   && \
+    yum clean all                          && \
+    rm -rf /var/cache/yum
+
+# Copy build artifacts into this stage
+COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
+
+# Link FreeRDP plugins into proper path
+RUN FREERDP_DIR=$(dirname \
+        $(rpm -ql freerdp-libs | grep 'libfreerdp.*\.so' | head -n1)) && \
+    FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp" && \
+    mkdir -p "$FREERDP_PLUGIN_DIR" && \
+    ln -s "$PREFIX_DIR"/lib/freerdp/*.so "$FREERDP_PLUGIN_DIR"
+
+# Expose the default listener port
+EXPOSE 4822
 
 # Start guacd, listening on port 0.0.0.0:4822
-EXPOSE 4822
-CMD [ "/usr/local/sbin/guacd", "-b", "0.0.0.0", "-f" ]
+#
+# Note the path here MUST correspond to the value specified in the 
+# PREFIX_DIR build argument.
+#
+CMD [ "/usr/local/guacamole/sbin/guacd", "-b", "0.0.0.0", "-f" ]
 
