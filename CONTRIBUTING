@@ -24,10 +24,10 @@ the review process.
 
     The Guacamole source is maintained in git repositories hosted on GitHub:
 
-        https://github.com/apache/incubator-guacamole-client
-        https://github.com/apache/incubator-guacamole-manual
-        https://github.com/apache/incubator-guacamole-server
-        https://github.com/apache/incubator-guacamole-website
+        https://github.com/apache/guacamole-client
+        https://github.com/apache/guacamole-manual
+        https://github.com/apache/guacamole-server
+        https://github.com/apache/guacamole-website
 
     To make your changes, fork the applicable repositories and make commits
     to a topic branch in your fork. Commits should be made in logical units
