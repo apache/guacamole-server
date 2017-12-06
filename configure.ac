@@ -1196,6 +1196,7 @@ AM_CONDITIONAL([ENABLE_GUACENC], [test "x${enable_guacenc}"  = "xyes" \
 #
 
 AC_CONFIG_FILES([Makefile
+                 doc/Doxyfile
                  tests/Makefile
                  src/common/Makefile
                  src/common-ssh/Makefile
