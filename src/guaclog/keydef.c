@@ -18,39 +18,23 @@
  */
 
 #include "config.h"
-#include "key-name.h"
+#include "keydef.h"
 #include "log.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-/**
- * A mapping of X11 keysym to its corresponding human-readable name.
- */
-typedef struct guaclog_known_key {
-
-    /**
-     * The X11 keysym of the key.
-     */
-    const int keysym;
-
-    /**
-     * A human-readable name for the key.
-     */
-    const char* name;
-
-} guaclog_known_key;
+#include <string.h>
 
 /**
  * All known keys.
  */
-const guaclog_known_key known_keys[] = {
-    { 0x0020, "Space" },
+const guaclog_keydef known_keys[] = {
     { 0xFE03, "AltGr" },
     { 0xFF08, "Backspace" },
-    { 0xFF09, "Tab" },
+    { 0xFF09, "Tab", "<Tab>" },
     { 0xFF0B, "Clear" },
-    { 0xFF0D, "Return" },
+    { 0xFF0D, "Return", "\n" },
     { 0xFF13, "Pause" },
     { 0xFF1B, "Escape" },
     { 0xFF51, "Left" },
@@ -62,9 +46,8 @@ const guaclog_known_key known_keys[] = {
     { 0xFF63, "Insert" },
     { 0xFF65, "Undo" },
     { 0xFF6A, "Help" },
-    { 0xFF80, "Space" },
-    { 0xFF8D, "Enter" },
-    { 0xFFBD, "Equals" },
+    { 0xFF80, "Space", " " },
+    { 0xFF8D, "Enter", "\n" },
     { 0xFFBE, "F1" },
     { 0xFFBF, "F2" },
     { 0xFFC0, "F3" },
@@ -89,8 +72,8 @@ const guaclog_known_key known_keys[] = {
     { 0xFFD3, "F22" },
     { 0xFFD4, "F23" },
     { 0xFFD5, "F24" },
-    { 0xFFE1, "Shift" },
-    { 0xFFE2, "Shift" },
+    { 0xFFE1, "Shift", "" },
+    { 0xFFE2, "Shift", "" },
     { 0xFFE3, "Ctrl" },
     { 0xFFE4, "Ctrl" },
     { 0xFFE5, "Caps" },
@@ -108,7 +91,7 @@ const guaclog_known_key known_keys[] = {
 
 /**
  * Comparator for the standard bsearch() function which compares an integer
- * keysym against the keysym associated with a guaclog_known_key.
+ * keysym against the keysym associated with a guaclog_keydef.
  *
  * @param key
  *     The key value being compared against the member. This MUST be the
@@ -125,11 +108,11 @@ const guaclog_known_key known_keys[] = {
  *     member, or a negative value if the given keysym is less than that of the
  *     given member.
  */
-static int guaclog_known_key_bsearch_compare(const void* key,
+static int guaclog_keydef_bsearch_compare(const void* key,
         const void* member) {
 
     int keysym = (int) ((intptr_t) key);
-    guaclog_known_key* current = (guaclog_known_key*) member;
+    guaclog_keydef* current = (guaclog_keydef*) member;
 
     /* Compare given keysym to keysym of current member */
     return keysym  - current->keysym;
@@ -138,67 +121,50 @@ static int guaclog_known_key_bsearch_compare(const void* key,
 
 /**
  * Searches through the known_keys array of known keys for the name of the key
- * having the given keysym. If found, the name of the keysym is copied into the
- * given buffer, which must be at least GUACLOG_MAX_KEY_NAME_LENGTH bytes long.
- *
- * @param key_name
- *     The buffer to copy the key name into, which must be at least
- *     GUACLOG_MAX_KEY_NAME_LENGTH.
+ * having the given keysym, returning a pointer to the static guaclog_keydef
+ * within the array if found.
  *
  * @param keysym
- *     The X11 keysym of the key whose name should be stored in
- *     key_name.
+ *     The X11 keysym of the key.
  *
  * @return
- *     The length of the name, in bytes, excluding null terminator, or zero if
- *     the key could not be found.
+ *     A pointer to the static guaclog_keydef associated with the given keysym,
+ *     or NULL if the key could not be found.
  */
-static int guaclog_locate_key_name(char* key_name, int keysym) {
+static guaclog_keydef* guaclog_get_known_key(int keysym) {
 
     /* Search through known keys for given keysym */
-    guaclog_known_key* found = bsearch((void*) ((intptr_t) keysym),
+    return bsearch((void*) ((intptr_t) keysym),
             known_keys, sizeof(known_keys) / sizeof(known_keys[0]),
-            sizeof(known_keys[0]), guaclog_known_key_bsearch_compare);
-
-    /* If found, format name and return length of result */
-    if (found != NULL)
-        return snprintf(key_name, GUACLOG_MAX_KEY_NAME_LENGTH,
-                "[ %s ]", found->name);
-
-    /* Key not found */
-    return 0;
+            sizeof(known_keys[0]), guaclog_keydef_bsearch_compare);
 
 }
 
 /**
- * Produces a name for the key having the given keysym using its corresponding
- * Unicode character. If possible, the name of the keysym is copied into the
- * given buffer, which must be at least GUAC_MAX_KEY_NAME_LENGTH bytes long.
- *
- * @param key_name
- *     The buffer to copy the key name into, which must be at least
- *     GUACLOG_MAX_KEY_NAME_LENGTH.
+ * Returns a statically-allocated guaclog_keydef representing the key
+ * associated with the given keysym, deriving the name and value of the key
+ * using its corresponding Unicode character.
  *
  * @param keysym
- *     The X11 keysym of the key whose name should be stored in
- *     key_name.
+ *     The X11 keysym of the key.
  *
  * @return
- *     The length of the name, in bytes, excluding null terminator, or zero if
- *     a readable name cannot be directly produced via Unicode alone.
+ *     A statically-allocated guaclog_keydef representing the key associated
+ *     with the given keysym, or NULL if the given keysym has no corresponding
+ *     Unicode character.
  */
-static int guaclog_unicode_key_name(char* key_name, int keysym) {
+static guaclog_keydef* guaclog_get_unicode_key(int keysym) {
+
+    static char unicode_keydef_name[8];
+
+    static guaclog_keydef unicode_keydef;
 
     int i;
     int mask, bytes;
 
     /* Translate only if keysym maps to Unicode */
     if (keysym < 0x00 || (keysym > 0xFF && (keysym & 0xFFFF0000) != 0x01000000))
-        return 0;
-
-    /* Do not translate whitespace - it will be unreadable */
-    if (keysym == 0x20)
-        return 0;
+        return NULL;
 
     int codepoint = keysym & 0xFFFF;
 
@@ -221,13 +187,11 @@ static int guaclog_unicode_key_name(char* key_name, int keysym) {
     }
 
     /* Otherwise, invalid codepoint */
-    else {
-        *(key_name++) = '?';
-        return 1;
-    }
+    else
+        return NULL;
 
     /* Offset buffer by size */
-    key_name += bytes;
+    char* key_name = unicode_keydef_name + bytes;
 
     /* Add null terminator */
     *(key_name--) = '\0';
@@ -241,36 +205,72 @@ static int guaclog_unicode_key_name(char* key_name, int keysym) {
     /* Set initial byte */
     *key_name = mask | codepoint;
 
-    /* Done */
-    return bytes;
+    /* Return static key definition */
+    unicode_keydef.keysym = keysym;
+    unicode_keydef.name = unicode_keydef.value = unicode_keydef_name;
+    return &unicode_keydef;
 
 }
 
-int guaclog_key_name(char* key_name, int keysym) {
+/**
+ * Copies the given guaclog_keydef into a newly-allocated guaclog_keydef
+ * structure. The resulting guaclog_keydef must eventually be freed through a
+ * call to guaclog_keydef_free().
+ *
+ * @param keydef
+ *     The guaclog_keydef to copy.
+ *
+ * @return
+ *     A newly-allocated guaclog_keydef structure copied from the given
+ *     guaclog_keydef.
+ */
+static guaclog_keydef* guaclog_copy_key(guaclog_keydef* keydef) {
 
-    int name_length;
+    guaclog_keydef* copy = malloc(sizeof(guaclog_keydef));
 
-    /* Attempt to translate straight into a Unicode character */
-    name_length = guaclog_unicode_key_name(key_name, keysym);
+    /* Always copy keysym and name */
+    copy->keysym = keydef->keysym;
+    copy->name = strdup(keydef->name);
 
-    /* If not Unicode, search for name within list of known keys */
-    if (name_length == 0)
-        name_length = guaclog_locate_key_name(key_name, keysym);
+    /* Copy value only if defined */
+    if (keydef->value != NULL)
+        copy->value = strdup(keydef->value);
+    else
+        copy->value = NULL;
 
-    /* Fallback to using hex keysym as name */
-    if (name_length == 0)
-        name_length = snprintf(key_name, GUACLOG_MAX_KEY_NAME_LENGTH,
-                "0x%X", keysym);
+    return copy;
 
-    /* Truncate name if necessary */
-    if (name_length >= GUACLOG_MAX_KEY_NAME_LENGTH) {
-        name_length = GUACLOG_MAX_KEY_NAME_LENGTH - 1;
-        key_name[name_length] = '\0';
-        guaclog_log(GUAC_LOG_DEBUG, "Name for key 0x%X was "
-                "truncated.", keysym);
-    }
+}
 
-    return name_length;
+guaclog_keydef* guaclog_keydef_alloc(int keysym) {
+
+    guaclog_keydef* keydef;
+
+    /* Check list of known keys first */
+    keydef = guaclog_get_known_key(keysym);
+    if (keydef != NULL)
+        return guaclog_copy_key(keydef);
+
+    /* Failing that, attempt to translate straight into a Unicode character */
+    keydef = guaclog_get_unicode_key(keysym);
+    if (keydef != NULL)
+        return guaclog_copy_key(keydef);
+
+    /* Key not known */
+    guaclog_log(GUAC_LOG_DEBUG, "Definition not found for key 0x%X.", keysym);
+    return NULL;
+
+}
+
+void guaclog_keydef_free(guaclog_keydef* keydef) {
+
+    /* Ignore NULL keydef */
+    if (keydef == NULL)
+        return;
+
+    free(keydef->name);
+    free(keydef->value);
+    free(keydef);
 
 }
 

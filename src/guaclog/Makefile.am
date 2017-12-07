@@ -28,7 +28,7 @@ noinst_HEADERS =   \
     guaclog.h      \
     instructions.h \
     interpret.h    \
-    key-name.h     \
+    keydef.h       \
     log.h          \
     state.h
 
@@ -37,7 +37,7 @@ guaclog_SOURCES =     \
     instructions.c    \
     instruction-key.c \
     interpret.c       \
-    key-name.c        \
+    keydef.c          \
     log.c             \
     state.c
 

@@ -21,6 +21,7 @@
 #define GUACLOG_STATE_H
 
 #include "config.h"
+#include "keydef.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -37,9 +38,9 @@
 typedef struct guaclog_key_state {
 
     /**
-     * The X11 keysym of the key.
+     * The definition of the key.
      */
-    int keysym;
+    guaclog_keydef* keydef;
 
     /**
      * Whether the key is currently pressed (true) or released (false).

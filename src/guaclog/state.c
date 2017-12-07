@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "key-name.h"
+#include "keydef.h"
 #include "log.h"
 #include "state.h"
 
@@ -77,9 +77,15 @@ fail_output_fd:
 
 int guaclog_state_free(guaclog_state* state) {
 
+    int i;
+
     /* Ignore NULL state */
     if (state == NULL)
         return 0;
+
+    /* Free keydefs of all tracked keys */
+    for (i = 0; i < state->active_keys; i++)
+        guaclog_keydef_free(state->key_states[i].keydef);
 
     /* Close output file */
     fclose(state->output);
@@ -100,8 +106,11 @@ int guaclog_state_free(guaclog_state* state) {
  * @param state
  *     The Guacamole input log interpreter state being updated.
  *
- * @param keysym
- *     The X11 keysym of the key being pressed or released.
+ * @param keydef
+ *     The guaclog_keydef of the key being pressed or released. This
+ *     guaclog_keydef will automatically be freed along with the guaclog_state
+ *     if the key state was successfully added, and must be manually freed
+ *     otherwise.
  *
  * @param pressed
  *     true if the key is being pressed, false if the key is being released.
@@ -109,14 +118,17 @@ int guaclog_state_free(guaclog_state* state) {
  * @return
  *     Zero if the key state was successfully added, non-zero otherwise.
  */
-static int guaclog_state_add_key(guaclog_state* state, int keysym, bool pressed) {
+static int guaclog_state_add_key(guaclog_state* state, guaclog_keydef* keydef,
+        bool pressed) {
 
     int i;
 
     /* Update existing key, if already tracked */
     for (i = 0; i < state->active_keys; i++) {
         guaclog_key_state* key = &state->key_states[i];
-        if (key->keysym == keysym) {
+        if (key->keydef->keysym == keydef->keysym) {
+            guaclog_keydef_free(key->keydef);
+            key->keydef = keydef;
             key->pressed = pressed;
             return 0;
         }
@@ -125,13 +137,13 @@ static int guaclog_state_add_key(guaclog_state* state, int keysym, bool pressed)
     /* If not already tracked, we need space to add it */
     if (state->active_keys == GUACLOG_MAX_KEYS) {
         guaclog_log(GUAC_LOG_WARNING, "Unable to log key 0x%X: Too many "
-                "active keys.", keysym);
+                "active keys.", keydef->keysym);
         return 1;
     }
 
     /* Add key to state */
     guaclog_key_state* key = &state->key_states[state->active_keys++];
-    key->keysym = keysym;
+    key->keydef = keydef;
     key->pressed = pressed;
     return 0;
 
@@ -152,11 +164,16 @@ static void guaclog_state_trim_keys(guaclog_state* state) {
 
     /* Reset active_keys to contain only up to the last pressed key */
     for (i = state->active_keys - 1; i >= 0; i--) {
+
         guaclog_key_state* key = &state->key_states[i];
         if (key->pressed) {
             state->active_keys = i + 1;
             return;
         }
+
+        /* Free all trimmed states */
+        guaclog_keydef_free(key->keydef);
+
     }
 
     /* No keys are active */
@@ -164,44 +181,76 @@ static void guaclog_state_trim_keys(guaclog_state* state) {
 
 }
 
+/**
+ * Returns whether the current tracked key state represents an in-progress
+ * keyboard shortcut.
+ *
+ * @param state
+ *     The Guacamole input log interpreter state to test.
+ *
+ * @return
+ *     true if the given state represents an in-progress keyboard shortcut,
+ *     false otherwise.
+ */
+static bool guaclog_state_is_shortcut(guaclog_state* state) {
+
+    int i;
+
+    /* We are in a shortcut if at least one key is non-printable */
+    for (i = 0; i < state->active_keys; i++) {
+        guaclog_key_state* key = &state->key_states[i];
+        if (key->keydef->value == NULL)
+            return true;
+    }
+
+    /* All keys are printable - no shortcut */
+    return false;
+
+}
+
 int guaclog_state_update_key(guaclog_state* state, int keysym, bool pressed) {
 
     int i;
 
-    /* Update tracked keysysm state */
-    guaclog_state_add_key(state, keysym, pressed);
-    guaclog_state_trim_keys(state);
+    /* Determine nature of key */
+    guaclog_keydef* keydef = guaclog_keydef_alloc(keysym);
+    if (keydef == NULL)
+        return 0;
 
-    /* Output new log entries only when keys are pressed */
-    if (pressed) {   
+    /* Update tracked key state */
+    if (guaclog_state_add_key(state, keydef, pressed))
+        guaclog_keydef_free(keydef);
+    else
+        guaclog_state_trim_keys(state);
 
-        /* Compose log entry by inspecting the state of each tracked key */
-        for (i = 0; i < state->active_keys; i++) {
+    /* Output key states only for printable keys */
+    if (pressed && keydef->value != NULL) {
 
-            guaclog_key_state* key = &state->key_states[i];
+        if (guaclog_state_is_shortcut(state)) {
 
-            /* Translate keysym into human-readable name */
-            char key_name[GUACLOG_MAX_KEY_NAME_LENGTH];
-            int name_length = guaclog_key_name(key_name, key->keysym);
+            fprintf(state->output, "<");
 
-            /* If not the final key, omit the name (it was printed earlier) */
-            if (i < state->active_keys - 1) {
-                memset(key_name, ' ', name_length);
-                if (key->pressed)
-                    key_name[name_length / 2] = '*';
+            /* Compose log entry by inspecting the state of each tracked key */
+            for (i = 0; i < state->active_keys; i++) {
+
+                /* Translate keysym into human-readable name */
+                guaclog_key_state* key = &state->key_states[i];
+
+                /* Print name of key */
+                if (i == 0)
+                    fprintf(state->output, "%s", key->keydef->name);
+                else
+                    fprintf(state->output, "+%s", key->keydef->name);
+
             }
 
-            /* Separate each key by a single space */
-            if (i != 0)
-                fprintf(state->output, " ");
-
-            /* Print name of key */
-            fprintf(state->output, "%s", key_name);
+            fprintf(state->output, ">");
 
         }
 
-        /* Terminate log entry with newline */
-        fprintf(state->output, "\n");
+        /* Print the key itself */
+        else
+            fprintf(state->output, "%s", keydef->value);
 
     }
 
