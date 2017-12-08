@@ -45,7 +45,8 @@ int guac_telnet_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     /* Report mouse position within recording */
     if (telnet_client->recording != NULL)
-        guac_common_recording_report_mouse(telnet_client->recording, x, y);
+        guac_common_recording_report_mouse(telnet_client->recording, x, y,
+                mask);
 
     /* Send mouse if not searching for password or username */
     if (settings->password_regex == NULL && settings->username_regex == NULL)

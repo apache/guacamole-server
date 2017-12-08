@@ -159,6 +159,19 @@ int vguac_protocol_send_log(guac_socket* socket, const char* format,
  * @param y
  *     The Y coordinate of the current mouse position.
  *
+ * @param button_mask
+ *     An integer value representing the current state of each button, where
+ *     the Nth bit within the integer is set to 1 if and only if the Nth mouse
+ *     button is currently pressed. The lowest-order bit is the left mouse
+ *     button, followed by the middle button, right button, and finally the up
+ *     and down buttons of the scroll wheel.
+ *
+ *     @see GUAC_CLIENT_MOUSE_LEFT
+ *     @see GUAC_CLIENT_MOUSE_MIDDLE
+ *     @see GUAC_CLIENT_MOUSE_RIGHT
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_UP
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
+ *
  * @param timestamp
  *     The server timestamp (in milliseconds) at the point in time this mouse
  *     position was acknowledged.
@@ -167,7 +180,7 @@ int vguac_protocol_send_log(guac_socket* socket, const char* format,
  *     Zero on success, non-zero on error.
  */
 int guac_protocol_send_mouse(guac_socket* socket, int x, int y,
-        guac_timestamp timestamp);
+        int button_mask, guac_timestamp timestamp);
 
 /**
  * Sends a nest instruction over the given guac_socket connection.

@@ -43,7 +43,7 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     /* Report mouse position within recording */
     if (ssh_client->recording != NULL)
-        guac_common_recording_report_mouse(ssh_client->recording, x, y);
+        guac_common_recording_report_mouse(ssh_client->recording, x, y, mask);
 
     /* Send mouse event */
     guac_terminal_send_mouse(term, user, x, y, mask);

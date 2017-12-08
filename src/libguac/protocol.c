@@ -685,7 +685,7 @@ int guac_protocol_send_lstroke(guac_socket* socket,
 }
 
 int guac_protocol_send_mouse(guac_socket* socket, int x, int y,
-        guac_timestamp timestamp) {
+        int button_mask, guac_timestamp timestamp) {
 
     int ret_val;
 
@@ -695,6 +695,8 @@ int guac_protocol_send_mouse(guac_socket* socket, int x, int y,
         || __guac_socket_write_length_int(socket, x)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, button_mask)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_int(socket, timestamp)
         || guac_socket_write_string(socket, ";");

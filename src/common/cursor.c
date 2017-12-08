@@ -103,7 +103,7 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
         guac_socket* socket) {
 
     /* Synchronize location */
-    guac_protocol_send_mouse(socket, cursor->x, cursor->y,
+    guac_protocol_send_mouse(socket, cursor->x, cursor->y, cursor->button_mask,
             cursor->timestamp);
 
     /* Synchronize cursor image */
@@ -125,24 +125,25 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
 
 /**
  * Callback for guac_client_foreach_user() which sends the current cursor
- * position to any given user except the user that moved the cursor last.
+ * position and button state to any given user except the user that moved the
+ * cursor last.
  *
  * @param data
- *     A pointer to the guac_common_cursor whose position should be broadcast
- *     to all users except the user that moved the cursor last.
+ *     A pointer to the guac_common_cursor whose state should be broadcast to
+ *     all users except the user that moved the cursor last.
  *
  * @return
  *     Always NULL.
  */
-static void* guac_common_cursor_broadcast_position(guac_user* user,
+static void* guac_common_cursor_broadcast_state(guac_user* user,
         void* data) {
 
     guac_common_cursor* cursor = (guac_common_cursor*) data;
 
-    /* Send cursor position only if the user is not moving the cursor */
+    /* Send cursor state only if the user is not moving the cursor */
     if (user != cursor->user) {
         guac_protocol_send_mouse(user->socket, cursor->x, cursor->y,
-                cursor->timestamp);
+                cursor->button_mask, cursor->timestamp);
         guac_socket_flush(user->socket);
     }
 
@@ -150,22 +151,23 @@ static void* guac_common_cursor_broadcast_position(guac_user* user,
 
 }
 
-void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
-        int x, int y) {
+void guac_common_cursor_update(guac_common_cursor* cursor, guac_user* user,
+        int x, int y, int button_mask) {
 
     /* Update current user of cursor */
     cursor->user = user;
 
-    /* Update cursor position */
+    /* Update cursor state */
     cursor->x = x;
     cursor->y = y;
+    cursor->button_mask = button_mask;
 
-    /* Store time at which cursor position was updated */
+    /* Store time at which cursor was updated */
     cursor->timestamp = guac_timestamp_current();
 
-    /* Notify all other users of change in cursor position */
+    /* Notify all other users of change in cursor state */
     guac_client_foreach_user(cursor->client,
-            guac_common_cursor_broadcast_position, cursor);
+            guac_common_cursor_broadcast_state, cursor);
 
 }
 

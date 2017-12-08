@@ -180,10 +180,10 @@ void guac_common_recording_free(guac_common_recording* recording) {
 }
 
 void guac_common_recording_report_mouse(guac_common_recording* recording,
-        int x, int y) {
+        int x, int y, int button_mask) {
 
     /* Report mouse location */
-    guac_protocol_send_mouse(recording->socket, x, y,
+    guac_protocol_send_mouse(recording->socket, x, y, button_mask,
             guac_timestamp_current());
 
 }

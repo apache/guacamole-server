@@ -45,11 +45,11 @@ int guacenc_handle_mouse(guacenc_display* display, int argc, char** argv) {
     cursor->y = y;
 
     /* If no timestamp provided, nothing further to do */
-    if (argc < 3)
+    if (argc < 4)
         return 0;
 
     /* Leverage timestamp to render frame */
-    guac_timestamp timestamp = guacenc_parse_timestamp(argv[2]);
+    guac_timestamp timestamp = guacenc_parse_timestamp(argv[3]);
     return guacenc_display_sync(display, timestamp);
 
 }

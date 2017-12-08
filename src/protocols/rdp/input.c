@@ -47,12 +47,12 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
         return 0;
     }
 
-    /* Store current mouse location */
-    guac_common_cursor_move(rdp_client->display->cursor, user, x, y);
+    /* Store current mouse location/state */
+    guac_common_cursor_update(rdp_client->display->cursor, user, x, y, mask);
 
     /* Report mouse position within recording */
     if (rdp_client->recording != NULL)
-        guac_common_recording_report_mouse(rdp_client->recording, x, y);
+        guac_common_recording_report_mouse(rdp_client->recording, x, y, mask);
 
     /* If button mask unchanged, just send move event */
     if (mask == rdp_client->mouse_button_mask)

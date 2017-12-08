@@ -1670,8 +1670,8 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
     int released_mask =  term->mouse_mask & ~mask;
     int pressed_mask  = ~term->mouse_mask &  mask;
 
-    /* Store current mouse location */
-    guac_common_cursor_move(term->cursor, user, x, y);
+    /* Store current mouse location/state */
+    guac_common_cursor_update(term->cursor, user, x, y, mask);
 
     /* Notify scrollbar, do not handle anything handled by scrollbar */
     if (guac_terminal_scrollbar_handle_mouse(term->scrollbar, x, y, mask)) {

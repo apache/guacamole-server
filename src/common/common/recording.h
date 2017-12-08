@@ -102,7 +102,7 @@ guac_common_recording* guac_common_recording_create(guac_client* client,
 void guac_common_recording_free(guac_common_recording* recording);
 
 /**
- * Reports the current mouse position within the recording.
+ * Reports the current mouse position and button state within the recording.
  *
  * @param recording
  *     The guac_common_recording associated with the mouse that has moved.
@@ -112,9 +112,22 @@ void guac_common_recording_free(guac_common_recording* recording);
  *
  * @param y
  *     The new Y coordinate of the mouse cursor, in pixels.
+ *
+ * @param button_mask
+ *     An integer value representing the current state of each button, where
+ *     the Nth bit within the integer is set to 1 if and only if the Nth mouse
+ *     button is currently pressed. The lowest-order bit is the left mouse
+ *     button, followed by the middle button, right button, and finally the up
+ *     and down buttons of the scroll wheel.
+ *
+ *     @see GUAC_CLIENT_MOUSE_LEFT
+ *     @see GUAC_CLIENT_MOUSE_MIDDLE
+ *     @see GUAC_CLIENT_MOUSE_RIGHT
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_UP
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
  */
 void guac_common_recording_report_mouse(guac_common_recording* recording,
-        int x, int y);
+        int x, int y, int button_mask);
 
 #endif
 
