@@ -217,14 +217,16 @@ int guaclog_state_update_key(guaclog_state* state, int keysym, bool pressed) {
     if (keydef == NULL)
         return 0;
 
-    /* Update tracked key state */
-    if (guaclog_state_add_key(state, keydef, pressed))
-        guaclog_keydef_free(keydef);
-    else
-        guaclog_state_trim_keys(state);
+    /* Update tracked key state for modifiers */
+    if (keydef->modifier) {
+        if (guaclog_state_add_key(state, keydef, pressed))
+            guaclog_keydef_free(keydef);
+        else
+            guaclog_state_trim_keys(state);
+    }
 
     /* Output key states only for printable keys */
-    if (pressed && keydef->value != NULL) {
+    else if (pressed) {
 
         if (guaclog_state_is_shortcut(state)) {
 
@@ -244,13 +246,17 @@ int guaclog_state_update_key(guaclog_state* state, int keysym, bool pressed) {
 
             }
 
-            fprintf(state->output, ">");
+            fprintf(state->output, "%s>", keydef->value);
 
         }
 
         /* Print the key itself */
-        else
-            fprintf(state->output, "%s", keydef->value);
+        else {
+            if (keydef->value != NULL)
+                fprintf(state->output, "%s", keydef->value);
+            else
+                fprintf(state->output, "<%s>", keydef->name);
+        }
 
     }
 

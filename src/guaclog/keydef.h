@@ -22,6 +22,8 @@
 
 #include "config.h"
 
+#include <stdbool.h>
+
 /**
  * A mapping of X11 keysym to its corresponding human-readable name.
  */
@@ -43,6 +45,12 @@ typedef struct guaclog_keydef {
      * not generally useful in an auditing context, this will be NULL.
      */
     char* value;
+
+    /**
+     * Whether this key is a modifier which may affect the interpretation of
+     * other keys, and thus should be tracked as it is held down.
+     */
+    bool modifier;
 
 } guaclog_keydef;
 
