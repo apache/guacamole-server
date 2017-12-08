@@ -21,6 +21,7 @@
 #include "keydef.h"
 #include "log.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -169,6 +170,36 @@ static guaclog_keydef* guaclog_get_known_key(int keysym) {
 }
 
 /**
+ * Returns a statically-allocated guaclog_keydef representing an unknown key,
+ * deriving the name of the key from the hexadecimal value of the keysym.
+ *
+ * @param keysym
+ *     The X11 keysym of the key.
+ *
+ * @return
+ *     A statically-allocated guaclog_keydef representing the key associated
+ *     with the given keysym.
+ */
+static guaclog_keydef* guaclog_get_unknown_key(int keysym) {
+
+    static char unknown_keydef_name[64];
+    static guaclog_keydef unknown_keydef;
+
+    /* Write keysym as hex */
+    int size = snprintf(unknown_keydef_name, sizeof(unknown_keydef_name),
+            "0x%X", keysym);
+
+    /* Hex string is guaranteed to fit within the provided 64 bytes */
+    assert(size < sizeof(unknown_keydef_name));
+
+    /* Return static key definition */
+    unknown_keydef.keysym = keysym;
+    unknown_keydef.name = unknown_keydef_name;
+    return &unknown_keydef;
+
+}
+
+/**
  * Returns a statically-allocated guaclog_keydef representing the key
  * associated with the given keysym, deriving the name and value of the key
  * using its corresponding Unicode character.
@@ -286,7 +317,7 @@ guaclog_keydef* guaclog_keydef_alloc(int keysym) {
 
     /* Key not known */
     guaclog_log(GUAC_LOG_DEBUG, "Definition not found for key 0x%X.", keysym);
-    return NULL;
+    return guaclog_copy_key(guaclog_get_unknown_key(keysym));
 
 }
 
