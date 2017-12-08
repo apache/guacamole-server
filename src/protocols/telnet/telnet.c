@@ -470,7 +470,10 @@ void* guac_telnet_client_thread(void* data) {
         telnet_client->recording = guac_common_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,
-                settings->create_recording_path);
+                settings->create_recording_path,
+                !settings->recording_exclude_output,
+                !settings->recording_exclude_mouse,
+                settings->recording_include_keys);
     }
 
     /* Create terminal */

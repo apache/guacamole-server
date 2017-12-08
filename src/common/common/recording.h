@@ -55,6 +55,31 @@ typedef struct guac_common_recording {
      */
     guac_socket* socket;
 
+    /**
+     * Non-zero if output which is broadcast to each connected client
+     * (graphics, streams, etc.) should be included in the session recording,
+     * zero otherwise. Including output is necessary for any recording which
+     * must later be viewable as video.
+     */
+    int include_output;
+
+    /**
+     * Non-zero if changes to mouse state, such as position and buttons pressed
+     * or released, should be included in the session recording, zero
+     * otherwise. Including mouse state is necessary for the mouse cursor to be
+     * rendered in any resulting video.
+     */
+    int include_mouse;
+
+    /**
+     * Non-zero if keys pressed and released should be included in the session
+     * recording, zero otherwise. Including key events within the recording may
+     * be necessary in certain auditing contexts, but should only be done with
+     * caution. Key events can easily contain sensitive information, such as
+     * passwords, credit card numbers, etc.
+     */
+    int include_keys;
+
 } guac_common_recording;
 
 /**
@@ -82,13 +107,33 @@ typedef struct guac_common_recording {
  *     written, or non-zero if the path should be created if it does not yet
  *     exist.
  *
+ * @param include_output
+ *     Non-zero if output which is broadcast to each connected client
+ *     (graphics, streams, etc.) should be included in the session recording,
+ *     zero otherwise. Including output is necessary for any recording which
+ *     must later be viewable as video.
+ *
+ * @param include_mouse
+ *     Non-zero if changes to mouse state, such as position and buttons pressed
+ *     or released, should be included in the session recording, zero
+ *     otherwise. Including mouse state is necessary for the mouse cursor to be
+ *     rendered in any resulting video.
+ *
+ * @param include_keys
+ *     Non-zero if keys pressed and released should be included in the session
+ *     recording, zero otherwise. Including key events within the recording may
+ *     be necessary in certain auditing contexts, but should only be done with
+ *     caution. Key events can easily contain sensitive information, such as
+ *     passwords, credit card numbers, etc.
+ *
  * @return
  *     A new guac_common_recording structure representing the in-progress
  *     recording if the recording file has been successfully created and a
  *     recording will be written, NULL otherwise.
  */
 guac_common_recording* guac_common_recording_create(guac_client* client,
-        const char* path, const char* name, int create_path);
+        const char* path, const char* name, int create_path,
+        int include_output, int include_mouse, int include_keys);
 
 /**
  * Frees the resources associated with the given in-progress recording. Note
