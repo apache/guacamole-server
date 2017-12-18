@@ -45,6 +45,11 @@
 #define GUACENC_DEFAULT_BITRATE 2000000
 
 /**
+ * The default file name guacenc will use if stdin is used as input
+ */
+#define GUACENC_DEFAULT_FILENAME "output"
+
+/**
  * The default log level below which no messages should be logged.
  */
 #define GUACENC_DEFAULT_LOG_LEVEL GUAC_LOG_INFO
