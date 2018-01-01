@@ -18,7 +18,7 @@
 #
 
 AC_PREREQ([2.61])
-AC_INIT([guacamole-server], [0.9.13-incubating])
+AC_INIT([guacamole-server], [0.9.14])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
@@ -1196,13 +1196,17 @@ AM_CONDITIONAL([ENABLE_GUACENC], [test "x${enable_guacenc}"  = "xyes" \
 #
 
 AC_CONFIG_FILES([Makefile
+                 doc/Doxyfile
                  tests/Makefile
                  src/common/Makefile
                  src/common-ssh/Makefile
                  src/terminal/Makefile
                  src/libguac/Makefile
                  src/guacd/Makefile
+                 src/guacd/man/guacd.8
+                 src/guacd/man/guacd.conf.5
                  src/guacenc/Makefile
+                 src/guacenc/man/guacenc.1
                  src/pulse/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/ssh/Makefile

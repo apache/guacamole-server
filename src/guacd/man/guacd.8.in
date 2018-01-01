@@ -16,7 +16,7 @@
 .\" specific language governing permissions and limitations
 .\" under the License.
 .\"
-.TH guacd 8 "1 Jun 2017" "version 0.9.13-incubating" "Guacamole"
+.TH guacd 8 "1 Jun 2017" "version @PACKAGE_VERSION@" "Apache Guacamole"
 .
 .SH NAME
 guacd \- Guacamole proxy daemon
@@ -113,6 +113,3 @@ this option is not given, communication with guacd must be unencrypted.
 .
 .SH SEE ALSO
 .BR guacd.conf (5)
-.
-.SH AUTHOR
-Written by Michael Jumper <mike.jumper@guac-dev.org>
