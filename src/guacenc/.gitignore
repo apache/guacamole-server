@@ -3,3 +3,6 @@
 guacenc
 guacenc.exe
 
+# Documentation (built from .in files)
+man/guacenc.1
+

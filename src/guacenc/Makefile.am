@@ -96,6 +96,6 @@ guacenc_LDFLAGS =  \
     @SWSCALE_LIBS@ \
     @WEBP_LIBS@
 
-EXTRA_DIST =      \
-    man/guacenc.1
+EXTRA_DIST =         \
+    man/guacenc.1.in
 

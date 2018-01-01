@@ -59,10 +59,10 @@ guacd_LDFLAGS =    \
     @PTHREAD_LIBS@ \
     @SSL_LIBS@
 
-EXTRA_DIST =         \
-    init.d/guacd.in  \
-    man/guacd.8      \
-    man/guacd.conf.5
+EXTRA_DIST =            \
+    init.d/guacd.in     \
+    man/guacd.8.in      \
+    man/guacd.conf.5.in
 
 CLEANFILES = $(init_SCRIPTS)
 

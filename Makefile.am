@@ -75,13 +75,13 @@ if ENABLE_GUACENC
 SUBDIRS += src/guacenc
 endif
 
-EXTRA_DIST =      \
-    .dockerignore \
-    CONTRIBUTING  \
-    Dockerfile    \
-    LICENSE       \
-    NOTICE        \
-    bin/guacctl   \
-    doc/Doxyfile  \
+EXTRA_DIST =         \
+    .dockerignore    \
+    CONTRIBUTING     \
+    Dockerfile       \
+    LICENSE          \
+    NOTICE           \
+    bin/guacctl      \
+    doc/Doxyfile.in  \
     src/guacd-docker
 
