@@ -72,6 +72,8 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "enable-full-window-drag",
     "enable-desktop-composition",
     "enable-menu-animations",
+    "disable-bitmap-caching",
+    "disable-offscreen-caching",
     "preconnection-id",
     "preconnection-blob",
 
@@ -304,6 +306,18 @@ enum RDP_ARGS_IDX {
      * not be animated.
      */
     IDX_ENABLE_MENU_ANIMATIONS,
+
+    /**
+     * "true" if bitmap caching should be disabled, "false" if bitmap caching
+     * should remain enabled.
+     */
+    IDX_DISABLE_BITMAP_CACHING,
+
+    /**
+     * "true" if the offscreen caching should be disabled, false if offscren
+     * caching should remain enabled.
+     */
+    IDX_DISABLE_OFFSCREEN_CACHING,
 
     /**
      * The preconnection ID to send within the preconnection PDU when
@@ -671,6 +685,14 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->menu_animations_enabled =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_ENABLE_MENU_ANIMATIONS, 0);
+
+    settings->disable_bitmap_caching =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_BITMAP_CACHING, 0);
+
+    settings->disable_offscreen_caching =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_OFFSCREEN_CACHING, 0);
 
     /* Session color depth */
     settings->color_depth = 
@@ -1305,7 +1327,9 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     /* Order support */
 #ifdef LEGACY_RDPSETTINGS
-    bitmap_cache = rdp_settings->bitmap_cache;
+    rdp_settings->bitmap_cache = !guac_settings->disable_bitmap_caching;
+    bitmap_cache = !guac_settings->disable_bitmap_caching;
+    rdp_settings->offscreen_bitmap_cache = !guac_settings->disable_offscreen_caching;
     rdp_settings->os_major_type = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->os_minor_type = OSMINORTYPE_UNSPECIFIED;
     rdp_settings->desktop_resize = TRUE;
@@ -1334,7 +1358,9 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->order_support[NEG_ELLIPSE_SC_INDEX] = FALSE;
     rdp_settings->order_support[NEG_ELLIPSE_CB_INDEX] = FALSE;
 #else
-    bitmap_cache = rdp_settings->BitmapCacheEnabled;
+    rdp_settings->BitmapCacheEnabled = !guac_settings->disable_bitmap_caching;
+    bitmap_cache = !guac_settings->disable_bitmap_caching;
+    rdp_settings->OffscreenSupportLevel = !guac_settings->disable_offscreen_caching;
     rdp_settings->OsMajorType = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
     rdp_settings->DesktopResize = TRUE;
