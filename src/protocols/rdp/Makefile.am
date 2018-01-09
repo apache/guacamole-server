@@ -258,7 +258,8 @@ rdp_keymaps =                   \
     $(srcdir)/keymaps/it_it_qwerty.keymap \
     $(srcdir)/keymaps/ja_jp_qwerty.keymap \
     $(srcdir)/keymaps/pt_br_qwerty.keymap \
-    $(srcdir)/keymaps/sv_se_qwerty.keymap
+    $(srcdir)/keymaps/sv_se_qwerty.keymap \
+    $(srcdir)/keymaps/tr_tr_qwerty.keymap
 
 _generated_keymaps.c: $(rdp_keymaps)
 	$(srcdir)/keymaps/generate.pl $(rdp_keymaps)
