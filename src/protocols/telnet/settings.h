@@ -214,6 +214,11 @@ typedef struct guac_telnet_settings {
      */
     int backspace;
 
+    /**
+     * The terminal emulator type that is passed to the remote system.
+     */
+    char* terminal_type;
+
 } guac_telnet_settings;
 
 /**

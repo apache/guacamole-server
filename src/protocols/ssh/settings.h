@@ -228,6 +228,11 @@ typedef struct guac_ssh_settings {
      */
     int backspace;
 
+    /**
+     * The terminal emulator type that is passed to the remote system.
+     */
+    char* terminal_type;
+
 } guac_ssh_settings;
 
 /**
