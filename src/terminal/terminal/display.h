@@ -139,6 +139,12 @@ typedef struct guac_terminal_display {
     guac_terminal_color palette[256];
 
     /**
+     * The default palette. Use GUAC_TERMINAL_INITIAL_PALETTE if null.
+     * Must free on destruction if not null.
+     */
+    const guac_terminal_color (*default_palette)[256];
+
+    /**
      * Default foreground color for all glyphs.
      */
     guac_terminal_color default_foreground;
@@ -215,7 +221,8 @@ typedef struct guac_terminal_display {
  */
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
         const char* font_name, int font_size, int dpi,
-        guac_terminal_color* foreground, guac_terminal_color* background);
+        guac_terminal_color* foreground, guac_terminal_color* background,
+        const guac_terminal_color (*palette)[256]);
 
 /**
  * Frees the given display.
@@ -224,7 +231,7 @@ void guac_terminal_display_free(guac_terminal_display* display);
 
 /**
  * Resets the palette of the given display to the initial, default color
- * values, as defined by GUAC_TERMINAL_INITIAL_PALETTE.
+ * values, as defined by default_palette or GUAC_TERMINAL_INITIAL_PALETTE.
  *
  * @param display
  *     The display to reset.

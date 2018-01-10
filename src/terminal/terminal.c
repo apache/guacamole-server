@@ -332,7 +332,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->display = guac_terminal_display_alloc(client,
             font_name, font_size, dpi,
             &default_char.attributes.foreground,
-            &default_char.attributes.background);
+            &default_char.attributes.background, NULL);
 
     /* Fail if display init failed */
     if (term->display == NULL) {
