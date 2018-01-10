@@ -33,6 +33,7 @@ int guac_terminal_xparsecolor(const char* spec,
 
     /* 12-bit RGB ("rgb:h/h/h"), zero-padded to 24-bit */
     if (sscanf(spec, "rgb:%1x/%1x/%1x", &red, &green, &blue) == 3) {
+        color->palette_index = -1; /* Not from palette. */
         color->red   = red   << 4;
         color->green = green << 4;
         color->blue  = blue  << 4;
@@ -41,6 +42,7 @@ int guac_terminal_xparsecolor(const char* spec,
 
     /* 24-bit RGB ("rgb:hh/hh/hh") */
     if (sscanf(spec, "rgb:%2x/%2x/%2x", &red, &green, &blue) == 3) {
+        color->palette_index = -1; /* Not from palette. */
         color->red   = red;
         color->green = green;
         color->blue  = blue;
@@ -49,6 +51,7 @@ int guac_terminal_xparsecolor(const char* spec,
 
     /* 36-bit RGB ("rgb:hhh/hhh/hhh"), truncated to 24-bit */
     if (sscanf(spec, "rgb:%3x/%3x/%3x", &red, &green, &blue) == 3) {
+        color->palette_index = -1; /* Not from palette. */
         color->red   = red   >> 4;
         color->green = green >> 4;
         color->blue  = blue  >> 4;
@@ -57,6 +60,7 @@ int guac_terminal_xparsecolor(const char* spec,
 
     /* 48-bit RGB ("rgb:hhhh/hhhh/hhhh"), truncated to 24-bit */
     if (sscanf(spec, "rgb:%4x/%4x/%4x", &red, &green, &blue) == 3) {
+        color->palette_index = -1; /* Not from palette. */
         color->red   = red   >> 8;
         color->green = green >> 8;
         color->blue  = blue  >> 8;
