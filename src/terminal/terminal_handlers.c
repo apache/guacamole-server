@@ -367,6 +367,10 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
             guac_terminal_reset(term);
             break;
 
+        case '_':
+            term->char_handler = guac_terminal_apc;
+            break;
+
         default:
             guac_client_log(term->client, GUAC_LOG_DEBUG,
                     "Unhandled ESC sequence: %c", c);
@@ -1373,3 +1377,19 @@ int guac_terminal_ctrl_func(guac_terminal* term, unsigned char c) {
 
 }
 
+int guac_terminal_apc(guac_terminal* term, unsigned char c) {
+
+    /* xterm does not implement APC functions and neither do we. Look for the
+     * "ESC \" (string terminator) sequence, while ignoring other chars. */
+    static bool escaping = false;
+
+    if (escaping) {
+        if (c == '\\')
+            term->char_handler = guac_terminal_echo;
+        escaping = false;
+    }
+
+    if (c == 0x1B)
+        escaping = true;
+    return 0;
+}

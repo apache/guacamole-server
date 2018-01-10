@@ -186,5 +186,16 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c);
  */
 int guac_terminal_ctrl_func(guac_terminal* term, unsigned char c);
 
+/**
+ * Handles terminal control function sequences initiated with "ESC _".
+ *
+ * @param term
+ *     The terminal that received the given character of data.
+ *
+ * @param c
+ *     The character that was received by the given terminal.
+ */
+int guac_terminal_apc(guac_terminal* term, unsigned char c);
+
 #endif
 
