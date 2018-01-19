@@ -28,16 +28,14 @@
 ##     The directory which currently contains the guacamole-server source and
 ##     in which the build should be performed.
 ##
+## @param PREFIX_DIR
+##     The directory prefix into which the build artifacts should be installed 
+##     in which the build should be performed. This is passed to the --prefix
+##     option of `configure`.
+##
 
 BUILD_DIR="$1"
-
-##
-## Locates the directory in which the FreeRDP libraries (.so files) are
-## located, printing the result to STDOUT.
-##
-where_is_freerdp() {
-    dirname `rpm -ql freerdp-libs | grep 'libfreerdp.*\.so' | head -n1`
-}
+PREFIX_DIR="$2"
 
 #
 # Build guacamole-server
@@ -45,18 +43,7 @@ where_is_freerdp() {
 
 cd "$BUILD_DIR"
 autoreconf -fi
-./configure
+./configure --prefix="$PREFIX_DIR"
 make
 make install
 ldconfig
-
-#
-# Add FreeRDP plugins to proper path
-#
-
-FREERDP_DIR=`where_is_freerdp`
-FREERDP_PLUGIN_DIR="$FREERDP_DIR/freerdp"
-
-mkdir -p "$FREERDP_PLUGIN_DIR"
-ln -s /usr/local/lib/freerdp/*.so "$FREERDP_PLUGIN_DIR"
-
