@@ -56,7 +56,6 @@ ENV \
         libtool                       \
         libtelnet-devel               \
         libvorbis-devel               \
-        libvncserver-devel            \
         libwebp-devel                 \
         make                          \
         pango-devel                   \
@@ -77,6 +76,7 @@ COPY . "$BUILD_DIR"
 
 # Build guacamole-server from local source
 RUN yum -y install $BUILD_DEPENDENCIES         && \
+    /opt/guacd/bin/build-libvncserver.sh "$BUILD_DIR" && \
     /opt/guacd/bin/build-guacd.sh "$BUILD_DIR" && \
     rm -Rf "$BUILD_DIR"                        && \
     yum -y autoremove $BUILD_DEPENDENCIES      && \
