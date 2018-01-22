@@ -833,13 +833,11 @@ static int guac_rdp_handle_connection(guac_client* client) {
         pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
         /* Close connection cleanly if server is disconnecting */
-        if (connection_closing) {
+        if (connection_closing)
             guac_rdp_client_abort(client);
-            return 1;
-        }
 
-        /* If an error occurred, fail */
-        if (wait_result < 0)
+        /* If a low-level connection error occurred, fail */
+        else if (wait_result < 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                     "Connection closed.");
 
