@@ -841,10 +841,12 @@ static int guac_rdp_handle_connection(guac_client* client) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                     "Connection closed.");
 
-        /* Flush frame */
-        guac_common_display_flush(rdp_client->display);
-        guac_client_end_frame(client);
-        guac_socket_flush(client->socket);
+        /* Flush frame only if successful */
+        else {
+            guac_common_display_flush(rdp_client->display);
+            guac_client_end_frame(client);
+            guac_socket_flush(client->socket);
+        }
 
     }
 
