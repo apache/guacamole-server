@@ -763,21 +763,14 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 pthread_mutex_lock(&(rdp_client->rdp_lock));
 
                 /* Check the libfreerdp fds */
-                if (!freerdp_check_fds(rdp_inst)) {
-                    guac_client_abort(client,
-                            GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
-                            "Error handling RDP file descriptors");
-                    pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                    return 1;
-                }
+                if (!freerdp_check_fds(rdp_inst)
+                        || !freerdp_channels_check_fds(channels, rdp_inst)) {
 
-                /* Check channel fds */
-                if (!freerdp_channels_check_fds(channels, rdp_inst)) {
-                    guac_client_abort(client,
-                            GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
-                            "Error handling RDP channel file descriptors");
+                    /* Flag connection failure */
+                    wait_result = -1;
                     pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                    return 1;
+                    break;
+
                 }
 
                 /* Check for channel events */
@@ -799,13 +792,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
                     freerdp_event_free(event);
 
-                }
-
-                /* Handle RDP disconnect */
-                if (freerdp_shall_disconnect(rdp_inst)) {
-                    guac_rdp_client_abort(client);
-                    pthread_mutex_unlock(&(rdp_client->rdp_lock));
-                    return 1;
                 }
 
                 pthread_mutex_unlock(&(rdp_client->rdp_lock));
@@ -839,6 +825,17 @@ static int guac_rdp_handle_connection(guac_client* client) {
              * excluded from the required wait period of the next frame). */
             last_frame_end = frame_start;
 
+        }
+
+        /* Test whether the RDP server is closing the connection */
+        pthread_mutex_lock(&(rdp_client->rdp_lock));
+        int connection_closing = freerdp_shall_disconnect(rdp_inst);
+        pthread_mutex_unlock(&(rdp_client->rdp_lock));
+
+        /* Close connection cleanly if server is disconnecting */
+        if (connection_closing) {
+            guac_rdp_client_abort(client);
+            return 1;
         }
 
         /* If an error occurred, fail */
