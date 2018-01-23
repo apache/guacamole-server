@@ -410,11 +410,23 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
 }
 
+void guac_terminal_stop(guac_terminal* term) {
+
+    /* Close input pipe and set fds to invalid */
+    if (term->stdin_pipe_fd[1] != -1) {
+        close(term->stdin_pipe_fd[1]);
+        term->stdin_pipe_fd[1] = -1;
+    }
+    if (term->stdin_pipe_fd[0] != -1) {
+        close(term->stdin_pipe_fd[0]);
+        term->stdin_pipe_fd[0] = -1;
+    }
+}
+
 void guac_terminal_free(guac_terminal* term) {
 
     /* Close user input pipe */
-    close(term->stdin_pipe_fd[1]);
-    close(term->stdin_pipe_fd[0]);
+    guac_terminal_stop(term);
 
     /* Wait for render thread to finish */
     pthread_join(term->thread, NULL);

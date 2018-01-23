@@ -162,8 +162,14 @@ void* ssh_input_thread(void* data) {
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
         libssh2_channel_write(ssh_client->term_channel, buffer, bytes_read);
         pthread_mutex_unlock(&(ssh_client->term_channel_lock));
+
+        /* Make sure ssh_input_thread can be terminated anyway */
+        if (client->state == GUAC_CLIENT_STOPPING)
+            break;
     }
 
+    /* Stop the client so that ssh_client_thread can be terminated */
+    guac_client_stop(client);
     return NULL;
 
 }
@@ -336,6 +342,12 @@ void* ssh_client_thread(void* data) {
 
         /* Stop reading at EOF */
         if (libssh2_channel_eof(ssh_client->term_channel)) {
+            pthread_mutex_unlock(&(ssh_client->term_channel_lock));
+            break;
+        }
+
+        /* Client is stopping, break the loop */
+        if (client->state == GUAC_CLIENT_STOPPING) {
             pthread_mutex_unlock(&(ssh_client->term_channel_lock));
             break;
         }

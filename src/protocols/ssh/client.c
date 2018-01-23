@@ -70,8 +70,12 @@ int guac_ssh_client_free_handler(guac_client* client) {
 
     /* Free terminal (which may still be using term_channel) */
     if (ssh_client->term != NULL) {
-        guac_terminal_free(ssh_client->term);
+        /* Stop the terminal to unblock any pending reads/writes */
+        guac_terminal_stop(ssh_client->term);
+
+        /* Wait ssh_client_thread to finish before freeing the terminal */
         pthread_join(ssh_client->client_thread, NULL);
+        guac_terminal_free(ssh_client->term);
     }
 
     /* Free terminal channel now that the terminal is finished */

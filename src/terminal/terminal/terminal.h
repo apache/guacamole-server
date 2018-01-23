@@ -492,6 +492,15 @@ int guac_terminal_render_frame(guac_terminal* terminal);
 int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size);
 
 /**
+ * Manually stop the terminal to forcibly unblock any pending reads/writes,
+ * e.g. forcing guac_terminal_read_stdin() to return and cease all terminal I/O.
+ *
+ * @param term
+ *     The terminal to stop.
+ */
+void guac_terminal_stop(guac_terminal* term);
+
+/**
  * Notifies the terminal that an event has occurred and the terminal should
  * flush itself when reasonable.
  *
