@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "display.h"
 #include "image-stream.h"
 #include "jpeg.h"
 #include "log.h"
@@ -139,6 +140,7 @@ int guacenc_image_stream_end(guacenc_image_stream* stream,
 
     /* Draw surface to buffer */
     if (buffer->cairo != NULL) {
+        cairo_set_operator(buffer->cairo, guacenc_display_cairo_operator(stream->mask));
         cairo_set_source_surface(buffer->cairo, surface, stream->x, stream->y);
         cairo_rectangle(buffer->cairo, stream->x, stream->y, width, height);
         cairo_fill(buffer->cairo);
