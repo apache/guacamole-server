@@ -94,4 +94,6 @@ would look like:
 .PP
 .RS 0
 Hello WORLD!<Ctrl+a><Ctrl+c><Alt+Shift+Tab><Ctrl+v>
-
+.
+.SH SEE ALSO
+.BR guacenc (1)
