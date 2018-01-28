@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "decompose.h"
 #include "keyboard.h"
 #include "rdp.h"
 #include "rdp_keymap.h"
@@ -309,11 +310,14 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
         }
     }
 
-    /* Fall back to unicode events if undefined inside current keymap */
-
-    /* Only send when key pressed - Unicode events do not have
-     * DOWN/RELEASE flags */
+    /* Fall back to dead keys or Unicode events if otherwise undefined inside
+     * current keymap (note that we only handle "pressed" here, as neither
+     * Unicode events nor dead keys can have a pressed/released state) */
     if (pressed) {
+
+        /* Attempt to type using dead keys */
+        if (!guac_rdp_decompose_keysym(keyboard, keysym))
+            return 0;
 
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "Sending keysym 0x%x as Unicode", keysym);
