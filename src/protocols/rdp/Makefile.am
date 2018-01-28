@@ -28,6 +28,7 @@ nodist_libguac_client_rdp_la_SOURCES = \
 libguac_client_rdp_la_SOURCES = \
     audio_input.c               \
     client.c                    \
+    decompose.c                 \
     dvc.c                       \
     error.c                     \
     input.c                     \
@@ -98,6 +99,7 @@ noinst_HEADERS =                             \
     guac_svc/svc_service.h                   \
     audio_input.h                            \
     client.h                                 \
+    decompose.h                              \
     dvc.h                                    \
     error.h                                  \
     input.h                                  \
