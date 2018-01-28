@@ -244,6 +244,21 @@ void guac_rdp_keyboard_free(guac_rdp_keyboard* keyboard) {
     free(keyboard);
 }
 
+int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym) {
+
+    /* Verify keysym can actually be stored within keymap */
+    if (!GUAC_RDP_KEYSYM_STORABLE(keysym))
+        return 0;
+
+    /* Look up scancode mapping */
+    const guac_rdp_keysym_desc* keysym_desc =
+        &GUAC_RDP_KEYSYM_LOOKUP(keyboard->keymap, keysym);
+
+    /* Return whether the mapping actually exists */
+    return keysym_desc->scancode != 0;
+
+}
+
 int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
         int keysym, int pressed) {
 

@@ -96,6 +96,23 @@ guac_rdp_keyboard* guac_rdp_keyboard_alloc(guac_client* client,
 void guac_rdp_keyboard_free(guac_rdp_keyboard* keyboard);
 
 /**
+ * Returns whether the given keysym is defined for the keyboard layout
+ * associated with the given keyboard.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard instance to check.
+ *
+ * @param keysym
+ *     The keysym of the key being checked against the keyboard layout of the
+ *     given keyboard.
+ *
+ * @return
+ *     Non-zero if the key is explicitly defined within the keyboard layout of
+ *     the given keyboard, zero otherwise.
+ */
+int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym);
+
+/**
  * Sends one or more RDP key events, effectively pressing or releasing the
  * given keysym on the remote side. The key events sent will depend on the
  * current keymap. The locally-stored state of each key is remains untouched.
