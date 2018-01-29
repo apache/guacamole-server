@@ -25,6 +25,50 @@
 #include <guacamole/client.h>
 
 /**
+ * The current local state of a key - either pressed or released.
+ */
+typedef enum guac_rdp_key_state {
+
+    /**
+     * The state associated with a key that is released (not currently
+     * pressed / held down).
+     */
+    GUAC_RDP_KEY_RELEASED = 0,
+
+    /**
+     * The state associated with a key that is currently pressed (held down).
+     */
+    GUAC_RDP_KEY_PRESSED = 1
+
+} guac_rdp_key_state;
+
+/**
+ * A representation of a single key within the overall local keyboard,
+ * including the definition of that key within the RDP server's keymap and
+ * whether the key is currently pressed locally.
+ */
+typedef struct guac_rdp_key {
+
+    /**
+     * The definition of this key within the RDP server's keymap (keyboard
+     * layout). This definition describes which scancode corresponds to this
+     * key from the perspective of the RDP server, as well as which other
+     * scancodes must be pressed/released for this key to have the desired
+     * meaning. If this key does not exist within the RDP server's keymap, this
+     * will be NULL.
+     */
+    const guac_rdp_keysym_desc* definition;
+
+    /**
+     * The local state of this key. For the sake of simplicity, it is assumed
+     * that this state is also an accurate representation of the remote state
+     * of this key within the RDP session.
+     */
+    guac_rdp_key_state state;
+
+} guac_rdp_key;
+
+/**
  * The current keyboard state of an RDP session.
  */
 typedef struct guac_rdp_keyboard {
@@ -49,18 +93,19 @@ typedef struct guac_rdp_keyboard {
     int synchronized;
 
     /**
-     * The keymap to use when translating keysyms into scancodes or sequences
-     * of scancodes for RDP.
+     * The local state of all keys, as well as the necessary information to
+     * translate received keysyms into scancodes or sequences  of scancodes for
+     * RDP. The state of each key is updated based on received Guacamole key
+     * events, while the information describing the behavior and scancode
+     * mapping of each key is populated based on an associated keymap.
+     *
+     * The index of the key for a given keysym is determined based on a
+     * simple transformation of the keysym itself. Keysyms between 0x0000 and
+     * 0xFFFF inclusive are mapped to 0x00000 through 0x0FFFF, while keysyms
+     * between 0x1000000 and 0x100FFFF inclusive (keysyms which are derived
+     * from Unicode) are mapped to 0x10000 through 0x1FFFF.
      */
-    guac_rdp_static_keymap keymap;
-
-    /**
-     * The local state of all keys, based on whether Guacamole key events for
-     * pressing/releasing particular keysyms have been received. This is used
-     * together with the associated keymap to determine the sequence of RDP key
-     * events sent to duplicate the effect of a particular keysym.
-     */
-    guac_rdp_keysym_state_map keysym_state;
+    guac_rdp_key keys[0x20000];
 
 } guac_rdp_keyboard;
 
@@ -136,9 +181,8 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
  * For every keysym in the given NULL-terminated array of keysyms, send the RDP
  * key events required to update the remote state of those keys as specified,
  * depending on the current local state of those keysyms.  For each key in the
- * "from" state (0 being released and 1 being pressed), that key will be
- * updated to the "to" state. The locally-stored state of each key is remains
- * untouched.
+ * "from" state, that key will be updated to the "to" state. The locally-stored
+ * state of each key is remains untouched.
  *
  * @param keyboard
  *     The guac_rdp_keyboard associated with the current RDP session.
@@ -147,15 +191,18 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
  *     A NULL-terminated array of keysyms, each of which will be updated.
  *
  * @param from
- *     0 if the state of currently-released keys should be updated, or 1 if
- *     the state of currently-pressed keys should be updated.
+ *     GUAC_RDP_KEY_RELEASED if the state of currently-released keys should be
+ *     updated, or GUAC_RDP_KEY_PRESSED if the state of currently-pressed keys
+ *     should be updated.
  *
  * @param to 
- *     0 if the keys being updated should be marked as released, or 1 if
- *     the keys being updated should be marked as pressed.
+ *     GUAC_RDP_KEY_RELEASED if the keys being updated should be marked as
+ *     released, or GUAC_RDP_KEY_PRESSED if the keys being updated should be
+ *     marked as pressed.
  */
 void guac_rdp_keyboard_send_events(guac_rdp_keyboard* keyboard,
-        const int* keysym_string, int from, int to);
+        const int* keysym_string, guac_rdp_key_state from,
+        guac_rdp_key_state to);
 
 /**
  * Updates the local state of the lock keys (such as Caps lock or Num lock),

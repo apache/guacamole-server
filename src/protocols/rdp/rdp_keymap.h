@@ -113,47 +113,6 @@ struct guac_rdp_keymap {
 };
 
 /**
- * Static mapping from keysyms to scancodes.
- */
-typedef guac_rdp_keysym_desc guac_rdp_static_keymap[0x200][0x100];
-
-/**
- * Mapping from keysym to current state
- */
-typedef int guac_rdp_keysym_state_map[0x200][0x100];
-
-/**
- * Simple macro for determing whether a keysym can be stored (or retrieved)
- * from any keymap.
- *
- * @param keysym
- *     The keysym to check.
- *
- * @return
- *     Non-zero if the keysym can be stored or retrieved, zero otherwise.
- */
-#define GUAC_RDP_KEYSYM_STORABLE(keysym) ((keysym) <= 0xFFFF || ((keysym) & 0xFFFF0000) == 0x01000000)
-
-/**
- * Simple macro for referencing the mapped value of a scancode for a given
- * keysym. The idea here is that a keysym of the form 0xABCD will map to
- * mapping[0xAB][0xCD] while a keysym of the form 0x100ABCD will map to
- * mapping[0x1AB][0xCD].
- *
- * @param keysym_mapping
- *     A 512-entry array of 256-entry arrays of arbitrary values, where the
- *     location of each array and value is determined by the given keysym.
- *
- * @param keysym
- *     The keysym of the entry to look up.
- */
-#define GUAC_RDP_KEYSYM_LOOKUP(keysym_mapping, keysym) (          \
-            (keysym_mapping)                                      \
-            [(((keysym) & 0xFF00) >> 8) | ((keysym) >> 16)]       \
-            [(keysym) & 0xFF]                                     \
-        )
-
-/**
  * The name of the default keymap, which MUST exist.
  */
 #define GUAC_DEFAULT_KEYMAP "en-us-qwerty"
