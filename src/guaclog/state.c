@@ -219,14 +219,19 @@ int guaclog_state_update_key(guaclog_state* state, int keysym, bool pressed) {
 
     /* Update tracked key state for modifiers */
     if (keydef->modifier) {
+
+        /* Keydef will be automatically freed if successfully added to state */
         if (guaclog_state_add_key(state, keydef, pressed))
             guaclog_keydef_free(keydef);
         else
             guaclog_state_trim_keys(state);
+
+        return 0;
+
     }
 
     /* Output key states only for printable keys */
-    else if (pressed) {
+    if (pressed) {
 
         if (guaclog_state_is_shortcut(state)) {
 
@@ -260,6 +265,7 @@ int guaclog_state_update_key(guaclog_state* state, int keysym, bool pressed) {
 
     }
 
+    guaclog_keydef_free(keydef);
     return 0;
 
 }
