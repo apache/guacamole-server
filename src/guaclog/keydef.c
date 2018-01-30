@@ -267,6 +267,7 @@ static guaclog_keydef* guaclog_get_unicode_key(int keysym) {
     /* Return static key definition */
     unicode_keydef.keysym = keysym;
     unicode_keydef.name = unicode_keydef.value = unicode_keydef_name;
+    unicode_keydef.modifier = false;
     return &unicode_keydef;
 
 }
@@ -290,6 +291,7 @@ static guaclog_keydef* guaclog_copy_key(guaclog_keydef* keydef) {
     /* Always copy keysym and name */
     copy->keysym = keydef->keysym;
     copy->name = strdup(keydef->name);
+    copy->modifier = keydef->modifier;
 
     /* Copy value only if defined */
     if (keydef->value != NULL)
