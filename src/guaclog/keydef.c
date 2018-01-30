@@ -222,7 +222,7 @@ static guaclog_keydef* guaclog_get_unicode_key(int keysym) {
     int mask, bytes;
 
     /* Translate only if keysym maps to Unicode */
-    if (keysym < 0x00 || (keysym > 0xFF && (keysym & 0xFFFF0000) != 0x01000000))
+    if (keysym < 0x00 || (keysym > 0xFF && (keysym | 0xFFFF) != 0x0100FFFF))
         return NULL;
 
     int codepoint = keysym & 0xFFFF;
