@@ -236,18 +236,11 @@ static guaclog_keydef* guaclog_get_unicode_key(int keysym) {
         mask  = 0xC0;
         bytes = 2;
     }
-    else if (codepoint <= 0xFFFF) {
+    else {
+        assert(codepoint <= 0xFFFF);
         mask  = 0xE0;
         bytes = 3;
     }
-    else if (codepoint <= 0x1FFFFF) {
-        mask  = 0xF0;
-        bytes = 4;
-    }
-
-    /* Otherwise, invalid codepoint */
-    else
-        return NULL;
 
     /* Offset buffer by size */
     char* key_name = unicode_keydef_name + bytes;
