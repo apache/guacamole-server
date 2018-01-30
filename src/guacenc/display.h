@@ -22,10 +22,12 @@
 
 #include "config.h"
 #include "buffer.h"
+#include "cursor.h"
 #include "image-stream.h"
 #include "layer.h"
 #include "video.h"
 
+#include <cairo/cairo.h>
 #include <guacamole/protocol.h>
 #include <guacamole/timestamp.h>
 
@@ -51,6 +53,11 @@
  * The current state of the Guacamole video encoder's internal display.
  */
 typedef struct guacenc_display {
+
+    /**
+     * The current mouse cursor state.
+     */
+    guacenc_cursor* cursor;
 
     /**
      * All currently-allocated buffers. The index of the buffer corresponds to

@@ -20,9 +20,12 @@
 #include "config.h"
 #include "display.h"
 #include "layer.h"
+#include "log.h"
 
 #include <cairo/cairo.h>
+#include <guacamole/client.h>
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -72,6 +75,50 @@ static int guacenc_display_layer_comparator(const void* a, const void* b) {
 
     /* Order sibling layers according to descending Z */
     return layer_b->z - layer_a->z;
+
+}
+
+/**
+ * Renders the mouse cursor on top of the frame buffer of the default layer of
+ * the given display.
+ *
+ * @param display
+ *     The display whose mouse cursor should be rendered to the frame buffer
+ *     of its default layer.
+ *
+ * @return
+ *     Zero if rendering succeeds, non-zero otherwise.
+ */
+static int guacenc_display_render_cursor(guacenc_display* display) {
+
+    guacenc_cursor* cursor = display->cursor;
+
+    /* Do not render cursor if coordinates are negative */
+    if (cursor->x < 0 || cursor->y < 0)
+        return 0;
+
+    /* Retrieve default layer (guaranteed to not be NULL) */
+    guacenc_layer* def_layer = guacenc_display_get_layer(display, 0);
+    assert(def_layer != NULL);
+
+    /* Get source and destination buffers */
+    guacenc_buffer* src = cursor->buffer;
+    guacenc_buffer* dst = def_layer->frame;
+
+    /* Render cursor to layer */
+    if (src->width > 0 && src->height > 0) {
+        cairo_set_source_surface(dst->cairo, src->surface,
+                cursor->x - cursor->hotspot_x,
+                cursor->y - cursor->hotspot_y);
+        cairo_rectangle(dst->cairo,
+                cursor->x - cursor->hotspot_x,
+                cursor->y - cursor->hotspot_y,
+                src->width, src->height);
+        cairo_fill(dst->cairo);
+    }
+
+    /* Always succeeds */
+    return 0;
 
 }
 
@@ -151,7 +198,8 @@ int guacenc_display_flatten(guacenc_display* display) {
 
     }
 
-    return 0;
+    /* Render cursor on top of everything else */
+    return guacenc_display_render_cursor(display);
 
 }
 

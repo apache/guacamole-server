@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "common/recording.h"
 #include "common-ssh/sftp.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
@@ -87,6 +88,10 @@ int guac_ssh_client_free_handler(guac_client* client) {
         guac_common_ssh_destroy_sftp_filesystem(ssh_client->sftp_filesystem);
         guac_common_ssh_destroy_session(ssh_client->sftp_session);
     }
+
+    /* Clean up recording, if in progress */
+    if (ssh_client->recording != NULL)
+        guac_common_recording_free(ssh_client->recording);
 
     /* Free interactive SSH session */
     if (ssh_client->session != NULL)

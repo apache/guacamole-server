@@ -18,28 +18,38 @@
  */
 
 #include "config.h"
+#include "cursor.h"
 #include "display.h"
 #include "log.h"
 #include "parse.h"
 
 #include <guacamole/client.h>
-#include <guacamole/timestamp.h>
 
-#include <inttypes.h>
 #include <stdlib.h>
 
-int guacenc_handle_sync(guacenc_display* display, int argc, char** argv) {
+int guacenc_handle_mouse(guacenc_display* display, int argc, char** argv) {
 
     /* Verify argument count */
-    if (argc < 1) {
-        guacenc_log(GUAC_LOG_WARNING, "\"sync\" instruction incomplete");
+    if (argc < 2) {
+        guacenc_log(GUAC_LOG_WARNING, "\"mouse\" instruction incomplete");
         return 1;
     }
 
     /* Parse arguments */
-    guac_timestamp timestamp = guacenc_parse_timestamp(argv[0]);
+    int x = atoi(argv[0]);
+    int y = atoi(argv[1]);
 
-    /* Update timestamp / flush frame */
+    /* Update cursor properties */
+    guacenc_cursor* cursor = display->cursor;
+    cursor->x = x;
+    cursor->y = y;
+
+    /* If no timestamp provided, nothing further to do */
+    if (argc < 4)
+        return 0;
+
+    /* Leverage timestamp to render frame */
+    guac_timestamp timestamp = guacenc_parse_timestamp(argv[3]);
     return guacenc_display_sync(display, timestamp);
 
 }

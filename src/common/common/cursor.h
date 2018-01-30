@@ -102,6 +102,27 @@ typedef struct guac_common_cursor {
      */
     int y;
 
+    /**
+     * An integer value representing the current state of each button, where
+     * the Nth bit within the integer is set to 1 if and only if the Nth mouse
+     * button is currently pressed. The lowest-order bit is the left mouse
+     * button, followed by the middle button, right button, and finally the up
+     * and down buttons of the scroll wheel.
+     *
+     * @see GUAC_CLIENT_MOUSE_LEFT
+     * @see GUAC_CLIENT_MOUSE_MIDDLE
+     * @see GUAC_CLIENT_MOUSE_RIGHT
+     * @see GUAC_CLIENT_MOUSE_SCROLL_UP
+     * @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
+     */
+    int button_mask;
+
+    /**
+     * The server timestamp representing the point in time when the mousr
+     * location was last updated.
+     */
+    guac_timestamp timestamp;
+
 } guac_common_cursor;
 
 /**
@@ -142,12 +163,12 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
         guac_socket* socket);
 
 /**
- * Moves the mouse cursor, marking the given user as the most recent user of
- * the mouse. The remote mouse cursor will be hidden for this user and shown
- * for all others.
+ * Updates the current position and button state of the mouse cursor, marking
+ * the given user as the most recent user of the mouse. The remote mouse cursor
+ * will be hidden for this user and shown for all others.
  *
  * @param cursor
- *     The cursor being moved.
+ *     The cursor being updated.
  *
  * @param user
  *     The user that moved the cursor.
@@ -157,9 +178,22 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
  *
  * @param y
  *     The new Y coordinate of the cursor.
+ *
+ * @param button_mask
+ *     An integer value representing the current state of each button, where
+ *     the Nth bit within the integer is set to 1 if and only if the Nth mouse
+ *     button is currently pressed. The lowest-order bit is the left mouse
+ *     button, followed by the middle button, right button, and finally the up
+ *     and down buttons of the scroll wheel.
+ *
+ *     @see GUAC_CLIENT_MOUSE_LEFT
+ *     @see GUAC_CLIENT_MOUSE_MIDDLE
+ *     @see GUAC_CLIENT_MOUSE_RIGHT
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_UP
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
  */
-void guac_common_cursor_move(guac_common_cursor* cursor, guac_user* user,
-        int x, int y);
+void guac_common_cursor_update(guac_common_cursor* cursor, guac_user* user,
+        int x, int y, int button_mask);
 
 /**
  * Sets the cursor image to the given raw image data. This raw image data must

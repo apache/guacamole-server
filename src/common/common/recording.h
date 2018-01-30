@@ -43,6 +43,21 @@
 #define GUAC_COMMON_RECORDING_MAX_NAME_LENGTH 2048
 
 /**
+ * An in-progress session recording, attached to a guac_client instance such
+ * that output Guacamole instructions may be dynamically intercepted and
+ * written to a file.
+ */
+typedef struct guac_common_recording {
+
+    /**
+     * The guac_socket which writes directly to the recording file, rather than
+     * to any particular user.
+     */
+    guac_socket* socket;
+
+} guac_common_recording;
+
+/**
  * Replaces the socket of the given client such that all further Guacamole
  * protocol output will be copied into a file within the given path and having
  * the given name. If the create_path flag is non-zero, the given path will be
@@ -68,11 +83,51 @@
  *     exist.
  *
  * @return
- *     Zero if the recording file has been successfully created and a recording
- *     will be written, non-zero otherwise.
+ *     A new guac_common_recording structure representing the in-progress
+ *     recording if the recording file has been successfully created and a
+ *     recording will be written, NULL otherwise.
  */
-int guac_common_recording_create(guac_client* client, const char* path,
-        const char* name, int create_path);
+guac_common_recording* guac_common_recording_create(guac_client* client,
+        const char* path, const char* name, int create_path);
+
+/**
+ * Frees the resources associated with the given in-progress recording. Note
+ * that, due to the manner that recordings are attached to the guac_client, the
+ * underlying guac_socket is not freed. The guac_socket will be automatically
+ * freed when the guac_client is freed.
+ *
+ * @param recording
+ *     The guac_common_recording to free.
+ */
+void guac_common_recording_free(guac_common_recording* recording);
+
+/**
+ * Reports the current mouse position and button state within the recording.
+ *
+ * @param recording
+ *     The guac_common_recording associated with the mouse that has moved.
+ *
+ * @param x
+ *     The new X coordinate of the mouse cursor, in pixels.
+ *
+ * @param y
+ *     The new Y coordinate of the mouse cursor, in pixels.
+ *
+ * @param button_mask
+ *     An integer value representing the current state of each button, where
+ *     the Nth bit within the integer is set to 1 if and only if the Nth mouse
+ *     button is currently pressed. The lowest-order bit is the left mouse
+ *     button, followed by the middle button, right button, and finally the up
+ *     and down buttons of the scroll wheel.
+ *
+ *     @see GUAC_CLIENT_MOUSE_LEFT
+ *     @see GUAC_CLIENT_MOUSE_MIDDLE
+ *     @see GUAC_CLIENT_MOUSE_RIGHT
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_UP
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
+ */
+void guac_common_recording_report_mouse(guac_common_recording* recording,
+        int x, int y, int button_mask);
 
 #endif
 

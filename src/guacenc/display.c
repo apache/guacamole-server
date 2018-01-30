@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "cursor.h"
 #include "display.h"
 #include "video.h"
 
@@ -97,6 +98,9 @@ guacenc_display* guacenc_display_alloc(const char* path, const char* codec,
     /* Associate display with video output */
     display->output = video;
 
+    /* Allocate special-purpose cursor layer */
+    display->cursor = guacenc_cursor_alloc();
+
     return display;
 
 }
@@ -123,6 +127,9 @@ int guacenc_display_free(guacenc_display* display) {
     /* Free all streams */
     for (i = 0; i < GUACENC_DISPLAY_MAX_STREAMS; i++)
         guacenc_image_stream_free(display->image_streams[i]);
+
+    /* Free cursor */
+    guacenc_cursor_free(display->cursor);
 
     free(display);
     return retval;

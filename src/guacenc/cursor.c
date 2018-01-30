@@ -18,29 +18,42 @@
  */
 
 #include "config.h"
-#include "display.h"
-#include "log.h"
-#include "parse.h"
+#include "buffer.h"
+#include "cursor.h"
 
-#include <guacamole/client.h>
-#include <guacamole/timestamp.h>
-
-#include <inttypes.h>
 #include <stdlib.h>
 
-int guacenc_handle_sync(guacenc_display* display, int argc, char** argv) {
+guacenc_cursor* guacenc_cursor_alloc() {
 
-    /* Verify argument count */
-    if (argc < 1) {
-        guacenc_log(GUAC_LOG_WARNING, "\"sync\" instruction incomplete");
-        return 1;
+    /* Allocate new cursor */
+    guacenc_cursor* cursor = (guacenc_cursor*) malloc(sizeof(guacenc_cursor));
+    if (cursor == NULL)
+        return NULL;
+
+    /* Allocate associated buffer (image) */
+    cursor->buffer = guacenc_buffer_alloc();
+    if (cursor->buffer == NULL) {
+        free(cursor);
+        return NULL;
     }
 
-    /* Parse arguments */
-    guac_timestamp timestamp = guacenc_parse_timestamp(argv[0]);
+    /* Do not initially render cursor, unless it moves */
+    cursor->x = cursor->y = -1;
 
-    /* Update timestamp / flush frame */
-    return guacenc_display_sync(display, timestamp);
+    return cursor;
+
+}
+
+void guacenc_cursor_free(guacenc_cursor* cursor) {
+
+    /* Ignore NULL cursors */
+    if (cursor == NULL)
+        return;
+
+    /* Free underlying buffer */
+    guacenc_buffer_free(cursor->buffer);
+
+    free(cursor);
 
 }
 

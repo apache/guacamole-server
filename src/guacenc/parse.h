@@ -22,6 +22,8 @@
 
 #include "config.h"
 
+#include <guacamole/timestamp.h>
+
 /**
  * Parses a string into a single integer. Only positive integers are accepted.
  * The input string may be modified during parsing. A value will be stored in
@@ -62,6 +64,21 @@ int guacenc_parse_int(char* arg, int* i);
  *     invalid.
  */
 int guacenc_parse_dimensions(char* arg, int* width, int* height);
+
+/**
+ * Parses a guac_timestamp from the given string. The string is assumed to
+ * consist solely of decimal digits with an optional leading minus sign. If the
+ * given string contains other characters, the behavior of this function is
+ * undefined.
+ *
+ * @param str
+ *     The string to parse, which must contain only decimal digits and an
+ *     optional leading minus sign.
+ *
+ * @return
+ *     A guac_timestamp having the same value as the provided string.
+ */
+guac_timestamp guacenc_parse_timestamp(const char* str);
 
 #endif
 

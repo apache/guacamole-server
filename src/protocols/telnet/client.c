@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include "client.h"
+#include "common/recording.h"
 #include "settings.h"
 #include "telnet.h"
 #include "terminal/terminal.h"
@@ -70,6 +71,10 @@ int guac_telnet_client_free_handler(guac_client* client) {
     /* Close telnet connection */
     if (telnet_client->socket_fd != -1)
         close(telnet_client->socket_fd);
+
+    /* Clean up recording, if in progress */
+    if (telnet_client->recording != NULL)
+        guac_common_recording_free(telnet_client->recording);
 
     /* Kill terminal */
     guac_terminal_free(telnet_client->term);

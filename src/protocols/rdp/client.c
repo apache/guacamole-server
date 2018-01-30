@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "audio_input.h"
+#include "common/recording.h"
 #include "client.h"
 #include "rdp.h"
 #include "rdp_disp.h"
@@ -121,6 +122,10 @@ int guac_rdp_client_free_handler(guac_client* client) {
 
     guac_common_ssh_uninit();
 #endif
+
+    /* Clean up recording, if in progress */
+    if (rdp_client->recording != NULL)
+        guac_common_recording_free(rdp_client->recording);
 
     /* Clean up audio stream, if allocated */
     if (rdp_client->audio != NULL)
