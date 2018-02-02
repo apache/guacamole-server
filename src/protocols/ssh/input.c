@@ -56,6 +56,11 @@ int guac_ssh_user_key_handler(guac_user* user, int keysym, int pressed) {
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
     guac_terminal* term = ssh_client->term;
 
+    /* Report key state within recording */
+    if (ssh_client->recording != NULL)
+        guac_common_recording_report_key(ssh_client->recording,
+                keysym, pressed);
+
     /* Skip if terminal not yet ready */
     if (term == NULL)
         return 0;

@@ -52,6 +52,11 @@ int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
     guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
     rfbClient* rfb_client = vnc_client->rfb_client;
 
+    /* Report key state within recording */
+    if (vnc_client->recording != NULL)
+        guac_common_recording_report_key(vnc_client->recording,
+                keysym, pressed);
+
     /* Send VNC event only if finished connecting */
     if (rfb_client != NULL)
         SendKeyEvent(rfb_client, keysym, pressed);

@@ -393,6 +393,32 @@ typedef struct guac_rdp_settings {
     int create_recording_path;
 
     /**
+     * Non-zero if output which is broadcast to each connected client
+     * (graphics, streams, etc.) should NOT be included in the session
+     * recording, zero otherwise. Output is included by default, as it is
+     * necessary for any recording which must later be viewable as video.
+     */
+    int recording_exclude_output;
+
+    /**
+     * Non-zero if changes to mouse state, such as position and buttons pressed
+     * or released, should NOT be included in the session recording, zero
+     * otherwise. Mouse state is included by default, as it is necessary for
+     * the mouse cursor to be rendered in any resulting video.
+     */
+    int recording_exclude_mouse;
+
+    /**
+     * Non-zero if keys pressed and released should be included in the session
+     * recording, zero otherwise. Key events are NOT included by default within
+     * the recording, as doing so has privacy and security implications.
+     * Including key events may be necessary in certain auditing contexts, but
+     * should only be done with caution. Key events can easily contain
+     * sensitive information, such as passwords, credit card numbers, etc.
+     */
+    int recording_include_keys;
+
+    /**
      * The method to apply when the user's display changes size.
      */
     guac_rdp_resize_method resize_method;
