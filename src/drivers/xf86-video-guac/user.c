@@ -161,7 +161,8 @@ int guac_drv_user_mouse_handler(guac_user* user,
     guac_drv_user_data* user_data = (guac_drv_user_data*) user->data;
 
     /* Store current mouse location */
-    guac_common_cursor_move(user_data->display->display->cursor, user, x, y);
+    guac_common_cursor_update(user_data->display->display->cursor,
+            user, x, y, mask);
 
     /* Calculate button difference */
     int change = mask ^ user_data->button_mask;
