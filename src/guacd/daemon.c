@@ -19,9 +19,10 @@
 
 #include "config.h"
 
-#include "connection.h"
+#include "conf.h"
 #include "conf-args.h"
 #include "conf-file.h"
+#include "connection.h"
 #include "log.h"
 #include "proc-map.h"
 

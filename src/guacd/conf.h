@@ -17,18 +17,56 @@
  * under the License.
  */
 
-#ifndef _GUACD_CONF_ARGS_H
-#define _GUACD_CONF_ARGS_H
+#ifndef GUACD_CONF_H
+#define GUACD_CONF_H
 
 #include "config.h"
 
-#include "conf.h"
+#include <guacamole/client.h>
 
 /**
- * Parses the given arguments into the given configuration. Zero is returned on
- * success, and non-zero is returned if arguments cannot be parsed.
+ * The contents of a guacd configuration file.
  */
-int guacd_conf_parse_args(guacd_config* config, int argc, char** argv);
+typedef struct guacd_config {
+
+    /**
+     * The host to bind on.
+     */
+    char* bind_host;
+
+    /**
+     * The port to bind on.
+     */
+    char* bind_port;
+
+    /**
+     * The file to write the PID in, if any.
+     */
+    char* pidfile;
+
+    /**
+     * Whether guacd should run in the foreground.
+     */
+    int foreground;
+
+#ifdef ENABLE_SSL
+    /**
+     * SSL certificate file.
+     */
+    char* cert_file;
+
+    /**
+     * SSL private key file.
+     */
+    char* key_file;
+#endif
+
+    /**
+     * The maximum log level to be logged by guacd.
+     */
+    guac_client_log_level max_log_level;
+
+} guacd_config;
 
 #endif
 

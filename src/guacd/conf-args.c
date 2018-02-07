@@ -19,8 +19,8 @@
 
 #include "config.h"
 
+#include "conf.h"
 #include "conf-args.h"
-#include "conf-file.h"
 #include "conf-parse.h"
 
 #include <getopt.h>

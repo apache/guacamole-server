@@ -26,6 +26,7 @@ man_MANS =           \
     man/guacd.conf.5
 
 noinst_HEADERS =  \
+    conf.h        \
     conf-args.h   \
     conf-file.h   \
     conf-parse.h  \
