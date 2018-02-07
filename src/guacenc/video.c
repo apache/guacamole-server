@@ -228,7 +228,11 @@ int guacenc_video_advance_timeline(guacenc_video* video,
 
         /* Flush frames to bring timeline in sync, duplicating if necessary */
         do {
-            guacenc_video_flush_frame(video);
+            if (guacenc_video_flush_frame(video)) {
+                guacenc_log(GUAC_LOG_ERROR, "Unable to flush frame to video "
+                        "stream.");
+                return 1;
+            }
         } while (--elapsed != 0);
 
     }
