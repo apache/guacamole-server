@@ -715,9 +715,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     rdp_client->keyboard = guac_rdp_keyboard_alloc(client,
             settings->server_layout);
 
-    /* Send connection name */
-    guac_protocol_send_name(client->socket, settings->hostname);
-
     /* Set default pointer */
     guac_common_cursor_set_pointer(rdp_client->display->cursor);
 
