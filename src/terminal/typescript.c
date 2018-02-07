@@ -130,8 +130,13 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
     }
 
     /* Append suffix to basename */
-    sprintf(typescript->timing_filename, "%s.%s", typescript->data_filename,
-            GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX);
+    if (snprintf(typescript->timing_filename, sizeof(typescript->timing_filename),
+                "%s.%s", typescript->data_filename, GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX)
+            >= sizeof(typescript->timing_filename)) {
+        close(typescript->data_fd);
+        free(typescript);
+        return NULL;
+    }
 
     /* Attempt to open typescript timing file */
     typescript->timing_fd = open(typescript->timing_filename,
