@@ -419,7 +419,7 @@ AC_ARG_WITH([terminal],
 if test "x$with_terminal" != "xno"
 then
     have_terminal=yes
-    if test "x${have_pango}" = "xno"
+    if test "x${have_pango}" != "xyes"
     then
         have_terminal=no
     fi
