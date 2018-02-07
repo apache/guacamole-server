@@ -312,9 +312,6 @@ void* guac_vnc_client_thread(void* data) {
                 settings->recording_include_keys);
     }
 
-    /* Send name */
-    guac_protocol_send_name(client->socket, rfb_client->desktopName);
-
     /* Create display */
     vnc_client->display = guac_common_display_alloc(client,
             rfb_client->width, rfb_client->height);
