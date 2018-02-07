@@ -49,6 +49,11 @@ typedef struct guacd_config {
      */
     int foreground;
 
+    /**
+     * Whether guacd should simply print its version information and exit.
+     */
+    int print_version;
+
 #ifdef ENABLE_SSL
     /**
      * SSL certificate file.

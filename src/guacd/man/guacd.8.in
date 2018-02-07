@@ -30,6 +30,7 @@ guacd \- Guacamole proxy daemon
 [\fB-C\fR \fICERTIFICATE FILE\fR]
 [\fB-K\fR \fIKEY FILE\fR]
 [\fB-f\fR]
+[\fB-v\fR]
 .
 .SH DESCRIPTION
 .B guacd
@@ -80,6 +81,11 @@ Causes
 .B guacd
 to run in the foreground, rather than automatically forking into the
 background.
+.TP
+\fB\-v\fR
+Causes
+.B guacd
+to simply print its version information and exit.
 .
 .SH SSL/TLS OPTIONS
 If libssl was present at the time

@@ -280,6 +280,13 @@ int main(int argc, char* argv[]) {
     if (config == NULL || guacd_conf_parse_args(config, argc, argv))
        exit(EXIT_FAILURE);
 
+    /* If requested, simply print version and exit, without initializing the
+     * logging system, etc. */
+    if (config->print_version) {
+        printf("Guacamole proxy daemon (guacd) version " VERSION "\n");
+        exit(EXIT_SUCCESS);
+    }
+
     /* Init logging as early as possible */
     guacd_log_level = config->max_log_level;
     openlog(GUACD_LOG_NAME, LOG_PID, LOG_DAEMON);
