@@ -102,10 +102,10 @@ ssize_t guac_socket_fd_write(guac_socket* socket,
 
 #ifdef ENABLE_WINSOCK
         /* WSA only works with send() */
-        retval = send(data->fd, buf, count, 0);
+        retval = send(data->fd, buffer, count, 0);
 #else
         /* Use write() for all other platforms */
-        retval = write(data->fd, buf, count);
+        retval = write(data->fd, buffer, count);
 #endif
 
         /* Record errors in guac_error */
@@ -115,7 +115,7 @@ ssize_t guac_socket_fd_write(guac_socket* socket,
             return retval;
         }
 
-        /* Advance buffer as data retval */
+        /* Advance buffer to next chunk */
         buffer += retval;
         count  -= retval;
 
