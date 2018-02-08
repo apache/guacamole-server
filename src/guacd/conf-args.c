@@ -19,8 +19,8 @@
 
 #include "config.h"
 
+#include "conf.h"
 #include "conf-args.h"
-#include "conf-file.h"
 #include "conf-parse.h"
 
 #include <getopt.h>
@@ -32,7 +32,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:f")) != -1) {
+    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:fv")) != -1) {
 
         /* -l: Bind port */
         if (opt == 'l') {
@@ -49,6 +49,11 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
         /* -f: Run in foreground */
         else if (opt == 'f') {
             config->foreground = 1;
+        }
+
+        /* -v: Print version and exit */
+        else if (opt == 'v') {
+            config->print_version = 1;
         }
 
         /* -p: PID file */
@@ -105,7 +110,8 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
                     " [-C CERTIFICATE_FILE]"
                     " [-K PEM_FILE]"
 #endif
-                    " [-f]\n", argv[0]);
+                    " [-f]"
+                    " [-v]\n", argv[0]);
 
             return 1;
         }

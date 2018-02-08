@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "conf.h"
 #include "conf-file.h"
 #include "conf-parse.h"
 
@@ -179,6 +180,7 @@ guacd_config* guacd_conf_load() {
     conf->bind_port = strdup("4822");
     conf->pidfile = NULL;
     conf->foreground = 0;
+    conf->print_version = 0;
     conf->max_log_level = GUAC_LOG_INFO;
 
 #ifdef ENABLE_SSL

@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#include "conf-file.h"
+#include "conf.h"
 
 /**
  * Parses the given arguments into the given configuration. Zero is returned on

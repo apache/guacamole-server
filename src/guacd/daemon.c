@@ -19,9 +19,10 @@
 
 #include "config.h"
 
-#include "connection.h"
+#include "conf.h"
 #include "conf-args.h"
 #include "conf-file.h"
+#include "connection.h"
 #include "log.h"
 #include "proc-map.h"
 
@@ -278,6 +279,13 @@ int main(int argc, char* argv[]) {
     guacd_config* config = guacd_conf_load();
     if (config == NULL || guacd_conf_parse_args(config, argc, argv))
        exit(EXIT_FAILURE);
+
+    /* If requested, simply print version and exit, without initializing the
+     * logging system, etc. */
+    if (config->print_version) {
+        printf("Guacamole proxy daemon (guacd) version " VERSION "\n");
+        exit(EXIT_SUCCESS);
+    }
 
     /* Init logging as early as possible */
     guacd_log_level = config->max_log_level;

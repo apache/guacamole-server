@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "conf.h"
 #include "conf-parse.h"
 
 #include <guacamole/client.h>
