@@ -94,11 +94,9 @@ ARG RUNTIME_DEPENDENCIES="            \
         libfreerdp-common1.1.0        \
         libfreerdp-core1.1            \
         libfreerdp-crypto1.1          \
-        libfreerdp-gdi1.1             \
         libfreerdp-locale1.1          \
-        libfreerdp-plugins-standard   \
         libfreerdp-primitives1.1      \
-        libfreerdp-rail1.1            \
+        libfreerdp-plugins-standard   \
         libfreerdp-utils1.1           \
         libjpeg-turbo8                \
         libossp-uuid16                \
@@ -109,36 +107,24 @@ ARG RUNTIME_DEPENDENCIES="            \
         libtelnet2                    \
         libvncclient1                 \
         libwebp5                      \
-        libwinpr-asn1-0.1             \
-        libwinpr-bcrypt0.1            \
-        libwinpr-credentials0.1       \
-        libwinpr-credui0.1            \
         libwinpr-crt0.1               \
-        libwinpr-crypto0.1            \
         libwinpr-dsparse0.1           \
         libwinpr-environment0.1       \
-        libwinpr-error0.1             \
         libwinpr-file0.1              \
         libwinpr-handle0.1            \
         libwinpr-heap0.1              \
         libwinpr-input0.1             \
         libwinpr-interlocked0.1       \
-        libwinpr-io0.1                \
         libwinpr-library0.1           \
         libwinpr-path0.1              \
-        libwinpr-pipe0.1              \
         libwinpr-pool0.1              \
         libwinpr-registry0.1          \
         libwinpr-rpc0.1               \
         libwinpr-sspi0.1              \
-        libwinpr-sspicli0.1           \
         libwinpr-synch0.1             \
         libwinpr-sysinfo0.1           \
         libwinpr-thread0.1            \
-        libwinpr-timezone0.1          \
         libwinpr-utils0.1             \
-        libwinpr-winhttp0.1           \
-        libwinpr-winsock0.1           \
         xfonts-terminus"
 
 # Bring runtime environment up to date and install runtime dependencies
@@ -151,7 +137,7 @@ COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
 
 # Link FreeRDP plugins into proper path
 RUN FREERDP_DIR=$(dirname \
-        $(dpkg-query -L libfreerdp | grep 'libfreerdp.*\.so' | head -n1)) && \
+        $(dpkg-query -L libfreerdp-client1.1 | grep 'libfreerdp.*\.so' | head -n1)) && \
     FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp" && \
     mkdir -p "$FREERDP_PLUGIN_DIR" && \
     ln -s "$PREFIX_DIR"/lib/freerdp/*.so "$FREERDP_PLUGIN_DIR"
