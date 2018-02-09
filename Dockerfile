@@ -61,13 +61,20 @@ RUN apt-get update                         && \
     rm -rf /var/lib/apt/lists/*
 
 # Add configuration scripts
-COPY src/guacd-docker/bin /opt/guacd/bin/
+COPY src/guacd-docker/bin "${PREFIX_DIR}/bin/"
 
 # Copy source to container for sake of build
 COPY . "$BUILD_DIR"
 
 # Build guacamole-server from local source
-RUN /opt/guacd/bin/build-guacd.sh "$BUILD_DIR" "$PREFIX_DIR"
+RUN ${PREFIX_DIR}/bin/build-guacd.sh "$BUILD_DIR" "$PREFIX_DIR"
+
+# Record the packages of all runtime library dependencies
+RUN ${PREFIX_DIR}/bin/list-dependencies.sh    \
+        ${PREFIX_DIR}/sbin/guacd              \
+        ${PREFIX_DIR}/lib/libguac-client-*.so \
+        ${PREFIX_DIR}/lib/freerdp/guac*.so    \
+        > ${PREFIX_DIR}/DEPENDENCIES
 
 # Use same Ubuntu as the base for the runtime image
 FROM ubuntu:${UBUNTU_VERSION}
@@ -85,62 +92,23 @@ ENV GUACD_LOG_LEVEL=info
 
 ARG RUNTIME_DEPENDENCIES="            \
         ghostscript                   \
-        libcairo2                     \
+        libfreerdp-plugins-standard   \
         fonts-liberation              \
         fonts-dejavu                  \
-        libfreerdp-cache1.1           \
-        libfreerdp-client1.1          \
-        libfreerdp-codec1.1           \
-        libfreerdp-common1.1.0        \
-        libfreerdp-core1.1            \
-        libfreerdp-crypto1.1          \
-        libfreerdp-locale1.1          \
-        libfreerdp-primitives1.1      \
-        libfreerdp-plugins-standard   \
-        libfreerdp-utils1.1           \
-        libjpeg-turbo8                \
-        libossp-uuid16                \
-        libpango1.0                   \
-        libpulse0                     \
-        libssh2-1                     \
-        libssl1.0.0                   \
-        libtelnet2                    \
-        libvncclient1                 \
-        libwebp5                      \
-        libwinpr-crt0.1               \
-        libwinpr-dsparse0.1           \
-        libwinpr-environment0.1       \
-        libwinpr-file0.1              \
-        libwinpr-handle0.1            \
-        libwinpr-heap0.1              \
-        libwinpr-input0.1             \
-        libwinpr-interlocked0.1       \
-        libwinpr-library0.1           \
-        libwinpr-path0.1              \
-        libwinpr-pool0.1              \
-        libwinpr-registry0.1          \
-        libwinpr-rpc0.1               \
-        libwinpr-sspi0.1              \
-        libwinpr-synch0.1             \
-        libwinpr-sysinfo0.1           \
-        libwinpr-thread0.1            \
-        libwinpr-utils0.1             \
         xfonts-terminus"
-
-# Bring runtime environment up to date and install runtime dependencies
-RUN apt-get update                           && \
-    apt-get install -y $RUNTIME_DEPENDENCIES && \
-    rm -rf /var/lib/apt/lists/*
 
 # Copy build artifacts into this stage
 COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
 
+# Bring runtime environment up to date and install runtime dependencies
+RUN apt-get update                                          && \
+    apt-get install -y $RUNTIME_DEPENDENCIES                && \
+    apt-get install -y $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
+    rm -rf /var/lib/apt/lists/*
+
 # Link FreeRDP plugins into proper path
-RUN FREERDP_DIR=$(dirname \
-        $(dpkg-query -L libfreerdp-client1.1 | grep 'libfreerdp.*\.so' | head -n1)) && \
-    FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp" && \
-    mkdir -p "$FREERDP_PLUGIN_DIR" && \
-    ln -s "$PREFIX_DIR"/lib/freerdp/*.so "$FREERDP_PLUGIN_DIR"
+RUN ${PREFIX_DIR}/bin/link-freerdp-plugins.sh \
+        ${PREFIX_DIR}/lib/freerdp/guac*.so
 
 # Expose the default listener port
 EXPOSE 4822
