@@ -23,7 +23,7 @@
 
 
 # Use Ubuntu as base for the build
-ARG UBUNTU_VERSION=xenial
+ARG UBUNTU_VERSION=artful
 FROM ubuntu:${UBUNTU_VERSION} AS builder
 
 # Base directory for installed build artifacts.
