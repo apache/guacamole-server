@@ -312,6 +312,12 @@ typedef struct guac_rdp_settings {
     int disable_offscreen_caching;
 
     /**
+     * Whether glyph caching should be disabled.  By default it is enabled
+     * - this allows users to explicitly disable it.
+     */
+    int disable_glyph_caching;
+
+    /**
      * The preconnection ID to send within the preconnection PDU when
      * initiating an RDP connection, if any. If no preconnection ID is
      * specified, this will be -1.
