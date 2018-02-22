@@ -38,6 +38,7 @@ noinst_HEADERS =                \
     settings.h                  \
     sftp.h                      \
     ssh.h                       \
+    ttymode.h                   \
     user.h
 
 # Add agent sources if enabled
