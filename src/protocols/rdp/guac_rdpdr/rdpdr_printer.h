@@ -35,7 +35,7 @@
  * Registers a new printer device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
  */
-void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr);
+void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr, char* printer_name);
 
 #endif
 

@@ -96,7 +96,7 @@ void guac_rdpdr_process_connect(rdpSvcPlugin* plugin) {
 
     /* Register printer if enabled */
     if (rdp_client->settings->printing_enabled)
-        guac_rdpdr_register_printer(rdpdr);
+        guac_rdpdr_register_printer(rdpdr, rdp_client->settings->printer_name);
 
     /* Register drive if enabled */
     if (rdp_client->settings->drive_enabled)

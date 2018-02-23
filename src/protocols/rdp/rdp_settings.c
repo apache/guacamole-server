@@ -990,6 +990,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     free(settings->remote_app_args);
     free(settings->remote_app_dir);
     free(settings->username);
+    free(settings->printer_name);
 
     /* Free channel name array */
     if (settings->svc_names != NULL) {

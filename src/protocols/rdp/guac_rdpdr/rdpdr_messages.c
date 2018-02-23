@@ -273,4 +273,3 @@ void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, wStream* input_s
 void guac_rdpdr_process_prn_using_xps(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
     guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Printer unexpectedly switched to XPS mode");
 }
-

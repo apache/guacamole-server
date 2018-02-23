@@ -25,12 +25,14 @@
 #include "rdp.h"
 #include "rdp_print_job.h"
 #include "rdp_status.h"
+#include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
+#include <guacamole/unicode.h>
 #include <guacamole/user.h>
 
 #ifdef ENABLE_WINPR
@@ -141,18 +143,25 @@ static void guac_rdpdr_device_printer_announce_handler(guac_rdpdr_device* device
     Stream_Write(output_stream, "PRN1\0\0\0\0", 8); /* DOS name */
 
     /* Printer data */
-    Stream_Write_UINT32(output_stream, 24 + GUAC_PRINTER_DRIVER_LENGTH + GUAC_PRINTER_NAME_LENGTH);
+    int settings_length = guac_utf8_strlen(device->device_name);
+    int printer_name_length = (settings_length + 1) * 2;
+    char printer_name[printer_name_length];
+    guac_rdp_utf8_to_utf16((const unsigned char*)device->device_name, 
+            settings_length, printer_name, printer_name_length);
+    printer_name[printer_name_length - 2] = '\0';
+    printer_name[printer_name_length - 1] = '\0';
+    Stream_Write_UINT32(output_stream, 24 + GUAC_PRINTER_DRIVER_LENGTH + printer_name_length);
     Stream_Write_UINT32(output_stream,
               RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER
             | RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER);
     Stream_Write_UINT32(output_stream, 0); /* reserved - must be 0 */
     Stream_Write_UINT32(output_stream, 0); /* PnPName length (PnPName is ultimately ignored) */
     Stream_Write_UINT32(output_stream, GUAC_PRINTER_DRIVER_LENGTH); /* DriverName length */
-    Stream_Write_UINT32(output_stream, GUAC_PRINTER_NAME_LENGTH);   /* PrinterName length */
+    Stream_Write_UINT32(output_stream, printer_name_length);   /* PrinterName length */
     Stream_Write_UINT32(output_stream, 0);                          /* CachedFields length */
 
     Stream_Write(output_stream, GUAC_PRINTER_DRIVER, GUAC_PRINTER_DRIVER_LENGTH);
-    Stream_Write(output_stream, GUAC_PRINTER_NAME,   GUAC_PRINTER_NAME_LENGTH);
+    Stream_Write(output_stream, printer_name, printer_name_length);
 
 }
 
@@ -190,7 +199,7 @@ static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
     /* Do nothing */
 }
 
-void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
+void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr, char* printer_name) {
 
     int id = rdpdr->devices_registered++;
 
@@ -200,7 +209,7 @@ void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr) {
     /* Init device */
     device->rdpdr       = rdpdr;
     device->device_id   = id;
-    device->device_name = "Guacamole Printer";
+    device->device_name = printer_name;
 
     /* Set handlers */
     device->announce_handler  = guac_rdpdr_device_printer_announce_handler;
