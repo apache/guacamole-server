@@ -29,6 +29,7 @@ libguac_client_ssh_la_SOURCES = \
     settings.c                  \
     sftp.c                      \
     ssh.c                       \
+    ttymode.c                   \
     user.c
 
 noinst_HEADERS =                \
