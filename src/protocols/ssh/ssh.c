@@ -298,8 +298,8 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Request PTY */
-    if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1, guac_tty_modes,
-            sizeof(guac_tty_modes), ssh_client->term->term_width, ssh_client->term->term_height, 0, 0)) {
+    if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1, GUAC_SSH_TTY_MODES,
+            sizeof(GUAC_SSH_TTY_MODES), ssh_client->term->term_width, ssh_client->term->term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
     }

@@ -17,16 +17,11 @@
  * under the License.
  */
 
-#ifndef GUAC_SSH_TTYMODE_H
-#define GUAC_SSH_TTYMODE_H
-
 #include "config.h"
+#include "ttymode.h"
 
-#define GUAC_SSH_TTY_OP_END 0
-#define GUAC_SSH_TTY_OP_VERASE 3
-
-#define GUAC_SSH_TERM_DEFAULT_BACKSPACE 127
-
-extern const char GUAC_SSH_TTY_MODES[6];
-
-#endif
+const char GUAC_SSH_TTY_MODES[6] = {
+    GUAC_SSH_TTY_OP_VERASE,
+    0, 0, 0, GUAC_SSH_TERM_DEFAULT_BACKSPACE,
+    GUAC_SSH_TTY_OP_END
+};
