@@ -29,6 +29,7 @@ libguac_client_ssh_la_SOURCES = \
     settings.c                  \
     sftp.c                      \
     ssh.c                       \
+    ttymode.c                   \
     user.c
 
 noinst_HEADERS =                \
@@ -38,6 +39,7 @@ noinst_HEADERS =                \
     settings.h                  \
     sftp.h                      \
     ssh.h                       \
+    ttymode.h                   \
     user.h
 
 # Add agent sources if enabled
