@@ -178,6 +178,11 @@ typedef struct guac_rdp_settings {
     int printing_enabled;
 
     /**
+     * Name of the redirected printer.
+     */
+    char* printer_name;
+
+    /**
      * Whether the virtual drive is enabled.
      */
     int drive_enabled;
