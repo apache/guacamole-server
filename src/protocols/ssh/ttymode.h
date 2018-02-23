@@ -22,11 +22,31 @@
 
 #include "config.h"
 
+/**
+ * The SSH TTY mode encoding opcode that terminates
+ * the list of TTY modes.
+ */
 #define GUAC_SSH_TTY_OP_END 0
+
+/**
+ * The SSH tty mode encoding opcode that configures
+ * the TTY erase code to configure the server
+ * backspace key.
+ */
 #define GUAC_SSH_TTY_OP_VERASE 3
 
+/**
+ * The default ASCII code to send for the backspace
+ * key that will be sent to the SSH server.
+ */
 #define GUAC_SSH_TERM_DEFAULT_BACKSPACE 127
 
+/**
+ * The array of TTY mode encoding data to send to the
+ * SSH server.  These consist of pairs of byte codes
+ * and uint32 (4-byte) values, with a 0 to terminate
+ * the list.
+ */
 extern const char GUAC_SSH_TTY_MODES[6];
 
 #endif
