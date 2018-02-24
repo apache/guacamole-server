@@ -207,7 +207,7 @@ void* ssh_client_thread(void* data) {
     ssh_client->term = guac_terminal_create(client,
             settings->font_name, settings->font_size,
             settings->resolution, settings->width, settings->height,
-            settings->color_scheme);
+            settings->color_scheme, settings->backspace);
 
     /* Fail if terminal init failed */
     if (ssh_client->term == NULL) {

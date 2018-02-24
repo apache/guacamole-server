@@ -207,6 +207,13 @@ typedef struct guac_telnet_settings {
      */
     bool recording_include_keys;
 
+    /**
+     * The ASCII code, in decimal, that the telnet client will use when the
+     * backspace key is pressed.  By default, this is 0x7f, ASCII delete,
+     * but can be configured in the client settings.
+     */
+    int backspace;
+
 } guac_telnet_settings;
 
 /**

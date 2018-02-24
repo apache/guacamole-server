@@ -257,7 +257,8 @@ void* guac_terminal_thread(void* data) {
 
 guac_terminal* guac_terminal_create(guac_client* client,
         const char* font_name, int font_size, int dpi,
-        int width, int height, const char* color_scheme) {
+        int width, int height, const char* color_scheme,
+        const int backspace) {
 
     int default_foreground;
     int default_background;
@@ -405,6 +406,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
         guac_terminal_free(term);
         return NULL;
     }
+
+    /* Configure backspace */
+    term->backspace = backspace;
+    guac_client_log(client, GUAC_LOG_DEBUG, "Backspace has been set to %d", term->backspace);
 
     return term;
 
@@ -1594,7 +1599,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         /* Non-printable keys */
         else {
 
-            if (keysym == 0xFF08) return guac_terminal_send_string(term, "\x7F"); /* Backspace */
+            if (keysym == 0xFF08) return guac_terminal_send_string(term, &term->backspace); /* Backspace */
             if (keysym == 0xFF09 || keysym == 0xFF89) return guac_terminal_send_string(term, "\x09"); /* Tab */
             if (keysym == 0xFF0D || keysym == 0xFF8D) return guac_terminal_send_string(term, "\x0D"); /* Enter */
             if (keysym == 0xFF1B) return guac_terminal_send_string(term, "\x1B"); /* Esc */
