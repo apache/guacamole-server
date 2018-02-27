@@ -176,7 +176,8 @@ enum TELNET_ARGS_IDX {
     IDX_READ_ONLY,
 
     /**
-     * ASCII code to use for the backspace key, or 127 if not specified.
+     * ASCII code, as an integer to use for the backspace key, or 127
+     * if not specified.
      */
     IDX_BACKSPACE,
 

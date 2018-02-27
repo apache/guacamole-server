@@ -211,8 +211,8 @@ enum SSH_ARGS_IDX {
     IDX_SERVER_ALIVE_INTERVAL,
 
     /**
-     * The ASCII code, in decimal, to send for the backspace key, as configured
-     * by the SSH connection from the client.  By default this will be 0x7f,
+     * The ASCII code, as an integer, to send for the backspace key, as configured
+     * by the SSH connection from the client.  By default this will be 127,
      * the ASCII DELETE code.
      */
     IDX_BACKSPACE,

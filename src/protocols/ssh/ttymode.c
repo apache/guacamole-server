@@ -36,17 +36,20 @@ guac_ssh_ttymodes* guac_ssh_ttymodes_init() {
 }
 
 void guac_ssh_ttymodes_add(guac_ssh_ttymodes *tty_modes, char opcode, uint32_t value) {
+    /* Increment number of opcodes */
     tty_modes->num_opcodes++;
+
+    /* Increase size of the pointer array */
     tty_modes->ttymode_array = realloc(tty_modes->ttymode_array, sizeof(guac_ssh_ttymode) * tty_modes->num_opcodes);
+
+    /* Add new values */
     tty_modes->ttymode_array[tty_modes->num_opcodes - 1].opcode = opcode;
     tty_modes->ttymode_array[tty_modes->num_opcodes - 1].value = value;
-
 }
 
 int guac_ssh_ttymodes_size(guac_ssh_ttymodes *tty_modes) {
     /* Each opcode pair is 5 bytes (1 opcode, 4 value)
        Add one for the ending opcode */
-     
     return (tty_modes->num_opcodes * 5) + 1;
 }
 

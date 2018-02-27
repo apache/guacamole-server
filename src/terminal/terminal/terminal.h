@@ -433,7 +433,7 @@ struct guac_terminal {
     guac_common_clipboard* clipboard;
 
     /**
-     * Hexidecimal ASCII code sent when backspace is pressed.
+     * ASCII character to send when backspace is pressed.
      */
     char backspace;
 
@@ -470,7 +470,7 @@ struct guac_terminal {
  *     GUAC_TERMINAL_SCHEME_GRAY_BLACK.
  *
  * @param backspace
- *     The decimal ASCII code to send when backspace is pressed in
+ *     The integer ASCII code to send when backspace is pressed in
  *     this terminal.
  *
  * @return

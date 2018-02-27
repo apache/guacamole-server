@@ -1598,11 +1598,12 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         /* Non-printable keys */
         else {
 
+            /* Backspace can vary based on configuration of terminal by client. */
             if (keysym == 0xFF08) {
                 char* backspace_str = malloc(sizeof(char) * 2);
                 backspace_str[0] = term->backspace;
                 backspace_str[1] = '\0';
-                return guac_terminal_send_string(term, backspace_str); /* Backspace */
+                return guac_terminal_send_string(term, backspace_str);
             }
             if (keysym == 0xFF09 || keysym == 0xFF89) return guac_terminal_send_string(term, "\x09"); /* Tab */
             if (keysym == 0xFF0D || keysym == 0xFF8D) return guac_terminal_send_string(term, "\x0D"); /* Enter */
