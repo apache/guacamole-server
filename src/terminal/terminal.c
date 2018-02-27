@@ -409,7 +409,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Configure backspace */
     term->backspace = backspace;
-    guac_client_log(client, GUAC_LOG_DEBUG, "Backspace has been set to %d", term->backspace);
 
     return term;
 
