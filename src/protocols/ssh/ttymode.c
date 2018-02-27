@@ -23,15 +23,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-guac_ssh_ttymodes guac_ssh_ttymodes_init() {
+guac_ssh_ttymodes* guac_ssh_ttymodes_init() {
     /* Simple allocation for a placeholder */
     guac_ssh_ttymode* ttymode_array = malloc(1);
     
     /* Set up the initial data structure. */
-    guac_ssh_ttymodes empty_modes = {
-        ttymode_array,
-        0
-    };
+    guac_ssh_ttymodes* empty_modes = malloc(sizeof(guac_ssh_ttymodes));
+    empty_modes->ttymode_array = ttymode_array;
+    empty_modes->num_opcodes = 0;
 
     return empty_modes;
 }

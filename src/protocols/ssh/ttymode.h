@@ -62,7 +62,7 @@ typedef struct guac_ssh_ttymodes {
  * with a null array of guac_ssh_ttymode and opcodes
  * set to zero.
  */
-guac_ssh_ttymodes guac_ssh_ttymodes_init();
+guac_ssh_ttymodes* guac_ssh_ttymodes_init();
 
 /**
  * Add an item to the opcode array.  This resizes the
