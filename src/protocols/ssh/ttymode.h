@@ -62,7 +62,7 @@ typedef struct guac_ssh_ttymodes {
  * with a null array of guac_ssh_ttymode and opcodes
  * set to zero.
  */
-guac_ssh_ttymodes init_ttymodes();
+guac_ssh_ttymodes guac_ssh_ttymodes_init();
 
 /**
  * Add an item to the opcode array.  This resizes the
@@ -70,19 +70,19 @@ guac_ssh_ttymodes init_ttymodes();
  * the specified opcode and value pair to the data
  * structure.
  */
-void add_ttymode(guac_ssh_ttymodes *tty_modes, char opcode, uint32_t value);
+void guac_ssh_ttymodes_add(guac_ssh_ttymodes *tty_modes, char opcode, uint32_t value);
 
 /**
  * Retrieve the size, in bytes, of the ttymode_array
  * in the given guac_ssh_ttymodes data structure.
  */
-int sizeof_ttymodes(guac_ssh_ttymodes *tty_modes);
+int guac_ssh_ttymodes_size(guac_ssh_ttymodes *tty_modes);
 
 /**
  * Convert the ttymodes data structure into a char
  * pointer array suitable for passing into the
  * libssh2_channel_request_pty_ex() function.
  */
-char* ttymodes_to_array(guac_ssh_ttymodes *tty_modes);
+char* guac_ssh_ttymodes_to_array(guac_ssh_ttymodes *tty_modes);
 
 #endif

@@ -193,7 +193,7 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Initialize a ttymode array */
-    guac_ssh_ttymodes ssh_ttymodes = init_ttymodes();
+    guac_ssh_ttymodes ssh_ttymodes = guac_ssh_ttymodes_init();
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
@@ -213,7 +213,7 @@ void* ssh_client_thread(void* data) {
             settings->color_scheme, settings->backspace);
 
     /* Add the backspace key to the ttymode array */
-    add_ttymode(&ssh_ttymodes, GUAC_SSH_TTY_OP_VERASE, settings->backspace);
+    guac_ssh_ttymodes_add(&ssh_ttymodes, GUAC_SSH_TTY_OP_VERASE, settings->backspace);
 
     /* Fail if terminal init failed */
     if (ssh_client->term == NULL) {
@@ -304,8 +304,9 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Request PTY */
-    if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1, ttymodes_to_array(&ssh_ttymodes),
-            sizeof_ttymodes(&ssh_ttymodes), ssh_client->term->term_width, ssh_client->term->term_height, 0, 0)) {
+    if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1,
+            guac_ssh_ttymodes_to_array(&ssh_ttymodes), guac_ssh_ttymodes_size(&ssh_ttymodes),
+            ssh_client->term->term_width, ssh_client->term->term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
     }
