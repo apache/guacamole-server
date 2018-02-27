@@ -224,7 +224,7 @@ typedef struct guac_ssh_settings {
     int server_alive_interval;
 
     /**
-     * The decismal ASCII code of the command to send for backspace.
+     * The integer ASCII code of the command to send for backspace.
      */
     int backspace;
 
