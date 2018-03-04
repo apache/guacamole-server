@@ -193,7 +193,7 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Initialize a ttymode array */
-    guac_ssh_ttymodes* ssh_ttymodes = guac_ssh_ttymodes_init();
+    guac_ssh_ttymodes* ssh_ttymodes = guac_ssh_ttymodes_init(1);
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
@@ -303,13 +303,21 @@ void* ssh_client_thread(void* data) {
 
     }
 
+    /* Get char pointer array for TTY Mode Encoding */
+    int ttymode_size = guac_ssh_ttymodes_size(ssh_ttymodes);
+    char* ttymode_array = guac_ssh_ttymodes_to_array(ssh_ttymodes, ttymode_size);
+
     /* Request PTY */
     if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1,
-            guac_ssh_ttymodes_to_array(ssh_ttymodes), guac_ssh_ttymodes_size(ssh_ttymodes),
-            ssh_client->term->term_width, ssh_client->term->term_height, 0, 0)) {
+            ttymode_array, ttymode_size, ssh_client->term->term_width,
+            ssh_client->term->term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
     }
+
+    /* We're done with TTY Mode Encoding, so free structures. */
+    free(ttymode_array);
+    free(ssh_ttymodes);
 
     /* If a command is specified, run that instead of a shell */
     if (settings->command != NULL) {

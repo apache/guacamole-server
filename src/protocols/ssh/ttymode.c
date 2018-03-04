@@ -23,9 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-guac_ssh_ttymodes* guac_ssh_ttymodes_init() {
-    /* Simple allocation for a placeholder */
-    guac_ssh_ttymode* ttymode_array = malloc(1);
+guac_ssh_ttymodes* guac_ssh_ttymodes_init(int max_opcodes) {
+    /* Allocate enough space for the max opcodes */
+    guac_ssh_ttymode* ttymode_array = malloc(sizeof(guac_ssh_ttymode) * max_opcodes);
     
     /* Set up the initial data structure. */
     guac_ssh_ttymodes* empty_modes = malloc(sizeof(guac_ssh_ttymodes));
@@ -39,9 +39,6 @@ void guac_ssh_ttymodes_add(guac_ssh_ttymodes *tty_modes, char opcode, uint32_t v
     /* Increment number of opcodes */
     tty_modes->num_opcodes++;
 
-    /* Increase size of the pointer array */
-    tty_modes->ttymode_array = realloc(tty_modes->ttymode_array, sizeof(guac_ssh_ttymode) * tty_modes->num_opcodes);
-
     /* Add new values */
     tty_modes->ttymode_array[tty_modes->num_opcodes - 1].opcode = opcode;
     tty_modes->ttymode_array[tty_modes->num_opcodes - 1].value = value;
@@ -53,10 +50,8 @@ int guac_ssh_ttymodes_size(guac_ssh_ttymodes *tty_modes) {
     return (tty_modes->num_opcodes * 5) + 1;
 }
 
-char* guac_ssh_ttymodes_to_array(guac_ssh_ttymodes *tty_modes) {
-    /* Total data size should be number of tracked opcodes
-       plus one final byte for the TTY_OP_END code. */
-    int data_size = (tty_modes->num_opcodes * 5) + 1;
+char* guac_ssh_ttymodes_to_array(guac_ssh_ttymodes *tty_modes, int data_size) {
+ 
     char* temp = malloc(data_size);
 
     /* Loop through the array based on number of tracked
