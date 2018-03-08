@@ -20,58 +20,40 @@
 #include "config.h"
 #include "ttymode.h"
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
-guac_ssh_ttymodes* guac_ssh_ttymodes_init(int max_opcodes) {
-    /* Allocate enough space for the max opcodes */
-    guac_ssh_ttymode* ttymode_array = malloc(sizeof(guac_ssh_ttymode) * max_opcodes);
-    
-    /* Set up the initial data structure. */
-    guac_ssh_ttymodes* empty_modes = malloc(sizeof(guac_ssh_ttymodes));
-    empty_modes->ttymode_array = ttymode_array;
-    empty_modes->num_opcodes = 0;
+int guac_ssh_ttymodes_init(char opcode_array[], const int array_size,
+        const int num_opcodes, ...) {
 
-    return empty_modes;
-}
+    /* Initialize the variable argument list. */
+    va_list args;
+    va_start(args, num_opcodes);
 
-void guac_ssh_ttymodes_add(guac_ssh_ttymodes *tty_modes, char opcode, uint32_t value) {
-    /* Increment number of opcodes */
-    tty_modes->num_opcodes++;
+    /* Check to make sure the array has enough space.
+       We need one extra byte at the end for the ending opcode. */
+    if ((num_opcodes * GUAC_SSH_TTY_OPCODE_SIZE) >= (array_size))
+        return 1;
 
-    /* Add new values */
-    tty_modes->ttymode_array[tty_modes->num_opcodes - 1].opcode = opcode;
-    tty_modes->ttymode_array[tty_modes->num_opcodes - 1].value = value;
-}
+    for (int i = 0; i < num_opcodes; i++) {
+        /* Calculate offset in array */
+        int offset = i * GUAC_SSH_TTY_OPCODE_SIZE;
 
-int guac_ssh_ttymodes_size(guac_ssh_ttymodes *tty_modes) {
-    /* Each opcode pair is 5 bytes (1 opcode, 4 value)
-       Add one for the ending opcode */
-    return (tty_modes->num_opcodes * 5) + 1;
-}
+        /* Get the next argument to this function */
+        guac_ssh_ttymode ttymode = va_arg(args, guac_ssh_ttymode);
 
-char* guac_ssh_ttymodes_to_array(guac_ssh_ttymodes *tty_modes, int data_size) {
- 
-    char* temp = malloc(data_size);
-
-    /* Loop through the array based on number of tracked
-       opcodes and convert each one. */
-    for (int i = 0; i < tty_modes->num_opcodes; i++) {
-        int idx = i * 5;
-        uint32_t value = tty_modes->ttymode_array[i].value;
-
-        /* Opcode goes in first byte. */
-        temp[idx] = tty_modes->ttymode_array[i].opcode;
-
-        /* Convert 32-bit int to individual bytes. */
-        temp[idx+1] = (value >> 24) & 0xFF;
-        temp[idx+2] = (value >> 16) & 0xFF;
-        temp[idx+3] = (value >> 8) & 0xFF;
-        temp[idx+4] = value & 0xFF;
+        /* Place opcode and value in array */
+        opcode_array[offset] = ttymode.opcode;
+        opcode_array[offset + 1] = (ttymode.value >> 24) & 0xFF;
+        opcode_array[offset + 2] = (ttymode.value >> 16) & 0xFF;
+        opcode_array[offset + 3] = (ttymode.value >> 8) & 0xFF;
+        opcode_array[offset + 4] = ttymode.value & 0xFF;
     }
-    
-    /* Add the ending opcode */
-    temp[data_size - 1] = GUAC_SSH_TTY_OP_END;
 
-    return temp;
+    /* Put the end opcode in the last opcode space */
+    opcode_array[num_opcodes * GUAC_SSH_TTY_OPCODE_SIZE] = GUAC_SSH_TTY_OP_END;
+
+    return 0;
+
 }

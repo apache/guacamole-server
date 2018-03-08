@@ -193,7 +193,8 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Initialize a ttymode array */
-    guac_ssh_ttymodes* ssh_ttymodes = guac_ssh_ttymodes_init(1);
+    const int num_tty_opcodes = 1;
+    char ssh_ttymodes[(GUAC_SSH_TTY_OPCODE_SIZE * num_tty_opcodes) + 1];
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
@@ -211,9 +212,6 @@ void* ssh_client_thread(void* data) {
             settings->font_name, settings->font_size,
             settings->resolution, settings->width, settings->height,
             settings->color_scheme, settings->backspace);
-
-    /* Add the backspace key to the ttymode array */
-    guac_ssh_ttymodes_add(ssh_ttymodes, GUAC_SSH_TTY_OP_VERASE, settings->backspace);
 
     /* Fail if terminal init failed */
     if (ssh_client->term == NULL) {
@@ -303,21 +301,18 @@ void* ssh_client_thread(void* data) {
 
     }
 
-    /* Get char pointer array for TTY Mode Encoding */
-    int ttymode_size = guac_ssh_ttymodes_size(ssh_ttymodes);
-    char* ttymode_array = guac_ssh_ttymodes_to_array(ssh_ttymodes, ttymode_size);
+    /* Set up the ttymode array prior to requesting the PTY */
+    if (guac_ssh_ttymodes_init(ssh_ttymodes, sizeof(ssh_ttymodes),
+            num_tty_opcodes, (guac_ssh_ttymode){ GUAC_SSH_TTY_OP_VERASE, settings->backspace}))
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error configuring TTY mode encoding.");
 
     /* Request PTY */
     if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1,
-            ttymode_array, ttymode_size, ssh_client->term->term_width,
+            ssh_ttymodes, sizeof(ssh_ttymodes), ssh_client->term->term_width,
             ssh_client->term->term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
     }
-
-    /* We're done with TTY Mode Encoding, so free structures. */
-    free(ttymode_array);
-    free(ssh_ttymodes);
 
     /* If a command is specified, run that instead of a shell */
     if (settings->command != NULL) {
