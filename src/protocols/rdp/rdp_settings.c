@@ -667,7 +667,7 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     /* Client name */
     settings->client_name =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_CLIENT_NAME, NULL);
+                IDX_CLIENT_NAME, "Guacamole RDP");
 
     /* Initial program */
     settings->initial_program =

@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "rdp.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_service.h"
 
@@ -161,7 +162,7 @@ void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr,
     guac_rdpdr_send_client_announce_reply(rdpdr, major, minor, client_id);
 
     /* Name request */
-    guac_rdpdr_send_client_name_request(rdpdr, "Guacamole RDP");
+    guac_rdpdr_send_client_name_request(rdpdr, ((guac_rdp_client *)rdpdr->client->data)->settings->client_name);
 
 }
 
