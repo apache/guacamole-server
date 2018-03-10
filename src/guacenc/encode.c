@@ -87,38 +87,44 @@ static int guacenc_read_instructions(guacenc_display* display,
 int guacenc_encode(const char* path, const char* out_path, const char* codec,
         int width, int height, int bitrate, bool force) {
 
-    /* Open input file */
-    int fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        guacenc_log(GUAC_LOG_ERROR, "%s: %s", path, strerror(errno));
-        return 1;
+    int fd;
+    if (strcmp(path, "-") != 0) {
+        /* Open input file */
+        fd = open(path, O_RDONLY);
+        if (fd < 0) {
+            guacenc_log(GUAC_LOG_ERROR, "%s: %s", path, strerror(errno));
+            return 1;
+        }
+
+        /* Lock entire input file for reading by the current process */
+        struct flock file_lock = {
+                .l_type   = F_RDLCK,
+                .l_whence = SEEK_SET,
+                .l_start  = 0,
+                .l_len    = 0,
+                .l_pid    = getpid()
+        };
+
+        /* Abort if file cannot be locked for reading */
+        if (!force && fcntl(fd, F_SETLK, &file_lock) == -1) {
+
+            /* Warn if lock cannot be acquired */
+            if (errno == EACCES || errno == EAGAIN)
+                guacenc_log(GUAC_LOG_WARNING, "Refusing to encode in-progress "
+                        "recording \"%s\" (specify the -f option to override "
+                        "this behavior).", path);
+
+            /* Log an error if locking fails in an unexpected way */
+            else
+                guacenc_log(GUAC_LOG_ERROR, "Cannot lock \"%s\" for reading: %s",
+                        path, strerror(errno));
+
+            close(fd);
+            return 1;
+        }
     }
-
-    /* Lock entire input file for reading by the current process */
-    struct flock file_lock = {
-        .l_type   = F_RDLCK,
-        .l_whence = SEEK_SET,
-        .l_start  = 0,
-        .l_len    = 0,
-        .l_pid    = getpid()
-    };
-
-    /* Abort if file cannot be locked for reading */
-    if (!force && fcntl(fd, F_SETLK, &file_lock) == -1) {
-
-        /* Warn if lock cannot be acquired */
-        if (errno == EACCES || errno == EAGAIN)
-            guacenc_log(GUAC_LOG_WARNING, "Refusing to encode in-progress "
-                    "recording \"%s\" (specify the -f option to override "
-                    "this behavior).", path);
-
-        /* Log an error if locking fails in an unexpected way */
-        else
-            guacenc_log(GUAC_LOG_ERROR, "Cannot lock \"%s\" for reading: %s",
-                    path, strerror(errno));
-
-        close(fd);
-        return 1;
+    else {
+        fd = STDIN_FILENO;
     }
 
     /* Allocate display for encoding process */
