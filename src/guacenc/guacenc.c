@@ -25,6 +25,7 @@
 #include "parse.h"
 
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 
 #include <getopt.h>
 #include <stdbool.h>
@@ -79,6 +80,9 @@ int main(int argc, char* argv[]) {
     /* Prepare libavcodec */
     avcodec_register_all();
 #endif
+
+    /* Prepare libavformat */
+    av_register_all();
 
     /* Track number of overall failures */
     int total_files = argc - optind;
