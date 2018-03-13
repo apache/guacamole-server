@@ -80,14 +80,8 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
 
     /* Retrieve encoding context */
     AVCodecContext* avcodec_context =
-            guacenc_build_avcodeccontext(video_stream,
-                    codec,
-                    bitrate,
-                    width,
-                    height,
-                    /*gop size*/ 10,
-                    /*qmax*/ 31,
-                    /*qmin*/ 2,
+            guacenc_build_avcodeccontext(video_stream, codec, bitrate, width,
+                    height, /*gop size*/ 10, /*qmax*/ 31, /*qmin*/ 2,
                     /*pix fmt*/ AV_PIX_FMT_YUV420P,
                     /*time base*/ (AVRational) { 1, GUACENC_VIDEO_FRAMERATE });
 

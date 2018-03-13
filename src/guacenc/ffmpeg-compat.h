@@ -113,16 +113,9 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame);
  *     The target time base for the encoded video
  *
  */
-AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream,
-        AVCodec* codec,
-        int bitrate,
-        int width,
-        int height,
-        int gop_size,
-        int qmax,
-        int qmin,
-        int pix_fmt,
-        AVRational time_base);
+AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec,
+        int bitrate, int width, int height, int gop_size, int qmax, int qmin,
+        int pix_fmt, AVRational time_base);
 
 /**
  * A wrapper for avcodec_open2(). Because libavformat ver

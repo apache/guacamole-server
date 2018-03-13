@@ -52,17 +52,14 @@
 static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
 
     int ret;
-    AVPacket *pkt;
-
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54,1,0)
-
-    pkt =  malloc(sizeof(AVPacket));
+    AVPacket pkt;
     /* have to create a packet around the encoded data we have */
-    av_init_packet(pkt);
+    av_init_packet(&pkt);
 
     if (video->context->coded_frame->pts != AV_NOPTS_VALUE) {
-        pkt->pts = av_rescale_q(video->context->coded_frame->pts,
+        pkt.pts = av_rescale_q(video->context->coded_frame->pts,
                 video->context->time_base,
                 video->output_stream->time_base);
     }
@@ -70,13 +67,13 @@ static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
         pkt->flags |= AV_PKT_FLAG_KEY;
     }
 
-    pkt->data = data;
-    pkt->size = size;
-    pkt->stream_index = video->output_stream->index;
-    ret = av_interleaved_write_frame(video->container_format_context, pkt);
-    free(pkt);
+    pkt.data = data;
+    pkt.size = size;
+    pkt.stream_index = video->output_stream->index;
+    ret = av_interleaved_write_frame(video->container_format_context, &pkt);
 
 #else
+    AVPacket *pkt;
     /* we know data is already a packet if we're using a newer libavcodec */
     pkt = (AVPacket*) data;
     av_packet_rescale_ts(pkt, video->context->time_base, video->output_stream->time_base);
@@ -197,16 +194,10 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
 #endif
 }
 
-AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream,
-        AVCodec* codec,
-        int bitrate,
-        int width,
-        int height,
-        int gop_size,
-        int qmax,
-        int qmin,
-        int pix_fmt,
-        AVRational time_base) {
+AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec, 
+        int bitrate, int width, int height, int gop_size, int qmax, int qmin,
+        int pix_fmt, AVRational time_base) {
+
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57, 33, 100)
     stream->codec->bit_rate = bitrate;
     stream->codec->width = width;
