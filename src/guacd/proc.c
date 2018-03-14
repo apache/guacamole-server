@@ -33,11 +33,15 @@
 #include <guacamole/user.h>
 
 #include <errno.h>
+#include <pthread.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 /**
  * Parameters for the user thread.
@@ -139,6 +143,151 @@ static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
 }
 
 /**
+ * Forcibly kills all processes within the current process group, including the
+ * current process and all child processes. This function is only safe to call
+ * if the process group ID has been correctly set. Calling this function within
+ * a process which does not have a PGID separate from the main guacd process
+ * can result in guacd itself being terminated.
+ */
+static void guacd_kill_current_proc_group() {
+
+    /* Forcibly kill all children within process group */
+    if (kill(0, SIGKILL))
+        guacd_log(GUAC_LOG_WARNING, "Unable to forcibly terminate "
+                "client process: %s ", strerror(errno));
+
+}
+
+/**
+ * The current status of a background attempt to free a guac_client instance.
+ */
+typedef struct guacd_client_free {
+
+    /**
+     * The guac_client instance being freed.
+     */
+    guac_client* client;
+
+    /**
+     * The condition which is signalled whenever changes are made to the
+     * completed flag. The completed flag only changes from zero (not yet
+     * freed) to non-zero (successfully freed).
+     */
+    pthread_cond_t completed_cond;
+
+    /**
+     * Mutex which must be acquired before any changes are made to the
+     * completed flag.
+     */
+    pthread_mutex_t completed_mutex;
+
+    /**
+     * Whether the guac_client has been successfully freed. Initially, this
+     * will be zero, indicating that the free operation has not yet been
+     * attempted. If the client is eventually successfully freed, this will be
+     * set to a non-zero value. Changes to this flag are signalled through
+     * the completed_cond condition.
+     */
+    int completed;
+
+} guacd_client_free;
+
+/**
+ * Thread which frees a given guac_client instance in the background. If the
+ * free operation succeeds, a flag is set on the provided structure, and the
+ * change in that flag is signalled with a pthread condition.
+ *
+ * At the time this function is provided to a pthread_create() call, the
+ * completed flag of the associated guacd_client_free structure MUST be
+ * initialized to zero, the pthread mutex and condition MUST both be
+ * initialized, and the client pointer must point to the guac_client being
+ * freed.
+ *
+ * @param data
+ *     A pointer to a guacd_client_free structure describing the free
+ *     operation.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guacd_client_free_thread(void* data) {
+
+    guacd_client_free* free_operation = (guacd_client_free*) data;
+
+    /* Attempt to free client (this may never return if the client is
+     * malfunctioning) */
+    guac_client_free(free_operation->client);
+
+    /* Signal that the client was successfully freed */
+    pthread_mutex_lock(&free_operation->completed_mutex);
+    free_operation->completed = 1;
+    pthread_cond_broadcast(&free_operation->completed_cond);
+    pthread_mutex_unlock(&free_operation->completed_mutex);
+
+    return NULL;
+
+}
+
+/**
+ * Attempts to free the given guac_client, restricting the time taken by the
+ * free handler of the guac_client to a finite number of seconds. If the free
+ * handler does not complete within the time alotted, this function returns
+ * and the intended free operation is left in an undefined state.
+ *
+ * @param client
+ *     The guac_client instance to free.
+ *
+ * @param timeout
+ *     The maximum amount of time to wait for the guac_client to be freed,
+ *     in seconds.
+ *
+ * @return
+ *     Zero if the guac_client was successfully freed within the time alotted,
+ *     non-zero otherwise.
+ */
+static int guacd_timed_client_free(guac_client* client, int timeout) {
+
+    pthread_t client_free_thread;
+
+    guacd_client_free free_operation = {
+        .client = client,
+        .completed_cond = PTHREAD_COND_INITIALIZER,
+        .completed_mutex = PTHREAD_MUTEX_INITIALIZER,
+        .completed = 0
+    };
+
+    /* Get current time */
+    struct timeval current_time;
+    if (gettimeofday(&current_time, NULL))
+        return 1;
+
+    /* Calculate exact time that the free operation MUST complete by */
+    struct timespec deadline = {
+        .tv_sec  = current_time.tv_sec + timeout,
+        .tv_nsec = current_time.tv_usec * 1000
+    };
+
+    /* Free the client in a separate thread, so we can time the free operation */
+    if (pthread_create(&client_free_thread, NULL,
+                guacd_client_free_thread, &free_operation))
+        return 1;
+
+    /* The mutex associated with the pthread conditional and flag MUST be
+     * acquired before attempting to wait for the condition */
+    if (pthread_mutex_lock(&free_operation.completed_mutex))
+        return 1;
+
+    /* Wait a finite amount of time for the free operation to finish */
+    if (pthread_cond_timedwait(&free_operation.completed_cond,
+                &free_operation.completed_mutex, &deadline))
+        return 1;
+
+    /* Return status of free operation */
+    return !free_operation.completed;
+
+}
+
+/**
  * Starts protocol-specific handling on the given process by loading the client
  * plugin for that protocol. This function does NOT return. It initializes the
  * process with protocol-specific handlers and then runs until the guacd_proc's
@@ -154,8 +303,18 @@ static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
  */
 static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
 
+    int result = 1;
+   
+    /* Set process group ID to match PID */ 
+    if (setpgid(0, 0)) {
+        guacd_log(GUAC_LOG_ERROR, "Cannot set PGID for connection process: %s",
+                strerror(errno));
+        goto cleanup_process;
+    }
+
     /* Init client for selected protocol */
-    if (guac_client_load_plugin(proc->client, protocol)) {
+    guac_client* client = proc->client;
+    if (guac_client_load_plugin(client, protocol)) {
 
         /* Log error */
         if (guac_error == GUAC_STATUS_NOT_FOUND)
@@ -165,10 +324,7 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
             guacd_log_guac_error(GUAC_LOG_ERROR,
                     "Unable to load client plugin");
 
-        guac_client_free(proc->client);
-        close(proc->fd_socket);
-        free(proc);
-        exit(1);
+        goto cleanup_client;
     }
 
     /* The first file descriptor is the owner */
@@ -185,14 +341,47 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
 
     }
 
-    /* Stop and free client */
-    guac_client_stop(proc->client);
-    guac_client_free(proc->client);
+cleanup_client:
 
-    /* Child is finished */
+    /* Request client to stop/disconnect */
+    guac_client_stop(client);
+
+    /* Attempt to free client cleanly */
+    guacd_log(GUAC_LOG_DEBUG, "Requesting termination of client...");
+    result = guacd_timed_client_free(client, GUACD_CLIENT_FREE_TIMEOUT);
+
+    /* If client was unable to be freed, warn and forcibly kill */
+    if (result) {
+        guacd_log(GUAC_LOG_WARNING, "Client did not terminate in a timely "
+                "manner. Forcibly terminating client and any child "
+                "processes.");
+        guacd_kill_current_proc_group();
+    }
+    else
+        guacd_log(GUAC_LOG_DEBUG, "Client terminated successfully.");
+
+    /* Verify whether children were all properly reaped */
+    pid_t child_pid;
+    while ((child_pid = waitpid(0, NULL, WNOHANG)) > 0) {
+        guacd_log(GUAC_LOG_DEBUG, "Automatically reaped unreaped "
+                "(zombie) child process with PID %i.", child_pid);
+    }
+
+    /* If running children remain, warn and forcibly kill */
+    if (child_pid == 0) {
+        guacd_log(GUAC_LOG_WARNING, "Client reported successful termination, "
+                "but child processes remain. Forcibly terminating client and "
+                "child processes.");
+        guacd_kill_current_proc_group();
+    }
+
+cleanup_process:
+
+    /* Free up all internal resources outside the client */
     close(proc->fd_socket);
     free(proc);
-    exit(0);
+
+    exit(result);
 
 }
 

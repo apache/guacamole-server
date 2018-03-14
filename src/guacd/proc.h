@@ -41,6 +41,14 @@
 #define GUACD_USEC_TIMEOUT (GUACD_TIMEOUT*1000)
 
 /**
+ * The number of seconds to wait for any particular guac_client instance
+ * to be freed following disconnect. If the free operation does not complete
+ * within this period of time, the associated process will be forcibly
+ * terminated.
+ */
+#define GUACD_CLIENT_FREE_TIMEOUT 5
+
+/**
  * Process information of the internal remote desktop client.
  */
 typedef struct guacd_proc {
