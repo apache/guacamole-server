@@ -61,11 +61,12 @@ guacd_LDFLAGS =    \
     @SSL_LIBS@
 
 EXTRA_DIST =            \
-    init.d/guacd.in     \
-    man/guacd.8.in      \
+    init.d/guacd.in          \
+    systemd/guacd.service.in \
+    man/guacd.8.in           \
     man/guacd.conf.5.in
 
-CLEANFILES = $(init_SCRIPTS)
+CLEANFILES = $(init_SCRIPTS) $(systemd_UNITS)
 
 # Init script
 if ENABLE_INIT
@@ -75,5 +76,14 @@ init_SCRIPTS = init.d/guacd
 init.d/guacd: init.d/guacd.in
 	sed -e 's,[@]sbindir[@],$(sbindir),g' < init.d/guacd.in > init.d/guacd
 	chmod +x init.d/guacd
+endif
+
+# Systemd service
+if ENABLE_SYSTEMD
+systemddir = @systemd_dir@
+systemd_SCRIPTS = systemd/guacd.service
+
+systemd/guacd.service: systemd/guacd.service.in
+	sed -e 's,[@]sbindir[@],$(sbindir),g' < systemd/guacd.service.in > systemd/guacd.service
 endif
 

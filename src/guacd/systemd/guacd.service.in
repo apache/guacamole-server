@@ -1,0 +1,11 @@
+[Unit]
+Description=Guacamole Server
+Documentation=man:guacd(8)
+
+[Service]
+User=daemon
+ExecStart=@sbindir@/guacd -f
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target

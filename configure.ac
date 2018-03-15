@@ -148,6 +148,14 @@ AC_ARG_WITH(init_dir,
 AM_CONDITIONAL([ENABLE_INIT], [test "x${init_dir}" != "x"])
 AC_SUBST(init_dir)
 
+# Systemd directory
+AC_ARG_WITH(systemd_dir,
+            [AS_HELP_STRING([--with-systemd-dir=<path>],
+                            [install systemd units to the given directory])
+            ],systemd_dir=$withval)
+AM_CONDITIONAL([ENABLE_SYSTEMD], [test "x${systemd_dir}" != "x"])
+AC_SUBST(systemd_dir)
+
 # guacd config file
 AC_ARG_WITH(guacd_conf,
             [AS_HELP_STRING([--with-guacd-conf=<path>],
@@ -1252,6 +1260,12 @@ AM_COND_IF([ENABLE_GUACLOG], [build_guaclog=yes], [build_guaclog=no])
 AM_COND_IF([ENABLE_INIT], [build_init="${init_dir}"], [build_init=no])
 
 #
+# Systemd units
+#
+
+AM_COND_IF([ENABLE_SYSTEMD], [build_systemd="${systemd_dir}"], [build_systemd=no])
+
+#
 # Display summary
 #
 
@@ -1290,6 +1304,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       guaclog .... ${build_guaclog}
 
    Init scripts: ${build_init}
+   Systemd units: ${build_systemd}
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
