@@ -2,6 +2,9 @@
 # Compiled init script
 init.d/guacd
 
+# Compiled systemd unit
+systemd/guacd.service
+
 # Compiled proxy
 guacd
 guacd.exe
