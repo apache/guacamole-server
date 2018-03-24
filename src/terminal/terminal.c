@@ -1600,7 +1600,7 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
             /* Backspace can vary based on configuration of terminal by client. */
             if (keysym == 0xFF08) {
-                char* backspace_str = malloc(sizeof(char) * 2);
+                char backspace_str[2];
                 backspace_str[0] = term->backspace;
                 backspace_str[1] = '\0';
                 return guac_terminal_send_string(term, backspace_str);
