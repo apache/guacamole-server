@@ -335,7 +335,7 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, false);
 
-    /* Parse backspae key code */
+    /* Parse backspace key code */
     settings->backspace =
         guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_BACKSPACE, 127);
