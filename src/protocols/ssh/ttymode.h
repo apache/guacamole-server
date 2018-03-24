@@ -46,21 +46,43 @@
 #define GUAC_SSH_TTY_OP_VERASE 3
 
 /**
- * Simple structure that defines a opcode and
- * value pair.
+ * The SSH protocol attempts to configure the remote
+ * terminal by sending pairs of opcodes and values, as
+ * described in Section 8 of RFC 4254.  These are
+ * comprised of a single byte opcode and a 4-byte
+ * value.  This data structure stores a single opcode
+ * and value pair.
  */
 typedef struct guac_ssh_ttymode {
+
+    /**
+     * The single byte opcode for defining the TTY
+     * encoding setting for the remote terminal.  The
+     * stadard codes are defined in Section 8 of
+     * the SSH RFC (4254).
+     */
     char opcode;
+
+    /**
+     * The four byte value of the setting for the
+     * defined opcode.
+     */
     uint32_t value;
+
 } guac_ssh_ttymode;
 
 /**
- * Initialize an array with the specified opcode/value
- * pairs, returning 0 if successful, or a non-zero value
- * if a failure occurs.
+ * Opcodes and value pairs are passed to the SSH connection
+ * in a single array, beginning with the opcode and followed
+ * by a four byte value, repeating until the end opcode is
+ * encountered.  This function takes the array, the array
+ * size, expected number of opcodes, and that number of
+ * guac_ssh_ttymode arguments and puts them in the array
+ * exepcted by the SSH connection.
  *
  * @param opcode_array
- *     Pointer to the opcode array.
+ *     Pointer to the opcode array that will ultimately
+ *     be passed to the SSH connection.
  *
  * @param array_size
  *     Size, in bytes, of the array.
