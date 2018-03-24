@@ -36,23 +36,22 @@ int guac_ssh_ttymodes_init(char opcode_array[], const int array_size,
     if ((num_opcodes * GUAC_SSH_TTY_OPCODE_SIZE) >= (array_size))
         return 1;
 
+    char *current = opcode_array;
     for (int i = 0; i < num_opcodes; i++) {
-        /* Calculate offset in array */
-        int offset = i * GUAC_SSH_TTY_OPCODE_SIZE;
 
         /* Get the next argument to this function */
-        guac_ssh_ttymode ttymode = va_arg(args, guac_ssh_ttymode);
+        guac_ssh_ttymode* ttymode = va_arg(args, guac_ssh_ttymode*);
 
         /* Place opcode and value in array */
-        opcode_array[offset] = ttymode.opcode;
-        opcode_array[offset + 1] = (ttymode.value >> 24) & 0xFF;
-        opcode_array[offset + 2] = (ttymode.value >> 16) & 0xFF;
-        opcode_array[offset + 3] = (ttymode.value >> 8) & 0xFF;
-        opcode_array[offset + 4] = ttymode.value & 0xFF;
+        *(current++) = ttymode->opcode;
+        *(current++) = (ttymode->value >> 24) & 0xFF;
+        *(current++) = (ttymode->value >> 16) & 0xFF;
+        *(current++) = (ttymode->value >> 8) & 0xFF;
+        *(current++) = ttymode->value & 0xFF;
     }
 
     /* Put the end opcode in the last opcode space */
-    opcode_array[num_opcodes * GUAC_SSH_TTY_OPCODE_SIZE] = GUAC_SSH_TTY_OP_END;
+    *(current) = GUAC_SSH_TTY_OP_END;
 
     return 0;
 
