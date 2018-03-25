@@ -35,6 +35,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -507,6 +508,47 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         free(common_session);
         close(fd);
         return NULL;
+    }
+
+    /* Check known_hosts */
+    size_t len;
+    int type;
+    struct passwd *pw = getpwuid(getuid());
+    char *homedir = pw->pw_dir;
+    char *known_hosts = strcat(homedir, "/.ssh/known_hosts");
+    LIBSSH2_KNOWNHOSTS *ssh_known_hosts = libssh2_knownhost_init(session);
+
+    libssh2_knownhost_readfile(ssh_known_hosts, known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+    const char *fingerprint = libssh2_session_hostkey(session, &len, &type);
+
+    if (fingerprint) {
+        struct libssh2_knownhost *host;
+        int check = libssh2_knownhost_checkp(ssh_known_hosts, hostname, atoi(port),
+                                            fingerprint, len,
+                                            LIBSSH2_KNOWNHOST_TYPE_PLAIN|
+                                            LIBSSH2_KNOWNHOST_KEYENC_RAW,
+                                            &host);
+
+        switch (check) {
+            case LIBSSH2_KNOWNHOST_CHECK_MATCH:
+                guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Host key match found.");
+                break;
+            case LIBSSH2_KNOWNHOST_CHECK_NOTFOUND:
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Host key not found in known hosts file.");
+                break;
+            case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Host key does not match host entry.");
+                break;
+            case LIBSSH2_KNOWNHOST_CHECK_FAILURE:
+            default:
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Host could not be checked against known hosts.");
+        }
+
+
     }
 
     /* Perform handshake */
