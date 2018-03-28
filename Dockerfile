@@ -82,6 +82,7 @@ ARG PREFIX_DIR=/usr/local/guacamole
 
 # Runtime environment
 ENV LC_ALL=en_US.UTF-8
+ENV GUACD_LOG_LEVEL=info
 
 ARG RUNTIME_DEPENDENCIES="            \
         cairo                         \
@@ -126,5 +127,5 @@ EXPOSE 4822
 # Note the path here MUST correspond to the value specified in the 
 # PREFIX_DIR build argument.
 #
-CMD [ "/usr/local/guacamole/sbin/guacd", "-b", "0.0.0.0", "-f" ]
+CMD [ "/usr/local/guacamole/sbin/guacd", "-b", "0.0.0.0", "-L", "$GUACD_LOG_LEVEL", "-f" ]
 
