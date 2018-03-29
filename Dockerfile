@@ -127,5 +127,5 @@ EXPOSE 4822
 # Note the path here MUST correspond to the value specified in the 
 # PREFIX_DIR build argument.
 #
-CMD [ "/usr/local/guacamole/sbin/guacd", "-b", "0.0.0.0", "-L", "$GUACD_LOG_LEVEL", "-f" ]
+CMD /usr/local/guacamole/sbin/guacd -b 0.0.0.0 -L $GUACD_LOG_LEVEL -f
 
