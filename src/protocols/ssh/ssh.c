@@ -26,6 +26,7 @@
 #include "sftp.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
+#include "ttymode.h"
 
 #ifdef ENABLE_SSH_AGENT
 #include "ssh_agent.h"
@@ -191,6 +192,8 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
+    char ssh_ttymodes[GUAC_SSH_TTYMODES_SIZE(1)];
+
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
         ssh_client->recording = guac_common_recording_create(client,
@@ -206,7 +209,7 @@ void* ssh_client_thread(void* data) {
     ssh_client->term = guac_terminal_create(client,
             settings->font_name, settings->font_size,
             settings->resolution, settings->width, settings->height,
-            settings->color_scheme);
+            settings->color_scheme, settings->backspace);
 
     /* Fail if terminal init failed */
     if (ssh_client->term == NULL) {
@@ -296,9 +299,17 @@ void* ssh_client_thread(void* data) {
 
     }
 
+    /* Set up the ttymode array prior to requesting the PTY */
+    int ttymodeBytes = guac_ssh_ttymodes_init(ssh_ttymodes,
+            GUAC_SSH_TTY_OP_VERASE, settings->backspace, GUAC_SSH_TTY_OP_END);
+    if (ttymodeBytes < 1)
+        guac_client_log(client, GUAC_LOG_WARNING, "Unable to set TTY modes."
+                "  Backspace may not work as expected.");
+
     /* Request PTY */
-    if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1, NULL, 0,
-            ssh_client->term->term_width, ssh_client->term->term_height, 0, 0)) {
+    if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1,
+            ssh_ttymodes, ttymodeBytes, ssh_client->term->term_width,
+            ssh_client->term->term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
     }

@@ -480,7 +480,7 @@ void* guac_telnet_client_thread(void* data) {
     telnet_client->term = guac_terminal_create(client,
             settings->font_name, settings->font_size,
             settings->resolution, settings->width, settings->height,
-            settings->color_scheme);
+            settings->color_scheme, settings->backspace);
 
     /* Fail if terminal init failed */
     if (telnet_client->term == NULL) {
