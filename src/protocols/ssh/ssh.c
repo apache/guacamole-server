@@ -192,8 +192,7 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
-    const int num_tty_opcodes = 1;
-    char ssh_ttymodes[(GUAC_SSH_TTY_OPCODE_SIZE * num_tty_opcodes) + 1];
+    char ssh_ttymodes[GUAC_SSH_TTYMODES_SIZE(1)];
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
@@ -301,7 +300,7 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Set up the ttymode array prior to requesting the PTY */
-    int ttymodeBytes = guac_ssh_ttymodes_init(ssh_ttymodes, sizeof(ssh_ttymodes),
+    int ttymodeBytes = guac_ssh_ttymodes_init(ssh_ttymodes,
             GUAC_SSH_TTY_OP_VERASE, settings->backspace, GUAC_SSH_TTY_OP_END);
     if (ttymodeBytes < 1)
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error storing TTY mode encoding \

@@ -46,46 +46,27 @@
 #define GUAC_SSH_TTY_OP_VERASE 3
 
 /**
- * The SSH protocol attempts to configure the remote
- * terminal by sending pairs of opcodes and values, as
- * described in Section 8 of RFC 4254.  These are
- * comprised of a single byte opcode and a 4-byte
- * value.  This data structure stores a single opcode
- * and value pair.
+ * Macro for calculating the number of bytes required
+ * to pass a given number of opcodes, which calculates
+ * the size of the number of opcodes plus the single byte
+ * end opcode.
  */
-typedef struct guac_ssh_ttymode {
-
-    /**
-     * The single byte opcode for defining the TTY
-     * encoding setting for the remote terminal.  The
-     * stadard codes are defined in Section 8 of
-     * the SSH RFC (4254).
-     */
-    char opcode;
-
-    /**
-     * The four byte value of the setting for the
-     * defined opcode.
-     */
-    uint32_t value;
-
-} guac_ssh_ttymode;
+#define GUAC_SSH_TTYMODES_SIZE(num_opcodes) ((GUAC_SSH_TTY_OPCODE_SIZE * num_opcodes) + 1)
 
 /**
  * Opcodes and value pairs are passed to the SSH connection
  * in a single array, beginning with the opcode and followed
  * by a four byte value, repeating until the end opcode is
- * encountered.  This function takes the array, the array
- * size, and a variable number of opcode and value pair
- * arguments and puts them in the array expected by the
- * SSH connection.
+ * encountered.  This function takes the array that will be
+ * sent and a variable number of opcode and value pair
+ * arguments and places the opcode and values in the array
+ * as expected by the SSH connection.
  *
  * @param opcode_array
  *     Pointer to the opcode array that will ultimately
- *     be passed to the SSH connection.
- *
- * @param array_size
- *     Size, in bytes, of the array.
+ *     be passed to the SSH connection.  The array must
+ *     be size to handle 5 bytes for each opcode and value
+ *     pair, plus one additional byte for the end opcode.
  *
  * @params ...
  *     A variable number of opcode and value pairs
@@ -95,7 +76,6 @@ typedef struct guac_ssh_ttymode {
  *     Number of bytes written to the array, or zero
  *     if a failure occurs.
  */
-int guac_ssh_ttymodes_init(char opcode_array[], const int array_size,
-        ...);
+int guac_ssh_ttymodes_init(char opcode_array[], ...);
 
 #endif

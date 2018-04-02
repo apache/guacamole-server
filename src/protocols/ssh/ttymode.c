@@ -25,12 +25,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-int guac_ssh_ttymodes_init(char opcode_array[], const int array_size,
-        ...) {
+int guac_ssh_ttymodes_init(char opcode_array[], ...) {
 
     /* Initialize the variable argument list. */
     va_list args;
-    va_start(args, array_size);
+    va_start(args, opcode_array);
 
     /* Initialize array pointer and byte counter. */
     char *current = opcode_array;
@@ -39,10 +38,6 @@ int guac_ssh_ttymodes_init(char opcode_array[], const int array_size,
     /* Loop through variable argument list. */
     while (true) {
        
-        /* Check to make sure we don't overrun array. */ 
-        if (bytes >= array_size)
-            return -1;
-
         /* Next argument should be an opcode. */
         char opcode = (char)va_arg(args, int);
         *(current++) = opcode;
