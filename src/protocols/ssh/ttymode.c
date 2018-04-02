@@ -21,38 +21,49 @@
 #include "ttymode.h"
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
 int guac_ssh_ttymodes_init(char opcode_array[], const int array_size,
-        const int num_opcodes, ...) {
+        ...) {
 
     /* Initialize the variable argument list. */
     va_list args;
-    va_start(args, num_opcodes);
+    va_start(args, array_size);
 
-    /* Check to make sure the array has enough space.
-       We need one extra byte at the end for the ending opcode. */
-    if ((num_opcodes * GUAC_SSH_TTY_OPCODE_SIZE) >= (array_size))
-        return 1;
-
+    /* Initialize array pointer and byte counter. */
     char *current = opcode_array;
-    for (int i = 0; i < num_opcodes; i++) {
+    int bytes = 0;
 
-        /* Get the next argument to this function */
-        guac_ssh_ttymode* ttymode = va_arg(args, guac_ssh_ttymode*);
+    /* Loop through variable argument list. */
+    while (true) {
+       
+        /* Check to make sure we don't overrun array. */ 
+        if (bytes >= array_size)
+            return -1;
 
-        /* Place opcode and value in array */
-        *(current++) = ttymode->opcode;
-        *(current++) = (ttymode->value >> 24) & 0xFF;
-        *(current++) = (ttymode->value >> 16) & 0xFF;
-        *(current++) = (ttymode->value >> 8) & 0xFF;
-        *(current++) = ttymode->value & 0xFF;
+        /* Next argument should be an opcode. */
+        char opcode = (char)va_arg(args, int);
+        *(current++) = opcode;
+        bytes += sizeof(char);
+
+        /* If it's the end opcode, we're done. */
+        if (opcode == GUAC_SSH_TTY_OP_END)
+            break;
+
+        /* Next argument should be 4-byte value. */
+        uint32_t value = va_arg(args, uint32_t);
+        *(current++) = (value >> 24) & 0xFF;
+        *(current++) = (value >> 16) & 0xFF;
+        *(current++) = (value >> 8) & 0xFF;
+        *(current++) = value & 0xFF;
+        bytes += sizeof(uint32_t);
     }
 
-    /* Put the end opcode in the last opcode space */
-    *(current) = GUAC_SSH_TTY_OP_END;
+    /* We're done processing arguments. */
+    va_end(args);
 
-    return 0;
+    return bytes;
 
 }

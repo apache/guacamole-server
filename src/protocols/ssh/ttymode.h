@@ -76,9 +76,9 @@ typedef struct guac_ssh_ttymode {
  * in a single array, beginning with the opcode and followed
  * by a four byte value, repeating until the end opcode is
  * encountered.  This function takes the array, the array
- * size, expected number of opcodes, and that number of
- * guac_ssh_ttymode arguments and puts them in the array
- * exepcted by the SSH connection.
+ * size, and a variable number of opcode and value pair
+ * arguments and puts them in the array expected by the
+ * SSH connection.
  *
  * @param opcode_array
  *     Pointer to the opcode array that will ultimately
@@ -87,18 +87,15 @@ typedef struct guac_ssh_ttymode {
  * @param array_size
  *     Size, in bytes, of the array.
  *
- * @param num_opcodes
- *     Number of opcodes to expect.
- *
  * @params ...
- *     A variable number of guac_ssh_ttymodes
+ *     A variable number of opcode and value pairs
  *     to place in the array.
  *
  * @return
- *     Zero of the function is successful, non-zero
+ *     Number of bytes written to the array, or zero
  *     if a failure occurs.
  */
 int guac_ssh_ttymodes_init(char opcode_array[], const int array_size,
-        const int num_opcodes, ...);
+        ...);
 
 #endif

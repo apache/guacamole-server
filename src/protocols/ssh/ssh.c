@@ -192,7 +192,6 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
-    /* Initialize a ttymode array */
     const int num_tty_opcodes = 1;
     char ssh_ttymodes[(GUAC_SSH_TTY_OPCODE_SIZE * num_tty_opcodes) + 1];
 
@@ -302,13 +301,15 @@ void* ssh_client_thread(void* data) {
     }
 
     /* Set up the ttymode array prior to requesting the PTY */
-    if (guac_ssh_ttymodes_init(ssh_ttymodes, sizeof(ssh_ttymodes),
-            num_tty_opcodes, (guac_ssh_ttymode){ GUAC_SSH_TTY_OP_VERASE, settings->backspace}))
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error configuring TTY mode encoding.");
+    int ttymodeBytes = guac_ssh_ttymodes_init(ssh_ttymodes, sizeof(ssh_ttymodes),
+            GUAC_SSH_TTY_OP_VERASE, settings->backspace, GUAC_SSH_TTY_OP_END);
+    if (ttymodeBytes < 1)
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error storing TTY mode encoding \
+                opcodes and values in array.");
 
     /* Request PTY */
     if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1,
-            ssh_ttymodes, sizeof(ssh_ttymodes), ssh_client->term->term_width,
+            ssh_ttymodes, ttymodeBytes, ssh_client->term->term_width,
             ssh_client->term->term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
