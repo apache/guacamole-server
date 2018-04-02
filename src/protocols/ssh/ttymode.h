@@ -50,6 +50,14 @@
  * to pass a given number of opcodes, which calculates
  * the size of the number of opcodes plus the single byte
  * end opcode.
+ *
+ * @param num_opcodes
+ *     The number of opcodes for which a size in bytes
+ *     should be calculated.
+ *
+ * @returns
+ *     The number of bytes that the given number of
+ *     opcodes will require.
  */
 #define GUAC_SSH_TTYMODES_SIZE(num_opcodes) ((GUAC_SSH_TTY_OPCODE_SIZE * num_opcodes) + 1)
 

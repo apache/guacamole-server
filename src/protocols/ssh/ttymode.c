@@ -33,7 +33,6 @@ int guac_ssh_ttymodes_init(char opcode_array[], ...) {
 
     /* Initialize array pointer and byte counter. */
     char *current = opcode_array;
-    int bytes = 0;
 
     /* Loop through variable argument list. */
     while (true) {
@@ -41,7 +40,6 @@ int guac_ssh_ttymodes_init(char opcode_array[], ...) {
         /* Next argument should be an opcode. */
         char opcode = (char)va_arg(args, int);
         *(current++) = opcode;
-        bytes += sizeof(char);
 
         /* If it's the end opcode, we're done. */
         if (opcode == GUAC_SSH_TTY_OP_END)
@@ -53,12 +51,11 @@ int guac_ssh_ttymodes_init(char opcode_array[], ...) {
         *(current++) = (value >> 16) & 0xFF;
         *(current++) = (value >> 8) & 0xFF;
         *(current++) = value & 0xFF;
-        bytes += sizeof(uint32_t);
     }
 
     /* We're done processing arguments. */
     va_end(args);
 
-    return bytes;
+    return current - opcode_array;
 
 }

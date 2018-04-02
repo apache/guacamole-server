@@ -303,8 +303,8 @@ void* ssh_client_thread(void* data) {
     int ttymodeBytes = guac_ssh_ttymodes_init(ssh_ttymodes,
             GUAC_SSH_TTY_OP_VERASE, settings->backspace, GUAC_SSH_TTY_OP_END);
     if (ttymodeBytes < 1)
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error storing TTY mode encoding \
-                opcodes and values in array.");
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to set TTY modes."
+                "  Backspace may not work as expected.");
 
     /* Request PTY */
     if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1,
