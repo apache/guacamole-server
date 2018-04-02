@@ -43,7 +43,7 @@ PREFIX_DIR="$2"
 
 cd "$BUILD_DIR"
 autoreconf -fi
-./configure --prefix="$PREFIX_DIR"
+./configure --prefix="$PREFIX_DIR" --disable-guaclog
 make
 make install
 ldconfig
