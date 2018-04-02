@@ -52,9 +52,6 @@ ARG BUILD_DEPENDENCIES="              \
         libwebp-dev                   \
         make"
 
-# Build time environment
-ENV LC_ALL=en_US.UTF-8
-
 # Bring build environment up to date and install build dependencies
 RUN apt-get update                         && \
     apt-get install -y $BUILD_DEPENDENCIES && \
