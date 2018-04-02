@@ -84,7 +84,7 @@ FROM debian:${DEBIAN_VERSION}
 ARG PREFIX_DIR=/usr/local/guacamole
 
 # Runtime environment
-ENV LC_ALL=en_US.UTF-8
+ENV LC_ALL=C.UTF-8
 ENV LD_LIBRARY_PATH=${PREFIX_DIR}/lib
 ENV GUACD_LOG_LEVEL=info
 
