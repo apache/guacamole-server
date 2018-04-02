@@ -22,9 +22,9 @@
 #
 
 
-# Use Ubuntu as base for the build
-ARG UBUNTU_VERSION=artful
-FROM ubuntu:${UBUNTU_VERSION} AS builder
+# Use Debian as base for the build
+ARG DEBIAN_VERSION=stable
+FROM debian:${DEBIAN_VERSION} AS builder
 
 # Base directory for installed build artifacts.
 # Due to limitations of the Docker image build process, this value is
@@ -40,7 +40,7 @@ ARG BUILD_DEPENDENCIES="              \
         gcc                           \
         libcairo2-dev                 \
         libfreerdp-dev                \
-        libjpeg-turbo8-dev            \
+        libjpeg62-turbo-dev           \
         libossp-uuid-dev              \
         libpango1.0-dev               \
         libpulse-dev                  \
@@ -76,8 +76,8 @@ RUN ${PREFIX_DIR}/bin/list-dependencies.sh    \
         ${PREFIX_DIR}/lib/freerdp/guac*.so    \
         > ${PREFIX_DIR}/DEPENDENCIES
 
-# Use same Ubuntu as the base for the runtime image
-FROM ubuntu:${UBUNTU_VERSION}
+# Use same Debian as the base for the runtime image
+FROM debian:${DEBIAN_VERSION}
 
 # Base directory for installed build artifacts.
 # Due to limitations of the Docker image build process, this value is
