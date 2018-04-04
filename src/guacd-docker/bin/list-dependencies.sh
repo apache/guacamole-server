@@ -19,31 +19,30 @@
 #
 
 ##
-## @fn build-guacd.sh
+## @fn list-dependencies.sh
 ##
-## Builds the source of guacamole-server, automatically creating any required
-## symbolic links for the proper loading of FreeRDP plugins.
+## Lists the Debian/Ubuntu package names for all library dependencies of the
+## given binaries. Each package is only listed once, even if multiple binaries
+## provided by the same package are given.
 ##
-## @param BUILD_DIR
-##     The directory which currently contains the guacamole-server source and
-##     in which the build should be performed.
-##
-## @param PREFIX_DIR
-##     The directory prefix into which the build artifacts should be installed 
-##     in which the build should be performed. This is passed to the --prefix
-##     option of `configure`.
+## @param ...
+##     The full paths to all binaries being checked.
 ##
 
-BUILD_DIR="$1"
-PREFIX_DIR="$2"
+while [ -n "$1" ]; do
 
-#
-# Build guacamole-server
-#
+    # For all non-Guacamole library dependencies
+    ldd "$1" | grep -v 'libguac' | awk '/=>/{print $(NF-1)}' \
+        | while read LIBRARY; do
 
-cd "$BUILD_DIR"
-autoreconf -fi
-./configure --prefix="$PREFIX_DIR" --disable-guaclog
-make
-make install
-ldconfig
+        # Determine the Debian package which is associated with that
+        # library, if any
+        dpkg-query -S "$LIBRARY" 2> /dev/null || true
+
+    done
+
+    # Next binary
+    shift
+
+done | cut -f1 -d: | sort -u
+
