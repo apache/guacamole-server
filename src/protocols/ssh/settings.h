@@ -73,7 +73,7 @@ typedef struct guac_ssh_settings {
     /**
      * The type of public SSH host key.
      */
-    char* host_key_type;
+    int host_key_type;
 
     /**
      * The public SSH host key.

@@ -35,6 +35,9 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
+#ifdef ENABLE_COMMON_SSH
+#include <libssh2.h>
+#endif
 #include <stddef.h>
 #include <string.h>
 
@@ -81,6 +84,8 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
     "sftp-hostname",
+    "sftp-host-key-type",
+    "sftp-host-key",
     "sftp-port",
     "sftp-username",
     "sftp-password",
@@ -354,6 +359,17 @@ enum RDP_ARGS_IDX {
      * hostname of the RDP server will be used.
      */
     IDX_SFTP_HOSTNAME,
+
+    /**
+     * The type of public SSH host key provided.  If not specified, it defaults
+     * to SSH-RSA.
+     */
+    IDX_SFTP_HOST_KEY_TYPE,
+
+    /**
+     * The public SSH host key of the SFTP server.  Optional.
+     */
+    IDX_SFTP_HOST_KEY,
 
     /**
      * The port of the SSH server to connect to for SFTP. If blank, the default
@@ -821,6 +837,30 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->sftp_hostname =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_HOSTNAME, settings->hostname);
+
+    /* The public SSH host key. */
+    settings->sftp_host_key =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_HOST_KEY, NULL);
+
+    if(settings->sftp_host_key) {
+        /* Type of public SSH host key. */
+        char* str_host_key_type = guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                    IDX_SFTP_HOST_KEY_TYPE, "ssh-rsa");
+        
+        if (strcmp(str_host_key_type, "ssh-rsa") == 0)
+            settings->sftp_host_key_type = LIBSSH2_KNOWNHOST_KEY_SSHRSA;
+        else if (strcmp(str_host_key_type, "ssh-dss") == 0)
+            settings->sftp_host_key_type = LIBSSH2_KNOWNHOST_KEY_SSHDSS;
+        else if (strcmp(str_host_key_type, "rsa1") == 0)
+            settings->sftp_host_key_type = LIBSSH2_KNOWNHOST_KEY_RSA1;
+        else {
+            guac_user_log(user, GUAC_LOG_WARNING, "Invalid host key type specified %s.  "
+                    "Ignoring host key.", str_host_key_type);
+            settings->sftp_host_key = NULL;
+        }
+
+    }
 
     /* Port for SFTP connection */
     settings->sftp_port =

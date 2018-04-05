@@ -24,6 +24,7 @@
 
 #include <guacamole/user.h>
 
+#include <libssh2.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -259,13 +260,25 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
 
-    settings->host_key_type =
-        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_HOST_KEY_TYPE, "ssh-rsa");
-
     settings->host_key =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_HOST_KEY, NULL);
+
+    if (settings->host_key) {
+        char* str_host_key_type = guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                    IDX_HOST_KEY_TYPE, "ssh-rsa");
+        if (strcmp(str_host_key_type, "ssh-rsa") == 0)
+            settings->host_key_type = LIBSSH2_KNOWNHOST_KEY_SSHRSA;
+        else if (strcmp(str_host_key_type, "ssh-dss") == 0)
+            settings->host_key_type = LIBSSH2_KNOWNHOST_KEY_SSHDSS;
+        else if (strcmp(str_host_key_type, "rsa1") == 0)
+            settings->host_key_type = LIBSSH2_KNOWNHOST_KEY_RSA1;
+        else {
+            guac_user_log(user, GUAC_LOG_WARNING, "Invalid host key type specified %s.  "
+                    "Ignoring host key.", str_host_key_type);
+            settings->host_key = NULL;
+        }
+    }
 
     settings->username =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
@@ -404,7 +417,6 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
 
     /* Free network connection information */
     free(settings->hostname);
-    free(settings->host_key_type);
     free(settings->host_key);
     free(settings->port);
 
@@ -439,4 +451,3 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
     free(settings);
 
 }
-

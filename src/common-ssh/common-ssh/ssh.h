@@ -99,7 +99,7 @@ void guac_common_ssh_uninit();
  */
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive,
-        const char* host_key_type, const char* host_key);
+        const int host_key_type, const char* host_key);
 
 /**
  * Disconnects and destroys the given SSH session, freeing all associated

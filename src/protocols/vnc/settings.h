@@ -139,6 +139,16 @@ typedef struct guac_vnc_settings {
     char* sftp_hostname;
 
     /**
+     * The type of public SSH host key provided.
+     */
+    int sftp_host_key_type;
+
+    /**
+     * The public SSH host key.
+     */
+    char* sftp_host_key;
+
+    /**
      * The port of the SSH server to connect to for SFTP.
      */
     char* sftp_port;

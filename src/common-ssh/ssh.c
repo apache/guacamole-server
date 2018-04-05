@@ -416,7 +416,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive,
-        const char* host_key_type, const char* host_key) {
+        const int host_key_type, const char* host_key) {
 
     int retval;
 
@@ -522,20 +522,9 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     /* Add host key provided from settings */
     if (strcmp(host_key, "") > 0) {
 
-        int kh_key_type = 0;
-        if (strcmp(host_key_type, "ssh-rsa") == 0)
-            kh_key_type = LIBSSH2_KNOWNHOST_KEY_SSHRSA;
-        else if(strcmp(host_key_type, "ssh-dss") == 0)
-            kh_key_type = LIBSSH2_KNOWNHOST_KEY_SSHDSS;
-        else if(strcmp(host_key_type, "rsa1") == 0)
-            kh_key_type = LIBSSH2_KNOWNHOST_KEY_RSA1;
-        else
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Invalid SSH host key type %s", host_key_type);
-
         if (libssh2_knownhost_addc(ssh_known_hosts, hostname, NULL, host_key, strlen(host_key),
                 NULL, 0, LIBSSH2_KNOWNHOST_TYPE_PLAIN|LIBSSH2_KNOWNHOST_KEYENC_BASE64|
-                         kh_key_type, NULL))
+                         host_key_type, NULL))
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Failed to add host key to known hosts store for %s", hostname);
     }
@@ -627,4 +616,3 @@ void guac_common_ssh_destroy_session(guac_common_ssh_session* session) {
     free(session);
 
 }
-
