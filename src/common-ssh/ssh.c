@@ -520,7 +520,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     libssh2_knownhost_readfile(ssh_known_hosts, known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
 
     /* Add host key provided from settings */
-    if (strcmp(host_key, "") > 0) {
+    if (host_key && strcmp(host_key, "") > 0) {
 
         if (libssh2_knownhost_addc(ssh_known_hosts, hostname, NULL, host_key, strlen(host_key),
                 NULL, 0, LIBSSH2_KNOWNHOST_TYPE_PLAIN|LIBSSH2_KNOWNHOST_KEYENC_BASE64|
