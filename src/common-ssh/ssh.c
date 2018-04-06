@@ -520,22 +520,22 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         return NULL;
     }
 
-    /* Check known_hosts */
-    /* Get known hosts file from user running guacd */
+    /* Check known_hosts, start by getting known_hosts file of user running guacd */
     struct passwd *pw = getpwuid(getuid());
-    char *homedir = pw->pw_dir;
-    char *known_hosts = strcat(homedir, "/.ssh/known_hosts");
+    const char *known_hosts = strcat(pw->pw_dir, "/.ssh/known_hosts");
     LIBSSH2_KNOWNHOSTS *ssh_known_hosts = libssh2_knownhost_init(session);
     libssh2_knownhost_readfile(ssh_known_hosts, known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
 
     /* Add host key provided from settings */
     if (host_key && strcmp(host_key, "") > 0) {
 
-        if (libssh2_knownhost_addc(ssh_known_hosts, hostname, NULL, host_key, strlen(host_key),
+        int kh_add = libssh2_knownhost_addc(ssh_known_hosts, hostname, NULL, host_key, strlen(host_key),
                 NULL, 0, LIBSSH2_KNOWNHOST_TYPE_PLAIN|LIBSSH2_KNOWNHOST_KEYENC_BASE64|
-                         host_key_type, NULL))
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Failed to add host key to known hosts store for %s", hostname);
+                         host_key_type, NULL);
+
+        if (kh_add)
+            guac_client_log(client, GUAC_LOG_WARNING, "Failed to add provided host key"
+                    " to known hosts store for %s.  Error was %d", hostname, kh_add);
 
     }
 
@@ -555,6 +555,8 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
                                          LIBSSH2_KNOWNHOST_TYPE_PLAIN|
                                          LIBSSH2_KNOWNHOST_KEYENC_RAW,
                                          &host);
+
+    libssh2_knownhost_free(ssh_known_hosts);
 
     switch (kh_check) {
         case LIBSSH2_KNOWNHOST_CHECK_MATCH:

@@ -278,6 +278,8 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
                     "Ignoring host key.", str_host_key_type);
             settings->host_key = NULL;
         }
+
+        free(str_host_key_type);
     }
 
     settings->username =

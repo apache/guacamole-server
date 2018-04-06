@@ -446,6 +446,8 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
             settings->sftp_host_key = NULL;
         }
 
+        free(str_host_key_type);
+
     }
 
     /* Port for SFTP connection */
@@ -541,6 +543,7 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
     /* Free SFTP settings */
     free(settings->sftp_directory);
     free(settings->sftp_root_directory);
+    free(settings->sftp_host_key);
     free(settings->sftp_hostname);
     free(settings->sftp_passphrase);
     free(settings->sftp_password);
