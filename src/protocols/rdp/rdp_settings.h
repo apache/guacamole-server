@@ -341,6 +341,11 @@ typedef struct guac_rdp_settings {
      */
     char* preconnection_blob;
 
+    /**
+     * The timezone to pass through to the RDP connection.
+     */
+    char* timezone;
+
 #ifdef ENABLE_COMMON_SSH
     /**
      * Whether SFTP should be enabled for the VNC connection.

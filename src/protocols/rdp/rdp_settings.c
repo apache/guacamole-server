@@ -79,6 +79,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "disable-glyph-caching",
     "preconnection-id",
     "preconnection-blob",
+    "timezone",
 
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
@@ -355,6 +356,11 @@ enum RDP_ARGS_IDX {
      * destination VM.
      */
     IDX_PRECONNECTION_BLOB,
+
+    /**
+     * The timezone to pass through to the RDP connection.
+     */
+    IDX_TIMEZONE,
 
 #ifdef ENABLE_COMMON_SSH
     /**
@@ -840,6 +846,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     if (settings->server_layout == NULL)
         settings->server_layout = guac_rdp_keymap_find(GUAC_DEFAULT_KEYMAP);
 
+    /* Timezone if provied by client */
+    settings->timezone =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_TIMEZONE, NULL);
+
 #ifdef ENABLE_COMMON_SSH
     /* SFTP enable/disable */
     settings->enable_sftp =
@@ -1013,6 +1024,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     free(settings->remote_app);
     free(settings->remote_app_args);
     free(settings->remote_app_dir);
+    free(settings->timezone);
     free(settings->username);
     free(settings->printer_name);
 
@@ -1265,6 +1277,9 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 #endif
 
     /* Device redirection */
+    if (guac_settings->timezone)
+        setenv("TZ", guac_settings->timezone, 1);
+
 #ifdef LEGACY_RDPSETTINGS
 #ifdef HAVE_RDPSETTINGS_DEVICEREDIRECTION
     rdp_settings->device_redirection =  guac_settings->audio_enabled
