@@ -65,8 +65,8 @@ static int guacenc_read_instructions(guacenc_display* display,
     while (!guac_parser_read(parser, socket, -1)) {
         if (guacenc_handle_instruction(display, parser->opcode,
                 parser->argc, parser->argv)) {
-            guac_parser_free(parser);
-            return 1;
+            guacenc_log(GUAC_LOG_DEBUG, "Handling of \"%s\" instruction "
+                    "failed.", parser->opcode);
         }
     }
 
