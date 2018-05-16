@@ -786,7 +786,7 @@ int guac_terminal_find_color(const char* name, guac_terminal_color* color) {
             guac_terminal_named_color_search);
 
     /* Fail if no such color is found */
-    if (color == NULL)
+    if (found == NULL)
         return 1;
 
     /* Otherwise copy the found color */
