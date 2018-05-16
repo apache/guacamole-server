@@ -180,6 +180,9 @@ void guac_terminal_reset(guac_terminal* term) {
     term->tab_interval = 8;
     memset(term->custom_tabs, 0, sizeof(term->custom_tabs));
 
+    /* Reset character attributes */
+    term->current_attributes = term->default_char.attributes;
+
     /* Reset display palette */
     guac_terminal_display_reset_palette(term->display);
 
