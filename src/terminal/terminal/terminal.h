@@ -201,6 +201,14 @@ struct guac_terminal {
     int stdin_pipe_fd[2];
 
     /**
+     * The currently-open pipe stream from which all terminal input should be
+     * read, if any. If no pipe stream is open, terminal input will be received
+     * through keyboard, clipboard, and mouse events, and this value will be
+     * NULL.
+     */
+    guac_stream* input_stream;
+
+    /**
      * The currently-open pipe stream to which all terminal output should be
      * written, if any. If no pipe stream is open, terminal output will be
      * written to the terminal display, and this value will be NULL.
@@ -518,9 +526,9 @@ int guac_terminal_render_frame(guac_terminal* terminal);
 
 /**
  * Reads from this terminal's STDIN. Input comes from key and mouse events
- * supplied by calls to guac_terminal_send_key() and
- * guac_terminal_send_mouse(). If input is not yet available, this function
- * will block.
+ * supplied by calls to guac_terminal_send_key(),
+ * guac_terminal_send_mouse(), and guac_terminal_send_stream(). If input is not
+ * yet available, this function will block.
  */
 int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size);
 
@@ -576,16 +584,93 @@ int guac_terminal_printf(guac_terminal* terminal, const char* format, ...);
 
 /**
  * Handles the given key event, sending data, scrolling, pasting clipboard
- * data, etc. as necessary.
+ * data, etc. as necessary. If terminal input is currently coming from a
+ * stream due to a prior call to guac_terminal_send_stream(), any input
+ * which would normally result from the key event is dropped.
+ *
+ * @param term
+ *     The terminal which should receive the given data on STDIN.
+ *
+ * @param keysym
+ *     The X11 keysym of the key that was pressed or released.
+ *
+ * @param pressed
+ *     Non-zero if the key represented by the given keysym is currently
+ *     pressed, zero if it is released.
+ *
+ * @return
+ *     Zero if the key event was handled successfully, non-zero otherwise.
  */
 int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed);
 
 /**
  * Handles the given mouse event, sending data, scrolling, pasting clipboard
- * data, etc. as necessary.
+ * data, etc. as necessary. If terminal input is currently coming from a
+ * stream due to a prior call to guac_terminal_send_stream(), any input
+ * which would normally result from the mouse event is dropped.
+ *
+ * @param term
+ *     The terminal which should receive the given data on STDIN.
+ *
+ * @param user
+ *     The user that originated the mouse event.
+ *
+ * @param x
+ *     The X coordinate of the mouse within the display when the event
+ *     occurred, in pixels. This value is not guaranteed to be within the
+ *     bounds of the display area.
+ *
+ * @param y
+ *     The Y coordinate of the mouse within the display when the event
+ *     occurred, in pixels. This value is not guaranteed to be within the
+ *     bounds of the display area.
+ *
+ * @param mask
+ *     An integer value representing the current state of each button, where
+ *     the Nth bit within the integer is set to 1 if and only if the Nth mouse
+ *     button is currently pressed. The lowest-order bit is the left mouse
+ *     button, followed by the middle button, right button, and finally the up
+ *     and down buttons of the scroll wheel.
+ *
+ *     @see GUAC_CLIENT_MOUSE_LEFT
+ *     @see GUAC_CLIENT_MOUSE_MIDDLE
+ *     @see GUAC_CLIENT_MOUSE_RIGHT
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_UP
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
+ *
+ * @return
+ *     Zero if the mouse event was handled successfully, non-zero otherwise.
  */
 int guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         int x, int y, int mask);
+
+/**
+ * Initializes the handlers of the given guac_stream such that it serves as the
+ * source of input to the terminal. Other input sources will be temporarily
+ * ignored until the stream is closed through receiving an "end" instruction.
+ * If input is already being read from a stream due to a prior call to
+ * guac_terminal_send_stream(), the prior call will remain in effect and this
+ * call will fail.
+ *
+ * Calling this function will overwrite the data member of the given
+ * guac_stream.
+ *
+ * @param term
+ *     The terminal emulator which should receive input from the given stream.
+ *
+ * @param user
+ *     The user that opened the stream.
+ *
+ * @param stream
+ *     The guac_stream which should serve as the source of input for the
+ *     terminal.
+ *
+ * @return
+ *     Zero if the terminal input has successfully been configured to read from
+ *     the given stream, non-zero otherwise.
+ */
+int guac_terminal_send_stream(guac_terminal* term, guac_user* user,
+        guac_stream* stream);
 
 /**
  * Handles a scroll event received from the scrollbar associated with a
@@ -740,18 +825,66 @@ int guac_terminal_resize(guac_terminal* term, int width, int height);
 void guac_terminal_flush(guac_terminal* terminal);
 
 /**
- * Sends the given string as if typed by the user. 
+ * Sends the given string as if typed by the user. If terminal input is
+ * currently coming from a stream due to a prior call to
+ * guac_terminal_send_stream(), any input which would normally result from
+ * invoking this function is dropped.
+ *
+ * @param term
+ *     The terminal which should receive the given data on STDIN.
+ *
+ * @param data
+ *     The data the terminal should receive on STDIN.
+ *
+ * @param length
+ *     The size of the given data, in bytes.
+ *
+ * @return
+ *     The number of bytes written to STDIN, or a negative value if an error
+ *     occurs preventing the data from being written. This should always be
+ *     the size of the data given unless data is intentionally dropped.
  */
 int guac_terminal_send_data(guac_terminal* term, const char* data, int length);
 
 /**
- * Sends the given string as if typed by the user. 
+ * Sends the given string as if typed by the user. If terminal input is
+ * currently coming from a stream due to a prior call to
+ * guac_terminal_send_stream(), any input which would normally result from
+ * invoking this function is dropped. 
+ *
+ * @param term
+ *     The terminal which should receive the given data on STDIN.
+ *
+ * @param data
+ *     The data the terminal should receive on STDIN.
+ *
+ * @return
+ *     The number of bytes written to STDIN, or a negative value if an error
+ *     occurs preventing the data from being written. This should always be
+ *     the size of the data given unless data is intentionally dropped.
  */
 int guac_terminal_send_string(guac_terminal* term, const char* data);
 
 /**
- * Sends data through STDIN as if typed by the user, using the format
- * string given and any args (similar to printf).
+ * Sends data through STDIN as if typed by the user, using the format string
+ * given and any args (similar to printf). If terminal input is currently
+ * coming from a stream due to a prior call to guac_terminal_send_stream(), any
+ * input which would normally result from invoking this function is dropped.
+ *
+ * @param term
+ *     The terminal which should receive the given data on STDIN.
+ *
+ * @param format
+ *     A printf-style format string describing the data to be received on
+ *     STDIN.
+ *
+ * @param ...
+ *     Any srguments to use when filling the format string.
+ *
+ * @return
+ *     The number of bytes written to STDIN, or a negative value if an error
+ *     occurs preventing the data from being written. This should always be
+ *     the size of the data given unless data is intentionally dropped.
  */
 int guac_terminal_sendf(guac_terminal* term, const char* format, ...);
 

@@ -604,6 +604,9 @@ guac_terminal* guac_terminal_create(guac_client* client,
         return NULL;
     }
 
+    /* Read input from keyboard by default */
+    term->input_stream = NULL;
+
     /* Init pipe stream (output to display by default) */
     term->pipe_stream = NULL;
 
@@ -1565,11 +1568,23 @@ void guac_terminal_unlock(guac_terminal* terminal) {
 }
 
 int guac_terminal_send_data(guac_terminal* term, const char* data, int length) {
+
+    /* Block all other sources of input if input is coming from a stream */
+    if (term->input_stream != NULL)
+        return 0;
+
     return guac_terminal_write_all(term->stdin_pipe_fd[1], data, length);
+
 }
 
 int guac_terminal_send_string(guac_terminal* term, const char* data) {
+
+    /* Block all other sources of input if input is coming from a stream */
+    if (term->input_stream != NULL)
+        return 0;
+
     return guac_terminal_write_all(term->stdin_pipe_fd[1], data, strlen(data));
+
 }
 
 static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
@@ -1866,6 +1881,10 @@ int guac_terminal_sendf(guac_terminal* term, const char* format, ...) {
 
     va_list ap;
     char buffer[1024];
+
+    /* Block all other sources of input if input is coming from a stream */
+    if (term->input_stream != NULL)
+        return 0;
 
     /* Print to buffer */
     va_start(ap, format);

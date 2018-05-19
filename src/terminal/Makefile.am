@@ -48,6 +48,7 @@ libguac_terminal_la_SOURCES =   \
     select.c                    \
     terminal.c                  \
     terminal_handlers.c         \
+    terminal-stdin-stream.c     \
     typescript.c                \
     xparsecolor.c
 
