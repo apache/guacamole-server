@@ -212,11 +212,6 @@ enum VNC_ARGS_IDX {
     IDX_SFTP_USERNAME,
 
     /**
-     * The type of public SSH host key provided to identify the SFTP server.
-     */
-    IDX_SFTP_HOST_KEY_TYPE,
-
-    /**
      * The public SSH host key to identify the SFTP server.
      */
     IDX_SFTP_HOST_KEY,
@@ -428,27 +423,6 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->sftp_host_key =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_SFTP_HOST_KEY, NULL);
-
-    if(settings->sftp_host_key) {
-        /* Type of public SSH host key. */
-        char* str_host_key_type = guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
-                    IDX_SFTP_HOST_KEY_TYPE, "ssh-rsa");
-
-        if (strcmp(str_host_key_type, "ssh-rsa") == 0)
-            settings->sftp_host_key_type = LIBSSH2_KNOWNHOST_KEY_SSHRSA;
-        else if (strcmp(str_host_key_type, "ssh-dss") == 0)
-            settings->sftp_host_key_type = LIBSSH2_KNOWNHOST_KEY_SSHDSS;
-        else if (strcmp(str_host_key_type, "rsa1") == 0)
-            settings->sftp_host_key_type = LIBSSH2_KNOWNHOST_KEY_RSA1;
-        else {
-            guac_user_log(user, GUAC_LOG_WARNING, "Invalid host key type specified %s.  "
-                    "Ignoring host key.", str_host_key_type);
-            settings->sftp_host_key = NULL;
-        }
-
-        free(str_host_key_type);
-
-    }
 
     /* Port for SFTP connection */
     settings->sftp_port =

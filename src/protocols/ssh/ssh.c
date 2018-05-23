@@ -236,7 +236,7 @@ void* ssh_client_thread(void* data) {
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,
             settings->hostname, settings->port, ssh_client->user, settings->server_alive_interval,
-            settings->host_key_type, settings->host_key);
+            settings->host_key);
     if (ssh_client->session == NULL) {
         /* Already aborted within guac_common_ssh_create_session() */
         return NULL;
@@ -277,7 +277,7 @@ void* ssh_client_thread(void* data) {
         ssh_client->sftp_session =
             guac_common_ssh_create_session(client, settings->hostname,
                     settings->port, ssh_client->user, settings->server_alive_interval,
-                    settings->host_key_type, settings->host_key);
+                    settings->host_key);
         if (ssh_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             return NULL;

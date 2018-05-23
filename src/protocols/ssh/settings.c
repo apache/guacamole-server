@@ -72,11 +72,6 @@ enum SSH_ARGS_IDX {
     IDX_HOSTNAME,
 
     /**
-     * The type of public SSH host key provided.  Optional.
-     */
-    IDX_HOST_KEY_TYPE,
-
-    /**
      * The Base64-encoded public SSH host key.  Optional.
      */
     IDX_HOST_KEY,
@@ -263,24 +258,6 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->host_key =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_HOST_KEY, NULL);
-
-    if (settings->host_key) {
-        char* str_host_key_type = guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
-                    IDX_HOST_KEY_TYPE, "ssh-rsa");
-        if (strcmp(str_host_key_type, "ssh-rsa") == 0)
-            settings->host_key_type = LIBSSH2_KNOWNHOST_KEY_SSHRSA;
-        else if (strcmp(str_host_key_type, "ssh-dss") == 0)
-            settings->host_key_type = LIBSSH2_KNOWNHOST_KEY_SSHDSS;
-        else if (strcmp(str_host_key_type, "rsa1") == 0)
-            settings->host_key_type = LIBSSH2_KNOWNHOST_KEY_RSA1;
-        else {
-            guac_user_log(user, GUAC_LOG_WARNING, "Invalid host key type specified %s.  "
-                    "Ignoring host key.", str_host_key_type);
-            settings->host_key = NULL;
-        }
-
-        free(str_host_key_type);
-    }
 
     settings->username =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,

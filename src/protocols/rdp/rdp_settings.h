@@ -343,11 +343,6 @@ typedef struct guac_rdp_settings {
     char* sftp_hostname;
 
     /**
-     * The type of the public SSH hos key.
-     */
-    int sftp_host_key_type;
-
-    /**
      * The public SSH host key.
      */
     char* sftp_host_key;

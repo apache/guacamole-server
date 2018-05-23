@@ -416,7 +416,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive,
-        const int host_key_type, const char* host_key) {
+        const char* host_key) {
 
     int retval;
 
@@ -529,9 +529,8 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     /* Add host key provided from settings */
     if (host_key && strcmp(host_key, "") > 0) {
 
-        int kh_add = libssh2_knownhost_addc(ssh_known_hosts, hostname, NULL, host_key, strlen(host_key),
-                NULL, 0, LIBSSH2_KNOWNHOST_TYPE_PLAIN|LIBSSH2_KNOWNHOST_KEYENC_BASE64|
-                         host_key_type, NULL);
+        int kh_add = libssh2_knownhost_readline(ssh_known_hosts, host_key, strlen(host_key),
+                LIBSSH2_KNOWNHOST_FILE_OPENSSH);
 
         if (kh_add)
             guac_client_log(client, GUAC_LOG_WARNING, "Failed to add provided host key"
@@ -564,7 +563,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
                 "Host key match found for %s", hostname);
             break;
         case LIBSSH2_KNOWNHOST_CHECK_NOTFOUND:
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+            guac_client_log(client, GUAC_LOG_WARNING,
                 "Host key not found for %s.", hostname);
             break;
         case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
