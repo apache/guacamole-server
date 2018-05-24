@@ -84,7 +84,6 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
     "sftp-hostname",
-    "sftp-host-key-type",
     "sftp-host-key",
     "sftp-port",
     "sftp-username",

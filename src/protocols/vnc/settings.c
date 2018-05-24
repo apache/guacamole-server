@@ -63,6 +63,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
     "sftp-hostname",
+    "sftp-host-key",
     "sftp-port",
     "sftp-username",
     "sftp-password",

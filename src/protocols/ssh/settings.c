@@ -32,7 +32,6 @@
 /* Client plugin arguments */
 const char* GUAC_SSH_CLIENT_ARGS[] = {
     "hostname",
-    "host-key-type",
     "host-key",
     "port",
     "username",
