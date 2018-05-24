@@ -35,9 +35,6 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
-#ifdef ENABLE_COMMON_SSH
-#include <libssh2.h>
-#endif
 #include <stddef.h>
 #include <string.h>
 

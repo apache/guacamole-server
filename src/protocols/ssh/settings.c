@@ -24,7 +24,6 @@
 
 #include <guacamole/user.h>
 
-#include <libssh2.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

@@ -24,9 +24,6 @@
 
 #include <guacamole/user.h>
 
-#ifdef ENABLE_COMMON_SSH
-#include <libssh2.h>
-#endif
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
