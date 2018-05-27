@@ -100,10 +100,12 @@ enum TELNET_ARGS_IDX {
     IDX_FONT_SIZE,
 
     /**
-     * The name of the color scheme to use. Currently valid color schemes are:
-     * "black-white", "white-black", "gray-black", and "green-black", each
-     * following the "foreground-background" pattern. By default, this will be
-     * "gray-black".
+     * The color scheme to use, as a series of semicolon-separated color-value
+     * pairs: "background: <color>", "foreground: <color>", or
+     * "color<n>: <color>", where <n> is a number from 0 to 255, and <color> is
+     * "color<n>" or an X11 color code (e.g. "aqua" or "rgb:12/34/56").
+     * The color scheme can also be one of the special values: "black-white",
+     * "white-black", "gray-black", or "green-black".
      */
     IDX_COLOR_SCHEME,
 

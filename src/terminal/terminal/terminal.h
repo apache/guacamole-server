@@ -83,6 +83,21 @@
  */
 #define GUAC_TERMINAL_SCHEME_WHITE_BLACK "white-black"
 
+/**
+ * Color name representing the foreground color.
+ */
+#define GUAC_TERMINAL_SCHEME_FOREGROUND "foreground"
+
+/**
+ * Color name representing the background color.
+ */
+#define GUAC_TERMINAL_SCHEME_BACKGROUND "background"
+
+/**
+ * Color name representing a numbered color.
+ */
+#define GUAC_TERMINAL_SCHEME_NUMBERED "color"
+
 typedef struct guac_terminal guac_terminal;
 
 /**

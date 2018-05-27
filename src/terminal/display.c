@@ -246,7 +246,8 @@ int __guac_terminal_set(guac_terminal_display* display, int row, int col, int co
 
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
         const char* font_name, int font_size, int dpi,
-        guac_terminal_color* foreground, guac_terminal_color* background) {
+        guac_terminal_color* foreground, guac_terminal_color* background,
+        const guac_terminal_color (*palette)[256]) {
 
     PangoFontMap* font_map;
     PangoFont* font;
@@ -294,6 +295,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
 
     display->default_foreground = display->glyph_foreground = *foreground;
     display->default_background = display->glyph_background = *background;
+    display->default_palette = palette;
 
     /* Calculate character dimensions */
     display->char_width =
@@ -317,6 +319,9 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
 
 void guac_terminal_display_free(guac_terminal_display* display) {
 
+    /* Free default palette. */
+    free((void*) display->default_palette);
+
     /* Free operations buffers */
     free(display->operations);
 
@@ -328,6 +333,12 @@ void guac_terminal_display_free(guac_terminal_display* display) {
 void guac_terminal_display_reset_palette(guac_terminal_display* display) {
 
     /* Reinitialize palette with default values */
+    if (display->default_palette) {
+        memcpy(display->palette, *display->default_palette,
+               sizeof(GUAC_TERMINAL_INITIAL_PALETTE));
+        return;
+    }
+
     memcpy(display->palette, GUAC_TERMINAL_INITIAL_PALETTE,
             sizeof(GUAC_TERMINAL_INITIAL_PALETTE));
 
