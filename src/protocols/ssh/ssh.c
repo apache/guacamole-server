@@ -307,7 +307,8 @@ void* ssh_client_thread(void* data) {
                 "  Backspace may not work as expected.");
 
     /* Request PTY */
-    if (libssh2_channel_request_pty_ex(ssh_client->term_channel, "linux", sizeof("linux")-1,
+    if (libssh2_channel_request_pty_ex(ssh_client->term_channel,
+            settings->terminal_type, strlen(settings->terminal_type),
             ssh_ttymodes, ttymodeBytes, ssh_client->term->term_width,
             ssh_client->term->term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");

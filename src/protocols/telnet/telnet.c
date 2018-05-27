@@ -216,7 +216,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
         /* Terminal type request */
         case TELNET_EV_TTYPE:
             if (event->ttype.cmd == TELNET_TTYPE_SEND)
-                telnet_ttype_is(telnet_client->telnet, "linux");
+                telnet_ttype_is(telnet_client->telnet, settings->terminal_type);
             break;
 
         /* Environment request */
