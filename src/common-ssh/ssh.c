@@ -520,17 +520,16 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         return NULL;
     }
 
-    /* Check known_hosts, start by getting known_hosts file of user running guacd */
-    struct passwd *pw = getpwuid(getuid());
-    const char *known_hosts = strcat(pw->pw_dir, "/.ssh/known_hosts");
+    /* SSH known host key checking. */
     LIBSSH2_KNOWNHOSTS *ssh_known_hosts = libssh2_knownhost_init(session);
-    libssh2_knownhost_readfile(ssh_known_hosts, known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+    int num_known_hosts = 0;
 
     /* Add host key provided from settings */
-    if (host_key && strcmp(host_key, "") > 0) {
+    if (host_key && strcmp(host_key, "") != 0) {
 
         int kh_add = libssh2_knownhost_readline(ssh_known_hosts, host_key, strlen(host_key),
                 LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+        num_known_hosts++;
 
         if (kh_add)
             guac_client_log(client, GUAC_LOG_WARNING, "Failed to add provided host key"
@@ -538,43 +537,52 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
     }
 
-    /* Get fingerprint of host we're connecting to */
-    size_t fp_len;
-    int fp_type;
-    const char *fingerprint = libssh2_session_hostkey(session, &fp_len, &fp_type);
+    /* Otherwise, we look for a ssh_known_hosts file within GUACAMOLE_HOME and read that in. */
+    else {
+        const char *known_hosts = "/etc/guacamole/ssh_known_hosts";
+        num_known_hosts = libssh2_knownhost_readfile(ssh_known_hosts, known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+    }
 
-    if (!fingerprint)
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Failed to get fingerprint for host %s", hostname);
+    /* If we've found a provided set of host keys, check against them. */
+    if (num_known_hosts > 0) {
+        /* Get fingerprint of host we're connecting to */
+        size_t fp_len;
+        int fp_type;
+        const char *fingerprint = libssh2_session_hostkey(session, &fp_len, &fp_type);
 
-    /* Check fingerprint against known hosts */
-    struct libssh2_knownhost *host;
-    int kh_check = libssh2_knownhost_checkp(ssh_known_hosts, hostname, atoi(port),
-                                         fingerprint, fp_len,
-                                         LIBSSH2_KNOWNHOST_TYPE_PLAIN|
-                                         LIBSSH2_KNOWNHOST_KEYENC_RAW,
-                                         &host);
-
-    libssh2_knownhost_free(ssh_known_hosts);
-
-    switch (kh_check) {
-        case LIBSSH2_KNOWNHOST_CHECK_MATCH:
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                "Host key match found for %s", hostname);
-            break;
-        case LIBSSH2_KNOWNHOST_CHECK_NOTFOUND:
-            guac_client_log(client, GUAC_LOG_WARNING,
-                "Host key not found for %s.", hostname);
-            break;
-        case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
+        if (!fingerprint)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Host key does not match host entry for %s", hostname);
-            break;
-        case LIBSSH2_KNOWNHOST_CHECK_FAILURE:
-        default:
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Host %s could not be checked against known hosts.",
-                hostname);
+                    "Failed to get fingerprint for host %s", hostname);
+
+        /* Check fingerprint against known hosts */
+        struct libssh2_knownhost *host;
+        int kh_check = libssh2_knownhost_checkp(ssh_known_hosts, hostname, atoi(port),
+                                             fingerprint, fp_len,
+                                             LIBSSH2_KNOWNHOST_TYPE_PLAIN|
+                                             LIBSSH2_KNOWNHOST_KEYENC_RAW,
+                                             &host);
+
+        libssh2_knownhost_free(ssh_known_hosts);
+
+        switch (kh_check) {
+            case LIBSSH2_KNOWNHOST_CHECK_MATCH:
+                guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Host key match found for %s", hostname);
+                break;
+            case LIBSSH2_KNOWNHOST_CHECK_NOTFOUND:
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Host key not found for %s.", hostname);
+                break;
+            case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Host key does not match known hosts entry for %s", hostname);
+                break;
+            case LIBSSH2_KNOWNHOST_CHECK_FAILURE:
+            default:
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Host %s could not be checked against known hosts.",
+                    hostname);
+        }
     }
 
     /* Store basic session data */
