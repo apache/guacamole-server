@@ -35,6 +35,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
         char* passphrase) {
@@ -268,7 +269,8 @@ int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* clien
     else {
 
         const char *guac_known_hosts = "/etc/guacamole/ssh_known_hosts";
-        known_hosts = libssh2_knownhost_readfile(ssh_known_hosts, guac_known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+        if (access(guac_known_hosts, F_OK) != -1)
+            known_hosts = libssh2_knownhost_readfile(ssh_known_hosts, guac_known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
 
     }
 
