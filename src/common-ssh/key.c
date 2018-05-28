@@ -287,6 +287,8 @@ int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* clien
 
     /* No host keys were loaded, so we bail out checking and continue the connection. */
     else if (known_hosts == 0) {
+        guac_client_log(client, GUAC_LOG_WARNING,
+            "No known host keys provided, host identity will not be verified.");
         libssh2_knownhost_free(ssh_known_hosts);
         return known_hosts;
     }
