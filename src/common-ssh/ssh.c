@@ -549,7 +549,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
         if (known_host_check > 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Host fingerprint did not match any provided known host keys: %s", err_msg);
+                "Host fingerprint did not match any provided known host keys. %s", err_msg);
 
         return NULL;
     }
