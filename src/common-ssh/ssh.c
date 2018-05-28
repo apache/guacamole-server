@@ -520,69 +520,38 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         return NULL;
     }
 
+    /* Get fingerprint of host we're connecting to */
+    size_t fp_len;
+    int fp_type;
+    const char *fingerprint = libssh2_session_hostkey(session, &fp_len, &fp_type);
+
+    /* Failure to generate a fingerprint means we should abort */
+    if (!fingerprint) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+            "Failed to get fingerprint for host %s", hostname);
+        return NULL;
+    }
+
     /* SSH known host key checking. */
-    LIBSSH2_KNOWNHOSTS *ssh_known_hosts = libssh2_knownhost_init(session);
-    int num_known_hosts = 0;
+    int known_host_check = guac_common_ssh_verify_host_key(session, client, host_key,
+                                                           hostname, atoi(port), fingerprint,
+                                                           fp_len);
 
-    /* Add host key provided from settings */
-    if (host_key && strcmp(host_key, "") != 0) {
+    /* Abort on any error codes */
+    if (known_host_check != 0) {
+        char* err_msg;
+        int err_len;
+        libssh2_session_last_error(session, &err_msg, &err_len, 0);
 
-        int kh_add = libssh2_knownhost_readline(ssh_known_hosts, host_key, strlen(host_key),
-                LIBSSH2_KNOWNHOST_FILE_OPENSSH);
-        num_known_hosts++;
-
-        if (kh_add)
-            guac_client_log(client, GUAC_LOG_WARNING, "Failed to add provided host key"
-                    " to known hosts store for %s.  Error was %d", hostname, kh_add);
-
-    }
-
-    /* Otherwise, we look for a ssh_known_hosts file within GUACAMOLE_HOME and read that in. */
-    else {
-        const char *known_hosts = "/etc/guacamole/ssh_known_hosts";
-        num_known_hosts = libssh2_knownhost_readfile(ssh_known_hosts, known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
-    }
-
-    /* If we've found a provided set of host keys, check against them. */
-    if (num_known_hosts > 0) {
-        /* Get fingerprint of host we're connecting to */
-        size_t fp_len;
-        int fp_type;
-        const char *fingerprint = libssh2_session_hostkey(session, &fp_len, &fp_type);
-
-        if (!fingerprint)
+        if (known_host_check < 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Failed to get fingerprint for host %s", hostname);
+                "Error occurred attempting to check host key: %s", err_msg);
 
-        /* Check fingerprint against known hosts */
-        struct libssh2_knownhost *host;
-        int kh_check = libssh2_knownhost_checkp(ssh_known_hosts, hostname, atoi(port),
-                                             fingerprint, fp_len,
-                                             LIBSSH2_KNOWNHOST_TYPE_PLAIN|
-                                             LIBSSH2_KNOWNHOST_KEYENC_RAW,
-                                             &host);
+        if (known_host_check > 0)
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Host fingerprint did not match any provided known host keys: %s", err_msg);
 
-        libssh2_knownhost_free(ssh_known_hosts);
-
-        switch (kh_check) {
-            case LIBSSH2_KNOWNHOST_CHECK_MATCH:
-                guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Host key match found for %s", hostname);
-                break;
-            case LIBSSH2_KNOWNHOST_CHECK_NOTFOUND:
-                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Host key not found for %s.", hostname);
-                break;
-            case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
-                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Host key does not match known hosts entry for %s", hostname);
-                break;
-            case LIBSSH2_KNOWNHOST_CHECK_FAILURE:
-            default:
-                guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Host %s could not be checked against known hosts.",
-                    hostname);
-        }
+        return NULL;
     }
 
     /* Store basic session data */

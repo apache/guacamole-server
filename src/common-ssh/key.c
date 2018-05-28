@@ -245,3 +245,81 @@ int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
 
 }
 
+int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* client,
+        const char* host_key, const char* hostname, int port, const char* fingerprint,
+        const size_t fp_len) {
+
+    LIBSSH2_KNOWNHOSTS* ssh_known_hosts = libssh2_knownhost_init(session);
+    int known_hosts = 0;
+
+    /* Add host key provided from settings */
+    if (host_key && strcmp(host_key, "") != 0) {
+
+        known_hosts = libssh2_knownhost_readline(ssh_known_hosts, host_key, strlen(host_key),
+                LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+
+        /* readline function returns 0 on success, so we increment to indicate a valid entry */
+        if (known_hosts == 0)
+            known_hosts++;
+
+    }
+
+    /* Otherwise, we look for a ssh_known_hosts file within GUACAMOLE_HOME and read that in. */
+    else {
+
+        const char *guac_known_hosts = "/etc/guacamole/ssh_known_hosts";
+        known_hosts = libssh2_knownhost_readfile(ssh_known_hosts, guac_known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+
+    }
+
+    /* If there's an error provided, abort connection and return that. */
+    if (known_hosts < 0) {
+
+        guac_client_log(client, GUAC_LOG_ERROR,
+            "Failure trying to load SSH host keys.");
+
+        libssh2_knownhost_free(ssh_known_hosts);
+        return known_hosts;
+
+    }
+
+    /* No host keys were loaded, so we bail out checking and continue the connection. */
+    else if (known_hosts == 0) {
+        libssh2_knownhost_free(ssh_known_hosts);
+        return known_hosts;
+    }
+
+
+    /* Check fingerprint against known hosts */
+    int kh_check = libssh2_knownhost_checkp(ssh_known_hosts, hostname, port,
+                                            fingerprint, fp_len,
+                                            LIBSSH2_KNOWNHOST_TYPE_PLAIN|
+                                            LIBSSH2_KNOWNHOST_KEYENC_RAW,
+                                            NULL);
+
+    /* Deal with the return of the host key check */
+    switch (kh_check) {
+        case LIBSSH2_KNOWNHOST_CHECK_MATCH:
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                "Host key match found for %s", hostname);
+            break;
+        case LIBSSH2_KNOWNHOST_CHECK_NOTFOUND:
+            guac_client_log(client, GUAC_LOG_ERROR,
+                "Host key not found for %s.", hostname);
+            break;
+        case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
+            guac_client_log(client, GUAC_LOG_ERROR,
+                "Host key does not match known hosts entry for %s", hostname);
+            break;
+        case LIBSSH2_KNOWNHOST_CHECK_FAILURE:
+        default:
+            guac_client_log(client, GUAC_LOG_ERROR,
+                "Host %s could not be checked against known hosts.",
+                hostname);
+    }
+
+    /* Return the check value */
+    libssh2_knownhost_free(ssh_known_hosts);
+    return kh_check;
+
+}
