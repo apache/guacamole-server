@@ -495,7 +495,8 @@ static void guac_terminal_parse_color_scheme(guac_client* client,
             return; /* Parsing failed. */
 
         if (guac_terminal_parse_color_scheme_value(
-                client, name_end + 1, pair_end, palette, color_target))
+                client, name_end + 1, pair_end,
+                (const guac_terminal_color(*)[256]) palette, color_target))
             return; /* Parsing failed. */
     }
 }
@@ -566,7 +567,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
             font_name, font_size, dpi,
             &default_char.attributes.foreground,
             &default_char.attributes.background,
-            default_palette);
+            (const guac_terminal_color(*)[256]) default_palette);
 
     /* Fail if display init failed */
     if (term->display == NULL) {
