@@ -256,6 +256,10 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
+    /* Set the client timezone */
+    if (settings->timezone != NULL)
+        libssh2_channel_setenv(ssh_client->term_channel, "TZ", settings->timezone);
+
 #ifdef ENABLE_SSH_AGENT
     /* Start SSH agent forwarding, if enabled */
     if (ssh_client->enable_agent) {

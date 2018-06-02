@@ -253,6 +253,10 @@ typedef struct guac_ssh_settings {
      * environment variable.
      */
     char* locale;
+    /** 
+     * The client timezone to pass to the remote system.
+     */
+    char* timezone;
 
 } guac_ssh_settings;
 
