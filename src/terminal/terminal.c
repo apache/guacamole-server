@@ -1023,6 +1023,12 @@ int guac_terminal_scroll_up(guac_terminal* term,
             term->visible_cursor_row <= end_row)
             term->visible_cursor_row -= amount;
 
+        /* Update selected region */
+        if (term->text_selected) {
+            term->selection_start_row -= amount;
+            term->selection_end_row -= amount;
+        }
+
     }
 
     /* Otherwise, just copy row data upwards */
