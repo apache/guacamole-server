@@ -61,6 +61,9 @@ static void __guac_terminal_set_columns(guac_terminal* terminal, int row,
     guac_terminal_buffer_set_columns(terminal->buffer, row,
             start_column, end_column, character);
 
+    /* Clear selection if region is modified */
+    guac_terminal_select_touch(terminal, row, start_column, row, end_column);
+
 }
 
 /**
@@ -173,6 +176,7 @@ void guac_terminal_reset(guac_terminal* term) {
 
     /* Reset flags */
     term->text_selected = false;
+    term->selection_committed = false;
     term->application_cursor_keys = false;
     term->automatic_carriage_return = false;
     term->insert_mode = false;
@@ -1279,6 +1283,9 @@ void guac_terminal_copy_columns(guac_terminal* terminal, int row,
     guac_terminal_buffer_copy_columns(terminal->buffer, row,
             start_column, end_column, offset);
 
+    /* Clear selection if region is modified */
+    guac_terminal_select_touch(terminal, row, start_column, row, end_column);
+
     /* Update cursor location if within region */
     if (row == terminal->visible_cursor_row &&
             terminal->visible_cursor_col >= start_column &&
@@ -1299,6 +1306,10 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
 
     guac_terminal_buffer_copy_rows(terminal->buffer,
             start_row, end_row, offset);
+
+    /* Clear selection if region is modified */
+    guac_terminal_select_touch(terminal, start_row, 0, end_row,
+            terminal->term_width);
 
     /* Update cursor location if within region */
     if (terminal->visible_cursor_row >= start_row &&
@@ -1532,6 +1543,7 @@ void guac_terminal_flush(guac_terminal* terminal) {
         guac_terminal_typescript_flush(terminal->typescript);
 
     /* Flush display state */
+    guac_terminal_select_redraw(terminal);
     guac_terminal_commit_cursor(terminal);
     guac_terminal_display_flush(terminal->display);
     guac_terminal_scrollbar_flush(terminal->scrollbar);
@@ -1764,27 +1776,32 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
     if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE))
         return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
 
-    /* If text selected, change state based on left mouse mouse button */
-    if (term->text_selected) {
+    /* If left mouse button was just released, stop selection */
+    if (released_mask & GUAC_CLIENT_MOUSE_LEFT)
+        guac_terminal_select_end(term);
 
-        /* If mouse button released, stop selection */
-        if (released_mask & GUAC_CLIENT_MOUSE_LEFT)
-            guac_terminal_select_end(term);
+    /* Update selection state contextually while the left mouse button is
+     * pressed */
+    else if (mask & GUAC_CLIENT_MOUSE_LEFT) {
 
-        /* Otherwise, just update */
+        int row = y / term->display->char_height - term->scroll_offset;
+        int col = x / term->display->char_width;
+
+        /* If mouse button was already just pressed, start a new selection or
+         * resume the existing selection depending on whether shift is held */
+        if (pressed_mask & GUAC_CLIENT_MOUSE_LEFT) {
+            if (term->mod_shift)
+                guac_terminal_select_resume(term, row, col);
+            else
+                guac_terminal_select_start(term, row, col);
+        }
+
+        /* In all other cases, simply update the existing selection as long as
+         * the mouse button is pressed */
         else
-            guac_terminal_select_update(term,
-                    y / term->display->char_height - term->scroll_offset,
-                    x / term->display->char_width);
+            guac_terminal_select_update(term, row, col);
 
     }
-
-    /* Otherwise, if mouse button pressed AND moved, start selection */
-    else if (!(pressed_mask & GUAC_CLIENT_MOUSE_LEFT) &&
-               mask         & GUAC_CLIENT_MOUSE_LEFT)
-        guac_terminal_select_start(term,
-                y / term->display->char_height - term->scroll_offset,
-                x / term->display->char_width);
 
     /* Scroll up if wheel moved up */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_UP)

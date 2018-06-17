@@ -37,54 +37,6 @@
 #include <guacamole/socket.h>
 #include <pango/pangocairo.h>
 
-/**
- * Clears the currently-selected region, removing the highlight.
- */
-static void __guac_terminal_display_clear_select(guac_terminal_display* display) {
-
-    guac_socket* socket = display->client->socket;
-    guac_layer* select_layer = display->select_layer;
-
-    guac_protocol_send_rect(socket, select_layer, 0, 0, 1, 1);
-    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
-            0x00, 0x00, 0x00, 0x00);
-
-    guac_client_end_frame(display->client);
-    guac_socket_flush(socket);
-
-    /* Text is no longer selected */
-    display->text_selected =
-    display->selection_committed = false;
-
-}
-
-/**
- * Returns whether at least one character within the given range is selected.
- */
-static bool __guac_terminal_display_selected_contains(guac_terminal_display* display,
-        int start_row, int start_column, int end_row, int end_column) {
-
-    /* If test range starts after highlight ends, does not intersect */
-    if (start_row > display->selection_end_row)
-        return false;
-
-    if (start_row == display->selection_end_row
-            && start_column > display->selection_end_column)
-        return false;
-
-    /* If test range ends before highlight starts, does not intersect */
-    if (end_row < display->selection_start_row)
-        return false;
-
-    if (end_row == display->selection_start_row
-            && end_column < display->selection_start_column)
-        return false;
-
-    /* Otherwise, does intersect */
-    return true;
-
-}
-
 /* Maps any codepoint onto a number between 0 and 511 inclusive */
 int __guac_terminal_hash_codepoint(int codepoint) {
 
@@ -310,8 +262,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     display->operations = NULL;
 
     /* Initially nothing selected */
-    display->text_selected =
-    display->selection_committed = false;
+    display->text_selected = false;
 
     return display;
 
@@ -413,11 +364,6 @@ void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
 
     }
 
-    /* If selection visible and committed, clear if update touches selection */
-    if (display->text_selected && display->selection_committed &&
-        __guac_terminal_display_selected_contains(display, row, start_column, row, end_column))
-            __guac_terminal_display_clear_select(display);
-
 }
 
 void guac_terminal_display_copy_rows(guac_terminal_display* display,
@@ -463,11 +409,6 @@ void guac_terminal_display_copy_rows(guac_terminal_display* display,
 
     }
 
-    /* If selection visible and committed, clear if update touches selection */
-    if (display->text_selected && display->selection_committed &&
-        __guac_terminal_display_selected_contains(display, start_row, 0, end_row, display->width - 1))
-            __guac_terminal_display_clear_select(display);
-
 }
 
 void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
@@ -501,11 +442,6 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
         current += character->width;
 
     }
-
-    /* If selection visible and committed, clear if update touches selection */
-    if (display->text_selected && display->selection_committed &&
-        __guac_terminal_display_selected_contains(display, row, start_column, row, end_column))
-            __guac_terminal_display_clear_select(display);
 
 }
 
@@ -569,10 +505,6 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
             display->select_layer,
             display->char_width  * width,
             display->char_height * height);
-
-    /* If selection visible and committed, clear */
-    if (display->text_selected && display->selection_committed)
-        __guac_terminal_display_clear_select(display);
 
 }
 
@@ -899,15 +831,19 @@ void guac_terminal_display_dup(guac_terminal_display* display, guac_user* user,
 
 }
 
-void guac_terminal_display_commit_select(guac_terminal_display* display) {
-    display->selection_committed = true;
-}
-
 void guac_terminal_display_select(guac_terminal_display* display,
         int start_row, int start_col, int end_row, int end_col) {
 
     guac_socket* socket = display->client->socket;
     guac_layer* select_layer = display->select_layer;
+
+    /* Do nothing if selection is unchanged */
+    if (display->text_selected
+            && display->selection_start_row    == start_row
+            && display->selection_start_column == start_col
+            && display->selection_end_row      == end_row
+            && display->selection_end_column   == end_col)
+        return;
 
     /* Text is now selected */
     display->text_selected = true;
@@ -989,8 +925,24 @@ void guac_terminal_display_select(guac_terminal_display* display,
     guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
             0x00, 0x80, 0xFF, 0x60);
 
-    guac_client_end_frame(display->client);
-    guac_socket_flush(socket);
+}
+
+void guac_terminal_display_clear_select(guac_terminal_display* display) {
+
+    /* Do nothing if nothing is selected */
+    if (!display->text_selected)
+        return;
+
+    guac_socket* socket = display->client->socket;
+    guac_layer* select_layer = display->select_layer;
+
+    guac_protocol_send_rect(socket, select_layer, 0, 0, 1, 1);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
+            0x00, 0x00, 0x00, 0x00);
+
+    /* Text is no longer selected */
+    display->text_selected = false;
 
 }
+
 

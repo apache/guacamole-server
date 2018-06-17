@@ -367,9 +367,17 @@ struct guac_terminal {
     int active_char_set;
 
     /**
-     * Whether text is being selected.
+     * Whether text is currently selected.
      */
     bool text_selected;
+
+    /**
+     * Whether the selection is finished, and will no longer be modified. A
+     * committed selection remains highlighted for reference, but the
+     * highlight will be removed if characters within the selected region are
+     * modified.
+     */
+    bool selection_committed;
 
     /**
      * The row that the selection starts at.
