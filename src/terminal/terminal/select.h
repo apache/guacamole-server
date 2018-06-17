@@ -67,19 +67,16 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column);
 
 /**
  * Ends text selection, removing any highlight and storing the selected
- * character data within the provided string buffer. This function should only
- * be invoked while the guac_terminal is locked through a call to
+ * character data within the clipboard associated with the given terminal. If
+ * more text is selected than can fit within the clipboard, text at the end of
+ * the selected area will be dropped as necessary. This function should only be
+ * invoked while the guac_terminal is locked through a call to
  * guac_terminal_lock().
  *
  * @param terminal
  *     The guac_terminal instance associated with the text being selected.
- *
- * @param string
- *     The buffer which should receive the characters within the selected
- *     area. This buffer must already have been allocated with sufficient
- *     space to store the selected text.
  */
-void guac_terminal_select_end(guac_terminal* terminal, char* string);
+void guac_terminal_select_end(guac_terminal* terminal);
 
 #endif
 

@@ -1729,9 +1729,6 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         int x, int y, int mask) {
 
-    guac_client* client = term->client;
-    guac_socket* socket = client->socket;
-
     /* Determine which buttons were just released and pressed */
     int released_mask =  term->mouse_mask & ~mask;
     int pressed_mask  = ~term->mouse_mask &  mask;
@@ -1771,27 +1768,8 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
     if (term->text_selected) {
 
         /* If mouse button released, stop selection */
-        if (released_mask & GUAC_CLIENT_MOUSE_LEFT) {
-
-            int selected_length;
-
-            /* End selection and get selected text */
-            int selectable_size = term->term_width * term->term_height * sizeof(char);
-            char* string = malloc(selectable_size);
-            guac_terminal_select_end(term, string);
-
-            selected_length = strnlen(string, selectable_size);
-
-            /* Store new data */
-            guac_common_clipboard_reset(term->clipboard, "text/plain");
-            guac_common_clipboard_append(term->clipboard, string, selected_length);
-            free(string);
-
-            /* Send data */
-            guac_common_clipboard_send(term->clipboard, client);
-            guac_socket_flush(socket);
-
-        }
+        if (released_mask & GUAC_CLIENT_MOUSE_LEFT)
+            guac_terminal_select_end(term);
 
         /* Otherwise, just update */
         else

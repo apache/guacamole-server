@@ -20,33 +20,15 @@
 #include "config.h"
 
 #include "common/clipboard.h"
-#include "common/cursor.h"
 #include "terminal/buffer.h"
-#include "terminal/common.h"
 #include "terminal/display.h"
-#include "terminal/palette.h"
+#include "terminal/select.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_handlers.h"
 #include "terminal/types.h"
-#include "terminal/typescript.h"
-#include "terminal/xparsecolor.h"
-
-#include <ctype.h>
-#include <errno.h>
-#include <pthread.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <wchar.h>
 
 #include <guacamole/client.h>
-#include <guacamole/error.h>
-#include <guacamole/protocol.h>
 #include <guacamole/socket.h>
-#include <guacamole/timestamp.h>
+#include <guacamole/unicode.h>
 
 void guac_terminal_select_redraw(guac_terminal* terminal) {
 
@@ -135,36 +117,95 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
 
 }
 
-int __guac_terminal_buffer_string(guac_terminal_buffer_row* row, int start, int end, char* string) {
+/**
+ * Appends the text within the given subsection of a terminal row to the
+ * clipboard. The provided coordinates are considered inclusiveley (the
+ * characters at the start and end column are included in the copied
+ * text). Any out-of-bounds coordinates will be automatically clipped within
+ * the bounds of the given row.
+ *
+ * @param terminal
+ *     The guac_terminal instance associated with the buffer containing the
+ *     text being copied and the clipboard receiving the copied text.
+ *
+ * @param row
+ *     The row number of the text within the terminal to be copied into the
+ *     clipboard, where the first (top-most) row in the terminal is row 0. Rows
+ *     within the scrollback buffer (above the top-most row of the terminal)
+ *     will be negative.
+ *
+ * @param start
+ *     The first column of the text to be copied from the given row into the
+ *     clipboard associated with the given terminal, where 0 is the first
+ *     (left-most) column within the row.
+ *
+ * @param end
+ *     The last column of the text to be copied from the given row into the
+ *     clipboard associated with the given terminal, where 0 is the first
+ *     (left-most) column within the row.
+ */
+static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
+        int row, int start, int end) {
 
-    int length = 0;
-    int i;
-    for (i=start; i<=end; i++) {
+    char buffer[1024];
+    int i = start;
 
-        int codepoint = row->characters[i].value;
+    guac_terminal_buffer_row* buffer_row =
+        guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
-        /* If not null (blank), add to string */
-        if (codepoint != 0 && codepoint != GUAC_CHAR_CONTINUATION) {
-            int bytes = guac_terminal_encode_utf8(codepoint, string);
-            string += bytes;
-            length += bytes;
+    /* If selection is entirely outside the bounds of the row, then there is
+     * nothing to append */
+    if (start > buffer_row->length - 1)
+        return;
+
+    /* Clip given range to actual bounds of row */
+    if (end == -1 || end > buffer_row->length - 1)
+        end = buffer_row->length - 1;
+
+    /* Repeatedly convert chunks of terminal buffer rows until entire specified
+     * region has been appended to clipboard */
+    while (i <= end) {
+
+        int remaining = sizeof(buffer);
+        char* current = buffer;
+
+        /* Convert as many codepoints within the given range as possible */
+        for (i = start; i <= end; i++) {
+
+            int codepoint = buffer_row->characters[i].value;
+
+            /* Ignore null (blank) characters */
+            if (codepoint == 0 || codepoint == GUAC_CHAR_CONTINUATION)
+                continue;
+
+            /* Encode current codepoint as UTF-8 */
+            int bytes = guac_utf8_write(codepoint, current, remaining);
+            if (bytes == 0)
+                break;
+
+            current += bytes;
+            remaining -= bytes;
+
         }
+
+        /* Append converted buffer to clipboard */
+        guac_common_clipboard_append(terminal->clipboard, buffer, current - buffer);
 
     }
 
-    return length;
-
 }
 
-void guac_terminal_select_end(guac_terminal* terminal, char* string) {
+void guac_terminal_select_end(guac_terminal* terminal) {
+
+    guac_client* client = terminal->client;
+    guac_socket* socket = client->socket;
+
+    /* Reset current clipboard contents */
+    guac_common_clipboard_reset(terminal->clipboard, "text/plain");
 
     /* Deselect */
     terminal->text_selected = false;
     guac_terminal_display_commit_select(terminal->display);
-
-    guac_terminal_buffer_row* buffer_row;
-
-    int row;
 
     int start_row, start_col;
     int end_row, end_col;
@@ -188,41 +229,30 @@ void guac_terminal_select_end(guac_terminal* terminal, char* string) {
     }
 
     /* If only one row, simply copy */
-    buffer_row = guac_terminal_buffer_get_row(terminal->buffer, start_row, 0);
-    if (end_row == start_row) {
-        if (buffer_row->length - 1 < end_col)
-            end_col = buffer_row->length - 1;
-        string += __guac_terminal_buffer_string(buffer_row, start_col, end_col, string);
-    }
+    if (end_row == start_row)
+        guac_terminal_clipboard_append_row(terminal, start_row, start_col, end_col);
 
     /* Otherwise, copy multiple rows */
     else {
 
         /* Store first row */
-        string += __guac_terminal_buffer_string(buffer_row, start_col, buffer_row->length - 1, string);
+        guac_terminal_clipboard_append_row(terminal, start_row, start_col, -1);
 
         /* Store all middle rows */
-        for (row=start_row+1; row<end_row; row++) {
-
-            buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
-
-            *(string++) = '\n';
-            string += __guac_terminal_buffer_string(buffer_row, 0, buffer_row->length - 1, string);
-
+        for (int row = start_row + 1; row < end_row; row++) {
+            guac_common_clipboard_append(terminal->clipboard, "\n", 1);
+            guac_terminal_clipboard_append_row(terminal, row, 0, -1);
         }
 
         /* Store last row */
-        buffer_row = guac_terminal_buffer_get_row(terminal->buffer, end_row, 0);
-        if (buffer_row->length - 1 < end_col)
-            end_col = buffer_row->length - 1;
-
-        *(string++) = '\n';
-        string += __guac_terminal_buffer_string(buffer_row, 0, end_col, string);
+        guac_common_clipboard_append(terminal->clipboard, "\n", 1);
+        guac_terminal_clipboard_append_row(terminal, end_row, 0, end_col);
 
     }
 
-    /* Null terminator */
-    *string = 0;
+    /* Send data */
+    guac_common_clipboard_send(terminal->clipboard, client);
+    guac_socket_flush(socket);
 
 }
 
