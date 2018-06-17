@@ -149,6 +149,12 @@ static int guac_terminal_find_char(guac_terminal* terminal,
 
     int start_column = *column;
 
+    /* If requested row is outside the bounds of the current terminal or
+     * scrollback, assume the character is 1 column wide */
+    if (row >= terminal->term_height
+            || row < terminal->term_height - terminal->buffer->length)
+        return 1;
+
     guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
     if (start_column < buffer_row->length) {
 
@@ -276,7 +282,8 @@ void guac_terminal_select_resume(guac_terminal* terminal, int row, int column) {
  * @param end
  *     The last column of the text to be copied from the given row into the
  *     clipboard associated with the given terminal, where 0 is the first
- *     (left-most) column within the row.
+ *     (left-most) column within the row, or a negative value to denote that
+ *     the last column in the row should be used.
  */
 static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
         int row, int start, int end) {
@@ -284,16 +291,22 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
     char buffer[1024];
     int i = start;
 
+    /* If requested row is outside the bounds of the current terminal or
+     * scrollback, do nothing */
+    if (row >= terminal->term_height
+            || row < terminal->term_height - terminal->buffer->length)
+        return;
+
     guac_terminal_buffer_row* buffer_row =
         guac_terminal_buffer_get_row(terminal->buffer, row, 0);
 
     /* If selection is entirely outside the bounds of the row, then there is
      * nothing to append */
-    if (start > buffer_row->length - 1)
+    if (start < 0 || start > buffer_row->length - 1)
         return;
 
     /* Clip given range to actual bounds of row */
-    if (end == -1 || end > buffer_row->length - 1)
+    if (end < 0 || end > buffer_row->length - 1)
         end = buffer_row->length - 1;
 
     /* Repeatedly convert chunks of terminal buffer rows until entire specified
