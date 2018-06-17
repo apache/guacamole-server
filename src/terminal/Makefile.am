@@ -30,6 +30,7 @@ noinst_HEADERS =                 \
     terminal/named-colors.h      \
     terminal/palette.h           \
     terminal/scrollbar.h         \
+    terminal/select.h            \
     terminal/terminal.h          \
     terminal/terminal_handlers.h \
     terminal/types.h             \
@@ -44,6 +45,7 @@ libguac_terminal_la_SOURCES =   \
     named-colors.c              \
     palette.c                   \
     scrollbar.c                 \
+    select.c                    \
     terminal.c                  \
     terminal_handlers.c         \
     typescript.c                \

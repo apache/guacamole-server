@@ -697,23 +697,6 @@ void guac_terminal_scroll_display_down(guac_terminal* terminal, int amount);
  */
 void guac_terminal_scroll_display_up(guac_terminal* terminal, int amount);
 
-/**
- * Marks the start of text selection at the given row and column.
- */
-void guac_terminal_select_start(guac_terminal* terminal, int row, int column);
-
-/**
- * Updates the end of text selection at the given row and column.
- */
-void guac_terminal_select_update(guac_terminal* terminal, int row, int column);
-
-/**
- * Ends text selection, removing any highlight. Character data is stored in the
- * string buffer provided.
- */
-void guac_terminal_select_end(guac_terminal* terminal, char* string);
-
-
 /* LOW-LEVEL TERMINAL OPERATIONS */
 
 
