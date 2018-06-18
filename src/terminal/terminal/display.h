@@ -182,16 +182,9 @@ typedef struct guac_terminal_display {
     guac_layer* select_layer;
 
     /**
-     * Whether text is being selected.
+     * Whether text is currently selected.
      */
     bool text_selected;
-
-    /**
-     * Whether the selection is finished, and will no longer be modified. A
-     * committed selection remains highlighted for reference, but the
-     * highlight will be removed when the display changes.
-     */
-    bool selection_committed;
 
     /**
      * The row that the selection starts at.
@@ -333,10 +326,13 @@ void guac_terminal_display_select(guac_terminal_display* display,
         int start_row, int start_col, int end_row, int end_col);
 
 /**
- * Commits the select rectangle, allowing the display to clear it when
- * necessary.
+ * Clears the currently-selected region, removing the highlight.
+ *
+ * @param display
+ *     The guac_terminal_display whose currently-selected region should be
+ *     cleared.
  */
-void guac_terminal_display_commit_select(guac_terminal_display* display);
+void guac_terminal_display_clear_select(guac_terminal_display* display);
 
 #endif
 

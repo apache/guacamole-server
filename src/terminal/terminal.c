@@ -25,6 +25,7 @@
 #include "terminal/common.h"
 #include "terminal/display.h"
 #include "terminal/palette.h"
+#include "terminal/select.h"
 #include "terminal/terminal.h"
 #include "terminal/terminal_handlers.h"
 #include "terminal/types.h"
@@ -59,6 +60,9 @@ static void __guac_terminal_set_columns(guac_terminal* terminal, int row,
 
     guac_terminal_buffer_set_columns(terminal->buffer, row,
             start_column, end_column, character);
+
+    /* Clear selection if region is modified */
+    guac_terminal_select_touch(terminal, row, start_column, row, end_column);
 
 }
 
@@ -172,6 +176,7 @@ void guac_terminal_reset(guac_terminal* term) {
 
     /* Reset flags */
     term->text_selected = false;
+    term->selection_committed = false;
     term->application_cursor_keys = false;
     term->automatic_carriage_return = false;
     term->insert_mode = false;
@@ -1018,6 +1023,12 @@ int guac_terminal_scroll_up(guac_terminal* term,
             term->visible_cursor_row <= end_row)
             term->visible_cursor_row -= amount;
 
+        /* Update selected region */
+        if (term->text_selected) {
+            term->selection_start_row -= amount;
+            term->selection_end_row -= amount;
+        }
+
     }
 
     /* Otherwise, just copy row data upwards */
@@ -1269,184 +1280,6 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
 
 }
 
-void guac_terminal_select_redraw(guac_terminal* terminal) {
-
-    int start_row = terminal->selection_start_row + terminal->scroll_offset;
-    int start_column = terminal->selection_start_column;
-
-    int end_row = terminal->selection_end_row + terminal->scroll_offset;
-    int end_column = terminal->selection_end_column;
-
-    /* Update start/end columns to include character width */
-    if (start_row > end_row || (start_row == end_row && start_column > end_column))
-        start_column += terminal->selection_start_width - 1;
-    else
-        end_column += terminal->selection_end_width - 1;
-
-    guac_terminal_display_select(terminal->display, start_row, start_column, end_row, end_column);
-
-}
-
-/**
- * Locates the beginning of the character at the given row and column, updating
- * the column to the starting column of that character. The width, if available,
- * is returned. If the character has no defined width, 1 is returned.
- */
-static int __guac_terminal_find_char(guac_terminal* terminal, int row, int* column) {
-
-    int start_column = *column;
-
-    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
-    if (start_column < buffer_row->length) {
-
-        /* Find beginning of character */
-        guac_terminal_char* start_char = &(buffer_row->characters[start_column]);
-        while (start_column > 0 && start_char->value == GUAC_CHAR_CONTINUATION) {
-            start_char--;
-            start_column--;
-        }
-
-        /* Use width, if available */
-        if (start_char->value != GUAC_CHAR_CONTINUATION) {
-            *column = start_column;
-            return start_char->width;
-        }
-
-    }
-
-    /* Default to one column wide */
-    return 1;
-
-}
-
-void guac_terminal_select_start(guac_terminal* terminal, int row, int column) {
-
-    int width = __guac_terminal_find_char(terminal, row, &column);
-
-    terminal->selection_start_row = 
-    terminal->selection_end_row   = row;
-
-    terminal->selection_start_column = 
-    terminal->selection_end_column   = column;
-
-    terminal->selection_start_width = 
-    terminal->selection_end_width   = width;
-
-    terminal->text_selected = true;
-
-    guac_terminal_select_redraw(terminal);
-
-}
-
-void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
-
-    /* Only update if selection has changed */
-    if (row != terminal->selection_end_row
-        || column <  terminal->selection_end_column
-        || column >= terminal->selection_end_column + terminal->selection_end_width) {
-
-        int width = __guac_terminal_find_char(terminal, row, &column);
-
-        terminal->selection_end_row = row;
-        terminal->selection_end_column = column;
-        terminal->selection_end_width = width;
-
-        guac_terminal_select_redraw(terminal);
-    }
-
-}
-
-int __guac_terminal_buffer_string(guac_terminal_buffer_row* row, int start, int end, char* string) {
-
-    int length = 0;
-    int i;
-    for (i=start; i<=end; i++) {
-
-        int codepoint = row->characters[i].value;
-
-        /* If not null (blank), add to string */
-        if (codepoint != 0 && codepoint != GUAC_CHAR_CONTINUATION) {
-            int bytes = guac_terminal_encode_utf8(codepoint, string);
-            string += bytes;
-            length += bytes;
-        }
-
-    }
-
-    return length;
-
-}
-
-void guac_terminal_select_end(guac_terminal* terminal, char* string) {
-
-    /* Deselect */
-    terminal->text_selected = false;
-    guac_terminal_display_commit_select(terminal->display);
-
-    guac_terminal_buffer_row* buffer_row;
-
-    int row;
-
-    int start_row, start_col;
-    int end_row, end_col;
-
-    /* Ensure proper ordering of start and end coords */
-    if (terminal->selection_start_row < terminal->selection_end_row
-        || (terminal->selection_start_row == terminal->selection_end_row
-            && terminal->selection_start_column < terminal->selection_end_column)) {
-
-        start_row = terminal->selection_start_row;
-        start_col = terminal->selection_start_column;
-        end_row   = terminal->selection_end_row;
-        end_col   = terminal->selection_end_column + terminal->selection_end_width - 1;
-
-    }
-    else {
-        end_row   = terminal->selection_start_row;
-        end_col   = terminal->selection_start_column + terminal->selection_start_width - 1;
-        start_row = terminal->selection_end_row;
-        start_col = terminal->selection_end_column;
-    }
-
-    /* If only one row, simply copy */
-    buffer_row = guac_terminal_buffer_get_row(terminal->buffer, start_row, 0);
-    if (end_row == start_row) {
-        if (buffer_row->length - 1 < end_col)
-            end_col = buffer_row->length - 1;
-        string += __guac_terminal_buffer_string(buffer_row, start_col, end_col, string);
-    }
-
-    /* Otherwise, copy multiple rows */
-    else {
-
-        /* Store first row */
-        string += __guac_terminal_buffer_string(buffer_row, start_col, buffer_row->length - 1, string);
-
-        /* Store all middle rows */
-        for (row=start_row+1; row<end_row; row++) {
-
-            buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
-
-            *(string++) = '\n';
-            string += __guac_terminal_buffer_string(buffer_row, 0, buffer_row->length - 1, string);
-
-        }
-
-        /* Store last row */
-        buffer_row = guac_terminal_buffer_get_row(terminal->buffer, end_row, 0);
-        if (buffer_row->length - 1 < end_col)
-            end_col = buffer_row->length - 1;
-
-        *(string++) = '\n';
-        string += __guac_terminal_buffer_string(buffer_row, 0, end_col, string);
-
-    }
-
-    /* Null terminator */
-    *string = 0;
-
-}
-
 void guac_terminal_copy_columns(guac_terminal* terminal, int row,
         int start_column, int end_column, int offset) {
 
@@ -1455,6 +1288,9 @@ void guac_terminal_copy_columns(guac_terminal* terminal, int row,
 
     guac_terminal_buffer_copy_columns(terminal->buffer, row,
             start_column, end_column, offset);
+
+    /* Clear selection if region is modified */
+    guac_terminal_select_touch(terminal, row, start_column, row, end_column);
 
     /* Update cursor location if within region */
     if (row == terminal->visible_cursor_row &&
@@ -1476,6 +1312,10 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
 
     guac_terminal_buffer_copy_rows(terminal->buffer,
             start_row, end_row, offset);
+
+    /* Clear selection if region is modified */
+    guac_terminal_select_touch(terminal, start_row, 0, end_row,
+            terminal->term_width);
 
     /* Update cursor location if within region */
     if (terminal->visible_cursor_row >= start_row &&
@@ -1709,6 +1549,7 @@ void guac_terminal_flush(guac_terminal* terminal) {
         guac_terminal_typescript_flush(terminal->typescript);
 
     /* Flush display state */
+    guac_terminal_select_redraw(terminal);
     guac_terminal_commit_cursor(terminal);
     guac_terminal_display_flush(terminal->display);
     guac_terminal_scrollbar_flush(terminal->scrollbar);
@@ -1906,9 +1747,6 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         int x, int y, int mask) {
 
-    guac_client* client = term->client;
-    guac_socket* socket = client->socket;
-
     /* Determine which buttons were just released and pressed */
     int released_mask =  term->mouse_mask & ~mask;
     int pressed_mask  = ~term->mouse_mask &  mask;
@@ -1944,46 +1782,32 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
     if ((released_mask & GUAC_CLIENT_MOUSE_RIGHT) || (released_mask & GUAC_CLIENT_MOUSE_MIDDLE))
         return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
 
-    /* If text selected, change state based on left mouse mouse button */
-    if (term->text_selected) {
+    /* If left mouse button was just released, stop selection */
+    if (released_mask & GUAC_CLIENT_MOUSE_LEFT)
+        guac_terminal_select_end(term);
 
-        /* If mouse button released, stop selection */
-        if (released_mask & GUAC_CLIENT_MOUSE_LEFT) {
+    /* Update selection state contextually while the left mouse button is
+     * pressed */
+    else if (mask & GUAC_CLIENT_MOUSE_LEFT) {
 
-            int selected_length;
+        int row = y / term->display->char_height - term->scroll_offset;
+        int col = x / term->display->char_width;
 
-            /* End selection and get selected text */
-            int selectable_size = term->term_width * term->term_height * sizeof(char);
-            char* string = malloc(selectable_size);
-            guac_terminal_select_end(term, string);
-
-            selected_length = strnlen(string, selectable_size);
-
-            /* Store new data */
-            guac_common_clipboard_reset(term->clipboard, "text/plain");
-            guac_common_clipboard_append(term->clipboard, string, selected_length);
-            free(string);
-
-            /* Send data */
-            guac_common_clipboard_send(term->clipboard, client);
-            guac_socket_flush(socket);
-
+        /* If mouse button was already just pressed, start a new selection or
+         * resume the existing selection depending on whether shift is held */
+        if (pressed_mask & GUAC_CLIENT_MOUSE_LEFT) {
+            if (term->mod_shift)
+                guac_terminal_select_resume(term, row, col);
+            else
+                guac_terminal_select_start(term, row, col);
         }
 
-        /* Otherwise, just update */
+        /* In all other cases, simply update the existing selection as long as
+         * the mouse button is pressed */
         else
-            guac_terminal_select_update(term,
-                    y / term->display->char_height - term->scroll_offset,
-                    x / term->display->char_width);
+            guac_terminal_select_update(term, row, col);
 
     }
-
-    /* Otherwise, if mouse button pressed AND moved, start selection */
-    else if (!(pressed_mask & GUAC_CLIENT_MOUSE_LEFT) &&
-               mask         & GUAC_CLIENT_MOUSE_LEFT)
-        guac_terminal_select_start(term,
-                y / term->display->char_height - term->scroll_offset,
-                x / term->display->char_width);
 
     /* Scroll up if wheel moved up */
     if (released_mask & GUAC_CLIENT_MOUSE_SCROLL_UP)
