@@ -277,8 +277,10 @@ int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* clien
     /* If there's an error provided, abort connection and return that. */
     if (known_hosts < 0) {
 
+        char* errmsg;
+        int errval = libssh2_session_last_error(session, &errmsg, NULL, 0);
         guac_client_log(client, GUAC_LOG_ERROR,
-            "Failure trying to load SSH host keys.");
+            "Error %d trying to load SSH host keys: %s", errval, errmsg);
 
         libssh2_knownhost_free(ssh_known_hosts);
         return known_hosts;
