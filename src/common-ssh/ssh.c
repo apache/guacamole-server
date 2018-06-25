@@ -520,15 +520,14 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         return NULL;
     }
 
-    /* Get fingerprint of host we're connecting to */
-    size_t fp_len;
-    int fp_type;
-    const char *fingerprint = libssh2_session_hostkey(session, &fp_len, &fp_type);
+    /* Get host key of remote system we're connecting to */
+    size_t remote_hostkey_len;
+    const char *remote_hostkey = libssh2_session_hostkey(session, &remote_hostkey_len, NULL);
 
-    /* Failure to generate a fingerprint means we should abort */
-    if (!fingerprint) {
+    /* Failure to retrieve a host key means we should abort */
+    if (!remote_hostkey) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-            "Failed to get fingerprint for host %s", hostname);
+            "Failed to get host key for %s", hostname);
         free(common_session);
         close(fd);
         return NULL;
@@ -536,8 +535,8 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
     /* SSH known host key checking. */
     int known_host_check = guac_common_ssh_verify_host_key(session, client, host_key,
-                                                           hostname, atoi(port), fingerprint,
-                                                           fp_len);
+                                                           hostname, atoi(port), remote_hostkey,
+                                                           remote_hostkey_len);
 
     /* Abort on any error codes */
     if (known_host_check != 0) {
@@ -551,7 +550,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
 
         if (known_host_check > 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Host fingerprint did not match any provided known host keys. %s", err_msg);
+                "Host key did not match any provided known host keys. %s", err_msg);
 
         free(common_session);
         close(fd);

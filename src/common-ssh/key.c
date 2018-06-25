@@ -247,8 +247,8 @@ int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
 }
 
 int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* client,
-        const char* host_key, const char* hostname, int port, const char* fingerprint,
-        const size_t fp_len) {
+        const char* host_key, const char* hostname, int port, const char* remote_hostkey,
+        const size_t remote_hostkey_len) {
 
     LIBSSH2_KNOWNHOSTS* ssh_known_hosts = libssh2_knownhost_init(session);
     int known_hosts = 0;
@@ -296,9 +296,9 @@ int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* clien
     }
 
 
-    /* Check fingerprint against known hosts */
+    /* Check remote host key against known hosts */
     int kh_check = libssh2_knownhost_checkp(ssh_known_hosts, hostname, port,
-                                            fingerprint, fp_len,
+                                            remote_hostkey, remote_hostkey_len,
                                             LIBSSH2_KNOWNHOST_TYPE_PLAIN|
                                             LIBSSH2_KNOWNHOST_KEYENC_RAW,
                                             NULL);

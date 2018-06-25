@@ -170,7 +170,7 @@ int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
         int length, unsigned char* sig);
 
 /**
- * Verifies the fingerprint for the given hostname/port combination against
+ * Verifies the host key for the given hostname/port combination against
  * one or more known_hosts entries.  The known_host entries can either be a
  * single host_key, provided by the client, or a set of known_hosts entries
  * provided in the /etc/guacamole/ssh_known_hosts file.  Failure to correctly
@@ -178,7 +178,7 @@ int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
  * error code.  A return code of zero indiciates that either no known_hosts entries
  * were provided, or that the verification succeeded (match).  Negative values
  * indicate internal libssh2 error codes; positive values indicate a failure
- * during verification of the fingerprint against the known hosts.
+ * during verification of the host key against the known hosts.
  *
  * @param session
  *     A pointer to the LIBSSH2_SESSION structure of the SSH connection already
@@ -200,11 +200,11 @@ int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
  * @param port
  *     The port number of the server being verified.
  *
- * @param fingerprint
- *     The fingering of the server being verified.
+ * @param remote_hostkey
+ *     The host key of the remote system being verified.
  *
- * @param fp_len
- *     The length of the fingerprint being verified
+ * @param remote_hostkey_len
+ *     The length of the remote host key being verified
  *
  * @return
  *     The status of the known_hosts check.  This will be zero if no entries
@@ -213,8 +213,8 @@ int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
  *     checking.
  */
 int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* client,
-        const char* host_key, const char* hostname, int port, const char* fingerprint,
-        const size_t fp_len);
+        const char* host_key, const char* hostname, int port, const char* remote_hostkey,
+        const size_t remote_hostkey_len);
 
 #endif
 
