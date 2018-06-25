@@ -529,6 +529,8 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     if (!fingerprint) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
             "Failed to get fingerprint for host %s", hostname);
+        free(common_session);
+        close(fd);
         return NULL;
     }
 
@@ -551,6 +553,8 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Host fingerprint did not match any provided known host keys. %s", err_msg);
 
+        free(common_session);
+        close(fd);
         return NULL;
     }
 
