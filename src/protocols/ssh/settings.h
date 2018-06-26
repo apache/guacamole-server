@@ -71,6 +71,11 @@ typedef struct guac_ssh_settings {
     char* hostname;
 
     /**
+     * The public SSH host key.
+     */
+    char* host_key;
+
+    /**
      * The port of the SSH server to connect to.
      */
     char* port;
