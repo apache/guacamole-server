@@ -22,6 +22,9 @@
 
 #include "config.h"
 
+#include <guacamole/client.h>
+#include <libssh2.h>
+
 #include <openssl/ossl_typ.h>
 
 /**
@@ -165,6 +168,53 @@ void guac_common_ssh_key_free(guac_common_ssh_key* key);
  */
 int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
         int length, unsigned char* sig);
+
+/**
+ * Verifies the host key for the given hostname/port combination against
+ * one or more known_hosts entries.  The known_host entries can either be a
+ * single host_key, provided by the client, or a set of known_hosts entries
+ * provided in the /etc/guacamole/ssh_known_hosts file.  Failure to correctly
+ * load the known_hosts entries will result in a connection abort and a returned
+ * error code.  A return code of zero indiciates that either no known_hosts entries
+ * were provided, or that the verification succeeded (match).  Negative values
+ * indicate internal libssh2 error codes; positive values indicate a failure
+ * during verification of the host key against the known hosts.
+ *
+ * @param session
+ *     A pointer to the LIBSSH2_SESSION structure of the SSH connection already
+ *     in progress.
+ *
+ * @param client
+ *     The current guac_client instance for which the known_hosts checking is
+ *     being performed.
+ *
+ * @param host_key
+ *     The known host entry provided by the client.  If this is non-null and not
+ *     empty, it will be the only host key loaded and used for verification.  If
+ *     this is null or empty an attempt will be made to read the
+ *     /etc/guacamole/ssh_known_hosts file and load entries from it.
+ *
+ * @param hostname
+ *     The hostname or IP of the server that is being verified.
+ *
+ * @param port
+ *     The port number of the server being verified.
+ *
+ * @param remote_hostkey
+ *     The host key of the remote system being verified.
+ *
+ * @param remote_hostkey_len
+ *     The length of the remote host key being verified
+ *
+ * @return
+ *     The status of the known_hosts check.  This will be zero if no entries
+ *     are provided or if the match succeeds, negative to indicate internal
+ *     libssh2 errors, or positive to indicate failures during host key
+ *     checking.
+ */
+int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* client,
+        const char* host_key, const char* hostname, int port, const char* remote_hostkey,
+        const size_t remote_hostkey_len);
 
 #endif
 

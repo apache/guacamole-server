@@ -31,6 +31,7 @@
 /* Client plugin arguments */
 const char* GUAC_SSH_CLIENT_ARGS[] = {
     "hostname",
+    "host-key",
     "port",
     "username",
     "password",
@@ -67,6 +68,11 @@ enum SSH_ARGS_IDX {
      * The hostname to connect to. Required.
      */
     IDX_HOSTNAME,
+
+    /**
+     * The Base64-encoded public SSH host key.  Optional.
+     */
+    IDX_HOST_KEY,
 
     /**
      * The port to connect to. Optional.
@@ -247,6 +253,10 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
 
+    settings->host_key =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_HOST_KEY, NULL);
+
     settings->username =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_USERNAME, NULL);
@@ -384,6 +394,7 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
 
     /* Free network connection information */
     free(settings->hostname);
+    free(settings->host_key);
     free(settings->port);
 
     /* Free credentials */
@@ -417,4 +428,3 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
     free(settings);
 
 }
-

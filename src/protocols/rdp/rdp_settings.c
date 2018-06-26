@@ -81,6 +81,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
     "sftp-hostname",
+    "sftp-host-key",
     "sftp-port",
     "sftp-username",
     "sftp-password",
@@ -354,6 +355,11 @@ enum RDP_ARGS_IDX {
      * hostname of the RDP server will be used.
      */
     IDX_SFTP_HOSTNAME,
+
+    /**
+     * The public SSH host key of the SFTP server.  Optional.
+     */
+    IDX_SFTP_HOST_KEY,
 
     /**
      * The port of the SSH server to connect to for SFTP. If blank, the default
@@ -822,6 +828,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_HOSTNAME, settings->hostname);
 
+    /* The public SSH host key. */
+    settings->sftp_host_key =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_HOST_KEY, NULL);
+
     /* Port for SFTP connection */
     settings->sftp_port =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -999,6 +1010,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     /* Free SFTP settings */
     free(settings->sftp_directory);
     free(settings->sftp_root_directory);
+    free(settings->sftp_host_key);
     free(settings->sftp_hostname);
     free(settings->sftp_passphrase);
     free(settings->sftp_password);

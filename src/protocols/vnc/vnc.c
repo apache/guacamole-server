@@ -261,7 +261,8 @@ void* guac_vnc_client_thread(void* data) {
         /* Attempt SSH connection */
         vnc_client->sftp_session =
             guac_common_ssh_create_session(client, settings->sftp_hostname,
-                    settings->sftp_port, vnc_client->sftp_user, settings->sftp_server_alive_interval);
+                    settings->sftp_port, vnc_client->sftp_user, settings->sftp_server_alive_interval,
+                    settings->sftp_host_key);
 
         /* Fail if SSH connection does not succeed */
         if (vnc_client->sftp_session == NULL) {
