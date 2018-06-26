@@ -541,8 +541,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     /* Abort on any error codes */
     if (known_host_check != 0) {
         char* err_msg;
-        int err_len;
-        libssh2_session_last_error(session, &err_msg, &err_len, 0);
+        libssh2_session_last_error(session, &err_msg, NULL, 0);
 
         if (known_host_check < 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
