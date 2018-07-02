@@ -216,6 +216,13 @@ struct guac_terminal {
     guac_stream* pipe_stream;
 
     /**
+     * Bitwise OR of all flags which apply to the currently-open pipe stream.
+     * If no pipe stream is open, this value has no meaning, and its contents
+     * are undefined.
+     */
+    int pipe_stream_flags;
+
+    /**
      * Buffer of data pending write to the pipe_stream. Data within this buffer
      * will be flushed to the pipe_stream when either (1) the buffer is full
      * and another character needs to be written or (2) the pipe_stream is
@@ -920,8 +927,13 @@ int guac_terminal_next_tab(guac_terminal* term, int column);
  *
  * @param name
  *     The name of the pipe stream to open.
+ *
+ * @param flags
+ *     A bitwise OR of all integer flags which should apply to the new pipe
+ *     stream.
  */
-void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name);
+void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name,
+        int flags);
 
 /**
  * Writes a single byte of data to the pipe stream currently open and
