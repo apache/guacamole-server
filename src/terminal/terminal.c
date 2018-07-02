@@ -1551,6 +1551,10 @@ void guac_terminal_flush(guac_terminal* terminal) {
     if (terminal->typescript != NULL)
         guac_terminal_typescript_flush(terminal->typescript);
 
+    /* Flush pipe stream if automatic flushing is enabled */
+    if (terminal->pipe_stream_flags & GUAC_TERMINAL_PIPE_AUTOFLUSH)
+        guac_terminal_pipe_stream_flush(terminal);
+
     /* Flush display state */
     guac_terminal_select_redraw(terminal);
     guac_terminal_commit_cursor(terminal);

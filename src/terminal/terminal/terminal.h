@@ -105,6 +105,14 @@
  */
 #define GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT 1
 
+/**
+ * Flag which forces the open pipe stream to be flushed automatically, whenever
+ * a new frame would be rendered, with only minimal buffering performed between
+ * frames. By default, the contents of the pipe stream will be flushed only
+ * when the buffer is full or the pipe stream is being closed.
+ */
+#define GUAC_TERMINAL_PIPE_AUTOFLUSH 2
+
 typedef struct guac_terminal guac_terminal;
 
 /**
@@ -228,6 +236,7 @@ struct guac_terminal {
      * are undefined.
      *
      * @see GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT
+     * @see GUAC_TERMINAL_PIPE_AUTOFLUSH
      */
     int pipe_stream_flags;
 
@@ -942,6 +951,7 @@ int guac_terminal_next_tab(guac_terminal* term, int column);
  *     stream.
  *
  *     @see GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT
+ *     @see GUAC_TERMINAL_PIPE_AUTOFLUSH
  */
 void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name,
         int flags);
