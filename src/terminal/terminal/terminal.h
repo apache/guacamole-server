@@ -98,6 +98,13 @@
  */
 #define GUAC_TERMINAL_SCHEME_NUMBERED "color"
 
+/**
+ * Flag which specifies that terminal output should be sent to both the current
+ * pipe stream and the user's display. By default, terminal output will be sent
+ * only to the open pipe.
+ */
+#define GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT 1
+
 typedef struct guac_terminal guac_terminal;
 
 /**
@@ -219,6 +226,8 @@ struct guac_terminal {
      * Bitwise OR of all flags which apply to the currently-open pipe stream.
      * If no pipe stream is open, this value has no meaning, and its contents
      * are undefined.
+     *
+     * @see GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT
      */
     int pipe_stream_flags;
 
@@ -931,6 +940,8 @@ int guac_terminal_next_tab(guac_terminal* term, int column);
  * @param flags
  *     A bitwise OR of all integer flags which should apply to the new pipe
  *     stream.
+ *
+ *     @see GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT
  */
 void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name,
         int flags);

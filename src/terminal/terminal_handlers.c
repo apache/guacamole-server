@@ -135,8 +135,14 @@ int guac_terminal_echo(guac_terminal* term, unsigned char c) {
 
     /* Echo to pipe stream if open and not starting an ESC sequence */
     if (term->pipe_stream != NULL && c != 0x1B) {
+
         guac_terminal_pipe_stream_write(term, c);
-        return 0;
+
+        /* Do not render output while pipe is open unless explicitly requested
+         * via flags */
+        if (!(term->pipe_stream_flags & GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT))
+            return 0;
+
     }
 
     /* If using non-Unicode mapping, just map straight bytes */
