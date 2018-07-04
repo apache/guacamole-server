@@ -186,6 +186,11 @@ typedef struct guac_rdp_settings {
      * Whether the virtual drive is enabled.
      */
     int drive_enabled;
+    
+    /**
+     * The name of the virtual drive to pass through to the RDP connection.
+     */
+    char* drive_name;
 
     /**
      * The local system path which will be used to persist the
