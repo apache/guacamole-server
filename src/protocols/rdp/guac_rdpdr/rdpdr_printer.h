@@ -34,8 +34,15 @@
 /**
  * Registers a new printer device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
+ * 
+ * @param rdpdr
+ *     The RDP device redirection plugin where the device is registered.
+ * 
+ * @param printer_name
+ *     The name of the printer that will be registered with the RDP
+ *     connection and passed through to the server.
  */
-void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr);
+void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr, char* printer_name);
 
 #endif
 
