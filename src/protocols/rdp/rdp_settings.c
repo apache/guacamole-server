@@ -820,7 +820,7 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     /* Name of the drive being passed through */
     settings->drive_name =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_DRIVE_NAME, 0);
+                IDX_DRIVE_NAME, "Guacamole Filesystem");
 
     settings->drive_path =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
