@@ -29,27 +29,13 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/unicode.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #else
 #include "compat/winpr-stream.h"
 #endif
-
-static void guac_rdpdr_device_fs_announce_handler(guac_rdpdr_device* device,
-        wStream* output_stream, int device_id) {
-
-    /* Filesystem header */
-    guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Sending filesystem");
-    Stream_Write_UINT32(output_stream, RDPDR_DTYP_FILESYSTEM);
-    Stream_Write_UINT32(output_stream, device_id);
-    Stream_Write(output_stream, "GUAC\0\0\0\0", 8); /* DOS name */
-
-    /* Filesystem data */
-    Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_NAME_LENGTH);
-    Stream_Write(output_stream, GUAC_FILESYSTEM_NAME, GUAC_FILESYSTEM_NAME_LENGTH);
-
-}
 
 static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id, int major_func, int minor_func) {
@@ -128,6 +114,9 @@ static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
 }
 
 static void guac_rdpdr_device_fs_free_handler(guac_rdpdr_device* device) {
+
+    Stream_Free(device->device_announce, 1);
+    
 }
 
 void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
@@ -143,9 +132,21 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
     device->rdpdr       = rdpdr;
     device->device_id   = id;
     device->device_name = "Guacamole Filesystem";
+    int device_name_len = guac_utf8_strlen(device->device_name);
+    device->device_type = RDPDR_DTYP_FILESYSTEM;
+    device->dos_name = "GUACFS\0\0";
+
+    /* Set up the device announcement */
+    device->device_announce_len = 20 + device_name_len;
+    device->device_announce = Stream_New(NULL, device->device_announce_len);
+    Stream_Write_UINT32(device->device_announce, device->device_type);
+    Stream_Write_UINT32(device->device_announce, device->device_id);
+    Stream_Write(device->device_announce, device->dos_name, 8);
+    Stream_Write_UINT32(device->device_announce, device_name_len);
+    Stream_Write(device->device_announce, device->device_name, device_name_len);
+    
 
     /* Set handlers */
-    device->announce_handler  = guac_rdpdr_device_fs_announce_handler;
     device->iorequest_handler = guac_rdpdr_device_fs_iorequest_handler;
     device->free_handler      = guac_rdpdr_device_fs_free_handler;
 

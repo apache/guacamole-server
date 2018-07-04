@@ -77,12 +77,6 @@
 #define GUAC_PRINTER_DRIVER_LENGTH 50
 
 /**
- * Name of the printer itself.
- */
-#define GUAC_PRINTER_NAME          "G\0u\0a\0c\0a\0m\0o\0l\0e\0\0\0"
-#define GUAC_PRINTER_NAME_LENGTH   20
-
-/**
  * Name of the filesystem.
  */
 #define GUAC_FILESYSTEM_NAME          "G\0u\0a\0c\0a\0m\0o\0l\0e\0\0\0"

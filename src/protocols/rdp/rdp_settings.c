@@ -52,6 +52,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "color-depth",
     "disable-audio",
     "enable-printing",
+    "printer-name",
     "enable-drive",
     "drive-path",
     "create-drive-path",
@@ -186,6 +187,11 @@ enum RDP_ARGS_IDX {
      * "true" if printing should be enabled, "false" or blank otherwise.
      */
     IDX_ENABLE_PRINTING,
+
+    /**
+     * The name of the printer that will be passed through to the RDP server.
+     */
+    IDX_PRINTER_NAME,
 
     /**
      * "true" if the virtual drive should be enabled, "false" or blank
@@ -794,6 +800,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_ENABLE_PRINTING, 0);
 
+    /* Name of redirected printer */
+    settings->printer_name =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_PRINTER_NAME, "Guacamole Printer");
+
     /* Drive enable/disable */
     settings->drive_enabled =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -990,6 +1001,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     free(settings->remote_app_args);
     free(settings->remote_app_dir);
     free(settings->username);
+    free(settings->printer_name);
 
     /* Free channel name array */
     if (settings->svc_names != NULL) {

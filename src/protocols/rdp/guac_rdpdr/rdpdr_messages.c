@@ -22,9 +22,11 @@
 #include "rdp.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_service.h"
+#include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
+#include <guacamole/unicode.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -122,20 +124,29 @@ static void guac_rdpdr_send_client_capability(guac_rdpdrPlugin* rdpdr) {
 
 static void guac_rdpdr_send_client_device_list_announce_request(guac_rdpdrPlugin* rdpdr) {
 
-    int i;
-    wStream* output_stream = Stream_New(NULL, 256);
+    /* Calculate number of bytes needed for the stream */
+    int streamBytes = 16;
+    for (int i=0; i < rdpdr->devices_registered; i++)
+        streamBytes += rdpdr->devices[i].device_announce_len;
+
+    /* Allocate the stream */
+    wStream* output_stream = Stream_New(NULL, streamBytes);
 
     /* Write header */
     Stream_Write_UINT16(output_stream, RDPDR_CTYP_CORE);
     Stream_Write_UINT16(output_stream, PAKID_CORE_DEVICELIST_ANNOUNCE);
 
-    /* List devices */
+    /* Get the stream for each of the devices. */
     Stream_Write_UINT32(output_stream, rdpdr->devices_registered);
-    for (i=0; i<rdpdr->devices_registered; i++) {
-        guac_rdpdr_device* device = &(rdpdr->devices[i]);
-        device->announce_handler(device, output_stream, i);
+    for (int i=0; i<rdpdr->devices_registered; i++) {
+        
+        Stream_Write(output_stream,
+                Stream_Buffer(rdpdr->devices[i].device_announce),
+                rdpdr->devices[i].device_announce_len);
+
         guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Registered device %i (%s)",
-                device->device_id, device->device_name);
+                rdpdr->devices[i].device_id, rdpdr->devices[i].device_name);
+        
     }
 
     svc_plugin_send((rdpSvcPlugin*) rdpdr, output_stream);
@@ -273,4 +284,3 @@ void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, wStream* input_s
 void guac_rdpdr_process_prn_using_xps(guac_rdpdrPlugin* rdpdr, wStream* input_stream) {
     guac_client_log(rdpdr->client, GUAC_LOG_INFO, "Printer unexpectedly switched to XPS mode");
 }
-

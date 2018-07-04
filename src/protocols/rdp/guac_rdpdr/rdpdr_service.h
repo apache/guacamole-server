@@ -74,15 +74,30 @@ struct guac_rdpdr_device {
     int device_id;
 
     /**
-     * An arbitrary device name, used for logging purposes only.
+     * Device name, used for logging and for passthrough to the
+     * server.
      */
     const char* device_name;
 
     /**
-     * Handler which will be called when the RDPDR plugin is forming the client
-     * device announce list.
+     * The type of RDPDR device that this represents.
      */
-    guac_rdpdr_device_announce_handler* announce_handler;
+    uint32_t device_type;
+
+    /**
+     * The DOS name of the device.  Max 8 bytes, including terminator.
+     */
+    const char *dos_name;
+    
+    /**
+     * The stream that stores the RDPDR device announcement for this device.
+     */
+    wStream* device_announce;
+    
+    /**
+     * The length of the device_announce wStream.
+     */
+    int device_announce_len;
 
     /**
      * Handler which should be called for every I/O request received.
@@ -90,7 +105,7 @@ struct guac_rdpdr_device {
     guac_rdpdr_device_iorequest_handler* iorequest_handler;
 
     /**
-     * Handlel which should be called when the device is being free'd.
+     * Handler which should be called when the device is being freed.
      */
     guac_rdpdr_device_free_handler* free_handler;
 
@@ -154,7 +169,7 @@ void guac_rdpdr_process_terminate(rdpSvcPlugin* plugin);
 void guac_rdpdr_process_event(rdpSvcPlugin* plugin, wMessage* event);
 
 /**
- * Creates a new stream which contains the ommon DR_DEVICE_IOCOMPLETION header
+ * Creates a new stream which contains the common DR_DEVICE_IOCOMPLETION header
  * used for virtually all responses.
  */
 wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
