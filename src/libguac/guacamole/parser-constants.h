@@ -39,7 +39,7 @@
 /**
  * The maximum number of elements per instruction, including the opcode.
  */
-#define GUAC_INSTRUCTION_MAX_ELEMENTS 64
+#define GUAC_INSTRUCTION_MAX_ELEMENTS 128
 
 #endif
 
