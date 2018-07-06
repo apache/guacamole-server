@@ -54,6 +54,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "enable-printing",
     "printer-name",
     "enable-drive",
+    "drive-name",
     "drive-path",
     "create-drive-path",
     "console",
@@ -198,6 +199,12 @@ enum RDP_ARGS_IDX {
      * otherwise.
      */
     IDX_ENABLE_DRIVE,
+    
+    /**
+     * The name of the virtual driver that will be passed through to the
+     * RDP connection.
+     */
+    IDX_DRIVE_NAME,
 
     /**
      * The local system path which will be used to persist the
@@ -809,6 +816,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->drive_enabled =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_ENABLE_DRIVE, 0);
+    
+    /* Name of the drive being passed through */
+    settings->drive_name =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DRIVE_NAME, "Guacamole Filesystem");
 
     settings->drive_path =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -990,6 +1002,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     /* Free settings strings */
     free(settings->client_name);
     free(settings->domain);
+    free(settings->drive_name);
     free(settings->drive_path);
     free(settings->hostname);
     free(settings->initial_program);

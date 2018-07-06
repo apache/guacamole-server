@@ -41,8 +41,14 @@
 /**
  * Registers a new filesystem device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
+ * 
+ * @param rdpdr
+ *     The RDP device redirection plugin with which to register the device.
+ * 
+ * @param drive_name
+ *     The name of the redirected drive to display in the RDP connection.
  */
-void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr);
+void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr, char* drive_name);
 
 #endif
 

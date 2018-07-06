@@ -119,7 +119,7 @@ static void guac_rdpdr_device_fs_free_handler(guac_rdpdr_device* device) {
     
 }
 
-void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
+void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr, char* drive_name) {
 
     guac_client* client = rdpdr->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -131,7 +131,7 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr) {
     /* Init device */
     device->rdpdr       = rdpdr;
     device->device_id   = id;
-    device->device_name = "Guacamole Filesystem";
+    device->device_name = drive_name;
     int device_name_len = guac_utf8_strlen(device->device_name);
     device->device_type = RDPDR_DTYP_FILESYSTEM;
     device->dos_name = "GUACFS\0\0";
