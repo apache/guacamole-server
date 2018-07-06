@@ -25,6 +25,7 @@
 #include "rdp_status.h"
 
 #include <freerdp/utils/svc_plugin.h>
+#include <guacamole/unicode.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -100,22 +101,23 @@ void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream*
 void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
         int file_id, int completion_id) {
 
+    int name_len = guac_utf8_strlen(device->device_name);
+    
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
-            completion_id, STATUS_SUCCESS, 16 + GUAC_FILESYSTEM_NAME_LENGTH);
+            completion_id, STATUS_SUCCESS, 16 + name_len);
 
     guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i]",
             __func__, file_id);
 
-    Stream_Write_UINT32(output_stream, 12 + GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT32(output_stream, 12 + name_len);
     Stream_Write_UINT32(output_stream,
               FILE_UNICODE_ON_DISK
             | FILE_CASE_SENSITIVE_SEARCH
             | FILE_CASE_PRESERVED_NAMES); /* FileSystemAttributes */
     Stream_Write_UINT32(output_stream, GUAC_RDP_FS_MAX_PATH ); /* MaximumComponentNameLength */
-    Stream_Write_UINT32(output_stream, GUAC_FILESYSTEM_NAME_LENGTH);
-    Stream_Write(output_stream, GUAC_FILESYSTEM_NAME,
-            GUAC_FILESYSTEM_NAME_LENGTH);
+    Stream_Write_UINT32(output_stream, name_len);
+    Stream_Write(output_stream, device->device_name, name_len);
 
     svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
 
