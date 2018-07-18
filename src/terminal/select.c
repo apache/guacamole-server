@@ -149,12 +149,6 @@ static int guac_terminal_find_char(guac_terminal* terminal,
 
     int start_column = *column;
 
-    /* If requested row is outside the bounds of the current terminal or
-     * scrollback, assume the character is 1 column wide */
-    if (row >= terminal->term_height
-            || row < terminal->term_height - terminal->buffer->length)
-        return 1;
-
     guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
     if (start_column < buffer_row->length) {
 
@@ -290,12 +284,6 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
 
     char buffer[1024];
     int i = start;
-
-    /* If requested row is outside the bounds of the current terminal or
-     * scrollback, do nothing */
-    if (row >= terminal->term_height
-            || row < terminal->term_height - terminal->buffer->length)
-        return;
 
     guac_terminal_buffer_row* buffer_row =
         guac_terminal_buffer_get_row(terminal->buffer, row, 0);

@@ -70,7 +70,10 @@ typedef struct guac_terminal_buffer {
     guac_terminal_buffer_row* rows;
 
     /**
-     * The row to replace when adding a new row to the buffer.
+     * The index of the first row in the buffer (the row which represents row 0
+     * with respect to the terminal display). This is also the index of the row
+     * to replace when insufficient space remains in the buffer to add a new
+     * row.
      */
     int top;
 
