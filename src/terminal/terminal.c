@@ -1551,6 +1551,10 @@ void guac_terminal_flush(guac_terminal* terminal) {
     if (terminal->typescript != NULL)
         guac_terminal_typescript_flush(terminal->typescript);
 
+    /* Flush pipe stream if automatic flushing is enabled */
+    if (terminal->pipe_stream_flags & GUAC_TERMINAL_PIPE_AUTOFLUSH)
+        guac_terminal_pipe_stream_flush(terminal);
+
     /* Flush display state */
     guac_terminal_select_redraw(terminal);
     guac_terminal_commit_cursor(terminal);
@@ -1961,7 +1965,8 @@ int guac_terminal_next_tab(guac_terminal* term, int column) {
     return tabstop;
 }
 
-void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name) {
+void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name,
+        int flags) {
 
     guac_client* client = term->client;
     guac_socket* socket = client->socket;
@@ -1972,13 +1977,14 @@ void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name) {
     /* Allocate and assign new pipe stream */
     term->pipe_stream = guac_client_alloc_stream(client);
     term->pipe_buffer_length = 0;
+    term->pipe_stream_flags = flags;
 
     /* Open new pipe stream */
     guac_protocol_send_pipe(socket, term->pipe_stream, "text/plain", name);
 
     /* Log redirect at debug level */
-    guac_client_log(client, GUAC_LOG_DEBUG,
-            "Terminal output now redirected to pipe '%s'.", name);
+    guac_client_log(client, GUAC_LOG_DEBUG, "Terminal output now directed to "
+            "pipe \"%s\" (flags=%i).", name, flags);
 
 }
 

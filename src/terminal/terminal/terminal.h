@@ -98,6 +98,21 @@
  */
 #define GUAC_TERMINAL_SCHEME_NUMBERED "color"
 
+/**
+ * Flag which specifies that terminal output should be sent to both the current
+ * pipe stream and the user's display. By default, terminal output will be sent
+ * only to the open pipe.
+ */
+#define GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT 1
+
+/**
+ * Flag which forces the open pipe stream to be flushed automatically, whenever
+ * a new frame would be rendered, with only minimal buffering performed between
+ * frames. By default, the contents of the pipe stream will be flushed only
+ * when the buffer is full or the pipe stream is being closed.
+ */
+#define GUAC_TERMINAL_PIPE_AUTOFLUSH 2
+
 typedef struct guac_terminal guac_terminal;
 
 /**
@@ -214,6 +229,16 @@ struct guac_terminal {
      * written to the terminal display, and this value will be NULL.
      */
     guac_stream* pipe_stream;
+
+    /**
+     * Bitwise OR of all flags which apply to the currently-open pipe stream.
+     * If no pipe stream is open, this value has no meaning, and its contents
+     * are undefined.
+     *
+     * @see GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT
+     * @see GUAC_TERMINAL_PIPE_AUTOFLUSH
+     */
+    int pipe_stream_flags;
 
     /**
      * Buffer of data pending write to the pipe_stream. Data within this buffer
@@ -920,8 +945,16 @@ int guac_terminal_next_tab(guac_terminal* term, int column);
  *
  * @param name
  *     The name of the pipe stream to open.
+ *
+ * @param flags
+ *     A bitwise OR of all integer flags which should apply to the new pipe
+ *     stream.
+ *
+ *     @see GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT
+ *     @see GUAC_TERMINAL_PIPE_AUTOFLUSH
  */
-void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name);
+void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name,
+        int flags);
 
 /**
  * Writes a single byte of data to the pipe stream currently open and
