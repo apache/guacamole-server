@@ -59,11 +59,6 @@
 #define GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT 3
 
 /**
- * The maximum number of bytes to allow within the clipboard.
- */
-#define GUAC_TERMINAL_CLIPBOARD_MAX_LENGTH 262144
-
-/**
  * The name of the color scheme having black foreground and white background.
  */
 #define GUAC_TERMINAL_SCHEME_BLACK_WHITE "black-white"
@@ -443,7 +438,10 @@ struct guac_terminal {
     guac_terminal_cursor_type current_cursor;
 
     /**
-     * The current contents of the clipboard.
+     * The current contents of the clipboard. This clipboard instance is
+     * maintained externally (will not be freed when this terminal is freed)
+     * and will be updated both internally by the terminal and externally
+     * through received clipboard instructions.
      */
     guac_common_clipboard* clipboard;
 
@@ -460,6 +458,13 @@ struct guac_terminal {
  *
  * @param client
  *     The client to which the terminal will be rendered.
+ *
+ * @param clipboard
+ *     The guac_common_clipboard which will contain the current clipboard
+ *     state. It is expected that this clipboard instance will be updated
+ *     both internally by the terminal and externally through received
+ *     clipboard instructions. This clipboard will not be automatically
+ *     freed when this terminal is freed.
  *
  * @param font_name
  *     The name of the font to use when rendering glyphs.
@@ -493,6 +498,7 @@ struct guac_terminal {
  *     which renders all text to the given client.
  */
 guac_terminal* guac_terminal_create(guac_client* client,
+        guac_common_clipboard* clipboard,
         const char* font_name, int font_size, int dpi,
         int width, int height, const char* color_scheme,
         const int backspace);
@@ -591,17 +597,6 @@ int guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
  *     represented within the terminal display.
  */
 void guac_terminal_scroll_handler(guac_terminal_scrollbar* scrollbar, int value);
-
-/**
- * Clears the current clipboard contents and sets the mimetype for future
- * contents.
- */
-void guac_terminal_clipboard_reset(guac_terminal* term, const char* mimetype);
-
-/**
- * Appends the given data to the current clipboard.
- */
-void guac_terminal_clipboard_append(guac_terminal* term, const void* data, int length);
 
 /**
  * Replicates the current display state to a user that has just joined the
