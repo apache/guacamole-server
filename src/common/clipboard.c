@@ -24,6 +24,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
+#include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -36,6 +37,8 @@ guac_common_clipboard* guac_common_clipboard_alloc(int size) {
     clipboard->buffer = malloc(size);
     clipboard->length = 0;
     clipboard->available = size;
+
+    pthread_mutex_init(&(clipboard->lock), NULL);
 
     return clipboard;
 
@@ -108,17 +111,36 @@ static void* __send_user_clipboard(guac_user* user, void* data) {
 }
 
 void guac_common_clipboard_send(guac_common_clipboard* clipboard, guac_client* client) {
+
+    pthread_mutex_lock(&(clipboard->lock));
+
     guac_client_log(client, GUAC_LOG_DEBUG, "Broadcasting clipboard to all connected users.");
     guac_client_foreach_user(client, __send_user_clipboard, clipboard);
     guac_client_log(client, GUAC_LOG_DEBUG, "Broadcast of clipboard complete.");
+
+    pthread_mutex_unlock(&(clipboard->lock));
+
 }
 
-void guac_common_clipboard_reset(guac_common_clipboard* clipboard, const char* mimetype) {
+void guac_common_clipboard_reset(guac_common_clipboard* clipboard,
+        const char* mimetype) {
+
+    pthread_mutex_lock(&(clipboard->lock));
+
+    /* Clear clipboard contents */
     clipboard->length = 0;
-    strncpy(clipboard->mimetype, mimetype, sizeof(clipboard->mimetype)-1);
+
+    /* Assign given mimetype */
+    strncpy(clipboard->mimetype, mimetype, sizeof(clipboard->mimetype) - 1);
+    clipboard->mimetype[sizeof(clipboard->mimetype) - 1] = '\0';
+
+    pthread_mutex_unlock(&(clipboard->lock));
+
 }
 
 void guac_common_clipboard_append(guac_common_clipboard* clipboard, const char* data, int length) {
+
+    pthread_mutex_lock(&(clipboard->lock));
 
     /* Truncate data to available length */
     int remaining = clipboard->available - clipboard->length;
@@ -130,6 +152,8 @@ void guac_common_clipboard_append(guac_common_clipboard* clipboard, const char* 
 
     /* Update length */
     clipboard->length += length;
+
+    pthread_mutex_unlock(&(clipboard->lock));
 
 }
 

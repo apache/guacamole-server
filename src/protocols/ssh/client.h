@@ -23,6 +23,11 @@
 #include <guacamole/client.h>
 
 /**
+ * The maximum number of bytes to allow within the clipboard.
+ */
+#define GUAC_SSH_CLIPBOARD_MAX_LENGTH 262144
+
+/**
  * Handler which is invoked when the SSH client needs to be disconnected (if
  * connected) and freed. This can happen if initialization fails, or all users
  * have left the connection.

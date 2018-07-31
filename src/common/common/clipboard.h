@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include <guacamole/client.h>
+#include <pthread.h>
 
 /**
  * The maximum number of bytes to send in an individual blob when
@@ -34,6 +35,13 @@
  * Generic clipboard structure.
  */
 typedef struct guac_common_clipboard {
+
+    /**
+     * Lock which restricts simultaneous access to the clipboard, guaranteeing
+     * ordered modifications to the clipboard and that changes to the clipboard
+     * are not allowed while the clipboard is being broadcast to all users.
+     */
+    pthread_mutex_t lock;
 
     /**
      * The mimetype of the contained clipboard data.

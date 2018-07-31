@@ -30,6 +30,11 @@
 #include <libtelnet.h>
 
 /**
+ * The maximum number of bytes to allow within the clipboard.
+ */
+#define GUAC_TELNET_CLIPBOARD_MAX_LENGTH 262144
+
+/**
  * Free handler. Required by libguac and called when the guac_client is
  * disconnected and must be cleaned up.
  */
