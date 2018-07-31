@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include "clipboard.h"
+#include "common/clipboard.h"
 #include "telnet.h"
 #include "terminal/terminal.h"
 
@@ -32,7 +33,7 @@ int guac_telnet_clipboard_handler(guac_user* user, guac_stream* stream,
     /* Clear clipboard and prepare for new data */
     guac_client* client = user->client;
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_terminal_clipboard_reset(telnet_client->term, mimetype);
+    guac_common_clipboard_reset(telnet_client->clipboard, mimetype);
 
     /* Set handlers for clipboard stream */
     stream->blob_handler = guac_telnet_clipboard_blob_handler;
@@ -47,7 +48,7 @@ int guac_telnet_clipboard_blob_handler(guac_user* user, guac_stream* stream,
     /* Append new data */
     guac_client* client = user->client;
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-    guac_terminal_clipboard_append(telnet_client->term, data, length);
+    guac_common_clipboard_append(telnet_client->clipboard, data, length);
 
     return 0;
 }

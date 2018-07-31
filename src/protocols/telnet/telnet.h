@@ -21,6 +21,7 @@
 #define GUAC_TELNET_H
 
 #include "config.h"
+#include "common/clipboard.h"
 #include "common/recording.h"
 #include "settings.h"
 #include "terminal/terminal.h"
@@ -65,6 +66,11 @@ typedef struct guac_telnet_client {
      * terminal.
      */
     int echo_enabled;
+
+    /**
+     * The current clipboard contents.
+     */
+    guac_common_clipboard* clipboard;
 
     /**
      * The terminal which will render all output from the telnet client.

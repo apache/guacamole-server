@@ -507,6 +507,7 @@ static void guac_terminal_parse_color_scheme(guac_client* client,
 }
 
 guac_terminal* guac_terminal_create(guac_client* client,
+        guac_common_clipboard* clipboard,
         const char* font_name, int font_size, int dpi,
         int width, int height, const char* color_scheme,
         const int backspace) {
@@ -587,6 +588,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init terminal state */
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
+    term->clipboard = clipboard;
 
     /* Set pixel size */
     term->width = width;
@@ -640,9 +642,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->current_cursor = GUAC_TERMINAL_CURSOR_BLANK;
     guac_common_cursor_set_blank(term->cursor);
 
-    /* Allocate clipboard */
-    term->clipboard = guac_common_clipboard_alloc(GUAC_TERMINAL_CLIPBOARD_MAX_LENGTH);
-
     /* Start terminal thread */
     if (pthread_create(&(term->thread), NULL,
                 guac_terminal_thread, (void*) term)) {
@@ -689,9 +688,6 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Free buffer */
     guac_terminal_buffer_free(term->buffer);
-
-    /* Free clipboard */
-    guac_common_clipboard_free(term->clipboard);
 
     /* Free scrollbar */
     guac_terminal_scrollbar_free(term->scrollbar);
@@ -1869,14 +1865,6 @@ void guac_terminal_scroll_handler(guac_terminal_scrollbar* scrollbar, int value)
     /* Update scrollbar value */
     guac_terminal_scrollbar_set_value(scrollbar, value);
 
-}
-
-void guac_terminal_clipboard_reset(guac_terminal* term, const char* mimetype) {
-    guac_common_clipboard_reset(term->clipboard, mimetype);
-}
-
-void guac_terminal_clipboard_append(guac_terminal* term, const void* data, int length) {
-    guac_common_clipboard_append(term->clipboard, data, length);
 }
 
 int guac_terminal_sendf(guac_terminal* term, const char* format, ...) {
