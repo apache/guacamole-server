@@ -70,7 +70,7 @@ static int __write_all(int fd, char* buffer, int length) {
     while (length > 0) {
 
         int written = write(fd, buffer, length);
-        if (written < 0 || errno > 0)
+        if (written < 0 || (written == 0 && errno > 0))
             return -1;
 
         length -= written;
