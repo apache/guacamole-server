@@ -38,6 +38,17 @@
 #include <guacamole/stream.h>
 
 /**
+ * The absolute maximum number of rows to allow within the display.
+ */
+#define GUAC_TERMINAL_MAX_ROWS 1024
+
+/**
+ * The absolute maximum number of columns to allow within the display. This
+ * implicitly limits the number of columns allowed within the buffer.
+ */
+#define GUAC_TERMINAL_MAX_COLUMNS 1024
+
+/**
  * The maximum duration of a single frame, in milliseconds.
  */
 #define GUAC_TERMINAL_FRAME_DURATION 40

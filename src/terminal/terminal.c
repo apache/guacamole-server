@@ -590,13 +590,29 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->default_char = default_char;
     term->clipboard = clipboard;
 
+    /* Calculate character size */
+    int rows    = height / term->display->char_height;
+    int columns = available_width / term->display->char_width;
+
+    /* Keep height within predefined maximum */
+    if (rows > GUAC_TERMINAL_MAX_ROWS) {
+        rows = GUAC_TERMINAL_MAX_ROWS;
+        height = rows * term->display->char_height;
+    }
+
+    /* Keep width within predefined maximum */
+    if (columns > GUAC_TERMINAL_MAX_COLUMNS) {
+        columns = GUAC_TERMINAL_MAX_COLUMNS;
+        available_width = columns * term->display->char_width;
+        width = available_width + GUAC_TERMINAL_SCROLLBAR_WIDTH;
+    }
+
     /* Set pixel size */
     term->width = width;
     term->height = height;
 
-    /* Calculate character size */
-    term->term_width   = available_width / term->display->char_width;
-    term->term_height  = height / term->display->char_height;
+    term->term_width  = columns;
+    term->term_height = rows;
 
     /* Open STDIN pipe */
     if (pipe(term->stdin_pipe_fd)) {
@@ -1507,6 +1523,19 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     /* Calculate dimensions */
     int rows    = height / display->char_height;
     int columns = available_width / display->char_width;
+
+    /* Keep height within predefined maximum */
+    if (rows > GUAC_TERMINAL_MAX_ROWS) {
+        rows = GUAC_TERMINAL_MAX_ROWS;
+        height = rows * display->char_height;
+    }
+
+    /* Keep width within predefined maximum */
+    if (columns > GUAC_TERMINAL_MAX_COLUMNS) {
+        columns = GUAC_TERMINAL_MAX_COLUMNS;
+        available_width = columns * display->char_width;
+        width = available_width + GUAC_TERMINAL_SCROLLBAR_WIDTH;
+    }
 
     /* Set pixel sizes */
     terminal->width = width;
