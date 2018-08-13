@@ -1208,6 +1208,39 @@ int guac_terminal_close_pipe_stream(guac_terminal* term, unsigned char c) {
 
 }
 
+int guac_terminal_set_scrollback(guac_terminal* term, unsigned char c) {
+
+    static char param[16];
+    static int length = 0;
+
+    /* Open pipe on ECMA-48 ST (String Terminator) */
+    if (c == 0x9C || c == 0x5C || c == 0x07) {
+
+        /* End parameter string */
+        param[length++] = '\0';
+        length = 0;
+
+        /* Assign scrollback size */
+        term->requested_scrollback = atoi(param);
+
+        /* Update scrollbar bounds */
+        guac_terminal_scrollbar_set_bounds(term->scrollbar,
+                -guac_terminal_available_scroll(term), 0);
+
+        /* Return to echo mode */
+        term->char_handler = guac_terminal_echo;
+
+    }
+
+    /* Otherwise, store character within parameter */
+    else if (length < sizeof(param) - 1)
+        param[length++] = c;
+
+    return 0;
+
+}
+
+
 int guac_terminal_window_title(guac_terminal* term, unsigned char c) {
 
     static int position = 0;
@@ -1345,6 +1378,10 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
         /* Close pipe stream OSC */
         else if (operation == 482203)
             term->char_handler = guac_terminal_close_pipe_stream;
+
+        /* Set scrollback size OSC */
+        else if (operation == 482204)
+            term->char_handler = guac_terminal_set_scrollback;
 
         /* Set window title OSC */
         else if (operation == 0 || operation == 2)

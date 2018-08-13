@@ -1063,5 +1063,20 @@ void guac_terminal_pipe_stream_close(guac_terminal* term);
 int guac_terminal_create_typescript(guac_terminal* term, const char* path,
         const char* name, int create_path);
 
+/**
+ * Returns the number of rows within the buffer of the given terminal which are
+ * not currently displayed on screen. Adjustments to the desired scrollback
+ * size are taken into account, and rows which are within the buffer but
+ * unavailable due to being outside the desired scrollback range are ignored.
+ *
+ * @param term
+ *     The terminal whose off-screen row count should be determined.
+ *
+ * @return
+ *     The number of rows within the buffer which are not currently displayed
+ *     on screen.
+ */
+int guac_terminal_available_scroll(guac_terminal* term);
+
 #endif
 
