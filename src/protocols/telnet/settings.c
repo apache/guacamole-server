@@ -52,6 +52,7 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "read-only",
     "backspace",
     "terminal-type",
+    "scrollback",
     NULL
 };
 
@@ -190,6 +191,11 @@ enum TELNET_ARGS_IDX {
      */
     IDX_TERMINAL_TYPE,
 
+    /**
+     * The maximum size of the scrollback buffer in rows.
+     */
+    IDX_SCROLLBACK,
+
     TELNET_ARGS_COUNT
 };
 
@@ -273,6 +279,11 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
     settings->read_only =
         guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_READ_ONLY, false);
+
+    /* Read maximum scrollback size */
+    settings->max_scrollback =
+        guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_SCROLLBACK, GUAC_TELNET_DEFAULT_MAX_SCROLLBACK);
 
     /* Read font name */
     settings->font_name =

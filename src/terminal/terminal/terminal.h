@@ -283,6 +283,26 @@ struct guac_terminal {
     int scroll_offset;
 
     /**
+     * The maximum number of rows to allow within the terminal buffer. Note
+     * that while this value is traditionally referred to as the scrollback
+     * size, it actually encompasses both the display and the off-screen
+     * region. The terminal will ensure enough buffer space is allocated for
+     * the on-screen rows, even if this exceeds the defined maximum, however
+     * additional rows for off-screen data will only be available if the
+     * display is smaller than this value.
+     */
+    int max_scrollback;
+
+    /**
+     * The number of rows that the user has requested be avalable within the
+     * terminal buffer. This value may be adjusted by the user while the
+     * terminal is running through console codes, and will adjust the number
+     * of rows available within the terminal buffer, subject to the maximum
+     * defined at terminal creation and stored within max_scrollback.
+     */
+    int requested_scrollback;
+
+    /**
      * The width of the terminal, in pixels.
      */
     int width;
@@ -518,6 +538,16 @@ struct guac_terminal {
  *     clipboard instructions. This clipboard will not be automatically
  *     freed when this terminal is freed.
  *
+ * @param max_scrollback
+ *     The maximum number of rows to allow within the scrollback buffer. The
+ *     user may still alter the size of the scrollback buffer using terminal
+ *     codes, however the size can never exceed the maximum size given here.
+ *     Note that this space is shared with the display, with the scrollable
+ *     area actually only containing the given number of rows less the number
+ *     of rows currently displayed, and sufficient buffer space will always be
+ *     allocated to represent the display area of the terminal regardless of
+ *     the value given here.
+ *
  * @param font_name
  *     The name of the font to use when rendering glyphs.
  *
@@ -550,7 +580,7 @@ struct guac_terminal {
  *     which renders all text to the given client.
  */
 guac_terminal* guac_terminal_create(guac_client* client,
-        guac_common_clipboard* clipboard,
+        guac_common_clipboard* clipboard, int max_scrollback,
         const char* font_name, int font_size, int dpi,
         int width, int height, const char* color_scheme,
         const int backspace);

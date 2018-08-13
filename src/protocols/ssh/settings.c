@@ -59,6 +59,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "server-alive-interval",
     "backspace",
     "terminal-type",
+    "scrollback",
     NULL
 };
 
@@ -232,6 +233,11 @@ enum SSH_ARGS_IDX {
      */
     IDX_TERMINAL_TYPE,
 
+    /**
+     * The maximum size of the scrollback buffer in rows.
+     */
+    IDX_SCROLLBACK,
+
     SSH_ARGS_COUNT
 };
 
@@ -273,6 +279,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->key_passphrase =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_PASSPHRASE, NULL);
+
+    /* Read maximum scrollback size */
+    settings->max_scrollback =
+        guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_SCROLLBACK, GUAC_SSH_DEFAULT_MAX_SCROLLBACK);
 
     /* Read font name */
     settings->font_name =

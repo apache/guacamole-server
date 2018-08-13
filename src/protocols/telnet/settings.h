@@ -68,6 +68,11 @@
 #define GUAC_TELNET_DEFAULT_PASSWORD_REGEX "[Pp]assword:"
 
 /**
+ * The default maximum scrollback size in rows.
+ */
+#define GUAC_TELNET_DEFAULT_MAX_SCROLLBACK 1000
+
+/**
  * Settings for the telnet connection. The values for this structure are parsed
  * from the arguments given during the Guacamole protocol handshake using the
  * guac_telnet_parse_args() function.
@@ -116,6 +121,11 @@ typedef struct guac_telnet_settings {
      * Whether this connection is read-only, and user input should be dropped.
      */
     bool read_only;
+
+    /**
+     * The maximum size of the scrollback buffer in rows.
+     */
+    int max_scrollback;
 
     /**
      * The name of the font to use for display rendering.
