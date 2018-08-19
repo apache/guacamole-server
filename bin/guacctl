@@ -91,6 +91,18 @@ send_close_pipe_stream() {
 }
 
 ##
+## Sends the Guacamole-specific console code for resizing the scrollback
+## buffer.
+##
+## @param ROWS
+##     The number of rows that the scrollback buffer should contain.
+##
+send_resize_scrollback() {
+    ROWS="$1"
+    printf "\033]482204;%s\007" "$ROWS"
+}
+
+##
 ## Prints the given error text to STDERR.
 ##
 ## @param ...
@@ -115,6 +127,8 @@ Usage: guacctl [OPTION] [FILE or NAME]...
                            name.
     -c, --close-pipe       close any existing pipe stream and redirect output
                            back to the terminal emulator.
+    -S, --scrollback       request that the scrollback buffer be limited to the
+                           given number of rows.
 END
 }
 
@@ -243,6 +257,39 @@ close_pipe_stream() {
 
 }
 
+##
+## Resizes the scrollback buffer to the given number of rows.
+##
+## @param ...
+##     The number of rows that should be contained within the scrollback
+##     buffer, as provided to guacctl.
+##
+resize_scrollback() {
+
+    #
+    # Validate arguments
+    #
+
+    if [ $# -lt 1 ]; then
+        error "No row count specified."
+        return;
+    fi
+
+    if [ $# -gt 1 ]; then
+        error "Only one row count may be given."
+        return;
+    fi
+
+    #
+    # Send code for resizing scrollback
+    #
+
+    ROWS="$1"
+    send_resize_scrollback "$ROWS"
+
+}
+
+
 #
 # Get script name
 #
@@ -298,6 +345,15 @@ case "$1" in
     "--close-pipe"|"-c")
         shift
         close_pipe_stream "$@"
+        ;;
+
+    #
+    # Resize scrollback
+    #
+
+    "--scrollback"|"-S")
+        shift
+        resize_scrollback "$@"
         ;;
 
     #

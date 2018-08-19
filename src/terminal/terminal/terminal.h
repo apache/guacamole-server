@@ -38,6 +38,17 @@
 #include <guacamole/stream.h>
 
 /**
+ * The absolute maximum number of rows to allow within the display.
+ */
+#define GUAC_TERMINAL_MAX_ROWS 1024
+
+/**
+ * The absolute maximum number of columns to allow within the display. This
+ * implicitly limits the number of columns allowed within the buffer.
+ */
+#define GUAC_TERMINAL_MAX_COLUMNS 1024
+
+/**
  * The maximum duration of a single frame, in milliseconds.
  */
 #define GUAC_TERMINAL_FRAME_DURATION 40
@@ -270,6 +281,26 @@ struct guac_terminal {
      * scrolling has occurred. Negative values are illegal.
      */
     int scroll_offset;
+
+    /**
+     * The maximum number of rows to allow within the terminal buffer. Note
+     * that while this value is traditionally referred to as the scrollback
+     * size, it actually encompasses both the display and the off-screen
+     * region. The terminal will ensure enough buffer space is allocated for
+     * the on-screen rows, even if this exceeds the defined maximum, however
+     * additional rows for off-screen data will only be available if the
+     * display is smaller than this value.
+     */
+    int max_scrollback;
+
+    /**
+     * The number of rows that the user has requested be avalable within the
+     * terminal buffer. This value may be adjusted by the user while the
+     * terminal is running through console codes, and will adjust the number
+     * of rows available within the terminal buffer, subject to the maximum
+     * defined at terminal creation and stored within max_scrollback.
+     */
+    int requested_scrollback;
 
     /**
      * The width of the terminal, in pixels.
@@ -507,6 +538,16 @@ struct guac_terminal {
  *     clipboard instructions. This clipboard will not be automatically
  *     freed when this terminal is freed.
  *
+ * @param max_scrollback
+ *     The maximum number of rows to allow within the scrollback buffer. The
+ *     user may still alter the size of the scrollback buffer using terminal
+ *     codes, however the size can never exceed the maximum size given here.
+ *     Note that this space is shared with the display, with the scrollable
+ *     area actually only containing the given number of rows less the number
+ *     of rows currently displayed, and sufficient buffer space will always be
+ *     allocated to represent the display area of the terminal regardless of
+ *     the value given here.
+ *
  * @param font_name
  *     The name of the font to use when rendering glyphs.
  *
@@ -539,7 +580,7 @@ struct guac_terminal {
  *     which renders all text to the given client.
  */
 guac_terminal* guac_terminal_create(guac_client* client,
-        guac_common_clipboard* clipboard,
+        guac_common_clipboard* clipboard, int max_scrollback,
         const char* font_name, int font_size, int dpi,
         int width, int height, const char* color_scheme,
         const int backspace);
@@ -1021,6 +1062,21 @@ void guac_terminal_pipe_stream_close(guac_terminal* term);
  */
 int guac_terminal_create_typescript(guac_terminal* term, const char* path,
         const char* name, int create_path);
+
+/**
+ * Returns the number of rows within the buffer of the given terminal which are
+ * not currently displayed on screen. Adjustments to the desired scrollback
+ * size are taken into account, and rows which are within the buffer but
+ * unavailable due to being outside the desired scrollback range are ignored.
+ *
+ * @param term
+ *     The terminal whose off-screen row count should be determined.
+ *
+ * @return
+ *     The number of rows within the buffer which are not currently displayed
+ *     on screen.
+ */
+int guac_terminal_available_scroll(guac_terminal* term);
 
 #endif
 

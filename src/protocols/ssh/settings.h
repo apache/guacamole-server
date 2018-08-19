@@ -59,6 +59,11 @@
 #define GUAC_SSH_DEFAULT_POLL_TIMEOUT 1000
 
 /**
+ * The default maximum scrollback size in rows.
+ */
+#define GUAC_SSH_DEFAULT_MAX_SCROLLBACK 1000
+
+/**
  * Settings for the SSH connection. The values for this structure are parsed
  * from the arguments given during the Guacamole protocol handshake using the
  * guac_ssh_parse_args() function.
@@ -114,6 +119,11 @@ typedef struct guac_ssh_settings {
      * session is desired, this will be NULL.
      */
     char* command;
+
+    /**
+     * The maximum size of the scrollback buffer in rows.
+     */
+    int max_scrollback;
 
     /**
      * The name of the font to use for display rendering.
