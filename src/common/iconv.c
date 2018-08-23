@@ -73,11 +73,19 @@ int guac_iconv(guac_iconv_read* reader, const char** input, int in_remaining,
         /* Read character */
         read_start = *input;
         value = reader(input, in_remaining);
+        /* Stop if not enough bytes to read */
+        if (*input - read_start == 0) {
+            return 1;
+        }
         in_remaining -= *input - read_start;
 
         /* Write character */
         write_start = *output;
         writer(output, out_remaining, value);
+        /* Stop if not enough room */
+        if (*output - write_start == 0 ) {
+            return 1;
+        }
         out_remaining -= *output - write_start;
 
         /* Stop if null terminator reached */
