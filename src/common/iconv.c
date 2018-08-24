@@ -67,26 +67,27 @@ int guac_iconv(guac_iconv_read* reader, const char** input, int in_remaining,
     while (in_remaining > 0 && out_remaining > 0) {
 
         int value;
+        int count;
         const char* read_start;
         char* write_start;
 
         /* Read character */
         read_start = *input;
         value = reader(input, in_remaining);
+        count = *input - read_start;
         /* Stop if not enough bytes to read */
-        if (*input - read_start == 0) {
+        if (count == 0)
             return 1;
-        }
-        in_remaining -= *input - read_start;
+        in_remaining -= count;
 
         /* Write character */
         write_start = *output;
         writer(output, out_remaining, value);
+        count = *output - write_start;
         /* Stop if not enough room */
-        if (*output - write_start == 0 ) {
+        if (count == 0)
             return 1;
-        }
-        out_remaining -= *output - write_start;
+        out_remaining -= count;
 
         /* Stop if null terminator reached */
         if (value == 0)
