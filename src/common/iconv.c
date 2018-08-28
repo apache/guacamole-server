@@ -67,31 +67,18 @@ int guac_iconv(guac_iconv_read* reader, const char** input, int in_remaining,
     while (in_remaining > 0 && out_remaining > 0) {
 
         int value;
-        int count;
         const char* read_start;
         char* write_start;
 
         /* Read character */
         read_start = *input;
         value = reader(input, in_remaining);
-        count = *input - read_start;
-
-        /* Stop if read zero byte */
-        if (count == 0)
-            break;
-
-        in_remaining -= count;
+        in_remaining -= *input - read_start;
 
         /* Write character */
         write_start = *output;
         writer(output, out_remaining, value);
-        count = *output - write_start;
-
-        /* Stop if write zero byte */
-        if (count == 0)
-            break;
-
-        out_remaining -= count;
+        out_remaining -= *output - write_start;
 
         /* Stop if null terminator reached */
         if (value == 0)
@@ -106,7 +93,7 @@ int guac_iconv(guac_iconv_read* reader, const char** input, int in_remaining,
 
 int GUAC_READ_UTF8(const char** input, int remaining) {
 
-    int value;
+    int value = 0;
 
     *input += guac_utf8_read(*input, remaining, &value);
     return value;
