@@ -596,6 +596,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
         available_width = 0;
 
     guac_terminal* term = malloc(sizeof(guac_terminal));
+    term->started = false;
     term->client = client;
     term->upload_path_handler = NULL;
     term->file_download_handler = NULL;
@@ -721,6 +722,11 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     return term;
 
+}
+
+void guac_terminal_start(guac_terminal* term) {
+    term->started = true;
+    guac_terminal_notify(term);
 }
 
 void guac_terminal_stop(guac_terminal* term) {
@@ -851,11 +857,13 @@ wait_complete:
 
 int guac_terminal_render_frame(guac_terminal* terminal) {
 
+    guac_client* client = terminal->client;
+
     int wait_result;
 
     /* Wait for data to be available */
     wait_result = guac_terminal_wait(terminal, 1000);
-    if (wait_result) {
+    if (wait_result || !terminal->started) {
 
         guac_timestamp frame_start = guac_timestamp_current();
 
@@ -867,13 +875,14 @@ int guac_terminal_render_frame(guac_terminal* terminal) {
                                 - frame_end;
 
             /* Wait again if frame remaining */
-            if (frame_remaining > 0)
+            if (frame_remaining > 0 || !terminal->started)
                 wait_result = guac_terminal_wait(terminal,
                         GUAC_TERMINAL_FRAME_TIMEOUT);
             else
                 break;
 
-        } while (wait_result > 0);
+        } while (client->state == GUAC_CLIENT_RUNNING
+                && (wait_result > 0 || !terminal->started));
 
         /* Flush terminal */
         guac_terminal_lock(terminal);
@@ -1672,6 +1681,13 @@ int guac_terminal_send_string(guac_terminal* term, const char* data) {
 
 static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
+    /* Ignore user input if terminal is not started */
+    if (!term->started) {
+        guac_client_log(term->client, GUAC_LOG_DEBUG, "Ignoring user input "
+                "while terminal has not yet started.");
+        return 0;
+    }
+
     /* Hide mouse cursor if not already hidden */
     if (term->current_cursor != GUAC_TERMINAL_CURSOR_BLANK) {
         term->current_cursor = GUAC_TERMINAL_CURSOR_BLANK;
@@ -1844,6 +1860,13 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
 static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         int x, int y, int mask) {
+
+    /* Ignore user input if terminal is not started */
+    if (!term->started) {
+        guac_client_log(term->client, GUAC_LOG_DEBUG, "Ignoring user input "
+                "while terminal has not yet started.");
+        return 0;
+    }
 
     /* Determine which buttons were just released and pressed */
     int released_mask =  term->mouse_mask & ~mask;

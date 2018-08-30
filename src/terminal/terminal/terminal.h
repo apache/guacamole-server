@@ -172,6 +172,16 @@ struct guac_terminal {
     guac_client* client;
 
     /**
+     * Whether user input should be handled and this terminal should render
+     * frames. Initially, this will be false, user input will be ignored, and
+     * rendering of frames will be withheld until guac_terminal_start() has
+     * been invoked. The data within frames will still be rendered, and text
+     * data received will still be handled, however actual frame boundaries
+     * will not be sent.
+     */
+    bool started;
+
+    /**
      * The terminal render thread.
      */
     pthread_t thread;
@@ -526,7 +536,13 @@ struct guac_terminal {
 
 /**
  * Creates a new guac_terminal, having the given width and height, and
- * rendering to the given client.
+ * rendering to the given client. As failover mechanisms and the Guacamole
+ * client implementation typically use the receipt of a "sync" message to
+ * denote successful connection, rendering of frames (sending of "sync") will
+ * be withheld until guac_terminal_start() is called, and user input will be
+ * ignored. The guac_terminal_start() function should be invoked only after
+ * either the underlying connection has truly succeeded, or until visible
+ * terminal output or user input is required.
  *
  * @param client
  *     The client to which the terminal will be rendered.
@@ -603,6 +619,17 @@ int guac_terminal_render_frame(guac_terminal* terminal);
  * yet available, this function will block.
  */
 int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size);
+
+/**
+ * Notifies the terminal that rendering should begin and that user input should
+ * now be accepted. This function must be invoked following terminal creation
+ * for the end of frames to be signalled with "sync" messages. Until this
+ * function is invoked, "sync" messages will be withheld.
+ *
+ * @param term
+ *     The terminal to start.
+ */
+void guac_terminal_start(guac_terminal* term);
 
 /**
  * Manually stop the terminal to forcibly unblock any pending reads/writes,
