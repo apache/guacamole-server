@@ -652,7 +652,9 @@ void guac_terminal_notify(guac_terminal* terminal);
 /**
  * Reads a single line from this terminal's STDIN, storing the result in a
  * newly-allocated string. Input is retrieved in the same manner as
- * guac_terminal_read_stdin() and the same restrictions apply.
+ * guac_terminal_read_stdin() and the same restrictions apply. As reading input
+ * naturally requires user interaction, this function will implicitly invoke
+ * guac_terminal_start().
  *
  * @param terminal
  *     The terminal to which the provided title should be output, and from

@@ -943,6 +943,9 @@ char* guac_terminal_prompt(guac_terminal* terminal, const char* title,
     int pos;
     char in_byte;
 
+    /* Prompting implicitly requires user input */
+    guac_terminal_start(terminal);
+
     /* Print title */
     guac_terminal_printf(terminal, "%s", title);
 
