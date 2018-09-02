@@ -103,6 +103,22 @@ static int guac_terminal_input_stream_end_handler(guac_user* user,
 static int __guac_terminal_send_stream(guac_terminal* term, guac_user* user,
         guac_stream* stream) {
 
+    /* Deny redirecting STDIN if terminal is not started */
+    if (!term->started) {
+
+        guac_user_log(user, GUAC_LOG_DEBUG, "Attempt to direct the contents "
+                "of an inbound stream to STDIN denied. The terminal is not "
+                "yet ready for input.");
+
+        guac_protocol_send_ack(user->socket, stream,
+                "Terminal not yet started.",
+                GUAC_PROTOCOL_STATUS_RESOURCE_CONFLICT);
+
+        guac_socket_flush(user->socket);
+        return 1;
+
+    }
+
     /* If a stream is already being used for STDIN, deny creation of
      * further streams */
     if (term->input_stream != NULL) {
