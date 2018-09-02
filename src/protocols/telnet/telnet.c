@@ -31,6 +31,7 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -84,10 +85,32 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
 /**
  * Searches for a line matching the stored password regex, appending the given
  * buffer to the internal pattern matching buffer. The internal pattern match
- * buffer is cleared whenever a newline is read. Returns TRUE if a match is found and the
- * value is sent.
+ * buffer is cleared whenever a newline is read. Returns true if a match is
+ * found and the value is sent. An enter keypress is automatically sent after
+ * the value is sent.
+ *
+ * @param client
+ *     The guac_client associated with the telnet session.
+ *
+ * @param regex
+ *     The regex to search for within the output of the telnet session
+ *     associated with the given client.
+ *
+ * @param value
+ *     The string value to send once a match is found, or NULL if no value
+ *     should be sent.
+ *
+ * @param buffer
+ *     The buffer of received data to search through.
+ *
+ * @param size
+ *     The size of the given buffer, in bytes.
+ *
+ * @return
+ *     true if a match is found, false otherwise.
  */
-static bool __guac_telnet_regex_search(guac_client* client, regex_t* regex, char* value, const char* buffer, int size) {
+static bool __guac_telnet_regex_search(guac_client* client, regex_t* regex,
+        char* value, const char* buffer, int size) {
 
     static char line_buffer[1024] = {0};
     static int length = 0;
@@ -123,16 +146,17 @@ static bool __guac_telnet_regex_search(guac_client* client, regex_t* regex, char
     if (regexec(regex, line_buffer, 0, NULL, 0) == 0) {
 
         /* Send value */
-        guac_terminal_send_string(telnet_client->term, value);
-        guac_terminal_send_key(telnet_client->term, 0xFF0D, 1);
-        guac_terminal_send_key(telnet_client->term, 0xFF0D, 0);
+        if (value != NULL) {
+            guac_terminal_send_string(telnet_client->term, value);
+            guac_terminal_send_string(telnet_client->term, "\x0D");
+        }
 
         /* Stop searching for prompt */
-        return TRUE;
+        return true;
 
     }
 
-    return FALSE;
+    return false;
 }
 
 /**
@@ -158,9 +182,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
                             settings->username_regex, settings->username,
                             event->data.buffer, event->data.size)) {
                     guac_client_log(client, GUAC_LOG_DEBUG, "Username sent");
-                    regfree(settings->username_regex);
-                    free(settings->username_regex);
-                    settings->username_regex = NULL;
+                    guac_telnet_regex_free(&settings->username_regex);
                 }
             }
 
@@ -172,18 +194,52 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
 
                     guac_client_log(client, GUAC_LOG_DEBUG, "Password sent");
 
-                    /* Do not continue searching for username once password is sent */
-                    if (settings->username_regex != NULL) {
-                        regfree(settings->username_regex);
-                        free(settings->username_regex);
-                        settings->username_regex = NULL;
-                    }
+                    /* Do not continue searching for username/password once password is sent */
+                    guac_telnet_regex_free(&settings->username_regex);
+                    guac_telnet_regex_free(&settings->password_regex);
 
-                    regfree(settings->password_regex);
-                    free(settings->password_regex);
-                    settings->password_regex = NULL;
                 }
             }
+
+            /* Continue search for login success */
+            if (settings->login_success_regex != NULL) {
+                if (__guac_telnet_regex_search(client,
+                            settings->login_success_regex, NULL,
+                            event->data.buffer, event->data.size)) {
+
+                    /* Allow terminal to render now that login has been deemed successful */
+                    guac_client_log(client, GUAC_LOG_DEBUG, "Login successful");
+                    guac_terminal_start(telnet_client->term);
+
+                    /* Stop all searches */
+                    guac_telnet_regex_free(&settings->username_regex);
+                    guac_telnet_regex_free(&settings->password_regex);
+                    guac_telnet_regex_free(&settings->login_success_regex);
+                    guac_telnet_regex_free(&settings->login_failure_regex);
+
+                }
+            }
+
+            /* Continue search for login failure */
+            if (settings->login_failure_regex != NULL) {
+                if (__guac_telnet_regex_search(client,
+                            settings->login_failure_regex, NULL,
+                            event->data.buffer, event->data.size)) {
+
+                    /* Advise that login has failed and connection should be closed */
+                    guac_client_abort(client,
+                            GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                            "Login failed");
+
+                    /* Stop all searches */
+                    guac_telnet_regex_free(&settings->username_regex);
+                    guac_telnet_regex_free(&settings->password_regex);
+                    guac_telnet_regex_free(&settings->login_success_regex);
+                    guac_telnet_regex_free(&settings->login_failure_regex);
+
+                }
+            }
+
             break;
 
         /* Data destined for remote end */
@@ -507,6 +563,12 @@ void* guac_telnet_client_thread(void* data) {
 
     /* Logged in */
     guac_client_log(client, GUAC_LOG_INFO, "Telnet connection successful.");
+
+    /* Allow terminal to render if login success/failure detection is not
+     * enabled */
+    if (settings->login_success_regex == NULL
+            && settings->login_failure_regex == NULL)
+        guac_terminal_start(telnet_client->term);
 
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, __guac_telnet_input_thread, (void*) client)) {
