@@ -83,64 +83,30 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
 }
 
 /**
- * Searches for a line matching the stored password regex, appending the given
- * buffer to the internal pattern matching buffer. The internal pattern match
- * buffer is cleared whenever a newline is read. Returns true if a match is
- * found and the value is sent. An enter keypress is automatically sent after
- * the value is sent.
+ * Matches the given line against the given regex, returning true and sending
+ * the given value if a match is found. An enter keypress is automatically
+ * sent after the value is sent.
  *
  * @param client
  *     The guac_client associated with the telnet session.
  *
  * @param regex
- *     The regex to search for within the output of the telnet session
- *     associated with the given client.
+ *     The regex to search for within the given line buffer.
  *
  * @param value
- *     The string value to send once a match is found, or NULL if no value
- *     should be sent.
+ *     The string value to send through STDIN of the telnet session if a
+ *     match is found, or NULL if no value should be sent.
  *
- * @param buffer
- *     The buffer of received data to search through.
- *
- * @param size
- *     The size of the given buffer, in bytes.
+ * @param line_buffer
+ *     The line of character data to test.
  *
  * @return
  *     true if a match is found, false otherwise.
  */
-static bool __guac_telnet_regex_search(guac_client* client, regex_t* regex,
-        char* value, const char* buffer, int size) {
-
-    static char line_buffer[1024] = {0};
-    static int length = 0;
+static bool guac_telnet_regex_exec(guac_client* client, regex_t* regex,
+        const char* value, const char* line_buffer) {
 
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-
-    int i;
-    const char* current;
-
-    /* Ensure line buffer contains only the most recent line */
-    current = buffer;
-    for (i = 0; i < size; i++) {
-
-        /* Reset line buffer and shift input buffer for each newline */
-        if (*(current++) == '\n') {
-            length = 0;
-            buffer += i;
-            size -= i;
-            i = 0;
-        }
-    }
-
-    /* Truncate if necessary */
-    if (size + length + 1 > sizeof(line_buffer))
-        size = sizeof(line_buffer) - length - 1;
-
-    /* Append to line */
-    memcpy(&(line_buffer[length]), buffer, size);
-    length += size;
-    line_buffer[length] = '\0';
 
     /* Send value upon match */
     if (regexec(regex, line_buffer, 0, NULL, 0) == 0) {
@@ -157,6 +123,138 @@ static bool __guac_telnet_regex_search(guac_client* client, regex_t* regex,
     }
 
     return false;
+
+}
+
+/**
+ * Matches the given line against the various stored regexes, automatically
+ * sending the configured username, password, or reporting login
+ * success/failure depending on context. If no search is in progress, either
+ * because no regexes have been defined or because all applicable searches have
+ * completed, this function has no effect.
+ *
+ * @param client
+ *     The guac_client associated with the telnet session.
+ *
+ * @param line_buffer
+ *     The line of character data to test.
+ */
+static void guac_telnet_search_line(guac_client* client, const char* line_buffer) {
+
+    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+    guac_telnet_settings* settings = telnet_client->settings;
+
+    /* Continue search for username prompt */
+    if (settings->username_regex != NULL) {
+        if (guac_telnet_regex_exec(client, settings->username_regex,
+                    settings->username, line_buffer)) {
+            guac_client_log(client, GUAC_LOG_DEBUG, "Username sent");
+            guac_telnet_regex_free(&settings->username_regex);
+        }
+    }
+
+    /* Continue search for password prompt */
+    if (settings->password_regex != NULL) {
+        if (guac_telnet_regex_exec(client, settings->password_regex,
+                    settings->password, line_buffer)) {
+
+            guac_client_log(client, GUAC_LOG_DEBUG, "Password sent");
+
+            /* Do not continue searching for username/password once password is sent */
+            guac_telnet_regex_free(&settings->username_regex);
+            guac_telnet_regex_free(&settings->password_regex);
+
+        }
+    }
+
+    /* Continue search for login success */
+    if (settings->login_success_regex != NULL) {
+        if (guac_telnet_regex_exec(client, settings->login_success_regex,
+                    NULL, line_buffer)) {
+
+            /* Allow terminal to render now that login has been deemed successful */
+            guac_client_log(client, GUAC_LOG_DEBUG, "Login successful");
+            guac_terminal_start(telnet_client->term);
+
+            /* Stop all searches */
+            guac_telnet_regex_free(&settings->username_regex);
+            guac_telnet_regex_free(&settings->password_regex);
+            guac_telnet_regex_free(&settings->login_success_regex);
+            guac_telnet_regex_free(&settings->login_failure_regex);
+
+        }
+    }
+
+    /* Continue search for login failure */
+    if (settings->login_failure_regex != NULL) {
+        if (guac_telnet_regex_exec(client, settings->login_failure_regex,
+                    NULL, line_buffer)) {
+
+            /* Advise that login has failed and connection should be closed */
+            guac_client_abort(client,
+                    GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                    "Login failed");
+
+            /* Stop all searches */
+            guac_telnet_regex_free(&settings->username_regex);
+            guac_telnet_regex_free(&settings->password_regex);
+            guac_telnet_regex_free(&settings->login_success_regex);
+            guac_telnet_regex_free(&settings->login_failure_regex);
+
+        }
+    }
+
+}
+
+/**
+ * Searches for a line matching the various stored regexes, automatically
+ * sending the configured username, password, or reporting login
+ * success/failure depending on context. If no search is in progress, either
+ * because no regexes have been defined or because all applicable searches
+ * have completed, this function has no effect.
+ *
+ * @param client
+ *     The guac_client associated with the telnet session.
+ *
+ * @param buffer
+ *     The buffer of received data to search through.
+ *
+ * @param size
+ *     The size of the given buffer, in bytes.
+ */
+static void guac_telnet_search(guac_client* client, const char* buffer, int size) {
+
+    static char line_buffer[1024] = {0};
+    static int length = 0;
+
+    /* Append all characters in buffer to current line */
+    const char* current = buffer;
+    for (int i = 0; i < size; i++) {
+
+        char c = *(current++);
+
+        /* Attempt pattern match and clear buffer upon reading newline */
+        if (c == '\n') {
+            if (length > 0) {
+                line_buffer[length] = '\0';
+                guac_telnet_search_line(client, line_buffer);
+                length = 0;
+            }
+        }
+
+        /* Append all non-newline characters to line buffer as long as space
+         * remains */
+        else if (length < sizeof(line_buffer) - 1)
+            line_buffer[length++] = c;
+
+    }
+
+    /* Attempt pattern match if an unfinished line remains (may be a prompt) */
+    if (length > 0) {
+        line_buffer[length] = '\0';
+        guac_telnet_search_line(client, line_buffer);
+    }
+
 }
 
 /**
@@ -175,71 +273,7 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
         /* Terminal output received */
         case TELNET_EV_DATA:
             guac_terminal_write(telnet_client->term, event->data.buffer, event->data.size);
-
-            /* Continue search for username prompt */
-            if (settings->username_regex != NULL) {
-                if (__guac_telnet_regex_search(client,
-                            settings->username_regex, settings->username,
-                            event->data.buffer, event->data.size)) {
-                    guac_client_log(client, GUAC_LOG_DEBUG, "Username sent");
-                    guac_telnet_regex_free(&settings->username_regex);
-                }
-            }
-
-            /* Continue search for password prompt */
-            if (settings->password_regex != NULL) {
-                if (__guac_telnet_regex_search(client,
-                            settings->password_regex, settings->password,
-                            event->data.buffer, event->data.size)) {
-
-                    guac_client_log(client, GUAC_LOG_DEBUG, "Password sent");
-
-                    /* Do not continue searching for username/password once password is sent */
-                    guac_telnet_regex_free(&settings->username_regex);
-                    guac_telnet_regex_free(&settings->password_regex);
-
-                }
-            }
-
-            /* Continue search for login success */
-            if (settings->login_success_regex != NULL) {
-                if (__guac_telnet_regex_search(client,
-                            settings->login_success_regex, NULL,
-                            event->data.buffer, event->data.size)) {
-
-                    /* Allow terminal to render now that login has been deemed successful */
-                    guac_client_log(client, GUAC_LOG_DEBUG, "Login successful");
-                    guac_terminal_start(telnet_client->term);
-
-                    /* Stop all searches */
-                    guac_telnet_regex_free(&settings->username_regex);
-                    guac_telnet_regex_free(&settings->password_regex);
-                    guac_telnet_regex_free(&settings->login_success_regex);
-                    guac_telnet_regex_free(&settings->login_failure_regex);
-
-                }
-            }
-
-            /* Continue search for login failure */
-            if (settings->login_failure_regex != NULL) {
-                if (__guac_telnet_regex_search(client,
-                            settings->login_failure_regex, NULL,
-                            event->data.buffer, event->data.size)) {
-
-                    /* Advise that login has failed and connection should be closed */
-                    guac_client_abort(client,
-                            GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                            "Login failed");
-
-                    /* Stop all searches */
-                    guac_telnet_regex_free(&settings->username_regex);
-                    guac_telnet_regex_free(&settings->password_regex);
-                    guac_telnet_regex_free(&settings->login_success_regex);
-                    guac_telnet_regex_free(&settings->login_failure_regex);
-
-                }
-            }
-
+            guac_telnet_search(client, event->data.buffer, event->data.size);
             break;
 
         /* Data destined for remote end */
