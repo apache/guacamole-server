@@ -33,7 +33,38 @@
 
 #include <guacamole/client.h>
 
+/**
+ * Static reference to the guac_client associated with the active Kubernetes
+ * connection. As guacd guarantees that each main client connection is
+ * isolated within its own process, this is safe.
+ */
+static guac_client* guac_kubernetes_lws_log_client = NULL;
+
+/**
+ * Logging callback invoked by libwebsockets to log a single line of logging
+ * output. As libwebsockets messages are all generally low-level, the log
+ * level provided by libwebsockets is ignored here, with all messages logged
+ * instead at guacd's debug level.
+ *
+ * @param level
+ *     The libwebsockets log level associated with the log message. This value
+ *     is ignored by this implementation of the logging callback.
+ *
+ * @param line
+ *     The line of logging output to log.
+ */
+static void guac_kubernetes_log(int level, const char* line) {
+    if (guac_kubernetes_lws_log_client != NULL)
+        guac_client_log(guac_kubernetes_lws_log_client, GUAC_LOG_DEBUG,
+                "libwebsockets: %s", line);
+}
+
 int guac_client_init(guac_client* client) {
+
+    /* Redirect libwebsockets logging */
+    guac_kubernetes_lws_log_client = client;
+    lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO,
+            guac_kubernetes_log);
 
     /* Set client args */
     client->args = GUAC_KUBERNETES_CLIENT_ARGS;
