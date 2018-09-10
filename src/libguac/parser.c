@@ -222,7 +222,11 @@ int guac_parser_read(guac_parser* parser, guac_socket* socket, int usec_timeout)
             retval = guac_socket_select(socket, usec_timeout);
             if (retval <= 0)
                 return -1;
-           
+            
+            /* Reset pointers if instruction buf len is less than max instruction len */
+            if (buffer_end - unparsed_end < GUAC_INSTRUCTION_MAX_LENGTH)
+                unparsed_end = unparsed_start = parser->__instructionbuf;
+            
             /* Attempt to fill buffer */
             retval = guac_socket_read(socket, unparsed_end,
                     buffer_end - unparsed_end);
