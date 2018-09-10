@@ -68,7 +68,7 @@ enum KUBERNETES_ARGS_IDX {
     IDX_PORT,
 
     /**
-     * Whether SSL/TLS should be used. SSL is used by default.
+     * Whether SSL/TLS should be used. If omitted, SSL/TLS will not be used.
      */
     IDX_USE_SSL,
 
@@ -223,7 +223,7 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     /* Parse whether SSL should be used */
     settings->use_ssl =
         guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_USE_SSL, true);
+                IDX_USE_SSL, false);
 
     /* Read SSL/TLS connection details only if enabled */
     if (settings->use_ssl) {

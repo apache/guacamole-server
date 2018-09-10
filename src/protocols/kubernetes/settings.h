@@ -42,7 +42,7 @@
  * The port to connect to when initiating any Kubernetes connection, if no
  * other port is specified.
  */
-#define GUAC_KUBERNETES_DEFAULT_PORT 8443
+#define GUAC_KUBERNETES_DEFAULT_PORT 8080
 
 /**
  * The filename to use for the typescript, if not specified.
