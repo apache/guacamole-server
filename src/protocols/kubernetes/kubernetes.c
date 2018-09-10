@@ -206,6 +206,8 @@ static void* guac_kubernetes_input_thread(void* data) {
 
 void* guac_kubernetes_client_thread(void* data) {
 
+    struct lws_context* context = NULL;
+
     guac_client* client = (guac_client*) data;
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
@@ -236,7 +238,7 @@ void* guac_kubernetes_client_thread(void* data) {
     if (kubernetes_client->term == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Terminal initialization failed");
-        return NULL;
+        goto fail;
     }
 
     /* Set up typescript, if requested */
@@ -295,11 +297,11 @@ void* guac_kubernetes_client_thread(void* data) {
     }
 
     /* Create libwebsockets context */
-    struct lws_context* context = lws_create_context(&context_info);
+    context = lws_create_context(&context_info);
     if (!context) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Initialization of libwebsockets failed");
-        return NULL;
+        goto fail;
     }
 
     /* FIXME: Generate path dynamically */
@@ -311,13 +313,16 @@ void* guac_kubernetes_client_thread(void* data) {
     if (kubernetes_client->wsi == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Connection via libwebsockets failed");
-        return NULL;
+        goto fail;
     }
+
+    /* Init outbound message buffer */
+    pthread_mutex_init(&(kubernetes_client->outbound_message_lock), NULL);
 
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, guac_kubernetes_input_thread, (void*) client)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to start input thread");
-        return NULL;
+        goto fail;
     }
 
     /* As long as client is connected, continue polling libwebsockets */
@@ -330,11 +335,23 @@ void* guac_kubernetes_client_thread(void* data) {
     }
 
     /* Kill client and Wait for input thread to die */
+    guac_terminal_stop(kubernetes_client->term);
     guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
-    /* All done with libwebsockets */
-    lws_context_destroy(context);
+fail:
+
+    /* Kill and free terminal, if allocated */
+    if (kubernetes_client->term != NULL)
+        guac_terminal_free(kubernetes_client->term);
+
+    /* Clean up recording, if in progress */
+    if (kubernetes_client->recording != NULL)
+        guac_common_recording_free(kubernetes_client->recording);
+
+    /* Free WebSocket context if successfully allocated */
+    if (context != NULL)
+        lws_context_destroy(context);
 
     guac_client_log(client, GUAC_LOG_INFO, "Kubernetes connection ended.");
     return NULL;

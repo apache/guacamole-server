@@ -56,6 +56,37 @@
 #define GUAC_KUBERNETES_CHANNEL_RESIZE 4
 
 /**
+ * The maximum number of messages to allow within the outbound message buffer.
+ * If messages are sent despite the buffer being full, those messages will be
+ * dropped.
+ */
+#define GUAC_KUBERNETES_MAX_OUTBOUND_MESSAGES 8
+
+/**
+ * An outbound message to be received by Kubernetes over WebSocket.
+ */
+typedef struct guac_kubernetes_message {
+
+    /**
+     * The index of the channel receiving the data, such as
+     * GUAC_KUBERNETES_CHANNEL_STDIN.
+     */
+    uint8_t channel;
+
+    /**
+     * The data that should be sent to Kubernetes (along with the channel
+     * index).
+     */
+    char data[1024];
+
+    /**
+     * The length of the data to be sent, excluding the channel index.
+     */
+    int length;
+
+} guac_kubernetes_message;
+
+/**
  * Kubernetes-specific client data.
  */
 typedef struct guac_kubernetes_client {
@@ -69,6 +100,33 @@ typedef struct guac_kubernetes_client {
      * The connected WebSocket.
      */
     struct lws* wsi;
+
+    /**
+     * Outbound message ring buffer for outbound WebSocket messages. As
+     * libwebsockets uses an event loop for all operations, outbound messages
+     * may be sent only in context of a particular event received via a
+     * callback. Until that event is received, pending data must accumulate in
+     * a buffer.
+     */
+    guac_kubernetes_message outbound_messages[GUAC_KUBERNETES_MAX_OUTBOUND_MESSAGES];
+
+    /**
+     * The number of messages currently waiting in the outbound message
+     * buffer.
+     */
+    int outbound_messages_waiting;
+
+    /**
+     * The index of the oldest entry in the outbound message buffer. Newer
+     * messages follow this entry.
+     */
+    int outbound_messages_top;
+
+    /**
+     * Lock which is acquired when the outbound message buffer is being read
+     * or manipulated.
+     */
+    pthread_mutex_t outbound_message_lock;
 
     /**
      * The Kubernetes client thread.

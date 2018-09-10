@@ -67,17 +67,8 @@ int guac_kubernetes_client_free_handler(guac_client* client) {
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
 
-    /* Clean up recording, if in progress */
-    if (kubernetes_client->recording != NULL)
-        guac_common_recording_free(kubernetes_client->recording);
-
-    /* Kill terminal */
-    guac_terminal_free(kubernetes_client->term);
-
-    /* TODO: Wait for and free WebSocket session, if connected */
-    /*if (kubernetes_client->websocket != NULL) {
-        pthread_join(kubernetes_client->client_thread, NULL);
-    }*/
+    /* Wait client thread to terminate */
+    pthread_join(kubernetes_client->client_thread, NULL);
 
     /* Free settings */
     if (kubernetes_client->settings != NULL)
