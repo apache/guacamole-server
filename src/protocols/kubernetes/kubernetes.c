@@ -38,10 +38,44 @@
 #include <unistd.h>
 
 /**
- * The name of the WebSocket protocol specific to Kubernetes which should be
- * sent to the Kubernetes server when attaching to a pod.
+ * Handles data received from Kubernetes over WebSocket, decoding the channel
+ * index of the received data and forwarding that data accordingly.
+ *
+ * @param client
+ *     The guac_client associated with the connection to Kubernetes.
+ *
+ * @param buffer
+ *     The data received from Kubernetes.
+ *
+ * @param length
+ *     The size of the data received from Kubernetes, in bytes.
  */
-#define GUAC_KUBERNETES_LWS_PROTOCOL "v4.channel.k8s.io"
+static void guac_kubernetes_receive_data(guac_client* client,
+        const char* buffer, size_t length) {
+
+    guac_kubernetes_client* kubernetes_client =
+        (guac_kubernetes_client*) client->data;
+
+    /* Strip channel index from beginning of buffer */
+    int channel = *(buffer++);
+    length--;
+
+    switch (channel) {
+
+        /* Write STDOUT / STDERR directly to terminal as output */
+        case GUAC_KUBERNETES_CHANNEL_STDOUT:
+        case GUAC_KUBERNETES_CHANNEL_STDERR:
+            guac_terminal_write(kubernetes_client->term, buffer, length);
+            break;
+
+        /* Ignore data on other channels */
+        default:
+            guac_client_log(client, GUAC_LOG_DEBUG, "Received %i bytes along "
+                    "channel %i.", length, channel);
+
+    }
+
+}
 
 /**
  * Callback invoked by libwebsockets for events related to a WebSocket being
@@ -71,16 +105,15 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
         enum lws_callback_reasons reason, void* user,
         void* in, size_t length) {
 
+    /* Request connection closure if client is stopped (note that the user
+     * pointer passed by libwebsockets may be NULL for some events) */
     guac_client* client = (guac_client*) user;
-    /*guac_kubernetes_client* kubernetes_client =
-        (guac_kubernetes_client*) client->data;*/
-
-    /* Request connection closure if client is stopped */
-    if (client->state != GUAC_CLIENT_RUNNING)
+    if (client != NULL && client->state != GUAC_CLIENT_RUNNING)
         return -1;
 
     switch (reason) {
 
+        /* Failed to connect */
         case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
                     "Error connecting to Kubernetes server: %s",
@@ -88,23 +121,29 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
                     "available)");
             break;
 
-        /* Logged in */
+        /* Connected / logged in */
         case LWS_CALLBACK_CLIENT_ESTABLISHED:
             guac_client_log(client, GUAC_LOG_INFO,
                     "Kubernetes connection successful.");
             break;
 
+        /* Data received via WebSocket */
         case LWS_CALLBACK_CLIENT_RECEIVE:
-            guac_client_log(client, GUAC_LOG_DEBUG, "Received: %s",
-                    (const char*) in);
+            guac_kubernetes_receive_data(client, (const char*) in, length);
             break;
 
         /* TODO: Only send data here. Request callback for writing via lws_callback_on_writable(some struct lws*) */
         case LWS_CALLBACK_CLIENT_WRITEABLE:
             break;
 
+        /* TODO: Add configure test */
+#ifdef HAVE_LWS_CALLBACK_CLIENT_CLOSED
+        /* Connection closed (client-specific) */
+        case LWS_CALLBACK_CLIENT_CLOSED:
+#endif
+
+        /* Connection closed */
         case LWS_CALLBACK_CLOSED:
-        /* TODO: case LWS_CALLBACK_CLIENT_CLOSED: <-- Needs test and #ifdef */
             guac_client_stop(client);
             guac_client_log(client, GUAC_LOG_DEBUG, "WebSocket connection to "
                     "Kubernetes server closed.");
@@ -112,8 +151,6 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
 
         /* No other event types are applicable */
         default:
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unexpected libwebsockets "
-                    "reason: %i", reason);
             break;
 
     }
@@ -213,7 +250,10 @@ void* guac_kubernetes_client_thread(void* data) {
     /* Init libwebsockets context creation parameters */
     struct lws_context_creation_info context_info = {
         .port = CONTEXT_PORT_NO_LISTEN, /* We are not a WebSocket server */
-        .protocols = guac_kubernetes_lws_protocols
+        .uid = -1,
+        .gid = -1,
+        .protocols = guac_kubernetes_lws_protocols,
+        .user = client
     };
 
     /* Init WebSocket connection parameters which do not vary by Guacmaole

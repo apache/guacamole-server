@@ -30,6 +30,32 @@
 #include <stdint.h>
 
 /**
+ * The name of the WebSocket protocol specific to Kubernetes which should be
+ * sent to the Kubernetes server when attaching to a pod.
+ */
+#define GUAC_KUBERNETES_LWS_PROTOCOL "v4.channel.k8s.io"
+
+/**
+ * The index of the Kubernetes channel used for STDIN.
+ */
+#define GUAC_KUBERNETES_CHANNEL_STDIN 0
+
+/**
+ * The index of the Kubernetes channel used for STDOUT.
+ */
+#define GUAC_KUBERNETES_CHANNEL_STDOUT 1
+
+/**
+ * The index of the Kubernetes channel used for STDERR.
+ */
+#define GUAC_KUBERNETES_CHANNEL_STDERR 2
+
+/**
+ * The index of the Kubernetes channel used for terminal resize messages.
+ */
+#define GUAC_KUBERNETES_CHANNEL_RESIZE 4
+
+/**
  * Kubernetes-specific client data.
  */
 typedef struct guac_kubernetes_client {
