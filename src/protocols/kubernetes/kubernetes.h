@@ -26,6 +26,7 @@
 #include "settings.h"
 #include "terminal/terminal.h"
 
+#include <libwebsockets.h>
 #include <stdint.h>
 
 /**
@@ -37,6 +38,11 @@ typedef struct guac_kubernetes_client {
      * Kubernetes connection settings.
      */
     guac_kubernetes_settings* settings;
+
+    /**
+     * The connected WebSocket.
+     */
+    struct lws* wsi;
 
     /**
      * The Kubernetes client thread.
