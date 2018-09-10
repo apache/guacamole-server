@@ -246,6 +246,11 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
         case LWS_CALLBACK_CLIENT_ESTABLISHED:
             guac_client_log(client, GUAC_LOG_INFO,
                     "Kubernetes connection successful.");
+
+            /* Schedule check for pending messages in case messages were added
+             * to the outbound message buffer prior to the connection being
+             * fully established */
+            lws_callback_on_writable(wsi);
             break;
 
         /* Data received via WebSocket */
@@ -260,7 +265,6 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
              * yet more messages remain */
             if (guac_kubernetes_write_pending_message(client))
                 lws_callback_on_writable(wsi);
-
             break;
 
         /* TODO: Add configure test */
@@ -451,6 +455,11 @@ void* guac_kubernetes_client_thread(void* data) {
         goto fail;
     }
 
+    /* Force a redraw of the attached display (there will be no content
+     * otherwise, given the stream nature of attaching to a running
+     * container) */
+    guac_kubernetes_force_redraw(client);
+
     /* As long as client is connected, continue polling libwebsockets */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
@@ -482,6 +491,50 @@ fail:
 
     guac_client_log(client, GUAC_LOG_INFO, "Kubernetes connection ended.");
     return NULL;
+
+}
+
+void guac_kubernetes_resize(guac_client* client, int rows, int columns) {
+
+    char buffer[64];
+
+    guac_kubernetes_client* kubernetes_client =
+        (guac_kubernetes_client*) client->data;
+
+    /* Send request only if different from last request */
+    if (kubernetes_client->rows != rows ||
+            kubernetes_client->columns != columns) {
+
+        kubernetes_client->rows = rows;
+        kubernetes_client->columns = columns;
+
+        /* Construct terminal resize message for Kubernetes */
+        int length = snprintf(buffer, sizeof(buffer),
+                "{\"Width\":%i,\"Height\":%i}", columns, rows);
+
+        /* Schedule message for sending */
+        guac_kubernetes_send_message(client, GUAC_KUBERNETES_CHANNEL_RESIZE,
+                buffer, length);
+
+    }
+
+}
+
+void guac_kubernetes_force_redraw(guac_client* client) {
+
+    guac_kubernetes_client* kubernetes_client =
+        (guac_kubernetes_client*) client->data;
+
+    /* Get current terminal dimensions */
+    guac_terminal* term = kubernetes_client->term;
+    int rows = term->term_height;
+    int columns = term->term_width;
+
+    /* Force a redraw by increasing the terminal size by one character in
+     * each dimension and then resizing it back to normal (the same technique
+     * used by kubectl */
+    guac_kubernetes_resize(client, rows + 1, columns + 1);
+    guac_kubernetes_resize(client, rows, columns);
 
 }
 

@@ -168,6 +168,18 @@ typedef struct guac_kubernetes_client {
     guac_terminal* term;
 
     /**
+     * The number of rows last sent to Kubernetes in a terminal resize
+     * request.
+     */
+    int rows;
+
+    /**
+     * The number of columns last sent to Kubernetes in a terminal resize
+     * request.
+     */
+    int columns;
+
+    /**
      * The in-progress session recording, or NULL if no recording is in
      * progress.
      */
@@ -180,6 +192,32 @@ typedef struct guac_kubernetes_client {
  * attached Kubernetes pod to STDOUT of the terminal.
  */
 void* guac_kubernetes_client_thread(void* data);
+
+/**
+ * Sends a message to the Kubernetes server requesting that the terminal be
+ * resized to the given dimensions. This message may be queued until the
+ * underlying WebSocket connection is ready to send.
+ *
+ * @param client
+ *     The guac_client associated with the Kubernetes connection.
+ *
+ * @param rows
+ *     The new terminal size in rows.
+ *
+ * @param columns
+ *     The new terminal size in columns.
+ */
+void guac_kubernetes_resize(guac_client* client, int rows, int columns);
+
+/**
+ * Sends messages to the Kubernetes server such that the terminal is forced
+ * to redraw. This function should be invoked at the beginning of each
+ * session in order to restore expected display state.
+ *
+ * @param client
+ *     The guac_client associated with the Kubernetes connection.
+ */
+void guac_kubernetes_force_redraw(guac_client* client);
 
 #endif
 
