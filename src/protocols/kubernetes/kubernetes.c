@@ -109,7 +109,7 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
      * pointer passed by libwebsockets may be NULL for some events) */
     guac_client* client = (guac_client*) user;
     if (client != NULL && client->state != GUAC_CLIENT_RUNNING)
-        return -1;
+        return lws_callback_http_dummy(wsi, reason, user, in, length);
 
     switch (reason) {
 
