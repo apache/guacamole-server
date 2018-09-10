@@ -56,6 +56,13 @@
 #define GUAC_KUBERNETES_CHANNEL_RESIZE 4
 
 /**
+ * The maximum amount of data to include in any particular WebSocket message
+ * to Kubernetes. This excludes the storage space required for the channel
+ * index.
+ */
+#define GUAC_KUBERNETES_MAX_MESSAGE_SIZE 1024
+
+/**
  * The maximum number of messages to allow within the outbound message buffer.
  * If messages are sent despite the buffer being full, those messages will be
  * dropped.
@@ -63,9 +70,21 @@
 #define GUAC_KUBERNETES_MAX_OUTBOUND_MESSAGES 8
 
 /**
+ * The maximum number of milliseconds to wait for a libwebsockets event to
+ * occur before entering another iteration of the libwebsockets event loop.
+ */
+#define GUAC_KUBERNETES_SERVICE_INTERVAL 1000
+
+/**
  * An outbound message to be received by Kubernetes over WebSocket.
  */
 typedef struct guac_kubernetes_message {
+
+    /**
+     * lws_write() requires leading padding of LWS_PRE bytes to provide
+     * scratch space for WebSocket framing.
+     */
+    uint8_t _padding[LWS_PRE];
 
     /**
      * The index of the channel receiving the data, such as
@@ -77,7 +96,7 @@ typedef struct guac_kubernetes_message {
      * The data that should be sent to Kubernetes (along with the channel
      * index).
      */
-    char data[1024];
+    char data[GUAC_KUBERNETES_MAX_MESSAGE_SIZE];
 
     /**
      * The length of the data to be sent, excluding the channel index.
@@ -95,6 +114,11 @@ typedef struct guac_kubernetes_client {
      * Kubernetes connection settings.
      */
     guac_kubernetes_settings* settings;
+
+    /**
+     * The libwebsockets context associated with the connected WebSocket.
+     */
+    struct lws_context* context;
 
     /**
      * The connected WebSocket.
