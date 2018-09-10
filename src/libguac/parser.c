@@ -167,7 +167,6 @@ int guac_parser_read(guac_parser* parser, guac_socket* socket, int usec_timeout)
 
     char* unparsed_end   = parser->__instructionbuf_unparsed_end;
     char* unparsed_start = parser->__instructionbuf_unparsed_start;
-    char* instr_start    = parser->__instructionbuf_unparsed_start;
     char* buffer_end     = parser->__instructionbuf + sizeof(parser->__instructionbuf);
 
     /* Begin next instruction if previous was ended */
@@ -187,35 +186,9 @@ int guac_parser_read(guac_parser* parser, guac_socket* socket, int usec_timeout)
 
             /* If no space left to read, fail */
             if (unparsed_end == buffer_end) {
-
-                /* Shift backward if possible */
-                if (instr_start != parser->__instructionbuf) {
-
-                    int i;
-
-                    /* Shift buffer */
-                    int offset = instr_start - parser->__instructionbuf;
-                    memmove(parser->__instructionbuf, instr_start,
-                            unparsed_end - instr_start);
-
-                    /* Update tracking pointers */
-                    unparsed_end -= offset;
-                    unparsed_start -= offset;
-                    instr_start = parser->__instructionbuf;
-
-                    /* Update parsed elements, if any */
-                    for (i=0; i < parser->__elementc; i++)
-                        parser->__elementv[i] -= offset;
-
-                }
-
-                /* Otherwise, no memory to read */
-                else {
-                    guac_error = GUAC_STATUS_NO_MEMORY;
-                    guac_error_message = "Instruction too long";
-                    return -1;
-                }
-
+                guac_error = GUAC_STATUS_NO_MEMORY;
+                guac_error_message = "Instruction too long";
+                return -1;
             }
 
             /* No instruction yet? Get more data ... */
