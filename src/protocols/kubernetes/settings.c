@@ -278,7 +278,7 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
 
     /* Read port */
     settings->port =
-        guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+        guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_PORT, GUAC_KUBERNETES_DEFAULT_PORT);
 
     /* Read typescript path */
@@ -340,7 +340,6 @@ void guac_kubernetes_settings_free(guac_kubernetes_settings* settings) {
 
     /* Free network connection information */
     free(settings->hostname);
-    free(settings->port);
 
     /* Free SSL/TLS details */
     free(settings->client_cert_file);
