@@ -52,6 +52,10 @@ if ENABLE_PULSE
 SUBDIRS += src/pulse
 endif
 
+if ENABLE_KUBERNETES
+SUBDIRS += src/protocols/kubernetes
+endif
+
 if ENABLE_RDP
 SUBDIRS += src/protocols/rdp
 endif
