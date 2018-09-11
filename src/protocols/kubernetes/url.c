@@ -23,6 +23,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * Returns whether the given character is a character that need not be
+ * escaped when included as part of a component of a URL.
+ *
+ * @param c
+ *     The character to test.
+ *
+ * @return
+ *     Zero if the character does not need to be escaped when included as
+ *     part of a component of a URL, non-zero otherwise.
+ */
 static int guac_kubernetes_is_url_safe(char c) {
     return (c >= 'A' && c <= 'Z')
         || (c >= 'a' && c <= 'z')
