@@ -1190,7 +1190,12 @@ then
     AC_CHECK_LIB([websockets],
                  [lws_create_context],
                  [WEBSOCKETS_LIBS="$WEBSOCKETS_LIBS -lwebsockets"],
-                 [have_libwebsockets=no])
+                 [AC_MSG_WARN([
+  --------------------------------------------
+   Unable to find libwebsockets.
+   Support for Kubernetes will be disabled.
+  --------------------------------------------])
+                 have_libwebsockets=no])
 fi
 
 # Check for client-specific closed event, which must be used in favor of the
@@ -1339,7 +1344,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libVNCServer ........ ${have_libvncserver}
      libvorbis ........... ${have_vorbis}
      libpulse ............ ${have_pulse}
-     libwebsockets ....... ${have_websockets}
+     libwebsockets ....... ${have_libwebsockets}
      libwebp ............. ${have_webp}
      wsock32 ............. ${have_winsock}
 
