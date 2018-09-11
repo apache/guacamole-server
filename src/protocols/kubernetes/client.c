@@ -48,9 +48,32 @@ guac_client* guac_kubernetes_lws_current_client = NULL;
  *     The line of logging output to log.
  */
 static void guac_kubernetes_log(int level, const char* line) {
-    if (guac_kubernetes_lws_current_client != NULL)
-        guac_client_log(guac_kubernetes_lws_current_client, GUAC_LOG_DEBUG,
-                "libwebsockets: %s", line);
+
+    char buffer[1024];
+
+    /* Drop log message if there's nowhere to log yet */
+    if (guac_kubernetes_lws_current_client == NULL)
+        return;
+
+    /* Trim length of line to fit buffer (plus null terminator) */
+    int length = strlen(line);
+    if (length > sizeof(buffer) - 1)
+        length = sizeof(buffer) - 1;
+
+    /* Copy as much of the received line as will fit in the buffer */
+    memcpy(buffer, line, length);
+
+    /* If the line ends with a newline character, trim the character */
+    if (length > 0 && buffer[length - 1] == '\n')
+        length--;
+
+    /* Null-terminate the trimmed string */
+    buffer[length] = '\0';
+
+    /* Log using guacd's own log facilities */
+    guac_client_log(guac_kubernetes_lws_current_client, GUAC_LOG_DEBUG,
+            "libwebsockets: %s", buffer);
+
 }
 
 int guac_client_init(guac_client* client) {
