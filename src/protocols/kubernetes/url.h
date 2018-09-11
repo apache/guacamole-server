@@ -20,8 +20,6 @@
 #ifndef GUAC_KUBERNETES_URL_H
 #define GUAC_KUBERNETES_URL_H
 
-#include "config.h"
-
 /**
  * The maximum number of characters allowed in the full path for any Kubernetes
  * endpoint.

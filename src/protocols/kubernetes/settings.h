@@ -20,11 +20,8 @@
 #ifndef GUAC_KUBERNETES_SETTINGS_H
 #define GUAC_KUBERNETES_SETTINGS_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
-#include <sys/types.h>
 #include <stdbool.h>
 
 /**

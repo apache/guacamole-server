@@ -17,12 +17,13 @@
  * under the License.
  */
 
-#include "config.h"
 #include "kubernetes.h"
-#include "pipe.h"
 #include "terminal/terminal.h"
+#include "pipe.h"
 
+#include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/stream-types.h>
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
 

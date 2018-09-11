@@ -17,11 +17,9 @@
  * under the License.
  */
 
-#include "config.h"
 #include "clipboard.h"
 #include "common/clipboard.h"
 #include "kubernetes.h"
-#include "terminal/terminal.h"
 
 #include <guacamole/client.h>
 #include <guacamole/stream.h>

@@ -20,13 +20,15 @@
 #ifndef GUAC_KUBERNETES_H
 #define GUAC_KUBERNETES_H
 
-#include "config.h"
 #include "common/clipboard.h"
 #include "common/recording.h"
 #include "settings.h"
 #include "terminal/terminal.h"
 
+#include <guacamole/client.h>
 #include <libwebsockets.h>
+
+#include <pthread.h>
 #include <stdint.h>
 
 /**

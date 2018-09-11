@@ -20,8 +20,6 @@
 #ifndef GUAC_KUBERNETES_INPUT_H
 #define GUAC_KUBERNETES_INPUT_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
 /**

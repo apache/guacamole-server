@@ -21,8 +21,6 @@
 #ifndef GUAC_KUBERNETES_PIPE_H
 #define GUAC_KUBERNETES_PIPE_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
 /**

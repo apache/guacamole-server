@@ -17,9 +17,8 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "clipboard.h"
+#include "common/cursor.h"
 #include "input.h"
 #include "kubernetes.h"
 #include "pipe.h"
@@ -28,11 +27,12 @@
 #include "user.h"
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
-#include <string.h>
+#include <stdlib.h>
 
 int guac_kubernetes_user_join_handler(guac_user* user, int argc, char** argv) {
 

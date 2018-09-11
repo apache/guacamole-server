@@ -20,8 +20,6 @@
 #ifndef GUAC_KUBERNETES_CLIPBOARD_H
 #define GUAC_KUBERNETES_CLIPBOARD_H
 
-#include "config.h"
-
 #include <guacamole/user.h>
 
 /**

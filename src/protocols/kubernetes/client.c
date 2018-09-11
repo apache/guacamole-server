@@ -17,21 +17,20 @@
  * under the License.
  */
 
-#include "config.h"
 #include "client.h"
-#include "common/recording.h"
+#include "common/clipboard.h"
 #include "kubernetes.h"
 #include "settings.h"
-#include "terminal/terminal.h"
 #include "user.h"
+
+#include <guacamole/client.h>
+#include <libwebsockets.h>
 
 #include <langinfo.h>
 #include <locale.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <guacamole/client.h>
 
 /**
  * Static reference to the guac_client associated with the active Kubernetes

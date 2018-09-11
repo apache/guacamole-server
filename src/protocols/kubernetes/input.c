@@ -17,18 +17,15 @@
  * under the License.
  */
 
-#include "config.h"
 #include "common/recording.h"
-#include "kubernetes.h"
 #include "input.h"
+#include "kubernetes.h"
 #include "terminal/terminal.h"
 
 #include <guacamole/client.h>
 #include <guacamole/user.h>
 
 #include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 int guac_kubernetes_user_mouse_handler(guac_user* user,
         int x, int y, int mask) {

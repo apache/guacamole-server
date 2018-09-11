@@ -20,11 +20,7 @@
 #ifndef GUAC_KUBERNETES_CLIENT_H
 #define GUAC_KUBERNETES_CLIENT_H
 
-#include "config.h"
-#include "terminal/terminal.h"
-
-#include <pthread.h>
-#include <sys/types.h>
+#include <guacamole/client.h>
 
 /**
  * The maximum number of bytes to allow within the clipboard.

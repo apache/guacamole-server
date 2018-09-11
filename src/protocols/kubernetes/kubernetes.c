@@ -18,8 +18,8 @@
  */
 
 #include "config.h"
-#include "common/recording.h"
 #include "kubernetes.h"
+#include "common/recording.h"
 #include "terminal/terminal.h"
 #include "url.h"
 
@@ -27,16 +27,10 @@
 #include <guacamole/protocol.h>
 #include <libwebsockets.h>
 
-#include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <poll.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <unistd.h>
 
 /**
  * Handles data received from Kubernetes over WebSocket, decoding the channel

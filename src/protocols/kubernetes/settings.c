@@ -17,16 +17,11 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "settings.h"
 
 #include <guacamole/user.h>
 
-#include <sys/types.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
 /* Client plugin arguments */
 const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {

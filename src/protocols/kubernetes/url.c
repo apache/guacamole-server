@@ -17,10 +17,10 @@
  * under the License.
  */
 
-#include "config.h"
 #include "url.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static int guac_kubernetes_is_url_safe(char c) {
