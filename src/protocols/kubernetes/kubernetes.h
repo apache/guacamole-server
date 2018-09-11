@@ -22,6 +22,7 @@
 
 #include "common/clipboard.h"
 #include "common/recording.h"
+#include "io.h"
 #include "settings.h"
 #include "terminal/terminal.h"
 
@@ -29,40 +30,12 @@
 #include <libwebsockets.h>
 
 #include <pthread.h>
-#include <stdint.h>
 
 /**
  * The name of the WebSocket protocol specific to Kubernetes which should be
  * sent to the Kubernetes server when attaching to a pod.
  */
 #define GUAC_KUBERNETES_LWS_PROTOCOL "v4.channel.k8s.io"
-
-/**
- * The index of the Kubernetes channel used for STDIN.
- */
-#define GUAC_KUBERNETES_CHANNEL_STDIN 0
-
-/**
- * The index of the Kubernetes channel used for STDOUT.
- */
-#define GUAC_KUBERNETES_CHANNEL_STDOUT 1
-
-/**
- * The index of the Kubernetes channel used for STDERR.
- */
-#define GUAC_KUBERNETES_CHANNEL_STDERR 2
-
-/**
- * The index of the Kubernetes channel used for terminal resize messages.
- */
-#define GUAC_KUBERNETES_CHANNEL_RESIZE 4
-
-/**
- * The maximum amount of data to include in any particular WebSocket message
- * to Kubernetes. This excludes the storage space required for the channel
- * index.
- */
-#define GUAC_KUBERNETES_MAX_MESSAGE_SIZE 1024
 
 /**
  * The maximum number of messages to allow within the outbound message buffer.
@@ -76,36 +49,6 @@
  * occur before entering another iteration of the libwebsockets event loop.
  */
 #define GUAC_KUBERNETES_SERVICE_INTERVAL 1000
-
-/**
- * An outbound message to be received by Kubernetes over WebSocket.
- */
-typedef struct guac_kubernetes_message {
-
-    /**
-     * lws_write() requires leading padding of LWS_PRE bytes to provide
-     * scratch space for WebSocket framing.
-     */
-    uint8_t _padding[LWS_PRE];
-
-    /**
-     * The index of the channel receiving the data, such as
-     * GUAC_KUBERNETES_CHANNEL_STDIN.
-     */
-    uint8_t channel;
-
-    /**
-     * The data that should be sent to Kubernetes (along with the channel
-     * index).
-     */
-    char data[GUAC_KUBERNETES_MAX_MESSAGE_SIZE];
-
-    /**
-     * The length of the data to be sent, excluding the channel index.
-     */
-    int length;
-
-} guac_kubernetes_message;
 
 /**
  * Kubernetes-specific client data.

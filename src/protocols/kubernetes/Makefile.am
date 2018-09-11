@@ -26,6 +26,7 @@ libguac_client_kubernetes_la_SOURCES = \
     client.c                           \
     clipboard.c                        \
     input.c                            \
+    io.c                               \
     pipe.c                             \
     settings.c                         \
     kubernetes.c                       \
@@ -36,6 +37,7 @@ noinst_HEADERS = \
     client.h     \
     clipboard.h  \
     input.h      \
+    io.h         \
     pipe.h       \
     settings.h   \
     kubernetes.h \
