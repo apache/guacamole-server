@@ -45,6 +45,12 @@
 #define GUAC_KUBERNETES_DEFAULT_PORT 8080
 
 /**
+ * The name of the Kubernetes namespace that should be used by default if no
+ * specific Kubernetes namespace is provided.
+ */
+#define GUAC_KUBERNETES_DEFAULT_NAMESPACE "default"
+
+/**
  * The filename to use for the typescript, if not specified.
  */
 #define GUAC_KUBERNETES_DEFAULT_TYPESCRIPT_NAME "typescript" 
@@ -75,6 +81,24 @@ typedef struct guac_kubernetes_settings {
      * The port of the Kubernetes server to connect to.
      */
     int port;
+
+    /**
+     * The name of the Kubernetes namespace of the pod containing the container
+     * being attached to.
+     */
+    char* kubernetes_namespace;
+
+    /**
+     * The name of the Kubernetes pod containing with the container being
+     * attached to.
+     */
+    char* kubernetes_pod;
+
+    /**
+     * The name of the container to attach to, or NULL to arbitrarily attach to
+     * the first container in the pod.
+     */
+    char* kubernetes_container;
 
     /**
      * Whether SSL/TLS should be used.

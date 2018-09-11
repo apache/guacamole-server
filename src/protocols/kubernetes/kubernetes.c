@@ -21,6 +21,7 @@
 #include "common/recording.h"
 #include "kubernetes.h"
 #include "terminal/terminal.h"
+#include "url.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -345,6 +346,28 @@ void* guac_kubernetes_client_thread(void* data) {
     guac_kubernetes_settings* settings = kubernetes_client->settings;
 
     pthread_t input_thread;
+    char endpoint_path[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
+
+    /* Verify that the pod name was specified (it's always required) */
+    if (settings->kubernetes_pod == NULL) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "The name of the Kubernetes pod is a required parameter.");
+        goto fail;
+    }
+
+    /* Generate endpoint for attachment URL */
+    if (guac_kubernetes_endpoint_attach(endpoint_path, sizeof(endpoint_path),
+                settings->kubernetes_namespace,
+                settings->kubernetes_pod,
+                settings->kubernetes_container)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Unable to generate path for Kubernetes API endpoint: "
+                "Resulting path too long");
+        goto fail;
+    }
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "The endpoint for attaching to "
+            "the requested Kubernetes pod is \"%s\".", endpoint_path);
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
@@ -434,9 +457,9 @@ void* guac_kubernetes_client_thread(void* data) {
         goto fail;
     }
 
-    /* FIXME: Generate path dynamically */
+    /* Generate path dynamically */
     connection_info.context = kubernetes_client->context;
-    connection_info.path = "/api/v1/namespaces/default/pods/my-shell-68974bb7f7-rpjgr/attach?container=my-shell&stdin=true&stdout=true&tty=true";
+    connection_info.path = endpoint_path;
 
     /* Open WebSocket connection to Kubernetes */
     kubernetes_client->wsi = lws_client_connect_via_info(&connection_info);

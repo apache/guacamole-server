@@ -32,6 +32,9 @@
 const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "hostname",
     "port",
+    "namespace",
+    "pod",
+    "container",
     "use-ssl",
     "client-cert-file",
     "client-key-file",
@@ -66,6 +69,24 @@ enum KUBERNETES_ARGS_IDX {
      * The port to connect to. Optional.
      */
     IDX_PORT,
+
+    /**
+     * The name of the Kubernetes namespace of the pod containing the container
+     * being attached to. If omitted, the default namespace will be used.
+     */
+    IDX_NAMESPACE,
+
+    /**
+     * The name of the Kubernetes pod containing with the container being
+     * attached to. Required.
+     */
+    IDX_POD,
+
+    /**
+     * The name of the container to attach to. If omitted, the first container
+     * in the pod will be used.
+     */
+    IDX_CONTAINER,
 
     /**
      * Whether SSL/TLS should be used. If omitted, SSL/TLS will not be used.
@@ -215,10 +236,30 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     guac_kubernetes_settings* settings =
         calloc(1, sizeof(guac_kubernetes_settings));
 
-    /* Read parameters */
+    /* Read hostname */
     settings->hostname =
         guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
+
+    /* Read port */
+    settings->port =
+        guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_PORT, GUAC_KUBERNETES_DEFAULT_PORT);
+
+    /* Read Kubernetes namespace */
+    settings->kubernetes_namespace =
+        guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_NAMESPACE, GUAC_KUBERNETES_DEFAULT_NAMESPACE);
+
+    /* Read name of Kubernetes pod (required) */
+    settings->kubernetes_pod =
+        guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_POD, NULL);
+
+    /* Read container of pod (optional) */
+    settings->kubernetes_container =
+        guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_CONTAINER, NULL);
 
     /* Parse whether SSL should be used */
     settings->use_ssl =
@@ -275,11 +316,6 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     settings->width      = user->info.optimal_width;
     settings->height     = user->info.optimal_height;
     settings->resolution = user->info.optimal_resolution;
-
-    /* Read port */
-    settings->port =
-        guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_PORT, GUAC_KUBERNETES_DEFAULT_PORT);
 
     /* Read typescript path */
     settings->typescript_path =
@@ -340,6 +376,11 @@ void guac_kubernetes_settings_free(guac_kubernetes_settings* settings) {
 
     /* Free network connection information */
     free(settings->hostname);
+
+    /* Free Kubernetes pod/container details */
+    free(settings->kubernetes_namespace);
+    free(settings->kubernetes_pod);
+    free(settings->kubernetes_container);
 
     /* Free SSL/TLS details */
     free(settings->client_cert_file);

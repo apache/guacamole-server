@@ -29,6 +29,7 @@ libguac_client_kubernetes_la_SOURCES = \
     pipe.c                             \
     settings.c                         \
     kubernetes.c                       \
+    url.c                              \
     user.c
 
 noinst_HEADERS = \
@@ -38,6 +39,7 @@ noinst_HEADERS = \
     pipe.h       \
     settings.h   \
     kubernetes.h \
+    url.h        \
     user.h
 
 libguac_client_kubernetes_la_CFLAGS = \
