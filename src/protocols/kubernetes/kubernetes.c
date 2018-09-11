@@ -268,7 +268,6 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
                 lws_callback_on_writable(wsi);
             break;
 
-        /* TODO: Add configure test */
 #ifdef HAVE_LWS_CALLBACK_CLIENT_CLOSED
         /* Connection closed (client-specific) */
         case LWS_CALLBACK_CLIENT_CLOSED:

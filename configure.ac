@@ -1193,6 +1193,16 @@ then
                  [have_libwebsockets=no])
 fi
 
+# Check for client-specific closed event, which must be used in favor of the
+# generic closed event if libwebsockets is recent enough to provide this
+if test "x$with_websockets" != "xno"
+then
+    AC_CHECK_DECL([LWS_CALLBACK_CLIENT_CLOSED],
+        [AC_DEFINE([HAVE_LWS_CALLBACK_CLIENT_CLOSED],,
+                   [Whether LWS_CALLBACK_CLIENT_CLOSED is defined])],,
+        [#include <libwebsockets.h>])
+fi
+
 AM_CONDITIONAL([ENABLE_WEBSOCKETS],
                [test "x${have_libwebsockets}"  = "xyes"])
 
