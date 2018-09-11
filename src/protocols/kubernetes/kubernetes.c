@@ -18,9 +18,11 @@
  */
 
 #include "config.h"
+#include "client.h"
 #include "common/recording.h"
 #include "io.h"
 #include "kubernetes.h"
+#include "ssl.h"
 #include "terminal/terminal.h"
 #include "url.h"
 
@@ -43,8 +45,9 @@
  *     The reason (event) that this callback was invoked.
  *
  * @param user
- *     Arbitrary data assocated with the WebSocket session. This will always
- *     be a pointer to the guac_client instance.
+ *     Arbitrary data assocated with the WebSocket session. In some cases,
+ *     this is actually event-specific data (such as the
+ *     LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERT event).
  *
  * @param in
  *     A pointer to arbitrary, reason-specific data.
@@ -60,13 +63,18 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
         enum lws_callback_reasons reason, void* user,
         void* in, size_t length) {
 
-    /* Request connection closure if client is stopped (note that the user
-     * pointer passed by libwebsockets may be NULL for some events) */
-    guac_client* client = (guac_client*) user;
-    if (client != NULL && client->state != GUAC_CLIENT_RUNNING)
+    guac_client* client = guac_kubernetes_lws_current_client;
+
+    /* Do not handle any further events if connection is closing */
+    if (client->state != GUAC_CLIENT_RUNNING)
         return lws_callback_http_dummy(wsi, reason, user, in, length);
 
     switch (reason) {
+
+        /* Complete initialization of SSL */
+        case LWS_CALLBACK_OPENSSL_LOAD_EXTRA_CLIENT_VERIFY_CERTS:
+            guac_kubernetes_init_ssl(client, (SSL_CTX*) user);
+            break;
 
         /* Failed to connect */
         case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
@@ -256,29 +264,13 @@ void* guac_kubernetes_client_thread(void* data) {
     };
 
     /* If requested, use an SSL/TLS connection for communication with
-     * Kubernetes */
+     * Kubernetes. Note that we disable hostname checks here because we
+     * do our own validation - libwebsockets does not validate properly if
+     * IP addresses are used. */
     if (settings->use_ssl) {
-
-        /* Enable use of SSL/TLS */
         context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-        connection_info.ssl_connection = LCCSCF_USE_SSL;
-
-        /* Bypass certificate checks if requested */
-        if (settings->ignore_cert) {
-            connection_info.ssl_connection |=
-                  LCCSCF_ALLOW_SELFSIGNED
-                | LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK
-                | LCCSCF_ALLOW_EXPIRED;
-        }
-
-        /* Otherwise use the given CA certificate to validate (if any) */
-        else
-            context_info.client_ssl_ca_filepath = settings->ca_cert_file;
-
-        /* Certificate and key file for SSL/TLS client auth */
-        context_info.client_ssl_cert_filepath = settings->client_cert_file;
-        context_info.client_ssl_private_key_filepath = settings->client_key_file;
-
+        connection_info.ssl_connection = LCCSCF_USE_SSL
+            | LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK;
     }
 
     /* Create libwebsockets context */

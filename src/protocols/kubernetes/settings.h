@@ -103,24 +103,26 @@ typedef struct guac_kubernetes_settings {
     bool use_ssl;
 
     /**
-     * The filename of the certificate to use if performing SSL/TLS client
-     * authentication to authenticate with the Kubernetes server. If omitted,
-     * SSL client authentication will not be performed.
+     * The certificate to use if performing SSL/TLS client authentication to
+     * authenticate with the Kubernetes server, in PEM format. If omitted, SSL
+     * client authentication will not be performed.
      */
-    char* client_cert_file;
+    char* client_cert;
 
     /**
-     * The filename of the key to use if performing SSL/TLS client
-     * authentication to authenticate with the Kubernetes server. If omitted,
-     * SSL client authentication will not be performed. 
+     * The key to use if performing SSL/TLS client authentication to
+     * authenticate with the Kubernetes server, in PEM format. If omitted, SSL
+     * client authentication will not be performed.
      */
-    char* client_key_file;
+    char* client_key;
 
     /**
-     * The filename of the certificate of the certificate authority that signed
-     * the certificate of the Kubernetes server.
+     * The certificate of the certificate authority that signed the certificate
+     * of the Kubernetes server, in PEM format. If omitted. verification of
+     * the Kubernetes server certificate will use the systemwide certificate
+     * authorities.
      */
-    char* ca_cert_file;
+    char* ca_cert;
 
     /**
      * Whether the certificate used by the Kubernetes server for SSL/TLS should

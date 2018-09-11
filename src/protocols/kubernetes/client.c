@@ -32,12 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * Static reference to the guac_client associated with the active Kubernetes
- * connection. As guacd guarantees that each main client connection is
- * isolated within its own process, this is safe.
- */
-static guac_client* guac_kubernetes_lws_log_client = NULL;
+guac_client* guac_kubernetes_lws_current_client = NULL;
 
 /**
  * Logging callback invoked by libwebsockets to log a single line of logging
@@ -53,15 +48,18 @@ static guac_client* guac_kubernetes_lws_log_client = NULL;
  *     The line of logging output to log.
  */
 static void guac_kubernetes_log(int level, const char* line) {
-    if (guac_kubernetes_lws_log_client != NULL)
-        guac_client_log(guac_kubernetes_lws_log_client, GUAC_LOG_DEBUG,
+    if (guac_kubernetes_lws_current_client != NULL)
+        guac_client_log(guac_kubernetes_lws_current_client, GUAC_LOG_DEBUG,
                 "libwebsockets: %s", line);
 }
 
 int guac_client_init(guac_client* client) {
 
+    /* Ensure reference to main guac_client remains available in all
+     * libwebsockets contexts */
+    guac_kubernetes_lws_current_client = client;
+
     /* Redirect libwebsockets logging */
-    guac_kubernetes_lws_log_client = client;
     lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO,
             guac_kubernetes_log);
 

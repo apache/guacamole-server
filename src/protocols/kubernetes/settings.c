@@ -31,9 +31,9 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "pod",
     "container",
     "use-ssl",
-    "client-cert-file",
-    "client-key-file",
-    "ca-cert-file",
+    "client-cert",
+    "client-key",
+    "ca-cert",
     "ignore-cert",
     "font-name",
     "font-size",
@@ -89,24 +89,26 @@ enum KUBERNETES_ARGS_IDX {
     IDX_USE_SSL,
 
     /**
-     * The filename of the certificate to use if performing SSL/TLS client
-     * authentication to authenticate with the Kubernetes server. If omitted,
-     * SSL client authentication will not be performed. 
+     * The certificate to use if performing SSL/TLS client authentication to
+     * authenticate with the Kubernetes server, in PEM format. If omitted, SSL
+     * client authentication will not be performed.
      */
-    IDX_CLIENT_CERT_FILE,
+    IDX_CLIENT_CERT,
 
     /**
-     * The filename of the key to use if performing SSL/TLS client
-     * authentication to authenticate with the Kubernetes server. If omitted,
-     * SSL client authentication will not be performed. 
+     * The key to use if performing SSL/TLS client authentication to
+     * authenticate with the Kubernetes server, in PEM format. If omitted, SSL
+     * client authentication will not be performed.
      */
-    IDX_CLIENT_KEY_FILE,
+    IDX_CLIENT_KEY,
 
     /**
-     * The filename of the certificate of the certificate authority that signed
-     * the certificate of the Kubernetes server.
+     * The certificate of the certificate authority that signed the certificate
+     * of the Kubernetes server, in PEM format. If omitted. verification of
+     * the Kubernetes server certificate will use the systemwide certificate
+     * authorities.
      */
-    IDX_CA_CERT_FILE,
+    IDX_CA_CERT,
 
     /**
      * Whether the certificate used by the Kubernetes server for SSL/TLS should
@@ -264,17 +266,17 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     /* Read SSL/TLS connection details only if enabled */
     if (settings->use_ssl) {
 
-        settings->client_cert_file =
+        settings->client_cert =
             guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS,
-                    argv, IDX_CLIENT_CERT_FILE, NULL);
+                    argv, IDX_CLIENT_CERT, NULL);
 
-        settings->client_key_file =
+        settings->client_key =
             guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS,
-                    argv, IDX_CLIENT_KEY_FILE, NULL);
+                    argv, IDX_CLIENT_KEY, NULL);
 
-        settings->ca_cert_file =
+        settings->ca_cert =
             guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS,
-                    argv, IDX_CA_CERT_FILE, NULL);
+                    argv, IDX_CA_CERT, NULL);
 
         settings->ignore_cert =
             guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS,
@@ -378,9 +380,9 @@ void guac_kubernetes_settings_free(guac_kubernetes_settings* settings) {
     free(settings->kubernetes_container);
 
     /* Free SSL/TLS details */
-    free(settings->client_cert_file);
-    free(settings->client_key_file);
-    free(settings->ca_cert_file);
+    free(settings->client_cert);
+    free(settings->client_key);
+    free(settings->ca_cert);
 
     /* Free display preferences */
     free(settings->font_name);

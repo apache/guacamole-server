@@ -1225,6 +1225,7 @@ AC_ARG_ENABLE([kubernetes],
 
 AM_CONDITIONAL([ENABLE_KUBERNETES], [test "x${enable_kubernetes}"  = "xyes" \
                                        -a "x${have_libwebsockets}" = "xyes" \
+                                       -a "x${have_ssl}"           = "xyes" \
                                        -a "x${have_terminal}"      = "xyes"])
 
 #

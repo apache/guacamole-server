@@ -17,28 +17,25 @@
  * under the License.
  */
 
-#ifndef GUAC_KUBERNETES_CLIENT_H
-#define GUAC_KUBERNETES_CLIENT_H
+#ifndef GUAC_KUBERNETES_SSL_H
+#define GUAC_KUBERNETES_SSL_H
 
-#include <guacamole/client.h>
+#include "settings.h"
 
-/**
- * The maximum number of bytes to allow within the clipboard.
- */
-#define GUAC_KUBERNETES_CLIPBOARD_MAX_LENGTH 262144
+#include <openssl/ssl.h>
 
 /**
- * Static reference to the guac_client associated with the active Kubernetes
- * connection. While libwebsockets provides some means of storing and
- * retrieving custom data in some structures, this is not always available.
+ * Initializes the given SSL/TLS context using the configuration parameters
+ * associated with the given guac_client, setting up hostname/address
+ * validation and client authentication.
+ *
+ * @param client
+ *     The guac_client associated with the Kubernetes connection.
+ *
+ * @param context
+ *     The SSL_CTX in use by libwebsockets.
  */
-extern guac_client* guac_kubernetes_lws_current_client;
-
-/**
- * Free handler. Required by libguac and called when the guac_client is
- * disconnected and must be cleaned up.
- */
-guac_client_free_handler guac_kubernetes_client_free_handler;
+void guac_kubernetes_init_ssl(guac_client* client, SSL_CTX* context);
 
 #endif
 

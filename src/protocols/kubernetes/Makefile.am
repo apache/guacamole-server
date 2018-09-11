@@ -29,6 +29,7 @@ libguac_client_kubernetes_la_SOURCES = \
     io.c                               \
     pipe.c                             \
     settings.c                         \
+    ssl.c                              \
     kubernetes.c                       \
     url.c                              \
     user.c
@@ -40,6 +41,7 @@ noinst_HEADERS = \
     io.h         \
     pipe.h       \
     settings.h   \
+    ssl.h        \
     kubernetes.h \
     url.h        \
     user.h
@@ -57,5 +59,6 @@ libguac_client_kubernetes_la_LIBADD = \
 libguac_client_kubernetes_la_LDFLAGS = \
     -version-info 0:0:0                \
     @PTHREAD_LIBS@                     \
+    @SSL_LIBS@                         \
     @WEBSOCKETS_LIBS@
 
