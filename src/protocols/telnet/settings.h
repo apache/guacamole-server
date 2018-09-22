@@ -118,6 +118,20 @@ typedef struct guac_telnet_settings {
     regex_t* password_regex;
 
     /**
+     * The regular expression to use when searching for whether login was
+     * successful. If no such regex is specified, or if no login failure regex
+     * was specified, this will be NULL.
+     */
+    regex_t* login_success_regex;
+
+    /**
+     * The regular expression to use when searching for whether login failed.
+     * If no such regex is specified, or if no login success regex was
+     * specified, this will be NULL.
+     */
+    regex_t* login_failure_regex;
+
+    /**
      * Whether this connection is read-only, and user input should be dropped.
      */
     bool read_only;
@@ -252,6 +266,16 @@ typedef struct guac_telnet_settings {
  */
 guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         int argc, const char** argv);
+
+/**
+ * Frees the regex pointed to by the given pointer, assigning the value NULL to
+ * that pointer once the regex is freed. If the pointer already contains NULL,
+ * this function has no effect.
+ *
+ * @param regex
+ *     The address of the pointer to the regex that should be freed.
+ */
+void guac_telnet_regex_free(regex_t** regex);
 
 /**
  * Frees the given guac_telnet_settings object, having been previously

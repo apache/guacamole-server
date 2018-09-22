@@ -233,6 +233,9 @@ void* ssh_client_thread(void* data) {
         return NULL;
     }
 
+    /* Ensure connection is kept alive during lengthy connects */
+    guac_socket_require_keep_alive(client->socket);
+
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,
             settings->hostname, settings->port, ssh_client->user, settings->server_alive_interval,
@@ -335,6 +338,7 @@ void* ssh_client_thread(void* data) {
 
     /* Logged in */
     guac_client_log(client, GUAC_LOG_INFO, "SSH connection successful.");
+    guac_terminal_start(ssh_client->term);
 
     /* Start input thread */
     if (pthread_create(&(input_thread), NULL, ssh_input_thread, (void*) client)) {
