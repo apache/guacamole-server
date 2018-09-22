@@ -70,41 +70,6 @@
 #define GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT 3
 
 /**
- * The name of the color scheme having black foreground and white background.
- */
-#define GUAC_TERMINAL_SCHEME_BLACK_WHITE "black-white"
-
-/**
- * The name of the color scheme having gray foreground and black background.
- */
-#define GUAC_TERMINAL_SCHEME_GRAY_BLACK "gray-black"
-
-/**
- * The name of the color scheme having green foreground and black background.
- */
-#define GUAC_TERMINAL_SCHEME_GREEN_BLACK "green-black"
-
-/**
- * The name of the color scheme having white foreground and black background.
- */
-#define GUAC_TERMINAL_SCHEME_WHITE_BLACK "white-black"
-
-/**
- * Color name representing the foreground color.
- */
-#define GUAC_TERMINAL_SCHEME_FOREGROUND "foreground"
-
-/**
- * Color name representing the background color.
- */
-#define GUAC_TERMINAL_SCHEME_BACKGROUND "background"
-
-/**
- * Color name representing a numbered color.
- */
-#define GUAC_TERMINAL_SCHEME_NUMBERED "color"
-
-/**
  * Flag which specifies that terminal output should be sent to both the current
  * pipe stream and the user's display. By default, terminal output will be sent
  * only to the open pipe.
