@@ -199,7 +199,7 @@ int __guac_terminal_set(guac_terminal_display* display, int row, int col, int co
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
         const char* font_name, int font_size, int dpi,
         guac_terminal_color* foreground, guac_terminal_color* background,
-        const guac_terminal_color (*palette)[256]) {
+        guac_terminal_color (*palette)[256]) {
 
     PangoFontMap* font_map;
     PangoFont* font;
@@ -271,7 +271,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
 void guac_terminal_display_free(guac_terminal_display* display) {
 
     /* Free default palette. */
-    free((void*) display->default_palette);
+    free(display->default_palette);
 
     /* Free operations buffers */
     free(display->operations);

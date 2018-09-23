@@ -1072,5 +1072,20 @@ int guac_terminal_create_typescript(guac_terminal* term, const char* path,
  */
 int guac_terminal_available_scroll(guac_terminal* term);
 
+/**
+ * Immediately applies the given color scheme to the given terminal, overriding
+ * the color scheme provided when the terminal was created. Applying the color
+ * scheme implicitly clears the display and resets the terminal state. Valid
+ * color schemes are those accepted by guac_terminal_parse_color_scheme().
+ *
+ * @param terminal
+ *     The terminal to apply the color scheme to.
+ *
+ * @param color_scheme
+ *     The color scheme to apply.
+ */
+void guac_terminal_apply_color_scheme(guac_terminal* terminal,
+        const char* color_scheme);
+
 #endif
 

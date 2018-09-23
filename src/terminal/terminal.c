@@ -384,7 +384,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
             font_name, font_size, dpi,
             &default_char.attributes.foreground,
             &default_char.attributes.background,
-            (const guac_terminal_color(*)[256]) default_palette);
+            (guac_terminal_color(*)[256]) default_palette);
 
     /* Fail if display init failed */
     if (term->display == NULL) {
@@ -1937,6 +1937,33 @@ void guac_terminal_dup(guac_terminal* term, guac_user* user,
 
     /* Paint scrollbar for joining user */
     guac_terminal_scrollbar_dup(term->scrollbar, user, socket);
+
+}
+
+void guac_terminal_apply_color_scheme(guac_terminal* terminal,
+        const char* color_scheme) {
+
+    guac_client* client = terminal->client;
+    guac_terminal_char* default_char = &terminal->default_char;
+    guac_terminal_display* display = terminal->display;
+
+    /* Reinitialize default terminal colors with values from color scheme */
+    guac_terminal_parse_color_scheme(client, color_scheme,
+        &default_char->attributes.foreground,
+        &default_char->attributes.background,
+        display->default_palette);
+
+    /* Reinitialize default attributes of buffer and display */
+    terminal->buffer->default_character = *default_char;
+    display->default_foreground = default_char->attributes.foreground;
+    display->default_background = default_char->attributes.background;
+
+    /* Redraw background with new color */
+    guac_terminal_repaint_default_layer(terminal, client->socket);
+
+    /* Force reset of terminal state */
+    guac_terminal_reset(terminal);
+    guac_terminal_notify(terminal);
 
 }
 

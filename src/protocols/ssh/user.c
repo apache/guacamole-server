@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "argv.h"
 #include "clipboard.h"
 #include "common/display.h"
 #include "input.h"
@@ -86,6 +87,9 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
 
         /* STDIN redirection */
         user->pipe_handler = guac_ssh_pipe_handler;
+
+        /* Updates to connection parameters */
+        user->argv_handler = guac_ssh_argv_handler;
 
         /* Display size change events */
         user->size_handler = guac_ssh_user_size_handler;
