@@ -238,6 +238,36 @@ typedef int guac_user_pipe_handler(guac_user* user, guac_stream* stream,
         char* mimetype, char* name);
 
 /**
+ * Handler for Guacamole argument value (argv) streams received from a user.
+ * Argument value streams are real-time revisions to the connection parameters
+ * of an in-progress connection. Each such argument value stream begins when
+ * the user sends a "argv" instruction. To handle received data along this
+ * stream, implementations of this handler must assign blob and end handlers to
+ * the given stream object.
+ *
+ * @param user
+ *     The user that opened the argument value stream.
+ *
+ * @param stream
+ *     The stream object allocated by libguac to represent the argument value
+ *     stream opened by the user.
+ *
+ * @param mimetype
+ *     The mimetype of the data that will be sent along the stream.
+ *
+ * @param name
+ *     The name of the connection parameter being updated. It is up to the
+ *     implementation of this handler to decide whether and how to update a
+ *     connection parameter.
+ *
+ * @return
+ *     Zero if the opening of the argument value stream has been handled
+ *     successfully, or non-zero if an error occurs.
+ */
+typedef int guac_user_argv_handler(guac_user* user, guac_stream* stream,
+        char* mimetype, char* name);
+
+/**
  * Handler for Guacamole stream blobs. Each blob originates from a "blob"
  * instruction which was associated with a previously-created stream.
  *

@@ -121,6 +121,13 @@ __guac_instruction_handler __guac_handle_file;
 __guac_instruction_handler __guac_handle_pipe;
 
 /**
+ * Internal initial handler for the argv instruction. When a argv instruction
+ * is received, this handler will be called. The client's argv handler will
+ * be invoked if defined.
+ */
+__guac_instruction_handler __guac_handle_argv;
+
+/**
  * Internal initial handler for the ack instruction. When a ack instruction
  * is received, this handler will be called. The client's ack handler will
  * be invoked if defined.

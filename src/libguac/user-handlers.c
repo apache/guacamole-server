@@ -49,6 +49,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"get",        __guac_handle_get},
    {"put",        __guac_handle_put},
    {"audio",      __guac_handle_audio},
+   {"argv",       __guac_handle_argv},
    {NULL,         NULL}
 };
 
@@ -379,6 +380,30 @@ int __guac_handle_pipe(guac_user* user, int argc, char** argv) {
     /* Otherwise, abort */
     guac_protocol_send_ack(user->socket, stream,
             "Named pipes unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
+    return 0;
+}
+
+int __guac_handle_argv(guac_user* user, int argc, char** argv) {
+
+    /* Pull corresponding stream */
+    int stream_index = atoi(argv[0]);
+    guac_stream* stream = __init_input_stream(user, stream_index);
+    if (stream == NULL)
+        return 0;
+
+    /* If supported, call handler */
+    if (user->argv_handler)
+        return user->argv_handler(
+            user,
+            stream,
+            argv[1], /* mimetype */
+            argv[2]  /* name */
+        );
+
+    /* Otherwise, abort */
+    guac_protocol_send_ack(user->socket, stream,
+            "Reconfiguring in-progress connections unsupported",
+            GUAC_PROTOCOL_STATUS_UNSUPPORTED);
     return 0;
 }
 
