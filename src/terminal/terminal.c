@@ -1954,15 +1954,16 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
         display->default_palette);
 
     /* Reinitialize default attributes of buffer and display */
-    terminal->buffer->default_character = *default_char;
+    guac_terminal_display_reset_palette(display);
     display->default_foreground = default_char->attributes.foreground;
     display->default_background = default_char->attributes.background;
 
-    /* Redraw background with new color */
+    /* Redraw terminal text and background */
     guac_terminal_repaint_default_layer(terminal, client->socket);
+    __guac_terminal_redraw_rect(terminal, 0, 0,
+            terminal->term_height - 1,
+            terminal->term_width - 1);
 
-    /* Force reset of terminal state */
-    guac_terminal_reset(terminal);
     guac_terminal_notify(terminal);
 
 }
