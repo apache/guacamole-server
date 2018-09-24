@@ -289,6 +289,10 @@ const guac_terminal_color GUAC_TERMINAL_INITIAL_PALETTE[256] = {
 int guac_terminal_colorcmp(const guac_terminal_color* a,
         const guac_terminal_color* b) {
 
+    /* Compare palette index alone if not unknown */
+    if (a->palette_index != -1 && b->palette_index != -1)
+        return a->palette_index - b->palette_index;
+
     /* Consider red component highest order ... */
     if (a->red != b->red)
         return a->red - b->red;

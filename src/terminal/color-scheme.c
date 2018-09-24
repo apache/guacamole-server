@@ -247,5 +247,10 @@ void guac_terminal_parse_color_scheme(guac_client* client,
                 (const guac_terminal_color(*)[256]) palette, color_target))
             return; /* Parsing failed. */
     }
+
+    /* Persist pseudo-index for foreground/background colors */
+    foreground->palette_index = GUAC_TERMINAL_COLOR_FOREGROUND;
+    background->palette_index = GUAC_TERMINAL_COLOR_BACKGROUND;
+
 }
 

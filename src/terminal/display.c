@@ -78,7 +78,12 @@ int __guac_terminal_set_colors(guac_terminal_display* display,
     }
 
     display->glyph_foreground = *foreground;
+    guac_terminal_display_lookup_color(display,
+            foreground->palette_index, &display->glyph_foreground);
+
     display->glyph_background = *background;
+    guac_terminal_display_lookup_color(display,
+            background->palette_index, &display->glyph_background);
 
     /* Modify color if half-bright (low intensity) */
     if (attributes->half_bright && !attributes->bold) {
@@ -314,6 +319,18 @@ int guac_terminal_display_assign_color(guac_terminal_display* display,
 
 int guac_terminal_display_lookup_color(guac_terminal_display* display,
         int index, guac_terminal_color* color) {
+
+    /* Use default foreground if foreground pseudo-index is given */
+    if (index == GUAC_TERMINAL_COLOR_FOREGROUND) {
+        *color = display->default_foreground;
+        return 0;
+    }
+
+    /* Use default background if background pseudo-index is given */
+    if (index == GUAC_TERMINAL_COLOR_BACKGROUND) {
+        *color = display->default_background;
+        return 0;
+    }
 
     /* Lookup fails if out-of-bounds */
     if (index < 0 || index > 255)
@@ -658,11 +675,15 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                 int rect_width, rect_height;
 
                 /* Color of the rectangle to draw */
-                const guac_terminal_color* color;
+                guac_terminal_color color;
                 if (current->character.attributes.reverse != current->character.attributes.cursor)
-                   color = &current->character.attributes.foreground;
+                   color = current->character.attributes.foreground;
                 else
-                   color = &current->character.attributes.background;
+                   color = current->character.attributes.background;
+
+                /* Rely only on palette index if defined */
+                guac_terminal_display_lookup_color(display,
+                        color.palette_index, &color);
 
                 /* Current row within a subrect */
                 guac_terminal_operation* rect_current_row;
@@ -685,7 +706,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                         /* If not identical operation, stop */
                         if (rect_current->type != GUAC_CHAR_SET
                                 || guac_terminal_has_glyph(rect_current->character.value)
-                                || guac_terminal_colorcmp(joining_color, color) != 0)
+                                || guac_terminal_colorcmp(joining_color, &color) != 0)
                             break;
 
                         /* Next column */
@@ -730,7 +751,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                         /* Mark clear operations as NOP */
                         if (rect_current->type == GUAC_CHAR_SET
                                 && !guac_terminal_has_glyph(rect_current->character.value)
-                                && guac_terminal_colorcmp(joining_color, color) == 0)
+                                && guac_terminal_colorcmp(joining_color, &color) == 0)
                             rect_current->type = GUAC_CHAR_NOP;
 
                         /* Next column */
@@ -750,7 +771,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
                         row * display->char_height,
                         rect_width * display->char_width,
                         rect_height * display->char_height,
-                        color->red, color->green, color->blue,
+                        color.red, color.green, color.blue,
                         0xFF);
 
             } /* end if clear operation */
