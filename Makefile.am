@@ -20,19 +20,20 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Subprojects
-DIST_SUBDIRS =           \
-    src/libguac          \
-    src/common           \
-    src/common-ssh       \
-    src/terminal         \
-    src/guacd            \
-    src/guacenc          \
-    src/guaclog          \
-    src/pulse            \
-    src/protocols/rdp    \
-    src/protocols/ssh    \
-    src/protocols/telnet \
-    src/protocols/vnc    \
+DIST_SUBDIRS =               \
+    src/libguac              \
+    src/common               \
+    src/common-ssh           \
+    src/terminal             \
+    src/guacd                \
+    src/guacenc              \
+    src/guaclog              \
+    src/pulse                \
+    src/protocols/kubernetes \
+    src/protocols/rdp        \
+    src/protocols/ssh        \
+    src/protocols/telnet     \
+    src/protocols/vnc        \
     tests
 
 SUBDIRS =        \
