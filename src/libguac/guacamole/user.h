@@ -475,6 +475,27 @@ struct guac_user {
      */
     guac_user_audio_handler* audio_handler;
 
+    /**
+     * Handler for argv events (updates to the connection parameters of an
+     * in-progress connection) sent by the Guacamole web-client.
+     *
+     * The handler takes a guac_stream which contains the stream index and
+     * will persist through the duration of the transfer, the mimetype of
+     * the data being transferred, and the argument (connection parameter)
+     * name.
+     *
+     * Example:
+     * @code
+     *     int argv_handler(guac_user* user, guac_stream* stream,
+     *             char* mimetype, char* name);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->argv_handler = argv_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_argv_handler* argv_handler;
+
 };
 
 /**
