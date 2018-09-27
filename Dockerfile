@@ -49,6 +49,7 @@ ARG BUILD_DEPENDENCIES="              \
         libtelnet-dev                 \
         libtool                       \
         libvncserver-dev              \
+        libwebsockets-dev             \
         libwebp-dev                   \
         make"
 
