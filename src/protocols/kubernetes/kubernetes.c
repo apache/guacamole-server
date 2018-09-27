@@ -66,8 +66,13 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
     guac_client* client = guac_kubernetes_lws_current_client;
 
     /* Do not handle any further events if connection is closing */
-    if (client->state != GUAC_CLIENT_RUNNING)
+    if (client->state != GUAC_CLIENT_RUNNING) {
+#ifdef HAVE_LWS_CALLBACK_HTTP_DUMMY
         return lws_callback_http_dummy(wsi, reason, user, in, length);
+#else
+        return 0;
+#endif
+    }
 
     switch (reason) {
 
@@ -127,7 +132,11 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
 
     }
 
+#ifdef HAVE_LWS_CALLBACK_HTTP_DUMMY
     return lws_callback_http_dummy(wsi, reason, user, in, length);
+#else
+    return 0;
+#endif
 
 }
 

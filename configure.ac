@@ -1224,6 +1224,14 @@ then
                    [Whether LCCSCF_USE_SSL is defined])],,
         [#include <libwebsockets.h>])
 
+    # Older versions of libwebsockets do not define a dummy callback which
+    # must be invoked after the main event callback is invoked; the main event
+    # callback must instead manually return zero
+    AC_CHECK_DECL([lws_callback_http_dummy],
+        [AC_DEFINE([HAVE_LWS_CALLBACK_HTTP_DUMMY],,
+                   [Whether lws_callback_http_dummy() is defined])],,
+        [#include <libwebsockets.h>])
+
 fi
 
 AM_CONDITIONAL([ENABLE_WEBSOCKETS],
