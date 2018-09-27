@@ -120,6 +120,7 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
 #endif
 
         /* Connection closed */
+        case LWS_CALLBACK_WSI_DESTROY:
         case LWS_CALLBACK_CLOSED:
             guac_client_stop(client);
             guac_client_log(client, GUAC_LOG_DEBUG, "WebSocket connection to "
