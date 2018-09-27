@@ -268,7 +268,6 @@ void* guac_kubernetes_client_thread(void* data) {
         .origin = settings->hostname,
         .port = settings->port,
         .protocol = GUAC_KUBERNETES_LWS_PROTOCOL,
-        .pwsi = &kubernetes_client->wsi,
         .userdata = client
     };
 
