@@ -64,6 +64,8 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
         void* in, size_t length) {
 
     guac_client* client = guac_kubernetes_lws_current_client;
+    guac_kubernetes_client* kubernetes_client =
+        (guac_kubernetes_client*) client->data;
 
     /* Do not handle any further events if connection is closing */
     if (client->state != GUAC_CLIENT_RUNNING) {
@@ -93,6 +95,9 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
         case LWS_CALLBACK_CLIENT_ESTABLISHED:
             guac_client_log(client, GUAC_LOG_INFO,
                     "Kubernetes connection successful.");
+
+            /* Allow terminal to render */
+            guac_terminal_start(kubernetes_client->term);
 
             /* Schedule check for pending messages in case messages were added
              * to the outbound message buffer prior to the connection being
