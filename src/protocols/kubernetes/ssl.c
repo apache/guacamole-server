@@ -110,6 +110,27 @@ static EVP_PKEY* guac_kubernetes_read_key(char* pem) {
 
 }
 
+/**
+ * OpenSSL certificate verification callback which universally accepts all
+ * certificates without performing any verification at all.
+ *
+ * @param x509_ctx
+ *     The current context of the certificate verification process. This
+ *     parameter is ignored by this particular implementation of the callback.
+ *
+ * @param arg
+ *     The arbitrary value passed to SSL_CTX_set_cert_verify_callback(). This
+ *     parameter is ignored by this particular implementation of the callback.
+ *
+ * @return
+ *     Strictly 0 if certificate verification fails, 1 if the certificate is
+ *     verified. No other values are legal return values for this callback as
+ *     documented by OpenSSL.
+ */
+static int guac_kubernetes_assume_cert_ok(X509_STORE_CTX* x509_ctx, void* arg) {
+    return 1;
+}
+
 void guac_kubernetes_init_ssl(guac_client* client, SSL_CTX* context) {
 
     guac_kubernetes_client* kubernetes_client =
@@ -118,8 +139,11 @@ void guac_kubernetes_init_ssl(guac_client* client, SSL_CTX* context) {
     guac_kubernetes_settings* settings = kubernetes_client->settings;
 
     /* Bypass certificate checks if requested */
-    if (settings->ignore_cert)
-        SSL_CTX_set_verify(context, SSL_VERIFY_NONE, NULL);
+    if (settings->ignore_cert) {
+        SSL_CTX_set_verify(context, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_cert_verify_callback(context,
+                guac_kubernetes_assume_cert_ok, NULL);
+    }
 
     /* Otherwise use the given CA certificate to validate (if any) */
     else if (settings->ca_cert != NULL) {

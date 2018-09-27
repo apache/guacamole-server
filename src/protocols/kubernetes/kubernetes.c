@@ -66,8 +66,13 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
     guac_client* client = guac_kubernetes_lws_current_client;
 
     /* Do not handle any further events if connection is closing */
-    if (client->state != GUAC_CLIENT_RUNNING)
+    if (client->state != GUAC_CLIENT_RUNNING) {
+#ifdef HAVE_LWS_CALLBACK_HTTP_DUMMY
         return lws_callback_http_dummy(wsi, reason, user, in, length);
+#else
+        return 0;
+#endif
+    }
 
     switch (reason) {
 
@@ -115,6 +120,7 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
 #endif
 
         /* Connection closed */
+        case LWS_CALLBACK_WSI_DESTROY:
         case LWS_CALLBACK_CLOSED:
             guac_client_stop(client);
             guac_client_log(client, GUAC_LOG_DEBUG, "WebSocket connection to "
@@ -127,7 +133,11 @@ static int guac_kubernetes_lws_callback(struct lws* wsi,
 
     }
 
+#ifdef HAVE_LWS_CALLBACK_HTTP_DUMMY
     return lws_callback_http_dummy(wsi, reason, user, in, length);
+#else
+    return 0;
+#endif
 
 }
 
@@ -259,7 +269,6 @@ void* guac_kubernetes_client_thread(void* data) {
         .origin = settings->hostname,
         .port = settings->port,
         .protocol = GUAC_KUBERNETES_LWS_PROTOCOL,
-        .pwsi = &kubernetes_client->wsi,
         .userdata = client
     };
 
@@ -268,9 +277,15 @@ void* guac_kubernetes_client_thread(void* data) {
      * do our own validation - libwebsockets does not validate properly if
      * IP addresses are used. */
     if (settings->use_ssl) {
+#ifdef HAVE_LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT
         context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
+#endif
+#ifdef HAVE_LCCSCF_USE_SSL
         connection_info.ssl_connection = LCCSCF_USE_SSL
             | LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK;
+#else
+        connection_info.ssl_connection = 2; /* SSL + no hostname check */
+#endif
     }
 
     /* Create libwebsockets context */
