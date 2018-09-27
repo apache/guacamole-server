@@ -1198,14 +1198,32 @@ then
                  have_libwebsockets=no])
 fi
 
-# Check for client-specific closed event, which must be used in favor of the
-# generic closed event if libwebsockets is recent enough to provide this
 if test "x$with_websockets" != "xno"
 then
+
+    # Check for client-specific closed event, which must be used in favor of
+    # the generic closed event if libwebsockets is recent enough to provide
+    # this
     AC_CHECK_DECL([LWS_CALLBACK_CLIENT_CLOSED],
         [AC_DEFINE([HAVE_LWS_CALLBACK_CLIENT_CLOSED],,
                    [Whether LWS_CALLBACK_CLIENT_CLOSED is defined])],,
         [#include <libwebsockets.h>])
+
+    # Older versions of libwebsockets may not define a flag for requesting
+    # global initialization of OpenSSL, instead performing that initialization
+    # by default
+    AC_CHECK_DECL([LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT],
+        [AC_DEFINE([HAVE_LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT],,
+                   [Whether LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT is defined])],,
+        [#include <libwebsockets.h>])
+
+    # Older versions of libwebsockets do not define special macros for SSL
+    # connection flags, instead relying on documented integer values
+    AC_CHECK_DECL([LCCSCF_USE_SSL],
+        [AC_DEFINE([HAVE_LCCSCF_USE_SSL],,
+                   [Whether LCCSCF_USE_SSL is defined])],,
+        [#include <libwebsockets.h>])
+
 fi
 
 AM_CONDITIONAL([ENABLE_WEBSOCKETS],

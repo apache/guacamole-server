@@ -268,9 +268,15 @@ void* guac_kubernetes_client_thread(void* data) {
      * do our own validation - libwebsockets does not validate properly if
      * IP addresses are used. */
     if (settings->use_ssl) {
+#ifdef HAVE_LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT
         context_info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
+#endif
+#ifdef HAVE_LCCSCF_USE_SSL
         connection_info.ssl_connection = LCCSCF_USE_SSL
             | LCCSCF_SKIP_SERVER_CERT_HOSTNAME_CHECK;
+#else
+        connection_info.ssl_connection = 2; /* SSL + no hostname check */
+#endif
     }
 
     /* Create libwebsockets context */
