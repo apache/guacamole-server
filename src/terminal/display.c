@@ -206,14 +206,14 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
         guac_terminal_color* foreground, guac_terminal_color* background,
         guac_terminal_color (*palette)[256]) {
 
-    PangoFontMap* font_map;
-    PangoFont* font;
-    PangoFontMetrics* metrics;
-    PangoContext* context;
-
     /* Allocate display */
     guac_terminal_display* display = malloc(sizeof(guac_terminal_display));
     display->client = client;
+
+    /* Initially no font loaded */
+    display->font_desc = NULL;
+    display->char_width = 0;
+    display->char_height = 0;
 
     /* Create default surface */
     display->display_layer = guac_client_alloc_layer(client);
@@ -225,41 +225,9 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     guac_protocol_send_move(client->socket, display->select_layer,
             display->display_layer, 0, 0, 0);
 
-    /* Get font */
-    display->font_desc = pango_font_description_new();
-    pango_font_description_set_family(display->font_desc, font_name);
-    pango_font_description_set_weight(display->font_desc, PANGO_WEIGHT_NORMAL);
-    pango_font_description_set_size(display->font_desc,
-            font_size * PANGO_SCALE * dpi / 96);
-
-    font_map = pango_cairo_font_map_get_default();
-    context = pango_font_map_create_context(font_map);
-
-    font = pango_font_map_load_font(font_map, context, display->font_desc);
-    if (font == NULL) {
-        guac_client_abort(display->client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Unable to get font \"%s\"", font_name);
-        free(display);
-        return NULL;
-    }
-
-    metrics = pango_font_get_metrics(font, NULL);
-    if (metrics == NULL) {
-        guac_client_abort(display->client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Unable to get font metrics for font \"%s\"", font_name);
-        free(display);
-        return NULL;
-    }
-
     display->default_foreground = display->glyph_foreground = *foreground;
     display->default_background = display->glyph_background = *background;
     display->default_palette = palette;
-
-    /* Calculate character dimensions */
-    display->char_width =
-        pango_font_metrics_get_approximate_digit_width(metrics) / PANGO_SCALE;
-    display->char_height =
-        (pango_font_metrics_get_descent(metrics)
-            + pango_font_metrics_get_ascent(metrics)) / PANGO_SCALE;
 
     /* Initially empty */
     display->width = 0;
@@ -269,11 +237,22 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     /* Initially nothing selected */
     display->text_selected = false;
 
+    /* Attempt to load font */
+    if (guac_terminal_display_set_font(display, font_name, font_size, dpi)) {
+        guac_client_abort(display->client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "Unable to set initial font \"%s\"", font_name);
+        free(display);
+        return NULL;
+    }
+
     return display;
 
 }
 
 void guac_terminal_display_free(guac_terminal_display* display) {
+
+    /* Free font description */
+    pango_font_description_free(display->font_desc);
 
     /* Free default palette. */
     free(display->default_palette);
@@ -966,4 +945,78 @@ void guac_terminal_display_clear_select(guac_terminal_display* display) {
 
 }
 
+int guac_terminal_display_set_font(guac_terminal_display* display,
+        const char* font_name, int font_size, int dpi) {
+
+    PangoFontDescription* font_desc;
+
+    /* Build off existing font description if possible */
+    if (display->font_desc != NULL)
+        font_desc = pango_font_description_copy(display->font_desc);
+
+    /* Create new font description if there is nothing to copy */
+    else {
+        font_desc = pango_font_description_new();
+        pango_font_description_set_weight(font_desc, PANGO_WEIGHT_NORMAL);
+    }
+
+    /* Optionally update font name */
+    if (font_name != NULL)
+        pango_font_description_set_family(font_desc, font_name);
+
+    /* Optionally update size */
+    if (font_size != -1) {
+        pango_font_description_set_size(font_desc,
+                font_size * PANGO_SCALE * dpi / 96);
+    }
+
+    PangoFontMap* font_map = pango_cairo_font_map_get_default();
+    PangoContext* context = pango_font_map_create_context(font_map);
+
+    /* Load font from font map */
+    PangoFont* font = pango_font_map_load_font(font_map, context, font_desc);
+    if (font == NULL) {
+        guac_client_log(display->client, GUAC_LOG_INFO, "Unable to load "
+                "font \"%s\"", pango_font_description_get_family(font_desc));
+        pango_font_description_free(font_desc);
+        return 1;
+    }
+
+    /* Get metrics from loaded font */
+    PangoFontMetrics* metrics = pango_font_get_metrics(font, NULL);
+    if (metrics == NULL) {
+        guac_client_log(display->client, GUAC_LOG_INFO, "Unable to get font "
+                "metrics for font \"%s\"",
+                pango_font_description_get_family(font_desc));
+        pango_font_description_free(font_desc);
+        return 1;
+    }
+
+    /* Save effective size of current display */
+    int pixel_width = display->width * display->char_width;
+    int pixel_height = display->height * display->char_height;
+
+    /* Calculate character dimensions using metrics */
+    display->char_width =
+        pango_font_metrics_get_approximate_digit_width(metrics) / PANGO_SCALE;
+    display->char_height =
+        (pango_font_metrics_get_descent(metrics)
+            + pango_font_metrics_get_ascent(metrics)) / PANGO_SCALE;
+
+    /* Atomically replace old font description */
+    PangoFontDescription* old_font_desc = display->font_desc;
+    display->font_desc = font_desc;
+    pango_font_description_free(old_font_desc);
+
+    /* Recalculate dimensions which will fit within current surface */
+    int new_width = pixel_width / display->char_width;
+    int new_height = pixel_height / display->char_height;
+
+    /* Resize display if dimensions have changed */
+    if (new_width != display->width || new_height != display->height)
+        guac_terminal_display_resize(display, new_width, new_height);
+
+    return 0;
+
+}
 
