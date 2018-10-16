@@ -198,6 +198,11 @@ enum VNC_ARGS_IDX {
     IDX_SFTP_HOSTNAME,
 
     /**
+     * The public SSH host key to identify the SFTP server.
+     */
+    IDX_SFTP_HOST_KEY,
+
+    /**
      * The port of the SSH server to connect to for SFTP. If blank, the default
      * SSH port of "22" will be used.
      */
@@ -208,11 +213,6 @@ enum VNC_ARGS_IDX {
      * SFTP.
      */
     IDX_SFTP_USERNAME,
-
-    /**
-     * The public SSH host key to identify the SFTP server.
-     */
-    IDX_SFTP_HOST_KEY,
 
     /**
      * The password to provide when authenticating with the SSH server for
