@@ -120,6 +120,11 @@ AC_CHECK_DECL([poll],
                [Whether poll() is defined])],,
 	[#include <poll.h>])
 
+AC_CHECK_DECL([strlcpy],
+	[AC_DEFINE([HAVE_STRLCPY],,
+               [Whether strlcpy() is defined])],,
+	[#include <string.h>])
+
 # Typedefs
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
