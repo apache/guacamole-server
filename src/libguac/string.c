@@ -50,3 +50,14 @@ size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n) {
 
 }
 
+size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n) {
+
+#ifdef HAVE_STRLCPY
+    return strlcat(dest, src, n);
+#else
+    int length = strnlen(dest, n);
+    return length + guac_strlcpy(dest + length, src, n - length);
+#endif
+
+}
+

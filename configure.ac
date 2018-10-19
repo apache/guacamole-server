@@ -125,6 +125,11 @@ AC_CHECK_DECL([strlcpy],
                [Whether strlcpy() is defined])],,
 	[#include <string.h>])
 
+AC_CHECK_DECL([strlcat],
+	[AC_DEFINE([HAVE_STRLCAT],,
+               [Whether strlcat() is defined])],,
+	[#include <string.h>])
+
 # Typedefs
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T

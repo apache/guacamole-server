@@ -64,5 +64,44 @@
  */
 size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n);
 
+/**
+ * Appends the given source string after the end of the given destination
+ * string, writing at most the given number of bytes. Both the source and
+ * destination strings MUST be null-terminated. The resulting buffer will
+ * always be null-terminated, even if doing so means that the intended string
+ * is truncated, unless the destination buffer has no space available at all.
+ * As this function always returns the length of the string it tried to create
+ * (the length of destination and source strings added together), whether
+ * truncation has occurred can be detected by comparing the return value
+ * against the size of the destination buffer. If the value returned is greater
+ * than or equal to the size of the destination buffer, then the string has
+ * been truncated.
+ *
+ * The source and destination buffers MAY NOT overlap.
+ *
+ * @param dest
+ *     The buffer which should be appended with the contents of the source
+ *     string. This buffer MUST already be null-terminated and will always be
+ *     null-terminated unless zero bytes are available within the buffer.
+ *
+ * @param src
+ *     The source string to append to the the destination buffer. This string
+ *     MUST be null-terminated.
+ *
+ * @param n
+ *     The number of bytes available within the destination buffer. If this
+ *     value is not greater than zero, no bytes will be written to the
+ *     destination buffer, and the destination buffer may not be
+ *     null-terminated. In all other cases, the destination buffer will always
+ *     be null-terminated, even if doing so means that the copied data from the
+ *     source string will be truncated.
+ *
+ * @return
+ *     The length of the string this function tried to create (the lengths of
+ *     the source and destination strings added together) in bytes, excluding
+ *     the null terminator.
+ */
+size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n);
+
 #endif
 
