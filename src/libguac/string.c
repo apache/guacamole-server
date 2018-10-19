@@ -61,3 +61,27 @@ size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n) {
 
 }
 
+size_t guac_strljoin(char* restrict dest, const char* restrict const* elements,
+        int nmemb, const char* restrict delim, size_t n) {
+
+    int length = 0;
+    const char* restrict const* current = elements;
+
+    /* If no elements are provided, nothing to do but ensure the destination
+     * buffer is null terminated */
+    if (nmemb <= 0)
+        return guac_strlcpy(dest, "", n);
+
+    /* Initialize destination buffer with first element */
+    length += guac_strlcpy(dest, *current, n);
+
+    /* Copy all remaining elements, separated by delimiter */
+    for (current++; nmemb > 1; current++, nmemb--) {
+        length += guac_strlcat(dest + length, delim, n - length);
+        length += guac_strlcat(dest + length, *current, n - length);
+    }
+
+    return length;
+
+}
+

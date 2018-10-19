@@ -103,5 +103,53 @@ size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n);
  */
 size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n);
 
+/**
+ * Concatenates each of the given strings, separated by the given delimiter,
+ * storing the result within a destination buffer. The number of bytes written
+ * will be no more than the given number of bytes, and the destination buffer
+ * is guaranteed to be null-terminated, even if doing so means that one or more
+ * of the intended strings are truncated or omitted from the end of the result,
+ * unless the destination buffer has no space available at all. As this
+ * function always returns the length of the string it tried to create (the
+ * length of all source strings and all delimiters added together), whether
+ * truncation has occurred can be detected by comparing the return value
+ * against the size of the destination buffer. If the value returned is greater
+ * than or equal to the size of the destination buffer, then the string has
+ * been truncated.
+ *
+ * The source strings, delimiter string, and destination buffer MAY NOT
+ * overlap.
+ *
+ * @param dest
+ *     The buffer which should receive the result of joining the given strings.
+ *     This buffer will always be null terminated unless zero bytes are
+ *     available within the buffer.
+ *
+ * @param elements
+ *     The elements to concatenate together, separated by the given delimiter.
+ *     Each element MUST be null-terminated.
+ *
+ * @param nmemb
+ *     The number of elements within the elements array.
+ *
+ * @param delim
+ *     The delimiter to include between each pair of elements.
+ *
+ * @param n
+ *     The number of bytes available within the destination buffer. If this
+ *     value is not greater than zero, no bytes will be written to the
+ *     destination buffer, and the destination buffer may not be null
+ *     terminated. In all other cases, the destination buffer will always be
+ *     null terminated, even if doing so means that the result will be
+ *     truncated.
+ *
+ * @return
+ *     The length of the string this function tried to create (the length of
+ *     all source strings and all delimiters added together) in bytes,
+ *     excluding the null terminator.
+ */
+size_t guac_strljoin(char* restrict dest, const char* restrict const* elements,
+        int nmemb, const char* restrict delim, size_t n);
+
 #endif
 
