@@ -19,10 +19,10 @@
 
 #include "config.h"
 
-#include "error.h"
-#include "parser.h"
-#include "socket.h"
-#include "unicode.h"
+#include "guacamole/error.h"
+#include "guacamole/parser.h"
+#include "guacamole/socket.h"
+#include "guacamole/unicode.h"
 
 #include <stdlib.h>
 #include <stdio.h>

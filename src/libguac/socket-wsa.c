@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#include "error.h"
-#include "socket.h"
+#include "guacamole/error.h"
+#include "guacamole/socket.h"
 
 #include <pthread.h>
 #include <stddef.h>

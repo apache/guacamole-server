@@ -19,20 +19,20 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "encode-jpeg.h"
 #include "encode-png.h"
 #include "encode-webp.h"
-#include "error.h"
+#include "guacamole/client.h"
+#include "guacamole/error.h"
+#include "guacamole/layer.h"
+#include "guacamole/plugin.h"
+#include "guacamole/pool.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
+#include "guacamole/stream.h"
+#include "guacamole/timestamp.h"
+#include "guacamole/user.h"
 #include "id.h"
-#include "layer.h"
-#include "pool.h"
-#include "plugin.h"
-#include "protocol.h"
-#include "socket.h"
-#include "stream.h"
-#include "timestamp.h"
-#include "user.h"
 
 #include <dlfcn.h>
 #include <inttypes.h>

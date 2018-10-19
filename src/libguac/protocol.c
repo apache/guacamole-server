@@ -19,14 +19,14 @@
 
 #include "config.h"
 
-#include "error.h"
-#include "layer.h"
-#include "object.h"
+#include "guacamole/error.h"
+#include "guacamole/layer.h"
+#include "guacamole/object.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
+#include "guacamole/stream.h"
+#include "guacamole/unicode.h"
 #include "palette.h"
-#include "protocol.h"
-#include "socket.h"
-#include "stream.h"
-#include "unicode.h"
 
 #include <cairo/cairo.h>
 

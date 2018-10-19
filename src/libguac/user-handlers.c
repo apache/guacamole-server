@@ -19,12 +19,12 @@
 
 #include "config.h"
 
-#include "client.h"
-#include "object.h"
-#include "protocol.h"
-#include "stream.h"
-#include "timestamp.h"
-#include "user.h"
+#include "guacamole/client.h"
+#include "guacamole/object.h"
+#include "guacamole/protocol.h"
+#include "guacamole/stream.h"
+#include "guacamole/timestamp.h"
+#include "guacamole/user.h"
 #include "user-handlers.h"
 
 #include <inttypes.h>

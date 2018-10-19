@@ -19,9 +19,9 @@
 
 #include "config.h"
 
-#include "error.h"
-#include "socket-ssl.h"
-#include "socket.h"
+#include "guacamole/error.h"
+#include "guacamole/socket-ssl.h"
+#include "guacamole/socket.h"
 #include "wait-fd.h"
 
 #include <stdlib.h>

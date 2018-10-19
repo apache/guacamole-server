@@ -23,7 +23,7 @@
 
 #include "config.h"
 
-#include "audio.h"
+#include "guacamole/audio.h"
 
 /**
  * The number of bytes to send in each audio blob.

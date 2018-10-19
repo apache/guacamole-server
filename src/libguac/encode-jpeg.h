@@ -22,8 +22,8 @@
 
 #include "config.h"
 
-#include "socket.h"
-#include "stream.h"
+#include "guacamole/socket.h"
+#include "guacamole/stream.h"
 
 #include <cairo/cairo.h>
 
