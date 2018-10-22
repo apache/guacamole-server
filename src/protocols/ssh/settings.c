@@ -60,6 +60,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "backspace",
     "terminal-type",
     "scrollback",
+    "locale",
     NULL
 };
 
@@ -238,6 +239,14 @@ enum SSH_ARGS_IDX {
      */
     IDX_SCROLLBACK,
 
+    /**
+     * The locale that should be forwarded to the remote system via the LANG
+     * environment variable. By default, no locale is forwarded. This setting
+     * will only have an effect if the SSH server allows the LANG environment
+     * variable to be set.
+     */
+    IDX_LOCALE,
+
     SSH_ARGS_COUNT
 };
 
@@ -396,6 +405,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_TERMINAL_TYPE, "linux");
 
+    /* Read locale */
+    settings->locale =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_LOCALE, NULL);
+
     /* Parsing was successful */
     return settings;
 
@@ -434,6 +448,9 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
 
     /* Free terminal emulator type. */
     free(settings->terminal_type);
+
+    /* Free locale */
+    free(settings->locale);
 
     /* Free overall structure */
     free(settings);
