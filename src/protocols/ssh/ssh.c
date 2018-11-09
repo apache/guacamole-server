@@ -324,10 +324,9 @@ void* ssh_client_thread(void* data) {
     if (settings->locale != NULL) {
         if (libssh2_channel_setenv(ssh_client->term_channel, "LANG",
                     settings->locale)) {
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
+            guac_client_log(client, GUAC_LOG_WARNING,
                     "Unable to forward locale: SSH server refused to set "
                     "\"LANG\" environment variable.");
-            return NULL;
         }
     }
 
