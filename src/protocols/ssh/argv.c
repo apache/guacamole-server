@@ -38,7 +38,7 @@ typedef struct guac_ssh_argv {
     /**
      * Buffer space for containing the received argument value.
      */
-    char buffer[16384];
+    char buffer[GUAC_SSH_ARGV_MAX_LENGTH];
 
     /**
      * The number of bytes received so far.

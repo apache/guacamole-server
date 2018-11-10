@@ -38,7 +38,7 @@ typedef struct guac_telnet_argv {
     /**
      * Buffer space for containing the received argument value.
      */
-    char buffer[16384];
+    char buffer[GUAC_TELNET_ARGV_MAX_LENGTH];
 
     /**
      * The number of bytes received so far.

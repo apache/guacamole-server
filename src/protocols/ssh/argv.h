@@ -26,6 +26,12 @@
 #include <guacamole/user.h>
 
 /**
+ * The maximum number of bytes to allow for any argument value received via an
+ * argv stream, including null terminator.
+ */
+#define GUAC_SSH_ARGV_MAX_LENGTH 16384
+
+/**
  * Handles an incoming stream from a Guacamole "argv" instruction, updating the
  * given connection parameter if that parameter is allowed to be updated.
  */
