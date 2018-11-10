@@ -248,6 +248,12 @@ typedef struct guac_ssh_settings {
      */
     char* terminal_type;
 
+    /**
+     * The locale that should be forwarded to the remote system via the LANG
+     * environment variable.
+     */
+    char* locale;
+
 } guac_ssh_settings;
 
 /**
