@@ -360,6 +360,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->upload_path_handler = NULL;
     term->file_download_handler = NULL;
 
+    /* Set size of available screen area */
+    term->outer_width = width;
+    term->outer_height = height;
+
     /* Init modified flag and conditional */
     term->modified = 0;
     pthread_cond_init(&(term->modified_cond), NULL);
@@ -1338,6 +1342,10 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     /* Acquire exclusive access to terminal */
     guac_terminal_lock(terminal);
 
+    /* Set size of available screen area */
+    terminal->outer_width = width;
+    terminal->outer_height = height;
+
     /* Calculate available display area */
     int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
     if (available_width < 0)
@@ -1957,6 +1965,30 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
     guac_terminal_display_reset_palette(display);
     display->default_foreground = default_char->attributes.foreground;
     display->default_background = default_char->attributes.background;
+
+    /* Redraw terminal text and background */
+    guac_terminal_repaint_default_layer(terminal, client->socket);
+    __guac_terminal_redraw_rect(terminal, 0, 0,
+            terminal->term_height - 1,
+            terminal->term_width - 1);
+
+    guac_terminal_notify(terminal);
+
+}
+
+void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
+        int font_size, int dpi) {
+
+    guac_client* client = terminal->client;
+    guac_terminal_display* display = terminal->display;
+
+    if (guac_terminal_display_set_font(display, font_name, font_size, dpi))
+        return;
+
+    /* Resize terminal to fit available region, now that font metrics may be
+     * different */
+    guac_terminal_resize(terminal, terminal->outer_width,
+            terminal->outer_height);
 
     /* Redraw terminal text and background */
     guac_terminal_repaint_default_layer(terminal, client->socket);

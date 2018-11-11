@@ -278,6 +278,20 @@ struct guac_terminal {
     int requested_scrollback;
 
     /**
+     * The width of the space available to all components of the terminal, in
+     * pixels. This may include space which will not actually be used for
+     * character rendering.
+     */
+    int outer_width;
+
+    /**
+     * The height of the space available to all components of the terminal, in
+     * pixels. This may include space which will not actually be used for
+     * character rendering.
+     */
+    int outer_height;
+
+    /**
      * The width of the terminal, in pixels.
      */
     int width;
@@ -1085,6 +1099,30 @@ int guac_terminal_available_scroll(guac_terminal* term);
  */
 void guac_terminal_apply_color_scheme(guac_terminal* terminal,
         const char* color_scheme);
+
+/**
+ * Alters the font of the terminal. The terminal will automatically be redrawn
+ * and resized as necessary. If the terminal size changes, the remote side of
+ * the terminal session must be manually informed of that change or graphical
+ * artifacts may result.
+ *
+ * @param terminal
+ *     The terminal whose font family and/or size are being changed.
+ *
+ * @param font_name
+ *     The name of the new font family, or NULL if the font family should
+ *     remain unchanged.
+ *
+ * @param font_size
+ *     The new font size, in points, or -1 if the font size should remain
+ *     unchanged.
+ *
+ * @param dpi
+ *     The resolution of the display in DPI. If the font size will not be
+ *     changed (the font size given is -1), this value is ignored.
+ */
+void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
+        int font_size, int dpi);
 
 #endif
 

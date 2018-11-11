@@ -334,5 +334,35 @@ void guac_terminal_display_select(guac_terminal_display* display,
  */
 void guac_terminal_display_clear_select(guac_terminal_display* display);
 
+/**
+ * Alters the font of the terminal display. The available display area and the
+ * regular grid of character cells will be resized as necessary to compensate
+ * for any changes in font metrics.
+ *
+ * If successful, the terminal itself MUST be manually resized to take into
+ * account the new character dimensions, and MUST be manually redrawn. Failing
+ * to do so will result in graphical artifacts.
+ *
+ * @param display
+ *     The display whose font family and/or size are being changed.
+ *
+ * @param font_name
+ *     The name of the new font family, or NULL if the font family should
+ *     remain unchanged.
+ *
+ * @param font_size
+ *     The new font size, in points, or -1 if the font size should remain
+ *     unchanged.
+ *
+ * @param dpi
+ *     The resolution of the display in DPI. If the font size will not be
+ *     changed (the font size given is -1), this value is ignored.
+ *
+ * @return
+ *     Zero if the font was successfully changed, non-zero otherwise.
+ */
+int guac_terminal_display_set_font(guac_terminal_display* display,
+        const char* font_name, int font_size, int dpi);
+
 #endif
 
