@@ -1281,15 +1281,8 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 #endif
 
     /* Device redirection */
-    if (guac_settings->timezone) {
-
-        /* Set the TZ env variable */
-        if (setenv("TZ", guac_settings->timezone, 1)) {
-            guac_user_log(user, GUAC_LOG_WARNING, "Could not set TZ "
-                "variable.  Received error %i", errno);
-        }
-
-    }
+    if (guac_settings->timezone)
+        setenv("TZ", guac_settings->timezone, 1)
 
 #ifdef LEGACY_RDPSETTINGS
 #ifdef HAVE_RDPSETTINGS_DEVICEREDIRECTION
