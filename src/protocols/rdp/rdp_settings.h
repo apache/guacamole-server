@@ -552,13 +552,17 @@ extern const char* GUAC_RDP_CLIENT_ARGS[];
 /**
  * Save all given settings to the given freerdp instance.
  *
+ * @param client
+ *     The guac_client object providing the settings.
+ *
  * @param guac_settings
  *     The guac_rdp_settings object to save.
  *
  * @param rdp
  *     The RDP instance to save settings to.
  */
-void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp);
+void guac_rdp_push_settings(guac_client* client,
+        guac_rdp_settings* guac_settings, freerdp* rdp);
 
 /**
  * Returns the width of the RDP session display.
