@@ -1169,7 +1169,8 @@ static char* guac_rdp_strdup(const char* str) {
 
 }
 
-void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
+void guac_rdp_push_settings(guac_client* client,
+        guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     BOOL bitmap_cache = !guac_settings->disable_bitmap_caching;
     rdpSettings* rdp_settings = rdp->settings;
@@ -1280,10 +1281,15 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
 #endif
 #endif
 
-    /* Device redirection */
-    if (guac_settings->timezone)
-        setenv("TZ", guac_settings->timezone, 1)
+    /* Timezone redirection */
+    if (guac_settings->timezone) {
+        if(setenv("TZ", guac_settings->timezone, 1)) {
+            guac_client_log(client, GUAC_LOG_WARNING,
+                "Unable to set TZ variable, error %i", errno);
+        }
+    }
 
+    /* Device redirection */
 #ifdef LEGACY_RDPSETTINGS
 #ifdef HAVE_RDPSETTINGS_DEVICEREDIRECTION
     rdp_settings->device_redirection =  guac_settings->audio_enabled
