@@ -321,6 +321,10 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     guac_client_log(client, GUAC_LOG_DEBUG,
             "Supported authentication methods: %s", user_authlist);
 
+    /* If auth list is NULL, then authentication has succeeded with NONE */
+    if (user_authlist == NULL)
+        return 0;
+
     /* Authenticate with private key, if provided */
     if (key != NULL) {
 
