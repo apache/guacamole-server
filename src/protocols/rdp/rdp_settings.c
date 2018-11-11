@@ -358,7 +358,10 @@ enum RDP_ARGS_IDX {
     IDX_PRECONNECTION_BLOB,
 
     /**
-     * The timezone to pass through to the RDP connection.
+     * The timezone to pass through to the RDP connection, in IANA format, which
+     * will be translated into Windows formats.  See the following page for
+     * information and list of valid values:
+     * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
      */
     IDX_TIMEZONE,
 

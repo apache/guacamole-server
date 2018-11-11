@@ -249,11 +249,12 @@ enum SSH_ARGS_IDX {
     IDX_LOCALE,
      
     /**
-     * The timezone that is passed from the client system to the
-     * remote server, or null if not specified.  If set, and allowed
-     * by the remote SSH server, the TZ environment variable will be
-     * set on the remote session, causing the session to be localized
-     * to the specified timezone.
+     * The timezone that is to be passed to the remote system, via the
+     * TZ environment variable.  By default, no timezone is forwarded
+     * and the timezone of the remote system will be used.  This
+     * setting will only work if the SSH server allows the TZ variable
+     * to be set.  Timezones should be in standard IANA format, see:
+     * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
      */
     IDX_TIMEZONE,
 
