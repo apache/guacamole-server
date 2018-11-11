@@ -35,6 +35,7 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
+#include <errno.h>
 #include <stddef.h>
 #include <string.h>
 
