@@ -261,7 +261,7 @@ void* ssh_client_thread(void* data) {
         if (libssh2_channel_setenv(ssh_client->term_channel, "TZ",
                     settings->timezone)) {
             guac_client_log(client, GUAC_LOG_WARNING,
-                    "Unable to set the timzeone: SSH server "
+                    "Unable to set the timezone: SSH server "
                     "refused to set \"TZ\" variable.");
         }
     }
