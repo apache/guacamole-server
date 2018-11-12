@@ -35,6 +35,7 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
+#include <errno.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -79,6 +80,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "disable-glyph-caching",
     "preconnection-id",
     "preconnection-blob",
+    "timezone",
 
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
@@ -355,6 +357,14 @@ enum RDP_ARGS_IDX {
      * destination VM.
      */
     IDX_PRECONNECTION_BLOB,
+
+    /**
+     * The timezone to pass through to the RDP connection, in IANA format, which
+     * will be translated into Windows formats.  See the following page for
+     * information and list of valid values:
+     * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+     */
+    IDX_TIMEZONE,
 
 #ifdef ENABLE_COMMON_SSH
     /**
@@ -840,6 +850,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     if (settings->server_layout == NULL)
         settings->server_layout = guac_rdp_keymap_find(GUAC_DEFAULT_KEYMAP);
 
+    /* Timezone if provied by client */
+    settings->timezone =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_TIMEZONE, NULL);
+
 #ifdef ENABLE_COMMON_SSH
     /* SFTP enable/disable */
     settings->enable_sftp =
@@ -1013,6 +1028,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     free(settings->remote_app);
     free(settings->remote_app_args);
     free(settings->remote_app_dir);
+    free(settings->timezone);
     free(settings->username);
     free(settings->printer_name);
 
@@ -1153,7 +1169,8 @@ static char* guac_rdp_strdup(const char* str) {
 
 }
 
-void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
+void guac_rdp_push_settings(guac_client* client,
+        guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     BOOL bitmap_cache = !guac_settings->disable_bitmap_caching;
     rdpSettings* rdp_settings = rdp->settings;
@@ -1263,6 +1280,15 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->AudioCapture = guac_settings->enable_audio_input;
 #endif
 #endif
+
+    /* Timezone redirection */
+    if (guac_settings->timezone) {
+        if (setenv("TZ", guac_settings->timezone, 1)) {
+            guac_client_log(client, GUAC_LOG_WARNING,
+                "Unable to forward timezone: TZ environment variable "
+                "could not be set: %s", strerror(errno));
+        }
+    }
 
     /* Device redirection */
 #ifdef LEGACY_RDPSETTINGS

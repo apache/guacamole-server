@@ -61,6 +61,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "terminal-type",
     "scrollback",
     "locale",
+    "timezone",
     NULL
 };
 
@@ -246,6 +247,16 @@ enum SSH_ARGS_IDX {
      * variable to be set.
      */
     IDX_LOCALE,
+     
+    /**
+     * The timezone that is to be passed to the remote system, via the
+     * TZ environment variable.  By default, no timezone is forwarded
+     * and the timezone of the remote system will be used.  This
+     * setting will only work if the SSH server allows the TZ variable
+     * to be set.  Timezones should be in standard IANA format, see:
+     * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+     */
+    IDX_TIMEZONE,
 
     SSH_ARGS_COUNT
 };
@@ -410,6 +421,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_LOCALE, NULL);
 
+    /* Read the client timezone. */
+    settings->timezone =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_TIMEZONE, NULL);
+
     /* Parsing was successful */
     return settings;
 
@@ -451,6 +467,9 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
 
     /* Free locale */
     free(settings->locale);
+
+    /* Free the client timezone. */
+    free(settings->timezone);
 
     /* Free overall structure */
     free(settings);

@@ -719,7 +719,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_common_cursor_set_pointer(rdp_client->display->cursor);
 
     /* Push desired settings to FreeRDP */
-    guac_rdp_push_settings(settings, rdp_inst);
+    guac_rdp_push_settings(client, settings, rdp_inst);
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
