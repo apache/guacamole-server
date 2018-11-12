@@ -1286,7 +1286,7 @@ void guac_rdp_push_settings(guac_client* client,
         if (setenv("TZ", guac_settings->timezone, 1)) {
             guac_client_log(client, GUAC_LOG_WARNING,
                 "Unable to forward timezone: TZ environment variable "
-                "could not be set: %s", sterror(errno));
+                "could not be set: %s", strerror(errno));
         }
     }
 
