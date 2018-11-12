@@ -24,6 +24,7 @@
 #include <guacamole/object.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 #include <libssh2.h>
 
@@ -74,10 +75,15 @@ static int guac_common_ssh_sftp_normalize_path(char* fullpath,
     path++;
 
     /* Copy path into component data for parsing */
-    strncpy(path_component_data, path, sizeof(path_component_data) - 1);
+    int length = guac_strlcpy(path_component_data, path,
+            sizeof(path_component_data));
+
+    /* Fail if input path was truncated */
+    if (length >= sizeof(path_component_data))
+        return 1;
 
     /* Find path components within path */
-    for (i = 0; i < sizeof(path_component_data) - 1; i++) {
+    for (i = 0; i < sizeof(path_component_data); i++) {
 
         /* If current character is a path separator, parse as component */
         char c = path_component_data[i];
@@ -113,9 +119,6 @@ static int guac_common_ssh_sftp_normalize_path(char* fullpath,
         strcpy(fullpath, "/");
         return 1;
     }
-
-    /* Ensure last component is null-terminated */
-    path_component_data[i] = 0;
 
     /* Convert components back into path */
     for (; path_depth > 0; path_depth--) {
@@ -830,8 +833,17 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
 
         list_state->directory = dir;
         list_state->filesystem = filesystem;
-        strncpy(list_state->directory_name, name,
-                sizeof(list_state->directory_name) - 1);
+
+        int length = guac_strlcpy(list_state->directory_name, name,
+                sizeof(list_state->directory_name));
+
+        /* Bail out if directory name is too long to store */
+        if (length >= sizeof(list_state->directory_name)) {
+            guac_user_log(user, GUAC_LOG_INFO, "Unable to read directory "
+                    "\"%s\": Path too long", fullpath);
+            free(list_state);
+            return 0;
+        }
 
         /* Allocate stream for body */
         guac_stream* stream = guac_user_alloc_stream(user);

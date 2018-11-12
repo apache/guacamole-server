@@ -29,6 +29,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -53,7 +54,7 @@ int VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints) {
     guac_rdp_svc* svc = (guac_rdp_svc*) entry_points_ex->pExtendedData;
 
     /* Init channel def */
-    strncpy(svc_plugin->plugin.channel_def.name, svc->name,
+    guac_strlcpy(svc_plugin->plugin.channel_def.name, svc->name,
             GUAC_RDP_SVC_MAX_LENGTH);
     svc_plugin->plugin.channel_def.options = 
           CHANNEL_OPTION_INITIALIZED

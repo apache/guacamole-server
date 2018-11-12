@@ -39,6 +39,7 @@
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
@@ -607,11 +608,11 @@ const char* guac_rdp_fs_read_dir(guac_rdp_fs* fs, int file_id) {
 int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
 
     int i;
-    int path_depth = 0;
+    int path_depth = 1;
     char path_component_data[GUAC_RDP_FS_MAX_PATH];
-    const char* path_components[64];
+    const char* path_components[64] = { "" };
 
-    const char** current_path_component      = &(path_components[0]);
+    const char** current_path_component      = &(path_components[1]);
     const char*  current_path_component_data = &(path_component_data[0]);
 
     /* If original path is not absolute, normalization fails */
@@ -622,10 +623,15 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
     path++;
 
     /* Copy path into component data for parsing */
-    strncpy(path_component_data, path, sizeof(path_component_data) - 1);
+    int length = guac_strlcpy(path_component_data, path,
+            sizeof(path_component_data));
+
+    /* Fail if input path was truncated */
+    if (length >= sizeof(path_component_data))
+        return 1;
 
     /* Find path components within path */
-    for (i = 0; i < sizeof(path_component_data) - 1; i++) {
+    for (i = 0; i < sizeof(path_component_data); i++) {
 
         /* If current character is a path separator, parse as component */
         char c = path_component_data[i];
@@ -666,9 +672,6 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
         return 0;
     }
 
-    /* Ensure last component is null-terminated */
-    path_component_data[i] = 0;
-
     /* Convert components back into path */
     for (; path_depth > 0; path_depth--) {
 
@@ -691,26 +694,19 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
 
 int guac_rdp_fs_convert_path(const char* parent, const char* rel_path, char* abs_path) {
 
-    int i;
+    int length;
     char combined_path[GUAC_RDP_FS_MAX_PATH];
-    char* current = combined_path;
 
     /* Copy parent path */
-    for (i=0; i<GUAC_RDP_FS_MAX_PATH; i++) {
-
-        char c = *(parent++);
-        if (c == 0)
-            break;
-
-        *(current++) = c;
-
-    }
+    length = guac_strlcpy(combined_path, parent, sizeof(combined_path));
 
     /* Add trailing slash */
-    *(current++) = '\\';
+    length += guac_strlcpy(combined_path + length, "\\",
+            sizeof(combined_path) - length);
 
     /* Copy remaining path */
-    strncpy(current, rel_path, GUAC_RDP_FS_MAX_PATH-i-2);
+    length += guac_strlcpy(combined_path + length, rel_path,
+            sizeof(combined_path) - length);
 
     /* Normalize into provided buffer */
     return guac_rdp_fs_normalize_path(combined_path, abs_path);

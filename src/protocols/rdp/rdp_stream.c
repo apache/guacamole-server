@@ -32,6 +32,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
+#include <guacamole/string.h>
 
 #ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
 #include <freerdp/client/cliprdr.h>
@@ -504,8 +505,8 @@ int guac_rdp_download_get_handler(guac_user* user, guac_object* object,
         rdp_stream->type = GUAC_RDP_LS_STREAM;
         rdp_stream->ls_status.fs = fs;
         rdp_stream->ls_status.file_id = file_id;
-        strncpy(rdp_stream->ls_status.directory_name, name,
-                sizeof(rdp_stream->ls_status.directory_name) - 1);
+        guac_strlcpy(rdp_stream->ls_status.directory_name, name,
+                sizeof(rdp_stream->ls_status.directory_name));
 
         /* Allocate stream for body */
         guac_stream* stream = guac_user_alloc_stream(user);

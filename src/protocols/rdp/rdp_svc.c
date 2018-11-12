@@ -25,6 +25,7 @@
 
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
+#include <guacamole/string.h>
 
 #ifdef ENABLE_WINPR
 #include <winpr/stream.h>
@@ -33,7 +34,6 @@
 #endif
 
 #include <stdlib.h>
-#include <string.h>
 
 guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
 
@@ -44,16 +44,14 @@ guac_rdp_svc* guac_rdp_alloc_svc(guac_client* client, char* name) {
     svc->plugin = NULL;
     svc->output_pipe = NULL;
 
+    /* Init name */
+    int name_length = guac_strlcpy(svc->name, name, GUAC_RDP_SVC_MAX_LENGTH);
+
     /* Warn about name length */
-    if (strnlen(name, GUAC_RDP_SVC_MAX_LENGTH+1) > GUAC_RDP_SVC_MAX_LENGTH)
+    if (name_length >= GUAC_RDP_SVC_MAX_LENGTH)
         guac_client_log(client, GUAC_LOG_INFO,
                 "Static channel name \"%s\" exceeds maximum of %i characters "
-                "and will be truncated",
-                name, GUAC_RDP_SVC_MAX_LENGTH);
-
-    /* Init name */
-    strncpy(svc->name, name, GUAC_RDP_SVC_MAX_LENGTH);
-    svc->name[GUAC_RDP_SVC_MAX_LENGTH] = '\0';
+                "and will be truncated", name, GUAC_RDP_SVC_MAX_LENGTH - 1);
 
     return svc;
 }
