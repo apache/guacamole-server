@@ -30,6 +30,7 @@
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"
 #include "guacamole/stream.h"
+#include "guacamole/string.h"
 #include "guacamole/timestamp.h"
 #include "guacamole/user.h"
 #include "id.h"
@@ -441,8 +442,13 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
     } alias;
 
     /* Add protocol and .so suffix to protocol_lib */
-    strncat(protocol_lib, protocol, GUAC_PROTOCOL_NAME_LIMIT-1);
-    strcat(protocol_lib, GUAC_PROTOCOL_LIBRARY_SUFFIX);
+    guac_strlcat(protocol_lib, protocol, sizeof(protocol_lib));
+    if (guac_strlcat(protocol_lib, GUAC_PROTOCOL_LIBRARY_SUFFIX,
+                sizeof(protocol_lib)) >= sizeof(protocol_lib)) {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Protocol name is too long";
+        return -1;
+    }
 
     /* Load client plugin */
     client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
