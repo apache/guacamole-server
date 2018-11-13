@@ -91,13 +91,14 @@ if ENABLE_GUACLOG
 SUBDIRS += src/guaclog
 endif
 
-EXTRA_DIST =         \
-    .dockerignore    \
-    CONTRIBUTING     \
-    Dockerfile       \
-    LICENSE          \
-    NOTICE           \
-    bin/guacctl      \
-    doc/Doxyfile.in  \
-    src/guacd-docker
+EXTRA_DIST =                     \
+    .dockerignore                \
+    CONTRIBUTING                 \
+    Dockerfile                   \
+    LICENSE                      \
+    NOTICE                       \
+    bin/guacctl                  \
+    doc/Doxyfile.in              \
+    src/guacd-docker             \
+    util/generate-test-runner.pl
 
