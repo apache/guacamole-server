@@ -17,35 +17,16 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "util_suite.h"
-
-#include <CUnit/Basic.h>
+#include <CUnit/CUnit.h>
 #include <guacamole/unicode.h>
 
-void test_guac_unicode() {
+/**
+ * Test which verifies that guac_utf8_write() properly encodes Unicode
+ * codepoints as UTF-8.
+ */
+void test_unicode__utf8_write() {
 
-    int codepoint;
     char buffer[16];
-
-    /* Test character length */
-    CU_ASSERT_EQUAL(1, guac_utf8_charsize(UTF8_1b[0]));
-    CU_ASSERT_EQUAL(2, guac_utf8_charsize(UTF8_2b[0]));
-    CU_ASSERT_EQUAL(3, guac_utf8_charsize(UTF8_3b[0]));
-    CU_ASSERT_EQUAL(4, guac_utf8_charsize(UTF8_4b[0]));
-
-    /* Test string length */
-    CU_ASSERT_EQUAL(0, guac_utf8_strlen(""));
-    CU_ASSERT_EQUAL(1, guac_utf8_strlen(UTF8_4b));
-    CU_ASSERT_EQUAL(2, guac_utf8_strlen(UTF8_4b UTF8_1b));
-    CU_ASSERT_EQUAL(2, guac_utf8_strlen(UTF8_2b UTF8_3b));
-    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_1b UTF8_3b UTF8_4b));
-    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_2b UTF8_1b UTF8_3b));
-    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_4b UTF8_2b UTF8_1b));
-    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_3b UTF8_4b UTF8_2b));
-    CU_ASSERT_EQUAL(5, guac_utf8_strlen("hello"));
-    CU_ASSERT_EQUAL(9, guac_utf8_strlen("guacamole"));
 
     /* Test writes */
     CU_ASSERT_EQUAL(1, guac_utf8_write(0x00065, &(buffer[0]),  10));
@@ -59,23 +40,6 @@ void test_guac_unicode() {
     CU_ASSERT(memcmp("\xD9\x94",         &(buffer[1]), 2) == 0); /* U+0654  */
     CU_ASSERT(memcmp("\xE0\xA1\xB6",     &(buffer[3]), 3) == 0); /* U+0876  */
     CU_ASSERT(memcmp("\xF0\x92\x8D\x85", &(buffer[6]), 4) == 0); /* U+12345 */
-
-    /* Test reads */
-
-    CU_ASSERT_EQUAL(1, guac_utf8_read(&(buffer[0]), 10, &codepoint));
-    CU_ASSERT_EQUAL(0x0065, codepoint);
-
-    CU_ASSERT_EQUAL(2, guac_utf8_read(&(buffer[1]),  9, &codepoint));
-    CU_ASSERT_EQUAL(0x0654, codepoint);
-
-    CU_ASSERT_EQUAL(3, guac_utf8_read(&(buffer[3]),  7, &codepoint));
-    CU_ASSERT_EQUAL(0x0876, codepoint);
-
-    CU_ASSERT_EQUAL(4, guac_utf8_read(&(buffer[6]),  4, &codepoint));
-    CU_ASSERT_EQUAL(0x12345, codepoint);
-
-    CU_ASSERT_EQUAL(0, guac_utf8_read(&(buffer[10]), 0, &codepoint));
-    CU_ASSERT_EQUAL(0x12345, codepoint);
 
 }
 

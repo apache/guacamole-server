@@ -17,20 +17,21 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "util_suite.h"
-
-#include <CUnit/Basic.h>
+#include <CUnit/CUnit.h>
 #include <guacamole/pool.h>
 
-#define UNSEEN          0 
-#define SEEN_PHASE_1    1
-#define SEEN_PHASE_2    2
-
+/**
+ * The number of unique integers to provide through the guac_pool instance
+ * being tested.
+ */
 #define POOL_SIZE 128
 
-void test_guac_pool() {
+/**
+ * Test which verifies that guac_pool provides access to a given number of
+ * unique integers, never repeating a retrieved integer until that integer
+ * is returned to the pool.
+ */
+void test_pool__next_free() {
 
     guac_pool* pool;
 
@@ -53,8 +54,8 @@ void test_guac_pool() {
         CU_ASSERT_FATAL(value <  POOL_SIZE);
 
         /* This should be an integer we have not seen yet */
-        CU_ASSERT_EQUAL(UNSEEN, seen[value]);
-        seen[value] = SEEN_PHASE_1;
+        CU_ASSERT_EQUAL(0, seen[value]);
+        seen[value]++;
 
         /* Return value to pool */
         guac_pool_free_int(pool, value);
@@ -71,9 +72,9 @@ void test_guac_pool() {
         CU_ASSERT_FATAL(value >= 0);
         CU_ASSERT_FATAL(value <  POOL_SIZE);
 
-        /* This should be an integer we have seen already */
-        CU_ASSERT_EQUAL(SEEN_PHASE_1, seen[value]);
-        seen[value] = SEEN_PHASE_2;
+        /* This should be an integer we have seen only once */
+        CU_ASSERT_EQUAL(1, seen[value]);
+        seen[value]++;
 
     }
 

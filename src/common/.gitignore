@@ -1,7 +1,7 @@
 
 # Auto-generated test runner and binary
 _generated_runner.c
-test_libguac
+test_common
 
 # Test suite output
 *.log

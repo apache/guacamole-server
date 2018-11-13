@@ -17,41 +17,26 @@
  * under the License.
  */
 
-#include "config.h"
+#include "common/rect.h"
 
-#include "common_suite.h"
+#include <CUnit/CUnit.h>
 
-#include <CUnit/Basic.h>
+/**
+ * Test which verifies that guac_common_rect_extend() expands the given
+ * rectangle as necessary to contain at least the given bounds.
+ */
+void test_rect__extend() {
 
-int common_suite_init() {
-    return 0;
-}
+    guac_common_rect max;
+    guac_common_rect rect;
 
-int common_suite_cleanup() {
-    return 0;
-}
-
-int register_common_suite() {
-
-    /* Add common test suite */
-    CU_pSuite suite = CU_add_suite("common",
-            common_suite_init, common_suite_cleanup);
-    if (suite == NULL) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    /* Add tests */
-    if (
-        CU_add_test(suite, "guac-iconv", test_guac_iconv)  == NULL
-     || CU_add_test(suite, "guac-string", test_guac_string) == NULL
-     || CU_add_test(suite, "guac-rect", test_guac_rect) == NULL
-       ) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    return 0;
+    guac_common_rect_init(&rect, 10, 10, 90, 90);
+    guac_common_rect_init(&max, 0, 0, 100, 100);
+    guac_common_rect_extend(&rect, &max);
+    CU_ASSERT_EQUAL(0, rect.x);
+    CU_ASSERT_EQUAL(0, rect.y);
+    CU_ASSERT_EQUAL(100, rect.width);
+    CU_ASSERT_EQUAL(100, rect.height);
 
 }
 

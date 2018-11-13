@@ -17,40 +17,27 @@
  * under the License.
  */
 
-#include "config.h"
+#include "common/rect.h"
 
-#include "client_suite.h"
+#include <CUnit/CUnit.h>
 
-#include <CUnit/Basic.h>
+/**
+ * Test which verifies that guac_common_rect_constrain() restricts a given
+ * rectangle to arbitrary bounds.
+ */
+void test_rect__constrain() {
 
-int client_suite_init() {
-    return 0;
-}
+    guac_common_rect max;
+    guac_common_rect rect;
 
-int client_suite_cleanup() {
-    return 0;
-}
+    guac_common_rect_init(&rect, -10, -10, 110, 110);
+    guac_common_rect_init(&max, 0, 0, 100, 100);
+    guac_common_rect_constrain(&rect, &max);
 
-int register_client_suite() {
-
-    /* Add client test suite */
-    CU_pSuite suite = CU_add_suite("client",
-            client_suite_init, client_suite_cleanup);
-    if (suite == NULL) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    /* Add tests */
-    if (
-        CU_add_test(suite, "layer-pool", test_layer_pool) == NULL
-     || CU_add_test(suite, "buffer-pool", test_buffer_pool) == NULL
-       ) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
-
-    return 0;
+    CU_ASSERT_EQUAL(0, rect.x);
+    CU_ASSERT_EQUAL(0, rect.y);
+    CU_ASSERT_EQUAL(100, rect.width);
+    CU_ASSERT_EQUAL(100, rect.height);
 
 }
 

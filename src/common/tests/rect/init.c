@@ -17,31 +17,23 @@
  * under the License.
  */
 
-#include "config.h"
+#include "common/rect.h"
 
-#include "client/client_suite.h"
-#include "common/common_suite.h"
-#include "protocol/suite.h"
-#include "util/util_suite.h"
+#include <CUnit/CUnit.h>
 
-#include <CUnit/Basic.h>
+/**
+ * Test which verifies rectangle initialization via guac_common_rect_init().
+ */
+void test_rect__init() {
 
-int main() {
+    guac_common_rect max;
 
-    /* Init registry */
-    if (CU_initialize_registry() != CUE_SUCCESS)
-        return CU_get_error();
+    guac_common_rect_init(&max, 0, 0, 100, 100);
 
-    /* Register suites */
-    register_protocol_suite();
-    register_client_suite();
-    register_util_suite();
-
-    /* Run tests */
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-    return CU_get_error();
+    CU_ASSERT_EQUAL(0, max.x);
+    CU_ASSERT_EQUAL(0, max.y);
+    CU_ASSERT_EQUAL(100, max.width);
+    CU_ASSERT_EQUAL(100, max.height);
 
 }
 

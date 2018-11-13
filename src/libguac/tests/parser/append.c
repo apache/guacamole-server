@@ -17,18 +17,18 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "suite.h"
+#include <CUnit/CUnit.h>
+#include <guacamole/parser.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <CUnit/Basic.h>
-#include <guacamole/parser.h>
-
-void test_instruction_parse() {
+/**
+ * Test which verifies that guac_parser correctly parses Guacamole instructions
+ * from arbitrary blocks of data passed to guac_parser_append().
+ */
+void test_parser__append() {
 
     /* Allocate parser */
     guac_parser* parser = guac_parser_alloc();
@@ -52,6 +52,7 @@ void test_instruction_parse() {
 
     }
 
+    /* Parse of instruction should be complete */
     CU_ASSERT_EQUAL(remaining, 18);
     CU_ASSERT_EQUAL(parser->state, GUAC_PARSE_COMPLETE);
 

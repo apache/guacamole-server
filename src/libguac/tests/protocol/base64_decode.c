@@ -17,18 +17,14 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "suite.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-#include <CUnit/Basic.h>
+#include <CUnit/CUnit.h>
 #include <guacamole/protocol.h>
 
-void test_base64_decode() {
+/**
+ * Tests that libguac's in-place base64 decoding function properly decodes
+ * valid base64 and fails for invalid base64.
+ */
+void test_protocol__decode_base64() {
 
     /* Test strings */
     char test_HELLO[]     = "SEVMTE8=";

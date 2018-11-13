@@ -19,6 +19,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT([guacamole-server], [1.0.0])
+AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
@@ -27,6 +28,9 @@ LT_INIT([dlopen])
 
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
+
+# Use TAP test driver for tests (part of automake)
+AC_REQUIRE_AUX_FILE([tap-driver.sh])
 
 # Programs
 AC_PROG_CC
@@ -1299,11 +1303,12 @@ AM_CONDITIONAL([ENABLE_GUACLOG], [test "x${enable_guaclog}"  = "xyes"])
 
 AC_CONFIG_FILES([Makefile
                  doc/Doxyfile
-                 tests/Makefile
                  src/common/Makefile
+                 src/common/tests/Makefile
                  src/common-ssh/Makefile
                  src/terminal/Makefile
                  src/libguac/Makefile
+                 src/libguac/tests/Makefile
                  src/guacd/Makefile
                  src/guacd/man/guacd.8
                  src/guacd/man/guacd.conf.5

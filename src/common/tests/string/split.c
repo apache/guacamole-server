@@ -17,26 +17,20 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "common_suite.h"
 #include "common/string.h"
 
+#include <CUnit/CUnit.h>
+
 #include <stdlib.h>
-#include <CUnit/Basic.h>
 
-void test_guac_string() {
-
-    char** tokens;
-
-    /* Test occurrence counting */
-    CU_ASSERT_EQUAL(4, guac_count_occurrences("this is a test string", 's'));
-    CU_ASSERT_EQUAL(3, guac_count_occurrences("this is a test string", 'i'));
-    CU_ASSERT_EQUAL(0, guac_count_occurrences("", 's'));
+/**
+ * Test which verifies that guac_split() splits a string on occurrences of a
+ * given character.
+ */
+void test_string__split() {
 
     /* Split test string */
-    tokens = guac_split("this is a test string", ' ');
-
+    char** tokens = guac_split("this is a test string", ' ');
     CU_ASSERT_PTR_NOT_NULL(tokens);
 
     /* Check resulting tokens */
@@ -56,7 +50,6 @@ void test_guac_string() {
     CU_ASSERT_STRING_EQUAL("string", tokens[4]);
 
     CU_ASSERT_PTR_NULL(tokens[5]);
-
 
     /* Clean up */
     free(tokens[0]);

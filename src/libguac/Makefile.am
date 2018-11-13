@@ -27,6 +27,7 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac.la
+SUBDIRS = . tests
 
 libguacincdir = $(includedir)/guacamole
 

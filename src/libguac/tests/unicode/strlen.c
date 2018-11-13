@@ -17,19 +17,8 @@
  * under the License.
  */
 
-
-#ifndef _GUAC_TEST_UTIL_SUITE_H
-#define _GUAC_TEST_UTIL_SUITE_H
-
-/**
- * Test suite containing unit tests for utility functions built into libguac.
- * These utility functions are included for convenience rather as integral
- * requirements of the core.
- *
- * @file util_suite.h
- */
-
-#include "config.h"
+#include <CUnit/CUnit.h>
+#include <guacamole/unicode.h>
 
 /**
  * A single Unicode character encoded as one byte with UTF-8.
@@ -52,24 +41,19 @@
 #define UTF8_4b "\xf0\x90\x84\xa3"
 
 /**
- * Registers the utility test suite with CUnit.
+ * Test which verifies that guac_utf8_strlen() properly calculates the length
+ * of UTF-8 strings.
  */
-int register_util_suite();
-
-/**
- * Unit test for the guac_pool structure and related functions. The guac_pool
- * structure provides a consistent source of pooled integers. This unit test
- * checks that the associated functions behave as documented (returning
- * integers in the proper order, allocating new integers as necessary, etc.).
- */
-void test_guac_pool();
-
-/**
- * Unit test for libguac's Unicode convenience functions. This test checks that
- * the functions provided for determining string length, character length, and
- * for reading and writing UTF-8 behave as specified in the documentation.
- */
-void test_guac_unicode();
-
-#endif
+void test_unicode__utf8_strlen() {
+    CU_ASSERT_EQUAL(0, guac_utf8_strlen(""));
+    CU_ASSERT_EQUAL(1, guac_utf8_strlen(UTF8_4b));
+    CU_ASSERT_EQUAL(2, guac_utf8_strlen(UTF8_4b UTF8_1b));
+    CU_ASSERT_EQUAL(2, guac_utf8_strlen(UTF8_2b UTF8_3b));
+    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_1b UTF8_3b UTF8_4b));
+    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_2b UTF8_1b UTF8_3b));
+    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_4b UTF8_2b UTF8_1b));
+    CU_ASSERT_EQUAL(3, guac_utf8_strlen(UTF8_3b UTF8_4b UTF8_2b));
+    CU_ASSERT_EQUAL(5, guac_utf8_strlen("hello"));
+    CU_ASSERT_EQUAL(9, guac_utf8_strlen("guacamole"));
+}
 

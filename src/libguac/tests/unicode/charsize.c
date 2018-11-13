@@ -17,39 +17,17 @@
  * under the License.
  */
 
-
-#ifndef _GUAC_TEST_COMMON_SUITE_H
-#define _GUAC_TEST_COMMON_SUITE_H
-
-/**
- * Test suite containing unit tests for the "common" utility library included
- * for the sake of simplifying guacamole-server development, but not included
- * as part of libguac.
- *
- * @file common_suite.h
- */
-
-#include "config.h"
+#include <CUnit/CUnit.h>
+#include <guacamole/unicode.h>
 
 /**
- * Registers the common test suite with CUnit.
+ * Test which verifies that guac_utf8_charsize() correctly determines the
+ * length of UTF-8 characters from the leading byte of that character.
  */
-int register_common_suite();
-
-/**
- * Unit test for string utility functions.
- */
-void test_guac_string();
-
-/**
- * Unit test for character conversion functions.
- */
-void test_guac_iconv();
-
-/**
- * Unit test for rectangle calculation functions.
- */
-void test_guac_rect();
-
-#endif
+void test_unicode__utf8_charsize() {
+    CU_ASSERT_EQUAL(1, guac_utf8_charsize('g'));
+    CU_ASSERT_EQUAL(2, guac_utf8_charsize('\xC4'));
+    CU_ASSERT_EQUAL(3, guac_utf8_charsize('\xE7'));
+    CU_ASSERT_EQUAL(4, guac_utf8_charsize('\xF0'));
+}
 
