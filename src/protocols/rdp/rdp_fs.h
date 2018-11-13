@@ -51,6 +51,11 @@
 #define GUAC_RDP_FS_MAX_PATH 4096
 
 /**
+ * The maximum number of directories a path may contain.
+ */
+#define GUAC_RDP_MAX_PATH_DEPTH 64
+
+/**
  * Error code returned when no more file IDs can be allocated.
  */
 #define GUAC_RDP_FS_ENFILE -1

@@ -610,9 +610,8 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
     int i;
     int path_depth = 1;
     char path_component_data[GUAC_RDP_FS_MAX_PATH];
-    const char* path_components[64] = { "" };
+    const char* path_components[GUAC_RDP_MAX_PATH_DEPTH] = { "" };
 
-    const char** current_path_component      = &(path_components[1]);
     const char*  current_path_component_data = &(path_component_data[0]);
 
     /* If original path is not absolute, normalization fails */
@@ -648,8 +647,15 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
 
             /* Otherwise, if component not current directory, add to list */
             else if (strcmp(current_path_component_data,   ".") != 0
-                     && strcmp(current_path_component_data, "") != 0)
+                     && strcmp(current_path_component_data, "") != 0) {
+
+                /* Fail normalization if path is too deep */
+                if (path_depth >= GUAC_RDP_MAX_PATH_DEPTH)
+                    return 1;
+
                 path_components[path_depth++] = current_path_component_data;
+
+            }
 
             /* If end of string, stop */
             if (c == 0)
@@ -673,21 +679,9 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
     }
 
     /* Convert components back into path */
-    for (; path_depth > 0; path_depth--) {
+    guac_strljoin(abs_path, path_components, path_depth,
+            "\\", GUAC_RDP_FS_MAX_PATH);
 
-        const char* filename = *(current_path_component++);
-
-        /* Add separator */
-        *(abs_path++) = '\\';
-
-        /* Copy string */
-        while (*filename != 0)
-            *(abs_path++) = *(filename++);
-
-    }
-
-    /* Terminate absolute path */
-    *(abs_path++) = 0;
     return 0;
 
 }

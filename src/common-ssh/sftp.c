@@ -64,12 +64,11 @@ static int guac_common_ssh_sftp_normalize_path(char* fullpath,
     char path_component_data[GUAC_COMMON_SSH_SFTP_MAX_PATH];
     const char* path_components[GUAC_COMMON_SSH_SFTP_MAX_DEPTH];
 
-    const char** current_path_component      = &(path_components[0]);
-    const char*  current_path_component_data = &(path_component_data[0]);
+    const char* current_path_component_data = &(path_component_data[0]);
 
     /* If original path is not absolute, normalization fails */
     if (path[0] != '\\' && path[0] != '/')
-        return 1;
+        return 0;
 
     /* Skip past leading slash */
     path++;
@@ -80,7 +79,7 @@ static int guac_common_ssh_sftp_normalize_path(char* fullpath,
 
     /* Fail if input path was truncated */
     if (length >= sizeof(path_component_data))
-        return 1;
+        return 0;
 
     /* Find path components within path */
     for (i = 0; i < sizeof(path_component_data); i++) {
@@ -100,8 +99,15 @@ static int guac_common_ssh_sftp_normalize_path(char* fullpath,
 
             /* Otherwise, if component not current directory, add to list */
             else if (strcmp(current_path_component_data,   ".") != 0
-                     && strcmp(current_path_component_data, "") != 0)
+                     && strcmp(current_path_component_data, "") != 0) {
+
+                /* Fail normalization if path is too deep */
+                if (path_depth >= GUAC_COMMON_SSH_SFTP_MAX_DEPTH)
+                    return 0;
+
                 path_components[path_depth++] = current_path_component_data;
+
+            }
 
             /* If end of string, stop */
             if (c == '\0')
@@ -121,21 +127,9 @@ static int guac_common_ssh_sftp_normalize_path(char* fullpath,
     }
 
     /* Convert components back into path */
-    for (; path_depth > 0; path_depth--) {
+    guac_strljoin(fullpath, path_components, path_depth,
+            "/", GUAC_COMMON_SSH_SFTP_MAX_PATH);
 
-        const char* filename = *(current_path_component++);
-
-        /* Add separator */
-        *(fullpath++) = '/';
-
-        /* Copy string */
-        while (*filename != 0)
-            *(fullpath++) = *(filename++);
-
-    }
-
-    /* Terminate absolute path */
-    *(fullpath++) = 0;
     return 1;
 
 }
@@ -232,7 +226,7 @@ static guac_protocol_status guac_sftp_get_status(
 static int guac_ssh_append_filename(char* fullpath, const char* path,
         const char* filename) {
 
-    int i;
+    int length;
 
     /* Disallow "." as a filename */
     if (strcmp(filename, ".") == 0)
@@ -242,49 +236,29 @@ static int guac_ssh_append_filename(char* fullpath, const char* path,
     if (strcmp(filename, "..") == 0)
         return 0;
 
-    /* Copy path, append trailing slash */
-    for (i=0; i<GUAC_COMMON_SSH_SFTP_MAX_PATH; i++) {
-
-        /*
-         * Append trailing slash only if:
-         *  1) Trailing slash is not already present
-         *  2) Path is non-empty
-         */
-
-        char c = path[i];
-        if (c == '\0') {
-            if (i > 0 && path[i-1] != '/')
-                fullpath[i++] = '/';
-            break;
-        }
-
-        /* Copy character if not end of string */
-        fullpath[i] = c;
-
-    }
-
-    /* Append filename */
-    for (; i<GUAC_COMMON_SSH_SFTP_MAX_PATH; i++) {
-
-        char c = *(filename++);
-        if (c == '\0')
-            break;
-
-        /* Filenames may not contain slashes */
-        if (c == '\\' || c == '/')
-            return 0;
-
-        /* Append each character within filename */
-        fullpath[i] = c;
-
-    }
-
-    /* Verify path length is within maximum */
-    if (i == GUAC_COMMON_SSH_SFTP_MAX_PATH)
+    /* Filenames may not contain slashes */
+    if (strchr(filename, '/') != NULL)
         return 0;
 
-    /* Terminate path string */
-    fullpath[i] = '\0';
+    /* Copy base path */
+    length = guac_strlcpy(fullpath, path, GUAC_COMMON_SSH_SFTP_MAX_PATH);
+
+    /*
+     * Append trailing slash only if:
+     *  1) Trailing slash is not already present
+     *  2) Path is non-empty
+     */
+    if (length > 0 && fullpath[length - 1] != '/')
+        length += guac_strlcpy(fullpath + length, "/",
+                GUAC_COMMON_SSH_SFTP_MAX_PATH - length);
+
+    /* Append filename */
+    length += guac_strlcpy(fullpath + length, filename,
+            GUAC_COMMON_SSH_SFTP_MAX_PATH - length);
+
+    /* Verify path length is within maximum */
+    if (length >= GUAC_COMMON_SSH_SFTP_MAX_PATH)
+        return 0;
 
     /* Append was successful */
     return 1;
@@ -313,45 +287,29 @@ static int guac_ssh_append_filename(char* fullpath, const char* path,
 static int guac_ssh_append_path(char* fullpath, const char* path_a,
         const char* path_b) {
 
-    int i;
+    int length;
 
-    /* Copy path, appending a trailing slash */
-    for (i = 0; i < GUAC_COMMON_SSH_SFTP_MAX_PATH; i++) {
+    /* Copy first half of path */
+    length = guac_strlcpy(fullpath, path_a, GUAC_COMMON_SSH_SFTP_MAX_PATH);
+    if (length >= GUAC_COMMON_SSH_SFTP_MAX_PATH)
+        return 0;
 
-        char c = path_a[i];
-        if (c == '\0') {
-            if (i > 0 && path_a[i-1] != '/')
-                fullpath[i++] = '/';
-            break;
-        }
-
-        /* Copy character if not end of string */
-        fullpath[i] = c;
-
-    }
+    /* Ensure path ends with trailing slash */
+    if (length == 0 || fullpath[length - 1] != '/')
+        length += guac_strlcpy(fullpath + length, "/",
+                GUAC_COMMON_SSH_SFTP_MAX_PATH - length);
 
     /* Skip past leading slashes in second path */
     while (*path_b == '/')
        path_b++;
 
-    /* Append path */
-    for (; i < GUAC_COMMON_SSH_SFTP_MAX_PATH; i++) {
-
-        char c = *(path_b++);
-        if (c == '\0')
-            break;
-
-        /* Append each character within path */
-        fullpath[i] = c;
-
-    }
+    /* Append final half of path */
+    length += guac_strlcpy(fullpath + length, path_b,
+            GUAC_COMMON_SSH_SFTP_MAX_PATH - length);
 
     /* Verify path length is within maximum */
-    if (i == GUAC_COMMON_SSH_SFTP_MAX_PATH)
+    if (length >= GUAC_COMMON_SSH_SFTP_MAX_PATH)
         return 0;
-
-    /* Terminate path string */
-    fullpath[i] = '\0';
 
     /* Append was successful */
     return 1;
