@@ -50,7 +50,7 @@ void test_instruction_write() {
     }
 
     /* Child (pipe writer) */
-    if (childpid != 0) {
+    if (childpid == 0) {
 
         guac_socket* socket;
 

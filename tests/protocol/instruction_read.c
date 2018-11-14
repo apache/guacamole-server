@@ -55,7 +55,7 @@ void test_instruction_read() {
     }
 
     /* Child (pipe writer) */
-    if (childpid != 0) {
+    if (childpid == 0) {
         close(rfd);
         CU_ASSERT_EQUAL(
             write(wfd, test_string, sizeof(test_string)),

@@ -50,7 +50,7 @@ void test_nest_write() {
     }
 
     /* Child (pipe writer) */
-    if (childpid != 0) {
+    if (childpid == 0) {
 
         guac_socket* nested_socket;
         guac_socket* socket;
