@@ -177,6 +177,11 @@ while ((my $suite_name, my $test_names) = each (%test_suites)) {
 
 print <<"END";
 
+    /* Force line-buffered output to ensure log messages are visible even if
+     * a test crashes */
+    setvbuf(stdout, NULL, _IOLBF, 0);
+    setvbuf(stderr, NULL, _IOLBF, 0);
+
     /* Write TAP header */
     printf("1..$num_tests\\n");
 
