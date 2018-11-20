@@ -42,6 +42,7 @@ test_libguac_SOURCES =               \
     protocol/base64_decode.c         \
     socket/fd_send_instruction.c     \
     socket/nested_send_instruction.c \
+    string/strlcat.c                 \
     string/strlcpy.c                 \
     unicode/charsize.c               \
     unicode/read.c                   \
