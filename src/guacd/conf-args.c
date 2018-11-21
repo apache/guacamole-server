@@ -32,10 +32,15 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:fv")) != -1) {
+    while ((opt = getopt(argc, argv, "c:l:b:p:L:C:K:fv")) != -1) {
+
+        /* -c: Configuration file */
+        if (opt == 'c') {
+            continue;
+        }
 
         /* -l: Bind port */
-        if (opt == 'l') {
+        else if (opt == 'l') {
             free(config->bind_port);
             config->bind_port = strdup(optarg);
         }
@@ -102,6 +107,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
         else {
 
             fprintf(stderr, "USAGE: %s"
+                    " [-c CONFIG_FILE]"
                     " [-l LISTENPORT]"
                     " [-b LISTENADDRESS]"
                     " [-p PIDFILE]"
@@ -122,3 +128,15 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
 }
 
+const char* guacd_conf_get_path(int argc, char** argv) {
+
+    /* Find -c option */
+    int i;
+    for(i=1; i<argc-1; i++) {
+        if(strcmp("-c", argv[i]) == 0) return argv[i+1];
+    }
+
+    /* Not found */
+    return NULL;
+
+}

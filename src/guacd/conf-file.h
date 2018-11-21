@@ -32,10 +32,11 @@
 int guacd_conf_parse_file(guacd_config* conf, int fd);
 
 /**
- * Loads the configuration from any of several default locations, if found. If
- * parsing fails, NULL is returned, and an error message is printed to stderr.
+ * Loads the configuration from the given path or from the default location, if
+ * NULL is passed. Configuration is loaded only if the specified file is found.
+ * If parsing fails, NULL is returned, and an error message is printed to stderr.
  */
-guacd_config* guacd_conf_load();
+guacd_config* guacd_conf_load(const char* conf_file_path);
 
 #endif
 

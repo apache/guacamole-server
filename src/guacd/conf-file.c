@@ -169,7 +169,7 @@ int guacd_conf_parse_file(guacd_config* conf, int fd) {
 
 }
 
-guacd_config* guacd_conf_load() {
+guacd_config* guacd_conf_load(const char* conf_file_path) {
 
     guacd_config* conf = malloc(sizeof(guacd_config));
     if (conf == NULL)
@@ -188,15 +188,18 @@ guacd_config* guacd_conf_load() {
     conf->key_file = NULL;
 #endif
 
+    /* Determine path of configuration file */
+    if(conf_file_path == NULL) conf_file_path = GUACD_CONF_FILE;
+
     /* Read configuration from file */
-    int fd = open(GUACD_CONF_FILE, O_RDONLY);
+    int fd = open(conf_file_path, O_RDONLY);
     if (fd > 0) {
 
         int retval = guacd_conf_parse_file(conf, fd);
         close(fd);
 
         if (retval != 0) {
-            fprintf(stderr, "Unable to parse \"" GUACD_CONF_FILE "\".\n");
+            fprintf(stderr, "Unable to parse \"%s\".\n", conf_file_path);
             free(conf);
             return NULL;
         }
@@ -205,7 +208,7 @@ guacd_config* guacd_conf_load() {
 
     /* Notify of errors preventing reading */
     else if (errno != ENOENT) {
-        fprintf(stderr, "Unable to open \"" GUACD_CONF_FILE "\": %s\n", strerror(errno));
+        fprintf(stderr, "Unable to open \"%s\": %s\n", conf_file_path, strerror(errno));
         free(conf);
         return NULL;
     }
