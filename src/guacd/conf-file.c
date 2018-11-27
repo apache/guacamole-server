@@ -188,12 +188,6 @@ guacd_config* guacd_conf_load(const char* conf_file_path) {
     conf->key_file = NULL;
 #endif
 
-    /* Determine path of configuration file */
-    if(conf_file_path == NULL) {
-        conf_file_path = getenv("GUACD_CONF_FILE");
-        if(conf_file_path == NULL) conf_file_path = GUACD_CONF_FILE;
-    }
-
     /* Read configuration from file */
     int fd = open(conf_file_path, O_RDONLY);
     if (fd > 0) {

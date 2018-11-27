@@ -130,13 +130,23 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
 const char* guacd_conf_get_path(int argc, char** argv) {
 
+    char *path = NULL;
+
     /* Find -c option */
     int i;
-    for(i=1; i<argc-1; i++) {
-        if(strcmp("-c", argv[i]) == 0) return argv[i+1];
+    for (i=1; i<argc-1; i++) {
+        if (strcmp("-c", argv[i]) == 0) {
+            path = argv[i+1];
+            break;
+        }
     }
 
-    /* Not found */
-    return NULL;
+    /* Determine and return path of configuration file */
+    if (path == NULL) {
+        path = getenv("GUACD_CONF_FILE");
+        if (path == NULL) path = GUACD_CONF_FILE;
+    }
+
+    return strdup(path);
 
 }

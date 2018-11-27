@@ -276,7 +276,8 @@ int main(int argc, char* argv[]) {
     int retval;
 
     /* Load configuration */
-    guacd_config* config = guacd_conf_load(guacd_conf_get_path(argc, argv));
+    const char *conf_file_path = guacd_conf_get_path(argc, argv);
+    guacd_config* config = guacd_conf_load(conf_file_path);
     if (config == NULL || guacd_conf_parse_args(config, argc, argv))
        exit(EXIT_FAILURE);
 
