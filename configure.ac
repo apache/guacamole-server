@@ -140,6 +140,46 @@ AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
 AC_SUBST([TERMINAL_LTLIB],   '$(top_builddir)/src/terminal/libguac_terminal.la')
 AC_SUBST([TERMINAL_INCLUDE], '-I$(top_srcdir)/src/terminal $(PANGO_CFLAGS) $(PANGOCAIRO_CFLAGS) $(COMMON_INCLUDE)')
 
+# pthread stack size
+AC_ARG_WITH(pthread_stack,
+            [AS_HELP_STRING([--with-pthread_stack=<size in bytes>],
+                            [explicitly set pthread stack size (8MB is recommended)])
+            ],pthread_stack_size=$withval
+              AC_DEFINE_UNQUOTED([PTHREAD_STACK_SIZE], [$pthread_stack_size], [pthread stack size (8MB is recommended)])
+)
+if test "x$ac_cv_lib_pthread_pthread_create" = xyes; then
+        AC_MSG_CHECKING([whether default pthread stack is larger than 8MB])
+        ac_save_libs="$LIBS"
+        LIBS="$LIBS -lpthread"
+        AC_RUN_IFELSE([AC_LANG_SOURCE([[
+            #include <pthread.h>
+
+            int main() {
+                pthread_attr_t default_pthread_attr;
+                size_t stacksize;
+
+                #ifdef PTHREAD_STACK_SIZE
+                return PTHREAD_STACK_SIZE < 8*1024*1024;
+                #else
+                pthread_attr_init(&default_pthread_attr);
+                pthread_attr_getstacksize(&default_pthread_attr, &stacksize);
+                return stacksize < 8*1024*1024;
+                #endif
+            }
+
+          ]])],
+          [AC_MSG_RESULT([yes])],
+          [AC_MSG_RESULT([no])
+           AC_MSG_WARN([
+  --------------------------------------------
+   Default pthread stack size is less than 8MB
+   You may want to manually set it with --with-pthread_stack option
+  --------------------------------------------])
+          ])
+        LIBS="$ac_save_libs"
+fi
+
+
 # Init directory
 AC_ARG_WITH(init_dir,
             [AS_HELP_STRING([--with-init-dir=<path>],

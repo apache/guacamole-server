@@ -19,6 +19,12 @@
 
 #include "config.h"
 
+#ifdef PTHREAD_STACK_SIZE
+#define _GNU_SOURCE 1
+#include <pthread.h>
+#undef _GNU_SOURCE
+#endif
+
 #include "conf.h"
 #include "conf-args.h"
 #include "conf-file.h"
@@ -274,6 +280,17 @@ int main(int argc, char* argv[]) {
 
     /* General */
     int retval;
+
+#ifdef PTHREAD_STACK_SIZE
+    /* Set default stack size */
+    pthread_attr_t default_pthread_attr;
+    if (pthread_attr_init(&default_pthread_attr) ||
+        pthread_attr_setstacksize(&default_pthread_attr, PTHREAD_STACK_SIZE) ||
+        pthread_setattr_default_np(&default_pthread_attr)) {
+       fprintf(stderr, "Couldn't set requested pthread stack size of %d\n", PTHREAD_STACK_SIZE);
+       exit(EXIT_FAILURE);
+    }
+#endif
 
     /* Load configuration */
     guacd_config* config = guacd_conf_load();
