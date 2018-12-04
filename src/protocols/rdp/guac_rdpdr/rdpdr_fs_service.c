@@ -153,5 +153,42 @@ void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr, char* drive_name) {
     /* Init data */
     device->data = rdp_client->filesystem;
 
+	/* Init directory for file transfer */
+	int create_fs = 0;
+
+	if (rdp_client) {
+		guac_rdp_settings* settings = rdp_client->settings;
+		if (settings) {
+			create_fs = settings->create_drive_path;
+		}
+		else {
+			guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "No settings.");
+		}
+	}
+	else {
+		guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "No rdp client.");
+	}
+
+	if (create_fs) {
+
+		/* Get filesystem, return error if no filesystem */
+		guac_rdp_fs* fs = rdp_client->filesystem;
+		if (fs == NULL) {
+			guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "No filesystem.");
+			return;
+		}
+
+		int file_id;
+		char* file_path = "\\";
+
+		/* create file path */
+		file_id = guac_rdp_fs_open(fs, file_path, ACCESS_GENERIC_ALL, 0, DISP_FILE_OPEN_IF, FILE_DIRECTORY_FILE);
+		if (file_id < 0) {
+			guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR, "Init client remote directory failed.");
+		}
+		else {
+			guac_client_log(device->rdpdr->client, GUAC_LOG_INFO, "Init client remote directory succeeded.");
+		}
+	}
 }
 
