@@ -35,6 +35,29 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+guacd_config* guacd_conf_create() {
+
+    guacd_config* conf = malloc(sizeof(guacd_config));
+    if (conf == NULL)
+        return NULL;
+
+    /* Load defaults */
+    conf->bind_host = NULL;
+    conf->bind_port = strdup("4822");
+    conf->pidfile = NULL;
+    conf->foreground = 0;
+    conf->print_version = 0;
+    conf->max_log_level = GUAC_LOG_INFO;
+
+#ifdef ENABLE_SSL
+    conf->cert_file = NULL;
+    conf->key_file = NULL;
+#endif
+
+    return conf;
+
+}
+
 /**
  * Updates the configuration with the given parameter/value pair, flagging
  * errors as necessary.
@@ -169,24 +192,7 @@ int guacd_conf_parse_file(guacd_config* conf, int fd) {
 
 }
 
-guacd_config* guacd_conf_load(const char* conf_file_path) {
-
-    guacd_config* conf = malloc(sizeof(guacd_config));
-    if (conf == NULL)
-        return NULL;
-
-    /* Load defaults */
-    conf->bind_host = NULL;
-    conf->bind_port = strdup("4822");
-    conf->pidfile = NULL;
-    conf->foreground = 0;
-    conf->print_version = 0;
-    conf->max_log_level = GUAC_LOG_INFO;
-
-#ifdef ENABLE_SSL
-    conf->cert_file = NULL;
-    conf->key_file = NULL;
-#endif
+int guacd_conf_load(guacd_config* conf, const char* conf_file_path) {
 
     /* Read configuration from file */
     int fd = open(conf_file_path, O_RDONLY);
@@ -197,8 +203,7 @@ guacd_config* guacd_conf_load(const char* conf_file_path) {
 
         if (retval != 0) {
             fprintf(stderr, "Unable to parse \"%s\".\n", conf_file_path);
-            free(conf);
-            return NULL;
+            return 1;
         }
 
     }
@@ -206,11 +211,11 @@ guacd_config* guacd_conf_load(const char* conf_file_path) {
     /* Notify of errors preventing reading */
     else if (errno != ENOENT) {
         fprintf(stderr, "Unable to open \"%s\": %s\n", conf_file_path, strerror(errno));
-        free(conf);
-        return NULL;
+        return 1;
     }
 
-    return conf;
+    /* Load successfully */
+    return 0;
 
 }
 
