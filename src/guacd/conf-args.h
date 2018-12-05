@@ -30,11 +30,5 @@
  */
 int guacd_conf_parse_args(guacd_config* config, int argc, char** argv);
 
-/**
- * Determines a path to a configuration file. Looks for it in the given list of
- * arguments or under environment variable. If appropriate option was not set
- * the default location is returned.
- */
-const char* guacd_conf_get_path(int argc, char** argv);
-
 #endif
+

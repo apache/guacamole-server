@@ -22,6 +22,7 @@
 #include "conf.h"
 #include "conf-args.h"
 #include "conf-parse.h"
+#include "conf-file.h"
 
 #include <getopt.h>
 #include <stdio.h>
@@ -36,7 +37,8 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
         /* -c: Configuration file */
         if (opt == 'c') {
-            continue;
+            if (guacd_conf_load(config, optarg))
+                return 1;
         }
 
         /* -l: Bind port */
@@ -125,28 +127,5 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
     /* Success */
     return 0;
-
-}
-
-const char* guacd_conf_get_path(int argc, char** argv) {
-
-    char *path = NULL;
-
-    /* Find -c option */
-    int i;
-    for (i=1; i<argc-1; i++) {
-        if (strcmp("-c", argv[i]) == 0) {
-            path = argv[i+1];
-            break;
-        }
-    }
-
-    /* Determine and return path of configuration file */
-    if (path == NULL) {
-        path = getenv("GUACD_CONF_FILE");
-        if (path == NULL) path = GUACD_CONF_FILE;
-    }
-
-    return strdup(path);
 
 }

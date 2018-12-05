@@ -219,3 +219,13 @@ int guacd_conf_load(guacd_config* conf, const char* conf_file_path) {
 
 }
 
+int guacd_conf_load_default(guacd_config* conf) {
+
+    /* Determine path to the default configuration file and load it */
+    char *path = getenv("GUACD_CONF_FILE");
+    if (path == NULL)
+        path = GUACD_CONF_FILE;
+
+    return guacd_conf_load(conf, path);
+
+}

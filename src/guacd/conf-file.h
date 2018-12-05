@@ -43,4 +43,11 @@ int guacd_conf_parse_file(guacd_config* conf, int fd);
  */
 int guacd_conf_load(guacd_config* conf, const char* conf_file_path);
 
+/**
+ * Determines path to the default configuration file (environment variable or
+ * predefined path) and loads settings from it. On success, zero is returned.
+ */
+int guacd_conf_load_default(guacd_config* conf);
+
 #endif
+
