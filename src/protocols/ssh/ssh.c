@@ -130,24 +130,18 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
 
     } /* end if key given */
 
-    /* Otherwise, use password */
-    else {
-
-        /* Get password if not provided */
-        if (settings->password == NULL)
-            settings->password = guac_terminal_prompt(ssh_client->term,
-                    "Password: ", false);
-
-        /* Set provided password */
-        guac_common_ssh_user_set_password(user, settings->password);
-
-    }
-
     /* Clear screen of any prompts */
     guac_terminal_printf(ssh_client->term, "\x1B[H\x1B[J");
 
     return user;
 
+}
+
+char* guac_ssh_get_credential(guac_client *client, char* credName) {
+
+    guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
+    return guac_terminal_prompt(ssh_client->term, credName, false);
+    
 }
 
 void* ssh_input_thread(void* data) {
@@ -239,7 +233,7 @@ void* ssh_client_thread(void* data) {
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,
             settings->hostname, settings->port, ssh_client->user, settings->server_alive_interval,
-            settings->host_key);
+            settings->host_key, guac_ssh_get_credential);
     if (ssh_client->session == NULL) {
         /* Already aborted within guac_common_ssh_create_session() */
         return NULL;
@@ -291,7 +285,7 @@ void* ssh_client_thread(void* data) {
         ssh_client->sftp_session =
             guac_common_ssh_create_session(client, settings->hostname,
                     settings->port, ssh_client->user, settings->server_alive_interval,
-                    settings->host_key);
+                    settings->host_key, NULL);
         if (ssh_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             return NULL;

@@ -26,6 +26,11 @@
 #include <libssh2.h>
 
 /**
+ * Handler for retrieving additional credentials.
+ */
+typedef char* guac_ssh_credential_handler(guac_client* client, char* credName);
+
+/**
  * An SSH session, backed by libssh2 and associated with a particular
  * Guacamole client.
  */
@@ -50,6 +55,11 @@ typedef struct guac_common_ssh_session {
      * The file descriptor of the socket being used for the SSH connection.
      */
     int fd;
+    
+    /**
+     * Callback function to retrieve credentials.
+     */
+    guac_ssh_credential_handler* credential_handler;
 
 } guac_common_ssh_session;
 
@@ -99,7 +109,7 @@ void guac_common_ssh_uninit();
  */
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive,
-        const char* host_key);
+        const char* host_key, guac_ssh_credential_handler* credential_callback);
 
 /**
  * Disconnects and destroys the given SSH session, freeing all associated
