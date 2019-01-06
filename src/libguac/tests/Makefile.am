@@ -44,6 +44,7 @@ test_libguac_SOURCES =               \
     socket/nested_send_instruction.c \
     string/strlcat.c                 \
     string/strlcpy.c                 \
+    string/strljoin.c                \
     unicode/charsize.c               \
     unicode/read.c                   \
     unicode/strlen.c                 \
