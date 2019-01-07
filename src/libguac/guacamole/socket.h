@@ -180,6 +180,13 @@ guac_socket* guac_socket_open(int fd);
  * If an error occurs while allocating the guac_socket object, NULL is returned,
  * and guac_error is set appropriately.
  *
+ * @deprecated
+ *     The "nest" instruction and the corresponding guac_socket
+ *     implementation are no longer necessary, having been replaced by
+ *     the streaming instructions ("blob", "ack", "end"). Code using nested
+ *     sockets or the "nest" instruction should instead write to a normal
+ *     socket directly.
+ *
  * @param parent The guac_socket this new guac_socket should write nest
  *               instructions to.
  * @param index The stream index to use for the written nest instructions.
