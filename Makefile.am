@@ -39,13 +39,11 @@ DIST_SUBDIRS =               \
     src/protocols/rdp        \
     src/protocols/ssh        \
     src/protocols/telnet     \
-    src/protocols/vnc        \
-    tests
+    src/protocols/vnc
 
 SUBDIRS =        \
     src/libguac  \
-    src/common   \
-    tests
+    src/common
 
 if ENABLE_COMMON_SSH
 SUBDIRS += src/common-ssh
@@ -91,13 +89,14 @@ if ENABLE_GUACLOG
 SUBDIRS += src/guaclog
 endif
 
-EXTRA_DIST =         \
-    .dockerignore    \
-    CONTRIBUTING     \
-    Dockerfile       \
-    LICENSE          \
-    NOTICE           \
-    bin/guacctl      \
-    doc/Doxyfile.in  \
-    src/guacd-docker
+EXTRA_DIST =                     \
+    .dockerignore                \
+    CONTRIBUTING                 \
+    Dockerfile                   \
+    LICENSE                      \
+    NOTICE                       \
+    bin/guacctl                  \
+    doc/Doxyfile.in              \
+    src/guacd-docker             \
+    util/generate-test-runner.pl
 

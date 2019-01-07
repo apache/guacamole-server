@@ -26,47 +26,47 @@
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
 
-noinst_LTLIBRARIES = libguac_common.la
-SUBDIRS = . tests
+#
+# Unit tests for libguac_common
+#
 
-noinst_HEADERS =            \
-    common/io.h             \
-    common/blank_cursor.h   \
-    common/clipboard.h      \
-    common/cursor.h         \
-    common/display.h        \
-    common/dot_cursor.h     \
-    common/ibar_cursor.h    \
-    common/iconv.h          \
-    common/json.h           \
-    common/list.h           \
-    common/pointer_cursor.h \
-    common/recording.h      \
-    common/rect.h           \
-    common/string.h         \
-    common/surface.h
+check_PROGRAMS = test_common
+TESTS = $(check_PROGRAMS)
 
-libguac_common_la_SOURCES = \
-    io.c                    \
-    blank_cursor.c          \
-    clipboard.c             \
-    cursor.c                \
-    display.c               \
-    dot_cursor.c            \
-    ibar_cursor.c           \
-    iconv.c                 \
-    json.c                  \
-    list.c                  \
-    pointer_cursor.c        \
-    recording.c             \
-    rect.c                  \
-    string.c                \
-    surface.c
+test_common_SOURCES =          \
+    iconv/convert.c            \
+    rect/clip_and_split.c      \
+    rect/constrain.c           \
+    rect/expand_to_grid.c      \
+    rect/extend.c              \
+    rect/init.c                \
+    rect/intersects.c          \
+    string/count_occurrences.c \
+    string/split.c
 
-libguac_common_la_CFLAGS =  \
+test_common_CFLAGS =        \
     -Werror -Wall -pedantic \
-    @LIBGUAC_INCLUDE@
+    @COMMON_INCLUDE@
 
-libguac_common_la_LIBADD = \
-    @LIBGUAC_LTLIB@
+test_common_LDADD =  \
+    @COMMON_LTLIB@   \
+    @CUNIT_LIBS@
+
+#
+# Autogenerate test runner
+#
+
+GEN_RUNNER = $(top_srcdir)/util/generate-test-runner.pl
+CLEANFILES = _generated_runner.c
+
+_generated_runner.c: $(test_common_SOURCES)
+	$(AM_V_GEN) $(GEN_RUNNER) $^ > $@
+
+nodist_test_common_SOURCES = \
+    _generated_runner.c
+
+# Use automake's TAP test driver for running any tests
+LOG_DRIVER =                \
+    env AM_TAP_AWK='$(AWK)' \
+    $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh
 
