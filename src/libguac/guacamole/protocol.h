@@ -214,6 +214,13 @@ int guac_protocol_send_mouse(guac_socket* socket, int x, int y,
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
+ * @deprecated
+ *     The "nest" instruction and the corresponding guac_socket
+ *     implementation are no longer necessary, having been replaced by
+ *     the streaming instructions ("blob", "ack", "end"). Code using nested
+ *     sockets or the "nest" instruction should instead write to a normal
+ *     socket directly.
+ *
  * @param socket The guac_socket connection to use.
  * @param index The integer index of the stram to send the protocol
  *              data over.
