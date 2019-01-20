@@ -1224,7 +1224,7 @@ AC_ARG_WITH(xorg-module-dir,
 if test "x$with_xorg" != "xno"
 then
     have_xorg=yes
-    PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto],, [have_xorg=no])
+    PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto xfont],, [have_xorg=no])
 fi
 
 AM_CONDITIONAL([ENABLE_XORG], [test "x${have_xorg}"       = "xyes" \
