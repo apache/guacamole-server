@@ -18,7 +18,7 @@
 #
 
 parent  "base"
-name    "dk-dk-qwerty"
+name    "da-dk-qwerty"
 freerdp "KBD_DANISH"
 
 #
