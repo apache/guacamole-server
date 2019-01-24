@@ -608,11 +608,15 @@ const char* guac_rdp_fs_read_dir(guac_rdp_fs* fs, int file_id) {
 int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
 
     int i;
-    int path_depth = 1;
-    char path_component_data[GUAC_RDP_FS_MAX_PATH];
-    const char* path_components[GUAC_RDP_MAX_PATH_DEPTH] = { "" };
 
-    const char*  current_path_component_data = &(path_component_data[0]);
+    char path_component_data[GUAC_RDP_FS_MAX_PATH];
+    const char* current_path_component_data = &(path_component_data[0]);
+
+    /* Always include a blank path component at the beginning, such that the
+     * eventual call to guac_strljoin() will produce an absolute path (leading
+     * backslash) */
+    int path_depth = 1;
+    const char* path_components[GUAC_RDP_MAX_PATH_DEPTH] = { "" };
 
     /* If original path is not absolute, normalization fails */
     if (path[0] != '\\' && path[0] != '/')
@@ -641,7 +645,7 @@ int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
 
             /* If component refers to parent, just move up in depth */
             if (strcmp(current_path_component_data, "..") == 0) {
-                if (path_depth > 0)
+                if (path_depth > 1)
                     path_depth--;
             }
 
