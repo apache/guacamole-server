@@ -60,7 +60,7 @@ GEN_RUNNER = $(top_srcdir)/util/generate-test-runner.pl
 CLEANFILES = _generated_runner.c
 
 _generated_runner.c: $(test_common_SOURCES)
-	$(AM_V_GEN) $(GEN_RUNNER) $^ > $@
+	$(AM_V_GEN) $(GEN_RUNNER) $(test_common_SOURCES) > $@
 
 nodist_test_common_SOURCES = \
     _generated_runner.c
