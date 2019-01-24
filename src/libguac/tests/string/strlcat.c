@@ -27,7 +27,7 @@
  * Verify guac_strlcat() behavior when the string fits the buffer without
  * truncation. The return value of each call should be the length of the
  * resulting string. Each resulting string should contain the full result of
- * the contatenation, including null terminator.
+ * the concatenation, including null terminator.
  */
 void test_string__strlcat() {
 
