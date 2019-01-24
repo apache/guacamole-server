@@ -24,7 +24,8 @@
 #include <string.h>
 
 /**
- * Verify guac_strlcpy() behavior when string fits buffer without truncation.
+ * Verify guac_strlcpy() behavior when the string fits the buffer without
+ * truncation.
  */
 void test_string__strlcpy() {
 
@@ -53,7 +54,8 @@ void test_string__strlcpy() {
 }
 
 /**
- * Verify guac_strlcpy() behavior when string must be truncated to fit buffer.
+ * Verify guac_strlcpy() behavior when the string must be truncated to fit the
+ * buffer.
  */
 void test_string__strlcpy_truncate() {
 

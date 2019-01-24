@@ -24,10 +24,10 @@
 #include <string.h>
 
 /**
- * Verify guac_strlcat() behavior when string fits buffer without truncation.
- * The return value of each call should be the length of the resulting string.
- * Each resulting string should contain the full result of the contatenation,
- * including null terminator.
+ * Verify guac_strlcat() behavior when the string fits the buffer without
+ * truncation. The return value of each call should be the length of the
+ * resulting string. Each resulting string should contain the full result of
+ * the contatenation, including null terminator.
  */
 void test_string__strlcat() {
 
@@ -66,11 +66,11 @@ void test_string__strlcat() {
 }
 
 /**
- * Verify guac_strlcat() behavior when string must be truncated to fit buffer.
- * The return value of each call should be the length that would result from
- * concatenating the strings given an infinite buffer, however only as many
- * characters as can fit should be appended to the string within the buffer,
- * and the buffer should be null-terminated.
+ * Verify guac_strlcat() behavior when the string must be truncated to fit the
+ * buffer. The return value of each call should be the length that would result
+ * from concatenating the strings given an infinite buffer, however only as
+ * many characters as can fit should be appended to the string within the
+ * buffer, and the buffer should be null-terminated.
  */
 void test_string__strlcat_truncate() {
 
