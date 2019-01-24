@@ -84,6 +84,12 @@ size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n);
  *     string. This buffer MUST already be null-terminated and will always be
  *     null-terminated unless zero bytes are available within the buffer.
  *
+ *     As a safeguard against incorrectly-written code, in the event that the
+ *     destination buffer is not null-terminated, this function will still stop
+ *     before overrunning the buffer, instead behaving as if the length of the
+ *     string in the buffer is exactly the size of the buffer. The destination
+ *     buffer will remain untouched (and unterminated) in this case.
+ *
  * @param src
  *     The source string to append to the the destination buffer. This string
  *     MUST be null-terminated.
