@@ -121,5 +121,29 @@ void guac_drv_client_log_guac_error(guac_client* client,
  */
 void guac_drv_log_handshake_failure();
 
+/**
+ * Logs a text art version of the given image data using UTF-8 block characters
+ * and ANSI terminal codes. The image is scaled to a maximum of 32x32
+ * characters to ensure it fits within the X.Org log.
+ *
+ * @param level
+ *     The level at which to log the image data.
+ *
+ * @param data
+ *     The raw image data to log. This data must be 32-bit RGB. The alpha
+ *     channel is ignored, if present.
+ *
+ * @param stride
+ *     The number of bytes in each row of image data.
+ *
+ * @param w
+ *     The width of the image data, in pixels.
+ *
+ * @param h
+ *     The height of the image data, in pixels.
+ */
+void guac_drv_log_image(guac_client_log_level level, const char* data,
+        int stride, int w, int h);
+
 #endif
 

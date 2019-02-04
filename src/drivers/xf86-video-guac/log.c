@@ -152,3 +152,57 @@ void guac_drv_log_handshake_failure() {
 
 }
 
+void guac_drv_log_image(guac_client_log_level level, const char* data,
+        int stride, int w, int h) {
+
+    /* Don't bother if the log level is too high */
+    if (level > guac_drv_log_level)
+        return;
+
+    /* Each pixel will take up a maximum of 26 characters of space */
+    char buffer[4096];
+
+    int pixel_size;
+    const char* current_row = data;
+
+    /* Calculate a rough pixel size such that each dimension will take up no
+     * greater than 32 characters */
+    if (w > h)
+        pixel_size = (w + 31) / 32;
+    else
+        pixel_size = (h + 31) / 32;
+
+    /* Log beginning of image */
+    guac_drv_log(level, "-------------- BEGIN %ix%i IMAGE -------------", w, h);
+
+    for (int y = 0; y < h; y += pixel_size) {
+
+        char* output_string = buffer;
+        const uint32_t* current_pixel = (const uint32_t*) current_row;
+
+        /* Write a scaled line of colored blocks for each row */
+        for (int x = 0; x < w; x += pixel_size) {
+            uint32_t color = *current_pixel;
+            output_string += sprintf(output_string,
+                    "\x1B[38;2;%i;%i;%im"
+                    "\xE2\x96\x88",
+                    (color & 0xFF0000) >> 16,
+                    (color & 0x00FF00) >> 8,
+                    (color & 0x0000FF));
+            current_pixel += pixel_size;
+        }
+
+        current_row += stride * pixel_size;
+
+        /* Reset colors at end of line */
+        guac_drv_log(level, "%s\x1B[0m", buffer);
+
+    }
+
+    /* Reset colors and log end of image */
+    guac_drv_log(GUAC_LOG_TRACE,
+            "\x1B[0m"
+            "--------------- END %ix%i IMAGE --------------", w, h);
+
+}
+

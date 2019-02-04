@@ -21,6 +21,7 @@
 #include "config.h"
 #include "drawable.h"
 #include "list.h"
+#include "log.h"
 
 #include <xf86.h>
 
@@ -123,6 +124,9 @@ void guac_drv_drawable_put(guac_drv_drawable* drawable,
             surface = NULL;
 
     }
+
+    /* Log all drawn images at the trace level */
+    guac_drv_log_image(GUAC_LOG_TRACE, data, stride, w, h);
 
     /* Draw surface if conversion was successful */
     if (surface != NULL) {
