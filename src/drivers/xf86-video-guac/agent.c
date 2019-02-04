@@ -256,7 +256,7 @@ int guac_drv_agent_resize_display(guac_drv_agent* agent, int w, int h) {
             connection, agent->dummy, w, h, width_mm, height_mm);
     xcb_flush(connection);
 
-    guac_user_log(user, GUAC_LOG_INFO, "Requested screen resize to %ix%i "
+    guac_user_log(user, GUAC_LOG_DEBUG, "Requested screen resize to %ix%i "
             "pixels (%ix%i mm).", w, h, width_mm, height_mm);
 
     /* Check for errors */
