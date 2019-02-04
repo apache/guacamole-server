@@ -70,6 +70,12 @@ const OptionInfoRec GUAC_OPTIONS[GUAC_DRV_OPTIONINFOREC_SIZE] = {
         "PulseAudioServerName", OPTV_STRING, { .str = NULL }, FALSE
     },
 
+    /* Driver log level */
+    {
+        GUAC_DRV_OPTION_LOG_LEVEL,
+        "LogLevel", OPTV_STRING, { .str = "info" }, FALSE
+    },
+
     /* End of options */
     { -1, NULL, OPTV_NONE, {0}, FALSE }
 

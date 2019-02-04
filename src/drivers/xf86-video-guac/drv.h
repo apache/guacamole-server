@@ -85,6 +85,13 @@ enum {
     GUAC_DRV_OPTION_PULSE_AUDIO_SERVER_NAME,
 
     /**
+     * The log level that the Guacamole X.Org driver should use. Valid levels
+     * are "error", "warning", "info", "debug", and "trace" (same as guacd).
+     * The default log level is "info".
+     */
+    GUAC_DRV_OPTION_LOG_LEVEL,
+
+    /**
      * The total number of options defined for the Guacamole X.Org driver.
      */
     GUAC_DRV_OPTION_COUNT,

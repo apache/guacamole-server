@@ -25,6 +25,7 @@
 #include "cursor.h"
 #include "display.h"
 #include "gc.h"
+#include "log.h"
 #include "pixmap.h"
 #include "screen.h"
 #include "window.h"
@@ -697,6 +698,22 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
     /* Read options from xorg.conf */
     xf86CollectOptions(screen_info, NULL);
     xf86ProcessOptions(screen_info->scrnIndex, screen_info->options, options);
+
+    /* Set log level if overridden in xorg.conf */
+    const char* log_level_str = options[GUAC_DRV_OPTION_LOG_LEVEL].value.str;
+    if (strcmp(log_level_str, "error") == 0)
+        guac_drv_log_level = GUAC_LOG_ERROR;
+    else if (strcmp(log_level_str, "warning") == 0)
+        guac_drv_log_level = GUAC_LOG_WARNING;
+    else if (strcmp(log_level_str, "info") == 0)
+        guac_drv_log_level = GUAC_LOG_INFO;
+    else if (strcmp(log_level_str, "debug") == 0)
+        guac_drv_log_level = GUAC_LOG_DEBUG;
+    else if (strcmp(log_level_str, "trace") == 0)
+        guac_drv_log_level = GUAC_LOG_TRACE;
+    else
+        guac_drv_log(GUAC_LOG_WARNING, "Invalid log level: \"%s\". Using "
+                "defaults.", log_level_str);
 
     /* Init display */
     guac_screen->display = guac_drv_display_alloc(screen,
