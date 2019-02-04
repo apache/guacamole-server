@@ -41,12 +41,14 @@ void guac_drv_drawable_copy_fb(DrawablePtr src, int srcx, int srcy,
     /* Ensure left edge of source rect does not exceed bounds */
     if (srcx < 0) {
         srcw += srcx;
+        dstx -= srcx;
         srcx = 0;
     }
 
     /* Ensure top edge of source rect does not exceed bounds */
     if (srcy < 0) {
         srch += srcy;
+        dsty -= srcy;
         srcy = 0;
     }
 
