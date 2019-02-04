@@ -21,6 +21,7 @@
 #include "config.h"
 #include "cursor.h"
 #include "display.h"
+#include "log.h"
 #include "screen.h"
 
 #include <xorg-server.h>
@@ -31,7 +32,7 @@
 static void guac_drv_cursor_set_argb(guac_drv_cursor* guac_cursor,
         CursorPtr cursor) {
 
-    xf86Msg(X_INFO, "guac: STUB: %s (%i, %i) %ix%i\n", __func__,
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s (%i, %i) %ix%i", __func__,
             guac_cursor->hotspot_x, guac_cursor->hotspot_y,
             guac_cursor->width, guac_cursor->height);
 
@@ -147,11 +148,11 @@ static void guac_drv_load_cursor_image(ScrnInfoPtr screen_info,
 }
 
 static void guac_drv_hide_cursor(ScrnInfoPtr screen) {
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s", __func__);
 }
 
 static void guac_drv_show_cursor(ScrnInfoPtr screen) {
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s", __func__);
 }
 
 static Bool guac_drv_use_hw_cursor(ScreenPtr screen, CursorPtr cursor) {

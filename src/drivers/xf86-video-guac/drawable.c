@@ -138,7 +138,7 @@ void guac_drv_drawable_put(guac_drv_drawable* drawable,
 
     /* Otherwise use stub */
     else {
-        xf86Msg(X_INFO, "guac: STUB FFFF00: %s:%d: %s()\n",
+        guac_drv_log(GUAC_LOG_DEBUG, "STUB FFFF00: %s:%d: %s()\n",
                 __FILE__, __LINE__, __func__);
         guac_drv_drawable_stub(drawable, dx, dy, w, h, 0xFFFF00);
     }
@@ -170,7 +170,7 @@ void guac_drv_drawable_clear(guac_drv_drawable* drawable, int x, int y,
 
 void guac_drv_drawable_drect(guac_drv_drawable* drawable, int x, int y,
         int w, int h, guac_drv_drawable* fill) {
-    xf86Msg(X_INFO, "guac: STUB 00FFFF: %s:%d: %s()\n",
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB 00FFFF: %s:%d: %s()\n",
             __FILE__, __LINE__, __func__);
     guac_drv_drawable_stub(drawable, x, y, w, h, 0x00FFFF);
 }

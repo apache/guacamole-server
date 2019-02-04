@@ -22,6 +22,7 @@
 #include "crtc.h"
 #include "display.h"
 #include "drawable.h"
+#include "log.h"
 #include "screen.h"
 #include "window.h"
 
@@ -58,7 +59,7 @@ static Bool guac_drv_crtc_resize(ScrnInfoPtr screen_info,
     guac_drv_drawable_resize(root, width, height);
 
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s %ix%i\n", __func__, width, height);
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s %ix%i", __func__, width, height);
 
     return TRUE;
 
@@ -70,7 +71,7 @@ xf86CrtcConfigFuncsRec guac_drv_crtc_configfuncs = {
 
 static void guac_drv_crtc_dpms(xf86CrtcPtr crtc, int mode) {
     /* Do nothing */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
 }
 
 static Bool guac_drv_crtc_lock(xf86CrtcPtr crtc) {
@@ -79,43 +80,43 @@ static Bool guac_drv_crtc_lock(xf86CrtcPtr crtc) {
 
 static void guac_drv_crtc_unlock(xf86CrtcPtr crtc) {
     /* Do nothing */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
 }
 
 static void guac_drv_crtc_set_cursor_colors(xf86CrtcPtr crtc, int bg, int fg) {
     /* Do nothing */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
 }
 
 static void guac_drv_crtc_set_cursor_position(xf86CrtcPtr crtc, int x, int y) {
     /* Do nothing */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
 }
 
 static void guac_drv_crtc_hide_cursor(xf86CrtcPtr crtc) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s", __func__);
 }
 
 static void guac_drv_crtc_show_cursor(xf86CrtcPtr crtc) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s", __func__);
 }
 
 static void guac_drv_crtc_load_cursor_argb(xf86CrtcPtr crtc, CARD32* image) {
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s", __func__);
 }
 
 static void guac_drv_crtc_destroy(xf86CrtcPtr crtc) {
     /* Do nothing */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
 }
 
 static Bool guac_drv_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
         Rotation rotation, int x, int y) {
     /* Do nothing */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
     return TRUE;
 }
 
@@ -134,14 +135,14 @@ xf86CrtcFuncsRec guac_drv_crtc_funcs = {
 
 static void guac_drv_output_dpms(xf86OutputPtr output, int mode) {
     /* Do nothing */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
 }
 
 static Bool guac_drv_output_mode_valid(xf86OutputPtr output,
         DisplayModePtr modes) {
 
     /* Accept all modes */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
     return MODE_OK;
 
 }
@@ -149,7 +150,7 @@ static Bool guac_drv_output_mode_valid(xf86OutputPtr output,
 static xf86OutputStatus guac_drv_output_detect(xf86OutputPtr output) {
 
     /* Output is always connected */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
     return XF86OutputStatusConnected;
 
 }
@@ -166,25 +167,25 @@ static DisplayModePtr guac_drv_output_get_modes(xf86OutputPtr output) {
     xf86SetModeCrtc(mode, 0);
 
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s", __func__);
     return mode;
 
 }
 
 static Bool guac_drv_output_set_property(xf86OutputPtr output, Atom property,
         RRPropertyValuePtr value) {
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
     return TRUE;
 }
 
 static Bool guac_drv_output_get_property(xf86OutputPtr output, Atom property) {
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
     return TRUE;
 }
 
 static void guac_drv_output_destroy(xf86OutputPtr output) {
     /* Do nothing */
-    xf86Msg(X_INFO, "guac: NOTE: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "NOTE: %s", __func__);
 }
 
 xf86OutputFuncsRec guac_drv_output_funcs = {

@@ -237,7 +237,7 @@ guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
 }
 
 void guac_drv_display_resize(guac_drv_display* display, int w, int h) {
-    xf86Msg(X_INFO, "guac: Resizing surface to %ix%i\n", w, h);
+    guac_drv_log(GUAC_LOG_DEBUG, "Resizing surface to %ix%i\n", w, h);
     guac_common_surface_resize(display->display->default_surface, w, h);
 }
 

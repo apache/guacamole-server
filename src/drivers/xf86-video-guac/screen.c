@@ -145,24 +145,24 @@ Bool guac_drv_pre_init(ScrnInfoPtr screen, int flags) {
 
 Bool guac_drv_switch_mode(ScrnInfoPtr screen_info, DisplayModePtr mode) {
     /* STUB */
-    xf86Msg(X_INFO, "DEBUG: guac_drv_switch_mode\n");
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_switch_mode");
     return TRUE;
 }
 
 void guac_drv_adjust_frame(ScrnInfoPtr screen_info, int x, int y) {
     /* STUB */
-    xf86Msg(X_INFO, "DEBUG: guac_drv_adjust_frame\n");
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_adjust_frame");
 }
 
 Bool guac_drv_enter_vt(ScrnInfoPtr screen_info) {
     /* STUB */
-    xf86Msg(X_INFO, "DEBUG: guac_drv_enter_vt\n");
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_enter_vt");
     return TRUE;
 }
 
 void guac_drv_leave_vt(ScrnInfoPtr screen_info) {
     /* STUB */
-    xf86Msg(X_INFO, "DEBUG: guac_drv_leave_vt\n");
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_leave_vt");
 }
 
 static Bool guac_drv_close_screen(ScreenPtr screen) {
@@ -173,7 +173,7 @@ static Bool guac_drv_close_screen(ScreenPtr screen) {
                                          GUAC_SCREEN_PRIVATE);
 
     /* STUB */
-    xf86Msg(X_INFO, "guac: STUB: %s\n", __func__);
+    guac_drv_log(GUAC_LOG_DEBUG, "STUB: %s", __func__);
 
     /* Call wrapped function */
     if (guac_screen->wrapped_close_screen)

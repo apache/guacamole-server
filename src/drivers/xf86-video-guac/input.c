@@ -127,8 +127,8 @@ static void guac_drv_input_translate_keysym(InputInfoPtr info, KeySymsPtr syms,
             int modifiers = i % syms->mapWidth;
 
             /* STUB: We're ignoring modifier state entirely */
-            xf86Msg(X_INFO, "guac: STUB: keycode=%i (ignored modifiers=%#x)\n",
-                    keycode, modifiers);
+            guac_drv_log(GUAC_LOG_DEBUG, "STUB: keycode=%i (ignored "
+                    "modifiers=%#x)", keycode, modifiers);
 
             /* Send key event */
             xf86PostKeyboardEvent(info->dev, keycode, pressed);
@@ -141,8 +141,8 @@ static void guac_drv_input_translate_keysym(InputInfoPtr info, KeySymsPtr syms,
     }
 
     /* Warn if the keysym couldn't be found */
-    xf86Msg(X_WARNING, "guac: Unable to translate keysym %#x\n. Keyboard "
-            "event dropped!", keysym);
+    guac_drv_log(GUAC_LOG_WARNING, "guac: Unable to translate keysym %#x\n. "
+            "Keyboard event dropped!", keysym);
 
 }
 
@@ -202,9 +202,9 @@ static void guac_drv_input_read_input(InputInfoPtr info) {
             /* Get keyboard layout from XKB */
             KeySymsPtr syms = XkbGetCoreMap(info->dev);
             if (syms == NULL)
-                xf86Msg(X_WARNING, "Unable to read server keyboard layout. "
-                        "All keyboard events from Guacamole will be "
-                        "dropped!\n");
+                guac_drv_log(GUAC_LOG_WARNING, "Unable to read server "
+                        "keyboard layout. All keyboard events from Guacamole "
+                        "will be dropped!\n");
 
             else {
 
@@ -254,7 +254,7 @@ static int guac_drv_input_pre_init(InputDriverPtr driver, InputInfoPtr info,
 
     /* Store device */
     GUAC_DRV_INPUT_DEVICE = info;
-    xf86Msg(X_INFO, "guac: init input device\n");
+    xf86Msg(X_DEBUG, "guac: init input device\n");
 
     return Success;
 }
