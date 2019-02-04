@@ -120,6 +120,11 @@ typedef struct guac_drv_screen {
      */
     ChangeWindowAttributesProcPtr wrapped_change_window_attributes;
 
+    /**
+     * Wrapped Composite implementation.
+     */
+    CompositeProcPtr wrapped_composite;
+
 } guac_drv_screen;
 
 /**

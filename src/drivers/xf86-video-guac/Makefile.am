@@ -25,6 +25,7 @@ guac_drv_ladir = @XORG_MODULE_DIR@/drivers
 
 noinst_HEADERS =      \
     agent.h           \
+    composite.h       \
     copy.h            \
     crtc.h            \
     cursor.h          \
@@ -49,6 +50,7 @@ noinst_HEADERS =      \
 
 guac_drv_la_SOURCES = \
     agent.c           \
+    composite.c       \
     copy.c            \
     crtc.c            \
     cursor.c          \

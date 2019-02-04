@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "drv.h"
+#include "composite.h"
 #include "crtc.h"
 #include "cursor.h"
 #include "display.h"
@@ -740,6 +741,12 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
 
     guac_screen->wrapped_destroy_window = screen->DestroyWindow;
     screen->DestroyWindow = guac_drv_destroy_window;
+
+    PictureScreenPtr pict_screen = GetPictureScreenIfSet(screen);
+    if (pict_screen != NULL) {
+        guac_screen->wrapped_composite = pict_screen->Composite;
+        pict_screen->Composite = guac_drv_composite;
+    }
 
     return TRUE;
 }
