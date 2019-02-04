@@ -41,6 +41,10 @@ void guac_drv_composite(CARD8 op,
     if (guac_drawable == NULL)
         return;
 
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_composite layer=%i (%i, %i) %ix%i",
+            guac_drawable->layer->layer->index,
+            dst_x, dst_y, width, height);
+
     /* Get guac_drv_screen */
     ScreenPtr screen = dst->pDrawable->pScreen;
     guac_drv_screen* guac_screen =

@@ -239,6 +239,19 @@ static Bool guac_drv_create_window(WindowPtr window) {
     drawable = guac_drv_display_create_layer(guac_screen->display,
             parent, x, y, z, width, height, opacity);
 
+    if (parent != NULL)
+        guac_drv_log(GUAC_LOG_DEBUG, "Create window 0x%x %ix%i+%i+%i "
+                "(z=%i, opacity=%i) -> layer %i, parent=0x%x (layer %i)",
+                window->drawable.id, width, height, x, y,
+                z, opacity, drawable->layer->layer->index,
+                window->parent->drawable.id,
+                parent->layer->layer->index);
+    else
+        guac_drv_log(GUAC_LOG_DEBUG, "Create window 0x%x %ix%i+%i+%i "
+                "(z=%i, opacity=%i) -> layer %i, parent=ROOT/NULL",
+                window->drawable.id, width, height, x, y,
+                z, opacity, drawable->layer->layer->index);
+
     /* Store drawable */
     dixSetPrivate(&(window->devPrivates), GUAC_WINDOW_PRIVATE, drawable);
 
@@ -335,6 +348,11 @@ static Bool guac_drv_unrealize_window(WindowPtr window) {
     guac_drv_drawable_shade(drawable, 0);
     guac_drv_display_touch(guac_screen->display);
 
+    guac_drv_log(GUAC_LOG_DEBUG, "Unrealize window 0x%x "
+            "opacity -> %i (layer %i)",
+            window->drawable.id, 0x0,
+            drawable->layer->layer->index);
+
     /* Call wrapped function */
     if (guac_screen->wrapped_unrealize_window)
         return guac_screen->wrapped_unrealize_window(window);
@@ -358,6 +376,11 @@ static Bool guac_drv_realize_window(WindowPtr window) {
     /* Set visible */
     guac_drv_drawable_shade(drawable, 0xFF);
     guac_drv_display_touch(guac_screen->display);
+
+    guac_drv_log(GUAC_LOG_DEBUG, "Realize window 0x%x "
+            "opacity -> %i (layer %i)",
+            window->drawable.id, 0xFF,
+            drawable->layer->layer->index);
 
     /* Call wrapped function */
     if (guac_screen->wrapped_realize_window)
@@ -385,6 +408,11 @@ static void guac_drv_move_window(WindowPtr window, int x, int y,
     guac_drv_drawable_move(drawable, x, y);
     guac_drv_display_touch(guac_screen->display);
 
+    guac_drv_log(GUAC_LOG_DEBUG, "Move window 0x%x +%i+%i "
+            "(layer %i)",
+            window->drawable.id, x, y,
+            drawable->layer->layer->index);
+
     /* Call wrapped function */
     if (guac_screen->wrapped_move_window)
         guac_screen->wrapped_move_window(window, x, y, sibling, kind);
@@ -409,6 +437,9 @@ static void guac_drv_clear_outside(WindowPtr window) {
     /* Create region from inverse of bounding shape */
     RegionPtr region = RegionCreate(NullBox, 1);
     RegionInverse(region, &window->borderClip, &bounds);
+
+    if (window->optional != NULL && window->optional->boundingShape != NULL)
+        RegionInverse(region, window->optional->boundingShape, &bounds);
 
     /* Clear outside bounding shape */
     GUAC_DRV_DRAWABLE_CLIP(drawable, (DrawablePtr) window, region,
@@ -440,6 +471,11 @@ static void guac_drv_resize_window(WindowPtr window, int x, int y,
     guac_drv_drawable_resize(drawable, w, h);
     guac_drv_clear_outside(window);
     guac_drv_display_touch(guac_screen->display);
+
+    guac_drv_log(GUAC_LOG_DEBUG, "Resize window 0x%x %ix%i+%i+%i "
+            "(layer %i)",
+            window->drawable.id, w, h, x, y,
+            drawable->layer->layer->index);
 
     /* Call wrapped function */
     if (guac_screen->wrapped_resize_window)
@@ -473,7 +509,17 @@ static void guac_drv_reparent_window(WindowPtr window,
         guac_drv_drawable_reparent(drawable, parent_drawable);
         guac_drv_display_touch(guac_screen->display);
 
+        guac_drv_log(GUAC_LOG_DEBUG, "Reparent window "
+                "0x%x (layer %i) -> 0x%x (layer %i)",
+                window->drawable.id, drawable->layer->layer->index,
+                window->parent->drawable.id,
+                parent_drawable->layer->layer->index);
+
     }
+    else
+        guac_drv_log(GUAC_LOG_DEBUG, "Unhandled reparent (to root?) "
+                "0x%x (layer %i)",
+                window->drawable.id, drawable->layer->layer->index);
 
     /* Call wrapped function */
     if (guac_screen->wrapped_reparent_window)
@@ -512,6 +558,12 @@ static void guac_drv_restack_window(WindowPtr window, WindowPtr old_next) {
         if (cur_drawable->layer->surface->z <= last_z) {
             guac_drv_drawable_stack(cur_drawable, last_z+1);
             guac_drv_display_touch(guac_screen->display);
+
+            guac_drv_log(GUAC_LOG_DEBUG, "Restack "
+                    "0x%x (layer %i) z -> %i",
+                    current->drawable.id, cur_drawable->layer->layer->index,
+                    last_z+1);
+
         }
 
         /* Advance to next window up */
@@ -546,6 +598,9 @@ static void guac_drv_set_shape(WindowPtr window, int kind) {
     guac_drv_clear_outside(window);
     guac_drv_display_touch(guac_screen->display);
 
+    guac_drv_log(GUAC_LOG_DEBUG, "Set shape 0x%x (kind=%i)",
+            window->drawable.id, kind);
+
     /* Call wrapped function */
     if (guac_screen->wrapped_set_shape)
         guac_screen->wrapped_set_shape(window, kind);
@@ -572,6 +627,9 @@ static Bool guac_drv_destroy_window(WindowPtr window) {
 
         /* Remove from private */
         dixSetPrivate(&(window->devPrivates), GUAC_WINDOW_PRIVATE, NULL);
+
+        guac_drv_log(GUAC_LOG_DEBUG, "Destroy window 0x%x (layer %i)",
+                window->drawable.id, drawable->layer->layer->index);
 
         /* Destroy drawable */
         guac_drv_display_destroy_layer(guac_screen->display, drawable);

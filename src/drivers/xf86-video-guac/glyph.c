@@ -22,6 +22,7 @@
 #include "gc.h"
 #include "glyph.h"
 #include "pixmap.h"
+#include "log.h"
 #include "screen.h"
 
 #include <xorg-server.h>
@@ -43,6 +44,9 @@ static void guac_drv_copy_glyphs(DrawablePtr drawable, GCPtr gc, int x, int y,
     /* Draw to windows only */
     if (guac_drawable == NULL)
         return;
+
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_copy_glyphs layer=%i",
+            guac_drawable->layer->layer->index);
 
     /* Get glyph extents */
     ExtentInfoRec extents;

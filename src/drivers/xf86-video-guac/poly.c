@@ -26,6 +26,7 @@
 #include "poly.h"
 #include "screen.h"
 #include "list.h"
+#include "log.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
@@ -49,6 +50,9 @@ static void guac_drv_copy_line(DrawablePtr drawable, GCPtr gc, int x1, int y1,
     /* Draw to windows only */
     if (guac_drawable == NULL)
         return;
+
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_copy_line layer=%i",
+            guac_drawable->layer->layer->index);
 
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen =
@@ -193,6 +197,9 @@ void guac_drv_fillpolygon(DrawablePtr drawable, GCPtr gc, int shape, int mode,
     if (count < 2)
         return;
 
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_fillpolygon layer=%i",
+            guac_drawable->layer->layer->index);
+
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen =
         (guac_drv_screen*) dixGetPrivate(&(gc->devPrivates),
@@ -263,6 +270,9 @@ void guac_drv_polyfillrect(DrawablePtr drawable, GCPtr gc, int nrects,
     if (guac_drawable != NULL) {
 
         int i;
+
+        guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_polyfillrect layer=%i",
+                guac_drawable->layer->layer->index);
 
         /* Get guac_drv_screen */
         guac_drv_screen* guac_screen =
@@ -377,6 +387,9 @@ void guac_drv_polyfillarc(DrawablePtr drawable, GCPtr gc, int narcs,
     /* Draw to windows only */
     if (guac_drawable == NULL)
         return;
+
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_polyfillarc layer=%i",
+            guac_drawable->layer->layer->index);
 
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen =

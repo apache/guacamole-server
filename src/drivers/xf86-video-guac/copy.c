@@ -26,6 +26,7 @@
 #include "screen.h"
 #include "pixmap.h"
 #include "list.h"
+#include "log.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
@@ -42,6 +43,10 @@ RegionPtr guac_drv_copyarea(DrawablePtr src, DrawablePtr dst, GCPtr gc,
 
     /* Draw to windows only */
     if (guac_dst != NULL) {
+
+        guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_copyarea layer=%i "
+                "(%i, %i) %ix%i", guac_dst->layer->layer->index,
+                dstx, dsty, w, h);
 
         /* Get guac_drv_screen */
         guac_drv_screen* guac_screen =
@@ -82,6 +87,10 @@ RegionPtr guac_drv_copyplane(DrawablePtr src, DrawablePtr dst, GCPtr gc,
 
     /* Draw to windows only */
     if (guac_dst != NULL) {
+
+        guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_copyplane layer=%i "
+                "(%i, %i) %ix%i", guac_dst->layer->layer->index,
+                dstx, dsty, w, h);
 
         /* Get guac_drv_screen */
         guac_drv_screen* guac_screen =

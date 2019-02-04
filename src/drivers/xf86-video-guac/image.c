@@ -23,6 +23,7 @@
 #include "drawable.h"
 #include "gc.h"
 #include "image.h"
+#include "log.h"
 #include "pixmap.h"
 #include "screen.h"
 #include "window.h"
@@ -40,6 +41,10 @@ void guac_drv_putimage(DrawablePtr drawable, GCPtr gc, int depth,
 
     /* Draw to windows only */
     if (guac_drawable != NULL) {
+
+        guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_putimage layer=%i "
+                "(%i, %i) %ix%i", guac_drawable->layer->layer->index,
+                x, y, w, h);
 
         /* Get guac_drv_screen */
         guac_drv_screen* guac_screen =
@@ -68,6 +73,10 @@ void guac_drv_pushpixels(GCPtr gc, PixmapPtr bitmap, DrawablePtr dst,
 
     /* Draw to windows only */
     if (guac_dst != NULL) {
+
+        guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_pushpixels layer=%i "
+                "(%i, %i) %ix%i", guac_dst->layer->layer->index,
+                x, y, w, h);
 
         /* Get guac_drv_screen */
         guac_drv_screen* guac_screen =

@@ -125,6 +125,36 @@ typedef struct guac_drv_screen {
      */
     CompositeProcPtr wrapped_composite;
 
+    /**
+     * Wrapped CompositeRects implementation.
+     */
+    CompositeRectsProcPtr wrapped_composite_rects;
+
+    /**
+     * Wrapped Triangles implementation.
+     */
+    TrianglesProcPtr wrapped_triangles;
+
+    /**
+     * Wrapped Glyphs implementation.
+     */
+    GlyphsProcPtr wrapped_glyphs;
+
+    /**
+     * Wrapped Trapezoids implementation.
+     */
+    TrapezoidsProcPtr wrapped_trapezoids;
+
+    /**
+     * Wrapped AddTraps implementation.
+     */
+    AddTrapsProcPtr wrapped_add_traps;
+
+    /**
+     * Wrapped UnrealizeGlyph implementation.
+     */
+    UnrealizeGlyphProcPtr wrapped_unrealize_glyph;
+
 } guac_drv_screen;
 
 /**

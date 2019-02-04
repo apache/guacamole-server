@@ -25,6 +25,7 @@
 #include "pixmap.h"
 #include "screen.h"
 #include "spans.h"
+#include "log.h"
 
 #include <xorg-server.h>
 #include <xf86.h>
@@ -43,6 +44,9 @@ static void guac_drv_copy_spans(DrawablePtr drawable, GCPtr gc, int npoints,
     /* Draw to windows only */
     if (guac_drawable == NULL)
         return;
+
+    guac_drv_log(GUAC_LOG_DEBUG, "guac_drv_copy_spans layer=%i",
+            guac_drawable->layer->layer->index);
 
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen =
