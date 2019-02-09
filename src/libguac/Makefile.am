@@ -125,7 +125,7 @@ libguac_la_CFLAGS = \
     -Werror -Wall -pedantic -I$(srcdir)/guacamole
 
 libguac_la_LDFLAGS =     \
-    -version-info 16:0:0 \
+    -version-info 17:0:0 \
     -no-undefined        \
     @CAIRO_LIBS@         \
     @DL_LIBS@            \
