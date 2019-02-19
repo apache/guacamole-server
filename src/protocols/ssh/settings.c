@@ -62,6 +62,8 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "scrollback",
     "locale",
     "timezone",
+    "disable-copy",
+    "disable-paste",
     NULL
 };
 
@@ -258,6 +260,20 @@ enum SSH_ARGS_IDX {
      */
     IDX_TIMEZONE,
 
+    /**
+     * Whether outbound clipboard access should be blocked. If set to "true",
+     * it will not be possible to copy data from the terminal to the client
+     * using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_COPY,
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set to "true", it
+     * will not be possible to paste data from the client to the terminal using
+     * the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_PASTE,
+
     SSH_ARGS_COUNT
 };
 
@@ -425,6 +441,16 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->timezone =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_TIMEZONE, NULL);
+
+    /* Parse clipboard copy disable flag */
+    settings->disable_copy =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_DISABLE_COPY, false);
+
+    /* Parse clipboard paste disable flag */
+    settings->disable_paste =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_DISABLE_PASTE, false);
 
     /* Parsing was successful */
     return settings;

@@ -172,6 +172,20 @@ typedef struct guac_telnet_settings {
     int resolution;
 
     /**
+     * Whether outbound clipboard access should be blocked. If set, it will not
+     * be possible to copy data from the terminal to the client using the
+     * clipboard.
+     */
+    bool disable_copy;
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set, it will not
+     * be possible to paste data from the client to the terminal using the
+     * clipboard.
+     */
+    bool disable_paste;
+
+    /**
      * The path in which the typescript should be saved, if enabled. If no
      * typescript should be saved, this will be NULL.
      */

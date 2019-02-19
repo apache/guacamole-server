@@ -55,6 +55,8 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "scrollback",
     "login-success-regex",
     "login-failure-regex",
+    "disable-copy",
+    "disable-paste",
     NULL
 };
 
@@ -215,6 +217,20 @@ enum TELNET_ARGS_IDX {
      * success/failure has been determined.
      */
     IDX_LOGIN_FAILURE_REGEX,
+
+    /**
+     * Whether outbound clipboard access should be blocked. If set to "true",
+     * it will not be possible to copy data from the terminal to the client
+     * using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_COPY,
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set to "true", it
+     * will not be possible to paste data from the client to the terminal using
+     * the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_PASTE,
 
     TELNET_ARGS_COUNT
 };
@@ -427,6 +443,16 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
     settings->terminal_type =
         guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_TERMINAL_TYPE, "linux");
+
+    /* Parse clipboard copy disable flag */
+    settings->disable_copy =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_DISABLE_COPY, false);
+
+    /* Parse clipboard paste disable flag */
+    settings->disable_paste =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_DISABLE_PASTE, false);
 
     /* Parsing was successful */
     return settings;

@@ -50,6 +50,8 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "read-only",
     "backspace",
     "scrollback",
+    "disable-copy",
+    "disable-paste",
     NULL
 };
 
@@ -216,6 +218,20 @@ enum KUBERNETES_ARGS_IDX {
      */
     IDX_SCROLLBACK,
 
+    /**
+     * Whether outbound clipboard access should be blocked. If set to "true",
+     * it will not be possible to copy data from the terminal to the client
+     * using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_COPY,
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set to "true", it
+     * will not be possible to paste data from the client to the terminal using
+     * the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_PASTE,
+
     KUBERNETES_ARGS_COUNT
 };
 
@@ -363,6 +379,16 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     settings->backspace =
         guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_BACKSPACE, 127);
+
+    /* Parse clipboard copy disable flag */
+    settings->disable_copy =
+        guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_DISABLE_COPY, false);
+
+    /* Parse clipboard paste disable flag */
+    settings->disable_paste =
+        guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_DISABLE_PASTE, false);
 
     /* Parsing was successful */
     return settings;

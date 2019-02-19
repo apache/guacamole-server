@@ -77,7 +77,8 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "recording-exclude-mouse",
     "recording-include-keys",
     "create-recording-path",
-
+    "disable-copy",
+    "disable-paste",
     NULL
 };
 
@@ -298,6 +299,20 @@ enum VNC_ARGS_IDX {
      */
     IDX_CREATE_RECORDING_PATH,
 
+    /**
+     * Whether outbound clipboard access should be blocked. If set to "true",
+     * it will not be possible to copy data from the remote desktop to the
+     * client using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_COPY,
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set to "true", it
+     * will not be possible to paste data from the client to the remote desktop
+     * using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_PASTE,
+
     VNC_ARGS_COUNT
 };
 
@@ -492,6 +507,16 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, false);
+
+    /* Parse clipboard copy disable flag */
+    settings->disable_copy =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_DISABLE_COPY, false);
+
+    /* Parse clipboard paste disable flag */
+    settings->disable_paste =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_DISABLE_PASTE, false);
 
     return settings;
 
