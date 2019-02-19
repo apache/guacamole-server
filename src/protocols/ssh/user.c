@@ -80,10 +80,13 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
     /* Only handle events if not read-only */
     if (!settings->read_only) {
 
-        /* General mouse/keyboard/clipboard events */
-        user->key_handler       = guac_ssh_user_key_handler;
-        user->mouse_handler     = guac_ssh_user_mouse_handler;
-        user->clipboard_handler = guac_ssh_clipboard_handler;
+        /* General mouse/keyboard events */
+        user->key_handler = guac_ssh_user_key_handler;
+        user->mouse_handler = guac_ssh_user_mouse_handler;
+
+        /* Inbound (client to server) clipboard transfer */
+        if (!settings->disable_paste)
+            user->clipboard_handler = guac_ssh_clipboard_handler;
 
         /* STDIN redirection */
         user->pipe_handler = guac_ssh_pipe_handler;
