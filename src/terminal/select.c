@@ -375,8 +375,10 @@ void guac_terminal_select_end(guac_terminal* terminal) {
     }
 
     /* Send data */
-    guac_common_clipboard_send(terminal->clipboard, client);
-    guac_socket_flush(socket);
+    if (!terminal->disable_copy) {
+        guac_common_clipboard_send(terminal->clipboard, client);
+        guac_socket_flush(socket);
+    }
 
     guac_terminal_notify(terminal);
 

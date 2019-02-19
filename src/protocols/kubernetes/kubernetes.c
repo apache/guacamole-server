@@ -237,7 +237,7 @@ void* guac_kubernetes_client_thread(void* data) {
 
     /* Create terminal */
     kubernetes_client->term = guac_terminal_create(client,
-            kubernetes_client->clipboard,
+            kubernetes_client->clipboard, settings->disable_copy,
             settings->max_scrollback, settings->font_name, settings->font_size,
             settings->resolution, settings->width, settings->height,
             settings->color_scheme, settings->backspace);

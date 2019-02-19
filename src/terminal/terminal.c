@@ -306,8 +306,8 @@ void* guac_terminal_thread(void* data) {
 }
 
 guac_terminal* guac_terminal_create(guac_client* client,
-        guac_common_clipboard* clipboard, int max_scrollback,
-        const char* font_name, int font_size, int dpi,
+        guac_common_clipboard* clipboard, bool disable_copy,
+        int max_scrollback, const char* font_name, int font_size, int dpi,
         int width, int height, const char* color_scheme,
         const int backspace) {
 
@@ -404,6 +404,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
     term->clipboard = clipboard;
+    term->disable_copy = disable_copy;
 
     /* Calculate character size */
     int rows    = height / term->display->char_height;

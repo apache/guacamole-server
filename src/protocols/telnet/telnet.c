@@ -568,7 +568,7 @@ void* guac_telnet_client_thread(void* data) {
 
     /* Create terminal */
     telnet_client->term = guac_terminal_create(client,
-            telnet_client->clipboard,
+            telnet_client->clipboard, settings->disable_copy,
             settings->max_scrollback, settings->font_name, settings->font_size,
             settings->resolution, settings->width, settings->height,
             settings->color_scheme, settings->backspace);

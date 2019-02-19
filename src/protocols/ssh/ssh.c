@@ -207,9 +207,10 @@ void* ssh_client_thread(void* data) {
 
     /* Create terminal */
     ssh_client->term = guac_terminal_create(client, ssh_client->clipboard,
-            settings->max_scrollback, settings->font_name, settings->font_size,
-            settings->resolution, settings->width, settings->height,
-            settings->color_scheme, settings->backspace);
+            settings->disable_copy, settings->max_scrollback,
+            settings->font_name, settings->font_size, settings->resolution,
+            settings->width, settings->height, settings->color_scheme,
+            settings->backspace);
 
     /* Fail if terminal init failed */
     if (ssh_client->term == NULL) {
