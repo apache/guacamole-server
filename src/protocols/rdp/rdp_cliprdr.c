@@ -230,6 +230,10 @@ void guac_rdp_process_cb_data_response(guac_client* client,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     char received_data[GUAC_RDP_CLIPBOARD_MAX_LENGTH];
 
+    /* Ignore received text if outbound clipboard transfer is disabled */
+    if (rdp_client->settings->disable_copy)
+        return;
+
     guac_iconv_read* reader;
     const char* input = (char*) event->data;
     char* output = received_data;

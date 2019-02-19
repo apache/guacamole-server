@@ -240,11 +240,13 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_rdp_audio_load_plugin(instance->context, dvc_list);
     }
 
-    /* Load clipboard plugin */
-    if (freerdp_channels_load_plugin(channels, instance->settings,
-                "cliprdr", NULL))
+    /* Load clipboard plugin if not disabled */
+    if (!(settings->disable_copy && settings->disable_paste)
+            && freerdp_channels_load_plugin(channels, instance->settings,
+                "cliprdr", NULL)) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load cliprdr plugin. Clipboard will not work.");
+    }
 
     /* If RDPSND/RDPDR required, load them */
     if (settings->printing_enabled
