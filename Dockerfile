@@ -31,15 +31,45 @@ FROM debian:${DEBIAN_VERSION} AS builder
 # duplicated in an ARG in the second stage of the build.
 #
 ARG PREFIX_DIR=/usr/local/guacamole
+ARG BUILD_DIR=/tmp/guacd-docker-BUILD
+ARG FREERDP_BUILD=/tmp/freerdp-BUILD
+
+# Add configuration scripts
+COPY src/guacd-docker/bin "${PREFIX_DIR}/bin/"
+
+# Copy source to container for sake of build
+COPY . "$BUILD_DIR"
+
+# FreeRDP build information
+ARG FREERDP_DEPS="              \
+        build-essential         \
+        cmake                   \
+        curl                    \
+        git                     \
+        libcups2-dev            \
+        libgsm1-dev             \
+        libjpeg-dev             \
+        libpulse-dev            \
+        libssl1.0-dev           \
+        libxml2-dev             \
+        libz-dev                \
+        make                    \
+        uuid-dev"
+
+# Install FreeRDP deps
+RUN apt-get update                      && \
+    apt-get install -y $FREERDP_DEPS    && \
+    rm -rf /var/lib/apt/lists/*
+
+# Run FreeRDP Build
+RUN ${PREFIX_DIR}/bin/build-freerdp.sh "$FREERDP_BUILD" "$PREFIX_DIR"
 
 # Build arguments
-ARG BUILD_DIR=/tmp/guacd-docker-BUILD
 ARG BUILD_DEPENDENCIES="              \
         autoconf                      \
         automake                      \
         gcc                           \
         libcairo2-dev                 \
-        libfreerdp-dev                \
         libjpeg62-turbo-dev           \
         libossp-uuid-dev              \
         libpango1.0-dev               \
@@ -58,18 +88,14 @@ RUN apt-get update                         && \
     apt-get install -y $BUILD_DEPENDENCIES && \
     rm -rf /var/lib/apt/lists/*
 
-# Add configuration scripts
-COPY src/guacd-docker/bin "${PREFIX_DIR}/bin/"
-
-# Copy source to container for sake of build
-COPY . "$BUILD_DIR"
-
 # Build guacamole-server from local source
 RUN ${PREFIX_DIR}/bin/build-guacd.sh "$BUILD_DIR" "$PREFIX_DIR"
 
 # Record the packages of all runtime library dependencies
 RUN ${PREFIX_DIR}/bin/list-dependencies.sh    \
         ${PREFIX_DIR}/sbin/guacd              \
+        ${PREFIX_DIR}/lib/libfreerdp*.so      \
+        ${PREFIX_DIR}/lib/libwinpr*.so        \
         ${PREFIX_DIR}/lib/libguac-client-*.so \
         ${PREFIX_DIR}/lib/freerdp/guac*.so    \
         > ${PREFIX_DIR}/DEPENDENCIES
@@ -104,10 +130,6 @@ RUN apt-get update                                          && \
     apt-get install -y $RUNTIME_DEPENDENCIES                && \
     apt-get install -y $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
     rm -rf /var/lib/apt/lists/*
-
-# Link FreeRDP plugins into proper path
-RUN ${PREFIX_DIR}/bin/link-freerdp-plugins.sh \
-        ${PREFIX_DIR}/lib/freerdp/guac*.so
 
 # Expose the default listener port
 EXPOSE 4822
