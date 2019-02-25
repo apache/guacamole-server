@@ -127,6 +127,20 @@ typedef struct guac_vnc_settings {
      */
     char* clipboard_encoding;
 
+    /**
+     * Whether outbound clipboard access should be blocked. If set, it will not
+     * be possible to copy data from the remote desktop to the client using the
+     * clipboard.
+     */
+    bool disable_copy;
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set, it will not
+     * be possible to paste data from the client to the remote desktop using
+     * the clipboard.
+     */
+    bool disable_paste;
+
 #ifdef ENABLE_COMMON_SSH
     /**
      * Whether SFTP should be enabled for the VNC connection.

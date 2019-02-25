@@ -125,6 +125,10 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
+    /* Ignore received text if outbound clipboard transfer is disabled */
+    if (vnc_client->settings->disable_copy)
+        return;
+
     char received_data[GUAC_VNC_CLIPBOARD_MAX_LENGTH];
 
     const char* input = text;

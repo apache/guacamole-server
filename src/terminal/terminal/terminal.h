@@ -511,6 +511,14 @@ struct guac_terminal {
      */
     char backspace;
 
+    /**
+     * Whether copying from the terminal clipboard should be blocked. If set,
+     * the contents of the terminal can still be copied, but will be usable
+     * only within the terminal itself. The clipboard contents will not be
+     * automatically streamed to the client.
+     */
+    bool disable_copy;
+
 };
 
 /**
@@ -532,6 +540,12 @@ struct guac_terminal {
  *     both internally by the terminal and externally through received
  *     clipboard instructions. This clipboard will not be automatically
  *     freed when this terminal is freed.
+ *
+ * @param disable_copy
+ *     Whether copying from the terminal clipboard should be blocked. If set,
+ *     the contents of the terminal can still be copied, but will be usable
+ *     only within the terminal itself. The clipboard contents will not be
+ *     automatically streamed to the client.
  *
  * @param max_scrollback
  *     The maximum number of rows to allow within the scrollback buffer. The
@@ -575,8 +589,8 @@ struct guac_terminal {
  *     which renders all text to the given client.
  */
 guac_terminal* guac_terminal_create(guac_client* client,
-        guac_common_clipboard* clipboard, int max_scrollback,
-        const char* font_name, int font_size, int dpi,
+        guac_common_clipboard* clipboard, bool disable_copy,
+        int max_scrollback, const char* font_name, int font_size, int dpi,
         int width, int height, const char* color_scheme,
         const int backspace);
 

@@ -269,6 +269,20 @@ typedef struct guac_rdp_settings {
     char** svc_names;
 
     /**
+     * Whether outbound clipboard access should be blocked. If set, it will not
+     * be possible to copy data from the remote desktop to the client using the
+     * clipboard.
+     */
+    int disable_copy;
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set, it will not
+     * be possible to paste data from the client to the remote desktop using
+     * the clipboard.
+     */
+    int disable_paste;
+
+    /**
      * Whether the desktop wallpaper should be visible. If unset, the desktop
      * wallpaper will be hidden, reducing the amount of bandwidth required.
      */

@@ -97,10 +97,13 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
     /* Only handle events if not read-only */
     if (!settings->read_only) {
 
-        /* General mouse/keyboard/clipboard events */
-        user->mouse_handler     = guac_rdp_user_mouse_handler;
-        user->key_handler       = guac_rdp_user_key_handler;
-        user->clipboard_handler = guac_rdp_clipboard_handler;
+        /* General mouse/keyboard events */
+        user->mouse_handler = guac_rdp_user_mouse_handler;
+        user->key_handler = guac_rdp_user_key_handler;
+
+        /* Inbound (client to server) clipboard transfer */
+        if (!settings->disable_paste)
+            user->clipboard_handler = guac_rdp_clipboard_handler;
 
         /* Display size change events */
         user->size_handler = guac_rdp_user_size_handler;
