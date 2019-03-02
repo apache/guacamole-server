@@ -66,6 +66,7 @@
 #include <freerdp/update.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/parser.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
@@ -227,10 +228,34 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
-
-    /* Warn if connection is likely to fail due to lack of credentials */
-    guac_client_log(client, GUAC_LOG_INFO,
-            "Authentication requested but username or password not given");
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+    
+    pthread_mutex_lock(&(rdp_client->rdp_lock));
+    
+    while (settings->username == NULL || strcmp(settings->username, "") == 0) {
+        guac_protocol_send_required(client->socket, "username");
+        guac_socket_flush(client->socket);
+        pthread_cond_wait(&(rdp_client->rdp_cond), &(rdp_client->rdp_lock));
+        *username = settings->username;
+    }
+    
+    while (settings->password == NULL || strcmp(settings->password, "") == 0) {
+        guac_protocol_send_required(client->socket, "password");
+        guac_socket_flush(client->socket);
+        pthread_cond_wait(&(rdp_client->rdp_cond), &(rdp_client->rdp_lock));
+        *password = settings->password;
+    }
+    
+    while (settings->domain == NULL || strcmp(settings->domain, "") == 0) {
+        guac_protocol_send_required(client->socket, "domain");
+        guac_socket_flush(client->socket);
+        pthread_cond_wait(&(rdp_client->rdp_cond), &(rdp_client->rdp_lock));
+        *domain = settings->domain;
+    }
+    
+    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+    
     return TRUE;
 
 }

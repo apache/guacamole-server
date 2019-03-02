@@ -36,6 +36,7 @@ int guac_ssh_argv_callback(guac_user* user, const char* mimetype,
     guac_client* client = user->client;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
     guac_terminal* terminal = ssh_client->term;
+    guac_ssh_settings* settings = ssh_client->settings;
 
     /* Update color scheme */
     if (strcmp(name, GUAC_SSH_ARGV_COLOR_SCHEME) == 0)

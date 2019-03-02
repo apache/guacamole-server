@@ -23,12 +23,29 @@
 #include "vnc.h"
 
 #include <guacamole/client.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>
 
+#include <pthread.h>
+#include <string.h>
+
 char* guac_vnc_get_password(rfbClient* client) {
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
-    return ((guac_vnc_client*) gc->data)->settings->password;
+    guac_vnc_client* vnc_client = ((guac_vnc_client*) gc->data);
+    guac_vnc_settings* settings = vnc_client->settings;
+    
+    if (settings->password == NULL || strcmp(settings->password, "") == 0) {
+        pthread_mutex_lock(&(vnc_client->argv_lock));
+        guac_protocol_send_required(gc->socket, "password");
+        guac_socket_flush(gc->socket);
+        pthread_cond_wait(&(vnc_client->argv_cond), &(vnc_client->argv_lock));
+        pthread_mutex_unlock(&(vnc_client->argv_lock));
+    }
+    
+    return settings->password;
+    
 }
 
 rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {

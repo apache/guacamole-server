@@ -26,21 +26,16 @@
 #include <libssh2.h>
 
 /**
- * Handler for retrieving additional credentials.
+ * A handler function for retrieving additional credentials for the client.
  * 
  * @param client
  *     The Guacamole Client associated with this need for additional
  *     credentials.
  * 
  * @param cred_name
- *     The name of the credential being requested, which will be shared
- *     with the client in order to generate a meaningful prompt.
- * 
- * @return
- *     A newly-allocated string containing the credentials provided by
- *     the user, which must be freed by a call to free().
+ *     The connection parameter that is being requested from the client.
  */
-typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name);
+typedef void guac_ssh_credential_handler(guac_client* client, char* cred_name);
 
 /**
  * An SSH session, backed by libssh2 and associated with a particular

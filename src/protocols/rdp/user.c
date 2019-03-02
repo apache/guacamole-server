@@ -116,6 +116,9 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
         /* Inbound arbitrary named pipes */
         user->pipe_handler = guac_rdp_pipe_svc_pipe_handler;
+        
+        /* Handler for updating parameters during connection. */
+        user->argv_handler = guac_rdp_argv_handler;
 
     }
 

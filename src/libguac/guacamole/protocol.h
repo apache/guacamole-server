@@ -795,6 +795,22 @@ int guac_protocol_send_rect(guac_socket* socket, const guac_layer* layer,
         int x, int y, int width, int height);
 
 /**
+ * Sends a "required" instruction over the given guac_socket connection.  This
+ * instruction indicates to the client that one or more additional parameters
+ * is needed to continue the connection.
+ * 
+ * @param socket
+ *     The guac_socket connection to use.
+ * 
+ * @param required
+ *     The name of the parameter that is required.
+ * 
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_required(guac_socket* socket, const char* required);
+
+/**
  * Sends a reset instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is

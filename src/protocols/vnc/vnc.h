@@ -61,6 +61,16 @@ typedef struct guac_vnc_client {
      */
     pthread_mutex_t tls_lock;
 #endif
+    
+    /**
+     * The lock for tracking changes via argv.
+     */
+    pthread_mutex_t argv_lock;
+    
+    /**
+     * The condition for signaling argv updates.
+     */
+    pthread_cond_t argv_cond;
 
     /**
      * The underlying VNC client.

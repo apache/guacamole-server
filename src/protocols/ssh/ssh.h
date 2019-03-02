@@ -89,6 +89,12 @@ typedef struct guac_ssh_client {
      * Lock dictating access to the SSH terminal channel.
      */
     pthread_mutex_t term_channel_lock;
+    
+    /**
+     * Condition used when SSH client thread needs to wait for Guacamole
+     * client response.
+     */
+    pthread_cond_t ssh_cond;
 
     /**
      * The current clipboard contents.

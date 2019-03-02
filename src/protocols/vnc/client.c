@@ -50,9 +50,13 @@ int guac_client_init(guac_client* client) {
     client->data = vnc_client;
 
 #ifdef ENABLE_VNC_TLS_LOCKING
-    /* Initialize the write lock */
+    /* Initialize the TLS write lock */
     pthread_mutex_init(&(vnc_client->tls_lock), NULL);
 #endif
+    
+    /* Initialize argv lock and condition */
+    pthread_mutex_init(&(vnc_client->argv_lock), NULL);
+    pthread_cond_init(&(vnc_client->argv_cond), NULL);
 
     /* Init clipboard */
     vnc_client->clipboard = guac_common_clipboard_alloc(GUAC_VNC_CLIPBOARD_MAX_LENGTH);
@@ -135,6 +139,10 @@ int guac_vnc_client_free_handler(guac_client* client) {
     /* Clean up TLS lock mutex. */
     pthread_mutex_destroy(&(vnc_client->tls_lock));
 #endif
+    
+    /* Clean up argv mutex */
+    pthread_cond_destroy(&(vnc_client->argv_cond));
+    pthread_mutex_destroy(&(vnc_client->argv_lock));
 
     /* Free generic data struct */
     free(client->data);
