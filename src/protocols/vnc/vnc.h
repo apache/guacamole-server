@@ -56,6 +56,11 @@ typedef struct guac_vnc_client {
     pthread_t client_thread;
 
     /**
+     * The TLS mutex lock for the client.
+     */
+    pthread_mutex_t tls_lock;
+
+    /**
      * The underlying VNC client.
      */
     rfbClient* rfb_client;

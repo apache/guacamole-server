@@ -55,6 +55,62 @@
 
 char* GUAC_VNC_CLIENT_KEY = "GUAC_VNC";
 
+/**
+ * A callback function that is called by the VNC library prior to writing
+ * data to a TLS-encrypted socket.  This returns the rfbBool FALSE value
+ * if there's an error locking the mutex, or rfbBool TRUE otherwise.
+ * 
+ * @param rfb_client
+ *     The rfbClient for which to lock the TLS mutex.
+ *
+ * @returns
+ *     rfbBool FALSE if an error occurs locking the mutex, otherwise
+ *     TRUE.
+ */
+static rfbBool guac_vnc_lock_write_to_tls(rfbClient* rfb_client) {
+
+    // Retrieve the Guacamole data structures
+    guac_client* gc = rfbClientGetClientData(rfb_client, GUAC_VNC_CLIENT_KEY);
+    guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
+
+    // Lock write access
+    int retval = pthread_mutex_lock(&(vnc_client->tls_lock));
+    if (retval) {
+        guac_client_log(gc, GUAC_LOG_ERROR, "Error locking TLS write mutex: %d", retval);
+        return FALSE;
+    }
+    return TRUE;
+
+}
+
+/**
+ * A callback function for use by the VNC library that is called once
+ * the client is finished writing to a TLS-encrypted socket. A rfbBool
+ * FALSE value is returned if an error occurs unlocking the mutex,
+ * otherwise TRUE is returned.
+ *
+ * @param rfb_client
+ *     The rfbClient for which to unlock the TLS mutex.
+ *
+ * @returns
+ *     rfbBool FALSE if an error occurs unlocking the mutex, otherwise
+ *     TRUE.
+ */
+static rfbBool guac_vnc_unlock_write_to_tls(rfbClient* rfb_client) {
+
+    // Retrieve the Guacamole data structures
+    guac_client* gc = rfbClientGetClientData(rfb_client, GUAC_VNC_CLIENT_KEY);
+    guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
+
+    // Unlock write access
+    int retval = pthread_mutex_unlock(&(vnc_client->tls_lock));
+    if (retval) {
+        guac_client_log(gc, GUAC_LOG_ERROR, "Error unlocking TLS write mutex: %d", retval);
+        return FALSE;
+    }
+    return TRUE;
+}
+
 rfbClient* guac_vnc_get_client(guac_client* client) {
 
     rfbClient* rfb_client = rfbGetClient(8, 3, 4); /* 32-bpp client */
@@ -67,6 +123,10 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
     /* Framebuffer update handler */
     rfb_client->GotFrameBufferUpdate = guac_vnc_update;
     rfb_client->GotCopyRect = guac_vnc_copyrect;
+
+    /* TLS Locking and Unlocking */
+    rfb_client->LockWriteToTLS = guac_vnc_lock_write_to_tls;
+    rfb_client->UnlockWriteToTLS = guac_vnc_unlock_write_to_tls;
 
     /* Do not handle clipboard and local cursor if read-only */
     if (vnc_settings->read_only == 0) {
@@ -181,6 +241,9 @@ void* guac_vnc_client_thread(void* data) {
     /* Set up libvncclient logging */
     rfbClientLog = guac_vnc_client_log_info;
     rfbClientErr = guac_vnc_client_log_error;
+
+    /* Initialize the write lock */
+    pthread_mutex_init(&(vnc_client->tls_lock), NULL);
 
     /* Attempt connection */
     rfbClient* rfb_client = guac_vnc_get_client(client);
@@ -403,4 +466,3 @@ void* guac_vnc_client_thread(void* data) {
     return NULL;
 
 }
-
