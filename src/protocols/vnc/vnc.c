@@ -47,7 +47,6 @@
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
 #include <rfb/rfbclient.h>
-#include <rfb/rfbconfig.h>
 #include <rfb/rfbproto.h>
 
 #include <stdlib.h>
@@ -71,11 +70,11 @@ char* GUAC_VNC_CLIENT_KEY = "GUAC_VNC";
  */
 static rfbBool guac_vnc_lock_write_to_tls(rfbClient* rfb_client) {
 
-    // Retrieve the Guacamole data structures
+    /* Retrieve the Guacamole data structures */
     guac_client* gc = rfbClientGetClientData(rfb_client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
-    // Lock write access
+    /* Lock write access */
     int retval = pthread_mutex_lock(&(vnc_client->tls_lock));
     if (retval) {
         guac_client_log(gc, GUAC_LOG_ERROR, "Error locking TLS write mutex: %d", retval);
@@ -100,11 +99,11 @@ static rfbBool guac_vnc_lock_write_to_tls(rfbClient* rfb_client) {
  */
 static rfbBool guac_vnc_unlock_write_to_tls(rfbClient* rfb_client) {
 
-    // Retrieve the Guacamole data structures
+    /* Retrieve the Guacamole data structures */
     guac_client* gc = rfbClientGetClientData(rfb_client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
-    // Unlock write access
+    /* Unlock write access */
     int retval = pthread_mutex_unlock(&(vnc_client->tls_lock));
     if (retval) {
         guac_client_log(gc, GUAC_LOG_ERROR, "Error unlocking TLS write mutex: %d", retval);
@@ -246,11 +245,6 @@ void* guac_vnc_client_thread(void* data) {
     /* Set up libvncclient logging */
     rfbClientLog = guac_vnc_client_log_info;
     rfbClientErr = guac_vnc_client_log_error;
-
-#ifdef ENABLE_VNC_TLS_LOCKING
-    /* Initialize the write lock */
-    pthread_mutex_init(&(vnc_client->tls_lock), NULL);
-#endif
 
     /* Attempt connection */
     rfbClient* rfb_client = guac_vnc_get_client(client);
