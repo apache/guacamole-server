@@ -32,6 +32,7 @@
 #include <guacamole/client.h>
 #include <guacamole/layer.h>
 #include <rfb/rfbclient.h>
+#include <rfb/rfbconfig.h>
 
 #ifdef ENABLE_PULSE
 #include "pulse/pulse.h"
@@ -55,10 +56,12 @@ typedef struct guac_vnc_client {
      */
     pthread_t client_thread;
 
+#if LIBVNCSERVER_VERSION_MAJOR >=0 && LIBVNCSERVER_VERSION_MINOR >= 9 && LIBVNCSERVER_VERSION_PATCHLEVEL >= 11
     /**
      * The TLS mutex lock for the client.
      */
     pthread_mutex_t tls_lock;
+#endif
 
     /**
      * The underlying VNC client.
