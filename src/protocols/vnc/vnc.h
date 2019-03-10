@@ -56,7 +56,7 @@ typedef struct guac_vnc_client {
      */
     pthread_t client_thread;
 
-#if LIBVNCSERVER_VERSION_MAJOR >=0 && LIBVNCSERVER_VERSION_MINOR >= 9 && LIBVNCSERVER_VERSION_PATCHLEVEL >= 11
+#ifdef ENABLE_VNC_TLS_LOCKING
     /**
      * The TLS mutex lock for the client.
      */

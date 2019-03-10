@@ -56,7 +56,7 @@
 
 char* GUAC_VNC_CLIENT_KEY = "GUAC_VNC";
 
-#if LIBVNCSERVER_VERSION_MAJOR >=0 && LIBVNCSERVER_VERSION_MINOR >= 9 && LIBVNCSERVER_VERSION_PATCHLEVEL >= 11
+#ifdef ENABLE_VNC_TLS_LOCKING
 /**
  * A callback function that is called by the VNC library prior to writing
  * data to a TLS-encrypted socket.  This returns the rfbBool FALSE value
@@ -127,7 +127,7 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
     rfb_client->GotFrameBufferUpdate = guac_vnc_update;
     rfb_client->GotCopyRect = guac_vnc_copyrect;
 
-#if LIBVNCSERVER_VERSION_MAJOR >=0 && LIBVNCSERVER_VERSION_MINOR >= 9 && LIBVNCSERVER_VERSION_PATCHLEVEL >= 11
+#ifdef ENABLE_VNC_TLS_LOCKING
     /* TLS Locking and Unlocking */
     rfb_client->LockWriteToTLS = guac_vnc_lock_write_to_tls;
     rfb_client->UnlockWriteToTLS = guac_vnc_unlock_write_to_tls;
@@ -247,7 +247,7 @@ void* guac_vnc_client_thread(void* data) {
     rfbClientLog = guac_vnc_client_log_info;
     rfbClientErr = guac_vnc_client_log_error;
 
-#if LIBVNCSERVER_VERSION_MAJOR >=0 && LIBVNCSERVER_VERSION_MINOR >= 9 && LIBVNCSERVER_VERSION_PATCHLEVEL >= 11
+#ifdef ENABLE_VNC_TLS_LOCKING
     /* Initialize the write lock */
     pthread_mutex_init(&(vnc_client->tls_lock), NULL);
 #endif
