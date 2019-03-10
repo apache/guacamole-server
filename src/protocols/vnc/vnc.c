@@ -77,7 +77,8 @@ static rfbBool guac_vnc_lock_write_to_tls(rfbClient* rfb_client) {
     /* Lock write access */
     int retval = pthread_mutex_lock(&(vnc_client->tls_lock));
     if (retval) {
-        guac_client_log(gc, GUAC_LOG_ERROR, "Error locking TLS write mutex: %d", retval);
+        guac_client_log(gc, GUAC_LOG_ERROR, "Error locking TLS write mutex: %s",
+                strerror(retval));
         return FALSE;
     }
     return TRUE;
@@ -106,7 +107,8 @@ static rfbBool guac_vnc_unlock_write_to_tls(rfbClient* rfb_client) {
     /* Unlock write access */
     int retval = pthread_mutex_unlock(&(vnc_client->tls_lock));
     if (retval) {
-        guac_client_log(gc, GUAC_LOG_ERROR, "Error unlocking TLS write mutex: %d", retval);
+        guac_client_log(gc, GUAC_LOG_ERROR, "Error unlocking TLS write mutex: %d",
+                strerror(retval));
         return FALSE;
     }
     return TRUE;
