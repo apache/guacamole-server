@@ -155,7 +155,8 @@ libguac_client_rdp_la_LDFLAGS = \
     -version-info 0:0:0         \
     @CAIRO_LIBS@                \
     @PTHREAD_LIBS@              \
-    @RDP_LIBS@
+    @RDP_LIBS@                  \
+    @WINPR_LIBS@
 
 libguac_client_rdp_la_LIBADD =     \
     @COMMON_LTLIB@                 \
@@ -174,7 +175,8 @@ guacdr_cflags                = \
 guacdr_ldflags =                   \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @WINPR_LIBS@
 
 guacdr_libadd =     \
     @COMMON_LTLIB@  \
@@ -193,7 +195,8 @@ guacai_cflags               =  \
 guacai_ldflags =                   \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @WINPR_LIBS@
 
 guacai_libadd =     \
     @COMMON_LTLIB@  \
@@ -212,7 +215,8 @@ guacsnd_cflags               = \
 guacsnd_ldflags =                  \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @WINPR_LIBS@
 
 guacsnd_libadd =    \
     @COMMON_LTLIB@  \
@@ -231,7 +235,8 @@ guacsvc_cflags               = \
 guacsvc_ldflags =                  \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @WINPR_LIBS@
 
 guacsvc_libadd =    \
     @COMMON_LTLIB@  \
