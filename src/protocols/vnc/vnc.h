@@ -32,7 +32,6 @@
 #include <guacamole/client.h>
 #include <guacamole/layer.h>
 #include <rfb/rfbclient.h>
-#include <rfb/rfbconfig.h>
 
 #ifdef ENABLE_PULSE
 #include "pulse/pulse.h"
