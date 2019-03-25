@@ -384,6 +384,31 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     /* Store image mimetypes */
     char** image_mimetypes = guac_copy_mimetypes(parser->argv, parser->argc);
     user->info.image_mimetypes = (const char**) image_mimetypes;
+    
+    /* Get client timezone */
+    if (guac_parser_expect(parser, socket, usec_timeout, "timezone")) {
+        
+        /* Log error */
+        guac_user_log_handshake_failure(user);
+        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
+                "Error reading \"timezone\"");
+        
+        guac_parser_free(parser);
+        return 1;
+        
+    }
+    
+    /* Check number of timezone arguments */
+    if (parser->argc < 1) {
+        guac_user_log(user, GUAC_LOG_ERROR, "Received \"timezone\" instruction "
+                "lacked required arguments.");
+        guac_parser_free(parser);
+        return 1;
+    }
+    
+    /* Store timezone */
+    char** timezone = parser->argv[0];
+    user->info.timezone = (const char**) timezone;
 
     /* Get args from connect instruction */
     if (guac_parser_expect(parser, socket, usec_timeout, "connect")) {

@@ -88,6 +88,13 @@ struct guac_user_info {
      * stated resolution of the display size request is recommended.
      */
     int optimal_resolution;
+    
+    /**
+     * The timezone of the remote system.  If the client does not provide
+     * a specific timezone then this will be NULL.  The format of the timezone
+     * is the standard tzdata naming convention.
+     */
+    const char** timezone;
 
 };
 
