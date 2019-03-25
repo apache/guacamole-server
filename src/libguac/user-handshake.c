@@ -408,7 +408,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     
     /* Store timezone, if present */
     char* timezone = parser->argv[0];
-    if (timezone != NULL && !strcmp(timezone, ""))
+    if (!strcmp(timezone, ""))
         user->info.timezone = (const char*) timezone;
 
     /* Get args from connect instruction */
