@@ -425,6 +425,10 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->timezone =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_TIMEZONE, NULL);
+    
+    /* If timezone not explicitly set, try to pull from tunnel */
+    if (settings->timezone == NULL)
+        settings->timezone = user->info.timezone;
 
     /* Parsing was successful */
     return settings;

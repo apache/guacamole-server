@@ -406,9 +406,10 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
         return 1;
     }
     
-    /* Store timezone */
-    char** timezone = parser->argv[0];
-    user->info.timezone = (const char**) timezone;
+    /* Store timezone, if present */
+    char* timezone = parser->argv[0];
+    if (timezone != NULL && !strcmp(timezone, ""))
+        user->info.timezone = (const char*) timezone;
 
     /* Get args from connect instruction */
     if (guac_parser_expect(parser, socket, usec_timeout, "connect")) {
@@ -452,6 +453,10 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     guac_free_mimetypes(audio_mimetypes);
     guac_free_mimetypes(video_mimetypes);
     guac_free_mimetypes(image_mimetypes);
+    
+    /* Free timezone */
+    if (timezone != NULL)
+        free(timezone);
 
     guac_parser_free(parser);
 

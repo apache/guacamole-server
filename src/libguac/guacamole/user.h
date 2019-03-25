@@ -94,7 +94,7 @@ struct guac_user_info {
      * a specific timezone then this will be NULL.  The format of the timezone
      * is the standard tzdata naming convention.
      */
-    const char** timezone;
+    const char* timezone;
 
 };
 
