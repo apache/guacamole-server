@@ -171,6 +171,80 @@ static void guac_free_mimetypes(char** mimetypes) {
 
 }
 
+/* Guacamole handshake handler functions. */
+
+int __guac_handshake_size_handler(guac_user* user, int argc, char** argv) {
+    
+    /* Validate size of instruction. */
+    if (argc < 2) {
+        guac_user_log(user, GUAC_LOG_ERROR, "Received \"size\" "
+                "instruction lacked required arguments.");
+        return 1;
+    }
+    
+    /* Parse optimal screen dimensions from size instruction */
+    user->info.optimal_width  = atoi(argv[0]);
+    user->info.optimal_height = atoi(argv[1]);
+
+    /* If DPI given, set the user resolution */
+    if (argc >= 3)
+        user->info.optimal_resolution = atoi(argv[2]);
+
+    /* Otherwise, use a safe default for rough backwards compatibility */
+    else
+        user->info.optimal_resolution = 96;
+    
+    return 0;
+    
+}
+
+int __guac_handshake_audio_handler(guac_user* user, int argc, char** argv) {
+    
+    /* Store audio mimetypes */
+    user->info.audio_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
+    
+    return 0;
+    
+}
+
+int __guac_handshake_video_handler(guac_user* user, int argc, char** argv) {
+    
+    /* Store video mimetypes */
+    user->info.video_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
+    
+    return 0;
+    
+}
+
+int __guac_handshake_image_handler(guac_user* user, int argc, char** argv) {
+    
+    /* Store image mimetypes */
+    user->info.image_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
+    
+    return 0;
+    
+}
+
+int __guac_handshake_timezone_handler(guac_user* user, int argc, char** argv) {
+    
+    /* Store timezone, if present */
+    if (argc > 0 && strcmp(argv[0], ""))
+        user->info.timezone = (const char*) strdup(argv[0]);
+    
+    return 0;
+    
+}
+
+/* Guacamole handshake handler mappings. */
+__guac_handshake_mapping __guac_handshake_map[] = {
+    {"size",     __guac_handshake_size_handler},
+    {"audio",    __guac_handshake_audio_handler},
+    {"video",    __guac_handshake_video_handler},
+    {"image",    __guac_handshake_image_handler},
+    {"timezone", __guac_handshake_timezone_handler},
+    {NULL,       NULL}
+};
+
 /**
  * The thread which handles all user input, calling event handlers for received
  * instructions.
@@ -305,122 +379,53 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
 
     guac_parser* parser = guac_parser_alloc();
 
-    /* Get optimal screen size */
-    if (guac_parser_expect(parser, socket, usec_timeout, "size")) {
-
-        /* Log error */
-        guac_user_log_handshake_failure(user);
-        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                "Error reading \"size\"");
-
-        guac_parser_free(parser);
-        return 1;
-    }
-
-    /* Validate content of size instruction */
-    if (parser->argc < 2) {
-        guac_user_log(user, GUAC_LOG_ERROR, "Received \"size\" "
-                "instruction lacked required arguments.");
-        guac_parser_free(parser);
-        return 1;
-    }
-
-    /* Parse optimal screen dimensions from size instruction */
-    user->info.optimal_width  = atoi(parser->argv[0]);
-    user->info.optimal_height = atoi(parser->argv[1]);
-
-    /* If DPI given, set the user resolution */
-    if (parser->argc >= 3)
-        user->info.optimal_resolution = atoi(parser->argv[2]);
-
-    /* Otherwise, use a safe default for rough backwards compatibility */
-    else
-        user->info.optimal_resolution = 96;
-
-    /* Get supported audio formats */
-    if (guac_parser_expect(parser, socket, usec_timeout, "audio")) {
-
-        /* Log error */
-        guac_user_log_handshake_failure(user);
-        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                "Error reading \"audio\"");
-
-        guac_parser_free(parser);
-        return 1;
-    }
-
-    /* Store audio mimetypes */
-    char** audio_mimetypes = guac_copy_mimetypes(parser->argv, parser->argc);
-    user->info.audio_mimetypes = (const char**) audio_mimetypes;
-
-    /* Get supported video formats */
-    if (guac_parser_expect(parser, socket, usec_timeout, "video")) {
-
-        /* Log error */
-        guac_user_log_handshake_failure(user);
-        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                "Error reading \"video\"");
-
-        guac_parser_free(parser);
-        return 1;
-    }
-
-    /* Store video mimetypes */
-    char** video_mimetypes = guac_copy_mimetypes(parser->argv, parser->argc);
-    user->info.video_mimetypes = (const char**) video_mimetypes;
-
-    /* Get supported image formats */
-    if (guac_parser_expect(parser, socket, usec_timeout, "image")) {
-
-        /* Log error */
-        guac_user_log_handshake_failure(user);
-        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                "Error reading \"image\"");
-
-        guac_parser_free(parser);
-        return 1;
-    }
-
-    /* Store image mimetypes */
-    char** image_mimetypes = guac_copy_mimetypes(parser->argv, parser->argc);
-    user->info.image_mimetypes = (const char**) image_mimetypes;
-    
-    /* Get client timezone */
-    if (guac_parser_expect(parser, socket, usec_timeout, "timezone")) {
+    /* Handle each of the opcodes. */
+    while (1) {
+        if (guac_parser_read(parser, socket, usec_timeout)) {
+            guac_user_log_handshake_failure(user);
+            guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
+                    "Error while reading opcode instruction.");
+            guac_parser_free(parser);
+            return 1;
+        }
         
-        /* Log error */
-        guac_user_log_handshake_failure(user);
-        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                "Error reading \"timezone\"");
+        /* If we receive the connect opcode, we're done. */
+        if (strcmp(parser->opcode, "connect") == 0)
+            break;
         
-        guac_parser_free(parser);
-        return 1;
-        
-    }
-    
-    /* Check number of timezone arguments */
-    if (parser->argc < 1) {
-        guac_user_log(user, GUAC_LOG_ERROR, "Received \"timezone\" instruction "
-                "lacked required arguments.");
-        guac_parser_free(parser);
-        return 1;
-    }
-    
-    /* Store timezone, if present */
-    char* timezone = parser->argv[0];
-    if (!strcmp(timezone, ""))
-        user->info.timezone = (const char*) timezone;
+        /* Loop available opcodes and run handler if/when match found. */
+        __guac_handshake_mapping* current = __guac_handshake_map;
+        while (current->opcode != NULL) {
+            
+            /* Check if loop opcode matches parsed opcode. */
+            if (strcmp(parser->opcode, current->opcode) == 0) {
+                
+                    /* If calling the handler fails, log it and return. */
+                    if (current->handler(user, parser->argc, parser->argv)) {
+                
+                        guac_user_log_handshake_failure(user);
+                        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
+                                "Error handling handling opcode during handshake.");
+                        guac_user_log(user, GUAC_LOG_DEBUG, "Failed opcode: %s",
+                                current->opcode);
 
-    /* Get args from connect instruction */
-    if (guac_parser_expect(parser, socket, usec_timeout, "connect")) {
+                        guac_parser_free(parser);
+                        return 1;
+                    }
+                    
+                    /* If calling the handler has succeeded, log it and break. */
+                    else {
+                        guac_user_log(user, GUAC_LOG_DEBUG,
+                                "Successfully processed instruction: \"%s\"",
+                                current->opcode);
+                        break;
+                    }
 
-        /* Log error */
-        guac_user_log_handshake_failure(user);
-        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                "Error reading \"connect\"");
-
-        guac_parser_free(parser);
-        return 1;
+            }
+            
+            /* Move to next opcode. */
+            current++;
+        }
     }
 
     /* Acknowledge connection availability */
@@ -448,16 +453,15 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
                 "users remain)", user->user_id, client->connected_users);
 
     }
-
-    /* Free mimetype lists */
-    guac_free_mimetypes(audio_mimetypes);
-    guac_free_mimetypes(video_mimetypes);
-    guac_free_mimetypes(image_mimetypes);
     
-    /* Free timezone */
-    if (timezone != NULL)
-        free(timezone);
-
+    /* Free mimetype character arrays. */
+    guac_free_mimetypes((char **) user->info.audio_mimetypes);
+    guac_free_mimetypes((char **) user->info.image_mimetypes);
+    guac_free_mimetypes((char **) user->info.video_mimetypes);
+    
+    /* Free timezone info. */
+    free((char *) user->info.timezone);
+    
     guac_parser_free(parser);
 
     /* Successful disconnect */

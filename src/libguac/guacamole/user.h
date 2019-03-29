@@ -506,6 +506,79 @@ struct guac_user {
 };
 
 /**
+ * Handler for Guacamole protocol opcode specific to the handshake that
+ * happens between client and server at the beginning of the connection.  The
+ * handler will be invoked when the matching opcode is received during the
+ * handshake process.
+ * 
+ * @param user
+ *     The user that initiated the handshake.
+ * 
+ * @param parser
+ *     The parser allocated for parsing the data provided by the client.
+ * 
+ * @param timeout
+ *     The timeout, in microseconds, for parsing the value.
+ * 
+ * @return
+ *     Zero if the handshake instruction is successfully parsed; otherwise
+ *     false.
+ */
+typedef int __guac_handshake_handler(guac_user* user, int argc, char** argv);
+
+/**
+ * Structure that maps opcodes received during the handshake phase of the
+ * connection to callback functions used when those opcodes are received.
+ */
+typedef struct __guac_handshake_mapping {
+    
+    /**
+     * The instruction opcode which maps to the handler.
+     */
+    char* opcode;
+    
+    /**
+     * The handler function used when specified opcode is received.
+     */
+    __guac_handshake_handler* handler;
+    
+} __guac_handshake_mapping;
+
+/**
+ * Internal handler function that is called when the size instruction is
+ * received during the handshake process.
+ */
+__guac_handshake_handler __guac_handshake_size_handler;
+
+/**
+ * Internal handler function that is called when the audio instruction is
+ * received during the handshake process, specifying the audio mimetypes
+ * available to the client.
+ */
+__guac_handshake_handler __guac_handshake_audio_handler;
+
+/**
+ * Internal handler function that is called when the video instruction is
+ * received during the handshake process, specifying the video mimetypes
+ * available to the client.
+ */
+__guac_handshake_handler __guac_handshake_video_handler;
+
+/**
+ * Internal handler function that is called when the image instruction is
+ * received during the handshake process, specifying the image mimetypes
+ * available to the client.
+ */
+__guac_handshake_handler __guac_handshake_image_handler;
+
+/**
+ * Internal handler function that is called when the timezone instruction is
+ * received during the handshake process, specifying the timezone of the
+ * client.
+ */
+__guac_handshake_handler __guac_handshake_timezone_handler;
+
+/**
  * Allocates a new, blank user, not associated with any specific client or
  * socket.
  *
