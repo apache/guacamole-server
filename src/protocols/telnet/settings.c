@@ -31,6 +31,14 @@
 
 /* Client plugin arguments */
 const char* GUAC_TELNET_CLIENT_ARGS[] = {
+    /**
+     * This first argument defines the protocol version in use so that the
+     * client knows how to handle talking to different versions of guacd.
+     * If this is omitted the client may choose not to enable certain
+     * features.
+     */
+    "VERSION_1_1_0",
+    
     "hostname",
     "port",
     "username",
@@ -60,6 +68,11 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
 
 enum TELNET_ARGS_IDX {
 
+    /**
+     * The protocol version provided by the client.
+     */
+    IDX_PROTOCOL_VERSION,
+    
     /**
      * The hostname to connect to. Required.
      */

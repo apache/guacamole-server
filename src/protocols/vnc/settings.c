@@ -31,6 +31,14 @@
 
 /* Client plugin arguments */
 const char* GUAC_VNC_CLIENT_ARGS[] = {
+    /**
+     * This first argument defines the protocol version in use so that the
+     * client knows how to handle talking to different versions of guacd.
+     * If this is omitted the client may choose not to enable certain
+     * features.
+     */
+    "VERSION_1_1_0",
+    
     "hostname",
     "port",
     "read-only",
@@ -83,6 +91,11 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
 
 enum VNC_ARGS_IDX {
 
+    /**
+     * The protocol version provided to the client.
+     */
+    IDX_PROTOCOL_VERSION,
+    
     /**
      * The hostname of the VNC server (or repeater) to connect to.
      */

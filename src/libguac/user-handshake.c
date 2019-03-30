@@ -199,7 +199,7 @@ int __guac_handshake_size_handler(guac_user* user, int argc, char** argv) {
 }
 
 int __guac_handshake_audio_handler(guac_user* user, int argc, char** argv) {
-    
+
     /* Store audio mimetypes */
     user->info.audio_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
     
@@ -208,7 +208,7 @@ int __guac_handshake_audio_handler(guac_user* user, int argc, char** argv) {
 }
 
 int __guac_handshake_video_handler(guac_user* user, int argc, char** argv) {
-    
+
     /* Store video mimetypes */
     user->info.video_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
     
@@ -226,6 +226,9 @@ int __guac_handshake_image_handler(guac_user* user, int argc, char** argv) {
 }
 
 int __guac_handshake_timezone_handler(guac_user* user, int argc, char** argv) {
+    
+    /* Free any past value */
+    free((char *) user->info.timezone);
     
     /* Store timezone, if present */
     if (argc > 0 && strcmp(argv[0], ""))
@@ -392,6 +395,9 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
         /* If we receive the connect opcode, we're done. */
         if (strcmp(parser->opcode, "connect") == 0)
             break;
+        
+        guac_user_log(user, GUAC_LOG_DEBUG, "Processing instruction: %s",
+                parser->opcode);
         
         /* Loop available opcodes and run handler if/when match found. */
         __guac_handshake_mapping* current = __guac_handshake_map;

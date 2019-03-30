@@ -25,6 +25,14 @@
 
 /* Client plugin arguments */
 const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
+    /**
+     * This first argument defines the protocol version in use so that the
+     * client knows how to handle talking to different versions of guacd.
+     * If this is omitted the client may choose not to enable certain
+     * features.
+     */
+    "VERSION_1_1_0",
+    
     "hostname",
     "port",
     "namespace",
@@ -55,6 +63,11 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
 
 enum KUBERNETES_ARGS_IDX {
 
+    /**
+     * The protocol version provided to the client.
+     */
+    IDX_PROTOCOL_VERSION,
+    
     /**
      * The hostname to connect to. Required.
      */
