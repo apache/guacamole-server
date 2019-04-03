@@ -114,141 +114,6 @@ static void guac_user_log_handshake_failure(guac_user* user) {
 }
 
 /**
- * Copies the given array of mimetypes (strings) into a newly-allocated NULL-
- * terminated array of strings. Both the array and the strings within the array
- * are newly-allocated and must be later freed via guac_free_mimetypes().
- *
- * @param mimetypes
- *     The array of mimetypes to copy.
- *
- * @param count
- *     The number of mimetypes in the given array.
- *
- * @return
- *     A newly-allocated, NULL-terminated array containing newly-allocated
- *     copies of each of the mimetypes provided in the original mimetypes
- *     array.
- */
-static char** guac_copy_mimetypes(char** mimetypes, int count) {
-
-    int i;
-
-    /* Allocate sufficient space for NULL-terminated array of mimetypes */
-    char** mimetypes_copy = malloc(sizeof(char*) * (count+1));
-
-    /* Copy each provided mimetype */
-    for (i = 0; i < count; i++)
-        mimetypes_copy[i] = strdup(mimetypes[i]);
-
-    /* Terminate with NULL */
-    mimetypes_copy[count] = NULL;
-
-    return mimetypes_copy;
-
-}
-
-/**
- * Frees the given array of mimetypes, including the space allocated to each
- * mimetype string within the array. The provided array of mimetypes MUST have
- * been allocated with guac_copy_mimetypes().
- *
- * @param mimetypes
- *     The NULL-terminated array of mimetypes to free. This array MUST have
- *     been previously allocated with guac_copy_mimetypes().
- */
-static void guac_free_mimetypes(char** mimetypes) {
-
-    char** current_mimetype = mimetypes;
-
-    /* Free all strings within NULL-terminated mimetype array */
-    while (*current_mimetype != NULL) {
-        free(*current_mimetype);
-        current_mimetype++;
-    }
-
-    /* Free the array itself, now that its contents have been freed */
-    free(mimetypes);
-
-}
-
-/* Guacamole handshake handler functions. */
-
-int __guac_handshake_size_handler(guac_user* user, int argc, char** argv) {
-    
-    /* Validate size of instruction. */
-    if (argc < 2) {
-        guac_user_log(user, GUAC_LOG_ERROR, "Received \"size\" "
-                "instruction lacked required arguments.");
-        return 1;
-    }
-    
-    /* Parse optimal screen dimensions from size instruction */
-    user->info.optimal_width  = atoi(argv[0]);
-    user->info.optimal_height = atoi(argv[1]);
-
-    /* If DPI given, set the user resolution */
-    if (argc >= 3)
-        user->info.optimal_resolution = atoi(argv[2]);
-
-    /* Otherwise, use a safe default for rough backwards compatibility */
-    else
-        user->info.optimal_resolution = 96;
-    
-    return 0;
-    
-}
-
-int __guac_handshake_audio_handler(guac_user* user, int argc, char** argv) {
-
-    /* Store audio mimetypes */
-    user->info.audio_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
-    
-    return 0;
-    
-}
-
-int __guac_handshake_video_handler(guac_user* user, int argc, char** argv) {
-
-    /* Store video mimetypes */
-    user->info.video_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
-    
-    return 0;
-    
-}
-
-int __guac_handshake_image_handler(guac_user* user, int argc, char** argv) {
-    
-    /* Store image mimetypes */
-    user->info.image_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
-    
-    return 0;
-    
-}
-
-int __guac_handshake_timezone_handler(guac_user* user, int argc, char** argv) {
-    
-    /* Free any past value */
-    free((char *) user->info.timezone);
-    
-    /* Store timezone, if present */
-    if (argc > 0 && strcmp(argv[0], ""))
-        user->info.timezone = (const char*) strdup(argv[0]);
-    
-    return 0;
-    
-}
-
-/* Guacamole handshake handler mappings. */
-__guac_handshake_mapping __guac_handshake_map[] = {
-    {"size",     __guac_handshake_size_handler},
-    {"audio",    __guac_handshake_audio_handler},
-    {"video",    __guac_handshake_video_handler},
-    {"image",    __guac_handshake_image_handler},
-    {"timezone", __guac_handshake_timezone_handler},
-    {NULL,       NULL}
-};
-
-/**
  * The thread which handles all user input, calling event handlers for received
  * instructions.
  *
@@ -296,7 +161,8 @@ static void* guac_user_input_thread(void* data) {
         guac_error_message = NULL;
 
         /* Call handler, stop on error */
-        if (guac_user_handle_instruction(user, parser->opcode, parser->argc, parser->argv) < 0) {
+        if (guac_user_handle_instruction(__guac_instruction_handler_map, 
+                user, parser->opcode, parser->argc, parser->argv) < 0) {
 
             /* Log error */
             guac_user_log_guac_error(user, GUAC_LOG_WARNING,
@@ -399,39 +265,21 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
         guac_user_log(user, GUAC_LOG_DEBUG, "Processing instruction: %s",
                 parser->opcode);
         
-        /* Loop available opcodes and run handler if/when match found. */
-        __guac_handshake_mapping* current = __guac_handshake_map;
-        while (current->opcode != NULL) {
+        /* Run instruction handler for opcode with arguments. */
+        if (guac_user_handle_instruction(__guac_handshake_handler_map, user,
+                parser->opcode, parser->argc, parser->argv)) {
             
-            /* Check if loop opcode matches parsed opcode. */
-            if (strcmp(parser->opcode, current->opcode) == 0) {
-                
-                    /* If calling the handler fails, log it and return. */
-                    if (current->handler(user, parser->argc, parser->argv)) {
-                
-                        guac_user_log_handshake_failure(user);
-                        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                                "Error handling handling opcode during handshake.");
-                        guac_user_log(user, GUAC_LOG_DEBUG, "Failed opcode: %s",
-                                current->opcode);
+            guac_user_log_handshake_failure(user);
+            guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
+                    "Error handling handling opcode during handshake.");
+            guac_user_log(user, GUAC_LOG_DEBUG, "Failed opcode: %s",
+                    parser->opcode);
 
-                        guac_parser_free(parser);
-                        return 1;
-                    }
-                    
-                    /* If calling the handler has succeeded, log it and break. */
-                    else {
-                        guac_user_log(user, GUAC_LOG_DEBUG,
-                                "Successfully processed instruction: \"%s\"",
-                                current->opcode);
-                        break;
-                    }
-
-            }
+            guac_parser_free(parser);
+            return 1;
             
-            /* Move to next opcode. */
-            current++;
         }
+        
     }
 
     /* Acknowledge connection availability */
