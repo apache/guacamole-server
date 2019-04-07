@@ -164,7 +164,8 @@ void test_fs__normalize_relative_mixed() {
  *
  * @param length
  *     The number of bytes to include in the generated path, not counting the
- *     null-terminator.
+ *     null-terminator. If -1, the length of the path will be automatically
+ *     determined from the provided max_depth.
  *
  * @param max_depth
  *     The maximum number of path components to include within the generated
@@ -176,6 +177,10 @@ void test_fs__normalize_relative_mixed() {
  *     call to free().
  */
 static char* generate_path(int length, int max_depth) {
+
+    /* If no length given, calculate space required from max_depth */
+    if (length == -1)
+        length = max_depth * 2;
 
     int i;
     char* input = malloc(length + 1);
@@ -207,7 +212,7 @@ void test_fs__normalize_long() {
     char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
     /* Exceeds maximum length by a factor of 2 */
-    input = generate_path(GUAC_COMMON_SSH_SFTP_MAX_PATH*2, GUAC_COMMON_SSH_SFTP_MAX_DEPTH);
+    input = generate_path(GUAC_COMMON_SSH_SFTP_MAX_PATH * 2, GUAC_COMMON_SSH_SFTP_MAX_DEPTH);
     CU_ASSERT_EQUAL(guac_common_ssh_sftp_normalize_path(normalized, input), 0);
     free(input);
 
@@ -218,6 +223,39 @@ void test_fs__normalize_long() {
 
     /* Exactly maximum length */
     input = generate_path(GUAC_COMMON_SSH_SFTP_MAX_PATH - 1, GUAC_COMMON_SSH_SFTP_MAX_DEPTH);
+    CU_ASSERT_NOT_EQUAL(guac_common_ssh_sftp_normalize_path(normalized, input), 0);
+    free(input);
+
+}
+
+/**
+ * Test which verifies that paths exceeding the maximum path depth are
+ * rejected.
+ */
+void test_fs__normalize_deep() {
+
+    char* input;
+    char normalized[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+
+    /* Exceeds maximum depth by a factor of 2 */
+    input = generate_path(-1, GUAC_COMMON_SSH_SFTP_MAX_DEPTH * 2);
+    CU_ASSERT_EQUAL(guac_common_ssh_sftp_normalize_path(normalized, input), 0);
+    free(input);
+
+    /* Exceeds maximum depth by one component */
+    input = generate_path(-1, GUAC_COMMON_SSH_SFTP_MAX_DEPTH + 1);
+    CU_ASSERT_EQUAL(guac_common_ssh_sftp_normalize_path(normalized, input), 0);
+    free(input);
+
+    /* Exactly maximum depth (should still be rejected as SFTP depth limits are
+     * set such that a path with the maximum depth will exceed the maximum
+     * length) */
+    input = generate_path(-1, GUAC_COMMON_SSH_SFTP_MAX_DEPTH);
+    CU_ASSERT_EQUAL(guac_common_ssh_sftp_normalize_path(normalized, input), 0);
+    free(input);
+
+    /* Less than maximum depth */
+    input = generate_path(-1, GUAC_COMMON_SSH_SFTP_MAX_DEPTH - 1);
     CU_ASSERT_NOT_EQUAL(guac_common_ssh_sftp_normalize_path(normalized, input), 0);
     free(input);
 
