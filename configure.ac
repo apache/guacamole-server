@@ -151,6 +151,10 @@ AC_SUBST([PULSE_INCLUDE], '-I$(top_srcdir)/src/pulse')
 AC_SUBST([COMMON_SSH_LTLIB],   '$(top_builddir)/src/common-ssh/libguac_common_ssh.la')
 AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
 
+# RDP support
+AC_SUBST([LIBGUAC_CLIENT_RDP_LTLIB],   '$(top_builddir)/src/protocols/rdp/libguac-client-rdp.la')
+AC_SUBST([LIBGUAC_CLIENT_RDP_INCLUDE], '-I$(top_srcdir)/src/protocols/rdp')
+
 # Terminal emulator
 AC_SUBST([TERMINAL_LTLIB],   '$(top_builddir)/src/terminal/libguac_terminal.la')
 AC_SUBST([TERMINAL_INCLUDE], '-I$(top_srcdir)/src/terminal $(PANGO_CFLAGS) $(PANGOCAIRO_CFLAGS) $(COMMON_INCLUDE)')
@@ -1331,6 +1335,7 @@ AC_CONFIG_FILES([Makefile
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/rdp/Makefile
+                 src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
                  src/protocols/vnc/Makefile])
