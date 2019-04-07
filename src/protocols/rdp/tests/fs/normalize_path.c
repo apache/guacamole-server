@@ -166,19 +166,28 @@ void test_fs__normalize_relative_mixed() {
  *     The number of bytes to include in the generated path, not counting the
  *     null-terminator.
  *
+ * @param max_depth
+ *     The maximum number of path components to include within the generated
+ *     path.
+ *
  * @return
  *     A dynamically-allocated path containing the given number of bytes, not
  *     counting the null-terminator. This path must eventually be freed with a
  *     call to free().
  */
-static char* generate_path(int length) {
+static char* generate_path(int length, int max_depth) {
 
     int i;
     char* input = malloc(length + 1);
 
-    /* Fill path with \x\x\x\x\x\x\x\x\x\x\... */
+    /* Fill path with \x\x\x\x\x\x\x\x\x\x\...\xxxxxxxxx... */
     for (i = 0; i < length; i++) {
-        input[i] = (i % 2 == 0) ? '\\' : 'x';
+        if (max_depth > 0 && i % 2 == 0) {
+            input[i] = '\\';
+            max_depth--;
+        }
+        else
+            input[i] = 'x';
     }
 
     /* Add null terminator */
@@ -198,17 +207,17 @@ void test_fs__normalize_long() {
     char normalized[GUAC_RDP_FS_MAX_PATH];
 
     /* Exceeds maximum length by a factor of 2 */
-    input = generate_path(GUAC_RDP_FS_MAX_PATH*2);
+    input = generate_path(GUAC_RDP_FS_MAX_PATH*2, GUAC_RDP_MAX_PATH_DEPTH);
     CU_ASSERT_NOT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
     free(input);
 
     /* Exceeds maximum length by one byte */
-    input = generate_path(GUAC_RDP_FS_MAX_PATH);
+    input = generate_path(GUAC_RDP_FS_MAX_PATH, GUAC_RDP_MAX_PATH_DEPTH);
     CU_ASSERT_NOT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
     free(input);
 
     /* Exactly maximum length */
-    input = generate_path(GUAC_RDP_FS_MAX_PATH - 1);
+    input = generate_path(GUAC_RDP_FS_MAX_PATH - 1, GUAC_RDP_MAX_PATH_DEPTH);
     CU_ASSERT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
     free(input);
 
