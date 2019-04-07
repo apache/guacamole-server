@@ -1317,6 +1317,7 @@ AC_CONFIG_FILES([Makefile
                  src/common/Makefile
                  src/common/tests/Makefile
                  src/common-ssh/Makefile
+                 src/common-ssh/tests/Makefile
                  src/terminal/Makefile
                  src/libguac/Makefile
                  src/libguac/tests/Makefile

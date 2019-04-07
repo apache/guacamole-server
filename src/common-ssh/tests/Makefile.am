@@ -23,40 +23,44 @@
 # to you by the ASF under the Apache License, Version 2.0, as described above.
 #
 
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
 
-noinst_LTLIBRARIES = libguac_common_ssh.la
-SUBDIRS = . tests
+#
+# Unit tests for common SSH support
+#
 
-libguac_common_ssh_la_SOURCES = \
-    buffer.c                    \
-    dsa-compat.c                \
-    rsa-compat.c                \
-    sftp.c                      \
-    ssh.c                       \
-    key.c                       \
-    user.c
+check_PROGRAMS = test_common_ssh
+TESTS = $(check_PROGRAMS)
 
-noinst_HEADERS =            \
-    common-ssh/buffer.h     \
-    common-ssh/dsa-compat.h \
-    common-ssh/rsa-compat.h \
-    common-ssh/key.h        \
-    common-ssh/sftp.h       \
-    common-ssh/ssh.h        \
-    common-ssh/user.h
+test_common_ssh_SOURCES = \
+    sftp/normalize_path.c
 
-libguac_common_ssh_la_CFLAGS = \
-    -Werror -Wall -pedantic    \
-    @COMMON_INCLUDE@           \
-    @LIBGUAC_INCLUDE@
+test_common_ssh_CFLAGS =    \
+    -Werror -Wall -pedantic \
+    @COMMON_INCLUDE@        \
+    @COMMON_SSH_INCLUDE@
 
-libguac_common_ssh_la_LIBADD = \
-    @LIBGUAC_LTLIB@
+test_common_ssh_LDADD = \
+    @CUNIT_LIBS@        \
+    @COMMON_SSH_LTLIB@  \
+    @COMMON_LTLIB@
 
-libguac_common_ssh_la_LDFLAGS = \
-    @PTHREAD_LIBS@              \
-    @SSH_LIBS@                  \
-    @SSL_LIBS@
+#
+# Autogenerate test runner
+#
+
+GEN_RUNNER = $(top_srcdir)/util/generate-test-runner.pl
+CLEANFILES = _generated_runner.c
+
+_generated_runner.c: $(test_common_ssh_SOURCES)
+	$(AM_V_GEN) $(GEN_RUNNER) $(test_common_ssh_SOURCES) > $@
+
+nodist_test_common_ssh_SOURCES = \
+    _generated_runner.c
+
+# Use automake's TAP test driver for running any tests
+LOG_DRIVER =                \
+    env AM_TAP_AWK='$(AWK)' \
+    $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh
 

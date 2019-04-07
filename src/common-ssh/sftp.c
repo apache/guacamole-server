@@ -33,29 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * Given an arbitrary absolute path, which may contain "..", ".", and
- * backslashes, creates an equivalent absolute path which does NOT contain
- * relative path components (".." or "."), backslashes, or empty path
- * components. With the exception of paths referring to the root directory, the
- * resulting path is guaranteed to not contain trailing slashes.
- *
- * Normalization will fail if the given path is not absolute, is too long, or
- * contains more than GUAC_COMMON_SSH_SFTP_MAX_DEPTH path components.
- *
- * @param fullpath
- *     The buffer to populate with the normalized path. The normalized path
- *     will not contain relative path components like ".." or ".", nor will it
- *     contain backslashes. This buffer MUST be at least
- *     GUAC_COMMON_SSH_SFTP_MAX_PATH bytes in size.
- *
- * @param path
- *     The absolute path to normalize.
- *
- * @return
- *     Non-zero if normalization succeeded, zero otherwise.
- */
-static int guac_common_ssh_sftp_normalize_path(char* fullpath,
+int guac_common_ssh_sftp_normalize_path(char* fullpath,
         const char* path) {
 
     int i;
