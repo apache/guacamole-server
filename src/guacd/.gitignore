@@ -13,38 +13,3 @@ guacd.exe
 man/guacd.8
 man/guacd.conf.5
 
-# Object code
-*.o
-*.so
-*.lo
-*.la
-
-# Backup files
-*~
-
-# Release files
-*.tar.gz
-
-# Files currently being edited by vim or vi
-*.swp
-
-# automake/autoconf
-.deps/
-.libs/
-Makefile
-Makefile.in
-aclocal.m4
-autom4te.cache/
-m4/
-config.guess
-config.log
-config.status
-config.sub
-configure
-depcomp
-install-sh
-libtool
-ltmain.sh
-missing
-
-
