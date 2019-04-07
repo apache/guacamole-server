@@ -36,77 +36,66 @@
 int guac_common_ssh_sftp_normalize_path(char* fullpath,
         const char* path) {
 
-    int i;
-
     int path_depth = 0;
-    char path_component_data[GUAC_COMMON_SSH_SFTP_MAX_PATH];
     const char* path_components[GUAC_COMMON_SSH_SFTP_MAX_DEPTH];
-
-    const char* current_path_component_data = &(path_component_data[0]);
 
     /* If original path is not absolute, normalization fails */
     if (path[0] != '\\' && path[0] != '/')
         return 0;
 
-    /* Skip past leading slash */
-    path++;
+    /* Create scratch copy of path excluding leading slash (we will be
+     * replacing path separators with null terminators and referencing those
+     * substrings directly as path components) */
+    char path_scratch[GUAC_COMMON_SSH_SFTP_MAX_PATH - 1];
+    int length = guac_strlcpy(path_scratch, path + 1,
+            sizeof(path_scratch));
 
-    /* Copy path into component data for parsing */
-    int length = guac_strlcpy(path_component_data, path,
-            sizeof(path_component_data));
-
-    /* Fail if input path was truncated */
-    if (length >= sizeof(path_component_data))
+    /* Fail if provided path is too long */
+    if (length >= sizeof(path_scratch))
         return 0;
 
-    /* Find path components within path */
-    for (i = 0; i < sizeof(path_component_data); i++) {
+    /* Locate all path components within path */
+    const char* current_path_component = &(path_scratch[0]);
+    for (int i = 0; i <= length; i++) {
 
         /* If current character is a path separator, parse as component */
-        char c = path_component_data[i];
+        char c = path_scratch[i];
         if (c == '/' || c == '\\' || c == '\0') {
 
             /* Terminate current component */
-            path_component_data[i] = '\0';
+            path_scratch[i] = '\0';
 
             /* If component refers to parent, just move up in depth */
-            if (strcmp(current_path_component_data, "..") == 0) {
+            if (strcmp(current_path_component, "..") == 0) {
                 if (path_depth > 0)
                     path_depth--;
             }
 
             /* Otherwise, if component not current directory, add to list */
-            else if (strcmp(current_path_component_data,   ".") != 0
-                     && strcmp(current_path_component_data, "") != 0) {
+            else if (strcmp(current_path_component, ".") != 0
+                    && strcmp(current_path_component, "") != 0) {
 
                 /* Fail normalization if path is too deep */
                 if (path_depth >= GUAC_COMMON_SSH_SFTP_MAX_DEPTH)
                     return 0;
 
-                path_components[path_depth++] = current_path_component_data;
+                path_components[path_depth++] = current_path_component;
 
             }
 
-            /* If end of string, stop */
-            if (c == '\0')
-                break;
-
             /* Update start of next component */
-            current_path_component_data = &(path_component_data[i+1]);
+            current_path_component = &(path_scratch[i+1]);
 
         } /* end if separator */
 
     } /* end for each character */
 
-    /* If no components, the path is simply root */
-    if (path_depth == 0) {
-        strcpy(fullpath, "/");
-        return 1;
-    }
+    /* Add leading slash for resulting absolute path */
+    fullpath[0] = '/';
 
-    /* Convert components back into path */
-    guac_strljoin(fullpath, path_components, path_depth,
-            "/", GUAC_COMMON_SSH_SFTP_MAX_PATH);
+    /* Append normalized components to path, separated by slashes */
+    guac_strljoin(fullpath + 1, path_components, path_depth,
+            "/", GUAC_COMMON_SSH_SFTP_MAX_PATH - 1);
 
     return 1;
 
