@@ -402,7 +402,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
 
 }
 
-int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
+int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, uint64_t offset,
         void* buffer, int length) {
 
     int bytes_read;
@@ -426,7 +426,7 @@ int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
 
 }
 
-int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, int offset,
+int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, uint64_t offset,
         void* buffer, int length) {
 
     int bytes_written;

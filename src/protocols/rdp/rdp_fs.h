@@ -487,7 +487,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
  *     error occurs. All error codes are negative values and correspond to
  *     GUAC_RDP_FS constants, such as GUAC_RDP_FS_ENOENT.
  */
-int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
+int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, uint64_t offset,
         void* buffer, int length);
 
 /**
@@ -515,7 +515,7 @@ int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
  *     occurs. All error codes are negative values and correspond to
  *     GUAC_RDP_FS constants, such as GUAC_RDP_FS_ENOENT.
  */
-int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, int offset,
+int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, uint64_t offset,
         void* buffer, int length);
 
 /**
