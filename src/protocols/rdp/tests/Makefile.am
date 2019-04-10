@@ -38,7 +38,8 @@ test_rdp_SOURCES =      \
 
 test_rdp_CFLAGS =                \
     -Werror -Wall -pedantic      \
-    @LIBGUAC_CLIENT_RDP_INCLUDE@
+    @LIBGUAC_CLIENT_RDP_INCLUDE@ \
+    @LIBGUAC_INCLUDE@
 
 test_rdp_LDADD =               \
     @CUNIT_LIBS@               \
