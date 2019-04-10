@@ -38,6 +38,9 @@
 #include <cairo/cairo.h>
 #include <stdarg.h>
 
+/* The protocol version */
+#define GUACAMOLE_PROTOCOL_VERSION "VERSION_1_1_0"
+
 /* CONTROL INSTRUCTIONS */
 
 /**

@@ -42,14 +42,6 @@
 
 /* Client plugin arguments */
 const char* GUAC_RDP_CLIENT_ARGS[] = {
-    /**
-     * This first argument defines the protocol version in use so that the
-     * client knows how to handle talking to different versions of guacd.
-     * If this is omitted the client may choose not to enable certain
-     * features.
-     */
-    "VERSION_1_1_0",
-    
     "hostname",
     "port",
     "domain",
