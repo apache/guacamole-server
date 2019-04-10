@@ -31,8 +31,8 @@
 
 #include "config.h"
 
-#include "client.h"
-#include "timestamp.h"
+#include "guacamole/client.h"
+#include "guacamole/timestamp.h"
 
 /**
  * Internal handler for Guacamole instructions. Instruction handlers will be

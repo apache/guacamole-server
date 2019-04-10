@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "timestamp.h"
+#include "guacamole/timestamp.h"
 
 #include <sys/time.h>
 

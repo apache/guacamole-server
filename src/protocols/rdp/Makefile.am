@@ -27,6 +27,7 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac-client-rdp.la
+SUBDIRS = . tests
 
 nodist_libguac_client_rdp_la_SOURCES = \
     _generated_keymaps.c

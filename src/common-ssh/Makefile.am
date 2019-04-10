@@ -27,6 +27,7 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 noinst_LTLIBRARIES = libguac_common_ssh.la
+SUBDIRS = . tests
 
 libguac_common_ssh_la_SOURCES = \
     buffer.c                    \

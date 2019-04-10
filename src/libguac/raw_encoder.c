@@ -19,14 +19,12 @@
 
 #include "config.h"
 
-#include "audio.h"
+#include "guacamole/audio.h"
+#include "guacamole/client.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
+#include "guacamole/user.h"
 #include "raw_encoder.h"
-
-#include <guacamole/audio.h>
-#include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-#include <guacamole/user.h>
 
 #include <stdlib.h>
 #include <stdio.h>
