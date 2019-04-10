@@ -19,10 +19,10 @@
 
 #include "config.h"
 
-#include "client.h"
-#include "error.h"
-#include "socket.h"
-#include "user.h"
+#include "guacamole/client.h"
+#include "guacamole/error.h"
+#include "guacamole/socket.h"
+#include "guacamole/user.h"
 
 #include <pthread.h>
 #include <stdlib.h>

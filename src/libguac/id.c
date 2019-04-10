@@ -19,8 +19,8 @@
 
 #include "config.h"
 
+#include "guacamole/error.h"
 #include "id.h"
-#include "error.h"
 
 #ifdef HAVE_OSSP_UUID_H
 #include <ossp/uuid.h>

@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "unicode.h"
+#include "guacamole/unicode.h"
 
 #include <stddef.h>
 

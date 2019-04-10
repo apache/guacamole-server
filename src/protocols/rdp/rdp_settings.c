@@ -27,6 +27,7 @@
 
 #include <freerdp/constants.h>
 #include <freerdp/settings.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 
 #ifdef ENABLE_WINPR
@@ -1268,11 +1269,11 @@ void guac_rdp_push_settings(guac_client* client,
     /* Client name */
     if (guac_settings->client_name != NULL) {
 #ifdef LEGACY_RDPSETTINGS
-        strncpy(rdp_settings->client_hostname, guac_settings->client_name,
-                RDP_CLIENT_HOSTNAME_SIZE - 1);
+        guac_strlcpy(rdp_settings->client_hostname, guac_settings->client_name,
+                RDP_CLIENT_HOSTNAME_SIZE);
 #else
-        strncpy(rdp_settings->ClientHostname, guac_settings->client_name,
-                RDP_CLIENT_HOSTNAME_SIZE - 1);
+        guac_strlcpy(rdp_settings->ClientHostname, guac_settings->client_name,
+                RDP_CLIENT_HOSTNAME_SIZE);
 #endif
     }
 

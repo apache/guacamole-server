@@ -27,9 +27,10 @@
 #include <guacamole/stream.h>
 
 /**
- * The maximum number of characters to allow for each channel name.
+ * The maximum number of bytes to allow within each channel name, including
+ * null terminator.
  */
-#define GUAC_RDP_SVC_MAX_LENGTH 7
+#define GUAC_RDP_SVC_MAX_LENGTH 8
 
 /**
  * Structure describing a static virtual channel, and the corresponding
@@ -50,7 +51,7 @@ typedef struct guac_rdp_svc {
     /**
      * The name of the RDP channel in use, and the name to use for each pipe.
      */
-    char name[GUAC_RDP_SVC_MAX_LENGTH+1];
+    char name[GUAC_RDP_SVC_MAX_LENGTH];
 
     /**
      * The output pipe, opened when the RDP server receives a connection to

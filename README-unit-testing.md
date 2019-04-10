@@ -60,7 +60,7 @@ modified to contain a sections like the following:
     CLEANFILES = _generated_runner.c
 
     _generated_runner.c: $(test_myproj_SOURCES)
-    	$(AM_V_GEN) $(GEN_RUNNER) $^ > $@
+    	$(AM_V_GEN) $(GEN_RUNNER) $(test_myproj_SOURCES) > $@
 
     nodist_test_libguac_SOURCES = \
         _generated_runner.c

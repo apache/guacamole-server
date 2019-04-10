@@ -3,7 +3,3 @@
 _generated_runner.c
 test_common
 
-# Test suite output
-*.log
-*.trs
-

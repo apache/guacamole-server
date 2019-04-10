@@ -20,10 +20,10 @@
 #include "config.h"
 
 #include "encode-png.h"
-#include "error.h"
+#include "guacamole/error.h"
+#include "guacamole/protocol.h"
+#include "guacamole/stream.h"
 #include "palette.h"
-#include "protocol.h"
-#include "stream.h"
 
 #include <png.h>
 #include <cairo/cairo.h>

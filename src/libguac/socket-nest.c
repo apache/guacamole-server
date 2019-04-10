@@ -19,9 +19,9 @@
 
 #include "config.h"
 
-#include "protocol.h"
-#include "socket.h"
-#include "unicode.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
+#include "guacamole/unicode.h"
 
 #include <stddef.h>
 #include <stdlib.h>

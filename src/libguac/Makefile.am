@@ -61,6 +61,7 @@ libguacinc_HEADERS =                  \
     guacamole/socket-types.h          \
     guacamole/stream.h                \
     guacamole/stream-types.h          \
+    guacamole/string.h                \
     guacamole/timestamp.h             \
     guacamole/timestamp-types.h       \
     guacamole/unicode.h               \
@@ -96,6 +97,7 @@ libguac_la_SOURCES =   \
     socket-fd.c        \
     socket-nest.c      \
     socket-tee.c       \
+    string.c           \
     timestamp.c        \
     unicode.c          \
     user.c             \
@@ -122,7 +124,7 @@ libguacinc_HEADERS += guacamole/socket-wsa.h
 endif
 
 libguac_la_CFLAGS = \
-    -Werror -Wall -pedantic -I$(srcdir)/guacamole
+    -Werror -Wall -pedantic
 
 libguac_la_LDFLAGS =     \
     -version-info 17:0:0 \

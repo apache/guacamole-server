@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "socket.h"
+#include "guacamole/socket.h"
 
 #include <stdlib.h>
 

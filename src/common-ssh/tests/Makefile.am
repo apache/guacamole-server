@@ -27,37 +27,24 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 #
-# Unit tests for libguac
+# Unit tests for common SSH support
 #
 
-check_PROGRAMS = test_libguac
+check_PROGRAMS = test_common_ssh
 TESTS = $(check_PROGRAMS)
 
-test_libguac_SOURCES =               \
-    client/buffer_pool.c             \
-    client/layer_pool.c              \
-    parser/append.c                  \
-    parser/read.c                    \
-    pool/next_free.c                 \
-    protocol/base64_decode.c         \
-    socket/fd_send_instruction.c     \
-    socket/nested_send_instruction.c \
-    string/strlcat.c                 \
-    string/strlcpy.c                 \
-    string/strljoin.c                \
-    unicode/charsize.c               \
-    unicode/read.c                   \
-    unicode/strlen.c                 \
-    unicode/write.c
+test_common_ssh_SOURCES = \
+    sftp/normalize_path.c
 
-
-test_libguac_CFLAGS =       \
+test_common_ssh_CFLAGS =    \
     -Werror -Wall -pedantic \
-    @LIBGUAC_INCLUDE@
+    @COMMON_INCLUDE@        \
+    @COMMON_SSH_INCLUDE@
 
-test_libguac_LDADD = \
-    @CUNIT_LIBS@     \
-    @LIBGUAC_LTLIB@
+test_common_ssh_LDADD = \
+    @CUNIT_LIBS@        \
+    @COMMON_SSH_LTLIB@  \
+    @COMMON_LTLIB@
 
 #
 # Autogenerate test runner
@@ -66,10 +53,10 @@ test_libguac_LDADD = \
 GEN_RUNNER = $(top_srcdir)/util/generate-test-runner.pl
 CLEANFILES = _generated_runner.c
 
-_generated_runner.c: $(test_libguac_SOURCES)
-	$(AM_V_GEN) $(GEN_RUNNER) $(test_libguac_SOURCES) > $@
+_generated_runner.c: $(test_common_ssh_SOURCES)
+	$(AM_V_GEN) $(GEN_RUNNER) $(test_common_ssh_SOURCES) > $@
 
-nodist_test_libguac_SOURCES = \
+nodist_test_common_ssh_SOURCES = \
     _generated_runner.c
 
 # Use automake's TAP test driver for running any tests
