@@ -261,8 +261,10 @@ char** guac_copy_mimetypes(char** mimetypes, int count);
 /**
  * Call the appropriate handler defined by the given user for the given
  * instruction. A comparison is made between the instruction opcode and the
- * initial handler lookup table defined in user-handlers.c. The intial handlers
- * will in turn call the user's handler (if defined).
+ * initial handler lookup table defined in the map that is provided to this
+ * function. If an entry for the instruction is found in the provided map,
+ * the handler defined in that map will be called and the value returned.  If
+ * no match is found, it is silently ignored.
  *
  * @param map
  *     The array that holds the opcode to handler mappings.
@@ -284,7 +286,7 @@ char** guac_copy_mimetypes(char** mimetypes, int count);
  *     Non-negative if the instruction was handled successfully, or negative
  *     if an error occurred.
  */
-int guac_user_handle_instruction(__guac_instruction_handler_mapping* map,
+int __guac_user_call_opcode_handler(__guac_instruction_handler_mapping* map,
         guac_user* user, const char* opcode, int argc, char** argv);
 
 #endif

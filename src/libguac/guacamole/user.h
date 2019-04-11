@@ -545,6 +545,32 @@ void guac_user_free(guac_user* user);
 int guac_user_handle_connection(guac_user* user, int usec_timeout);
 
 /**
+ * Call the appropriate handler defined by the given user for the given
+ * instruction. A comparison is made between the instruction opcode and the
+ * initial handler lookup table defined in user-handlers.c. The initial handlers
+ * will in turn call the user's handler (if defined).
+ *
+ * @param user
+ *     The user whose handlers should be called.
+ *
+ * @param opcode
+ *     The opcode of the instruction to pass to the user via the appropriate
+ *     handler.
+ *
+ * @param argc
+ *     The number of arguments which are part of the instruction.
+ *
+ * @param argv
+ *     An array of all arguments which are part of the instruction.
+ *
+ * @return
+ *     Non-negative if the instruction was handled successfully, or negative
+ *     if an error occurred.
+ */
+int guac_user_handle_instruction(guac_user* user, const char* opcode,
+        int argc, char** argv);
+
+/**
  * Allocates a new stream. An arbitrary index is automatically assigned
  * if no previously-allocated stream is available for use.
  *

@@ -25,6 +25,7 @@
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"
 #include "guacamole/user.h"
+#include "user-handlers.h"
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -161,7 +162,7 @@ static void* guac_user_input_thread(void* data) {
         guac_error_message = NULL;
 
         /* Call handler, stop on error */
-        if (guac_user_handle_instruction(__guac_instruction_handler_map, 
+        if (__guac_user_call_opcode_handler(__guac_instruction_handler_map, 
                 user, parser->opcode, parser->argc, parser->argv) < 0) {
 
             /* Log error */
@@ -266,7 +267,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
                 parser->opcode);
         
         /* Run instruction handler for opcode with arguments. */
-        if (guac_user_handle_instruction(__guac_handshake_handler_map, user,
+        if (__guac_user_call_opcode_handler(__guac_handshake_handler_map, user,
                 parser->opcode, parser->argc, parser->argv)) {
             
             guac_user_log_handshake_failure(user);

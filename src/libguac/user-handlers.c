@@ -693,7 +693,7 @@ void guac_free_mimetypes(char** mimetypes) {
 
 }
 
-int guac_user_handle_instruction(__guac_instruction_handler_mapping* map,
+int __guac_user_call_opcode_handler(__guac_instruction_handler_mapping* map,
         guac_user* user, const char* opcode, int argc, char** argv) {
 
     /* For each defined instruction */
