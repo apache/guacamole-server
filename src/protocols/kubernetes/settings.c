@@ -54,11 +54,6 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
 };
 
 enum KUBERNETES_ARGS_IDX {
-
-    /**
-     * The protocol version provided to the client.
-     */
-    IDX_PROTOCOL_VERSION,
     
     /**
      * The hostname to connect to. Required.

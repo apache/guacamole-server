@@ -234,7 +234,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
 
     guac_socket* socket = user->socket;
     guac_client* client = user->client;
-
+    
     /* Send args */
     if (guac_protocol_send_args(socket, client->args)
             || guac_socket_flush(socket)) {
@@ -286,9 +286,10 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     /* Acknowledge connection availability */
     guac_protocol_send_ready(socket, client->connection_id);
     guac_socket_flush(socket);
-
-    /* Attempt join */
-    if (guac_client_add_user(client, user, parser->argc, parser->argv))
+    
+    /* Check return value from join attempt */
+    if (guac_client_add_user(client, user, (parser->argc - 1),
+                parser->argv + 1))
         guac_client_log(client, GUAC_LOG_ERROR, "User \"%s\" could NOT "
                 "join connection \"%s\"", user->user_id, client->connection_id);
 

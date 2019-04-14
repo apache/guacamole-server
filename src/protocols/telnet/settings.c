@@ -59,11 +59,6 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
 };
 
 enum TELNET_ARGS_IDX {
-
-    /**
-     * The protocol version provided by the client.
-     */
-    IDX_PROTOCOL_VERSION,
     
     /**
      * The hostname to connect to. Required.

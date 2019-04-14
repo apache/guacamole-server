@@ -66,11 +66,6 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
 };
 
 enum SSH_ARGS_IDX {
-    
-    /**
-     * The protocol version 
-     */
-    IDX_PROTOCOL_VERSION,
 
     /**
      * The hostname to connect to. Required.

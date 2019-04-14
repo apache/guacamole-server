@@ -123,11 +123,6 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 };
 
 enum RDP_ARGS_IDX {
-
-    /**
-     * The protocol version sent to the client.
-     */
-    IDX_PROTOCOL_VERSION,
     
     /**
      * The hostname to connect to.

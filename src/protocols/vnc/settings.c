@@ -82,11 +82,6 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
 };
 
 enum VNC_ARGS_IDX {
-
-    /**
-     * The protocol version provided to the client.
-     */
-    IDX_PROTOCOL_VERSION,
     
     /**
      * The hostname of the VNC server (or repeater) to connect to.
