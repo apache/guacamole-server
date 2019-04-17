@@ -622,6 +622,8 @@ int __guac_handshake_size_handler(guac_user* user, int argc, char** argv) {
 
 int __guac_handshake_audio_handler(guac_user* user, int argc, char** argv) {
 
+    guac_free_mimetypes((char **) user->info.audio_mimetypes);
+    
     /* Store audio mimetypes */
     user->info.audio_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
     
@@ -631,6 +633,8 @@ int __guac_handshake_audio_handler(guac_user* user, int argc, char** argv) {
 
 int __guac_handshake_video_handler(guac_user* user, int argc, char** argv) {
 
+    guac_free_mimetypes((char **) user->info.video_mimetypes);
+    
     /* Store video mimetypes */
     user->info.video_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
     
@@ -639,6 +643,8 @@ int __guac_handshake_video_handler(guac_user* user, int argc, char** argv) {
 }
 
 int __guac_handshake_image_handler(guac_user* user, int argc, char** argv) {
+    
+    guac_free_mimetypes((char **) user->info.image_mimetypes);
     
     /* Store image mimetypes */
     user->info.image_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
@@ -680,6 +686,9 @@ char** guac_copy_mimetypes(char** mimetypes, int count) {
 
 void guac_free_mimetypes(char** mimetypes) {
 
+    if (mimetypes == NULL)
+        return;
+    
     char** current_mimetype = mimetypes;
 
     /* Free all strings within NULL-terminated mimetype array */
