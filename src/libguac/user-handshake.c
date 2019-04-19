@@ -238,6 +238,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     user->info.audio_mimetypes = NULL;
     user->info.image_mimetypes = NULL;
     user->info.video_mimetypes = NULL;
+    user->info.timezone = NULL;
     
     /* Send args */
     if (guac_protocol_send_args(socket, client->args)
