@@ -283,8 +283,7 @@ char** guac_copy_mimetypes(char** mimetypes, int count);
  *     An array of all arguments which are part of the instruction.
  *
  * @return
- *     Non-negative if the instruction was handled successfully, or negative
- *     if an error occurred.
+ *     Zero if the instruction was handled successfully, or non-zero otherwise.
  */
 int __guac_user_call_opcode_handler(__guac_instruction_handler_mapping* map,
         guac_user* user, const char* opcode, int argc, char** argv);
