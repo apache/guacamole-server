@@ -662,6 +662,9 @@ int __guac_handshake_timezone_handler(guac_user* user, int argc, char** argv) {
     if (argc > 0 && strcmp(argv[0], ""))
         user->info.timezone = (const char*) strdup(argv[0]);
     
+    else
+        user->info.timezone = NULL;
+    
     return 0;
     
 }

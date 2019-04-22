@@ -230,6 +230,62 @@ static int guac_user_start(guac_parser* parser, guac_user* user,
 
 }
 
+/**
+ * This function loops through the received instructions during the handshake
+ * with the client attempting to join the connection, and runs the handlers
+ * for each of the opcodes, ending when the connect instruction is received.
+ * Returns zero if the handshake completes successfully with the connect opcode,
+ * or a non-zero value if an error occurs.
+ * 
+ * @param user
+ *     The guac_user attempting to join the connection.
+ * 
+ * @param parser
+ *     The parser used to examine the received data.
+ * 
+ * @param usec_timeout
+ *     The timeout, in microseconds, for reading the instructions.
+ * 
+ * @return
+ *     Zero if the handshake completes successfully with the connect opcode,
+ *     or non-zero if an error occurs.
+ */
+static int __guac_user_handshake(guac_user* user, guac_parser* parser,
+        int usec_timeout) {
+    
+    guac_socket* socket = user->socket;
+    
+    /* Handle each of the opcodes. */
+    while (guac_parser_read(parser, socket, usec_timeout) == 0) {
+        
+        /* If we receive the connect opcode, we're done. */
+        if (strcmp(parser->opcode, "connect") == 0)
+            return 0;
+        
+        guac_user_log(user, GUAC_LOG_DEBUG, "Processing instruction: %s",
+                parser->opcode);
+        
+        /* Run instruction handler for opcode with arguments. */
+        if (__guac_user_call_opcode_handler(__guac_handshake_handler_map, user,
+                parser->opcode, parser->argc, parser->argv)) {
+            
+            guac_user_log_handshake_failure(user);
+            guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
+                    "Error handling handling opcode during handshake.");
+            guac_user_log(user, GUAC_LOG_DEBUG, "Failed opcode: %s",
+                    parser->opcode);
+
+            guac_parser_free(parser);
+            return 1;
+            
+        }
+        
+    }
+    
+    /* If we get here something has gone wrong. */
+    return 1;
+}
+
 int guac_user_handle_connection(guac_user* user, int usec_timeout) {
 
     guac_socket* socket = user->socket;
@@ -254,38 +310,12 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
 
     guac_parser* parser = guac_parser_alloc();
 
-    /* Handle each of the opcodes. */
-    while (1) {
-        if (guac_parser_read(parser, socket, usec_timeout)) {
-            guac_user_log_handshake_failure(user);
-            guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                    "Error while reading opcode instruction.");
-            guac_parser_free(parser);
-            return 1;
-        }
-        
-        /* If we receive the connect opcode, we're done. */
-        if (strcmp(parser->opcode, "connect") == 0)
-            break;
-        
-        guac_user_log(user, GUAC_LOG_DEBUG, "Processing instruction: %s",
-                parser->opcode);
-        
-        /* Run instruction handler for opcode with arguments. */
-        if (__guac_user_call_opcode_handler(__guac_handshake_handler_map, user,
-                parser->opcode, parser->argc, parser->argv)) {
-            
-            guac_user_log_handshake_failure(user);
-            guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                    "Error handling handling opcode during handshake.");
-            guac_user_log(user, GUAC_LOG_DEBUG, "Failed opcode: %s",
-                    parser->opcode);
-
-            guac_parser_free(parser);
-            return 1;
-            
-        }
-        
+    /* Perform the handshake with the client. */
+    if (__guac_user_handshake(user, parser, usec_timeout)) {
+        guac_user_log_handshake_failure(user);
+        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
+                "Error while reading opcode instruction.");
+        guac_parser_free(parser);
     }
 
     /* Acknowledge connection availability */
