@@ -528,6 +528,33 @@ then
 fi
 
 #
+# TLS Locking Support within libVNCServer
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_tls_locking=yes
+    AC_CHECK_MEMBERS([rfbClient.LockWriteToTLS, rfbClient.UnlockWriteToTLS],
+                     [], [have_vnc_tls_locking=no],
+                     [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_tls_locking}" = "xno"
+    then
+        AC_MSG_WARN([
+      --------------------------------------------
+       This version of libvncclient lacks support
+       for TLS locking.  VNC connections that use
+       TLS may experience instability as documented
+       in GUACAMOLE-414])
+    else
+        AC_DEFINE([ENABLE_VNC_TLS_LOCKING],,
+                  [Whether support for TLS locking within VNC is enabled.])
+    fi
+
+fi
+
+#
 # FreeRDP
 #
 
