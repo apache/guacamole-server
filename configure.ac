@@ -560,6 +560,7 @@ fi
 
 have_freerdp=disabled
 RDP_LIBS=
+WINPR_LIBS=
 AC_ARG_WITH([rdp],
             [AS_HELP_STRING([--with-rdp],
                             [support RDP @<:@default=check@:>@])],
@@ -759,6 +760,21 @@ then
   --------------------------------------------])
                                    have_freerdp=no],
                                   [#include <freerdp/utils/stream.h>])])
+fi
+
+# Find location of Stream_New and Stream_free
+if test "x${have_freerdp}" = "xyes" -a "x${have_winpr}" = "xyes"
+then
+    AC_CHECK_LIB([winpr], [Stream_New, Stream_Free],
+                 [WINPR_LIBS="$WINPR_LIBS -lwinpr"],
+                 [AC_CHECK_LIB([winpr-utils], [Stream_New, Stream_Free],
+                               [WINPR_LIBS="$WINPR_LIBS -lwinpr-utils"],
+                               [AC_MSG_WARN([
+  ------------------------------------------
+  Unable to locate stream functions in winpr
+  libraries.  RDP will be disabled.
+  ------------------------------------------])
+                                    have_freerdp=no])])
 fi
 
 # Check for types in WinPR
@@ -1069,6 +1085,7 @@ AM_CONDITIONAL([ENABLE_WINPR], [test "x${have_winpr}"   = "xyes"])
 AM_CONDITIONAL([ENABLE_RDP],   [test "x${have_freerdp}" = "xyes"])
 
 AC_SUBST(RDP_LIBS)
+AC_SUBST(WINPR_LIBS)
 
 #
 # libssh2
