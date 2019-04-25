@@ -163,7 +163,7 @@ static void* guac_user_input_thread(void* data) {
 
         /* Call handler, stop on error */
         if (__guac_user_call_opcode_handler(__guac_instruction_handler_map, 
-                user, parser->opcode, parser->argc, parser->argv) < 0) {
+                user, parser->opcode, parser->argc, parser->argv)) {
 
             /* Log error */
             guac_user_log_guac_error(user, GUAC_LOG_WARNING,
@@ -271,7 +271,7 @@ static int __guac_user_handshake(guac_user* user, guac_parser* parser,
             
             guac_user_log_handshake_failure(user);
             guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                    "Error handling handling opcode during handshake.");
+                    "Error handling instruction during handshake.");
             guac_user_log(user, GUAC_LOG_DEBUG, "Failed opcode: %s",
                     parser->opcode);
 
@@ -282,7 +282,9 @@ static int __guac_user_handshake(guac_user* user, guac_parser* parser,
         
     }
     
-    /* If we get here something has gone wrong. */
+    /* If we get here it's because we never got the connect instruction. */
+    guac_user_log(user, GUAC_LOG_ERROR,
+            "Handshake failed, \"connect\" instruction was not received.");
     return 1;
 }
 
@@ -295,6 +297,10 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     user->info.image_mimetypes = NULL;
     user->info.video_mimetypes = NULL;
     user->info.timezone = NULL;
+    
+    /* Count number of arguments. */
+    int numArgs;
+    for (numArgs = 0; client->args[numArgs] != NULL; numArgs++);
     
     /* Send args */
     if (guac_protocol_send_args(socket, client->args)
@@ -312,15 +318,20 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
 
     /* Perform the handshake with the client. */
     if (__guac_user_handshake(user, parser, usec_timeout)) {
-        guac_user_log_handshake_failure(user);
-        guac_user_log_guac_error(user, GUAC_LOG_DEBUG,
-                "Error while reading opcode instruction.");
         guac_parser_free(parser);
+        return 1;
     }
 
     /* Acknowledge connection availability */
     guac_protocol_send_ready(socket, client->connection_id);
     guac_socket_flush(socket);
+    
+    /* Verify argument count. */
+    if (parser->argc != (numArgs + 1)) {
+        guac_client_log(client, GUAC_LOG_ERROR, "Client did not return the "
+                "expected number of arguments.");
+        return 1;
+    }
     
     /* Attempt to join user to connection. */
     if (guac_client_add_user(client, user, (parser->argc - 1), parser->argv + 1))
@@ -333,6 +344,12 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
         guac_client_log(client, GUAC_LOG_INFO, "User \"%s\" joined connection "
                 "\"%s\" (%i users now present)", user->user_id,
                 client->connection_id, client->connected_users);
+        if (strcmp(parser->argv[0],"") != 0)
+            guac_client_log(client, GUAC_LOG_DEBUG, "Client is using protocol "
+                    "version \"%s\"", parser->argv[0]);
+        else
+            guac_client_log(client, GUAC_LOG_DEBUG, "Client has not defined "
+                    "its protocol version.");
 
         /* Handle user I/O, wait for connection to terminate */
         guac_user_start(parser, user, usec_timeout);
