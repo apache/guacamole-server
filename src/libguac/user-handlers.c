@@ -720,7 +720,7 @@ int __guac_user_call_opcode_handler(__guac_instruction_handler_mapping* map,
     }
 
     /* If unrecognized, log and ignore */
-    guac_user_log(user, GUAC_LOG_WARNING, "Handler not found for \"%s\"",
+    guac_user_log(user, GUAC_LOG_DEBUG, "Handler not found for \"%s\"",
             opcode);
     return 0;
 

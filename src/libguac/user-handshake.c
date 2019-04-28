@@ -299,8 +299,8 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     user->info.timezone = NULL;
     
     /* Count number of arguments. */
-    int numArgs;
-    for (numArgs = 0; client->args[numArgs] != NULL; numArgs++);
+    int num_args;
+    for (num_args = 0; client->args[num_args] != NULL; num_args++);
     
     /* Send args */
     if (guac_protocol_send_args(socket, client->args)
@@ -327,7 +327,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     guac_socket_flush(socket);
     
     /* Verify argument count. */
-    if (parser->argc != (numArgs + 1)) {
+    if (parser->argc != (num_args + 1)) {
         guac_client_log(client, GUAC_LOG_ERROR, "Client did not return the "
                 "expected number of arguments.");
         return 1;
