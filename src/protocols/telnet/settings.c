@@ -61,7 +61,7 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
 };
 
 enum TELNET_ARGS_IDX {
-
+    
     /**
      * The hostname to connect to. Required.
      */

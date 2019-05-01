@@ -56,7 +56,7 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
 };
 
 enum KUBERNETES_ARGS_IDX {
-
+    
     /**
      * The hostname to connect to. Required.
      */

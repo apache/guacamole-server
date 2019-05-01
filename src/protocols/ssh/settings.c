@@ -437,10 +437,10 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_LOCALE, NULL);
 
-    /* Read the client timezone. */
+    /* Read the timezone parameter, or use client handshake. */
     settings->timezone =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_TIMEZONE, NULL);
+                IDX_TIMEZONE, user->info.timezone);
 
     /* Parse clipboard copy disable flag */
     settings->disable_copy =

@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Guacamole instruction handler map */
 
@@ -51,6 +52,17 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"audio",      __guac_handle_audio},
    {"argv",       __guac_handle_argv},
    {NULL,         NULL}
+};
+
+/* Guacamole handshake handler map */
+
+__guac_instruction_handler_mapping __guac_handshake_handler_map[] = {
+    {"size",     __guac_handshake_size_handler},
+    {"audio",    __guac_handshake_audio_handler},
+    {"video",    __guac_handshake_video_handler},
+    {"image",    __guac_handshake_image_handler},
+    {"timezone", __guac_handshake_timezone_handler},
+    {NULL,       NULL}
 };
 
 /**
@@ -579,5 +591,138 @@ int __guac_handle_put(guac_user* user, int argc, char** argv) {
 int __guac_handle_disconnect(guac_user* user, int argc, char** argv) {
     guac_user_stop(user);
     return 0;
+}
+
+/* Guacamole handshake handler functions. */
+
+int __guac_handshake_size_handler(guac_user* user, int argc, char** argv) {
+    
+    /* Validate size of instruction. */
+    if (argc < 2) {
+        guac_user_log(user, GUAC_LOG_ERROR, "Received \"size\" "
+                "instruction lacked required arguments.");
+        return 1;
+    }
+    
+    /* Parse optimal screen dimensions from size instruction */
+    user->info.optimal_width  = atoi(argv[0]);
+    user->info.optimal_height = atoi(argv[1]);
+
+    /* If DPI given, set the user resolution */
+    if (argc >= 3)
+        user->info.optimal_resolution = atoi(argv[2]);
+
+    /* Otherwise, use a safe default for rough backwards compatibility */
+    else
+        user->info.optimal_resolution = 96;
+    
+    return 0;
+    
+}
+
+int __guac_handshake_audio_handler(guac_user* user, int argc, char** argv) {
+
+    guac_free_mimetypes((char **) user->info.audio_mimetypes);
+    
+    /* Store audio mimetypes */
+    user->info.audio_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
+    
+    return 0;
+    
+}
+
+int __guac_handshake_video_handler(guac_user* user, int argc, char** argv) {
+
+    guac_free_mimetypes((char **) user->info.video_mimetypes);
+    
+    /* Store video mimetypes */
+    user->info.video_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
+    
+    return 0;
+    
+}
+
+int __guac_handshake_image_handler(guac_user* user, int argc, char** argv) {
+    
+    guac_free_mimetypes((char **) user->info.image_mimetypes);
+    
+    /* Store image mimetypes */
+    user->info.image_mimetypes = (const char**) guac_copy_mimetypes(argv, argc);
+    
+    return 0;
+    
+}
+
+int __guac_handshake_timezone_handler(guac_user* user, int argc, char** argv) {
+    
+    /* Free any past value */
+    free((char *) user->info.timezone);
+    
+    /* Store timezone, if present */
+    if (argc > 0 && strcmp(argv[0], ""))
+        user->info.timezone = (const char*) strdup(argv[0]);
+    
+    else
+        user->info.timezone = NULL;
+    
+    return 0;
+    
+}
+
+char** guac_copy_mimetypes(char** mimetypes, int count) {
+
+    int i;
+
+    /* Allocate sufficient space for NULL-terminated array of mimetypes */
+    char** mimetypes_copy = malloc(sizeof(char*) * (count+1));
+
+    /* Copy each provided mimetype */
+    for (i = 0; i < count; i++)
+        mimetypes_copy[i] = strdup(mimetypes[i]);
+
+    /* Terminate with NULL */
+    mimetypes_copy[count] = NULL;
+
+    return mimetypes_copy;
+
+}
+
+void guac_free_mimetypes(char** mimetypes) {
+
+    if (mimetypes == NULL)
+        return;
+    
+    char** current_mimetype = mimetypes;
+
+    /* Free all strings within NULL-terminated mimetype array */
+    while (*current_mimetype != NULL) {
+        free(*current_mimetype);
+        current_mimetype++;
+    }
+
+    /* Free the array itself, now that its contents have been freed */
+    free(mimetypes);
+
+}
+
+int __guac_user_call_opcode_handler(__guac_instruction_handler_mapping* map,
+        guac_user* user, const char* opcode, int argc, char** argv) {
+
+    /* For each defined instruction */
+    __guac_instruction_handler_mapping* current = map;
+    while (current->opcode != NULL) {
+
+        /* If recognized, call handler */
+        if (strcmp(opcode, current->opcode) == 0)
+            return current->handler(user, argc, argv);
+
+        current++;
+    }
+
+    /* If unrecognized, log and ignore */
+    guac_user_log(user, GUAC_LOG_DEBUG, "Handler not found for \"%s\"",
+            opcode);
+    return 0;
+
 }
 

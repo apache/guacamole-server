@@ -83,7 +83,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
 };
 
 enum VNC_ARGS_IDX {
-
+    
     /**
      * The hostname of the VNC server (or repeater) to connect to.
      */

@@ -169,19 +169,8 @@ void guac_user_free_object(guac_user* user, guac_object* object) {
 
 int guac_user_handle_instruction(guac_user* user, const char* opcode, int argc, char** argv) {
 
-    /* For each defined instruction */
-    __guac_instruction_handler_mapping* current = __guac_instruction_handler_map;
-    while (current->opcode != NULL) {
-
-        /* If recognized, call handler */
-        if (strcmp(opcode, current->opcode) == 0)
-            return current->handler(user, argc, argv);
-
-        current++;
-    }
-
-    /* If unrecognized, ignore */
-    return 0;
+    return __guac_user_call_opcode_handler(__guac_instruction_handler_map,
+            user, opcode, argc, argv);
 
 }
 

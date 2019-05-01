@@ -38,6 +38,20 @@
 #include <cairo/cairo.h>
 #include <stdarg.h>
 
+/**
+ * This defines the overall protocol version that this build of libguac
+ * supports.  The protocol version is used to provide compatibility between
+ * potentially different versions of Guacamole server and clients.  The
+ * version number is a MAJOR_MINOR_PATCH version that matches the versioning
+ * used throughout the components of the Guacamole project.  This version
+ * will not necessarily increment with the other components, unless additional
+ * functionality is introduced that affects compatibility.
+ * 
+ * This version is passed by the __guac_protocol_send_args() function from the
+ * server to the client during the client/server handshake.
+ */
+#define GUACAMOLE_PROTOCOL_VERSION "VERSION_1_1_0"
+
 /* CONTROL INSTRUCTIONS */
 
 /**
