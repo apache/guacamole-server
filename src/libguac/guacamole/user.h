@@ -88,6 +88,13 @@ struct guac_user_info {
      * stated resolution of the display size request is recommended.
      */
     int optimal_resolution;
+    
+    /**
+     * The timezone of the remote system.  If the client does not provide
+     * a specific timezone then this will be NULL.  The format of the timezone
+     * is the standard tzdata naming convention.
+     */
+    const char* timezone;
 
 };
 
@@ -540,7 +547,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout);
 /**
  * Call the appropriate handler defined by the given user for the given
  * instruction. A comparison is made between the instruction opcode and the
- * initial handler lookup table defined in user-handlers.c. The intial handlers
+ * initial handler lookup table defined in user-handlers.c. The initial handlers
  * will in turn call the user's handler (if defined).
  *
  * @param user

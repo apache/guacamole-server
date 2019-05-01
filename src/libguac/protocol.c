@@ -93,6 +93,11 @@ static int __guac_protocol_send_args(guac_socket* socket, const char** args) {
     int i;
 
     if (guac_socket_write_string(socket, "4.args")) return -1;
+    
+    /* Send protocol version ahead of other args. */
+    if (guac_socket_write_string(socket, ",")
+            || __guac_socket_write_length_string(socket, GUACAMOLE_PROTOCOL_VERSION))
+        return -1;
 
     for (i=0; args[i] != NULL; i++) {
 
