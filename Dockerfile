@@ -50,6 +50,9 @@ ARG BUILD_DEPENDENCIES="              \
         libtool                       \
         libvncserver-dev              \
         libwebsockets-dev             \
+        libavcodec-dev                \
+        libavutil-dev                 \
+        libswscale-dev                \        
         libwebp-dev                   \
         make"
 
