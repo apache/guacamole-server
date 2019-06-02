@@ -52,7 +52,8 @@ ARG BUILD_DEPENDENCIES="              \
         libwebsockets-dev             \
         libavcodec-dev                \
         libavutil-dev                 \
-        libswscale-dev                \        
+        libavcodec-dev                \
+        libswscale-dev                \ 
         libwebp-dev                   \
         make"
 
