@@ -27,8 +27,17 @@
 
 /**
  * Handler for retrieving additional credentials.
+ * 
+ * @param client
+ *     The Guacamole Client associated with this need for additional
+ *     credentials.
+ * 
+ * @param cred_name
+ *     The name of the credential being requested, which will be shared
+ *     with the client in order to generate a meaningful prompt.
+ * 
  */
-typedef char* guac_ssh_credential_handler(guac_client* client, char* credName);
+typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name);
 
 /**
  * An SSH session, backed by libssh2 and associated with a particular
@@ -102,14 +111,31 @@ void guac_common_ssh_uninit();
  *
  * @param user
  *     The user to authenticate as, once connected.
+ * 
+ * @param keepalive
+ *     How frequently the connection should send keepalive packets, in
+ *     seconds.  Zero disables keepalive packets, and 2 is the minimum
+ *     configurable value.
+ * 
+ * @param host_key
+ *     The known public host key of the server, as provided by the client.  If
+ *     provided the identity of the server will be checked against this key,
+ *     and a mis-match between this and the server identity will cause the
+ *     connection to fail.  If not provided, no checks will be done and the
+ *     connection will proceed.
+ * 
+ * @param credential_handler
+ *     The handler function for retrieving additional credentials from the user
+ *     as required by the SSH server.
  *
  * @return
  *     A new SSH session if the connection and authentication succeed, or NULL
  *     if the connection or authentication were not successful.
  */
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
-        const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive,
-        const char* host_key, guac_ssh_credential_handler* credential_callback);
+        const char* hostname, const char* port, guac_common_ssh_user* user,
+        int keepalive, const char* host_key,
+        guac_ssh_credential_handler* credential_handler);
 
 /**
  * Disconnects and destroys the given SSH session, freeing all associated

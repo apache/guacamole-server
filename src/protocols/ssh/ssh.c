@@ -138,25 +138,25 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
 }
 
 /**
- * A call-back function used to gather additional credentials from a client
- * during a connection.  It takes the guac_client object and a string to
- * display to the user, and returns the credentials entered by the user.
+ * A function used to generate a terminal prompt to gather additional
+ * credentials from the guac_client during a connection, and using
+ * the specified string to generate the prompt for the user.
  * 
  * @param client
  *     The guac_client object associated with the current connection
  *     where additional credentials are required.
  * 
- * @param credName
+ * @param cred_name
  *     The prompt text to display to the screen when prompting for the
  *     additional credentials.
  * 
  * @return 
  *     The string of credentials gathered from the user.
  */
-char* guac_ssh_get_credential(guac_client *client, char* credName) {
+static char* guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
-    return guac_terminal_prompt(ssh_client->term, credName, false);
+    return guac_terminal_prompt(ssh_client->term, cred_name, false);
     
 }
 

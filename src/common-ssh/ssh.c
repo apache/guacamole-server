@@ -327,7 +327,6 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     guac_client_log(client, GUAC_LOG_DEBUG,
             "Supported authentication methods: %s", user_authlist);
 
-
     /* Authenticate with private key, if provided */
     if (key != NULL) {
 
@@ -359,7 +358,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 
     }
 
-    /* Down to username + password authentication. */
+    /* Attempt authentication with username + password. */
     if (user->password == NULL && common_session->credential_handler)
             user->password = common_session->credential_handler(client, "Password: ");
     
@@ -426,8 +425,9 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 }
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
-        const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive,
-        const char* host_key, guac_ssh_credential_handler* credential_handler) {
+        const char* hostname, const char* port, guac_common_ssh_user* user,
+        int keepalive, const char* host_key,
+        guac_ssh_credential_handler* credential_handler) {
 
     int retval;
 
