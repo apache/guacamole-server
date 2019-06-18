@@ -36,6 +36,9 @@
  *     The name of the credential being requested, which will be shared
  *     with the client in order to generate a meaningful prompt.
  * 
+ * @return
+ *     The credential provided by the user, which should be a dynamically-
+ *     allocated such that it can be freed as required.
  */
 typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name);
 
