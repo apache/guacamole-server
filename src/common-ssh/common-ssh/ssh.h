@@ -37,8 +37,8 @@
  *     with the client in order to generate a meaningful prompt.
  * 
  * @return
- *     The credential provided by the user, which should be a dynamically-
- *     allocated such that it can be freed as required.
+ *     A newly-allocated string containing the credentials provided by
+ *     the user, which must be freed by a call to free().
  */
 typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name);
 
@@ -129,7 +129,8 @@ void guac_common_ssh_uninit();
  * 
  * @param credential_handler
  *     The handler function for retrieving additional credentials from the user
- *     as required by the SSH server.
+ *     as required by the SSH server, or NULL if the user will not be asked
+ *     for additional credentials.
  *
  * @return
  *     A new SSH session if the connection and authentication succeed, or NULL
