@@ -304,20 +304,26 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     LIBSSH2_SESSION* session = common_session->session;
 
     /* Get user credentials */
-    char* username = user->username;
-    char* password = user->password;
     guac_common_ssh_key* key = user->private_key;
 
     /* Validate username provided */
-    if (username == NULL) {
+    if (user->username == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
                 "SSH authentication requires a username.");
         return 1;
     }
 
     /* Get list of supported authentication methods */
-    char* user_authlist = libssh2_userauth_list(session, username,
-            strlen(username));
+    char* user_authlist = libssh2_userauth_list(session, user->username,
+            strlen(user->username));
+
+    /* If auth list is NULL, then authentication has succeeded with NONE */
+    if (user_authlist == NULL) {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+            "SSH NONE authentication succeeded.");
+        return 0;
+    }
+
     guac_client_log(client, GUAC_LOG_DEBUG,
             "Supported authentication methods: %s", user_authlist);
 
@@ -333,7 +339,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
         }
 
         /* Attempt public key auth */
-        if (libssh2_userauth_publickey(session, username,
+        if (libssh2_userauth_publickey(session, user->username,
                     (unsigned char*) key->public_key, key->public_key_length,
                     guac_common_ssh_sign_callback, (void**) key)) {
 
@@ -352,14 +358,18 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 
     }
 
+    /* Attempt authentication with username + password. */
+    if (user->password == NULL && common_session->credential_handler)
+            user->password = common_session->credential_handler(client, "Password: ");
+    
     /* Authenticate with password, if provided */
-    else if (password != NULL) {
+    if (user->password != NULL) {
 
         /* Check if password auth is supported on the server */
         if (strstr(user_authlist, "password") != NULL) {
 
             /* Attempt password authentication */
-            if (libssh2_userauth_password(session, username, password)) {
+            if (libssh2_userauth_password(session, user->username, user->password)) {
 
                 /* Abort on failure */
                 char* error_message;
@@ -380,7 +390,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
         if (strstr(user_authlist, "keyboard-interactive") != NULL) {
 
             /* Attempt keyboard-interactive auth using provided password */
-            if (libssh2_userauth_keyboard_interactive(session, username,
+            if (libssh2_userauth_keyboard_interactive(session, user->username,
                         &guac_common_ssh_kbd_callback)) {
 
                 /* Abort on failure */
@@ -415,8 +425,9 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 }
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
-        const char* hostname, const char* port, guac_common_ssh_user* user, int keepalive,
-        const char* host_key) {
+        const char* hostname, const char* port, guac_common_ssh_user* user,
+        int keepalive, const char* host_key,
+        guac_ssh_credential_handler* credential_handler) {
 
     int retval;
 
@@ -561,6 +572,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
     common_session->user = user;
     common_session->session = session;
     common_session->fd = fd;
+    common_session->credential_handler = credential_handler;
 
     /* Attempt authentication */
     if (guac_common_ssh_authenticate(common_session)) {
