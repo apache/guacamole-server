@@ -131,7 +131,7 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
     } /* end if key given */
 
     /* If available, get password from settings */
-    else if (settings->password != NULL){
+    else if (settings->password != NULL) {
         guac_common_ssh_user_set_password(user, settings->password);
     }
 
