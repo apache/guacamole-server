@@ -270,6 +270,7 @@ rdp_keymaps =                   \
     $(srcdir)/keymaps/es_es_qwerty.keymap \
     $(srcdir)/keymaps/fr_fr_azerty.keymap \
     $(srcdir)/keymaps/fr_ch_qwertz.keymap \
+    $(srcdir)/keymaps/hu_hu_qwertz.keymap \
     $(srcdir)/keymaps/it_it_qwerty.keymap \
     $(srcdir)/keymaps/ja_jp_qwerty.keymap \
     $(srcdir)/keymaps/pt_br_qwerty.keymap \
