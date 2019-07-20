@@ -110,35 +110,36 @@ void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
      * If next PDU is SNDWAVE (due to receiving WaveInfo PDU previously),
      * ignore the header and parse as a Wave PDU.
      */
-    if (rdpsnd->next_pdu_is_wave) {
+    if (rdpsnd->next_pdu_is_wave)
         guac_rdpsnd_wave_handler(rdpsnd, input_stream, &header);
-        return;
-    }
-
+    
     /* Dispatch message to standard handlers */
-    switch (header.message_type) {
+    else {
+        switch (header.message_type) {
 
-        /* Server Audio Formats and Version PDU */
-        case SNDC_FORMATS:
-            guac_rdpsnd_formats_handler(rdpsnd, input_stream, &header);
-            break;
+            /* Server Audio Formats and Version PDU */
+            case SNDC_FORMATS:
+                guac_rdpsnd_formats_handler(rdpsnd, input_stream, &header);
+                break;
 
-        /* Training PDU */
-        case SNDC_TRAINING:
-            guac_rdpsnd_training_handler(rdpsnd, input_stream, &header);
-            break;
+            /* Training PDU */
+            case SNDC_TRAINING:
+                guac_rdpsnd_training_handler(rdpsnd, input_stream, &header);
+                break;
 
-        /* WaveInfo PDU */
-        case SNDC_WAVE:
-            guac_rdpsnd_wave_info_handler(rdpsnd, input_stream, &header);
-            break;
+            /* WaveInfo PDU */
+            case SNDC_WAVE:
+                guac_rdpsnd_wave_info_handler(rdpsnd, input_stream, &header);
+                break;
 
-        /* Close PDU */
-        case SNDC_CLOSE:
-            guac_rdpsnd_close_handler(rdpsnd, input_stream, &header);
-            break;
+            /* Close PDU */
+            case SNDC_CLOSE:
+                guac_rdpsnd_close_handler(rdpsnd, input_stream, &header);
+                break;
 
+        }
     }
 
+    Stream_Free(input_stream, TRUE);
 }
 
