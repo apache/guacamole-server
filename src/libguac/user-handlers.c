@@ -51,6 +51,7 @@ __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"put",        __guac_handle_put},
    {"audio",      __guac_handle_audio},
    {"argv",       __guac_handle_argv},
+   {"nop",        __guac_handle_nop},
    {NULL,         NULL}
 };
 
@@ -585,6 +586,12 @@ int __guac_handle_put(guac_user* user, int argc, char** argv) {
     /* Otherwise, abort */
     guac_protocol_send_ack(user->socket, stream,
             "Object write unsupported", GUAC_PROTOCOL_STATUS_UNSUPPORTED);
+    return 0;
+}
+
+int __guac_handle_nop(guac_user* user, int argc, char** argv) {
+    guac_user_log(user, GUAC_LOG_TRACE,
+            "Received nop instruction");
     return 0;
 }
 

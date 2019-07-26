@@ -178,6 +178,13 @@ __guac_instruction_handler __guac_handle_size;
 __guac_instruction_handler __guac_handle_disconnect;
 
 /**
+ * Internal handler for the nop instruction.  This handler will be called when
+ * the nop instruction is received, and will do nothing more than a TRACE level
+ * log of the instruction.
+ */
+__guac_instruction_handler __guac_handle_nop;
+
+/**
  * Internal handler function that is called when the size instruction is
  * received during the handshake process.
  */
