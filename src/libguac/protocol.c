@@ -125,6 +125,26 @@ int guac_protocol_send_args(guac_socket* socket, const char** args) {
 
 }
 
+int guac_protocol_send_argv(guac_socket* socket, guac_stream* stream,
+        const char* mimetype, const char* name) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "4.argv,")
+        || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
         int x, int y, int radius, double startAngle, double endAngle,
         int negative) {

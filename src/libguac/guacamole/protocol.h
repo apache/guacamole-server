@@ -933,6 +933,31 @@ int guac_protocol_send_size(guac_socket* socket, const guac_layer* layer,
 /* TEXT INSTRUCTIONS */
 
 /**
+ * Sends an argv instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use to send the connection parameter
+ *     value.
+ *
+ * @param stream
+ *     The stream to use to send the connection parameter value.
+ *
+ * @param mimetype
+ *     The mimetype of the connection parameter value being sent.
+ *
+ * @param name
+ *     The name of the connection parameter whose current value is being sent.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_argv(guac_socket* socket, guac_stream* stream,
+        const char* mimetype, const char* name);
+
+/**
  * Sends a clipboard instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
