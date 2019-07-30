@@ -52,7 +52,7 @@ typedef struct guac_webp_stream_writer {
     /**
      * Buffer of pending WebP data.
      */
-    char buffer[6048];
+    char buffer[GUAC_PROTOCOL_BLOB_MAX_LENGTH];
 
     /**
      * The number of bytes currently stored in the buffer.

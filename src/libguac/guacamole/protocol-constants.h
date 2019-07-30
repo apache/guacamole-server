@@ -40,5 +40,14 @@
  */
 #define GUACAMOLE_PROTOCOL_VERSION "VERSION_1_1_0"
 
+/**
+ * The maximum number of bytes that should be sent in any one blob instruction
+ * to ensure the instruction does not exceed the maximum allowed instruction
+ * size.
+ *
+ * @see GUAC_INSTRUCTION_MAX_LENGTH 
+ */
+#define GUAC_PROTOCOL_BLOB_MAX_LENGTH 6048
+
 #endif
 

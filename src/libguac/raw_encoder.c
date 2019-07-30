@@ -129,8 +129,8 @@ static void raw_encoder_flush_handler(guac_audio_stream* audio) {
 
         /* Determine size of blob to be written */
         int chunk_size = remaining;
-        if (chunk_size > 6048)
-            chunk_size = 6048;
+        if (chunk_size > GUAC_PROTOCOL_BLOB_MAX_LENGTH)
+            chunk_size = GUAC_PROTOCOL_BLOB_MAX_LENGTH;
 
         /* Send audio data */
         guac_protocol_send_blob(socket, stream, current, chunk_size);
