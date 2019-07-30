@@ -121,25 +121,8 @@ static void raw_encoder_flush_handler(guac_audio_stream* audio) {
     guac_socket* socket = audio->client->socket;
     guac_stream* stream = audio->stream;
 
-    unsigned char* current = state->buffer;
-    int remaining = state->written;
-
     /* Flush all data in buffer as blobs */
-    while (remaining > 0) {
-
-        /* Determine size of blob to be written */
-        int chunk_size = remaining;
-        if (chunk_size > GUAC_PROTOCOL_BLOB_MAX_LENGTH)
-            chunk_size = GUAC_PROTOCOL_BLOB_MAX_LENGTH;
-
-        /* Send audio data */
-        guac_protocol_send_blob(socket, stream, current, chunk_size);
-
-        /* Advance to next blob */
-        current += chunk_size;
-        remaining -= chunk_size;
-
-    }
+    guac_protocol_send_blobs(socket, stream, state->buffer, state->written);
 
     /* All data has been flushed */
     state->written = 0;

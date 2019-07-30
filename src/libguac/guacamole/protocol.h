@@ -436,6 +436,37 @@ int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
         const void* data, int count);
 
 /**
+ * Sends a series of blob instructions, splitting the given data across the
+ * number of instructions required to ensure the size of each blob does not
+ * exceed GUAC_PROTOCOL_BLOB_MAX_LENGTH. If the size of data provided is zero,
+ * no blob instructions are sent.
+ *
+ * If an error occurs sending any blob instruction, a non-zero value is
+ * returned, guac_error is set appropriately, and no further blobs are sent.
+ *
+ * @see GUAC_PROTOCOL_BLOB_MAX_LENGTH
+ *
+ * @param socket
+ *     The guac_socket connection to use to send the blob instructions.
+ *
+ * @param stream
+ *     The stream to associate with each blob sent.
+ *
+ * @param data
+ *     The data which should be sent using the required number of blob
+ *     instructions.
+ *
+ * @param count
+ *     The number of bytes within the given buffer of data that must be
+ *     written.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_blobs(guac_socket* socket, const guac_stream* stream,
+        const void* data, int count);
+
+/**
  * Sends an end instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is

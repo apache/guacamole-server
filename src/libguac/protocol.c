@@ -215,6 +215,33 @@ int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
 
 }
 
+int guac_protocol_send_blobs(guac_socket* socket, const guac_stream* stream,
+        const void* data, int count) {
+
+    int ret_val = 0;
+
+    /* Send blob instructions while data remains and instructions are being
+     * sent successfully */
+    while (count > 0 && ret_val == 0) {
+
+        /* Limit blob size to maximum allowed */
+        int blob_size = count;
+        if (blob_size > GUAC_PROTOCOL_BLOB_MAX_LENGTH)
+            blob_size = GUAC_PROTOCOL_BLOB_MAX_LENGTH;
+
+        /* Send next blob of data */
+        ret_val = guac_protocol_send_blob(socket, stream, data, blob_size);
+
+        /* Advance to next blob */
+        data = (const char*) data + blob_size;
+        count -= blob_size;
+
+    }
+
+    return ret_val;
+
+}
+
 int guac_protocol_send_body(guac_socket* socket, const guac_object* object,
         const guac_stream* stream, const char* mimetype, const char* name) {
 
