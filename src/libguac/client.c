@@ -516,6 +516,26 @@ int guac_client_get_processing_lag(guac_client* client) {
 
 }
 
+void guac_client_stream_argv(guac_client* client, guac_socket* socket,
+        const char* mimetype, const char* name, const char* value) {
+
+    /* Allocate new stream for argument value */
+    guac_stream* stream = guac_client_alloc_stream(client);
+
+    /* Declare stream as containing connection parameter data */
+    guac_protocol_send_argv(socket, stream, mimetype, name);
+
+    /* Write parameter data */
+    guac_protocol_send_blobs(socket, stream, value, strlen(value));
+
+    /* Terminate stream */
+    guac_protocol_send_end(socket, stream);
+
+    /* Free allocated stream */
+    guac_client_free_stream(client, stream);
+
+}
+
 void guac_client_stream_png(guac_client* client, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
         cairo_surface_t* surface) {

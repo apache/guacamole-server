@@ -549,6 +549,33 @@ int guac_client_load_plugin(guac_client* client, const char* protocol);
 int guac_client_get_processing_lag(guac_client* client);
 
 /**
+ * Streams the given connection parameter value over an argument value stream
+ * ("argv" instruction), exposing the current value of the named connection
+ * parameter to all users of the given client. The argument value stream will
+ * be automatically allocated and freed.
+ *
+ * @param client
+ *     The Guacamole client for which the argument value stream should be
+ *     allocated.
+ *
+ * @param socket
+ *     The socket over which instructions associated with the argument value
+ *     stream should be sent.
+ *
+ * @param mimetype
+ *     The mimetype of the data within the connection parameter value being
+ *     sent.
+ *
+ * @param name
+ *     The name of the connection parameter being sent.
+ *
+ * @param value
+ *     The current value of the connection parameter being sent.
+ */
+void guac_client_stream_argv(guac_client* client, guac_socket* socket,
+        const char* mimetype, const char* name, const char* value);
+
+/**
  * Streams the image data of the given surface over an image stream ("img"
  * instruction) as PNG-encoded data. The image stream will be automatically
  * allocated and freed.
