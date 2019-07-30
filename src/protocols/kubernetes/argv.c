@@ -125,11 +125,15 @@ static int guac_kubernetes_argv_end_handler(guac_user* user,
         /* Update color scheme */
         case GUAC_KUBERNETES_ARGV_SETTING_COLOR_SCHEME:
             guac_terminal_apply_color_scheme(terminal, argv->buffer);
+            guac_client_stream_argv(client, client->socket, "text/plain",
+                    "color-scheme", argv->buffer);
             break;
 
         /* Update font name */
         case GUAC_KUBERNETES_ARGV_SETTING_FONT_NAME:
             guac_terminal_apply_font(terminal, argv->buffer, -1, 0);
+            guac_client_stream_argv(client, client->socket, "text/plain",
+                    "font-name", argv->buffer);
             break;
 
         /* Update font size */
@@ -140,6 +144,8 @@ static int guac_kubernetes_argv_end_handler(guac_user* user,
             if (size > 0) {
                 guac_terminal_apply_font(terminal, NULL, size,
                         kubernetes_client->settings->resolution);
+                guac_client_stream_argv(client, client->socket, "text/plain",
+                        "font-size", argv->buffer);
             }
 
             break;
