@@ -59,7 +59,7 @@ typedef struct guac_jpeg_destination_mgr {
     /**
      * The output buffer.
      */
-    unsigned char buffer[6048];
+    unsigned char buffer[GUAC_PROTOCOL_BLOB_MAX_LENGTH];
 
 } guac_jpeg_destination_mgr;
 

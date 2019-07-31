@@ -229,6 +229,26 @@ void guac_user_log(guac_user* user, guac_client_log_level level,
 
 }
 
+void guac_user_stream_argv(guac_user* user, guac_socket* socket,
+        const char* mimetype, const char* name, const char* value) {
+
+    /* Allocate new stream for argument value */
+    guac_stream* stream = guac_user_alloc_stream(user);
+
+    /* Declare stream as containing connection parameter data */
+    guac_protocol_send_argv(socket, stream, mimetype, name);
+
+    /* Write parameter data */
+    guac_protocol_send_blobs(socket, stream, value, strlen(value));
+
+    /* Terminate stream */
+    guac_protocol_send_end(socket, stream);
+
+    /* Free allocated stream */
+    guac_user_free_stream(user, stream);
+
+}
+
 void guac_user_stream_png(guac_user* user, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
         cairo_surface_t* surface) {
