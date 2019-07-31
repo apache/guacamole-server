@@ -125,6 +125,26 @@ int guac_protocol_send_args(guac_socket* socket, const char** args) {
 
 }
 
+int guac_protocol_send_argv(guac_socket* socket, guac_stream* stream,
+        const char* mimetype, const char* name) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "4.argv,")
+        || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_arc(guac_socket* socket, const guac_layer* layer,
         int x, int y, int radius, double startAngle, double endAngle,
         int negative) {
@@ -191,6 +211,33 @@ int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_blobs(guac_socket* socket, const guac_stream* stream,
+        const void* data, int count) {
+
+    int ret_val = 0;
+
+    /* Send blob instructions while data remains and instructions are being
+     * sent successfully */
+    while (count > 0 && ret_val == 0) {
+
+        /* Limit blob size to maximum allowed */
+        int blob_size = count;
+        if (blob_size > GUAC_PROTOCOL_BLOB_MAX_LENGTH)
+            blob_size = GUAC_PROTOCOL_BLOB_MAX_LENGTH;
+
+        /* Send next blob of data */
+        ret_val = guac_protocol_send_blob(socket, stream, data, blob_size);
+
+        /* Advance to next blob */
+        data = (const char*) data + blob_size;
+        count -= blob_size;
+
+    }
+
     return ret_val;
 
 }

@@ -56,7 +56,7 @@ typedef struct guac_png_write_state {
     /**
      * Buffer of pending PNG data.
      */
-    char buffer[6048];
+    char buffer[GUAC_PROTOCOL_BLOB_MAX_LENGTH];
 
     /**
      * The number of bytes currently stored in the buffer.

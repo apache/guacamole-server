@@ -30,6 +30,7 @@
 
 #include "layer-types.h"
 #include "object-types.h"
+#include "protocol-constants.h"
 #include "protocol-types.h"
 #include "socket-types.h"
 #include "stream-types.h"
@@ -37,20 +38,6 @@
 
 #include <cairo/cairo.h>
 #include <stdarg.h>
-
-/**
- * This defines the overall protocol version that this build of libguac
- * supports.  The protocol version is used to provide compatibility between
- * potentially different versions of Guacamole server and clients.  The
- * version number is a MAJOR_MINOR_PATCH version that matches the versioning
- * used throughout the components of the Guacamole project.  This version
- * will not necessarily increment with the other components, unless additional
- * functionality is introduced that affects compatibility.
- * 
- * This version is passed by the __guac_protocol_send_args() function from the
- * server to the client during the client/server handshake.
- */
-#define GUACAMOLE_PROTOCOL_VERSION "VERSION_1_1_0"
 
 /* CONTROL INSTRUCTIONS */
 
@@ -446,6 +433,37 @@ int guac_protocol_send_pipe(guac_socket* socket, const guac_stream* stream,
  * @return Zero on success, non-zero on error.
  */
 int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
+        const void* data, int count);
+
+/**
+ * Sends a series of blob instructions, splitting the given data across the
+ * number of instructions required to ensure the size of each blob does not
+ * exceed GUAC_PROTOCOL_BLOB_MAX_LENGTH. If the size of data provided is zero,
+ * no blob instructions are sent.
+ *
+ * If an error occurs sending any blob instruction, a non-zero value is
+ * returned, guac_error is set appropriately, and no further blobs are sent.
+ *
+ * @see GUAC_PROTOCOL_BLOB_MAX_LENGTH
+ *
+ * @param socket
+ *     The guac_socket connection to use to send the blob instructions.
+ *
+ * @param stream
+ *     The stream to associate with each blob sent.
+ *
+ * @param data
+ *     The data which should be sent using the required number of blob
+ *     instructions.
+ *
+ * @param count
+ *     The number of bytes within the given buffer of data that must be
+ *     written.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_blobs(guac_socket* socket, const guac_stream* stream,
         const void* data, int count);
 
 /**
@@ -931,6 +949,31 @@ int guac_protocol_send_size(guac_socket* socket, const guac_layer* layer,
         int w, int h);
 
 /* TEXT INSTRUCTIONS */
+
+/**
+ * Sends an argv instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use to send the connection parameter
+ *     value.
+ *
+ * @param stream
+ *     The stream to use to send the connection parameter value.
+ *
+ * @param mimetype
+ *     The mimetype of the connection parameter value being sent.
+ *
+ * @param name
+ *     The name of the connection parameter whose current value is being sent.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_argv(guac_socket* socket, guac_stream* stream,
+        const char* mimetype, const char* name);
 
 /**
  * Sends a clipboard instruction over the given guac_socket connection.
