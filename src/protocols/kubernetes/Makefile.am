@@ -29,6 +29,7 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libguac-client-kubernetes.la
 
 libguac_client_kubernetes_la_SOURCES = \
+    argv.c                             \
     client.c                           \
     clipboard.c                        \
     input.c                            \
@@ -41,6 +42,7 @@ libguac_client_kubernetes_la_SOURCES = \
     user.c
 
 noinst_HEADERS = \
+    argv.h       \
     client.h     \
     clipboard.h  \
     input.h      \
