@@ -47,6 +47,10 @@ char* guac_vnc_get_password(rfbClient* client);
  *     The rfbClient associated with the VNC connection requiring the
  *     authentication.
  * 
+ * @param credentialType
+ *     The credential type being requested, as defined by the libVNCclient
+ *     code in the rfbclient.h header.
+ * 
  * @return
  *     The rfbCredential object that contains the required credentials.
  */
