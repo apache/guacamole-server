@@ -45,13 +45,7 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
         creds->x509Credential.x509ClientCertFile = ((guac_vnc_client*) gc->data)->settings->client_cert;
         creds->x509Credential.x509ClientKeyFile = ((guac_vnc_client*) gc->data)->settings->client_key;
         creds->x509Credential.x509CACertFile = ((guac_vnc_client*) gc->data)->settings->ca_cert;
-        creds->x509Credential.x509CACRLFile = ((guac_vnc_client*) gc->data)->settings->ca_crl;
-        
-        if (creds->x509Credential.x509CACRLFile != NULL)
-            creds->x509Credential.x509CrlVerifyMode = 2;
-        else
-            creds->x509Credential.x509CrlVerifyMode = 0;
-        
+        creds->x509Credential.x509CACrlFile = ((guac_vnc_client*) gc->data)->settings->ca_crl;        
         return creds;
     }
     
