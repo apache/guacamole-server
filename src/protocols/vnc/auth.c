@@ -55,8 +55,7 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
         return creds;
     }
     
-    guac_client_log(client, GUAC_LOG_ERROR,
-            "Unknown credential type requested.");
+    guac_client_log(gc, GUAC_LOG_ERROR, "Unknown credential type requested.");
     return NULL;
     
 }
