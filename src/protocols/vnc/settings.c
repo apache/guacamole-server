@@ -35,7 +35,12 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "port",
     "read-only",
     "encodings",
+    "username",
     "password",
+    "client-cert",
+    "client-key",
+    "ca-cert",
+    "ca-crl",
     "swap-red-blue",
     "color-depth",
     "cursor",
@@ -109,9 +114,36 @@ enum VNC_ARGS_IDX {
     IDX_ENCODINGS,
 
     /**
+     * The username to send to the VNC server if authentication is requested.
+     */
+    IDX_USERNAME,
+    
+    /**
      * The password to send to the VNC server if authentication is requested.
      */
     IDX_PASSWORD,
+    
+    /**
+     * The client certificate to send to the VNC server if x509 authentication
+     * is being used.
+     */
+    IDX_CLIENT_CERT,
+    
+    /**
+     * The client private key to send to the VNC server if x509 authentication
+     * is being used.
+     */
+    IDX_CLIENT_KEY,
+    
+    /**
+     * The CA certificate to use when performing x509 authentication.
+     */
+    IDX_CA_CERT,
+    
+    /**
+     * The location of the CA CRL to use when performing x509 authentication.
+     */
+    IDX_CA_CRL,
 
     /**
      * "true" if the red and blue components of each color should be swapped,
@@ -337,10 +369,30 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_PORT, 0);
 
+    settings->username =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_USERNAME, ""); /* NOTE: freed by libvncclient */
+    
     settings->password =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_PASSWORD, ""); /* NOTE: freed by libvncclient */
 
+    settings->client_cert =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_CLIENT_CERT, NULL);
+    
+    settings->client_key =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_CLIENT_KEY, NULL);
+    
+    settings->ca_cert =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_CA_CERT, NULL);
+    
+    settings->ca_crl =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_CA_CRL, NULL);
+    
     /* Remote cursor */
     if (strcmp(argv[IDX_CURSOR], "remote") == 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Cursor rendering: remote");
@@ -530,6 +582,10 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
     free(settings->hostname);
     free(settings->recording_name);
     free(settings->recording_path);
+    free(settings->client_cert);
+    free(settings->client_key);
+    free(settings->ca_cert);
+    free(settings->ca_crl);
 
 #ifdef ENABLE_VNC_REPEATER
     /* Free VNC repeater settings */

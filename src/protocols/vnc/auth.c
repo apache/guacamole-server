@@ -31,3 +31,32 @@ char* guac_vnc_get_password(rfbClient* client) {
     return ((guac_vnc_client*) gc->data)->settings->password;
 }
 
+rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
+    guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
+    rfbCredential *creds = malloc(sizeof(rfbCredential));
+    
+    if (credentialType == rfbCredentialTypeUser) {
+        creds->userCredential.username = ((guac_vnc_client*) gc->data)->settings->username;
+        creds->userCredential.password = ((guac_vnc_client*) gc->data)->settings->password;
+        return creds;
+    }
+    
+    else if (credentialType == rfbCredentialTypeX509) {
+        creds->x509Credential.x509ClientCertFile = ((guac_vnc_client*) gc->data)->settings->client_cert;
+        creds->x509Credential.x509ClientKeyFile = ((guac_vnc_client*) gc->data)->settings->client_key;
+        creds->x509Credential.x509CACertFile = ((guac_vnc_client*) gc->data)->settings->ca_cert;
+        creds->x509Credential.x509CACRLFile = ((guac_vnc_client*) gc->data)->settings->ca_crl;
+        
+        if (creds->x509Credential.x509CACRLFile != NULL)
+            creds->x509Credential.x509CrlVerifyMode = 2;
+        else
+            creds->x509Credential.x509CrlVerifyMode = 0;
+        
+        return creds;
+    }
+    
+    guac_client_log(client, GUAC_LOG_ERROR,
+            "Unknown credential type requested.");
+    return NULL;
+    
+}

@@ -153,6 +153,9 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
 
     }
 
+    /* Authentication */
+    rfb_client->GetCredential = guac_vnc_get_credentials;
+    
     /* Password */
     rfb_client->GetPassword = guac_vnc_get_password;
 
