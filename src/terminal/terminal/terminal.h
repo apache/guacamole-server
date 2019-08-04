@@ -507,6 +507,25 @@ struct guac_terminal {
     guac_common_clipboard* clipboard;
 
     /**
+     * The name of the font to use when rendering glyphs, as requested at
+     * creation time or via guac_terminal_apply_font().
+     */
+    const char* font_name;
+
+    /**
+     * The size of each glyph, in points, as requested at creation time or via
+     * guac_terminal_apply_font().
+     */
+    int font_size;
+
+    /**
+     * The name of the color scheme to use, as requested at creation time or
+     * via guac_terminal_apply_color_scheme(). This string must be in the
+     * format accepted by guac_terminal_parse_color_scheme().
+     */
+    const char* color_scheme;
+
+    /**
      * ASCII character to send when backspace is pressed.
      */
     char backspace;
