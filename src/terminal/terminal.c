@@ -327,23 +327,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
     guac_terminal_color (*default_palette)[256] = (guac_terminal_color(*)[256])
             malloc(sizeof(guac_terminal_color[256]));
 
-    /* Special cases. */
-    if (color_scheme == NULL || color_scheme[0] == '\0') {
-        /* guac_terminal_parse_color_scheme defaults to gray-black */
-    }
-    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GRAY_BLACK) == 0) {
-        color_scheme = "foreground:color7;background:color0";
-    }
-    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_BLACK_WHITE) == 0) {
-        color_scheme = "foreground:color0;background:color15";
-    }
-    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GREEN_BLACK) == 0) {
-        color_scheme = "foreground:color2;background:color0";
-    }
-    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_WHITE_BLACK) == 0) {
-        color_scheme = "foreground:color15;background:color0";
-    }
-
     guac_terminal_parse_color_scheme(client, color_scheme,
                                      &default_char.attributes.foreground,
                                      &default_char.attributes.background,
