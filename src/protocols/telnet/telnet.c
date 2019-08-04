@@ -18,6 +18,8 @@
  */
 
 #include "config.h"
+
+#include "argv.h"
 #include "common/recording.h"
 #include "telnet.h"
 #include "terminal/terminal.h"
@@ -579,6 +581,10 @@ void* guac_telnet_client_thread(void* data) {
                 "Terminal initialization failed");
         return NULL;
     }
+
+    /* Send current values of exposed arguments to owner only */
+    guac_client_for_owner(client, guac_telnet_send_current_argv,
+            telnet_client);
 
     /* Set up typescript, if requested */
     if (settings->typescript_path != NULL) {
