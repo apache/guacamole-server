@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 /* Client plugin arguments */
 const char* GUAC_VNC_CLIENT_ARGS[] = {
@@ -586,6 +587,26 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
     free(settings->client_key);
     free(settings->ca_cert);
     free(settings->ca_crl);
+    
+    if (settings->client_cert_temp != NULL) {
+        unlink(settings->client_cert_temp);
+        free(settings->client_cert_temp);
+    }
+    
+    if (settings->client_key_temp != NULL) {
+        unlink(settings->client_key_temp);
+        free(settings->client_key_temp);
+    }
+    
+    if (settings->ca_cert_temp != NULL) {
+        unlink(settings->ca_cert_temp);
+        free(settings->ca_cert_temp);
+    }
+    
+    if (settings->ca_crl_temp != NULL) {
+        unlink(settings->ca_crl_temp);
+        free(settings->ca_crl_temp);
+    }
 
 #ifdef ENABLE_VNC_REPEATER
     /* Free VNC repeater settings */

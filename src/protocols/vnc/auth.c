@@ -34,18 +34,49 @@ char* guac_vnc_get_password(rfbClient* client) {
 rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     rfbCredential *creds = malloc(sizeof(rfbCredential));
+    guac_vnc_settings* settings = ((guac_vnc_client*) gc->data)->settings;
     
     if (credentialType == rfbCredentialTypeUser) {
-        creds->userCredential.username = ((guac_vnc_client*) gc->data)->settings->username;
-        creds->userCredential.password = ((guac_vnc_client*) gc->data)->settings->password;
+        creds->userCredential.username = settings->username;
+        creds->userCredential.password = settings->password;
         return creds;
     }
     
     else if (credentialType == rfbCredentialTypeX509) {
-        creds->x509Credential.x509ClientCertFile = ((guac_vnc_client*) gc->data)->settings->client_cert;
-        creds->x509Credential.x509ClientKeyFile = ((guac_vnc_client*) gc->data)->settings->client_key;
-        creds->x509Credential.x509CACertFile = ((guac_vnc_client*) gc->data)->settings->ca_cert;
-        creds->x509Credential.x509CACrlFile = ((guac_vnc_client*) gc->data)->settings->ca_crl;        
+        char* template = "guac_XXXXXX";
+        
+        if (settings->client_cert != NULL) {
+            settings->client_cert_temp = strdup(template);
+            int cert_fd = mkstemp(settings->client_cert_temp);
+            write(cert_fd, settings->client_cert, strlen(settings->client_cert));
+            close(cert_fd);
+            creds->x509Credential.x509ClientCertFile = settings->client_cert_temp;
+        }
+        
+        if (settings->client_key != NULL) {
+            settings->client_key_temp = strdup(template);
+            int key_fd = mkstemp(settings->client_key_temp);
+            write(key_fd, settings->client_key, strlen(settings->client_key));
+            close(key_fd);
+            creds->x509Credential.x509ClientKeyFile = settings->client_key_temp;
+        }
+        
+        if (settings->ca_cert != NULL) {
+            settings->ca_cert_temp = strdup(template);
+            int ca_fd = mkstemp(settings->ca_cert_temp);
+            write(ca_fd, settings->ca_cert, strlen(settings->ca_cert));
+            close(ca_fd);
+            creds->x509Credential.x509CACertFile = settings->ca_cert_temp;
+        }
+        
+        if (settings->ca_crl != NULL) {
+            settings->ca_crl_temp = strdup(template);
+            int crl_fd = mkstemp(settings->ca_crl_temp);
+            write(crl_fd, settings->ca_crl, strlen(settings->ca_crl));
+            close(crl_fd);
+            creds->x509Credential.x509CACrlFile = settings->ca_crl_temp;
+        }
+        
         return creds;
     }
     
