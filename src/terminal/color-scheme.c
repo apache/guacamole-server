@@ -197,7 +197,7 @@ void guac_terminal_parse_color_scheme(guac_client* client,
         guac_terminal_color (*palette)[256]) {
 
     /* Special cases. */
-    if (color_scheme == NULL || color_scheme[0] == '\0') {
+    if (color_scheme[0] == '\0') {
         /* guac_terminal_parse_color_scheme defaults to gray-black */
     }
     else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GRAY_BLACK) == 0) {

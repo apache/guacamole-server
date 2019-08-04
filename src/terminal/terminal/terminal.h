@@ -561,8 +561,8 @@ struct guac_terminal {
  *
  * @param color_scheme
  *     The name of the color scheme to use. This string must be one of the
- *     names defined by the GUAC_TERMINAL_SCHEME_* constants. If blank or NULL,
- *     the default scheme of GUAC_TERMINAL_SCHEME_GRAY_BLACK will be used. If
+ *     names defined by the GUAC_TERMINAL_SCHEME_* constants. If blank, the
+ *     default scheme of GUAC_TERMINAL_SCHEME_GRAY_BLACK will be used. If
  *     invalid, a warning will be logged, and the terminal will fall back on
  *     GUAC_TERMINAL_SCHEME_GRAY_BLACK.
  *
