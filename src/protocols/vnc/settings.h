@@ -54,47 +54,6 @@ typedef struct guac_vnc_settings {
      * The password given in the arguments.
      */
     char* password;
-    
-    /**
-     * The contents of the client certificate to use for authentication.
-     */
-    char* client_cert;
-    
-    /**
-     * The location of the temporary client certificate file.
-     */
-    char* client_cert_temp;
-    
-    /**
-     * The contents of the client private key to use for authentication.
-     */
-    char* client_key;
-    
-    /**
-     * The location of the temporary client key file.
-     */
-    char* client_key_temp;
-    
-    /**
-     * The contents of the CA certificate file to use for authentication.
-     */
-    char* ca_cert;
-    
-    /**
-     * The location of the temporary CA file.
-     */
-    char* ca_cert_temp;
-    
-    /**
-     * The contents of the CA CRL location to use for checking for revoked
-     * certificates during authentication.
-     */
-    char* ca_crl;
-    
-    /**
-     * The location of the temporary CRL file.
-     */
-    char* ca_crl_temp;
 
     /**
      * Space-separated list of encodings to use within the VNC session.
