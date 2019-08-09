@@ -74,6 +74,7 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
     /* If not owner, synchronize with current display */
     else {
         guac_terminal_dup(ssh_client->term, user, user->socket);
+        guac_ssh_send_current_argv(user, ssh_client);
         guac_socket_flush(user->socket);
     }
 

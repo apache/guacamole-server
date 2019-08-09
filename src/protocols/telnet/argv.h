@@ -37,5 +37,24 @@
  */
 guac_user_argv_handler guac_telnet_argv_handler;
 
+/**
+ * Sends the current values of all non-sensitive parameters which may be set
+ * while the connection is running to the given user. Note that the user
+ * receiving these values will not necessarily be able to set new values
+ * themselves if their connection is read-only. This function can be used as
+ * the callback for guac_client_foreach_user() and guac_client_for_owner()
+ *
+ * @param user
+ *     The user that should receive the values of all non-sensitive parameters
+ *     which may be set while the connection is running.
+ *
+ * @param data
+ *     The guac_telnet_client instance associated with the current connection.
+ *
+ * @return
+ *     Always NULL.
+ */
+void* guac_telnet_send_current_argv(guac_user* user, void* data);
+
 #endif
 

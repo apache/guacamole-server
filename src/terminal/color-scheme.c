@@ -196,6 +196,23 @@ void guac_terminal_parse_color_scheme(guac_client* client,
         guac_terminal_color* background,
         guac_terminal_color (*palette)[256]) {
 
+    /* Special cases. */
+    if (color_scheme[0] == '\0') {
+        /* guac_terminal_parse_color_scheme defaults to gray-black */
+    }
+    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GRAY_BLACK) == 0) {
+        color_scheme = "foreground:color7;background:color0";
+    }
+    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_BLACK_WHITE) == 0) {
+        color_scheme = "foreground:color0;background:color15";
+    }
+    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GREEN_BLACK) == 0) {
+        color_scheme = "foreground:color2;background:color0";
+    }
+    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_WHITE_BLACK) == 0) {
+        color_scheme = "foreground:color15;background:color0";
+    }
+
     /* Set default gray-black color scheme and initial palette. */
     *foreground = GUAC_TERMINAL_INITIAL_PALETTE[GUAC_TERMINAL_COLOR_GRAY];
     *background = GUAC_TERMINAL_INITIAL_PALETTE[GUAC_TERMINAL_COLOR_BLACK];

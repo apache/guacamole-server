@@ -74,6 +74,7 @@ int guac_kubernetes_user_join_handler(guac_user* user, int argc, char** argv) {
     /* If not owner, synchronize with current display */
     else {
         guac_terminal_dup(kubernetes_client->term, user, user->socket);
+        guac_kubernetes_send_current_argv(user, kubernetes_client);
         guac_socket_flush(user->socket);
     }
 

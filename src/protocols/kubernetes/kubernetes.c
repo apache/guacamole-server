@@ -18,6 +18,8 @@
  */
 
 #include "config.h"
+
+#include "argv.h"
 #include "client.h"
 #include "common/recording.h"
 #include "io.h"
@@ -248,6 +250,10 @@ void* guac_kubernetes_client_thread(void* data) {
                 "Terminal initialization failed");
         goto fail;
     }
+
+    /* Send current values of exposed arguments to owner only */
+    guac_client_for_owner(client, guac_kubernetes_send_current_argv,
+            kubernetes_client);
 
     /* Set up typescript, if requested */
     if (settings->typescript_path != NULL) {
