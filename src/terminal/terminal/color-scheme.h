@@ -72,9 +72,15 @@
  *     The client that the terminal is connected to.
  *
  * @param color_scheme
- *     A semicolon-separated list of name-value pairs, i.e.
- *     "<name>: <value> [; <name>: <value> [; ...]]".
- *     For example, "color2: rgb:cc/33/22; background: color5".
+ *     The name of a pre-defined color scheme (one of the
+ *     names defined by the GUAC_TERMINAL_SCHEME_* constants), or
+ *     semicolon-separated list of name-value pairs, i.e. "<name>: <value> [;
+ *     <name>: <value> [; ...]]". For example, "color2: rgb:cc/33/22;
+ *     background: color5".
+ *
+ *     If blank, the default scheme of GUAC_TERMINAL_SCHEME_GRAY_BLACK will be
+ *     used. If invalid, a warning will be logged, and
+ *     GUAC_TERMINAL_SCHEME_GRAY_BLACK will be used.
  *
  * @param[out] foreground
  *     Parsed foreground color.

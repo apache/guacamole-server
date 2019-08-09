@@ -125,11 +125,15 @@ static int guac_telnet_argv_end_handler(guac_user* user,
         /* Update color scheme */
         case GUAC_TELNET_ARGV_SETTING_COLOR_SCHEME:
             guac_terminal_apply_color_scheme(terminal, argv->buffer);
+            guac_client_stream_argv(client, client->socket, "text/plain",
+                    "color-scheme", argv->buffer);
             break;
 
         /* Update font name */
         case GUAC_TELNET_ARGV_SETTING_FONT_NAME:
             guac_terminal_apply_font(terminal, argv->buffer, -1, 0);
+            guac_client_stream_argv(client, client->socket, "text/plain",
+                    "font-name", argv->buffer);
             break;
 
         /* Update font size */
@@ -140,6 +144,8 @@ static int guac_telnet_argv_end_handler(guac_user* user,
             if (size > 0) {
                 guac_terminal_apply_font(terminal, NULL, size,
                         telnet_client->settings->resolution);
+                guac_client_stream_argv(client, client->socket, "text/plain",
+                        "font-size", argv->buffer);
             }
 
             break;
@@ -191,6 +197,29 @@ int guac_telnet_argv_handler(guac_user* user, guac_stream* stream,
             "parameter.", GUAC_PROTOCOL_STATUS_SUCCESS);
     guac_socket_flush(user->socket);
     return 0;
+
+}
+
+void* guac_telnet_send_current_argv(guac_user* user, void* data) {
+
+    guac_telnet_client* telnet_client = (guac_telnet_client*) data;
+    guac_terminal* terminal = telnet_client->term;
+
+    /* Send current color scheme */
+    guac_user_stream_argv(user, user->socket, "text/plain", "color-scheme",
+            terminal->color_scheme);
+
+    /* Send current font name */
+    guac_user_stream_argv(user, user->socket, "text/plain", "font-name",
+            terminal->font_name);
+
+    /* Send current font size */
+    char font_size[64];
+    sprintf(font_size, "%i", terminal->font_size);
+    guac_user_stream_argv(user, user->socket, "text/plain", "font-size",
+            font_size);
+
+    return NULL;
 
 }
 

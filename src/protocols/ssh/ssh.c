@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "argv.h"
 #include "common/recording.h"
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
@@ -233,6 +234,9 @@ void* ssh_client_thread(void* data) {
                 "Terminal initialization failed");
         return NULL;
     }
+
+    /* Send current values of exposed arguments to owner only */
+    guac_client_for_owner(client, guac_ssh_send_current_argv, ssh_client);
 
     /* Set up typescript, if requested */
     if (settings->typescript_path != NULL) {

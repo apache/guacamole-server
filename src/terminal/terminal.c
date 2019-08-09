@@ -327,23 +327,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
     guac_terminal_color (*default_palette)[256] = (guac_terminal_color(*)[256])
             malloc(sizeof(guac_terminal_color[256]));
 
-    /* Special cases. */
-    if (color_scheme == NULL || color_scheme[0] == '\0') {
-        /* guac_terminal_parse_color_scheme defaults to gray-black */
-    }
-    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GRAY_BLACK) == 0) {
-        color_scheme = "foreground:color7;background:color0";
-    }
-    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_BLACK_WHITE) == 0) {
-        color_scheme = "foreground:color0;background:color15";
-    }
-    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_GREEN_BLACK) == 0) {
-        color_scheme = "foreground:color2;background:color0";
-    }
-    else if (strcmp(color_scheme, GUAC_TERMINAL_SCHEME_WHITE_BLACK) == 0) {
-        color_scheme = "foreground:color15;background:color0";
-    }
-
     guac_terminal_parse_color_scheme(client, color_scheme,
                                      &default_char.attributes.foreground,
                                      &default_char.attributes.background,
@@ -359,6 +342,11 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->client = client;
     term->upload_path_handler = NULL;
     term->file_download_handler = NULL;
+
+    /* Copy initially-provided color scheme and font details */
+    term->color_scheme = strdup(color_scheme);
+    term->font_name = strdup(font_name);
+    term->font_size = font_size;
 
     /* Set size of available screen area */
     term->outer_width = width;
@@ -528,6 +516,10 @@ void guac_terminal_free(guac_terminal* term) {
 
     /* Free scrollbar */
     guac_terminal_scrollbar_free(term->scrollbar);
+
+    /* Free copies of font and color scheme information */
+    free((char*) term->color_scheme);
+    free((char*) term->font_name);
 
     /* Free the terminal itself */
     free(term);
@@ -1973,6 +1965,16 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
             terminal->term_height - 1,
             terminal->term_width - 1);
 
+    /* Acquire exclusive access to terminal */
+    guac_terminal_lock(terminal);
+
+    /* Update stored copy of color scheme */
+    free((char*) terminal->color_scheme);
+    terminal->color_scheme = strdup(color_scheme);
+
+    /* Release terminal */
+    guac_terminal_unlock(terminal);
+
     guac_terminal_notify(terminal);
 
 }
@@ -1996,6 +1998,20 @@ void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
     __guac_terminal_redraw_rect(terminal, 0, 0,
             terminal->term_height - 1,
             terminal->term_width - 1);
+
+    /* Acquire exclusive access to terminal */
+    guac_terminal_lock(terminal);
+
+    /* Update stored copy of font name, if changed */
+    if (font_name != NULL)
+        terminal->font_name = strdup(font_name);
+
+    /* Update stored copy of font size, if changed */
+    if (font_size != -1)
+        terminal->font_size = font_size;
+
+    /* Release terminal */
+    guac_terminal_unlock(terminal);
 
     guac_terminal_notify(terminal);
 
