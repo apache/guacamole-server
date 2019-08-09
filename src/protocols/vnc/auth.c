@@ -41,9 +41,12 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
         creds->userCredential.password = settings->password;
         return creds;
     }
-    
-    guac_client_log(gc, GUAC_LOG_ERROR,
+
+    guac_client_abort(gc, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
             "Unsupported credential type requested.");
+    guac_client_log(gc, GUAC_LOG_DEBUG,
+            "Unable to provided requested credential %d.",
+            credentialType);
     return NULL;
     
 }
