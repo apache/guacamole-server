@@ -46,6 +46,16 @@
 #include <pthread.h>
 
 /**
+ * A flag for tracking status of requesting username from client.
+ */
+#define GUAC_VNC_COND_FLAG_USERNAME 1
+
+/**
+ * A flag for tracking status of requesting password from client.
+ */
+#define GUAC_VNC_COND_FLAG_PASSWORD 2
+
+/**
  * VNC-specific client data.
  */
 typedef struct guac_vnc_client {
@@ -71,6 +81,11 @@ typedef struct guac_vnc_client {
      * The condition for signaling argv updates.
      */
     pthread_cond_t argv_cond;
+    
+    /**
+     * Flags for conditional signaling for argv updates;
+     */
+    unsigned argv_cond_flags;
 
     /**
      * The underlying VNC client.

@@ -161,6 +161,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Init RDP credential lock and condition */
     pthread_mutex_init(&(rdp_client->rdp_credential_lock), &(rdp_client->attributes));
     pthread_cond_init(&(rdp_client->rdp_credential_cond), NULL);;
+    rdp_client->rdp_credential_flags = 0;
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;

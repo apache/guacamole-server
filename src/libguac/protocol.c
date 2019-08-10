@@ -961,17 +961,33 @@ int guac_protocol_send_rect(guac_socket* socket,
 
 }
 
-int guac_protocol_send_required(guac_socket* socket, const char* required) {
+static int __guac_protocol_send_required(guac_socket* socket,
+        const char** required) {
+
+    if (guac_socket_write_string(socket, "8.required")) return -1;
+
+    for (int i=0; required[i] != NULL; i++) {
+
+        if (guac_socket_write_string(socket, ","))
+            return -1;
+
+        if (__guac_socket_write_length_string(socket, required[i]))
+            return -1;
+
+    }
+
+    return guac_socket_write_string(socket, ";");
+
+}
+
+int guac_protocol_send_required(guac_socket* socket, const char** required) {
     
     int ret_val;
     
     guac_socket_instruction_begin(socket);
-    ret_val =
-            guac_socket_write_string(socket, "8.required,")
-        || __guac_socket_write_length_string(socket, required)
-        || guac_socket_write_string(socket, ";");
-    
+    ret_val = __guac_protocol_send_required(socket, required);
     guac_socket_instruction_end(socket);
+
     return ret_val;
     
 }

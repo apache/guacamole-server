@@ -57,6 +57,7 @@ int guac_client_init(guac_client* client) {
     /* Initialize argv lock and condition */
     pthread_mutex_init(&(vnc_client->argv_lock), NULL);
     pthread_cond_init(&(vnc_client->argv_cond), NULL);
+    vnc_client->argv_cond_flags = 0;
 
     /* Init clipboard */
     vnc_client->clipboard = guac_common_clipboard_alloc(GUAC_VNC_CLIPBOARD_MAX_LENGTH);

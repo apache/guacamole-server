@@ -36,6 +36,11 @@
 typedef enum guac_vnc_argv_setting {
 
     /**
+     * The username for the connection.
+     */
+    GUAC_VNC_ARGV_SETTING_USERNAME,
+    
+    /**
      * The password for the connection.
      */
     GUAC_VNC_ARGV_SETTING_PASSWORD
@@ -109,6 +114,19 @@ static int guac_vnc_argv_end_handler(guac_user* user, guac_stream* stream) {
     /* Apply changes to chosen setting */
     switch (argv->setting) {
         
+        /* Update username */
+        case GUAC_VNC_ARGV_SETTING_USERNAME:
+            
+            /* Update username in settings. */
+            if (settings->username != NULL)
+                free(settings->username);
+            settings->username = malloc(strlen(argv->buffer) * sizeof(char));
+            strcpy(settings->username, argv->buffer);
+            
+            /* Remove the username conditional flag. */
+            vnc_client->argv_cond_flags ^= GUAC_VNC_COND_FLAG_USERNAME;
+            break;
+        
         /* Update password */
         case GUAC_VNC_ARGV_SETTING_PASSWORD:
             
@@ -118,10 +136,15 @@ static int guac_vnc_argv_end_handler(guac_user* user, guac_stream* stream) {
             settings->password = malloc(strlen(argv->buffer) * sizeof(char));
             strcpy(settings->password, argv->buffer);
             
-            pthread_cond_broadcast(&(vnc_client->argv_cond));
+            /* Remove the password conditional flag. */
+            vnc_client->argv_cond_flags ^= GUAC_VNC_COND_FLAG_PASSWORD;
             break;
 
     }
+    
+    /* If no flags are set, signal the conditional. */
+    if (!vnc_client->argv_cond_flags)
+        pthread_cond_broadcast(&(vnc_client->argv_cond));
 
     free(argv);
     return 0;
@@ -134,7 +157,9 @@ int guac_vnc_argv_handler(guac_user* user, guac_stream* stream, char* mimetype,
     guac_vnc_argv_setting setting;
 
     /* Allow users to update authentication information */
-    if (strcmp(name, "password") == 0)
+    if (strcmp(name, "username") == 0)
+        setting = GUAC_VNC_ARGV_SETTING_USERNAME;
+    else if (strcmp(name, "password") == 0)
         setting = GUAC_VNC_ARGV_SETTING_PASSWORD;
 
     /* No other connection parameters may be updated */

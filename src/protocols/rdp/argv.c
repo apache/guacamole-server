@@ -48,8 +48,8 @@ typedef enum guac_rdp_argv_setting {
     /**
      * The domain to use for connection authentication.
      */
-    GUAC_RDP_ARGV_SETTING_DOMAIN
-
+    GUAC_RDP_ARGV_SETTING_DOMAIN,
+    
 } guac_rdp_argv_setting;
 
 /**
@@ -125,24 +125,27 @@ static int guac_rdp_argv_end_handler(guac_user* user,
             free(settings->username);
             settings->username = malloc(strlen(argv->buffer) * sizeof(char));
             strcpy(settings->username, argv->buffer);
-            pthread_cond_broadcast(&(rdp_client->rdp_cond));
+            rdp_client->rdp_cond_flags ^= GUAC_RDP_COND_FLAG_USERNAME;
             break;
             
         case GUAC_RDP_ARGV_SETTING_PASSWORD:
             free(settings->password);
             settings->password = malloc(strlen(argv->buffer) * sizeof(char));
             strcpy(settings->password, argv->buffer);
-            pthread_cond_broadcast(&(rdp_client->rdp_cond));
+            rdp_client->rdp_cond_flags ^= GUAC_RDP_COND_FLAG_PASSWORD;
             break;
             
         case GUAC_RDP_ARGV_SETTING_DOMAIN:
             free(settings->domain);
             settings->domain = malloc(strlen(argv->buffer) * sizeof(char));
             strcpy(settings->domain, argv->buffer);
-            pthread_cond_broadcast(&(rdp_client->rdp_cond));
+            rdp_client->rdp_cond_flags ^= GUAC_RDP_COND_FLAG_DOMAIN;
             break;
             
     }
+    
+    if (!rdp_client->rdp_cond_flags)
+        pthread_cond_signal(&(rdp_client->rdp_cond));
 
     free(argv);
     return 0;

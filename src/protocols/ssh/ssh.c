@@ -75,7 +75,7 @@ static void guac_ssh_get_credential(guac_client *client, char* cred_name) {
     
     pthread_mutex_lock(&(ssh_client->term_channel_lock));
     
-    guac_protocol_send_required(client->socket, cred_name);
+    guac_protocol_send_required(client->socket, (const char* []) {cred_name, NULL});
     guac_socket_flush(client->socket);
     
     pthread_cond_wait(&(ssh_client->ssh_cond), &(ssh_client->term_channel_lock));

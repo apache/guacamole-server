@@ -803,12 +803,12 @@ int guac_protocol_send_rect(guac_socket* socket, const guac_layer* layer,
  *     The guac_socket connection to use.
  * 
  * @param required
- *     The name of the parameter that is required.
+ *     A NULL-terminated array of required parameters.
  * 
  * @return
  *     Zero on success, non-zero on error.
  */
-int guac_protocol_send_required(guac_socket* socket, const char* required);
+int guac_protocol_send_required(guac_socket* socket, const char** required);
 
 /**
  * Sends a reset instruction over the given guac_socket connection.

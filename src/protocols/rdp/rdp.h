@@ -50,6 +50,21 @@
 #include <stdint.h>
 
 /**
+ * A flag for tracking if we are waiting conditionally on a username.
+ */
+#define GUAC_RDP_COND_FLAG_USERNAME 1
+
+/**
+ * A flag for tracking if we are waiting conditionally on a password.
+ */
+#define GUAC_RDP_COND_FLAG_PASSWORD 2
+
+/**
+ * A flag for tracking if we are waiting conditionally on a domain.
+ */
+#define GUAC_RDP_COND_FLAG_DOMAIN 3
+
+/**
  * RDP-specific client data.
  */
 typedef struct guac_rdp_client {
@@ -164,6 +179,12 @@ typedef struct guac_rdp_client {
      * particular credential to be provided.
      */
     pthread_cond_t rdp_credential_cond;
+    
+    /**
+     * Flags for tracking events related to the rdp_credential_cond
+     * pthread condition.
+     */
+    unsigned rdp_credential_flags;
 
     /**
      * Common attributes for locks.

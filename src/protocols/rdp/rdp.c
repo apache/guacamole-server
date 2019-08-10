@@ -230,32 +230,51 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
+    char* params[4] = {};
+    int i = 0;
     
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
+    if (settings->username == NULL || strcmp(settings->username, "") == 0) {
+        params[i] = "username";
+        rdp_client->rdp_cond_flags |= GUAC_RDP_COND_FLAG_USERNAME;
+        i++;
+    }
     
-    while (settings->username == NULL || strcmp(settings->username, "") == 0) {
-        guac_protocol_send_required(client->socket, "username");
+    if (settings->password == NULL || strcmp(settings->password, "") == 0) {
+        params[i] = "password";
+        rdp_client->rdp_cond_flags |= GUAC_RDP_COND_FLAG_PASSWORD;
+        i++;
+    }
+    
+    if (settings->domain == NULL || strcmp(settings->domain, "") == 0) {
+        params[i] = "domain";
+        rdp_client->rdp_cond_flags |= GUAC_RDP_COND_FLAG_DOMAIN;
+        i++;
+    }
+    
+    /* NULL-terminate the array. */
+    params[i] = NULL;
+    
+    if (i > 0) {
+        /* Lock the client thread. */
+        pthread_mutex_lock(&(rdp_client->rdp_lock));
+        
+        /* Send require params and flush socket. */
+        guac_protocol_send_required(client->socket, (const char**) params);
         guac_socket_flush(client->socket);
+        
+        /* Wait for condition. */
         pthread_cond_wait(&(rdp_client->rdp_cond), &(rdp_client->rdp_lock));
+        
+        /* Get new values from settings. */
         *username = settings->username;
-    }
-    
-    while (settings->password == NULL || strcmp(settings->password, "") == 0) {
-        guac_protocol_send_required(client->socket, "password");
-        guac_socket_flush(client->socket);
-        pthread_cond_wait(&(rdp_client->rdp_cond), &(rdp_client->rdp_lock));
         *password = settings->password;
-    }
-    
-    while (settings->domain == NULL || strcmp(settings->domain, "") == 0) {
-        guac_protocol_send_required(client->socket, "domain");
-        guac_socket_flush(client->socket);
-        pthread_cond_wait(&(rdp_client->rdp_cond), &(rdp_client->rdp_lock));
         *domain = settings->domain;
+        
+        /* Unlock the thread. */
+        pthread_mutex_unlock(&(rdp_client->rdp_lock));
     }
     
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
-    
+    /* Always return TRUE allowing connection to retry. */
     return TRUE;
 
 }
