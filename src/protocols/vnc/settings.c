@@ -35,6 +35,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "port",
     "read-only",
     "encodings",
+    "username",
     "password",
     "swap-red-blue",
     "color-depth",
@@ -108,6 +109,11 @@ enum VNC_ARGS_IDX {
      */
     IDX_ENCODINGS,
 
+    /**
+     * The username to send to the VNC server if authentication is requested.
+     */
+    IDX_USERNAME,
+    
     /**
      * The password to send to the VNC server if authentication is requested.
      */
@@ -337,10 +343,14 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_PORT, 0);
 
+    settings->username =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_USERNAME, ""); /* NOTE: freed by libvncclient */
+    
     settings->password =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_PASSWORD, ""); /* NOTE: freed by libvncclient */
-
+    
     /* Remote cursor */
     if (strcmp(argv[IDX_CURSOR], "remote") == 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Cursor rendering: remote");

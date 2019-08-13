@@ -27,7 +27,7 @@
 
 /**
  * Callback which is invoked by libVNCServer when it needs to read the user's
- * VNC password. As ths user's password, if any, will be stored in the
+ * VNC password. As this user's password, if any, will be stored in the
  * connection settings, this function does nothing more than return that value.
  *
  * @param client
@@ -37,6 +37,24 @@
  *     The password to provide to the VNC server.
  */
 char* guac_vnc_get_password(rfbClient* client);
+
+/**
+ * Callback which is invoked by libVNCServer when it needs to read the user's
+ * VNC credentials.  The credentials are stored in the connection settings,
+ * so they will be retrieved from that.
+ * 
+ * @param client
+ *     The rfbClient associated with the VNC connection requiring the
+ *     authentication.
+ * 
+ * @param credentialType
+ *     The credential type being requested, as defined by the libVNCclient
+ *     code in the rfbclient.h header.
+ * 
+ * @return
+ *     The rfbCredential object that contains the required credentials.
+ */
+rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType);
 
 #endif
 

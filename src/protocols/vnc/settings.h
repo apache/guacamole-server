@@ -46,6 +46,11 @@ typedef struct guac_vnc_settings {
     int port;
 
     /**
+     * The username given in the arguments.
+     */
+    char* username;
+    
+    /**
      * The password given in the arguments.
      */
     char* password;
