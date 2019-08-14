@@ -42,7 +42,7 @@ map +ext 0x37 ~ 0xff61 # Print Screen
 # Locks
 map      0x45 ~ 0xff7f # Num_Lock
 map      0x46 ~ 0xff14 # Scroll_Lock
-map +ext 0x3A ~ 0xffe5 # Caps_Lock
+map      0x3A ~ 0xffe5 # Caps_Lock
 
 # Keypad numerals
 map -shift +num 0x52 ~ 0xffb0 # KP_0
