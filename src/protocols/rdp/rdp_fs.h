@@ -188,7 +188,7 @@
  * Converts a UNIX timestamp (seconds since Jan 1, 1970 UTC) to Windows
  * timestamp (100 nanosecond intervals since Jan 1, 1601 UTC).
  */
-#define WINDOWS_TIME(t) ((t - ((uint64_t) 11644473600)) * 10000000)
+#define WINDOWS_TIME(t) ((t + ((uint64_t) 11644473600)) * 10000000)
 
 /**
  * An arbitrary file on the virtual filesystem of the Guacamole drive.
