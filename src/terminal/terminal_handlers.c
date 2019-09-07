@@ -432,6 +432,7 @@ static bool* __guac_terminal_get_flag(guac_terminal* term, int num, char private
     if (private_mode == '?') {
         switch (num) {
             case 1:  return &(term->application_cursor_keys); /* DECCKM */
+            case 25: return &(term->cursor_visible); /* DECTECM */
         }
     }
 
