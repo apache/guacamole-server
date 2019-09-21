@@ -130,7 +130,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     rdpGlyph* glyph;
     rdpPointer* pointer;
     rdpPrimaryUpdate* primary;
-    CLRCONV* clrconv;
 
     guac_rdp_dvc_list* dvc_list = guac_rdp_dvc_list_alloc();
 
@@ -227,14 +226,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Dynamic virtual channel list is no longer needed */
     guac_rdp_dvc_list_free(dvc_list);
 
-    /* Init color conversion structure */
-    clrconv = calloc(1, sizeof(CLRCONV));
-    clrconv->alpha = 1;
-    clrconv->invert = 0;
-    clrconv->rgb555 = 0;
-    clrconv->palette = calloc(1, sizeof(rdpPalette));
-    ((rdp_freerdp_context*) context)->clrconv = clrconv;
-
     /* Init FreeRDP cache */
     instance->context->cache = cache_new(instance->settings);
 
@@ -274,7 +265,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Set up GDI */
     instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
-    instance->update->Palette = guac_rdp_gdi_palette_update;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
 
     primary = instance->update->primary;
@@ -740,7 +730,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     freerdp_disconnect(rdp_inst);
 
     /* Clean up RDP client context */
-    freerdp_clrconv_free(((rdp_freerdp_context*) rdp_inst->context)->clrconv);
     cache_free(rdp_inst->context->cache);
     freerdp_context_free(rdp_inst);
 

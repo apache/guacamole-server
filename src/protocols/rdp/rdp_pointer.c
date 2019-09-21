@@ -41,17 +41,17 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
             rdp_client->display, pointer->width, pointer->height);
 
     /* Allocate data for image */
-    unsigned char* data =
-        (unsigned char*) malloc(pointer->width * pointer->height * 4);
+    unsigned char* data = _aligned_malloc(pointer->width * pointer->height * 4, 16);
 
     cairo_surface_t* surface;
 
     /* Convert to alpha cursor if mask data present */
     if (pointer->andMaskData && pointer->xorMaskData)
-        freerdp_alpha_cursor_convert(data,
-                pointer->xorMaskData, pointer->andMaskData,
-                pointer->width, pointer->height, pointer->xorBpp,
-                ((rdp_freerdp_context*) context)->clrconv);
+        freerdp_image_copy_from_pointer_data(data, 0, 0, 0,
+                pointer->width, pointer->height,
+                pointer->xorMaskData, pointer->lengthXorMask,
+                pointer->andMaskData, pointer->lengthAndMask,
+                pointer->xorBpp, &context->gdi->palette);
 
     /* Create surface from image data */
     surface = cairo_image_surface_create_for_data(
@@ -63,7 +63,7 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
     /* Free surface */
     cairo_surface_destroy(surface);
-    free(data);
+    _aligned_free(data);
 
     /* Remember buffer */
     ((guac_rdp_pointer*) pointer)->layer = buffer;

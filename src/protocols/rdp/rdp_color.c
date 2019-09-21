@@ -27,13 +27,55 @@
 #include <freerdp/freerdp.h>
 #include <winpr/wtypes.h>
 
+/**
+ * Returns the integer constant used by the FreeRDP API to represent the colors
+ * used by a connection having the given bit depth. These constants each have
+ * corresponding PIXEL_FORMAT_* macros defined within freerdp/codec/color.h.
+ *
+ * @param depth
+ *     The color depth which should be translated into the integer constant
+ *     defined by FreeRDP's corresponding PIXEL_FORMAT_* macro.
+ *
+ * @return
+ *     The integer value of the PIXEL_FORMAT_* macro corresponding to the
+ *     given color depth.
+ */
+static UINT32 guac_rdp_get_pixel_format(int depth) {
+
+    switch (depth) {
+
+        /* 32- and 24-bit RGB (8 bits per color component) */
+        case 32:
+        case 24:
+            return PIXEL_FORMAT_BGR24;
+
+        /* 16-bit palette (6-bit green, 5-bit red and blue) */
+        case 16:
+            return PIXEL_FORMAT_RGB16;
+
+        /* 15-bit RGB (5 bits per color component) */
+        case 15:
+            return PIXEL_FORMAT_RGB15;
+
+        /* 8-bit palette */
+        case 8:
+            return PIXEL_FORMAT_RGB8;
+
+    }
+
+    /* Unknown format */
+    return PIXEL_FORMAT_BGR24;
+
+}
+
 UINT32 guac_rdp_convert_color(rdpContext* context, UINT32 color) {
 
-    CLRCONV* clrconv = ((rdp_freerdp_context*) context)->clrconv;
+    int depth = guac_rdp_get_depth(context->instance);
+    rdpGdi* gdi = context->gdi;
 
     /* Convert given color to ARGB32 */
-    return freerdp_color_convert_drawing_order_color_to_gdi_color(color,
-            guac_rdp_get_depth(context->instance), clrconv);
+    return FreeRDPConvertColor(color, guac_rdp_get_pixel_format(depth),
+            PIXEL_FORMAT_ARGB32, &gdi->palette);
 
 }
 

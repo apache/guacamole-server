@@ -191,13 +191,6 @@ typedef struct rdp_freerdp_context {
      */
     guac_client* client;
 
-#if 0
-    /**
-     * Color conversion structure to be used to convert RDP images to PNGs.
-     */
-    CLRCONV* clrconv;
-#endif
-
     /**
      * The current color palette, as received from the RDP server.
      */

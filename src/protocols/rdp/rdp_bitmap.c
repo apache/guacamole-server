@@ -74,19 +74,21 @@ BOOL guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
     /* Convert image data if present */
     if (bitmap->data != NULL && bitmap->bpp != 32) {
 
-        /* Convert image data to 32-bit RGB */
-        unsigned char* image_buffer = freerdp_image_convert(bitmap->data, NULL,
-                bitmap->width, bitmap->height,
-                guac_rdp_get_depth(context->instance),
-                32, ((rdp_freerdp_context*) context)->clrconv);
+        /* Allocate sufficient space for converted image */
+        unsigned char* image_buffer = _aligned_malloc(bitmap->width * bitmap->height * 4, 16);
 
-        /* Free existing image, if any */
-        if (image_buffer != bitmap->data) {
-            _aligned_free(bitmap->data);
+        /* Attempt image conversion */
+        if (!freerdp_image_copy(image_buffer, PIXEL_FORMAT_ARGB32, 0, 0, 0,
+                bitmap->width, bitmap->height, bitmap->data, bitmap->format,
+                0, 0, 0, &context->gdi->palette, FREERDP_FLIP_NONE)) {
+            _aligned_free(image_buffer);
         }
 
-        /* Store converted image in bitmap */
-        bitmap->data = image_buffer;
+        /* If successful, replace original image with converted image */
+        else {
+            _aligned_free(bitmap->data);
+            bitmap->data = image_buffer;
+        }
 
     }
 
