@@ -25,11 +25,7 @@
 
 #include "rdpdr_service.h"
 
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Registers a new printer device within the RDPDR plugin. This must be done

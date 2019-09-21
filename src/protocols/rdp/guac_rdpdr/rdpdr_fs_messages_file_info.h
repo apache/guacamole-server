@@ -32,11 +32,7 @@
 
 #include "rdpdr_service.h"
 
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Processes a query for FileBasicInformation. From the documentation, this is

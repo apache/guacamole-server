@@ -30,12 +30,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/unicode.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 static void guac_rdpdr_device_fs_iorequest_handler(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id, int major_func, int minor_func) {

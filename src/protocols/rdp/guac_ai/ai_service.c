@@ -32,12 +32,7 @@
 #include <freerdp/constants.h>
 #include <freerdp/dvc.h>
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Handles the given data received along the AUDIO_INPUT channel of the RDP
@@ -95,43 +90,9 @@ static void guac_rdp_ai_handle_data(guac_client* client,
 
 }
 
-#ifdef LEGACY_IWTSVIRTUALCHANNELCALLBACK
 /**
  * Callback which is invoked when data is received along a connection to the
- * AUDIO_INPUT plugin. This callback is specific to FreeRDP 1.1 and older.
- *
- * @param channel_callback
- *     The IWTSVirtualChannelCallback structure to which this callback was
- *     originally assigned.
- *
- * @param size
- *     The number of bytes received.
- *
- * @param buffer
- *     A buffer containing all bytes received.
- *
- * @return
- *     Always zero.
- */
-static int guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
-        UINT32 size, BYTE* buffer) {
-
-    guac_rdp_ai_channel_callback* ai_channel_callback =
-        (guac_rdp_ai_channel_callback*) channel_callback;
-    IWTSVirtualChannel* channel = ai_channel_callback->channel;
-
-    /* Invoke generalized (API-independent) data handler */
-    wStream* stream = Stream_New(buffer, size);
-    guac_rdp_ai_handle_data(ai_channel_callback->client, channel, stream);
-    Stream_Free(stream, FALSE);
-
-    return 0;
-
-}
-#else
-/**
- * Callback which is invoked when data is received along a connection to the
- * AUDIO_INPUT plugin. This callback is specific to FreeRDP 1.2 and newer.
+ * AUDIO_INPUT plugin.
  *
  * @param channel_callback
  *     The IWTSVirtualChannelCallback structure to which this callback was
@@ -156,7 +117,6 @@ static UINT guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
     return 0;
 
 }
-#endif
 
 /**
  * Callback which is invoked when a connection to the AUDIO_INPUT plugin is
@@ -315,13 +275,8 @@ static UINT guac_rdp_ai_terminated(IWTSPlugin* plugin) {
 int DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints) {
 
     /* Pull guac_client from arguments */
-#ifdef HAVE_ADDIN_ARGV
     ADDIN_ARGV* args = pEntryPoints->GetPluginData(pEntryPoints);
     guac_client* client = (guac_client*) guac_rdp_string_to_ptr(args->argv[1]);
-#else
-    RDP_PLUGIN_DATA* data = pEntryPoints->GetPluginData(pEntryPoints);
-    guac_client* client = (guac_client*) guac_rdp_string_to_ptr(data->data[1]);
-#endif
 
     /* Pull previously-allocated plugin */
     guac_rdp_ai_plugin* ai_plugin = (guac_rdp_ai_plugin*)

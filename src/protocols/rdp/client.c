@@ -35,20 +35,12 @@
 
 #include <freerdp/cache/cache.h>
 #include <freerdp/channels/channels.h>
+#include <freerdp/client/channels.h>
+#include <freerdp/client/cliprdr.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
-
-#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
-#include <freerdp/client/cliprdr.h>
-#else
-#include "compat/client-cliprdr.h"
-#endif
-
-#ifdef HAVE_FREERDP_CLIENT_CHANNELS_H
-#include <freerdp/client/channels.h>
-#endif
 
 #include <pthread.h>
 #include <stdlib.h>

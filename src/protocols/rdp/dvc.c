@@ -117,14 +117,6 @@ int guac_rdp_load_drdynvc(rdpContext* context, guac_rdp_dvc_list* list) {
     if (list->channel_count == 0)
         return 0;
 
-#ifndef HAVE_ADDIN_ARGV
-    /* Allocate plugin data array */
-    RDP_PLUGIN_DATA* all_plugin_data =
-        calloc(list->channel_count + 1, sizeof(RDP_PLUGIN_DATA));
-
-    RDP_PLUGIN_DATA* current_plugin_data = all_plugin_data;
-#endif
-
     /* For each channel */
     guac_common_list_element* current = list->channels->head;
     while (current != NULL) {
@@ -143,41 +135,20 @@ int guac_rdp_load_drdynvc(rdpContext* context, guac_rdp_dvc_list* list) {
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "Registering DVC plugin \"%s\"", dvc->argv[0]);
 
-#ifdef HAVE_ADDIN_ARGV
         /* Register plugin with FreeRDP */
         ADDIN_ARGV* args = malloc(sizeof(ADDIN_ARGV));
         args->argc = dvc->argc;
         args->argv = dvc->argv;
         freerdp_dynamic_channel_collection_add(context->settings, args);
-#else
-        /* Copy all arguments */
-        for (int i = 0; i < dvc->argc; i++)
-            current_plugin_data->data[i] = dvc->argv[i];
-
-        /* Store size of entry */
-        current_plugin_data->size = sizeof(*current_plugin_data);
-
-        /* Advance to next set of plugin data */
-        current_plugin_data++;
-#endif
 
         /* Rely on FreeRDP to free argv storage */
         dvc->argv = NULL;
 
     }
 
-#ifdef HAVE_ADDIN_ARGV
     /* Load virtual channel management plugin */
     return freerdp_channels_load_plugin(channels, context->instance->settings,
                 "drdynvc", context->instance->settings);
-#else
-    /* Terminate with empty RDP_PLUGIN_DATA element */
-    current_plugin_data->size = 0;
-
-    /* Load virtual channel management plugin */
-    return freerdp_channels_load_plugin(channels, context->instance->settings,
-                "drdynvc", all_plugin_data);
-#endif
 
 }
 

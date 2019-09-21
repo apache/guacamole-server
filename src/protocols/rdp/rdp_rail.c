@@ -26,30 +26,16 @@
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/rail.h>
 #include <freerdp/utils/event.h>
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
-
-#ifdef LEGACY_FREERDP
-#include "compat/rail.h"
-#else
-#include <freerdp/rail.h>
-#endif
 
 #include <stddef.h>
 
 void guac_rdp_process_rail_event(guac_client* client, wMessage* event) {
 
-#ifdef LEGACY_EVENT
-        switch (event->event_type) {
-#else
         switch (GetMessageType(event->id)) {
-#endif
 
             /* Get system parameters */
             case RailChannel_GetSystemParam:
@@ -66,15 +52,9 @@ void guac_rdp_process_rail_event(guac_client* client, wMessage* event) {
                 break;
 
             default:
-#ifdef LEGACY_EVENT
-                guac_client_log(client, GUAC_LOG_INFO,
-                        "Unknown rail event type: 0x%x",
-                        event->event_type);
-#else
                 guac_client_log(client, GUAC_LOG_INFO,
                         "Unknown rail event type: 0x%x",
                         GetMessageType(event->id));
-#endif
 
         }
 
@@ -90,11 +70,7 @@ void guac_rdp_process_rail_get_sysparam(guac_client* client, wMessage* event) {
     rdpChannels* channels = rdp_client->rdp_inst->context->channels;
 
     /* Get sysparam structure */
-#ifdef LEGACY_EVENT
-    sysparam = (RAIL_SYSPARAM_ORDER*) event->user_data;
-#else
     sysparam = (RAIL_SYSPARAM_ORDER*) event->wParam;
-#endif
 
     response = freerdp_event_new(RailChannel_Class,
                                  RailChannel_ClientSystemParam,

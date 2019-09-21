@@ -25,12 +25,7 @@
 
 #include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
 
 /**
  * Guacamole-specific rdpGlyph data.

@@ -33,11 +33,7 @@
 
 #include "rdpdr_service.h"
 
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Handles a Server Create Drive Request. Despite its name, this request opens

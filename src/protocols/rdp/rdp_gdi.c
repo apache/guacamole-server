@@ -30,12 +30,7 @@
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
 
 #include <stddef.h>
 
@@ -361,12 +356,8 @@ static void guac_rdp_update_clrconv(CLRCONV* clrconv,
         PALETTE_UPDATE* palette) {
 
     clrconv->palette->count = palette->number;
-#ifdef LEGACY_RDPPALETTE
-    clrconv->palette->entries = palette->entries;
-#else
     memcpy(clrconv->palette->entries, palette->entries,
             sizeof(palette->entries));
-#endif
 
 }
 #endif

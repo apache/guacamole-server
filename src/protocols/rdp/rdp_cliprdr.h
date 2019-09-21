@@ -24,18 +24,8 @@
 #include "config.h"
 
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
-#include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
-
-#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
 #include <freerdp/client/cliprdr.h>
-#else
-#include "compat/client-cliprdr.h"
-#endif
+#include <winpr/stream.h>
 
 /**
  * Clipboard format for text encoded in Windows CP1252.

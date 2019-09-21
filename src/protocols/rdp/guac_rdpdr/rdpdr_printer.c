@@ -34,12 +34,7 @@
 #include <guacamole/stream.h>
 #include <guacamole/unicode.h>
 #include <guacamole/user.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 #include <errno.h>
 #include <pthread.h>

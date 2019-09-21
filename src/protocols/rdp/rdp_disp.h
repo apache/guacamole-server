@@ -23,11 +23,8 @@
 #include "dvc.h"
 #include "rdp_settings.h"
 
-#include <freerdp/freerdp.h>
-
-#ifdef HAVE_FREERDP_CLIENT_DISP_H
 #include <freerdp/client/disp.h>
-#endif
+#include <freerdp/freerdp.h>
 
 /**
  * The minimum value for width or height, in pixels.
@@ -50,12 +47,10 @@
  */
 typedef struct guac_rdp_disp {
 
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /**
      * Display control interface.
      */
     DispClientContext* disp;
-#endif
 
     /**
      * The timestamp of the last display update request, or 0 if no request
@@ -117,7 +112,6 @@ void guac_rdp_disp_free(guac_rdp_disp* disp);
  */
 void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list);
 
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
 /**
  * Stores the given DispClientContext within the given guac_rdp_disp, such that
  * display updates can be properly sent. Until this is called, changes to the
@@ -129,7 +123,6 @@ void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list);
  *             display update channel.
  */
 void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, DispClientContext* disp);
-#endif
 
 /**
  * Requests a display size update, which may then be sent immediately to the

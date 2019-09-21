@@ -24,12 +24,7 @@
 #include "rdp_svc.h"
 
 #include <freerdp/utils/svc_plugin.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Structure representing the current state of an arbitrary static virtual

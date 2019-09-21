@@ -32,12 +32,7 @@
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -87,11 +82,7 @@ BOOL guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
         /* Free existing image, if any */
         if (image_buffer != bitmap->data) {
-#ifdef FREERDP_BITMAP_REQUIRES_ALIGNED_MALLOC
             _aligned_free(bitmap->data);
-#else
-            free(bitmap->data);
-#endif
         }
 
         /* Store converted image in bitmap */
@@ -194,69 +185,39 @@ BOOL guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL pri
 
 }
 
-#ifdef LEGACY_RDPBITMAP
-void guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, UINT8* data,
-        int width, int height, int bpp, int length, BOOL compressed) {
-#else
 BOOL guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap, const BYTE* data,
         UINT32 width, UINT32 height, UINT32 bpp, UINT32 length, BOOL compressed, UINT32 codec_id) {
-#endif
 
     int size = width * height * 4;
 
-#ifdef FREERDP_BITMAP_REQUIRES_ALIGNED_MALLOC
     /* Free pre-existing data, if any (might be reused) */
     if (bitmap->data != NULL)
         _aligned_free(bitmap->data);
 
-    /* Allocate new data */
+    /* Allocate new data - this MUST be allocated with _aligned_malloc() */
     bitmap->data = (UINT8*) _aligned_malloc(size, 16);
-#else
-    /* Free pre-existing data, if any (might be reused) */
-    free(bitmap->data);
-
-    /* Allocate new data */
-    bitmap->data = (UINT8*) malloc(size);
-#endif
 
     if (compressed) {
 
-#ifdef HAVE_RDPCONTEXT_CODECS 
         rdpCodecs* codecs = context->codecs;
 
         /* Decode as interleaved if less than 32 bits per pixel */
         if (bpp < 32) {
             freerdp_client_codecs_prepare(codecs, FREERDP_CODEC_INTERLEAVED);
-#ifdef INTERLEAVED_DECOMPRESS_TAKES_PALETTE
             interleaved_decompress(codecs->interleaved, data, length, bpp,
                 &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height,
                 (BYTE*) ((rdp_freerdp_context*) context)->palette);
             bitmap->bpp = 32;
-#else
-            interleaved_decompress(codecs->interleaved, data, length, bpp,
-                &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height);
-            bitmap->bpp = bpp;
-#endif
         }
 
         /* Otherwise, decode as planar */
         else {
             freerdp_client_codecs_prepare(codecs, FREERDP_CODEC_PLANAR);
-#ifdef PLANAR_DECOMPRESS_CAN_FLIP
             planar_decompress(codecs->planar, data, length,
                 &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height,
                 TRUE);
             bitmap->bpp = 32;
-#else
-            planar_decompress(codecs->planar, data, length,
-                &(bitmap->data), PIXEL_FORMAT_XRGB32, -1, 0, 0, width, height);
-            bitmap->bpp = bpp;
-#endif
         }
-#else
-        bitmap_decompress(data, bitmap->data, width, height, length, bpp, bpp);
-        bitmap->bpp = bpp;
-#endif
 
     }
     else {

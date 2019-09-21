@@ -30,12 +30,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/string.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Entry point for arbitrary SVC.

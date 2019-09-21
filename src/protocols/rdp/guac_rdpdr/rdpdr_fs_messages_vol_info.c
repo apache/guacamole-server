@@ -26,14 +26,8 @@
 
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/unicode.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-stream.h"
-#include "compat/winpr-wtypes.h"
-#endif
 
 void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device,
         wStream* input_stream, int file_id, int completion_id) {

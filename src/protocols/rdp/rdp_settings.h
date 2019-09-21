@@ -466,7 +466,6 @@ typedef struct guac_rdp_settings {
      */
     int enable_audio_input;
 
-#ifdef HAVE_FREERDP_GATEWAY_SUPPORT
     /**
      * The hostname of the remote desktop gateway that should be used as an
      * intermediary for the remote desktop connection. If no gateway should
@@ -501,15 +500,12 @@ typedef struct guac_rdp_settings {
      * gateway, if a gateway is being used.
      */
     char* gateway_password;
-#endif
 
-#ifdef HAVE_FREERDP_LOAD_BALANCER_SUPPORT
     /**
      * The load balancing information/cookie which should be provided to
      * the connection broker, if a connection broker is being used.
      */
     char* load_balance_info;
-#endif
 
 } guac_rdp_settings;
 

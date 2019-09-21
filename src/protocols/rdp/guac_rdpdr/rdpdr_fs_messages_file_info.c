@@ -25,14 +25,8 @@
 #include "unicode.h"
 
 #include <freerdp/utils/svc_plugin.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-stream.h"
-#include "compat/winpr-wtypes.h"
-#endif
 
 #include <inttypes.h>
 #include <stdint.h>

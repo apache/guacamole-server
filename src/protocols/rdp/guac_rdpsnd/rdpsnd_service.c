@@ -28,12 +28,7 @@
 #include <freerdp/constants.h>
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Entry point for RDPSND virtual channel.

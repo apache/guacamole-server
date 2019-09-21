@@ -21,12 +21,7 @@
 #define GUAC_RDP_COLOR_H
 
 #include <freerdp/freerdp.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
 
 /**
  * Converts the given color to ARGB32. The color given may be an index

@@ -88,8 +88,6 @@ guacdr_sources =                             \
     unicode.c
 
 noinst_HEADERS =                             \
-    compat/client-cliprdr.h                  \
-    compat/rail.h                            \
     guac_ai/ai_messages.h                    \
     guac_ai/ai_service.h                     \
     guac_rdpdr/rdpdr_fs_messages.h           \
@@ -129,16 +127,6 @@ noinst_HEADERS =                             \
     resolution.h                             \
     unicode.h                                \
     user.h
-
-# Add compatibility layer for WinPR if not available
-if ! ENABLE_WINPR
-noinst_HEADERS  += compat/winpr-stream.h compat/winpr-wtypes.h
-libguac_client_rdp_la_SOURCES += compat/winpr-stream.c
-guacai_sources  += compat/winpr-stream.c
-guacsvc_sources += compat/winpr-stream.c
-guacsnd_sources += compat/winpr-stream.c
-guacdr_sources  += compat/winpr-stream.c
-endif
 
 #
 # Main RDP client library
@@ -277,37 +265,6 @@ EXTRA_DIST =            \
     $(rdp_keymaps)      \
     keymaps/generate.pl
 
-if LEGACY_FREERDP_EXTENSIONS
-
-# FreeRDP 1.0-style extensions
-freerdp_LTLIBRARIES = \
-    guacai.la
-#    guacdr.la         \
-#    guacsnd.la        \
-#    guacsvc.la
-
-guacai_la_SOURCES = ${guacai_sources}
-guacai_la_CFLAGS  = ${guacai_cflags}
-guacai_la_LDFLAGS = ${guacai_ldflags}
-guacai_la_LIBADD  = ${guacai_libadd}
-
-#guacdr_la_SOURCES = ${guacdr_sources}
-#guacdr_la_CFLAGS  = ${guacdr_cflags}
-#guacdr_la_LDFLAGS = ${guacdr_ldflags}
-#guacdr_la_LIBADD  = ${guacdr_libadd}
-
-#guacsnd_la_SOURCES = ${guacsnd_sources}
-#guacsnd_la_CFLAGS  = ${guacsnd_cflags}
-#guacsnd_la_LDFLAGS = ${guacsnd_ldflags}
-#guacsnd_la_LIBADD  = ${guacsnd_libadd}
-
-#guacsvc_la_SOURCES = ${guacsvc_sources}
-#guacsvc_la_CFLAGS  = ${guacsvc_cflags}
-#guacsvc_la_LDFLAGS = ${guacsvc_ldflags}
-#guacsvc_la_LIBADD  = ${guacsvc_libadd}
-
-else
-
 # FreeRDP 1.1 (and hopefully onward) extensions
 freerdp_LTLIBRARIES = \
     guacai-client.la
@@ -334,8 +291,6 @@ guacai_client_la_LIBADD  = ${guacai_libadd}
 #guacsvc_client_la_CFLAGS  = ${guacsvc_cflags}
 #guacsvc_client_la_LDFLAGS = ${guacsvc_ldflags}
 #guacsvc_client_la_LIBADD  = ${guacsvc_libadd}
-
-endif
 
 freerdpdir = ${libdir}/freerdp
 

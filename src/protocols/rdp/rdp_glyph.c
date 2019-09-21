@@ -28,12 +28,7 @@
 
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
 
 #include <pthread.h>
 #include <stdint.h>

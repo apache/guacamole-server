@@ -23,11 +23,7 @@
 
 #include "config.h"
 
-#ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
 
 /**
  * Represents a keysym-to-scancode mapping for RDP, with extra information

@@ -24,12 +24,7 @@
 
 #include <freerdp/dvc.h>
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * The format tag associated with raw wave audio (WAVE_FORMAT_PCM). This format

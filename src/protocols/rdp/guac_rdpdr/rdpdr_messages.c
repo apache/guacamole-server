@@ -27,12 +27,7 @@
 #include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 #include <guacamole/unicode.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 #include <stdlib.h>
 #include <string.h>

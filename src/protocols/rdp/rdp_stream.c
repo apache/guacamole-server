@@ -28,25 +28,14 @@
 
 #include <freerdp/freerdp.h>
 #include <freerdp/channels/channels.h>
+#include <freerdp/client/cliprdr.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
 #include <guacamole/string.h>
-
-#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
-#include <freerdp/client/cliprdr.h>
-#else
-#include "compat/client-cliprdr.h"
-#endif
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-stream.h"
-#include "compat/winpr-wtypes.h"
-#endif
 
 #include <stdlib.h>
 

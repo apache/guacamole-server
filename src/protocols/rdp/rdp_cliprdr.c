@@ -26,32 +26,18 @@
 #include "rdp_cliprdr.h"
 
 #include <freerdp/channels/channels.h>
+#include <freerdp/client/cliprdr.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/utils/event.h>
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
-
-#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
-#include <freerdp/client/cliprdr.h>
-#else
-#include "compat/client-cliprdr.h"
-#endif
 
 #include <stdlib.h>
 #include <string.h>
 
 void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event) {
 
-#ifdef LEGACY_EVENT
         switch (event->event_type) {
-#else
-        switch (GetMessageType(event->id)) {
-#endif
 
             case CliprdrChannel_MonitorReady:
                 guac_rdp_process_cb_monitor_ready(client, event);
@@ -73,15 +59,9 @@ void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event) {
                 break;
 
             default:
-#ifdef LEGACY_EVENT
-                guac_client_log(client, GUAC_LOG_INFO,
-                        "Unknown cliprdr event type: 0x%x",
-                        event->event_type);
-#else
                 guac_client_log(client, GUAC_LOG_INFO,
                         "Unknown cliprdr event type: 0x%x",
                         GetMessageType(event->id));
-#endif
 
         }
 

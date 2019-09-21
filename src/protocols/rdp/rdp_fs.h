@@ -132,18 +132,6 @@
 #define DISP_FILE_OVERWRITE_IF 0x00000005
 
 /*
- * Information constants.
- * FreeRDP 1.1+ already defines those constants
- */
-#ifdef LEGACY_FREERDP
-
-#define FILE_SUPERSEDED   0x00000000
-#define FILE_OPENED       0x00000001
-#define FILE_OVERWRITTEN  0x00000003
-
-#endif
-
-/*
  * File attributes.
  */
 

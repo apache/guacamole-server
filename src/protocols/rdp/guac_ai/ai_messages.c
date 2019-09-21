@@ -29,12 +29,7 @@
 #include <freerdp/constants.h>
 #include <freerdp/dvc.h>
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Reads AUDIO_FORMAT data from the given stream into the given struct.

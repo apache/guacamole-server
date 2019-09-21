@@ -24,12 +24,7 @@
 #include "config.h"
 
 #include <guacamole/client.h>
-
-#ifdef ENABLE_WINPR
 #include <winpr/stream.h>
-#else
-#include "compat/winpr-stream.h"
-#endif
 
 /**
  * Dispatches a given RAIL event to the appropriate handler.
