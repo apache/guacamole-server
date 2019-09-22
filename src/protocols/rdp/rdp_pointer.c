@@ -27,6 +27,7 @@
 
 #include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/gdi/gdi.h>
 #include <guacamole/client.h>
 
 #include <stdlib.h>

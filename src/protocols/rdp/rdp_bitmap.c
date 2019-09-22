@@ -30,6 +30,7 @@
 #include <freerdp/codec/bitmap.h>
 #include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/gdi/gdi.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
 #include <winpr/wtypes.h>
@@ -72,13 +73,13 @@ BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 BOOL guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Convert image data if present */
-    if (bitmap->data != NULL && bitmap->bpp != 32) {
+    if (bitmap->data != NULL && bitmap->format != PIXEL_FORMAT_XRGB32) {
 
         /* Allocate sufficient space for converted image */
         unsigned char* image_buffer = _aligned_malloc(bitmap->width * bitmap->height * 4, 16);
 
         /* Attempt image conversion */
-        if (!freerdp_image_copy(image_buffer, PIXEL_FORMAT_ARGB32, 0, 0, 0,
+        if (!freerdp_image_copy(image_buffer, PIXEL_FORMAT_XRGB32, 0, 0, 0,
                 bitmap->width, bitmap->height, bitmap->data, bitmap->format,
                 0, 0, 0, &context->gdi->palette, FREERDP_FLIP_NONE)) {
             _aligned_free(image_buffer);
