@@ -31,7 +31,7 @@
 
 #include <stdlib.h>
 
-void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
+BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -68,9 +68,11 @@ void guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
     /* Remember buffer */
     ((guac_rdp_pointer*) pointer)->layer = buffer;
 
+    return TRUE;
+
 }
 
-void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer) {
+BOOL guac_rdp_pointer_set(rdpContext* context, const rdpPointer* pointer) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -79,6 +81,8 @@ void guac_rdp_pointer_set(rdpContext* context, rdpPointer* pointer) {
     guac_common_cursor_set_surface(rdp_client->display->cursor,
             pointer->xPos, pointer->yPos,
             ((guac_rdp_pointer*) pointer)->layer->surface);
+
+    return TRUE;
 
 }
 
