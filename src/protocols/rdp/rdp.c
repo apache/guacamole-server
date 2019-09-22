@@ -189,6 +189,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     }
 
+#if 0
     /* Load SVC plugin instances for all static channels */
     if (settings->svc_names != NULL) {
 
@@ -216,6 +217,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         } while (*(++current) != NULL);
 
     }
+#endif
 
     /* Load DRDYNVC plugin if required */
     if (guac_rdp_load_drdynvc(instance->context, dvc_list))

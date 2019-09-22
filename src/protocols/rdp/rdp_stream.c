@@ -23,7 +23,9 @@
 #include "common/clipboard.h"
 #include "rdp.h"
 #include "rdp_fs.h"
+#if 0
 #include "rdp_svc.h"
+#endif
 #include "rdp_stream.h"
 
 #include <freerdp/freerdp.h>
