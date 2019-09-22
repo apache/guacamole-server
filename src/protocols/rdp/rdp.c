@@ -378,8 +378,9 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
  * @return
  *     TRUE if the certificate passes verification, FALSE otherwise.
  */
-static BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
-        char* issuer, char* fingerprint) {
+static DWORD rdp_freerdp_verify_certificate(freerdp* instance,
+        const char* common_name, const char* subject, const char* issuer,
+        const char* fingerprint, BOOL host_mismatch) {
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -389,11 +390,11 @@ static BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
     /* Bypass validation if ignore_certificate given */
     if (rdp_client->settings->ignore_certificate) {
         guac_client_log(client, GUAC_LOG_INFO, "Certificate validation bypassed");
-        return TRUE;
+        return 2; /* Accept only for this session */
     }
 
     guac_client_log(client, GUAC_LOG_INFO, "Certificate validation failed");
-    return FALSE;
+    return 0; /* Reject certificate */
 
 }
 
