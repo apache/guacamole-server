@@ -82,8 +82,8 @@ void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event) {
 
     /* Respond with supported format list */
     format_list->formats = (UINT32*) malloc(sizeof(UINT32)*2);
-    format_list->formats[0] = CB_FORMAT_TEXT;
-    format_list->formats[1] = CB_FORMAT_UNICODETEXT;
+    format_list->formats[0] = CF_TEXT;
+    format_list->formats[1] = CF_UNICODETEXT;
     format_list->num_formats = 2;
 
     freerdp_channels_send_event(channels, (wMessage*) format_list);
@@ -132,22 +132,22 @@ void guac_rdp_process_cb_format_list(guac_client* client,
     for (i=0; i<event->num_formats; i++) {
 
         /* If plain text available, request it */
-        if (event->formats[i] == CB_FORMAT_TEXT)
+        if (event->formats[i] == CF_TEXT)
             formats |= GUAC_RDP_CLIPBOARD_FORMAT_CP1252;
-        else if (event->formats[i] == CB_FORMAT_UNICODETEXT)
+        else if (event->formats[i] == CF_UNICODETEXT)
             formats |= GUAC_RDP_CLIPBOARD_FORMAT_UTF16;
 
     }
 
     /* Prefer Unicode to plain text */
     if (formats & GUAC_RDP_CLIPBOARD_FORMAT_UTF16) {
-        __guac_rdp_cb_request_format(client, CB_FORMAT_UNICODETEXT);
+        __guac_rdp_cb_request_format(client, CF_UNICODETEXT);
         return;
     }
 
     /* Use plain text if Unicode unavailable */
     if (formats & GUAC_RDP_CLIPBOARD_FORMAT_CP1252) {
-        __guac_rdp_cb_request_format(client, CB_FORMAT_TEXT);
+        __guac_rdp_cb_request_format(client, CF_TEXT);
         return;
     }
 
@@ -171,11 +171,11 @@ void guac_rdp_process_cb_data_request(guac_client* client,
     /* Determine output encoding */
     switch (event->format) {
 
-        case CB_FORMAT_TEXT:
+        case CF_TEXT:
             writer = GUAC_WRITE_CP1252;
             break;
 
-        case CB_FORMAT_UNICODETEXT:
+        case CF_UNICODETEXT:
             writer = GUAC_WRITE_UTF16;
             break;
 
@@ -218,12 +218,12 @@ void guac_rdp_process_cb_data_response(guac_client* client,
     switch (rdp_client->requested_clipboard_format) {
 
         /* Non-Unicode */
-        case CB_FORMAT_TEXT:
+        case CF_TEXT:
             reader = GUAC_READ_CP1252;
             break;
 
         /* Unicode (UTF-16) */
-        case CB_FORMAT_UNICODETEXT:
+        case CF_UNICODETEXT:
             reader = GUAC_READ_UTF16;
             break;
 

@@ -566,7 +566,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     rdp_client->current_surface = rdp_client->display->default_surface;
 
-    rdp_client->requested_clipboard_format = CB_FORMAT_TEXT;
+    rdp_client->requested_clipboard_format = CF_TEXT;
     rdp_client->available_svc = guac_common_list_alloc();
 
     freerdp_channels_global_init();
