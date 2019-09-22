@@ -54,7 +54,7 @@ guac_composite_mode guac_rdp_rop3_transfer_function(guac_client* client,
  * @param dstblt
  *     The DSTBLT update to handle.
  */
-void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt);
+BOOL guac_rdp_gdi_dstblt(rdpContext* context, const DSTBLT_ORDER* dstblt);
 
 /**
  * Handler for RDP PATBLT update.
@@ -65,7 +65,7 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt);
  * @param patblt
  *     The PATBLT update to handle.
  */
-void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt);
+BOOL guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt);
 
 /**
  * Handler for RDP SCRBLT update.
@@ -76,7 +76,7 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt);
  * @param scrblt
  *     The SCRBLT update to handle.
  */
-void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt);
+BOOL guac_rdp_gdi_scrblt(rdpContext* context, const SCRBLT_ORDER* scrblt);
 
 /**
  * Handler for RDP MEMBLT update.
@@ -87,7 +87,7 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt);
  * @param memblt
  *     The MEMBLT update to handle.
  */
-void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt);
+BOOL guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt);
 
 /**
  * Handler for RDP OPAQUE RECT update.
@@ -98,19 +98,8 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt);
  * @param opaque_rect
  *     The OPAQUE RECT update to handle.
  */
-void guac_rdp_gdi_opaquerect(rdpContext* context,
-        OPAQUE_RECT_ORDER* opaque_rect);
-
-/**
- * Handler called when the remote color palette is changing.
- *
- * @param context
- *     The rdpContext associated with the current RDP session.
- *
- * @param palette
- *     The PALETTE update containing the new palette.
- */
-void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette);
+BOOL guac_rdp_gdi_opaquerect(rdpContext* context,
+        const OPAQUE_RECT_ORDER* opaque_rect);
 
 /**
  * Handler called prior to calling the handlers for specific updates when
@@ -125,7 +114,7 @@ void guac_rdp_gdi_palette_update(rdpContext* context, PALETTE_UPDATE* palette);
  *     The clipping rectangle to set, or NULL to remove any applied clipping
  *     rectangle.
  */
-void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds);
+BOOL guac_rdp_gdi_set_bounds(rdpContext* context, const rdpBounds* bounds);
 
 /**
  * Handler called when a paint operation is complete. We don't actually
@@ -134,7 +123,7 @@ void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds);
  * @param context
  *     The rdpContext associated with the current RDP session.
  */
-void guac_rdp_gdi_end_paint(rdpContext* context);
+BOOL guac_rdp_gdi_end_paint(rdpContext* context);
 
 /**
  * Handler called when the desktop dimensions change, either from a
@@ -148,6 +137,6 @@ void guac_rdp_gdi_end_paint(rdpContext* context);
  * @param context
  *     The rdpContext associated with the current RDP session.
  */
-void guac_rdp_gdi_desktop_resize(rdpContext* context);
+BOOL guac_rdp_gdi_desktop_resize(rdpContext* context);
 
 #endif

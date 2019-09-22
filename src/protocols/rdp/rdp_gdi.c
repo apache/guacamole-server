@@ -92,7 +92,7 @@ guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
 
 }
 
-void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
+BOOL guac_rdp_gdi_dstblt(rdpContext* context, const DSTBLT_ORDER* dstblt) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_common_surface* current_surface = ((guac_rdp_client*) client->data)->current_surface;
@@ -135,9 +135,11 @@ void guac_rdp_gdi_dstblt(rdpContext* context, DSTBLT_ORDER* dstblt) {
 
     }
 
+    return TRUE;
+
 }
 
-void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
+BOOL guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
 
     /*
      * Note that this is not a full implementation of PATBLT. This is a
@@ -203,9 +205,11 @@ void guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
 
     }
 
+    return TRUE;
+
 }
 
-void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
+BOOL guac_rdp_gdi_scrblt(rdpContext* context, const SCRBLT_ORDER* scrblt) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_common_surface* current_surface = ((guac_rdp_client*) client->data)->current_surface;
@@ -224,9 +228,11 @@ void guac_rdp_gdi_scrblt(rdpContext* context, SCRBLT_ORDER* scrblt) {
     guac_common_surface_copy(rdp_client->display->default_surface,
             x_src, y_src, w, h, current_surface, x, y);
 
+    return TRUE;
+
 }
 
-void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
+BOOL guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_common_surface* current_surface = ((guac_rdp_client*) client->data)->current_surface;
@@ -316,9 +322,11 @@ void guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
 
     }
 
+    return TRUE;
+
 }
 
-void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect) {
+BOOL guac_rdp_gdi_opaquerect(rdpContext* context, const OPAQUE_RECT_ORDER* opaque_rect) {
 
     /* Get client data */
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -338,9 +346,11 @@ void guac_rdp_gdi_opaquerect(rdpContext* context, OPAQUE_RECT_ORDER* opaque_rect
             (color      ) & 0xFF,
             0xFF);
 
+    return TRUE;
+
 }
 
-void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
+BOOL guac_rdp_gdi_set_bounds(rdpContext* context, const rdpBounds* bounds) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -356,13 +366,16 @@ void guac_rdp_gdi_set_bounds(rdpContext* context, rdpBounds* bounds) {
                 bounds->right - bounds->left + 1,
                 bounds->bottom - bounds->top + 1);
 
+    return TRUE;
+
 }
 
-void guac_rdp_gdi_end_paint(rdpContext* context) {
+BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
     /* IGNORE */
+    return TRUE;
 }
 
-void guac_rdp_gdi_desktop_resize(rdpContext* context) {
+BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -376,6 +389,8 @@ void guac_rdp_gdi_desktop_resize(rdpContext* context) {
     guac_client_log(client, GUAC_LOG_DEBUG, "Server resized display to %ix%i",
             guac_rdp_get_width(context->instance),
             guac_rdp_get_height(context->instance));
+
+    return TRUE;
 
 }
 
