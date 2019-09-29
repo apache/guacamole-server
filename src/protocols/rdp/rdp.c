@@ -283,39 +283,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     offscreen_cache_register_callbacks(instance->update);
     palette_cache_register_callbacks(instance->update);
 
-    /* Init channels (pre-connect) */
-    if (freerdp_channels_pre_connect(channels, instance)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error initializing RDP client channel manager");
-        return FALSE;
-    }
-
-    return TRUE;
-
-}
-
-/**
- * Callback invoked by FreeRDP just after the connection is established with
- * the RDP server. Implementations are required to manually invoke
- * freerdp_channels_post_connect().
- *
- * @param instance
- *     The FreeRDP instance that has just connected.
- *
- * @return
- *     TRUE if successful, FALSE if an error occurs.
- */
-static BOOL rdp_freerdp_post_connect(freerdp* instance) {
-
-    rdpContext* context = instance->context;
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    rdpChannels* channels = instance->context->channels;
-
-    /* Init channels (post-connect) */
-    if (freerdp_channels_post_connect(channels, instance)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error initializing RDP client channel manager");
-        return FALSE;
-    }
-
     return TRUE;
 
 }
@@ -396,36 +363,6 @@ static DWORD rdp_freerdp_verify_certificate(freerdp* instance,
     guac_client_log(client, GUAC_LOG_INFO, "Certificate validation failed");
     return 0; /* Reject certificate */
 
-}
-
-/**
- * Callback invoked by FreeRDP after a new rdpContext has been allocated and
- * associated with the current FreeRDP instance. Implementations are required
- * to manually invoke freerdp_channels_new() at this point.
- *
- * @param instance
- *     The FreeRDP instance whose context has just been allocated.
- *
- * @param context
- *     The newly-allocated FreeRDP context.
- */
-static void rdp_freerdp_context_new(freerdp* instance, rdpContext* context) {
-    context->channels = freerdp_channels_new();
-}
-
-/**
- * Callback invoked by FreeRDP when the rdpContext is being freed. This must be
- * provided, but there is no Guacamole-specific data associated with the
- * FreeRDP context, so nothing is done here.
- *
- * @param instance
- *     The FreeRDP instance whose context is being freed.
- *
- * @param context
- *     The FreeRDP context being freed.
- */
-static void rdp_freerdp_context_free(freerdp* instance, rdpContext* context) {
-    /* EMPTY */
 }
 
 /**
@@ -569,20 +506,15 @@ static int guac_rdp_handle_connection(guac_client* client) {
     rdp_client->requested_clipboard_format = CF_TEXT;
     rdp_client->available_svc = guac_common_list_alloc();
 
-    freerdp_channels_global_init();
-
     /* Init client */
     freerdp* rdp_inst = freerdp_new();
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
-    rdp_inst->PostConnect = rdp_freerdp_post_connect;
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
     rdp_inst->VerifyCertificate = rdp_freerdp_verify_certificate;
     rdp_inst->ReceiveChannelData = freerdp_channels_data;
 
     /* Allocate FreeRDP context */
     rdp_inst->ContextSize = sizeof(rdp_freerdp_context);
-    rdp_inst->ContextNew  = (pContextNew) rdp_freerdp_context_new;
-    rdp_inst->ContextFree = (pContextFree) rdp_freerdp_context_free;
 
     freerdp_context_new(rdp_inst);
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
@@ -728,8 +660,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     pthread_mutex_lock(&(rdp_client->rdp_lock));
 
     /* Disconnect client and channels */
-    freerdp_channels_close(channels, rdp_inst);
-    freerdp_channels_free(channels);
     freerdp_disconnect(rdp_inst);
 
     /* Clean up RDP client context */
