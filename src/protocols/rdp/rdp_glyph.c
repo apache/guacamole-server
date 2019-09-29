@@ -96,7 +96,7 @@ BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph) {
 
 BOOL guac_rdp_glyph_draw(rdpContext* context, const rdpGlyph* glyph,
         INT32 x, INT32 y, INT32 w, INT32 h, INT32 sx, INT32 sy,
-        BOOL redundant);
+        BOOL redundant) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
