@@ -48,8 +48,8 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
     /* Convert to alpha cursor if mask data present */
     if (pointer->andMaskData && pointer->xorMaskData)
-        freerdp_image_copy_from_pointer_data(data, 0, 0, 0,
-                pointer->width, pointer->height,
+        freerdp_image_copy_from_pointer_data(data, PIXEL_FORMAT_ARGB32,
+                0, 0, 0, pointer->width, pointer->height,
                 pointer->xorMaskData, pointer->lengthXorMask,
                 pointer->andMaskData, pointer->lengthAndMask,
                 pointer->xorBpp, &context->gdi->palette);
