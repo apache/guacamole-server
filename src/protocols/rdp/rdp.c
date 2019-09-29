@@ -61,6 +61,7 @@
 #include <freerdp/client/disp.h>
 #include <freerdp/event.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/gdi/gdi.h>
 #include <freerdp/rail.h>
 #include <freerdp/version.h>
 #include <guacamole/audio.h>
@@ -226,6 +227,10 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Init FreeRDP cache */
     instance->context->cache = cache_new(instance->settings);
+
+    /* Init FreeRDP internal GDI implementation */
+    if (!gdi_init(instance, PIXEL_FORMAT_XRGB32))
+        return FALSE;
 
     /* Set up bitmap handling */
     rdpBitmap bitmap = *graphics->Bitmap_Prototype;
