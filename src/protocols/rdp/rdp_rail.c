@@ -27,7 +27,6 @@
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/rail.h>
-#include <freerdp/utils/event.h>
 #include <guacamole/client.h>
 #include <winpr/wtypes.h>
 
@@ -61,7 +60,7 @@ void guac_rdp_process_rail_event(guac_client* client, wMessage* event) {
 }
 
 void guac_rdp_process_rail_get_sysparam(guac_client* client, wMessage* event) {
-
+#if 0
     wMessage* response;
     RAIL_SYSPARAM_ORDER* sysparam;
 
@@ -93,6 +92,6 @@ void guac_rdp_process_rail_get_sysparam(guac_client* client, wMessage* event) {
 
     /* Send response */
     freerdp_channels_send_event(channels, response);
-
+#endif
 }
 

@@ -28,7 +28,6 @@
 #include <freerdp/channels/channels.h>
 #include <freerdp/client/cliprdr.h>
 #include <freerdp/freerdp.h>
-#include <freerdp/utils/event.h>
 #include <guacamole/client.h>
 #include <winpr/wtypes.h>
 
@@ -36,7 +35,7 @@
 #include <string.h>
 
 void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event) {
-
+#if 0
         switch (event->event_type) {
 
             case CliprdrChannel_MonitorReady:
@@ -64,11 +63,11 @@ void guac_rdp_process_cliprdr_event(guac_client* client, wMessage* event) {
                         GetMessageType(event->id));
 
         }
-
+#endif
 }
 
 void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event) {
-
+#if 0
     rdpChannels* channels = 
         ((guac_rdp_client*) client->data)->rdp_inst->context->channels;
 
@@ -87,7 +86,7 @@ void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event) {
     format_list->num_formats = 2;
 
     freerdp_channels_send_event(channels, (wMessage*) format_list);
-
+#endif
 }
 
 /**
@@ -101,7 +100,7 @@ void guac_rdp_process_cb_monitor_ready(guac_client* client, wMessage* event) {
  *     documented values used by the CLIPRDR channel for clipboard format IDs.
  */
 static void __guac_rdp_cb_request_format(guac_client* client, int format) {
-
+#if 0
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     rdpChannels* channels = rdp_client->rdp_inst->context->channels;
 
@@ -118,7 +117,7 @@ static void __guac_rdp_cb_request_format(guac_client* client, int format) {
 
     /* Send request */
     freerdp_channels_send_event(channels, (wMessage*) data_request);
-
+#endif
 }
 
 void guac_rdp_process_cb_format_list(guac_client* client,
@@ -158,7 +157,7 @@ void guac_rdp_process_cb_format_list(guac_client* client,
 
 void guac_rdp_process_cb_data_request(guac_client* client,
         RDP_CB_DATA_REQUEST_EVENT* event) {
-
+#if 0
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     rdpChannels* channels = rdp_client->rdp_inst->context->channels;
 
@@ -201,7 +200,7 @@ void guac_rdp_process_cb_data_request(guac_client* client,
 
     /* Send response */
     freerdp_channels_send_event(channels, (wMessage*) data_response);
-
+#endif
 }
 
 void guac_rdp_process_cb_data_response(guac_client* client,

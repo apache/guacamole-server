@@ -582,6 +582,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 }
 
                 /* Check for channel events */
+#if 0
                 wMessage* event = freerdp_channels_pop_event(channels);
                 if (event) {
 
@@ -594,6 +595,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                     freerdp_event_free(event);
 
                 }
+#endif
 
                 pthread_mutex_unlock(&(rdp_client->rdp_lock));
 

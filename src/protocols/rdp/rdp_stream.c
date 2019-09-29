@@ -123,6 +123,7 @@ int guac_rdp_upload_file_handler(guac_user* user, guac_stream* stream,
 int guac_rdp_svc_pipe_handler(guac_user* user, guac_stream* stream,
         char* mimetype, char* name) {
 
+#if 0
     guac_rdp_stream* rdp_stream;
     guac_rdp_svc* svc = guac_rdp_get_svc(user->client, name);
 
@@ -146,6 +147,7 @@ int guac_rdp_svc_pipe_handler(guac_user* user, guac_stream* stream,
     stream->blob_handler = guac_rdp_svc_blob_handler;
     rdp_stream->type = GUAC_RDP_INBOUND_SVC_STREAM;
     rdp_stream->svc = svc;
+#endif
 
     return 0;
 
@@ -221,10 +223,12 @@ int guac_rdp_upload_blob_handler(guac_user* user, guac_stream* stream,
 int guac_rdp_svc_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
+#if 0
     guac_rdp_stream* rdp_stream = (guac_rdp_stream*) stream->data;
 
     /* Write blob data to SVC directly */
     guac_rdp_svc_write(rdp_stream->svc, data, length);
+#endif
 
     guac_protocol_send_ack(user->socket, stream, "OK (DATA RECEIVED)",
             GUAC_PROTOCOL_STATUS_SUCCESS);
@@ -280,6 +284,7 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     guac_common_clipboard_append(rdp_client->clipboard, "", 1);
 
     /* Notify RDP server of new data, if connected */
+#if 0
     freerdp* rdp_inst = rdp_client->rdp_inst;
     if (rdp_inst != NULL) {
 
@@ -300,6 +305,7 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
         freerdp_channels_send_event(channels, (wMessage*) format_list);
 
     }
+#endif
 
     return 0;
 }
