@@ -64,7 +64,7 @@
 typedef enum guac_rdp_security {
 
     /**
-     * Standard RDP encryption.
+     * Legacy RDP encryption.
      */
     GUAC_SECURITY_RDP,
 
@@ -79,7 +79,7 @@ typedef enum guac_rdp_security {
     GUAC_SECURITY_NLA,
 
     /**
-     * Any method supported by the server.
+     * Negotiate a security method supported by both server and client.
      */
     GUAC_SECURITY_ANY
 

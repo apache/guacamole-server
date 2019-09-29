@@ -232,7 +232,8 @@ enum RDP_ARGS_IDX {
 
     /**
      * The type of security to use for the connection. Valid values are "rdp",
-     * "tls", "nla", or "any". By default, "rdp" security is used.
+     * "tls", "nla", "nla-ext", or "any". By default, the security mode is
+     * negotiated ("any").
      */
     IDX_SECURITY,
 
@@ -587,16 +588,16 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->security_mode = GUAC_SECURITY_RDP;
     }
 
-    /* ANY security (allow server to choose) */
+    /* Negotiate security (allow server to choose) */
     else if (strcmp(argv[IDX_SECURITY], "any") == 0) {
-        guac_user_log(user, GUAC_LOG_INFO, "Security mode: ANY");
+        guac_user_log(user, GUAC_LOG_INFO, "Security mode: Negotiate (ANY)");
         settings->security_mode = GUAC_SECURITY_ANY;
     }
 
     /* If nothing given, default to RDP */
     else {
-        guac_user_log(user, GUAC_LOG_INFO, "No security mode specified. Defaulting to RDP.");
-        settings->security_mode = GUAC_SECURITY_RDP;
+        guac_user_log(user, GUAC_LOG_INFO, "No security mode specified. Defaulting to security mode negotiation with server.");
+        settings->security_mode = GUAC_SECURITY_ANY;
     }
 
     /* Set hostname */
@@ -1202,7 +1203,7 @@ void guac_rdp_push_settings(guac_client* client,
     /* Security */
     switch (guac_settings->security_mode) {
 
-        /* Standard RDP encryption */
+        /* Legacy RDP encryption */
         case GUAC_SECURITY_RDP:
             rdp_settings->RdpSecurity = TRUE;
             rdp_settings->TlsSecurity = FALSE;
