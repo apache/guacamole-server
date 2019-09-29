@@ -121,15 +121,11 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
     rdpChannels* channels = context->channels;
+    rdpGraphics* graphics = context->graphics;
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
-
-    rdpBitmap* bitmap;
-    rdpGlyph* glyph;
-    rdpPointer* pointer;
-    rdpPrimaryUpdate* primary;
 
     guac_rdp_dvc_list* dvc_list = guac_rdp_dvc_list_alloc();
 
@@ -232,44 +228,40 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     instance->context->cache = cache_new(instance->settings);
 
     /* Set up bitmap handling */
-    bitmap = calloc(1, sizeof(rdpBitmap));
-    bitmap->size = sizeof(guac_rdp_bitmap);
-    bitmap->New = guac_rdp_bitmap_new;
-    bitmap->Free = guac_rdp_bitmap_free;
-    bitmap->Paint = guac_rdp_bitmap_paint;
-    bitmap->Decompress = guac_rdp_bitmap_decompress;
-    bitmap->SetSurface = guac_rdp_bitmap_setsurface;
-    graphics_register_bitmap(context->graphics, bitmap);
-    free(bitmap);
+    rdpBitmap bitmap = *graphics->Bitmap_Prototype;
+    bitmap.size = sizeof(guac_rdp_bitmap);
+    bitmap.New = guac_rdp_bitmap_new;
+    bitmap.Free = guac_rdp_bitmap_free;
+    bitmap.Paint = guac_rdp_bitmap_paint;
+    bitmap.SetSurface = guac_rdp_bitmap_setsurface;
+    graphics_register_bitmap(graphics, &bitmap);
 
     /* Set up glyph handling */
-    glyph = calloc(1, sizeof(rdpGlyph));
-    glyph->size = sizeof(guac_rdp_glyph);
-    glyph->New = guac_rdp_glyph_new;
-    glyph->Free = guac_rdp_glyph_free;
-    glyph->Draw = guac_rdp_glyph_draw;
-    glyph->BeginDraw = guac_rdp_glyph_begindraw;
-    glyph->EndDraw = guac_rdp_glyph_enddraw;
-    graphics_register_glyph(context->graphics, glyph);
-    free(glyph);
+    rdpGlyph glyph = *graphics->Glyph_Prototype;
+    glyph.size = sizeof(guac_rdp_glyph);
+    glyph.New = guac_rdp_glyph_new;
+    glyph.Free = guac_rdp_glyph_free;
+    glyph.Draw = guac_rdp_glyph_draw;
+    glyph.BeginDraw = guac_rdp_glyph_begindraw;
+    glyph.EndDraw = guac_rdp_glyph_enddraw;
+    graphics_register_glyph(graphics, &glyph);
 
     /* Set up pointer handling */
-    pointer = calloc(1, sizeof(rdpPointer));
-    pointer->size = sizeof(guac_rdp_pointer);
-    pointer->New = guac_rdp_pointer_new;
-    pointer->Free = guac_rdp_pointer_free;
-    pointer->Set = guac_rdp_pointer_set;
-    pointer->SetNull = guac_rdp_pointer_set_null;
-    pointer->SetDefault = guac_rdp_pointer_set_default;
-    graphics_register_pointer(context->graphics, pointer);
-    free(pointer);
+    rdpPointer pointer = *graphics->Pointer_Prototype;
+    pointer.size = sizeof(guac_rdp_pointer);
+    pointer.New = guac_rdp_pointer_new;
+    pointer.Free = guac_rdp_pointer_free;
+    pointer.Set = guac_rdp_pointer_set;
+    pointer.SetNull = guac_rdp_pointer_set_null;
+    pointer.SetDefault = guac_rdp_pointer_set_default;
+    graphics_register_pointer(graphics, &pointer);
 
     /* Set up GDI */
     instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
 
-    primary = instance->update->primary;
+    rdpPrimaryUpdate* primary = instance->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;
     primary->PatBlt = guac_rdp_gdi_patblt;
     primary->ScrBlt = guac_rdp_gdi_scrblt;
