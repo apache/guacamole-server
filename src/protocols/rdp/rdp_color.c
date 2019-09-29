@@ -48,7 +48,7 @@ static UINT32 guac_rdp_get_pixel_format(int depth) {
         /* 32- and 24-bit RGB (8 bits per color component) */
         case 32:
         case 24:
-            return PIXEL_FORMAT_BGR24;
+            return PIXEL_FORMAT_RGB24;
 
         /* 16-bit palette (6-bit green, 5-bit red and blue) */
         case 16:
@@ -65,7 +65,7 @@ static UINT32 guac_rdp_get_pixel_format(int depth) {
     }
 
     /* Unknown format */
-    return PIXEL_FORMAT_BGR24;
+    return PIXEL_FORMAT_RGB24;
 
 }
 
@@ -76,7 +76,7 @@ UINT32 guac_rdp_convert_color(rdpContext* context, UINT32 color) {
 
     /* Convert given color to ARGB32 */
     return FreeRDPConvertColor(color, guac_rdp_get_pixel_format(depth),
-            PIXEL_FORMAT_ARGB32, &gdi->palette);
+            PIXEL_FORMAT_BGRA32, &gdi->palette);
 
 }
 

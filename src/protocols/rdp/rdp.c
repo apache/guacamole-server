@@ -229,7 +229,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     instance->context->cache = cache_new(instance->settings);
 
     /* Init FreeRDP internal GDI implementation */
-    if (!gdi_init(instance, PIXEL_FORMAT_XRGB32))
+    if (!gdi_init(instance, PIXEL_FORMAT_BGRX32))
         return FALSE;
 
     /* Set up bitmap handling */
