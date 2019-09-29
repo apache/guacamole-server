@@ -249,7 +249,7 @@ BOOL guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
     /* Make sure that the recieved bitmap is not NULL before processing */
     if (bitmap == NULL) {
         guac_client_log(client, GUAC_LOG_INFO, "NULL bitmap found in memblt instruction.");
-        return;
+        return TRUE;
     }
 
     switch (memblt->bRop) {
