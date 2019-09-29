@@ -1207,6 +1207,7 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->RdpSecurity = TRUE;
             rdp_settings->TlsSecurity = FALSE;
             rdp_settings->NlaSecurity = FALSE;
+            rdp_settings->UseRdpSecurityLayer = TRUE;
             rdp_settings->EncryptionLevel = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
             rdp_settings->EncryptionMethods =
                   ENCRYPTION_METHOD_40BIT
@@ -1240,7 +1241,6 @@ void guac_rdp_push_settings(guac_client* client,
     /* Authentication */
     rdp_settings->Authentication = !guac_settings->disable_authentication;
     rdp_settings->IgnoreCertificate = guac_settings->ignore_certificate;
-    rdp_settings->DisableEncryption = FALSE;
 
     /* RemoteApp */
     if (guac_settings->remote_app != NULL) {
