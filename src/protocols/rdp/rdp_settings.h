@@ -79,6 +79,11 @@ typedef enum guac_rdp_security {
     GUAC_SECURITY_NLA,
 
     /**
+     * Extended network level authentication.
+     */
+    GUAC_SECURITY_EXTENDED_NLA,
+
+    /**
      * Negotiate a security method supported by both server and client.
      */
     GUAC_SECURITY_ANY

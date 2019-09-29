@@ -576,6 +576,12 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->security_mode = GUAC_SECURITY_NLA;
     }
 
+    /* Extended NLA security */
+    else if (strcmp(argv[IDX_SECURITY], "nla-ext") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Security mode: Extended NLA");
+        settings->security_mode = GUAC_SECURITY_EXTENDED_NLA;
+    }
+
     /* TLS security */
     else if (strcmp(argv[IDX_SECURITY], "tls") == 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Security mode: TLS");
@@ -1208,6 +1214,7 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->RdpSecurity = TRUE;
             rdp_settings->TlsSecurity = FALSE;
             rdp_settings->NlaSecurity = FALSE;
+            rdp_settings->ExtSecurity = FALSE;
             rdp_settings->UseRdpSecurityLayer = TRUE;
             rdp_settings->EncryptionLevel = ENCRYPTION_LEVEL_CLIENT_COMPATIBLE;
             rdp_settings->EncryptionMethods =
@@ -1221,6 +1228,7 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->RdpSecurity = FALSE;
             rdp_settings->TlsSecurity = TRUE;
             rdp_settings->NlaSecurity = FALSE;
+            rdp_settings->ExtSecurity = FALSE;
             break;
 
         /* Network level authentication */
@@ -1228,6 +1236,15 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->RdpSecurity = FALSE;
             rdp_settings->TlsSecurity = FALSE;
             rdp_settings->NlaSecurity = TRUE;
+            rdp_settings->ExtSecurity = FALSE;
+            break;
+
+        /* Extended network level authentication */
+        case GUAC_SECURITY_EXTENDED_NLA:
+            rdp_settings->RdpSecurity = FALSE;
+            rdp_settings->TlsSecurity = FALSE;
+            rdp_settings->NlaSecurity = FALSE;
+            rdp_settings->ExtSecurity = TRUE;
             break;
 
         /* All security types */
@@ -1235,6 +1252,7 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->RdpSecurity = TRUE;
             rdp_settings->TlsSecurity = TRUE;
             rdp_settings->NlaSecurity = TRUE;
+            rdp_settings->ExtSecurity = TRUE;
             break;
 
     }
