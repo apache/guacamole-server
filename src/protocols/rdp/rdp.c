@@ -380,78 +380,30 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     freerdp* rdp_inst = rdp_client->rdp_inst;
-    rdpChannels* channels = rdp_inst->context->channels;
 
-    int result;
-    int index;
+    HANDLE handles[GUAC_RDP_MAX_FILE_DESCRIPTORS];
+    int num_handles = freerdp_get_event_handles(rdp_inst->context, handles,
+            GUAC_RDP_MAX_FILE_DESCRIPTORS);
 
-    /* List of all file descriptors which we may read data from */
-    void* read_fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
-    int read_count = 0;
+    /* Wait for data and construct a reasonable frame */
+    int result = WaitForMultipleObjects(num_handles, handles, FALSE,
+            timeout_msecs);
 
-    /* List of all file descriptors which data may be written to. These will
-     * ultimately be ignored, but FreeRDP requires that both read and write
-     * file descriptors be retrieved simultaneously. */
-    void* write_fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
-    int write_count = 0;
+    /* Translate WaitForMultipleObjects() return values */
+    switch (result) {
 
-    struct pollfd fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
-
-    /* Get RDP file descriptors */
-    if (!freerdp_get_fds(rdp_inst, read_fds, &read_count,
-                write_fds, &write_count)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Unable to read RDP file descriptors.");
-        return -1;
-    }
-
-    /* Get RDP channel file descriptors */
-    if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count,
-                write_fds, &write_count)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Unable to read RDP channel file descriptors.");
-        return -1;
-    }
-
-    /* If no file descriptors, error */
-    if (read_count == 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "No file descriptors associated with RDP connection.");
-        return -1;
-    }
-
-    /* Populate poll() array of read file descriptors */
-    for (index = 0; index < read_count; index++) {
-
-        struct pollfd* current = &fds[index];
-
-        /* Init poll() array element with RDP file descriptor */
-        current->fd      = (int)(long) (read_fds[index]);
-        current->events  = POLLIN;
-        current->revents = 0;
-
-    }
-
-    /* Wait until data can be read from RDP file descriptors */
-    result = poll(fds, read_count, timeout_msecs);
-    if (result < 0) {
-
-        /* If error ignorable, pretend timout occurred */
-        if (errno == EAGAIN
-            || errno == EWOULDBLOCK
-            || errno == EINPROGRESS
-            || errno == EINTR)
+        /* Timeout elapsed before wait could complete */
+        case WAIT_TIMEOUT:
             return 0;
 
-        /* Otherwise, return as error */
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
-                "Error waiting for file descriptor.");
-        return -1;
+        /* Attempt to wait failed due to an error */
+        case WAIT_FAILED:
+            return -1;
 
     }
 
-    /* Return wait result */
-    return result;
+    /* Wait was successful */
+    return 1;
 
 }
 
@@ -535,7 +487,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Connection complete */
     rdp_client->rdp_inst = rdp_inst;
-    rdpChannels* channels = rdp_inst->context->channels;
 
     guac_timestamp last_frame_end = guac_timestamp_current();
 
@@ -568,8 +519,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 pthread_mutex_lock(&(rdp_client->rdp_lock));
 
                 /* Check the libfreerdp fds */
-                if (!freerdp_check_fds(rdp_inst)
-                        || !freerdp_channels_check_fds(channels, rdp_inst)) {
+                if (!freerdp_check_event_handles(rdp_inst->context)) {
 
                     /* Flag connection failure */
                     wait_result = -1;
