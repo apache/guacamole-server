@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include "common/list.h"
+#include "channels.h"
 #include "dvc.h"
 #include "rdp.h"
 
@@ -147,8 +148,9 @@ int guac_rdp_load_drdynvc(rdpContext* context, guac_rdp_dvc_list* list) {
     }
 
     /* Load virtual channel management plugin */
-    return freerdp_channels_load_plugin(channels, context->instance->settings,
-                "drdynvc", context->instance->settings);
+    return guac_freerdp_channels_load_plugin(channels,
+            context->instance->settings, "drdynvc",
+            context->instance->settings);
 
 }
 

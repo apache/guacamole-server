@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "audio_input.h"
+#include "channels.h"
 #include "client.h"
 #include "common/cursor.h"
 #include "common/display.h"
@@ -148,7 +149,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     }
 
     /* Load clipboard plugin */
-    if (freerdp_channels_load_plugin(channels, instance->settings,
+    if (guac_freerdp_channels_load_plugin(channels, instance->settings,
                 "cliprdr", NULL))
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load cliprdr plugin. Clipboard will not work.");
@@ -159,14 +160,14 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         || settings->audio_enabled) {
 
         /* Load RDPDR plugin */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
+        if (guac_freerdp_channels_load_plugin(channels, instance->settings,
                     "guacdr", client))
             guac_client_log(client, GUAC_LOG_WARNING,
                     "Failed to load guacdr plugin. Drive redirection and "
                     "printing will not work. Sound MAY not work.");
 
         /* Load RDPSND plugin */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
+        if (guac_freerdp_channels_load_plugin(channels, instance->settings,
                     "guacsnd", client))
             guac_client_log(client, GUAC_LOG_WARNING,
                     "Failed to load guacsnd alongside guacdr plugin. Sound "
@@ -179,7 +180,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     if (settings->remote_app != NULL) {
 
         /* Attempt to load rail */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
+        if (guac_freerdp_channels_load_plugin(channels, instance->settings,
                     "rail", instance->settings))
             guac_client_log(client, GUAC_LOG_WARNING,
                     "Failed to load rail plugin. RemoteApp will not work.");
@@ -196,7 +197,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
             guac_rdp_svc* svc = guac_rdp_alloc_svc(client, *current);
 
             /* Attempt to load guacsvc plugin for new static channel */
-            if (freerdp_channels_load_plugin(channels, instance->settings,
+            if (guac_freerdp_channels_load_plugin(channels, instance->settings,
                         "guacsvc", svc)) {
                 guac_client_log(client, GUAC_LOG_WARNING,
                         "Cannot create static channel \"%s\": failed to load guacsvc plugin.",
