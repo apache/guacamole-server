@@ -18,9 +18,27 @@
  */
 
 #include "config.h"
+#include "rdp.h"
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
+#include <guacamole/client.h>
+
+void guac_rdp_channel_connected(rdpContext* context,
+        ChannelConnectedEventArgs* e) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "Channel \"%s\" connected.", e->name);
+
+    /* Display update channel */
+    if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0) {
+        DispClientContext* disp = (DispClientContext*) e->pInterface;
+        guac_rdp_disp_connect(rdp_client->disp, context, disp);
+    }
+
+}
 
 int guac_freerdp_channels_load_plugin(rdpChannels* channels,
         rdpSettings* settings, const char* name, void* data) {

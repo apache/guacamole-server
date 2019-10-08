@@ -59,8 +59,29 @@ void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list) {
 
 }
 
-void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, DispClientContext* disp) {
+void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, rdpContext* context,
+        DispClientContext* disp) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+
+    /* Ignore connected channel if not configured to use the display update
+     * channel for resize */
+    if (settings->resize_method != GUAC_RESIZE_DISPLAY_UPDATE)
+        return;
+
+    /* Init module with current display size */
+    guac_rdp_disp_set_size(rdp_client->disp, rdp_client->settings,
+            context->instance, guac_rdp_get_width(context->instance),
+            guac_rdp_get_height(context->instance));
+
+    /* Store reference to the display update plugin once it's connected */
     guac_disp->disp = disp;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "Display update channel "
+            "will be used for display size changes.");
+
 }
 
 /**

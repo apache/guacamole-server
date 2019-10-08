@@ -80,45 +80,6 @@
 #include <sys/time.h>
 #include <time.h>
 
-/**
- * Called whenever a channel connects via the PubSub event system within
- * FreeRDP.
- *
- * @param context
- *     The rdpContext associated with the active RDP session.
- *
- * @param e
- *     Event-specific arguments, mainly the name of the channel, and a
- *     reference to the associated plugin loaded for that channel by FreeRDP.
- */
-static void guac_rdp_channel_connected(rdpContext* context,
-        ChannelConnectedEventArgs* e) {
-
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    guac_rdp_settings* settings = rdp_client->settings;
-
-    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
-        /* Store reference to the display update plugin once it's connected */
-        if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0) {
-
-            DispClientContext* disp = (DispClientContext*) e->pInterface;
-
-            /* Init module with current display size */
-            guac_rdp_disp_set_size(rdp_client->disp, rdp_client->settings,
-                    context->instance, guac_rdp_get_width(context->instance),
-                    guac_rdp_get_height(context->instance));
-
-            /* Store connected channel */
-            guac_rdp_disp_connect(rdp_client->disp, disp);
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Display update channel connected.");
-
-        }
-    }
-
-}
-
 BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;

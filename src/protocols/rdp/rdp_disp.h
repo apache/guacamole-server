@@ -92,9 +92,6 @@ guac_rdp_disp* guac_rdp_disp_alloc();
 void guac_rdp_disp_free(guac_rdp_disp* disp);
 
 /**
- * @param context The rdpContext associated with the active RDP session.
- */
-/**
  * Adds FreeRDP's "disp" plugin to the list of dynamic virtual channel plugins
  * to be loaded by FreeRDP's "drdynvc" plugin. The plugin will only be loaded
  * once guac_rdp_load_drdynvc() is invoked with the guac_rdp_dvc_list passed to
@@ -117,12 +114,19 @@ void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list);
  * display updates can be properly sent. Until this is called, changes to the
  * display size will be deferred.
  *
- * @param guac_disp The display update module to associate with the connected
- *                  display update channel.
- * @param disp The DispClientContext associated by FreeRDP with the connected
- *             display update channel.
+ * @param guac_disp
+ *     The display update module to associate with the connected display update
+ *     channel.
+ *
+ * @param context
+ *     The rdpContext associated with the active RDP session.
+ *
+ * @param disp
+ *     The DispClientContext associated by FreeRDP with the connected display
+ *     update channel.
  */
-void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, DispClientContext* disp);
+void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, rdpContext* context,
+        DispClientContext* disp);
 
 /**
  * Requests a display size update, which may then be sent immediately to the
