@@ -138,7 +138,8 @@ libguac_client_rdp_la_CFLAGS = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
     @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@
+    @LIBGUAC_INCLUDE@          \
+    @RDP_CFLAGS@
 
 libguac_client_rdp_la_LDFLAGS = \
     -version-info 0:0:0         \
@@ -158,7 +159,8 @@ guacdr_cflags                = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
     @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@
+    @LIBGUAC_INCLUDE@          \
+    @RDP_CFLAGS@
 
 guacdr_ldflags =                   \
     -module -avoid-version -shared \
@@ -177,7 +179,8 @@ guacai_cflags               =  \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
     @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@
+    @LIBGUAC_INCLUDE@          \
+    @RDP_CFLAGS@
 
 guacai_ldflags =                   \
     -module -avoid-version -shared \
@@ -196,7 +199,8 @@ guacsnd_cflags               = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
     @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@
+    @LIBGUAC_INCLUDE@          \
+    @RDP_CFLAGS@
 
 guacsnd_ldflags =                  \
     -module -avoid-version -shared \
@@ -215,7 +219,8 @@ guacsvc_cflags               = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
     @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@
+    @LIBGUAC_INCLUDE@          \
+    @RDP_CFLAGS@
 
 guacsvc_ldflags =                  \
     -module -avoid-version -shared \

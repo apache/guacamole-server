@@ -528,11 +528,10 @@ then
 fi
 
 #
-# FreeRDP 2
+# FreeRDP 2 (libfreerdp2, libfreerdp-client2, and libwinpr2)
 #
 
 have_freerdp2=disabled
-RDP_LIBS=
 AC_ARG_WITH([rdp],
             [AS_HELP_STRING([--with-rdp],
                             [support RDP @<:@default=check@:>@])],
@@ -542,21 +541,16 @@ AC_ARG_WITH([rdp],
 if test "x$with_rdp" != "xno"
 then
     have_freerdp2=yes
-
-    # libfreerdp2
-    AC_CHECK_LIB([freerdp2], [freerdp_new],
-                 [RDP_LIBS="$RDP_LIBS -lfreerdp2 -lfreerdp-client2 -lwinpr2"],
-                 [AC_MSG_WARN([
+    PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],,
+                      [AC_MSG_WARN([
   --------------------------------------------
-   Unable to find libfreerdp2
+   Unable to find FreeRDP (libfreerdp2 / libfreerdp-client2 / libwinpr2)
    RDP will be disabled.
   --------------------------------------------])
-                  have_freerdp2=no])
+                       have_freerdp2=no])
 fi
 
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp2}" = "xyes"])
-
-AC_SUBST(RDP_LIBS)
 
 #
 # libssh2
