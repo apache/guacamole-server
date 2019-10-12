@@ -184,9 +184,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Dynamic virtual channel list is no longer needed */
     guac_rdp_dvc_list_free(dvc_list);
 
-    /* Init FreeRDP cache */
-    instance->context->cache = cache_new(instance->settings);
-
     /* Init FreeRDP internal GDI implementation */
     if (!gdi_init(instance, PIXEL_FORMAT_BGRX32))
         return FALSE;
@@ -569,8 +566,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Disconnect client and channels */
     freerdp_disconnect(rdp_inst);
 
+    /* Clean up FreeRDP internal GDI implementation */
+    gdi_free(rdp_inst);
+
     /* Clean up RDP client context */
-    cache_free(rdp_inst->context->cache);
     freerdp_context_free(rdp_inst);
 
     /* Clean up RDP client */
