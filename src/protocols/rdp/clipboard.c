@@ -59,8 +59,7 @@ static UINT guac_rdp_cliprdr_send_format_list(CliprdrClientContext* cliprdr) {
             { .formatId = CF_TEXT },
             { .formatId = CF_UNICODETEXT }
         },
-        .numFormats = 2,
-        .msgFlags = CB_RESPONSE_OK
+        .numFormats = 2
     };
 
     return cliprdr->ClientFormatList(cliprdr, &format_list);
