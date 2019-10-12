@@ -22,6 +22,7 @@
 #include "audio_input.h"
 #include "channels.h"
 #include "client.h"
+#include "clipboard.h"
 #include "common/cursor.h"
 #include "common/display.h"
 #include "common/recording.h"
@@ -30,7 +31,6 @@
 #include "keyboard.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"
-#include "rdp_cliprdr.h"
 #include "rdp_disp.h"
 #include "rdp_fs.h"
 #include "rdp_print_job.h"
@@ -109,11 +109,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_rdp_audio_load_plugin(instance->context, dvc_list);
     }
 
-    /* Load clipboard plugin */
-    if (guac_freerdp_channels_load_plugin(channels, instance->settings,
-                "cliprdr", NULL))
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Failed to load cliprdr plugin. Clipboard will not work.");
+    /* Load "cliprdr" plugin for clipboard support */
+    guac_rdp_clipboard_load_plugin(rdp_client->clipboard, context);
 
     /* If RDPSND/RDPDR required, load them */
     if (settings->printing_enabled
@@ -414,7 +411,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     rdp_client->current_surface = rdp_client->display->default_surface;
 
-    rdp_client->requested_clipboard_format = CF_TEXT;
     rdp_client->available_svc = guac_common_list_alloc();
 
     /* Init client */

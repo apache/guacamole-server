@@ -56,7 +56,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->data = rdp_client;
 
     /* Init clipboard */
-    rdp_client->clipboard = guac_common_clipboard_alloc(GUAC_RDP_CLIPBOARD_MAX_LENGTH);
+    rdp_client->clipboard = guac_rdp_clipboard_alloc(client);
 
     /* Init display update module */
     rdp_client->disp = guac_rdp_disp_alloc();
@@ -91,6 +91,9 @@ int guac_rdp_client_free_handler(guac_client* client) {
     /* Free parsed settings */
     if (rdp_client->settings != NULL)
         guac_rdp_settings_free(rdp_client->settings);
+
+    /* Clean up clipboard */
+    guac_rdp_clipboard_free(rdp_client->clipboard);
 
     /* Free display update module */
     guac_rdp_disp_free(rdp_client->disp);
@@ -128,7 +131,6 @@ int guac_rdp_client_free_handler(guac_client* client) {
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
 
     /* Free client data */
-    guac_common_clipboard_free(rdp_client->clipboard);
     free(rdp_client);
 
     return 0;

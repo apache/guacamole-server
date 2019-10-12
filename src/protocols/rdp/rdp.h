@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include "audio_input.h"
+#include "clipboard.h"
 #include "common/clipboard.h"
 #include "common/display.h"
 #include "common/list.h"
@@ -95,17 +96,9 @@ typedef struct guac_rdp_client {
     guac_rdp_keyboard* keyboard;
 
     /**
-     * The current clipboard contents.
+     * The current state of the clipboard and the CLIPRDR channel.
      */
-    guac_common_clipboard* clipboard;
-
-    /**
-     * The format of the clipboard which was requested. Data received from
-     * the RDP server should conform to this format. This will be one of
-     * several legal clipboard format values defined within FreeRDP, such as
-     * CB_FORMAT_TEXT.
-     */
-    int requested_clipboard_format;
+    guac_rdp_clipboard* clipboard;
 
     /**
      * Audio output, if any.

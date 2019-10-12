@@ -36,6 +36,7 @@ libguac_client_rdp_la_SOURCES = \
     audio_input.c               \
     channels.c                  \
     client.c                    \
+    clipboard.c                 \
     decompose.c                 \
     dvc.c                       \
     error.c                     \
@@ -44,7 +45,6 @@ libguac_client_rdp_la_SOURCES = \
     ptr_string.c                \
     rdp.c                       \
     rdp_bitmap.c                \
-    rdp_cliprdr.c               \
     rdp_color.c                 \
     rdp_disp.c                  \
     rdp_fs.c                    \
@@ -104,6 +104,7 @@ noinst_HEADERS =                             \
     guac_svc/svc_service.h                   \
     audio_input.h                            \
     client.h                                 \
+    clipboard.h                              \
     channels.h                               \
     decompose.h                              \
     dvc.h                                    \
@@ -113,7 +114,6 @@ noinst_HEADERS =                             \
     ptr_string.h                             \
     rdp.h                                    \
     rdp_bitmap.h                             \
-    rdp_cliprdr.h                            \
     rdp_color.h                              \
     rdp_disp.h                               \
     rdp_fs.h                                 \

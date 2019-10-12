@@ -20,7 +20,6 @@
 
 #include "config.h"
 #include "client.h"
-#include "common/clipboard.h"
 #include "rdp.h"
 #include "rdp_fs.h"
 #if 0
@@ -153,24 +152,6 @@ int guac_rdp_svc_pipe_handler(guac_user* user, guac_stream* stream,
 
 }
 
-int guac_rdp_clipboard_handler(guac_user* user, guac_stream* stream,
-        char* mimetype) {
-
-    guac_client* client = user->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    guac_rdp_stream* rdp_stream;
-
-    /* Init stream data */
-    stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
-    stream->blob_handler = guac_rdp_clipboard_blob_handler;
-    stream->end_handler = guac_rdp_clipboard_end_handler;
-    rdp_stream->type = GUAC_RDP_INBOUND_CLIPBOARD_STREAM;
-
-    guac_common_clipboard_reset(rdp_client->clipboard, mimetype);
-    return 0;
-
-}
-
 int guac_rdp_upload_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
@@ -237,16 +218,6 @@ int guac_rdp_svc_blob_handler(guac_user* user, guac_stream* stream,
 
 }
 
-int guac_rdp_clipboard_blob_handler(guac_user* user, guac_stream* stream,
-        void* data, int length) {
-
-    guac_client* client = user->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    guac_common_clipboard_append(rdp_client->clipboard, (char*) data, length);
-
-    return 0;
-}
-
 int guac_rdp_upload_end_handler(guac_user* user, guac_stream* stream) {
 
     guac_client* client = user->client;
@@ -273,41 +244,6 @@ int guac_rdp_upload_end_handler(guac_user* user, guac_stream* stream) {
     free(rdp_stream);
     return 0;
 
-}
-
-int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
-
-    guac_client* client = user->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
-    /* Terminate clipboard data with NULL */
-    guac_common_clipboard_append(rdp_client->clipboard, "", 1);
-
-    /* Notify RDP server of new data, if connected */
-#if 0
-    freerdp* rdp_inst = rdp_client->rdp_inst;
-    if (rdp_inst != NULL) {
-
-        rdpChannels* channels = rdp_inst->context->channels;
-
-        RDP_CB_FORMAT_LIST_EVENT* format_list =
-            (RDP_CB_FORMAT_LIST_EVENT*) freerdp_event_new(
-                CliprdrChannel_Class,
-                CliprdrChannel_FormatList,
-                NULL, NULL);
-
-        /* Notify server that text data is now available */
-        format_list->formats = (UINT32*) malloc(sizeof(UINT32) * 2);
-        format_list->formats[0] = CF_TEXT;
-        format_list->formats[1] = CF_UNICODETEXT;
-        format_list->num_formats = 2;
-
-        freerdp_channels_send_event(channels, (wMessage*) format_list);
-
-    }
-#endif
-
-    return 0;
 }
 
 int guac_rdp_download_ack_handler(guac_user* user, guac_stream* stream,
