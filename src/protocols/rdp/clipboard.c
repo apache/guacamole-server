@@ -191,6 +191,13 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
     guac_rdp_clipboard* clipboard = (guac_rdp_clipboard*) cliprdr->custom;
     assert(clipboard != NULL);
 
+    CLIPRDR_FORMAT_LIST_RESPONSE format_list_response = {
+        .msgFlags = CB_RESPONSE_OK
+    };
+
+    /* Report successful processing of format list */
+    cliprdr->ClientFormatListResponse(cliprdr, &format_list_response);
+
     /* Prefer Unicode (in this case, UTF-16) */
     if (guac_rdp_cliprdr_format_supported(format_list, CF_UNICODETEXT))
         return guac_rdp_cliprdr_send_format_data_request(cliprdr, CF_UNICODETEXT);
