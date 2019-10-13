@@ -1192,6 +1192,10 @@ void guac_rdp_push_settings(guac_client* client,
     /* Audio capture */
     rdp_settings->AudioCapture = guac_settings->enable_audio_input;
 
+    /* Display Update channel */
+    rdp_settings->SupportDisplayControl =
+        (guac_settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE);
+
     /* Timezone redirection */
     if (guac_settings->timezone) {
         if (setenv("TZ", guac_settings->timezone, 1)) {

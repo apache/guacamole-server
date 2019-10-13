@@ -22,8 +22,8 @@
 #include "audio_input.h"
 #include "common/recording.h"
 #include "client.h"
+#include "disp.h"
 #include "rdp.h"
-#include "rdp_disp.h"
 #include "rdp_fs.h"
 #include "user.h"
 

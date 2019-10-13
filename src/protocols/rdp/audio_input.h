@@ -21,7 +21,6 @@
 #define GUAC_RDP_AUDIO_INPUT_H
 
 #include "config.h"
-#include "dvc.h"
 
 #include <freerdp/freerdp.h>
 #include <guacamole/stream.h>
@@ -296,18 +295,13 @@ guac_user_end_handler guac_rdp_audio_end_handler;
 /**
  * Adds Guacamole's "guacai" plugin to the list of dynamic virtual channel
  * plugins to be loaded by FreeRDP's "drdynvc" plugin. The plugin will only
- * be loaded once guac_rdp_load_drdynvc() is invoked with the guac_rdp_dvc_list
- * passed to this function. The "guacai" plugin ultimately adds support for the
- * "AUDIO_INPUT"  dynamic virtual channel.
+ * be loaded once the "drdynvc" plugin is loaded. The "guacai" plugin
+ * ultimately adds support for the "AUDIO_INPUT"  dynamic virtual channel.
  *
  * @param context
  *     The rdpContext associated with the active RDP session.
- *
- * @param list
- *     The guac_rdp_dvc_list to which the "guacai" plugin should be added, such
- *     that it may later be loaded by guac_rdp_load_drdynvc().
  */
-void guac_rdp_audio_load_plugin(rdpContext* context, guac_rdp_dvc_list* list);
+void guac_rdp_audio_load_plugin(rdpContext* context);
 
 #endif
 

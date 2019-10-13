@@ -38,7 +38,7 @@ libguac_client_rdp_la_SOURCES = \
     client.c                    \
     clipboard.c                 \
     decompose.c                 \
-    dvc.c                       \
+    disp.c                      \
     error.c                     \
     input.c                     \
     keyboard.c                  \
@@ -46,7 +46,6 @@ libguac_client_rdp_la_SOURCES = \
     rdp.c                       \
     rdp_bitmap.c                \
     rdp_color.c                 \
-    rdp_disp.c                  \
     rdp_fs.c                    \
     rdp_gdi.c                   \
     rdp_glyph.c                 \
@@ -107,7 +106,7 @@ noinst_HEADERS =                             \
     clipboard.h                              \
     channels.h                               \
     decompose.h                              \
-    dvc.h                                    \
+    disp.h                                   \
     error.h                                  \
     input.h                                  \
     keyboard.h                               \
@@ -115,7 +114,6 @@ noinst_HEADERS =                             \
     rdp.h                                    \
     rdp_bitmap.h                             \
     rdp_color.h                              \
-    rdp_disp.h                               \
     rdp_fs.h                                 \
     rdp_gdi.h                                \
     rdp_glyph.h                              \

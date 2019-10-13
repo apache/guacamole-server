@@ -21,10 +21,10 @@
 
 #include "client.h"
 #include "common/recording.h"
+#include "disp.h"
 #include "input.h"
 #include "keyboard.h"
 #include "rdp.h"
-#include "rdp_disp.h"
 
 #include <freerdp/freerdp.h>
 #include <freerdp/input.h>

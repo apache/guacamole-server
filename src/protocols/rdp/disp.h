@@ -20,11 +20,12 @@
 #ifndef GUAC_RDP_DISP_H
 #define GUAC_RDP_DISP_H
 
-#include "dvc.h"
 #include "rdp_settings.h"
 
 #include <freerdp/client/disp.h>
 #include <freerdp/freerdp.h>
+#include <guacamole/client.h>
+#include <guacamole/timestamp.h>
 
 /**
  * The minimum value for width or height, in pixels.
@@ -78,55 +79,43 @@ typedef struct guac_rdp_disp {
 
 /**
  * Allocates a new display update module, which will ultimately control the
- * display update channel once conected.
+ * display update channel once connected.
  *
- * @return A new display update module.
+ * @return
+ *     A newly-allocated display update module.
  */
 guac_rdp_disp* guac_rdp_disp_alloc();
 
 /**
- * Frees the given display update module.
+ * Frees the resources associated with support for the RDP Display Update
+ * channel. Only resources specific to Guacamole are freed. Resources specific
+ * to FreeRDP's handling of the Display Update channel will be freed by
+ * FreeRDP. If no resources are currently allocated for Display Update support,
+ * this function has no effect.
  *
- * @param disp The display update module to free.
+ * @param disp
+ *     The display update module to free.
  */
 void guac_rdp_disp_free(guac_rdp_disp* disp);
 
 /**
  * Adds FreeRDP's "disp" plugin to the list of dynamic virtual channel plugins
- * to be loaded by FreeRDP's "drdynvc" plugin. The plugin will only be loaded
- * once guac_rdp_load_drdynvc() is invoked with the guac_rdp_dvc_list passed to
- * this function. The "disp" plugin ultimately adds support for the Display
- * Update channel. NOTE: It is still up to external code to detect when the
- * "disp" channel is connected, and update the guac_rdp_disp with a call to
- * guac_rdp_disp_connect().
+ * to be loaded by FreeRDP's "drdynvc" plugin. The context of the plugin will
+ * automatically be assicated with the guac_rdp_disp instance pointed to by the
+ * current guac_rdp_client. The plugin will only be loaded once the "drdynvc"
+ * plugin is loaded. The "disp" plugin ultimately adds support for the Display
+ * Update channel.
+ *
+ * If failures occur, messages noting the specifics of those failures will be
+ * logged, and the RDP side of Display Update support will not be functional.
+ *
+ * This MUST be called within the PreConnect callback of the freerdp instance
+ * for Display Update support to be loaded.
  *
  * @param context
  *     The rdpContext associated with the active RDP session.
- *
- * @param list
- *     The guac_rdp_dvc_list to which the "disp" plugin should be added, such
- *     that it may later be loaded by guac_rdp_load_drdynvc().
  */
-void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list);
-
-/**
- * Stores the given DispClientContext within the given guac_rdp_disp, such that
- * display updates can be properly sent. Until this is called, changes to the
- * display size will be deferred.
- *
- * @param guac_disp
- *     The display update module to associate with the connected display update
- *     channel.
- *
- * @param context
- *     The rdpContext associated with the active RDP session.
- *
- * @param disp
- *     The DispClientContext associated by FreeRDP with the connected display
- *     update channel.
- */
-void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, rdpContext* context,
-        DispClientContext* disp);
+void guac_rdp_disp_load_plugin(rdpContext* context);
 
 /**
  * Requests a display size update, which may then be sent immediately to the
@@ -196,6 +185,10 @@ void guac_rdp_disp_reconnect_complete(guac_rdp_disp* disp);
 /**
  * Returns whether a full RDP reconnect is required for display update changes
  * to take effect.
+ *
+ * @param client
+ *     The guac_client associated with the Guacamole side of the RDP
+ *     connection.
  *
  * @return
  *     Non-zero if a reconnect is needed, zero otherwise.

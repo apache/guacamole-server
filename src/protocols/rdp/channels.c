@@ -24,22 +24,6 @@
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 
-void guac_rdp_channel_connected(rdpContext* context,
-        ChannelConnectedEventArgs* e) {
-
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
-    guac_client_log(client, GUAC_LOG_DEBUG, "Channel \"%s\" connected.", e->name);
-
-    /* Display update channel */
-    if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0) {
-        DispClientContext* disp = (DispClientContext*) e->pInterface;
-        guac_rdp_disp_connect(rdp_client->disp, context, disp);
-    }
-
-}
-
 int guac_freerdp_channels_load_plugin(rdpChannels* channels,
         rdpSettings* settings, const char* name, void* data) {
 
@@ -59,6 +43,39 @@ int guac_freerdp_channels_load_plugin(rdpChannels* channels,
 
     /* The plugin does not exist / cannot be loaded */
     return 1;
+
+}
+
+void guac_freerdp_dynamic_channel_collection_add(rdpSettings* settings,
+        const char* name, ...) {
+
+    va_list args;
+
+    ADDIN_ARGV* freerdp_args = malloc(sizeof(ADDIN_ARGV));
+
+    va_start(args, name);
+
+    /* Count number of arguments (excluding terminating NULL) */
+    freerdp_args->argc = 1;
+    while (va_arg(args, char*) != NULL)
+        freerdp_args->argc++;
+
+    /* Reset va_list */
+    va_end(args);
+    va_start(args, name);
+
+    /* Copy argument values into DVC entry */
+    freerdp_args->argv = malloc(sizeof(char*) * freerdp_args->argc);
+    freerdp_args->argv[0] = strdup(name);
+    int i;
+    for (i = 1; i < freerdp_args->argc; i++)
+        freerdp_args->argv[i] = strdup(va_arg(args, char*));
+
+    va_end(args);
+
+    /* Register plugin with FreeRDP */
+    settings->SupportDynamicChannels = TRUE;
+    freerdp_dynamic_channel_collection_add(settings, freerdp_args);
 
 }
 

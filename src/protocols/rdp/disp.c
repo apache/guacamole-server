@@ -18,16 +18,17 @@
  */
 
 #include "config.h"
+#include "channels.h"
 #include "client.h"
-#include "dvc.h"
+#include "disp.h"
 #include "rdp.h"
-#include "rdp_disp.h"
 #include "rdp_settings.h"
 
 #include <freerdp/client/disp.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
+#include <winpr/wtypes.h>
 
 guac_rdp_disp* guac_rdp_disp_alloc() {
 
@@ -50,37 +51,57 @@ void guac_rdp_disp_free(guac_rdp_disp* disp) {
     free(disp);
 }
 
-void guac_rdp_disp_load_plugin(rdpContext* context, guac_rdp_dvc_list* list) {
-
-    context->settings->SupportDisplayControl = TRUE;
-
-    /* Add "disp" channel */
-    guac_rdp_dvc_list_add(list, "disp", NULL);
-
-}
-
-void guac_rdp_disp_connect(guac_rdp_disp* guac_disp, rdpContext* context,
-        DispClientContext* disp) {
+/**
+ * Callback which associates handlers specific to Guacamole with the
+ * DispClientContext instance allocated by FreeRDP to deal with received
+ * Display Update (client-initiated dynamic display resizing) messages.
+ *
+ * This function is called whenever a channel connects via the PubSub event
+ * system within FreeRDP, but only has any effect if the connected channel is
+ * the Display Update channel. This specific callback is registered with the
+ * PubSub system of the relevant rdpContext when guac_rdp_disp_load_plugin() is
+ * called.
+ *
+ * @param context
+ *     The rdpContext associated with the active RDP session.
+ *
+ * @param e
+ *     Event-specific arguments, mainly the name of the channel, and a
+ *     reference to the associated plugin loaded for that channel by FreeRDP.
+ */
+static void guac_rdp_disp_channel_connected(rdpContext* context,
+        ChannelConnectedEventArgs* e) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    guac_rdp_settings* settings = rdp_client->settings;
+    guac_rdp_disp* guac_disp = rdp_client->disp;
 
-    /* Ignore connected channel if not configured to use the display update
-     * channel for resize */
-    if (settings->resize_method != GUAC_RESIZE_DISPLAY_UPDATE)
+    /* Ignore connection event if it's not for the Display Update channel */
+    if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) != 0)
         return;
 
     /* Init module with current display size */
-    guac_rdp_disp_set_size(rdp_client->disp, rdp_client->settings,
+    guac_rdp_disp_set_size(guac_disp, rdp_client->settings,
             context->instance, guac_rdp_get_width(context->instance),
             guac_rdp_get_height(context->instance));
 
     /* Store reference to the display update plugin once it's connected */
+    DispClientContext* disp = (DispClientContext*) e->pInterface;
     guac_disp->disp = disp;
 
     guac_client_log(client, GUAC_LOG_DEBUG, "Display update channel "
             "will be used for display size changes.");
+
+}
+
+void guac_rdp_disp_load_plugin(rdpContext* context) {
+
+    /* Subscribe to and handle channel connected events */
+    PubSub_SubscribeChannelConnected(context->pubSub,
+        (pChannelConnectedEventHandler) guac_rdp_disp_channel_connected);
+
+    /* Add "disp" channel */
+    guac_freerdp_dynamic_channel_collection_add(context->settings, "disp", NULL);
 
 }
 

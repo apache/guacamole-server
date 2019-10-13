@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include "audio_input.h"
-#include "dvc.h"
+#include "channels.h"
 #include "ptr_string.h"
 #include "rdp.h"
 
@@ -182,14 +182,14 @@ int guac_rdp_audio_end_handler(guac_user* user, guac_stream* stream) {
 
 }
 
-void guac_rdp_audio_load_plugin(rdpContext* context, guac_rdp_dvc_list* list) {
+void guac_rdp_audio_load_plugin(rdpContext* context) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     char client_ref[GUAC_RDP_PTR_STRING_LENGTH];
 
     /* Add "AUDIO_INPUT" channel */
     guac_rdp_ptr_to_string(client, client_ref);
-    guac_rdp_dvc_list_add(list, "guacai", client_ref, NULL);
+    guac_freerdp_dynamic_channel_collection_add(context->settings, "guacai", client_ref, NULL);
 
 }
 

@@ -26,12 +26,11 @@
 #include "common/cursor.h"
 #include "common/display.h"
 #include "common/recording.h"
-#include "dvc.h"
+#include "disp.h"
 #include "error.h"
 #include "keyboard.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"
-#include "rdp_disp.h"
 #include "rdp_fs.h"
 #include "rdp_print_job.h"
 #include "rdp_gdi.h"
@@ -90,23 +89,17 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
-    guac_rdp_dvc_list* dvc_list = guac_rdp_dvc_list_alloc();
-
     /* Init FreeRDP add-in provider */
     freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
 
-    /* Subscribe to and handle channel connected events */
-    PubSub_SubscribeChannelConnected(context->pubSub,
-            (pChannelConnectedEventHandler) guac_rdp_channel_connected);
-
     /* Load "disp" plugin for display update */
     if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
-        guac_rdp_disp_load_plugin(instance->context, dvc_list);
+        guac_rdp_disp_load_plugin(context);
 
     /* Load "AUDIO_INPUT" plugin for audio input*/
     if (settings->enable_audio_input) {
         rdp_client->audio_input = guac_rdp_audio_buffer_alloc();
-        guac_rdp_audio_load_plugin(instance->context, dvc_list);
+        guac_rdp_audio_load_plugin(instance->context);
     }
 
     /* Load "cliprdr" plugin for clipboard support */
@@ -175,14 +168,14 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     }
 #endif
 
-    /* Load DRDYNVC plugin if required */
-    if (guac_rdp_load_drdynvc(instance->context, dvc_list))
+    /* Load plugin providing Dynamic Virtual Channel support, if required */
+    if (instance->settings->SupportDynamicChannels &&
+            guac_freerdp_channels_load_plugin(channels, instance->settings,
+                "drdynvc", instance->settings)) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load drdynvc plugin. Display update and audio "
                 "input support will be disabled.");
-
-    /* Dynamic virtual channel list is no longer needed */
-    guac_rdp_dvc_list_free(dvc_list);
+    }
 
     /* Init FreeRDP internal GDI implementation */
     if (!gdi_init(instance, PIXEL_FORMAT_BGRX32))
