@@ -29,6 +29,10 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libguac-client-rdp.la
 SUBDIRS = . tests
 
+#
+# Main RDP client library
+#
+
 nodist_libguac_client_rdp_la_SOURCES = \
     _generated_keymaps.c
 
@@ -58,34 +62,6 @@ libguac_client_rdp_la_SOURCES = \
     resolution.c                \
     unicode.c                   \
     user.c
-
-guacai_sources =          \
-    audio_input.c         \
-    guac_ai/ai_messages.c \
-    guac_ai/ai_service.c  \
-    ptr_string.c
-
-guacsvc_sources =          \
-    guac_svc/svc_service.c \
-    rdp_svc.c
-
-guacsnd_sources =                 \
-    guac_rdpsnd/rdpsnd_messages.c \
-    guac_rdpsnd/rdpsnd_service.c
-
-guacdr_sources =                             \
-    guac_rdpdr/rdpdr_fs_messages.c           \
-    guac_rdpdr/rdpdr_fs_messages_dir_info.c  \
-    guac_rdpdr/rdpdr_fs_messages_file_info.c \
-    guac_rdpdr/rdpdr_fs_messages_vol_info.c  \
-    guac_rdpdr/rdpdr_fs_service.c            \
-    guac_rdpdr/rdpdr_messages.c              \
-    guac_rdpdr/rdpdr_printer.c               \
-    guac_rdpdr/rdpdr_service.c               \
-    rdp_fs.c                                 \
-    rdp_print_job.c                          \
-    rdp_stream.c                             \
-    unicode.c
 
 noinst_HEADERS =                             \
     guac_ai/ai_messages.h                    \
@@ -128,10 +104,6 @@ noinst_HEADERS =                             \
     unicode.h                                \
     user.h
 
-#
-# Main RDP client library
-#
-
 libguac_client_rdp_la_CFLAGS = \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
@@ -150,84 +122,124 @@ libguac_client_rdp_la_LIBADD =     \
     @LIBGUAC_LTLIB@
 
 #
+# Plugins for FreeRDP
+#
+
+freerdp_LTLIBRARIES = \
+    libguacai-client.la
+#    libguacdr-client.la  \
+#    libguacsnd-client.la \
+#    libguacsvc-client.la
+
+freerdpdir = ${libdir}/freerdp2
+
+#
 # RDPDR
 #
 
-guacdr_cflags                = \
-    -Werror -Wall -Iinclude    \
-    @COMMON_INCLUDE@           \
-    @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@          \
-    @RDP_CFLAGS@
-
-guacdr_ldflags =                   \
-    -module -avoid-version -shared \
-    @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
-
-guacdr_libadd =     \
-    @COMMON_LTLIB@  \
-    @LIBGUAC_LTLIB@
+#libguacdr_client_la_SOURCES =                \
+#    guac_rdpdr/rdpdr_fs_messages.c           \
+#    guac_rdpdr/rdpdr_fs_messages_dir_info.c  \
+#    guac_rdpdr/rdpdr_fs_messages_file_info.c \
+#    guac_rdpdr/rdpdr_fs_messages_vol_info.c  \
+#    guac_rdpdr/rdpdr_fs_service.c            \
+#    guac_rdpdr/rdpdr_messages.c              \
+#    guac_rdpdr/rdpdr_printer.c               \
+#    guac_rdpdr/rdpdr_service.c               \
+#    rdp_fs.c                                 \
+#    rdp_print_job.c                          \
+#    rdp_stream.c                             \
+#    unicode.c
+#
+#libguacdr_client_la_CFLAGS =   \
+#    -Werror -Wall -Iinclude    \
+#    @COMMON_INCLUDE@           \
+#    @COMMON_SSH_INCLUDE@       \
+#    @LIBGUAC_INCLUDE@          \
+#    @RDP_CFLAGS@
+#
+#libguacdr_client_la_LDFLAGS =      \
+#    -module -avoid-version -shared \
+#    @PTHREAD_LIBS@                 \
+#    @RDP_LIBS@
+#
+#libguacdr_client_la_LIBADD = \
+#    @COMMON_LTLIB@           \
+#    @LIBGUAC_LTLIB@
 
 #
 # Audio Input
 #
 
-guacai_cflags               =  \
+libguacai_client_la_SOURCES = \
+    audio_input.c             \
+    guac_ai/ai_messages.c     \
+    guac_ai/ai_service.c      \
+    ptr_string.c
+
+libguacai_client_la_CFLAGS =   \
     -Werror -Wall -Iinclude    \
     @COMMON_INCLUDE@           \
     @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@          \
     @RDP_CFLAGS@
 
-guacai_ldflags =                   \
+libguacai_client_la_LDFLAGS =      \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
     @RDP_LIBS@
 
-guacai_libadd =     \
-    @COMMON_LTLIB@  \
+libguacai_client_la_LIBADD = \
+    @COMMON_LTLIB@           \
     @LIBGUAC_LTLIB@
 
 #
 # RDPSND
 #
 
-guacsnd_cflags               = \
-    -Werror -Wall -Iinclude    \
-    @COMMON_INCLUDE@           \
-    @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@          \
-    @RDP_CFLAGS@
-
-guacsnd_ldflags =                  \
-    -module -avoid-version -shared \
-    @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
-
-guacsnd_libadd =    \
-    @COMMON_LTLIB@  \
-    @LIBGUAC_LTLIB@
+#libguacsnd_client_la_SOURCES =    \
+#    guac_rdpsnd/rdpsnd_messages.c \
+#    guac_rdpsnd/rdpsnd_service.c
+#
+#libguacsnd_client_la_CFLAGS = \
+#    -Werror -Wall -Iinclude   \
+#    @COMMON_INCLUDE@          \
+#    @COMMON_SSH_INCLUDE@      \
+#    @LIBGUAC_INCLUDE@         \
+#    @RDP_CFLAGS@
+#
+#libguacsnd_client_la_LDFLAGS =     \
+#    -module -avoid-version -shared \
+#    @PTHREAD_LIBS@                 \
+#    @RDP_LIBS@
+#
+#libguacsnd_client_la_LIBADD = \
+#    @COMMON_LTLIB@            \
+#    @LIBGUAC_LTLIB@
 
 #
 # Static Virtual Channels
 #
 
-guacsvc_cflags               = \
-    -Werror -Wall -Iinclude    \
-    @COMMON_INCLUDE@           \
-    @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@          \
-    @RDP_CFLAGS@
-
-guacsvc_ldflags =                  \
-    -module -avoid-version -shared \
-    @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
-
-guacsvc_libadd =    \
-    @COMMON_LTLIB@  \
-    @LIBGUAC_LTLIB@
+#libguacsvc_client_la_SOURCES = \
+#    guac_svc/svc_service.c     \
+#    rdp_svc.c
+#
+#libguacsvc_client_la_CFLAGS =  \
+#    -Werror -Wall -Iinclude    \
+#    @COMMON_INCLUDE@           \
+#    @COMMON_SSH_INCLUDE@       \
+#    @LIBGUAC_INCLUDE@          \
+#    @RDP_CFLAGS@
+#
+#libguacsvc_client_la_LDFLAGS =     \
+#    -module -avoid-version -shared \
+#    @PTHREAD_LIBS@                 \
+#    @RDP_LIBS@
+#
+#libguacsvc_client_la_LIBADD = \
+#    @COMMON_LTLIB@            \
+#    @LIBGUAC_LTLIB@
 
 #
 # Optional SFTP support
@@ -269,33 +281,4 @@ _generated_keymaps.c: $(rdp_keymaps)
 EXTRA_DIST =            \
     $(rdp_keymaps)      \
     keymaps/generate.pl
-
-# FreeRDP 1.1 (and hopefully onward) extensions
-freerdp_LTLIBRARIES = \
-    guacai-client.la
-#    guacdr-client.la  \
-#    guacsnd-client.la \
-#    guacsvc-client.la
-
-guacai_client_la_SOURCES = ${guacai_sources}
-guacai_client_la_CFLAGS  = ${guacai_cflags}
-guacai_client_la_LDFLAGS = ${guacai_ldflags}
-guacai_client_la_LIBADD  = ${guacai_libadd}
-
-#guacdr_client_la_SOURCES = ${guacdr_sources}
-#guacdr_client_la_CFLAGS  = ${guacdr_cflags}
-#guacdr_client_la_LDFLAGS = ${guacdr_ldflags}
-#guacdr_client_la_LIBADD  = ${guacdr_libadd}
-
-#guacsnd_client_la_SOURCES = ${guacsnd_sources}
-#guacsnd_client_la_CFLAGS  = ${guacsnd_cflags}
-#guacsnd_client_la_LDFLAGS = ${guacsnd_ldflags}
-#guacsnd_client_la_LIBADD  = ${guacsnd_libadd}
-
-#guacsvc_client_la_SOURCES = ${guacsvc_sources}
-#guacsvc_client_la_CFLAGS  = ${guacsvc_cflags}
-#guacsvc_client_la_LDFLAGS = ${guacsvc_ldflags}
-#guacsvc_client_la_LIBADD  = ${guacsvc_libadd}
-
-freerdpdir = ${libdir}/freerdp
 
