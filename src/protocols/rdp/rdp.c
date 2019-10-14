@@ -29,6 +29,7 @@
 #include "disp.h"
 #include "error.h"
 #include "keyboard.h"
+#include "rail.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"
 #include "rdp_fs.h"
@@ -36,7 +37,6 @@
 #include "rdp_gdi.h"
 #include "rdp_glyph.h"
 #include "rdp_pointer.h"
-#include "rdp_rail.h"
 #include "rdp_stream.h"
 #if 0
 #include "rdp_svc.h"
@@ -128,15 +128,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     }
 
     /* Load RAIL plugin if RemoteApp in use */
-    if (settings->remote_app != NULL) {
-
-        /* Attempt to load rail */
-        if (guac_freerdp_channels_load_plugin(channels, instance->settings,
-                    "rail", instance->settings))
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load rail plugin. RemoteApp will not work.");
-
-    }
+    if (settings->remote_app != NULL)
+        guac_rdp_rail_load_plugin(context);
 
 #if 0
     /* Load SVC plugin instances for all static channels */
@@ -475,22 +468,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
                     break;
 
                 }
-
-                /* Check for channel events */
-#if 0
-                wMessage* event = freerdp_channels_pop_event(channels);
-                if (event) {
-
-                    /* Handle channel events (clipboard and RAIL) */
-                    if (GetMessageClass(event->id) == CliprdrChannel_Class)
-                        guac_rdp_process_cliprdr_event(client, event);
-                    else if (GetMessageClass(event->id) == RailChannel_Class)
-                        guac_rdp_process_rail_event(client, event);
-
-                    freerdp_event_free(event);
-
-                }
-#endif
 
                 pthread_mutex_unlock(&(rdp_client->rdp_lock));
 

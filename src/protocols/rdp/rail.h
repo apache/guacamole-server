@@ -17,37 +17,23 @@
  * under the License.
  */
 
-
-#ifndef __GUAC_RDP_RDP_RAIL_H
-#define __GUAC_RDP_RDP_RAIL_H
+#ifndef GUAC_RDP_RAIL_H
+#define GUAC_RDP_RAIL_H
 
 #include "config.h"
 
-#include <guacamole/client.h>
-#include <winpr/stream.h>
-
 /**
- * Dispatches a given RAIL event to the appropriate handler.
+ * Initializes RemoteApp support for RDP and handling of the RAIL channel. If
+ * failures occur, messages noting the specifics of those failures will be
+ * logged, and RemoteApp support will not be functional.
  *
- * @param client
- *     The guac_client associated with the current RDP session.
+ * This MUST be called within the PreConnect callback of the freerdp instance
+ * for RAIL support to be loaded.
  *
- * @param event
- *     The RAIL event to process.
+ * @param rdpContext
+ *     The rdpContext associated with the FreeRDP side of the RDP connection.
  */
-void guac_rdp_process_rail_event(guac_client* client, wMessage* event);
-
-/**
- * Handles the event sent when updating system parameters. The event given
- * MUST be a SYSPARAM event.
- *
- * @param client
- *     The guac_client associated with the current RDP session.
- *
- * @param event
- *     The system parameter event to process.
- */
-void guac_rdp_process_rail_get_sysparam(guac_client* client, wMessage* event);
+void guac_rdp_rail_load_plugin(rdpContext* context);
 
 #endif
 

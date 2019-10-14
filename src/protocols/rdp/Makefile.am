@@ -43,6 +43,7 @@ libguac_client_rdp_la_SOURCES = \
     input.c                     \
     keyboard.c                  \
     ptr_string.c                \
+    rail.c                      \
     rdp.c                       \
     rdp_bitmap.c                \
     rdp_color.c                 \
@@ -52,7 +53,6 @@ libguac_client_rdp_la_SOURCES = \
     rdp_keymap.c                \
     rdp_print_job.c             \
     rdp_pointer.c               \
-    rdp_rail.c                  \
     rdp_settings.c              \
     rdp_stream.c                \
     resolution.c                \
@@ -111,6 +111,7 @@ noinst_HEADERS =                             \
     input.h                                  \
     keyboard.h                               \
     ptr_string.h                             \
+    rail.h                                   \
     rdp.h                                    \
     rdp_bitmap.h                             \
     rdp_color.h                              \
@@ -120,7 +121,6 @@ noinst_HEADERS =                             \
     rdp_keymap.h                             \
     rdp_pointer.h                            \
     rdp_print_job.h                          \
-    rdp_rail.h                               \
     rdp_settings.h                           \
     rdp_status.h                             \
     rdp_stream.h                             \
