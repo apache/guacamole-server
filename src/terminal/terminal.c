@@ -202,6 +202,7 @@ void guac_terminal_reset(guac_terminal* term) {
     /* Reset cursor location */
     term->cursor_row = term->visible_cursor_row = term->saved_cursor_row = 0;
     term->cursor_col = term->visible_cursor_col = term->saved_cursor_col = 0;
+    term->cursor_visible = true;
 
     /* Clear scrollback, buffer, and scroll region */
     term->buffer->top = 0;
@@ -777,31 +778,42 @@ void guac_terminal_commit_cursor(guac_terminal* term) {
 
     guac_terminal_char* guac_char;
 
-    guac_terminal_buffer_row* old_row;
-    guac_terminal_buffer_row* new_row;
+    guac_terminal_buffer_row* row;
 
     /* If no change, done */
-    if (term->visible_cursor_row == term->cursor_row && term->visible_cursor_col == term->cursor_col)
+    if (term->cursor_visible && term->visible_cursor_row == term->cursor_row && term->visible_cursor_col == term->cursor_col)
         return;
 
-    /* Get old and new rows with cursor */
-    new_row = guac_terminal_buffer_get_row(term->buffer, term->cursor_row, term->cursor_col+1);
-    old_row = guac_terminal_buffer_get_row(term->buffer, term->visible_cursor_row, term->visible_cursor_col+1);
+    /* Clear cursor if it was visible */
+    if (term->visible_cursor_row != -1 && term->visible_cursor_col != -1) {
+        /* Get old row with cursor */
+        row = guac_terminal_buffer_get_row(term->buffer, term->visible_cursor_row, term->visible_cursor_col+1);
 
-    /* Clear cursor */
-    guac_char = &(old_row->characters[term->visible_cursor_col]);
-    guac_char->attributes.cursor = false;
-    guac_terminal_display_set_columns(term->display, term->visible_cursor_row + term->scroll_offset,
-            term->visible_cursor_col, term->visible_cursor_col, guac_char);
+        guac_char = &(row->characters[term->visible_cursor_col]);
+        guac_char->attributes.cursor = false;
+        guac_terminal_display_set_columns(term->display, term->visible_cursor_row + term->scroll_offset,
+                term->visible_cursor_col, term->visible_cursor_col, guac_char);
+    }
 
-    /* Set cursor */
-    guac_char = &(new_row->characters[term->cursor_col]);
-    guac_char->attributes.cursor = true;
-    guac_terminal_display_set_columns(term->display, term->cursor_row + term->scroll_offset,
-            term->cursor_col, term->cursor_col, guac_char);
+    /* Set cursor if should be visible */
+    if (term->cursor_visible) {
+        /* Get new row with cursor */
+        row = guac_terminal_buffer_get_row(term->buffer, term->cursor_row, term->cursor_col+1);
 
-    term->visible_cursor_row = term->cursor_row;
-    term->visible_cursor_col = term->cursor_col;
+        guac_char = &(row->characters[term->cursor_col]);
+        guac_char->attributes.cursor = true;
+        guac_terminal_display_set_columns(term->display, term->cursor_row + term->scroll_offset,
+                term->cursor_col, term->cursor_col, guac_char);
+
+        term->visible_cursor_row = term->cursor_row;
+        term->visible_cursor_col = term->cursor_col;
+    }
+
+    /* Otherwise set visible position to a sentinel value */
+    else {
+        term->visible_cursor_row = -1;
+        term->visible_cursor_col = -1;
+    }
 
     return;
 
@@ -1240,7 +1252,8 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
             /* Update buffer top and cursor row based on shift */
             term->buffer->top += shift_amount;
             term->cursor_row  -= shift_amount;
-            term->visible_cursor_row  -= shift_amount;
+            if (term->visible_cursor_row != -1)
+                term->visible_cursor_row -= shift_amount;
 
             /* Redraw characters within old region */
             __guac_terminal_redraw_rect(term, height - shift_amount, 0, height-1, width-1);
@@ -1274,7 +1287,8 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
             /* Update buffer top and cursor row based on shift */
             term->buffer->top -= shift_amount;
             term->cursor_row  += shift_amount;
-            term->visible_cursor_row  += shift_amount;
+            if (term->visible_cursor_row != -1)
+                term->visible_cursor_row += shift_amount;
 
             /* If scrolled enough, use scroll to fulfill entire resize */
             if (term->scroll_offset >= shift_amount) {

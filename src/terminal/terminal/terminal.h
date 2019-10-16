@@ -338,12 +338,19 @@ struct guac_terminal {
     int cursor_col;
 
     /**
+     * The desired visibility state of the cursor.
+     */
+    bool cursor_visible;
+
+    /**
      * The row of the rendered cursor.
+     * Will be set to -1 if the cursor is not visible.
      */
     int visible_cursor_row;
 
     /**
      * The column of the rendered cursor.
+     * Will be set to -1 if the cursor is not visible.
      */
     int visible_cursor_col;
 
