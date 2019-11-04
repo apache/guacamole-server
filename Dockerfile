@@ -23,7 +23,7 @@
 
 
 # Use Debian as base for the build
-ARG DEBIAN_VERSION=stable
+ARG DEBIAN_VERSION=stretch
 FROM debian:${DEBIAN_VERSION} AS builder
 
 # Base directory for installed build artifacts.
