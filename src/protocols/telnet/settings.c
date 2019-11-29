@@ -53,11 +53,15 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "backspace",
     "terminal-type",
     "scrollback",
+    "login-success-regex",
+    "login-failure-regex",
+    "disable-copy",
+    "disable-paste",
     NULL
 };
 
 enum TELNET_ARGS_IDX {
-
+    
     /**
      * The hostname to connect to. Required.
      */
@@ -196,12 +200,45 @@ enum TELNET_ARGS_IDX {
      */
     IDX_SCROLLBACK,
 
+    /**
+     * The regular expression to use when searching for whether login was
+     * successful. This parameter is optional. If given, the
+     * "login-failure-regex" parameter must also be specified, and the first
+     * frame of the Guacamole connection will be withheld until login
+     * success/failure has been determined.
+     */
+    IDX_LOGIN_SUCCESS_REGEX,
+
+    /**
+     * The regular expression to use when searching for whether login was
+     * unsuccessful. This parameter is optional. If given, the
+     * "login-success-regex" parameter must also be specified, and the first
+     * frame of the Guacamole connection will be withheld until login
+     * success/failure has been determined.
+     */
+    IDX_LOGIN_FAILURE_REGEX,
+
+    /**
+     * Whether outbound clipboard access should be blocked. If set to "true",
+     * it will not be possible to copy data from the terminal to the client
+     * using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_COPY,
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set to "true", it
+     * will not be possible to paste data from the client to the terminal using
+     * the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_PASTE,
+
     TELNET_ARGS_COUNT
 };
 
 /**
- * Compiles the given regular expression, returning NULL if compilation fails.
- * The returned regex_t must be freed with regfree() AND free().
+ * Compiles the given regular expression, returning NULL if compilation fails
+ * or of the given regular expression is NULL. The returned regex_t must be
+ * freed with regfree() AND free(), or with guac_telnet_regex_free().
  *
  * @param user
  *     The user who provided the setting associated with the given regex
@@ -211,9 +248,14 @@ enum TELNET_ARGS_IDX {
  *     The regular expression pattern to compile.
  *
  * @return
- *     The compiled regular expression, or NULL if compilation fails.
+ *     The compiled regular expression, or NULL if compilation fails or NULL
+ *     was originally provided for the pattern.
  */
 static regex_t* guac_telnet_compile_regex(guac_user* user, char* pattern) {
+
+    /* Nothing to compile if no pattern provided */
+    if (pattern == NULL)
+        return NULL;
 
     int compile_result;
     regex_t* regex = malloc(sizeof(regex_t));
@@ -231,6 +273,14 @@ static regex_t* guac_telnet_compile_regex(guac_user* user, char* pattern) {
     }
 
     return regex;
+}
+
+void guac_telnet_regex_free(regex_t** regex) {
+    if (*regex != NULL) {
+        regfree(*regex);
+        free(*regex);
+        *regex = NULL;
+    }
 }
 
 guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
@@ -256,7 +306,7 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_USERNAME, NULL);
 
-    /* Read username regex only if password is specified */
+    /* Read username regex only if username is specified */
     if (settings->username != NULL) {
         settings->username_regex = guac_telnet_compile_regex(user,
             guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
@@ -273,6 +323,35 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         settings->password_regex = guac_telnet_compile_regex(user,
             guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
                     IDX_PASSWORD_REGEX, GUAC_TELNET_DEFAULT_PASSWORD_REGEX));
+    }
+
+    /* Read optional login success detection regex */
+    settings->login_success_regex = guac_telnet_compile_regex(user,
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_LOGIN_SUCCESS_REGEX, NULL));
+
+    /* Read optional login failure detection regex */
+    settings->login_failure_regex = guac_telnet_compile_regex(user,
+            guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                    IDX_LOGIN_FAILURE_REGEX, NULL));
+
+    /* Both login success and login failure regexes must be provided if either
+     * is present at all */
+    if (settings->login_success_regex != NULL
+            && settings->login_failure_regex == NULL) {
+        guac_telnet_regex_free(&settings->login_success_regex);
+        guac_user_log(user, GUAC_LOG_WARNING, "Ignoring provided value for "
+                "\"%s\" as \"%s\" must also be provided.",
+                GUAC_TELNET_CLIENT_ARGS[IDX_LOGIN_SUCCESS_REGEX],
+                GUAC_TELNET_CLIENT_ARGS[IDX_LOGIN_FAILURE_REGEX]);
+    }
+    else if (settings->login_failure_regex != NULL
+            && settings->login_success_regex == NULL) {
+        guac_telnet_regex_free(&settings->login_failure_regex);
+        guac_user_log(user, GUAC_LOG_WARNING, "Ignoring provided value for "
+                "\"%s\" as \"%s\" must also be provided.",
+                GUAC_TELNET_CLIENT_ARGS[IDX_LOGIN_FAILURE_REGEX],
+                GUAC_TELNET_CLIENT_ARGS[IDX_LOGIN_SUCCESS_REGEX]);
     }
 
     /* Read-only mode */
@@ -365,6 +444,16 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_TERMINAL_TYPE, "linux");
 
+    /* Parse clipboard copy disable flag */
+    settings->disable_copy =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_DISABLE_COPY, false);
+
+    /* Parse clipboard paste disable flag */
+    settings->disable_paste =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_DISABLE_PASTE, false);
+
     /* Parsing was successful */
     return settings;
 
@@ -380,17 +469,11 @@ void guac_telnet_settings_free(guac_telnet_settings* settings) {
     free(settings->username);
     free(settings->password);
 
-    /* Free username regex (if allocated) */
-    if (settings->username_regex != NULL) {
-        regfree(settings->username_regex);
-        free(settings->username_regex);
-    }
-
-    /* Free password regex (if allocated) */
-    if (settings->password_regex != NULL) {
-        regfree(settings->password_regex);
-        free(settings->password_regex);
-    }
+    /* Free various regexes */
+    guac_telnet_regex_free(&settings->username_regex);
+    guac_telnet_regex_free(&settings->password_regex);
+    guac_telnet_regex_free(&settings->login_success_regex);
+    guac_telnet_regex_free(&settings->login_failure_regex);
 
     /* Free display preferences */
     free(settings->font_name);

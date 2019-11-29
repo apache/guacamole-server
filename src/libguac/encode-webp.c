@@ -20,10 +20,10 @@
 #include "config.h"
 
 #include "encode-webp.h"
-#include "error.h"
+#include "guacamole/error.h"
+#include "guacamole/protocol.h"
+#include "guacamole/stream.h"
 #include "palette.h"
-#include "protocol.h"
-#include "stream.h"
 
 #include <cairo/cairo.h>
 #include <webp/encode.h>
@@ -52,7 +52,7 @@ typedef struct guac_webp_stream_writer {
     /**
      * Buffer of pending WebP data.
      */
-    char buffer[6048];
+    char buffer[GUAC_PROTOCOL_BLOB_MAX_LENGTH];
 
     /**
      * The number of bytes currently stored in the buffer.

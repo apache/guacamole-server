@@ -19,18 +19,18 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "encode-jpeg.h"
 #include "encode-png.h"
 #include "encode-webp.h"
+#include "guacamole/client.h"
+#include "guacamole/object.h"
+#include "guacamole/pool.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
+#include "guacamole/stream.h"
+#include "guacamole/timestamp.h"
+#include "guacamole/user.h"
 #include "id.h"
-#include "object.h"
-#include "pool.h"
-#include "protocol.h"
-#include "socket.h"
-#include "stream.h"
-#include "timestamp.h"
-#include "user.h"
 #include "user-handlers.h"
 
 #include <errno.h>
@@ -169,19 +169,8 @@ void guac_user_free_object(guac_user* user, guac_object* object) {
 
 int guac_user_handle_instruction(guac_user* user, const char* opcode, int argc, char** argv) {
 
-    /* For each defined instruction */
-    __guac_instruction_handler_mapping* current = __guac_instruction_handler_map;
-    while (current->opcode != NULL) {
-
-        /* If recognized, call handler */
-        if (strcmp(opcode, current->opcode) == 0)
-            return current->handler(user, argc, argv);
-
-        current++;
-    }
-
-    /* If unrecognized, ignore */
-    return 0;
+    return __guac_user_call_opcode_handler(__guac_instruction_handler_map,
+            user, opcode, argc, argv);
 
 }
 
@@ -237,6 +226,26 @@ void guac_user_log(guac_user* user, guac_client_log_level level,
     vguac_client_log(user->client, level, format, args);
 
     va_end(args);
+
+}
+
+void guac_user_stream_argv(guac_user* user, guac_socket* socket,
+        const char* mimetype, const char* name, const char* value) {
+
+    /* Allocate new stream for argument value */
+    guac_stream* stream = guac_user_alloc_stream(user);
+
+    /* Declare stream as containing connection parameter data */
+    guac_protocol_send_argv(socket, stream, mimetype, name);
+
+    /* Write parameter data */
+    guac_protocol_send_blobs(socket, stream, value, strlen(value));
+
+    /* Terminate stream */
+    guac_protocol_send_end(socket, stream);
+
+    /* Free allocated stream */
+    guac_user_free_stream(user, stream);
 
 }
 

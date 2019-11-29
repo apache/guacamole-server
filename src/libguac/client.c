@@ -19,20 +19,21 @@
 
 #include "config.h"
 
-#include "client.h"
 #include "encode-jpeg.h"
 #include "encode-png.h"
 #include "encode-webp.h"
-#include "error.h"
+#include "guacamole/client.h"
+#include "guacamole/error.h"
+#include "guacamole/layer.h"
+#include "guacamole/plugin.h"
+#include "guacamole/pool.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
+#include "guacamole/stream.h"
+#include "guacamole/string.h"
+#include "guacamole/timestamp.h"
+#include "guacamole/user.h"
 #include "id.h"
-#include "layer.h"
-#include "pool.h"
-#include "plugin.h"
-#include "protocol.h"
-#include "socket.h"
-#include "stream.h"
-#include "timestamp.h"
-#include "user.h"
 
 #include <dlfcn.h>
 #include <inttypes.h>
@@ -441,8 +442,13 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
     } alias;
 
     /* Add protocol and .so suffix to protocol_lib */
-    strncat(protocol_lib, protocol, GUAC_PROTOCOL_NAME_LIMIT-1);
-    strcat(protocol_lib, GUAC_PROTOCOL_LIBRARY_SUFFIX);
+    guac_strlcat(protocol_lib, protocol, sizeof(protocol_lib));
+    if (guac_strlcat(protocol_lib, GUAC_PROTOCOL_LIBRARY_SUFFIX,
+                sizeof(protocol_lib)) >= sizeof(protocol_lib)) {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Protocol name is too long";
+        return -1;
+    }
 
     /* Load client plugin */
     client_plugin_handle = dlopen(protocol_lib, RTLD_LAZY);
@@ -507,6 +513,26 @@ int guac_client_get_processing_lag(guac_client* client) {
     guac_client_foreach_user(client, __calculate_lag, &processing_lag);
 
     return processing_lag;
+
+}
+
+void guac_client_stream_argv(guac_client* client, guac_socket* socket,
+        const char* mimetype, const char* name, const char* value) {
+
+    /* Allocate new stream for argument value */
+    guac_stream* stream = guac_client_alloc_stream(client);
+
+    /* Declare stream as containing connection parameter data */
+    guac_protocol_send_argv(socket, stream, mimetype, name);
+
+    /* Write parameter data */
+    guac_protocol_send_blobs(socket, stream, value, strlen(value));
+
+    /* Terminate stream */
+    guac_protocol_send_end(socket, stream);
+
+    /* Free allocated stream */
+    guac_client_free_stream(client, stream);
 
 }
 

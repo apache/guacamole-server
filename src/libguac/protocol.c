@@ -19,14 +19,14 @@
 
 #include "config.h"
 
-#include "error.h"
-#include "layer.h"
-#include "object.h"
+#include "guacamole/error.h"
+#include "guacamole/layer.h"
+#include "guacamole/object.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
+#include "guacamole/stream.h"
+#include "guacamole/unicode.h"
 #include "palette.h"
-#include "protocol.h"
-#include "socket.h"
-#include "stream.h"
-#include "unicode.h"
 
 #include <cairo/cairo.h>
 
@@ -93,6 +93,11 @@ static int __guac_protocol_send_args(guac_socket* socket, const char** args) {
     int i;
 
     if (guac_socket_write_string(socket, "4.args")) return -1;
+    
+    /* Send protocol version ahead of other args. */
+    if (guac_socket_write_string(socket, ",")
+            || __guac_socket_write_length_string(socket, GUACAMOLE_PROTOCOL_VERSION))
+        return -1;
 
     for (i=0; args[i] != NULL; i++) {
 
@@ -116,6 +121,26 @@ int guac_protocol_send_args(guac_socket* socket, const char** args) {
     ret_val = __guac_protocol_send_args(socket, args);
     guac_socket_instruction_end(socket);
 
+    return ret_val;
+
+}
+
+int guac_protocol_send_argv(guac_socket* socket, guac_stream* stream,
+        const char* mimetype, const char* name) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "4.argv,")
+        || __guac_socket_write_length_int(socket, stream->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, mimetype)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
     return ret_val;
 
 }
@@ -186,6 +211,33 @@ int guac_protocol_send_blob(guac_socket* socket, const guac_stream* stream,
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_blobs(guac_socket* socket, const guac_stream* stream,
+        const void* data, int count) {
+
+    int ret_val = 0;
+
+    /* Send blob instructions while data remains and instructions are being
+     * sent successfully */
+    while (count > 0 && ret_val == 0) {
+
+        /* Limit blob size to maximum allowed */
+        int blob_size = count;
+        if (blob_size > GUAC_PROTOCOL_BLOB_MAX_LENGTH)
+            blob_size = GUAC_PROTOCOL_BLOB_MAX_LENGTH;
+
+        /* Send next blob of data */
+        ret_val = guac_protocol_send_blob(socket, stream, data, blob_size);
+
+        /* Advance to next blob */
+        data = (const char*) data + blob_size;
+        count -= blob_size;
+
+    }
+
     return ret_val;
 
 }

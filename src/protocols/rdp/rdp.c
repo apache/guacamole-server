@@ -240,11 +240,13 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         guac_rdp_audio_load_plugin(instance->context, dvc_list);
     }
 
-    /* Load clipboard plugin */
-    if (freerdp_channels_load_plugin(channels, instance->settings,
-                "cliprdr", NULL))
+    /* Load clipboard plugin if not disabled */
+    if (!(settings->disable_copy && settings->disable_paste)
+            && freerdp_channels_load_plugin(channels, instance->settings,
+                "cliprdr", NULL)) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load cliprdr plugin. Clipboard will not work.");
+    }
 
     /* If RDPSND/RDPDR required, load them */
     if (settings->printing_enabled
@@ -719,7 +721,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_common_cursor_set_pointer(rdp_client->display->cursor);
 
     /* Push desired settings to FreeRDP */
-    guac_rdp_push_settings(settings, rdp_inst);
+    guac_rdp_push_settings(client, settings, rdp_inst);
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
@@ -975,7 +977,7 @@ void* guac_rdp_client_thread(void* data) {
         rdp_client->sftp_session =
             guac_common_ssh_create_session(client, settings->sftp_hostname,
                     settings->sftp_port, rdp_client->sftp_user, settings->sftp_server_alive_interval,
-                    settings->sftp_host_key);
+                    settings->sftp_host_key, NULL);
 
         /* Fail if SSH connection does not succeed */
         if (rdp_client->sftp_session == NULL) {

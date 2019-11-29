@@ -88,6 +88,13 @@ struct guac_user_info {
      * stated resolution of the display size request is recommended.
      */
     int optimal_resolution;
+    
+    /**
+     * The timezone of the remote system.  If the client does not provide
+     * a specific timezone then this will be NULL.  The format of the timezone
+     * is the standard tzdata naming convention.
+     */
+    const char* timezone;
 
 };
 
@@ -475,6 +482,27 @@ struct guac_user {
      */
     guac_user_audio_handler* audio_handler;
 
+    /**
+     * Handler for argv events (updates to the connection parameters of an
+     * in-progress connection) sent by the Guacamole web-client.
+     *
+     * The handler takes a guac_stream which contains the stream index and
+     * will persist through the duration of the transfer, the mimetype of
+     * the data being transferred, and the argument (connection parameter)
+     * name.
+     *
+     * Example:
+     * @code
+     *     int argv_handler(guac_user* user, guac_stream* stream,
+     *             char* mimetype, char* name);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->argv_handler = argv_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_argv_handler* argv_handler;
+
 };
 
 /**
@@ -519,7 +547,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout);
 /**
  * Call the appropriate handler defined by the given user for the given
  * instruction. A comparison is made between the instruction opcode and the
- * initial handler lookup table defined in user-handlers.c. The intial handlers
+ * initial handler lookup table defined in user-handlers.c. The initial handlers
  * will in turn call the user's handler (if defined).
  *
  * @param user
@@ -647,6 +675,32 @@ guac_object* guac_user_alloc_object(guac_user* user);
  *     The object to return to the pool of available object.
  */
 void guac_user_free_object(guac_user* user, guac_object* object);
+
+/**
+ * Streams the given connection parameter value over an argument value stream
+ * ("argv" instruction), exposing the current value of the named connection
+ * parameter to the given user. The argument value stream will be automatically
+ * allocated and freed.
+ *
+ * @param user
+ *     The Guacamole user who should receive the connection parameter value.
+ *
+ * @param socket
+ *     The socket over which instructions associated with the argument value
+ *     stream should be sent.
+ *
+ * @param mimetype
+ *     The mimetype of the data within the connection parameter value being
+ *     sent.
+ *
+ * @param name
+ *     The name of the connection parameter being sent.
+ *
+ * @param value
+ *     The current value of the connection parameter being sent.
+ */
+void guac_user_stream_argv(guac_user* user, guac_socket* socket,
+        const char* mimetype, const char* name, const char* value);
 
 /**
  * Streams the image data of the given surface over an image stream ("img"

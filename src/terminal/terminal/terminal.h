@@ -70,41 +70,6 @@
 #define GUAC_TERMINAL_WHEEL_SCROLL_AMOUNT 3
 
 /**
- * The name of the color scheme having black foreground and white background.
- */
-#define GUAC_TERMINAL_SCHEME_BLACK_WHITE "black-white"
-
-/**
- * The name of the color scheme having gray foreground and black background.
- */
-#define GUAC_TERMINAL_SCHEME_GRAY_BLACK "gray-black"
-
-/**
- * The name of the color scheme having green foreground and black background.
- */
-#define GUAC_TERMINAL_SCHEME_GREEN_BLACK "green-black"
-
-/**
- * The name of the color scheme having white foreground and black background.
- */
-#define GUAC_TERMINAL_SCHEME_WHITE_BLACK "white-black"
-
-/**
- * Color name representing the foreground color.
- */
-#define GUAC_TERMINAL_SCHEME_FOREGROUND "foreground"
-
-/**
- * Color name representing the background color.
- */
-#define GUAC_TERMINAL_SCHEME_BACKGROUND "background"
-
-/**
- * Color name representing a numbered color.
- */
-#define GUAC_TERMINAL_SCHEME_NUMBERED "color"
-
-/**
  * Flag which specifies that terminal output should be sent to both the current
  * pipe stream and the user's display. By default, terminal output will be sent
  * only to the open pipe.
@@ -170,6 +135,16 @@ struct guac_terminal {
      * The Guacamole client associated with this terminal emulator.
      */
     guac_client* client;
+
+    /**
+     * Whether user input should be handled and this terminal should render
+     * frames. Initially, this will be false, user input will be ignored, and
+     * rendering of frames will be withheld until guac_terminal_start() has
+     * been invoked. The data within frames will still be rendered, and text
+     * data received will still be handled, however actual frame boundaries
+     * will not be sent.
+     */
+    bool started;
 
     /**
      * The terminal render thread.
@@ -301,6 +276,20 @@ struct guac_terminal {
      * defined at terminal creation and stored within max_scrollback.
      */
     int requested_scrollback;
+
+    /**
+     * The width of the space available to all components of the terminal, in
+     * pixels. This may include space which will not actually be used for
+     * character rendering.
+     */
+    int outer_width;
+
+    /**
+     * The height of the space available to all components of the terminal, in
+     * pixels. This may include space which will not actually be used for
+     * character rendering.
+     */
+    int outer_height;
 
     /**
      * The width of the terminal, in pixels.
@@ -518,15 +507,48 @@ struct guac_terminal {
     guac_common_clipboard* clipboard;
 
     /**
+     * The name of the font to use when rendering glyphs, as requested at
+     * creation time or via guac_terminal_apply_font().
+     */
+    const char* font_name;
+
+    /**
+     * The size of each glyph, in points, as requested at creation time or via
+     * guac_terminal_apply_font().
+     */
+    int font_size;
+
+    /**
+     * The name of the color scheme to use, as requested at creation time or
+     * via guac_terminal_apply_color_scheme(). This string must be in the
+     * format accepted by guac_terminal_parse_color_scheme().
+     */
+    const char* color_scheme;
+
+    /**
      * ASCII character to send when backspace is pressed.
      */
     char backspace;
+
+    /**
+     * Whether copying from the terminal clipboard should be blocked. If set,
+     * the contents of the terminal can still be copied, but will be usable
+     * only within the terminal itself. The clipboard contents will not be
+     * automatically streamed to the client.
+     */
+    bool disable_copy;
 
 };
 
 /**
  * Creates a new guac_terminal, having the given width and height, and
- * rendering to the given client.
+ * rendering to the given client. As failover mechanisms and the Guacamole
+ * client implementation typically use the receipt of a "sync" message to
+ * denote successful connection, rendering of frames (sending of "sync") will
+ * be withheld until guac_terminal_start() is called, and user input will be
+ * ignored. The guac_terminal_start() function should be invoked only after
+ * either the underlying connection has truly succeeded, or until visible
+ * terminal output or user input is required.
  *
  * @param client
  *     The client to which the terminal will be rendered.
@@ -537,6 +559,12 @@ struct guac_terminal {
  *     both internally by the terminal and externally through received
  *     clipboard instructions. This clipboard will not be automatically
  *     freed when this terminal is freed.
+ *
+ * @param disable_copy
+ *     Whether copying from the terminal clipboard should be blocked. If set,
+ *     the contents of the terminal can still be copied, but will be usable
+ *     only within the terminal itself. The clipboard contents will not be
+ *     automatically streamed to the client.
  *
  * @param max_scrollback
  *     The maximum number of rows to allow within the scrollback buffer. The
@@ -565,11 +593,8 @@ struct guac_terminal {
  *     The height of the terminal, in pixels.
  *
  * @param color_scheme
- *     The name of the color scheme to use. This string must be one of the
- *     names defined by the GUAC_TERMINAL_SCHEME_* constants. If blank or NULL,
- *     the default scheme of GUAC_TERMINAL_SCHEME_GRAY_BLACK will be used. If
- *     invalid, a warning will be logged, and the terminal will fall back on
- *     GUAC_TERMINAL_SCHEME_GRAY_BLACK.
+ *     The name of the color scheme to use. This string must be in the format
+ *     accepted by guac_terminal_parse_color_scheme().
  *
  * @param backspace
  *     The integer ASCII code to send when backspace is pressed in
@@ -580,8 +605,8 @@ struct guac_terminal {
  *     which renders all text to the given client.
  */
 guac_terminal* guac_terminal_create(guac_client* client,
-        guac_common_clipboard* clipboard, int max_scrollback,
-        const char* font_name, int font_size, int dpi,
+        guac_common_clipboard* clipboard, bool disable_copy,
+        int max_scrollback, const char* font_name, int font_size, int dpi,
         int width, int height, const char* color_scheme,
         const int backspace);
 
@@ -605,6 +630,17 @@ int guac_terminal_render_frame(guac_terminal* terminal);
 int guac_terminal_read_stdin(guac_terminal* terminal, char* c, int size);
 
 /**
+ * Notifies the terminal that rendering should begin and that user input should
+ * now be accepted. This function must be invoked following terminal creation
+ * for the end of frames to be signalled with "sync" messages. Until this
+ * function is invoked, "sync" messages will be withheld.
+ *
+ * @param term
+ *     The terminal to start.
+ */
+void guac_terminal_start(guac_terminal* term);
+
+/**
  * Manually stop the terminal to forcibly unblock any pending reads/writes,
  * e.g. forcing guac_terminal_read_stdin() to return and cease all terminal I/O.
  *
@@ -625,7 +661,9 @@ void guac_terminal_notify(guac_terminal* terminal);
 /**
  * Reads a single line from this terminal's STDIN, storing the result in a
  * newly-allocated string. Input is retrieved in the same manner as
- * guac_terminal_read_stdin() and the same restrictions apply.
+ * guac_terminal_read_stdin() and the same restrictions apply. As reading input
+ * naturally requires user interaction, this function will implicitly invoke
+ * guac_terminal_start().
  *
  * @param terminal
  *     The terminal to which the provided title should be output, and from
@@ -1077,6 +1115,44 @@ int guac_terminal_create_typescript(guac_terminal* term, const char* path,
  *     on screen.
  */
 int guac_terminal_available_scroll(guac_terminal* term);
+
+/**
+ * Immediately applies the given color scheme to the given terminal, overriding
+ * the color scheme provided when the terminal was created. Valid color schemes
+ * are those accepted by guac_terminal_parse_color_scheme().
+ *
+ * @param terminal
+ *     The terminal to apply the color scheme to.
+ *
+ * @param color_scheme
+ *     The color scheme to apply.
+ */
+void guac_terminal_apply_color_scheme(guac_terminal* terminal,
+        const char* color_scheme);
+
+/**
+ * Alters the font of the terminal. The terminal will automatically be redrawn
+ * and resized as necessary. If the terminal size changes, the remote side of
+ * the terminal session must be manually informed of that change or graphical
+ * artifacts may result.
+ *
+ * @param terminal
+ *     The terminal whose font family and/or size are being changed.
+ *
+ * @param font_name
+ *     The name of the new font family, or NULL if the font family should
+ *     remain unchanged.
+ *
+ * @param font_size
+ *     The new font size, in points, or -1 if the font size should remain
+ *     unchanged.
+ *
+ * @param dpi
+ *     The resolution of the display in DPI. If the font size will not be
+ *     changed (the font size given is -1), this value is ignored.
+ */
+void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
+        int font_size, int dpi);
 
 #endif
 

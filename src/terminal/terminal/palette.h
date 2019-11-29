@@ -25,6 +25,20 @@
 #include <stdint.h>
 
 /**
+ * The pseudo-index of the color set as the the default foreground color for
+ * the terminal. Regardless of what changes are made to the palette, this index
+ * will always return the current default foreground color.
+ */
+#define GUAC_TERMINAL_COLOR_FOREGROUND -2
+
+/**
+ * The pseudo-index of the color set as the the default background color for
+ * the terminal. Regardless of what changes are made to the palette, this index
+ * will always return the current default background color.
+ */
+#define GUAC_TERMINAL_COLOR_BACKGROUND -3
+
+/**
  * The index of black within the terminal color palette.
  */
 #define GUAC_TERMINAL_COLOR_BLACK 0

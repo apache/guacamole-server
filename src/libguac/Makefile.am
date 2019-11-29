@@ -16,11 +16,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+# NOTE: Parts of this file (Makefile.am) are automatically transcluded verbatim
+# into Makefile.in. Though the build system (GNU Autotools) automatically adds
+# its own license boilerplate to the generated Makefile.in, that boilerplate
+# does not apply to the transcluded portions of Makefile.am which are licensed
+# to you by the ASF under the Apache License, Version 2.0, as described above.
+#
 
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac.la
+SUBDIRS = . tests
 
 libguacincdir = $(includedir)/guacamole
 
@@ -47,6 +54,7 @@ libguacinc_HEADERS =                  \
     guacamole/pool.h                  \
     guacamole/pool-types.h            \
     guacamole/protocol.h              \
+    guacamole/protocol-constants.h    \
     guacamole/protocol-types.h        \
     guacamole/socket-constants.h      \
     guacamole/socket.h                \
@@ -54,6 +62,7 @@ libguacinc_HEADERS =                  \
     guacamole/socket-types.h          \
     guacamole/stream.h                \
     guacamole/stream-types.h          \
+    guacamole/string.h                \
     guacamole/timestamp.h             \
     guacamole/timestamp-types.h       \
     guacamole/unicode.h               \
@@ -89,6 +98,7 @@ libguac_la_SOURCES =   \
     socket-fd.c        \
     socket-nest.c      \
     socket-tee.c       \
+    string.c           \
     timestamp.c        \
     unicode.c          \
     user.c             \
@@ -115,10 +125,10 @@ libguacinc_HEADERS += guacamole/socket-wsa.h
 endif
 
 libguac_la_CFLAGS = \
-    -Werror -Wall -pedantic -I$(srcdir)/guacamole
+    -Werror -Wall -pedantic
 
 libguac_la_LDFLAGS =     \
-    -version-info 16:0:0 \
+    -version-info 17:0:0 \
     -no-undefined        \
     @CAIRO_LIBS@         \
     @DL_LIBS@            \

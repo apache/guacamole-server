@@ -156,6 +156,20 @@ typedef struct guac_ssh_settings {
     int resolution;
 
     /**
+     * Whether outbound clipboard access should be blocked. If set, it will not
+     * be possible to copy data from the terminal to the client using the
+     * clipboard.
+     */
+    bool disable_copy;
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set, it will not
+     * be possible to paste data from the client to the terminal using the
+     * clipboard.
+     */
+    bool disable_paste;
+
+    /**
      * Whether SFTP is enabled.
      */
     bool enable_sftp;
@@ -247,6 +261,17 @@ typedef struct guac_ssh_settings {
      * The terminal emulator type that is passed to the remote system.
      */
     char* terminal_type;
+
+    /**
+     * The locale that should be forwarded to the remote system via the LANG
+     * environment variable.
+     */
+    char* locale;
+
+    /** 
+     * The client timezone to pass to the remote system.
+     */
+    char* timezone;
 
 } guac_ssh_settings;
 

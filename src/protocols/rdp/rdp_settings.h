@@ -269,6 +269,20 @@ typedef struct guac_rdp_settings {
     char** svc_names;
 
     /**
+     * Whether outbound clipboard access should be blocked. If set, it will not
+     * be possible to copy data from the remote desktop to the client using the
+     * clipboard.
+     */
+    int disable_copy;
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set, it will not
+     * be possible to paste data from the client to the remote desktop using
+     * the clipboard.
+     */
+    int disable_paste;
+
+    /**
      * Whether the desktop wallpaper should be visible. If unset, the desktop
      * wallpaper will be hidden, reducing the amount of bandwidth required.
      */
@@ -340,6 +354,11 @@ typedef struct guac_rdp_settings {
      * destination VM.
      */
     char* preconnection_blob;
+
+    /**
+     * The timezone to pass through to the RDP connection.
+     */
+    char* timezone;
 
 #ifdef ENABLE_COMMON_SSH
     /**
@@ -547,13 +566,17 @@ extern const char* GUAC_RDP_CLIENT_ARGS[];
 /**
  * Save all given settings to the given freerdp instance.
  *
+ * @param client
+ *     The guac_client object providing the settings.
+ *
  * @param guac_settings
  *     The guac_rdp_settings object to save.
  *
  * @param rdp
  *     The RDP instance to save settings to.
  */
-void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp);
+void guac_rdp_push_settings(guac_client* client,
+        guac_rdp_settings* guac_settings, freerdp* rdp);
 
 /**
  * Returns the width of the RDP session display.

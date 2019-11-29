@@ -27,6 +27,7 @@
 
 #include <freerdp/constants.h>
 #include <freerdp/settings.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 
 #ifdef ENABLE_WINPR
@@ -35,6 +36,7 @@
 #include "compat/winpr-wtypes.h"
 #endif
 
+#include <errno.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -79,6 +81,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "disable-glyph-caching",
     "preconnection-id",
     "preconnection-blob",
+    "timezone",
 
 #ifdef ENABLE_COMMON_SSH
     "enable-sftp",
@@ -116,11 +119,13 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "load-balance-info",
 #endif
 
+    "disable-copy",
+    "disable-paste",
     NULL
 };
 
 enum RDP_ARGS_IDX {
-
+    
     /**
      * The hostname to connect to.
      */
@@ -356,6 +361,14 @@ enum RDP_ARGS_IDX {
      */
     IDX_PRECONNECTION_BLOB,
 
+    /**
+     * The timezone to pass through to the RDP connection, in IANA format, which
+     * will be translated into Windows formats.  See the following page for
+     * information and list of valid values:
+     * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+     */
+    IDX_TIMEZONE,
+
 #ifdef ENABLE_COMMON_SSH
     /**
      * "true" if SFTP should be enabled for the RDP connection, "false" or
@@ -534,6 +547,20 @@ enum RDP_ARGS_IDX {
      */
     IDX_LOAD_BALANCE_INFO,
 #endif
+
+    /**
+     * Whether outbound clipboard access should be blocked. If set to "true",
+     * it will not be possible to copy data from the remote desktop to the
+     * client using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_COPY,
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set to "true", it
+     * will not be possible to paste data from the client to the remote desktop
+     * using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_PASTE,
 
     RDP_ARGS_COUNT
 };
@@ -840,6 +867,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     if (settings->server_layout == NULL)
         settings->server_layout = guac_rdp_keymap_find(GUAC_DEFAULT_KEYMAP);
 
+    /* Timezone if provided by client, or use handshake version */
+    settings->timezone =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_TIMEZONE, user->info.timezone);
+
 #ifdef ENABLE_COMMON_SSH
     /* SFTP enable/disable */
     settings->enable_sftp =
@@ -992,6 +1024,16 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 IDX_LOAD_BALANCE_INFO, NULL);
 #endif
 
+    /* Parse clipboard copy disable flag */
+    settings->disable_copy =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_COPY, 0);
+
+    /* Parse clipboard paste disable flag */
+    settings->disable_paste =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_PASTE, 0);
+
     /* Success */
     return settings;
 
@@ -1013,6 +1055,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     free(settings->remote_app);
     free(settings->remote_app_args);
     free(settings->remote_app_dir);
+    free(settings->timezone);
     free(settings->username);
     free(settings->printer_name);
 
@@ -1153,7 +1196,8 @@ static char* guac_rdp_strdup(const char* str) {
 
 }
 
-void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
+void guac_rdp_push_settings(guac_client* client,
+        guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     BOOL bitmap_cache = !guac_settings->disable_bitmap_caching;
     rdpSettings* rdp_settings = rdp->settings;
@@ -1225,11 +1269,11 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     /* Client name */
     if (guac_settings->client_name != NULL) {
 #ifdef LEGACY_RDPSETTINGS
-        strncpy(rdp_settings->client_hostname, guac_settings->client_name,
-                RDP_CLIENT_HOSTNAME_SIZE - 1);
+        guac_strlcpy(rdp_settings->client_hostname, guac_settings->client_name,
+                RDP_CLIENT_HOSTNAME_SIZE);
 #else
-        strncpy(rdp_settings->ClientHostname, guac_settings->client_name,
-                RDP_CLIENT_HOSTNAME_SIZE - 1);
+        guac_strlcpy(rdp_settings->ClientHostname, guac_settings->client_name,
+                RDP_CLIENT_HOSTNAME_SIZE);
 #endif
     }
 
@@ -1263,6 +1307,15 @@ void guac_rdp_push_settings(guac_rdp_settings* guac_settings, freerdp* rdp) {
     rdp_settings->AudioCapture = guac_settings->enable_audio_input;
 #endif
 #endif
+
+    /* Timezone redirection */
+    if (guac_settings->timezone) {
+        if (setenv("TZ", guac_settings->timezone, 1)) {
+            guac_client_log(client, GUAC_LOG_WARNING,
+                "Unable to forward timezone: TZ environment variable "
+                "could not be set: %s", strerror(errno));
+        }
+    }
 
     /* Device redirection */
 #ifdef LEGACY_RDPSETTINGS

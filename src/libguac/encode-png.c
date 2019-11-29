@@ -20,10 +20,10 @@
 #include "config.h"
 
 #include "encode-png.h"
-#include "error.h"
+#include "guacamole/error.h"
+#include "guacamole/protocol.h"
+#include "guacamole/stream.h"
 #include "palette.h"
-#include "protocol.h"
-#include "stream.h"
 
 #include <png.h>
 #include <cairo/cairo.h>
@@ -56,7 +56,7 @@ typedef struct guac_png_write_state {
     /**
      * Buffer of pending PNG data.
      */
-    char buffer[6048];
+    char buffer[GUAC_PROTOCOL_BLOB_MAX_LENGTH];
 
     /**
      * The number of bytes currently stored in the buffer.

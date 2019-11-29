@@ -16,11 +16,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+# NOTE: Parts of this file (Makefile.am) are automatically transcluded verbatim
+# into Makefile.in. Though the build system (GNU Autotools) automatically adds
+# its own license boilerplate to the generated Makefile.in, that boilerplate
+# does not apply to the transcluded portions of Makefile.am which are licensed
+# to you by the ASF under the Apache License, Version 2.0, as described above.
+#
 
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac-client-rdp.la
+SUBDIRS = . tests
 
 nodist_libguac_client_rdp_la_SOURCES = \
     _generated_keymaps.c
@@ -149,7 +156,8 @@ libguac_client_rdp_la_LDFLAGS = \
     -version-info 0:0:0         \
     @CAIRO_LIBS@                \
     @PTHREAD_LIBS@              \
-    @RDP_LIBS@
+    @RDP_LIBS@                  \
+    @WINPR_LIBS@
 
 libguac_client_rdp_la_LIBADD =     \
     @COMMON_LTLIB@                 \
@@ -168,7 +176,8 @@ guacdr_cflags                = \
 guacdr_ldflags =                   \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @WINPR_LIBS@
 
 guacdr_libadd =     \
     @COMMON_LTLIB@  \
@@ -187,7 +196,8 @@ guacai_cflags               =  \
 guacai_ldflags =                   \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @WINPR_LIBS@
 
 guacai_libadd =     \
     @COMMON_LTLIB@  \
@@ -206,7 +216,8 @@ guacsnd_cflags               = \
 guacsnd_ldflags =                  \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @WINPR_LIBS@
 
 guacsnd_libadd =    \
     @COMMON_LTLIB@  \
@@ -225,7 +236,8 @@ guacsvc_cflags               = \
 guacsvc_ldflags =                  \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @WINPR_LIBS@
 
 guacsvc_libadd =    \
     @COMMON_LTLIB@  \
@@ -252,15 +264,18 @@ rdp_keymaps =                   \
     $(srcdir)/keymaps/base.keymap         \
     $(srcdir)/keymaps/failsafe.keymap     \
     $(srcdir)/keymaps/de_de_qwertz.keymap \
+    $(srcdir)/keymaps/de_ch_qwertz.keymap \
     $(srcdir)/keymaps/en_gb_qwerty.keymap \
     $(srcdir)/keymaps/en_us_qwerty.keymap \
     $(srcdir)/keymaps/es_es_qwerty.keymap \
     $(srcdir)/keymaps/fr_fr_azerty.keymap \
     $(srcdir)/keymaps/fr_ch_qwertz.keymap \
+    $(srcdir)/keymaps/hu_hu_qwertz.keymap \
     $(srcdir)/keymaps/it_it_qwerty.keymap \
     $(srcdir)/keymaps/ja_jp_qwerty.keymap \
     $(srcdir)/keymaps/pt_br_qwerty.keymap \
     $(srcdir)/keymaps/sv_se_qwerty.keymap \
+    $(srcdir)/keymaps/da_dk_qwerty.keymap \
     $(srcdir)/keymaps/tr_tr_qwerty.keymap
 
 _generated_keymaps.c: $(rdp_keymaps)

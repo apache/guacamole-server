@@ -16,6 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+# NOTE: Parts of this file (Makefile.am) are automatically transcluded verbatim
+# into Makefile.in. Though the build system (GNU Autotools) automatically adds
+# its own license boilerplate to the generated Makefile.in, that boilerplate
+# does not apply to the transcluded portions of Makefile.am which are licensed
+# to you by the ASF under the Apache License, Version 2.0, as described above.
+#
 
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
@@ -23,6 +29,7 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libguac-client-ssh.la
 
 libguac_client_ssh_la_SOURCES = \
+    argv.c                      \
     client.c                    \
     clipboard.c                 \
     input.c                     \
@@ -34,6 +41,7 @@ libguac_client_ssh_la_SOURCES = \
     user.c
 
 noinst_HEADERS =                \
+    argv.h                      \
     client.h                    \
     clipboard.h                 \
     input.h                     \

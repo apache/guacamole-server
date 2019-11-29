@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "pool.h"
+#include "guacamole/pool.h"
 
 #include <stdlib.h>
 

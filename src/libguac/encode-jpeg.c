@@ -20,10 +20,10 @@
 #include "config.h"
 
 #include "encode-jpeg.h"
-#include "error.h"
+#include "guacamole/error.h"
+#include "guacamole/protocol.h"
+#include "guacamole/stream.h"
 #include "palette.h"
-#include "protocol.h"
-#include "stream.h"
 
 #include <cairo/cairo.h>
 #include <jpeglib.h>
@@ -59,7 +59,7 @@ typedef struct guac_jpeg_destination_mgr {
     /**
      * The output buffer.
      */
-    unsigned char buffer[6048];
+    unsigned char buffer[GUAC_PROTOCOL_BLOB_MAX_LENGTH];
 
 } guac_jpeg_destination_mgr;
 

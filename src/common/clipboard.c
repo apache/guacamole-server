@@ -23,6 +23,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/stream.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 #include <pthread.h>
 #include <string.h>
@@ -131,8 +132,7 @@ void guac_common_clipboard_reset(guac_common_clipboard* clipboard,
     clipboard->length = 0;
 
     /* Assign given mimetype */
-    strncpy(clipboard->mimetype, mimetype, sizeof(clipboard->mimetype) - 1);
-    clipboard->mimetype[sizeof(clipboard->mimetype) - 1] = '\0';
+    guac_strlcpy(clipboard->mimetype, mimetype, sizeof(clipboard->mimetype));
 
     pthread_mutex_unlock(&(clipboard->lock));
 

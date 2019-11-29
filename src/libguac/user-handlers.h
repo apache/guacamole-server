@@ -31,8 +31,8 @@
 
 #include "config.h"
 
-#include "client.h"
-#include "timestamp.h"
+#include "guacamole/client.h"
+#include "guacamole/timestamp.h"
 
 /**
  * Internal handler for Guacamole instructions. Instruction handlers will be
@@ -121,6 +121,13 @@ __guac_instruction_handler __guac_handle_file;
 __guac_instruction_handler __guac_handle_pipe;
 
 /**
+ * Internal initial handler for the argv instruction. When a argv instruction
+ * is received, this handler will be called. The client's argv handler will
+ * be invoked if defined.
+ */
+__guac_instruction_handler __guac_handle_argv;
+
+/**
  * Internal initial handler for the ack instruction. When a ack instruction
  * is received, this handler will be called. The client's ack handler will
  * be invoked if defined.
@@ -171,6 +178,47 @@ __guac_instruction_handler __guac_handle_size;
 __guac_instruction_handler __guac_handle_disconnect;
 
 /**
+ * Internal handler for the nop instruction.  This handler will be called when
+ * the nop instruction is received, and will do nothing more than a TRACE level
+ * log of the instruction.
+ */
+__guac_instruction_handler __guac_handle_nop;
+
+/**
+ * Internal handler function that is called when the size instruction is
+ * received during the handshake process.
+ */
+__guac_instruction_handler __guac_handshake_size_handler;
+
+/**
+ * Internal handler function that is called when the audio instruction is
+ * received during the handshake process, specifying the audio mimetypes
+ * available to the client.
+ */
+__guac_instruction_handler __guac_handshake_audio_handler;
+
+/**
+ * Internal handler function that is called when the video instruction is
+ * received during the handshake process, specifying the video mimetypes
+ * available to the client.
+ */
+__guac_instruction_handler __guac_handshake_video_handler;
+
+/**
+ * Internal handler function that is called when the image instruction is
+ * received during the handshake process, specifying the image mimetypes
+ * available to the client.
+ */
+__guac_instruction_handler __guac_handshake_image_handler;
+
+/**
+ * Internal handler function that is called when the timezone instruction is
+ * received during the handshake process, specifying the timezone of the
+ * client.
+ */
+__guac_instruction_handler __guac_handshake_timezone_handler;
+
+/**
  * Instruction handler mapping table. This is a NULL-terminated array of
  * __guac_instruction_handler_mapping structures, each mapping an opcode
  * to a __guac_instruction_handler. The end of the array must be marked
@@ -178,5 +226,73 @@ __guac_instruction_handler __guac_handle_disconnect;
  * NULL (the NULL terminator).
  */
 extern __guac_instruction_handler_mapping __guac_instruction_handler_map[];
+
+/**
+ * Handler mapping table for instructions (opcodes) specifically for the
+ * handshake portion of the connection.  Each
+ * __guac_instruction_handler_mapping structure within this NULL-terminated
+ * array maps an opcode to a __guac_instruction_handler.  The end of the array
+ * must be marked with a mapping with the opcode set to NULL.
+ */
+extern __guac_instruction_handler_mapping __guac_handshake_handler_map[];
+
+/**
+ * Frees the given array of mimetypes, including the space allocated to each
+ * mimetype string within the array. The provided array of mimetypes MUST have
+ * been allocated with guac_copy_mimetypes().
+ *
+ * @param mimetypes
+ *     The NULL-terminated array of mimetypes to free. This array MUST have
+ *     been previously allocated with guac_copy_mimetypes().
+ */
+void guac_free_mimetypes(char** mimetypes);
+
+/**
+ * Copies the given array of mimetypes (strings) into a newly-allocated NULL-
+ * terminated array of strings. Both the array and the strings within the array
+ * are newly-allocated and must be later freed via guac_free_mimetypes().
+ *
+ * @param mimetypes
+ *     The array of mimetypes to copy.
+ *
+ * @param count
+ *     The number of mimetypes in the given array.
+ *
+ * @return
+ *     A newly-allocated, NULL-terminated array containing newly-allocated
+ *     copies of each of the mimetypes provided in the original mimetypes
+ *     array.
+ */
+char** guac_copy_mimetypes(char** mimetypes, int count);
+
+/**
+ * Call the appropriate handler defined by the given user for the given
+ * instruction. A comparison is made between the instruction opcode and the
+ * initial handler lookup table defined in the map that is provided to this
+ * function. If an entry for the instruction is found in the provided map,
+ * the handler defined in that map will be called and the value returned.  If
+ * no match is found, it is silently ignored.
+ *
+ * @param map
+ *     The array that holds the opcode to handler mappings.
+ * 
+ * @param user
+ *     The user whose handlers should be called.
+ *
+ * @param opcode
+ *     The opcode of the instruction to pass to the user via the appropriate
+ *     handler.
+ *
+ * @param argc
+ *     The number of arguments which are part of the instruction.
+ *
+ * @param argv
+ *     An array of all arguments which are part of the instruction.
+ *
+ * @return
+ *     Zero if the instruction was handled successfully, or non-zero otherwise.
+ */
+int __guac_user_call_opcode_handler(__guac_instruction_handler_mapping* map,
+        guac_user* user, const char* opcode, int argc, char** argv);
 
 #endif

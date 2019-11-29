@@ -60,6 +60,10 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "backspace",
     "terminal-type",
     "scrollback",
+    "locale",
+    "timezone",
+    "disable-copy",
+    "disable-paste",
     NULL
 };
 
@@ -238,6 +242,38 @@ enum SSH_ARGS_IDX {
      */
     IDX_SCROLLBACK,
 
+    /**
+     * The locale that should be forwarded to the remote system via the LANG
+     * environment variable. By default, no locale is forwarded. This setting
+     * will only have an effect if the SSH server allows the LANG environment
+     * variable to be set.
+     */
+    IDX_LOCALE,
+     
+    /**
+     * The timezone that is to be passed to the remote system, via the
+     * TZ environment variable.  By default, no timezone is forwarded
+     * and the timezone of the remote system will be used.  This
+     * setting will only work if the SSH server allows the TZ variable
+     * to be set.  Timezones should be in standard IANA format, see:
+     * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+     */
+    IDX_TIMEZONE,
+
+    /**
+     * Whether outbound clipboard access should be blocked. If set to "true",
+     * it will not be possible to copy data from the terminal to the client
+     * using the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_COPY,
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set to "true", it
+     * will not be possible to paste data from the client to the terminal using
+     * the clipboard. By default, clipboard access is not blocked.
+     */
+    IDX_DISABLE_PASTE,
+
     SSH_ARGS_COUNT
 };
 
@@ -396,6 +432,26 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_TERMINAL_TYPE, "linux");
 
+    /* Read locale */
+    settings->locale =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_LOCALE, NULL);
+
+    /* Read the timezone parameter, or use client handshake. */
+    settings->timezone =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_TIMEZONE, user->info.timezone);
+
+    /* Parse clipboard copy disable flag */
+    settings->disable_copy =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_DISABLE_COPY, false);
+
+    /* Parse clipboard paste disable flag */
+    settings->disable_paste =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_DISABLE_PASTE, false);
+
     /* Parsing was successful */
     return settings;
 
@@ -434,6 +490,12 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
 
     /* Free terminal emulator type. */
     free(settings->terminal_type);
+
+    /* Free locale */
+    free(settings->locale);
+
+    /* Free the client timezone. */
+    free(settings->timezone);
 
     /* Free overall structure */
     free(settings);

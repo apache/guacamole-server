@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "argv.h"
 #include "clipboard.h"
 #include "common/display.h"
 #include "input.h"
@@ -73,19 +74,26 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
     /* If not owner, synchronize with current display */
     else {
         guac_terminal_dup(ssh_client->term, user, user->socket);
+        guac_ssh_send_current_argv(user, ssh_client);
         guac_socket_flush(user->socket);
     }
 
     /* Only handle events if not read-only */
     if (!settings->read_only) {
 
-        /* General mouse/keyboard/clipboard events */
-        user->key_handler       = guac_ssh_user_key_handler;
-        user->mouse_handler     = guac_ssh_user_mouse_handler;
-        user->clipboard_handler = guac_ssh_clipboard_handler;
+        /* General mouse/keyboard events */
+        user->key_handler = guac_ssh_user_key_handler;
+        user->mouse_handler = guac_ssh_user_mouse_handler;
+
+        /* Inbound (client to server) clipboard transfer */
+        if (!settings->disable_paste)
+            user->clipboard_handler = guac_ssh_clipboard_handler;
 
         /* STDIN redirection */
         user->pipe_handler = guac_ssh_pipe_handler;
+
+        /* Updates to connection parameters */
+        user->argv_handler = guac_ssh_argv_handler;
 
         /* Display size change events */
         user->size_handler = guac_ssh_user_size_handler;

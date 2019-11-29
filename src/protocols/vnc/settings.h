@@ -46,6 +46,11 @@ typedef struct guac_vnc_settings {
     int port;
 
     /**
+     * The username given in the arguments.
+     */
+    char* username;
+    
+    /**
      * The password given in the arguments.
      */
     char* password;
@@ -126,6 +131,20 @@ typedef struct guac_vnc_settings {
      * to use the encoding required by the VNC standard.
      */
     char* clipboard_encoding;
+
+    /**
+     * Whether outbound clipboard access should be blocked. If set, it will not
+     * be possible to copy data from the remote desktop to the client using the
+     * clipboard.
+     */
+    bool disable_copy;
+
+    /**
+     * Whether inbound clipboard access should be blocked. If set, it will not
+     * be possible to paste data from the client to the remote desktop using
+     * the clipboard.
+     */
+    bool disable_paste;
 
 #ifdef ENABLE_COMMON_SSH
     /**

@@ -51,6 +51,11 @@
 #define GUAC_RDP_FS_MAX_PATH 4096
 
 /**
+ * The maximum number of directories a path may contain.
+ */
+#define GUAC_RDP_MAX_PATH_DEPTH 64
+
+/**
  * Error code returned when no more file IDs can be allocated.
  */
 #define GUAC_RDP_FS_ENFILE -1
@@ -183,7 +188,7 @@
  * Converts a UNIX timestamp (seconds since Jan 1, 1970 UTC) to Windows
  * timestamp (100 nanosecond intervals since Jan 1, 1601 UTC).
  */
-#define WINDOWS_TIME(t) ((t - ((uint64_t) 11644473600)) * 10000000)
+#define WINDOWS_TIME(t) ((t + ((uint64_t) 11644473600)) * 10000000)
 
 /**
  * An arbitrary file on the virtual filesystem of the Guacamole drive.
@@ -487,7 +492,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
  *     error occurs. All error codes are negative values and correspond to
  *     GUAC_RDP_FS constants, such as GUAC_RDP_FS_ENOENT.
  */
-int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
+int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, uint64_t offset,
         void* buffer, int length);
 
 /**
@@ -515,7 +520,7 @@ int guac_rdp_fs_read(guac_rdp_fs* fs, int file_id, int offset,
  *     occurs. All error codes are negative values and correspond to
  *     GUAC_RDP_FS constants, such as GUAC_RDP_FS_ENOENT.
  */
-int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, int offset,
+int guac_rdp_fs_write(guac_rdp_fs* fs, int file_id, uint64_t offset,
         void* buffer, int length);
 
 /**

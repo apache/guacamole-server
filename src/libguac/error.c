@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "error.h"
+#include "guacamole/error.h"
 
 #include <errno.h>
 #include <stdlib.h>

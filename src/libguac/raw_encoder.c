@@ -19,14 +19,12 @@
 
 #include "config.h"
 
-#include "audio.h"
+#include "guacamole/audio.h"
+#include "guacamole/client.h"
+#include "guacamole/protocol.h"
+#include "guacamole/socket.h"
+#include "guacamole/user.h"
 #include "raw_encoder.h"
-
-#include <guacamole/audio.h>
-#include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-#include <guacamole/user.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -123,25 +121,8 @@ static void raw_encoder_flush_handler(guac_audio_stream* audio) {
     guac_socket* socket = audio->client->socket;
     guac_stream* stream = audio->stream;
 
-    unsigned char* current = state->buffer;
-    int remaining = state->written;
-
     /* Flush all data in buffer as blobs */
-    while (remaining > 0) {
-
-        /* Determine size of blob to be written */
-        int chunk_size = remaining;
-        if (chunk_size > 6048)
-            chunk_size = 6048;
-
-        /* Send audio data */
-        guac_protocol_send_blob(socket, stream, current, chunk_size);
-
-        /* Advance to next blob */
-        current += chunk_size;
-        remaining -= chunk_size;
-
-    }
+    guac_protocol_send_blobs(socket, stream, state->buffer, state->written);
 
     /* All data has been flushed */
     state->written = 0;

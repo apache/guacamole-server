@@ -10,6 +10,10 @@
 *.gcov
 *.gcno
 
+# Test suite output
+*.log
+*.trs
+
 # Backup files
 *~
 
@@ -28,27 +32,16 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/
+build-aux/
+libtool
 m4/*
 !README
-compile
-config.guess
 config.h
 config.h.in
 config.log
 config.status
-config.sub
 configure
-depcomp
-install-sh
-libtool
-ltmain.sh
-missing
 stamp-h1
-test-driver
-
-# Test binaries
-tests/test_*
-!tests/test_*.[ch]
 
 # Generated docs
 doc/doxygen-output

@@ -49,6 +49,7 @@ ARG BUILD_DEPENDENCIES="              \
         libtelnet-dev                 \
         libtool                       \
         libvncserver-dev              \
+        libwebsockets-dev             \
         libwebp-dev                   \
         make"
 
@@ -74,7 +75,7 @@ RUN ${PREFIX_DIR}/bin/list-dependencies.sh    \
         > ${PREFIX_DIR}/DEPENDENCIES
 
 # Use same Debian as the base for the runtime image
-FROM debian:${DEBIAN_VERSION}
+FROM debian:${DEBIAN_VERSION}-slim
 
 # Base directory for installed build artifacts.
 # Due to limitations of the Docker image build process, this value is
@@ -89,6 +90,7 @@ ENV LD_LIBRARY_PATH=${PREFIX_DIR}/lib
 ENV GUACD_LOG_LEVEL=info
 
 ARG RUNTIME_DEPENDENCIES="            \
+        ca-certificates               \
         ghostscript                   \
         libfreerdp-plugins-standard   \
         fonts-liberation              \

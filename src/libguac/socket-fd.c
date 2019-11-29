@@ -19,8 +19,8 @@
 
 #include "config.h"
 
-#include "error.h"
-#include "socket.h"
+#include "guacamole/error.h"
+#include "guacamole/socket.h"
 #include "wait-fd.h"
 
 #include <pthread.h>
