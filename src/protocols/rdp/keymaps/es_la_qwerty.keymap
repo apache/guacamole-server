@@ -18,7 +18,7 @@
 #
 
 parent  "base"
-name    "latam-qwerty"
+name    "es-la-qwerty"
 freerdp "KBD_LATIN_AMERICAN"
 
 #
