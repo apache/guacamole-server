@@ -23,9 +23,6 @@
 
 #include "config.h"
 #include "common/json.h"
-#if 0
-#include "rdp_svc.h"
-#endif
 
 #include <guacamole/user.h>
 #include <guacamole/protocol.h>
@@ -113,12 +110,7 @@ typedef enum guac_rdp_stream_type {
     /**
      * An in-progress stream of a directory listing.
      */
-    GUAC_RDP_LS_STREAM,
-
-    /**
-     * The inbound half of a static virtual channel.
-     */
-    GUAC_RDP_INBOUND_SVC_STREAM
+    GUAC_RDP_LS_STREAM
 
 } guac_rdp_stream_type;
 
@@ -147,13 +139,6 @@ typedef struct guac_rdp_stream {
      */
     guac_rdp_ls_status ls_status;
 
-#if 0
-    /**
-     * Associated SVC instance. Only valid for GUAC_RDP_INBOUND_SVC_STREAM.
-     */
-    guac_rdp_svc* svc;
-#endif
-
 } guac_rdp_stream;
 
 /**
@@ -162,19 +147,9 @@ typedef struct guac_rdp_stream {
 guac_user_file_handler guac_rdp_upload_file_handler;
 
 /**
- * Handler for inbound pipes related to static virtual channels.
- */
-guac_user_pipe_handler guac_rdp_svc_pipe_handler;
-
-/**
  * Handler for stream data related to file uploads.
  */
 guac_user_blob_handler guac_rdp_upload_blob_handler;
-
-/**
- * Handler for stream data related to static virtual channels.
- */
-guac_user_blob_handler guac_rdp_svc_blob_handler;
 
 /**
  * Handler for end-of-stream related to file uploads.

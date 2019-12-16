@@ -38,9 +38,7 @@
 #include "rdp_glyph.h"
 #include "rdp_pointer.h"
 #include "rdp_stream.h"
-#if 0
-#include "rdp_svc.h"
-#endif
+#include "svc.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
@@ -131,35 +129,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     if (settings->remote_app != NULL)
         guac_rdp_rail_load_plugin(context);
 
-#if 0
     /* Load SVC plugin instances for all static channels */
     if (settings->svc_names != NULL) {
 
         char** current = settings->svc_names;
         do {
-
-            guac_rdp_svc* svc = guac_rdp_alloc_svc(client, *current);
-
-            /* Attempt to load guacsvc plugin for new static channel */
-            if (guac_freerdp_channels_load_plugin(channels, instance->settings,
-                        "guacsvc", svc)) {
-                guac_client_log(client, GUAC_LOG_WARNING,
-                        "Cannot create static channel \"%s\": failed to load guacsvc plugin.",
-                        svc->name);
-                guac_rdp_free_svc(svc);
-            }
-
-            /* Store and log on success */
-            else {
-                guac_rdp_add_svc(client, svc);
-                guac_client_log(client, GUAC_LOG_INFO, "Created static channel \"%s\"...",
-                        svc->name);
-            }
-
+            guac_rdp_svc_load_plugin(context, *current);
         } while (*(++current) != NULL);
 
     }
-#endif
 
     /* Load plugin providing Dynamic Virtual Channel support, if required */
     if (instance->settings->SupportDynamicChannels &&

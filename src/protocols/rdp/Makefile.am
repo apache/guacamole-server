@@ -60,6 +60,7 @@ libguac_client_rdp_la_SOURCES = \
     rdp_settings.c              \
     rdp_stream.c                \
     resolution.c                \
+    svc.c                       \
     unicode.c                   \
     user.c
 
@@ -76,7 +77,6 @@ noinst_HEADERS =                             \
     guac_rdpdr/rdpdr_service.h               \
     guac_rdpsnd/rdpsnd_messages.h            \
     guac_rdpsnd/rdpsnd_service.h             \
-    guac_svc/svc_service.h                   \
     audio_input.h                            \
     client.h                                 \
     clipboard.h                              \
@@ -101,6 +101,7 @@ noinst_HEADERS =                             \
     rdp_status.h                             \
     rdp_stream.h                             \
     resolution.h                             \
+    svc.h                                    \
     unicode.h                                \
     user.h
 
@@ -125,11 +126,11 @@ libguac_client_rdp_la_LIBADD =     \
 # Plugins for FreeRDP
 #
 
-freerdp_LTLIBRARIES = \
-    libguacai-client.la
-#    libguacdr-client.la  \
-#    libguacsnd-client.la \
-#    libguacsvc-client.la
+freerdp_LTLIBRARIES =    \
+    libguacai-client.la  \
+    libguacsvc-client.la
+#    libguacdr-client.la
+#    libguacsnd-client.la
 
 freerdpdir = ${libdir}/freerdp2
 
@@ -221,25 +222,25 @@ libguacai_client_la_LIBADD = \
 # Static Virtual Channels
 #
 
-#libguacsvc_client_la_SOURCES = \
-#    guac_svc/svc_service.c     \
-#    rdp_svc.c
-#
-#libguacsvc_client_la_CFLAGS =  \
-#    -Werror -Wall -Iinclude    \
-#    @COMMON_INCLUDE@           \
-#    @COMMON_SSH_INCLUDE@       \
-#    @LIBGUAC_INCLUDE@          \
-#    @RDP_CFLAGS@
-#
-#libguacsvc_client_la_LDFLAGS =     \
-#    -module -avoid-version -shared \
-#    @PTHREAD_LIBS@                 \
-#    @RDP_LIBS@
-#
-#libguacsvc_client_la_LIBADD = \
-#    @COMMON_LTLIB@            \
-#    @LIBGUAC_LTLIB@
+libguacsvc_client_la_SOURCES = \
+    guac_svc/svc_service.c     \
+    svc.c
+
+libguacsvc_client_la_CFLAGS =  \
+    -Werror -Wall -Iinclude    \
+    @COMMON_INCLUDE@           \
+    @COMMON_SSH_INCLUDE@       \
+    @LIBGUAC_INCLUDE@          \
+    @RDP_CFLAGS@
+
+libguacsvc_client_la_LDFLAGS =     \
+    -module -avoid-version -shared \
+    @PTHREAD_LIBS@                 \
+    @RDP_LIBS@
+
+libguacsvc_client_la_LIBADD = \
+    @COMMON_LTLIB@            \
+    @LIBGUAC_LTLIB@
 
 #
 # Optional SFTP support
