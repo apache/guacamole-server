@@ -38,6 +38,7 @@
 #include "rdp_glyph.h"
 #include "rdp_pointer.h"
 #include "rdp_stream.h"
+#include "rdpsnd.h"
 #include "svc.h"
 
 #ifdef ENABLE_COMMON_SSH
@@ -116,12 +117,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
                     "printing will not work. Sound MAY not work.");
 
         /* Load RDPSND plugin */
-        if (guac_freerdp_channels_load_plugin(channels, instance->settings,
-                    "guacsnd", client))
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load guacsnd alongside guacdr plugin. Sound "
-                    "will not work. Drive redirection and printing MAY not "
-                    "work.");
+        guac_rdpsnd_load_plugin(context);
 
     }
 
