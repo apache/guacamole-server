@@ -38,6 +38,7 @@
 #include "rdp_glyph.h"
 #include "rdp_pointer.h"
 #include "rdp_stream.h"
+#include "rdpdr.h"
 #include "rdpsnd.h"
 #include "svc.h"
 
@@ -108,17 +109,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     if (settings->printing_enabled
         || settings->drive_enabled
         || settings->audio_enabled) {
-
-        /* Load RDPDR plugin */
-        if (guac_freerdp_channels_load_plugin(channels, instance->settings,
-                    "guacdr", client))
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load guacdr plugin. Drive redirection and "
-                    "printing will not work. Sound MAY not work.");
-
-        /* Load RDPSND plugin */
+        guac_rdpdr_load_plugin(context);
         guac_rdpsnd_load_plugin(context);
-
     }
 
     /* Load RAIL plugin if RemoteApp in use */

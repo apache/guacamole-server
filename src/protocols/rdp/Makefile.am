@@ -59,6 +59,7 @@ libguac_client_rdp_la_SOURCES = \
     rdp_pointer.c               \
     rdp_settings.c              \
     rdp_stream.c                \
+    rdpdr.c                     \
     rdpsnd.c                    \
     resolution.c                \
     svc.c                       \
@@ -101,6 +102,7 @@ noinst_HEADERS =                             \
     rdp_settings.h                           \
     rdp_status.h                             \
     rdp_stream.h                             \
+    rdpdr.h                                  \
     rdpsnd.h                                 \
     resolution.h                             \
     svc.h                                    \
