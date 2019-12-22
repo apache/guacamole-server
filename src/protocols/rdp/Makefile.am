@@ -47,6 +47,7 @@ libguac_client_rdp_la_SOURCES = \
     error.c                     \
     input.c                     \
     keyboard.c                  \
+    pipe-svc.c                  \
     ptr_string.c                \
     rail.c                      \
     rdp.c                       \
@@ -63,7 +64,6 @@ libguac_client_rdp_la_SOURCES = \
     rdpdr.c                     \
     rdpsnd.c                    \
     resolution.c                \
-    svc.c                       \
     unicode.c                   \
     user.c
 
@@ -90,6 +90,7 @@ noinst_HEADERS =                             \
     error.h                                  \
     input.h                                  \
     keyboard.h                               \
+    pipe-svc.h                               \
     ptr_string.h                             \
     rail.h                                   \
     rdp.h                                    \
@@ -107,7 +108,6 @@ noinst_HEADERS =                             \
     rdpdr.h                                  \
     rdpsnd.h                                 \
     resolution.h                             \
-    svc.h                                    \
     unicode.h                                \
     user.h
 
@@ -136,8 +136,7 @@ freerdp_LTLIBRARIES =            \
     libguac-common-svc-client.la \
     libguacai-client.la          \
     libguacdr-client.la          \
-    libguacsnd-client.la         \
-    libguacsvc-client.la
+    libguacsnd-client.la
 
 freerdpdir = ${libdir}/freerdp2
 
@@ -241,30 +240,6 @@ libguacsnd_client_la_LDFLAGS =     \
     @RDP_LIBS@
 
 libguacsnd_client_la_LIBADD = \
-    @COMMON_LTLIB@            \
-    @LIBGUAC_LTLIB@
-
-#
-# Static Virtual Channels
-#
-
-libguacsvc_client_la_SOURCES = \
-    guac_svc/svc_service.c     \
-    svc.c
-
-libguacsvc_client_la_CFLAGS =  \
-    -Werror -Wall -Iinclude    \
-    @COMMON_INCLUDE@           \
-    @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@          \
-    @RDP_CFLAGS@
-
-libguacsvc_client_la_LDFLAGS =     \
-    -module -avoid-version -shared \
-    @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
-
-libguacsvc_client_la_LIBADD = \
     @COMMON_LTLIB@            \
     @LIBGUAC_LTLIB@
 

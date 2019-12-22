@@ -29,6 +29,7 @@
 #include "disp.h"
 #include "error.h"
 #include "keyboard.h"
+#include "pipe-svc.h"
 #include "rail.h"
 #include "rdp.h"
 #include "rdp_bitmap.h"
@@ -40,7 +41,6 @@
 #include "rdp_stream.h"
 #include "rdpdr.h"
 #include "rdpsnd.h"
-#include "svc.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
@@ -122,7 +122,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
         char** current = settings->svc_names;
         do {
-            guac_rdp_svc_load_plugin(context, *current);
+            guac_rdp_pipe_svc_load_plugin(context, *current);
         } while (*(++current) != NULL);
 
     }

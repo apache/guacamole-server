@@ -23,10 +23,10 @@
 #include "common/display.h"
 #include "input.h"
 #include "user.h"
+#include "pipe-svc.h"
 #include "rdp.h"
 #include "rdp_settings.h"
 #include "rdp_stream.h"
-#include "svc.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "sftp.h"
@@ -86,7 +86,7 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
             guac_audio_stream_add_user(rdp_client->audio, user);
 
         /* Bring user up to date with any registered static channels */
-        guac_rdp_svc_send_pipes(user);
+        guac_rdp_pipe_svc_send_pipes(user);
 
         /* Synchronize with current display */
         guac_common_display_dup(rdp_client->display, user, user->socket);
@@ -109,7 +109,7 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
         user->file_handler = guac_rdp_user_file_handler;
 
         /* Inbound arbitrary named pipes */
-        user->pipe_handler = guac_rdp_svc_pipe_handler;
+        user->pipe_handler = guac_rdp_pipe_svc_pipe_handler;
 
     }
 
