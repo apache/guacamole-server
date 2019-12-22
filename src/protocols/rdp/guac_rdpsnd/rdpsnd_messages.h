@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __GUAC_RDPSND_MESSAGES_H
-#define __GUAC_RDPSND_MESSAGES_H
+#ifndef GUAC_RDPSND_MESSAGES_H
+#define GUAC_RDPSND_MESSAGES_H
 
 #include "config.h"
 
@@ -128,7 +128,7 @@ typedef struct guac_rdpsnd_pdu_header {
  *     The header content of the SNDC_FORMATS PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
@@ -149,7 +149,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
  *     The header content of the SNDC_TRAINING PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_training_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
@@ -172,7 +172,7 @@ void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
  *     The header content of the SNDC_WAVE PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_wave_info_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
@@ -191,7 +191,7 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
  *     The header content of the SNDWAV PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_wave_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
@@ -211,7 +211,7 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
  *     The header content of the SNDC_CLOSE PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_close_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 #endif

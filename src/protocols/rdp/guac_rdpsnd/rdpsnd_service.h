@@ -18,14 +18,15 @@
  */
 
 
-#ifndef __GUAC_RDPSND_SERVICE_H
-#define __GUAC_RDPSND_SERVICE_H
+#ifndef GUAC_RDPSND_SERVICE_H
+#define GUAC_RDPSND_SERVICE_H
 
 #include "config.h"
 
-#include <freerdp/utils/svc_plugin.h>
+#include <freerdp/svc.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
+#include <winpr/wtsapi.h>
 
 /**
  * The maximum number of PCM formats to accept during the initial RDPSND
@@ -62,20 +63,45 @@ typedef struct guac_pcm_format {
  * Structure representing the current state of the Guacamole RDPSND plugin for
  * FreeRDP.
  */
-typedef struct guac_rdpsndPlugin {
-
-    /**
-     * The FreeRDP parts of this plugin. This absolutely MUST be first.
-     * FreeRDP depends on accessing this structure as if it were an instance
-     * of rdpSvcPlugin.
-     */
-    rdpSvcPlugin plugin;
+typedef struct guac_rdpsnd {
 
     /**
      * The Guacamole client associated with the guac_audio_stream that this
      * plugin should use to stream received audio packets.
      */
     guac_client* client;
+
+    /**
+     * The definition of this virtual channel (RDPSND).
+     */
+    CHANNEL_DEF channel_def;
+
+    /**
+     * Functions and data specific to the FreeRDP side of the virtual channel
+     * and plugin.
+     */
+    CHANNEL_ENTRY_POINTS_FREERDP_EX entry_points;
+
+    /**
+     * Handle which identifies the client connection, typically referred to
+     * within the FreeRDP source as pInitHandle. This handle is provided to the
+     * channel entry point and the channel init event handler. The handle must
+     * eventually be used within the channel open event handler to obtain a
+     * handle to the channel itself.
+     */
+    PVOID init_handle;
+
+    /**
+     * Handle which identifies the channel itself, typically referred to within
+     * the FreeRDP source as OpenHandle. This handle is obtained through a call
+     * to entry_points.pVirtualChannelOpenEx() in response to receiving a
+     * CHANNEL_EVENT_CONNECTED event via the init event handler.
+     *
+     * Data is received in CHANNEL_EVENT_DATA_RECEIVED events via the open
+     * event handler, and data is written through calls to
+     * entry_points.pVirtualChannelWriteEx().
+     */
+    DWORD open_handle;
 
     /**
      * The block number of the last SNDC_WAVE (WaveInfo) PDU received.
@@ -118,29 +144,7 @@ typedef struct guac_rdpsndPlugin {
      */
     int format_count;
 
-} guac_rdpsndPlugin;
-
-/**
- * Handler called when this plugin is loaded by FreeRDP.
- */
-void guac_rdpsnd_process_connect(rdpSvcPlugin* plugin);
-
-/**
- * Handler called when this plugin receives data along its designated channel.
- */
-void guac_rdpsnd_process_receive(rdpSvcPlugin* plugin,
-        wStream* input_stream);
-
-/**
- * Handler called when this plugin is being unloaded.
- */
-void guac_rdpsnd_process_terminate(rdpSvcPlugin* plugin);
-
-/**
- * Handler called when this plugin receives an event. For the sake of RDPSND,
- * all events will be ignored and simply free'd.
- */
-void guac_rdpsnd_process_event(rdpSvcPlugin* plugin, wMessage* event);
+} guac_rdpsnd;
 
 #endif
 

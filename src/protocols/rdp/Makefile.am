@@ -130,9 +130,9 @@ libguac_client_rdp_la_LIBADD =     \
 
 freerdp_LTLIBRARIES =    \
     libguacai-client.la  \
+    libguacsnd-client.la \
     libguacsvc-client.la
 #    libguacdr-client.la
-#    libguacsnd-client.la
 
 freerdpdir = ${libdir}/freerdp2
 
@@ -200,25 +200,25 @@ libguacai_client_la_LIBADD = \
 # RDPSND
 #
 
-#libguacsnd_client_la_SOURCES =    \
-#    guac_rdpsnd/rdpsnd_messages.c \
-#    guac_rdpsnd/rdpsnd_service.c
-#
-#libguacsnd_client_la_CFLAGS = \
-#    -Werror -Wall -Iinclude   \
-#    @COMMON_INCLUDE@          \
-#    @COMMON_SSH_INCLUDE@      \
-#    @LIBGUAC_INCLUDE@         \
-#    @RDP_CFLAGS@
-#
-#libguacsnd_client_la_LDFLAGS =     \
-#    -module -avoid-version -shared \
-#    @PTHREAD_LIBS@                 \
-#    @RDP_LIBS@
-#
-#libguacsnd_client_la_LIBADD = \
-#    @COMMON_LTLIB@            \
-#    @LIBGUAC_LTLIB@
+libguacsnd_client_la_SOURCES =    \
+    guac_rdpsnd/rdpsnd_messages.c \
+    guac_rdpsnd/rdpsnd_service.c
+
+libguacsnd_client_la_CFLAGS = \
+    -Werror -Wall -Iinclude   \
+    @COMMON_INCLUDE@          \
+    @COMMON_SSH_INCLUDE@      \
+    @LIBGUAC_INCLUDE@         \
+    @RDP_CFLAGS@
+
+libguacsnd_client_la_LDFLAGS =     \
+    -module -avoid-version -shared \
+    @PTHREAD_LIBS@                 \
+    @RDP_LIBS@
+
+libguacsnd_client_la_LIBADD = \
+    @COMMON_LTLIB@            \
+    @LIBGUAC_LTLIB@
 
 #
 # Static Virtual Channels

@@ -26,7 +26,6 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#include <freerdp/utils/svc_plugin.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
@@ -34,7 +33,7 @@
 
 /* MESSAGE HANDLERS */
 
-void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int server_format_count;
@@ -182,8 +181,9 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_SetPointer(output_stream, output_stream_end);
 
     /* Send accepted formats */
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
-    svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
+    rdpsnd->entry_points.pVirtualChannelWriteEx(rdpsnd->init_handle,
+            rdpsnd->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
     /* If version greater than 6, must send Quality Mode PDU */
     if (server_version >= 6) {
@@ -196,23 +196,20 @@ void guac_rdpsnd_formats_handler(guac_rdpsndPlugin* rdpsnd,
         Stream_Write_UINT16(output_stream, HIGH_QUALITY);
         Stream_Write_UINT16(output_stream, 0);
 
-        svc_plugin_send((rdpSvcPlugin*)rdpsnd, output_stream);
-    }
+        rdpsnd->entry_points.pVirtualChannelWriteEx(rdpsnd->init_handle,
+                rdpsnd->open_handle, Stream_Buffer(output_stream),
+                Stream_GetPosition(output_stream), output_stream);
 
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+    }
 
 }
 
 /* server is getting a feel of the round trip time */
-void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_training_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int data_size;
     wStream* output_stream;
-
-    /* Get associated client data */
-    guac_client* client = rdpsnd->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Read timestamp and data size */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
@@ -226,13 +223,13 @@ void guac_rdpsnd_training_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_Write_UINT16(output_stream, rdpsnd->server_timestamp);
     Stream_Write_UINT16(output_stream, data_size);
 
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
-    svc_plugin_send((rdpSvcPlugin*) rdpsnd, output_stream);
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+    rdpsnd->entry_points.pVirtualChannelWriteEx(rdpsnd->init_handle,
+            rdpsnd->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
-void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_wave_info_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int format;
@@ -270,10 +267,8 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsndPlugin* rdpsnd,
 
 }
 
-void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_wave_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
-
-    rdpSvcPlugin* plugin = (rdpSvcPlugin*)rdpsnd;
 
     /* Get associated client data */
     guac_client* client = rdpsnd->client;
@@ -307,16 +302,16 @@ void guac_rdpsnd_wave_handler(guac_rdpsndPlugin* rdpsnd,
     Stream_Write_UINT8(output_stream, 0);
 
     /* Send Wave Confirmation PDU */
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
-    svc_plugin_send(plugin, output_stream);
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
+    rdpsnd->entry_points.pVirtualChannelWriteEx(rdpsnd->init_handle,
+            rdpsnd->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
     /* We no longer expect to receive wave data */
     rdpsnd->next_pdu_is_wave = FALSE;
 
 }
 
-void guac_rdpsnd_close_handler(guac_rdpsndPlugin* rdpsnd,
+void guac_rdpsnd_close_handler(guac_rdpsnd* rdpsnd,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     /* Do nothing */
