@@ -29,7 +29,6 @@
 #include "rdp_status.h"
 #include "unicode.h"
 
-#include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
@@ -110,7 +109,9 @@ void guac_rdpdr_fs_process_create(guac_rdpdr_device* device,
 
     }
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -158,7 +159,9 @@ void guac_rdpdr_fs_process_read(guac_rdpdr_device* device,
         Stream_Write(output_stream, buffer, bytes_read); /* ReadData */
     }
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
     free(buffer);
 
 }
@@ -201,7 +204,9 @@ void guac_rdpdr_fs_process_write(guac_rdpdr_device* device,
         Stream_Write_UINT8(output_stream, 0);              /* Padding */
     }
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -234,7 +239,9 @@ void guac_rdpdr_fs_process_close(guac_rdpdr_device* device,
             STATUS_SUCCESS, 4);
     Stream_Write(output_stream, "\0\0\0\0", 4); /* Padding */
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -322,7 +329,9 @@ void guac_rdpdr_fs_process_set_volume_info(guac_rdpdr_device* device,
             "%s: [file_id=%i] Set volume info not supported",
             __func__, file_id);
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -385,7 +394,9 @@ void guac_rdpdr_fs_process_device_control(guac_rdpdr_device* device,
     /* No content for now */
     Stream_Write_UINT32(output_stream, 0);
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -501,7 +512,9 @@ void guac_rdpdr_fs_process_query_directory(guac_rdpdr_device* device, wStream* i
     Stream_Write_UINT32(output_stream, 0); /* Length */
     Stream_Write_UINT8(output_stream, 0);  /* Padding */
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -517,7 +530,9 @@ void guac_rdpdr_fs_process_lock_control(guac_rdpdr_device* device, wStream* inpu
 
     Stream_Zero(output_stream, 5); /* Padding */
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 

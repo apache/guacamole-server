@@ -24,7 +24,6 @@
 #include "rdp_status.h"
 #include "unicode.h"
 
-#include <freerdp/utils/svc_plugin.h>
 #include <guacamole/unicode.h>
 #include <winpr/stream.h>
 
@@ -72,7 +71,9 @@ void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
     Stream_Write(output_stream, "\0\0", 2);
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -119,7 +120,9 @@ void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
     Stream_Write(output_stream, "\0\0", 2);
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -170,7 +173,9 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
     Stream_Write(output_stream, "\0\0", 2);
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -208,7 +213,9 @@ void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
     Stream_Write(output_stream, "\0\0", 2);
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 

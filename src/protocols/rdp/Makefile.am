@@ -132,9 +132,9 @@ libguac_client_rdp_la_LIBADD =     \
 
 freerdp_LTLIBRARIES =    \
     libguacai-client.la  \
+    libguacdr-client.la  \
     libguacsnd-client.la \
     libguacsvc-client.la
-#    libguacdr-client.la
 
 freerdpdir = ${libdir}/freerdp2
 
@@ -142,35 +142,35 @@ freerdpdir = ${libdir}/freerdp2
 # RDPDR
 #
 
-#libguacdr_client_la_SOURCES =                \
-#    guac_rdpdr/rdpdr_fs_messages.c           \
-#    guac_rdpdr/rdpdr_fs_messages_dir_info.c  \
-#    guac_rdpdr/rdpdr_fs_messages_file_info.c \
-#    guac_rdpdr/rdpdr_fs_messages_vol_info.c  \
-#    guac_rdpdr/rdpdr_fs_service.c            \
-#    guac_rdpdr/rdpdr_messages.c              \
-#    guac_rdpdr/rdpdr_printer.c               \
-#    guac_rdpdr/rdpdr_service.c               \
-#    rdp_fs.c                                 \
-#    rdp_print_job.c                          \
-#    rdp_stream.c                             \
-#    unicode.c
-#
-#libguacdr_client_la_CFLAGS =   \
-#    -Werror -Wall -Iinclude    \
-#    @COMMON_INCLUDE@           \
-#    @COMMON_SSH_INCLUDE@       \
-#    @LIBGUAC_INCLUDE@          \
-#    @RDP_CFLAGS@
-#
-#libguacdr_client_la_LDFLAGS =      \
-#    -module -avoid-version -shared \
-#    @PTHREAD_LIBS@                 \
-#    @RDP_LIBS@
-#
-#libguacdr_client_la_LIBADD = \
-#    @COMMON_LTLIB@           \
-#    @LIBGUAC_LTLIB@
+libguacdr_client_la_SOURCES =                \
+    guac_rdpdr/rdpdr_fs_messages.c           \
+    guac_rdpdr/rdpdr_fs_messages_dir_info.c  \
+    guac_rdpdr/rdpdr_fs_messages_file_info.c \
+    guac_rdpdr/rdpdr_fs_messages_vol_info.c  \
+    guac_rdpdr/rdpdr_fs_service.c            \
+    guac_rdpdr/rdpdr_messages.c              \
+    guac_rdpdr/rdpdr_printer.c               \
+    guac_rdpdr/rdpdr_service.c               \
+    rdp_fs.c                                 \
+    rdp_print_job.c                          \
+    rdp_stream.c                             \
+    unicode.c
+
+libguacdr_client_la_CFLAGS =   \
+    -Werror -Wall -Iinclude    \
+    @COMMON_INCLUDE@           \
+    @COMMON_SSH_INCLUDE@       \
+    @LIBGUAC_INCLUDE@          \
+    @RDP_CFLAGS@
+
+libguacdr_client_la_LDFLAGS =      \
+    -module -avoid-version -shared \
+    @PTHREAD_LIBS@                 \
+    @RDP_LIBS@
+
+libguacdr_client_la_LIBADD = \
+    @COMMON_LTLIB@           \
+    @LIBGUAC_LTLIB@
 
 #
 # Audio Input

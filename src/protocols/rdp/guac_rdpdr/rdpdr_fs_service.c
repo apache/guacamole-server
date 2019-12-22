@@ -25,7 +25,6 @@
 #include "rdpdr_messages.h"
 #include "rdpdr_service.h"
 
-#include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -114,7 +113,7 @@ static void guac_rdpdr_device_fs_free_handler(guac_rdpdr_device* device) {
     
 }
 
-void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr, char* drive_name) {
+void guac_rdpdr_register_fs(guac_rdpdr* rdpdr, char* drive_name) {
 
     guac_client* client = rdpdr->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;

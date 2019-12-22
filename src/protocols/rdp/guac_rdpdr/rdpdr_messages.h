@@ -204,14 +204,14 @@
  * Message handlers.
  */
 
-void guac_rdpdr_process_server_announce(guac_rdpdrPlugin* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_clientid_confirm(guac_rdpdrPlugin* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_device_reply(guac_rdpdrPlugin* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_device_iorequest(guac_rdpdrPlugin* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_server_capability(guac_rdpdrPlugin* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_user_loggedon(guac_rdpdrPlugin* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_prn_cache_data(guac_rdpdrPlugin* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_prn_using_xps(guac_rdpdrPlugin* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_server_announce(guac_rdpdr* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_clientid_confirm(guac_rdpdr* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_device_reply(guac_rdpdr* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_device_iorequest(guac_rdpdr* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_server_capability(guac_rdpdr* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_user_loggedon(guac_rdpdr* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_prn_cache_data(guac_rdpdr* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_prn_using_xps(guac_rdpdr* rdpdr, wStream* input_stream);
 
 #endif
 

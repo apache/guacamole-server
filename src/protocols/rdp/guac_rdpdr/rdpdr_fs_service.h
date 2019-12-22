@@ -48,7 +48,7 @@
  * @param drive_name
  *     The name of the redirected drive to display in the RDP connection.
  */
-void guac_rdpdr_register_fs(guac_rdpdrPlugin* rdpdr, char* drive_name);
+void guac_rdpdr_register_fs(guac_rdpdr* rdpdr, char* drive_name);
 
 #endif
 

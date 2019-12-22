@@ -27,7 +27,6 @@
 #include "rdp_status.h"
 #include "unicode.h"
 
-#include <freerdp/utils/svc_plugin.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -61,7 +60,9 @@ void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
             completion_id, STATUS_SUCCESS, 4);
 
     Stream_Write_UINT32(output_stream, 0); /* fileId */
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -100,7 +101,9 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, length);
     Stream_Write_UINT8(output_stream, 0); /* Padding */
 
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
 }
 
@@ -121,7 +124,9 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
             completion_id, STATUS_SUCCESS, 4);
 
     Stream_Write_UINT32(output_stream, 0); /* Padding */
-    svc_plugin_send((rdpSvcPlugin*) device->rdpdr, output_stream);
+    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
+            device->rdpdr->open_handle, Stream_Buffer(output_stream),
+            Stream_GetPosition(output_stream), output_stream);
 
     /* Log end of print job */
     guac_client_log(client, GUAC_LOG_INFO, "Print job closed");
@@ -164,7 +169,7 @@ static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
 
 }
 
-void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr, char* printer_name) {
+void guac_rdpdr_register_printer(guac_rdpdr* rdpdr, char* printer_name) {
 
     int id = rdpdr->devices_registered++;
 

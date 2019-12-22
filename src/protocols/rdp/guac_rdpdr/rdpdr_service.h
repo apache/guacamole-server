@@ -23,16 +23,17 @@
 
 #include "config.h"
 
-#include <freerdp/utils/svc_plugin.h>
+#include <freerdp/svc.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
+#include <winpr/wtsapi.h>
 
 /**
  * The maximum number of bytes to allow for a device read.
  */
 #define GUAC_RDP_MAX_READ_BUFFER 4194304
 
-typedef struct guac_rdpdrPlugin guac_rdpdrPlugin;
+typedef struct guac_rdpdr guac_rdpdr;
 typedef struct guac_rdpdr_device guac_rdpdr_device;
 
 /**
@@ -61,7 +62,7 @@ struct guac_rdpdr_device {
     /**
      * The RDPDR plugin owning this device.
      */
-    guac_rdpdrPlugin* rdpdr;
+    guac_rdpdr* rdpdr;
 
     /**
      * The ID assigned to this device by the RDPDR plugin.
@@ -115,19 +116,44 @@ struct guac_rdpdr_device {
  * Structure representing the current state of the Guacamole RDPDR plugin for
  * FreeRDP.
  */
-struct guac_rdpdrPlugin {
-
-    /**
-     * The FreeRDP parts of this plugin. This absolutely MUST be first.
-     * FreeRDP depends on accessing this structure as if it were an instance
-     * of rdpSvcPlugin.
-     */
-    rdpSvcPlugin plugin;
+struct guac_rdpdr {
 
     /**
      * Reference to the client owning this instance of the RDPDR plugin.
      */
     guac_client* client;
+
+    /**
+     * The definition of this virtual channel (RDPDR).
+     */
+    CHANNEL_DEF channel_def;
+
+    /**
+     * Functions and data specific to the FreeRDP side of the virtual channel
+     * and plugin.
+     */
+    CHANNEL_ENTRY_POINTS_FREERDP_EX entry_points;
+
+    /**
+     * Handle which identifies the client connection, typically referred to
+     * within the FreeRDP source as pInitHandle. This handle is provided to the
+     * channel entry point and the channel init event handler. The handle must
+     * eventually be used within the channel open event handler to obtain a
+     * handle to the channel itself.
+     */
+    PVOID init_handle;
+
+    /**
+     * Handle which identifies the channel itself, typically referred to within
+     * the FreeRDP source as OpenHandle. This handle is obtained through a call
+     * to entry_points.pVirtualChannelOpenEx() in response to receiving a
+     * CHANNEL_EVENT_CONNECTED event via the init event handler.
+     *
+     * Data is received in CHANNEL_EVENT_DATA_RECEIVED events via the open
+     * event handler, and data is written through calls to
+     * entry_points.pVirtualChannelWriteEx().
+     */
+    DWORD open_handle;
 
     /**
      * The number of devices registered within the devices array.
@@ -140,28 +166,6 @@ struct guac_rdpdrPlugin {
     guac_rdpdr_device devices[8];
 
 };
-
-/**
- * Handler called when this plugin is loaded by FreeRDP.
- */
-void guac_rdpdr_process_connect(rdpSvcPlugin* plugin);
-
-/**
- * Handler called when this plugin receives data along its designated channel.
- */
-void guac_rdpdr_process_receive(rdpSvcPlugin* plugin,
-        wStream* input_stream);
-
-/**
- * Handler called when this plugin is being unloaded.
- */
-void guac_rdpdr_process_terminate(rdpSvcPlugin* plugin);
-
-/**
- * Handler called when this plugin receives an event. For the sake of RDPDR,
- * all events will be ignored and simply free'd.
- */
-void guac_rdpdr_process_event(rdpSvcPlugin* plugin, wMessage* event);
 
 /**
  * Creates a new stream which contains the common DR_DEVICE_IOCOMPLETION header

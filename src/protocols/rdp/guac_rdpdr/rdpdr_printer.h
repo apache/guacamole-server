@@ -38,7 +38,7 @@
  *     The name of the printer that will be registered with the RDP
  *     connection and passed through to the server.
  */
-void guac_rdpdr_register_printer(guac_rdpdrPlugin* rdpdr, char* printer_name);
+void guac_rdpdr_register_printer(guac_rdpdr* rdpdr, char* printer_name);
 
 #endif
 
