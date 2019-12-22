@@ -41,6 +41,7 @@ libguac_client_rdp_la_SOURCES = \
     channels.c                  \
     client.c                    \
     clipboard.c                 \
+    common-svc.c                \
     decompose.c                 \
     disp.c                      \
     error.c                     \
@@ -83,6 +84,7 @@ noinst_HEADERS =                             \
     client.h                                 \
     clipboard.h                              \
     channels.h                               \
+    common-svc.h                             \
     decompose.h                              \
     disp.h                                   \
     error.h                                  \
@@ -130,13 +132,33 @@ libguac_client_rdp_la_LIBADD =     \
 # Plugins for FreeRDP
 #
 
-freerdp_LTLIBRARIES =    \
-    libguacai-client.la  \
-    libguacdr-client.la  \
-    libguacsnd-client.la \
+freerdp_LTLIBRARIES =            \
+    libguac-common-svc-client.la \
+    libguacai-client.la          \
+    libguacdr-client.la          \
+    libguacsnd-client.la         \
     libguacsvc-client.la
 
 freerdpdir = ${libdir}/freerdp2
+
+#
+# Common SVC plugin (shared by RDPDR, RDPSND, etc.)
+#
+
+libguac_common_svc_client_la_SOURCES = \
+    guac-common-svc/common-svc-main.c
+
+libguac_common_svc_client_la_CFLAGS = \
+    -Werror -Wall -Iinclude           \
+    @LIBGUAC_INCLUDE@                 \
+    @RDP_CFLAGS@
+
+libguac_common_svc_client_la_LDFLAGS = \
+    -module -avoid-version -shared     \
+    @RDP_LIBS@
+
+libguac_common_svc_client_la_LIBADD = \
+    @LIBGUAC_LTLIB@
 
 #
 # RDPDR
