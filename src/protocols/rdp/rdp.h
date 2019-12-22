@@ -154,13 +154,6 @@ typedef struct guac_rdp_client {
     guac_common_list* available_svc;
 
     /**
-     * Lock which is locked and unlocked for each RDP message, and for each
-     * part of the RDP client instance which may be dynamically freed and
-     * reallocated during reconnection.
-     */
-    pthread_mutex_t rdp_lock;
-
-    /**
      * Common attributes for locks.
      */
     pthread_mutexattr_t attributes;

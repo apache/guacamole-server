@@ -66,9 +66,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     pthread_mutexattr_settype(&(rdp_client->attributes),
             PTHREAD_MUTEX_RECURSIVE);
 
-    /* Init RDP lock */
-    pthread_mutex_init(&(rdp_client->rdp_lock), &(rdp_client->attributes));
-
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
     client->free_handler = guac_rdp_client_free_handler;

@@ -405,9 +405,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
             && !guac_rdp_disp_reconnect_needed(rdp_client->disp)) {
 
         /* Update remote display size */
-        pthread_mutex_lock(&(rdp_client->rdp_lock));
         guac_rdp_disp_update_size(rdp_client->disp, settings, rdp_inst);
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
         /* Wait for data and construct a reasonable frame */
         int wait_result = rdp_guac_client_wait_for_messages(client,
@@ -423,19 +421,14 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 guac_timestamp frame_end;
                 int frame_remaining;
 
-                pthread_mutex_lock(&(rdp_client->rdp_lock));
-
                 /* Check the libfreerdp fds */
                 if (!freerdp_check_event_handles(rdp_inst->context)) {
 
                     /* Flag connection failure */
                     wait_result = -1;
-                    pthread_mutex_unlock(&(rdp_client->rdp_lock));
                     break;
 
                 }
-
-                pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
                 /* Calculate time remaining in frame */
                 frame_end = guac_timestamp_current();
@@ -469,9 +462,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
         }
 
         /* Test whether the RDP server is closing the connection */
-        pthread_mutex_lock(&(rdp_client->rdp_lock));
         int connection_closing = freerdp_shall_disconnect(rdp_inst);
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
         /* Close connection cleanly if server is disconnecting */
         if (connection_closing)
@@ -497,8 +488,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
         guac_rdp_print_job_free(rdp_client->active_job);
     }
 
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
-
     /* Disconnect client and channels */
     freerdp_disconnect(rdp_inst);
 
@@ -520,8 +509,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Free display */
     guac_common_display_free(rdp_client->display);
-
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
     /* Client is now disconnected */
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
