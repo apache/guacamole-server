@@ -20,8 +20,8 @@
 #include "config.h"
 
 #include "rdp.h"
+#include "rdpsnd.h"
 #include "rdpsnd_messages.h"
-#include "rdpsnd_service.h"
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -31,9 +31,7 @@
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
 
-/* MESSAGE HANDLERS */
-
-void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int server_format_count;
@@ -44,11 +42,10 @@ void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
     int output_body_size;
     unsigned char* output_stream_end;
 
-    /* Get associated client data */
-    guac_client* client = rdpsnd->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_client* client = svc->client;
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
 
-    /* Get audio stream from client data */
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_audio_stream* audio = rdp_client->audio;
 
     /* Reset own format count */
@@ -181,9 +178,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
     Stream_SetPointer(output_stream, output_stream_end);
 
     /* Send accepted formats */
-    rdpsnd->entry_points.pVirtualChannelWriteEx(rdpsnd->init_handle,
-            rdpsnd->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
     /* If version greater than 6, must send Quality Mode PDU */
     if (server_version >= 6) {
@@ -196,20 +191,20 @@ void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
         Stream_Write_UINT16(output_stream, HIGH_QUALITY);
         Stream_Write_UINT16(output_stream, 0);
 
-        rdpsnd->entry_points.pVirtualChannelWriteEx(rdpsnd->init_handle,
-                rdpsnd->open_handle, Stream_Buffer(output_stream),
-                Stream_GetPosition(output_stream), output_stream);
+        guac_rdp_common_svc_write(svc, output_stream);
 
     }
 
 }
 
 /* server is getting a feel of the round trip time */
-void guac_rdpsnd_training_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_training_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int data_size;
     wStream* output_stream;
+
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
 
     /* Read timestamp and data size */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
@@ -223,22 +218,19 @@ void guac_rdpsnd_training_handler(guac_rdpsnd* rdpsnd,
     Stream_Write_UINT16(output_stream, rdpsnd->server_timestamp);
     Stream_Write_UINT16(output_stream, data_size);
 
-    rdpsnd->entry_points.pVirtualChannelWriteEx(rdpsnd->init_handle,
-            rdpsnd->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpsnd_wave_info_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_wave_info_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     int format;
 
-    /* Get associated client data */
-    guac_client* client = rdpsnd->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_client* client = svc->client;
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
 
-    /* Get audio stream from client data */
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_audio_stream* audio = rdp_client->audio;
 
     /* Read wave information */
@@ -267,14 +259,13 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsnd* rdpsnd,
 
 }
 
-void guac_rdpsnd_wave_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_wave_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
-    /* Get associated client data */
-    guac_client* client = rdpsnd->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_client* client = svc->client;
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
 
-    /* Get audio stream from client data */
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_audio_stream* audio = rdp_client->audio;
 
     /* Wave Confirmation PDU */
@@ -302,16 +293,14 @@ void guac_rdpsnd_wave_handler(guac_rdpsnd* rdpsnd,
     Stream_Write_UINT8(output_stream, 0);
 
     /* Send Wave Confirmation PDU */
-    rdpsnd->entry_points.pVirtualChannelWriteEx(rdpsnd->init_handle,
-            rdpsnd->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
     /* We no longer expect to receive wave data */
     rdpsnd->next_pdu_is_wave = FALSE;
 
 }
 
-void guac_rdpsnd_close_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_close_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {
 
     /* Do nothing */

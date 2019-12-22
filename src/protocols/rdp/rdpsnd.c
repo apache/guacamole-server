@@ -18,26 +18,89 @@
  */
 
 #include "config.h"
-#include "channels.h"
+#include "common-svc.h"
 #include "rdp.h"
+#include "rdpsnd.h"
+#include "rdpsnd_messages.h"
 
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/client.h>
+#include <winpr/stream.h>
+
+#include <stdlib.h>
+
+void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
+        wStream* input_stream) {
+
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
+    guac_rdpsnd_pdu_header header;
+
+    /* Read RDPSND PDU header */
+    Stream_Read_UINT8(input_stream, header.message_type);
+    Stream_Seek_UINT8(input_stream);
+    Stream_Read_UINT16(input_stream, header.body_size);
+
+    /* 
+     * If next PDU is SNDWAVE (due to receiving WaveInfo PDU previously),
+     * ignore the header and parse as a Wave PDU.
+     */
+    if (rdpsnd->next_pdu_is_wave) {
+        guac_rdpsnd_wave_handler(svc, input_stream, &header);
+        return;
+    }
+
+    /* Dispatch message to standard handlers */
+    switch (header.message_type) {
+
+        /* Server Audio Formats and Version PDU */
+        case SNDC_FORMATS:
+            guac_rdpsnd_formats_handler(svc, input_stream, &header);
+            break;
+
+        /* Training PDU */
+        case SNDC_TRAINING:
+            guac_rdpsnd_training_handler(svc, input_stream, &header);
+            break;
+
+        /* WaveInfo PDU */
+        case SNDC_WAVE:
+            guac_rdpsnd_wave_info_handler(svc, input_stream, &header);
+            break;
+
+        /* Close PDU */
+        case SNDC_CLOSE:
+            guac_rdpsnd_close_handler(svc, input_stream, &header);
+            break;
+
+    }
+
+}
+
+void guac_rdpsnd_process_connect(guac_rdp_common_svc* svc) {
+
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) calloc(1, sizeof(guac_rdpsnd));
+    svc->data = rdpsnd;
+
+}
+
+void guac_rdpsnd_process_terminate(guac_rdp_common_svc* svc) {
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
+    free(rdpsnd);
+}
 
 void guac_rdpsnd_load_plugin(rdpContext* context) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
-    /* Load RDPSND plugin */
-    if (guac_freerdp_channels_load_plugin(context->channels, context->settings, "guacsnd", client)) {
+    /* Load support for RDPSND */
+    if (guac_rdp_common_svc_load_plugin(context, "rdpsnd", 0,
+                guac_rdpsnd_process_connect, guac_rdpsnd_process_receive,
+                guac_rdpsnd_process_terminate)) {
         guac_client_log(client, GUAC_LOG_WARNING, "Support for the RDPSND "
                 "channel (audio output) could not be loaded. Sound will not "
                 "work. Drive redirection and printing MAY not work.");
-        return;
     }
-
-    guac_client_log(client, GUAC_LOG_DEBUG, "Support for RDPSND (audio "
-        "output) registered. Awaiting channel connection.");
 
 }
 

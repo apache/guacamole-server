@@ -22,8 +22,7 @@
 #define GUAC_RDPSND_MESSAGES_H
 
 #include "config.h"
-
-#include "rdpsnd_service.h"
+#include "common-svc.h"
 
 #include <winpr/stream.h>
 
@@ -117,8 +116,8 @@ typedef struct guac_rdpsnd_pdu_header {
  * SNDC_FORMATS PDU describes all audio formats supported by the RDP server, as
  * well as the version of RDPSND implemented.
  *
- * @param rdpsnd
- *     The Guacamole RDPSND plugin receiving the SNDC_FORMATS PDU.
+ * @param svc
+ *     The RDPSND channel receiving the SNDC_FORMATS PDU.
  *
  * @param input_stream
  *     The FreeRDP input stream containing the remaining raw bytes (after the
@@ -128,7 +127,7 @@ typedef struct guac_rdpsnd_pdu_header {
  *     The header content of the SNDC_FORMATS PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
@@ -138,8 +137,8 @@ void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
  *
  * https://msdn.microsoft.com/en-us/library/cc240961.aspx
  *
- * @param rdpsnd
- *     The Guacamole RDPSND plugin receiving the SNDC_TRAINING PDU.
+ * @param svc
+ *     The RDPSND channel receiving the SNDC_TRAINING PDU.
  *
  * @param input_stream
  *     The FreeRDP input stream containing the remaining raw bytes (after the
@@ -149,7 +148,7 @@ void guac_rdpsnd_formats_handler(guac_rdpsnd* rdpsnd,
  *     The header content of the SNDC_TRAINING PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_training_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_training_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
@@ -161,8 +160,8 @@ void guac_rdpsnd_training_handler(guac_rdpsnd* rdpsnd,
  *
  * https://msdn.microsoft.com/en-us/library/cc240963.aspx
  *
- * @param rdpsnd
- *     The Guacamole RDPSND plugin receiving the SNDC_WAVE PDU.
+ * @param svc
+ *     The RDPSND channel receiving the SNDC_WAVE PDU.
  *
  * @param input_stream
  *     The FreeRDP input stream containing the remaining raw bytes (after the
@@ -172,7 +171,7 @@ void guac_rdpsnd_training_handler(guac_rdpsnd* rdpsnd,
  *     The header content of the SNDC_WAVE PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_wave_info_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_wave_info_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
@@ -180,8 +179,8 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsnd* rdpsnd,
  * PDU contains the actual audio data, less the four bytes of audio data
  * included in the SNDC_WAVE PDU.
  *
- * @param rdpsnd
- *     The Guacamole RDPSND plugin receiving the SNDWAV PDU.
+ * @param svc
+ *     The RDPSND channel receiving the SNDWAV PDU.
  *
  * @param input_stream
  *     The FreeRDP input stream containing the remaining raw bytes (after the
@@ -191,7 +190,7 @@ void guac_rdpsnd_wave_info_handler(guac_rdpsnd* rdpsnd,
  *     The header content of the SNDWAV PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_wave_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_wave_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 /**
@@ -200,8 +199,8 @@ void guac_rdpsnd_wave_handler(guac_rdpsnd* rdpsnd,
  *
  * https://msdn.microsoft.com/en-us/library/cc240970.aspx
  *
- * @param rdpsnd
- *     The Guacamole RDPSND plugin receiving the SNDC_CLOSE PDU.
+ * @param svc
+ *     The RDPSND channel receiving the SNDC_CLOSE PDU.
  *
  * @param input_stream
  *     The FreeRDP input stream containing the remaining raw bytes (after the
@@ -211,7 +210,7 @@ void guac_rdpsnd_wave_handler(guac_rdpsnd* rdpsnd,
  *     The header content of the SNDC_CLOSE PDU. All RDPSND messages contain
  *     the same header information.
  */
-void guac_rdpsnd_close_handler(guac_rdpsnd* rdpsnd,
+void guac_rdpsnd_close_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header);
 
 #endif
