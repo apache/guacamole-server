@@ -35,6 +35,13 @@
 #define GUAC_RDP_MAX_FORMATS 16
 
 /**
+ * The maximum number of bytes that the RDP server will be allowed to send
+ * within any single write operation, regardless of the number of chunks that
+ * write is split into. Bytes beyond this limit may be dropped.
+ */
+#define GUAC_SVC_MAX_ASSEMBLED_LENGTH 1048576
+
+/**
  * Abstract representation of a PCM format, including the sample rate, number
  * of channels, and bits per sample.
  */
@@ -102,6 +109,14 @@ typedef struct guac_rdpsnd {
      * entry_points.pVirtualChannelWriteEx().
      */
     DWORD open_handle;
+
+    /**
+     * All data that has been received thus far from the current RDP server
+     * write operation. Data received along virtual channels is sent in chunks
+     * (typically 1600 bytes), and thus must be gradually reassembled as it is
+     * received.
+     */
+    wStream* input_stream;
 
     /**
      * The block number of the last SNDC_WAVE (WaveInfo) PDU received.

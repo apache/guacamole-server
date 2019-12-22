@@ -161,9 +161,45 @@ static VOID guac_rdpsnd_handle_open_event(LPVOID user_param,
         return;
     }
 
-    wStream* input_stream = Stream_New(data, data_length);
-    guac_rdpsnd_process_receive(rdpsnd, input_stream);
-    Stream_Free(input_stream, FALSE);
+    /* If receiving first chunk, allocate sufficient space for all remaining
+     * chunks */
+    if (data_flags & CHANNEL_FLAG_FIRST) {
+
+        /* Limit maximum received size */
+        if (total_length > GUAC_SVC_MAX_ASSEMBLED_LENGTH) {
+            guac_client_log(rdpsnd->client, GUAC_LOG_WARNING, "RDP server has "
+                    "requested to send a sequence of %i bytes, but this "
+                    "exceeds the maximum buffer space of %i bytes. Received "
+                    "data may be truncated.", total_length,
+                    GUAC_SVC_MAX_ASSEMBLED_LENGTH);
+            total_length = GUAC_SVC_MAX_ASSEMBLED_LENGTH;
+        }
+
+        rdpsnd->input_stream = Stream_New(NULL, total_length);
+    }
+
+    /* Add chunk to buffer only if sufficient space remains */
+    if (Stream_EnsureRemainingCapacity(rdpsnd->input_stream, data_length))
+        Stream_Write(rdpsnd->input_stream, data, data_length);
+    else
+        guac_client_log(rdpsnd->client, GUAC_LOG_WARNING, "%i bytes of data "
+                "received from within the remote desktop session for the "
+                "RDPSND channel are being dropped because the maximum "
+                "available space for received data has been exceeded.",
+                data_length, rdpsnd->channel_def.name, open_handle,
+                rdpsnd->open_handle);
+
+    /* Fire event once last chunk has been received */
+    if (data_flags & CHANNEL_FLAG_LAST) {
+
+        Stream_SealLength(rdpsnd->input_stream);
+        Stream_SetPosition(rdpsnd->input_stream, 0);
+
+        guac_rdpsnd_process_receive(rdpsnd, rdpsnd->input_stream);
+
+        Stream_Free(rdpsnd->input_stream, TRUE);
+
+    }
 
 }
 
