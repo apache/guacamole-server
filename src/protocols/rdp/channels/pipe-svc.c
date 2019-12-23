@@ -18,12 +18,11 @@
  */
 
 #include "config.h"
-
-#include "plugins/channels.h"
-#include "client.h"
-#include "common/list.h"
 #include "channels/common-svc.h"
 #include "channels/pipe-svc.h"
+#include "client.h"
+#include "common/list.h"
+#include "plugins/channels.h"
 #include "rdp.h"
 
 #include <freerdp/svc.h>

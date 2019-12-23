@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef GUAC_RDPDR_FS_MESSAGES_H
-#define GUAC_RDPDR_FS_MESSAGES_H
+#ifndef GUAC_RDP_CHANNELS_RDPDR_FS_MESSAGES_H
+#define GUAC_RDP_CHANNELS_RDPDR_FS_MESSAGES_H
 
 /**
  * Handlers for core drive I/O requests. Requests handled here may be simple

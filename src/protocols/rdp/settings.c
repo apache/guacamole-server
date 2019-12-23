@@ -18,12 +18,11 @@
  */
 
 #include "config.h"
-
 #include "client.h"
 #include "common/string.h"
 #include "rdp.h"
-#include "settings.h"
 #include "resolution.h"
+#include "settings.h"
 
 #include <freerdp/constants.h>
 #include <freerdp/settings.h>

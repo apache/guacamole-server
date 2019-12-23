@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef GUAC_RDPSND_MESSAGES_H
-#define GUAC_RDPSND_MESSAGES_H
+#ifndef GUAC_RDP_CHANNELS_RDPSND_MESSAGES_H
+#define GUAC_RDP_CHANNELS_RDPSND_MESSAGES_H
 
 #include "config.h"
 #include "channels/common-svc.h"

@@ -23,6 +23,13 @@
 #include "status.h"
 #include "stream.h"
 
+#include <guacamole/client.h>
+#include <guacamole/object.h>
+#include <guacamole/pool.h>
+#include <guacamole/socket.h>
+#include <guacamole/string.h>
+#include <guacamole/user.h>
+
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -34,13 +41,6 @@
 #include <sys/statvfs.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include <guacamole/client.h>
-#include <guacamole/object.h>
-#include <guacamole/pool.h>
-#include <guacamole/socket.h>
-#include <guacamole/string.h>
-#include <guacamole/user.h>
 
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
         int create_drive_path) {

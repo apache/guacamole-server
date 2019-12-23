@@ -17,10 +17,12 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_RAIL_H
-#define GUAC_RDP_RAIL_H
+#ifndef GUAC_RDP_CHANNELS_RAIL_H
+#define GUAC_RDP_CHANNELS_RAIL_H
 
 #include "config.h"
+
+#include <freerdp/freerdp.h>
 
 /**
  * Initializes RemoteApp support for RDP and handling of the RAIL channel. If

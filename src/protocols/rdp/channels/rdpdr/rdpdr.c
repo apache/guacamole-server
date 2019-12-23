@@ -18,15 +18,15 @@
  */
 
 #include "config.h"
-#include "plugins/channels.h"
-#include "rdp.h"
-#include "fs.h"
-#include "settings.h"
-#include "stream.h"
-#include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpdr/rdpdr-fs.h"
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr-printer.h"
+#include "channels/rdpdr/rdpdr.h"
+#include "fs.h"
+#include "plugins/channels.h"
+#include "rdp.h"
+#include "settings.h"
+#include "stream.h"
 
 #include <freerdp/channels/rdpdr.h>
 #include <freerdp/freerdp.h>

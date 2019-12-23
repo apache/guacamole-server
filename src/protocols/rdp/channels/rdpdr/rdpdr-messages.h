@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef GUAC_RDPDR_MESSAGES_H
-#define GUAC_RDPDR_MESSAGES_H
+#ifndef GUAC_RDP_CHANNELS_RDPDR_MESSAGES_H
+#define GUAC_RDP_CHANNELS_RDPDR_MESSAGES_H
 
 #include "config.h"
 #include "channels/rdpdr/rdpdr.h"

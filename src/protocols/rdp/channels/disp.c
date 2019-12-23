@@ -18,9 +18,9 @@
  */
 
 #include "config.h"
-#include "plugins/channels.h"
-#include "client.h"
 #include "channels/disp.h"
+#include "client.h"
+#include "plugins/channels.h"
 #include "rdp.h"
 #include "settings.h"
 

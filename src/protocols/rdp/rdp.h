@@ -21,17 +21,16 @@
 #define GUAC_RDP_H
 
 #include "config.h"
-
 #include "channels/audio-input.h"
 #include "channels/cliprdr.h"
+#include "channels/disp.h"
 #include "common/clipboard.h"
 #include "common/display.h"
 #include "common/list.h"
 #include "common/recording.h"
 #include "common/surface.h"
-#include "channels/disp.h"
-#include "keyboard/keyboard.h"
 #include "fs.h"
+#include "keyboard/keyboard.h"
 #include "print-job.h"
 #include "settings.h"
 

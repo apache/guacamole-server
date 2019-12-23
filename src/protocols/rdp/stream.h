@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef _GUAC_RDP_STREAM_H
-#define _GUAC_RDP_STREAM_H
+#ifndef GUAC_RDP_STREAM_H
+#define GUAC_RDP_STREAM_H
 
 #include "config.h"
 #include "common/json.h"

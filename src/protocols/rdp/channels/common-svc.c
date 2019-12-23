@@ -18,8 +18,8 @@
  */
 
 #include "config.h"
-#include "plugins/channels.h"
 #include "channels/common-svc.h"
+#include "plugins/channels.h"
 #include "rdp.h"
 
 #include <freerdp/svc.h>

@@ -19,18 +19,18 @@
 
 #include "config.h"
 
-#include "rdp.h"
-#include "channels/rdpsnd/rdpsnd.h"
 #include "channels/rdpsnd/rdpsnd-messages.h"
-
-#include <pthread.h>
-#include <stdlib.h>
+#include "channels/rdpsnd/rdpsnd.h"
+#include "rdp.h"
 
 #include <freerdp/codec/audio.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
+
+#include <pthread.h>
+#include <stdlib.h>
 
 void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {

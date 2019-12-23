@@ -18,9 +18,9 @@
  */
 
 #include "config.h"
-#include "rdp.h"
-#include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpdr/rdpdr-messages.h"
+#include "channels/rdpdr/rdpdr.h"
+#include "rdp.h"
 #include "unicode.h"
 
 #include <freerdp/channels/rdpdr.h>

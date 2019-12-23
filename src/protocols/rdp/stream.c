@@ -17,16 +17,15 @@
  * under the License.
  */
 
-
 #include "config.h"
 #include "client.h"
-#include "rdp.h"
 #include "fs.h"
+#include "rdp.h"
 #include "stream.h"
 
-#include <freerdp/freerdp.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/client/cliprdr.h>
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>

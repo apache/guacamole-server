@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_AI_MESSAGES_H
-#define GUAC_RDP_AI_MESSAGES_H
+#ifndef GUAC_RDP_PLUGINS_GUACAI_MESSAGES_H
+#define GUAC_RDP_PLUGINS_GUACAI_MESSAGES_H
 
 #include "config.h"
 

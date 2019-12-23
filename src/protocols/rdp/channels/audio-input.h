@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_AUDIO_INPUT_H
-#define GUAC_RDP_AUDIO_INPUT_H
+#ifndef GUAC_RDP_CHANNELS_AUDIO_INPUT_H
+#define GUAC_RDP_CHANNELS_AUDIO_INPUT_H
 
 #include "config.h"
 

@@ -19,9 +19,9 @@
 
 #include "config.h"
 #include "channels/common-svc.h"
-#include "rdp.h"
-#include "channels/rdpsnd/rdpsnd.h"
 #include "channels/rdpsnd/rdpsnd-messages.h"
+#include "channels/rdpsnd/rdpsnd.h"
+#include "rdp.h"
 
 #include <freerdp/codec/audio.h>
 #include <freerdp/freerdp.h>

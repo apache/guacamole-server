@@ -18,21 +18,20 @@
  */
 
 #include "config.h"
-
+#include "channels/audio-input.h"
 #include "plugins/guacai/guacai-messages.h"
 #include "plugins/guacai/guacai.h"
-#include "channels/audio-input.h"
 #include "plugins/ptr-string.h"
 #include "rdp.h"
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <freerdp/freerdp.h>
 #include <freerdp/constants.h>
 #include <freerdp/dvc.h>
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
+
+#include <stdlib.h>
+#include <string.h>
 
 /**
  * Handles the given data received along the AUDIO_INPUT channel of the RDP

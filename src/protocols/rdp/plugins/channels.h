@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_CHANNELS_H
-#define GUAC_RDP_CHANNELS_H
+#ifndef GUAC_RDP_PLUGINS_CHANNELS_H
+#define GUAC_RDP_PLUGINS_CHANNELS_H
 
 #include "config.h"
 

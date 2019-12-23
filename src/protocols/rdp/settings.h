@@ -17,15 +17,15 @@
  * under the License.
  */
 
-
-#ifndef __GUAC_RDP_SETTINGS_H
-#define __GUAC_RDP_SETTINGS_H
+#ifndef GUAC_RDP_SETTINGS_H
+#define GUAC_RDP_SETTINGS_H
 
 #include "config.h"
 
 #include "keyboard/keymap.h"
 
 #include <freerdp/freerdp.h>
+#include <guacamole/user.h>
 
 /**
  * The maximum number of bytes in the client hostname claimed during

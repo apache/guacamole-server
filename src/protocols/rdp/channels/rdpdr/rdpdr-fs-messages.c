@@ -18,12 +18,12 @@
  */
 
 #include "config.h"
-#include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpdr/rdpdr-fs-messages-dir-info.h"
 #include "channels/rdpdr/rdpdr-fs-messages-file-info.h"
-#include "channels/rdpdr/rdpdr-fs-messages.h"
 #include "channels/rdpdr/rdpdr-fs-messages-vol-info.h"
+#include "channels/rdpdr/rdpdr-fs-messages.h"
 #include "channels/rdpdr/rdpdr-messages.h"
+#include "channels/rdpdr/rdpdr.h"
 #include "fs.h"
 #include "status.h"
 #include "unicode.h"

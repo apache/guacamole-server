@@ -18,15 +18,14 @@
  */
 
 #include "config.h"
-
 #include "channels/audio-input.h"
+#include "channels/pipe-svc.h"
 #include "common/display.h"
 #include "input.h"
-#include "user.h"
-#include "channels/pipe-svc.h"
 #include "rdp.h"
 #include "settings.h"
 #include "stream.h"
+#include "user.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "sftp.h"

@@ -18,10 +18,9 @@
  */
 
 #include "config.h"
-
+#include "channels/disp.h"
 #include "client.h"
 #include "common/recording.h"
-#include "channels/disp.h"
 #include "input.h"
 #include "keyboard/keyboard.h"
 #include "rdp.h"

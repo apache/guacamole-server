@@ -18,12 +18,11 @@
  */
 
 #include "config.h"
-
 #include "client.h"
 #include "common/cursor.h"
 #include "common/display.h"
-#include "rdp.h"
 #include "pointer.h"
+#include "rdp.h"
 
 #include <cairo/cairo.h>
 #include <freerdp/freerdp.h>

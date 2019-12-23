@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef __GUAC_RDP_STATUS_H
-#define __GUAC_RDP_STATUS_H
+#ifndef GUAC_RDP_STATUS_H
+#define GUAC_RDP_STATUS_H
 
 /**
  * RDP-specific status constants.

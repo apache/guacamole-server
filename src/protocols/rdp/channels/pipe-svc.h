@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_PIPE_SVC_H
-#define GUAC_RDP_PIPE_SVC_H
+#ifndef GUAC_RDP_CHANNELS_PIPE_SVC_H
+#define GUAC_RDP_CHANNELS_PIPE_SVC_H
 
 #include "config.h"
 #include "channels/common-svc.h"

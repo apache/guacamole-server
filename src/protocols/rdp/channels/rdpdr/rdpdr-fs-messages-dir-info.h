@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef GUAC_RDPDR_FS_MESSAGES_DIR_INFO_H
-#define GUAC_RDPDR_FS_MESSAGES_DIR_INFO_H
+#ifndef GUAC_RDP_CHANNELS_RDPDR_FS_MESSAGES_DIR_INFO_H
+#define RDP_CHANNELS_GUAC_RDPDR_FS_MESSAGES_DIR_INFO_H
 
 /**
  * Handlers for directory queries received over the RDPDR channel via the

@@ -18,12 +18,11 @@
  */
 
 #include "config.h"
-
 #include "client.h"
-#include "common/surface.h"
-#include "rdp.h"
 #include "color.h"
+#include "common/surface.h"
 #include "glyph.h"
+#include "rdp.h"
 #include "settings.h"
 
 #include <freerdp/freerdp.h>

@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef GUAC_RDPDR_FS_H
-#define GUAC_RDPDR_FS_H
+#ifndef GUAC_RDP_RDPDR_FS_H
+#define GUAC_RDP_RDPDR_FS_H
 
 /**
  * Functions and macros specific to filesystem handling and initialization

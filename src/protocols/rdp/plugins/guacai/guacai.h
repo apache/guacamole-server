@@ -17,14 +17,14 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_AI_SERVICE_H
-#define GUAC_RDP_AI_SERVICE_H
+#ifndef GUAC_RDP_PLUGINS_GUACAI_H
+#define GUAC_RDP_PLUGINS_GUACAI_H
 
 #include "config.h"
 
-#include <freerdp/freerdp.h>
 #include <freerdp/constants.h>
 #include <freerdp/dvc.h>
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 
 /**

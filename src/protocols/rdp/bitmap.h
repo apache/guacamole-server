@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef _GUAC_RDP_RDP_BITMAP_H
-#define _GUAC_RDP_RDP_BITMAP_H
+#ifndef GUAC_RDP_BITMAP_H
+#define GUAC_RDP_BITMAP_H
 
 #include "config.h"
 #include "common/display.h"

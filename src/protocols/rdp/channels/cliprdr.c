@@ -19,11 +19,11 @@
 
 #include "config.h"
 
-#include "plugins/channels.h"
-#include "client.h"
 #include "channels/cliprdr.h"
+#include "client.h"
 #include "common/clipboard.h"
 #include "common/iconv.h"
+#include "plugins/channels.h"
 #include "rdp.h"
 
 #include <freerdp/channels/channels.h>

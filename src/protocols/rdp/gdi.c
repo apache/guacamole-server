@@ -18,12 +18,11 @@
  */
 
 #include "config.h"
-
+#include "bitmap.h"
 #include "client.h"
+#include "color.h"
 #include "common/surface.h"
 #include "rdp.h"
-#include "bitmap.h"
-#include "color.h"
 #include "settings.h"
 
 #include <cairo/cairo.h>

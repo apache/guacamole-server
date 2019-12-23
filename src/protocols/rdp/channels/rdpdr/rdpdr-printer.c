@@ -18,11 +18,11 @@
  */
 
 #include "config.h"
-#include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr-printer.h"
-#include "rdp.h"
+#include "channels/rdpdr/rdpdr.h"
 #include "print-job.h"
+#include "rdp.h"
 #include "status.h"
 #include "unicode.h"
 

@@ -18,8 +18,8 @@
  */
 
 #include "config.h"
-#include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpdr/rdpdr-messages.h"
+#include "channels/rdpdr/rdpdr.h"
 #include "fs.h"
 #include "status.h"
 

@@ -18,18 +18,17 @@
  */
 
 #include "config.h"
-
-#include "plugins/guacai/guacai-messages.h"
 #include "channels/audio-input.h"
+#include "plugins/guacai/guacai-messages.h"
 #include "rdp.h"
 
-#include <stdlib.h>
-
-#include <freerdp/freerdp.h>
 #include <freerdp/constants.h>
 #include <freerdp/dvc.h>
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
+
+#include <stdlib.h>
 
 /**
  * Reads AUDIO_FORMAT data from the given stream into the given struct.

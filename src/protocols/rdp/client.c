@@ -18,13 +18,12 @@
  */
 
 #include "config.h"
-
 #include "channels/audio-input.h"
-#include "common/recording.h"
-#include "client.h"
 #include "channels/disp.h"
-#include "rdp.h"
+#include "client.h"
+#include "common/recording.h"
 #include "fs.h"
+#include "rdp.h"
 #include "user.h"
 
 #ifdef ENABLE_COMMON_SSH

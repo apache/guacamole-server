@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_CLIPBOARD_H
-#define GUAC_RDP_CLIPBOARD_H
+#ifndef GUAC_RDP_CHANNELS_CLIPRDR_H
+#define GUAC_RDP_CHANNELS_CLIPRDR_H
 
 #include "config.h"
 #include "common/clipboard.h"

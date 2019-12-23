@@ -17,12 +17,11 @@
  * under the License.
  */
 
-
 #include "config.h"
-#include "rdp.h"
-#include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpdr/rdpdr-fs-messages.h"
 #include "channels/rdpdr/rdpdr-messages.h"
+#include "channels/rdpdr/rdpdr.h"
+#include "rdp.h"
 
 #include <freerdp/channels/rdpdr.h>
 #include <guacamole/client.h>

@@ -20,9 +20,6 @@
 #include "config.h"
 #include "channels/common-svc.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <freerdp/constants.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -30,6 +27,9 @@
 #include <guacamole/string.h>
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
+
+#include <stdlib.h>
+#include <string.h>
 
 /**
  * Event handler for events which deal with data transmitted over an open SVC.

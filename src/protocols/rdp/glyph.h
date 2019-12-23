@@ -17,9 +17,8 @@
  * under the License.
  */
 
-
-#ifndef _GUAC_RDP_RDP_GLYPH_H
-#define _GUAC_RDP_RDP_GLYPH_H
+#ifndef GUAC_RDP_GLYPH_H
+#define GUAC_RDP_GLYPH_H
 
 #include "config.h"
 
