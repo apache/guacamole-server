@@ -26,6 +26,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 
+#include <freerdp/codec/audio.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>

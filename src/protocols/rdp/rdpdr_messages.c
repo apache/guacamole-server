@@ -23,6 +23,7 @@
 #include "rdpdr_messages.h"
 #include "unicode.h"
 
+#include <freerdp/channels/rdpdr.h>
 #include <guacamole/client.h>
 #include <guacamole/unicode.h>
 #include <winpr/stream.h>
@@ -87,15 +88,15 @@ static void guac_rdpdr_send_client_capability(guac_rdp_common_svc* svc) {
     Stream_Write_UINT32(output_stream, GENERAL_CAPABILITY_VERSION_02);
 
     /* General capability data */
-    Stream_Write_UINT32(output_stream, GUAC_OS_TYPE);          /* osType - required to be ignored */
-    Stream_Write_UINT32(output_stream, 0);                     /* osVersion */
-    Stream_Write_UINT16(output_stream, RDP_CLIENT_MAJOR_ALL);  /* protocolMajor */
-    Stream_Write_UINT16(output_stream, RDP_CLIENT_MINOR_5_2);  /* protocolMinor */
-    Stream_Write_UINT32(output_stream, 0xFFFF);                /* ioCode1 */
-    Stream_Write_UINT32(output_stream, 0);                     /* ioCode2 */
+    Stream_Write_UINT32(output_stream, GUAC_OS_TYPE);                /* osType - required to be ignored */
+    Stream_Write_UINT32(output_stream, 0);                           /* osVersion */
+    Stream_Write_UINT16(output_stream, 1);                           /* protocolMajor - must be set to 1 */
+    Stream_Write_UINT16(output_stream, RDPDR_MINOR_RDP_VERSION_5_2); /* protocolMinor */
+    Stream_Write_UINT32(output_stream, 0xFFFF);                      /* ioCode1 */
+    Stream_Write_UINT32(output_stream, 0);                           /* ioCode2 */
     Stream_Write_UINT32(output_stream,
                                       RDPDR_DEVICE_REMOVE_PDUS
-                                    | RDPDR_CLIENT_DISPLAY_NAME
+                                    | RDPDR_CLIENT_DISPLAY_NAME_PDU
                                     | RDPDR_USER_LOGGEDON_PDU); /* extendedPDU */
     Stream_Write_UINT32(output_stream, 0);                      /* extraFlags1 */
     Stream_Write_UINT32(output_stream, 0);                      /* extraFlags2 */

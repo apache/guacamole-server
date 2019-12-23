@@ -24,6 +24,7 @@
 #include "rdpdr_fs_messages.h"
 #include "rdpdr_messages.h"
 
+#include <freerdp/channels/rdpdr.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>

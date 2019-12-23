@@ -26,6 +26,7 @@
 #include "rdp_status.h"
 #include "unicode.h"
 
+#include <freerdp/channels/rdpdr.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>

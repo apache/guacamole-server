@@ -23,6 +23,7 @@
 #include "rdpsnd.h"
 #include "rdpsnd_messages.h"
 
+#include <freerdp/codec/audio.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/client.h>

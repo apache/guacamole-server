@@ -28,6 +28,7 @@
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"
 
+#include <freerdp/channels/rdpdr.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
