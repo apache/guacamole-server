@@ -21,9 +21,9 @@
 
 #include "client.h"
 #include "common/recording.h"
-#include "disp.h"
+#include "channels/disp.h"
 #include "input.h"
-#include "keyboard.h"
+#include "keyboard/keyboard.h"
 #include "rdp.h"
 
 #include <freerdp/freerdp.h>

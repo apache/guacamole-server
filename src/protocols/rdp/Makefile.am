@@ -37,85 +37,85 @@ nodist_libguac_client_rdp_la_SOURCES =  \
     _generated_channel_entry_wrappers.c \
     _generated_keymaps.c
 
-libguac_client_rdp_la_SOURCES =   \
-    audio_input.c                 \
-    channels.c                    \
-    client.c                      \
-    clipboard.c                   \
-    common-svc.c                  \
-    decompose.c                   \
-    disp.c                        \
-    error.c                       \
-    input.c                       \
-    keyboard.c                    \
-    pipe-svc.c                    \
-    ptr_string.c                  \
-    rail.c                        \
-    rdp.c                         \
-    rdp_bitmap.c                  \
-    rdp_color.c                   \
-    rdp_fs.c                      \
-    rdp_gdi.c                     \
-    rdp_glyph.c                   \
-    rdp_keymap.c                  \
-    rdp_print_job.c               \
-    rdp_pointer.c                 \
-    rdp_settings.c                \
-    rdp_stream.c                  \
-    rdpdr.c                       \
-    rdpdr_fs_messages.c           \
-    rdpdr_fs_messages_dir_info.c  \
-    rdpdr_fs_messages_file_info.c \
-    rdpdr_fs_messages_vol_info.c  \
-    rdpdr_fs_service.c            \
-    rdpdr_messages.c              \
-    rdpdr_printer.c               \
-    rdpsnd.c                      \
-    rdpsnd_messages.c             \
-    resolution.c                  \
-    unicode.c                     \
+libguac_client_rdp_la_SOURCES =                  \
+    bitmap.c                                     \
+    channels/audio-input.c                       \
+    channels/cliprdr.c                           \
+    channels/common-svc.c                        \
+    channels/disp.c                              \
+    channels/pipe-svc.c                          \
+    channels/rail.c                              \
+    channels/rdpdr/rdpdr-fs-messages-dir-info.c  \
+    channels/rdpdr/rdpdr-fs-messages-file-info.c \
+    channels/rdpdr/rdpdr-fs-messages-vol-info.c  \
+    channels/rdpdr/rdpdr-fs-messages.c           \
+    channels/rdpdr/rdpdr-fs.c                    \
+    channels/rdpdr/rdpdr-messages.c              \
+    channels/rdpdr/rdpdr-printer.c               \
+    channels/rdpdr/rdpdr.c                       \
+    channels/rdpsnd/rdpsnd-messages.c            \
+    channels/rdpsnd/rdpsnd.c                     \
+    client.c                                     \
+    color.c                                      \
+    error.c                                      \
+    fs.c                                         \
+    gdi.c                                        \
+    glyph.c                                      \
+    input.c                                      \
+    keyboard/decompose.c                         \
+    keyboard/keyboard.c                          \
+    keyboard/keymap.c                            \
+    plugins/channels.c                           \
+    plugins/ptr-string.c                         \
+    pointer.c                                    \
+    print-job.c                                  \
+    rdp.c                                        \
+    resolution.c                                 \
+    settings.c                                   \
+    stream.c                                     \
+    unicode.c                                    \
     user.c
 
-noinst_HEADERS =                             \
-    guac_ai/ai_messages.h                    \
-    guac_ai/ai_service.h                     \
-    audio_input.h                            \
-    client.h                                 \
-    clipboard.h                              \
-    channels.h                               \
-    common-svc.h                             \
-    decompose.h                              \
-    disp.h                                   \
-    error.h                                  \
-    input.h                                  \
-    keyboard.h                               \
-    pipe-svc.h                               \
-    ptr_string.h                             \
-    rail.h                                   \
-    rdp.h                                    \
-    rdp_bitmap.h                             \
-    rdp_color.h                              \
-    rdp_fs.h                                 \
-    rdp_gdi.h                                \
-    rdp_glyph.h                              \
-    rdp_keymap.h                             \
-    rdp_pointer.h                            \
-    rdp_print_job.h                          \
-    rdp_settings.h                           \
-    rdp_status.h                             \
-    rdp_stream.h                             \
-    rdpdr.h                                  \
-    rdpdr_fs_messages.h                      \
-    rdpdr_fs_messages_dir_info.h             \
-    rdpdr_fs_messages_file_info.h            \
-    rdpdr_fs_messages_vol_info.h             \
-    rdpdr_fs_service.h                       \
-    rdpdr_messages.h                         \
-    rdpdr_printer.h                          \
-    rdpsnd.h                                 \
-    rdpsnd_messages.h                        \
-    resolution.h                             \
-    unicode.h                                \
+noinst_HEADERS =                                 \
+    bitmap.h                                     \
+    channels/audio-input.h                       \
+    channels/cliprdr.h                           \
+    channels/common-svc.h                        \
+    channels/disp.h                              \
+    channels/pipe-svc.h                          \
+    channels/rail.h                              \
+    channels/rdpdr/rdpdr-fs-messages-dir-info.h  \
+    channels/rdpdr/rdpdr-fs-messages-file-info.h \
+    channels/rdpdr/rdpdr-fs-messages-vol-info.h  \
+    channels/rdpdr/rdpdr-fs-messages.h           \
+    channels/rdpdr/rdpdr-fs.h                    \
+    channels/rdpdr/rdpdr-messages.h              \
+    channels/rdpdr/rdpdr-printer.h               \
+    channels/rdpdr/rdpdr.h                       \
+    channels/rdpsnd/rdpsnd-messages.h            \
+    channels/rdpsnd/rdpsnd.h                     \
+    client.h                                     \
+    color.h                                      \
+    error.h                                      \
+    fs.h                                         \
+    gdi.h                                        \
+    glyph.h                                      \
+    input.h                                      \
+    keyboard/decompose.h                         \
+    keyboard/keyboard.h                          \
+    keyboard/keymap.h                            \
+    plugins/channels.h                           \
+    plugins/guacai/guacai-messages.h             \
+    plugins/guacai/guacai.h                      \
+    plugins/ptr-string.h                         \
+    pointer.h                                    \
+    print-job.h                                  \
+    rdp.h                                        \
+    resolution.h                                 \
+    settings.h                                   \
+    status.h                                     \
+    stream.h                                     \
+    unicode.h                                    \
     user.h
 
 libguac_client_rdp_la_CFLAGS = \
@@ -131,8 +131,8 @@ libguac_client_rdp_la_LDFLAGS = \
     @PTHREAD_LIBS@              \
     @RDP_LIBS@
 
-libguac_client_rdp_la_LIBADD =     \
-    @COMMON_LTLIB@                 \
+libguac_client_rdp_la_LIBADD = \
+    @COMMON_LTLIB@             \
     @LIBGUAC_LTLIB@
 
 #
@@ -149,8 +149,8 @@ freerdpdir = ${libdir}/freerdp2
 # Common SVC plugin (shared by RDPDR, RDPSND, etc.)
 #
 
-libguac_common_svc_client_la_SOURCES = \
-    guac-common-svc/common-svc-main.c
+libguac_common_svc_client_la_SOURCES =        \
+    plugins/guac-common-svc/guac-common-svc.c
 
 libguac_common_svc_client_la_CFLAGS = \
     -Werror -Wall -Iinclude           \
@@ -168,17 +168,17 @@ libguac_common_svc_client_la_LIBADD = \
 # Audio Input
 #
 
-libguacai_client_la_SOURCES = \
-    audio_input.c             \
-    guac_ai/ai_messages.c     \
-    guac_ai/ai_service.c      \
-    ptr_string.c
+libguacai_client_la_SOURCES =        \
+    channels/audio-input.c           \
+    plugins/guacai/guacai-messages.c \
+    plugins/guacai/guacai.c          \
+    plugins/ptr-string.c
 
-libguacai_client_la_CFLAGS =   \
-    -Werror -Wall -Iinclude    \
-    @COMMON_INCLUDE@           \
-    @COMMON_SSH_INCLUDE@       \
-    @LIBGUAC_INCLUDE@          \
+libguacai_client_la_CFLAGS = \
+    -Werror -Wall -Iinclude  \
+    @COMMON_INCLUDE@         \
+    @COMMON_SSH_INCLUDE@     \
+    @LIBGUAC_INCLUDE@        \
     @RDP_CFLAGS@
 
 libguacai_client_la_LDFLAGS =      \
@@ -212,31 +212,31 @@ BUILT_SOURCES =                         \
     _generated_channel_entry_wrappers.c \
     _generated_keymaps.c
 
-rdp_keymaps =                   \
-    $(srcdir)/keymaps/base.keymap         \
-    $(srcdir)/keymaps/failsafe.keymap     \
-    $(srcdir)/keymaps/de_de_qwertz.keymap \
-    $(srcdir)/keymaps/de_ch_qwertz.keymap \
-    $(srcdir)/keymaps/en_gb_qwerty.keymap \
-    $(srcdir)/keymaps/en_us_qwerty.keymap \
-    $(srcdir)/keymaps/es_es_qwerty.keymap \
-    $(srcdir)/keymaps/fr_fr_azerty.keymap \
-    $(srcdir)/keymaps/fr_ch_qwertz.keymap \
-    $(srcdir)/keymaps/it_it_qwerty.keymap \
-    $(srcdir)/keymaps/ja_jp_qwerty.keymap \
-    $(srcdir)/keymaps/pt_br_qwerty.keymap \
-    $(srcdir)/keymaps/sv_se_qwerty.keymap \
-    $(srcdir)/keymaps/da_dk_qwerty.keymap \
-    $(srcdir)/keymaps/tr_tr_qwerty.keymap
+rdp_keymaps =                                      \
+    $(srcdir)/keyboard/keymaps/base.keymap         \
+    $(srcdir)/keyboard/keymaps/failsafe.keymap     \
+    $(srcdir)/keyboard/keymaps/de_de_qwertz.keymap \
+    $(srcdir)/keyboard/keymaps/de_ch_qwertz.keymap \
+    $(srcdir)/keyboard/keymaps/en_gb_qwerty.keymap \
+    $(srcdir)/keyboard/keymaps/en_us_qwerty.keymap \
+    $(srcdir)/keyboard/keymaps/es_es_qwerty.keymap \
+    $(srcdir)/keyboard/keymaps/fr_fr_azerty.keymap \
+    $(srcdir)/keyboard/keymaps/fr_ch_qwertz.keymap \
+    $(srcdir)/keyboard/keymaps/it_it_qwerty.keymap \
+    $(srcdir)/keyboard/keymaps/ja_jp_qwerty.keymap \
+    $(srcdir)/keyboard/keymaps/pt_br_qwerty.keymap \
+    $(srcdir)/keyboard/keymaps/sv_se_qwerty.keymap \
+    $(srcdir)/keyboard/keymaps/da_dk_qwerty.keymap \
+    $(srcdir)/keyboard/keymaps/tr_tr_qwerty.keymap
 
 _generated_keymaps.c: $(rdp_keymaps)
-	$(AM_V_GEN) $(srcdir)/keymaps/generate.pl $(rdp_keymaps)
+	$(AM_V_GEN) $(srcdir)/keyboard/keymaps/generate.pl $(rdp_keymaps)
 
-_generated_channel_entry_wrappers.c: $(srcdir)/channels.h $(srcdir)/generate-entry-wrappers.pl
-	$(AM_V_GEN) $(srcdir)/generate-entry-wrappers.pl $(srcdir)/channels.h
+_generated_channel_entry_wrappers.c: $(srcdir)/plugins/channels.h $(srcdir)/plugins/generate-entry-wrappers.pl
+	$(AM_V_GEN) $(srcdir)/plugins/generate-entry-wrappers.pl $(srcdir)/plugins/channels.h
 
-EXTRA_DIST =                   \
-    $(rdp_keymaps)             \
-    generate-entry-wrappers.pl \
-    keymaps/generate.pl
+EXTRA_DIST =                           \
+    $(rdp_keymaps)                     \
+    plugins/generate-entry-wrappers.pl \
+    keyboard/keymaps/generate.pl
 

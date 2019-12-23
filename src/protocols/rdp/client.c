@@ -19,12 +19,12 @@
 
 #include "config.h"
 
-#include "audio_input.h"
+#include "channels/audio-input.h"
 #include "common/recording.h"
 #include "client.h"
-#include "disp.h"
+#include "channels/disp.h"
 #include "rdp.h"
-#include "rdp_fs.h"
+#include "fs.h"
 #include "user.h"
 
 #ifdef ENABLE_COMMON_SSH

@@ -22,18 +22,18 @@
 
 #include "config.h"
 
-#include "audio_input.h"
-#include "clipboard.h"
+#include "channels/audio-input.h"
+#include "channels/cliprdr.h"
 #include "common/clipboard.h"
 #include "common/display.h"
 #include "common/list.h"
 #include "common/recording.h"
 #include "common/surface.h"
-#include "disp.h"
-#include "keyboard.h"
-#include "rdp_fs.h"
-#include "rdp_print_job.h"
-#include "rdp_settings.h"
+#include "channels/disp.h"
+#include "keyboard/keyboard.h"
+#include "fs.h"
+#include "print-job.h"
+#include "settings.h"
 
 #include <freerdp/freerdp.h>
 #include <freerdp/codec/color.h>

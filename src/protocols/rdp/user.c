@@ -19,14 +19,14 @@
 
 #include "config.h"
 
-#include "audio_input.h"
+#include "channels/audio-input.h"
 #include "common/display.h"
 #include "input.h"
 #include "user.h"
-#include "pipe-svc.h"
+#include "channels/pipe-svc.h"
 #include "rdp.h"
-#include "rdp_settings.h"
-#include "rdp_stream.h"
+#include "settings.h"
+#include "stream.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "sftp.h"
