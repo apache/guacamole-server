@@ -23,7 +23,6 @@
 #include "channels/rdpdr/rdpdr.h"
 #include "print-job.h"
 #include "rdp.h"
-#include "status.h"
 #include "unicode.h"
 
 #include <freerdp/channels/rdpdr.h>
@@ -33,6 +32,7 @@
 #include <guacamole/stream.h>
 #include <guacamole/unicode.h>
 #include <guacamole/user.h>
+#include <winpr/file.h>
 #include <winpr/stream.h>
 
 #include <errno.h>

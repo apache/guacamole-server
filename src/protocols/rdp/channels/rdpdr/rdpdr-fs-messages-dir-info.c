@@ -20,10 +20,10 @@
 #include "config.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "fs.h"
-#include "status.h"
 #include "unicode.h"
 
 #include <guacamole/unicode.h>
+#include <winpr/file.h>
 #include <winpr/stream.h>
 
 #include <stddef.h>

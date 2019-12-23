@@ -20,7 +20,6 @@
 #include "config.h"
 
 #include "fs.h"
-#include "status.h"
 #include "stream.h"
 
 #include <guacamole/client.h>
@@ -29,6 +28,7 @@
 #include <guacamole/socket.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
+#include <winpr/file.h>
 
 #include <dirent.h>
 #include <errno.h>

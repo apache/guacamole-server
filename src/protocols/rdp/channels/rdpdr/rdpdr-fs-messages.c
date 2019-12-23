@@ -25,11 +25,11 @@
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "fs.h"
-#include "status.h"
 #include "unicode.h"
 
 #include <freerdp/channels/rdpdr.h>
 #include <guacamole/client.h>
+#include <winpr/file.h>
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
 

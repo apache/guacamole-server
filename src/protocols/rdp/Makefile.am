@@ -113,7 +113,6 @@ noinst_HEADERS =                                 \
     rdp.h                                        \
     resolution.h                                 \
     settings.h                                   \
-    status.h                                     \
     stream.h                                     \
     unicode.h                                    \
     user.h
