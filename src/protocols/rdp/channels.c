@@ -18,11 +18,52 @@
  */
 
 #include "config.h"
+#include "channels.h"
 #include "rdp.h"
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+
+int guac_rdp_wrapped_entry_ex_count = 0;
+
+int guac_rdp_wrapped_entry_count = 0;
+
+PVIRTUALCHANNELENTRYEX guac_rdp_wrapped_entry_ex[GUAC_RDP_MAX_CHANNELS] = { NULL };
+
+PVIRTUALCHANNELENTRY guac_rdp_wrapped_entry[GUAC_RDP_MAX_CHANNELS] = { NULL };
+
+PVIRTUALCHANNELENTRYEX guac_rdp_plugin_wrap_entry_ex(PVIRTUALCHANNELENTRYEX entry_ex) {
+
+    /* Do not wrap if there is insufficient space to store the wrapped
+     * function */
+    if (guac_rdp_wrapped_entry_ex_count == GUAC_RDP_MAX_CHANNELS)
+        return entry_ex;
+
+    /* Generate wrapped version of provided entry point */
+    PVIRTUALCHANNELENTRYEX wrapper = guac_rdp_entry_ex_wrappers[guac_rdp_wrapped_entry_ex_count];
+    guac_rdp_wrapped_entry_ex[guac_rdp_wrapped_entry_ex_count] = entry_ex;
+    guac_rdp_wrapped_entry_ex_count++;
+
+    return wrapper;
+
+}
+
+PVIRTUALCHANNELENTRY guac_rdp_plugin_wrap_entry(PVIRTUALCHANNELENTRY entry) {
+
+    /* Do not wrap if there is insufficient space to store the wrapped
+     * function */
+    if (guac_rdp_wrapped_entry_count == GUAC_RDP_MAX_CHANNELS)
+        return entry;
+
+    /* Generate wrapped version of provided entry point */
+    PVIRTUALCHANNELENTRY wrapper = guac_rdp_entry_wrappers[guac_rdp_wrapped_entry_count];
+    guac_rdp_wrapped_entry[guac_rdp_wrapped_entry_count] = entry;
+    guac_rdp_wrapped_entry_count++;
+
+    return wrapper;
+
+}
 
 int guac_freerdp_channels_load_plugin(rdpChannels* channels,
         rdpSettings* settings, const char* name, void* data) {
@@ -31,15 +72,19 @@ int guac_freerdp_channels_load_plugin(rdpChannels* channels,
     PVIRTUALCHANNELENTRYEX entry_ex = (PVIRTUALCHANNELENTRYEX) (void*) freerdp_load_channel_addin_entry(name,
             NULL, NULL, FREERDP_ADDIN_CHANNEL_STATIC | FREERDP_ADDIN_CHANNEL_ENTRYEX);
 
-    if (entry_ex != NULL)
+    if (entry_ex != NULL) {
+        entry_ex = guac_rdp_plugin_wrap_entry_ex(entry_ex);
         return freerdp_channels_client_load_ex(channels, settings, entry_ex, data);
+    }
 
     /* Lacking the "ex" entry point, attempt to load using the non-ex version */
     PVIRTUALCHANNELENTRY entry = freerdp_load_channel_addin_entry(name,
             NULL, NULL, FREERDP_ADDIN_CHANNEL_STATIC);
 
-    if (entry != NULL)
+    if (entry != NULL) {
+        entry = guac_rdp_plugin_wrap_entry(entry);
         return freerdp_channels_client_load(channels, settings, entry, data);
+    }
 
     /* The plugin does not exist / cannot be loaded */
     return 1;

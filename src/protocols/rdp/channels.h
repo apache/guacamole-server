@@ -26,6 +26,22 @@
 #include <freerdp/freerdp.h>
 
 /**
+ * The maximum number of static channels supported by Guacamole's RDP support.
+ * This value should be given a value which is at least the value of FreeRDP's
+ * CHANNEL_MAX_COUNT.
+ *
+ * NOTE: The value of this macro must be specified statically (not as a
+ * reference to CHANNEL_MAX_COUNT), as its value is extracted and used by the
+ * entry point wrapper code generator (generate-entry-wrappers.pl).
+ */
+#define GUAC_RDP_MAX_CHANNELS 64
+
+/* Validate GUAC_RDP_MAX_CHANNELS is sane at compile time */
+#if GUAC_RDP_MAX_CHANNELS < CHANNEL_MAX_COUNT
+#error "GUAC_RDP_MAX_CHANNELS must not be less than CHANNEL_MAX_COUNT"
+#endif
+
+/**
  * Loads the FreeRDP plugin having the given name. This function is a drop-in
  * replacement for freerdp_channels_load_plugin() which additionally loads
  * plugins implementing the PVIRTUALCHANNELENTRYEX version of the channel
@@ -104,6 +120,84 @@ int guac_freerdp_channels_load_plugin(rdpChannels* channels,
  */
 void guac_freerdp_dynamic_channel_collection_add(rdpSettings* settings,
         const char* name, ...);
+
+/**
+ * The number of wrapped channel entry points currently stored within
+ * guac_rdp_wrapped_entry_ex.
+ */
+extern int guac_rdp_wrapped_entry_ex_count;
+
+/**
+ * All currently wrapped entry points that use the PVIRTUALCHANNELENTRYEX
+ * variant.
+ */
+extern PVIRTUALCHANNELENTRYEX guac_rdp_wrapped_entry_ex[GUAC_RDP_MAX_CHANNELS];
+
+/**
+ * Lookup table of wrapper functions for PVIRTUALCHANNELENTRYEX entry points.
+ * Each function within this array is generated at compile time by the entry
+ * point wrapper code generator (generate-entry-wrappers.pl) and automatically
+ * invokes the corresponding wrapped entry point stored within
+ * guac_rdp_wrapped_entry_ex.
+ */
+extern PVIRTUALCHANNELENTRYEX guac_rdp_entry_ex_wrappers[GUAC_RDP_MAX_CHANNELS];
+
+/**
+ * Wraps the provided entry point function, returning a different entry point
+ * which simply invokes the original. As long as this function is not invoked
+ * more than GUAC_RDP_MAX_CHANNELS times, each returned entry point will be
+ * unique, even if the provided entry point is not. As FreeRDP will refuse to
+ * load a plugin if its entry point is already loaded, this allows a single
+ * FreeRDP plugin to be loaded multiple times.
+ *
+ * @param entry_ex
+ *     The entry point function to wrap.
+ *
+ * @return
+ *     A wrapped version of the provided entry point, or the unwrapped entry
+ *     point if there is insufficient space remaining within
+ *     guac_rdp_entry_ex_wrappers to wrap the entry point.
+ */
+PVIRTUALCHANNELENTRYEX guac_rdp_plugin_wrap_entry_ex(PVIRTUALCHANNELENTRYEX entry_ex);
+
+/**
+ * The number of wrapped channel entry points currently stored within
+ * guac_rdp_wrapped_entry.
+ */
+extern int guac_rdp_wrapped_entry_count;
+
+/**
+ * All currently wrapped entry points that use the PVIRTUALCHANNELENTRY
+ * variant.
+ */
+extern PVIRTUALCHANNELENTRY guac_rdp_wrapped_entry[GUAC_RDP_MAX_CHANNELS];
+
+/**
+ * Lookup table of wrapper functions for PVIRTUALCHANNELENTRY entry points.
+ * Each function within this array is generated at compile time by the entry
+ * point wrapper code generator (generate-entry-wrappers.pl) and automatically
+ * invokes the corresponding wrapped entry point stored within
+ * guac_rdp_wrapped_entry.
+ */
+extern PVIRTUALCHANNELENTRY guac_rdp_entry_wrappers[GUAC_RDP_MAX_CHANNELS];
+
+/**
+ * Wraps the provided entry point function, returning a different entry point
+ * which simply invokes the original. As long as this function is not invoked
+ * more than GUAC_RDP_MAX_CHANNELS times, each returned entry point will be
+ * unique, even if the provided entry point is not. As FreeRDP will refuse to
+ * load a plugin if its entry point is already loaded, this allows a single
+ * FreeRDP plugin to be loaded multiple times.
+ *
+ * @param entry
+ *     The entry point function to wrap.
+ *
+ * @return
+ *     A wrapped version of the provided entry point, or the unwrapped entry
+ *     point if there is insufficient space remaining within
+ *     guac_rdp_entry_wrappers to wrap the entry point.
+ */
+PVIRTUALCHANNELENTRY guac_rdp_plugin_wrap_entry(PVIRTUALCHANNELENTRY entry);
 
 #endif
 
