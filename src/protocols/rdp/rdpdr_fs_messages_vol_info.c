@@ -18,9 +18,8 @@
  */
 
 #include "config.h"
-
+#include "rdpdr.h"
 #include "rdpdr_messages.h"
-#include "rdpdr_service.h"
 #include "rdp_fs.h"
 #include "rdp_status.h"
 
@@ -28,13 +27,14 @@
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
 
-void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_volume_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id) {
 
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 21 + GUAC_FILESYSTEM_LABEL_LENGTH);
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i]",
             __func__, file_id);
 
@@ -46,14 +46,13 @@ void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device,
     /* Reserved field must not be sent */
     Stream_Write(output_stream, GUAC_FILESYSTEM_LABEL, GUAC_FILESYSTEM_LABEL_LENGTH);
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_size_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id) {
 
     guac_rdp_fs_info info = {0};
     guac_rdp_fs_get_info((guac_rdp_fs*) device->data, &info);
@@ -61,7 +60,7 @@ void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* i
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 28);
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i]",
             __func__, file_id);
 
@@ -71,19 +70,18 @@ void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* i
     Stream_Write_UINT32(output_stream, 1);                     /* SectorsPerAllocationUnit */
     Stream_Write_UINT32(output_stream, info.block_size);       /* BytesPerSector */
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_device_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id) {
 
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 12);
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i]",
             __func__, file_id);
 
@@ -91,21 +89,20 @@ void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream*
     Stream_Write_UINT32(output_stream, FILE_DEVICE_DISK); /* DeviceType */
     Stream_Write_UINT32(output_stream, 0); /* Characteristics */
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_attribute_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id) {
 
     int name_len = guac_utf8_strlen(device->device_name);
     
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 16 + name_len);
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i]",
             __func__, file_id);
 
@@ -118,14 +115,13 @@ void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStre
     Stream_Write_UINT32(output_stream, name_len);
     Stream_Write(output_stream, device->device_name, name_len);
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_full_size_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id) {
 
     guac_rdp_fs_info info = {0};
     guac_rdp_fs_get_info((guac_rdp_fs*) device->data, &info);
@@ -133,7 +129,7 @@ void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStre
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
             completion_id, STATUS_SUCCESS, 36);
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i]",
             __func__, file_id);
 
@@ -144,9 +140,7 @@ void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStre
     Stream_Write_UINT32(output_stream, 1);                     /* SectorsPerAllocationUnit */
     Stream_Write_UINT32(output_stream, info.block_size);       /* BytesPerSector */
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 

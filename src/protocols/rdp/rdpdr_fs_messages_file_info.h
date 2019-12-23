@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __GUAC_RDPDR_FS_MESSAGES_FILE_INFO_H
-#define __GUAC_RDPDR_FS_MESSAGES_FILE_INFO_H
+#ifndef GUAC_RDPDR_FS_MESSAGES_FILE_INFO_H
+#define GUAC_RDPDR_FS_MESSAGES_FILE_INFO_H
 
 /**
  * Handlers for file queries received over the RDPDR channel via the
@@ -29,8 +29,8 @@
  */
 
 #include "config.h"
-
-#include "rdpdr_service.h"
+#include "common-svc.h"
+#include "rdpdr.h"
 
 #include <winpr/stream.h>
 
@@ -39,59 +39,67 @@
  * "used to query a file for the times of creation, last access, last write,
  * and change, in addition to file attribute information."
  */
-void guac_rdpdr_fs_process_query_basic_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_basic_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id);
 
 /**
  * Processes a query for FileStandardInformation. From the documentation, this
  * is "used to query for file information such as allocation size, end-of-file
  * position, and number of links."
  */
-void guac_rdpdr_fs_process_query_standard_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_standard_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id);
 
 /**
  * Processes a query for FileAttributeTagInformation. From the documentation
  * this is "used to query for file attribute and reparse tag information."
  */
-void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id);
 
 /**
  * Process a set operation for FileRenameInformation. From the documentation,
  * this operation is used to rename a file.
  */
-void guac_rdpdr_fs_process_set_rename_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id, int length);
+void guac_rdpdr_fs_process_set_rename_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id, int length);
 
 /**
  * Process a set operation for FileAllocationInformation. From the
  * documentation, this operation is used to set a file's allocation size.
  */
-void guac_rdpdr_fs_process_set_allocation_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id, int length);
+void guac_rdpdr_fs_process_set_allocation_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id, int length);
 
 /**
  * Process a set operation for FileDispositionInformation. From the
  * documentation, this operation is used to mark a file for deletion.
  */
-void guac_rdpdr_fs_process_set_disposition_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id, int length);
+void guac_rdpdr_fs_process_set_disposition_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id, int length);
 
 /**
  * Process a set operation for FileEndOfFileInformation. From the
  * documentation, this operation is used "to set end-of-file information for
  * a file."
  */
-void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id, int length);
+void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id, int length);
 
 /**
  * Process a set operation for FileBasicInformation. From the documentation,
  * this is "used to set file information such as the times of creation, last
  * access, last write, and change, in addition to file attributes."
  */
-void guac_rdpdr_fs_process_set_basic_info(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id, int length);
+void guac_rdpdr_fs_process_set_basic_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id, int length);
 
 #endif

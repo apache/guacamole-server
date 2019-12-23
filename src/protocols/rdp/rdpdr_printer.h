@@ -18,37 +18,26 @@
  */
 
 
-#ifndef __GUAC_RDPDR_FS_H
-#define __GUAC_RDPDR_FS_H
-
-/**
- * Functions and macros specific to filesystem handling and initialization
- * independent of RDP.  The functions here may deal with the RDPDR device
- * directly, but their semantics must not deal with RDP protocol messaging.
- * Functions here represent a virtual Windows-style filesystem on top of UNIX
- * system calls and structures, using the guac_rdpdr_device structure as a home
- * for common data.
- *
- * @file rdpdr_fs.h 
- */
+#ifndef GUAC_RDPDR_PRINTER_H
+#define GUAC_RDPDR_PRINTER_H
 
 #include "config.h"
+#include "rdpdr.h"
 
-#include "rdpdr_service.h"
-
-#include <guacamole/pool.h>
+#include <winpr/stream.h>
 
 /**
- * Registers a new filesystem device within the RDPDR plugin. This must be done
+ * Registers a new printer device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
  * 
  * @param rdpdr
- *     The RDP device redirection plugin with which to register the device.
+ *     The RDP device redirection plugin where the device is registered.
  * 
- * @param drive_name
- *     The name of the redirected drive to display in the RDP connection.
+ * @param printer_name
+ *     The name of the printer that will be registered with the RDP
+ *     connection and passed through to the server.
  */
-void guac_rdpdr_register_fs(guac_rdpdr* rdpdr, char* drive_name);
+void guac_rdpdr_register_printer(guac_rdp_common_svc* svc, char* printer_name);
 
 #endif
 

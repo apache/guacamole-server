@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __GUAC_RDPDR_FS_MESSAGES_VOL_INFO_H
-#define __GUAC_RDPDR_FS_MESSAGES_VOL_INFO_H
+#ifndef GUAC_RDPDR_FS_MESSAGES_VOL_INFO_H
+#define GUAC_RDPDR_FS_MESSAGES_VOL_INFO_H
 
 /**
  * Handlers for directory queries received over the RDPDR channel via the
@@ -30,8 +30,7 @@
  */
 
 #include "config.h"
-
-#include "rdpdr_service.h"
+#include "rdpdr.h"
 
 #include <winpr/stream.h>
 
@@ -40,32 +39,37 @@
  * documentation, this is "used to query information for a volume on which a
  * file system is mounted."
  */
-void guac_rdpdr_fs_process_query_volume_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_volume_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id);
 
 /**
  * Processes a query request for FileFsSizeInformation.
  */
-void guac_rdpdr_fs_process_query_size_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_size_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id);
 
 /**
  * Processes a query request for FileFsAttributeInformation.
  */
-void guac_rdpdr_fs_process_query_attribute_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_attribute_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id);
 
 /**
  * Processes a query request for FileFsFullSizeInformation.
  */
-void guac_rdpdr_fs_process_query_full_size_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_full_size_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id);
 
 /**
  * Processes a query request for FileFsDeviceInformation.
  */
-void guac_rdpdr_fs_process_query_device_info(guac_rdpdr_device* device, wStream* input_stream,
-        int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_device_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id);
 
 #endif
 

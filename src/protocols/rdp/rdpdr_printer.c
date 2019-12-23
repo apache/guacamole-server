@@ -18,10 +18,9 @@
  */
 
 #include "config.h"
-
+#include "rdpdr.h"
 #include "rdpdr_messages.h"
 #include "rdpdr_printer.h"
-#include "rdpdr_service.h"
 #include "rdp.h"
 #include "rdp_print_job.h"
 #include "rdp_status.h"
@@ -42,10 +41,10 @@
 #include <string.h>
 #include <unistd.h>
 
-void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
-        wStream* input_stream, int completion_id) {
+void guac_rdpdr_process_print_job_create(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int completion_id) {
 
-    guac_client* client = device->rdpdr->client;
+    guac_client* client = svc->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Log creation of print job */
@@ -60,16 +59,14 @@ void guac_rdpdr_process_print_job_create(guac_rdpdr_device* device,
             completion_id, STATUS_SUCCESS, 4);
 
     Stream_Write_UINT32(output_stream, 0); /* fileId */
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
-        wStream* input_stream, int completion_id) {
+void guac_rdpdr_process_print_job_write(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int completion_id) {
 
-    guac_client* client = device->rdpdr->client;
+    guac_client* client = svc->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_print_job* job = (guac_rdp_print_job*) rdp_client->active_job;
 
@@ -101,16 +98,14 @@ void guac_rdpdr_process_print_job_write(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, length);
     Stream_Write_UINT8(output_stream, 0); /* Padding */
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
-        wStream* input_stream, int completion_id) {
+void guac_rdpdr_process_print_job_close(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int completion_id) {
 
-    guac_client* client = device->rdpdr->client;
+    guac_client* client = svc->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_print_job* job = (guac_rdp_print_job*) rdp_client->active_job;
 
@@ -124,38 +119,40 @@ void guac_rdpdr_process_print_job_close(guac_rdpdr_device* device,
             completion_id, STATUS_SUCCESS, 4);
 
     Stream_Write_UINT32(output_stream, 0); /* Padding */
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
     /* Log end of print job */
     guac_client_log(client, GUAC_LOG_INFO, "Print job closed");
 
 }
 
-static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* device,
-        wStream* input_stream, int file_id, int completion_id, int major_func, int minor_func) {
+static void guac_rdpdr_device_printer_iorequest_handler(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, wStream* input_stream, int file_id,
+        int completion_id, int major_func, int minor_func) {
 
     switch (major_func) {
 
         /* Print job create */
         case IRP_MJ_CREATE:
-            guac_rdpdr_process_print_job_create(device, input_stream, completion_id);
+            guac_rdpdr_process_print_job_create(svc, device, input_stream,
+                    completion_id);
             break;
 
         /* Printer job write */
         case IRP_MJ_WRITE:
-            guac_rdpdr_process_print_job_write(device, input_stream, completion_id);
+            guac_rdpdr_process_print_job_write(svc, device, input_stream,
+                    completion_id);
             break;
 
         /* Printer job close */
         case IRP_MJ_CLOSE:
-            guac_rdpdr_process_print_job_close(device, input_stream, completion_id);
+            guac_rdpdr_process_print_job_close(svc, device, input_stream,
+                    completion_id);
             break;
 
         /* Log unknown */
         default:
-            guac_client_log(device->rdpdr->client, GUAC_LOG_ERROR,
+            guac_client_log(svc->client, GUAC_LOG_ERROR,
                     "Unknown printer I/O request function: 0x%x/0x%x",
                     major_func, minor_func);
 
@@ -163,21 +160,22 @@ static void guac_rdpdr_device_printer_iorequest_handler(guac_rdpdr_device* devic
 
 }
 
-static void guac_rdpdr_device_printer_free_handler(guac_rdpdr_device* device) {
+static void guac_rdpdr_device_printer_free_handler(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device) {
 
     Stream_Free(device->device_announce, 1);
 
 }
 
-void guac_rdpdr_register_printer(guac_rdpdr* rdpdr, char* printer_name) {
+void guac_rdpdr_register_printer(guac_rdp_common_svc* svc, char* printer_name) {
 
+    guac_rdpdr* rdpdr = (guac_rdpdr*) svc->data;
     int id = rdpdr->devices_registered++;
 
     /* Get new device */
     guac_rdpdr_device* device = &(rdpdr->devices[id]);
 
     /* Init device */
-    device->rdpdr       = rdpdr;
     device->device_id   = id;
     device->device_name = printer_name;
     int device_name_len = guac_utf8_strlen(device->device_name);

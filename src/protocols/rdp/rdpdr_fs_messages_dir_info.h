@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __GUAC_RDPDR_FS_MESSAGES_DIR_INFO_H
-#define __GUAC_RDPDR_FS_MESSAGES_DIR_INFO_H
+#ifndef GUAC_RDPDR_FS_MESSAGES_DIR_INFO_H
+#define GUAC_RDPDR_FS_MESSAGES_DIR_INFO_H
 
 /**
  * Handlers for directory queries received over the RDPDR channel via the
@@ -30,8 +30,8 @@
  */
 
 #include "config.h"
-
-#include "rdpdr_service.h"
+#include "common-svc.h"
+#include "rdpdr.h"
 
 #include <winpr/stream.h>
 
@@ -40,31 +40,35 @@
  * documentation this is "defined as the file's name, time stamp, and size, or its
  * attributes."
  */
-void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
-        const char* entry_name, int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_directory_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, const char* entry_name, int file_id,
+        int completion_id);
 
 /**
  * Processes a query request for FileFullDirectoryInformation. From the
  * documentation, this is "defined as all the basic information, plus extended
  * attribute size."
  */
-void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
-        const char* entry_name, int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_full_directory_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, const char* entry_name, int file_id,
+        int completion_id);
 
 /**
  * Processes a query request for FileBothDirectoryInformation. From the
  * documentation, this absurdly-named request is "basic information plus
  * extended attribute size and short name about a file or directory."
  */
-void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
-        const char* entry_name, int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_both_directory_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, const char* entry_name, int file_id,
+        int completion_id);
 
 /**
  * Processes a query request for FileNamesInformation. From the documentation,
  * this is "detailed information on the names of files in a directory."
  */
-void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
-        const char* entry_name, int file_id, int completion_id);
+void guac_rdpdr_fs_process_query_names_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, const char* entry_name, int file_id,
+        int completion_id);
 
 #endif
 

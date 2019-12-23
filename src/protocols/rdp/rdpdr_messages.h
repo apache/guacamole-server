@@ -18,12 +18,11 @@
  */
 
 
-#ifndef __GUAC_RDPDR_MESSAGES_H
-#define __GUAC_RDPDR_MESSAGES_H
+#ifndef GUAC_RDPDR_MESSAGES_H
+#define GUAC_RDPDR_MESSAGES_H
 
 #include "config.h"
-
-#include "rdpdr_service.h"
+#include "rdpdr.h"
 
 #include <winpr/stream.h>
 
@@ -204,14 +203,14 @@
  * Message handlers.
  */
 
-void guac_rdpdr_process_server_announce(guac_rdpdr* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_clientid_confirm(guac_rdpdr* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_device_reply(guac_rdpdr* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_device_iorequest(guac_rdpdr* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_server_capability(guac_rdpdr* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_user_loggedon(guac_rdpdr* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_prn_cache_data(guac_rdpdr* rdpdr, wStream* input_stream);
-void guac_rdpdr_process_prn_using_xps(guac_rdpdr* rdpdr, wStream* input_stream);
+void guac_rdpdr_process_server_announce(guac_rdp_common_svc* svc, wStream* input_stream);
+void guac_rdpdr_process_clientid_confirm(guac_rdp_common_svc* svc, wStream* input_stream);
+void guac_rdpdr_process_device_reply(guac_rdp_common_svc* svc, wStream* input_stream);
+void guac_rdpdr_process_device_iorequest(guac_rdp_common_svc* svc, wStream* input_stream);
+void guac_rdpdr_process_server_capability(guac_rdp_common_svc* svc, wStream* input_stream);
+void guac_rdpdr_process_user_loggedon(guac_rdp_common_svc* svc, wStream* input_stream);
+void guac_rdpdr_process_prn_cache_data(guac_rdp_common_svc* svc, wStream* input_stream);
+void guac_rdpdr_process_prn_using_xps(guac_rdp_common_svc* svc, wStream* input_stream);
 
 #endif
 

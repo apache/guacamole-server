@@ -18,8 +18,7 @@
  */
 
 #include "config.h"
-
-#include "rdpdr_service.h"
+#include "rdpdr.h"
 #include "rdp_fs.h"
 #include "rdp_status.h"
 #include "unicode.h"
@@ -29,8 +28,9 @@
 
 #include <stddef.h>
 
-void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
-        const char* entry_name, int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_directory_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, const char* entry_name, int file_id,
+        int completion_id) {
 
     guac_rdp_fs_file* file;
 
@@ -47,7 +47,7 @@ void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
     if (file == NULL)
         return;
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i (entry_name=\"%s\")]",
             __func__, file_id, entry_name);
 
@@ -71,14 +71,13 @@ void guac_rdpdr_fs_process_query_directory_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
     Stream_Write(output_stream, "\0\0", 2);
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
-        const char* entry_name, int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_full_directory_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, const char* entry_name, int file_id,
+        int completion_id) {
 
     guac_rdp_fs_file* file;
 
@@ -95,7 +94,7 @@ void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
     if (file == NULL)
         return;
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i (entry_name=\"%s\")]",
             __func__, file_id, entry_name);
 
@@ -120,14 +119,13 @@ void guac_rdpdr_fs_process_query_full_directory_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
     Stream_Write(output_stream, "\0\0", 2);
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
-        const char* entry_name, int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_both_directory_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, const char* entry_name, int file_id,
+        int completion_id) {
 
     guac_rdp_fs_file* file;
 
@@ -144,7 +142,7 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     if (file == NULL)
         return;
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i (entry_name=\"%s\")]",
             __func__, file_id, entry_name);
 
@@ -173,14 +171,13 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
     Stream_Write(output_stream, "\0\0", 2);
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 
-void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
-        const char* entry_name, int file_id, int completion_id) {
+void guac_rdpdr_fs_process_query_names_info(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, const char* entry_name, int file_id,
+        int completion_id) {
 
     guac_rdp_fs_file* file;
 
@@ -197,7 +194,7 @@ void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
     if (file == NULL)
         return;
 
-    guac_client_log(device->rdpdr->client, GUAC_LOG_DEBUG,
+    guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i (entry_name=\"%s\")]",
             __func__, file_id, entry_name);
 
@@ -213,9 +210,7 @@ void guac_rdpdr_fs_process_query_names_info(guac_rdpdr_device* device,
     Stream_Write(output_stream, utf16_entry_name, utf16_length); /* FileName */
     Stream_Write(output_stream, "\0\0", 2);
 
-    device->rdpdr->entry_points.pVirtualChannelWriteEx(device->rdpdr->init_handle,
-            device->rdpdr->open_handle, Stream_Buffer(output_stream),
-            Stream_GetPosition(output_stream), output_stream);
+    guac_rdp_common_svc_write(svc, output_stream);
 
 }
 

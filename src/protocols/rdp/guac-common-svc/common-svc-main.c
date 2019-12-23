@@ -283,7 +283,7 @@ static VOID guac_rdp_common_svc_handle_init_event(LPVOID user_param,
  * @return
  *     TRUE if the plugin has initialized successfully, FALSE otherwise.
  */
-BOOL VirtualChannelEntryEx(PCHANNEL_ENTRY_POINTS entry_points,
+BOOL VirtualChannelEntryEx(PCHANNEL_ENTRY_POINTS_EX entry_points,
         PVOID init_handle) {
 
     CHANNEL_ENTRY_POINTS_FREERDP_EX* entry_points_ex =
