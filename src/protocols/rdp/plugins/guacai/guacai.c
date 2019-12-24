@@ -113,7 +113,7 @@ static UINT guac_rdp_ai_data(IWTSVirtualChannelCallback* channel_callback,
     /* Invoke generalized (API-independent) data handler */
     guac_rdp_ai_handle_data(ai_channel_callback->client, channel, stream);
 
-    return 0;
+    return CHANNEL_RC_OK;
 
 }
 
@@ -143,7 +143,7 @@ static UINT guac_rdp_ai_close(IWTSVirtualChannelCallback* channel_callback) {
 
     guac_rdp_audio_buffer_end(audio_buffer);
     free(ai_channel_callback);
-    return 0;
+    return CHANNEL_RC_OK;
 
 }
 
@@ -202,7 +202,8 @@ static UINT guac_rdp_ai_new_connection(
 
     /* Return callback through pointer */
     *channel_callback = (IWTSVirtualChannelCallback*) ai_channel_callback;
-    return 0;
+
+    return CHANNEL_RC_OK;
 
 }
 
@@ -240,7 +241,7 @@ static UINT guac_rdp_ai_initialize(IWTSPlugin* plugin,
     manager->CreateListener(manager, "AUDIO_INPUT", 0,
             (IWTSListenerCallback*) ai_listener_callback, NULL);
 
-    return 0;
+    return CHANNEL_RC_OK;
 
 }
 
@@ -264,7 +265,7 @@ static UINT guac_rdp_ai_terminated(IWTSPlugin* plugin) {
     free(ai_plugin);
 
     guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT plugin unloaded.");
-    return 0;
+    return CHANNEL_RC_OK;
 
 }
 
@@ -297,7 +298,7 @@ int DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints) {
         guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT plugin loaded.");
     }
 
-    return 1;
+    return CHANNEL_RC_OK;
 
 }
 
