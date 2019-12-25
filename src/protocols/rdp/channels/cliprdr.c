@@ -338,7 +338,8 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 
     CLIPRDR_FORMAT_DATA_RESPONSE data_response = {
         .requestedFormatData = (BYTE*) start,
-        .dataLen = ((BYTE*) output) - start
+        .dataLen = ((BYTE*) output) - start,
+        .msgFlags = CB_RESPONSE_OK
     };
 
     guac_client_log(clipboard->client, GUAC_LOG_TRACE, "CLIPRDR: Sending "
