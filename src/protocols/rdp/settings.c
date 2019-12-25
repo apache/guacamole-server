@@ -55,6 +55,8 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "drive-name",
     "drive-path",
     "create-drive-path",
+    "disable-download",
+    "disable-upload",
     "console",
     "console-audio",
     "server-layout",
@@ -91,6 +93,8 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "sftp-directory",
     "sftp-root-directory",
     "sftp-server-alive-interval",
+    "sftp-disable-download",
+    "sftp-disable-upload",
 #endif
 
     "recording-path",
@@ -214,6 +218,18 @@ enum RDP_ARGS_IDX {
      * drive if it does not yet exist, "false" or blank otherwise.
      */
     IDX_CREATE_DRIVE_PATH,
+    
+    /**
+     * "true" to disable the ability to download files from a remote server to
+     * the local client over RDP, "false" or blank otherwise.
+     */
+    IDX_DISABLE_DOWNLOAD,
+    
+    /**
+     * "true" to disable the ability to upload files from the local client to
+     * the remote server over RDP, "false" or blank otherwise.
+     */
+    IDX_DISABLE_UPLOAD,
 
     /**
      * "true" if this session is a console session, "false" or blank otherwise.
@@ -430,6 +446,20 @@ enum RDP_ARGS_IDX {
      * cases.
      */
     IDX_SFTP_SERVER_ALIVE_INTERVAL,
+    
+    /**
+     * "true" to disable file download from the SFTP server to the local client
+     * over the SFTP connection, if SFTP is configured and enabled.  "false" or
+     * blank otherwise.
+     */
+    IDX_SFTP_DISABLE_DOWNLOAD,
+    
+    /**
+     * "true" to disable file upload from the SFTP server to the local client
+     * over the SFTP connection, if SFTP is configured and enabled.  "false" or
+     * blank otherwise.
+     */
+    IDX_SFTP_DISABLE_UPLOAD,
 #endif
 
     /**
@@ -842,13 +872,25 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_DRIVE_NAME, "Guacamole Filesystem");
 
+    /* The path on the server to connect the drive. */
     settings->drive_path =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_DRIVE_PATH, "");
 
+    /* If the server path should be created if it doesn't already exist. */
     settings->create_drive_path =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_CREATE_DRIVE_PATH, 0);
+    
+    /* If file downloads over RDP should be disabled. */
+    settings->disable_download =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_DOWNLOAD, 0);
+    
+    /* If file uploads over RDP should be disabled. */
+    settings->disable_upload =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_UPLOAD, 0);
 
     /* Pick keymap based on argument */
     settings->server_layout = NULL;
@@ -921,6 +963,16 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->sftp_server_alive_interval =
         guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_SERVER_ALIVE_INTERVAL, 0);
+    
+    /* Whether or not to disable file download over SFTP. */
+    settings->sftp_disable_download =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_DISABLE_DOWNLOAD, 0);
+    
+    /* Whether or not to disable file upload over SFTP. */
+    settings->sftp_disable_upload =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_DISABLE_UPLOAD, 0);
 #endif
 
     /* Read recording path */

@@ -218,6 +218,16 @@ typedef struct guac_rdp_settings {
      * exist.
      */
     int create_drive_path;
+    
+    /**
+     * Whether or not to disable file download over RDP.
+     */
+    int disable_download;
+    
+    /**
+     * Wether or not to disable file upload over RDP.
+     */
+    int disable_upload;
 
     /**
      * Whether this session is a console session.
@@ -440,6 +450,16 @@ typedef struct guac_rdp_settings {
      * cases.
      */
     int sftp_server_alive_interval;
+    
+    /**
+     * Whether or not to disable file download over SFTP.
+     */
+    int sftp_disable_download;
+    
+    /**
+     * Whether or not to disable file upload over SFTP.
+     */
+    int sftp_disable_upload;
 #endif
 
     /**
