@@ -77,6 +77,36 @@ static UINT guac_rdp_cliprdr_send_format_list(CliprdrClientContext* cliprdr) {
 }
 
 /**
+ * Sends a Clipboard Capabilities PDU to the RDP server describing the features
+ * of the CLIPRDR channel that are supported by the client.
+ *
+ * @param cliprdr
+ *     The CliprdrClientContext structure used by FreeRDP to handle the
+ *     CLIPRDR channel for the current RDP session.
+ *
+ * @return
+ *     CHANNEL_RC_OK (zero) if the Clipboard Capabilities PDU was sent
+ *     successfully, an error code (non-zero) otherwise.
+ */
+static UINT guac_rdp_cliprdr_send_capabilities(CliprdrClientContext* cliprdr) {
+
+    CLIPRDR_GENERAL_CAPABILITY_SET cap_set = {
+        .capabilitySetType = CB_CAPSTYPE_GENERAL, /* CLIPRDR specification requires that this is CB_CAPSTYPE_GENERAL, the only defined set type */
+        .capabilitySetLength = 12, /* The size of the capability set within the PDU - for CB_CAPSTYPE_GENERAL, this is ALWAYS 12 bytes */
+        .version = CB_CAPS_VERSION_2, /* The version of the CLIPRDR specification supported */
+        .generalFlags = CB_USE_LONG_FORMAT_NAMES /* Bitwise OR of all supported feature flags */
+    };
+
+    CLIPRDR_CAPABILITIES caps = {
+        .cCapabilitiesSets = 1,
+        .capabilitySets = (CLIPRDR_CAPABILITY_SET*) &cap_set
+    };
+
+    return cliprdr->ClientCapabilities(cliprdr, &caps);
+
+}
+
+/**
  * Callback invoked by the FreeRDP CLIPRDR plugin for received Monitor Ready
  * PDUs. The Monitor Ready PDU is sent by the RDP server only during
  * initialization of the CLIPRDR channel. It is part of the CLIPRDR channel
@@ -107,7 +137,8 @@ static UINT guac_rdp_cliprdr_monitor_ready(CliprdrClientContext* cliprdr,
     guac_client_log(clipboard->client, GUAC_LOG_TRACE, "CLIPRDR: Received "
             "monitor ready.");
 
-    /* Respond with supported format list */
+    /* Respond with capabilities and supported format list */
+    guac_rdp_cliprdr_send_capabilities(cliprdr);
     return guac_rdp_cliprdr_send_format_list(cliprdr);
 
 }
