@@ -337,7 +337,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
                writer, &output, GUAC_RDP_CLIPBOARD_MAX_LENGTH);
 
     CLIPRDR_FORMAT_DATA_RESPONSE data_response = {
-        .requestedFormatData = (BYTE*) output,
+        .requestedFormatData = (BYTE*) start,
         .dataLen = ((BYTE*) output) - start
     };
 
