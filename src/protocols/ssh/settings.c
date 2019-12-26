@@ -368,7 +368,7 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     /* Disable file downloads. */
     settings->sftp_disable_download =
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_SFTP_DISABLE_DOWNLAOD, false);
+                IDX_SFTP_DISABLE_DOWNLOAD, false);
     
     /* Disable file uploads. */
     settings->sftp_disable_upload =

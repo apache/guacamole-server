@@ -221,8 +221,9 @@ void guac_rdpdr_fs_process_close(guac_rdp_common_svc* svc,
         return;
 
     /* If file was written to, and it's in the \Download folder, start stream */
-    if (file->bytes_written > 0 &&
-            strncmp(file->absolute_path, "\\Download\\", 10) == 0) {
+    if (file->bytes_written > 0
+            && strncmp(file->absolute_path, "\\Download\\", 10) == 0
+			&& !((guac_rdp_fs*) device->data)->disable_download) {
         guac_client_for_owner(svc->client, guac_rdp_download_to_user, file->absolute_path);
         guac_rdp_fs_delete((guac_rdp_fs*) device->data, iorequest->file_id);
     }

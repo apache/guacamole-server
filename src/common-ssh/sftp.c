@@ -429,7 +429,7 @@ int guac_common_ssh_sftp_handle_file_stream(
 
 /**
  * Handler for ack messages which continue an outbound SFTP data transfer
- * (download), signalling the current status and requesting additional data.
+ * (download), signaling the current status and requesting additional data.
  * The data associated with the given stream is expected to be a pointer to an
  * open LIBSSH2_SFTP_HANDLE for the file from which the data is to be read.
  *
@@ -787,6 +787,13 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
     /* Otherwise, send file contents */
     else {
 
+        /* If downloads are disabled, log and return. */
+        if (filesystem->disable_download) {
+            guac_user_log(user, GUAC_LOG_INFO,
+                    "File downloads have been disabled.");
+            return 0;
+        }
+        
         /* Open as normal file */
         LIBSSH2_SFTP_HANDLE* file = libssh2_sftp_open(sftp, fullpath,
             LIBSSH2_FXF_READ, 0);
@@ -903,7 +910,11 @@ guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
     /* Init filesystem */
     guac_object* fs_object = guac_user_alloc_object(user);
     fs_object->get_handler = guac_common_ssh_sftp_get_handler;
-    fs_object->put_handler = guac_common_ssh_sftp_put_handler;
+    
+    /* Only handle uploads if not disabled. */
+    if (!filesystem->disable_upload)
+        fs_object->put_handler = guac_common_ssh_sftp_put_handler;
+    
     fs_object->data = filesystem;
 
     /* Send filesystem to user */
@@ -916,7 +927,7 @@ guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
 
 guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
         guac_common_ssh_session* session, const char* root_path,
-        const char* name) {
+        const char* name, int disable_download, int disable_upload) {
 
     /* Request SFTP */
     LIBSSH2_SFTP* sftp_session = libssh2_sftp_init(session->session);
@@ -930,6 +941,10 @@ guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
     /* Associate SSH session with SFTP data and user */
     filesystem->ssh_session = session;
     filesystem->sftp_session = sftp_session;
+    
+    /* Copy over disable flags */
+    filesystem->disable_download = disable_download;
+    filesystem->disable_upload = disable_upload;
 
     /* Normalize and store the provided root path */
     if (!guac_common_ssh_sftp_normalize_path(filesystem->root_path,

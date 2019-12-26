@@ -219,6 +219,16 @@ typedef struct guac_rdp_fs {
      * All available file structures.
      */
     guac_rdp_fs_file files[GUAC_RDP_FS_MAX_FILES];
+    
+    /**
+     * If downloads from the remote server to the browser should be disabled.
+     */
+    int disable_download;
+    
+    /**
+     * If uploads from the browser to the remote server should be disabled.
+     */
+    int disable_upload;
 
 } guac_rdp_fs;
 
@@ -258,12 +268,20 @@ typedef struct guac_rdp_fs_info {
  * @param create_drive_path
  *     Non-zero if the drive path specified should be automatically created if
  *     it does not yet exist, zero otherwise.
+ * 
+ * @param disable_download
+ *     Non-zero if downloads from the remote server to the local browser should
+ *     be disabled.
+ * 
+ * @param disable_upload
+ *     Non-zero if uploads from the browser to the remote server should be
+ *     disabled.
  *
  * @return
  *     The newly-allocated filesystem.
  */
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
-        int create_drive_path);
+        int create_drive_path, int disable_download, int disable_upload);
 
 /**
  * Frees the given filesystem.

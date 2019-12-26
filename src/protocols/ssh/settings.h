@@ -185,14 +185,14 @@ typedef struct guac_ssh_settings {
      * downloads will not be allowed over SFTP.  If not set or set to false, file
      * downloads will be allowed.
      */
-    bool disable_download;
+    bool sftp_disable_download;
     
     /**
      * Whether file uploads over SFTP should be disabled.  If set to true, file
      * uploads will not be allowed over SFTP.  If not set or set to false, file
      * uploads will be allowed.
      */
-    bool disable_upload;
+    bool sftp_disable_upload;
 
 #ifdef ENABLE_SSH_AGENT
     /**
