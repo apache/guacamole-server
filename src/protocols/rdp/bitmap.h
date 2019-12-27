@@ -120,42 +120,4 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap);
 BOOL guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap,
         BOOL primary);
 
-/**
- * Decompresses or copies the given image data, storing the result within the
- * given bitmap, depending on the compressed flag. Note that even if the
- * received data is not compressed, it is the duty of this function to also
- * flip received data, if the row order is backwards.
- *
- * @param context
- *     The rdpContext associated with the current RDP session.
- *
- * @param bitmap
- *     The bitmap in which the decompressed/copied data should be stored.
- *
- * @param data
- *     Possibly-compressed image data.
- *
- * @param width
- *     The width of the image data, in pixels.
- *
- * @param height
- *     The height of the image data, in pixels.
- *
- * @param bpp
- *     The number of bits per pixel in the image data.
- *
- * @param length
- *     The length of the image data, in bytes.
- *
- * @param compressed
- *     TRUE if the image data is compressed, FALSE otherwise.
- *
- * @param codec_id
- *     The ID of the codec used to compress the image data. This parameter is
- *     currently ignored.
- */
-BOOL guac_rdp_bitmap_decompress(rdpContext* context, rdpBitmap* bitmap,
-        const BYTE* data, UINT32 width, UINT32 height, UINT32 bpp, UINT32 length,
-        BOOL compressed, UINT32 codec_id);
-
 #endif
