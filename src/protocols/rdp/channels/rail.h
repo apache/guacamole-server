@@ -32,7 +32,7 @@
  * This MUST be called within the PreConnect callback of the freerdp instance
  * for RAIL support to be loaded.
  *
- * @param rdpContext
+ * @param context
  *     The rdpContext associated with the FreeRDP side of the RDP connection.
  */
 void guac_rdp_rail_load_plugin(rdpContext* context);

@@ -29,8 +29,8 @@
  * Registers a new printer device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
  * 
- * @param rdpdr
- *     The RDP device redirection plugin where the device is registered.
+ * @param svc
+ *     The static virtual channel instance being used for RDPDR.
  * 
  * @param printer_name
  *     The name of the printer that will be registered with the RDP

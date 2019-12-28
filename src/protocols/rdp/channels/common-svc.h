@@ -177,7 +177,7 @@ struct guac_rdp_common_svc {
  * This MUST be called within the PreConnect callback of the freerdp instance
  * for static virtual channel support to be loaded.
  *
- * @param rdpContext
+ * @param context
  *     The rdpContext associated with the FreeRDP side of the RDP connection.
  *
  * @param name

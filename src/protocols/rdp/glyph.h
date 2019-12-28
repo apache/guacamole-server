@@ -52,6 +52,9 @@ typedef struct guac_rdp_glyph {
  *
  * @param glyph
  *     The glyph to cache.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph);
 
@@ -70,6 +73,26 @@ BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph);
  *
  * @param y
  *     The destination Y coordinate of the upper-left corner of the glyph.
+ *
+ * @param w
+ *     The width of the glyph being drawn.
+ *
+ * @param h
+ *     The height of the glyph being drawn.
+ *
+ * @param sx
+ *     The X coordinare of the upper-left corner of the glyph within the source
+ *     cache surface containing the glyph.
+ *
+ * @param sy
+ *     The Y coordinare of the upper-left corner of the glyph within the source
+ *     cache surface containing the glyph.
+ *
+ * @param redundant
+ *     Whether the background rectangle specified is redundant (transparent).
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_glyph_draw(rdpContext* context, const rdpGlyph* glyph,
         INT32 x, INT32 y, INT32 w, INT32 h, INT32 sx, INT32 sy,
@@ -121,6 +144,12 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph);
  *     colorspace of the RDP session, and may even be a palette index, and must
  *     be translated via guac_rdp_convert_color(). If the background is
  *     transparent, this value is undefined.
+ *
+ * @param redundant
+ *     Whether the background rectangle specified is redundant (transparent).
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_glyph_begindraw(rdpContext* context, INT32 x, INT32 y,
         INT32 width, INT32 height, UINT32 fgcolor, UINT32 bgcolor,
@@ -159,6 +188,9 @@ BOOL guac_rdp_glyph_begindraw(rdpContext* context, INT32 x, INT32 y,
  *     colorspace of the RDP session, and may even be a palette index, and must
  *     be translated via guac_rdp_convert_color(). If the background is
  *     transparent, this value is undefined.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_glyph_enddraw(rdpContext* context, INT32 x, INT32 y,
         INT32 width, INT32 height, UINT32 fgcolor, UINT32 bgcolor);

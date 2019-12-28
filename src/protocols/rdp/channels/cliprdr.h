@@ -87,7 +87,7 @@ guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client);
  *     The guac_rdp_clipboard instance which has been allocated for the current
  *     RDP connection.
  *
- * @param rdpContext
+ * @param context
  *     The rdpContext associated with the FreeRDP side of the RDP connection.
  */
 void guac_rdp_clipboard_load_plugin(guac_rdp_clipboard* clipboard,

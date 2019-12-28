@@ -113,7 +113,7 @@ typedef struct guac_rdpsnd {
  * This MUST be called within the PreConnect callback of the freerdp instance
  * for RDPSND support to be loaded.
  *
- * @param rdpContext
+ * @param context
  *     The rdpContext associated with the FreeRDP side of the RDP connection.
  */
 void guac_rdpsnd_load_plugin(rdpContext* context);

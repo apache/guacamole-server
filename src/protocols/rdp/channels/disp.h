@@ -186,9 +186,9 @@ void guac_rdp_disp_reconnect_complete(guac_rdp_disp* disp);
  * Returns whether a full RDP reconnect is required for display update changes
  * to take effect.
  *
- * @param client
- *     The guac_client associated with the Guacamole side of the RDP
- *     connection.
+ * @param disp
+ *     The display update module that should be checked to determine whether a
+ *     reconnect is required.
  *
  * @return
  *     Non-zero if a reconnect is needed, zero otherwise.

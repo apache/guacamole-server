@@ -146,7 +146,7 @@ void guac_rdpdr_start_download(guac_rdp_common_svc* svc,
  * This MUST be called within the PreConnect callback of the freerdp instance
  * for RDPDR support to be loaded.
  *
- * @param rdpContext
+ * @param context
  *     The rdpContext associated with the FreeRDP side of the RDP connection.
  */
 void guac_rdpdr_load_plugin(rdpContext* context);

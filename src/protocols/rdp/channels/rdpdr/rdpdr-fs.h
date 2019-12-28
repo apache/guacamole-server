@@ -40,8 +40,8 @@
  * Registers a new filesystem device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
  * 
- * @param rdpdr
- *     The RDP device redirection plugin with which to register the device.
+ * @param svc
+ *     The static virtual channel instance being used for RDPDR.
  * 
  * @param drive_name
  *     The name of the redirected drive to display in the RDP connection.
