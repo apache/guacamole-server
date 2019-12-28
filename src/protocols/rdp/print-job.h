@@ -79,6 +79,9 @@ typedef enum guac_rdp_print_job_state {
  */
 typedef struct guac_rdp_print_job {
 
+    /**
+     * The Guacamole client associated with the RDP session.
+     */
     guac_client* client;
 
     /**

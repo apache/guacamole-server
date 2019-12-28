@@ -51,6 +51,9 @@ typedef struct guac_rdp_pointer {
  *
  * @param pointer
  *     The pointer to cache.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer);
 
@@ -63,6 +66,9 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer);
  *
  * @param pointer
  *     The pointer to set as the current mouse pointer.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_pointer_set(rdpContext* context, const rdpPointer* pointer);
 
@@ -83,6 +89,9 @@ void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer);
  *
  * @param context
  *     The rdpContext associated with the current RDP session.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_pointer_set_null(rdpContext* context);
 
@@ -92,6 +101,9 @@ BOOL guac_rdp_pointer_set_null(rdpContext* context);
  *
  * @param context
  *     The rdpContext associated with the current RDP session.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_pointer_set_default(rdpContext* context);
 

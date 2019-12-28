@@ -39,6 +39,13 @@
 /**
  * Writes the given filename to the given upload path, sanitizing the filename
  * and translating the filename to the root directory.
+ *
+ * @param filename
+ *     The filename to sanitize and move to the root directory.
+ *
+ * @param path
+ *     A pointer to a buffer which should receive the sanitized path. The
+ *     buffer must hav at least GUAC_RDP_FS_MAX_PATH bytes available.
  */
 static void __generate_upload_path(const char* filename, char* path) {
 

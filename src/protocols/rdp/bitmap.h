@@ -60,6 +60,9 @@ typedef struct guac_rdp_bitmap {
  *
  * @param bitmap
  *     The bitmap to cache.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap);
 
@@ -71,6 +74,9 @@ BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap);
  *
  * @param bitmap
  *     The bitmap to initialize.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);
 
@@ -86,6 +92,9 @@ BOOL guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap);
  *     The bitmap to paint. This structure will also contain the specifics of
  *     the paint operation to perform, including the destination X/Y
  *     coordinates.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap);
 
@@ -116,6 +125,9 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap);
  *     TRUE if the bitmap parameter should be ignored, and the current drawing
  *     surface should be reset to the primary drawing surface of the remote
  *     display, FALSE otherwise.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap,
         BOOL primary);

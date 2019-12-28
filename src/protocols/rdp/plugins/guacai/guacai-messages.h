@@ -207,5 +207,14 @@ void guac_rdp_ai_process_open(guac_client* client,
 void guac_rdp_ai_process_formatchange(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream);
 
+/**
+ * Audio buffer flush handler which sends audio data along the active audio
+ * input channel using a Data Incoming PDU and Data PDU. The arbitrary data
+ * provided to the handler by the audio buffer implementation is in this case
+ * the IWTSVirtualChannel structure representing the active audio input
+ * channel.
+ */
+guac_rdp_audio_buffer_flush_handler guac_rdp_ai_flush_packet;
+
 #endif
 

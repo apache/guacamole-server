@@ -107,6 +107,19 @@ static void guac_rdp_ai_send_incoming_data(IWTSVirtualChannel* channel) {
 
 }
 
+/**
+ * Sends a Data PDU along the given channel. A Data PDU is used by the client
+ * to send actual audio data following a Data Incoming PDU.
+ *
+ * @param channel
+ *     The channel along which the PDU should be sent.
+ *
+ * @param buffer
+ *     The audio data to send.
+ *
+ * @param length
+ *     The number of bytes of audio data to send.
+ */
 static void guac_rdp_ai_send_data(IWTSVirtualChannel* channel,
         char* buffer, int length) {
 
@@ -280,7 +293,7 @@ void guac_rdp_ai_process_formats(guac_client* client,
 
 }
 
-static void guac_rdp_ai_flush_packet(char* buffer, int length, void* data) {
+void guac_rdp_ai_flush_packet(char* buffer, int length, void* data) {
 
     IWTSVirtualChannel* channel = (IWTSVirtualChannel*) data;
 
