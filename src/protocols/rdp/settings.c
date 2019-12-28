@@ -1320,9 +1320,9 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
     rdp_settings->DesktopResize = TRUE;
     rdp_settings->OrderSupport[NEG_DSTBLT_INDEX] = TRUE;
-    rdp_settings->OrderSupport[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not yet supported */
+    rdp_settings->OrderSupport[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not implemented */
     rdp_settings->OrderSupport[NEG_SCRBLT_INDEX] = TRUE;
-    rdp_settings->OrderSupport[NEG_OPAQUE_RECT_INDEX] = TRUE;
+    rdp_settings->OrderSupport[NEG_OPAQUE_RECT_INDEX] = FALSE; /* PATBLT not implemented, and OPAQUE_RECT implies PATBLT */
     rdp_settings->OrderSupport[NEG_DRAWNINEGRID_INDEX] = FALSE;
     rdp_settings->OrderSupport[NEG_MULTIDSTBLT_INDEX] = FALSE;
     rdp_settings->OrderSupport[NEG_MULTIPATBLT_INDEX] = FALSE;
