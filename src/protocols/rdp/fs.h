@@ -108,8 +108,6 @@
  */
 #define GUAC_RDP_FS_ENOTSUP -10
 
-#define SEC_TO_UNIX_EPOCH 11644473600
-
 /**
  * Converts a Windows timestamp (100 nanosecond intervals since Jan 1, 1601
  * UTC) to UNIX timestamp (seconds since Jan 1, 1970 UTC).
