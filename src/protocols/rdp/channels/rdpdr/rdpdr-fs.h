@@ -28,7 +28,7 @@
  * system calls and structures, using the guac_rdpdr_device structure as a home
  * for common data.
  *
- * @file rdpdr_fs.h 
+ * @file rdpdr-fs.h 
  */
 
 #include "config.h"

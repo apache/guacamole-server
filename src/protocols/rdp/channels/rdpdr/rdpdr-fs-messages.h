@@ -25,7 +25,7 @@
  * messages handled directly, or more complex multi-type messages handled
  * elsewhere.
  *
- * @file rdpdr_fs_messages.h
+ * @file rdpdr-fs-messages.h
  */
 
 #include "config.h"

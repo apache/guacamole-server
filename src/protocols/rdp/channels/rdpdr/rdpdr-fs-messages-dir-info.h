@@ -25,7 +25,7 @@
  * IRP_MJ_DIRECTORY_CONTROL major function and the IRP_MN_QUERY_DIRECTORY minor
  * function.
  *
- * @file rdpdr_fs_messages_dir_info.h
+ * @file rdpdr-fs-messages-dir-info.h
  */
 
 #include "config.h"

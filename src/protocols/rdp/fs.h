@@ -28,7 +28,7 @@
  * system calls and structures, using the guac_rdp_fs structure as a home
  * for common data.
  *
- * @file rdp_fs.h 
+ * @file fs.h 
  */
 
 #include "config.h"

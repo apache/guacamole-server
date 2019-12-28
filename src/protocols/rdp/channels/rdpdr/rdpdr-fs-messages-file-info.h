@@ -24,7 +24,7 @@
  * Handlers for file queries received over the RDPDR channel via the
  * IRP_MJ_QUERY_INFORMATION major function.
  *
- * @file rdpdr_fs_messages_file_info.h
+ * @file rdpdr-fs-messages-file-info.h
  */
 
 #include "config.h"
