@@ -108,59 +108,6 @@
  */
 #define GUAC_RDP_FS_ENOTSUP -10
 
-/*
- * Access constants.
- */
-#define ACCESS_GENERIC_READ       0x80000000
-#define ACCESS_GENERIC_WRITE      0x40000000
-#define ACCESS_GENERIC_ALL        0x10000000
-#define ACCESS_FILE_READ_DATA     0x00000001
-#define ACCESS_FILE_WRITE_DATA    0x00000002
-#define ACCESS_FILE_APPEND_DATA   0x00000004
-#define ACCESS_DELETE             0x00010000
-
-/*
- * Create disposition constants.
- */
-
-#define DISP_FILE_SUPERSEDE    0x00000000
-#define DISP_FILE_OPEN         0x00000001
-#define DISP_FILE_CREATE       0x00000002
-#define DISP_FILE_OPEN_IF      0x00000003
-#define DISP_FILE_OVERWRITE    0x00000004
-#define DISP_FILE_OVERWRITE_IF 0x00000005
-
-/*
- * File attributes.
- */
-
-#define FILE_ATTRIBUTE_READONLY  0x00000001 
-#define FILE_ATTRIBUTE_HIDDEN    0x00000002 
-#define FILE_ATTRIBUTE_DIRECTORY 0x00000010
-#define FILE_ATTRIBUTE_ARCHIVE   0x00000020
-#define FILE_ATTRIBUTE_NORMAL    0x00000080
-
-/*
- * Filesystem attributes.
- */
-
-#define FILE_CASE_SENSITIVE_SEARCH 0x00000001
-#define FILE_CASE_PRESERVED_NAMES  0x00000002
-#define FILE_UNICODE_ON_DISK       0x00000004
-
-/*
- * File create options.
- */
-
-#define FILE_DIRECTORY_FILE     0x00000001
-#define FILE_NON_DIRECTORY_FILE 0x00000040
-
-/*
- * File device types.
- */
-
-#define FILE_DEVICE_DISK 0x00000007
-
 #define SEC_TO_UNIX_EPOCH 11644473600
 
 /**
@@ -425,10 +372,10 @@ int guac_rdp_fs_get_status(int err);
  *     The absolute path to the file within the simulated filesystem.
  *
  * @param access
- *     A bitwise-OR of various RDPDR access flags, such as ACCESS_GENERIC_ALL
- *     or ACCESS_GENERIC_WRITE. This value will ultimately be translated to a
- *     standard O_RDWR, O_WRONLY, etc. value when opening the real file on the
- *     local filesystem.
+ *     A bitwise-OR of various RDPDR access flags, such as GENERIC_ALL or
+ *     GENERIC_WRITE. This value will ultimately be translated to a standard
+ *     O_RDWR, O_WRONLY, etc. value when opening the real file on the local
+ *     filesystem.
  *
  * @param file_attributes
  *     The attributes to apply to the file, if created. This parameter is
@@ -436,9 +383,9 @@ int guac_rdp_fs_get_status(int err);
  *
  * @param create_disposition
  *     Any one of several RDPDR file creation dispositions, such as
- *     DISP_FILE_CREATE, DISP_FILE_OPEN_IF, etc. The creation disposition
- *     dictates whether a new file should be created, whether the file can
- *     already exist, whether existing contents should be truncated, etc.
+ *     FILE_CREATE, FILE_OPEN_IF, etc. The creation disposition dictates
+ *     whether a new file should be created, whether the file can already
+ *     exist, whether existing contents should be truncated, etc.
  *
  * @param create_options
  *     A bitwise-OR of various RDPDR options dictating how a file is to be

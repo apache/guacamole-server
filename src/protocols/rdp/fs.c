@@ -244,16 +244,16 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     }
 
     /* Translate access into flags */
-    if (access & ACCESS_GENERIC_ALL)
+    if (access & GENERIC_ALL)
         flags = O_RDWR;
-    else if ((access & ( ACCESS_GENERIC_WRITE
-                       | ACCESS_FILE_WRITE_DATA
-                       | ACCESS_FILE_APPEND_DATA))
-          && (access & (ACCESS_GENERIC_READ  | ACCESS_FILE_READ_DATA)))
+    else if ((access & ( GENERIC_WRITE
+                       | FILE_WRITE_DATA
+                       | FILE_APPEND_DATA))
+          && (access & (GENERIC_READ  | FILE_READ_DATA)))
         flags = O_RDWR;
-    else if (access & ( ACCESS_GENERIC_WRITE
-                      | ACCESS_FILE_WRITE_DATA
-                      | ACCESS_FILE_APPEND_DATA))
+    else if (access & ( GENERIC_WRITE
+                      | FILE_WRITE_DATA
+                      | FILE_APPEND_DATA))
         flags = O_WRONLY;
     else
         flags = O_RDONLY;
@@ -279,32 +279,32 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     switch (create_disposition) {
 
         /* Create if not exist, fail otherwise */
-        case DISP_FILE_CREATE:
+        case FILE_CREATE:
             flags |= O_CREAT | O_EXCL;
             break;
 
         /* Open file if exists and do not overwrite, fail otherwise */
-        case DISP_FILE_OPEN:
+        case FILE_OPEN:
             /* No flag necessary - default functionality of open */
             break;
 
         /* Open if exists, create otherwise */
-        case DISP_FILE_OPEN_IF:
+        case FILE_OPEN_IF:
             flags |= O_CREAT;
             break;
 
         /* Overwrite if exists, fail otherwise */
-        case DISP_FILE_OVERWRITE:
+        case FILE_OVERWRITE:
             flags |= O_TRUNC;
             break;
 
         /* Overwrite if exists, create otherwise */
-        case DISP_FILE_OVERWRITE_IF:
+        case FILE_OVERWRITE_IF:
             flags |= O_CREAT | O_TRUNC;
             break;
 
         /* Supersede (replace) if exists, otherwise create */
-        case DISP_FILE_SUPERSEDE:
+        case FILE_SUPERSEDE:
             unlink(real_path);
             flags |= O_CREAT | O_TRUNC;
             break;

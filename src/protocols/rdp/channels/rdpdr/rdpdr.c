@@ -167,7 +167,7 @@ static void* guac_rdpdr_download_to_owner(guac_user* owner, void* data) {
     /* Attempt to open requested file */
     char* path = (char*) data;
     int file_id = guac_rdp_fs_open(filesystem, path,
-            ACCESS_FILE_READ_DATA, 0, DISP_FILE_OPEN, 0);
+            FILE_READ_DATA, 0, FILE_OPEN, 0);
 
     /* If file opened successfully, start stream */
     if (file_id >= 0) {

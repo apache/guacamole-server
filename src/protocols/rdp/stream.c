@@ -90,8 +90,8 @@ int guac_rdp_upload_file_handler(guac_user* user, guac_stream* stream,
     __generate_upload_path(filename, file_path);
 
     /* Open file */
-    file_id = guac_rdp_fs_open(fs, file_path, ACCESS_GENERIC_WRITE, 0,
-            DISP_FILE_OVERWRITE_IF, 0);
+    file_id = guac_rdp_fs_open(fs, file_path, GENERIC_WRITE, 0,
+            FILE_OVERWRITE_IF, 0);
     if (file_id < 0) {
         guac_protocol_send_ack(user->socket, stream, "FAIL (CANNOT OPEN)",
                 GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
@@ -293,7 +293,7 @@ int guac_rdp_ls_ack_handler(guac_user* user, guac_stream* stream,
 
         /* Attempt to open file to determine type */
         int file_id = guac_rdp_fs_open(rdp_stream->ls_status.fs, absolute_path,
-                ACCESS_GENERIC_READ, 0, DISP_FILE_OPEN, 0);
+                GENERIC_READ, 0, FILE_OPEN, 0);
         if (file_id < 0)
             continue;
 
@@ -359,8 +359,7 @@ int guac_rdp_download_get_handler(guac_user* user, guac_object* object,
         return 0;
 
     /* Attempt to open file for reading */
-    int file_id = guac_rdp_fs_open(fs, name, ACCESS_GENERIC_READ, 0,
-            DISP_FILE_OPEN, 0);
+    int file_id = guac_rdp_fs_open(fs, name, GENERIC_READ, 0, FILE_OPEN, 0);
     if (file_id < 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Unable to read file \"%s\"",
                 name);
@@ -442,8 +441,8 @@ int guac_rdp_upload_put_handler(guac_user* user, guac_object* object,
     }
 
     /* Open file */
-    int file_id = guac_rdp_fs_open(fs, name, ACCESS_GENERIC_WRITE, 0,
-            DISP_FILE_OVERWRITE_IF, 0);
+    int file_id = guac_rdp_fs_open(fs, name, GENERIC_WRITE, 0,
+            FILE_OVERWRITE_IF, 0);
 
     /* Abort on failure */
     if (file_id < 0) {
