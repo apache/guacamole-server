@@ -66,6 +66,7 @@ libguac_client_rdp_la_SOURCES =                  \
     keyboard/decompose.c                         \
     keyboard/keyboard.c                          \
     keyboard/keymap.c                            \
+    log.c                                        \
     ls.c                                         \
     plugins/channels.c                           \
     plugins/ptr-string.c                         \
@@ -107,6 +108,7 @@ noinst_HEADERS =                                 \
     keyboard/decompose.h                         \
     keyboard/keyboard.h                          \
     keyboard/keymap.h                            \
+    log.h                                        \
     ls.h                                         \
     plugins/channels.h                           \
     plugins/guacai/guacai-messages.h             \

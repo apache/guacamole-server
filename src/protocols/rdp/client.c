@@ -23,6 +23,7 @@
 #include "client.h"
 #include "common/recording.h"
 #include "fs.h"
+#include "log.h"
 #include "rdp.h"
 #include "user.h"
 
@@ -40,6 +41,7 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
+#include <winpr/wlog.h>
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -59,6 +61,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Init display update module */
     rdp_client->disp = guac_rdp_disp_alloc();
+
+    /* Redirect FreeRDP log messages to guac_client_log() */
+    guac_rdp_redirect_wlog(client);
 
     /* Recursive attribute for locks */
     pthread_mutexattr_init(&(rdp_client->attributes));
