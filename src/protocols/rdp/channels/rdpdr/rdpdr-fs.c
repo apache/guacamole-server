@@ -102,7 +102,7 @@ void guac_rdpdr_device_fs_iorequest_handler(guac_rdp_common_svc* svc,
             break;
 
         default:
-            guac_client_log(svc->client, GUAC_LOG_ERROR,
+            guac_client_log(svc->client, GUAC_LOG_DEBUG,
                     "Unknown filesystem I/O request function: 0x%x/0x%x",
                     iorequest->major_func, iorequest->minor_func);
     }

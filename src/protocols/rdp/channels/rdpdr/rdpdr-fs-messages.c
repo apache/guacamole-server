@@ -272,7 +272,7 @@ void guac_rdpdr_fs_process_volume_info(guac_rdp_common_svc* svc,
             break;
 
         default:
-            guac_client_log(svc->client, GUAC_LOG_INFO,
+            guac_client_log(svc->client, GUAC_LOG_DEBUG,
                     "Unknown volume information class: 0x%x", fs_information_class);
     }
 
@@ -302,7 +302,7 @@ void guac_rdpdr_fs_process_file_info(guac_rdp_common_svc* svc,
             break;
 
         default:
-            guac_client_log(svc->client, GUAC_LOG_INFO,
+            guac_client_log(svc->client, GUAC_LOG_DEBUG,
                     "Unknown file information class: 0x%x", fs_information_class);
     }
 
@@ -358,7 +358,7 @@ void guac_rdpdr_fs_process_set_file_info(guac_rdp_common_svc* svc,
             break;
 
         default:
-            guac_client_log(svc->client, GUAC_LOG_INFO,
+            guac_client_log(svc->client, GUAC_LOG_DEBUG,
                     "Unknown file information class: 0x%x",
                     fs_information_class);
     }
@@ -473,7 +473,7 @@ void guac_rdpdr_fs_process_query_directory(guac_rdp_common_svc* svc,
                         break;
 
                     default:
-                        guac_client_log(svc->client, GUAC_LOG_INFO,
+                        guac_client_log(svc->client, GUAC_LOG_DEBUG,
                                 "Unknown dir information class: 0x%x",
                                 fs_information_class);
                 }
