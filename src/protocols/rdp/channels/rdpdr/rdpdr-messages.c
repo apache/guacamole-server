@@ -31,6 +31,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * Sends a Client Announce Reply message. The Client Announce Reply message is
+ * required to be sent in response to the Server Announce Request message. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpefs/d6fe6d1b-c145-4a6f-99aa-4fe3cdcea398
+ *
+ * @param svc
+ *     The guac_rdp_common_svc representing the static virtual channel being
+ *     used for RDPDR.
+ *
+ * @param major
+ *     The major version of the RDPDR protocol in use. This value must always
+ *     be 1.
+ *
+ * @param minor
+ *     The minor version of the RDPDR protocol in use. This value must be
+ *     either 2, 5, 10, 12, or 13.
+ *
+ * @param client_id
+ *     The client ID received in the Server Announce Request, or a randomly
+ *     generated ID.
+ */
 static void guac_rdpdr_send_client_announce_reply(guac_rdp_common_svc* svc,
         unsigned int major, unsigned int minor, unsigned int client_id) {
 
@@ -49,6 +71,19 @@ static void guac_rdpdr_send_client_announce_reply(guac_rdp_common_svc* svc,
 
 }
 
+/**
+ * Sends a Client Name Request message. The Client Name Request message is used
+ * by the client to announce its own name. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpefs/902497f1-3b1c-4aee-95f8-1668f9b7b7d2
+ *
+ * @param svc
+ *     The guac_rdp_common_svc representing the static virtual channel being
+ *     used for RDPDR.
+ *
+ * @param name
+ *     The name that should be used for the client.
+ */
 static void guac_rdpdr_send_client_name_request(guac_rdp_common_svc* svc,
         const char* name) {
 
@@ -69,6 +104,18 @@ static void guac_rdpdr_send_client_name_request(guac_rdp_common_svc* svc,
 
 }
 
+/**
+ * Sends a Client Core Capability Response message. The Client Core Capability
+ * Response message is used to announce the client's capabilities, in response
+ * to receiving the server's capabilities via a Server Core Capability Request.
+ * See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpefs/f513bf87-cca0-488a-ac5c-18cf18f4a7e1
+ *
+ * @param svc
+ *     The guac_rdp_common_svc representing the static virtual channel being
+ *     used for RDPDR.
+ */
 static void guac_rdpdr_send_client_capability(guac_rdp_common_svc* svc) {
 
     wStream* output_stream = Stream_New(NULL, 256);
@@ -117,6 +164,17 @@ static void guac_rdpdr_send_client_capability(guac_rdp_common_svc* svc) {
 
 }
 
+/**
+ * Sends a Client Device List Announce Request message. The Client Device List
+ * Announce Request message is used by the client to enumerate all devices
+ * which should be made available within the RDP session via RDPDR. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpefs/10ef9ada-cba2-4384-ab60-7b6290ed4a9a
+ *
+ * @param svc
+ *     The guac_rdp_common_svc representing the static virtual channel being
+ *     used for RDPDR.
+ */
 static void guac_rdpdr_send_client_device_list_announce_request(guac_rdp_common_svc* svc) {
 
     guac_rdpdr* rdpdr = (guac_rdpdr*) svc->data;
@@ -220,28 +278,27 @@ void guac_rdpdr_process_device_iorequest(guac_rdp_common_svc* svc,
         wStream* input_stream) {
 
     guac_rdpdr* rdpdr = (guac_rdpdr*) svc->data;
-
-    int device_id, file_id, completion_id, major_func, minor_func;
+    guac_rdpdr_iorequest iorequest;
 
     /* Read header */
-    Stream_Read_UINT32(input_stream, device_id);
-    Stream_Read_UINT32(input_stream, file_id);
-    Stream_Read_UINT32(input_stream, completion_id);
-    Stream_Read_UINT32(input_stream, major_func);
-    Stream_Read_UINT32(input_stream, minor_func);
+    Stream_Read_UINT32(input_stream, iorequest.device_id);
+    Stream_Read_UINT32(input_stream, iorequest.file_id);
+    Stream_Read_UINT32(input_stream, iorequest.completion_id);
+    Stream_Read_UINT32(input_stream, iorequest.major_func);
+    Stream_Read_UINT32(input_stream, iorequest.minor_func);
 
     /* If printer, run printer handlers */
-    if (device_id >= 0 && device_id < rdpdr->devices_registered) {
+    if (iorequest.device_id >= 0 && iorequest.device_id < rdpdr->devices_registered) {
 
         /* Call handler on device */
-        guac_rdpdr_device* device = &(rdpdr->devices[device_id]);
-        device->iorequest_handler(svc, device, input_stream,
-                file_id, completion_id, major_func, minor_func);
+        guac_rdpdr_device* device = &(rdpdr->devices[iorequest.device_id]);
+        device->iorequest_handler(svc, device, &iorequest, input_stream);
 
     }
 
     else
-        guac_client_log(svc->client, GUAC_LOG_ERROR, "Unknown device ID: 0x%08x", device_id);
+        guac_client_log(svc->client, GUAC_LOG_ERROR, "Unknown device ID: "
+                "0x%08x", iorequest.device_id);
 
 }
 

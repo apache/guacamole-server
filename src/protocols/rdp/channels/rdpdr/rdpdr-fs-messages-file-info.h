@@ -34,71 +34,87 @@
 #include <winpr/stream.h>
 
 /**
+ * Handler for Device I/O Requests which set/update file information.
+ *
+ * @param svc
+ *     The guac_rdp_common_svc representing the static virtual channel being
+ *     used for RDPDR.
+ *
+ * @param device
+ *     The guac_rdpdr_device of the relevant device, as dictated by the
+ *     deviceId field of common RDPDR header within the received PDU. Within
+ *     the guac_rdpdr_iorequest structure, the deviceId field is stored within
+ *     device_id.
+ *
+ * @param iorequest
+ *     The contents of the common RDPDR Device I/O Request header shared by all
+ *     RDPDR devices.
+ *
+ * @param length
+ *     The length of the SetBuffer field of the I/O request, in bytes. Whether
+ *     the SetBuffer field is applicable to a particular request, as well as
+ *     the specific contents of that field, depend on the type of request.
+ *
+ * @param input_stream
+ *     The remaining data within the received PDU, following the common RDPDR
+ *     Device I/O Request header and length field. If the SetBuffer field is
+ *     used for this request, the first byte of SetBuffer will be the first
+ *     byte read from this stream.
+ */
+typedef void guac_rdpdr_set_information_request_handler(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        int length, wStream* input_stream);
+
+/**
  * Processes a query for FileBasicInformation. From the documentation, this is
  * "used to query a file for the times of creation, last access, last write,
  * and change, in addition to file attribute information."
  */
-void guac_rdpdr_fs_process_query_basic_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id);
+guac_rdpdr_device_iorequest_handler guac_rdpdr_fs_process_query_basic_info;
 
 /**
  * Processes a query for FileStandardInformation. From the documentation, this
  * is "used to query for file information such as allocation size, end-of-file
  * position, and number of links."
  */
-void guac_rdpdr_fs_process_query_standard_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id);
+guac_rdpdr_device_iorequest_handler guac_rdpdr_fs_process_query_standard_info;
 
 /**
  * Processes a query for FileAttributeTagInformation. From the documentation
  * this is "used to query for file attribute and reparse tag information."
  */
-void guac_rdpdr_fs_process_query_attribute_tag_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id);
+guac_rdpdr_device_iorequest_handler guac_rdpdr_fs_process_query_attribute_tag_info;
 
 /**
  * Process a set operation for FileRenameInformation. From the documentation,
  * this operation is used to rename a file.
  */
-void guac_rdpdr_fs_process_set_rename_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id, int length);
+guac_rdpdr_set_information_request_handler guac_rdpdr_fs_process_set_rename_info;
 
 /**
  * Process a set operation for FileAllocationInformation. From the
  * documentation, this operation is used to set a file's allocation size.
  */
-void guac_rdpdr_fs_process_set_allocation_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id, int length);
+guac_rdpdr_set_information_request_handler guac_rdpdr_fs_process_set_allocation_info;
 
 /**
  * Process a set operation for FileDispositionInformation. From the
  * documentation, this operation is used to mark a file for deletion.
  */
-void guac_rdpdr_fs_process_set_disposition_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id, int length);
+guac_rdpdr_set_information_request_handler guac_rdpdr_fs_process_set_disposition_info;
 
 /**
  * Process a set operation for FileEndOfFileInformation. From the
  * documentation, this operation is used "to set end-of-file information for
  * a file."
  */
-void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id, int length);
+guac_rdpdr_set_information_request_handler guac_rdpdr_fs_process_set_end_of_file_info;
 
 /**
  * Process a set operation for FileBasicInformation. From the documentation,
  * this is "used to set file information such as the times of creation, last
  * access, last write, and change, in addition to file attributes."
  */
-void guac_rdpdr_fs_process_set_basic_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id, int length);
+guac_rdpdr_set_information_request_handler guac_rdpdr_fs_process_set_basic_info;
 
 #endif

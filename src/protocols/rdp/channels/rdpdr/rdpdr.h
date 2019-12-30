@@ -37,21 +37,79 @@
 typedef struct guac_rdpdr_device guac_rdpdr_device;
 
 /**
- * Handler for client device list announce. Each implementing device must write
- * its announcement header and data to the given output stream.
+ * The contents of the header common to all RDPDR Device I/O Requests. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpefs/a087ffa8-d0d5-4874-ac7b-0494f63e2d5d
  */
-typedef void guac_rdpdr_device_announce_handler(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* output_stream, int device_id);
+typedef struct guac_rdpdr_iorequest {
+
+    /**
+     * The unique ID assigned to the device receiving this I/O request.
+     */
+    int device_id;
+
+    /**
+     * The unique ID which identifies the relevant file, as returned when the
+     * file was opened. This field may not be relevant to all requests.
+     */
+    int file_id;
+
+    /**
+     * The unique ID that should be used to refer to this I/O request in future
+     * responses.
+     */
+    int completion_id;
+
+    /**
+     * Integer ID which identifies the function being requested, such as
+     * IRP_MJ_CREATE (open a file within a shared drive) or IRP_MJ_WRITE (write
+     * data to an open file).
+     */
+    int major_func;
+
+    /**
+     * Integer ID which identifies a variant of the function denoted by
+     * major_func. This value is only valid for IRP_MJ_DIRECTORY_CONTROL.
+     */
+    int minor_func;
+
+} guac_rdpdr_iorequest;
 
 /**
- * Handler for device I/O requests.
+ * Handler for Device I/O Requests. RDPDR devices must provide an
+ * implementation of this function to be able to handle inbound I/O requests.
+ *
+ * @param svc
+ *     The guac_rdp_common_svc representing the static virtual channel being
+ *     used for RDPDR.
+ *
+ * @param device
+ *     The guac_rdpdr_device of the relevant device, as dictated by the
+ *     deviceId field of common RDPDR header within the received PDU. Within
+ *     the guac_rdpdr_iorequest structure, the deviceId field is stored within
+ *     device_id.
+ *
+ * @param iorequest
+ *     The contents of the common RDPDR Device I/O Request header shared by all
+ *     RDPDR devices.
+ *
+ * @param input_stream
+ *     The remaining data within the received PDU, following the common RDPDR
+ *     Device I/O Request header.
  */
 typedef void guac_rdpdr_device_iorequest_handler(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id, int major_func, int minor_func);
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        wStream* input_stream);
 
 /**
  * Handler for cleaning up the dynamically-allocated portions of a device.
+ *
+ * @param svc
+ *     The guac_rdp_common_svc representing the static virtual channel being
+ *     used for RDPDR.
+ *
+ * @param device
+ *     The guac_rdpdr_device of the device being freed.
  */
 typedef void guac_rdpdr_device_free_handler(guac_rdp_common_svc* svc,
         guac_rdpdr_device* device);
@@ -126,7 +184,30 @@ typedef struct guac_rdpdr {
 
 /**
  * Creates a new stream which contains the common DR_DEVICE_IOCOMPLETION header
- * used for virtually all responses.
+ * used for virtually all responses. Depending on the specific I/O completion
+ * being sent, additional space may be reserved within the resulting stream for
+ * additional fields. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpefs/10ef9ada-cba2-4384-ab60-7b6290ed4a9a
+ *
+ * @param device
+ *     The device that completed the operation requested by a prior I/O
+ *     request.
+ *
+ * @param completion_id
+ *     The completion ID of the I/O request that requested the operation.
+ *
+ * @param status
+ *     An NTSTATUS code describing the success/failure of the operation that
+ *     was completed.
+ *
+ * @param size
+ *     The number of additional bytes to reserve at the end of the resulting
+ *     stream for additional fields to be appended.
+ *
+ * @return
+ *     A new wStream containing an I/O completion header, followed by the
+ *     requested additional free space.
  */
 wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
         int completion_id, int status, int size);

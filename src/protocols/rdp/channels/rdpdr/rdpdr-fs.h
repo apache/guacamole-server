@@ -37,6 +37,16 @@
 #include <guacamole/pool.h>
 
 /**
+ * The UTF-16 string that should be sent as the label of the filesystem.
+ */
+#define GUAC_FILESYSTEM_LABEL "G\0U\0A\0C\0F\0I\0L\0E\0"
+
+/**
+ * The size of GUAC_FILESYSTEM_LABEL in bytes.
+ */
+#define GUAC_FILESYSTEM_LABEL_LENGTH 16
+
+/**
  * Registers a new filesystem device within the RDPDR plugin. This must be done
  * before RDPDR connection finishes.
  * 

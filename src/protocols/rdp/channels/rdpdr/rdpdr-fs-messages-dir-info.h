@@ -35,39 +35,59 @@
 #include <winpr/stream.h>
 
 /**
+ * Handler for Device I/O Requests which query information about the files
+ * within a directory.
+ *
+ * @param svc
+ *     The guac_rdp_common_svc representing the static virtual channel being
+ *     used for RDPDR.
+ *
+ * @param device
+ *     The guac_rdpdr_device of the relevant device, as dictated by the
+ *     deviceId field of common RDPDR header within the received PDU. Within
+ *     the guac_rdpdr_iorequest structure, the deviceId field is stored within
+ *     device_id.
+ *
+ * @param iorequest
+ *     The contents of the common RDPDR Device I/O Request header shared by all
+ *     RDPDR devices.
+ *
+ * @param entry_name
+ *     The filename of the file being queried.
+ *
+ * @param entry_file_id
+ *     The ID of the file being queried.
+ */
+typedef void guac_rdpdr_directory_query_handler(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        const char* entry_name, int entry_file_id);
+
+/**
  * Processes a query request for FileDirectoryInformation. From the
  * documentation this is "defined as the file's name, time stamp, and size, or its
  * attributes."
  */
-void guac_rdpdr_fs_process_query_directory_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, const char* entry_name, int file_id,
-        int completion_id);
+guac_rdpdr_directory_query_handler guac_rdpdr_fs_process_query_directory_info;
 
 /**
  * Processes a query request for FileFullDirectoryInformation. From the
  * documentation, this is "defined as all the basic information, plus extended
  * attribute size."
  */
-void guac_rdpdr_fs_process_query_full_directory_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, const char* entry_name, int file_id,
-        int completion_id);
+guac_rdpdr_directory_query_handler guac_rdpdr_fs_process_query_full_directory_info;
 
 /**
  * Processes a query request for FileBothDirectoryInformation. From the
  * documentation, this absurdly-named request is "basic information plus
  * extended attribute size and short name about a file or directory."
  */
-void guac_rdpdr_fs_process_query_both_directory_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, const char* entry_name, int file_id,
-        int completion_id);
+guac_rdpdr_directory_query_handler guac_rdpdr_fs_process_query_both_directory_info;
 
 /**
  * Processes a query request for FileNamesInformation. From the documentation,
  * this is "detailed information on the names of files in a directory."
  */
-void guac_rdpdr_fs_process_query_names_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, const char* entry_name, int file_id,
-        int completion_id);
+guac_rdpdr_directory_query_handler guac_rdpdr_fs_process_query_names_info;
 
 #endif
 

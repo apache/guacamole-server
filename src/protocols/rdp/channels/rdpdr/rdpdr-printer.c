@@ -43,7 +43,8 @@
 #include <unistd.h>
 
 void guac_rdpdr_process_print_job_create(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int completion_id) {
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        wStream* input_stream) {
 
     guac_client* client = svc->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -57,7 +58,7 @@ void guac_rdpdr_process_print_job_create(guac_rdp_common_svc* svc,
 
     /* Respond with success */
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
-            completion_id, STATUS_SUCCESS, 4);
+            iorequest->completion_id, STATUS_SUCCESS, 4);
 
     Stream_Write_UINT32(output_stream, 0); /* fileId */
     guac_rdp_common_svc_write(svc, output_stream);
@@ -65,7 +66,8 @@ void guac_rdpdr_process_print_job_create(guac_rdp_common_svc* svc,
 }
 
 void guac_rdpdr_process_print_job_write(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int completion_id) {
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        wStream* input_stream) {
 
     guac_client* client = svc->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -94,7 +96,7 @@ void guac_rdpdr_process_print_job_write(guac_rdp_common_svc* svc,
     }
 
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
-            completion_id, status, 5);
+            iorequest->completion_id, status, 5);
 
     Stream_Write_UINT32(output_stream, length);
     Stream_Write_UINT8(output_stream, 0); /* Padding */
@@ -104,7 +106,8 @@ void guac_rdpdr_process_print_job_write(guac_rdp_common_svc* svc,
 }
 
 void guac_rdpdr_process_print_job_close(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int completion_id) {
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        wStream* input_stream) {
 
     guac_client* client = svc->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -117,7 +120,7 @@ void guac_rdpdr_process_print_job_close(guac_rdp_common_svc* svc,
     }
 
     wStream* output_stream = guac_rdpdr_new_io_completion(device,
-            completion_id, STATUS_SUCCESS, 4);
+            iorequest->completion_id, STATUS_SUCCESS, 4);
 
     Stream_Write_UINT32(output_stream, 0); /* Padding */
     guac_rdp_common_svc_write(svc, output_stream);
@@ -127,41 +130,38 @@ void guac_rdpdr_process_print_job_close(guac_rdp_common_svc* svc,
 
 }
 
-static void guac_rdpdr_device_printer_iorequest_handler(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, wStream* input_stream, int file_id,
-        int completion_id, int major_func, int minor_func) {
+void guac_rdpdr_device_printer_iorequest_handler(guac_rdp_common_svc* svc,
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        wStream* input_stream) {
 
-    switch (major_func) {
+    switch (iorequest->major_func) {
 
         /* Print job create */
         case IRP_MJ_CREATE:
-            guac_rdpdr_process_print_job_create(svc, device, input_stream,
-                    completion_id);
+            guac_rdpdr_process_print_job_create(svc, device, iorequest, input_stream);
             break;
 
         /* Printer job write */
         case IRP_MJ_WRITE:
-            guac_rdpdr_process_print_job_write(svc, device, input_stream,
-                    completion_id);
+            guac_rdpdr_process_print_job_write(svc, device, iorequest, input_stream);
             break;
 
         /* Printer job close */
         case IRP_MJ_CLOSE:
-            guac_rdpdr_process_print_job_close(svc, device, input_stream,
-                    completion_id);
+            guac_rdpdr_process_print_job_close(svc, device, iorequest, input_stream);
             break;
 
         /* Log unknown */
         default:
-            guac_client_log(svc->client, GUAC_LOG_ERROR,
-                    "Unknown printer I/O request function: 0x%x/0x%x",
-                    major_func, minor_func);
+            guac_client_log(svc->client, GUAC_LOG_ERROR, "Unknown printer "
+                    "I/O request function: 0x%x/0x%x", iorequest->major_func,
+                    iorequest->minor_func);
 
     }
 
 }
 
-static void guac_rdpdr_device_printer_free_handler(guac_rdp_common_svc* svc,
+void guac_rdpdr_device_printer_free_handler(guac_rdp_common_svc* svc,
         guac_rdpdr_device* device) {
 
     Stream_Free(device->device_announce, 1);

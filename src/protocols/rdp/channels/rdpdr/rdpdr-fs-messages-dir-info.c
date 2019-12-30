@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "channels/rdpdr/rdpdr-fs-messages-dir-info.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "fs.h"
 #include "unicode.h"
@@ -29,8 +30,8 @@
 #include <stddef.h>
 
 void guac_rdpdr_fs_process_query_directory_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, const char* entry_name, int file_id,
-        int completion_id) {
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        const char* entry_name, int entry_file_id) {
 
     guac_rdp_fs_file* file;
 
@@ -43,16 +44,17 @@ void guac_rdpdr_fs_process_query_directory_info(guac_rdp_common_svc* svc,
             (char*) utf16_entry_name, sizeof(utf16_entry_name));
 
     /* Get file */
-    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, entry_file_id);
     if (file == NULL)
         return;
 
     guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i (entry_name=\"%s\")]",
-            __func__, file_id, entry_name);
+            __func__, entry_file_id, entry_name);
 
-    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
-            STATUS_SUCCESS, 4 + 64 + utf16_length + 2);
+    output_stream = guac_rdpdr_new_io_completion(device,
+            iorequest->completion_id, STATUS_SUCCESS,
+            4 + 64 + utf16_length + 2);
 
     Stream_Write_UINT32(output_stream,
             64 + utf16_length + 2); /* Length */
@@ -76,8 +78,8 @@ void guac_rdpdr_fs_process_query_directory_info(guac_rdp_common_svc* svc,
 }
 
 void guac_rdpdr_fs_process_query_full_directory_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, const char* entry_name, int file_id,
-        int completion_id) {
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        const char* entry_name, int entry_file_id) {
 
     guac_rdp_fs_file* file;
 
@@ -90,16 +92,17 @@ void guac_rdpdr_fs_process_query_full_directory_info(guac_rdp_common_svc* svc,
             (char*) utf16_entry_name, sizeof(utf16_entry_name));
 
     /* Get file */
-    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, entry_file_id);
     if (file == NULL)
         return;
 
     guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i (entry_name=\"%s\")]",
-            __func__, file_id, entry_name);
+            __func__, entry_file_id, entry_name);
 
-    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
-            STATUS_SUCCESS, 4 + 68 + utf16_length + 2);
+    output_stream = guac_rdpdr_new_io_completion(device,
+            iorequest->completion_id, STATUS_SUCCESS,
+            4 + 68 + utf16_length + 2);
 
     Stream_Write_UINT32(output_stream,
             68 + utf16_length + 2); /* Length */
@@ -124,8 +127,8 @@ void guac_rdpdr_fs_process_query_full_directory_info(guac_rdp_common_svc* svc,
 }
 
 void guac_rdpdr_fs_process_query_both_directory_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, const char* entry_name, int file_id,
-        int completion_id) {
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        const char* entry_name, int entry_file_id) {
 
     guac_rdp_fs_file* file;
 
@@ -138,16 +141,17 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdp_common_svc* svc,
             (char*) utf16_entry_name, sizeof(utf16_entry_name));
 
     /* Get file */
-    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, entry_file_id);
     if (file == NULL)
         return;
 
     guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i (entry_name=\"%s\")]",
-            __func__, file_id, entry_name);
+            __func__, entry_file_id, entry_name);
 
-    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
-            STATUS_SUCCESS, 4 + 69 + 24 + utf16_length + 2);
+    output_stream = guac_rdpdr_new_io_completion(device,
+            iorequest->completion_id, STATUS_SUCCESS,
+            4 + 69 + 24 + utf16_length + 2);
 
     Stream_Write_UINT32(output_stream,
             69 + 24 + utf16_length + 2); /* Length */
@@ -176,8 +180,8 @@ void guac_rdpdr_fs_process_query_both_directory_info(guac_rdp_common_svc* svc,
 }
 
 void guac_rdpdr_fs_process_query_names_info(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, const char* entry_name, int file_id,
-        int completion_id) {
+        guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,
+        const char* entry_name, int entry_file_id) {
 
     guac_rdp_fs_file* file;
 
@@ -190,16 +194,17 @@ void guac_rdpdr_fs_process_query_names_info(guac_rdp_common_svc* svc,
             (char*) utf16_entry_name, sizeof(utf16_entry_name));
 
     /* Get file */
-    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, file_id);
+    file = guac_rdp_fs_get_file((guac_rdp_fs*) device->data, entry_file_id);
     if (file == NULL)
         return;
 
     guac_client_log(svc->client, GUAC_LOG_DEBUG,
             "%s: [file_id=%i (entry_name=\"%s\")]",
-            __func__, file_id, entry_name);
+            __func__, entry_file_id, entry_name);
 
-    output_stream = guac_rdpdr_new_io_completion(device, completion_id,
-            STATUS_SUCCESS, 4 + 12 + utf16_length + 2);
+    output_stream = guac_rdpdr_new_io_completion(device,
+            iorequest->completion_id, STATUS_SUCCESS,
+            4 + 12 + utf16_length + 2);
 
     Stream_Write_UINT32(output_stream,
             12 + utf16_length + 2); /* Length */
