@@ -24,6 +24,7 @@
 #include "channels/rdpdr/rdpdr-fs-messages.h"
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr.h"
+#include "download.h"
 #include "fs.h"
 #include "unicode.h"
 
@@ -224,7 +225,7 @@ void guac_rdpdr_fs_process_close(guac_rdp_common_svc* svc,
     /* If file was written to, and it's in the \Download folder, start stream */
     if (file->bytes_written > 0 &&
             strncmp(file->absolute_path, "\\Download\\", 10) == 0) {
-        guac_rdpdr_start_download(svc, device, file->absolute_path);
+        guac_client_for_owner(svc->client, guac_rdp_download_to_user, file->absolute_path);
         guac_rdp_fs_delete((guac_rdp_fs*) device->data, iorequest->file_id);
     }
 

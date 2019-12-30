@@ -26,7 +26,6 @@
 #include "plugins/channels.h"
 #include "rdp.h"
 #include "settings.h"
-#include "stream.h"
 
 #include <freerdp/channels/rdpdr.h>
 #include <freerdp/freerdp.h>
@@ -132,99 +131,6 @@ wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
     Stream_Write_UINT32(output_stream, status);
 
     return output_stream;
-
-}
-
-/**
- * Callback invoked on the current connection owner (if any) when a file
- * download is being initiated using the magic "Download" folder.
- *
- * @param owner
- *     The guac_user that is the owner of the connection, or NULL if the
- *     connection owner has left.
- *
- * @param data
- *     The full absolute path to the file that should be downloaded.
- *
- * @return
- *     The stream allocated for the file download, or NULL if the download has
- *     failed to start.
- */
-static void* guac_rdpdr_download_to_owner(guac_user* owner, void* data) {
-
-    /* Do not bother attempting the download if the owner has left */
-    if (owner == NULL)
-        return NULL;
-
-    guac_client* client = owner->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    guac_rdp_fs* filesystem = rdp_client->filesystem;
-
-    /* Ignore download if filesystem has been unloaded */
-    if (filesystem == NULL)
-        return NULL;
-
-    /* Attempt to open requested file */
-    char* path = (char*) data;
-    int file_id = guac_rdp_fs_open(filesystem, path,
-            FILE_READ_DATA, 0, FILE_OPEN, 0);
-
-    /* If file opened successfully, start stream */
-    if (file_id >= 0) {
-
-        guac_rdp_stream* rdp_stream;
-        const char* basename;
-
-        int i;
-        char c;
-
-        /* Associate stream with transfer status */
-        guac_stream* stream = guac_user_alloc_stream(owner);
-        stream->data = rdp_stream = malloc(sizeof(guac_rdp_stream));
-        stream->ack_handler = guac_rdp_download_ack_handler;
-        rdp_stream->type = GUAC_RDP_DOWNLOAD_STREAM;
-        rdp_stream->download_status.file_id = file_id;
-        rdp_stream->download_status.offset = 0;
-
-        /* Get basename from absolute path */
-        i=0;
-        basename = path;
-        do {
-
-            c = path[i];
-            if (c == '/' || c == '\\')
-                basename = &(path[i+1]);
-
-            i++;
-
-        } while (c != '\0');
-
-        guac_user_log(owner, GUAC_LOG_DEBUG, "%s: Initiating download "
-                "of \"%s\"", __func__, path);
-
-        /* Begin stream */
-        guac_protocol_send_file(owner->socket, stream,
-                "application/octet-stream", basename);
-        guac_socket_flush(owner->socket);
-
-        /* Download started successfully */
-        return stream;
-
-    }
-
-    /* Download failed */
-    guac_user_log(owner, GUAC_LOG_ERROR, "Unable to download \"%s\"", path);
-    return NULL;
-
-}
-
-void guac_rdpdr_start_download(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, char* path) {
-
-    guac_client* client = svc->client;
-
-    /* Initiate download to the owner of the connection */
-    guac_client_for_owner(client, guac_rdpdr_download_to_owner, path);
 
 }
 

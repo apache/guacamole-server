@@ -20,6 +20,7 @@
 #include "config.h"
 #include "channels/rdpdr/rdpdr-fs-messages-file-info.h"
 #include "channels/rdpdr/rdpdr.h"
+#include "download.h"
 #include "fs.h"
 #include "unicode.h"
 
@@ -158,7 +159,7 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdp_common_svc* svc,
             return;
 
         /* Initiate download, pretend move succeeded */
-        guac_rdpdr_start_download(svc, device, file->absolute_path);
+        guac_client_for_owner(svc->client, guac_rdp_download_to_user, file->absolute_path);
         output_stream = guac_rdpdr_new_io_completion(device,
                 iorequest->completion_id, STATUS_SUCCESS, 4);
 

@@ -39,7 +39,6 @@
 #include "pointer.h"
 #include "print-job.h"
 #include "rdp.h"
-#include "stream.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"

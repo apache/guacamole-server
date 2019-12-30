@@ -24,7 +24,7 @@
 #include "input.h"
 #include "rdp.h"
 #include "settings.h"
-#include "stream.h"
+#include "upload.h"
 #include "user.h"
 
 #ifdef ENABLE_COMMON_SSH

@@ -19,8 +19,9 @@
 
 #include "config.h"
 
+#include "download.h"
 #include "fs.h"
-#include "stream.h"
+#include "upload.h"
 
 #include <guacamole/client.h>
 #include <guacamole/object.h>

@@ -213,12 +213,6 @@ wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
         int completion_id, int status, int size);
 
 /**
- * Begins streaming the given file to the user via a Guacamole file stream.
- */
-void guac_rdpdr_start_download(guac_rdp_common_svc* svc,
-        guac_rdpdr_device* device, char* path);
-
-/**
  * Initializes device redirection support (file transfer, printing, etc.) for
  * RDP and handling of the RDPDR channel.  If failures occur, messages noting
  * the specifics of those failures will be logged, and the RDP side of

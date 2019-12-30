@@ -57,6 +57,7 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/rdpsnd/rdpsnd.c                     \
     client.c                                     \
     color.c                                      \
+    download.c                                   \
     error.c                                      \
     fs.c                                         \
     gdi.c                                        \
@@ -65,6 +66,7 @@ libguac_client_rdp_la_SOURCES =                  \
     keyboard/decompose.c                         \
     keyboard/keyboard.c                          \
     keyboard/keymap.c                            \
+    ls.c                                         \
     plugins/channels.c                           \
     plugins/ptr-string.c                         \
     pointer.c                                    \
@@ -72,8 +74,8 @@ libguac_client_rdp_la_SOURCES =                  \
     rdp.c                                        \
     resolution.c                                 \
     settings.c                                   \
-    stream.c                                     \
     unicode.c                                    \
+    upload.c                                     \
     user.c
 
 noinst_HEADERS =                                 \
@@ -96,6 +98,7 @@ noinst_HEADERS =                                 \
     channels/rdpsnd/rdpsnd.h                     \
     client.h                                     \
     color.h                                      \
+    download.h                                   \
     error.h                                      \
     fs.h                                         \
     gdi.h                                        \
@@ -104,6 +107,7 @@ noinst_HEADERS =                                 \
     keyboard/decompose.h                         \
     keyboard/keyboard.h                          \
     keyboard/keymap.h                            \
+    ls.h                                         \
     plugins/channels.h                           \
     plugins/guacai/guacai-messages.h             \
     plugins/guacai/guacai.h                      \
@@ -113,8 +117,8 @@ noinst_HEADERS =                                 \
     rdp.h                                        \
     resolution.h                                 \
     settings.h                                   \
-    stream.h                                     \
     unicode.h                                    \
+    upload.h                                     \
     user.h
 
 libguac_client_rdp_la_CFLAGS = \
