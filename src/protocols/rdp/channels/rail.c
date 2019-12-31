@@ -32,30 +32,29 @@
 #include <stddef.h>
 
 /**
- * Callback which is invoked when a Server System Parameters Update PDU is
- * received from the RDP server. The Server System Parameters Update PDU, also
- * referred to as a "sysparam order", is used by the server to update system
- * parameters for RemoteApp.
+ * Completes initialization of the RemoteApp session, sending client system
+ * parameters and executing the desired RemoteApp command using the Client
+ * System Parameters Update PDU and Client Execute PDU respectively. These PDUs
+ * MUST be sent for the desired RemoteApp to run, and MUST NOT be sent until
+ * after a Handshake or HandshakeEx PDU has been received. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/60344497-883f-4711-8b9a-828d1c580195 (System Parameters Update PDU)
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/98a6e3c3-c2a9-42cc-ad91-0d9a6c211138 (Client Execute PDU)
  *
  * @param rail
  *     The RailClientContext structure used by FreeRDP to handle the RAIL
  *     channel for the current RDP session.
  *
- * @param sysparam
- *     The RAIL_SYSPARAM_ORDER structure representing the Server System
- *     Parameters Update PDU that was received.
- *
  * @return
- *     CHANNEL_RC_OK (zero) if the PDU was handled successfully, an error code
+ *     CHANNEL_RC_OK (zero) if the PDUs were sent successfully, an error code
  *     (non-zero) otherwise.
  */
-static UINT guac_rdp_rail_sysparam(RailClientContext* rail,
-        const RAIL_SYSPARAM_ORDER* sysparam) {
+static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
 
     guac_client* client = (guac_client*) rail->custom;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    RAIL_SYSPARAM_ORDER response = {
+    RAIL_SYSPARAM_ORDER sysparam = {
         .workArea = {
             .left   = 0,
             .top    = 0,
@@ -65,8 +64,68 @@ static UINT guac_rdp_rail_sysparam(RailClientContext* rail,
         .dragFullWindows = FALSE
     };
 
-    return rail->ClientSystemParam(rail, &response);
+    /* Send client system parameters */
+    UINT status = rail->ClientSystemParam(rail, &sysparam);
+    if (status != CHANNEL_RC_OK)
+        return status;
 
+    RAIL_EXEC_ORDER exec = {
+        .RemoteApplicationProgram = rdp_client->settings->remote_app,
+        .RemoteApplicationWorkingDir = rdp_client->settings->remote_app_dir,
+        .RemoteApplicationArguments = rdp_client->settings->remote_app_args,
+    };
+
+    /* Execute desired RemoteApp command */
+    return rail->ClientExecute(rail, &exec);
+
+}
+
+/**
+ * Callback which is invoked when a Handshake PDU is received from the RDP
+ * server. No communication for RemoteApp may occur until the Handshake PDU
+ * (or, alternatively, the HandshakeEx PDU) is received. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/cec4eb83-b304-43c9-8378-b5b8f5e7082a
+ *
+ * @param rail
+ *     The RailClientContext structure used by FreeRDP to handle the RAIL
+ *     channel for the current RDP session.
+ *
+ * @param handshake
+ *     The RAIL_HANDSHAKE_ORDER structure representing the Handshake PDU that
+ *     was received.
+ *
+ * @return
+ *     CHANNEL_RC_OK (zero) if the PDU was handled successfully, an error code
+ *     (non-zero) otherwise.
+ */
+static UINT guac_rdp_rail_handshake(RailClientContext* rail,
+        const RAIL_HANDSHAKE_ORDER* handshake) {
+    return guac_rdp_rail_complete_handshake(rail);
+}
+
+/**
+ * Callback which is invoked when a HandshakeEx PDU is received from the RDP
+ * server. No communication for RemoteApp may occur until the HandshakeEx PDU
+ * (or, alternatively, the Handshake PDU) is received. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/5cec5414-27de-442e-8d4a-c8f8b41f3899
+ *
+ * @param rail
+ *     The RailClientContext structure used by FreeRDP to handle the RAIL
+ *     channel for the current RDP session.
+ *
+ * @param handshake_ex
+ *     The RAIL_HANDSHAKE_EX_ORDER structure representing the HandshakeEx PDU
+ *     that was received.
+ *
+ * @return
+ *     CHANNEL_RC_OK (zero) if the PDU was handled successfully, an error code
+ *     (non-zero) otherwise.
+ */
+static UINT guac_rdp_rail_handshake_ex(RailClientContext* rail,
+        const RAIL_HANDSHAKE_EX_ORDER* handshake_ex) {
+    return guac_rdp_rail_complete_handshake(rail);
 }
 
 /**
@@ -103,7 +162,8 @@ static void guac_rdp_rail_channel_connected(rdpContext* context,
     /* Init FreeRDP RAIL context, ensuring the guac_client can be accessed from
      * within any RAIL-specific callbacks */
     rail->custom = client;
-    rail->ServerSystemParam = guac_rdp_rail_sysparam;
+    rail->ServerHandshake = guac_rdp_rail_handshake;
+    rail->ServerHandshakeEx = guac_rdp_rail_handshake_ex;
 
     guac_client_log(client, GUAC_LOG_DEBUG, "RAIL (RemoteApp) channel "
             "connected.");
