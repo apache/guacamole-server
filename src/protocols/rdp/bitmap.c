@@ -156,6 +156,13 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
     if (buffer != NULL)
         guac_common_display_free_buffer(rdp_client->display, buffer);
 
+    /* NOTE: FreeRDP-allocated memory for the rdpBitmap will NOT be
+     * automatically released after this free handler is invoked, thus we must
+     * do so manually here */
+
+    _aligned_free(bitmap->data);
+    free(bitmap);
+
 }
 
 BOOL guac_rdp_bitmap_setsurface(rdpContext* context, rdpBitmap* bitmap, BOOL primary) {

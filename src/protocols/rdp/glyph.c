@@ -121,6 +121,13 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph) {
     cairo_surface_destroy(((guac_rdp_glyph*) glyph)->surface);
     free(image_buffer);
 
+    /* NOTE: FreeRDP-allocated memory for the rdpGlyph will NOT be
+     * automatically released after this free handler is invoked, thus we must
+     * do so manually here */
+
+    free(glyph->aj);
+    free(glyph);
+
 }
 
 BOOL guac_rdp_glyph_begindraw(rdpContext* context, INT32 x, INT32 y,

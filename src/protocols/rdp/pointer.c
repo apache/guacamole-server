@@ -95,6 +95,9 @@ void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {
     /* Free buffer */
     guac_common_display_free_buffer(rdp_client->display, buffer);
 
+    /* NOTE: FreeRDP-allocated memory for the rdpPointer will be automatically
+     * released after this free handler is invoked */
+
 }
 
 BOOL guac_rdp_pointer_set_null(rdpContext* context) {
