@@ -37,6 +37,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+BOOL guac_rdp_bitmap_convert(rdpContext* context, rdpBitmap* bitmap) {
+
+    /* No need to convert if there is no image data or the image data is
+     * already in the format used by libguac (the format used by Cairo) */
+    if (bitmap->data == NULL || bitmap->format == PIXEL_FORMAT_BGRX32)
+        return TRUE;
+
+    /* Allocate sufficient space for converted image */
+    unsigned char* image_buffer = _aligned_malloc(bitmap->width * bitmap->height * 4, 16);
+
+    /* Attempt image conversion, replacing existing image data if successful */
+    if (freerdp_image_copy(image_buffer, PIXEL_FORMAT_BGRX32, 0, 0, 0,
+            bitmap->width, bitmap->height, bitmap->data, bitmap->format,
+            0, 0, 0, &context->gdi->palette, FREERDP_FLIP_NONE)) {
+        _aligned_free(bitmap->data);
+        bitmap->data = image_buffer;
+        bitmap->format = PIXEL_FORMAT_BGRX32;
+        return TRUE;
+    }
+
+    _aligned_free(image_buffer);
+    return FALSE;
+
+}
+
 BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -48,6 +73,9 @@ BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Cache image data if present */
     if (bitmap->data != NULL) {
+
+        /* Convert image data to format used by libguac */
+        guac_rdp_bitmap_convert(context, bitmap);
 
         /* Create surface from image data */
         cairo_surface_t* image = cairo_image_surface_create_for_data(
@@ -71,26 +99,8 @@ BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 
 BOOL guac_rdp_bitmap_new(rdpContext* context, rdpBitmap* bitmap) {
 
-    /* Convert image data if present */
-    if (bitmap->data != NULL && bitmap->format != PIXEL_FORMAT_BGRX32) {
-
-        /* Allocate sufficient space for converted image */
-        unsigned char* image_buffer = _aligned_malloc(bitmap->width * bitmap->height * 4, 16);
-
-        /* Attempt image conversion */
-        if (!freerdp_image_copy(image_buffer, PIXEL_FORMAT_BGRX32, 0, 0, 0,
-                bitmap->width, bitmap->height, bitmap->data, bitmap->format,
-                0, 0, 0, &context->gdi->palette, FREERDP_FLIP_NONE)) {
-            _aligned_free(image_buffer);
-        }
-
-        /* If successful, replace original image with converted image */
-        else {
-            _aligned_free(bitmap->data);
-            bitmap->data = image_buffer;
-        }
-
-    }
+    /* Convert image data to format used by libguac */
+    guac_rdp_bitmap_convert(context, bitmap);
 
     /* No corresponding surface yet - caching is deferred. */
     ((guac_rdp_bitmap*) bitmap)->layer = NULL;
@@ -124,6 +134,9 @@ BOOL guac_rdp_bitmap_paint(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Otherwise, draw with stored image data */
     else if (bitmap->data != NULL) {
+
+        /* Convert image data to format used by libguac */
+        guac_rdp_bitmap_convert(context, bitmap);
 
         /* Create surface from image data */
         cairo_surface_t* image = cairo_image_surface_create_for_data(

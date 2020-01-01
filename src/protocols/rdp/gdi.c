@@ -274,6 +274,9 @@ BOOL guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
             if (bitmap->layer == NULL) {
                 if (memblt->bitmap->data != NULL) {
 
+                    /* Convert image data to format used by libguac */
+                    guac_rdp_bitmap_convert(context, memblt->bitmap);
+
                     /* Create surface from image data */
                     cairo_surface_t* surface = cairo_image_surface_create_for_data(
                         memblt->bitmap->data + 4*(x_src + y_src*memblt->bitmap->width),
