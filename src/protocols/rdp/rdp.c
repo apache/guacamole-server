@@ -87,6 +87,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
+    /* Push desired settings to FreeRDP */
+    guac_rdp_push_settings(client, settings, instance);
+
     /* Init FreeRDP add-in provider */
     freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
 
@@ -379,9 +382,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Set default pointer */
     guac_common_cursor_set_pointer(rdp_client->display->cursor);
-
-    /* Push desired settings to FreeRDP */
-    guac_rdp_push_settings(client, settings, rdp_inst);
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
