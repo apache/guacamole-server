@@ -139,7 +139,7 @@ BOOL guac_rdp_glyph_begindraw(rdpContext* context, INT32 x, INT32 y,
         (guac_rdp_client*) client->data;
 
     /* Fill background with color if specified */
-    if (width != 0 && height != 0) {
+    if (width != 0 && height != 0 && !redundant) {
 
         /* Convert background color */
         bgcolor = guac_rdp_convert_color(context, bgcolor);
