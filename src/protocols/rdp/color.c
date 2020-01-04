@@ -76,7 +76,7 @@ UINT32 guac_rdp_convert_color(rdpContext* context, UINT32 color) {
 
     /* Convert given color to ARGB32 */
     return FreeRDPConvertColor(color, guac_rdp_get_pixel_format(depth),
-            PIXEL_FORMAT_BGRA32, &gdi->palette);
+            PIXEL_FORMAT_ABGR32, &gdi->palette);
 
 }
 
