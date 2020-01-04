@@ -50,25 +50,6 @@ typedef struct guac_rdp_bitmap {
 } guac_rdp_bitmap;
 
 /**
- * Converts the image data within the given rdpBitmap to the pixel format used
- * by libguac (Cairo) for 24-bit RGB images lacking an alpha channel. Any
- * existing image data within the bitmap is freed and replaced with
- * newly-allocated image data in the needed format, and the format field of the
- * rdpBitmap is updated to match.
- *
- * @param context
- *     The rdpContext associated with the current RDP session.
- *
- * @param bitmap
- *     The rdpBitmap to convert.
- *
- * @return
- *     TRUE if image conversion was successful or there was no image data to
- *     convert, FALSE otherwise.
- */
-BOOL guac_rdp_bitmap_convert(rdpContext* context, rdpBitmap* bitmap);
-
-/**
  * Caches the given bitmap immediately, storing its data in a remote Guacamole
  * buffer. As RDP bitmaps are frequently created, used once, and immediately
  * destroyed, we defer actual remote-side caching of RDP bitmaps until they are
