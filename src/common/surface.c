@@ -260,58 +260,67 @@ static int __guac_common_surface_is_opaque(guac_common_surface* surface,
 
 /**
  * Returns whether the given rectangle should be combined into the existing
- * dirty rectangle, to be eventually flushed as a "png" instruction.
+ * dirty rectangle, to be eventually flushed as image data, or would be best
+ * kept independent of the current rectangle.
  *
- * @param surface The surface to be queried.
- * @param rect The update rectangle.
- * @param rect_only Non-zero if this update, by its nature, contains only
- *                  metainformation about the update's rectangle, zero if
- *                  the update also contains image data.
- * @return Non-zero if the update should be combined with any existing update,
- *         zero otherwise.
+ * @param surface
+ *     The surface being updated.
+ *
+ * @param rect
+ *     The bounding rectangle of the updating being made to the surface.
+ *
+ * @param rect_only
+ *     Non-zero if this update, by its nature, contains only metainformation
+ *     about the update's bounding rectangle, zero if the update also contains
+ *     image data.
+ *
+ * @return
+ *     Non-zero if the update should be combined with any existing update, zero
+ *     otherwise.
  */
 static int __guac_common_should_combine(guac_common_surface* surface, const guac_common_rect* rect, int rect_only) {
 
-    if (surface->dirty) {
+    int combined_cost, dirty_cost, update_cost;
 
-        int combined_cost, dirty_cost, update_cost;
+    /* Always favor combining updates if surface is currently a purely
+     * server-side scratch area */
+    if (!surface->realized)
+        return 1;
 
-        /* Simulate combination */
-        guac_common_rect combined = surface->dirty_rect;
-        guac_common_rect_extend(&combined, rect);
+    /* Simulate combination */
+    guac_common_rect combined = surface->dirty_rect;
+    guac_common_rect_extend(&combined, rect);
 
-        /* Combine if result is still small */
-        if (combined.width <= GUAC_SURFACE_NEGLIGIBLE_WIDTH && combined.height <= GUAC_SURFACE_NEGLIGIBLE_HEIGHT)
+    /* Combine if result is still small */
+    if (combined.width <= GUAC_SURFACE_NEGLIGIBLE_WIDTH && combined.height <= GUAC_SURFACE_NEGLIGIBLE_HEIGHT)
+        return 1;
+
+    /* Estimate costs of the existing update, new update, and both combined */
+    combined_cost = GUAC_SURFACE_BASE_COST + combined.width * combined.height;
+    dirty_cost    = GUAC_SURFACE_BASE_COST + surface->dirty_rect.width * surface->dirty_rect.height;
+    update_cost   = GUAC_SURFACE_BASE_COST + rect->width * rect->height;
+
+    /* Reduce cost if no image data */
+    if (rect_only)
+        update_cost /= GUAC_SURFACE_DATA_FACTOR;
+
+    /* Combine if cost estimate shows benefit */
+    if (combined_cost <= update_cost + dirty_cost)
+        return 1;
+
+    /* Combine if increase in cost is negligible */
+    if (combined_cost - dirty_cost <= dirty_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
+        return 1;
+
+    if (combined_cost - update_cost <= update_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
+        return 1;
+
+    /* Combine if we anticipate further updates, as this update follows a common fill pattern */
+    if (rect->x == surface->dirty_rect.x && rect->y == surface->dirty_rect.y + surface->dirty_rect.height) {
+        if (combined_cost <= (dirty_cost + update_cost) * GUAC_SURFACE_FILL_PATTERN_FACTOR)
             return 1;
-
-        /* Estimate costs of the existing update, new update, and both combined */
-        combined_cost = GUAC_SURFACE_BASE_COST + combined.width * combined.height;
-        dirty_cost    = GUAC_SURFACE_BASE_COST + surface->dirty_rect.width * surface->dirty_rect.height;
-        update_cost   = GUAC_SURFACE_BASE_COST + rect->width * rect->height;
-
-        /* Reduce cost if no image data */
-        if (rect_only)
-            update_cost /= GUAC_SURFACE_DATA_FACTOR;
-
-        /* Combine if cost estimate shows benefit */
-        if (combined_cost <= update_cost + dirty_cost)
-            return 1;
-
-        /* Combine if increase in cost is negligible */
-        if (combined_cost - dirty_cost <= dirty_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
-            return 1;
-
-        if (combined_cost - update_cost <= update_cost / GUAC_SURFACE_NEGLIGIBLE_INCREASE)
-            return 1;
-
-        /* Combine if we anticipate further updates, as this update follows a common fill pattern */
-        if (rect->x == surface->dirty_rect.x && rect->y == surface->dirty_rect.y + surface->dirty_rect.height) {
-            if (combined_cost <= (dirty_cost + update_cost) * GUAC_SURFACE_FILL_PATTERN_FACTOR)
-                return 1;
-        }
-
     }
-    
+
     /* Otherwise, do not combine */
     return 0;
 
