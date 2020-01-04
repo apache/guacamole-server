@@ -28,7 +28,6 @@
  * @file rdpdr-fs-messages.h
  */
 
-#include "config.h"
 #include "channels/rdpdr/rdpdr.h"
 
 #include <winpr/stream.h>

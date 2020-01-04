@@ -20,12 +20,14 @@
 #ifndef GUAC_RDP_CHANNELS_CLIPRDR_H
 #define GUAC_RDP_CHANNELS_CLIPRDR_H
 
-#include "config.h"
 #include "common/clipboard.h"
 
-#include <guacamole/client.h>
 #include <freerdp/client/cliprdr.h>
+#include <freerdp/freerdp.h>
+#include <guacamole/client.h>
+#include <guacamole/user.h>
 #include <winpr/stream.h>
+#include <winpr/wtypes.h>
 
 /**
  * RDP clipboard, leveraging the "CLIPRDR" channel.

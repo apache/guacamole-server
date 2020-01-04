@@ -17,18 +17,19 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/disp.h"
-#include "client.h"
 #include "plugins/channels.h"
 #include "rdp.h"
 #include "settings.h"
 
 #include <freerdp/client/disp.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/event.h>
 #include <guacamole/client.h>
 #include <guacamole/timestamp.h>
-#include <winpr/wtypes.h>
+
+#include <stdlib.h>
+#include <string.h>
 
 guac_rdp_disp* guac_rdp_disp_alloc() {
 

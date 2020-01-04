@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "channels/cliprdr.h"
 #include "client.h"
 #include "common/clipboard.h"
@@ -26,10 +24,13 @@
 #include "plugins/channels.h"
 #include "rdp.h"
 
-#include <freerdp/channels/channels.h>
 #include <freerdp/client/cliprdr.h>
+#include <freerdp/event.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/stream.h>
+#include <guacamole/user.h>
+#include <winpr/wtsapi.h>
 #include <winpr/wtypes.h>
 
 #include <assert.h>

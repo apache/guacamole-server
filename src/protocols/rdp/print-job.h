@@ -20,8 +20,6 @@
 #ifndef GUAC_RDP_PRINT_JOB_H
 #define GUAC_RDP_PRINT_JOB_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>

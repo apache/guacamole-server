@@ -20,10 +20,11 @@
 #ifndef GUAC_RDP_POINTER_H
 #define GUAC_RDP_POINTER_H
 
-#include "config.h"
 #include "common/display.h"
 
 #include <freerdp/freerdp.h>
+#include <freerdp/graphics.h>
+#include <winpr/wtypes.h>
 
 /**
  * Guacamole-specific rdpPointer data.

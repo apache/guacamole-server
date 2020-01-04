@@ -19,6 +19,9 @@
 
 #include <guacamole/client.h>
 #include <winpr/wlog.h>
+#include <winpr/wtypes.h>
+
+#include <stddef.h>
 
 /**
  * The guac_client that should be used within this process for FreeRDP log

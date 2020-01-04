@@ -24,6 +24,7 @@
 #include "common/display.h"
 
 #include <freerdp/freerdp.h>
+#include <freerdp/graphics.h>
 #include <guacamole/layer.h>
 #include <winpr/wtypes.h>
 

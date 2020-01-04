@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "keymap.h"
 
 #include <string.h>

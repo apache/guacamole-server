@@ -20,8 +20,6 @@
 #ifndef GUAC_RDP_PLUGINS_PTR_STRING_H
 #define GUAC_RDP_PLUGINS_PTR_STRING_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 
 /**

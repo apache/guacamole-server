@@ -17,26 +17,20 @@
  * under the License.
  */
 
-#include "config.h"
+#include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpdr/rdpdr-fs.h"
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr-printer.h"
-#include "channels/rdpdr/rdpdr.h"
-#include "fs.h"
-#include "plugins/channels.h"
 #include "rdp.h"
 #include "settings.h"
 
 #include <freerdp/channels/rdpdr.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/settings.h>
 #include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-#include <guacamole/stream.h>
 #include <winpr/stream.h>
 
 #include <stdlib.h>
-#include <string.h>
 
 void guac_rdpdr_process_receive(guac_rdp_common_svc* svc,
         wStream* input_stream) {

@@ -17,19 +17,20 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/disp.h"
-#include "client.h"
+#include "common/cursor.h"
+#include "common/display.h"
 #include "common/recording.h"
 #include "input.h"
 #include "keyboard.h"
 #include "rdp.h"
+#include "settings.h"
 
 #include <freerdp/freerdp.h>
 #include <freerdp/input.h>
 #include <guacamole/client.h>
+#include <guacamole/user.h>
 
-#include <pthread.h>
 #include <stdlib.h>
 
 int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {

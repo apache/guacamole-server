@@ -17,16 +17,14 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "client.h"
-#include "rdp.h"
 #include "settings.h"
 
 #include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/gdi/gdi.h>
 #include <winpr/wtypes.h>
+
+#include <stdint.h>
 
 UINT32 guac_rdp_get_native_pixel_format(BOOL alpha) {
 

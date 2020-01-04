@@ -20,11 +20,12 @@
 #ifndef GUAC_RDP_PLUGINS_GUACAI_MESSAGES_H
 #define GUAC_RDP_PLUGINS_GUACAI_MESSAGES_H
 
-#include "config.h"
+#include "channels/audio-input.h"
 
 #include <freerdp/dvc.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
+#include <winpr/wtypes.h>
 
 /**
  * The format tag associated with raw wave audio (WAVE_FORMAT_PCM). This format

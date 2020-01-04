@@ -17,21 +17,21 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/common-svc.h"
 #include "channels/pipe-svc.h"
-#include "client.h"
 #include "common/list.h"
-#include "plugins/channels.h"
 #include "rdp.h"
 
-#include <freerdp/svc.h>
+#include <freerdp/settings.h>
 #include <guacamole/client.h>
-#include <guacamole/string.h>
+#include <guacamole/protocol.h>
+#include <guacamole/socket.h>
+#include <guacamole/stream.h>
+#include <guacamole/user.h>
 #include <winpr/stream.h>
-#include <winpr/wtsapi.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 void guac_rdp_pipe_svc_send_pipe(guac_socket* socket, guac_rdp_pipe_svc* pipe_svc) {
 

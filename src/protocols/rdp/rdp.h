@@ -20,7 +20,6 @@
 #ifndef GUAC_RDP_H
 #define GUAC_RDP_H
 
-#include "config.h"
 #include "channels/audio-input.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
@@ -29,21 +28,23 @@
 #include "common/list.h"
 #include "common/recording.h"
 #include "common/surface.h"
+#include "config.h"
 #include "fs.h"
 #include "keyboard.h"
 #include "print-job.h"
 #include "settings.h"
-
-#include <freerdp/freerdp.h>
-#include <freerdp/codec/color.h>
-#include <guacamole/audio.h>
-#include <guacamole/client.h>
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
 #include "common-ssh/user.h"
 #endif
+
+#include <freerdp/codec/color.h>
+#include <freerdp/freerdp.h>
+#include <guacamole/audio.h>
+#include <guacamole/client.h>
+#include <winpr/wtypes.h>
 
 #include <pthread.h>
 #include <stdint.h>

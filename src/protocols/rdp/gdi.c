@@ -17,20 +17,21 @@
  * under the License.
  */
 
-#include "config.h"
 #include "bitmap.h"
-#include "client.h"
-#include "color.h"
+#include "common/display.h"
 #include "common/surface.h"
 #include "rdp.h"
 #include "settings.h"
 
 #include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/graphics.h>
+#include <freerdp/primary.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <winpr/wtypes.h>
 
+#include <stddef.h>
 #include <stddef.h>
 
 guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,

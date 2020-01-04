@@ -17,21 +17,15 @@
  * under the License.
  */
 
-#include "config.h"
 #include "bitmap.h"
-#include "client.h"
 #include "common/display.h"
 #include "common/surface.h"
 #include "rdp.h"
-#include "settings.h"
 
 #include <cairo/cairo.h>
-#include <freerdp/codec/bitmap.h>
-#include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
-#include <freerdp/gdi/gdi.h>
 #include <guacamole/client.h>
-#include <guacamole/socket.h>
+#include <winpr/crt.h>
 #include <winpr/wtypes.h>
 
 #include <stdio.h>

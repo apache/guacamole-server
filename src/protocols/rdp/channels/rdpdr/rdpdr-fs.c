@@ -17,19 +17,18 @@
  * under the License.
  */
 
-#include "config.h"
-#include "channels/rdpdr/rdpdr-fs-messages.h"
 #include "channels/rdpdr/rdpdr-fs.h"
-#include "channels/rdpdr/rdpdr-messages.h"
+#include "channels/rdpdr/rdpdr-fs-messages.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "rdp.h"
 
 #include <freerdp/channels/rdpdr.h>
+#include <freerdp/settings.h>
 #include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
 #include <guacamole/unicode.h>
 #include <winpr/stream.h>
+
+#include <stddef.h>
 
 void guac_rdpdr_device_fs_iorequest_handler(guac_rdp_common_svc* svc,
         guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,

@@ -17,14 +17,13 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/audio-input.h"
 #include "plugins/channels.h"
 #include "plugins/ptr-string.h"
 #include "rdp.h"
 
 #include <freerdp/freerdp.h>
-#include <freerdp/channels/channels.h>
+#include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
@@ -32,8 +31,10 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <pthread.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 /**
  * Parses the given raw audio mimetype, producing the corresponding rate,

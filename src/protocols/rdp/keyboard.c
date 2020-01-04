@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-#include "client.h"
 #include "decompose.h"
 #include "keyboard.h"
 #include "keymap.h"
@@ -28,7 +26,6 @@
 #include <freerdp/input.h>
 #include <guacamole/client.h>
 
-#include <pthread.h>
 #include <stdlib.h>
 
 /**

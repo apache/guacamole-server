@@ -20,10 +20,9 @@
 #ifndef GUAC_RDP_GLYPH_H
 #define GUAC_RDP_GLYPH_H
 
-#include "config.h"
-
 #include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/graphics.h>
 #include <winpr/wtypes.h>
 
 /**

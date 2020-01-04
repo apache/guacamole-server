@@ -17,19 +17,15 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/common-svc.h"
 
-#include <freerdp/constants.h>
+#include <freerdp/svc.h>
 #include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-#include <guacamole/string.h>
 #include <winpr/stream.h>
+#include <winpr/wtsapi.h>
 #include <winpr/wtypes.h>
 
 #include <stdlib.h>
-#include <string.h>
 
 /**
  * Event handler for events which deal with data transmitted over an open SVC.

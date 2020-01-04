@@ -17,14 +17,11 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/audio-input.h"
 #include "plugins/guacai/guacai-messages.h"
 #include "rdp.h"
 
-#include <freerdp/constants.h>
 #include <freerdp/dvc.h>
-#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <winpr/stream.h>
 

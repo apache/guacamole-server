@@ -20,12 +20,11 @@
 #ifndef GUAC_RDP_UPLOAD_H
 #define GUAC_RDP_UPLOAD_H
 
-#include "config.h"
 #include "common/json.h"
 
-#include <guacamole/user.h>
 #include <guacamole/protocol.h>
 #include <guacamole/stream.h>
+#include <guacamole/user.h>
 
 #include <stdint.h>
 

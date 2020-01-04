@@ -20,11 +20,15 @@
 #ifndef GUAC_RDP_CHANNELS_RDPDR_H
 #define GUAC_RDP_CHANNELS_RDPDR_H
 
-#include "config.h"
 #include "channels/common-svc.h"
 
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <winpr/stream.h>
+
+#include <stdint.h>
+
+struct guac_rdpdr_device;
 
 /**
  * The maximum number of bytes to allow for a device read.

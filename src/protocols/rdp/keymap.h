@@ -20,9 +20,9 @@
 #ifndef GUAC_RDP_KEYMAP_H
 #define GUAC_RDP_KEYMAP_H
 
-#include "config.h"
-
 #include <winpr/wtypes.h>
+
+struct guac_rdp_keymap;
 
 /**
  * Represents a keysym-to-scancode mapping for RDP, with extra information

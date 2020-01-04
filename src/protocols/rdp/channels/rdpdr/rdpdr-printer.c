@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-#include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr-printer.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "print-job.h"
@@ -26,21 +24,13 @@
 #include "unicode.h"
 
 #include <freerdp/channels/rdpdr.h>
+#include <freerdp/settings.h>
 #include <guacamole/client.h>
-#include <guacamole/protocol.h>
-#include <guacamole/socket.h>
-#include <guacamole/stream.h>
 #include <guacamole/unicode.h>
-#include <guacamole/user.h>
-#include <winpr/file.h>
+#include <winpr/nt.h>
 #include <winpr/stream.h>
 
-#include <errno.h>
-#include <pthread.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 void guac_rdpdr_process_print_job_create(guac_rdp_common_svc* svc,
         guac_rdpdr_device* device, guac_rdpdr_iorequest* iorequest,

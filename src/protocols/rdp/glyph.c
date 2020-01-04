@@ -17,19 +17,16 @@
  * under the License.
  */
 
-#include "config.h"
-#include "client.h"
 #include "color.h"
 #include "common/surface.h"
+#include "config.h"
 #include "glyph.h"
 #include "rdp.h"
-#include "settings.h"
 
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <winpr/wtypes.h>
 
-#include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
 

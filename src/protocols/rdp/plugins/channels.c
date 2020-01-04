@@ -17,13 +17,16 @@
  * under the License.
  */
 
-#include "config.h"
 #include "plugins/channels.h"
-#include "rdp.h"
 
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
-#include <guacamole/client.h>
+#include <freerdp/addin.h>
+#include <winpr/wtypes.h>
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 int guac_rdp_wrapped_entry_ex_count = 0;
 

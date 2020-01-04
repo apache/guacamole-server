@@ -17,19 +17,19 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "download.h"
 #include "fs.h"
+#include "download.h"
 #include "upload.h"
 
 #include <guacamole/client.h>
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
+#include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
 #include <winpr/file.h>
+#include <winpr/nt.h>
 
 #include <dirent.h>
 #include <errno.h>
@@ -40,7 +40,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,

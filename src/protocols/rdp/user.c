@@ -17,10 +17,12 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/audio-input.h"
+#include "channels/cliprdr.h"
 #include "channels/pipe-svc.h"
+#include "common/cursor.h"
 #include "common/display.h"
+#include "config.h"
 #include "input.h"
 #include "rdp.h"
 #include "settings.h"
@@ -35,9 +37,11 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/stream.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
+#include <stddef.h>
 
 int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 

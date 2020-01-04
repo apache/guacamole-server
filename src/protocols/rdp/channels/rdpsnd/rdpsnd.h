@@ -20,9 +20,9 @@
 #ifndef GUAC_RDP_CHANNELS_RDPSND_H
 #define GUAC_RDP_CHANNELS_RDPSND_H
 
-#include "config.h"
 #include "channels/common-svc.h"
 
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 
 /**

@@ -17,16 +17,17 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/rdpdr/rdpdr-fs-messages-dir-info.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "fs.h"
 #include "unicode.h"
 
+#include <guacamole/client.h>
 #include <guacamole/unicode.h>
-#include <winpr/file.h>
+#include <winpr/nt.h>
 #include <winpr/stream.h>
 
+#include <stddef.h>
 #include <stddef.h>
 
 void guac_rdpdr_fs_process_query_directory_info(guac_rdp_common_svc* svc,

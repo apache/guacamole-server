@@ -17,20 +17,19 @@
  * under the License.
  */
 
-#include "config.h"
-#include "client.h"
 #include "color.h"
 #include "common/cursor.h"
 #include "common/display.h"
+#include "common/surface.h"
 #include "pointer.h"
 #include "rdp.h"
 
 #include <cairo/cairo.h>
+#include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/gdi/gdi.h>
 #include <guacamole/client.h>
-
-#include <stdlib.h>
+#include <winpr/crt.h>
 
 BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 

@@ -17,14 +17,16 @@
  * under the License.
  */
 
-#include "config.h"
-#include "channels/audio-input.h"
-#include "channels/disp.h"
 #include "client.h"
+#include "channels/audio-input.h"
+#include "channels/cliprdr.h"
+#include "channels/disp.h"
 #include "common/recording.h"
+#include "config.h"
 #include "fs.h"
 #include "log.h"
 #include "rdp.h"
+#include "settings.h"
 #include "user.h"
 
 #ifdef ENABLE_COMMON_SSH
@@ -33,19 +35,11 @@
 #include "common-ssh/user.h"
 #endif
 
-#include <freerdp/cache/cache.h>
-#include <freerdp/channels/channels.h>
-#include <freerdp/client/channels.h>
-#include <freerdp/client/cliprdr.h>
-#include <freerdp/freerdp.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
-#include <guacamole/socket.h>
-#include <winpr/wlog.h>
 
 #include <pthread.h>
 #include <stdlib.h>
-#include <string.h>
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 

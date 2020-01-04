@@ -17,12 +17,11 @@
  * under the License.
  */
 
-#include "config.h"
+#include "channels/common-svc.h"
 #include "channels/rdpdr/rdpdr-fs-messages-dir-info.h"
 #include "channels/rdpdr/rdpdr-fs-messages-file-info.h"
 #include "channels/rdpdr/rdpdr-fs-messages-vol-info.h"
 #include "channels/rdpdr/rdpdr-fs-messages.h"
-#include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "download.h"
 #include "fs.h"
@@ -30,11 +29,10 @@
 
 #include <freerdp/channels/rdpdr.h>
 #include <guacamole/client.h>
-#include <winpr/file.h>
+#include <winpr/nt.h>
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
 
-#include <inttypes.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>

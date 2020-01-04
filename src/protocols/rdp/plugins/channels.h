@@ -20,10 +20,10 @@
 #ifndef GUAC_RDP_PLUGINS_CHANNELS_H
 #define GUAC_RDP_PLUGINS_CHANNELS_H
 
-#include "config.h"
-
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/settings.h>
+#include <winpr/wtsapi.h>
 
 /**
  * The maximum number of static channels supported by Guacamole's RDP support.

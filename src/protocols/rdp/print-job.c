@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "print-job.h"
 
 #include <guacamole/client.h>

@@ -20,8 +20,6 @@
 #ifndef GUAC_RDP_PLUGINS_GUACAI_H
 #define GUAC_RDP_PLUGINS_GUACAI_H
 
-#include "config.h"
-
 #include <freerdp/constants.h>
 #include <freerdp/dvc.h>
 #include <freerdp/freerdp.h>

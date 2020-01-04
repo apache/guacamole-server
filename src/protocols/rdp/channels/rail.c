@@ -17,19 +17,21 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/rail.h"
-#include "client.h"
 #include "plugins/channels.h"
 #include "rdp.h"
 #include "settings.h"
 
 #include <freerdp/client/rail.h>
+#include <freerdp/event.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/rail.h>
 #include <guacamole/client.h>
 #include <winpr/wtypes.h>
+#include <winpr/wtsapi.h>
 
 #include <stddef.h>
+#include <string.h>
 
 /**
  * Completes initialization of the RemoteApp session, sending client system

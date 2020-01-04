@@ -20,14 +20,15 @@
 #ifndef GUAC_RDP_CHANNELS_COMMON_SVC_H
 #define GUAC_RDP_CHANNELS_COMMON_SVC_H
 
-#include "config.h"
-
+#include <freerdp/freerdp.h>
 #include <freerdp/svc.h>
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
 #include <winpr/stream.h>
 #include <winpr/wtsapi.h>
 #include <winpr/wtypes.h>
+
+struct guac_rdp_common_svc;
 
 /**
  * The maximum number of bytes to allow within each channel name, including

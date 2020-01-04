@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include <guacamole/unicode.h>
 
 #include <stdint.h>

@@ -20,12 +20,14 @@
 #ifndef GUAC_RDP_CHANNELS_PIPE_SVC_H
 #define GUAC_RDP_CHANNELS_PIPE_SVC_H
 
-#include "config.h"
 #include "channels/common-svc.h"
 
+#include <freerdp/freerdp.h>
 #include <freerdp/svc.h>
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
+#include <guacamole/socket.h>
+#include <guacamole/user.h>
 #include <winpr/wtsapi.h>
 
 /**

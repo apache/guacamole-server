@@ -31,7 +31,7 @@
  * @file rdpdr-fs.h 
  */
 
-#include "config.h"
+#include "channels/common-svc.h"
 #include "channels/rdpdr/rdpdr.h"
 
 #include <guacamole/pool.h>

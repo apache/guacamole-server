@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "bitmap.h"
 #include "channels/audio-input.h"
 #include "channels/cliprdr.h"
@@ -31,6 +30,7 @@
 #include "common/cursor.h"
 #include "common/display.h"
 #include "common/recording.h"
+#include "config.h"
 #include "error.h"
 #include "fs.h"
 #include "gdi.h"
@@ -56,26 +56,22 @@
 #include <freerdp/cache/pointer.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/client/channels.h>
-#include <freerdp/client/cliprdr.h>
-#include <freerdp/client/disp.h>
-#include <freerdp/event.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/gdi/gdi.h>
-#include <freerdp/rail.h>
-#include <freerdp/version.h>
+#include <freerdp/graphics.h>
+#include <freerdp/primary.h>
+#include <freerdp/settings.h>
+#include <freerdp/update.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
+#include <winpr/error.h>
+#include <winpr/synch.h>
 #include <winpr/wtypes.h>
 
-#include <errno.h>
-#include <poll.h>
-#include <pthread.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
 #include <time.h>
 
 BOOL rdp_freerdp_pre_connect(freerdp* instance) {

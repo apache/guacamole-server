@@ -20,7 +20,7 @@
 #ifndef GUAC_RDP_CHANNELS_RDPDR_PRINTER_H
 #define GUAC_RDP_CHANNELS_RDPDR_PRINTER_H
 
-#include "config.h"
+#include "channels/common-svc.h"
 #include "channels/rdpdr/rdpdr.h"
 
 #include <winpr/stream.h>

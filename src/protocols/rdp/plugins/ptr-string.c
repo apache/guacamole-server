@@ -17,13 +17,9 @@
  * under the License.
  */
 
-#include "config.h"
 #include "plugins/ptr-string.h"
 
-#include <guacamole/client.h>
-
 #include <stdio.h>
-#include <stdlib.h>
 
 void guac_rdp_ptr_to_string(void* data, char* str) {
 

@@ -20,12 +20,9 @@
 #ifndef GUAC_RDP_CHANNELS_AUDIO_INPUT_H
 #define GUAC_RDP_CHANNELS_AUDIO_INPUT_H
 
-#include "config.h"
-
 #include <freerdp/freerdp.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
-
 #include <pthread.h>
 
 /**

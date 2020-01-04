@@ -17,18 +17,18 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/common-svc.h"
 #include "plugins/channels.h"
 #include "rdp.h"
 
-#include <freerdp/svc.h>
+#include <freerdp/settings.h>
 #include <guacamole/client.h>
-#include <guacamole/stream.h>
 #include <guacamole/string.h>
 #include <winpr/stream.h>
 #include <winpr/wtsapi.h>
 #include <winpr/wtypes.h>
+
+#include <stdlib.h>
 
 int guac_rdp_common_svc_load_plugin(rdpContext* context,
         char* name, ULONG channel_options,

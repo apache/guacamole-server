@@ -17,15 +17,13 @@
  * under the License.
  */
 
-#include "config.h"
 #include "channels/rdpdr/rdpdr-messages.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "rdp.h"
-#include "unicode.h"
+#include "settings.h"
 
 #include <freerdp/channels/rdpdr.h>
 #include <guacamole/client.h>
-#include <guacamole/unicode.h>
 #include <winpr/stream.h>
 
 #include <stdlib.h>

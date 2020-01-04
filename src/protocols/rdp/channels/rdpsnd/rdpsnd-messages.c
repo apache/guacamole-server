@@ -17,8 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "channels/rdpsnd/rdpsnd-messages.h"
 #include "channels/rdpsnd/rdpsnd.h"
 #include "rdp.h"
@@ -29,8 +27,8 @@
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
 
-#include <pthread.h>
 #include <stdlib.h>
+#include <string.h>
 
 void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
         wStream* input_stream, guac_rdpsnd_pdu_header* header) {

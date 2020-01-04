@@ -17,24 +17,19 @@
  * under the License.
  */
 
-#include "config.h"
-#include "client.h"
 #include "fs.h"
 #include "ls.h"
-#include "rdp.h"
 
-#include <freerdp/channels/channels.h>
-#include <freerdp/client/cliprdr.h>
-#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
-#include <guacamole/string.h>
-#include <winpr/stream.h>
-#include <winpr/wtypes.h>
+#include <guacamole/user.h>
+#include <winpr/nt.h>
+#include <winpr/shell.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 int guac_rdp_ls_ack_handler(guac_user* user, guac_stream* stream,
         char* message, guac_protocol_status status) {

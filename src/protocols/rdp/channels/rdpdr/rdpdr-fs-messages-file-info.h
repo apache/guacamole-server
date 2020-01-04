@@ -27,7 +27,6 @@
  * @file rdpdr-fs-messages-file-info.h
  */
 
-#include "config.h"
 #include "channels/common-svc.h"
 #include "channels/rdpdr/rdpdr.h"
 

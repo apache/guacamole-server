@@ -21,10 +21,10 @@
 #define GUAC_RDP_SETTINGS_H
 
 #include "config.h"
-
 #include "keymap.h"
 
 #include <freerdp/freerdp.h>
+#include <guacamole/client.h>
 #include <guacamole/user.h>
 
 /**

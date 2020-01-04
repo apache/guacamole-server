@@ -17,21 +17,23 @@
  * under the License.
  */
 
-#include "config.h"
-#include "client.h"
 #include "common/string.h"
-#include "rdp.h"
+#include "config.h"
 #include "resolution.h"
 #include "settings.h"
 
 #include <freerdp/constants.h>
 #include <freerdp/settings.h>
+#include <freerdp/freerdp.h>
+#include <guacamole/client.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
+#include <winpr/crt.h>
 #include <winpr/wtypes.h>
 
 #include <errno.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* Client plugin arguments */

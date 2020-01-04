@@ -31,10 +31,10 @@
  * @file fs.h 
  */
 
-#include "config.h"
-
 #include <guacamole/client.h>
+#include <guacamole/object.h>
 #include <guacamole/pool.h>
+#include <guacamole/user.h>
 
 #include <dirent.h>
 #include <stdint.h>
