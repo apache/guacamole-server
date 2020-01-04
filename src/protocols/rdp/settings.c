@@ -1144,7 +1144,6 @@ static char* guac_rdp_strdup(const char* str) {
 void guac_rdp_push_settings(guac_client* client,
         guac_rdp_settings* guac_settings, freerdp* rdp) {
 
-    BOOL bitmap_cache = !guac_settings->disable_bitmap_caching;
     rdpSettings* rdp_settings = rdp->settings;
 
     /* Authentication */
@@ -1312,37 +1311,22 @@ void guac_rdp_push_settings(guac_client* client,
         rdp_settings->LoadBalanceInfoLength = strlen(guac_settings->load_balance_info);
     }
 
-    /* Order support */
-    rdp_settings->BitmapCacheEnabled = bitmap_cache;
+    rdp_settings->BitmapCacheEnabled = !guac_settings->disable_bitmap_caching;
     rdp_settings->OffscreenSupportLevel = !guac_settings->disable_offscreen_caching;
     rdp_settings->GlyphSupportLevel = !guac_settings->disable_glyph_caching ? GLYPH_SUPPORT_FULL : GLYPH_SUPPORT_NONE;
     rdp_settings->OsMajorType = OSMAJORTYPE_UNSPECIFIED;
     rdp_settings->OsMinorType = OSMINORTYPE_UNSPECIFIED;
     rdp_settings->DesktopResize = TRUE;
+
+    /* Claim support only for specific updates, independent of FreeRDP defaults */
+    ZeroMemory(rdp_settings->OrderSupport, GUAC_RDP_ORDER_SUPPORT_LENGTH);
     rdp_settings->OrderSupport[NEG_DSTBLT_INDEX] = TRUE;
-    rdp_settings->OrderSupport[NEG_PATBLT_INDEX] = FALSE; /* PATBLT not implemented */
     rdp_settings->OrderSupport[NEG_SCRBLT_INDEX] = TRUE;
-    rdp_settings->OrderSupport[NEG_OPAQUE_RECT_INDEX] = FALSE; /* PATBLT not implemented, and OPAQUE_RECT implies PATBLT */
-    rdp_settings->OrderSupport[NEG_DRAWNINEGRID_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_MULTIDSTBLT_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_MULTIPATBLT_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_MULTISCRBLT_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_MULTIOPAQUERECT_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_MULTI_DRAWNINEGRID_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_LINETO_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_POLYLINE_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_MEMBLT_INDEX] = bitmap_cache;
-    rdp_settings->OrderSupport[NEG_MEM3BLT_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_MEMBLT_V2_INDEX] = bitmap_cache;
-    rdp_settings->OrderSupport[NEG_MEM3BLT_V2_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_SAVEBITMAP_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_GLYPH_INDEX_INDEX] = TRUE;
-    rdp_settings->OrderSupport[NEG_FAST_INDEX_INDEX] = TRUE;
-    rdp_settings->OrderSupport[NEG_FAST_GLYPH_INDEX] = TRUE;
-    rdp_settings->OrderSupport[NEG_POLYGON_SC_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_POLYGON_CB_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_ELLIPSE_SC_INDEX] = FALSE;
-    rdp_settings->OrderSupport[NEG_ELLIPSE_CB_INDEX] = FALSE;
+    rdp_settings->OrderSupport[NEG_MEMBLT_INDEX] = !guac_settings->disable_bitmap_caching;
+    rdp_settings->OrderSupport[NEG_MEMBLT_V2_INDEX] = !guac_settings->disable_bitmap_caching;
+    rdp_settings->OrderSupport[NEG_GLYPH_INDEX_INDEX] = !guac_settings->disable_glyph_caching;
+    rdp_settings->OrderSupport[NEG_FAST_INDEX_INDEX] = !guac_settings->disable_glyph_caching;
+    rdp_settings->OrderSupport[NEG_FAST_GLYPH_INDEX] = !guac_settings->disable_glyph_caching;
 
 }
 

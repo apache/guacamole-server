@@ -59,6 +59,16 @@
 #define GUAC_RDP_DEFAULT_RECORDING_NAME "recording"
 
 /**
+ * The number of entries contained within the OrderSupport BYTE array
+ * referenced by the rdpSettings structure. This value is defined by the RDP
+ * negotiation process (there are 32 bytes available within the order
+ * negotiation field sent during the connection handshake) and is hard-coded
+ * within FreeRDP. There is no public constant for this value defined within
+ * the FreeRDP headers.
+ */
+#define GUAC_RDP_ORDER_SUPPORT_LENGTH 32
+
+/**
  * All supported combinations of security types.
  */
 typedef enum guac_rdp_security {
