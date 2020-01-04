@@ -35,7 +35,7 @@
 #include "fs.h"
 #include "gdi.h"
 #include "glyph.h"
-#include "keyboard/keyboard.h"
+#include "keyboard.h"
 #include "plugins/channels.h"
 #include "pointer.h"
 #include "print-job.h"

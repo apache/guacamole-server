@@ -43,7 +43,7 @@ my @keymaps = ();
 open OUTPUT, ">", "_generated_keymaps.c";
 print OUTPUT 
        '#include "config.h"'                                . "\n"
-     . '#include "keyboard/keymap.h"'                       . "\n"
+     . '#include "keymap.h"'                                . "\n"
      . '#include <freerdp/input.h>'                         . "\n"
      . '#include <freerdp/locale/keyboard.h>'               . "\n"
      .                                                        "\n"

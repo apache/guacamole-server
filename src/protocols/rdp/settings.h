@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#include "keyboard/keymap.h"
+#include "keymap.h"
 
 #include <freerdp/freerdp.h>
 #include <guacamole/user.h>

@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_KEYBOARD_KEYMAP_H
-#define GUAC_RDP_KEYBOARD_KEYMAP_H
+#ifndef GUAC_RDP_KEYMAP_H
+#define GUAC_RDP_KEYMAP_H
 
 #include "config.h"
 

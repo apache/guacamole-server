@@ -18,7 +18,7 @@
  */
 
 #include "config.h"
-#include "keyboard/keyboard.h"
+#include "keyboard.h"
 
 /**
  * The X11 keysym for the dead key which types a grave (`).

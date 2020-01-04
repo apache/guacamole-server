@@ -17,11 +17,11 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_KEYBOARD_DECOMPOSE_H
-#define GUAC_RDP_KEYBOARD_DECOMPOSE_H
+#ifndef GUAC_RDP_DECOMPOSE_H
+#define GUAC_RDP_DECOMPOSE_H
 
 #include "config.h"
-#include "keyboard/keyboard.h"
+#include "keyboard.h"
 
 /**
  * Attempts to type the given keysym by decomposing the associated character

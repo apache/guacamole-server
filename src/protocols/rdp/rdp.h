@@ -30,7 +30,7 @@
 #include "common/recording.h"
 #include "common/surface.h"
 #include "fs.h"
-#include "keyboard/keyboard.h"
+#include "keyboard.h"
 #include "print-job.h"
 #include "settings.h"
 

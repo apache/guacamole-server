@@ -57,15 +57,15 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/rdpsnd/rdpsnd.c                     \
     client.c                                     \
     color.c                                      \
+    decompose.c                                  \
     download.c                                   \
     error.c                                      \
     fs.c                                         \
     gdi.c                                        \
     glyph.c                                      \
     input.c                                      \
-    keyboard/decompose.c                         \
-    keyboard/keyboard.c                          \
-    keyboard/keymap.c                            \
+    keyboard.c                                   \
+    keymap.c                                     \
     log.c                                        \
     ls.c                                         \
     plugins/channels.c                           \
@@ -99,15 +99,15 @@ noinst_HEADERS =                                 \
     channels/rdpsnd/rdpsnd.h                     \
     client.h                                     \
     color.h                                      \
+    decompose.h                                  \
     download.h                                   \
     error.h                                      \
     fs.h                                         \
     gdi.h                                        \
     glyph.h                                      \
     input.h                                      \
-    keyboard/decompose.h                         \
-    keyboard/keyboard.h                          \
-    keyboard/keymap.h                            \
+    keyboard.h                                   \
+    keymap.h                                     \
     log.h                                        \
     ls.h                                         \
     plugins/channels.h                           \
@@ -217,31 +217,31 @@ BUILT_SOURCES =                         \
     _generated_channel_entry_wrappers.c \
     _generated_keymaps.c
 
-rdp_keymaps =                                      \
-    $(srcdir)/keyboard/keymaps/base.keymap         \
-    $(srcdir)/keyboard/keymaps/failsafe.keymap     \
-    $(srcdir)/keyboard/keymaps/de_de_qwertz.keymap \
-    $(srcdir)/keyboard/keymaps/de_ch_qwertz.keymap \
-    $(srcdir)/keyboard/keymaps/en_gb_qwerty.keymap \
-    $(srcdir)/keyboard/keymaps/en_us_qwerty.keymap \
-    $(srcdir)/keyboard/keymaps/es_es_qwerty.keymap \
-    $(srcdir)/keyboard/keymaps/fr_fr_azerty.keymap \
-    $(srcdir)/keyboard/keymaps/fr_ch_qwertz.keymap \
-    $(srcdir)/keyboard/keymaps/it_it_qwerty.keymap \
-    $(srcdir)/keyboard/keymaps/ja_jp_qwerty.keymap \
-    $(srcdir)/keyboard/keymaps/pt_br_qwerty.keymap \
-    $(srcdir)/keyboard/keymaps/sv_se_qwerty.keymap \
-    $(srcdir)/keyboard/keymaps/da_dk_qwerty.keymap \
-    $(srcdir)/keyboard/keymaps/tr_tr_qwerty.keymap
+rdp_keymaps =                             \
+    $(srcdir)/keymaps/base.keymap         \
+    $(srcdir)/keymaps/failsafe.keymap     \
+    $(srcdir)/keymaps/de_de_qwertz.keymap \
+    $(srcdir)/keymaps/de_ch_qwertz.keymap \
+    $(srcdir)/keymaps/en_gb_qwerty.keymap \
+    $(srcdir)/keymaps/en_us_qwerty.keymap \
+    $(srcdir)/keymaps/es_es_qwerty.keymap \
+    $(srcdir)/keymaps/fr_fr_azerty.keymap \
+    $(srcdir)/keymaps/fr_ch_qwertz.keymap \
+    $(srcdir)/keymaps/it_it_qwerty.keymap \
+    $(srcdir)/keymaps/ja_jp_qwerty.keymap \
+    $(srcdir)/keymaps/pt_br_qwerty.keymap \
+    $(srcdir)/keymaps/sv_se_qwerty.keymap \
+    $(srcdir)/keymaps/da_dk_qwerty.keymap \
+    $(srcdir)/keymaps/tr_tr_qwerty.keymap
 
 _generated_keymaps.c: $(rdp_keymaps)
-	$(AM_V_GEN) $(srcdir)/keyboard/keymaps/generate.pl $(rdp_keymaps)
+	$(AM_V_GEN) $(srcdir)/keymaps/generate.pl $(rdp_keymaps)
 
 _generated_channel_entry_wrappers.c: $(srcdir)/plugins/channels.h $(srcdir)/plugins/generate-entry-wrappers.pl
 	$(AM_V_GEN) $(srcdir)/plugins/generate-entry-wrappers.pl $(srcdir)/plugins/channels.h
 
 EXTRA_DIST =                           \
     $(rdp_keymaps)                     \
-    plugins/generate-entry-wrappers.pl \
-    keyboard/keymaps/generate.pl
+    keymaps/generate.pl                \
+    plugins/generate-entry-wrappers.pl
 

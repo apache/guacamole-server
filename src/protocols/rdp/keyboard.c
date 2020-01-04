@@ -19,9 +19,9 @@
 
 #include "config.h"
 #include "client.h"
-#include "keyboard/decompose.h"
-#include "keyboard/keyboard.h"
-#include "keyboard/keymap.h"
+#include "decompose.h"
+#include "keyboard.h"
+#include "keymap.h"
 #include "rdp.h"
 
 #include <freerdp/freerdp.h>

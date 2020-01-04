@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "keyboard/keymap.h"
+#include "keymap.h"
 
 #include <string.h>
 

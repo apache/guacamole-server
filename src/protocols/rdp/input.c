@@ -22,7 +22,7 @@
 #include "client.h"
 #include "common/recording.h"
 #include "input.h"
-#include "keyboard/keyboard.h"
+#include "keyboard.h"
 #include "rdp.h"
 
 #include <freerdp/freerdp.h>
