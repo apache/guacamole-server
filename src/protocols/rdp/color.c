@@ -28,44 +28,19 @@
 #include <freerdp/gdi/gdi.h>
 #include <winpr/wtypes.h>
 
-/**
- * Returns the integer constant used by the FreeRDP API to represent the colors
- * used by a connection having the given bit depth. These constants each have
- * corresponding PIXEL_FORMAT_* macros defined within freerdp/codec/color.h.
- *
- * @param depth
- *     The color depth which should be translated into the integer constant
- *     defined by FreeRDP's corresponding PIXEL_FORMAT_* macro.
- *
- * @return
- *     The integer value of the PIXEL_FORMAT_* macro corresponding to the
- *     given color depth.
- */
-static UINT32 guac_rdp_get_pixel_format(int depth) {
+UINT32 guac_rdp_get_native_pixel_format(BOOL alpha) {
 
-    switch (depth) {
+    uint8_t color[] = { 0x0A, 0x0B, 0x0C, 0x0D };
 
-        /* 32- and 24-bit RGB (8 bits per color component) */
-        case 32:
-        case 24:
-            return PIXEL_FORMAT_RGB24;
+    /* Local platform stores bytes in decreasing order of significance
+     * (big-endian) */
+    if (*((uint32_t*) color) == 0x0A0B0C0D)
+        return alpha ? PIXEL_FORMAT_ARGB32 : PIXEL_FORMAT_XRGB32;
 
-        /* 16-bit palette (6-bit green, 5-bit red and blue) */
-        case 16:
-            return PIXEL_FORMAT_RGB16;
-
-        /* 15-bit RGB (5 bits per color component) */
-        case 15:
-            return PIXEL_FORMAT_RGB15;
-
-        /* 8-bit palette */
-        case 8:
-            return PIXEL_FORMAT_RGB8;
-
-    }
-
-    /* Unknown format */
-    return PIXEL_FORMAT_RGB24;
+    /* Local platform stores bytes in increasing order of significance
+     * (little-endian) */
+    else
+        return alpha ? PIXEL_FORMAT_BGRA32 : PIXEL_FORMAT_BGRX32;
 
 }
 
@@ -75,8 +50,8 @@ UINT32 guac_rdp_convert_color(rdpContext* context, UINT32 color) {
     rdpGdi* gdi = context->gdi;
 
     /* Convert given color to ARGB32 */
-    return FreeRDPConvertColor(color, guac_rdp_get_pixel_format(depth),
-            PIXEL_FORMAT_ABGR32, &gdi->palette);
+    return FreeRDPConvertColor(color, gdi_get_pixel_format(depth),
+            guac_rdp_get_native_pixel_format(TRUE), &gdi->palette);
 
 }
 

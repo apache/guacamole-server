@@ -27,6 +27,7 @@
 #include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
+#include "color.h"
 #include "common/cursor.h"
 #include "common/display.h"
 #include "common/recording.h"
@@ -138,7 +139,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     }
 
     /* Init FreeRDP internal GDI implementation */
-    if (!gdi_init(instance, PIXEL_FORMAT_BGRX32))
+    if (!gdi_init(instance, guac_rdp_get_native_pixel_format(FALSE)))
         return FALSE;
 
     /* Set up bitmap handling */

@@ -24,6 +24,26 @@
 #include <winpr/wtypes.h>
 
 /**
+ * Returns the FreeRDP pixel format ID corresponding to the 32-bit RGB format
+ * used by the Cairo library's image surfaces. Cairo handles colors in terms of
+ * integers in native endianness, with CAIRO_FORMAT_ARGB32 representing a color
+ * format where the alpha channel is stored in the most significant byte,
+ * followed by red, green, and blue. FreeRDP handles colors in terms of
+ * absolute byte order, with PIXEL_FORMAT_ARGB32 representing a color format
+ * where the alpha channel is in byte 0, followed by red at byte 1, etc.
+ *
+ * @param alpha
+ *     TRUE if the returned FreeRDP pixel format should correspond to Cairo's
+ *     CAIRO_FORMAT_ARGB32, FALSE if the returned format should correspond to
+ *     Cairo's CAIRO_FORMAT_RGB24.
+ *
+ * @return
+ *     The FreeRDP pixel format ID that corresponds to the 32-bit RGB format
+ *     used by the Cairo library.
+ */
+UINT32 guac_rdp_get_native_pixel_format(BOOL alpha);
+
+/**
  * Converts the given color to ARGB32. The color given may be an index
  * referring to the palette, a 16-bit or 32-bit color, etc. all depending on
  * the current color depth of the RDP session.
