@@ -28,8 +28,6 @@
 
 #include <stdint.h>
 
-struct guac_rdpdr_device;
-
 /**
  * The maximum number of bytes to allow for a device read.
  */

@@ -28,8 +28,6 @@
 #include <winpr/wtsapi.h>
 #include <winpr/wtypes.h>
 
-struct guac_rdp_common_svc;
-
 /**
  * The maximum number of bytes to allow within each channel name, including
  * null terminator.
