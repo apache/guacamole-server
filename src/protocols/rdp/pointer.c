@@ -102,12 +102,25 @@ void guac_rdp_pointer_free(rdpContext* context, rdpPointer* pointer) {
 }
 
 BOOL guac_rdp_pointer_set_null(rdpContext* context) {
-    /* STUB */
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    /* Set cursor to empty/blank graphic */
+    guac_common_cursor_set_blank(rdp_client->display->cursor);
+
     return TRUE;
+
 }
 
 BOOL guac_rdp_pointer_set_default(rdpContext* context) {
-    /* STUB */
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    /* Set cursor to embedded pointer */
+    guac_common_cursor_set_pointer(rdp_client->display->cursor);
+
     return TRUE;
 }
 
