@@ -150,6 +150,8 @@ void guac_rdpdr_process_connect(guac_rdp_common_svc* svc) {
 void guac_rdpdr_process_terminate(guac_rdp_common_svc* svc) {
 
     guac_rdpdr* rdpdr = (guac_rdpdr*) svc->data;
+    if (rdpdr == NULL)
+        return;
 
     int i;
 

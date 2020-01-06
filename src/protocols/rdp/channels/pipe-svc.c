@@ -209,6 +209,8 @@ void guac_rdp_pipe_svc_process_receive(guac_rdp_common_svc* svc,
 void guac_rdp_pipe_svc_process_terminate(guac_rdp_common_svc* svc) {
 
     guac_rdp_pipe_svc* pipe_svc = (guac_rdp_pipe_svc*) svc->data;
+    if (pipe_svc == NULL)
+        return;
 
     /* Remove and free SVC */
     guac_rdp_pipe_svc_remove(svc->client, svc->name);
