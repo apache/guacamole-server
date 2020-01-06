@@ -1256,7 +1256,7 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->RdpSecurity = TRUE;
             rdp_settings->TlsSecurity = TRUE;
             rdp_settings->NlaSecurity = TRUE;
-            rdp_settings->ExtSecurity = TRUE;
+            rdp_settings->ExtSecurity = FALSE;
             break;
 
     }
