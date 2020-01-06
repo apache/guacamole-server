@@ -363,7 +363,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
     rdp_inst->VerifyCertificate = rdp_freerdp_verify_certificate;
-    rdp_inst->ReceiveChannelData = freerdp_channels_data;
 
     /* Allocate FreeRDP context */
     rdp_inst->ContextSize = sizeof(rdp_freerdp_context);
