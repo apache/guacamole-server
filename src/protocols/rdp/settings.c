@@ -1255,7 +1255,7 @@ void guac_rdp_push_settings(guac_client* client,
         case GUAC_SECURITY_ANY:
             rdp_settings->RdpSecurity = TRUE;
             rdp_settings->TlsSecurity = TRUE;
-            rdp_settings->NlaSecurity = TRUE;
+            rdp_settings->NlaSecurity = guac_settings->username && guac_settings->password;
             rdp_settings->ExtSecurity = FALSE;
             break;
 
