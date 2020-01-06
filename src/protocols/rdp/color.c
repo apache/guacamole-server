@@ -45,11 +45,23 @@ UINT32 guac_rdp_get_native_pixel_format(BOOL alpha) {
 UINT32 guac_rdp_convert_color(rdpContext* context, UINT32 color) {
 
     int depth = guac_rdp_get_depth(context->instance);
+    int src_format = gdi_get_pixel_format(depth);
+    int dst_format = guac_rdp_get_native_pixel_format(TRUE);
     rdpGdi* gdi = context->gdi;
 
-    /* Convert given color to ARGB32 */
-    return FreeRDPConvertColor(color, gdi_get_pixel_format(depth),
-            guac_rdp_get_native_pixel_format(TRUE), &gdi->palette);
+    /* Convert provided color into the intermediate representation expected by
+     * FreeRDPConvertColor() */
+    UINT32 intermed = ReadColor((BYTE*) &color, src_format);
+
+    /* Convert color from RDP source format to the native format used by Cairo,
+     * still maintaining intermediate representation */
+    intermed = FreeRDPConvertColor(intermed, src_format, dst_format,
+            &gdi->palette);
+
+    /* Convert color from intermediate representation to the actual desired
+     * format */
+    WriteColor((BYTE*) &color, dst_format, intermed);
+    return color;
 
 }
 
