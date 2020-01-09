@@ -65,7 +65,7 @@ BOOL guac_rdp_gdi_dstblt(rdpContext* context, const DSTBLT_ORDER* dstblt);
 /**
  * Handler for the ScrBlt Primary Drawing Order. A ScrBlt Primary Drawing Order
  * paints a rectangle of image data using a raster operation which considers
- * the source and destination.  See:
+ * the source and destination. See:
  *
  * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpegdi/a4e322b0-cd64-4dfc-8e1a-f24dc0edc99d
  *

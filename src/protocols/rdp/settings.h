@@ -325,19 +325,19 @@ typedef struct guac_rdp_settings {
     int menu_animations_enabled;
 
     /**
-     * Whether bitmap caching should be disabled.  By default it is
+     * Whether bitmap caching should be disabled. By default it is
      * enabled - this allows users to explicitly disable it.
      */
     int disable_bitmap_caching;
 
     /**
-     * Whether offscreen caching should be disabled.  By default it is
+     * Whether offscreen caching should be disabled. By default it is
      * enabled - this allows users to explicitly disable it.
      */
     int disable_offscreen_caching;
 
     /**
-     * Whether glyph caching should be disabled.  By default it is enabled
+     * Whether glyph caching should be disabled. By default it is enabled
      * - this allows users to explicitly disable it.
      */
     int disable_glyph_caching;
@@ -421,7 +421,7 @@ typedef struct guac_rdp_settings {
 
     /**
      * The interval at which SSH keepalive messages are sent to the server for
-     * SFTP connections.  The default is 0 (disabling keepalives), and a value
+     * SFTP connections. The default is 0 (disabling keepalives), and a value
      * of 1 is automatically increased to 2 by libssh2 to avoid busy loop corner
      * cases.
      */

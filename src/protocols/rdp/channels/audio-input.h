@@ -293,7 +293,7 @@ guac_user_end_handler guac_rdp_audio_end_handler;
  * Adds Guacamole's "guacai" plugin to the list of dynamic virtual channel
  * plugins to be loaded by FreeRDP's "drdynvc" plugin. The plugin will only
  * be loaded once the "drdynvc" plugin is loaded. The "guacai" plugin
- * ultimately adds support for the "AUDIO_INPUT"  dynamic virtual channel.
+ * ultimately adds support for the "AUDIO_INPUT" dynamic virtual channel.
  *
  * @param context
  *     The rdpContext associated with the active RDP session.

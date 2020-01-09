@@ -309,7 +309,7 @@ enum RDP_ARGS_IDX {
 
     /**
      * "true" if desktop composition (Aero) should be enabled during the
-     * session, "false" or blank otherwise.  As desktop composition provides
+     * session, "false" or blank otherwise. As desktop composition provides
      * alpha blending and other special effects, this increases the amount of
      * bandwidth used.
      */
@@ -354,7 +354,7 @@ enum RDP_ARGS_IDX {
 
     /**
      * The timezone to pass through to the RDP connection, in IANA format, which
-     * will be translated into Windows formats.  See the following page for
+     * will be translated into Windows formats. See the following page for
      * information and list of valid values:
      * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
      */
@@ -374,7 +374,7 @@ enum RDP_ARGS_IDX {
     IDX_SFTP_HOSTNAME,
 
     /**
-     * The public SSH host key of the SFTP server.  Optional.
+     * The public SSH host key of the SFTP server. Optional.
      */
     IDX_SFTP_HOST_KEY,
 
@@ -423,7 +423,7 @@ enum RDP_ARGS_IDX {
 
     /**
      * The interval at which SSH keepalive messages are sent to the server for
-     * SFTP connections.  The default is 0 (disabling keepalives), and a value
+     * SFTP connections. The default is 0 (disabling keepalives), and a value
      * of 1 is automatically increased to 2 by libssh2 to avoid busy loop corner
      * cases.
      */
@@ -461,7 +461,7 @@ enum RDP_ARGS_IDX {
     /**
      * Whether keys pressed and released should be included in the session
      * recording. Key events are NOT included by default within the recording,
-     * as doing so has privacy and security implications.  Including key events
+     * as doing so has privacy and security implications. Including key events
      * may be necessary in certain auditing contexts, but should only be done
      * with caution. Key events can easily contain sensitive information, such
      * as passwords, credit card numbers, etc.

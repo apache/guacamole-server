@@ -22,7 +22,7 @@
 
 /**
  * Functions and macros specific to filesystem handling and initialization
- * independent of RDP.  The functions here may deal with the RDPDR device
+ * independent of RDP. The functions here may deal with the RDPDR device
  * directly, but their semantics must not deal with RDP protocol messaging.
  * Functions here represent a virtual Windows-style filesystem on top of UNIX
  * system calls and structures, using the guac_rdpdr_device structure as a home

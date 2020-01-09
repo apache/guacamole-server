@@ -22,7 +22,7 @@
 
 /**
  * Functions and macros specific to filesystem handling and initialization
- * independent of RDP.  The functions here may deal with the filesystem device
+ * independent of RDP. The functions here may deal with the filesystem device
  * directly, but their semantics must not deal with RDP protocol messaging.
  * Functions here represent a virtual Windows-style filesystem on top of UNIX
  * system calls and structures, using the guac_rdp_fs structure as a home

@@ -135,7 +135,7 @@ struct guac_rdpdr_device {
     uint32_t device_type;
 
     /**
-     * The DOS name of the device.  Max 8 bytes, including terminator.
+     * The DOS name of the device. Max 8 bytes, including terminator.
      */
     const char *dos_name;
     
@@ -216,7 +216,7 @@ wStream* guac_rdpdr_new_io_completion(guac_rdpdr_device* device,
 
 /**
  * Initializes device redirection support (file transfer, printing, etc.) for
- * RDP and handling of the RDPDR channel.  If failures occur, messages noting
+ * RDP and handling of the RDPDR channel. If failures occur, messages noting
  * the specifics of those failures will be logged, and the RDP side of
  * device redirection support will not be functional.
  *
