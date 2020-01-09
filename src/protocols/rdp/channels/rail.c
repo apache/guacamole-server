@@ -177,7 +177,7 @@ void guac_rdp_rail_load_plugin(rdpContext* context) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
     /* Attempt to load FreeRDP support for the RAIL channel */
-    if (guac_freerdp_channels_load_plugin(context->channels, context->settings, "rail", context->settings)) {
+    if (guac_freerdp_channels_load_plugin(context, "rail", context->settings)) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Support for the RAIL channel (RemoteApp) could not be "
                 "loaded. This support normally takes the form of a plugin "

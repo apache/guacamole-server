@@ -23,6 +23,7 @@
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/settings.h>
+#include <guacamole/client.h>
 #include <winpr/wtsapi.h>
 
 /**
@@ -41,25 +42,20 @@
 #error "GUAC_RDP_MAX_CHANNELS must not be less than CHANNEL_MAX_COUNT"
 #endif
 
-/**
- * Loads the FreeRDP plugin having the given name. This function is a drop-in
- * replacement for freerdp_channels_load_plugin() which additionally loads
- * plugins implementing the PVIRTUALCHANNELENTRYEX version of the channel
- * plugin entry point. The freerdp_channels_load_plugin() function which is
- * part of FreeRDP can load only plugins which implement the
- * PVIRTUALCHANNELENTRY version of the entry point.
+/** Loads the FreeRDP plugin having the given name. With the exception that
+ * this function requires the rdpContext rather than rdpChannels and
+ * rdpSettings, this function is essentially a drop-in replacement for
+ * freerdp_channels_load_plugin() which additionally loads plugins implementing
+ * the PVIRTUALCHANNELENTRYEX version of the channel plugin entry point. The
+ * freerdp_channels_load_plugin() function which is part of FreeRDP can load
+ * only plugins which implement the PVIRTUALCHANNELENTRY version of the entry
+ * point.
  *
  * This MUST be called within the PreConnect callback of the freerdp instance
  * for the referenced plugin to be loaded correctly.
  *
- * @param channels
- *     The rdpChannels structure with which the plugin should be registered
- *     once loaded. This structure should be retrieved directly from the
- *     relevant FreeRDP instance.
- *
- * @param settings
- *     The rdpSettings structure associated with the FreeRDP instance, already
- *     populated with any settings applicable to the plugin being loaded.
+ * @param context
+ *     The rdpContext associated with the active RDP session.
  *
  * @param name
  *     The name of the plugin to load. If the plugin is not statically built
@@ -78,8 +74,8 @@
  *     Zero if the plugin was loaded successfully, non-zero if the plugin could
  *     not be loaded.
  */
-int guac_freerdp_channels_load_plugin(rdpChannels* channels,
-        rdpSettings* settings, const char* name, void* data);
+int guac_freerdp_channels_load_plugin(rdpContext* context,
+        const char* name, void* data);
 
 /**
  * Schedules loading of the FreeRDP dynamic virtual channel plugin having the
@@ -150,6 +146,9 @@ extern PVIRTUALCHANNELENTRYEX guac_rdp_entry_ex_wrappers[GUAC_RDP_MAX_CHANNELS];
  * load a plugin if its entry point is already loaded, this allows a single
  * FreeRDP plugin to be loaded multiple times.
  *
+ * @param client
+ *     The guac_client associated with the relevant RDP session.
+ *
  * @param entry_ex
  *     The entry point function to wrap.
  *
@@ -158,7 +157,8 @@ extern PVIRTUALCHANNELENTRYEX guac_rdp_entry_ex_wrappers[GUAC_RDP_MAX_CHANNELS];
  *     point if there is insufficient space remaining within
  *     guac_rdp_entry_ex_wrappers to wrap the entry point.
  */
-PVIRTUALCHANNELENTRYEX guac_rdp_plugin_wrap_entry_ex(PVIRTUALCHANNELENTRYEX entry_ex);
+PVIRTUALCHANNELENTRYEX guac_rdp_plugin_wrap_entry_ex(guac_client* client,
+        PVIRTUALCHANNELENTRYEX entry_ex);
 
 /**
  * The number of wrapped channel entry points currently stored within
@@ -189,6 +189,9 @@ extern PVIRTUALCHANNELENTRY guac_rdp_entry_wrappers[GUAC_RDP_MAX_CHANNELS];
  * load a plugin if its entry point is already loaded, this allows a single
  * FreeRDP plugin to be loaded multiple times.
  *
+ * @param client
+ *     The guac_client associated with the relevant RDP session.
+ *
  * @param entry
  *     The entry point function to wrap.
  *
@@ -197,7 +200,8 @@ extern PVIRTUALCHANNELENTRY guac_rdp_entry_wrappers[GUAC_RDP_MAX_CHANNELS];
  *     point if there is insufficient space remaining within
  *     guac_rdp_entry_wrappers to wrap the entry point.
  */
-PVIRTUALCHANNELENTRY guac_rdp_plugin_wrap_entry(PVIRTUALCHANNELENTRY entry);
+PVIRTUALCHANNELENTRY guac_rdp_plugin_wrap_entry(guac_client* client,
+        PVIRTUALCHANNELENTRY entry);
 
 #endif
 

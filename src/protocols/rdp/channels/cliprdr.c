@@ -496,7 +496,7 @@ void guac_rdp_clipboard_load_plugin(guac_rdp_clipboard* clipboard,
         rdpContext* context) {
 
     /* Attempt to load FreeRDP support for the CLIPRDR channel */
-    if (guac_freerdp_channels_load_plugin(context->channels, context->settings, "cliprdr", NULL)) {
+    if (guac_freerdp_channels_load_plugin(context, "cliprdr", NULL)) {
         guac_client_log(clipboard->client, GUAC_LOG_WARNING,
                 "Support for the CLIPRDR channel (clipboard redirection) "
                 "could not be loaded. This support normally takes the form of "

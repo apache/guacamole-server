@@ -59,10 +59,8 @@ int guac_rdp_common_svc_load_plugin(rdpContext* context,
                 "characters and will be truncated to \"%s\".",
                 name, GUAC_RDP_SVC_MAX_LENGTH - 1, svc->name);
 
-    int result = guac_freerdp_channels_load_plugin(context->channels,
-            context->settings, "guac-common-svc", svc);
-
     /* Attempt to load the common SVC plugin for new static channel */
+    int result = guac_freerdp_channels_load_plugin(context, "guac-common-svc", svc);
     if (result) {
         guac_client_log(client, GUAC_LOG_WARNING, "Cannot create static "
                 "channel \"%s\": failed to load \"guac-common-svc\" plugin "

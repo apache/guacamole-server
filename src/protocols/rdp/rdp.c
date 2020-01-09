@@ -77,7 +77,6 @@
 BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
-    rdpChannels* channels = context->channels;
     rdpGraphics* graphics = context->graphics;
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -127,8 +126,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Load plugin providing Dynamic Virtual Channel support, if required */
     if (instance->settings->SupportDynamicChannels &&
-            guac_freerdp_channels_load_plugin(channels, instance->settings,
-                "drdynvc", instance->settings)) {
+            guac_freerdp_channels_load_plugin(context, "drdynvc",
+                instance->settings)) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load drdynvc plugin. Display update and audio "
                 "input support will be disabled.");
