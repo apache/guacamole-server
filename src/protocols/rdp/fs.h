@@ -525,6 +525,20 @@ int guac_rdp_fs_truncate(guac_rdp_fs* fs, int file_id, int length);
 void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id);
 
 /**
+ * Given an arbitrary path, returns a pointer to the first character following
+ * the last path separator in the path (the basename of the path). For example,
+ * given "/foo/bar/baz" or "\foo\bar\baz", this function would return a pointer
+ * to "baz".
+ *
+ * @param path
+ *     The path to determine the basename of.
+ *
+ * @return
+ *     A pointer to the first character of the basename within the path.
+ */
+const char* guac_rdp_fs_basename(const char* path);
+
+/**
  * Given an arbitrary path, which may contain ".." and ".", creates an
  * absolute path which does NOT contain ".." or ".". The given path MUST
  * be absolute.

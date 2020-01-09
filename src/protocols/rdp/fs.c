@@ -605,6 +605,21 @@ const char* guac_rdp_fs_read_dir(guac_rdp_fs* fs, int file_id) {
 
 }
 
+const char* guac_rdp_fs_basename(const char* path) {
+
+    for (const char* c = path; *c != '\0'; c++) {
+
+        /* Reset beginning of path if a path separator is found */
+        if (*c == '/' || *c == '\\')
+            path = c + 1;
+
+    }
+
+    /* path now points to the first character after the last path separator */
+    return path;
+
+}
+
 int guac_rdp_fs_normalize_path(const char* path, char* abs_path) {
 
     int path_depth = 0;

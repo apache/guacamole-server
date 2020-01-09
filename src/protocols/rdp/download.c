@@ -193,38 +193,20 @@ void* guac_rdp_download_to_user(guac_user* user, void* data) {
     /* If file opened successfully, start stream */
     if (file_id >= 0) {
 
-        guac_rdp_download_status* download_status;
-        const char* basename;
-
-        int i;
-        char c;
-
         /* Associate stream with transfer status */
         guac_stream* stream = guac_user_alloc_stream(user);
-        stream->data = download_status = malloc(sizeof(guac_rdp_download_status));
+        guac_rdp_download_status* download_status = malloc(sizeof(guac_rdp_download_status));
+        stream->data = download_status;
         stream->ack_handler = guac_rdp_download_ack_handler;
         download_status->file_id = file_id;
         download_status->offset = 0;
-
-        /* Get basename from absolute path */
-        i=0;
-        basename = path;
-        do {
-
-            c = path[i];
-            if (c == '/' || c == '\\')
-                basename = &(path[i+1]);
-
-            i++;
-
-        } while (c != '\0');
 
         guac_user_log(user, GUAC_LOG_DEBUG, "%s: Initiating download "
                 "of \"%s\"", __func__, path);
 
         /* Begin stream */
         guac_protocol_send_file(user->socket, stream,
-                "application/octet-stream", basename);
+                "application/octet-stream", guac_rdp_fs_basename(path));
         guac_socket_flush(user->socket);
 
         /* Download started successfully */
