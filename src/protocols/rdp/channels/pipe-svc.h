@@ -161,7 +161,7 @@ guac_user_blob_handler guac_rdp_pipe_svc_blob_handler;
  * Handler for "pipe" instructions which automatically prepares received pipe
  * streams to automatically write received blobs to the SVC having the same
  * name as the pipe stream. Received pipe streams are associated with the
- * relevant guac_rdp_pipe_svc instance and the SVC-specific "blob" instructino
+ * relevant guac_rdp_pipe_svc instance and the SVC-specific "blob" instruction
  * handler (guac_rdp_pipe_svc_blob_handler).
  */
 guac_user_pipe_handler guac_rdp_pipe_svc_pipe_handler;
