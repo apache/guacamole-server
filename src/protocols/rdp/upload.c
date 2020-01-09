@@ -121,7 +121,7 @@ int guac_rdp_upload_blob_handler(guac_user* user, guac_stream* stream,
     int bytes_written;
     guac_rdp_upload_status* upload_status = (guac_rdp_upload_status*) stream->data;
 
-    /* Get filesystem, return error if no filesystem 0*/
+    /* Get filesystem, return error if no filesystem */
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_fs* fs = rdp_client->filesystem;
