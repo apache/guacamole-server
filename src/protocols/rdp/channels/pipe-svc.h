@@ -152,17 +152,17 @@ guac_rdp_pipe_svc* guac_rdp_pipe_svc_get(guac_client* client, const char* name);
 guac_rdp_pipe_svc* guac_rdp_pipe_svc_remove(guac_client* client, const char* name);
 
 /**
- * Handler for "blob" instructions which automatically writes received data to
- * the associated SVC using guac_rdp_pipe_svc_write().
+ * Handler for "blob" instructions which writes received data to the associated
+ * SVC using guac_rdp_pipe_svc_write().
  */
 guac_user_blob_handler guac_rdp_pipe_svc_blob_handler;
 
 /**
- * Handler for "pipe" instructions which automatically prepares received pipe
- * streams to automatically write received blobs to the SVC having the same
- * name as the pipe stream. Received pipe streams are associated with the
- * relevant guac_rdp_pipe_svc instance and the SVC-specific "blob" instruction
- * handler (guac_rdp_pipe_svc_blob_handler).
+ * Handler for "pipe" instructions which prepares received pipe streams to
+ * write received blobs to the SVC having the same name as the pipe stream.
+ * Received pipe streams are associated with the relevant guac_rdp_pipe_svc
+ * instance and the SVC-specific "blob" instruction handler
+ * (guac_rdp_pipe_svc_blob_handler).
  */
 guac_user_pipe_handler guac_rdp_pipe_svc_pipe_handler;
 
