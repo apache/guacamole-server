@@ -267,7 +267,7 @@ static int __guac_common_surface_is_opaque(guac_common_surface* surface,
  *     The surface being updated.
  *
  * @param rect
- *     The bounding rectangle of the updating being made to the surface.
+ *     The bounding rectangle of the update being made to the surface.
  *
  * @param rect_only
  *     Non-zero if this update, by its nature, contains only metainformation
