@@ -151,8 +151,8 @@ static UINT guac_rdp_cliprdr_monitor_ready(CliprdrClientContext* cliprdr,
 /**
  * Sends a Format Data Request PDU to the RDP server, requesting that available
  * clipboard data be sent to the client in the specified format. This PDU is
- * sent when the server indicating that clipboard data is available via a
- * Format List PDU.
+ * sent when the server indicates that clipboard data is available via a Format
+ * List PDU.
  *
  * @param client
  *     The guac_client associated with the current RDP session.
