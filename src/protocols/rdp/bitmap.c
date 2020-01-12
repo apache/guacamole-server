@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
+void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -58,8 +58,6 @@ BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap) {
 
     /* Store buffer reference in bitmap */
     ((guac_rdp_bitmap*) bitmap)->layer = buffer;
-
-    return TRUE;
 
 }
 

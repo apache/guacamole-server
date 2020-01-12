@@ -61,11 +61,8 @@ typedef struct guac_rdp_bitmap {
  *
  * @param bitmap
  *     The bitmap to cache.
- *
- * @return
- *     TRUE if successful, FALSE otherwise.
  */
-BOOL guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap);
+void guac_rdp_cache_bitmap(rdpContext* context, rdpBitmap* bitmap);
 
 /**
  * Initializes the given newly-created rdpBitmap.
