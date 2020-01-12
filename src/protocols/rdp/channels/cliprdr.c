@@ -474,10 +474,10 @@ static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
     cliprdr->custom = clipboard;
     clipboard->cliprdr = cliprdr;
 
-    cliprdr->MonitorReady = guac_rdp_cliprdr_monitor_ready;
-    cliprdr->ServerFormatList = guac_rdp_cliprdr_format_list;
-    cliprdr->ServerFormatDataRequest = guac_rdp_cliprdr_format_data_request;
-    cliprdr->ServerFormatDataResponse = guac_rdp_cliprdr_format_data_response;
+    cliprdr->MonitorReady = (pcCliprdrMonitorReady) guac_rdp_cliprdr_monitor_ready;
+    cliprdr->ServerFormatList = (pcCliprdrServerFormatList) guac_rdp_cliprdr_format_list;
+    cliprdr->ServerFormatDataRequest = (pcCliprdrServerFormatDataRequest) guac_rdp_cliprdr_format_data_request;
+    cliprdr->ServerFormatDataResponse = (pcCliprdrServerFormatDataResponse) guac_rdp_cliprdr_format_data_response;
 
     guac_client_log(client, GUAC_LOG_DEBUG, "CLIPRDR (clipboard redirection) "
             "channel connected.");
