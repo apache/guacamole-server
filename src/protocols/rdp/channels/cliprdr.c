@@ -138,8 +138,12 @@ static UINT guac_rdp_cliprdr_monitor_ready(CliprdrClientContext* cliprdr,
     guac_client_log(clipboard->client, GUAC_LOG_TRACE, "CLIPRDR: Received "
             "monitor ready.");
 
-    /* Respond with capabilities and supported format list */
-    guac_rdp_cliprdr_send_capabilities(cliprdr);
+    /* Respond with capabilities ... */
+    int status = guac_rdp_cliprdr_send_capabilities(cliprdr);
+    if (status != CHANNEL_RC_OK)
+        return status;
+
+    /* ... and supported format list */
     return guac_rdp_cliprdr_send_format_list(cliprdr);
 
 }
