@@ -41,9 +41,9 @@
  *
  * @param device
  *     The guac_rdpdr_device of the relevant device, as dictated by the
- *     deviceId field of common RDPDR header within the received PDU. Within
- *     the guac_rdpdr_iorequest structure, the deviceId field is stored within
- *     device_id.
+ *     deviceId field of the common RDPDR header within the received PDU.
+ *     Within the guac_rdpdr_iorequest structure, the deviceId field is stored
+ *     within device_id.
  *
  * @param iorequest
  *     The contents of the common RDPDR Device I/O Request header shared by all
