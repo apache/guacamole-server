@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "config.h"
 #include "settings.h"
 
 #include <freerdp/codec/color.h>
@@ -59,8 +60,12 @@ UINT32 guac_rdp_convert_color(rdpContext* context, UINT32 color) {
 
     /* Convert color from RDP source format to the native format used by Cairo,
      * still maintaining intermediate representation */
+#ifdef HAVE_FREERDPCONVERTCOLOR
     intermed = FreeRDPConvertColor(intermed, src_format, dst_format,
             &gdi->palette);
+#else
+    intermed = ConvertColor(intermed, src_format, dst_format, &gdi->palette);
+#endif
 
     /* Convert color from intermediate representation to the actual desired
      * format */

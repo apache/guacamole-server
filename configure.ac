@@ -541,13 +541,27 @@ AC_ARG_WITH([rdp],
 if test "x$with_rdp" != "xno"
 then
     have_freerdp2=yes
-    PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],,
+    PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
+                      [CPPFLAGS="${RDP_CFLAGS} $CPPFLAGS"],
                       [AC_MSG_WARN([
   --------------------------------------------
    Unable to find FreeRDP (libfreerdp2 / libfreerdp-client2 / libwinpr2)
    RDP will be disabled.
   --------------------------------------------])
                        have_freerdp2=no])
+fi
+
+# Available color conversion functions
+if test "x$have_freerdp2" = "xyes"
+then
+
+    # FreeRDP 2.0.0-rc3 and older referred to FreeRDPConvertColor() as
+    # ConvertColor()
+    AC_CHECK_DECL([FreeRDPConvertColor],
+                  [AC_DEFINE([HAVE_FREERDPCONVERTCOLOR],,
+                             [Whether FreeRDPConvertColor() is defined])],,
+                  [#include <freerdp/codec/color.h>])
+
 fi
 
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp2}" = "xyes"])
