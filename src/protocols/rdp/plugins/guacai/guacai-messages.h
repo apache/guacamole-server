@@ -20,7 +20,7 @@
 #ifndef GUAC_RDP_PLUGINS_GUACAI_MESSAGES_H
 #define GUAC_RDP_PLUGINS_GUACAI_MESSAGES_H
 
-#include "channels/audio-input.h"
+#include "channels/audio-input/audio-buffer.h"
 
 #include <freerdp/dvc.h>
 #include <guacamole/client.h>

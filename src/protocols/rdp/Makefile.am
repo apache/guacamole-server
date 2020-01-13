@@ -39,7 +39,8 @@ nodist_libguac_client_rdp_la_SOURCES =  \
 
 libguac_client_rdp_la_SOURCES =                  \
     bitmap.c                                     \
-    channels/audio-input.c                       \
+    channels/audio-input/audio-buffer.c          \
+    channels/audio-input/audio-input.c           \
     channels/cliprdr.c                           \
     channels/common-svc.c                        \
     channels/disp.c                              \
@@ -81,7 +82,8 @@ libguac_client_rdp_la_SOURCES =                  \
 
 noinst_HEADERS =                                 \
     bitmap.h                                     \
-    channels/audio-input.h                       \
+    channels/audio-input/audio-buffer.h          \
+    channels/audio-input/audio-input.h           \
     channels/cliprdr.h                           \
     channels/common-svc.h                        \
     channels/disp.h                              \
@@ -173,10 +175,10 @@ libguac_common_svc_client_la_LIBADD = \
 # Audio Input
 #
 
-libguacai_client_la_SOURCES =        \
-    channels/audio-input.c           \
-    plugins/guacai/guacai-messages.c \
-    plugins/guacai/guacai.c          \
+libguacai_client_la_SOURCES =           \
+    channels/audio-input/audio-buffer.c \
+    plugins/guacai/guacai-messages.c    \
+    plugins/guacai/guacai.c             \
     plugins/ptr-string.c
 
 libguacai_client_la_CFLAGS = \

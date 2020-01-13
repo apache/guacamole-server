@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "channels/audio-input.h"
+#include "channels/audio-input/audio-buffer.h"
 #include "plugins/guacai/guacai.h"
 #include "plugins/guacai/guacai-messages.h"
 #include "plugins/ptr-string.h"

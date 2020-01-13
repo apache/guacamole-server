@@ -18,7 +18,7 @@
  */
 
 #include "client.h"
-#include "channels/audio-input.h"
+#include "channels/audio-input/audio-buffer.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
 #include "common/recording.h"

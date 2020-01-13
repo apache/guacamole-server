@@ -18,7 +18,8 @@
  */
 
 #include "bitmap.h"
-#include "channels/audio-input.h"
+#include "channels/audio-input/audio-buffer.h"
+#include "channels/audio-input/audio-input.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
 #include "channels/pipe-svc.h"

@@ -17,10 +17,9 @@
  * under the License.
  */
 
-#ifndef GUAC_RDP_CHANNELS_AUDIO_INPUT_H
-#define GUAC_RDP_CHANNELS_AUDIO_INPUT_H
+#ifndef GUAC_RDP_CHANNELS_AUDIO_INPUT_AUDIO_BUFFER_H
+#define GUAC_RDP_CHANNELS_AUDIO_INPUT_AUDIO_BUFFER_H
 
-#include <freerdp/freerdp.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 #include <pthread.h>
@@ -273,32 +272,6 @@ void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer);
  *     The audio buffer to free.
  */
 void guac_rdp_audio_buffer_free(guac_rdp_audio_buffer* audio_buffer);
-
-/**
- * Handler for inbound audio data (audio input).
- */
-guac_user_audio_handler guac_rdp_audio_handler;
-
-/**
- * Handler for stream data related to audio input.
- */
-guac_user_blob_handler guac_rdp_audio_blob_handler;
-
-/**
- * Handler for end-of-stream related to audio input.
- */
-guac_user_end_handler guac_rdp_audio_end_handler;
-
-/**
- * Adds Guacamole's "guacai" plugin to the list of dynamic virtual channel
- * plugins to be loaded by FreeRDP's "drdynvc" plugin. The plugin will only
- * be loaded once the "drdynvc" plugin is loaded. The "guacai" plugin
- * ultimately adds support for the "AUDIO_INPUT" dynamic virtual channel.
- *
- * @param context
- *     The rdpContext associated with the active RDP session.
- */
-void guac_rdp_audio_load_plugin(rdpContext* context);
 
 #endif
 

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "channels/audio-input.h"
+#include "channels/audio-input/audio-input.h"
 #include "channels/cliprdr.h"
 #include "channels/pipe-svc.h"
 #include "common/cursor.h"

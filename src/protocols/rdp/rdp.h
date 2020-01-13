@@ -20,7 +20,7 @@
 #ifndef GUAC_RDP_H
 #define GUAC_RDP_H
 
-#include "channels/audio-input.h"
+#include "channels/audio-input/audio-buffer.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
 #include "common/clipboard.h"
