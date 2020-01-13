@@ -164,8 +164,8 @@ static void guac_rdp_rail_channel_connected(rdpContext* context,
     /* Init FreeRDP RAIL context, ensuring the guac_client can be accessed from
      * within any RAIL-specific callbacks */
     rail->custom = client;
-    rail->ServerHandshake = guac_rdp_rail_handshake;
-    rail->ServerHandshakeEx = guac_rdp_rail_handshake_ex;
+    rail->ServerHandshake = (pcRailServerHandshake) guac_rdp_rail_handshake;
+    rail->ServerHandshakeEx = (pcRailServerHandshakeEx) guac_rdp_rail_handshake_ex;
 
     guac_client_log(client, GUAC_LOG_DEBUG, "RAIL (RemoteApp) channel "
             "connected.");
