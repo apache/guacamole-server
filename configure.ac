@@ -538,6 +538,10 @@ AC_ARG_WITH([rdp],
             [],
             [with_rdp=check])
 
+# Preserve CPPFLAGS so it can be restored later, following the addition of
+# options specific to FreeRDP tests
+OLDCPPFLAGS="$CPPFLAGS"
+
 if test "x$with_rdp" != "xno"
 then
     have_freerdp2=yes
@@ -656,6 +660,9 @@ then
     [AC_MSG_RESULT([no])])
 
 fi
+
+# Restore CPPFLAGS, removing FreeRDP-specific options needed for testing
+CPPFLAGS="$OLDCPPFLAGS"
 
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp2}" = "xyes"])
 
