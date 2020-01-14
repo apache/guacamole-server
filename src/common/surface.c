@@ -260,17 +260,30 @@ static int __guac_common_surface_is_opaque(guac_common_surface* surface,
 
 /**
  * Returns whether the given rectangle should be combined into the existing
- * dirty rectangle, to be eventually flushed as a "png" instruction.
+ * dirty rectangle, to be eventually flushed as image data, or would be best
+ * kept independent of the current rectangle.
  *
- * @param surface The surface to be queried.
- * @param rect The update rectangle.
- * @param rect_only Non-zero if this update, by its nature, contains only
- *                  metainformation about the update's rectangle, zero if
- *                  the update also contains image data.
- * @return Non-zero if the update should be combined with any existing update,
- *         zero otherwise.
+ * @param surface
+ *     The surface being updated.
+ *
+ * @param rect
+ *     The bounding rectangle of the update being made to the surface.
+ *
+ * @param rect_only
+ *     Non-zero if this update, by its nature, contains only metainformation
+ *     about the update's bounding rectangle, zero if the update also contains
+ *     image data.
+ *
+ * @return
+ *     Non-zero if the update should be combined with any existing update, zero
+ *     otherwise.
  */
 static int __guac_common_should_combine(guac_common_surface* surface, const guac_common_rect* rect, int rect_only) {
+
+    /* Always favor combining updates if surface is currently a purely
+     * server-side scratch area */
+    if (!surface->realized)
+        return 1;
 
     if (surface->dirty) {
 

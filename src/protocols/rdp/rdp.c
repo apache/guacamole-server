@@ -17,28 +17,30 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "audio_input.h"
+#include "bitmap.h"
+#include "channels/audio-input/audio-buffer.h"
+#include "channels/audio-input/audio-input.h"
+#include "channels/cliprdr.h"
+#include "channels/disp.h"
+#include "channels/pipe-svc.h"
+#include "channels/rail.h"
+#include "channels/rdpdr/rdpdr.h"
+#include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
+#include "color.h"
 #include "common/cursor.h"
 #include "common/display.h"
 #include "common/recording.h"
-#include "dvc.h"
+#include "config.h"
 #include "error.h"
+#include "fs.h"
+#include "gdi.h"
+#include "glyph.h"
 #include "keyboard.h"
+#include "plugins/channels.h"
+#include "pointer.h"
+#include "print-job.h"
 #include "rdp.h"
-#include "rdp_bitmap.h"
-#include "rdp_cliprdr.h"
-#include "rdp_disp.h"
-#include "rdp_fs.h"
-#include "rdp_print_job.h"
-#include "rdp_gdi.h"
-#include "rdp_glyph.h"
-#include "rdp_pointer.h"
-#include "rdp_rail.h"
-#include "rdp_stream.h"
-#include "rdp_svc.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
@@ -46,6 +48,7 @@
 #include "common-ssh/user.h"
 #endif
 
+#include <freerdp/addin.h>
 #include <freerdp/cache/bitmap.h>
 #include <freerdp/cache/brush.h>
 #include <freerdp/cache/glyph.h>
@@ -53,347 +56,126 @@
 #include <freerdp/cache/palette.h>
 #include <freerdp/cache/pointer.h>
 #include <freerdp/channels/channels.h>
+#include <freerdp/client/channels.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/gdi/gdi.h>
+#include <freerdp/graphics.h>
+#include <freerdp/primary.h>
+#include <freerdp/settings.h>
+#include <freerdp/update.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
-
-#ifdef HAVE_FREERDP_CLIENT_CLIPRDR_H
-#include <freerdp/client/cliprdr.h>
-#else
-#include "compat/client-cliprdr.h"
-#endif
-
-#ifdef HAVE_FREERDP_CLIENT_DISP_H
-#include <freerdp/client/disp.h>
-#endif
-
-#ifdef HAVE_FREERDP_EVENT_PUBSUB
-#include <freerdp/event.h>
-#endif
-
-#ifdef LEGACY_FREERDP
-#include "compat/rail.h"
-#else
-#include <freerdp/rail.h>
-#endif
-
-#ifdef ENABLE_WINPR
+#include <winpr/error.h>
+#include <winpr/synch.h>
 #include <winpr/wtypes.h>
-#else
-#include "compat/winpr-wtypes.h"
-#endif
 
-#ifdef HAVE_FREERDP_ADDIN_H
-#include <freerdp/addin.h>
-#endif
-
-#ifdef HAVE_FREERDP_CLIENT_CHANNELS_H
-#include <freerdp/client/channels.h>
-#endif
-
-#ifdef HAVE_FREERDP_VERSION_H
-#include <freerdp/version.h>
-#endif
-
-#include <errno.h>
-#include <poll.h>
-#include <pthread.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
 #include <time.h>
-
-/**
- * Callback invoked by FreeRDP for data received along a channel. This is the
- * most recent version of the callback and uses a 16-bit unsigned integer for
- * the channel ID, as well as different type naming for the datatype of the
- * data itself. This function does nothing more than invoke
- * freerdp_channels_data() with the given arguments. The prototypes of these
- * functions are compatible in 1.2 and later, but not necessarily prior to
- * that, hence the conditional compilation of differing prototypes.
- *
- * Beware that the official purpose of these parameters is an undocumented
- * mystery. The meanings below are derived from looking at how the function is
- * used within FreeRDP.
- *
- * @param rdp_inst
- *     The RDP client instance associated with the channel receiving the data.
- *
- * @param channelId
- *     The integer ID of the channel that received the data.
- *
- * @param data
- *     A buffer containing the received data.
- *
- * @param size
- *     The number of bytes received and contained in the given buffer (the
- *     number of bytes received within the PDU that resulted in this function
- *     being inboked).
- *
- * @param flags
- *     Channel control flags, as defined by the CHANNEL_PDU_HEADER in the RDP
- *     specification.
- *
- * @param total_size
- *     The total length of the chanel data being received, which may span
- *     multiple PDUs (see the "length" field of CHANNEL_PDU_HEADER).
- *
- * @return
- *     Zero if the received channel data was successfully handled, non-zero
- *     otherwise. Note that this return value is discarded in practice.
- */
-#if defined(FREERDP_VERSION_MAJOR) \
-    && (FREERDP_VERSION_MAJOR > 1 || FREERDP_VERSION_MINOR >= 2)
-static int __guac_receive_channel_data(freerdp* rdp_inst, UINT16 channelId,
-        BYTE* data, int size, int flags, int total_size) {
-#else
-static int __guac_receive_channel_data(freerdp* rdp_inst, int channelId,
-        UINT8* data, int size, int flags, int total_size) {
-#endif
-    return freerdp_channels_data(rdp_inst, channelId,
-            data, size, flags, total_size);
-}
-
-#ifdef HAVE_FREERDP_EVENT_PUBSUB
-/**
- * Called whenever a channel connects via the PubSub event system within
- * FreeRDP.
- *
- * @param context
- *     The rdpContext associated with the active RDP session.
- *
- * @param e
- *     Event-specific arguments, mainly the name of the channel, and a
- *     reference to the associated plugin loaded for that channel by FreeRDP.
- */
-static void guac_rdp_channel_connected(rdpContext* context,
-        ChannelConnectedEventArgs* e) {
-
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    guac_rdp_settings* settings = rdp_client->settings;
-
-    if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE) {
-#ifdef HAVE_RDPSETTINGS_SUPPORTDISPLAYCONTROL
-        /* Store reference to the display update plugin once it's connected */
-        if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0) {
-
-            DispClientContext* disp = (DispClientContext*) e->pInterface;
-
-            /* Init module with current display size */
-            guac_rdp_disp_set_size(rdp_client->disp, rdp_client->settings,
-                    context->instance, guac_rdp_get_width(context->instance),
-                    guac_rdp_get_height(context->instance));
-
-            /* Store connected channel */
-            guac_rdp_disp_connect(rdp_client->disp, disp);
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Display update channel connected.");
-
-        }
-#endif
-    }
-
-}
-#endif
 
 BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpContext* context = instance->context;
-    rdpChannels* channels = context->channels;
+    rdpGraphics* graphics = context->graphics;
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
-    rdpBitmap* bitmap;
-    rdpGlyph* glyph;
-    rdpPointer* pointer;
-    rdpPrimaryUpdate* primary;
-    CLRCONV* clrconv;
+    /* Push desired settings to FreeRDP */
+    guac_rdp_push_settings(client, settings, instance);
 
-    guac_rdp_dvc_list* dvc_list = guac_rdp_dvc_list_alloc();
-
-#ifdef HAVE_FREERDP_REGISTER_ADDIN_PROVIDER
     /* Init FreeRDP add-in provider */
     freerdp_register_addin_provider(freerdp_channels_load_static_addin_entry, 0);
-#endif
 
-#ifdef HAVE_FREERDP_EVENT_PUBSUB
-    /* Subscribe to and handle channel connected events */
-    PubSub_SubscribeChannelConnected(context->pubSub,
-            (pChannelConnectedEventHandler) guac_rdp_channel_connected);
-#endif
-
-#ifdef HAVE_FREERDP_DISPLAY_UPDATE_SUPPORT
     /* Load "disp" plugin for display update */
     if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
-        guac_rdp_disp_load_plugin(instance->context, dvc_list);
-#endif
+        guac_rdp_disp_load_plugin(context);
 
     /* Load "AUDIO_INPUT" plugin for audio input*/
     if (settings->enable_audio_input) {
         rdp_client->audio_input = guac_rdp_audio_buffer_alloc();
-        guac_rdp_audio_load_plugin(instance->context, dvc_list);
+        guac_rdp_audio_load_plugin(instance->context);
     }
 
-    /* Load clipboard plugin */
-    if (freerdp_channels_load_plugin(channels, instance->settings,
-                "cliprdr", NULL))
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Failed to load cliprdr plugin. Clipboard will not work.");
+    /* Load "cliprdr" plugin for clipboard support */
+    guac_rdp_clipboard_load_plugin(rdp_client->clipboard, context);
 
     /* If RDPSND/RDPDR required, load them */
     if (settings->printing_enabled
         || settings->drive_enabled
         || settings->audio_enabled) {
-
-        /* Load RDPDR plugin */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
-                    "guacdr", client))
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load guacdr plugin. Drive redirection and "
-                    "printing will not work. Sound MAY not work.");
-
-        /* Load RDPSND plugin */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
-                    "guacsnd", client))
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load guacsnd alongside guacdr plugin. Sound "
-                    "will not work. Drive redirection and printing MAY not "
-                    "work.");
-
+        guac_rdpdr_load_plugin(context);
+        guac_rdpsnd_load_plugin(context);
     }
 
     /* Load RAIL plugin if RemoteApp in use */
-    if (settings->remote_app != NULL) {
-
-#ifdef LEGACY_FREERDP
-        RDP_PLUGIN_DATA* plugin_data = malloc(sizeof(RDP_PLUGIN_DATA) * 2);
-
-        plugin_data[0].size = sizeof(RDP_PLUGIN_DATA);
-        plugin_data[0].data[0] = settings->remote_app;
-        plugin_data[0].data[1] = settings->remote_app_dir;
-        plugin_data[0].data[2] = settings->remote_app_args;
-        plugin_data[0].data[3] = NULL;
-
-        plugin_data[1].size = 0;
-
-        /* Attempt to load rail */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
-                    "rail", plugin_data))
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load rail plugin. RemoteApp will not work.");
-#else
-        /* Attempt to load rail */
-        if (freerdp_channels_load_plugin(channels, instance->settings,
-                    "rail", instance->settings))
-            guac_client_log(client, GUAC_LOG_WARNING,
-                    "Failed to load rail plugin. RemoteApp will not work.");
-#endif
-
-    }
+    if (settings->remote_app != NULL)
+        guac_rdp_rail_load_plugin(context);
 
     /* Load SVC plugin instances for all static channels */
     if (settings->svc_names != NULL) {
 
         char** current = settings->svc_names;
         do {
-
-            guac_rdp_svc* svc = guac_rdp_alloc_svc(client, *current);
-
-            /* Attempt to load guacsvc plugin for new static channel */
-            if (freerdp_channels_load_plugin(channels, instance->settings,
-                        "guacsvc", svc)) {
-                guac_client_log(client, GUAC_LOG_WARNING,
-                        "Cannot create static channel \"%s\": failed to load guacsvc plugin.",
-                        svc->name);
-                guac_rdp_free_svc(svc);
-            }
-
-            /* Store and log on success */
-            else {
-                guac_rdp_add_svc(client, svc);
-                guac_client_log(client, GUAC_LOG_INFO, "Created static channel \"%s\"...",
-                        svc->name);
-            }
-
+            guac_rdp_pipe_svc_load_plugin(context, *current);
         } while (*(++current) != NULL);
 
     }
 
-    /* Load DRDYNVC plugin if required */
-    if (guac_rdp_load_drdynvc(instance->context, dvc_list))
+    /* Load plugin providing Dynamic Virtual Channel support, if required */
+    if (instance->settings->SupportDynamicChannels &&
+            guac_freerdp_channels_load_plugin(context, "drdynvc",
+                instance->settings)) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load drdynvc plugin. Display update and audio "
                 "input support will be disabled.");
+    }
 
-    /* Dynamic virtual channel list is no longer needed */
-    guac_rdp_dvc_list_free(dvc_list);
-
-    /* Init color conversion structure */
-    clrconv = calloc(1, sizeof(CLRCONV));
-    clrconv->alpha = 1;
-    clrconv->invert = 0;
-    clrconv->rgb555 = 0;
-    clrconv->palette = calloc(1, sizeof(rdpPalette));
-    ((rdp_freerdp_context*) context)->clrconv = clrconv;
-
-    /* Init FreeRDP cache */
-    instance->context->cache = cache_new(instance->settings);
+    /* Init FreeRDP internal GDI implementation */
+    if (!gdi_init(instance, guac_rdp_get_native_pixel_format(FALSE)))
+        return FALSE;
 
     /* Set up bitmap handling */
-    bitmap = calloc(1, sizeof(rdpBitmap));
-    bitmap->size = sizeof(guac_rdp_bitmap);
-    bitmap->New = guac_rdp_bitmap_new;
-    bitmap->Free = guac_rdp_bitmap_free;
-    bitmap->Paint = guac_rdp_bitmap_paint;
-    bitmap->Decompress = guac_rdp_bitmap_decompress;
-    bitmap->SetSurface = guac_rdp_bitmap_setsurface;
-    graphics_register_bitmap(context->graphics, bitmap);
-    free(bitmap);
+    rdpBitmap bitmap = *graphics->Bitmap_Prototype;
+    bitmap.size = sizeof(guac_rdp_bitmap);
+    bitmap.New = guac_rdp_bitmap_new;
+    bitmap.Free = guac_rdp_bitmap_free;
+    bitmap.Paint = guac_rdp_bitmap_paint;
+    bitmap.SetSurface = guac_rdp_bitmap_setsurface;
+    graphics_register_bitmap(graphics, &bitmap);
 
     /* Set up glyph handling */
-    glyph = calloc(1, sizeof(rdpGlyph));
-    glyph->size = sizeof(guac_rdp_glyph);
-    glyph->New = guac_rdp_glyph_new;
-    glyph->Free = guac_rdp_glyph_free;
-    glyph->Draw = guac_rdp_glyph_draw;
-    glyph->BeginDraw = guac_rdp_glyph_begindraw;
-    glyph->EndDraw = guac_rdp_glyph_enddraw;
-    graphics_register_glyph(context->graphics, glyph);
-    free(glyph);
+    rdpGlyph glyph = *graphics->Glyph_Prototype;
+    glyph.size = sizeof(guac_rdp_glyph);
+    glyph.New = guac_rdp_glyph_new;
+    glyph.Free = guac_rdp_glyph_free;
+    glyph.Draw = guac_rdp_glyph_draw;
+    glyph.BeginDraw = guac_rdp_glyph_begindraw;
+    glyph.EndDraw = guac_rdp_glyph_enddraw;
+    graphics_register_glyph(graphics, &glyph);
 
     /* Set up pointer handling */
-    pointer = calloc(1, sizeof(rdpPointer));
-    pointer->size = sizeof(guac_rdp_pointer);
-    pointer->New = guac_rdp_pointer_new;
-    pointer->Free = guac_rdp_pointer_free;
-    pointer->Set = guac_rdp_pointer_set;
-#ifdef HAVE_RDPPOINTER_SETNULL
-    pointer->SetNull = guac_rdp_pointer_set_null;
-#endif
-#ifdef HAVE_RDPPOINTER_SETDEFAULT
-    pointer->SetDefault = guac_rdp_pointer_set_default;
-#endif
-    graphics_register_pointer(context->graphics, pointer);
-    free(pointer);
+    rdpPointer pointer = *graphics->Pointer_Prototype;
+    pointer.size = sizeof(guac_rdp_pointer);
+    pointer.New = guac_rdp_pointer_new;
+    pointer.Free = guac_rdp_pointer_free;
+    pointer.Set = guac_rdp_pointer_set;
+    pointer.SetNull = guac_rdp_pointer_set_null;
+    pointer.SetDefault = guac_rdp_pointer_set_default;
+    graphics_register_pointer(graphics, &pointer);
 
     /* Set up GDI */
     instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
-    instance->update->Palette = guac_rdp_gdi_palette_update;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
 
-    primary = instance->update->primary;
+    rdpPrimaryUpdate* primary = instance->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;
-    primary->PatBlt = guac_rdp_gdi_patblt;
     primary->ScrBlt = guac_rdp_gdi_scrblt;
     primary->MemBlt = guac_rdp_gdi_memblt;
-    primary->OpaqueRect = guac_rdp_gdi_opaquerect;
 
     pointer_cache_register_callbacks(instance->update);
     glyph_cache_register_callbacks(instance->update);
@@ -401,39 +183,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     bitmap_cache_register_callbacks(instance->update);
     offscreen_cache_register_callbacks(instance->update);
     palette_cache_register_callbacks(instance->update);
-
-    /* Init channels (pre-connect) */
-    if (freerdp_channels_pre_connect(channels, instance)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error initializing RDP client channel manager");
-        return FALSE;
-    }
-
-    return TRUE;
-
-}
-
-/**
- * Callback invoked by FreeRDP just after the connection is established with
- * the RDP server. Implementations are required to manually invoke
- * freerdp_channels_post_connect().
- *
- * @param instance
- *     The FreeRDP instance that has just connected.
- *
- * @return
- *     TRUE if successful, FALSE if an error occurs.
- */
-static BOOL rdp_freerdp_post_connect(freerdp* instance) {
-
-    rdpContext* context = instance->context;
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    rdpChannels* channels = instance->context->channels;
-
-    /* Init channels (post-connect) */
-    if (freerdp_channels_post_connect(channels, instance)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error initializing RDP client channel manager");
-        return FALSE;
-    }
 
     return TRUE;
 
@@ -497,8 +246,9 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
  * @return
  *     TRUE if the certificate passes verification, FALSE otherwise.
  */
-static BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
-        char* issuer, char* fingerprint) {
+static DWORD rdp_freerdp_verify_certificate(freerdp* instance,
+        const char* common_name, const char* subject, const char* issuer,
+        const char* fingerprint, BOOL host_mismatch) {
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -508,42 +258,12 @@ static BOOL rdp_freerdp_verify_certificate(freerdp* instance, char* subject,
     /* Bypass validation if ignore_certificate given */
     if (rdp_client->settings->ignore_certificate) {
         guac_client_log(client, GUAC_LOG_INFO, "Certificate validation bypassed");
-        return TRUE;
+        return 2; /* Accept only for this session */
     }
 
     guac_client_log(client, GUAC_LOG_INFO, "Certificate validation failed");
-    return FALSE;
+    return 0; /* Reject certificate */
 
-}
-
-/**
- * Callback invoked by FreeRDP after a new rdpContext has been allocated and
- * associated with the current FreeRDP instance. Implementations are required
- * to manually invoke freerdp_channels_new() at this point.
- *
- * @param instance
- *     The FreeRDP instance whose context has just been allocated.
- *
- * @param context
- *     The newly-allocated FreeRDP context.
- */
-static void rdp_freerdp_context_new(freerdp* instance, rdpContext* context) {
-    context->channels = freerdp_channels_new();
-}
-
-/**
- * Callback invoked by FreeRDP when the rdpContext is being freed. This must be
- * provided, but there is no Guacamole-specific data associated with the
- * FreeRDP context, so nothing is done here.
- *
- * @param instance
- *     The FreeRDP instance whose context is being freed.
- *
- * @param context
- *     The FreeRDP context being freed.
- */
-static void rdp_freerdp_context_free(freerdp* instance, rdpContext* context) {
-    /* EMPTY */
 }
 
 /**
@@ -564,78 +284,30 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     freerdp* rdp_inst = rdp_client->rdp_inst;
-    rdpChannels* channels = rdp_inst->context->channels;
 
-    int result;
-    int index;
+    HANDLE handles[GUAC_RDP_MAX_FILE_DESCRIPTORS];
+    int num_handles = freerdp_get_event_handles(rdp_inst->context, handles,
+            GUAC_RDP_MAX_FILE_DESCRIPTORS);
 
-    /* List of all file descriptors which we may read data from */
-    void* read_fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
-    int read_count = 0;
+    /* Wait for data and construct a reasonable frame */
+    int result = WaitForMultipleObjects(num_handles, handles, FALSE,
+            timeout_msecs);
 
-    /* List of all file descriptors which data may be written to. These will
-     * ultimately be ignored, but FreeRDP requires that both read and write
-     * file descriptors be retrieved simultaneously. */
-    void* write_fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
-    int write_count = 0;
+    /* Translate WaitForMultipleObjects() return values */
+    switch (result) {
 
-    struct pollfd fds[GUAC_RDP_MAX_FILE_DESCRIPTORS];
-
-    /* Get RDP file descriptors */
-    if (!freerdp_get_fds(rdp_inst, read_fds, &read_count,
-                write_fds, &write_count)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Unable to read RDP file descriptors.");
-        return -1;
-    }
-
-    /* Get RDP channel file descriptors */
-    if (!freerdp_channels_get_fds(channels, rdp_inst, read_fds, &read_count,
-                write_fds, &write_count)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Unable to read RDP channel file descriptors.");
-        return -1;
-    }
-
-    /* If no file descriptors, error */
-    if (read_count == 0) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "No file descriptors associated with RDP connection.");
-        return -1;
-    }
-
-    /* Populate poll() array of read file descriptors */
-    for (index = 0; index < read_count; index++) {
-
-        struct pollfd* current = &fds[index];
-
-        /* Init poll() array element with RDP file descriptor */
-        current->fd      = (int)(long) (read_fds[index]);
-        current->events  = POLLIN;
-        current->revents = 0;
-
-    }
-
-    /* Wait until data can be read from RDP file descriptors */
-    result = poll(fds, read_count, timeout_msecs);
-    if (result < 0) {
-
-        /* If error ignorable, pretend timout occurred */
-        if (errno == EAGAIN
-            || errno == EWOULDBLOCK
-            || errno == EINPROGRESS
-            || errno == EINTR)
+        /* Timeout elapsed before wait could complete */
+        case WAIT_TIMEOUT:
             return 0;
 
-        /* Otherwise, return as error */
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
-                "Error waiting for file descriptor.");
-        return -1;
+        /* Attempt to wait failed due to an error */
+        case WAIT_FAILED:
+            return -1;
 
     }
 
-    /* Return wait result */
-    return result;
+    /* Wait was successful */
+    return 1;
 
 }
 
@@ -684,29 +356,16 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     rdp_client->current_surface = rdp_client->display->default_surface;
 
-    rdp_client->requested_clipboard_format = CB_FORMAT_TEXT;
     rdp_client->available_svc = guac_common_list_alloc();
-
-#ifdef HAVE_FREERDP_CHANNELS_GLOBAL_INIT
-    freerdp_channels_global_init();
-#endif
 
     /* Init client */
     freerdp* rdp_inst = freerdp_new();
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
-    rdp_inst->PostConnect = rdp_freerdp_post_connect;
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
     rdp_inst->VerifyCertificate = rdp_freerdp_verify_certificate;
-    rdp_inst->ReceiveChannelData = __guac_receive_channel_data;
 
     /* Allocate FreeRDP context */
-#ifdef LEGACY_FREERDP
-    rdp_inst->context_size = sizeof(rdp_freerdp_context);
-#else
     rdp_inst->ContextSize = sizeof(rdp_freerdp_context);
-#endif
-    rdp_inst->ContextNew  = (pContextNew) rdp_freerdp_context_new;
-    rdp_inst->ContextFree = (pContextFree) rdp_freerdp_context_free;
 
     freerdp_context_new(rdp_inst);
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
@@ -718,9 +377,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Set default pointer */
     guac_common_cursor_set_pointer(rdp_client->display->cursor);
 
-    /* Push desired settings to FreeRDP */
-    guac_rdp_push_settings(client, settings, rdp_inst);
-
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
@@ -730,7 +386,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Connection complete */
     rdp_client->rdp_inst = rdp_inst;
-    rdpChannels* channels = rdp_inst->context->channels;
 
     guac_timestamp last_frame_end = guac_timestamp_current();
 
@@ -742,9 +397,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
             && !guac_rdp_disp_reconnect_needed(rdp_client->disp)) {
 
         /* Update remote display size */
-        pthread_mutex_lock(&(rdp_client->rdp_lock));
         guac_rdp_disp_update_size(rdp_client->disp, settings, rdp_inst);
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
         /* Wait for data and construct a reasonable frame */
         int wait_result = rdp_guac_client_wait_for_messages(client,
@@ -760,41 +413,14 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 guac_timestamp frame_end;
                 int frame_remaining;
 
-                pthread_mutex_lock(&(rdp_client->rdp_lock));
-
                 /* Check the libfreerdp fds */
-                if (!freerdp_check_fds(rdp_inst)
-                        || !freerdp_channels_check_fds(channels, rdp_inst)) {
+                if (!freerdp_check_event_handles(rdp_inst->context)) {
 
                     /* Flag connection failure */
                     wait_result = -1;
-                    pthread_mutex_unlock(&(rdp_client->rdp_lock));
                     break;
 
                 }
-
-                /* Check for channel events */
-                wMessage* event = freerdp_channels_pop_event(channels);
-                if (event) {
-
-                    /* Handle channel events (clipboard and RAIL) */
-#ifdef LEGACY_EVENT
-                    if (event->event_class == CliprdrChannel_Class)
-                        guac_rdp_process_cliprdr_event(client, event);
-                    else if (event->event_class == RailChannel_Class)
-                        guac_rdp_process_rail_event(client, event);
-#else
-                    if (GetMessageClass(event->id) == CliprdrChannel_Class)
-                        guac_rdp_process_cliprdr_event(client, event);
-                    else if (GetMessageClass(event->id) == RailChannel_Class)
-                        guac_rdp_process_rail_event(client, event);
-#endif
-
-                    freerdp_event_free(event);
-
-                }
-
-                pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
                 /* Calculate time remaining in frame */
                 frame_end = guac_timestamp_current();
@@ -828,9 +454,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
         }
 
         /* Test whether the RDP server is closing the connection */
-        pthread_mutex_lock(&(rdp_client->rdp_lock));
         int connection_closing = freerdp_shall_disconnect(rdp_inst);
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
         /* Close connection cleanly if server is disconnecting */
         if (connection_closing)
@@ -856,16 +480,13 @@ static int guac_rdp_handle_connection(guac_client* client) {
         guac_rdp_print_job_free(rdp_client->active_job);
     }
 
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
-
     /* Disconnect client and channels */
-    freerdp_channels_close(channels, rdp_inst);
-    freerdp_channels_free(channels);
     freerdp_disconnect(rdp_inst);
 
+    /* Clean up FreeRDP internal GDI implementation */
+    gdi_free(rdp_inst);
+
     /* Clean up RDP client context */
-    freerdp_clrconv_free(((rdp_freerdp_context*) rdp_inst->context)->clrconv);
-    cache_free(rdp_inst->context->cache);
     freerdp_context_free(rdp_inst);
 
     /* Clean up RDP client */
@@ -880,8 +501,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Free display */
     guac_common_display_free(rdp_client->display);
-
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
     /* Client is now disconnected */
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");

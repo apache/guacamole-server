@@ -70,7 +70,7 @@ while [ -n "$1" ]; do
 
     # Determine correct install location for FreeRDP plugins
     FREERDP_DIR="$(where_is_freerdp "$1")"
-    FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp"
+    FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp2"
 
     # Add symbolic link if necessary
     if [ ! -e "$FREERDP_PLUGIN_DIR/$(basename "$1")" ]; then

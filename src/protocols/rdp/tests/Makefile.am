@@ -34,6 +34,7 @@ check_PROGRAMS = test_rdp
 TESTS = $(check_PROGRAMS)
 
 test_rdp_SOURCES =      \
+    fs/basename.c       \
     fs/normalize_path.c
 
 test_rdp_CFLAGS =                \
