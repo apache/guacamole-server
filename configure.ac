@@ -597,6 +597,36 @@ then
 
 fi
 
+# CLIPRDR callback variants
+if test "x${have_freerdp2}" = "xyes"
+then
+
+    # FreeRDP 2.0.0-rc3 and older did not use const for CLIPRDR callbacks
+    AC_MSG_CHECKING([whether CLIPRDR callbacks require const for their final parameter])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+
+        #include <freerdp/client/cliprdr.h>
+        #include <winpr/wtypes.h>
+
+        UINT test_monitor_ready(CliprdrClientContext* cliprdr,
+                const CLIPRDR_MONITOR_READY* monitor_ready);
+
+        CliprdrClientContext context = {
+            .MonitorReady = test_monitor_ready
+        };
+
+        int main() {
+            return (int) context.MonitorReady(NULL, NULL);
+        }
+
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([FREERDP_CLIPRDR_CALLBACKS_REQUIRE_CONST],,
+               [Whether CLIPRDR callbacks require const for the final parameter])],
+    [AC_MSG_RESULT([no])])
+
+fi
+
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp2}" = "xyes"])
 
 #

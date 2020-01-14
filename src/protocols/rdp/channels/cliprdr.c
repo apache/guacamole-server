@@ -21,6 +21,7 @@
 #include "client.h"
 #include "common/clipboard.h"
 #include "common/iconv.h"
+#include "config.h"
 #include "plugins/channels.h"
 #include "rdp.h"
 
@@ -36,6 +37,20 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef FREERDP_CLIPRDR_CALLBACKS_REQUIRE_CONST
+/**
+ * FreeRDP 2.0.0-rc4 and newer requires the final argument for all CLIPRDR
+ * callbacks to be const.
+ */
+#define CLIPRDR_CONST const
+#else
+/**
+ * FreeRDP 2.0.0-rc3 and older requires the final argument for all CLIPRDR
+ * callbacks to NOT be const.
+ */
+#define CLIPRDR_CONST
+#endif
 
 /**
  * Sends a Format List PDU to the RDP server containing the formats of
@@ -127,7 +142,7 @@ static UINT guac_rdp_cliprdr_send_capabilities(CliprdrClientContext* cliprdr) {
  *     (non-zero) otherwise.
  */
 static UINT guac_rdp_cliprdr_monitor_ready(CliprdrClientContext* cliprdr,
-        const CLIPRDR_MONITOR_READY* monitor_ready) {
+        CLIPRDR_CONST CLIPRDR_MONITOR_READY* monitor_ready) {
 
     /* FreeRDP-specific handlers for CLIPRDR are not assigned, and thus not
      * callable, until after the relevant guac_rdp_clipboard structure is
@@ -241,7 +256,7 @@ static int guac_rdp_cliprdr_format_supported(const CLIPRDR_FORMAT_LIST* format_l
  *     (non-zero) otherwise.
  */
 static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
-        const CLIPRDR_FORMAT_LIST* format_list) {
+        CLIPRDR_CONST CLIPRDR_FORMAT_LIST* format_list) {
 
     /* FreeRDP-specific handlers for CLIPRDR are not assigned, and thus not
      * callable, until after the relevant guac_rdp_clipboard structure is
@@ -296,7 +311,7 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
  *     (non-zero) otherwise.
  */
 static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
-        const CLIPRDR_FORMAT_DATA_REQUEST* format_data_request) {
+        CLIPRDR_CONST CLIPRDR_FORMAT_DATA_REQUEST* format_data_request) {
 
     /* FreeRDP-specific handlers for CLIPRDR are not assigned, and thus not
      * callable, until after the relevant guac_rdp_clipboard structure is
@@ -373,7 +388,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
  *     (non-zero) otherwise.
  */
 static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
-        const CLIPRDR_FORMAT_DATA_RESPONSE* format_data_response) {
+        CLIPRDR_CONST CLIPRDR_FORMAT_DATA_RESPONSE* format_data_response) {
 
     /* FreeRDP-specific handlers for CLIPRDR are not assigned, and thus not
      * callable, until after the relevant guac_rdp_clipboard structure is
@@ -474,10 +489,10 @@ static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
     cliprdr->custom = clipboard;
     clipboard->cliprdr = cliprdr;
 
-    cliprdr->MonitorReady = (pcCliprdrMonitorReady) guac_rdp_cliprdr_monitor_ready;
-    cliprdr->ServerFormatList = (pcCliprdrServerFormatList) guac_rdp_cliprdr_format_list;
-    cliprdr->ServerFormatDataRequest = (pcCliprdrServerFormatDataRequest) guac_rdp_cliprdr_format_data_request;
-    cliprdr->ServerFormatDataResponse = (pcCliprdrServerFormatDataResponse) guac_rdp_cliprdr_format_data_response;
+    cliprdr->MonitorReady = guac_rdp_cliprdr_monitor_ready;
+    cliprdr->ServerFormatList = guac_rdp_cliprdr_format_list;
+    cliprdr->ServerFormatDataRequest = guac_rdp_cliprdr_format_data_request;
+    cliprdr->ServerFormatDataResponse = guac_rdp_cliprdr_format_data_response;
 
     guac_client_log(client, GUAC_LOG_DEBUG, "CLIPRDR (clipboard redirection) "
             "channel connected.");
