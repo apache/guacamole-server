@@ -546,7 +546,7 @@ if test "x$with_rdp" != "xno"
 then
     have_freerdp2=yes
     PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
-                      [CPPFLAGS="${RDP_CFLAGS} $CPPFLAGS"],
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"],
                       [AC_MSG_WARN([
   --------------------------------------------
    Unable to find FreeRDP (libfreerdp2 / libfreerdp-client2 / libwinpr2)
