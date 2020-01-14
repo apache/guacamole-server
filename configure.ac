@@ -564,6 +564,39 @@ then
 
 fi
 
+# Glyph callback variants
+if test "x${have_freerdp2}" = "xyes"
+then
+
+    # FreeRDP 2.0.0-rc3 and older used UINT32 for integer parameters to all
+    # rdpGlyph callbacks
+    AC_MSG_CHECKING([whether rdpGlyph callbacks accept INT32 integer parameters])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+
+        #include <freerdp/freerdp.h>
+        #include <freerdp/graphics.h>
+        #include <winpr/wtypes.h>
+
+        BOOL test_begindraw(rdpContext* context, INT32 x, INT32 y,
+                INT32 width, INT32 height, UINT32 fgcolor, UINT32 bgcolor,
+                BOOL redundant);
+
+        rdpGlyph glyph = {
+            .BeginDraw = test_begindraw
+        };
+
+        int main() {
+            return (int) glyph.BeginDraw(NULL, 0, 0, 0, 0, 0, 0, FALSE);
+        }
+
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([FREERDP_GLYPH_CALLBACKS_ACCEPT_INT32],,
+               [Whether rdpGlyph callbacks accept INT32 integer parameters])],
+    [AC_MSG_RESULT([no])])
+
+fi
+
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp2}" = "xyes"])
 
 #

@@ -91,7 +91,9 @@ BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph) {
 }
 
 BOOL guac_rdp_glyph_draw(rdpContext* context, const rdpGlyph* glyph,
-        INT32 x, INT32 y, INT32 w, INT32 h, INT32 sx, INT32 sy,
+        GLYPH_CALLBACK_INT32 x, GLYPH_CALLBACK_INT32 y,
+        GLYPH_CALLBACK_INT32 w, GLYPH_CALLBACK_INT32 h,
+        GLYPH_CALLBACK_INT32 sx, GLYPH_CALLBACK_INT32 sy,
         BOOL redundant) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -127,9 +129,10 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph) {
 
 }
 
-BOOL guac_rdp_glyph_begindraw(rdpContext* context, INT32 x, INT32 y,
-        INT32 width, INT32 height, UINT32 fgcolor, UINT32 bgcolor,
-        BOOL redundant) {
+BOOL guac_rdp_glyph_begindraw(rdpContext* context,
+        GLYPH_CALLBACK_INT32 x, GLYPH_CALLBACK_INT32 y,
+        GLYPH_CALLBACK_INT32 width, GLYPH_CALLBACK_INT32 height,
+        UINT32 fgcolor, UINT32 bgcolor, BOOL redundant) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client =
@@ -157,8 +160,10 @@ BOOL guac_rdp_glyph_begindraw(rdpContext* context, INT32 x, INT32 y,
 
 }
 
-BOOL guac_rdp_glyph_enddraw(rdpContext* context, INT32 x, INT32 y,
-        INT32 width, INT32 height, UINT32 fgcolor, UINT32 bgcolor) {
+BOOL guac_rdp_glyph_enddraw(rdpContext* context,
+        GLYPH_CALLBACK_INT32 x, GLYPH_CALLBACK_INT32 y,
+        GLYPH_CALLBACK_INT32 width, GLYPH_CALLBACK_INT32 height,
+        UINT32 fgcolor, UINT32 bgcolor) {
     /* IGNORE */
     return TRUE;
 }
