@@ -20,7 +20,7 @@
 #ifndef GUAC_RDP_KEYBOARD_H
 #define GUAC_RDP_KEYBOARD_H
 
-#include "rdp_keymap.h"
+#include "keymap.h"
 
 #include <guacamole/client.h>
 
@@ -94,7 +94,7 @@ typedef struct guac_rdp_keyboard {
 
     /**
      * The local state of all keys, as well as the necessary information to
-     * translate received keysyms into scancodes or sequences  of scancodes for
+     * translate received keysyms into scancodes or sequences of scancodes for
      * RDP. The state of each key is updated based on received Guacamole key
      * events, while the information describing the behavior and scancode
      * mapping of each key is populated based on an associated keymap.
@@ -180,7 +180,7 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
 /**
  * For every keysym in the given NULL-terminated array of keysyms, send the RDP
  * key events required to update the remote state of those keys as specified,
- * depending on the current local state of those keysyms.  For each key in the
+ * depending on the current local state of those keysyms. For each key in the
  * "from" state, that key will be updated to the "to" state. The locally-stored
  * state of each key is remains untouched.
  *

@@ -17,19 +17,15 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "client.h"
 #include "decompose.h"
 #include "keyboard.h"
+#include "keymap.h"
 #include "rdp.h"
-#include "rdp_keymap.h"
 
 #include <freerdp/freerdp.h>
 #include <freerdp/input.h>
 #include <guacamole/client.h>
 
-#include <pthread.h>
 #include <stdlib.h>
 
 /**
@@ -102,20 +98,14 @@ static void guac_rdp_send_key_event(guac_rdp_client* rdp_client,
     else
         pressed_flags = KBD_FLAGS_RELEASE;
 
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
-
     /* Skip if not yet connected */
     freerdp* rdp_inst = rdp_client->rdp_inst;
-    if (rdp_inst == NULL) {
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
+    if (rdp_inst == NULL)
         return;
-    }
 
     /* Send actual key */
     rdp_inst->input->KeyboardEvent(rdp_inst->input,
             flags | pressed_flags, scancode);
-
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
 }
 
@@ -136,21 +126,15 @@ static void guac_rdp_send_key_event(guac_rdp_client* rdp_client,
 static void guac_rdp_send_unicode_event(guac_rdp_client* rdp_client,
         int codepoint) {
 
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
-
     /* Skip if not yet connected */
     freerdp* rdp_inst = rdp_client->rdp_inst;
-    if (rdp_inst == NULL) {
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
+    if (rdp_inst == NULL)
         return;
-    }
 
     /* Send Unicode event */
     rdp_inst->input->UnicodeKeyboardEvent(
             rdp_inst->input,
             0, codepoint);
-
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
 }
 
@@ -171,19 +155,13 @@ static void guac_rdp_send_unicode_event(guac_rdp_client* rdp_client,
 static void guac_rdp_send_synchronize_event(guac_rdp_client* rdp_client,
         int flags) {
 
-    pthread_mutex_lock(&(rdp_client->rdp_lock));
-
     /* Skip if not yet connected */
     freerdp* rdp_inst = rdp_client->rdp_inst;
-    if (rdp_inst == NULL) {
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
+    if (rdp_inst == NULL)
         return;
-    }
 
     /* Synchronize lock key states */
     rdp_inst->input->SynchronizeEvent(rdp_inst->input, flags);
-
-    pthread_mutex_unlock(&(rdp_client->rdp_lock));
 
 }
 

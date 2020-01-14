@@ -17,11 +17,9 @@
  * under the License.
  */
 
-#include "config.h"
+#include <guacamole/unicode.h>
 
 #include <stdint.h>
-
-#include <guacamole/unicode.h>
 
 void guac_rdp_utf16_to_utf8(const unsigned char* utf16, int length,
         char* utf8, int size) {

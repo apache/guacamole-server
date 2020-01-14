@@ -17,16 +17,17 @@
  * under the License.
  */
 
-#include "config.h"
-
-#include "audio_input.h"
+#include "channels/audio-input/audio-input.h"
+#include "channels/cliprdr.h"
+#include "channels/pipe-svc.h"
+#include "common/cursor.h"
 #include "common/display.h"
+#include "config.h"
 #include "input.h"
-#include "user.h"
 #include "rdp.h"
-#include "rdp_settings.h"
-#include "rdp_stream.h"
-#include "rdp_svc.h"
+#include "settings.h"
+#include "upload.h"
+#include "user.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "sftp.h"
@@ -36,9 +37,11 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/stream.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
+#include <stddef.h>
 
 int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
@@ -86,7 +89,7 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
             guac_audio_stream_add_user(rdp_client->audio, user);
 
         /* Bring user up to date with any registered static channels */
-        guac_rdp_svc_send_pipes(user);
+        guac_rdp_pipe_svc_send_pipes(user);
 
         /* Synchronize with current display */
         guac_common_display_dup(rdp_client->display, user, user->socket);
@@ -112,7 +115,7 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
         user->file_handler = guac_rdp_user_file_handler;
 
         /* Inbound arbitrary named pipes */
-        user->pipe_handler = guac_rdp_svc_pipe_handler;
+        user->pipe_handler = guac_rdp_pipe_svc_pipe_handler;
 
     }
 

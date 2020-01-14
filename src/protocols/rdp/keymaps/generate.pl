@@ -43,14 +43,9 @@ my @keymaps = ();
 open OUTPUT, ">", "_generated_keymaps.c";
 print OUTPUT 
        '#include "config.h"'                                . "\n"
-     . '#include "rdp_keymap.h"'                            . "\n"
+     . '#include "keymap.h"'                                . "\n"
      . '#include <freerdp/input.h>'                         . "\n"
-     .                                                        "\n"
-     . '#ifdef HAVE_FREERDP_LOCALE_KEYBOARD_H'              . "\n"
      . '#include <freerdp/locale/keyboard.h>'               . "\n"
-     . '#else'                                              . "\n"
-     . '#include <freerdp/kbd/layouts.h>'                   . "\n"
-     . '#endif'                                             . "\n"
      .                                                        "\n"
      . '#include <stddef.h>'                                . "\n"
      .                                                        "\n";

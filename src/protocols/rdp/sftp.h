@@ -20,8 +20,6 @@
 #ifndef GUAC_RDP_SFTP_H
 #define GUAC_RDP_SFTP_H
 
-#include "config.h"
-
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 

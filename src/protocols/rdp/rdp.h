@@ -20,30 +20,31 @@
 #ifndef GUAC_RDP_H
 #define GUAC_RDP_H
 
-#include "config.h"
-
-#include "audio_input.h"
+#include "channels/audio-input/audio-buffer.h"
+#include "channels/cliprdr.h"
+#include "channels/disp.h"
 #include "common/clipboard.h"
 #include "common/display.h"
 #include "common/list.h"
 #include "common/recording.h"
 #include "common/surface.h"
+#include "config.h"
+#include "fs.h"
 #include "keyboard.h"
-#include "rdp_disp.h"
-#include "rdp_fs.h"
-#include "rdp_print_job.h"
-#include "rdp_settings.h"
-
-#include <freerdp/freerdp.h>
-#include <freerdp/codec/color.h>
-#include <guacamole/audio.h>
-#include <guacamole/client.h>
+#include "print-job.h"
+#include "settings.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
 #include "common-ssh/user.h"
 #endif
+
+#include <freerdp/codec/color.h>
+#include <freerdp/freerdp.h>
+#include <guacamole/audio.h>
+#include <guacamole/client.h>
+#include <winpr/wtypes.h>
 
 #include <pthread.h>
 #include <stdint.h>
@@ -95,17 +96,9 @@ typedef struct guac_rdp_client {
     guac_rdp_keyboard* keyboard;
 
     /**
-     * The current clipboard contents.
+     * The current state of the clipboard and the CLIPRDR channel.
      */
-    guac_common_clipboard* clipboard;
-
-    /**
-     * The format of the clipboard which was requested. Data received from
-     * the RDP server should conform to this format. This will be one of
-     * several legal clipboard format values defined within FreeRDP, such as
-     * CB_FORMAT_TEXT.
-     */
-    int requested_clipboard_format;
+    guac_rdp_clipboard* clipboard;
 
     /**
      * Audio output, if any.
@@ -161,13 +154,6 @@ typedef struct guac_rdp_client {
     guac_common_list* available_svc;
 
     /**
-     * Lock which is locked and unlocked for each RDP message, and for each
-     * part of the RDP client instance which may be dynamically freed and
-     * reallocated during reconnection.
-     */
-    pthread_mutex_t rdp_lock;
-
-    /**
      * Common attributes for locks.
      */
     pthread_mutexattr_t attributes;
@@ -190,11 +176,6 @@ typedef struct rdp_freerdp_context {
      * this context.
      */
     guac_client* client;
-
-    /**
-     * Color conversion structure to be used to convert RDP images to PNGs.
-     */
-    CLRCONV* clrconv;
 
     /**
      * The current color palette, as received from the RDP server.

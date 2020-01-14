@@ -37,9 +37,9 @@ ARG BUILD_DIR=/tmp/guacd-docker-BUILD
 ARG BUILD_DEPENDENCIES="              \
         autoconf                      \
         automake                      \
+        freerdp2-dev                  \
         gcc                           \
         libcairo2-dev                 \
-        libfreerdp-dev                \
         libjpeg62-turbo-dev           \
         libossp-uuid-dev              \
         libpango1.0-dev               \
@@ -71,7 +71,7 @@ RUN ${PREFIX_DIR}/bin/build-guacd.sh "$BUILD_DIR" "$PREFIX_DIR"
 RUN ${PREFIX_DIR}/bin/list-dependencies.sh    \
         ${PREFIX_DIR}/sbin/guacd              \
         ${PREFIX_DIR}/lib/libguac-client-*.so \
-        ${PREFIX_DIR}/lib/freerdp/guac*.so    \
+        ${PREFIX_DIR}/lib/freerdp2/guac*.so   \
         > ${PREFIX_DIR}/DEPENDENCIES
 
 # Use same Debian as the base for the runtime image
@@ -92,7 +92,6 @@ ENV GUACD_LOG_LEVEL=info
 ARG RUNTIME_DEPENDENCIES="            \
         ca-certificates               \
         ghostscript                   \
-        libfreerdp-plugins-standard   \
         fonts-liberation              \
         fonts-dejavu                  \
         xfonts-terminus"
@@ -108,7 +107,7 @@ RUN apt-get update                                          && \
 
 # Link FreeRDP plugins into proper path
 RUN ${PREFIX_DIR}/bin/link-freerdp-plugins.sh \
-        ${PREFIX_DIR}/lib/freerdp/guac*.so
+        ${PREFIX_DIR}/lib/freerdp2/libguac*.so
 
 # Expose the default listener port
 EXPOSE 4822

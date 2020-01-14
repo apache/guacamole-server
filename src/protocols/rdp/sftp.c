@@ -17,14 +17,11 @@
  * under the License.
  */
 
-#include "config.h"
-
 #include "common-ssh/sftp.h"
 #include "rdp.h"
 #include "sftp.h"
 
 #include <guacamole/client.h>
-#include <guacamole/stream.h>
 #include <guacamole/user.h>
 
 int guac_rdp_sftp_file_handler(guac_user* user, guac_stream* stream,

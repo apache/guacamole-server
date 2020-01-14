@@ -20,8 +20,6 @@
 #ifndef GUAC_RDP_CLIENT_H
 #define GUAC_RDP_CLIENT_H
 
-#include "config.h"
-
 #include <guacamole/client.h>
 
 /**
