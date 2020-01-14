@@ -33,6 +33,20 @@
 #include <stddef.h>
 #include <string.h>
 
+#ifdef FREERDP_RAIL_CALLBACKS_REQUIRE_CONST
+/**
+ * FreeRDP 2.0.0-rc4 and newer requires the final argument for all RAIL
+ * callbacks to be const.
+ */
+#define RAIL_CONST const
+#else
+/**
+ * FreeRDP 2.0.0-rc3 and older requires the final argument for all RAIL
+ * callbacks to NOT be const.
+ */
+#define RAIL_CONST
+#endif
+
 /**
  * Completes initialization of the RemoteApp session, sending client system
  * parameters and executing the desired RemoteApp command using the Client
@@ -102,7 +116,7 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
  *     (non-zero) otherwise.
  */
 static UINT guac_rdp_rail_handshake(RailClientContext* rail,
-        const RAIL_HANDSHAKE_ORDER* handshake) {
+        RAIL_CONST RAIL_HANDSHAKE_ORDER* handshake) {
     return guac_rdp_rail_complete_handshake(rail);
 }
 
@@ -126,7 +140,7 @@ static UINT guac_rdp_rail_handshake(RailClientContext* rail,
  *     (non-zero) otherwise.
  */
 static UINT guac_rdp_rail_handshake_ex(RailClientContext* rail,
-        const RAIL_HANDSHAKE_EX_ORDER* handshake_ex) {
+        RAIL_CONST RAIL_HANDSHAKE_EX_ORDER* handshake_ex) {
     return guac_rdp_rail_complete_handshake(rail);
 }
 
@@ -164,8 +178,8 @@ static void guac_rdp_rail_channel_connected(rdpContext* context,
     /* Init FreeRDP RAIL context, ensuring the guac_client can be accessed from
      * within any RAIL-specific callbacks */
     rail->custom = client;
-    rail->ServerHandshake = (pcRailServerHandshake) guac_rdp_rail_handshake;
-    rail->ServerHandshakeEx = (pcRailServerHandshakeEx) guac_rdp_rail_handshake_ex;
+    rail->ServerHandshake = guac_rdp_rail_handshake;
+    rail->ServerHandshakeEx = guac_rdp_rail_handshake_ex;
 
     guac_client_log(client, GUAC_LOG_DEBUG, "RAIL (RemoteApp) channel "
             "connected.");

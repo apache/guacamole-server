@@ -627,6 +627,36 @@ then
 
 fi
 
+# RAIL callback variants
+if test "x${have_freerdp2}" = "xyes"
+then
+
+    # FreeRDP 2.0.0-rc3 and older did not use const for RAIL callbacks
+    AC_MSG_CHECKING([whether RAIL callbacks require const for their final parameter])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+
+        #include <freerdp/client/rail.h>
+        #include <winpr/wtypes.h>
+
+        UINT test_server_handshake(RailClientContext* rail,
+                const RAIL_HANDSHAKE_ORDER* handshake);
+
+        RailClientContext context = {
+            .ServerHandshake = test_server_handshake
+        };
+
+        int main() {
+            return (int) context.ServerHandshake(NULL, NULL);
+        }
+
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([FREERDP_RAIL_CALLBACKS_REQUIRE_CONST],,
+               [Whether RAIL callbacks require const for the final parameter])],
+    [AC_MSG_RESULT([no])])
+
+fi
+
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp2}" = "xyes"])
 
 #
