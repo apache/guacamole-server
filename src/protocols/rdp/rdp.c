@@ -103,9 +103,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Load "cliprdr" service if not disabled */
     if (!(settings->disable_copy && settings->disable_paste))
         guac_rdp_clipboard_load_plugin(rdp_client->clipboard, context);
-    else
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Copy and paste are both disabled.  Clipboard plugin will not be loaded.");
 
     /* If RDPSND/RDPDR required, load them */
     if (settings->printing_enabled
