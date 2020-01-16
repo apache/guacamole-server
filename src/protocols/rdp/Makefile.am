@@ -150,7 +150,7 @@ freerdp_LTLIBRARIES =            \
     libguac-common-svc-client.la \
     libguacai-client.la
 
-freerdpdir = ${libdir}/freerdp2
+freerdpdir = @FREERDP2_PLUGIN_DIR@
 
 #
 # Common SVC plugin (shared by RDPDR, RDPSND, etc.)
