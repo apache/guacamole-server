@@ -532,11 +532,19 @@ fi
 #
 
 have_freerdp2=disabled
+FREERDP2_PLUGIN_DIR=
+
 AC_ARG_WITH([rdp],
             [AS_HELP_STRING([--with-rdp],
                             [support RDP @<:@default=check@:>@])],
             [],
             [with_rdp=check])
+
+# FreeRDP plugin directory
+AC_ARG_WITH(freerdp_plugin_dir,
+            [AS_HELP_STRING([--with-freerdp-plugin-dir=<path>],
+                            [install FreeRDP plugins to the given directory @<:@default=check@:>@])
+            ],FREERDP2_PLUGIN_DIR=$withval)
 
 # Preserve CPPFLAGS so it can be restored later, following the addition of
 # options specific to FreeRDP tests
@@ -547,7 +555,8 @@ then
     have_freerdp2=yes
     PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
                       [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
-                      [FREERDP2_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"],
+                      [AS_IF([test "x${FREERDP2_PLUGIN_DIR}" = "x"],
+                             [FREERDP2_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
                       [AC_MSG_WARN([
   --------------------------------------------
    Unable to find FreeRDP (libfreerdp2 / libfreerdp-client2 / libwinpr2)
