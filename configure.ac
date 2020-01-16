@@ -532,11 +532,19 @@ fi
 #
 
 have_freerdp2=disabled
+FREERDP2_PLUGIN_DIR=
+
 AC_ARG_WITH([rdp],
             [AS_HELP_STRING([--with-rdp],
                             [support RDP @<:@default=check@:>@])],
             [],
             [with_rdp=check])
+
+# FreeRDP plugin directory
+AC_ARG_WITH(freerdp_plugin_dir,
+            [AS_HELP_STRING([--with-freerdp-plugin-dir=<path>],
+                            [install FreeRDP plugins to the given directory @<:@default=check@:>@])
+            ],FREERDP2_PLUGIN_DIR=$withval)
 
 # Preserve CPPFLAGS so it can be restored later, following the addition of
 # options specific to FreeRDP tests
@@ -546,7 +554,9 @@ if test "x$with_rdp" != "xno"
 then
     have_freerdp2=yes
     PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"],
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+                      [AS_IF([test "x${FREERDP2_PLUGIN_DIR}" = "x"],
+                             [FREERDP2_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
                       [AC_MSG_WARN([
   --------------------------------------------
    Unable to find FreeRDP (libfreerdp2 / libfreerdp-client2 / libwinpr2)
@@ -664,6 +674,7 @@ fi
 # Restore CPPFLAGS, removing FreeRDP-specific options needed for testing
 CPPFLAGS="$OLDCPPFLAGS"
 
+AC_SUBST(FREERDP2_PLUGIN_DIR)
 AM_CONDITIONAL([ENABLE_RDP], [test "x${have_freerdp2}" = "xyes"])
 
 #
@@ -995,6 +1006,12 @@ AM_COND_IF([ENABLE_INIT], [build_init="${init_dir}"], [build_init=no])
 AM_COND_IF([ENABLE_SYSTEMD], [build_systemd="${systemd_dir}"], [build_systemd=no])
 
 #
+# FreeRDP plugins
+#
+
+AM_COND_IF([ENABLE_RDP], [build_rdp_plugins="${FREERDP2_PLUGIN_DIR}"], [build_rdp_plugins=no])
+
+#
 # Display summary
 #
 
@@ -1034,6 +1051,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       guacenc .... ${build_guacenc}
       guaclog .... ${build_guaclog}
 
+   FreeRDP plugins: ${build_rdp_plugins}
    Init scripts: ${build_init}
    Systemd units: ${build_systemd}
 
