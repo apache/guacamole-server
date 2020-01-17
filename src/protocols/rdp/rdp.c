@@ -367,7 +367,14 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Allocate FreeRDP context */
     rdp_inst->ContextSize = sizeof(rdp_freerdp_context);
 
-    freerdp_context_new(rdp_inst);
+    if (!freerdp_context_new(rdp_inst)) {
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                "FreeRDP initialization failed before connecting. Please "
+                "check for errors earlier in the logs and/or enable "
+                "debug-level logging for guacd.");
+        return 1;
+    }
+
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
 
     /* Load keymap into client */
