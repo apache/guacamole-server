@@ -38,10 +38,44 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 
+#include <errno.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
+
+    /* Automatically set HOME environment variable if unset (FreeRDP's
+     * initialization process will fail within freerdp_settings_new() if this
+     * is unset) */
+    const char* current_home = getenv("HOME");
+    if (current_home == NULL) {
+
+        /* Warn if the correct home directory cannot be determined */
+        struct passwd* passwd = getpwuid(getuid());
+        if (passwd == NULL)
+            guac_client_log(client, GUAC_LOG_WARNING, "FreeRDP initialization "
+                    "may fail: The \"HOME\" environment variable is unset and "
+                    "its correct value could not be automatically determined: "
+                    "%s", strerror(errno));
+
+        /* Warn if the correct home directory could be determined but can't be
+         * assigned */
+        else if (setenv("HOME", passwd->pw_dir, 1))
+            guac_client_log(client, GUAC_LOG_WARNING, "FreeRDP initialization "
+                    "may fail: The \"HOME\" environment variable is unset "
+                    "and its correct value (detected as \"%s\") could not be "
+                    "assigned: %s", passwd->pw_dir, strerror(errno));
+
+        /* HOME has been successfully set */
+        else
+            guac_client_log(client, GUAC_LOG_DEBUG, "\"HOME\" "
+                    "environment variable was unset and has been "
+                    "automatically set to \"%s\"", passwd->pw_dir);
+
+    }
 
     /* Set client args */
     client->args = GUAC_RDP_CLIENT_ARGS;
