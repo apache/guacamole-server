@@ -123,6 +123,15 @@ BOOL guac_rdp_beep_play_sound(rdpContext* context,
     guac_audio_stream* beep = guac_audio_stream_alloc(client, NULL,
             GUAC_RDP_BEEP_SAMPLE_RATE, 1, 8);
 
+    /* Stream availability is not guaranteed */
+    if (beep == NULL) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Ignoring request to beep "
+                "for %" PRIu32 " millseconds at %" PRIu32 " Hz as no audio "
+                "stream could be allocated.", play_sound->duration,
+                play_sound->frequency);
+        return TRUE;
+    }
+
     /* Limit maximum duration of each beep */
     int duration = play_sound->duration;
     if (duration > GUAC_RDP_BEEP_MAX_DURATION)
