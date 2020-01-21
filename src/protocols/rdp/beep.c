@@ -46,29 +46,30 @@
  * @param buffer_size
  *     The number of bytes of PCM data to write to the given buffer.
  */
-static void guac_rdp_beep_fill_square_wave(unsigned char* buffer,
+static void guac_rdp_beep_fill_triangle_wave(unsigned char* buffer,
         int frequency, int rate, int buffer_size) {
 
-    int remaining = buffer_size;
-    int current_value = GUAC_RDP_BEEP_AMPLITUDE;
-    int pulse_width = rate / frequency / 2;
+    /* With the distance between each positive/negative peak and zero being the
+     * amplitude, and with the "bounce" between those peaks occurring once
+     * every two periods, the number of distinct states that the triangle wave
+     * function goes through is twice the peak-to-peak amplitude, or four times
+     * the overall amplitude */
+    const int wave_period = GUAC_RDP_BEEP_AMPLITUDE * 4;
 
-    /* Repeatedly write pulses (whose widths are determined by the desired
-     * frequency) until buffer space is exhausted */
-    while (remaining > 0) {
+    /* With the number of distinct states being the wave_period defined above,
+     * the "bounce" point within that period is half the period */
+    const int wave_bounce_offset = wave_period / 2;
 
-        /* Truncate pulse if insufficient space remains */
-        int block_size = pulse_width;
-        if (block_size > remaining)
-            block_size = remaining;
+    for (int position = 0; position < buffer_size; position++) {
 
-        /* Write blocks, alternating the sign of the amplitude of each
-         * successive block */
-        memset(buffer, current_value, block_size);
-        current_value = -current_value;
+        /* Calculate relative position within the repeating portion of the wave
+         * (the portion with wave_period unique states) */
+        int wave_position = (position * frequency * wave_period / rate) % wave_period;
 
-        buffer += block_size;
-        remaining -= block_size;
+        /* Calculate state of the triangle wave function at the calculated
+         * offset, knowing in advance the relative location that the function
+         * should "bounce" */
+        *(buffer++) = abs(wave_position - wave_bounce_offset) - GUAC_RDP_BEEP_AMPLITUDE;
 
     }
 
@@ -95,8 +96,8 @@ static void guac_rdp_beep_write_pcm(guac_audio_stream* audio,
     int buffer_size = audio->rate * duration / 1000;
     unsigned char* buffer = malloc(buffer_size);
 
-    /* Beep for given frequency/duration using a simple square wave */
-    guac_rdp_beep_fill_square_wave(buffer, frequency, audio->rate, buffer_size);
+    /* Beep for given frequency/duration using a simple triangle wave */
+    guac_rdp_beep_fill_triangle_wave(buffer, frequency, audio->rate, buffer_size);
     guac_audio_stream_write_pcm(audio, buffer, buffer_size);
 
     free(buffer);
