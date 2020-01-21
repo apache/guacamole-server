@@ -578,6 +578,37 @@ then
 
 fi
 
+# Variation in memory internal allocation/free behavior
+if test "x${have_freerdp2}" = "xyes"
+then
+
+    # FreeRDP 2.0.0-rc0 and older automatically free rdpBitmap and its
+    # associated data member within Bitmap_Free(), relying on the
+    # implementation-specific free handler to free only implementation-specific
+    # data. This changed in commit 2cf10cc, and implementations must now
+    # manually free all data associated with the rdpBitmap, even data which
+    # was not allocated by the implementation.
+    AC_MSG_CHECKING([whether Bitmap_Free() frees the rdpBitmap and its image data])
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
+
+        #include <freerdp/version.h>
+
+        #include <string.h>
+
+        int main() {
+            /* Return successfully if version is 2.0.0-rc0 */
+            return strcmp(FREERDP_VERSION_FULL, "2.0.0-dev");
+        }
+
+    ]])],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([FREERDP_BITMAP_FREE_FREES_BITMAP],,
+               [Whether Bitmap_Free() frees the rdpBitmap and its image data])],
+    [AC_MSG_RESULT([no])],
+    [AC_MSG_RESULT([assuming no (cross-compiling)])])
+
+fi
+
 # Glyph callback variants
 if test "x${have_freerdp2}" = "xyes"
 then
