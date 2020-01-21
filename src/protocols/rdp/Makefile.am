@@ -38,6 +38,7 @@ nodist_libguac_client_rdp_la_SOURCES =  \
     _generated_keymaps.c
 
 libguac_client_rdp_la_SOURCES =                  \
+    beep.c                                       \
     bitmap.c                                     \
     channels/audio-input/audio-buffer.c          \
     channels/audio-input/audio-input.c           \
@@ -81,6 +82,7 @@ libguac_client_rdp_la_SOURCES =                  \
     user.c
 
 noinst_HEADERS =                                 \
+    beep.h                                       \
     bitmap.h                                     \
     channels/audio-input/audio-buffer.h          \
     channels/audio-input/audio-input.h           \
