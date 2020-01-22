@@ -294,7 +294,7 @@ BOOL VirtualChannelEntryEx(PCHANNEL_ENTRY_POINTS_EX entry_points,
     svc->_init_handle = init_handle;
 
     /* Complete initialization */
-    if (svc->_entry_points.pVirtualChannelInitEx(svc, svc, init_handle,
+    if (svc->_entry_points.pVirtualChannelInitEx(svc, NULL, init_handle,
                 &svc->_channel_def, 1, VIRTUAL_CHANNEL_VERSION_WIN2000,
                 guac_rdp_common_svc_handle_init_event) != CHANNEL_RC_OK) {
         return FALSE;
