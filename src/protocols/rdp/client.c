@@ -38,12 +38,45 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 
+#include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <pwd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
+
+/**
+ * Tests whether the given path refers to a directory which the current user
+ * can write to. If the given path is not a directory, is not writable, or is
+ * not a link pointing to a writable directory, this test will fail, and
+ * errno will be set appropriately.
+ *
+ * @param path
+ *     The path to test.
+ *
+ * @return
+ *     Non-zero if the given path is (or points to) a writable directory, zero
+ *     otherwise.
+ */
+static int is_writable_directory(const char* path) {
+
+    /* Verify path is writable */
+    if (faccessat(AT_FDCWD, path, W_OK, 0))
+        return 0;
+
+    /* If writable, verify path is actually a directory */
+    DIR* dir = opendir(path);
+    if (!dir)
+        return 0;
+
+    /* Path is both writable and a directory */
+    closedir(dir);
+    return 1;
+
+}
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
@@ -70,11 +103,35 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                     "assigned: %s", passwd->pw_dir, strerror(errno));
 
         /* HOME has been successfully set */
-        else
+        else {
             guac_client_log(client, GUAC_LOG_DEBUG, "\"HOME\" "
                     "environment variable was unset and has been "
                     "automatically set to \"%s\"", passwd->pw_dir);
+            current_home = passwd->pw_dir;
+        }
 
+    }
+
+    /* Verify that detected home directory is actually writable and actually a
+     * directory, as FreeRDP initialization will mysteriously fail otherwise */
+    if (current_home != NULL && !is_writable_directory(current_home)) {
+        if (errno == EACCES)
+            guac_client_log(client, GUAC_LOG_WARNING, "FreeRDP initialization "
+                    "may fail: The current user's home directory (\"%s\") is "
+                    "not writable, but FreeRDP generally requires a writable "
+                    "home directory for storage of configuration files and "
+                    "certificates.", current_home);
+        else if (errno == ENOTDIR)
+            guac_client_log(client, GUAC_LOG_WARNING, "FreeRDP initialization "
+                    "may fail: The current user's home directory (\"%s\") is "
+                    "not actually a directory, but FreeRDP generally requires "
+                    "a writable home directory for storage of configuration "
+                    "files and certificates.", current_home);
+        else
+            guac_client_log(client, GUAC_LOG_WARNING, "FreeRDP initialization "
+                    "may fail: Writability of the current user's home "
+                    "directory (\"%s\") could not be determined: %s",
+                    current_home, strerror(errno));
     }
 
     /* Set client args */
