@@ -20,6 +20,7 @@
 #include "bitmap.h"
 #include "common/display.h"
 #include "common/surface.h"
+#include "config.h"
 #include "rdp.h"
 
 #include <cairo/cairo.h>
@@ -127,12 +128,14 @@ void guac_rdp_bitmap_free(rdpContext* context, rdpBitmap* bitmap) {
     if (buffer != NULL)
         guac_common_display_free_buffer(rdp_client->display, buffer);
 
-    /* NOTE: FreeRDP-allocated memory for the rdpBitmap will NOT be
-     * automatically released after this free handler is invoked, thus we must
-     * do so manually here */
+#ifndef FREERDP_BITMAP_FREE_FREES_BITMAP
+    /* NOTE: Except in FreeRDP 2.0.0-rc0 and earlier, FreeRDP-allocated memory
+     * for the rdpBitmap will NOT be automatically released after this free
+     * handler is invoked, thus we must do so manually here */
 
     _aligned_free(bitmap->data);
     free(bitmap);
+#endif
 
 }
 

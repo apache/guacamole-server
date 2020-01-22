@@ -148,7 +148,8 @@ struct guac_audio_stream {
  * @return
  *     The newly allocated guac_audio_stream, or NULL if no audio stream could
  *     be allocated due to lack of support on the part of the connecting
- *     Guacamole client.
+ *     Guacamole client or due to reaching the maximum number of active
+ *     streams.
  */
 guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
         guac_audio_encoder* encoder, int rate, int channels, int bps);
