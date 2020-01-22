@@ -574,8 +574,12 @@ int guac_user_handle_instruction(guac_user* user, const char* opcode,
  * Allocates a new stream. An arbitrary index is automatically assigned
  * if no previously-allocated stream is available for use.
  *
- * @param user The user to allocate the stream for.
- * @return The next available stream, or a newly allocated stream.
+ * @param user
+ *     The user to allocate the stream for.
+ *
+ * @return
+ *     The next available stream, or a newly allocated stream, or NULL if the
+ *     maximum number of active streams has been reached.
  */
 guac_stream* guac_user_alloc_stream(guac_user* user);
 

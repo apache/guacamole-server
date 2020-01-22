@@ -383,7 +383,8 @@ void guac_client_free_layer(guac_client* client, guac_layer* layer);
  *     The client to allocate the stream for.
  *
  * @return
- *     The next available stream, or a newly allocated stream.
+ *     The next available stream, or a newly allocated stream, or NULL if the
+ *     maximum number of active streams has been reached.
  */
 guac_stream* guac_client_alloc_stream(guac_client* client);
 

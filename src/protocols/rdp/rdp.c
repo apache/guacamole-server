@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "beep.h"
 #include "bitmap.h"
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/audio-input/audio-input.h"
@@ -166,6 +167,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     pointer.SetNull = guac_rdp_pointer_set_null;
     pointer.SetDefault = guac_rdp_pointer_set_default;
     graphics_register_pointer(graphics, &pointer);
+
+    /* Beep on receipt of Play Sound PDU */
+    instance->update->PlaySound = guac_rdp_beep_play_sound;
 
     /* Set up GDI */
     instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
