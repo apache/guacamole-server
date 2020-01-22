@@ -589,7 +589,7 @@ then
     # manually free all data associated with the rdpBitmap, even data which
     # was not allocated by the implementation.
     AC_MSG_CHECKING([whether Bitmap_Free() frees the rdpBitmap and its image data])
-    AC_EGREP_CPP([\"2.0.0-dev\"], [
+    AC_EGREP_CPP([\"2\\.0\\.0-dev\"], [
 
         #include <freerdp/version.h>
         FREERDP_VERSION_FULL
