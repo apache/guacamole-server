@@ -235,19 +235,19 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     
     if (settings->username == NULL || strcmp(settings->username, "") == 0) {
         params[i] = "username";
-        rdp_client->rdp_cond_flags |= GUAC_RDP_COND_FLAG_USERNAME;
+        rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_USERNAME;
         i++;
     }
     
     if (settings->password == NULL || strcmp(settings->password, "") == 0) {
         params[i] = "password";
-        rdp_client->rdp_cond_flags |= GUAC_RDP_COND_FLAG_PASSWORD;
+        rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_PASSWORD;
         i++;
     }
     
     if (settings->domain == NULL || strcmp(settings->domain, "") == 0) {
         params[i] = "domain";
-        rdp_client->rdp_cond_flags |= GUAC_RDP_COND_FLAG_DOMAIN;
+        rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_DOMAIN;
         i++;
     }
     
@@ -256,14 +256,14 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     
     if (i > 0) {
         /* Lock the client thread. */
-        pthread_mutex_lock(&(rdp_client->rdp_lock));
+        pthread_mutex_lock(&(rdp_client->rdp_credential_lock));
         
         /* Send require params and flush socket. */
         guac_protocol_send_required(client->socket, (const char**) params);
         guac_socket_flush(client->socket);
         
         /* Wait for condition. */
-        pthread_cond_wait(&(rdp_client->rdp_cond), &(rdp_client->rdp_lock));
+        pthread_cond_wait(&(rdp_client->rdp_credential_cond), &(rdp_client->rdp_credential_lock));
         
         /* Get new values from settings. */
         *username = settings->username;
@@ -271,7 +271,7 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
         *domain = settings->domain;
         
         /* Unlock the thread. */
-        pthread_mutex_unlock(&(rdp_client->rdp_lock));
+        pthread_mutex_unlock(&(rdp_client->rdp_credential_lock));
     }
     
     /* Always return TRUE allowing connection to retry. */

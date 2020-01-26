@@ -123,29 +123,26 @@ static int guac_rdp_argv_end_handler(guac_user* user,
         /* Update RDP username. */
         case GUAC_RDP_ARGV_SETTING_USERNAME:
             free(settings->username);
-            settings->username = malloc(strlen(argv->buffer) * sizeof(char));
-            strcpy(settings->username, argv->buffer);
-            rdp_client->rdp_cond_flags ^= GUAC_RDP_COND_FLAG_USERNAME;
+			settings->username = strndup(argv->buffer, argv->length);
+            rdp_client->rdp_credential_flags &= ~GUAC_RDP_CRED_FLAG_USERNAME;
             break;
             
         case GUAC_RDP_ARGV_SETTING_PASSWORD:
             free(settings->password);
-            settings->password = malloc(strlen(argv->buffer) * sizeof(char));
-            strcpy(settings->password, argv->buffer);
-            rdp_client->rdp_cond_flags ^= GUAC_RDP_COND_FLAG_PASSWORD;
+            settings->password = strndup(argv->buffer, argv->length);
+            rdp_client->rdp_credential_flags &= ~GUAC_RDP_CRED_FLAG_PASSWORD;
             break;
             
         case GUAC_RDP_ARGV_SETTING_DOMAIN:
             free(settings->domain);
-            settings->domain = malloc(strlen(argv->buffer) * sizeof(char));
-            strcpy(settings->domain, argv->buffer);
-            rdp_client->rdp_cond_flags ^= GUAC_RDP_COND_FLAG_DOMAIN;
+            settings->domain = strndup(argv->buffer, argv->length);
+            rdp_client->rdp_credential_flags &= ~GUAC_RDP_CRED_FLAG_DOMAIN;
             break;
             
     }
     
-    if (!rdp_client->rdp_cond_flags)
-        pthread_cond_signal(&(rdp_client->rdp_cond));
+    if (!rdp_client->rdp_credential_flags)
+        pthread_cond_signal(&(rdp_client->rdp_credential_cond));
 
     free(argv);
     return 0;

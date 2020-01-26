@@ -52,17 +52,17 @@
 /**
  * A flag for tracking if we are waiting conditionally on a username.
  */
-#define GUAC_RDP_COND_FLAG_USERNAME 1
+#define GUAC_RDP_CRED_FLAG_USERNAME 1
 
 /**
  * A flag for tracking if we are waiting conditionally on a password.
  */
-#define GUAC_RDP_COND_FLAG_PASSWORD 2
+#define GUAC_RDP_CRED_FLAG_PASSWORD 2
 
 /**
  * A flag for tracking if we are waiting conditionally on a domain.
  */
-#define GUAC_RDP_COND_FLAG_DOMAIN 3
+#define GUAC_RDP_CRED_FLAG_DOMAIN 4
 
 /**
  * RDP-specific client data.

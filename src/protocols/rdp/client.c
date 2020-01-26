@@ -225,7 +225,7 @@ int guac_rdp_client_free_handler(guac_client* client) {
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
     
     /* Destroy the pthread conditional handler */
-    pthread_cond_destroy(&(rdp_client->rdp_cond));
+    pthread_cond_destroy(&(rdp_client->rdp_credential_cond));
 
     pthread_rwlock_destroy(&(rdp_client->lock));
 
