@@ -66,6 +66,37 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
 
 }
 
+/**
+ * Loop through the provided NULL-terminated array, writing the values
+ * and lengths of the values in the array to the given socket. Return
+ * zero on success, non-zero on error.
+ *
+ * @param socket
+ *     The socket to which the data should be written.
+ *
+ * @param array
+ *     The NULL-terminated array of values to write.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+static int __guac_socket_write_array(guac_socket* socket, const char** array) {
+
+	/* Loop through array, writing provided values to the socket. */
+    for (int i=0; array[i] != NULL; i++) {
+
+        if (guac_socket_write_string(socket, ","))
+            return -1;
+
+        if (__guac_socket_write_length_string(socket, array[i]))
+            return -1;
+
+    }
+
+	return 0;
+
+}
+
 /* Protocol functions */
 
 int guac_protocol_send_ack(guac_socket* socket, guac_stream* stream,
@@ -90,8 +121,6 @@ int guac_protocol_send_ack(guac_socket* socket, guac_stream* stream,
 
 static int __guac_protocol_send_args(guac_socket* socket, const char** args) {
 
-    int i;
-
     if (guac_socket_write_string(socket, "4.args")) return -1;
     
     /* Send protocol version ahead of other args. */
@@ -99,15 +128,8 @@ static int __guac_protocol_send_args(guac_socket* socket, const char** args) {
             || __guac_socket_write_length_string(socket, GUACAMOLE_PROTOCOL_VERSION))
         return -1;
 
-    for (i=0; args[i] != NULL; i++) {
-
-        if (guac_socket_write_string(socket, ","))
-            return -1;
-
-        if (__guac_socket_write_length_string(socket, args[i]))
-            return -1;
-
-    }
+	if (__guac_socket_write_array(socket, args))
+		return -1;
 
     return guac_socket_write_string(socket, ";");
 
@@ -308,19 +330,10 @@ int guac_protocol_send_close(guac_socket* socket, const guac_layer* layer) {
 
 static int __guac_protocol_send_connect(guac_socket* socket, const char** args) {
 
-    int i;
-
     if (guac_socket_write_string(socket, "7.connect")) return -1;
 
-    for (i=0; args[i] != NULL; i++) {
-
-        if (guac_socket_write_string(socket, ","))
-            return -1;
-
-        if (__guac_socket_write_length_string(socket, args[i]))
-            return -1;
-
-    }
+	if (__guac_socket_write_array(socket, args))
+		return -1;
 
     return guac_socket_write_string(socket, ";");
 
@@ -961,20 +974,29 @@ int guac_protocol_send_rect(guac_socket* socket,
 
 }
 
+/**
+ * Sends the "required" instruction on the given socket, looping
+ * through all the items provided in the NULL-terminated array,
+ * and closing out the instruction.  Returns zero on success, or
+ * non-zero on error.
+ *
+ * @param socket
+ *     The socket on which to write the instruction.
+ *
+ * @param required
+ *     The NULL-terminated array of required parameters to send
+ *     to the client.
+ *
+ * @return
+ *     Zero if successful, non-zero on error.
+ */
 static int __guac_protocol_send_required(guac_socket* socket,
         const char** required) {
 
     if (guac_socket_write_string(socket, "8.required")) return -1;
 
-    for (int i=0; required[i] != NULL; i++) {
-
-        if (guac_socket_write_string(socket, ","))
-            return -1;
-
-        if (__guac_socket_write_length_string(socket, required[i]))
-            return -1;
-
-    }
+	if (__guac_socket_write_array(socket, required))
+		return -1;
 
     return guac_socket_write_string(socket, ";");
 

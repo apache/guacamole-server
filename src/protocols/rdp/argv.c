@@ -123,7 +123,7 @@ static int guac_rdp_argv_end_handler(guac_user* user,
         /* Update RDP username. */
         case GUAC_RDP_ARGV_SETTING_USERNAME:
             free(settings->username);
-			settings->username = strndup(argv->buffer, argv->length);
+            settings->username = strndup(argv->buffer, argv->length);
             rdp_client->rdp_credential_flags &= ~GUAC_RDP_CRED_FLAG_USERNAME;
             break;
             
