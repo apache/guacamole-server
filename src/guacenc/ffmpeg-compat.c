@@ -55,7 +55,7 @@ static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54,1,0)
     AVPacket pkt;
-    /* have to create a packet around the encoded data we have */
+    /* Have to create a packet around the encoded data we have */
     av_init_packet(&pkt);
 
     if (video->context->coded_frame->pts != AV_NOPTS_VALUE) {
@@ -207,9 +207,7 @@ AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec,
     stream->codec->qmin = qmin;
     stream->codec->pix_fmt = pix_fmt;
     stream->codec->time_base = time_base;
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(55, 44, 100)
-    stream->codec->time_base = time_base;
-#else
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(55, 44, 100)
     stream->time_base = time_base;
 #endif
     return stream->codec;
@@ -234,12 +232,10 @@ AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec,
 int guacenc_open_avcodec(AVCodecContext *avcodec_context,
         AVCodec *codec, AVDictionary **options,
         AVStream* stream) {
-    int ret = 0;
-    ret = avcodec_open2(avcodec_context, codec, options);
+    int ret = avcodec_open2(avcodec_context, codec, options);
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 33, 100)
-    int codecpar_ret = 0;
     /* copy stream parameters to the muxer */
-    codecpar_ret = avcodec_parameters_from_context(stream->codecpar,
+    int codecpar_ret = avcodec_parameters_from_context(stream->codecpar,
             avcodec_context);
     if (codecpar_ret < 0) {
         return codecpar_ret;

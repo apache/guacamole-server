@@ -51,7 +51,8 @@ typedef struct guacenc_video {
 
     /**
      * AVStream for video output.
-     * Persists via the AVFormatContext.
+     * Frames sent to this stream are written into
+     * the output file in the specified container format.
      */
     AVStream* output_stream;
 

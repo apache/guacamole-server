@@ -91,9 +91,9 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         goto fail_context;
     }
 
-    //if format needs global headers, write them
+    /* If format needs global headers, write them */
     if (container_format_context->oformat->flags & AVFMT_GLOBALHEADER) {
-        avcodec_context->flags |= CODEC_FLAG_GLOBAL_HEADER;
+        avcodec_context->flags |= GUACENC_FLAG_GLOBAL_HEADER;
     }
 
     /* Open codec for use */

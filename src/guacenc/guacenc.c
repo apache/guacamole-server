@@ -81,8 +81,9 @@ int main(int argc, char* argv[]) {
     avcodec_register_all();
 #endif
 
-    /* Prepare libavformat */
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 9, 100)
     av_register_all();
+#endif
 
     /* Track number of overall failures */
     int total_files = argc - optind;
