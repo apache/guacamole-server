@@ -103,6 +103,24 @@ struct guac_rdp_keymap {
      */
     const UINT32 freerdp_keyboard_layout;
 
+    /**
+     * FreeRDP keyboard type definition.
+     * See https://docs.microsoft.com/ja-jp/windows/win32/api/winuser/nf-winuser-getkeyboardtype
+     */
+    const UINT32 freerdp_keyboard_type;
+
+    /**
+     * FreeRDP keyboard subtype definition.
+     * See https://docs.microsoft.com/ja-jp/windows/win32/api/winuser/nf-winuser-getkeyboardtype
+     */
+    const UINT32 freerdp_keyboard_subtype;
+
+    /**
+     * FreeRDP keyboard number of function keys.
+     * See https://docs.microsoft.com/ja-jp/windows/win32/api/winuser/nf-winuser-getkeyboardtype#remarks
+     */
+    const UINT32 freerdp_keyboard_function_key;
+
 };
 
 /**

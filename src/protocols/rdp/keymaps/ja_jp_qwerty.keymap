@@ -20,6 +20,9 @@
 parent  "base"
 name    "ja-jp-qwerty"
 freerdp "KBD_JAPANESE"
+freerdp_keyboard_type "KBD_TYPE_JAPANESE"
+freerdp_keyboard_subtype "2"
+freerdp_keyboard_function_key "12"
 
 map -shift      0x02..0x0D 0x7D ~ "1234567890-^\"
 map -shift      0x10..0x1B      ~ "qwertyuiop@["

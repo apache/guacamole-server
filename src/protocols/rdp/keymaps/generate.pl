@@ -81,6 +81,22 @@ for my $filename (@ARGV) {
         elsif ((my $name) = m/^\s*freerdp\s+"(.*)"\s*(?:#.*)?$/) {
             $freerdp = $name;
         }
+        
+        # FreeRDP keyboard type
+        elsif ((my $name) = m/^\s*freerdp_keyboard_type\s+"(.*)"\s*(?:#.*)?$/) {
+            $freerdp_keyboard_type = $name;
+        }
+
+        # FreeRDP keyboard subtype
+        elsif ((my $name) = m/^\s*freerdp_keyboard_subtype\s+"(.*)"\s*(?:#.*)?$/) {
+            $freerdp_keyboard_subtype = $name;
+        }
+
+        # FreeRDP keyboard function key
+        elsif ((my $name) = m/^\s*freerdp_keyboard_function_key\s+"(.*)"\s*(?:#.*)?$/) {
+            $freerdp_keyboard_function_key = $name;
+        }
+
 
         # Map
         elsif ((my $range, my $onto) =
@@ -252,6 +268,18 @@ for my $filename (@ARGV) {
     # FreeRDP layout (if any)
     if ($freerdp) {
         print OUTPUT "    .freerdp_keyboard_layout = $freerdp,\n";
+    }
+    # FreeRDP keyboard type (if any)
+    if ($freerdp_keyboard_type) {
+        print OUTPUT "    .freerdp_keyboard_type = $freerdp_keyboard_type,\n";
+    }
+    # FreeRDP layout (if any)
+    if ($freerdp_keyboard_subtype) {
+        print OUTPUT "    .freerdp_keyboard_subtype = $freerdp_keyboard_subtype,\n";
+    }
+    # FreeRDP layout (if any)
+    if ($freerdp_keyboard_function_key) {
+        print OUTPUT "    .freerdp_keyboard_function_key = $freerdp_keyboard_function_key,\n";
     }
 
     # Desc footer
