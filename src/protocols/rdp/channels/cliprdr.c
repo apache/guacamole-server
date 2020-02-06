@@ -78,6 +78,7 @@ static UINT guac_rdp_cliprdr_send_format_list(CliprdrClientContext* cliprdr) {
 
     /* We support CP-1252 and UTF-16 text */
     CLIPRDR_FORMAT_LIST format_list = {
+        .msgType = CB_FORMAT_LIST,
         .formats = (CLIPRDR_FORMAT[]) {
             { .formatId = CF_TEXT },
             { .formatId = CF_UNICODETEXT }
