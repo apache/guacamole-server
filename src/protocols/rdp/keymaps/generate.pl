@@ -56,6 +56,9 @@ for my $filename (@ARGV) {
     my $parent = "";
     my $layout_name = "";
     my $freerdp = "";
+    my $freerdp_keyboard_type = "";
+    my $freerdp_keyboard_subtype = "";
+    my $freerdp_keyboard_function_key = "";
 
     # Parse file
     open INPUT, '<', "$filename";
