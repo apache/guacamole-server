@@ -235,6 +235,7 @@ rdp_keymaps =                                \
     $(srcdir)/keymaps/es_es_qwerty.keymap    \
     $(srcdir)/keymaps/es_latam_qwerty.keymap \
     $(srcdir)/keymaps/fr_be_azerty.keymap    \
+    $(srcdir)/keymaps/fr_ca_qwerty.keymap    \
     $(srcdir)/keymaps/fr_ch_qwertz.keymap    \
     $(srcdir)/keymaps/fr_fr_azerty.keymap    \
     $(srcdir)/keymaps/hu_hu_qwertz.keymap    \
