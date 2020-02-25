@@ -179,8 +179,10 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpPrimaryUpdate* primary = instance->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;
+    primary->PatBlt = guac_rdp_gdi_patblt;
     primary->ScrBlt = guac_rdp_gdi_scrblt;
     primary->MemBlt = guac_rdp_gdi_memblt;
+    primary->OpaqueRect = guac_rdp_gdi_opaquerect;
 
     pointer_cache_register_callbacks(instance->update);
     glyph_cache_register_callbacks(instance->update);

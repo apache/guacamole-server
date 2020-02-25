@@ -63,6 +63,25 @@ guac_composite_mode guac_rdp_rop3_transfer_function(guac_client* client,
 BOOL guac_rdp_gdi_dstblt(rdpContext* context, const DSTBLT_ORDER* dstblt);
 
 /**
+ * Handler for the PatBlt Primary Drawing Order. A PatBlt Primary Drawing Order
+ * paints a rectangle of image data, a brush pattern, and a three-way raster
+ * operation which considers the source data, the destination, AND the brush
+ * pattern. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpegdi/bd4bf5e7-b988-45f9-8201-3b22cc9aeeb8
+ *
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param patblt
+ *     The PATBLT update to handle.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
+ */
+BOOL guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt);
+
+/**
  * Handler for the ScrBlt Primary Drawing Order. A ScrBlt Primary Drawing Order
  * paints a rectangle of image data using a raster operation which considers
  * the source and destination. See:
@@ -97,6 +116,26 @@ BOOL guac_rdp_gdi_scrblt(rdpContext* context, const SCRBLT_ORDER* scrblt);
  *     TRUE if successful, FALSE otherwise.
  */
 BOOL guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt);
+
+/**
+ * Handler for the OpaqueRect Primary Drawing Order. An OpaqueRect Primary
+ * Drawing Order draws an opaque rectangle of a single solid color. Note that
+ * support for OpaqueRect cannot be claimed without also supporting PatBlt, as
+ * both use the same negotiation order number. See:
+ *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpegdi/1eead7aa-ac63-411a-9f8c-b1b227526877
+ *
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param opaque_rect
+ *     The OPAQUE RECT update to handle.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
+ */
+BOOL guac_rdp_gdi_opaquerect(rdpContext* context,
+        const OPAQUE_RECT_ORDER* opaque_rect);
 
 /**
  * Handler called prior to calling the handlers for specific updates when

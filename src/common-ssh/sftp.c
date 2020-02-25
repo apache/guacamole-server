@@ -586,7 +586,6 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
         guac_stream* stream, char* message, guac_protocol_status status) {
 
     int bytes_read;
-    int blob_written = 0;
 
     char filename[GUAC_COMMON_SSH_SFTP_MAX_PATH];
     LIBSSH2_SFTP_ATTRIBUTES attributes;
@@ -608,8 +607,7 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
 
     /* While directory entries remain */
     while ((bytes_read = libssh2_sftp_readdir(list_state->directory,
-                filename, sizeof(filename), &attributes)) > 0
-            && !blob_written) {
+                filename, sizeof(filename), &attributes)) > 0) {
 
         char absolute_path[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -639,9 +637,10 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
         else
             mimetype = "application/octet-stream";
 
-        /* Write entry */
-        blob_written |= guac_common_json_write_property(user, stream,
-                &list_state->json_state, absolute_path, mimetype);
+        /* Write entry, waiting for next ack if a blob is written */
+        if (guac_common_json_write_property(user, stream,
+                    &list_state->json_state, absolute_path, mimetype))
+            break;
 
     }
 

@@ -722,6 +722,21 @@ then
 
 fi
 
+# Support for receiving unannounced orders from the RDP server
+if test "x${have_freerdp2}" = "xyes"
+then
+    AC_CHECK_MEMBERS([rdpSettings.AllowUnanouncedOrdersFromServer],,
+                     [AC_MSG_WARN([
+  --------------------------------------------
+   This version of FreeRDP does not support relaxed order checks. RDP servers
+   that send orders that the client did not announce as supported (such as the
+   VirtualBox RDP server) will likely not be usable.
+
+   See: https://issues.apache.org/jira/browse/GUACAMOLE-962
+  --------------------------------------------])],
+                     [[#include <freerdp/freerdp.h>]])
+fi
+
 # Restore CPPFLAGS, removing FreeRDP-specific options needed for testing
 CPPFLAGS="$OLDCPPFLAGS"
 
