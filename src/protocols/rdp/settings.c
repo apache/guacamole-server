@@ -1356,5 +1356,10 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->OrderSupport[NEG_FAST_INDEX_INDEX] = !guac_settings->disable_glyph_caching;
     rdp_settings->OrderSupport[NEG_FAST_GLYPH_INDEX] = !guac_settings->disable_glyph_caching;
 
+#ifdef HAVE_RDPSETTINGS_ALLOWUNANOUNCEDORDERSFROMSERVER
+    /* Do not consider server use of unannounced orders to be a fatal error */
+    rdp_settings->AllowUnanouncedOrdersFromServer = TRUE;
+#endif
+
 }
 
