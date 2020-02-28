@@ -49,6 +49,7 @@ map +altgr -shift 0x0C ~ "\"
 
 map +altgr -shift 0x10 ~ "@"
 map +altgr -shift 0x12 ~ "€"
+map +altgr -shift 0x1B ~ "~"
 
 map +altgr -shift 0x56 ~ "|"
 map +altgr -shift 0x32 ~ "µ"
