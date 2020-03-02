@@ -1296,9 +1296,9 @@ void guac_rdp_push_settings(guac_client* client,
         rdp_settings->Workarea = TRUE;
         rdp_settings->RemoteApplicationMode = TRUE;
         rdp_settings->RemoteAppLanguageBarSupported = TRUE;
-        rdp_settings->RemoteApplicationProgram = guac_settings->remote_app;
+        rdp_settings->RemoteApplicationProgram = guac_rdp_strdup(guac_settings->remote_app);
         rdp_settings->ShellWorkingDirectory = guac_rdp_strdup(guac_settings->remote_app_dir);
-        rdp_settings->RemoteApplicationCmdLine = guac_settings->remote_app_args;
+        rdp_settings->RemoteApplicationCmdLine = guac_rdp_strdup(guac_settings->remote_app_args);
     }
 
     /* Preconnection ID */
@@ -1312,7 +1312,7 @@ void guac_rdp_push_settings(guac_client* client,
     if (guac_settings->preconnection_blob != NULL) {
         rdp_settings->NegotiateSecurityLayer = FALSE;
         rdp_settings->SendPreconnectionPdu = TRUE;
-        rdp_settings->PreconnectionBlob = guac_settings->preconnection_blob;
+        rdp_settings->PreconnectionBlob = guac_rdp_strdup(guac_settings->preconnection_blob);
     }
 
     /* Enable use of RD gateway if a gateway hostname is provided */
