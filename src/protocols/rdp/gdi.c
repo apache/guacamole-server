@@ -18,6 +18,7 @@
  */
 
 #include "bitmap.h"
+#include "color.h"
 #include "common/display.h"
 #include "common/surface.h"
 #include "rdp.h"
@@ -139,6 +140,76 @@ BOOL guac_rdp_gdi_dstblt(rdpContext* context, const DSTBLT_ORDER* dstblt) {
 
 }
 
+BOOL guac_rdp_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt) {
+
+    /*
+     * Note that this is not a full implementation of PATBLT. This is a
+     * fallback implementation which only renders a solid block of background
+     * color using the specified ROP3 operation, ignoring whatever brush
+     * was actually specified.
+     *
+     * As libguac-client-rdp explicitly tells the server not to send PATBLT,
+     * well-behaved RDP servers will not use this operation at all, while
+     * others will at least have a fallback.
+     */
+
+    /* Get client and current layer */
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_common_surface* current_surface =
+        ((guac_rdp_client*) client->data)->current_surface;
+
+    int x = patblt->nLeftRect;
+    int y = patblt->nTopRect;
+    int w = patblt->nWidth;
+    int h = patblt->nHeight;
+
+    /*
+     * Warn that rendering is a fallback, as the server should not be sending
+     * this order.
+     */
+    guac_client_log(client, GUAC_LOG_INFO, "Using fallback PATBLT (server is ignoring "
+            "negotiated client capabilities)");
+
+    /* Render rectangle based on ROP */
+    switch (patblt->bRop) {
+
+        /* If blackness, send black rectangle */
+        case 0x00:
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    0x00, 0x00, 0x00, 0xFF);
+            break;
+
+        /* If NOP, do nothing */
+        case 0xAA:
+            break;
+
+        /* If operation is just a copy, send foreground only */
+        case 0xCC:
+        case 0xF0:
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    (patblt->foreColor >> 16) & 0xFF,
+                    (patblt->foreColor >> 8 ) & 0xFF,
+                    (patblt->foreColor      ) & 0xFF,
+                    0xFF);
+            break;
+
+        /* If whiteness, send white rectangle */
+        case 0xFF:
+            guac_common_surface_set(current_surface, x, y, w, h,
+                    0xFF, 0xFF, 0xFF, 0xFF);
+            break;
+
+        /* Otherwise, invert entire rect */
+        default:
+            guac_common_surface_transfer(current_surface, x, y, w, h,
+                                         GUAC_TRANSFER_BINARY_NDEST, current_surface, x, y);
+
+    }
+
+    return TRUE;
+
+}
+
 BOOL guac_rdp_gdi_scrblt(rdpContext* context, const SCRBLT_ORDER* scrblt) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -251,6 +322,30 @@ BOOL guac_rdp_gdi_memblt(rdpContext* context, MEMBLT_ORDER* memblt) {
             ((guac_rdp_bitmap*) bitmap)->used++;
 
     }
+
+    return TRUE;
+
+}
+
+BOOL guac_rdp_gdi_opaquerect(rdpContext* context, const OPAQUE_RECT_ORDER* opaque_rect) {
+
+    /* Get client data */
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+
+    UINT32 color = guac_rdp_convert_color(context, opaque_rect->color);
+
+    guac_common_surface* current_surface = ((guac_rdp_client*) client->data)->current_surface;
+
+    int x = opaque_rect->nLeftRect;
+    int y = opaque_rect->nTopRect;
+    int w = opaque_rect->nWidth;
+    int h = opaque_rect->nHeight;
+
+    guac_common_surface_set(current_surface, x, y, w, h,
+            (color >> 16) & 0xFF,
+            (color >> 8 ) & 0xFF,
+            (color      ) & 0xFF,
+            0xFF);
 
     return TRUE;
 

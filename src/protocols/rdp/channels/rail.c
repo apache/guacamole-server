@@ -48,12 +48,14 @@
 #endif
 
 /**
- * Completes initialization of the RemoteApp session, sending client system
- * parameters and executing the desired RemoteApp command using the Client
- * System Parameters Update PDU and Client Execute PDU respectively. These PDUs
- * MUST be sent for the desired RemoteApp to run, and MUST NOT be sent until
- * after a Handshake or HandshakeEx PDU has been received. See:
+ * Completes initialization of the RemoteApp session, responding to the server
+ * handshake, sending client system parameters, and executing the desired
+ * RemoteApp command. This is accomplished using the Handshake PDU, Client
+ * System Parameters Update PDU, and Client Execute PDU respectively. These
+ * PDUs MUST be sent for the desired RemoteApp to run, and MUST NOT be sent
+ * until after a Handshake or HandshakeEx PDU has been received. See:
  *
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/cec4eb83-b304-43c9-8378-b5b8f5e7082a (Handshake PDU)
  * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/60344497-883f-4711-8b9a-828d1c580195 (System Parameters Update PDU)
  * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/98a6e3c3-c2a9-42cc-ad91-0d9a6c211138 (Client Execute PDU)
  *
@@ -67,8 +69,24 @@
  */
 static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
 
+    UINT status;
+
     guac_client* client = (guac_client*) rail->custom;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    RAIL_HANDSHAKE_ORDER handshake = {
+
+        /* Build number 7600 (0x1DB0) apparently represents Windows 7 and
+         * compatibility with RDP 7.0. As of this writing, this is the same
+         * build number sent for RAIL connections by xfreerdp. */
+        .buildNumber = 7600
+
+    };
+
+    /* Send client handshake response */
+    status = rail->ClientHandshake(rail, &handshake);
+    if (status != CHANNEL_RC_OK)
+        return status;
 
     RAIL_SYSPARAM_ORDER sysparam = {
         .workArea = {
@@ -81,7 +99,7 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
     };
 
     /* Send client system parameters */
-    UINT status = rail->ClientSystemParam(rail, &sysparam);
+    status = rail->ClientSystemParam(rail, &sysparam);
     if (status != CHANNEL_RC_OK)
         return status;
 

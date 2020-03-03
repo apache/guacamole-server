@@ -18,7 +18,7 @@
 #
 
 AC_PREREQ([2.61])
-AC_INIT([guacamole-server], [1.1.0])
+AC_INIT([guacamole-server], [1.2.0])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
@@ -720,6 +720,21 @@ then
                [Whether RAIL callbacks require const for the final parameter])],
     [AC_MSG_RESULT([no])])
 
+fi
+
+# Support for receiving unannounced orders from the RDP server
+if test "x${have_freerdp2}" = "xyes"
+then
+    AC_CHECK_MEMBERS([rdpSettings.AllowUnanouncedOrdersFromServer],,
+                     [AC_MSG_WARN([
+  --------------------------------------------
+   This version of FreeRDP does not support relaxed order checks. RDP servers
+   that send orders that the client did not announce as supported (such as the
+   VirtualBox RDP server) will likely not be usable.
+
+   See: https://issues.apache.org/jira/browse/GUACAMOLE-962
+  --------------------------------------------])],
+                     [[#include <freerdp/freerdp.h>]])
 fi
 
 # Restore CPPFLAGS, removing FreeRDP-specific options needed for testing
