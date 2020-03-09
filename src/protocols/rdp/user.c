@@ -71,7 +71,7 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
         if (pthread_create(&rdp_client->client_thread, NULL,
                     guac_rdp_client_thread, user->client)) {
             guac_user_log(user, GUAC_LOG_ERROR,
-                    "Unable to start VNC client thread.");
+                    "Unable to start RDP client thread.");
             return 1;
         }
 
