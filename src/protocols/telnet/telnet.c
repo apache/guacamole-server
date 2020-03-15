@@ -26,6 +26,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/wol.h>
 #include <libtelnet.h>
 
 #include <errno.h>
@@ -556,6 +557,13 @@ void* guac_telnet_client_thread(void* data) {
     pthread_t input_thread;
     char buffer[8192];
     int wait_result;
+    
+    /* If Wake-on-LAN is enabled, attempt to wake. */
+    if (settings->wol_send_packet) {
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
+                settings->wol_wait_time))
+            return NULL;
+    }
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {

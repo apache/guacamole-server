@@ -256,6 +256,30 @@ typedef struct guac_telnet_settings {
      * The terminal emulator type that is passed to the remote system.
      */
     char* terminal_type;
+    
+    /**
+     * Whether or not to send the magic Wake-on-LAN (WoL) packet prior to
+     * continuing the connection.
+     */
+    bool wol_send_packet;
+    
+    /**
+     * The MAC address to put in the magic WoL packet for the remote host to
+     * wake.
+     */
+    char* wol_mac_addr;
+    
+    /**
+     * The broadcast address to which to send the magic WoL packet to wake
+     * the remote host.
+     */
+    char* wol_broadcast_addr;
+    
+    /**
+     * The number of seconds to wait after sending the magic WoL packet before
+     * continuing the connection.
+     */
+    int wol_wait_time;
 
 } guac_telnet_settings;
 

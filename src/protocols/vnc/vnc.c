@@ -46,6 +46,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/wol.h>
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>
 
@@ -238,6 +239,13 @@ void* guac_vnc_client_thread(void* data) {
     guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
     guac_vnc_settings* settings = vnc_client->settings;
 
+    /* If Wake-on-LAN is enabled, attempt to wake. */
+    if (settings->wol_send_packet) {
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
+                settings->wol_wait_time))
+            return NULL;
+    }
+    
     /* Configure clipboard encoding */
     if (guac_vnc_set_clipboard_encoding(client, settings->clipboard_encoding)) {
         guac_client_log(client, GUAC_LOG_INFO, "Using non-standard VNC "

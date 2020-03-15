@@ -23,6 +23,7 @@
 #include "settings.h"
 
 #include <guacamole/user.h>
+#include <guacamole/wol-constants.h>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -80,6 +81,11 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "create-recording-path",
     "disable-copy",
     "disable-paste",
+    
+    "wol-send-packet",
+    "wol-mac-addr",
+    "wol-broadcast-addr",
+    "wol-wait-time",
     NULL
 };
 
@@ -318,6 +324,31 @@ enum VNC_ARGS_IDX {
      * using the clipboard. By default, clipboard access is not blocked.
      */
     IDX_DISABLE_PASTE,
+    
+    /**
+     * Whether to send the magic Wake-on-LAN (WoL) packet to wake the remote
+     * host prior to attempting to connect.  If set to "true" the packet will
+     * be sent.  By default the packet will not be sent.
+     */
+    IDX_WOL_SEND_PACKET,
+    
+    /**
+     * The MAC address to place in the magic WoL packet to wake the remote host.
+     * If WoL is requested but this is not provided a warning will be logged
+     * and the WoL packet will not be sent.
+     */
+    IDX_WOL_MAC_ADDR,
+    
+    /**
+     * The broadcast packet to which to send the magic WoL packet.
+     */
+    IDX_WOL_BROADCAST_ADDR,
+    
+    /**
+     * The number of seconds to wait after sending the magic WoL packet before
+     * attempting to connect to the remote host.
+     */
+    IDX_WOL_WAIT_TIME,
 
     VNC_ARGS_COUNT
 };

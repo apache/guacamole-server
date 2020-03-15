@@ -69,6 +69,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/wol.h>
 #include <winpr/error.h>
 #include <winpr/synch.h>
 #include <winpr/wtypes.h>
@@ -344,7 +345,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Init random number generator */
     srandom(time(NULL));
-
+    
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
         rdp_client->recording = guac_common_recording_create(client,
@@ -529,6 +530,13 @@ void* guac_rdp_client_thread(void* data) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
+    /* If Wake-on-LAN is enabled, try to wake. */
+    if (settings->wol_send_packet) {
+        if(guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
+                settings->wol_wait_time))
+            return NULL;
+    }
+    
     /* If audio enabled, choose an encoder */
     if (settings->audio_enabled) {
 

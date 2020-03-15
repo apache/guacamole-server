@@ -36,6 +36,7 @@
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 #include <guacamole/client.h>
+#include <guacamole/wol.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
@@ -201,6 +202,13 @@ void* ssh_client_thread(void* data) {
 
     pthread_t input_thread;
 
+    /* If Wake-on-LAN is enabled, attempt to wake. */
+    if (settings->wol_send_packet) {
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
+                settings->wol_wait_time))
+            return NULL;
+    }
+    
     /* Init SSH base libraries */
     if (guac_common_ssh_init(client)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
