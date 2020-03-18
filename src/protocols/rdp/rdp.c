@@ -532,6 +532,8 @@ void* guac_rdp_client_thread(void* data) {
 
     /* If Wake-on-LAN is enabled, try to wake. */
     if (settings->wol_send_packet) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
+                "and pausing for %d seconds.", settings->wol_wait_time);
         if(guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
                 settings->wol_wait_time))
             return NULL;
