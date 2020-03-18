@@ -97,8 +97,7 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
  
 }
 
-int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
-        const int wait_time) {
+int guac_wol_wake(const char* mac_addr, const char* broadcast_addr) {
     
     unsigned char wol_packet[102];
     unsigned int dest_mac[6];
@@ -115,10 +114,6 @@ int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
     
     /* Send the packet and record bytes sent. */
     int bytes_sent = __guac_wol_send_packet(broadcast_addr, wol_packet);
-    
-    /* Sleep for the specified amount of time to wait for the remote
-     host to boot. */
-    sleep(wait_time);
     
     /* Return 0 if bytes were sent, otherwise return an error. */
     if (bytes_sent)

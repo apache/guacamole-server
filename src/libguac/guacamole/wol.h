@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef __GUAC_WOL_H
-#define __GUAC_WOL_H
+#ifndef GUAC_WOL_H
+#define GUAC_WOL_H
 
 /**
  * Header that provides functions and structures related to Wake-on-LAN
@@ -42,15 +42,11 @@
  * @param broadcast_addr
  *     The broadcast address to which to send the magic Wake-on-LAN packet.
  * 
- * @param wait_time
- *     The number of seconds to pause after sending the packet.
- * 
  * @return 
  *     Zero if the packet is successfully sent to the destination; non-zero
  *     if the packet cannot be sent.
  */
-int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
-        const int wait_time);
+int guac_wol_wake(const char* mac_addr, const char* broadcast_addr);
 
-#endif /* __GUAC_WOL_H */
+#endif /* GUAC_WOL_H */
 

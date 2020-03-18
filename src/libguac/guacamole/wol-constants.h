@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef __GUAC_WOL_CONSTANTS_H
-#define __GUAC_WOL_CONSTANTS_H
+#ifndef GUAC_WOL_CONSTANTS_H
+#define GUAC_WOL_CONSTANTS_H
 
 /**
  * Header file that provides constants and defaults related to libguac
@@ -29,7 +29,8 @@
 
 /**
  * The default broadcast address to which Wake-on-LAN packets will be sent
- * if one is not specified.
+ * if one is not specified, which is the special value for the IPv4 local
+ * network broadcast.
  */
 #define GUAC_WOL_DEFAULT_BROADCAST "255.255.255.255"
 
@@ -39,5 +40,5 @@
  */
 #define GUAC_WOL_DEFAULT_WAIT_TIME 60
 
-#endif /* __GUAC_WOL_CONSTANTS_H */
+#endif /* GUAC_WOL_CONSTANTS_H */
 
