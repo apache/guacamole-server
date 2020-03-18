@@ -99,7 +99,7 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
 
 int guac_wol_wake(const char* mac_addr, const char* broadcast_addr) {
     
-    unsigned char wol_packet[102];
+    unsigned char wol_packet[GUAC_WOL_PACKET_SIZE];
     unsigned int dest_mac[6];
     
     /* Parse mac address and return with error if parsing fails. */

@@ -40,5 +40,12 @@
  */
 #define GUAC_WOL_DEFAULT_WAIT_TIME 60
 
+/**
+ * The size of the magic Wake-on-LAN packet to send to wake a remote host.  This
+ * consists of 6 bytes of 0xFF, and then the MAC address repeated 16 times.
+ * https://en.wikipedia.org/wiki/Wake-on-LAN#Magic_packet
+ */
+#define GUAC_WOL_PACKET_SIZE 102
+
 #endif /* GUAC_WOL_CONSTANTS_H */
 
