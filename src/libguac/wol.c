@@ -77,22 +77,43 @@ static void __guac_wol_create_magic_packet(unsigned char packet[],
 static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
         unsigned char packet[]) {
     
-    int wol_bcast = 1;
     struct sockaddr_in wol_dest;
-    int wol_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    int wol_socket;
     
-    /* Attempt to set broadcast; exit with error if this fails. */
-    if (setsockopt(wol_socket, SOL_SOCKET, SO_BROADCAST, &wol_bcast, sizeof(wol_bcast)) < 0) {
-        return 0;
+    /* Determine the IP version, starting with IPv4. */
+    wol_dest.sin_port = htons(GUAC_WOL_PORT);
+    wol_dest.sin_family = AF_INET;
+    if (inet_pton(AF_INET, broadcast_addr, &(wol_dest.sin_addr)) == 0) {
+        wol_dest.sin_family = AF_INET6;
+        if (inet_pton(AF_INET6, broadcast_addr, &(wol_dest.sin_addr)) == 0)
+            return 0;
     }
     
-    /* Set server endpoint to the broadcast address. */
-    wol_dest.sin_family = AF_INET;
-    wol_dest.sin_port = htons(9);
-    wol_dest.sin_addr.s_addr = inet_addr(broadcast_addr);
+    /* Set up socket for IPv4 broadcast. */
+    if (wol_dest.sin_family == AF_INET) {
+        int wol_bcast = 1;
+        wol_socket = socket(AF_INET, SOCK_DGRAM, 0);
+
+        /* Attempt to set broadcast; exit with error if this fails. */
+        if (setsockopt(wol_socket, SOL_SOCKET, SO_BROADCAST, &wol_bcast,
+                sizeof(wol_bcast)) < 0)
+            return 0;
+    }
+    
+    /* Set up socket for IPv6 multicast. */
+    else {
+        wol_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+        
+        /* Stick to a single hop for now. */
+        int hops = 1;
+        
+        if (setsockopt(wol_socket, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &hops,
+                sizeof(hops)))
+            return 0;
+    }
     
     /* Send the packet and return number of bytes sent. */
-    return sendto(wol_socket, &packet, sizeof(unsigned char) * 102, 0,
+    return sendto(wol_socket, packet, GUAC_WOL_PACKET_SIZE, 0,
             (struct sockaddr*) &wol_dest, sizeof(wol_dest));
  
 }

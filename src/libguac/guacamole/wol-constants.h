@@ -47,5 +47,13 @@
  */
 #define GUAC_WOL_PACKET_SIZE 102
 
+/**
+ * The port number that the magic packet should contain as the destination.  In
+ * reality this doesn't matter all that much, since the packet is not usually
+ * processed by a full IP stack, but it is considered a pretty standard
+ * practice.
+ */
+#define GUAC_WOL_PORT 9
+
 #endif /* GUAC_WOL_CONSTANTS_H */
 
