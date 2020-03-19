@@ -118,33 +118,29 @@ static int guac_vnc_argv_end_handler(guac_user* user, guac_stream* stream) {
         case GUAC_VNC_ARGV_SETTING_USERNAME:
             
             /* Update username in settings. */
-            if (settings->username != NULL)
-                free(settings->username);
-            settings->username = malloc(strlen(argv->buffer) * sizeof(char));
-            strcpy(settings->username, argv->buffer);
+            free(settings->username);
+            settings->username = strndup(argv->buffer, argv->length);
             
             /* Remove the username conditional flag. */
-            vnc_client->argv_cond_flags ^= GUAC_VNC_COND_FLAG_USERNAME;
+            vnc_client->vnc_credential_flags &= ~GUAC_VNC_COND_FLAG_USERNAME;
             break;
         
         /* Update password */
         case GUAC_VNC_ARGV_SETTING_PASSWORD:
             
             /* Update password in settings */
-            if (settings->password != NULL)
-                free(settings->password);
-            settings->password = malloc(strlen(argv->buffer) * sizeof(char));
-            strcpy(settings->password, argv->buffer);
+            free(settings->password);
+            settings->password = strndup(argv->buffer, argv->length);
             
             /* Remove the password conditional flag. */
-            vnc_client->argv_cond_flags ^= GUAC_VNC_COND_FLAG_PASSWORD;
+            vnc_client->vnc_credential_flags &= ~GUAC_VNC_COND_FLAG_PASSWORD;
             break;
 
     }
     
     /* If no flags are set, signal the conditional. */
-    if (!vnc_client->argv_cond_flags)
-        pthread_cond_broadcast(&(vnc_client->argv_cond));
+    if (!vnc_client->vnc_credential_flags)
+        pthread_cond_broadcast(&(vnc_client->vnc_credential_cond));
 
     free(argv);
     return 0;

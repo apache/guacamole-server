@@ -87,7 +87,7 @@ static int guac_rdp_argv_blob_handler(guac_user* user,
     guac_rdp_argv* argv = (guac_rdp_argv*) stream->data;
     
     /* Calculate buffer size remaining, including space for null terminator,
-     * adjusting received length accordingly */
+    adjusting received length accordingly */
     int remaining = sizeof(argv->buffer) - argv->length - 1;
     if (length > remaining)
         length = remaining;

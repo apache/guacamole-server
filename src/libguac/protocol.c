@@ -128,8 +128,8 @@ static int __guac_protocol_send_args(guac_socket* socket, const char** args) {
             || __guac_socket_write_length_string(socket, GUACAMOLE_PROTOCOL_VERSION))
         return -1;
 
-	if (__guac_socket_write_array(socket, args))
-		return -1;
+    if (__guac_socket_write_array(socket, args))
+        return -1;
 
     return guac_socket_write_string(socket, ";");
 
@@ -330,10 +330,11 @@ int guac_protocol_send_close(guac_socket* socket, const guac_layer* layer) {
 
 static int __guac_protocol_send_connect(guac_socket* socket, const char** args) {
 
-    if (guac_socket_write_string(socket, "7.connect")) return -1;
+    if (guac_socket_write_string(socket, "7.connect"))
+        return -1;
 
-	if (__guac_socket_write_array(socket, args))
-		return -1;
+    if (__guac_socket_write_array(socket, args))
+        return -1;
 
     return guac_socket_write_string(socket, ";");
 
@@ -993,10 +994,11 @@ int guac_protocol_send_rect(guac_socket* socket,
 static int __guac_protocol_send_required(guac_socket* socket,
         const char** required) {
 
-    if (guac_socket_write_string(socket, "8.required")) return -1;
+    if (guac_socket_write_string(socket, "8.required"))
+        return -1;
 
-	if (__guac_socket_write_array(socket, required))
-		return -1;
+    if (__guac_socket_write_array(socket, required))
+        return -1;
 
     return guac_socket_write_string(socket, ";");
 

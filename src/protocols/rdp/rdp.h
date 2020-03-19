@@ -169,14 +169,15 @@ typedef struct guac_rdp_client {
     guac_common_list* available_svc;
 
     /**
-     * Lock which is locked and unlocked for each credential required
-     * during the connection process.
+     * Lock which is locked when one or more credentials are required to
+     * complete the connection, and unlocked when credentials have been
+     * provided by the client.
      */
     pthread_mutex_t rdp_credential_lock;
     
     /**
-     * Condition which is used when the pthread needs to wait for a
-     * particular credential to be provided.
+     * Condition which is used when the pthread needs to wait for one or more
+     * credentials to be provided by the client.
      */
     pthread_cond_t rdp_credential_cond;
     

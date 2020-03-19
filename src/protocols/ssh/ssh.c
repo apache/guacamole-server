@@ -58,9 +58,9 @@
 #include <sys/time.h>
 
 /**
- * A function used to generate a prompt to gather additional credentials from
- * the guac_client during a connection, and using the specified parameter to
- * generate the prompt to the client.
+ * This function generates a prompt to the specified instance of guac_client
+ * for the credential specified in the cred_name parameter, which should
+ * be a valid SSH connection parameter.
  * 
  * @param client
  *     The guac_client object associated with the current connection
@@ -73,12 +73,15 @@ static void guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
     
+    /* Lock the terminal thread while prompting for the credential. */
     pthread_mutex_lock(&(ssh_client->term_channel_lock));
     
+    /* Let the client know what we require and flush the socket. */
     guac_protocol_send_required(client->socket, (const char* []) {cred_name, NULL});
     guac_socket_flush(client->socket);
     
-    pthread_cond_wait(&(ssh_client->ssh_cond), &(ssh_client->term_channel_lock));
+    /* Wait for the response, and then unlock the thread. */
+    pthread_cond_wait(&(ssh_client->ssh_credential_cond), &(ssh_client->term_channel_lock));
     pthread_mutex_unlock(&(ssh_client->term_channel_lock));
     
 }
@@ -281,7 +284,7 @@ void* ssh_client_thread(void* data) {
     }
 
     pthread_mutex_init(&ssh_client->term_channel_lock, NULL);
-    pthread_cond_init(&(ssh_client->ssh_cond), NULL);
+    pthread_cond_init(&(ssh_client->ssh_credential_cond), NULL);
 
     /* Open channel for terminal */
     ssh_client->term_channel =
@@ -496,7 +499,7 @@ void* ssh_client_thread(void* data) {
     guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
-    pthread_cond_destroy(&(ssh_client->ssh_cond));
+    pthread_cond_destroy(&(ssh_client->ssh_credential_cond));
     pthread_mutex_destroy(&ssh_client->term_channel_lock);
 
     guac_client_log(client, GUAC_LOG_INFO, "SSH connection ended.");

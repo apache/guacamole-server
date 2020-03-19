@@ -54,10 +54,10 @@ int guac_client_init(guac_client* client) {
     pthread_mutex_init(&(vnc_client->tls_lock), NULL);
 #endif
     
-    /* Initialize argv lock and condition */
-    pthread_mutex_init(&(vnc_client->argv_lock), NULL);
-    pthread_cond_init(&(vnc_client->argv_cond), NULL);
-    vnc_client->argv_cond_flags = 0;
+    /* Initialize credential lock, cond, and flags */
+    pthread_mutex_init(&(vnc_client->vnc_credential_lock), NULL);
+    pthread_cond_init(&(vnc_client->vnc_credential_cond), NULL);
+    vnc_client->vnc_credential_flags = 0;
 
     /* Init clipboard */
     vnc_client->clipboard = guac_common_clipboard_alloc(GUAC_VNC_CLIPBOARD_MAX_LENGTH);
@@ -141,9 +141,9 @@ int guac_vnc_client_free_handler(guac_client* client) {
     pthread_mutex_destroy(&(vnc_client->tls_lock));
 #endif
     
-    /* Clean up argv mutex */
-    pthread_cond_destroy(&(vnc_client->argv_cond));
-    pthread_mutex_destroy(&(vnc_client->argv_lock));
+    /* Clean up credential mutex */
+    pthread_cond_destroy(&(vnc_client->vnc_credential_cond));
+    pthread_mutex_destroy(&(vnc_client->vnc_credential_lock));
 
     /* Free generic data struct */
     free(client->data);

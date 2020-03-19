@@ -26,7 +26,7 @@
 #include <libssh2.h>
 
 /**
- * A handler function for retrieving additional credentials for the client.
+ * A handler function for retrieving additional credentials from the client.
  * 
  * @param client
  *     The Guacamole Client associated with this need for additional

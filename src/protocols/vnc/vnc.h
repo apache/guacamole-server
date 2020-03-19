@@ -71,21 +71,6 @@ typedef struct guac_vnc_client {
      */
     pthread_mutex_t tls_lock;
 #endif
-    
-    /**
-     * The lock for tracking changes via argv.
-     */
-    pthread_mutex_t argv_lock;
-    
-    /**
-     * The condition for signaling argv updates.
-     */
-    pthread_cond_t argv_cond;
-    
-    /**
-     * Flags for conditional signaling for argv updates;
-     */
-    unsigned argv_cond_flags;
 
     /**
      * The underlying VNC client.
@@ -158,6 +143,24 @@ typedef struct guac_vnc_client {
      * Clipboard encoding-specific writer.
      */
     guac_iconv_write* clipboard_writer;
+    
+    /**
+     * A lock that will be locked when retrieving required credentials from
+     * the client, and unlocked when credentials have been retrieved.
+     */
+    pthread_mutex_t vnc_credential_lock;
+    
+    /**
+     * A condition to use for signaling the thread when credentials have been
+     * retrieved from the client.
+     */
+    pthread_cond_t vnc_credential_cond;
+    
+    /**
+     * A field to track flags related to retrieving required credentials
+     * from the client.
+     */
+    unsigned vnc_credential_flags;
 
 } guac_vnc_client;
 

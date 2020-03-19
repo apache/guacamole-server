@@ -66,7 +66,6 @@
 #include <freerdp/update.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
-#include <guacamole/parser.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>

@@ -92,9 +92,9 @@ typedef struct guac_ssh_client {
     
     /**
      * Condition used when SSH client thread needs to wait for Guacamole
-     * client response.
+     * client to pass additional credentials before continuing the connection.
      */
-    pthread_cond_t ssh_cond;
+    pthread_cond_t ssh_credential_cond;
 
     /**
      * The current clipboard contents.
