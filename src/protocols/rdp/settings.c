@@ -808,15 +808,6 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 "Preconnection BLOB: \"%s\"", settings->preconnection_blob);
     }
 
-    /* Warn if support for the preconnection BLOB / ID is absent */
-    if (settings->preconnection_blob != NULL
-            || settings->preconnection_id != -1) {
-        guac_user_log(user, GUAC_LOG_WARNING,
-                "Installed version of FreeRDP lacks support for the "
-                "preconnection PDU. The specified preconnection BLOB and/or "
-                "ID will be ignored.");
-    }
-
     /* Audio enable/disable */
     settings->audio_enabled =
         !guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
