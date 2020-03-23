@@ -39,6 +39,11 @@
 #define RDP_DEFAULT_PORT 3389
 
 /**
+ * The default RDP port used by Hyper-V "VMConnect".
+ */
+#define RDP_DEFAULT_VMCONNECT_PORT 2179
+
+/**
  * Default screen width, in pixels.
  */
 #define RDP_DEFAULT_WIDTH  1024
@@ -92,6 +97,11 @@ typedef enum guac_rdp_security {
      * Extended network level authentication.
      */
     GUAC_SECURITY_EXTENDED_NLA,
+
+    /**
+     * Negotiate security methods supported by Hyper-V's "VMConnect" feature.
+     */
+    GUAC_SECURITY_VMCONNECT,
 
     /**
      * Negotiate a security method supported by both server and client.
