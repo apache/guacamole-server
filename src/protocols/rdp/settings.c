@@ -235,8 +235,8 @@ enum RDP_ARGS_IDX {
 
     /**
      * The type of security to use for the connection. Valid values are "rdp",
-     * "tls", "nla", "nla-ext", or "any". By default, the security mode is
-     * negotiated ("any").
+     * "tls", "nla", "nla-ext", "vmconnect", or "any". By default, the security
+     * mode is negotiated ("any").
      */
     IDX_SECURITY,
 
@@ -611,6 +611,12 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->security_mode = GUAC_SECURITY_RDP;
     }
 
+    /* Negotiate security supported by VMConnect */
+    else if (strcmp(argv[IDX_SECURITY], "vmconnect") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Security mode: Hyper-V / VMConnect");
+        settings->security_mode = GUAC_SECURITY_VMCONNECT;
+    }
+
     /* Negotiate security (allow server to choose) */
     else if (strcmp(argv[IDX_SECURITY], "any") == 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Security mode: Negotiate (ANY)");
@@ -628,10 +634,10 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_HOSTNAME, "");
 
-    /* If port specified, use it */
+    /* If port specified, use it, otherwise use an appropriate default */
     settings->port =
-        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_PORT, RDP_DEFAULT_PORT);
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv, IDX_PORT,
+                settings->security_mode == GUAC_SECURITY_VMCONNECT ? RDP_DEFAULT_VMCONNECT_PORT : RDP_DEFAULT_PORT);
 
     guac_user_log(user, GUAC_LOG_DEBUG,
             "User resolution is %ix%i at %i DPI",
@@ -806,15 +812,6 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->preconnection_blob = strdup(argv[IDX_PRECONNECTION_BLOB]);
         guac_user_log(user, GUAC_LOG_DEBUG,
                 "Preconnection BLOB: \"%s\"", settings->preconnection_blob);
-    }
-
-    /* Warn if support for the preconnection BLOB / ID is absent */
-    if (settings->preconnection_blob != NULL
-            || settings->preconnection_id != -1) {
-        guac_user_log(user, GUAC_LOG_WARNING,
-                "Installed version of FreeRDP lacks support for the "
-                "preconnection PDU. The specified preconnection BLOB and/or "
-                "ID will be ignored.");
     }
 
     /* Audio enable/disable */
@@ -1275,6 +1272,15 @@ void guac_rdp_push_settings(guac_client* client,
             rdp_settings->TlsSecurity = FALSE;
             rdp_settings->NlaSecurity = FALSE;
             rdp_settings->ExtSecurity = TRUE;
+            break;
+
+        /* Hyper-V "VMConnect" negotiation mode */
+        case GUAC_SECURITY_VMCONNECT:
+            rdp_settings->RdpSecurity = FALSE;
+            rdp_settings->TlsSecurity = TRUE;
+            rdp_settings->NlaSecurity = TRUE;
+            rdp_settings->ExtSecurity = FALSE;
+            rdp_settings->VmConnectMode = TRUE;
             break;
 
         /* All security types */
