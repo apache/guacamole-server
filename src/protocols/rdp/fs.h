@@ -109,14 +109,6 @@
 #define GUAC_RDP_FS_ENOTSUP -10
 
 /**
- * Converts a Windows timestamp (100 nanosecond intervals since Jan 1, 1601
- * UTC) to UNIX timestamp (seconds since Jan 1, 1970 UTC).
- *
- * This conversion is lossy.
- */
-#define UNIX_TIME(t)    ((time_t) ((t / 10000000 + ((uint64_t) 11644473600))))
-
-/**
  * Converts a UNIX timestamp (seconds since Jan 1, 1970 UTC) to Windows
  * timestamp (100 nanosecond intervals since Jan 1, 1601 UTC).
  */
