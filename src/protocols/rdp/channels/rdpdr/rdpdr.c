@@ -38,6 +38,9 @@ void guac_rdpdr_process_receive(guac_rdp_common_svc* svc,
     int component;
     int packet_id;
 
+    if (Stream_GetRemainingLength(input_stream) < 4)
+        return;
+    
     /* Read header */
     Stream_Read_UINT16(input_stream, component);
     Stream_Read_UINT16(input_stream, packet_id);

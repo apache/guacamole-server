@@ -212,6 +212,9 @@ void guac_rdpdr_process_server_announce(guac_rdp_common_svc* svc,
 
     unsigned int major, minor, client_id;
 
+    if (Stream_GetRemainingLength(input_stream) < 8)
+        return;
+    
     Stream_Read_UINT16(input_stream, major);
     Stream_Read_UINT16(input_stream, minor);
     Stream_Read_UINT32(input_stream, client_id);
@@ -243,6 +246,9 @@ void guac_rdpdr_process_device_reply(guac_rdp_common_svc* svc,
     unsigned int device_id, ntstatus;
     int severity, c, n, facility, code;
 
+    if (Stream_GetRemainingLength(input_stream) < 8)
+        return;
+    
     Stream_Read_UINT32(input_stream, device_id);
     Stream_Read_UINT32(input_stream, ntstatus);
 
@@ -278,6 +284,9 @@ void guac_rdpdr_process_device_iorequest(guac_rdp_common_svc* svc,
     guac_rdpdr* rdpdr = (guac_rdpdr*) svc->data;
     guac_rdpdr_iorequest iorequest;
 
+    if (Stream_GetRemainingLength(input_stream) < 20)
+        return;
+    
     /* Read header */
     Stream_Read_UINT32(input_stream, iorequest.device_id);
     Stream_Read_UINT32(input_stream, iorequest.file_id);
@@ -306,6 +315,9 @@ void guac_rdpdr_process_server_capability(guac_rdp_common_svc* svc,
     int count;
     int i;
 
+    if (Stream_GetRemainingLength(input_stream) < 4)
+        return;
+    
     /* Read header */
     Stream_Read_UINT16(input_stream, count);
     Stream_Seek(input_stream, 2);
@@ -316,9 +328,15 @@ void guac_rdpdr_process_server_capability(guac_rdp_common_svc* svc,
         int type;
         int length;
 
+        if (Stream_GetRemainingLength(input_stream) < 4)
+            break;
+        
         Stream_Read_UINT16(input_stream, type);
         Stream_Read_UINT16(input_stream, length);
 
+        if (Stream_GetRemainingLength(input_stream) < (length - 4))
+            break;
+        
         /* Ignore all for now */
         guac_client_log(svc->client, GUAC_LOG_DEBUG, "Ignoring server capability set type=0x%04x, length=%i", type, length);
         Stream_Seek(input_stream, length - 4);

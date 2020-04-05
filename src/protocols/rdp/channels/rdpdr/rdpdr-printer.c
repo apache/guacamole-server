@@ -67,6 +67,9 @@ void guac_rdpdr_process_print_job_write(guac_rdp_common_svc* svc,
     int length;
     int status;
 
+    if (Stream_GetRemainingLength(input_stream) < 32)
+        return;
+    
     /* Read buffer of print data */
     Stream_Read_UINT32(input_stream, length);
     Stream_Seek(input_stream, 8);  /* Offset */

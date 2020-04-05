@@ -50,6 +50,9 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
     /* Reset own format count */
     rdpsnd->format_count = 0;
 
+    if (Stream_GetRemainingLength(input_stream) < 20)
+        return;
+    
     /* Format header */
     Stream_Seek(input_stream, 14);
     Stream_Read_UINT16(input_stream, server_format_count);
@@ -96,6 +99,9 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
             /* Remember position in stream */
             Stream_GetPointer(input_stream, format_start);
 
+            if (Stream_GetRemainingLength(input_stream) < 18)
+                return;
+            
             /* Read format */
             Stream_Read_UINT16(input_stream, format_tag);
             Stream_Read_UINT16(input_stream, channels);
@@ -106,6 +112,10 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
 
             /* Skip past extra data */
             Stream_Read_UINT16(input_stream, body_size);
+            
+            if (Stream_GetRemainingLength(input_stream) < body_size)
+                return;
+            
             Stream_Seek(input_stream, body_size);
 
             /* If PCM, accept */
@@ -205,6 +215,9 @@ void guac_rdpsnd_training_handler(guac_rdp_common_svc* svc,
 
     guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
 
+    if (Stream_GetRemainingLength(input_stream) < 4)
+        return;
+    
     /* Read timestamp and data size */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
     Stream_Read_UINT16(input_stream, data_size);
@@ -232,6 +245,9 @@ void guac_rdpsnd_wave_info_handler(guac_rdp_common_svc* svc,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_audio_stream* audio = rdp_client->audio;
 
+    if (Stream_GetRemainingLength(input_stream) < 12)
+        return;
+    
     /* Read wave information */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
     Stream_Read_UINT16(input_stream, format);

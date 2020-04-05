@@ -116,6 +116,10 @@ static VOID guac_rdp_common_svc_handle_open_event(LPVOID user_param,
         svc->_input_stream = Stream_New(NULL, total_length);
     }
 
+    /* leave if we don't have a stream. */
+    if (svc->_input_stream == NULL)
+        return;
+    
     /* Add chunk to buffer only if sufficient space remains */
     if (Stream_EnsureRemainingCapacity(svc->_input_stream, data_length))
         Stream_Write(svc->_input_stream, data, data_length);
@@ -137,6 +141,7 @@ static VOID guac_rdp_common_svc_handle_open_event(LPVOID user_param,
             svc->_receive_handler(svc, svc->_input_stream);
 
         Stream_Free(svc->_input_stream, TRUE);
+        svc->_input_stream = NULL;
 
     }
 

@@ -52,10 +52,13 @@
 static void guac_rdp_ai_handle_data(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
 
+    if (Stream_GetRemainingLength(stream) < 1)
+        return;
+    
     /* Read message ID from received PDU */
     BYTE message_id;
     Stream_Read_UINT8(stream, message_id);
-
+    
     /* Invoke appropriate message processor based on ID */
     switch (message_id) {
 
