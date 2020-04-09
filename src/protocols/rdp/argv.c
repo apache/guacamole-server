@@ -115,7 +115,6 @@ static int guac_rdp_argv_end_handler(guac_user* user,
     
     /* Append null terminator to value */
     guac_rdp_argv* argv = (guac_rdp_argv*) stream->data;
-    argv->buffer[argv->length] = '\0';
 
     /* Apply changes to chosen setting */
     switch (argv->setting) {
