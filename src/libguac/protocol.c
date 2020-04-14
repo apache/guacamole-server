@@ -994,6 +994,9 @@ int guac_protocol_send_rect(guac_socket* socket,
 static int __guac_protocol_send_required(guac_socket* socket,
         const char** required) {
 
+    // The socket should be kept alive while waiting for user response.
+    guac_socket_require_keep_alive(socket);
+    
     if (guac_socket_write_string(socket, "8.required"))
         return -1;
 
