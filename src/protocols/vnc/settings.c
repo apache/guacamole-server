@@ -558,6 +558,37 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->disable_paste =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_DISABLE_PASTE, false);
+    
+    /* Parse Wake-on-LAN (WoL) settings */
+    settings->wol_send_packet =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_WOL_SEND_PACKET, false);
+    
+    if (settings->wol_send_packet) {
+        
+        /* If WoL has been enabled but no MAC provided, log warning and disable. */
+        if(strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
+            guac_user_log(user, GUAC_LOG_WARNING, "Wake on LAN was requested, ",
+                    "but no MAC address was specified.  WoL will not be sent.");
+            settings->wol_send_packet = false;
+        }
+        
+        /* Parse the WoL MAC address. */
+        settings->wol_mac_addr =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_WOL_MAC_ADDR, NULL);
+        
+        /* Parse the WoL broadcast address. */
+        settings->wol_broadcast_addr =
+            guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
+        
+        /* Parse the WoL wait time. */
+        settings->wol_wait_time =
+            guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_WOL_WAIT_TIME, GUAC_WOL_BOOT_WAIT_TIME);
+        
+    }
 
     return settings;
 

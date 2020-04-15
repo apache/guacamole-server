@@ -504,11 +504,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         
         settings->wol_broadcast_addr =
             guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_WOL_BROADCAST_ADDR, GUAC_WOL_DEFAULT_BROADCAST);
+                IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
         
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_WOL_WAIT_TIME, GUAC_WOL_DEFAULT_WAIT_TIME);
+                IDX_WOL_WAIT_TIME, GUAC_WOL_BOOT_WAIT_TIME);
         
     }
 

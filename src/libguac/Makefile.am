@@ -69,8 +69,8 @@ libguacinc_HEADERS =                  \
     guacamole/user.h                  \
     guacamole/user-constants.h        \
     guacamole/user-fntypes.h          \
-    guacamole/user-types.h	      \
-    guacamole/wol.h		      \
+    guacamole/user-types.h            \
+    guacamole/wol.h                   \
     guacamole/wol-constants.h
 
 noinst_HEADERS =      \

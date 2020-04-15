@@ -28,17 +28,15 @@
  */
 
 /**
- * The default broadcast address to which Wake-on-LAN packets will be sent
- * if one is not specified, which is the special value for the IPv4 local
- * network broadcast.
+ * The value for the local IPv4 broadcast address.
  */
-#define GUAC_WOL_DEFAULT_BROADCAST "255.255.255.255"
+#define GUAC_WOL_LOCAL_IPV4_BROADCAST "255.255.255.255"
 
 /**
- * The default number of seconds to wait after sending the Wake-on-LAN packet
+ * The number of seconds to wait after sending the Wake-on-LAN packet
  * for the destination host to start responding.
  */
-#define GUAC_WOL_DEFAULT_WAIT_TIME 60
+#define GUAC_WOL_BOOT_WAIT_TIME 60
 
 /**
  * The size of the magic Wake-on-LAN packet to send to wake a remote host.  This
@@ -50,7 +48,7 @@
 /**
  * The port number that the magic packet should contain as the destination.  In
  * reality this doesn't matter all that much, since the packet is not usually
- * processed by a full IP stack, but it is considered a pretty standard
+ * processed by a full IP stack, but defining one is considered a standard
  * practice.
  */
 #define GUAC_WOL_PORT 9
