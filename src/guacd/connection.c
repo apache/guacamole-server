@@ -278,10 +278,18 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
         proc = guacd_proc_map_retrieve(map, identifier);
         new_process = 0;
 
-        /* Warn if requested connection does not exist */
-        if (proc == NULL)
-            guacd_log(GUAC_LOG_INFO, "Connection \"%s\" does not exist.",
-                    identifier);
+        /* Warn and ward off client if requested connection does not exist */
+        if (proc == NULL) {
+            char message[2048];
+
+            snprintf(message, sizeof(message),
+                    "Connection \"%s\" does not exist", identifier);
+
+            guacd_log(GUAC_LOG_INFO, message);
+            guac_protocol_send_error(socket, message,
+                    GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+        }
+
         else
             guacd_log(GUAC_LOG_INFO, "Joining existing connection \"%s\"",
                     identifier);
