@@ -509,12 +509,15 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Free SVC list */
     guac_common_list_free(rdp_client->available_svc);
+    rdp_client->available_svc = NULL;
 
     /* Free RDP keyboard state */
     guac_rdp_keyboard_free(rdp_client->keyboard);
+    rdp_client->keyboard = NULL;
 
     /* Free display */
     guac_common_display_free(rdp_client->display);
+    rdp_client->display = NULL;
 
     /* Client is now disconnected */
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
