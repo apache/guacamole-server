@@ -158,6 +158,14 @@ typedef struct guac_rdp_client {
      */
     pthread_mutexattr_t attributes;
 
+    /**
+     * Lock which is used to synchronizes access to RDP data structures
+     * between user input and client threads. It prevents input handlers
+     * from running when RDP data structures are allocated or freed
+     * by the client thread.
+     */
+    pthread_rwlock_t lock;
+
 } guac_rdp_client;
 
 /**
