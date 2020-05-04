@@ -56,14 +56,6 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
         guac_rdpsnd_wave_handler(svc, input_stream, &header);
         return;
     }
-    
-    /* Check Stream size against body size */
-    if (Stream_GetRemainingLength(input_stream) < header.body_size) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Stream does not "
-                "contain the expected number of bytes. Sound may not work as "
-                "expected.");
-        return;
-    }
 
     /* Dispatch message to standard handlers */
     switch (header.message_type) {
