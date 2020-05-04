@@ -39,6 +39,7 @@
 static void guac_rdp_ai_read_format(wStream* stream,
         guac_rdp_ai_format* format) {
 
+    /* Check that we have at least 18 bytes (5 x UINT16, 2 x UINT32) */
     if (Stream_GetRemainingLength(stream) < 18)
         return;
     
@@ -51,7 +52,7 @@ static void guac_rdp_ai_read_format(wStream* stream,
     Stream_Read_UINT16(stream, format->bps); /* wBitsPerSample */
     Stream_Read_UINT16(stream, format->data_size); /* cbSize */
 
-    /* Read arbitrary data block (if applicable) */
+    /* Read arbitrary data block (if applicable) and data is available. */
     if (format->data_size != 0
             && Stream_GetRemainingLength(stream) >= format->data_size) {
         format->data = Stream_Pointer(stream); /* data */
@@ -236,9 +237,11 @@ static void guac_rdp_ai_send_formatchange(IWTSVirtualChannel* channel,
 void guac_rdp_ai_process_version(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
 
+    /* Verify we have at least 4 bytes available (UINT32) */
     if (Stream_GetRemainingLength(stream) < 4) {
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Invalid value provided for AUDIO_INPUT version.");
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio input stream does not "
+                "contain the expected number of bytes. Audio input may not "
+                "work as expected.");
         return;
     }
     
@@ -268,8 +271,13 @@ void guac_rdp_ai_process_formats(guac_client* client,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_audio_buffer* audio_buffer = rdp_client->audio_input;
 
-    if (Stream_GetRemainingLength(stream) < 8)
+    /* Verify we have at least 8 bytes available (2 x UINT32) */
+    if (Stream_GetRemainingLength(stream) < 8) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio input stream does not "
+                "contain the expected number of bytes. Audio input may not "
+                "work as expected.");
         return;
+    }
     
     UINT32 num_formats;
     Stream_Read_UINT32(stream, num_formats); /* NumFormats */
@@ -319,8 +327,13 @@ void guac_rdp_ai_process_open(guac_client* client,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_audio_buffer* audio_buffer = rdp_client->audio_input;
 
-    if (Stream_GetRemainingLength(stream) < 8)
+    /* Verify we have at least 8 bytes available (2 x UINT32) */
+    if (Stream_GetRemainingLength(stream) < 8) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio input stream does not "
+                "contain the expected number of bytes. Audio input may not "
+                "work as expected.");
         return;
+    }
     
     UINT32 packet_frames;
     UINT32 initial_format;

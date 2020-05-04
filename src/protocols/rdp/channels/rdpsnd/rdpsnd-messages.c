@@ -50,8 +50,13 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
     /* Reset own format count */
     rdpsnd->format_count = 0;
 
-    if (Stream_GetRemainingLength(input_stream) < 20)
+    /* Check to make sure the stream has at least 20 bytes, which */
+    if (Stream_GetRemainingLength(input_stream) < 20) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio Stream does not "
+                "contain the expected number of bytes. Sound may not work as "
+                "expected.");
         return;
+    }
     
     /* Format header */
     Stream_Seek(input_stream, 14);
@@ -99,8 +104,13 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
             /* Remember position in stream */
             Stream_GetPointer(input_stream, format_start);
 
-            if (Stream_GetRemainingLength(input_stream) < 18)
+            /* Check to make sure Stream has at least 18 bytes. */
+            if (Stream_GetRemainingLength(input_stream) < 18) {
+                guac_client_log(client, GUAC_LOG_WARNING, "Audio Stream does "
+                        "not contain the expected number of bytes. Sound may "
+                        "not work as expected.");
                 return;
+            }
             
             /* Read format */
             Stream_Read_UINT16(input_stream, format_tag);
@@ -113,8 +123,13 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
             /* Skip past extra data */
             Stream_Read_UINT16(input_stream, body_size);
             
-            if (Stream_GetRemainingLength(input_stream) < body_size)
+            /* Check that Stream has at least body_size bytes remaining. */
+            if (Stream_GetRemainingLength(input_stream) < body_size) {
+                guac_client_log(client, GUAC_LOG_WARNING, "Audio Stream does "
+                        "not contain the expected number of bytes. Sound may "
+                        "not work as expected.");
                 return;
+            }
             
             Stream_Seek(input_stream, body_size);
 
@@ -215,8 +230,13 @@ void guac_rdpsnd_training_handler(guac_rdp_common_svc* svc,
 
     guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
 
-    if (Stream_GetRemainingLength(input_stream) < 4)
+    /* Check to make sure audio stream contains a minimum number of bytes. */
+    if (Stream_GetRemainingLength(input_stream) < 4) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Stream does not "
+                "contain the expected number of bytes. Sound may not work as "
+                "expected.");
         return;
+    }
     
     /* Read timestamp and data size */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
@@ -245,8 +265,13 @@ void guac_rdpsnd_wave_info_handler(guac_rdp_common_svc* svc,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_audio_stream* audio = rdp_client->audio;
 
-    if (Stream_GetRemainingLength(input_stream) < 12)
+    /* Check to make sure audio stream contains a minimum number of bytes. */
+    if (Stream_GetRemainingLength(input_stream) < 12) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio stream does not "
+                "contain the expected number of bytes. Sound may not work as "
+                "expected.");
         return;
+    }
     
     /* Read wave information */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);

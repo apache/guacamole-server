@@ -35,9 +35,13 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
     guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
     guac_rdpsnd_pdu_header header;
 
-    /* Check that we at least have a header. */
-    if (Stream_GetRemainingLength(input_stream) < 4)
+    /* Check that we at least the 4 byte header (UINT8 + UINT8 + UINT16) */
+    if (Stream_GetRemainingLength(input_stream) < 4) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Stream does not "
+                "contain the expected number of bytes. Sound may not work as "
+                "expected.");
         return;
+    }
     
     /* Read RDPSND PDU header */
     Stream_Read_UINT8(input_stream, header.message_type);
@@ -53,9 +57,13 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
         return;
     }
     
-    /* Check body size */
-    if (Stream_GetRemainingLength(input_stream) < header.body_size)
+    /* Check Stream size against body size */
+    if (Stream_GetRemainingLength(input_stream) < header.body_size) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Stream does not "
+                "contain the expected number of bytes. Sound may not work as "
+                "expected.");
         return;
+    }
 
     /* Dispatch message to standard handlers */
     switch (header.message_type) {

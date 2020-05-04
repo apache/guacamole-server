@@ -67,8 +67,13 @@ void guac_rdpdr_process_print_job_write(guac_rdp_common_svc* svc,
     int length;
     int status;
 
-    if (Stream_GetRemainingLength(input_stream) < 32)
+    /* Verify that Stream contains at least 32 bytes (UINT32 + 8 + 20) */
+    if (Stream_GetRemainingLength(input_stream) < 32) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Printer Stream does not "
+                "contain the required number of bytes. Print redirection may "
+                "not work as expected.");
         return;
+    }
     
     /* Read buffer of print data */
     Stream_Read_UINT32(input_stream, length);

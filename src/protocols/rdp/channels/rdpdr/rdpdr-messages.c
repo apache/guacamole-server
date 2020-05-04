@@ -212,6 +212,7 @@ void guac_rdpdr_process_server_announce(guac_rdp_common_svc* svc,
 
     unsigned int major, minor, client_id;
 
+    /* Stream should contain at least 8 bytes (UINT16 + UINT16 + UINT32) */
     if (Stream_GetRemainingLength(input_stream) < 8)
         return;
     
@@ -246,8 +247,13 @@ void guac_rdpdr_process_device_reply(guac_rdp_common_svc* svc,
     unsigned int device_id, ntstatus;
     int severity, c, n, facility, code;
 
-    if (Stream_GetRemainingLength(input_stream) < 8)
+    /* Stream should contain at least 8 bytes (UINT32 + UINT32 ) */
+    if (Stream_GetRemainingLength(input_stream) < 8) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Device Stream does not "
+                "contain the expected number of bytes. Device redirection may "
+                "not work.");
         return;
+    }
     
     Stream_Read_UINT32(input_stream, device_id);
     Stream_Read_UINT32(input_stream, ntstatus);
@@ -284,8 +290,13 @@ void guac_rdpdr_process_device_iorequest(guac_rdp_common_svc* svc,
     guac_rdpdr* rdpdr = (guac_rdpdr*) svc->data;
     guac_rdpdr_iorequest iorequest;
 
-    if (Stream_GetRemainingLength(input_stream) < 20)
+    /* Check to make sure the Stream contains at least 20 bytes (5 x UINT32 ). */
+    if (Stream_GetRemainingLength(input_stream) < 20) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Device Stream does not "
+                "contain the expected number of bytes. Device redirection may "
+                "not work as expected.");
         return;
+    }
     
     /* Read header */
     Stream_Read_UINT32(input_stream, iorequest.device_id);
@@ -315,8 +326,13 @@ void guac_rdpdr_process_server_capability(guac_rdp_common_svc* svc,
     int count;
     int i;
 
-    if (Stream_GetRemainingLength(input_stream) < 4)
+    /* Check to make sure the Stream has at least 4 bytes (UINT16 + 2) */
+    if (Stream_GetRemainingLength(input_stream) < 4) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Redirection Stream "
+                "does not contain the expected number of bytes. Device "
+                "redirection may not work as expected.");
         return;
+    }
     
     /* Read header */
     Stream_Read_UINT16(input_stream, count);
@@ -328,14 +344,24 @@ void guac_rdpdr_process_server_capability(guac_rdp_common_svc* svc,
         int type;
         int length;
 
-        if (Stream_GetRemainingLength(input_stream) < 4)
+        /* Make sure Stream has at least 4 bytes (UINT16 + UINT16) */
+        if (Stream_GetRemainingLength(input_stream) < 4) {
+            guac_client_log(svc->client, GUAC_LOG_WARNING, "Redirection Stream "
+                    "does not contain the expected number of bytes. Device "
+                    "redirection may not work as expected.");
             break;
+        }
         
         Stream_Read_UINT16(input_stream, type);
         Stream_Read_UINT16(input_stream, length);
 
-        if (Stream_GetRemainingLength(input_stream) < (length - 4))
+        /* Make sure Stream has required length remaining for Seek below. */
+        if (Stream_GetRemainingLength(input_stream) < (length - 4)) {
+            guac_client_log(svc->client, GUAC_LOG_WARNING, "Redirection Stream "
+                    "does not contain the expected number of bytes. Device "
+                    "redirection may not work as expected.");
             break;
+        }
         
         /* Ignore all for now */
         guac_client_log(svc->client, GUAC_LOG_DEBUG, "Ignoring server capability set type=0x%04x, length=%i", type, length);

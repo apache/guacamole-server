@@ -49,8 +49,12 @@ void guac_rdpdr_fs_process_create(guac_rdp_common_svc* svc,
     char path[GUAC_RDP_FS_MAX_PATH];
 
     /* Check remaining stream data prior to reading. */
-    if (Stream_GetRemainingLength(input_stream) < 32)
+    if (Stream_GetRemainingLength(input_stream) < 32) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "File stream does not "
+                "contain the expected number of bytes. File sharing may not "
+                "work as expected.");
         return;
+    }
     
     /* Read "create" information */
     Stream_Read_UINT32(input_stream, desired_access);
@@ -128,8 +132,12 @@ void guac_rdpdr_fs_process_read(guac_rdp_common_svc* svc,
     wStream* output_stream;
 
     /* Check remaining bytes before reading stream. */
-    if (Stream_GetRemainingLength(input_stream) < 12)
+    if (Stream_GetRemainingLength(input_stream) < 12) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
+                "contain the expected number of bytes. File sharing may not "
+                "work as expected.");
         return;
+    }
     
     /* Read packet */
     Stream_Read_UINT32(input_stream, length);
@@ -181,8 +189,12 @@ void guac_rdpdr_fs_process_write(guac_rdp_common_svc* svc,
     wStream* output_stream;
 
     /* Check remaining length. */
-    if (Stream_GetRemainingLength(input_stream) < 32)
+    if (Stream_GetRemainingLength(input_stream) < 32) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
+                "contain the expected number of bytes. File sharing may not "
+                "work as expected.");
         return;
+    }
     
     /* Read packet */
     Stream_Read_UINT32(input_stream, length);
@@ -257,8 +269,12 @@ void guac_rdpdr_fs_process_volume_info(guac_rdp_common_svc* svc,
     int fs_information_class;
 
     /* Check remaining length */
-    if (Stream_GetRemainingLength(input_stream) < 4)
+    if (Stream_GetRemainingLength(input_stream) < 4) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
+                "contain the expected number of bytes. File sharing may not "
+                "work as expected.");
         return;
+    }
     
     Stream_Read_UINT32(input_stream, fs_information_class);
 
@@ -299,8 +315,12 @@ void guac_rdpdr_fs_process_file_info(guac_rdp_common_svc* svc,
     int fs_information_class;
 
     /* Check remaining length */
-    if (Stream_GetRemainingLength(input_stream) < 4)
+    if (Stream_GetRemainingLength(input_stream) < 4) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
+                "contain the expected number of bytes. File sharing may not "
+                "work as expected.");
         return;
+    }
     
     Stream_Read_UINT32(input_stream, fs_information_class);
 
@@ -349,8 +369,12 @@ void guac_rdpdr_fs_process_set_file_info(guac_rdp_common_svc* svc,
     int length;
 
     /* Check remaining length */
-    if (Stream_GetRemainingLength(input_stream) < 32)
+    if (Stream_GetRemainingLength(input_stream) < 32) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "File stream does not "
+                "contain the expected number of bytes. File sharing may not "
+                "work as expected.");
         return;
+    }
     
     Stream_Read_UINT32(input_stream, fs_information_class);
     Stream_Read_UINT32(input_stream, length); /* Length */
@@ -430,8 +454,12 @@ void guac_rdpdr_fs_process_query_directory(guac_rdp_common_svc* svc,
     if (file == NULL)
         return;
 
-    if (Stream_GetRemainingLength(input_stream) < 9)
+    if (Stream_GetRemainingLength(input_stream) < 9) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "File stream does not "
+                "contain the expected number of bytes. File sharing may not "
+                "work as expected.");
         return;
+    }
     
     /* Read main header */
     Stream_Read_UINT32(input_stream, fs_information_class);
@@ -441,8 +469,16 @@ void guac_rdpdr_fs_process_query_directory(guac_rdp_common_svc* svc,
     /* If this is the first query, the path is included after padding */
     if (initial_query) {
 
-        if (Stream_GetRemainingLength(input_stream) < 23)
+        /*
+         * Check to make sure Stream has at least the 23 padding bytes in it
+         * prior to seeking.
+         */
+        if (Stream_GetRemainingLength(input_stream) < 23) {
+            guac_client_log(svc->client, GUAC_LOG_WARNING, "File stream does "
+                    "not contain the expected number of bytes. File sharing "
+                    "may not work as expected.");
             return;
+        }
         
         Stream_Seek(input_stream, 23);       /* Padding */
 

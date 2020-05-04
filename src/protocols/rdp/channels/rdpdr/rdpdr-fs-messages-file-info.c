@@ -136,9 +136,13 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdp_common_svc* svc,
     char destination_path[GUAC_RDP_FS_MAX_PATH];
 
     /* Check stream size prior to reading. */
-    if (Stream_GetRemainingLength(input_stream) < 6)
+    if (Stream_GetRemainingLength(input_stream) < 6) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
+                "contain the required number of bytes.  File sharing may not "
+                "work as expected.");
         return;
-    
+    }
+        
     /* Read structure */
     Stream_Seek_UINT8(input_stream); /* ReplaceIfExists */
     Stream_Seek_UINT8(input_stream); /* RootDirectory */
