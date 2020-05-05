@@ -310,8 +310,8 @@ void guac_rdpsnd_wave_handler(guac_rdp_common_svc* svc,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_audio_stream* audio = rdp_client->audio;
     
-    /* Verify we have at least 4 bytes, which is manually copied below. */
-    if (Stream_Length(input_stream) < 4) {
+    /* Verify that the stream has bytes to cover the wave size plus header. */
+    if (Stream_Length(input_stream) < (rdpsnd->incoming_wave_size + 4)) {
         guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Wave PDU does "
                 "not contain the expected number of bytes. Sound may not work "
                 "as expected.");
