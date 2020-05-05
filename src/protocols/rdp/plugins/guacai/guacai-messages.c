@@ -35,13 +35,16 @@
  *
  * @param format
  *     The structure to populate with data from the stream.
+ * 
+ * @return
+ *     Zero on success or non-zero if an error occurs processing the format.
  */
-static void guac_rdp_ai_read_format(wStream* stream,
+static int guac_rdp_ai_read_format(wStream* stream,
         guac_rdp_ai_format* format) {
 
     /* Check that we have at least 18 bytes (5 x UINT16, 2 x UINT32) */
     if (Stream_GetRemainingLength(stream) < 18)
-        return;
+        return 1;
     
     /* Read audio format into structure */
     Stream_Read_UINT16(stream, format->tag); /* wFormatTag */
@@ -53,11 +56,18 @@ static void guac_rdp_ai_read_format(wStream* stream,
     Stream_Read_UINT16(stream, format->data_size); /* cbSize */
 
     /* Read arbitrary data block (if applicable) and data is available. */
-    if (format->data_size != 0
-            && Stream_GetRemainingLength(stream) >= format->data_size) {
+    if (format->data_size != 0) {
+        
+        /* Check to make sure Stream contains expected bytes. */
+        if (Stream_GetRemainingLength(stream) < format->data_size)
+            return 1;
+        
         format->data = Stream_Pointer(stream); /* data */
         Stream_Seek(stream, format->data_size);
+        
     }
+    
+    return 0;
 
 }
 
@@ -287,7 +297,12 @@ void guac_rdp_ai_process_formats(guac_client* client,
     for (index = 0; index < num_formats; index++) {
 
         guac_rdp_ai_format format;
-        guac_rdp_ai_read_format(stream, &format);
+        if (guac_rdp_ai_read_format(stream, &format)) {
+            guac_client_log(client, GUAC_LOG_WARNING, "Error occurred "
+                    "processing audio input formats.  Audio input redirection "
+                    "may not work as expected.");
+            return;
+        }
 
         /* Ignore anything but WAVE_FORMAT_PCM */
         if (format.tag != GUAC_RDP_WAVE_FORMAT_PCM)
