@@ -55,8 +55,8 @@ static void guac_rdp_ai_handle_data(guac_client* client,
     /* Verify we have at least 1 byte in the stream (UINT8) */
     if (Stream_GetRemainingLength(stream) < 1) {
         guac_client_log(client, GUAC_LOG_WARNING, "Audio input stream does not "
-                "contain the expected number of bytes. Audio input may not "
-                "work as expected.");
+                "contain the expected number of bytes. Audio input redirection "
+                "may not work as expected.");
         return;
     }
     

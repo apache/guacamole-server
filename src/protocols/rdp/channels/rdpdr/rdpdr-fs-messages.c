@@ -50,9 +50,9 @@ void guac_rdpdr_fs_process_create(guac_rdp_common_svc* svc,
 
     /* Check remaining stream data prior to reading. */
     if (Stream_GetRemainingLength(input_stream) < 32) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, "File stream does not "
-                "contain the expected number of bytes. File sharing may not "
-                "work as expected.");
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Create Drive "
+                "Request PDU does not contain the expected number of bytes. "
+                "Drive redirection may not work as expected.");
         return;
     }
     
@@ -65,6 +65,14 @@ void guac_rdpdr_fs_process_create(guac_rdp_common_svc* svc,
     Stream_Read_UINT32(input_stream, create_options);
     Stream_Read_UINT32(input_stream, path_length);
 
+    /* Check to make sure the stream contains path_length bytes. */
+    if(Stream_GetRemainingLength(input_stream) < path_length) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Create Drive "
+                "Request PDU does not contain the expected number of bytes. "
+                "Drive redirection may not work as expected.");
+        return;
+    }
+    
     /* Convert path to UTF-8 */
     guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), path_length/2 - 1,
             path, sizeof(path));
@@ -133,9 +141,9 @@ void guac_rdpdr_fs_process_read(guac_rdp_common_svc* svc,
 
     /* Check remaining bytes before reading stream. */
     if (Stream_GetRemainingLength(input_stream) < 12) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
-                "contain the expected number of bytes. File sharing may not "
-                "work as expected.");
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Read "
+                "Request PDU does not contain the expected number of bytes. "
+                "Drive redirection may not work as expected.");
         return;
     }
     
@@ -190,9 +198,9 @@ void guac_rdpdr_fs_process_write(guac_rdp_common_svc* svc,
 
     /* Check remaining length. */
     if (Stream_GetRemainingLength(input_stream) < 32) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
-                "contain the expected number of bytes. File sharing may not "
-                "work as expected.");
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Write "
+                "Request PDU does not contain the expected number of bytes. "
+                "Drive redirection may not work as expected.");
         return;
     }
     
@@ -205,6 +213,14 @@ void guac_rdpdr_fs_process_write(guac_rdp_common_svc* svc,
             "%s: [file_id=%i] length=%i, offset=%" PRIu64,
              __func__, iorequest->file_id, length, (uint64_t) offset);
 
+    /* Check to make sure stream contains at least length bytes */
+    if (Stream_GetRemainingLength(input_stream) < length) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Write "
+                "Request PDU does not contain the expected number of bytes. "
+                "Drive redirection may not work as expected.");
+        return;
+    }
+    
     /* Attempt write */
     bytes_written = guac_rdp_fs_write((guac_rdp_fs*) device->data,
             iorequest->file_id, offset, Stream_Pointer(input_stream), length);
@@ -270,9 +286,9 @@ void guac_rdpdr_fs_process_volume_info(guac_rdp_common_svc* svc,
 
     /* Check remaining length */
     if (Stream_GetRemainingLength(input_stream) < 4) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
-                "contain the expected number of bytes. File sharing may not "
-                "work as expected.");
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Query "
+                "Volume Information PDU does not contain the expected number "
+                "of bytes. Drive redirection may not work as expected.");
         return;
     }
     
@@ -316,9 +332,9 @@ void guac_rdpdr_fs_process_file_info(guac_rdp_common_svc* svc,
 
     /* Check remaining length */
     if (Stream_GetRemainingLength(input_stream) < 4) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, "File Stream does not "
-                "contain the expected number of bytes. File sharing may not "
-                "work as expected.");
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Query "
+                "Information PDU does not contain the expected number of "
+                "bytes. Drive redirection may not work as expected.");
         return;
     }
     
@@ -370,9 +386,9 @@ void guac_rdpdr_fs_process_set_file_info(guac_rdp_common_svc* svc,
 
     /* Check remaining length */
     if (Stream_GetRemainingLength(input_stream) < 32) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, "File stream does not "
-                "contain the expected number of bytes. File sharing may not "
-                "work as expected.");
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Set "
+                "Information PDU does not contain the expected number of "
+                "bytes. Drive redirection may not work as expected.");
         return;
     }
     
@@ -455,9 +471,9 @@ void guac_rdpdr_fs_process_query_directory(guac_rdp_common_svc* svc,
         return;
 
     if (Stream_GetRemainingLength(input_stream) < 9) {
-        guac_client_log(svc->client, GUAC_LOG_WARNING, "File stream does not "
-                "contain the expected number of bytes. File sharing may not "
-                "work as expected.");
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Query "
+                "Directory PDU does not contain the expected number of bytes. "
+                "Drive redirection may not work as expected.");
         return;
     }
     
@@ -473,15 +489,15 @@ void guac_rdpdr_fs_process_query_directory(guac_rdp_common_svc* svc,
          * Check to make sure Stream has at least the 23 padding bytes in it
          * prior to seeking.
          */
-        if (Stream_GetRemainingLength(input_stream) < 23) {
-            guac_client_log(svc->client, GUAC_LOG_WARNING, "File stream does "
-                    "not contain the expected number of bytes. File sharing "
-                    "may not work as expected.");
+        if (Stream_GetRemainingLength(input_stream) < (23 + path_length)) {
+            guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Query "
+                    "Directory PDU does not contain the expected number of "
+                    "bytes. Drive redirection may not work as expected.");
             return;
         }
         
         Stream_Seek(input_stream, 23);       /* Padding */
-
+        
         /* Convert path to UTF-8 */
         guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), path_length/2 - 1,
                 file->dir_pattern, sizeof(file->dir_pattern));

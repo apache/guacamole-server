@@ -239,9 +239,9 @@ void guac_rdp_ai_process_version(guac_client* client,
 
     /* Verify we have at least 4 bytes available (UINT32) */
     if (Stream_GetRemainingLength(stream) < 4) {
-        guac_client_log(client, GUAC_LOG_WARNING, "Audio input stream does not "
-                "contain the expected number of bytes. Audio input may not "
-                "work as expected.");
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio input Versoin PDU "
+                "does not contain the expected number of bytes. Audio input "
+                "redirection may not work as expected.");
         return;
     }
     
@@ -273,9 +273,9 @@ void guac_rdp_ai_process_formats(guac_client* client,
 
     /* Verify we have at least 8 bytes available (2 x UINT32) */
     if (Stream_GetRemainingLength(stream) < 8) {
-        guac_client_log(client, GUAC_LOG_WARNING, "Audio input stream does not "
-                "contain the expected number of bytes. Audio input may not "
-                "work as expected.");
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio input Sound Formats "
+                "PDU does not contain the expected number of bytes. Audio "
+                "input redirection may not work as expected.");
         return;
     }
     
@@ -329,9 +329,9 @@ void guac_rdp_ai_process_open(guac_client* client,
 
     /* Verify we have at least 8 bytes available (2 x UINT32) */
     if (Stream_GetRemainingLength(stream) < 8) {
-        guac_client_log(client, GUAC_LOG_WARNING, "Audio input stream does not "
-                "contain the expected number of bytes. Audio input may not "
-                "work as expected.");
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio input Open PDU does "
+                "not contain the expected number of bytes. Audio input "
+                "redirection may not work as expected.");
         return;
     }
     
