@@ -50,7 +50,10 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
     /* Reset own format count */
     rdpsnd->format_count = 0;
 
-    /* Check to make sure the stream has at least 20 bytes, which */
+    /* 
+     * Check to make sure the stream has at least 20 bytes (14 byte seek,
+     * 2 x UTF16 reads, and 2 x UTF8 seeks).
+     */
     if (Stream_GetRemainingLength(input_stream) < 20) {
         guac_client_log(client, GUAC_LOG_WARNING, "Server Audio Formats and "
                 "Version PDU does not contain the expected number of bytes. "

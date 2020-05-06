@@ -35,7 +35,7 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
     guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
     guac_rdpsnd_pdu_header header;
 
-    /* Check that we at least the 4 byte header (UINT8 + UINT8 + UINT16) */
+    /* Check that we have at least the 4 byte header (UINT8 + UINT8 + UINT16) */
     if (Stream_GetRemainingLength(input_stream) < 4) {
         guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Stream does not "
                 "contain the expected number of bytes. Audio redirection may "

@@ -213,8 +213,12 @@ void guac_rdpdr_process_server_announce(guac_rdp_common_svc* svc,
     unsigned int major, minor, client_id;
 
     /* Stream should contain at least 8 bytes (UINT16 + UINT16 + UINT32) */
-    if (Stream_GetRemainingLength(input_stream) < 8)
+    if (Stream_GetRemainingLength(input_stream) < 8) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Announce "
+                "Request PDU does not contain the expected number of bytes. "
+                "Device redirection may not work as expected.");
         return;
+    }
     
     Stream_Read_UINT16(input_stream, major);
     Stream_Read_UINT16(input_stream, minor);

@@ -44,8 +44,8 @@ void guac_rdpdr_process_receive(guac_rdp_common_svc* svc,
      */
     if (Stream_GetRemainingLength(input_stream) < 4) {
         guac_client_log(svc->client, GUAC_LOG_WARNING, "Device redirection "
-                "channel receive Stream does not contain the expected number "
-                "of bytes. Device redirection may not function as expected.");
+                "channel PDU header does not contain the expected number of "
+                "bytes. Device redirection may not function as expected.");
         return;
     }
     
