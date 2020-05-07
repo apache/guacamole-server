@@ -135,11 +135,28 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdp_common_svc* svc,
     wStream* output_stream;
     char destination_path[GUAC_RDP_FS_MAX_PATH];
 
+    /* Check stream size prior to reading. */
+    if (Stream_GetRemainingLength(input_stream) < 6) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Set "
+                "Information Request (FileRenameInformation) PDU does not "
+                "contain the expected number of bytes.  File redirection "
+                "may not work as expected.");
+        return;
+    }
+        
     /* Read structure */
     Stream_Seek_UINT8(input_stream); /* ReplaceIfExists */
     Stream_Seek_UINT8(input_stream); /* RootDirectory */
     Stream_Read_UINT32(input_stream, filename_length); /* FileNameLength */
 
+    if (Stream_GetRemainingLength(input_stream) < filename_length) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Set "
+                "Information Request (FileRenameInformation) PDU does not "
+                "contain the expected number of bytes.  File redirection "
+                "may not work as expected.");
+        return;
+    }
+    
     /* Convert name to UTF-8 */
     guac_rdp_utf16_to_utf8(Stream_Pointer(input_stream), filename_length/2,
             destination_path, sizeof(destination_path));
@@ -192,6 +209,15 @@ void guac_rdpdr_fs_process_set_allocation_info(guac_rdp_common_svc* svc,
     UINT64 size;
     wStream* output_stream;
 
+    /* Check to make sure the stream has at least 8 bytes (UINT64) */
+    if (Stream_GetRemainingLength(input_stream) < 8) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Set "
+                "Information Request (FileAllocationInformation) PDU does not "
+                "contain the expected number of bytes.  File redirection "
+                "may not work as expected.");
+        return;
+    }
+    
     /* Read new size */
     Stream_Read_UINT64(input_stream, size); /* AllocationSize */
 
@@ -244,6 +270,15 @@ void guac_rdpdr_fs_process_set_end_of_file_info(guac_rdp_common_svc* svc,
     UINT64 size;
     wStream* output_stream;
 
+    /* Check to make sure stream contains at least 8 bytes (UINT64) */
+    if (Stream_GetRemainingLength(input_stream) < 8) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Server Drive Set "
+                "Information Request (FileEndOfFileInformation) PDU does not "
+                "contain the expected number of bytes.  File redirection "
+                "may not work as expected.");
+        return;
+    }
+    
     /* Read new size */
     Stream_Read_UINT64(input_stream, size); /* AllocationSize */
 
