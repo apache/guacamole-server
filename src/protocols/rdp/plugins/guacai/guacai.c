@@ -52,10 +52,18 @@
 static void guac_rdp_ai_handle_data(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
 
+    /* Verify we have at least 1 byte in the stream (UINT8) */
+    if (Stream_GetRemainingLength(stream) < 1) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio input PDU header does "
+                "not contain the expected number of bytes. Audio input "
+                "redirection may not work as expected.");
+        return;
+    }
+    
     /* Read message ID from received PDU */
     BYTE message_id;
     Stream_Read_UINT8(stream, message_id);
-
+    
     /* Invoke appropriate message processor based on ID */
     switch (message_id) {
 
