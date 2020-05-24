@@ -41,6 +41,7 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "typescript-path",
     "typescript-name",
     "create-typescript-path",
+    "recording-disabled",
     "recording-path",
     "recording-name",
     "recording-exclude-output",
@@ -157,6 +158,14 @@ enum KUBERNETES_ARGS_IDX {
      */
     IDX_CREATE_TYPESCRIPT_PATH,
 
+    /**
+     * Whether or not recording should be explicitly disabled, even if the
+     * recording_path parameter is set.  Normally setting the recording_path
+     * parameter to a non-null value will result in session recording being
+     * enabled - this provides the ability to override that.
+     */
+    IDX_RECORDING_DISABLED,
+    
     /**
      * The full absolute path to the directory in which screen recordings
      * should be written.
@@ -345,6 +354,11 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_CREATE_TYPESCRIPT_PATH, false);
 
+    /* Read flag to disable recording */
+    settings->recording_disabled =
+        guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_RECORDING_DISABLED, false);
+    
     /* Read recording path */
     settings->recording_path =
         guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,

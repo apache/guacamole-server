@@ -346,7 +346,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     srandom(time(NULL));
 
     /* Set up screen recording, if requested */
-    if (settings->recording_path != NULL) {
+    if (settings->recording_path != NULL && !settings->recording_disabled) {
         rdp_client->recording = guac_common_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,

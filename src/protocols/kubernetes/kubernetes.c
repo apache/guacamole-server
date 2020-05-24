@@ -227,7 +227,7 @@ void* guac_kubernetes_client_thread(void* data) {
             "the requested Kubernetes pod is \"%s\".", endpoint_path);
 
     /* Set up screen recording, if requested */
-    if (settings->recording_path != NULL) {
+    if (settings->recording_path != NULL && !settings->recording_disabled) {
         kubernetes_client->recording = guac_common_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,

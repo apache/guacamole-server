@@ -372,7 +372,7 @@ void* guac_vnc_client_thread(void* data) {
     vnc_client->rfb_client = rfb_client;
 
     /* Set up screen recording, if requested */
-    if (settings->recording_path != NULL) {
+    if (settings->recording_path != NULL && !settings->recording_disabled) {
         vnc_client->recording = guac_common_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,

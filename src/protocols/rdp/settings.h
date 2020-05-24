@@ -453,6 +453,14 @@ typedef struct guac_rdp_settings {
 #endif
 
     /**
+     * Whether or not recording should be explicitly disabled, even if the
+     * recording_path parameter is set.  Normally setting the recording_path
+     * parameter to a non-null value will result in session recording being
+     * enabled - this provides the ability to override that.
+     */
+    int recording_disabled;
+    
+    /**
      * The path in which the screen recording should be saved, if enabled. If
      * no screen recording should be saved, this will be NULL.
      */

@@ -558,7 +558,7 @@ void* guac_telnet_client_thread(void* data) {
     int wait_result;
 
     /* Set up screen recording, if requested */
-    if (settings->recording_path != NULL) {
+    if (settings->recording_path != NULL && !settings->recording_disabled) {
         telnet_client->recording = guac_common_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,

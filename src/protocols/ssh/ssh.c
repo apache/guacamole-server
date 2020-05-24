@@ -211,7 +211,7 @@ void* ssh_client_thread(void* data) {
     char ssh_ttymodes[GUAC_SSH_TTYMODES_SIZE(1)];
 
     /* Set up screen recording, if requested */
-    if (settings->recording_path != NULL) {
+    if (settings->recording_path != NULL && !settings->recording_disabled) {
         ssh_client->recording = guac_common_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,

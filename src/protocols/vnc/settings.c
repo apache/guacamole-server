@@ -262,6 +262,14 @@ enum VNC_ARGS_IDX {
 #endif
 
     /**
+     * Whether or not recording should be explicitly disabled, even if the
+     * recording_path parameter is set.  Normally setting the recording_path
+     * parameter to a non-null value will result in session recording being
+     * enabled - this provides the ability to override that.
+     */
+    IDX_RECORDING_DISABLED,
+    
+    /**
      * The full absolute path to the directory in which screen recordings
      * should be written.
      */
@@ -488,6 +496,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
                 IDX_SFTP_SERVER_ALIVE_INTERVAL, 0);
 #endif
 
+    /* Read flag for disabling recording */
+    settings->recording_disabled =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_RECORDING_DISABLED, false);
+    
     /* Read recording path */
     settings->recording_path =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
