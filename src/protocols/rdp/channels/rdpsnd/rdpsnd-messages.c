@@ -296,11 +296,18 @@ void guac_rdpsnd_wave_info_handler(guac_rdp_common_svc* svc,
     rdpsnd->next_pdu_is_wave = TRUE;
 
     /* Reset audio stream if format has changed */
-    if (audio != NULL)
-        guac_audio_stream_reset(audio, NULL,
-                rdpsnd->formats[format].rate,
-                rdpsnd->formats[format].channels,
-                rdpsnd->formats[format].bps);
+    if (audio != NULL) {
+        if (format < sizeof(rdpsnd->formats)) 
+            guac_audio_stream_reset(audio, NULL,
+                    rdpsnd->formats[format].rate,
+                    rdpsnd->formats[format].channels,
+                    rdpsnd->formats[format].bps);
+    
+        else
+            guac_client_log(svc->client, GUAC_LOG_WARNING, "RDP server "
+                    "attempted to specify an invalid audio format. Sound may "
+                    "not work as expected.");
+    }
 
 }
 
