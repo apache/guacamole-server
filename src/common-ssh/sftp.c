@@ -790,7 +790,8 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
         /* If downloads are disabled, log and return. */
         if (filesystem->disable_download) {
             guac_user_log(user, GUAC_LOG_INFO,
-                    "File downloads have been disabled.");
+                    "Unable to download file \"%s\", "
+                    "file downloads have been disabled.", fullpath);
             return 0;
         }
         

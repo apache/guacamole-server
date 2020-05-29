@@ -85,7 +85,7 @@ guac_object* guac_rdp_fs_alloc_object(guac_rdp_fs* fs, guac_user* user) {
     fs_object->get_handler = guac_rdp_download_get_handler;
     
     /* Assign handler only if uploads are not disabled. */
-    if(!fs->disable_upload)
+    if (!fs->disable_upload)
         fs_object->put_handler = guac_rdp_upload_put_handler;
     
     fs_object->data = fs;
