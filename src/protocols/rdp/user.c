@@ -131,16 +131,17 @@ int guac_rdp_user_file_handler(guac_user* user, guac_stream* stream,
 #ifdef ENABLE_COMMON_SSH
     guac_rdp_settings* settings = rdp_client->settings;
 
-    /* If SFTP is enabled, it should be used for default uploads only if RDPDR
-     * is not enabled or its upload directory has been set */
-    if (rdp_client->sftp_filesystem != NULL) {
+    /* If SFTP is enabled and SFTP uploads have not been disabled, it should be
+     * used for default uploads only if RDPDR is not enabled or its upload
+     * directory has been set */
+    if (rdp_client->sftp_filesystem != NULL && !settings->sftp_disable_upload) {
         if (!settings->drive_enabled || settings->sftp_directory != NULL)
             return guac_rdp_sftp_file_handler(user, stream, mimetype, filename);
     }
 #endif
 
     /* Default to using RDPDR uploads (if enabled) */
-    if (rdp_client->filesystem != NULL)
+    if (rdp_client->filesystem != NULL && !settings->disable_upload)
         return guac_rdp_upload_file_handler(user, stream, mimetype, filename);
 
     /* File transfer not enabled */

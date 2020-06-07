@@ -70,6 +70,8 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "sftp-directory",
     "sftp-root-directory",
     "sftp-server-alive-interval",
+    "sftp-disable-download",
+    "sftp-disable-upload",
 #endif
 
     "recording-path",
@@ -259,6 +261,18 @@ enum VNC_ARGS_IDX {
      * cases.
      */
     IDX_SFTP_SERVER_ALIVE_INTERVAL,
+    
+    /**
+     * If set to "true", file downloads over SFTP will be blocked.  If set to
+     * "false" or not set, file downloads will be allowed.
+     */
+    IDX_SFTP_DISABLE_DOWNLOAD,
+    
+    /**
+     * If set to "true", file uploads over SFTP will be blocked.  If set to
+     * "false" or not set, file uploads will be allowed.
+     */
+    IDX_SFTP_DISABLE_UPLOAD,
 #endif
 
     /**
@@ -486,6 +500,14 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->sftp_server_alive_interval =
         guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_SFTP_SERVER_ALIVE_INTERVAL, 0);
+    
+    settings->sftp_disable_download =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SFTP_DISABLE_DOWNLOAD, false);
+    
+    settings->sftp_disable_upload =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SFTP_DISABLE_UPLOAD, false);
 #endif
 
     /* Read recording path */

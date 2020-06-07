@@ -99,7 +99,7 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
         user->size_handler = guac_ssh_user_size_handler;
 
         /* Set generic (non-filesystem) file upload handler */
-        if (settings->enable_sftp)
+        if (settings->enable_sftp && !settings->sftp_disable_upload)
             user->file_handler = guac_sftp_file_handler;
 
     }

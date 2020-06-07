@@ -550,7 +550,8 @@ void* guac_rdp_client_thread(void* data) {
         /* Allocate actual emulated filesystem */
         rdp_client->filesystem =
             guac_rdp_fs_alloc(client, settings->drive_path,
-                    settings->create_drive_path);
+                    settings->create_drive_path, settings->disable_download,
+                    settings->disable_upload);
 
         /* Expose filesystem to owner */
         guac_client_for_owner(client, guac_rdp_fs_expose,
@@ -619,7 +620,9 @@ void* guac_rdp_client_thread(void* data) {
         /* Load and expose filesystem */
         rdp_client->sftp_filesystem =
             guac_common_ssh_create_sftp_filesystem(rdp_client->sftp_session,
-                    settings->sftp_root_directory, NULL);
+                    settings->sftp_root_directory, NULL,
+                    settings->sftp_disable_download,
+                    settings->sftp_disable_upload);
 
         /* Expose filesystem to connection owner */
         guac_client_for_owner(client,

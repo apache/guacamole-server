@@ -43,7 +43,7 @@
 #include <unistd.h>
 
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
-        int create_drive_path) {
+        int create_drive_path, int disable_download, int disable_upload) {
 
     /* Create drive path if it does not exist */
     if (create_drive_path) {
@@ -65,6 +65,8 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
     fs->drive_path = strdup(drive_path);
     fs->file_id_pool = guac_pool_alloc(0);
     fs->open_files = 0;
+    fs->disable_download = disable_download;
+    fs->disable_upload = disable_upload;
 
     return fs;
 
@@ -77,11 +79,15 @@ void guac_rdp_fs_free(guac_rdp_fs* fs) {
 }
 
 guac_object* guac_rdp_fs_alloc_object(guac_rdp_fs* fs, guac_user* user) {
-
+    
     /* Init filesystem */
     guac_object* fs_object = guac_user_alloc_object(user);
     fs_object->get_handler = guac_rdp_download_get_handler;
-    fs_object->put_handler = guac_rdp_upload_put_handler;
+    
+    /* Assign handler only if uploads are not disabled. */
+    if (!fs->disable_upload)
+        fs_object->put_handler = guac_rdp_upload_put_handler;
+    
     fs_object->data = fs;
 
     /* Send filesystem to user */
