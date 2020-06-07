@@ -211,6 +211,20 @@ typedef struct guac_vnc_settings {
      * cases.
      */
     int sftp_server_alive_interval;
+    
+    /**
+     * Whether file downloads over SFTP should be blocked.  If set to "true",
+     * the local client will not be able to download files from the SFTP server.
+     * If set to "false" or not set, file downloads will be allowed.
+     */
+    bool sftp_disable_download;
+    
+    /**
+     * Whether file uploads over SFTP should be blocked.  If set to "true", the
+     * local client will not be able to upload files to the SFTP server.  If set
+     * to "false" or not set, file uploads will be allowed.
+     */
+    bool sftp_disable_upload;
 #endif
 
     /**
