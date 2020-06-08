@@ -96,8 +96,10 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
 
         /* Attempt to set broadcast; exit with error if this fails. */
         if (setsockopt(wol_socket, SOL_SOCKET, SO_BROADCAST, &wol_bcast,
-                sizeof(wol_bcast)) < 0)
+                sizeof(wol_bcast)) < 0) {
+            close(wol_socket);
             return 0;
+        }
     }
     
     /* Set up socket for IPv6 multicast. */
@@ -108,13 +110,17 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
         int hops = 1;
         
         if (setsockopt(wol_socket, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &hops,
-                sizeof(hops)))
+                sizeof(hops))) {
+            close(wol_socket);
             return 0;
+        }
     }
     
     /* Send the packet and return number of bytes sent. */
-    return sendto(wol_socket, packet, GUAC_WOL_PACKET_SIZE, 0,
+    int bytes = sendto(wol_socket, packet, GUAC_WOL_PACKET_SIZE, 0,
             (struct sockaddr*) &wol_dest, sizeof(wol_dest));
+    close(wol_socket);
+    return bytes;
  
 }
 
