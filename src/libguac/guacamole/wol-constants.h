@@ -33,12 +33,6 @@
 #define GUAC_WOL_LOCAL_IPV4_BROADCAST "255.255.255.255"
 
 /**
- * The number of seconds to wait after sending the Wake-on-LAN packet
- * for the destination host to start responding.
- */
-#define GUAC_WOL_BOOT_WAIT_TIME 60
-
-/**
  * The size of the magic Wake-on-LAN packet to send to wake a remote host.  This
  * consists of 6 bytes of 0xFF, and then the MAC address repeated 16 times.
  * https://en.wikipedia.org/wiki/Wake-on-LAN#Magic_packet

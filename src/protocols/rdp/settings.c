@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "common/defaults.h"
 #include "common/string.h"
 #include "config.h"
 #include "resolution.h"
@@ -1084,7 +1085,7 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         /* Parse the WoL wait time. */
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_WOL_WAIT_TIME, GUAC_WOL_BOOT_WAIT_TIME);
+                IDX_WOL_WAIT_TIME, GUAC_WOL_DEFAULT_BOOT_WAIT_TIME);
         
     }
 

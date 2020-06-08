@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "client.h"
+#include "common/defaults.h"
 #include "settings.h"
 
 #include <guacamole/user.h>
@@ -508,7 +509,7 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_WOL_WAIT_TIME, GUAC_WOL_BOOT_WAIT_TIME);
+                IDX_WOL_WAIT_TIME, GUAC_WOL_DEFAULT_BOOT_WAIT_TIME);
         
     }
 

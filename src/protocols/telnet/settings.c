@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "common/defaults.h"
 #include "settings.h"
 
 #include <guacamole/user.h>
@@ -511,7 +512,7 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
         /* Parse the WoL wait time. */
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
-                IDX_WOL_WAIT_TIME, GUAC_WOL_BOOT_WAIT_TIME);
+                IDX_WOL_WAIT_TIME, GUAC_WOL_DEFAULT_BOOT_WAIT_TIME);
         
     }
 
