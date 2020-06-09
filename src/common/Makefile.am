@@ -34,6 +34,7 @@ noinst_HEADERS =            \
     common/blank_cursor.h   \
     common/clipboard.h      \
     common/cursor.h         \
+    common/defaults.h       \
     common/display.h        \
     common/dot_cursor.h     \
     common/ibar_cursor.h    \
