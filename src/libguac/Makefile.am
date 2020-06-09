@@ -69,7 +69,9 @@ libguacinc_HEADERS =                  \
     guacamole/user.h                  \
     guacamole/user-constants.h        \
     guacamole/user-fntypes.h          \
-    guacamole/user-types.h
+    guacamole/user-types.h            \
+    guacamole/wol.h                   \
+    guacamole/wol-constants.h
 
 noinst_HEADERS =      \
     id.h              \
@@ -104,7 +106,8 @@ libguac_la_SOURCES =   \
     user.c             \
     user-handlers.c    \
     user-handshake.c   \
-    wait-fd.c
+    wait-fd.c	       \
+    wol.c
 
 # Compile WebP support if available
 if ENABLE_WEBP

@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "common/defaults.h"
 #include "common/string.h"
 #include "config.h"
 #include "resolution.h"
@@ -28,6 +29,7 @@
 #include <guacamole/client.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
+#include <guacamole/wol-constants.h>
 #include <winpr/crt.h>
 #include <winpr/wtypes.h>
 
@@ -117,6 +119,11 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
     "disable-copy",
     "disable-paste",
+    
+    "wol-send-packet",
+    "wol-mac-addr",
+    "wol-broadcast-addr",
+    "wol-wait-time",
     NULL
 };
 
@@ -580,6 +587,34 @@ enum RDP_ARGS_IDX {
      * using the clipboard. By default, clipboard access is not blocked.
      */
     IDX_DISABLE_PASTE,
+    
+    /**
+     * Whether or not to send the magic Wake-on-LAN (WoL) packet to the host
+     * prior to attempting to connect.  Non-zero values will enable sending
+     * the WoL packet, while zero will disable this functionality.  By default
+     * the WoL packet is not sent.
+     */
+    IDX_WOL_SEND_PACKET,
+    
+    /**
+     * The MAC address to put in the magic WoL packet for the host that should
+     * be woken up.
+     */
+    IDX_WOL_MAC_ADDR,
+    
+    /**
+     * The broadcast address to which to send the magic WoL packet to wake up
+     * the remote host.
+     */
+    IDX_WOL_BROADCAST_ADDR,
+    
+    /**
+     * The amount of time, in seconds, to wait after sending the WoL packet
+     * before attempting to connect to the host.  This should be a reasonable
+     * amount of time to allow the remote host to fully boot and respond to
+     * network connection requests.  The default amount of time is 60 seconds.
+     */
+    IDX_WOL_WAIT_TIME,
 
     RDP_ARGS_COUNT
 };
@@ -1071,6 +1106,37 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->disable_paste =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_DISABLE_PASTE, 0);
+    
+    /* Parse Wake-on-LAN (WoL) settings */
+    settings->wol_send_packet =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_WOL_SEND_PACKET, 0);
+    
+    if (settings->wol_send_packet) {
+        
+        /* If WoL has been requested but no MAC address given, log a warning. */
+        if(strcmp(argv[IDX_WOL_MAC_ADDR], "") == 0) {
+            guac_user_log(user, GUAC_LOG_WARNING, "WoL requested but no MAC ",
+                    "address specified.  WoL will not be sent.");
+            settings->wol_send_packet = 0;
+        }
+        
+        /* Parse the WoL MAC address. */
+        settings->wol_mac_addr = 
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_WOL_MAC_ADDR, NULL);
+        
+        /* Parse the WoL broadcast address. */
+        settings->wol_broadcast_addr =
+            guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
+        
+        /* Parse the WoL wait time. */
+        settings->wol_wait_time =
+            guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_WOL_WAIT_TIME, GUAC_WOL_DEFAULT_BOOT_WAIT_TIME);
+        
+    }
 
     /* Success */
     return settings;
@@ -1133,6 +1199,9 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
 
     /* Free load balancer information string */
     free(settings->load_balance_info);
+    
+    free(settings->wol_mac_addr);
+    free(settings->wol_broadcast_addr);
 
     /* Free settings structure */
     free(settings);

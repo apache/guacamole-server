@@ -269,6 +269,31 @@ typedef struct guac_vnc_settings {
      * as passwords, credit card numbers, etc.
      */
     bool recording_include_keys;
+    
+    /**
+     * Whether or not to send the magic Wake-on-LAN (WoL) packet prior to
+     * trying to connect to the remote host.  By default this will not be sent.
+     * If this option is enabled but a MAC address is not provided a warning will
+     * be logged and the packet will not be sent.
+     */
+    bool wol_send_packet;
+    
+    /**
+     * The MAC address to place in the magic WoL packet to wake the remote host.
+     */
+    char* wol_mac_addr;
+    
+    /**
+     * The broadcast address to which to send the magic WoL packet to wake
+     * the remote host.
+     */
+    char* wol_broadcast_addr;
+    
+    /**
+     * The number of seconds after sending the magic WoL packet to wait before
+     * attempting to connect to the remote host.
+     */
+    int wol_wait_time;
 
 } guac_vnc_settings;
 

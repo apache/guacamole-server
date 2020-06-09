@@ -286,6 +286,26 @@ typedef struct guac_ssh_settings {
      * The client timezone to pass to the remote system.
      */
     char* timezone;
+    
+    /**
+     * Whether or not to send the Wake-on-LAN magic packet.
+     */
+    bool wol_send_packet;
+    
+    /**
+     * The MAC address to put in the magic WoL packet for the host to wake.
+     */
+    char* wol_mac_addr;
+    
+    /**
+     * The broadcast address to which to send the magic WoL packet.
+     */
+    char* wol_broadcast_addr;
+    
+    /**
+     * The amount of time to wait for the system to wake after sending the packet.
+     */
+    int wol_wait_time;
 
 } guac_ssh_settings;
 
