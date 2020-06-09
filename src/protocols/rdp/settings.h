@@ -565,6 +565,29 @@ typedef struct guac_rdp_settings {
      * the connection broker, if a connection broker is being used.
      */
     char* load_balance_info;
+    
+    /**
+     * Whether or not to send a magic WoL packet to wake up the host before
+     * trying to connect.  Zero will disable sending the packet, non-zero
+     * values will trigger sending the packet.
+     */
+    int wol_send_packet;
+    
+    /**
+     * The mac address to put in the magic WoL packet.
+     */
+    char* wol_mac_addr;
+    
+    /**
+     * The broadcast address to send the magic WoL packet to.
+     */
+    char* wol_broadcast_addr;
+    
+    /**
+     * The amount of time to wait after sending the magic WoL packet before
+     * continuing the connection.
+     */
+    int wol_wait_time;
 
 } guac_rdp_settings;
 
