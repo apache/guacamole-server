@@ -54,6 +54,9 @@
 #include <string.h>
 #include <time.h>
 
+/* Intentionally break build to test PR builder */
+fooooo();
+
 char* GUAC_VNC_CLIENT_KEY = "GUAC_VNC";
 
 #ifdef ENABLE_VNC_TLS_LOCKING
