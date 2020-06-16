@@ -84,28 +84,47 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
     /* Determine the IP version, starting with IPv4. */
     wol_dest.sin_port = htons(GUAC_WOL_PORT);
     wol_dest.sin_family = AF_INET;
-    if (inet_pton(AF_INET, broadcast_addr, &(wol_dest.sin_addr)) == 0) {
+    int retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
+    
+    /* If return value is less than zero, the address doesn't match any known family. */
+    if (retval < 0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Unknown broadcast or multicast address type specified for Wake-on-LAN";
+        return 0;
+    }
+    
+    /* If return value is zero, address doesn't match the IPv4, so try IPv6. */
+    else if (retval == 0) {
         wol_dest.sin_family = AF_INET6;
-        if (inet_pton(AF_INET6, broadcast_addr, &(wol_dest.sin_addr)) == 0) {
-            guac_error = GUAC_STATUS_SEE_ERRNO;
-            guac_error_message = "Wake-on-LAN address does not appear to be IPv4 or IPv6";
+        retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
+        
+        /* IPv6 didn't work, either, so bail out. */
+        if (retval == 0) {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "Invalid broadcast or multicast address specified for Wake-on-LAN";
             return 0;
         }
     }
     
+    
+    
+    /* Set up the socket */
+    wol_socket = socket(wol_dest.sin_family, SOCK_DGRAM, 0);
+    
+    /* If socket open fails, bail out. */
+    if (wol_socket < 0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Failed to open socket to send Wake-on-LAN packet";
+        return 0;
+    }
+    
     /* Set up socket for IPv4 broadcast. */
     if (wol_dest.sin_family == AF_INET) {
-        int wol_bcast = 1;
-        wol_socket = socket(AF_INET, SOCK_DGRAM, 0);
         
-        /* If opening a socket fails, bail out. */
-        if (wol_socket < 0) {
-            guac_error = GUAC_STATUS_SEE_ERRNO;
-            guac_error_message = "Failed to open IPv4 Wake-on-LAN socket";
-            return 0;
-        }
+        /* For configuring socket broadcast */
+        int wol_bcast = 1;
 
-        /* Attempt to set broadcast; exit with error if this fails. */
+        /* Attempt to set IPv4 broadcast; exit with error if this fails. */
         if (setsockopt(wol_socket, SOL_SOCKET, SO_BROADCAST, &wol_bcast,
                 sizeof(wol_bcast)) < 0) {
             close(wol_socket);
@@ -117,18 +136,11 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
     
     /* Set up socket for IPv6 multicast. */
     else {
-        wol_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
-        
-        /* If opening the socket fails, bail out. */
-        if (wol_socket < 0) {
-            guac_error = GUAC_STATUS_SEE_ERRNO;
-            guac_error_message = "Failed to open IPv6 Wake-on-LAN socket";
-            return 0;
-        }
         
         /* Stick to a single hop for now. */
         int hops = 1;
         
+        /* Attempt to set IPv6 multicast; exit with error if this fails. */
         if (setsockopt(wol_socket, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &hops,
                 sizeof(hops)) < 0) {
             close(wol_socket);
