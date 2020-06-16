@@ -95,10 +95,8 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
         wol_socket = socket(AF_INET, SOCK_DGRAM, 0);
         
         /* If opening a socket fails, bail out. */
-        if (wol_socket < 0) {
-            close(wol_socket);
+        if (wol_socket < 0)
             return 0;
-        }
 
         /* Attempt to set broadcast; exit with error if this fails. */
         if (setsockopt(wol_socket, SOL_SOCKET, SO_BROADCAST, &wol_bcast,
@@ -113,16 +111,14 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
         wol_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
         
         /* If opening the socket fails, bail out. */
-        if (wol_socket < 0) {
-            close(wol_socket);
+        if (wol_socket < 0)
             return 0;
-        }
         
         /* Stick to a single hop for now. */
         int hops = 1;
         
         if (setsockopt(wol_socket, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &hops,
-                sizeof(hops))) {
+                sizeof(hops)) < 0) {
             close(wol_socket);
             return 0;
         }
