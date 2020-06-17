@@ -318,7 +318,8 @@ enum SSH_ARGS_IDX {
     
     /**
      * The amount of time to wait after sending the magic WoL packet prior to
-     * continuing the connection attempt.
+     * continuing the connection attempt.  The default is no wait time
+     * (0 seconds).
      */
     IDX_WOL_WAIT_TIME,
 
