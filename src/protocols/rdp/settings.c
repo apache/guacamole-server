@@ -612,7 +612,8 @@ enum RDP_ARGS_IDX {
      * The amount of time, in seconds, to wait after sending the WoL packet
      * before attempting to connect to the host.  This should be a reasonable
      * amount of time to allow the remote host to fully boot and respond to
-     * network connection requests.  The default amount of time is 60 seconds.
+     * network connection requests.  The default is not to wait at all
+     * (0 seconds).
      */
     IDX_WOL_WAIT_TIME,
 
