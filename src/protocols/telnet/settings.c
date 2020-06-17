@@ -259,7 +259,8 @@ enum TELNET_ARGS_IDX {
     
     /**
      * The amount of time, in seconds, to wait after the magic WoL packet is
-     * sent before continuing the connection attempt.
+     * sent before continuing the connection attempt.  The default is not to
+     * wait at all (0 seconds).
      */
     IDX_WOL_WAIT_TIME,
 

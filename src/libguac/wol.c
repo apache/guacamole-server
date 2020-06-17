@@ -19,6 +19,9 @@
 
 #include "config.h"
 
+#include "guacamole/error.h"
+#include "guacamole/wol.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,8 +29,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-
-#include "guacamole/wol.h"
 
 /**
  * Generate the magic Wake-on-LAN (WoL) packet for the specified MAC address
@@ -83,35 +84,75 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
     /* Determine the IP version, starting with IPv4. */
     wol_dest.sin_port = htons(GUAC_WOL_PORT);
     wol_dest.sin_family = AF_INET;
-    if (inet_pton(AF_INET, broadcast_addr, &(wol_dest.sin_addr)) == 0) {
+    int retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
+    
+    /* If return value is less than zero, this system doesn't know about IPv4. */
+    if (retval < 0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "IPv4 address family is not supported";
+        return 0;
+    }
+    
+    /* If return value is zero, address doesn't match the IPv4, so try IPv6. */
+    else if (retval == 0) {
         wol_dest.sin_family = AF_INET6;
-        if (inet_pton(AF_INET6, broadcast_addr, &(wol_dest.sin_addr)) == 0)
+        retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
+        
+        /* System does not support IPv6. */
+        if (retval < 0) {
+            guac_error = GUAC_STATUS_SEE_ERRNO;
+            guac_error_message = "IPv6 address family is not supported";
             return 0;
+        }
+        
+        /* Address didn't match IPv6. */
+        else if (retval == 0) {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "Invalid broadcast or multicast address specified for Wake-on-LAN";
+            return 0;
+        }
+    }
+    
+    
+    
+    /* Set up the socket */
+    wol_socket = socket(wol_dest.sin_family, SOCK_DGRAM, 0);
+    
+    /* If socket open fails, bail out. */
+    if (wol_socket < 0) {
+        guac_error = GUAC_STATUS_SEE_ERRNO;
+        guac_error_message = "Failed to open socket to send Wake-on-LAN packet";
+        return 0;
     }
     
     /* Set up socket for IPv4 broadcast. */
     if (wol_dest.sin_family == AF_INET) {
+        
+        /* For configuring socket broadcast */
         int wol_bcast = 1;
-        wol_socket = socket(AF_INET, SOCK_DGRAM, 0);
 
-        /* Attempt to set broadcast; exit with error if this fails. */
+        /* Attempt to set IPv4 broadcast; exit with error if this fails. */
         if (setsockopt(wol_socket, SOL_SOCKET, SO_BROADCAST, &wol_bcast,
                 sizeof(wol_bcast)) < 0) {
             close(wol_socket);
+            guac_error = GUAC_STATUS_SEE_ERRNO;
+            guac_error_message = "Failed to set IPv4 broadcast for Wake-on-LAN socket";
             return 0;
         }
     }
     
     /* Set up socket for IPv6 multicast. */
     else {
-        wol_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
         
         /* Stick to a single hop for now. */
         int hops = 1;
         
+        /* Attempt to set IPv6 multicast; exit with error if this fails. */
         if (setsockopt(wol_socket, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &hops,
-                sizeof(hops))) {
+                sizeof(hops)) < 0) {
             close(wol_socket);
+            guac_error = GUAC_STATUS_SEE_ERRNO;
+            guac_error_message = "Failed to set IPv6 multicast for Wake-on-LAN socket";
             return 0;
         }
     }
@@ -133,6 +174,8 @@ int guac_wol_wake(const char* mac_addr, const char* broadcast_addr) {
     if (sscanf(mac_addr, "%x:%x:%x:%x:%x:%x",
             &(dest_mac[0]), &(dest_mac[1]), &(dest_mac[2]),
             &(dest_mac[3]), &(dest_mac[4]), &(dest_mac[5])) != 6) {
+        guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+        guac_error_message = "Invalid argument for Wake-on-LAN MAC address";
         return -1;
     }
     

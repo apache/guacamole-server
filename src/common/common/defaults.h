@@ -24,7 +24,7 @@
  * The default number of seconds to wait after sending the Wake-on-LAN packet
  * for the destination host to start responding.
  */
-#define GUAC_WOL_DEFAULT_BOOT_WAIT_TIME 60
+#define GUAC_WOL_DEFAULT_BOOT_WAIT_TIME 0
 
 
 #endif /* GUAC_COMMON_DEFAULTS_H */

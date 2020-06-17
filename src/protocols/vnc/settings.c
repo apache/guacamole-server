@@ -361,7 +361,8 @@ enum VNC_ARGS_IDX {
     
     /**
      * The number of seconds to wait after sending the magic WoL packet before
-     * attempting to connect to the remote host.
+     * attempting to connect to the remote host.  The default is not to wait
+     * at all (0 seconds).
      */
     IDX_WOL_WAIT_TIME,
 
