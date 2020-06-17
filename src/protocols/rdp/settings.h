@@ -397,7 +397,7 @@ typedef struct guac_rdp_settings {
 
 #ifdef ENABLE_COMMON_SSH
     /**
-     * Whether SFTP should be enabled for the VNC connection.
+     * Whether SFTP should be enabled for the RDP connection.
      */
     int enable_sftp;
 
