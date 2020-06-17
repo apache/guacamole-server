@@ -86,10 +86,10 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
     wol_dest.sin_family = AF_INET;
     int retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
     
-    /* If return value is less than zero, the address doesn't match any known family. */
+    /* If return value is less than zero, this system doesn't know about IPv4. */
     if (retval < 0) {
         guac_error = GUAC_STATUS_SEE_ERRNO;
-        guac_error_message = "Unknown broadcast or multicast address type specified for Wake-on-LAN";
+        guac_error_message = "IPv4 address family is not supported";
         return 0;
     }
     
@@ -98,8 +98,15 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
         wol_dest.sin_family = AF_INET6;
         retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
         
-        /* IPv6 didn't work, either, so bail out. */
-        if (retval == 0) {
+        /* System does not support IPv6. */
+        if (retval < 0) {
+            guac_error = GUAC_STATUS_SEE_ERRNO;
+            guac_error_message = "IPv6 address family is not supported";
+            return 0;
+        }
+        
+        /* Address didn't match IPv6. */
+        else if (retval == 0) {
             guac_error = GUAC_STATUS_INVALID_ARGUMENT;
             guac_error_message = "Invalid broadcast or multicast address specified for Wake-on-LAN";
             return 0;
