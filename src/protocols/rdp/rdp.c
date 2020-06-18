@@ -345,7 +345,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Init random number generator */
     srandom(time(NULL));
-    
+
+    pthread_rwlock_wrlock(&(rdp_client->lock));
+
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
         rdp_client->recording = guac_common_recording_create(client,
@@ -380,7 +382,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 "FreeRDP initialization failed before connecting. Please "
                 "check for errors earlier in the logs and/or enable "
                 "debug-level logging for guacd.");
-        return 1;
+        goto fail;
     }
 
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
@@ -396,7 +398,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     if (!freerdp_connect(rdp_inst)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
                 "Error connecting to RDP server");
-        return 1;
+        goto fail;
     }
 
     /* Connection complete */
@@ -406,6 +408,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Signal that reconnect has been completed */
     guac_rdp_disp_reconnect_complete(rdp_client->disp);
+
+    pthread_rwlock_unlock(&(rdp_client->lock));
 
     /* Handle messages from RDP server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING
@@ -489,6 +493,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     }
 
+    pthread_rwlock_wrlock(&(rdp_client->lock));
+
     /* Clean up print job, if active */
     if (rdp_client->active_job != NULL) {
         guac_rdp_print_job_kill(rdp_client->active_job);
@@ -510,17 +516,26 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Free SVC list */
     guac_common_list_free(rdp_client->available_svc);
+    rdp_client->available_svc = NULL;
 
     /* Free RDP keyboard state */
     guac_rdp_keyboard_free(rdp_client->keyboard);
+    rdp_client->keyboard = NULL;
 
     /* Free display */
     guac_common_display_free(rdp_client->display);
+    rdp_client->display = NULL;
+
+    pthread_rwlock_unlock(&(rdp_client->lock));
 
     /* Client is now disconnected */
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
 
     return 0;
+
+fail:
+    pthread_rwlock_unlock(&(rdp_client->lock));
+    return 1;
 
 }
 
