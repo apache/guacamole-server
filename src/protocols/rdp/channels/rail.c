@@ -104,6 +104,7 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
         return status;
 
     RAIL_EXEC_ORDER exec = {
+        .flags = RAIL_EXEC_FLAG_EXPAND_ARGUMENTS,
         .RemoteApplicationProgram = rdp_client->settings->remote_app,
         .RemoteApplicationWorkingDir = rdp_client->settings->remote_app_dir,
         .RemoteApplicationArguments = rdp_client->settings->remote_app_args,
