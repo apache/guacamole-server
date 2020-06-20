@@ -104,7 +104,13 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
         .dragFullWindows = FALSE,
 
         .highContrast = {
-            .flags = 0x7E,
+            .flags =
+                  HCF_AVAILABLE
+                | HCF_CONFIRMHOTKEY
+                | HCF_HOTKEYACTIVE
+                | HCF_HOTKEYAVAILABLE
+                | HCF_HOTKEYSOUND
+                | HCF_INDICATOR,
             .colorScheme = {
                 .string = NULL,
                 .length = 0
