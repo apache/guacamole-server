@@ -100,13 +100,36 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
         return status;
 
     RAIL_SYSPARAM_ORDER sysparam = {
+
+        .dragFullWindows = FALSE,
+
+        .highContrast = {
+            .flags = 0x7E,
+            .colorScheme = {
+                .string = NULL,
+                .length = 0
+            }
+        },
+
+        .keyboardCues = FALSE,
+        .keyboardPref = FALSE,
+        .mouseButtonSwap = FALSE,
+
         .workArea = {
             .left   = 0,
             .top    = 0,
             .right  = rdp_client->settings->width,
             .bottom = rdp_client->settings->height
         },
-        .dragFullWindows = FALSE
+
+        .params =
+              SPI_MASK_SET_DRAG_FULL_WINDOWS
+            | SPI_MASK_SET_HIGH_CONTRAST
+            | SPI_MASK_SET_KEYBOARD_CUES
+            | SPI_MASK_SET_KEYBOARD_PREF
+            | SPI_MASK_SET_MOUSE_BUTTON_SWAP
+            | SPI_MASK_SET_WORK_AREA
+
     };
 
     /* Send client system parameters */
