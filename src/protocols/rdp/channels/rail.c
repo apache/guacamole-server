@@ -49,13 +49,15 @@
 
 /**
  * Completes initialization of the RemoteApp session, responding to the server
- * handshake, sending client system parameters, and executing the desired
- * RemoteApp command. This is accomplished using the Handshake PDU, Client
- * System Parameters Update PDU, and Client Execute PDU respectively. These
- * PDUs MUST be sent for the desired RemoteApp to run, and MUST NOT be sent
- * until after a Handshake or HandshakeEx PDU has been received. See:
+ * handshake, sending client status and system parameters, and executing the
+ * desired RemoteApp command. This is accomplished using the Handshake PDU,
+ * Client Information PDU, one or more Client System Parameters Update PDUs,
+ * and the Client Execute PDU respectively. These PDUs MUST be sent for the
+ * desired RemoteApp to run, and MUST NOT be sent until after a Handshake or
+ * HandshakeEx PDU has been received. See:
  *
  * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/cec4eb83-b304-43c9-8378-b5b8f5e7082a (Handshake PDU)
+ * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/743e782d-f59b-40b5-a0f3-adc74e68a2ff (Client Information PDU)
  * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/60344497-883f-4711-8b9a-828d1c580195 (System Parameters Update PDU)
  * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-rdperp/98a6e3c3-c2a9-42cc-ad91-0d9a6c211138 (Client Execute PDU)
  *
@@ -88,14 +90,52 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
     if (status != CHANNEL_RC_OK)
         return status;
 
+    RAIL_CLIENT_STATUS_ORDER client_status = {
+        .flags = 0x00
+    };
+
+    /* Send client status */
+    status = rail->ClientInformation(rail, &client_status);
+    if (status != CHANNEL_RC_OK)
+        return status;
+
     RAIL_SYSPARAM_ORDER sysparam = {
+
+        .dragFullWindows = FALSE,
+
+        .highContrast = {
+            .flags =
+                  HCF_AVAILABLE
+                | HCF_CONFIRMHOTKEY
+                | HCF_HOTKEYACTIVE
+                | HCF_HOTKEYAVAILABLE
+                | HCF_HOTKEYSOUND
+                | HCF_INDICATOR,
+            .colorScheme = {
+                .string = NULL,
+                .length = 0
+            }
+        },
+
+        .keyboardCues = FALSE,
+        .keyboardPref = FALSE,
+        .mouseButtonSwap = FALSE,
+
         .workArea = {
             .left   = 0,
             .top    = 0,
             .right  = rdp_client->settings->width,
             .bottom = rdp_client->settings->height
         },
-        .dragFullWindows = FALSE
+
+        .params =
+              SPI_MASK_SET_DRAG_FULL_WINDOWS
+            | SPI_MASK_SET_HIGH_CONTRAST
+            | SPI_MASK_SET_KEYBOARD_CUES
+            | SPI_MASK_SET_KEYBOARD_PREF
+            | SPI_MASK_SET_MOUSE_BUTTON_SWAP
+            | SPI_MASK_SET_WORK_AREA
+
     };
 
     /* Send client system parameters */
@@ -104,6 +144,7 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
         return status;
 
     RAIL_EXEC_ORDER exec = {
+        .flags = RAIL_EXEC_FLAG_EXPAND_ARGUMENTS,
         .RemoteApplicationProgram = rdp_client->settings->remote_app,
         .RemoteApplicationWorkingDir = rdp_client->settings->remote_app_dir,
         .RemoteApplicationArguments = rdp_client->settings->remote_app_args,
