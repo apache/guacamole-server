@@ -340,72 +340,95 @@ int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym) {
 
 }
 
-int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
-        int keysym, int pressed) {
+/**
+ * Presses/releases the requested key by sending one or more RDP key events, as
+ * defined within the keymap defining that key.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param key
+ *     The guac_rdp_keysym_desc of the key being pressed or released, as
+ *     retrieved from the relevant keymap.
+ *
+ * @param pressed
+ *     Zero if the key is being released, non-zero otherwise.
+ *
+ * @return
+ *     Zero if the key was successfully pressed/released, non-zero if the key
+ *     cannot be sent using RDP key events.
+ */
+static int guac_rdp_keyboard_send_defined_key(guac_rdp_keyboard* keyboard,
+        guac_rdp_key* key, int pressed) {
 
     guac_client* client = keyboard->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    /* If keysym is actually defined within keyboard */
-    guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
-    if (key != NULL) {
+    if (key->definition->scancode == 0)
+        return 1;
 
-        /* Look up scancode mapping */
-        const guac_rdp_keysym_desc* keysym_desc = key->definition;
+    const guac_rdp_keysym_desc* keysym_desc = key->definition;
 
-        /* If defined, send event */
-        if (keysym_desc->scancode != 0) {
-
-            /* Update remote lock state as necessary */
-            guac_rdp_keyboard_update_locks(keyboard,
-                    keysym_desc->set_locks,
-                    keysym_desc->clear_locks);
-
-            /* Update remote modifier states as necessary */
-            guac_rdp_keyboard_update_modifiers(keyboard,
-                    keysym_desc->set_modifiers,
-                    keysym_desc->clear_modifiers);
-
-            /* Fire actual key event for target key */
-            guac_rdp_send_key_event(rdp_client, keysym_desc->scancode,
-                    keysym_desc->flags, pressed);
-
-            return 0;
-
-        }
-    }
-
-    /* Fall back to dead keys or Unicode events if otherwise undefined inside
-     * current keymap (note that we only handle "pressed" here, as neither
-     * Unicode events nor dead keys can have a pressed/released state) */
+    /* Update state of required locks and modifiers only when key is just
+     * now being pressed */
     if (pressed) {
+        guac_rdp_keyboard_update_locks(keyboard,
+                keysym_desc->set_locks,
+                keysym_desc->clear_locks);
 
-        /* Attempt to type using dead keys */
-        if (!guac_rdp_decompose_keysym(keyboard, keysym))
-            return 0;
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Sending keysym 0x%x as Unicode", keysym);
-
-        /* Translate keysym into codepoint */
-        int codepoint;
-        if (keysym <= 0xFF)
-            codepoint = keysym;
-        else if (keysym >= 0x1000000)
-            codepoint = keysym & 0xFFFFFF;
-        else {
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Unmapped keysym has no equivalent unicode "
-                    "value: 0x%x", keysym);
-            return 0;
-        }
-
-        /* Send as Unicode event */
-        guac_rdp_send_unicode_event(rdp_client, codepoint);
-
+        guac_rdp_keyboard_update_modifiers(keyboard,
+                keysym_desc->set_modifiers,
+                keysym_desc->clear_modifiers);
     }
-    
+
+    /* Fire actual key event for target key */
+    guac_rdp_send_key_event(rdp_client, keysym_desc->scancode,
+            keysym_desc->flags, pressed);
+
     return 0;
+
+}
+
+/**
+ * Presses and releases the requested key by sending one or more RDP events,
+ * without relying on a keymap for that key. This will typically involve either
+ * sending the key using a Unicode event or decomposing the key into a series
+ * of keypresses involving deadkeys.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param keysym
+ *     The keysym of the key to press and release.
+ */
+static void guac_rdp_keyboard_send_missing_key(guac_rdp_keyboard* keyboard,
+        int keysym) {
+
+    guac_client* client = keyboard->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    /* Attempt to type using dead keys */
+    if (!guac_rdp_decompose_keysym(keyboard, keysym))
+        return;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "Sending keysym 0x%x as "
+            "Unicode", keysym);
+
+    /* Translate keysym into codepoint */
+    int codepoint;
+    if (keysym <= 0xFF)
+        codepoint = keysym;
+    else if (keysym >= 0x1000000)
+        codepoint = keysym & 0xFFFFFF;
+    else {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Unmapped keysym has no "
+                "equivalent unicode value: 0x%x", keysym);
+        return;
+    }
+
+    /* Send as Unicode event */
+    guac_rdp_send_unicode_event(rdp_client, codepoint);
+
 }
 
 void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
@@ -456,19 +479,6 @@ void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
 int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
         int keysym, int pressed) {
 
-    guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
-    if (key != NULL) {
-
-        /* Ignore event if state is not changing */
-        guac_rdp_key_state new_state = pressed ? GUAC_RDP_KEY_PRESSED : GUAC_RDP_KEY_RELEASED;
-        if (key->state == new_state)
-            return 0;
-
-        /* Update keysym state */
-        key->state = new_state;
-
-    }
-
     /* Synchronize lock keys states, if this has not yet been done */
     if (!keyboard->synchronized) {
 
@@ -481,6 +491,19 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
 
     }
 
+    /* If key is known, update stored state, ignoring the key event entirely if
+     * state is not actually changing */
+    guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
+    if (key != NULL) {
+
+        guac_rdp_key_state new_state = pressed ? GUAC_RDP_KEY_PRESSED : GUAC_RDP_KEY_RELEASED;
+        if (key->state == new_state)
+            return 0;
+
+        key->state = new_state;
+
+    }
+
     /* Toggle locks and set modifiers on keydown */
     if (pressed) {
         keyboard->lock_flags ^= guac_rdp_keyboard_lock_flag(keysym);
@@ -488,10 +511,21 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
     }
 
     /* Clear modifiers on keyup */
-    else
+    else {
         keyboard->modifier_flags &= ~guac_rdp_keyboard_modifier_flag(keysym);
+    }
 
-    return guac_rdp_keyboard_send_event(keyboard, keysym, pressed);
+    /* Attempt to send using normal RDP key events */
+    if (key == NULL && !guac_rdp_keyboard_send_defined_key(keyboard, key, pressed))
+        return 0;
+
+    /* Fall back to dead keys or Unicode events if otherwise undefined inside
+     * current keymap (note that we only handle "pressed" here, as neither
+     * Unicode events nor dead keys can have a pressed/released state) */
+    if (pressed)
+        guac_rdp_keyboard_send_missing_key(keyboard, keysym);
+
+    return 0;
 
 }
 

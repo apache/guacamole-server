@@ -162,12 +162,12 @@ int guac_rdp_decompose_keysym(guac_rdp_keyboard* keyboard, int keysym) {
         return 1;
 
     /* Press dead key */
-    guac_rdp_keyboard_send_event(keyboard, key->dead_keysym, 1);
-    guac_rdp_keyboard_send_event(keyboard, key->dead_keysym, 0);
+    guac_rdp_keyboard_update_keysym(keyboard, key->dead_keysym, 1);
+    guac_rdp_keyboard_update_keysym(keyboard, key->dead_keysym, 0);
 
     /* Press base key */
-    guac_rdp_keyboard_send_event(keyboard, key->base_keysym, 1);
-    guac_rdp_keyboard_send_event(keyboard, key->base_keysym, 0);
+    guac_rdp_keyboard_update_keysym(keyboard, key->base_keysym, 1);
+    guac_rdp_keyboard_update_keysym(keyboard, key->base_keysym, 0);
 
     /* Decomposed key successfully typed */
     return 0;

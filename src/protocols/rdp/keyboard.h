@@ -167,26 +167,6 @@ void guac_rdp_keyboard_free(guac_rdp_keyboard* keyboard);
 int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym);
 
 /**
- * Sends one or more RDP key events, effectively pressing or releasing the
- * given keysym on the remote side. The key events sent will depend on the
- * current keymap. The locally-stored state of each key is remains untouched.
- *
- * @param keyboard
- *     The guac_rdp_keyboard associated with the current RDP session.
- *
- * @param keysym
- *     The keysym being pressed or released.
- *
- * @param pressed
- *     Zero if the keysym is being released, non-zero otherwise.
- *
- * @return
- *     Zero if the keys were successfully sent, non-zero otherwise.
- */
-int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
-        int keysym, int pressed);
-
-/**
  * Updates the local state of the lock keys (such as Caps lock or Num lock),
  * synchronizing the remote state of those keys if it is expected to differ.
  *
