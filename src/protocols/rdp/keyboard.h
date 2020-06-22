@@ -25,22 +25,17 @@
 #include <guacamole/client.h>
 
 /**
- * The current local state of a key - either pressed or released.
+ * The maximum number of distinct keysyms that any particular keyboard may support.
  */
-typedef enum guac_rdp_key_state {
+#define GUAC_RDP_KEYBOARD_MAX_KEYSYMS 1024
 
-    /**
-     * The state associated with a key that is released (not currently
-     * pressed / held down).
-     */
-    GUAC_RDP_KEY_RELEASED = 0,
-
-    /**
-     * The state associated with a key that is currently pressed (held down).
-     */
-    GUAC_RDP_KEY_PRESSED = 1
-
-} guac_rdp_key_state;
+/**
+ * The maximum number of unique modifier variations that any particular keysym
+ * may define. For example, on a US English keyboard, an uppercase "A" may be
+ * typed by pressing Shift+A with Caps Lock unset, or by pressing A with Caps
+ * Lock set (two variations).
+ */
+#define GUAC_RDP_KEY_MAX_DEFINITIONS 4
 
 /**
  * A representation of a single key within the overall local keyboard,
@@ -50,21 +45,25 @@ typedef enum guac_rdp_key_state {
 typedef struct guac_rdp_key {
 
     /**
-     * The definition of this key within the RDP server's keymap (keyboard
-     * layout). This definition describes which scancode corresponds to this
+     * All definitions of this key within the RDP server's keymap (keyboard
+     * layout). Each definition describes which scancode corresponds to this
      * key from the perspective of the RDP server, as well as which other
      * scancodes must be pressed/released for this key to have the desired
-     * meaning. If this key does not exist within the RDP server's keymap, this
-     * will be NULL.
+     * meaning.
      */
-    const guac_rdp_keysym_desc* definition;
+    const guac_rdp_keysym_desc* definitions[GUAC_RDP_KEY_MAX_DEFINITIONS];
 
     /**
-     * The local state of this key. For the sake of simplicity, it is assumed
-     * that this state is also an accurate representation of the remote state
-     * of this key within the RDP session.
+     * The number of definitions within the definitions array. If this key does
+     * not exist within the RDP server's keymap, this will be 0.
      */
-    guac_rdp_key_state state;
+    int num_definitions;
+
+    /**
+     * The definition of this key that is currently pressed. If this key is not
+     * currently pressed, this will be NULL.
+     */
+    const guac_rdp_keysym_desc* pressed;
 
 } guac_rdp_key;
 
@@ -102,11 +101,26 @@ typedef struct guac_rdp_keyboard {
     int synchronized;
 
     /**
+     * The number of keys stored within the keys array.
+     */
+    unsigned int num_keys;
+
+    /**
      * The local state of all keys, as well as the necessary information to
      * translate received keysyms into scancodes or sequences of scancodes for
      * RDP. The state of each key is updated based on received Guacamole key
      * events, while the information describing the behavior and scancode
      * mapping of each key is populated based on an associated keymap.
+     *
+     * Keys within this array are in arbitrary order.
+     */
+    guac_rdp_key keys[GUAC_RDP_KEYBOARD_MAX_KEYSYMS];
+
+    /**
+     * Lookup table into the overall keys array, locating the guac_rdp_key
+     * associated with any particular keysym. If a keysym has no corresponding
+     * guac_rdp_key within the keys array, its entry within this lookuptable
+     * will be NULL.
      *
      * The index of the key for a given keysym is determined based on a
      * simple transformation of the keysym itself. Keysyms between 0x0000 and
@@ -114,7 +128,7 @@ typedef struct guac_rdp_keyboard {
      * between 0x1000000 and 0x100FFFF inclusive (keysyms which are derived
      * from Unicode) are mapped to 0x10000 through 0x1FFFF.
      */
-    guac_rdp_key keys[0x20000];
+    guac_rdp_key* keys_by_keysym[0x20000];
 
 } guac_rdp_keyboard;
 
