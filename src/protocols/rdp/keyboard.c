@@ -29,6 +29,39 @@
 #include <stdlib.h>
 
 /**
+ * Translates the given keysym into the corresponding modifier flag, as defined
+ * by keymap.h. If the given keysym does not represent a modifier key, zero is
+ * returned.
+ *
+ * @param keysym
+ *     The keysym to translate into a modifier flag.
+ *
+ * @return
+ *     The modifier flag which corresponds to the given keysym, or zero if the
+ *     given keysym does not represent a modifier key.
+ */
+static int guac_rdp_keyboard_modifier_flag(int keysym) {
+
+    /* Translate keysym into corresponding modifier flag */
+    switch (keysym) {
+
+        /* Shift */
+        case 0xFFE1:
+        case 0xFFE2:
+            return GUAC_RDP_KEYMAP_MODIFIER_SHIFT;
+
+        /* AltGr */
+        case 0xFE03:
+            return GUAC_RDP_KEYMAP_MODIFIER_ALTGR;
+
+    }
+
+    /* Not a modifier */
+    return 0;
+
+}
+
+/**
  * Translates the given keysym into the corresponding lock flag, as would be
  * required by the RDP synchronize event. If the given keysym does not
  * represent a lock key, zero is returned.
@@ -328,37 +361,14 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
                     keysym_desc->set_locks,
                     keysym_desc->clear_locks);
 
-            /* If defined, send any prerequesite keys that must be set */
-            if (keysym_desc->set_keysyms != NULL)
-                guac_rdp_keyboard_send_events(keyboard,
-                        keysym_desc->set_keysyms,
-                        GUAC_RDP_KEY_RELEASED,
-                        GUAC_RDP_KEY_PRESSED);
-
-            /* If defined, release any keys that must be cleared */
-            if (keysym_desc->clear_keysyms != NULL)
-                guac_rdp_keyboard_send_events(keyboard,
-                        keysym_desc->clear_keysyms,
-                        GUAC_RDP_KEY_PRESSED,
-                        GUAC_RDP_KEY_RELEASED);
+            /* Update remote modifier states as necessary */
+            guac_rdp_keyboard_update_modifiers(keyboard,
+                    keysym_desc->set_modifiers,
+                    keysym_desc->clear_modifiers);
 
             /* Fire actual key event for target key */
             guac_rdp_send_key_event(rdp_client, keysym_desc->scancode,
                     keysym_desc->flags, pressed);
-
-            /* If defined, release any keys that were originally released */
-            if (keysym_desc->set_keysyms != NULL)
-                guac_rdp_keyboard_send_events(keyboard,
-                        keysym_desc->set_keysyms,
-                        GUAC_RDP_KEY_RELEASED,
-                        GUAC_RDP_KEY_RELEASED);
-
-            /* If defined, send any keys that were originally set */
-            if (keysym_desc->clear_keysyms != NULL)
-                guac_rdp_keyboard_send_events(keyboard,
-                        keysym_desc->clear_keysyms,
-                        GUAC_RDP_KEY_PRESSED,
-                        GUAC_RDP_KEY_PRESSED);
 
             return 0;
 
@@ -398,28 +408,6 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
     return 0;
 }
 
-void guac_rdp_keyboard_send_events(guac_rdp_keyboard* keyboard,
-        const int* keysym_string, guac_rdp_key_state from,
-        guac_rdp_key_state to) {
-
-    int keysym;
-
-    /* Send all keysyms in string, NULL terminated */
-    while ((keysym = *keysym_string) != 0) {
-
-        /* If key is currently in given state, send event for changing it to
-         * specified "to" state */
-        guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
-        if (key != NULL && key->state == from)
-            guac_rdp_keyboard_send_event(keyboard, *keysym_string, to);
-
-        /* Next keysym */
-        keysym_string++;
-
-    }
-
-}
-
 void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
         int set_flags, int clear_flags) {
 
@@ -437,8 +425,49 @@ void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
 
 }
 
+void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
+        int set_flags, int clear_flags) {
+
+    /* Only clear modifiers that are set */
+    clear_flags &= keyboard->modifier_flags;
+
+    /* Only set modifiers that are currently cleared */
+    set_flags &= ~keyboard->modifier_flags;
+
+    /* Press/release Shift as needed */
+    if (set_flags & GUAC_RDP_KEYMAP_MODIFIER_SHIFT) {
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE1, 1);
+    }
+    else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_SHIFT) {
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE1, 0);
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE2, 0);
+    }
+
+    /* Press/release AltGr as needed */
+    if (set_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 1);
+    }
+    else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 0);
+    }
+
+}
+
 int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
         int keysym, int pressed) {
+
+    guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
+    if (key != NULL) {
+
+        /* Ignore event if state is not changing */
+        guac_rdp_key_state new_state = pressed ? GUAC_RDP_KEY_PRESSED : GUAC_RDP_KEY_RELEASED;
+        if (key->state == new_state)
+            return 0;
+
+        /* Update keysym state */
+        key->state = new_state;
+
+    }
 
     /* Synchronize lock keys states, if this has not yet been done */
     if (!keyboard->synchronized) {
@@ -452,14 +481,15 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
 
     }
 
-    /* Toggle lock flag, if any */
-    if (pressed)
+    /* Toggle locks and set modifiers on keydown */
+    if (pressed) {
         keyboard->lock_flags ^= guac_rdp_keyboard_lock_flag(keysym);
+        keyboard->modifier_flags |= guac_rdp_keyboard_modifier_flag(keysym);
+    }
 
-    /* Update keysym state */
-    guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
-    if (key != NULL)
-        key->state = pressed ? GUAC_RDP_KEY_PRESSED : GUAC_RDP_KEY_RELEASED;
+    /* Clear modifiers on keyup */
+    else
+        keyboard->modifier_flags &= ~guac_rdp_keyboard_modifier_flag(keysym);
 
     return guac_rdp_keyboard_send_event(keyboard, keysym, pressed);
 

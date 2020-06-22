@@ -80,6 +80,15 @@ typedef struct guac_rdp_keyboard {
     guac_client* client;
 
     /**
+     * The local state of all known modifier keys, as a bitwise OR of the
+     * modified flags used by the keymaps.
+     *
+     * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
+     * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
+     */
+    int modifier_flags;
+
+    /**
      * The local state of all known lock keys, as a bitwise OR of all RDP lock
      * key flags. Legal flags are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK,
      * KBD_SYNC_CAPS_LOCK, and KBD_SYNC_KANA_LOCK.
@@ -178,33 +187,6 @@ int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
         int keysym, int pressed);
 
 /**
- * For every keysym in the given NULL-terminated array of keysyms, send the RDP
- * key events required to update the remote state of those keys as specified,
- * depending on the current local state of those keysyms. For each key in the
- * "from" state, that key will be updated to the "to" state. The locally-stored
- * state of each key is remains untouched.
- *
- * @param keyboard
- *     The guac_rdp_keyboard associated with the current RDP session.
- *
- * @param keysym_string
- *     A NULL-terminated array of keysyms, each of which will be updated.
- *
- * @param from
- *     GUAC_RDP_KEY_RELEASED if the state of currently-released keys should be
- *     updated, or GUAC_RDP_KEY_PRESSED if the state of currently-pressed keys
- *     should be updated.
- *
- * @param to 
- *     GUAC_RDP_KEY_RELEASED if the keys being updated should be marked as
- *     released, or GUAC_RDP_KEY_PRESSED if the keys being updated should be
- *     marked as pressed.
- */
-void guac_rdp_keyboard_send_events(guac_rdp_keyboard* keyboard,
-        const int* keysym_string, guac_rdp_key_state from,
-        guac_rdp_key_state to);
-
-/**
  * Updates the local state of the lock keys (such as Caps lock or Num lock),
  * synchronizing the remote state of those keys if it is expected to differ.
  *
@@ -222,6 +204,26 @@ void guac_rdp_keyboard_send_events(guac_rdp_keyboard* keyboard,
  *     KBD_SYNC_KANA_LOCK.
  */
 void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
+        int set_flags, int clear_flags);
+
+/**
+ * Updates the local state of the modifier keys (such as Shift or AltGr),
+ * synchronizing the remote state of those keys if it is expected to differ.
+ * Valid modifier flags are defined by keymap.h.
+ *
+ * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
+ * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param set_flags
+ *     The modifier key flags which should be set.
+ *
+ * @param clear_flags
+ *     The modifier key flags which should be cleared.
+ */
+void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
         int set_flags, int clear_flags);
 
 /**
