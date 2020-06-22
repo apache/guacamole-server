@@ -607,25 +607,25 @@ void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
 
     /* Press/release Shift as needed */
     if (set_flags & GUAC_RDP_KEYMAP_MODIFIER_SHIFT) {
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE1, 1);
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE1, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
     else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_SHIFT) {
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE1, 0);
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE2, 0);
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE1, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE2, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
 
     /* Press/release AltGr as needed */
     if (set_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 1);
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
     else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 0);
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
 
 }
 
 int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
-        int keysym, int pressed) {
+        int keysym, int pressed, guac_rdp_key_source source) {
 
     /* Synchronize lock keys states, if this has not yet been done */
     if (!keyboard->synchronized) {
@@ -673,7 +673,39 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
         guac_rdp_keyboard_send_missing_key(keyboard, keysym);
     }
 
+    if (source == GUAC_RDP_KEY_SOURCE_CLIENT) {
+
+        /* Update tracking of client-side keyboard state but only for keys
+         * which are tracked server-side, as well (to ensure that the key count
+         * remains correct, even if a user sends extra unbalanced or excessive
+         * press and release events) */
+        if (key != NULL) {
+            if (pressed)
+                keyboard->user_pressed_keys++;
+            else
+                keyboard->user_pressed_keys--;
+        }
+
+        /* Reset RDP server keyboard state (releasing any automatically pressed
+         * keys) once all keys have been released on the client side */
+        if (keyboard->user_pressed_keys == 0)
+            guac_rdp_keyboard_reset(keyboard);
+
+    }
+
     return 0;
+
+}
+
+void guac_rdp_keyboard_reset(guac_rdp_keyboard* keyboard) {
+
+    /* Release all pressed keys */
+    for (int i = 0; i < keyboard->num_keys; i++) {
+        guac_rdp_key* key = &keyboard->keys[i];
+        if (key->pressed != NULL)
+            guac_rdp_keyboard_update_keysym(keyboard, key->pressed->keysym, 0,
+                    GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+    }
 
 }
 

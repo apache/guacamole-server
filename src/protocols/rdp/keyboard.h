@@ -38,6 +38,24 @@
 #define GUAC_RDP_KEY_MAX_DEFINITIONS 4
 
 /**
+ * All possible sources of RDP key events tracked by guac_rdp_keyboard.
+ */
+typedef enum guac_rdp_key_source {
+
+    /**
+     * The key event was received directly from the Guacamole client via a
+     * "key" instruction.
+     */
+    GUAC_RDP_KEY_SOURCE_CLIENT = 0,
+
+    /**
+     * The key event is being synthesized internally within the RDP support.
+     */
+    GUAC_RDP_KEY_SOURCE_SYNTHETIC = 1
+
+} guac_rdp_key_source;
+
+/**
  * A representation of a single key within the overall local keyboard,
  * including the definition of that key within the RDP server's keymap and
  * whether the key is currently pressed locally.
@@ -129,6 +147,14 @@ typedef struct guac_rdp_keyboard {
      * from Unicode) are mapped to 0x10000 through 0x1FFFF.
      */
     guac_rdp_key* keys_by_keysym[0x20000];
+
+    /**
+     * The total number of keys that the user of the connection is currently
+     * holding down. This value indicates only the client-side keyboard state.
+     * It DOES NOT indicate the number of keys currently pressed within the RDP
+     * server.
+     */
+    int user_pressed_keys;
 
 } guac_rdp_keyboard;
 
@@ -234,11 +260,24 @@ void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
  * @param pressed
  *     Zero if the keysym is being released, non-zero otherwise.
  *
+ * @param source
+ *     The source of the key event represented by this call to
+ *     guac_rdp_keyboard_update_keysym().
+ *
  * @return
  *     Zero if the keys were successfully sent, non-zero otherwise.
  */
 int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
-        int keysym, int pressed);
+        int keysym, int pressed, guac_rdp_key_source source);
+
+/**
+ * Releases all currently pressed keys, sending key release events to the RDP
+ * server as necessary. Lock states (Caps Lock, etc.) are not affected.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ */
+void guac_rdp_keyboard_reset(guac_rdp_keyboard* keyboard);
 
 #endif
 
