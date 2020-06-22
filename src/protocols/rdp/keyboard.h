@@ -86,14 +86,14 @@ typedef struct guac_rdp_keyboard {
      * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
      * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
      */
-    int modifier_flags;
+    unsigned int modifier_flags;
 
     /**
      * The local state of all known lock keys, as a bitwise OR of all RDP lock
      * key flags. Legal flags are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK,
      * KBD_SYNC_CAPS_LOCK, and KBD_SYNC_KANA_LOCK.
      */
-    int lock_flags;
+    UINT32 lock_flags;
 
     /**
      * Whether the states of remote lock keys (Caps lock, Num lock, etc.) have
@@ -184,7 +184,7 @@ int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym);
  *     KBD_SYNC_KANA_LOCK.
  */
 void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
-        int set_flags, int clear_flags);
+        unsigned int set_flags, unsigned int clear_flags);
 
 /**
  * Updates the local state of the modifier keys (such as Shift or AltGr),
@@ -204,7 +204,7 @@ void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
  *     The modifier key flags which should be cleared.
  */
 void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
-        int set_flags, int clear_flags);
+        unsigned int set_flags, unsigned int clear_flags);
 
 /**
  * Updates the local state of the given keysym, sending the key events required

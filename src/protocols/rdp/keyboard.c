@@ -186,7 +186,7 @@ static void guac_rdp_send_unicode_event(guac_rdp_client* rdp_client,
  *     lock keys will be active.
  */
 static void guac_rdp_send_synchronize_event(guac_rdp_client* rdp_client,
-        int flags) {
+        UINT32 flags) {
 
     /* Skip if not yet connected */
     freerdp* rdp_inst = rdp_client->rdp_inst;
@@ -432,13 +432,13 @@ static void guac_rdp_keyboard_send_missing_key(guac_rdp_keyboard* keyboard,
 }
 
 void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
-        int set_flags, int clear_flags) {
+        unsigned int set_flags, unsigned int clear_flags) {
 
     guac_client* client = keyboard->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Calculate updated lock flags */
-    int lock_flags = (keyboard->lock_flags | set_flags) & ~clear_flags;
+    unsigned int lock_flags = (keyboard->lock_flags | set_flags) & ~clear_flags;
 
     /* Synchronize remote side only if lock flags have changed */
     if (lock_flags != keyboard->lock_flags) {
@@ -449,7 +449,7 @@ void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
 }
 
 void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
-        int set_flags, int clear_flags) {
+        unsigned int set_flags, unsigned int clear_flags) {
 
     /* Only clear modifiers that are set */
     clear_flags &= keyboard->modifier_flags;

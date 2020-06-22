@@ -64,7 +64,7 @@ typedef struct guac_rdp_keysym_desc {
      * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
      * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
      */
-    const int set_modifiers;
+    const unsigned int set_modifiers;
 
     /**
      * Bitwise-OR of the flags of any modifiers that must NOT be active for the
@@ -78,7 +78,7 @@ typedef struct guac_rdp_keysym_desc {
      * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
      * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
      */
-    const int clear_modifiers;
+    const unsigned int clear_modifiers;
 
     /**
      * Bitwise OR of the flags of all lock keys (ie: Caps lock, Num lock, etc.)
@@ -86,7 +86,7 @@ typedef struct guac_rdp_keysym_desc {
      * are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
      * KBD_SYNC_KANA_LOCK.
       */
-    const int set_locks;
+    const unsigned int set_locks;
 
     /**
      * Bitwise OR of the flags of all lock keys (ie: Caps lock, Num lock, etc.)
@@ -94,7 +94,7 @@ typedef struct guac_rdp_keysym_desc {
      * are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
      * KBD_SYNC_KANA_LOCK.
      */
-    const int clear_locks;
+    const unsigned int clear_locks;
 
 } guac_rdp_keysym_desc;
 
