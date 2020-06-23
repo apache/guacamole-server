@@ -22,6 +22,7 @@
 
 #include "keymap.h"
 
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 
 /**
@@ -278,6 +279,23 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
  *     The guac_rdp_keyboard associated with the current RDP session.
  */
 void guac_rdp_keyboard_reset(guac_rdp_keyboard* keyboard);
+
+/**
+ * Callback which is invoked by FreeRDP when the RDP server reports changes to
+ * keyboard lock status using a Server Set Keyboard Indicators PDU.
+ *
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @param flags
+ *     The remote state of all lock keys, as a bitwise OR of all RDP lock key
+ *     flags. Legal flags are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK,
+ *     KBD_SYNC_CAPS_LOCK, and KBD_SYNC_KANA_LOCK.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
+ */
+BOOL guac_rdp_keyboard_set_indicators(rdpContext* context, UINT16 flags);
 
 #endif
 

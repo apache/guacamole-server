@@ -173,6 +173,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Beep on receipt of Play Sound PDU */
     instance->update->PlaySound = guac_rdp_beep_play_sound;
 
+    /* Automatically synchronize keyboard locks when changed server-side */
+    instance->update->SetKeyboardIndicators = guac_rdp_keyboard_set_indicators;
+
     /* Set up GDI */
     instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
