@@ -25,15 +25,25 @@ freerdp "KBD_SWISS_FRENCH"
 # Basic keys
 #
 
-map -altgr -shift 0x29 0x02..0x0C      ~ "§1234567890'"
-map -altgr -shift      0x10..0x1A      ~ "qwertzuiopè"
-map -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjkléà$"
-map -altgr -shift 0x56 0x2C..0x35      ~ "<yxcvbnm,.-"
+map -caps -altgr -shift 0x29 0x02..0x0C      ~ "§1234567890'"
+map -caps -altgr -shift      0x10..0x1A      ~ "qwertzuiopè"
+map -caps -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjkléà$"
+map -caps -altgr -shift 0x56 0x2C..0x35      ~ "<yxcvbnm,.-"
 
-map -altgr +shift 0x29 0x02..0x0C      ~ "°+"*ç%&/()=?"
-map -altgr +shift      0x10..0x1B      ~ "QWERTZUIOPü!"
-map -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLöä£"
-map -altgr +shift 0x56 0x2C..0x35      ~ ">YXCVBNM;:_"
+map -caps -altgr +shift 0x29 0x02..0x0C      ~ "°+"*ç%&/()=?"
+map -caps -altgr +shift      0x10..0x1B      ~ "QWERTZUIOPü!"
+map -caps -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLöä£"
+map -caps -altgr +shift 0x56 0x2C..0x35      ~ ">YXCVBNM;:_"
+
+map +caps -altgr -shift 0x29 0x02..0x0C      ~ "§1234567890'"
+map +caps -altgr -shift      0x10..0x1A      ~ "QWERTZUIOPè"
+map +caps -altgr -shift      0x1E..0x28 0x2B ~ "ASDFGHJKLéà$"
+map +caps -altgr -shift 0x56 0x2C..0x35      ~ "<YXCVBNM,.-"
+
+map +caps -altgr +shift 0x29 0x02..0x0C      ~ "°+"*ç%&/()=?"
+map +caps -altgr +shift      0x10..0x1B      ~ "qwertzuiopü!"
+map +caps -altgr +shift      0x1E..0x28 0x2B ~ "asdfghjklöä£"
+map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">yxcvbnm;:_"
 
 #
 # Keys requiring AltGr
