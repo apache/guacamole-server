@@ -25,17 +25,27 @@ freerdp "KBD_TURKISH_Q"
 # Basic keys
 #
 
-map -altgr -shift 0x29 0x02..0x0D      ~ ""1234567890*-"
-map -altgr -shift      0x10..0x1B      ~ "qwertyuıopğü"
-map -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjklşi,"
-map -altgr -shift 0x56 0x2C..0x35      ~ "<zxcvbnmöç."
+map -caps -altgr -shift 0x29 0x02..0x0D      ~ ""1234567890*-"
+map -caps -altgr -shift      0x10..0x1B      ~ "qwertyuıopğü"
+map -caps -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjklşi,"
+map -caps -altgr -shift 0x56 0x2C..0x35      ~ "<zxcvbnmöç."
 
-map -altgr +shift 0x29 0x02..0x03      ~ "é!'"
-map -altgr +shift      0x05..0x0D      ~ "+%&/()=?_"
-map -altgr +shift      0x10..0x1B      ~ "QWERTYUIOPĞÜ"
-map -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLŞİ;"
-map -altgr +shift 0x56 0x2C..0x35      ~ ">ZXCVBNMÖÇ:"
+map -caps -altgr +shift 0x29 0x02..0x03      ~ "é!'"
+map -caps -altgr +shift      0x05..0x0D      ~ "+%&/()=?_"
+map -caps -altgr +shift      0x10..0x1B      ~ "QWERTYUIOPĞÜ"
+map -caps -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLŞİ;"
+map -caps -altgr +shift 0x56 0x2C..0x35      ~ ">ZXCVBNMÖÇ:"
 
+map +caps -altgr -shift 0x29 0x02..0x0D      ~ ""1234567890*-"
+map +caps -altgr -shift      0x10..0x1B      ~ "QWERTYUIOPĞÜ"
+map +caps -altgr -shift      0x1E..0x28 0x2B ~ "ASDFGHJKLŞİ,"
+map +caps -altgr -shift 0x56 0x2C..0x35      ~ "<ZXCVBNMÖÇ."
+
+map +caps -altgr +shift 0x29 0x02..0x03      ~ "é!'"
+map +caps -altgr +shift      0x05..0x0D      ~ "+%&/()=?_"
+map +caps -altgr +shift      0x10..0x1B      ~ "qwertyuıopğü"
+map +caps -altgr +shift      0x1E..0x28 0x2B ~ "asdfghjklşi;"
+map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">zxcvbnmöç:"
 
 #
 # Keys requiring AltGr
@@ -47,21 +57,26 @@ map +altgr -shift      0x08..0x0D      ~ "{[]}\|"
 map +altgr -shift 0x10 ~ "@"
 map +altgr -shift 0x12 ~ "€"
 map +altgr -shift 0x14 ~ "₺"
-map +altgr -shift 0x17 ~ "i"
-
-map +altgr -shift 0x1E ~ "æ"
 map +altgr -shift 0x1F ~ "ß"
 
 map +altgr -shift 0x56 ~ "|"
 
 
 #
-# Keys requiring AltGr & Shift
+# Keys requiring AltGr and vary by Shift and Caps Lock
 #
 
-map +altgr +shift 0x17 ~ "İ"
+map -caps +altgr -shift 0x17 ~ "i"
+map -caps +altgr -shift 0x1E ~ "æ"
 
-map +altgr +shift 0x1E ~ "Æ"
+map -caps +altgr +shift 0x17 ~ "İ"
+map -caps +altgr +shift 0x1E ~ "Æ"
+
+map +caps +altgr -shift 0x17 ~ "İ"
+map +caps +altgr -shift 0x1E ~ "Æ"
+
+map +caps +altgr +shift 0x1E ~ "æ"
+map +caps +altgr +shift 0x17 ~ "i"
 
 #
 # Dead keys

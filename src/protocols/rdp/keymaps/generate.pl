@@ -92,10 +92,12 @@ for my $filename (@ARGV) {
             my $ext_flags = 0;
             my $set_shift = 0;
             my $set_altgr = 0;
+            my $set_caps  = 0;
             my $set_num   = 0;
 
             my $clear_shift = 0;
             my $clear_altgr = 0;
+            my $clear_caps  = 0;
             my $clear_num   = 0;
 
             # Parse ranges and options
@@ -105,6 +107,7 @@ for my $filename (@ARGV) {
                 if ((my $opt) = m/^\+([a-z]+)$/) {
                     if    ($opt eq "shift") { $set_shift = 1; }
                     elsif ($opt eq "altgr") { $set_altgr = 1; }
+                    elsif ($opt eq "caps")  { $set_caps  = 1; }
                     elsif ($opt eq "num")   { $set_num   = 1; }
                     elsif ($opt eq "ext")   { $ext_flags = 1; }
                     else {
@@ -117,6 +120,7 @@ for my $filename (@ARGV) {
                 elsif ((my $opt) = m/^-([a-z]+)$/) {
                     if    ($opt eq "shift") { $clear_shift = 1; }
                     elsif ($opt eq "altgr") { $clear_altgr = 1; }
+                    elsif ($opt eq "caps")  { $clear_caps  = 1; }
                     elsif ($opt eq "num")   { $clear_num   = 1; }
                     else {
                         die "$filename: $.: ERROR: "
@@ -175,37 +179,25 @@ for my $filename (@ARGV) {
                          .  " .keysym = "   . $keysyms[$i] . ","
                          .  " .scancode = " . $scancodes[$i];
 
-                # Set requirements
-                if ($set_shift && !$set_altgr) {
-                    $content .= ", .set_keysyms = GUAC_KEYSYMS_SHIFT";
-                }
-                elsif (!$set_shift && $set_altgr) {
-                    $content .= ", .set_keysyms = GUAC_KEYSYMS_ALTGR";
-                }
-                elsif ($set_shift && $set_altgr) {
-                    $content .= ", .set_keysyms = GUAC_KEYSYMS_SHIFT_ALTGR";
-                }
+                # Modifiers that must be active
+                $content .= ", .set_modifiers = 0";
+                $content .= " | GUAC_RDP_KEYMAP_MODIFIER_SHIFT" if $set_shift;
+                $content .= " | GUAC_RDP_KEYMAP_MODIFIER_ALTGR" if $set_altgr;
 
-                # Clear requirements
-                if ($clear_shift && !$clear_altgr) {
-                    $content .= ", .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT";
-                }
-                elsif (!$clear_shift && $clear_altgr) {
-                    $content .= ", .clear_keysyms = GUAC_KEYSYMS_ALTGR";
-                }
-                elsif ($clear_shift && $clear_altgr) {
-                    $content .= ", .clear_keysyms = GUAC_KEYSYMS_ALL_SHIFT_ALTGR";
-                }
+                # Modifiers that must be inactive
+                $content .= ", .clear_modifiers = 0";
+                $content .= " | GUAC_RDP_KEYMAP_MODIFIER_SHIFT" if $clear_shift;
+                $content .= " | GUAC_RDP_KEYMAP_MODIFIER_ALTGR" if $clear_altgr;
 
-                # Set locks
-                if ($set_num) {
-                    $content .= ", .set_locks = KBD_SYNC_NUM_LOCK";
-                }
+                # Locks that must be set
+                $content .= ", .set_locks = 0";
+                $content .= " | KBD_SYNC_NUM_LOCK" if $set_num;
+                $content .= " | KBD_SYNC_CAPS_LOCK" if $set_caps;
 
-                # Clear locks
-                if ($clear_num) {
-                    $content .= ", .clear_locks = KBD_SYNC_NUM_LOCK";
-                }
+                # Locks that must NOT be set
+                $content .= ", .clear_locks = 0";
+                $content .= " | KBD_SYNC_NUM_LOCK" if $clear_num;
+                $content .= " | KBD_SYNC_CAPS_LOCK" if $clear_caps;
 
                 # Flags
                 if ($ext_flags) {

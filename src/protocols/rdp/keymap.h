@@ -23,6 +23,16 @@
 #include <winpr/wtypes.h>
 
 /**
+ * Bitwise flag value representing the Shift modifier.
+ */
+#define GUAC_RDP_KEYMAP_MODIFIER_SHIFT 1
+
+/**
+ * Bitwise flag value representing the AltGr modifier.
+ */
+#define GUAC_RDP_KEYMAP_MODIFIER_ALTGR 2
+
+/**
  * Represents a keysym-to-scancode mapping for RDP, with extra information
  * about the state of prerequisite keysyms.
  */
@@ -39,29 +49,44 @@ typedef struct guac_rdp_keysym_desc {
     int scancode;
 
     /**
-     * Required RDP-specific flags.
+     * Required RDP-specific flags that must be sent along with the scancode.
      */
     int flags;
 
     /**
-     * Null-terminated list of keysyms which must be down for this keysym
-     * to be properly typed.
+     * Bitwise-OR of the flags of any modifiers that must be active for the
+     * associated scancode to be interpreted as this keysym.
+     *
+     * If the associated keysym is pressed, and any of these modifiers are not
+     * currently active, Guacamole's RDP support must send additional events to
+     * activate these modifiers prior to sending the scancode for this keysym.
+     *
+     * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
+     * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
      */
-    const int* set_keysyms;
+    const unsigned int set_modifiers;
 
     /**
-     * Null-terminated list of keysyms which must be up for this keysym
-     * to be properly typed.
+     * Bitwise-OR of the flags of any modifiers that must NOT be active for the
+     * associated scancode to be interpreted as this keysym.
+     *
+     * If the associated keysym is pressed, and any of these modifiers are
+     * currently active, Guacamole's RDP support must send additional events to
+     * deactivate these modifiers prior to sending the scancode for this
+     * keysym.
+     *
+     * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
+     * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
      */
-    const int* clear_keysyms;
+    const unsigned int clear_modifiers;
 
     /**
      * Bitwise OR of the flags of all lock keys (ie: Caps lock, Num lock, etc.)
      * which must be active for this keysym to be properly typed. Legal flags
      * are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
      * KBD_SYNC_KANA_LOCK.
-     */
-    int set_locks;
+      */
+    const unsigned int set_locks;
 
     /**
      * Bitwise OR of the flags of all lock keys (ie: Caps lock, Num lock, etc.)
@@ -69,7 +94,7 @@ typedef struct guac_rdp_keysym_desc {
      * are KBD_SYNC_SCROLL_LOCK, KBD_SYNC_NUM_LOCK, KBD_SYNC_CAPS_LOCK, and
      * KBD_SYNC_KANA_LOCK.
      */
-    int clear_locks;
+    const unsigned int clear_locks;
 
 } guac_rdp_keysym_desc;
 
@@ -109,63 +134,6 @@ struct guac_rdp_keymap {
  * The name of the default keymap, which MUST exist.
  */
 #define GUAC_DEFAULT_KEYMAP "en-us-qwerty"
-
-/**
- * Keysym string containing only the left "shift" key.
- */
-extern const int GUAC_KEYSYMS_SHIFT[];
-
-/**
- * Keysym string containing both "shift" keys.
- */
-extern const int GUAC_KEYSYMS_ALL_SHIFT[];
-
-/**
- * Keysym string containing only the right "alt" key (AltGr).
- */
-extern const int GUAC_KEYSYMS_ALTGR[];
-
-/**
- * Keysym string containing the right "alt" key (AltGr) and
- * left shift.
- */
-extern const int GUAC_KEYSYMS_SHIFT_ALTGR[];
-
-/**
- * Keysym string containing the right "alt" key (AltGr) and
- * both shift keys.
- */
-extern const int GUAC_KEYSYMS_ALL_SHIFT_ALTGR[];
-
-/**
- * Keysym string containing only the left "ctrl" key.
- */
-extern const int GUAC_KEYSYMS_CTRL[];
-
-/**
- * Keysym string containing both "ctrl" keys.
- */
-extern const int GUAC_KEYSYMS_ALL_CTRL[];
-
-/**
- * Keysym string containing only the left "alt" key.
- */
-extern const int GUAC_KEYSYMS_ALT[];
-
-/**
- * Keysym string containing both "alt" keys.
- */
-extern const int GUAC_KEYSYMS_ALL_ALT[];
-
-/**
- * Keysym string containing the left "alt" and left "ctrl" keys
- */
-extern const int GUAC_KEYSYMS_CTRL_ALT[];
-
-/**
- * Keysym string containing all modifier keys.
- */
-extern const int GUAC_KEYSYMS_ALL_MODIFIERS[];
 
 /**
  * NULL-terminated array of all keymaps.

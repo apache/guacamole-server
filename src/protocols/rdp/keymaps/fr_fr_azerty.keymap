@@ -25,18 +25,28 @@ freerdp "KBD_FRENCH"
 # Basic keys
 #
 
-map -altgr -shift 0x29 0x02..0x0D      ~ "²&é"'(-è_çà)="
-map -altgr -shift      0x10..0x19 0x1B ~ "azertyuiop$"
-map -altgr -shift      0x1E..0x28 0x2B ~ "qsdfghjklmù*"
-map -altgr -shift 0x56 0x2C..0x35      ~ "<wxcvbn,;:!"
+map -caps -altgr -shift 0x29 0x02..0x0D      ~ "²&é"'(-è_çà)="
+map -caps -altgr -shift      0x10..0x19 0x1B ~ "azertyuiop$"
+map -caps -altgr -shift      0x1E..0x28 0x2B ~ "qsdfghjklmù*"
+map -caps -altgr -shift 0x56 0x2C..0x35      ~ "<wxcvbn,;:!"
 
-map -altgr +shift      0x02..0x0D      ~ "1234567890°+"
-map -altgr +shift      0x10..0x19 0x1B ~ "AZERTYUIOP£"
-map -altgr +shift      0x1E..0x28 0x2B ~ "QSDFGHJKLM%µ"
-map -altgr +shift 0x56 0x2C..0x35      ~ ">WXCVBN?./§"
+map -caps -altgr +shift      0x02..0x0D      ~ "1234567890°+"
+map -caps -altgr +shift      0x10..0x19 0x1B ~ "AZERTYUIOP£"
+map -caps -altgr +shift      0x1E..0x28 0x2B ~ "QSDFGHJKLM%µ"
+map -caps -altgr +shift 0x56 0x2C..0x35      ~ ">WXCVBN?./§"
+
+map +caps -altgr -shift 0x29 0x02..0x0D      ~ "²1234567890°+"
+map +caps -altgr -shift      0x10..0x19 0x1B ~ "AZERTYUIOP£"
+map +caps -altgr -shift      0x1E..0x28 0x2B ~ "QSDFGHJKLM%µ"
+map +caps -altgr -shift 0x56 0x2C..0x35      ~ "<WXCVBN?./§"
+
+map +caps -altgr +shift      0x02..0x0D      ~ "&é"'(-è_çà)="
+map +caps -altgr +shift      0x10..0x19 0x1B ~ "azertyuiop$"
+map +caps -altgr +shift      0x1E..0x28 0x2B ~ "qsdfghjklmù*"
+map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">wxcvbn,;:!"
 
 #
-# Keys requiring AltGr
+# Keys requiring AltGr (unaffected by Caps Lock, but Shift must not be pressed)
 #
 
 map +altgr -shift 0x03..0x0D ~ "~#{[|`\^@]}"
@@ -45,9 +55,12 @@ map +altgr -shift 0x12 ~ "€"
 map +altgr -shift 0x1B ~ "¤"
 
 #
-# Dead keys
+# Dead keys (affected by Caps Lock and Shift)
 #
 
-map -altgr -shift 0x1A ~ 0xFE52 # Dead circumflex
-map -altgr +shift 0x1A ~ 0xFE57 # Dead umlaut
+map -caps -altgr -shift 0x1A ~ 0xFE52 # Dead circumflex
+map -caps -altgr +shift 0x1A ~ 0xFE57 # Dead umlaut
+
+map +caps -altgr -shift 0x1A ~ 0xFE57 # Dead umlaut
+map +caps -altgr +shift 0x1A ~ 0xFE52 # Dead circumflex
 

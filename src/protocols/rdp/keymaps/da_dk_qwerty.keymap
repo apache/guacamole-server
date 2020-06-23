@@ -25,15 +25,25 @@ freerdp "KBD_DANISH"
 # Basic keys
 #
 
-map -altgr -shift 0x29 0x02..0x0C      ~ "§1234567890+"
-map -altgr -shift      0x10..0x1A      ~ "qwertyuiopå"
-map -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjklæø'"
-map -altgr -shift 0x56 0x2C..0x35      ~ "<zxcvbnm,.-"
+map -caps -altgr -shift 0x29 0x02..0x0C      ~ "§1234567890+"
+map -caps -altgr -shift      0x10..0x1A      ~ "qwertyuiopå"
+map -caps -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjklæø'"
+map -caps -altgr -shift 0x56 0x2C..0x35      ~ "<zxcvbnm,.-"
 
-map -altgr +shift 0x29 0x02..0x0C      ~ "½!"#¤%&/()=?"
-map -altgr +shift      0x10..0x1A      ~ "QWERTYUIOPÅ"
-map -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÆØ*"
-map -altgr +shift 0x56 0x2C..0x35      ~ ">ZXCVBNM;:_"
+map -caps -altgr +shift 0x29 0x02..0x0C      ~ "½!"#¤%&/()=?"
+map -caps -altgr +shift      0x10..0x1A      ~ "QWERTYUIOPÅ"
+map -caps -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÆØ*"
+map -caps -altgr +shift 0x56 0x2C..0x35      ~ ">ZXCVBNM;:_"
+
+map +caps -altgr -shift 0x29 0x02..0x0C      ~ "§1234567890+"
+map +caps -altgr -shift      0x10..0x1A      ~ "QWERTYUIOPÅ"
+map +caps -altgr -shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÆØ'"
+map +caps -altgr -shift 0x56 0x2C..0x35      ~ "<ZXCVBNM,.-"
+
+map +caps -altgr +shift 0x29 0x02..0x0C      ~ "½!"#¤%&/()=?"
+map +caps -altgr +shift      0x10..0x1A      ~ "qwertyuiopå"
+map +caps -altgr +shift      0x1E..0x28 0x2B ~ "asdfghjklæø*"
+map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">zxcvbnm;:_"
 
 #
 # Keys requiring AltGr

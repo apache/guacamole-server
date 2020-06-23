@@ -25,16 +25,25 @@ freerdp "KBD_HUNGARIAN"
 # Basic keys
 #
 
-map -altgr -shift 0x29 0x02..0x0D      ~ "0123456789öüó"
-map -altgr -shift      0x10..0x1B      ~ "qwertzuıopőú"
-map -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjkléáű"
-map -altgr -shift 0x56 0x2C..0x35      ~ "íyxcvbnm,.-"
+map -caps -altgr -shift 0x29 0x02..0x0D      ~ "0123456789öüó"
+map -caps -altgr -shift      0x10..0x1B      ~ "qwertzuıopőú"
+map -caps -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjkléáű"
+map -caps -altgr -shift 0x56 0x2C..0x35      ~ "íyxcvbnm,.-"
 
-map -altgr +shift 0x29 0x02..0x0D      ~ "§'"+!%/=()ÖÜÓ"
-map -altgr +shift      0x10..0x1B      ~ "QWERTZUIOPŐÚ"
-map -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÉÁŰ"
-map -altgr +shift 0x56 0x2C..0x35      ~ "ÍYXCVBNM?:_"
+map -caps -altgr +shift 0x29 0x02..0x0D      ~ "§'"+!%/=()ÖÜÓ"
+map -caps -altgr +shift      0x10..0x1B      ~ "QWERTZUIOPŐÚ"
+map -caps -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÉÁŰ"
+map -caps -altgr +shift 0x56 0x2C..0x35      ~ "ÍYXCVBNM?:_"
 
+map +caps -altgr -shift 0x29 0x02..0x0D      ~ "0123456789ÖÜÓ"
+map +caps -altgr -shift      0x10..0x1B      ~ "QWERTZUIOPŐÚ"
+map +caps -altgr -shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÉÁŰ"
+map +caps -altgr -shift 0x56 0x2C..0x35      ~ "ÍYXCVBNM,.-"
+
+map +caps -altgr +shift 0x29 0x02..0x0D      ~ "§'"+!%/=()öüó"
+map +caps -altgr +shift      0x10..0x1B      ~ "qwertzuiopőú"
+map +caps -altgr +shift      0x1E..0x28 0x2B ~ "asdfghjkléáű"
+map +caps -altgr +shift 0x56 0x2C..0x35      ~ "íyxcvbnm?:_"
 
 #
 # Keys requiring AltGr

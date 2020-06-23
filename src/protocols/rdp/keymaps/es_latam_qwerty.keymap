@@ -25,15 +25,25 @@ freerdp "KBD_LATIN_AMERICAN"
 # Basic keys
 #
 
-map -altgr -shift 0x29 0x02..0x0D      ~ "|1234567890'¿"
-map -altgr -shift      0x10..0x19 0x1B ~ "qwertyuiop+"
-map -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjklñ{}"
-map -altgr -shift 0x56 0x2C..0x35      ~ "<zxcvbnm,.-"
+map -caps -altgr -shift 0x29 0x02..0x0D      ~ "|1234567890'¿"
+map -caps -altgr -shift      0x10..0x19 0x1B ~ "qwertyuiop+"
+map -caps -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjklñ{}"
+map -caps -altgr -shift 0x56 0x2C..0x35      ~ "<zxcvbnm,.-"
 
-map -altgr +shift 0x29 0x02..0x0D      ~ "º!"#$%&/()=?¡"
-map -altgr +shift      0x10..0x19 0x1B ~ "QWERTYUIOP*"
-map -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÑ[]"
-map -altgr +shift 0x56 0x2C..0x35      ~ ">ZXCVBNM;:_"
+map -caps -altgr +shift 0x29 0x02..0x0D      ~ "º!"#$%&/()=?¡"
+map -caps -altgr +shift      0x10..0x19 0x1B ~ "QWERTYUIOP*"
+map -caps -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÑ[]"
+map -caps -altgr +shift 0x56 0x2C..0x35      ~ ">ZXCVBNM;:_"
+
+map +caps -altgr -shift 0x29 0x02..0x0D      ~ "|1234567890'¿"
+map +caps -altgr -shift      0x10..0x19 0x1B ~ "QWERTYUIOP+"
+map +caps -altgr -shift      0x1E..0x28 0x2B ~ "ASDFGHJKLÑ{}"
+map +caps -altgr -shift 0x56 0x2C..0x35      ~ "<ZXCVBNM,.-"
+
+map +caps -altgr +shift 0x29 0x02..0x0D      ~ "º!"#$%&/()=?¡"
+map +caps -altgr +shift      0x10..0x19 0x1B ~ "qwertyuiop*"
+map +caps -altgr +shift      0x1E..0x28 0x2B ~ "asdfghjklñ[]"
+map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">zxcvbnm;:_"
 
 #
 # Keys requiring AltGr
