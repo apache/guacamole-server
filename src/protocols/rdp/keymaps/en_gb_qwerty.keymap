@@ -25,32 +25,56 @@ freerdp "KBD_UNITED_KINGDOM"
 # Basic keys
 #
 
-map -altgr -shift 0x29 0x02..0x0D      ~ "`1234567890-="
-map -altgr -shift      0x10..0x1B      ~ "qwertyuiop[]"
-map -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjkl;'#"
-map -altgr -shift 0x56 0x2C..0x35      ~ "\zxcvbnm,./"
+map -caps -altgr -shift 0x29 0x02..0x0D      ~ "`1234567890-="
+map -caps -altgr -shift      0x10..0x1B      ~ "qwertyuiop[]"
+map -caps -altgr -shift      0x1E..0x28 0x2B ~ "asdfghjkl;'#"
+map -caps -altgr -shift 0x56 0x2C..0x35      ~ "\zxcvbnm,./"
 
-map -altgr +shift 0x29 0x02..0x0D      ~ "¬!"£$%^&*()_+"
-map -altgr +shift      0x10..0x1B      ~ "QWERTYUIOP{}"
-map -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKL:@~"
-map -altgr +shift 0x56 0x2C..0x35      ~ "|ZXCVBNM<>?"
+map -caps -altgr +shift 0x29 0x02..0x0D      ~ "¬!"£$%^&*()_+"
+map -caps -altgr +shift      0x10..0x1B      ~ "QWERTYUIOP{}"
+map -caps -altgr +shift      0x1E..0x28 0x2B ~ "ASDFGHJKL:@~"
+map -caps -altgr +shift 0x56 0x2C..0x35      ~ "|ZXCVBNM<>?"
+
+map +caps -altgr -shift 0x29 0x02..0x0D      ~ "`1234567890-="
+map +caps -altgr -shift      0x10..0x1B      ~ "QWERTYUIOP[]"
+map +caps -altgr -shift      0x1E..0x28 0x2B ~ "ASDFGHJKL;'#"
+map +caps -altgr -shift 0x56 0x2C..0x35      ~ "\ZXCVBNM,./"
+
+map +caps -altgr +shift 0x29 0x02..0x0D      ~ "¬!"£$%^&*()_+"
+map +caps -altgr +shift      0x10..0x1B      ~ "qwertyuiop{}"
+map +caps -altgr +shift      0x1E..0x28 0x2B ~ "asdfghjkl:@~"
+map +caps -altgr +shift 0x56 0x2C..0x35      ~ "|zxcvbnm<>?"
 
 #
-# Keys requiring AltGr
+# Keys requiring AltGr (some of which are affected by Caps Lock)
 #
 
 map +altgr -shift 0x29 ~ "¦"
 map +altgr -shift 0x05 ~ "€"
-map +altgr -shift 0x12 ~ "é"
-map +altgr +shift 0x12 ~ "É"
-map +altgr -shift 0x16 ~ "ú"
-map +altgr +shift 0x16 ~ "Ú"
-map +altgr -shift 0x17 ~ "í"
-map +altgr +shift 0x17 ~ "Í"
-map +altgr -shift 0x18 ~ "ó"
-map +altgr +shift 0x18 ~ "Ó"
-map +altgr -shift 0x1E ~ "á"
-map +altgr +shift 0x1E ~ "Á"
-map +altgr -shift 0x2E ~ "ç"
-map +altgr +shift 0x2E ~ "Ç"
+
+map -caps +altgr -shift 0x12 ~ "é"
+map -caps +altgr +shift 0x12 ~ "É"
+map -caps +altgr -shift 0x16 ~ "ú"
+map -caps +altgr +shift 0x16 ~ "Ú"
+map -caps +altgr -shift 0x17 ~ "í"
+map -caps +altgr +shift 0x17 ~ "Í"
+map -caps +altgr -shift 0x18 ~ "ó"
+map -caps +altgr +shift 0x18 ~ "Ó"
+map -caps +altgr -shift 0x1E ~ "á"
+map -caps +altgr +shift 0x1E ~ "Á"
+map -caps +altgr -shift 0x2E ~ "ç"
+map -caps +altgr +shift 0x2E ~ "Ç"
+
+map +caps +altgr +shift 0x12 ~ "é"
+map +caps +altgr -shift 0x12 ~ "É"
+map +caps +altgr +shift 0x16 ~ "ú"
+map +caps +altgr -shift 0x16 ~ "Ú"
+map +caps +altgr +shift 0x17 ~ "í"
+map +caps +altgr -shift 0x17 ~ "Í"
+map +caps +altgr +shift 0x18 ~ "ó"
+map +caps +altgr -shift 0x18 ~ "Ó"
+map +caps +altgr +shift 0x1E ~ "á"
+map +caps +altgr -shift 0x1E ~ "Á"
+map +caps +altgr +shift 0x2E ~ "ç"
+map +caps +altgr -shift 0x2E ~ "Ç"
 

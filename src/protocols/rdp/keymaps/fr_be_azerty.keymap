@@ -25,18 +25,28 @@ freerdp "KBD_BELGIAN_FRENCH"
 # Basic keys
 #
 
-map -altgr -shift 0x29 0x02..0x0D      ~ "²&é"'(§è!çà)_"
-map -altgr -shift      0x10..0x19 0x1B ~ "azertyuiop$"
-map -altgr -shift      0x1E..0x28 0x2B ~ "qsdfghjklmùµ"
-map -altgr -shift 0x56 0x2C..0x35      ~ "<wxcvbn,;:="
+map -caps -altgr -shift 0x29 0x02..0x0D      ~ "²&é"'(§è!çà)_"
+map -caps -altgr -shift      0x10..0x19 0x1B ~ "azertyuiop$"
+map -caps -altgr -shift      0x1E..0x28 0x2B ~ "qsdfghjklmùµ"
+map -caps -altgr -shift 0x56 0x2C..0x35      ~ "<wxcvbn,;:="
 
-map -altgr +shift 0x29 0x02..0x0D      ~ "³1234567890°-"
-map -altgr +shift      0x10..0x19 0x1B ~ "AZERTYUIOP£"
-map -altgr +shift      0x1E..0x28 0x2B ~ "QSDFGHJKLM%£"
-map -altgr +shift 0x56 0x2C..0x35      ~ ">WXCVBN?./+"
+map -caps -altgr +shift 0x29 0x02..0x0D      ~ "³1234567890°-"
+map -caps -altgr +shift      0x10..0x19 0x1B ~ "AZERTYUIOP£"
+map -caps -altgr +shift      0x1E..0x28 0x2B ~ "QSDFGHJKLM%£"
+map -caps -altgr +shift 0x56 0x2C..0x35      ~ ">WXCVBN?./+"
+
+map +caps -altgr -shift 0x29 0x02..0x0D      ~ "²1234567890°-"
+map +caps -altgr -shift      0x10..0x19 0x1B ~ "AZERTYUIOP£"
+map +caps -altgr -shift      0x1E..0x28 0x2B ~ "QSDFGHJKLM%£"
+map +caps -altgr -shift 0x56 0x2C..0x35      ~ "<WXCVBN?./+"
+
+map +caps -altgr +shift 0x29 0x02..0x0D      ~ "³&é"'(§è!çà)_"
+map +caps -altgr +shift      0x10..0x19 0x1B ~ "azertyuiop$"
+map +caps -altgr +shift      0x1E..0x28 0x2B ~ "qsdfghjklmùµ"
+map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">wxcvbn,;:="
 
 #
-# Keys requiring AltGr
+# Keys requiring AltGr (unaffected by Caps Lock, but Shift must not be pressed)
 #
 
 map +altgr -shift 0x02..0x04 ~ "|@#"
@@ -48,11 +58,20 @@ map +altgr -shift 0x56 ~ "\"
 map +altgr -shift 0x07 ~ "^"
 
 #
-# Dead keys
+# Dead keys requiring AltGr (unaffected by Caps Lock or Shift)
 #
 
-map -altgr -shift 0x1A ~ 0xFE52 # Dead circumflex
-map -altgr +shift 0x1A ~ 0xFE57 # Dead umlaut
-map +altgr -shift 0x35 ~ 0xFE53 # Dead tilde
-map +altgr -shift 0x28 ~ 0xFE51 # Dead acute
-map +altgr -shift 0x2B ~ 0xFE50 # Dead grave
+map +altgr 0x35 ~ 0xFE53 # Dead tilde
+map +altgr 0x28 ~ 0xFE51 # Dead acute
+map +altgr 0x2B ~ 0xFE50 # Dead grave
+
+#
+# Dead keys (affected by Caps Lock and Shift)
+#
+
+map -caps -altgr -shift 0x1A ~ 0xFE52 # Dead circumflex
+map -caps -altgr +shift 0x1A ~ 0xFE57 # Dead umlaut
+
+map +caps -altgr -shift 0x1A ~ 0xFE57 # Dead umlaut
+map +caps -altgr +shift 0x1A ~ 0xFE52 # Dead circumflex
+
