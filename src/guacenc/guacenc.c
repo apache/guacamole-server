@@ -25,6 +25,7 @@
 #include "parse.h"
 
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 
 #include <getopt.h>
 #include <stdbool.h>
@@ -78,6 +79,10 @@ int main(int argc, char* argv[]) {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 10, 100)
     /* Prepare libavcodec */
     avcodec_register_all();
+#endif
+
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 9, 100)
+    av_register_all();
 #endif
 
     /* Track number of overall failures */

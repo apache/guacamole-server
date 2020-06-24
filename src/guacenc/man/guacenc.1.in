@@ -38,7 +38,7 @@ is essentially an implementation of a Guacamole client which accepts
 its input from files instead of a network connection, and renders directly to
 video instead of to the user's screen.
 .P
-Each \fIFILE\fR specified will be encoded as a raw MPEG-4 video stream to a new
+Each \fIFILE\fR specified will be encoded as MPEG-4 video to a new
 file named \fIFILE\fR.m4v, encoded according to the other options specified. By
 default, the output video will be \fI640\fRx\fI480\fR pixels, and will be saved
 with a bitrate of \fI2000000\fR bits per second (2 Mbps). These defaults can be

@@ -52,6 +52,16 @@
 #define av_packet_unref av_free_packet
 #endif
 
+/* For libavcodec <= 56.41.100: Global header flag didn't have AV_ prefix.
+ * Guacenc defines its own flag here to avoid conflicts with libavcodec
+ * macros.
+ */
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(56,41,100)
+#define GUACENC_FLAG_GLOBAL_HEADER CODEC_FLAG_GLOBAL_HEADER
+#else
+#define GUACENC_FLAG_GLOBAL_HEADER AV_CODEC_FLAG_GLOBAL_HEADER
+#endif
+
 /* For libavutil < 51.42.0: AV_PIX_FMT_* was PIX_FMT_* */
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51,42,0)
 #define AV_PIX_FMT_RGB32 PIX_FMT_RGB32
@@ -77,6 +87,79 @@
  *     error occurs.
  */
 int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame);
+
+/**
+ * Creates and sets up the AVCodecContext for the appropriate version of
+ * libavformat installed. The AVCodecContext will be built, but the AVStream
+ * will also be affected by having its time_base field set to the value passed
+ * into this function.
+ *
+ * @param stream
+ *     The open AVStream.
+ *
+ * @param codec
+ *     The codec used on the AVStream.
+ *
+ * @param bitrate
+ *     The target bitrate for the encoded video
+ *
+ * @param width
+ *     The target width for the encoded video.
+ *
+ * @param height
+ *     The target height for the encoded video.
+ *
+ * @param gop_size
+ *     The size of the Group of Pictures.
+ *
+ * @param qmax
+ *     The max value of the quantizer.
+ *
+ * @param qmin
+ *     The min value of the quantizer.
+ *
+ * @param pix_fmt
+ *     The target pixel format for the encoded video.
+ *
+ * @param time_base
+ *     The target time base for the encoded video.
+ *
+ * @return
+ *     The pointer to the configured AVCodecContext.
+ *
+ */
+AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec,
+        int bitrate, int width, int height, int gop_size, int qmax, int qmin,
+        int pix_fmt, AVRational time_base);
+
+/**
+ * A wrapper for avcodec_open2(). Because libavformat ver 57.33.100 and greater
+ * use stream->codecpar rather than stream->codec to handle information to the
+ * codec, there needs to be an additional step in that version.  So this
+ * wrapper handles that. Otherwise, it's the same as avcodec_open2().
+ *
+ * @param avcodec_context
+ *     The context to initialize.
+ *
+ * @param codec
+ *     The codec to open this context for. If a non-NULL codec has been
+ *     previously passed to avcodec_alloc_context3() or for this context, then
+ *     this parameter MUST be either NULL or equal to the previously passed
+ *     codec.
+ *
+ * @param options
+ *     A dictionary filled with AVCodecContext and codec-private options. On
+ *     return this object will be filled with options that were not found.
+ *
+ * @param stream
+ *     The stream for the codec context.
+ *
+ * @return
+ *     Zero on success, a negative value on error.
+ */
+int guacenc_open_avcodec(AVCodecContext *avcodec_context,
+        AVCodec *codec, AVDictionary **options,
+        AVStream* stream);
 
 #endif
 

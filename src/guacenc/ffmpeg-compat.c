@@ -51,8 +51,41 @@
  */
 static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
 
-    /* Write data, logging any errors */
-    if (fwrite(data, 1, size, video->output) == 0) {
+    int ret;
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54,1,0)
+
+    AVPacket pkt;
+
+    /* Have to create a packet around the encoded data we have */
+    av_init_packet(&pkt);
+
+    if (video->context->coded_frame->pts != AV_NOPTS_VALUE) {
+        pkt.pts = av_rescale_q(video->context->coded_frame->pts,
+                video->context->time_base,
+                video->output_stream->time_base);
+    }
+    if (video->context->coded_frame->key_frame) {
+        pkt->flags |= AV_PKT_FLAG_KEY;
+    }
+
+    pkt.data = data;
+    pkt.size = size;
+    pkt.stream_index = video->output_stream->index;
+    ret = av_interleaved_write_frame(video->container_format_context, &pkt);
+
+#else
+
+    /* We know data is already a packet if we're using a newer libavcodec */
+    AVPacket* pkt = (AVPacket*) data;
+    av_packet_rescale_ts(pkt, video->context->time_base, video->output_stream->time_base);
+    pkt->stream_index = video->output_stream->index;
+    ret = av_interleaved_write_frame(video->container_format_context, pkt);
+
+#endif
+
+
+    if (ret != 0) {
         guacenc_log(GUAC_LOG_ERROR, "Unable to write frame "
                 "#%" PRId64 ": %s", video->next_pts, strerror(errno));
         return -1;
@@ -62,8 +95,7 @@ static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
     guacenc_log(GUAC_LOG_DEBUG, "Frame #%08" PRId64 ": wrote %i bytes",
             video->next_pts, size);
 
-    return 0;
-
+    return ret;
 }
 
 int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
@@ -113,6 +145,7 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
 
 /* For libavcodec < 57.37.100: input/output was not decoupled */
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,37,100)
+
     /* Write frame to video */
     int got_data;
     if (avcodec_encode_video2(video->context, &packet, frame, &got_data) < 0) {
@@ -123,10 +156,12 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
 
     /* Write corresponding data to file */
     if (got_data) {
-        guacenc_write_packet(video, packet.data, packet.size);
+        guacenc_write_packet(video, (void*) &packet, packet.size);
         av_packet_unref(&packet);
     }
+
 #else
+
     /* Write frame to video */
     int result = avcodec_send_frame(video->context, frame);
 
@@ -149,10 +184,11 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
         got_data = 1;
 
         /* Attempt to write data to output file */
-        guacenc_write_packet(video, packet.data, packet.size);
+        guacenc_write_packet(video, (void*) &packet, packet.size);
         av_packet_unref(&packet);
 
     }
+
 #endif
 
     /* Frame may have been queued for later writing / reordering */
@@ -165,3 +201,54 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
 #endif
 }
 
+AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec, 
+        int bitrate, int width, int height, int gop_size, int qmax, int qmin,
+        int pix_fmt, AVRational time_base) {
+
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57, 33, 100)
+    stream->codec->bit_rate = bitrate;
+    stream->codec->width = width;
+    stream->codec->height = height;
+    stream->codec->gop_size = gop_size;
+    stream->codec->qmax = qmax;
+    stream->codec->qmin = qmin;
+    stream->codec->pix_fmt = pix_fmt;
+    stream->codec->time_base = time_base;
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(55, 44, 100)
+    stream->time_base = time_base;
+#endif
+    return stream->codec;
+#else
+    AVCodecContext* context = avcodec_alloc_context3(codec);
+    if (context) {
+        context->bit_rate = bitrate;
+        context->width = width;
+        context->height = height;
+        context->gop_size = gop_size;
+        context->qmax = qmax;
+        context->qmin = qmin;
+        context->pix_fmt = pix_fmt;
+        context->time_base = time_base;
+        stream->time_base = time_base;
+    }
+    return context;
+#endif
+
+}
+
+int guacenc_open_avcodec(AVCodecContext *avcodec_context,
+        AVCodec *codec, AVDictionary **options,
+        AVStream* stream) {
+
+    int ret = avcodec_open2(avcodec_context, codec, options);
+
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 33, 100)
+    /* Copy stream parameters to the muxer */
+    int codecpar_ret = avcodec_parameters_from_context(stream->codecpar, avcodec_context);
+    if (codecpar_ret < 0)
+        return codecpar_ret;
+#endif
+
+    return ret;
+
+}
