@@ -619,6 +619,7 @@ void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
         guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
     else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
+        guac_rdp_keyboard_update_keysym(keyboard, 0xFFEA, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
         guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
 
