@@ -54,7 +54,9 @@ static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
     int ret;
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54,1,0)
+
     AVPacket pkt;
+
     /* Have to create a packet around the encoded data we have */
     av_init_packet(&pkt);
 
@@ -73,12 +75,13 @@ static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
     ret = av_interleaved_write_frame(video->container_format_context, &pkt);
 
 #else
-    AVPacket *pkt;
-    /* we know data is already a packet if we're using a newer libavcodec */
-    pkt = (AVPacket*) data;
+
+    /* We know data is already a packet if we're using a newer libavcodec */
+    AVPacket* pkt = (AVPacket*) data;
     av_packet_rescale_ts(pkt, video->context->time_base, video->output_stream->time_base);
     pkt->stream_index = video->output_stream->index;
     ret = av_interleaved_write_frame(video->container_format_context, pkt);
+
 #endif
 
 
@@ -142,6 +145,7 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
 
 /* For libavcodec < 57.37.100: input/output was not decoupled */
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,37,100)
+
     /* Write frame to video */
     int got_data;
     if (avcodec_encode_video2(video->context, &packet, frame, &got_data) < 0) {
@@ -155,7 +159,9 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
         guacenc_write_packet(video, (void*) &packet, packet.size);
         av_packet_unref(&packet);
     }
+
 #else
+
     /* Write frame to video */
     int result = avcodec_send_frame(video->context, frame);
 
@@ -182,6 +188,7 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
         av_packet_unref(&packet);
 
     }
+
 #endif
 
     /* Frame may have been queued for later writing / reordering */
@@ -232,14 +239,16 @@ AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec,
 int guacenc_open_avcodec(AVCodecContext *avcodec_context,
         AVCodec *codec, AVDictionary **options,
         AVStream* stream) {
+
     int ret = avcodec_open2(avcodec_context, codec, options);
+
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 33, 100)
-    /* copy stream parameters to the muxer */
-    int codecpar_ret = avcodec_parameters_from_context(stream->codecpar,
-            avcodec_context);
-    if (codecpar_ret < 0) {
+    /* Copy stream parameters to the muxer */
+    int codecpar_ret = avcodec_parameters_from_context(stream->codecpar, avcodec_context);
+    if (codecpar_ret < 0)
         return codecpar_ret;
-    }
 #endif
+
     return ret;
+
 }
