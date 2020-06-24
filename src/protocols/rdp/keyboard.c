@@ -651,52 +651,47 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
      * are tracked server-side, as well (to ensure that the key count remains
      * correct, even if a user sends extra unbalanced or excessive press and
      * release events) */
-    if (key != NULL && source == GUAC_RDP_KEY_SOURCE_CLIENT) {
-
+    if (source == GUAC_RDP_KEY_SOURCE_CLIENT && key != NULL) {
         if (pressed && !key->user_pressed) {
             keyboard->user_pressed_keys++;
             key->user_pressed = 1;
         }
         else if (!pressed && key->user_pressed) {
-
             keyboard->user_pressed_keys--;
             key->user_pressed = 0;
+        }
+    }
 
-            /* Reset RDP server keyboard state (releasing any automatically
-             * pressed keys) once all keys have been released on the client
-             * side */
-            if (keyboard->user_pressed_keys == 0)
-                guac_rdp_keyboard_reset(keyboard);
+    /* Send events and update server-side lock state only if server-side key
+     * state is changing (or if server-side state of this key is untracked) */
+    if (key == NULL || (pressed && key->pressed == NULL) || (!pressed && key->pressed != NULL)) {
 
+        /* Toggle locks on keydown */
+        if (pressed)
+            keyboard->lock_flags ^= guac_rdp_keyboard_lock_flag(keysym);
+
+        /* If key is known, update state and attempt to send using normal RDP key
+         * events */
+        const guac_rdp_keysym_desc* definition = NULL;
+        if (key != NULL) {
+            definition = guac_rdp_keyboard_send_defined_key(keyboard, key, pressed);
+            key->pressed = pressed ? definition : NULL;
+        }
+
+        /* Fall back to dead keys or Unicode events if otherwise undefined inside
+         * current keymap (note that we only handle "pressed" here, as neither
+         * Unicode events nor dead keys can have a pressed/released state) */
+        if (definition == NULL && pressed) {
+            guac_rdp_keyboard_send_missing_key(keyboard, keysym);
         }
 
     }
 
-    /* If key is known, ignore the key event entirely if state is not actually
-     * changing */
-    if (key != NULL) {
-        if ((!pressed && key->pressed == NULL) || (pressed && key->pressed != NULL))
-            return 0;
-    }
-
-    /* Toggle locks on keydown */
-    if (pressed)
-        keyboard->lock_flags ^= guac_rdp_keyboard_lock_flag(keysym);
-
-    /* If key is known, update state and attempt to send using normal RDP key
-     * events */
-    const guac_rdp_keysym_desc* definition = NULL;
-    if (key != NULL) {
-        definition = guac_rdp_keyboard_send_defined_key(keyboard, key, pressed);
-        key->pressed = pressed ? definition : NULL;
-    }
-
-    /* Fall back to dead keys or Unicode events if otherwise undefined inside
-     * current keymap (note that we only handle "pressed" here, as neither
-     * Unicode events nor dead keys can have a pressed/released state) */
-    if (definition == NULL && pressed) {
-        guac_rdp_keyboard_send_missing_key(keyboard, keysym);
-    }
+    /* Reset RDP server keyboard state (releasing any automatically
+     * pressed keys) once all keys have been released on the client
+     * side */
+    if (source == GUAC_RDP_KEY_SOURCE_CLIENT && keyboard->user_pressed_keys == 0)
+        guac_rdp_keyboard_reset(keyboard);
 
     return 0;
 
