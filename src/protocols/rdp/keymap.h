@@ -23,6 +23,61 @@
 #include <winpr/wtypes.h>
 
 /**
+ * The X11 keysym for Num Lock.
+ */
+#define GUAC_RDP_KEYSYM_NUM_LOCK 0xFF7F
+
+/**
+ * The X11 keysym for Scroll Lock.
+ */
+#define GUAC_RDP_KEYSYM_SCROLL_LOCK 0xFF14
+
+/**
+ * The X11 keysym for Caps Lock.
+ */
+#define GUAC_RDP_KEYSYM_CAPS_LOCK 0xFFE5
+
+/**
+ * The X11 keysym for Kana Lock.
+ */
+#define GUAC_RDP_KEYSYM_KANA_LOCK 0xFF2D
+
+/**
+ * The X11 keysym for Left Shift.
+ */
+#define GUAC_RDP_KEYSYM_LSHIFT 0xFFE1
+
+/**
+ * The X11 keysym for Right Shift.
+ */
+#define GUAC_RDP_KEYSYM_RSHIFT 0xFFE2
+
+/**
+ * The X11 keysym for Left Ctrl.
+ */
+#define GUAC_RDP_KEYSYM_LCTRL 0xFFE3
+
+/**
+ * The X11 keysym for Right Ctrl.
+ */
+#define GUAC_RDP_KEYSYM_RCTRL 0xFFE4
+
+/**
+ * The X11 keysym for Left Alt.
+ */
+#define GUAC_RDP_KEYSYM_LALT 0xFFE9
+
+/**
+ * The X11 keysym for Right Alt.
+ */
+#define GUAC_RDP_KEYSYM_RALT 0xFFEA
+
+/**
+ * The X11 keysym for AltGr.
+ */
+#define GUAC_RDP_KEYSYM_ALTGR 0xFE03
+
+/**
  * Bitwise flag value representing the Shift modifier.
  */
 #define GUAC_RDP_KEYMAP_MODIFIER_SHIFT 1

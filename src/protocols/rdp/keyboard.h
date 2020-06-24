@@ -84,6 +84,12 @@ typedef struct guac_rdp_key {
      */
     const guac_rdp_keysym_desc* pressed;
 
+    /**
+     * Whether this key is currently pressed by the user, and is included among
+     * the total tracked by user_pressed_keys within guac_rdp_keyboard.
+     */
+    int user_pressed;
+
 } guac_rdp_key;
 
 /**
@@ -96,15 +102,6 @@ typedef struct guac_rdp_keyboard {
      * being managed by this guac_rdp_keyboard.
      */
     guac_client* client;
-
-    /**
-     * The local state of all known modifier keys, as a bitwise OR of the
-     * modified flags used by the keymaps.
-     *
-     * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
-     * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
-     */
-    unsigned int modifier_flags;
 
     /**
      * The local state of all known lock keys, as a bitwise OR of all RDP lock
@@ -206,6 +203,37 @@ void guac_rdp_keyboard_free(guac_rdp_keyboard* keyboard);
  *     the given keyboard, zero otherwise.
  */
 int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym);
+
+/**
+ * Returns whether the key having the given keysym is currently pressed.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard instance to check.
+ *
+ * @param keysym
+ *     The keysym of the key being checked.
+ *
+ * @return
+ *     Non-zero if the key is currently pressed, zero otherwise.
+ */
+int guac_rdp_keyboard_is_pressed(guac_rdp_keyboard* keyboard, int keysym);
+
+/**
+ * Returns the local state of all known modifier keys, as a bitwise OR of the
+ * modifier flags used by the keymaps. Alternative methods of producing the
+ * effect of certain modifiers, such as holding Ctrl+Alt for AltGr when a
+ * dedicated AltGr key is unavailable, are taken into account.
+ *
+ * @see GUAC_RDP_KEYMAP_MODIFIER_SHIFT
+ * @see GUAC_RDP_KEYMAP_MODIFIER_ALTGR
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @return
+ *     The local state of all known modifier keys.
+ */
+unsigned int guac_rdp_keyboard_get_modifier_flags(guac_rdp_keyboard* keyboard);
 
 /**
  * Updates the local state of the lock keys (such as Caps lock or Num lock),

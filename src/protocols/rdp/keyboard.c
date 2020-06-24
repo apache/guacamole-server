@@ -29,39 +29,6 @@
 #include <stdlib.h>
 
 /**
- * Translates the given keysym into the corresponding modifier flag, as defined
- * by keymap.h. If the given keysym does not represent a modifier key, zero is
- * returned.
- *
- * @param keysym
- *     The keysym to translate into a modifier flag.
- *
- * @return
- *     The modifier flag which corresponds to the given keysym, or zero if the
- *     given keysym does not represent a modifier key.
- */
-static int guac_rdp_keyboard_modifier_flag(int keysym) {
-
-    /* Translate keysym into corresponding modifier flag */
-    switch (keysym) {
-
-        /* Shift */
-        case 0xFFE1:
-        case 0xFFE2:
-            return GUAC_RDP_KEYMAP_MODIFIER_SHIFT;
-
-        /* AltGr */
-        case 0xFE03:
-            return GUAC_RDP_KEYMAP_MODIFIER_ALTGR;
-
-    }
-
-    /* Not a modifier */
-    return 0;
-
-}
-
-/**
  * Translates the given keysym into the corresponding lock flag, as would be
  * required by the RDP synchronize event. If the given keysym does not
  * represent a lock key, zero is returned.
@@ -79,19 +46,19 @@ static int guac_rdp_keyboard_lock_flag(int keysym) {
     switch (keysym) {
 
         /* Scroll lock */
-        case 0xFF14:
+        case GUAC_RDP_KEYSYM_SCROLL_LOCK:
             return KBD_SYNC_SCROLL_LOCK;
 
         /* Kana lock */
-        case 0xFF2D:
+        case GUAC_RDP_KEYSYM_KANA_LOCK:
             return KBD_SYNC_KANA_LOCK;
 
         /* Num lock */
-        case 0xFF7F:
+        case GUAC_RDP_KEYSYM_NUM_LOCK:
             return KBD_SYNC_NUM_LOCK;
 
         /* Caps lock */
-        case 0xFFE5:
+        case GUAC_RDP_KEYSYM_CAPS_LOCK:
             return KBD_SYNC_CAPS_LOCK;
 
     }
@@ -288,6 +255,8 @@ static int guac_rdp_count_bits(unsigned int value) {
 static int guac_rdp_keyboard_get_cost(guac_rdp_keyboard* keyboard,
         const guac_rdp_keysym_desc* def) {
 
+    unsigned int modifier_flags = guac_rdp_keyboard_get_modifier_flags(keyboard);
+
     /* Each change to any key requires one event, by definition */
     int cost = 1;
 
@@ -296,7 +265,7 @@ static int guac_rdp_keyboard_get_cost(guac_rdp_keyboard* keyboard,
     cost += guac_rdp_count_bits(update_locks) * 2;
 
     /* Each change to a modifier requires one key event */
-    unsigned int update_modifiers = (def->clear_modifiers & keyboard->modifier_flags) | (def->set_modifiers & ~keyboard->modifier_flags);
+    unsigned int update_modifiers = (def->clear_modifiers & modifier_flags) | (def->set_modifiers & ~modifier_flags);
     cost += guac_rdp_count_bits(update_modifiers);
 
     return cost;
@@ -489,6 +458,37 @@ int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym) {
 
 }
 
+int guac_rdp_keyboard_is_pressed(guac_rdp_keyboard* keyboard, int keysym) {
+
+    guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
+    return key != NULL && key->pressed != NULL;
+
+}
+
+unsigned int guac_rdp_keyboard_get_modifier_flags(guac_rdp_keyboard* keyboard) {
+
+    unsigned int modifier_flags = 0;
+
+    /* Shift */
+    if (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LSHIFT)
+            || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RSHIFT))
+        modifier_flags |= GUAC_RDP_KEYMAP_MODIFIER_SHIFT;
+
+    /* Dedicated AltGr key */
+    if (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RALT)
+            || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_ALTGR))
+        modifier_flags |= GUAC_RDP_KEYMAP_MODIFIER_ALTGR;
+
+    /* AltGr via Ctrl+Alt */
+    if (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LALT)
+            && (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RCTRL)
+                || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LCTRL)))
+        modifier_flags |= GUAC_RDP_KEYMAP_MODIFIER_ALTGR;
+
+    return modifier_flags;
+
+}
+
 /**
  * Presses/releases the requested key by sending one or more RDP key events, as
  * defined within the keymap defining that key.
@@ -599,27 +599,33 @@ void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
 void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
         unsigned int set_flags, unsigned int clear_flags) {
 
+    unsigned int modifier_flags = guac_rdp_keyboard_get_modifier_flags(keyboard);
+
     /* Only clear modifiers that are set */
-    clear_flags &= keyboard->modifier_flags;
+    clear_flags &= modifier_flags;
 
     /* Only set modifiers that are currently cleared */
-    set_flags &= ~keyboard->modifier_flags;
+    set_flags &= ~modifier_flags;
 
     /* Press/release Shift as needed */
     if (set_flags & GUAC_RDP_KEYMAP_MODIFIER_SHIFT) {
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE1, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LSHIFT, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
     else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_SHIFT) {
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE1, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFFE2, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LSHIFT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_RSHIFT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
 
     /* Press/release AltGr as needed */
     if (set_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_ALTGR, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
     else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
-        guac_rdp_keyboard_update_keysym(keyboard, 0xFE03, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_ALTGR, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LALT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_RALT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LCTRL, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_RCTRL, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
     }
 
 }
@@ -639,59 +645,53 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
 
     }
 
-    /* If key is known, ignoring the key event entirely if state is not
-     * actually changing */
     guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
-    if (key != NULL) {
-        if ((!pressed && key->pressed == NULL) || (pressed && key->pressed != NULL))
-            return 0;
+
+    /* Update tracking of client-side keyboard state but only for keys which
+     * are tracked server-side, as well (to ensure that the key count remains
+     * correct, even if a user sends extra unbalanced or excessive press and
+     * release events) */
+    if (source == GUAC_RDP_KEY_SOURCE_CLIENT && key != NULL) {
+        if (pressed && !key->user_pressed) {
+            keyboard->user_pressed_keys++;
+            key->user_pressed = 1;
+        }
+        else if (!pressed && key->user_pressed) {
+            keyboard->user_pressed_keys--;
+            key->user_pressed = 0;
+        }
     }
 
-    /* Toggle locks and set modifiers on keydown */
-    if (pressed) {
-        keyboard->lock_flags ^= guac_rdp_keyboard_lock_flag(keysym);
-        keyboard->modifier_flags |= guac_rdp_keyboard_modifier_flag(keysym);
-    }
+    /* Send events and update server-side lock state only if server-side key
+     * state is changing (or if server-side state of this key is untracked) */
+    if (key == NULL || (pressed && key->pressed == NULL) || (!pressed && key->pressed != NULL)) {
 
-    /* Clear modifiers on keyup */
-    else {
-        keyboard->modifier_flags &= ~guac_rdp_keyboard_modifier_flag(keysym);
-    }
+        /* Toggle locks on keydown */
+        if (pressed)
+            keyboard->lock_flags ^= guac_rdp_keyboard_lock_flag(keysym);
 
-    /* If key is known, update state and attempt to send using normal RDP key
-     * events */
-    const guac_rdp_keysym_desc* definition = NULL;
-    if (key != NULL) {
-        definition = guac_rdp_keyboard_send_defined_key(keyboard, key, pressed);
-        key->pressed = pressed ? definition : NULL;
-    }
-
-    /* Fall back to dead keys or Unicode events if otherwise undefined inside
-     * current keymap (note that we only handle "pressed" here, as neither
-     * Unicode events nor dead keys can have a pressed/released state) */
-    if (definition == NULL && pressed) {
-        guac_rdp_keyboard_send_missing_key(keyboard, keysym);
-    }
-
-    if (source == GUAC_RDP_KEY_SOURCE_CLIENT) {
-
-        /* Update tracking of client-side keyboard state but only for keys
-         * which are tracked server-side, as well (to ensure that the key count
-         * remains correct, even if a user sends extra unbalanced or excessive
-         * press and release events) */
+        /* If key is known, update state and attempt to send using normal RDP key
+         * events */
+        const guac_rdp_keysym_desc* definition = NULL;
         if (key != NULL) {
-            if (pressed)
-                keyboard->user_pressed_keys++;
-            else
-                keyboard->user_pressed_keys--;
+            definition = guac_rdp_keyboard_send_defined_key(keyboard, key, pressed);
+            key->pressed = pressed ? definition : NULL;
         }
 
-        /* Reset RDP server keyboard state (releasing any automatically pressed
-         * keys) once all keys have been released on the client side */
-        if (keyboard->user_pressed_keys == 0)
-            guac_rdp_keyboard_reset(keyboard);
+        /* Fall back to dead keys or Unicode events if otherwise undefined inside
+         * current keymap (note that we only handle "pressed" here, as neither
+         * Unicode events nor dead keys can have a pressed/released state) */
+        if (definition == NULL && pressed) {
+            guac_rdp_keyboard_send_missing_key(keyboard, keysym);
+        }
 
     }
+
+    /* Reset RDP server keyboard state (releasing any automatically
+     * pressed keys) once all keys have been released on the client
+     * side */
+    if (source == GUAC_RDP_KEY_SOURCE_CLIENT && keyboard->user_pressed_keys == 0)
+        guac_rdp_keyboard_reset(keyboard);
 
     return 0;
 
