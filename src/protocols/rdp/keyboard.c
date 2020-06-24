@@ -645,9 +645,35 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
 
     }
 
-    /* If key is known, ignoring the key event entirely if state is not
-     * actually changing */
     guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
+
+    /* Update tracking of client-side keyboard state but only for keys which
+     * are tracked server-side, as well (to ensure that the key count remains
+     * correct, even if a user sends extra unbalanced or excessive press and
+     * release events) */
+    if (key != NULL && source == GUAC_RDP_KEY_SOURCE_CLIENT) {
+
+        if (pressed && !key->user_pressed) {
+            keyboard->user_pressed_keys++;
+            key->user_pressed = 1;
+        }
+        else if (!pressed && key->user_pressed) {
+
+            keyboard->user_pressed_keys--;
+            key->user_pressed = 0;
+
+            /* Reset RDP server keyboard state (releasing any automatically
+             * pressed keys) once all keys have been released on the client
+             * side */
+            if (keyboard->user_pressed_keys == 0)
+                guac_rdp_keyboard_reset(keyboard);
+
+        }
+
+    }
+
+    /* If key is known, ignore the key event entirely if state is not actually
+     * changing */
     if (key != NULL) {
         if ((!pressed && key->pressed == NULL) || (pressed && key->pressed != NULL))
             return 0;
@@ -670,26 +696,6 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
      * Unicode events nor dead keys can have a pressed/released state) */
     if (definition == NULL && pressed) {
         guac_rdp_keyboard_send_missing_key(keyboard, keysym);
-    }
-
-    if (source == GUAC_RDP_KEY_SOURCE_CLIENT) {
-
-        /* Update tracking of client-side keyboard state but only for keys
-         * which are tracked server-side, as well (to ensure that the key count
-         * remains correct, even if a user sends extra unbalanced or excessive
-         * press and release events) */
-        if (key != NULL) {
-            if (pressed)
-                keyboard->user_pressed_keys++;
-            else
-                keyboard->user_pressed_keys--;
-        }
-
-        /* Reset RDP server keyboard state (releasing any automatically pressed
-         * keys) once all keys have been released on the client side */
-        if (keyboard->user_pressed_keys == 0)
-            guac_rdp_keyboard_reset(keyboard);
-
     }
 
     return 0;

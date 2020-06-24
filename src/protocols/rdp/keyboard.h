@@ -84,6 +84,12 @@ typedef struct guac_rdp_key {
      */
     const guac_rdp_keysym_desc* pressed;
 
+    /**
+     * Whether this key is currently pressed by the user, and is included among
+     * the total tracked by user_pressed_keys within guac_rdp_keyboard.
+     */
+    int user_pressed;
+
 } guac_rdp_key;
 
 /**
