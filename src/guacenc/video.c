@@ -483,7 +483,7 @@ int guacenc_video_free(guacenc_video* video) {
     /* write trailer, if needed */
     if (video->container_format_context != NULL &&
             video->output_stream != NULL) {
-        guacenc_log(GUAC_LOG_DEBUG, "Writing trailer: %d",
+        guacenc_log(GUAC_LOG_DEBUG, "Writing trailer: %s",
                 av_write_trailer(video->container_format_context) == 0 ?
                         "success" : "failure");
     }
