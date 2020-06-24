@@ -133,13 +133,13 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     if (ret < 0) {
         guacenc_log(GUAC_LOG_ERROR, "Error occurred while writing output file header.\n");
         failed_header = true;
+        goto fail_output_file;
     }
 
     /* Allocate video structure */
     guacenc_video* video = malloc(sizeof(guacenc_video));
-    if (video == NULL) {
-        goto fail_output_file;
-    }
+    if (video == NULL)
+        goto fail_alloc_video;
 
     /* Init properties of video */
     video->output_stream = video_stream;
@@ -154,16 +154,10 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     video->last_timestamp = 0;
     video->next_pts = 0;
 
-    if (failed_header) {
-        guacenc_log(GUAC_LOG_ERROR, "An incompatible codec/container "
-                "combination was specified. Cannot encode.\n");
-        goto fail_output_file;
-    }
-
     return video;
 
     /* Free all allocated data in case of failure */
-
+fail_alloc_video:
 fail_output_file:
     avio_close(container_format_context->pb);
     /* delete the file that was created if it was actually created */
