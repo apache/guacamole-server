@@ -516,6 +516,15 @@ guac_stream* guac_common_ssh_sftp_download_file(
     guac_stream* stream;
     LIBSSH2_SFTP_HANDLE* file;
 
+    /* Ignore download if downloads have been disabled */
+    if (filesystem->disable_download) {
+        guac_user_log(user, GUAC_LOG_WARNING, "A download attempt has "
+                "been blocked due to downloads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        return NULL;
+    }
+
     /* Attempt to open file for reading */
     file = libssh2_sftp_open(filesystem->sftp_session, filename,
             LIBSSH2_FXF_READ, 0);
