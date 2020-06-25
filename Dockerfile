@@ -90,6 +90,7 @@ ENV LD_LIBRARY_PATH=${PREFIX_DIR}/lib
 ENV GUACD_LOG_LEVEL=info
 
 ARG RUNTIME_DEPENDENCIES="            \
+        netcat-openbsd                \
         ca-certificates               \
         ghostscript                   \
         fonts-liberation              \
@@ -100,14 +101,20 @@ ARG RUNTIME_DEPENDENCIES="            \
 COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
 
 # Bring runtime environment up to date and install runtime dependencies
-RUN apt-get update                                          && \
-    apt-get install -y $RUNTIME_DEPENDENCIES                && \
-    apt-get install -y $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
+RUN apt-get update                                                                  && \
+    apt-get install -y --no-install-recommends $RUNTIME_DEPENDENCIES                && \
+    apt-get install -y --no-install-recommends $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
     rm -rf /var/lib/apt/lists/*
 
 # Link FreeRDP plugins into proper path
 RUN ${PREFIX_DIR}/bin/link-freerdp-plugins.sh \
         ${PREFIX_DIR}/lib/freerdp2/libguac*.so
+
+# Checks the operating status every 5 minutes with a timeout of 5 seconds
+HEALTHCHECK --interval=5m --timeout=5s CMD nc -z 127.0.0.1 4822 || exit 1
+
+# Run with user nobody
+USER nobody
 
 # Expose the default listener port
 EXPOSE 4822
