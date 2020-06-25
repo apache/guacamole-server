@@ -37,10 +37,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
@@ -55,7 +56,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     /* allocate the output media context */
     avformat_alloc_output_context2(&container_format_context, NULL, NULL, path);
     if (container_format_context == NULL) {
-        guacenc_log(GUAC_LOG_ERROR, "Failed to determine container from output file name\n");
+        guacenc_log(GUAC_LOG_ERROR, "Failed to determine container from output file name");
         goto fail_codec;
     }
 
@@ -73,7 +74,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     video_stream = NULL;
     video_stream = avformat_new_stream(container_format_context, codec);
     if (video_stream == NULL) {
-        guacenc_log(GUAC_LOG_ERROR, "Could not allocate encoder stream. Cannot continue.\n");
+        guacenc_log(GUAC_LOG_ERROR, "Could not allocate encoder stream. Cannot continue.");
         goto fail_format_context;
     }
     video_stream->id = container_format_context->nb_streams - 1;
@@ -123,7 +124,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     if (!(container_format->flags & AVFMT_NOFILE)) {
         ret = avio_open(&container_format_context->pb, path, AVIO_FLAG_WRITE);
         if (ret < 0) {
-            guacenc_log(GUAC_LOG_ERROR, "Error occurred while opening output file.\n");
+            guacenc_log(GUAC_LOG_ERROR, "Error occurred while opening output file.");
             goto fail_output_avio;
         }
     }
@@ -131,7 +132,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     /* write the stream header, if needed */
     ret = avformat_write_header(container_format_context, NULL);
     if (ret < 0) {
-        guacenc_log(GUAC_LOG_ERROR, "Error occurred while writing output file header.\n");
+        guacenc_log(GUAC_LOG_ERROR, "Error occurred while writing output file header.");
         failed_header = true;
         goto fail_output_file;
     }
@@ -160,10 +161,11 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
 fail_alloc_video:
 fail_output_file:
     avio_close(container_format_context->pb);
-    /* delete the file that was created if it was actually created */
-    if (access(path, F_OK) != -1) {
-        remove(path);
-    }
+
+    /* Delete the file that was created if it was actually created */
+    if (unlink(path) == -1 && errno != ENOENT)
+        guacenc_log(GUAC_LOG_WARNING, "Failed output file \"%s\" could not "
+                "be automatically deleted: %s", path, strerror(errno));
 
 fail_output_avio:
     av_freep(&frame->data[0]);
@@ -481,7 +483,7 @@ int guacenc_video_free(guacenc_video* video) {
     /* write trailer, if needed */
     if (video->container_format_context != NULL &&
             video->output_stream != NULL) {
-        guacenc_log(GUAC_LOG_DEBUG, "Writing trailer: %d\n",
+        guacenc_log(GUAC_LOG_DEBUG, "Writing trailer: %s",
                 av_write_trailer(video->container_format_context) == 0 ?
                         "success" : "failure");
     }
