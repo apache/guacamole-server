@@ -166,7 +166,8 @@ void guac_rdpdr_fs_process_set_rename_info(guac_rdp_common_svc* svc,
             destination_path);
 
     /* If file moving to \Download folder, start stream, do not move */
-    if (strncmp(destination_path, "\\Download\\", 10) == 0) {
+    if (strncmp(destination_path, "\\Download\\", 10) == 0
+			&& !((guac_rdp_fs*) device->data)->disable_download) {
 
         guac_rdp_fs_file* file;
 

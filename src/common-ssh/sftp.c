@@ -376,6 +376,18 @@ int guac_common_ssh_sftp_handle_file_stream(
     char fullpath[GUAC_COMMON_SSH_SFTP_MAX_PATH];
     LIBSSH2_SFTP_HANDLE* file;
 
+    /* Ignore upload if uploads have been disabled */
+    if (filesystem->disable_upload) {
+        guac_user_log(user, GUAC_LOG_WARNING, "A upload attempt has "
+                "been blocked due to uploads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        guac_protocol_send_ack(user->socket, stream, "SFTP: Upload disabled",
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
+        guac_socket_flush(user->socket);
+        return 0;
+    }
+
     /* Concatenate filename with path */
     if (!guac_ssh_append_filename(fullpath, filesystem->upload_path,
                 filename)) {
@@ -515,6 +527,15 @@ guac_stream* guac_common_ssh_sftp_download_file(
 
     guac_stream* stream;
     LIBSSH2_SFTP_HANDLE* file;
+
+    /* Ignore download if downloads have been disabled */
+    if (filesystem->disable_download) {
+        guac_user_log(user, GUAC_LOG_WARNING, "A download attempt has "
+                "been blocked due to downloads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        return NULL;
+    }
 
     /* Attempt to open file for reading */
     file = libssh2_sftp_open(filesystem->sftp_session, filename,
@@ -849,6 +870,18 @@ static int guac_common_ssh_sftp_put_handler(guac_user* user,
 
     guac_common_ssh_sftp_filesystem* filesystem =
         (guac_common_ssh_sftp_filesystem*) object->data;
+
+    /* Ignore upload if uploads have been disabled */
+    if (filesystem->disable_upload) {
+        guac_user_log(user, GUAC_LOG_WARNING, "A upload attempt has "
+                "been blocked due to uploads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        guac_protocol_send_ack(user->socket, stream, "SFTP: Upload disabled",
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
+        guac_socket_flush(user->socket);
+        return 0;
+    }
 
     LIBSSH2_SFTP* sftp = filesystem->sftp_session;
 
