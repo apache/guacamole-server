@@ -148,8 +148,8 @@ int guac_rdp_download_get_handler(guac_user* user, guac_object* object,
 
     }
 
-    /* Otherwise, send file contents */
-    else {
+    /* Otherwise, send file contents if downloads are allowed */
+    else if (!fs->disable_download) {
 
         /* Create stream data */
         guac_rdp_download_status* download_status = malloc(sizeof(guac_rdp_download_status));
@@ -166,6 +166,10 @@ int guac_rdp_download_get_handler(guac_user* user, guac_object* object,
                 "application/octet-stream", name);
 
     }
+
+    else
+        guac_client_log(client, GUAC_LOG_INFO, "Unable to download file "
+                "\"%s\", file downloads have been disabled.", name);
 
     guac_socket_flush(user->socket);
     return 0;
