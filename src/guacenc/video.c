@@ -37,10 +37,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
@@ -160,10 +161,11 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
 fail_alloc_video:
 fail_output_file:
     avio_close(container_format_context->pb);
-    /* delete the file that was created if it was actually created */
-    if (access(path, F_OK) != -1) {
-        remove(path);
-    }
+
+    /* Delete the file that was created if it was actually created */
+    if (unlink(path) == -1 && errno != ENOENT)
+        guacenc_log(GUAC_LOG_WARNING, "Failed output file \"%s\" could not "
+                "be automatically deleted: %s", path, strerror(errno));
 
 fail_output_avio:
     av_freep(&frame->data[0]);
