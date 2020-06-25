@@ -86,6 +86,14 @@ int guac_rdp_upload_file_handler(guac_user* user, guac_stream* stream,
         guac_socket_flush(user->socket);
         return 0;
     }
+    
+    /* Return error if uploads are disabled */
+    if (fs->disable_upload) {
+        guac_protocol_send_ack(user->socket, stream, "FAIL (Uploads Disabled)",
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
+        guac_socket_flush(user->socket);
+        return 0;
+    }
 
     /* Translate name */
     __generate_upload_path(filename, file_path);

@@ -101,9 +101,9 @@ int guac_rdp_download_get_handler(guac_user* user, guac_object* object,
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    /* Get filesystem, ignore request if no filesystem */
+    /* Get filesystem, ignore request if no filesystem or downloads are disabled. */
     guac_rdp_fs* fs = rdp_client->filesystem;
-    if (fs == NULL)
+    if (fs == NULL || fs->disable_download)
         return 0;
 
     /* Attempt to open file for reading */
