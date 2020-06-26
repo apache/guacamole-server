@@ -80,7 +80,7 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
  * @return
  *     Zero on success, non-zero on error.
  */
-static int __guac_socket_write_array(guac_socket* socket, const char** array) {
+static int guac_socket_write_array(guac_socket* socket, const char** array) {
 
 	/* Loop through array, writing provided values to the socket. */
     for (int i=0; array[i] != NULL; i++) {
@@ -128,7 +128,7 @@ static int __guac_protocol_send_args(guac_socket* socket, const char** args) {
             || __guac_socket_write_length_string(socket, GUACAMOLE_PROTOCOL_VERSION))
         return -1;
 
-    if (__guac_socket_write_array(socket, args))
+    if (guac_socket_write_array(socket, args))
         return -1;
 
     return guac_socket_write_string(socket, ";");
@@ -333,7 +333,7 @@ static int __guac_protocol_send_connect(guac_socket* socket, const char** args) 
     if (guac_socket_write_string(socket, "7.connect"))
         return -1;
 
-    if (__guac_socket_write_array(socket, args))
+    if (guac_socket_write_array(socket, args))
         return -1;
 
     return guac_socket_write_string(socket, ";");
@@ -975,44 +975,23 @@ int guac_protocol_send_rect(guac_socket* socket,
 
 }
 
-/**
- * Sends the "required" instruction on the given socket, looping
- * through all the items provided in the NULL-terminated array,
- * and closing out the instruction.  Returns zero on success, or
- * non-zero on error.
- *
- * @param socket
- *     The socket on which to write the instruction.
- *
- * @param required
- *     The NULL-terminated array of required parameters to send
- *     to the client.
- *
- * @return
- *     Zero if successful, non-zero on error.
- */
-static int __guac_protocol_send_required(guac_socket* socket,
-        const char** required) {
-
+int guac_protocol_send_required(guac_socket* socket, const char** required) {
+    
+    int ret_val;
+    
+    guac_socket_instruction_begin(socket);
+    
     // The socket should be kept alive while waiting for user response.
     guac_socket_require_keep_alive(socket);
     
     if (guac_socket_write_string(socket, "8.required"))
         return -1;
 
-    if (__guac_socket_write_array(socket, required))
+    if (guac_socket_write_array(socket, required))
         return -1;
 
-    return guac_socket_write_string(socket, ";");
-
-}
-
-int guac_protocol_send_required(guac_socket* socket, const char** required) {
+    ret_val = guac_socket_write_string(socket, ";");
     
-    int ret_val;
-    
-    guac_socket_instruction_begin(socket);
-    ret_val = __guac_protocol_send_required(socket, required);
     guac_socket_instruction_end(socket);
 
     return ret_val;
