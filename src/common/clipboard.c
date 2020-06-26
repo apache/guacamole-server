@@ -46,7 +46,14 @@ guac_common_clipboard* guac_common_clipboard_alloc(int size) {
 }
 
 void guac_common_clipboard_free(guac_common_clipboard* clipboard) {
+
+    /* Destroy lock */
+    pthread_mutex_destroy(&(clipboard->lock));
+
+    /* Free buffer */
     free(clipboard->buffer);
+
+    /* Free base structure */
     free(clipboard);
 }
 
