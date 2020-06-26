@@ -1473,9 +1473,9 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     }
 
     /* Track modifiers */
-    if (keysym == 0xFFE3)
+    if (keysym == 0xFFE3 /* LCtrl */ || keysym == 0xFFE4 /* RCtrl */)
         term->mod_ctrl = pressed;
-    else if (keysym == 0xFFE9)
+    else if (keysym == 0xFFE9 /* LAlt */ || keysym == 0xFE03 /* AltGr */)
         term->mod_alt = pressed;
     else if (keysym == 0xFFE1)
         term->mod_shift = pressed;
