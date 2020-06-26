@@ -631,6 +631,9 @@ void guac_rdp_print_job_free(guac_rdp_print_job* job) {
     /* Wait for job to terminate */
     pthread_join(job->output_thread, NULL);
 
+    /* Destroy lock */
+    pthread_mutex_destroy(&(job->state_lock));
+
     /* Free base structure */
     free(job);
 
