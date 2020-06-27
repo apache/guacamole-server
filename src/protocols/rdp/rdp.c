@@ -258,9 +258,8 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
         pthread_mutex_lock(&(rdp_client->rdp_credential_lock));
         
         /* Send require params and flush socket. */
-        guac_socket_require_keep_alive(client->__owner->socket);
-        guac_protocol_send_required(client->__owner->socket, (const char**) params);
-        guac_socket_flush(client->__owner->socket);
+        guac_socket_require_keep_alive(client->socket);
+        guac_client_owner_send_required(client, (const char**) params);
         
         /* Wait for condition. */
         pthread_cond_wait(&(rdp_client->rdp_credential_cond), &(rdp_client->rdp_credential_lock));

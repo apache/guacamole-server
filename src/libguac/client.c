@@ -478,6 +478,25 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
 
 }
 
+int guac_client_owner_send_required(guac_client* client, const char** required) {
+
+    int retval;
+
+    pthread_rwlock_rdlock(&(client->__users_lock));
+
+    /* Invoke callback with current owner */
+    retval = guac_protocol_send_required(client->__owner->socket, required);
+    
+    /* Flush the socket */
+    guac_socket_flush(client->__owner->socket);
+
+    pthread_rwlock_unlock(&(client->__users_lock));
+
+    /* Return value from sending required */
+    return retval;
+
+}
+
 /**
  * Updates the provided approximate processing lag, taking into account the
  * processing lag of the given user.

@@ -42,10 +42,9 @@ char* guac_vnc_get_password(rfbClient* client) {
         pthread_mutex_lock(&(vnc_client->vnc_credential_lock));
         
         /* Send the request for password and flush the socket. */
-        guac_socket_require_keep_alive(gc->__owner->socket);
-        guac_protocol_send_required(gc->__owner->socket,
+        guac_socket_require_keep_alive(gc->socket);
+        guac_client_owner_send_required(gc,
                 (const char* []) {GUAC_VNC_PARAMETER_NAME_PASSWORD, NULL});
-        guac_socket_flush(gc->__owner->socket);
         
         /* Set the conditional flag. */
         vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_PASSWORD;
@@ -93,8 +92,8 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
             pthread_mutex_lock(&(vnc_client->vnc_credential_lock));
             
             /* Send required parameters to client and flush the socket. */
-            guac_protocol_send_required(gc->socket, (const char**) params);
-            guac_socket_flush(gc->socket);
+            guac_socket_require_keep_alive(gc->socket);
+            guac_client_owner_send_required(gc, (const char**) params);
             
             /* Wait for the parameters to be returned. */
             pthread_cond_wait(&(vnc_client->vnc_credential_cond),
