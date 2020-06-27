@@ -44,7 +44,7 @@ char* guac_vnc_get_password(rfbClient* client) {
         /* Send the request for password and flush the socket. */
         guac_socket_require_keep_alive(gc->__owner->socket);
         guac_protocol_send_required(gc->__owner->socket,
-                (const char* []) {"password", NULL});
+                (const char* []) {GUAC_VNC_PARAMETER_NAME_PASSWORD, NULL});
         guac_socket_flush(gc->__owner->socket);
         
         /* Set the conditional flag. */
@@ -74,15 +74,15 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
         int i = 0;
         
         /* Check if username is null or empty. */
-        if (settings->username == NULL || strcmp(settings->username, "") == 0) {
-            params[i] = "username";
+        if (settings->username == NULL) {
+            params[i] = GUAC_VNC_PARAMETER_NAME_USERNAME;
             i++;
             vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_USERNAME;
         }
         
         /* Check if password is null or empty. */
-        if (settings->password == NULL || strcmp(settings->password, "") == 0) {
-            params[i] = "password";
+        if (settings->password == NULL) {
+            params[i] = GUAC_VNC_PARAMETER_NAME_PASSWORD;
             i++;
             vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_PASSWORD;
         }

@@ -22,6 +22,7 @@
 #include "argv.h"
 #include "client.h"
 #include "common/defaults.h"
+#include "common-ssh/ssh-constants.h"
 #include "settings.h"
 
 #include <guacamole/user.h>
@@ -36,8 +37,8 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "hostname",
     "host-key",
     "port",
-    "username",
-    "password",
+	GUAC_SSH_ARGV_USERNAME,
+	GUAC_SSH_ARGV_PASSWORD,
     GUAC_SSH_ARGV_FONT_NAME,
     GUAC_SSH_ARGV_FONT_SIZE,
     "enable-sftp",
@@ -45,7 +46,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "sftp-disable-download",
     "sftp-disable-upload",
     "private-key",
-    "passphrase",
+    GUAC_SSH_ARGV_PASSPHRASE,
 #ifdef ENABLE_SSH_AGENT
     "enable-agent",
 #endif

@@ -20,6 +20,7 @@
 #include "config.h"
 #include "argv.h"
 #include "rdp.h"
+#include "settings.h"
 
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -154,11 +155,11 @@ int guac_rdp_argv_handler(guac_user* user, guac_stream* stream,
     guac_rdp_argv_setting setting;
 
     /* Allow users to update authentication details */
-    if (strcmp(name, "username") == 0)
+    if (strcmp(name, GUAC_RDP_PARAMETER_NAME_USERNAME) == 0)
         setting = GUAC_RDP_ARGV_SETTING_USERNAME;
-    else if (strcmp(name, "password") == 0)
+    else if (strcmp(name, GUAC_RDP_PARAMETER_NAME_PASSWORD) == 0)
         setting = GUAC_RDP_ARGV_SETTING_PASSWORD;
-    else if (strcmp(name, "domain") == 0)
+    else if (strcmp(name, GUAC_RDP_PARAMETER_NAME_DOMAIN) == 0)
         setting = GUAC_RDP_ARGV_SETTING_DOMAIN;
 
     /* No other connection parameters may be updated */

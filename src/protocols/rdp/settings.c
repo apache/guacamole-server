@@ -42,9 +42,9 @@
 const char* GUAC_RDP_CLIENT_ARGS[] = {
     "hostname",
     "port",
-    "domain",
-    "username",
-    "password",
+    GUAC_RDP_PARAMETER_NAME_DOMAIN,
+    GUAC_RDP_PARAMETER_NAME_USERNAME,
+    GUAC_RDP_PARAMETER_NAME_PASSWORD,
     "width",
     "height",
     "dpi",

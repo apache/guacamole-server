@@ -74,6 +74,24 @@
 #define GUAC_RDP_ORDER_SUPPORT_LENGTH 32
 
 /**
+ * The name of the parameter that is used by Guacamole to collect the username
+ * from the Guacamole client and send it to the RDP server.
+ */
+#define GUAC_RDP_PARAMETER_NAME_USERNAME "username"
+
+/**
+ * The name of the parameter that is used by Guacamole to collect the password
+ * from the Guacamole client and send it to the RDP server.
+ */
+#define GUAC_RDP_PARAMETER_NAME_PASSWORD "password"
+
+/**
+ * The name of the parameter that is used by Guacamole to collect the domain
+ * name from the Guacamole client and send it to the RDP server.
+ */
+#define GUAC_RDP_PARAMETER_NAME_DOMAIN "domain"
+
+/**
  * All supported combinations of security types.
  */
 typedef enum guac_rdp_security {

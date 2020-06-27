@@ -800,7 +800,7 @@ int guac_protocol_send_rect(guac_socket* socket, const guac_layer* layer,
  * is needed to continue the connection.
  * 
  * @param socket
- *     The guac_socket connection to use.
+ *     The guac_socket connection to which to send the instruction.
  * 
  * @param required
  *     A NULL-terminated array of required parameters.

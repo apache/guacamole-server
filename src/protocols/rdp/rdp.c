@@ -232,20 +232,20 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     char* params[4] = {};
     int i = 0;
     
-    if (settings->username == NULL || strcmp(settings->username, "") == 0) {
-        params[i] = "username";
+    if (settings->username == NULL) {
+        params[i] = GUAC_RDP_PARAMETER_NAME_USERNAME;
         rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_USERNAME;
         i++;
     }
     
-    if (settings->password == NULL || strcmp(settings->password, "") == 0) {
-        params[i] = "password";
+    if (settings->password == NULL) {
+        params[i] = GUAC_RDP_PARAMETER_NAME_PASSWORD;
         rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_PASSWORD;
         i++;
     }
     
-    if (settings->domain == NULL || strcmp(settings->domain, "") == 0) {
-        params[i] = "domain";
+    if (settings->domain == NULL) {
+        params[i] = GUAC_RDP_PARAMETER_NAME_DOMAIN;
         rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_DOMAIN;
         i++;
     }

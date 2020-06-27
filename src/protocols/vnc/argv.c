@@ -153,9 +153,9 @@ int guac_vnc_argv_handler(guac_user* user, guac_stream* stream, char* mimetype,
     guac_vnc_argv_setting setting;
 
     /* Allow users to update authentication information */
-    if (strcmp(name, "username") == 0)
+    if (strcmp(name, GUAC_VNC_PARAMETER_NAME_USERNAME) == 0)
         setting = GUAC_VNC_ARGV_SETTING_USERNAME;
-    else if (strcmp(name, "password") == 0)
+    else if (strcmp(name, GUAC_VNC_PARAMETER_NAME_PASSWORD) == 0)
         setting = GUAC_VNC_ARGV_SETTING_PASSWORD;
 
     /* No other connection parameters may be updated */

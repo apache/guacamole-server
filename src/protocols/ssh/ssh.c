@@ -23,6 +23,7 @@
 #include "common/recording.h"
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
+#include "common-ssh/ssh-constants.h"
 #include "settings.h"
 #include "sftp.h"
 #include "ssh.h"
@@ -108,7 +109,7 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
 
     /* Get username */
     while (settings->username == NULL)
-        guac_ssh_get_credential(client, "username");
+        guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_USERNAME);
 
     /* Create user object from username */
     user = guac_common_ssh_create_user(settings->username);
@@ -133,7 +134,7 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
 
             /* Prompt for passphrase if missing */
             while (settings->key_passphrase == NULL)
-                guac_ssh_get_credential(client, "passphrase");
+                guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_PASSPHRASE);
 
             /* Reattempt import with passphrase */
             if (guac_common_ssh_user_import_key(user,
