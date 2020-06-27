@@ -42,9 +42,10 @@ char* guac_vnc_get_password(rfbClient* client) {
         pthread_mutex_lock(&(vnc_client->vnc_credential_lock));
         
         /* Send the request for password and flush the socket. */
-        guac_protocol_send_required(gc->socket,
+        guac_socket_require_keep_alive(gc->__owner->socket);
+        guac_protocol_send_required(gc->__owner->socket,
                 (const char* []) {"password", NULL});
-        guac_socket_flush(gc->socket);
+        guac_socket_flush(gc->__owner->socket);
         
         /* Set the conditional flag. */
         vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_PASSWORD;
