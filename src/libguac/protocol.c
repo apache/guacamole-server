@@ -23,6 +23,7 @@
 #include "guacamole/layer.h"
 #include "guacamole/object.h"
 #include "guacamole/protocol.h"
+#include "guacamole/protocol-types.h"
 #include "guacamole/socket.h"
 #include "guacamole/stream.h"
 #include "guacamole/unicode.h"
@@ -38,6 +39,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+
+/**
+ * Structure mapping the enum value of a protocol version to the string
+ * representation of the version.
+ */
+typedef struct guac_protocol_version_mapping {
+    
+    /**
+     * The enum value representing the selected protocol version.
+     */
+    guac_protocol_version version;
+    
+    /**
+     * The string value representing the protocol version.
+     */
+    char* version_string;
+    
+} guac_protocol_version_mapping;
+
+/**
+ * The map of known protocol version enum to the corresponding string value.
+ */
+guac_protocol_version_mapping guac_protocol_version_table[] = {
+    { GUAC_PROTOCOL_VERSION_1_0_0,   "VERSION_1_0_0" },
+    { GUAC_PROTOCOL_VERSION_1_1_0,   "VERSION_1_1_0" },
+    { GUAC_PROTOCOL_VERSION_1_3_0,   "VERSION_1_3_0" },
+    { GUAC_PROTOCOL_VERSION_UNKNOWN, NULL }
+};
 
 /* Output formatting functions */
 
@@ -1273,5 +1302,36 @@ int guac_protocol_decode_base64(char* base64) {
     /* Return number of bytes written */
     return length;
 
+}
+
+guac_protocol_version guac_protocol_string_to_version(char* version_string) {
+    
+    guac_protocol_version_mapping* current = guac_protocol_version_table;
+    while (current->version != GUAC_PROTOCOL_VERSION_UNKNOWN) {
+        
+        if (strcmp(current->version_string, version_string) == 0)
+            return current->version;
+        
+        current++;
+        
+    }
+    
+    return GUAC_PROTOCOL_VERSION_UNKNOWN;
+    
+}
+
+const char* guac_protocol_version_to_string(guac_protocol_version version) {
+    
+    guac_protocol_version_mapping* current = guac_protocol_version_table;
+    while (current->version) {
+        
+        if (current->version == version) {
+            return (const char*) current->version_string;
+        }
+        
+    }
+    
+    return NULL;
+    
 }
 

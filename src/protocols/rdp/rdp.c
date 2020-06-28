@@ -202,7 +202,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 /**
  * Callback invoked by FreeRDP when authentication is required but a username
  * and password has not already been given. In the case of Guacamole, this
- * function always succeeds but does not populate the usename or password. The
+ * function always succeeds but does not populate the username or password. The
  * username/password must be given within the connection parameters.
  *
  * @param instance
@@ -232,6 +232,11 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     char* params[4] = {};
     int i = 0;
     
+    /* If the client does not support the "required" instruction, just
+        exit. */
+    if (!guac_client_owner_supports_required(client))
+        return TRUE;
+    
     if (settings->username == NULL) {
         params[i] = GUAC_RDP_PARAMETER_NAME_USERNAME;
         rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_USERNAME;
@@ -257,7 +262,7 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
         /* Lock the client thread. */
         pthread_mutex_lock(&(rdp_client->rdp_credential_lock));
         
-        /* Send require parameters to the owner. */
+        /* Send required parameters to the owner. */
         guac_client_owner_send_required(client, (const char**) params);
         
         /* Wait for condition. */

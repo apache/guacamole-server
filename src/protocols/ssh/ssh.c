@@ -74,6 +74,10 @@ static void guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
     
+    /* If the client does not support the "required" instruction, just return. */
+    if (!guac_client_owner_supports_required(client))
+        return;
+    
     /* Lock the terminal thread while prompting for the credential. */
     pthread_mutex_lock(&(ssh_client->term_channel_lock));
     

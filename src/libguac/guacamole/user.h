@@ -95,6 +95,12 @@ struct guac_user_info {
      * is the standard tzdata naming convention.
      */
     const char* timezone;
+    
+    /**
+     * The Guacamole protocol version that the remote system supports, allowing
+     * for feature support to be negotiated between client and server.
+     */
+    guac_protocol_version protocol_version;
 
 };
 
@@ -822,6 +828,17 @@ void guac_user_stream_jpeg(guac_user* user, guac_socket* socket,
 void guac_user_stream_webp(guac_user* user, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
         cairo_surface_t* surface, int quality, int lossless);
+
+/**
+ * Returns whether the given user supports the "required" instruction.
+ * 
+ * @param user
+ *     The Guacamole user to check for support of the "required" instruction.
+ * 
+ * @return 
+ *     Non-zero if the user supports the "required" instruction, otherwise zero.
+ */
+int guac_user_supports_required(guac_user* user);
 
 /**
  * Returns whether the given user supports WebP. If the user does not

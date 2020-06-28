@@ -1023,5 +1023,32 @@ int guac_protocol_send_name(guac_socket* socket, const char* name);
  */
 int guac_protocol_decode_base64(char* base64);
 
+/**
+ * Given a string representation of a protocol version, search the mapping
+ * to find the matching enum version, or GUAC_PROTOCOL_VERSION_UNKNOWN if no
+ * match is found.
+ * 
+ * @param version_string
+ *     The string representation of the protocol version.
+ * 
+ * @return 
+ *     The enum value of the protocol version, or GUAC_PROTOCOL_VERSION_UNKNOWN
+ *     if no match is found.
+ */
+guac_protocol_version guac_protocol_string_to_version(char* version_string);
+
+/**
+ * Given the enum value of the protocol version, return a pointer to the string
+ * representation of the version, or NULL if the version is unknown.
+ * 
+ * @param version
+ *     The enum value of the protocol version.
+ * 
+ * @return 
+ *     A pointer to the string representation of the protocol version, or NULL
+ *     if the version is unknown.
+ */
+const char* guac_protocol_version_to_string(guac_protocol_version version);
+
 #endif
 

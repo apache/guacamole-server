@@ -709,6 +709,21 @@ void guac_client_stream_webp(guac_client* client, guac_socket* socket,
         cairo_surface_t* surface, int quality, int lossless);
 
 /**
+ * Returns whether the owner of the given client supports the "required"
+ * instruction, returning non-zero if the client owner does support the
+ * instruction, or zero if the owner does not.
+ * 
+ * @param client
+ *     The Guacamole client whose owner should be checked for supporting
+ *     the "required" instruction.
+ * 
+ * @return 
+ *     Non-zero if the owner of the given client supports the "required"
+ *     instruction, zero otherwise.
+ */
+int guac_client_owner_supports_required(guac_client* client);
+
+/**
  * Returns whether all users of the given client support WebP. If any user does
  * not support WebP, or the server cannot encode WebP images, zero is returned.
  *

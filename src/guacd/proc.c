@@ -340,6 +340,9 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
         owner = 0;
 
     }
+    
+    /* Enable keep alive on the broadcast socket */
+    guac_socket_require_keep_alive(client->socket);
 
 cleanup_client:
 

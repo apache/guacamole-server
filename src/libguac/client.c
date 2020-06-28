@@ -478,22 +478,39 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
 
 }
 
+/**
+ * Callback function which is invoked by guac_client_owner_send_required() to
+ * send the required parameters to the specified user, who is the owner of the
+ * client session.
+ * 
+ * @param user
+ *     The guac_user that will receive the required parameters, who is the owner
+ *     of the client.
+ * 
+ * @param data
+ *     Pointer to a NULL-terminated array of required parameters that will be
+ *     passed on to the owner to continue the connection.
+ * 
+ * @return
+ *     A pointer to an integer containing the return status of the send
+ *     operation.
+ */
+static void* guac_client_owner_send_required_callback(guac_user* user, void* data) {
+    
+    const char** required = (const char **) data;
+    
+    /* Send required parameters to owner. */
+    return (void*) ((intptr_t) guac_protocol_send_required(user->socket, required));
+    
+}
+
 int guac_client_owner_send_required(guac_client* client, const char** required) {
 
-    int retval;
-
-    pthread_rwlock_rdlock(&(client->__users_lock));
-
-    /* Invoke callback with current owner */
-    retval = guac_protocol_send_required(client->__owner->socket, required);
+    /* Don't send required instruction if client does not support it. */
+    if (!guac_client_owner_supports_required(client))
+        return -1;
     
-    /* Flush the socket */
-    guac_socket_flush(client->__owner->socket);
-
-    pthread_rwlock_unlock(&(client->__users_lock));
-
-    /* Return value from sending required */
-    return retval;
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_send_required_callback, required));
 
 }
 
@@ -651,6 +668,44 @@ static void* __webp_support_callback(guac_user* user, void* data) {
 
 }
 #endif
+
+/**
+ * Callback function which is invoked by guac_client_owner_supports_required()
+ * to determine if the owner of a client supports the "required" instruction,
+ * updating the flag to indicate support.
+ * 
+ * @param user
+ *     The guac_user that will be checked for "required" instruction support.
+ * 
+ * @param data
+ *     Pointer to an int containing the status for support of the "required"
+ *     instruction.  This will be 0 if the owner does not support this
+ *     instruction, or 1 if the owner does support it.
+ * 
+ * @return
+ *     Always NULL.
+ */
+static void* guac_owner_supports_required_callback(guac_user* user, void* data) {
+    
+    int* required_supported = (int *) data;
+    
+    /* Check if owner supports required */
+    if (*required_supported)
+        *required_supported = guac_user_supports_required(user);
+    
+    return NULL;
+    
+}
+
+int guac_client_owner_supports_required(guac_client* client) {
+    
+    int required_supported = 1;
+    
+    guac_client_for_owner(client, guac_owner_supports_required_callback, &required_supported);
+    
+    return required_supported;
+    
+}
 
 int guac_client_supports_webp(guac_client* client) {
 

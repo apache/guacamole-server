@@ -38,7 +38,7 @@
  * This version is passed by the __guac_protocol_send_args() function from the
  * server to the client during the client/server handshake.
  */
-#define GUACAMOLE_PROTOCOL_VERSION "VERSION_1_1_0"
+#define GUACAMOLE_PROTOCOL_VERSION "VERSION_1_3_0"
 
 /**
  * The maximum number of bytes that should be sent in any one blob instruction

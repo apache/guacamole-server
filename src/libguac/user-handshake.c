@@ -344,12 +344,16 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
         guac_client_log(client, GUAC_LOG_INFO, "User \"%s\" joined connection "
                 "\"%s\" (%i users now present)", user->user_id,
                 client->connection_id, client->connected_users);
-        if (strcmp(parser->argv[0],"") != 0)
+        if (strcmp(parser->argv[0],"") != 0) {
             guac_client_log(client, GUAC_LOG_DEBUG, "Client is using protocol "
                     "version \"%s\"", parser->argv[0]);
-        else
+            user->info.protocol_version = guac_protocol_string_to_version(parser->argv[0]);
+        }
+        else {
             guac_client_log(client, GUAC_LOG_DEBUG, "Client has not defined "
                     "its protocol version.");
+            user->info.protocol_version = GUAC_PROTOCOL_VERSION_1_0_0;
+        }
 
         /* Handle user I/O, wait for connection to terminate */
         guac_user_start(parser, user, usec_timeout);

@@ -36,6 +36,11 @@ char* guac_vnc_get_password(rfbClient* client) {
     guac_vnc_client* vnc_client = ((guac_vnc_client*) gc->data);
     guac_vnc_settings* settings = vnc_client->settings;
     
+    /* If the client does not support the "required" instruction, just return
+        the configuration data. */
+    if (!guac_client_owner_supports_required(gc))
+        return ((guac_vnc_client*) gc->data)->settings->password;
+    
     /* If password isn't around, prompt for it. */
     if (settings->password == NULL || strcmp(settings->password, "") == 0) {
         /* Lock the thread. */
@@ -64,10 +69,19 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = ((guac_vnc_client*) gc->data);
     guac_vnc_settings* settings = vnc_client->settings;
-
+    
     /* Handle request for Username/Password credentials */
     if (credentialType == rfbCredentialTypeUser) {
         rfbCredential *creds = malloc(sizeof(rfbCredential));
+        
+        /* If the client does not support the "required" instruction, just return
+           the parameters already configured. */
+        if (!guac_client_owner_supports_required(gc)) {
+            creds->userCredential.username = settings->username;
+            creds->userCredential.password = settings->password;
+            return creds;
+        }
+        
         char* params[2] = {NULL};
         int i = 0;
         
