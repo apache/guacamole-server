@@ -77,8 +77,7 @@ static void guac_ssh_get_credential(guac_client *client, char* cred_name) {
     /* Lock the terminal thread while prompting for the credential. */
     pthread_mutex_lock(&(ssh_client->term_channel_lock));
     
-    /* Let the owner know what we require and flush the socket. */
-    guac_socket_require_keep_alive(client->socket);
+    /* Let the owner know what we require. */
     guac_client_owner_send_required(client, (const char* []) {cred_name, NULL});
     
     /* Wait for the response, and then unlock the thread. */
@@ -271,9 +270,6 @@ void* ssh_client_thread(void* data) {
         /* Already aborted within guac_ssh_get_user() */
         return NULL;
     }
-
-    /* Ensure connection is kept alive during lengthy connects */
-    guac_socket_require_keep_alive(client->socket);
 
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,

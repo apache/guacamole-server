@@ -150,8 +150,10 @@ guac_socket* guac_socket_alloc() {
     socket->state = GUAC_SOCKET_OPEN;
     socket->last_write_timestamp = guac_timestamp_current();
 
-    /* No keep alive ping by default */
-    socket->__keep_alive_enabled = 0;
+    /* keep alive ping by default */
+    socket->__keep_alive_enabled = 1;
+    pthread_create(&(socket->__keep_alive_thread), NULL,
+                __guac_socket_keep_alive_thread, (void*) socket);
 
     /* No handlers yet */
     socket->read_handler   = NULL;

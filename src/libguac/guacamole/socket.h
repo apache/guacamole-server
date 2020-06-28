@@ -136,6 +136,10 @@ void guac_socket_free(guac_socket* socket);
  * to ensure neither side of the socket times out while the socket is open.
  * This ping will take the form of a "nop" instruction.
  *
+ * @deprecated
+ *     Manually starting the keep alive process on sockets is no longer
+ *     necessary, as the sockets enable the "nop" ping by default.
+ * 
  * @param socket
  *     The guac_socket to declare as requiring an automatic keep-alive ping.
  */

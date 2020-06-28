@@ -41,8 +41,7 @@ char* guac_vnc_get_password(rfbClient* client) {
         /* Lock the thread. */
         pthread_mutex_lock(&(vnc_client->vnc_credential_lock));
         
-        /* Send the request for password and flush the socket. */
-        guac_socket_require_keep_alive(gc->socket);
+        /* Send the request for password to the owner. */
         guac_client_owner_send_required(gc,
                 (const char* []) {GUAC_VNC_PARAMETER_NAME_PASSWORD, NULL});
         
@@ -91,8 +90,7 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
             /* Lock the thread. */
             pthread_mutex_lock(&(vnc_client->vnc_credential_lock));
             
-            /* Send required parameters to client and flush the socket. */
-            guac_socket_require_keep_alive(gc->socket);
+            /* Send required parameters to owner. */
             guac_client_owner_send_required(gc, (const char**) params);
             
             /* Wait for the parameters to be returned. */
