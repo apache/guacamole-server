@@ -159,6 +159,9 @@ typedef struct guac_vnc_client {
     /**
      * A field to track flags related to retrieving required credentials
      * from the client.
+     *
+     * @see GUAC_VNC_COND_FLAG_USERNAME
+     * @see GUAC_VNC_COND_FLAG_PASSWORD
      */
     unsigned vnc_credential_flags;
 

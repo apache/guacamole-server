@@ -226,6 +226,7 @@ int guac_rdp_client_free_handler(guac_client* client) {
     
     /* Destroy the pthread conditional handler */
     pthread_cond_destroy(&(rdp_client->rdp_credential_cond));
+    pthread_mutex_destroy(&(rdp_client->rdp_credential_lock));
 
     pthread_rwlock_destroy(&(rdp_client->lock));
 

@@ -184,6 +184,10 @@ typedef struct guac_rdp_client {
     /**
      * Flags for tracking events related to the rdp_credential_cond
      * pthread condition.
+     * 
+     * @see GUAC_RDP_CRED_FLAG_USERNAME
+     * @see GUAC_RDP_CRED_FLAG_PASSWORD
+     * @see GUAC_RDP_CRED_FLAG_DOMAIN
      */
     unsigned rdp_credential_flags;
 
