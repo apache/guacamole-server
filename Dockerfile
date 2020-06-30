@@ -113,8 +113,12 @@ RUN ${PREFIX_DIR}/bin/link-freerdp-plugins.sh \
 # Checks the operating status every 5 minutes with a timeout of 5 seconds
 HEALTHCHECK --interval=5m --timeout=5s CMD nc -z 127.0.0.1 4822 || exit 1
 
-# Run with user nobody
-USER nobody
+# Create a new user guacd
+ARG UID=1000
+RUN useradd --system --create-home --shell /usr/sbin/nologin --uid $UID --no-user-group guacd
+
+# Run with user guacd
+USER guacd
 
 # Expose the default listener port
 EXPOSE 4822
