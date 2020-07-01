@@ -99,9 +99,25 @@ guac_ssh_credential_prompt_map ssh_credential_prompt_map[] = {
  * @param cred_name
  *     The name of the parameter to prompt for in the client.
  */
-static void guac_ssh_get_credential(guac_client *client, char* cred_name) {
+static char* guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
+    
+    /* If client owner does not support required, use terminal prompt. */
+    if (!guac_client_owner_supports_required(client)) {
+        
+        /* Loop to find correct prompt for credential name. */
+        guac_ssh_credential_prompt_map* current = ssh_credential_prompt_map;
+        while (current->name != NULL) {
+            if (strcmp(current->name, cred_name) == 0)
+                return guac_terminal_prompt(ssh_client->term,
+                    current->prompt, true);
+            current++;
+        }
+        
+        /* No matching credential was found, so return NULL. */
+        return NULL;
+    }
     
     /* Lock the terminal thread while prompting for the credential. */
     pthread_mutex_lock(&(ssh_client->ssh_credential_lock));
@@ -112,6 +128,8 @@ static void guac_ssh_get_credential(guac_client *client, char* cred_name) {
     /* Wait for the response, and then unlock the thread. */
     pthread_cond_wait(&(ssh_client->ssh_credential_cond), &(ssh_client->ssh_credential_lock));
     pthread_mutex_unlock(&(ssh_client->ssh_credential_lock));
+    
+    return NULL;
     
 }
 
@@ -137,16 +155,9 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
     /* Get username */
     while (settings->username == NULL) {
         
-        /* Client owner supports required instruction, so send prompt(s) that way. */
-        if (guac_client_owner_supports_required(client)) {
-            guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_USERNAME);
-        }
-        
-        /* Fall back to terminal prompting. */
-        else {
-            settings->username = guac_terminal_prompt(ssh_client->term,
-                "Login as: ", true);
-        }
+        char* username = guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_USERNAME);
+        if (username != NULL)
+            settings->username = username;
 
     }
     
@@ -174,14 +185,9 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
             /* Prompt for passphrase if missing */
             while (settings->key_passphrase == NULL) {
                 
-                /* Send prompt via required instruction, if supported */
-                if (guac_client_owner_supports_required(client))
-                    guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_PASSPHRASE);
-                
-                /* Fall back to terminal prompt */
-                else
-                    settings->key_passphrase = guac_terminal_prompt(ssh_client->term,
-                        "Key passphrase: ", true);
+                char* passphrase = guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_PASSPHRASE);
+                if (passphrase != NULL)
+                    settings->key_passphrase = passphrase;
                 
             }
 

@@ -360,8 +360,13 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     }
 
     /* Attempt authentication with username + password. */
-    if (user->password == NULL && common_session->credential_handler)
-        common_session->credential_handler(client, GUAC_SSH_PARAMETER_NAME_PASSWORD);
+    if (user->password == NULL && common_session->credential_handler) {
+        
+        char* password = common_session->credential_handler(client, GUAC_SSH_PARAMETER_NAME_PASSWORD);
+        if (password != NULL)
+            user->password = password;
+        
+    }
     
     /* Authenticate with password, if provided */
     if (user->password != NULL) {

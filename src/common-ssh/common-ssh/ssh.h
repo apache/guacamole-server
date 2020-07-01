@@ -34,8 +34,13 @@
  * 
  * @param cred_name
  *     The connection parameter that is being requested from the client.
+ * 
+ * @return
+ *     A newly-allocated string containing the credentials request from the
+ *     client, or NULL if the credentials will be updated via the required
+ *     instruction.
  */
-typedef void guac_ssh_credential_handler(guac_client* client, char* cred_name);
+typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name);
 
 /**
  * An SSH session, backed by libssh2 and associated with a particular
