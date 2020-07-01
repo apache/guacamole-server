@@ -47,7 +47,7 @@ int guac_client_init(guac_client* client) {
 
     /* Init clipboard */
     ssh_client->clipboard = guac_common_clipboard_alloc(GUAC_SSH_CLIPBOARD_MAX_LENGTH);
-
+    
     /* Set handlers */
     client->join_handler = guac_ssh_user_join_handler;
     client->free_handler = guac_ssh_client_free_handler;
@@ -120,6 +120,10 @@ int guac_ssh_client_free_handler(guac_client* client) {
     guac_common_clipboard_free(ssh_client->clipboard);
     free(ssh_client);
 
+    /* Destroy the pthread conditional handler */
+    pthread_cond_destroy(&(ssh_client->ssh_credential_cond));
+    pthread_mutex_destroy(&(ssh_client->ssh_credential_lock));
+    
     guac_common_ssh_uninit();
     return 0;
 }

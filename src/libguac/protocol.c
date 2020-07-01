@@ -96,9 +96,10 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
 }
 
 /**
- * Loop through the provided NULL-terminated array, writing the values
- * and lengths of the values in the array to the given socket. Return
- * zero on success, non-zero on error.
+ * Loop through the provided NULL-terminated array, writing the values in the
+ * array to the given socket. Values are written as a series of Guacamole
+ * protocol elements, including the leading comma and the value length in
+ * addition to the value itself. Returns zero on success, non-zero on error.
  *
  * @param socket
  *     The socket to which the data should be written.
@@ -111,7 +112,7 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
  */
 static int guac_socket_write_array(guac_socket* socket, const char** array) {
 
-	/* Loop through array, writing provided values to the socket. */
+    /* Loop through array, writing provided values to the socket. */
     for (int i=0; array[i] != NULL; i++) {
 
         if (guac_socket_write_string(socket, ","))
@@ -122,7 +123,7 @@ static int guac_socket_write_array(guac_socket* socket, const char** array) {
 
     }
 
-	return 0;
+    return 0;
 
 }
 
@@ -1009,14 +1010,10 @@ int guac_protocol_send_required(guac_socket* socket, const char** required) {
     int ret_val;
     
     guac_socket_instruction_begin(socket);
-    
-    if (guac_socket_write_string(socket, "8.required"))
-        return -1;
 
-    if (guac_socket_write_array(socket, required))
-        return -1;
-
-    ret_val = guac_socket_write_string(socket, ";");
+    ret_val = guac_socket_write_string(socket, "8.required")
+        || guac_socket_write_array(socket, required)
+        || guac_socket_write_string(socket, ";");
     
     guac_socket_instruction_end(socket);
 

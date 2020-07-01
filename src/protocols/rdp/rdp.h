@@ -183,7 +183,12 @@ typedef struct guac_rdp_client {
     
     /**
      * Flags for tracking events related to the rdp_credential_cond
-     * pthread condition.
+     * pthread condition. These flags will be set when credential parameters
+     * are required by the connection, and cleared when those have been
+     * provided by the client.  All flags are cleared at the start of the
+     * connection, and then set as the client determines that further
+     * information is required.
+     * 
      * 
      * @see GUAC_RDP_CRED_FLAG_USERNAME
      * @see GUAC_RDP_CRED_FLAG_PASSWORD

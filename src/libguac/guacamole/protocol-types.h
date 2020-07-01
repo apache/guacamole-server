@@ -20,8 +20,6 @@
 #ifndef _GUAC_PROTOCOL_TYPES_H
 #define _GUAC_PROTOCOL_TYPES_H
 
-#include <stddef.h>
-
 /**
  * Type definitions related to the Guacamole protocol.
  *

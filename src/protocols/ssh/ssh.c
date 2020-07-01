@@ -59,6 +59,35 @@
 #include <sys/time.h>
 
 /**
+ * A data structure that maps parameter names of credentials that will be
+ * prompted to the actual text that will be displayed on the screen.
+ */
+typedef struct guac_ssh_credential_prompt_map {
+    
+    /**
+     * The parameter name of the credential that is being prompted for.
+     */
+    char* name;
+    
+    /**
+     * The text that will display to the user during the prompt.
+     */
+    char* prompt;
+    
+} guac_ssh_credential_prompt_map;
+
+/**
+ * The map of credentials the user can be prompted for to the text displayed
+ * on the screen.
+ */
+guac_ssh_credential_prompt_map ssh_credential_prompt_map[] = {
+    { GUAC_SSH_PARAMETER_NAME_USERNAME,   "Login as: " },
+    { GUAC_SSH_PARAMETER_NAME_PASSWORD,   "Password: " },
+    { GUAC_SSH_PARAMETER_NAME_PASSPHRASE, "Key passphrase: " },
+    { NULL,                               NULL}
+};
+
+/**
  * This function generates a prompt to the specified instance of guac_client
  * for the credential specified in the cred_name parameter, which should
  * be a valid SSH connection parameter.
@@ -74,19 +103,15 @@ static void guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
     
-    /* If the client does not support the "required" instruction, just return. */
-    if (!guac_client_owner_supports_required(client))
-        return;
-    
     /* Lock the terminal thread while prompting for the credential. */
-    pthread_mutex_lock(&(ssh_client->term_channel_lock));
+    pthread_mutex_lock(&(ssh_client->ssh_credential_lock));
     
     /* Let the owner know what we require. */
     guac_client_owner_send_required(client, (const char* []) {cred_name, NULL});
     
     /* Wait for the response, and then unlock the thread. */
-    pthread_cond_wait(&(ssh_client->ssh_credential_cond), &(ssh_client->term_channel_lock));
-    pthread_mutex_unlock(&(ssh_client->term_channel_lock));
+    pthread_cond_wait(&(ssh_client->ssh_credential_cond), &(ssh_client->ssh_credential_lock));
+    pthread_mutex_unlock(&(ssh_client->ssh_credential_lock));
     
 }
 
@@ -110,9 +135,21 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
     guac_common_ssh_user* user;
 
     /* Get username */
-    while (settings->username == NULL)
-        guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_USERNAME);
+    while (settings->username == NULL) {
+        
+        /* Client owner supports required instruction, so send prompt(s) that way. */
+        if (guac_client_owner_supports_required(client)) {
+            guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_USERNAME);
+        }
+        
+        /* Fall back to terminal prompting. */
+        else {
+            settings->username = guac_terminal_prompt(ssh_client->term,
+                "Login as: ", true);
+        }
 
+    }
+    
     /* Create user object from username */
     user = guac_common_ssh_create_user(settings->username);
 
@@ -135,8 +172,18 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
                     "Re-attempting private key import (WITH passphrase)");
 
             /* Prompt for passphrase if missing */
-            while (settings->key_passphrase == NULL)
-                guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_PASSPHRASE);
+            while (settings->key_passphrase == NULL) {
+                
+                /* Send prompt via required instruction, if supported */
+                if (guac_client_owner_supports_required(client))
+                    guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_PASSPHRASE);
+                
+                /* Fall back to terminal prompt */
+                else
+                    settings->key_passphrase = guac_terminal_prompt(ssh_client->term,
+                        "Key passphrase: ", true);
+                
+            }
 
             /* Reattempt import with passphrase */
             if (guac_common_ssh_user_import_key(user,
@@ -285,6 +332,7 @@ void* ssh_client_thread(void* data) {
     }
 
     pthread_mutex_init(&ssh_client->term_channel_lock, NULL);
+    pthread_mutex_init(&ssh_client->ssh_credential_lock, NULL);
     pthread_cond_init(&(ssh_client->ssh_credential_cond), NULL);
 
     /* Open channel for terminal */

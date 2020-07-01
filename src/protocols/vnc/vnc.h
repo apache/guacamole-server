@@ -158,7 +158,10 @@ typedef struct guac_vnc_client {
     
     /**
      * A field to track flags related to retrieving required credentials
-     * from the client.
+     * from the client. These flags will be set when credentials are required
+     * that have not been provided, and cleared when those credentials are
+     * provided.  All flags are cleared at the start of the connection, and
+     * then set as the client determines which are required.
      *
      * @see GUAC_VNC_COND_FLAG_USERNAME
      * @see GUAC_VNC_COND_FLAG_PASSWORD
