@@ -127,9 +127,9 @@ int guac_rdp_user_file_handler(guac_user* user, guac_stream* stream,
         char* mimetype, char* filename) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
 
 #ifdef ENABLE_COMMON_SSH
-    guac_rdp_settings* settings = rdp_client->settings;
 
     /* If SFTP is enabled and SFTP uploads have not been disabled, it should be
      * used for default uploads only if RDPDR is not enabled or its upload
