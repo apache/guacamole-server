@@ -43,6 +43,7 @@
  * @see GUAC_ARGV_MAX_REGISTERED
  *
  * @see GUAC_ARGV_OPTION_ONCE
+ * @see GUAC_ARGV_OPTION_ECHO
  *
  * @param name
  *     The name of the argument that should be handled by the given callback.
@@ -57,7 +58,7 @@
  *
  * @param options
  *     Bitwise OR of all option flags that should affect processing of this
- *     argument. The only current flag is GUAC_ARGV_OPTION_ONCE.
+ *     argument.
  *
  * @return
  *     Zero if the callback was successfully registered, non-zero if the

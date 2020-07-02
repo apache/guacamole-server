@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "guacamole/argv.h"
+#include "guacamole/client.h"
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"
 #include "guacamole/stream.h"
@@ -51,7 +52,7 @@ typedef struct guac_argv_state {
 
     /**
      * Bitwise OR of all option flags that should affect processing of this
-     * argument. The only current flag is GUAC_ARGV_OPTION_ONCE.
+     * argument.
      */
     int options;
 
@@ -243,6 +244,8 @@ static int guac_argv_blob_handler(guac_user* user, guac_stream* stream,
  */
 static int guac_argv_end_handler(guac_user* user, guac_stream* stream) {
 
+    int result = 0;
+
     /* Append null terminator to value */
     guac_argv* argv = (guac_argv*) stream->data;
     argv->buffer[argv->length] = '\0';
@@ -254,7 +257,14 @@ static int guac_argv_end_handler(guac_user* user, guac_stream* stream) {
     guac_argv_state* state = argv->state;
     if (!(state->options & GUAC_ARGV_OPTION_ONCE) || !state->received) {
         if (state->callback != NULL)
-            state->callback(user, argv->mimetype, state->name, argv->buffer, state->data);
+            result = state->callback(user, argv->mimetype, state->name, argv->buffer, state->data);
+    }
+
+    /* Alert connected clients regarding newly-accepted values if echo is
+     * enabled */
+    if (!result && (state->options & GUAC_ARGV_OPTION_ECHO)) {
+        guac_client* client = user->client;
+        guac_client_stream_argv(client, client->socket, argv->mimetype, state->name, argv->buffer);
     }
 
     /* Notify that argument has been received */

@@ -35,6 +35,13 @@
 #define GUAC_ARGV_OPTION_ONCE 1
 
 /**
+ * Option flag which declares to guac_argv_register() that the values received
+ * and accepted for the associated argument should be echoed to all connected
+ * users via outbound "argv" streams.
+ */
+#define GUAC_ARGV_OPTION_ECHO 2
+
+/**
  * The maximum number of bytes to allow for any argument value received via an
  * argv stream and processed using guac_argv_received(), including null
  * terminator.

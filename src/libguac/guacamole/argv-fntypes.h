@@ -50,8 +50,12 @@
  * @param data
  *     Any arbitrary data that was provided when the received argument was
  *     registered with guac_argv_register().
+ *
+ * @return
+ *     Zero if the received argument value has been accepted and has either
+ *     taken effect or is being intentionally ignored, non-zero otherwise.
  */
-typedef void guac_argv_callback(guac_user* user, const char* mimetype,
+typedef int guac_argv_callback(guac_user* user, const char* mimetype,
         const char* name, const char* value, void* data);
 
 #endif
