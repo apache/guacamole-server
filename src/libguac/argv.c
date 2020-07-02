@@ -165,7 +165,7 @@ static int guac_argv_is_received(const char** args) {
 
         /* Fail immediately for any matching non-received arguments */
         for (const char** arg = args; *arg != NULL; arg++) {
-            if (strcmp(state->name, *(arg++)) == 0)
+            if (strcmp(state->name, *arg) == 0)
                 return 0;
         }
 
