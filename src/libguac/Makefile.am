@@ -32,6 +32,9 @@ SUBDIRS = . tests
 libguacincdir = $(includedir)/guacamole
 
 libguacinc_HEADERS =                  \
+    guacamole/argv.h                  \
+    guacamole/argv-constants.h        \
+    guacamole/argv-fntypes.h          \
     guacamole/audio.h                 \
     guacamole/audio-fntypes.h         \
     guacamole/audio-types.h           \
@@ -83,6 +86,7 @@ noinst_HEADERS =      \
     wait-fd.h
 
 libguac_la_SOURCES =   \
+    argv.c             \
     audio.c            \
     client.c           \
     encode-jpeg.c      \
