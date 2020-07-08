@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "argv.h"
 #include "settings.h"
 
 #include <guacamole/user.h>
@@ -35,9 +36,9 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "client-key",
     "ca-cert",
     "ignore-cert",
-    "font-name",
-    "font-size",
-    "color-scheme",
+    GUAC_KUBERNETES_ARGV_FONT_NAME,
+    GUAC_KUBERNETES_ARGV_FONT_SIZE,
+    GUAC_KUBERNETES_ARGV_COLOR_SCHEME,
     "typescript-path",
     "typescript-name",
     "create-typescript-path",

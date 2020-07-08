@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "argv.h"
 #include "client.h"
 #include "common/defaults.h"
 #include "settings.h"
@@ -37,8 +38,8 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "port",
     "username",
     "password",
-    "font-name",
-    "font-size",
+    GUAC_SSH_ARGV_FONT_NAME,
+    GUAC_SSH_ARGV_FONT_SIZE,
     "enable-sftp",
     "sftp-root-directory",
     "sftp-disable-download",
@@ -48,7 +49,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
 #ifdef ENABLE_SSH_AGENT
     "enable-agent",
 #endif
-    "color-scheme",
+    GUAC_SSH_ARGV_COLOR_SCHEME,
     "command",
     "typescript-path",
     "typescript-name",
