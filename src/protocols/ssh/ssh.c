@@ -23,7 +23,6 @@
 #include "common/recording.h"
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
-#include "common-ssh/ssh-constants.h"
 #include "settings.h"
 #include "sftp.h"
 #include "ssh.h"
@@ -81,9 +80,9 @@ typedef struct guac_ssh_credential_prompt_map {
  * on the screen.
  */
 guac_ssh_credential_prompt_map ssh_credential_prompt_map[] = {
-    { GUAC_SSH_PARAMETER_NAME_USERNAME,   "Login as: " },
-    { GUAC_SSH_PARAMETER_NAME_PASSWORD,   "Password: " },
-    { GUAC_SSH_PARAMETER_NAME_PASSPHRASE, "Key passphrase: " },
+    { GUAC_SSH_ARGV_USERNAME,   "Login as: " },
+    { GUAC_SSH_ARGV_PASSWORD,   "Password: " },
+    { GUAC_SSH_ARGV_PASSPHRASE, "Key passphrase: " },
     { NULL,                               NULL}
 };
 
@@ -155,7 +154,7 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
     /* Get username */
     while (settings->username == NULL) {
         
-        char* username = guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_USERNAME);
+        char* username = guac_ssh_get_credential(client, GUAC_SSH_ARGV_USERNAME);
         if (username != NULL)
             settings->username = username;
 
@@ -185,7 +184,7 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
             /* Prompt for passphrase if missing */
             while (settings->key_passphrase == NULL) {
                 
-                char* passphrase = guac_ssh_get_credential(client, GUAC_SSH_PARAMETER_NAME_PASSPHRASE);
+                char* passphrase = guac_ssh_get_credential(client, GUAC_SSH_ARGV_PASSPHRASE);
                 if (passphrase != NULL)
                     settings->key_passphrase = passphrase;
                 

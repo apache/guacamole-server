@@ -22,7 +22,6 @@
 #include "argv.h"
 #include "client.h"
 #include "common/defaults.h"
-#include "common-ssh/ssh-constants.h"
 #include "settings.h"
 
 #include <guacamole/user.h>

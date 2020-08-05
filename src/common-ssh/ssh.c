@@ -19,7 +19,6 @@
 
 #include "common-ssh/key.h"
 #include "common-ssh/ssh.h"
-#include "common-ssh/ssh-constants.h"
 #include "common-ssh/user.h"
 
 #include <guacamole/client.h>
@@ -362,7 +361,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     /* Attempt authentication with username + password. */
     if (user->password == NULL && common_session->credential_handler) {
         
-        char* password = common_session->credential_handler(client, GUAC_SSH_PARAMETER_NAME_PASSWORD);
+        char* password = common_session->credential_handler(client, "password");
         if (password != NULL)
             user->password = password;
         
