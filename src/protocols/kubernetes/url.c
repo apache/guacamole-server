@@ -89,15 +89,16 @@ int guac_kubernetes_escape_url_component(char* output, int length,
 
 }
 
-int guac_kubernetes_endpoint_attach(char* buffer, int length,
+int guac_kubernetes_endpoint_uri(char* buffer, int length,
         const char* kubernetes_namespace, const char* kubernetes_pod,
-        const char* kubernetes_container) {
+        const char* kubernetes_container, int use_exec, const char* exec_command) {
 
     int written;
 
     char escaped_namespace[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
     char escaped_pod[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
     char escaped_container[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
+    char escaped_exec_command[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
 
     /* Escape Kubernetes namespace */
     if (guac_kubernetes_escape_url_component(escaped_namespace,
@@ -109,26 +110,42 @@ int guac_kubernetes_endpoint_attach(char* buffer, int length,
                 sizeof(escaped_pod), kubernetes_pod))
         return 1;
 
-    /* Generate attachment endpoint URL */
-    if (kubernetes_container != NULL) {
+    /* Generate endpoint path depending on the call type */
+    char* call="attach";
+    if (use_exec)
+        call = "exec";
 
+    char endpoint_path[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
+    snprintf(endpoint_path, GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH*3, 
+    "/api/v1/namespaces/%s/pods/%s/%s", escaped_namespace, escaped_pod, call);
+
+    /* Generate endpoint params */
+    char endpoint_params[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH]="";
+    int param_length=0;
+
+    if(use_exec){
+        /* Escape exec command */
+        if (guac_kubernetes_escape_url_component(escaped_exec_command,
+                    sizeof(escaped_exec_command), exec_command))
+            return 1;
+
+        param_length += snprintf(endpoint_params, GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH, 
+        "command=%s&", escaped_exec_command);
+    }
+
+    if (kubernetes_container != NULL) {
         /* Escape container name */
         if (guac_kubernetes_escape_url_component(escaped_container,
                     sizeof(escaped_container), kubernetes_container))
             return 1;
 
-        written = snprintf(buffer, length,
-                "/api/v1/namespaces/%s/pods/%s/attach"
-                "?container=%s&stdin=true&stdout=true&tty=true",
-                escaped_namespace, escaped_pod, escaped_container);
-    }
-    else {
-        written = snprintf(buffer, length,
-                "/api/v1/namespaces/%s/pods/%s/attach"
-                "?stdin=true&stdout=true&tty=true",
-                escaped_namespace, escaped_pod);
+        snprintf(endpoint_params+param_length, GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH-param_length,
+                "container=%s&", escaped_container);
     }
 
+    /* Combine path and params to uri */
+    written = snprintf(buffer, length, "%s?%sstdin=true&stdout=true&tty=true", 
+    endpoint_path, endpoint_params);
     /* Endpoint URL was successfully generated if it was written to the given
      * buffer without truncation */
     return !(written < length - 1);
