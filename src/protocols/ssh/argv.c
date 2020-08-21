@@ -18,7 +18,10 @@
  */
 
 #include "config.h"
+
 #include "argv.h"
+#include "common-ssh/user.h"
+#include "settings.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
 
@@ -36,9 +39,30 @@ int guac_ssh_argv_callback(guac_user* user, const char* mimetype,
     guac_client* client = user->client;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
     guac_terminal* terminal = ssh_client->term;
+    guac_ssh_settings* settings = ssh_client->settings;
 
+    /* Update username */
+    if (strcmp(name, GUAC_SSH_ARGV_USERNAME) == 0) {
+        free(settings->username);
+        settings->username = strdup(value);
+        pthread_cond_signal(&ssh_client->ssh_credential_cond);
+    }
+    
+    /* Update password */
+    else if (strcmp(name, GUAC_SSH_ARGV_PASSWORD) == 0) {
+        guac_common_ssh_user_set_password(ssh_client->user, value);
+        pthread_cond_signal(&ssh_client->ssh_credential_cond);
+    }
+    
+    /* Update private key passphrase */
+    else if (strcmp(name, GUAC_SSH_ARGV_PASSPHRASE) == 0) {
+        free(settings->key_passphrase);
+        settings->key_passphrase = strdup(value);
+        pthread_cond_signal(&ssh_client->ssh_credential_cond);
+    }
+    
     /* Update color scheme */
-    if (strcmp(name, GUAC_SSH_ARGV_COLOR_SCHEME) == 0)
+    else if (strcmp(name, GUAC_SSH_ARGV_COLOR_SCHEME) == 0)
         guac_terminal_apply_color_scheme(terminal, value);
 
     /* Update font name */

@@ -41,13 +41,13 @@
 #include <sys/types.h>
 
 /**
- * Structure mapping the enum value of a protocol version to the string
- * representation of the version.
+ * A structure mapping the enum value of a Guacamole protocol version to the
+ * string representation of the version.
  */
 typedef struct guac_protocol_version_mapping {
     
     /**
-     * The enum value representing the selected protocol version.
+     * The enum value of the protocol version.
      */
     guac_protocol_version version;
     
@@ -59,7 +59,7 @@ typedef struct guac_protocol_version_mapping {
 } guac_protocol_version_mapping;
 
 /**
- * The map of known protocol version enum to the corresponding string value.
+ * The map of known protocol versions to the corresponding string value.
  */
 guac_protocol_version_mapping guac_protocol_version_table[] = {
     { GUAC_PROTOCOL_VERSION_1_0_0,   "VERSION_1_0_0" },

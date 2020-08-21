@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "argv.h"
 #include "auth.h"
 #include "vnc.h"
 
@@ -48,7 +49,7 @@ char* guac_vnc_get_password(rfbClient* client) {
         
         /* Send the request for password to the owner. */
         guac_client_owner_send_required(gc,
-                (const char* []) {GUAC_VNC_PARAMETER_NAME_PASSWORD, NULL});
+                (const char* []) {GUAC_VNC_ARGV_PASSWORD, NULL});
         
         /* Set the conditional flag. */
         vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_PASSWORD;
@@ -87,14 +88,14 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
         
         /* Check if username is null or empty. */
         if (settings->username == NULL) {
-            params[i] = GUAC_VNC_PARAMETER_NAME_USERNAME;
+            params[i] = GUAC_VNC_ARGV_USERNAME;
             i++;
             vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_USERNAME;
         }
         
         /* Check if password is null or empty. */
         if (settings->password == NULL) {
-            params[i] = GUAC_VNC_PARAMETER_NAME_PASSWORD;
+            params[i] = GUAC_VNC_ARGV_PASSWORD;
             i++;
             vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_PASSWORD;
         }

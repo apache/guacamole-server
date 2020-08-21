@@ -57,7 +57,7 @@
 #define GUAC_SSH_ARGV_PASSWORD "password"
 
 /**
- * The name of the parameter that specifies/updates the private ky passphrase
+ * The name of the parameter that specifies/updates the private key passphrase
  * used by the connection.
  */
 #define GUAC_SSH_ARGV_PASSPHRASE "passphrase"

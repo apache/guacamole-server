@@ -479,7 +479,7 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
 }
 
 /**
- * Callback function which is invoked by guac_client_owner_send_required() to
+ * A callback function which is invoked by guac_client_owner_send_required() to
  * send the required parameters to the specified user, who is the owner of the
  * client session.
  * 
@@ -488,7 +488,7 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
  *     of the client.
  * 
  * @param data
- *     Pointer to a NULL-terminated array of required parameters that will be
+ *     A pointer to a NULL-terminated array of required parameters that will be
  *     passed on to the owner to continue the connection.
  * 
  * @return
@@ -670,7 +670,7 @@ static void* __webp_support_callback(guac_user* user, void* data) {
 #endif
 
 /**
- * Callback function which is invoked by guac_client_owner_supports_required()
+ * A callback function which is invoked by guac_client_owner_supports_required()
  * to determine if the owner of a client supports the "required" instruction,
  * updating the flag to indicate support.
  * 
@@ -678,7 +678,7 @@ static void* __webp_support_callback(guac_user* user, void* data) {
  *     The guac_user that will be checked for "required" instruction support.
  * 
  * @param data
- *     Pointer to an int containing the status for support of the "required"
+ *     A pointer to an int containing the status for support of the "required"
  *     instruction.  This will be 0 if the owner does not support this
  *     instruction, or 1 if the owner does support it.
  * 

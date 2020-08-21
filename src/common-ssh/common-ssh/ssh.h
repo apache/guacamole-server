@@ -36,8 +36,8 @@
  *     The connection parameter that is being requested from the client.
  * 
  * @return
- *     A newly-allocated string containing the credentials request from the
- *     client, or NULL if the credentials will be updated via the required
+ *     A newly-allocated string containing the credentials to be requested from
+ *     the client, or NULL if the credentials will be updated via the required
  *     instruction.
  */
 typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name);

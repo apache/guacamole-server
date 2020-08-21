@@ -37,5 +37,17 @@
  */
 guac_user_argv_handler guac_vnc_argv_handler;
 
+/**
+ * The name of the parameter Guacamole will use to specify/update the username
+ * for the VNC connection.
+ */
+#define GUAC_VNC_ARGV_USERNAME "username"
+
+/**
+ * The name of the parameter Guacamole will use to specify/update the password
+ * for the VNC connection.
+ */
+#define GUAC_VNC_ARGV_PASSWORD "password"
+
 #endif /* ARGV_H */
 

@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "argv.h"
 #include "common/defaults.h"
 #include "common/string.h"
 #include "config.h"
@@ -42,9 +43,9 @@
 const char* GUAC_RDP_CLIENT_ARGS[] = {
     "hostname",
     "port",
-    GUAC_RDP_PARAMETER_NAME_DOMAIN,
-    GUAC_RDP_PARAMETER_NAME_USERNAME,
-    GUAC_RDP_PARAMETER_NAME_PASSWORD,
+    GUAC_RDP_ARGV_DOMAIN,
+    GUAC_RDP_ARGV_USERNAME,
+    GUAC_RDP_ARGV_PASSWORD,
     "width",
     "height",
     "dpi",

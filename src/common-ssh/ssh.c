@@ -363,7 +363,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
         
         char* password = common_session->credential_handler(client, "password");
         if (password != NULL)
-            user->password = password;
+            guac_common_ssh_user_set_password(user, password);
         
     }
     

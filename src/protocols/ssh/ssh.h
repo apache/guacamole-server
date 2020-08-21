@@ -91,13 +91,13 @@ typedef struct guac_ssh_client {
     pthread_mutex_t term_channel_lock;
     
     /**
-     * Lock that will be locked when retrieving required credentials from the
-     * user, and unlocked when those requirements are satisfied.
+     * Lock that controls access to updating credential parameters for the
+     * SSH connection.
      */
     pthread_mutex_t ssh_credential_lock;
     
     /**
-     * Condition used when SSH client thread needs to wait for Guacamole
+     * Condition used when the SSH client thread needs to wait for Guacamole
      * client to pass additional credentials before continuing the connection.
      */
     pthread_cond_t ssh_credential_cond;

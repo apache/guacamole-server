@@ -83,13 +83,17 @@ guac_ssh_credential_prompt_map ssh_credential_prompt_map[] = {
     { GUAC_SSH_ARGV_USERNAME,   "Login as: " },
     { GUAC_SSH_ARGV_PASSWORD,   "Password: " },
     { GUAC_SSH_ARGV_PASSPHRASE, "Key passphrase: " },
-    { NULL,                               NULL}
+    { NULL,                     NULL}
 };
 
 /**
- * This function generates a prompt to the specified instance of guac_client
- * for the credential specified in the cred_name parameter, which should
- * be a valid SSH connection parameter.
+ * Prompts the user for the credential specified in the cred_name parameter in
+ * order to continue a SSH connection. If the owner of the connection is running
+ * a client that supports the "required" instruction this credential will be
+ * sent to the client with that instruction and updated directly via the argv
+ * handler. If the client does not support the "required" instruction the prompt
+ * will be generated directly on the terminal and the value returned through
+ * this function.
  * 
  * @param client
  *     The guac_client object associated with the current connection
@@ -97,6 +101,13 @@ guac_ssh_credential_prompt_map ssh_credential_prompt_map[] = {
  * 
  * @param cred_name
  *     The name of the parameter to prompt for in the client.
+ * 
+ * @return
+ *     If the client does not support the "required" instruction, the value
+ *     provided by the user on the terminal will be returned. NULL will be
+ *     returned if either the client supports the "required" instruction and
+ *     the parameter will be updated directly, or if the parameter specified
+ *     is invalid.
  */
 static char* guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
@@ -118,7 +129,7 @@ static char* guac_ssh_get_credential(guac_client *client, char* cred_name) {
         return NULL;
     }
     
-    /* Lock the terminal thread while prompting for the credential. */
+    /* Lock the SSH client thread while prompting for the credential. */
     pthread_mutex_lock(&(ssh_client->ssh_credential_lock));
     
     /* Let the owner know what we require. */
@@ -152,7 +163,7 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
     guac_common_ssh_user* user;
 
     /* Get username */
-    while (settings->username == NULL) {
+    if (settings->username == NULL) {
         
         char* username = guac_ssh_get_credential(client, GUAC_SSH_ARGV_USERNAME);
         if (username != NULL)
@@ -182,7 +193,7 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
                     "Re-attempting private key import (WITH passphrase)");
 
             /* Prompt for passphrase if missing */
-            while (settings->key_passphrase == NULL) {
+            if (settings->key_passphrase == NULL) {
                 
                 char* passphrase = guac_ssh_get_credential(client, GUAC_SSH_ARGV_PASSPHRASE);
                 if (passphrase != NULL)
@@ -338,7 +349,7 @@ void* ssh_client_thread(void* data) {
 
     pthread_mutex_init(&ssh_client->term_channel_lock, NULL);
     pthread_mutex_init(&ssh_client->ssh_credential_lock, NULL);
-    pthread_cond_init(&(ssh_client->ssh_credential_cond), NULL);
+    pthread_cond_init(&ssh_client->ssh_credential_cond, NULL);
 
     /* Open channel for terminal */
     ssh_client->term_channel =
@@ -553,7 +564,7 @@ void* ssh_client_thread(void* data) {
     guac_client_stop(client);
     pthread_join(input_thread, NULL);
 
-    pthread_cond_destroy(&(ssh_client->ssh_credential_cond));
+    pthread_cond_destroy(&ssh_client->ssh_credential_cond);
     pthread_mutex_destroy(&ssh_client->term_channel_lock);
 
     guac_client_log(client, GUAC_LOG_INFO, "SSH connection ended.");

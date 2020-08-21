@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "argv.h"
 #include "beep.h"
 #include "bitmap.h"
 #include "channels/audio-input/audio-buffer.h"
@@ -200,10 +201,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 }
 
 /**
- * Callback invoked by FreeRDP when authentication is required but a username
- * and password has not already been given. In the case of Guacamole, this
- * function always succeeds but does not populate the username or password. The
- * username/password must be given within the connection parameters.
+ * Callback invoked by FreeRDP when authentication is required but the required
+ * parameters have not been provided. In the case of Guacamole clients that
+ * support the "required" instruction, this function will send any of the three
+ * unpopulated RDP authentication parameters back to the client so that the
+ * connection owner can provide the required information.  If the values have
+ * been provided in the original connection parameters the user will not be
+ * prompted for updated parameters. If the version of Guacamole Client in use
+ * by the connection owner does not support the "required" instruction then the
+ * connection will fail. This function always returns true.
  *
  * @param instance
  *     The FreeRDP instance associated with the RDP session requesting
@@ -232,25 +238,33 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     char* params[4] = {};
     int i = 0;
     
-    /* If the client does not support the "required" instruction, just
-        exit. */
-    if (!guac_client_owner_supports_required(client))
+    /* If the client does not support the "required" instruction, warn and
+     * quit.
+     */
+    if (!guac_client_owner_supports_required(client)) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Client does not support the "
+                "\"required\" instruction. No authentication parameters will "
+                "be requested.");
         return TRUE;
+    }
     
+    /* If the username is undefined, add it to the requested parameters. */
     if (settings->username == NULL) {
-        params[i] = GUAC_RDP_PARAMETER_NAME_USERNAME;
+        params[i] = GUAC_RDP_ARGV_USERNAME;
         rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_USERNAME;
         i++;
     }
     
+    /* If the password is undefined, add it to the requested parameters. */
     if (settings->password == NULL) {
-        params[i] = GUAC_RDP_PARAMETER_NAME_PASSWORD;
+        params[i] = GUAC_RDP_ARGV_PASSWORD;
         rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_PASSWORD;
         i++;
     }
     
+    /* If the domain is undefined, add it to the requested parameters. */
     if (settings->domain == NULL) {
-        params[i] = GUAC_RDP_PARAMETER_NAME_DOMAIN;
+        params[i] = GUAC_RDP_ARGV_DOMAIN;
         rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_DOMAIN;
         i++;
     }

@@ -37,5 +37,23 @@
  */
 guac_user_argv_handler guac_rdp_argv_handler;
 
+/**
+ * The name of the parameter that specifies/updates the username that will be
+ * sent to the RDP server during authentication.
+ */
+#define GUAC_RDP_ARGV_USERNAME "username"
+
+/**
+ * The name of the parameter that specifies/updates the password that will be
+ * sent to the RDP server during authentication.
+ */
+#define GUAC_RDP_ARGV_PASSWORD "password"
+
+/**
+ * The name of the parameter that specifies/updates the domain name that will be
+ * sent to the RDP server during authentication.
+ */
+#define GUAC_RDP_ARGV_DOMAIN "domain"
+
 #endif
 

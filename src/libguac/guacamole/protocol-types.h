@@ -277,8 +277,8 @@ typedef enum guac_line_join_style {
 } guac_line_join_style;
 
 /**
- * Track the various protocol versions supported by guacd to help negotiate
- * features that may not be supported by various versions of the client.
+ * The set of protocol versions known to guacd to help negotiate features that
+ * may not be supported by various versions of the client.
  */
 typedef enum guac_protocol_version {
     
@@ -289,7 +289,8 @@ typedef enum guac_protocol_version {
     
     /**
      * Original protocol version 1.0.0, which lacks support for negotiating
-     * parameters and protocol version.
+     * parameters and protocol version, and requires that parameters in the
+     * client/server handshake be delivered in order.
      */
     GUAC_PROTOCOL_VERSION_1_0_0 = 0x010000,
             

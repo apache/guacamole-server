@@ -31,18 +31,6 @@
 #define GUAC_VNC_DEFAULT_RECORDING_NAME "recording"
 
 /**
- * The name of the parameter Guacamole will use to collect the username from the
- * Guacamole client to send to the VNC server.
- */
-#define GUAC_VNC_PARAMETER_NAME_USERNAME "username"
-
-/**
- * The name of the parameter Guacamole will use to collect the password from the
- * Guacamole client to send to the VNC server.
- */
-#define GUAC_VNC_PARAMETER_NAME_PASSWORD "password"
-
-/**
  * VNC-specific client data.
  */
 typedef struct guac_vnc_settings {

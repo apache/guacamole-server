@@ -155,11 +155,11 @@ int guac_rdp_argv_handler(guac_user* user, guac_stream* stream,
     guac_rdp_argv_setting setting;
 
     /* Allow users to update authentication details */
-    if (strcmp(name, GUAC_RDP_PARAMETER_NAME_USERNAME) == 0)
+    if (strcmp(name, GUAC_RDP_ARGV_USERNAME) == 0)
         setting = GUAC_RDP_ARGV_SETTING_USERNAME;
-    else if (strcmp(name, GUAC_RDP_PARAMETER_NAME_PASSWORD) == 0)
+    else if (strcmp(name, GUAC_RDP_ARGV_PASSWORD) == 0)
         setting = GUAC_RDP_ARGV_SETTING_PASSWORD;
-    else if (strcmp(name, GUAC_RDP_PARAMETER_NAME_DOMAIN) == 0)
+    else if (strcmp(name, GUAC_RDP_ARGV_DOMAIN) == 0)
         setting = GUAC_RDP_ARGV_SETTING_DOMAIN;
 
     /* No other connection parameters may be updated */

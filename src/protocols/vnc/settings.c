@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "argv.h"
 #include "client.h"
 #include "common/defaults.h"
 #include "settings.h"
@@ -37,8 +38,8 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "port",
     "read-only",
     "encodings",
-    GUAC_VNC_PARAMETER_NAME_USERNAME,
-    GUAC_VNC_PARAMETER_NAME_PASSWORD,
+    GUAC_VNC_ARGV_USERNAME,
+    GUAC_VNC_ARGV_PASSWORD,
     "swap-red-blue",
     "color-depth",
     "cursor",

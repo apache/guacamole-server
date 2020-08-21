@@ -51,12 +51,12 @@ int guac_client_init(guac_client* client) {
 
 #ifdef ENABLE_VNC_TLS_LOCKING
     /* Initialize the TLS write lock */
-    pthread_mutex_init(&(vnc_client->tls_lock), NULL);
+    pthread_mutex_init(&vnc_client->tls_lock, NULL);
 #endif
     
     /* Initialize credential lock, cond, and flags */
-    pthread_mutex_init(&(vnc_client->vnc_credential_lock), NULL);
-    pthread_cond_init(&(vnc_client->vnc_credential_cond), NULL);
+    pthread_mutex_init(&vnc_client->vnc_credential_lock, NULL);
+    pthread_cond_init(&vnc_client->vnc_credential_cond, NULL);
     vnc_client->vnc_credential_flags = 0;
 
     /* Init clipboard */
@@ -142,8 +142,8 @@ int guac_vnc_client_free_handler(guac_client* client) {
 #endif
     
     /* Clean up credential mutex */
-    pthread_cond_destroy(&(vnc_client->vnc_credential_cond));
-    pthread_mutex_destroy(&(vnc_client->vnc_credential_lock));
+    pthread_cond_destroy(&vnc_client->vnc_credential_cond);
+    pthread_mutex_destroy(&vnc_client->vnc_credential_lock);
 
     /* Free generic data struct */
     free(client->data);
