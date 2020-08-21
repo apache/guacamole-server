@@ -1013,7 +1013,8 @@ int guac_protocol_send_required(guac_socket* socket, const char** required) {
 
     ret_val = guac_socket_write_string(socket, "8.required")
         || guac_socket_write_array(socket, required)
-        || guac_socket_write_string(socket, ";");
+        || guac_socket_write_string(socket, ";")
+        || guac_socket_flush(socket);
     
     guac_socket_instruction_end(socket);
 
