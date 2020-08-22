@@ -50,21 +50,6 @@
 #include <stdint.h>
 
 /**
- * A flag for tracking if we are waiting conditionally on a username.
- */
-#define GUAC_RDP_CRED_FLAG_USERNAME 1
-
-/**
- * A flag for tracking if we are waiting conditionally on a password.
- */
-#define GUAC_RDP_CRED_FLAG_PASSWORD 2
-
-/**
- * A flag for tracking if we are waiting conditionally on a domain.
- */
-#define GUAC_RDP_CRED_FLAG_DOMAIN 4
-
-/**
  * RDP-specific client data.
  */
 typedef struct guac_rdp_client {
@@ -167,34 +152,6 @@ typedef struct guac_rdp_client {
      * List of all available static virtual channels.
      */
     guac_common_list* available_svc;
-
-    /**
-     * Lock which is locked when one or more credentials are required to
-     * complete the connection, and unlocked when credentials have been
-     * provided by the client.
-     */
-    pthread_mutex_t rdp_credential_lock;
-    
-    /**
-     * Condition which is used when the pthread needs to wait for one or more
-     * credentials to be provided by the client.
-     */
-    pthread_cond_t rdp_credential_cond;
-    
-    /**
-     * Flags for tracking events related to the rdp_credential_cond
-     * pthread condition. These flags will be set when credential parameters
-     * are required by the connection, and cleared when those have been
-     * provided by the client. All flags are cleared at the start of the
-     * connection, and then set as the RDP client determines that further
-     * information is required.
-     * 
-     * 
-     * @see GUAC_RDP_CRED_FLAG_USERNAME
-     * @see GUAC_RDP_CRED_FLAG_PASSWORD
-     * @see GUAC_RDP_CRED_FLAG_DOMAIN
-     */
-    unsigned rdp_credential_flags;
 
     /**
      * Common attributes for locks.

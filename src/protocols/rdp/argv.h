@@ -23,19 +23,14 @@
 
 #include "config.h"
 
+#include <guacamole/argv.h>
 #include <guacamole/user.h>
 
 /**
- * The maximum number of bytes to allow for any argument value received via an
- * argv stream, including null terminator.
+ * Handles a received argument value from a Guacamole "argv" instruction,
+ * updating the given connection parameter.
  */
-#define GUAC_RDP_ARGV_MAX_LENGTH 16384
-
-/**
- * Handles an incoming stream from a Guacamole "argv" instruction, updating the
- * given connection parameter if that parameter is allowed to be updated.
- */
-guac_user_argv_handler guac_rdp_argv_handler;
+guac_argv_callback guac_rdp_argv_callback;
 
 /**
  * The name of the parameter that specifies/updates the username that will be

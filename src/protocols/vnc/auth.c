@@ -23,6 +23,7 @@
 #include "auth.h"
 #include "vnc.h"
 
+#include <guacamole/argv.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -44,22 +45,17 @@ char* guac_vnc_get_password(rfbClient* client) {
     
     /* If password isn't around, prompt for it. */
     if (settings->password == NULL || strcmp(settings->password, "") == 0) {
-        /* Lock the thread. */
-        pthread_mutex_lock(&(vnc_client->vnc_credential_lock));
+        
+        guac_argv_register(GUAC_VNC_ARGV_PASSWORD, guac_vnc_argv_callback, NULL, 0);
+        
+        const char* params[] = {GUAC_VNC_ARGV_PASSWORD, NULL};
         
         /* Send the request for password to the owner. */
-        guac_client_owner_send_required(gc,
-                (const char* []) {GUAC_VNC_ARGV_PASSWORD, NULL});
-        
-        /* Set the conditional flag. */
-        vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_PASSWORD;
-        
-        /* Wait for the condition. */
-        pthread_cond_wait(&(vnc_client->vnc_credential_cond),
-                &(vnc_client->vnc_credential_lock));
-        
-        /* Unlock the thread. */
-        pthread_mutex_unlock(&(vnc_client->vnc_credential_lock));
+        guac_client_owner_send_required(gc, params);
+                
+        /* Wait for the arguments to be returned */
+        guac_argv_await(params);
+
     }
     
     return settings->password;
@@ -88,36 +84,26 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
         
         /* Check if username is null or empty. */
         if (settings->username == NULL) {
+            guac_argv_register(GUAC_VNC_ARGV_USERNAME, guac_vnc_argv_callback, NULL, 0);
             params[i] = GUAC_VNC_ARGV_USERNAME;
             i++;
-            vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_USERNAME;
         }
         
         /* Check if password is null or empty. */
         if (settings->password == NULL) {
+            guac_argv_register(GUAC_VNC_ARGV_PASSWORD, guac_vnc_argv_callback, NULL, 0);
             params[i] = GUAC_VNC_ARGV_PASSWORD;
             i++;
-            vnc_client->vnc_credential_flags |= GUAC_VNC_COND_FLAG_PASSWORD;
         }
         
         /* If we have empty parameters, request them. */
         if (i > 0) {
-            /* Lock the thread. */
-            pthread_mutex_lock(&(vnc_client->vnc_credential_lock));
             
             /* Send required parameters to owner. */
             guac_client_owner_send_required(gc, (const char**) params);
             
             /* Wait for the parameters to be returned. */
-            pthread_cond_wait(&(vnc_client->vnc_credential_cond),
-                    &(vnc_client->vnc_credential_lock));
-            
-            /* Pull the credentials from updated settings. */
-            creds->userCredential.username = settings->username;
-            creds->userCredential.password = settings->password;
-            
-            /* Unlock the thread. */
-            pthread_mutex_unlock(&(vnc_client->vnc_credential_lock));
+            guac_argv_await((const char**) params);
             
             return creds;
             

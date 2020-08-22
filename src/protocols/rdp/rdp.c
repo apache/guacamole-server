@@ -65,6 +65,7 @@
 #include <freerdp/primary.h>
 #include <freerdp/settings.h>
 #include <freerdp/update.h>
+#include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -247,25 +248,25 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
                 "be requested.");
         return TRUE;
     }
-    
+
     /* If the username is undefined, add it to the requested parameters. */
     if (settings->username == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_USERNAME, guac_rdp_argv_callback, NULL, 0);
         params[i] = GUAC_RDP_ARGV_USERNAME;
-        rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_USERNAME;
         i++;
     }
     
     /* If the password is undefined, add it to the requested parameters. */
     if (settings->password == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_PASSWORD, guac_rdp_argv_callback, NULL, 0);
         params[i] = GUAC_RDP_ARGV_PASSWORD;
-        rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_PASSWORD;
         i++;
     }
     
     /* If the domain is undefined, add it to the requested parameters. */
     if (settings->domain == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_DOMAIN, guac_rdp_argv_callback, NULL, 0);
         params[i] = GUAC_RDP_ARGV_DOMAIN;
-        rdp_client->rdp_credential_flags |= GUAC_RDP_CRED_FLAG_DOMAIN;
         i++;
     }
     
@@ -273,22 +274,17 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     params[i] = NULL;
     
     if (i > 0) {
-        /* Lock the client thread. */
-        pthread_mutex_lock(&(rdp_client->rdp_credential_lock));
         
         /* Send required parameters to the owner. */
         guac_client_owner_send_required(client, (const char**) params);
         
-        /* Wait for condition. */
-        pthread_cond_wait(&(rdp_client->rdp_credential_cond), &(rdp_client->rdp_credential_lock));
+        guac_argv_await((const char**) params);
         
         /* Get new values from settings. */
         *username = settings->username;
         *password = settings->password;
         *domain = settings->domain;
         
-        /* Unlock the thread. */
-        pthread_mutex_unlock(&(rdp_client->rdp_credential_lock));
     }
     
     /* Always return TRUE allowing connection to retry. */

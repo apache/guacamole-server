@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "argv.h"
 #include "channels/audio-input/audio-input.h"
 #include "channels/cliprdr.h"
 #include "channels/pipe-svc.h"
@@ -34,6 +33,7 @@
 #include "sftp.h"
 #endif
 
+#include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -119,7 +119,7 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
         user->pipe_handler = guac_rdp_pipe_svc_pipe_handler;
         
         /* Handler for updating parameters during connection. */
-        user->argv_handler = guac_rdp_argv_handler;
+        user->argv_handler = guac_argv_handler;
 
     }
 

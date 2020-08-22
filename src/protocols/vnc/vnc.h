@@ -46,16 +46,6 @@
 #include <pthread.h>
 
 /**
- * A flag for tracking the status of requesting username from client.
- */
-#define GUAC_VNC_COND_FLAG_USERNAME 1
-
-/**
- * A flag for tracking the status of requesting password from client.
- */
-#define GUAC_VNC_COND_FLAG_PASSWORD 2
-
-/**
  * VNC-specific client data.
  */
 typedef struct guac_vnc_client {
@@ -143,30 +133,6 @@ typedef struct guac_vnc_client {
      * Clipboard encoding-specific writer.
      */
     guac_iconv_write* clipboard_writer;
-    
-    /**
-     * A lock that controls access to updating credentials when connecting
-     * to a VNC server.
-     */
-    pthread_mutex_t vnc_credential_lock;
-    
-    /**
-     * A condition for signaling the thread when credentials have been
-     * retrieved from the client.
-     */
-    pthread_cond_t vnc_credential_cond;
-    
-    /**
-     * A field to track flags related to retrieving required credentials
-     * from the client. These flags will be set when credentials are required
-     * that have not been provided, and cleared when those credentials are
-     * provided.  All flags are cleared at the start of the connection, and
-     * then set as the client determines which are required.
-     *
-     * @see GUAC_VNC_COND_FLAG_USERNAME
-     * @see GUAC_VNC_COND_FLAG_PASSWORD
-     */
-    unsigned vnc_credential_flags;
 
 } guac_vnc_client;
 
