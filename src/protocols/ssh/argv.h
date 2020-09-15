@@ -45,24 +45,6 @@
 #define GUAC_SSH_ARGV_FONT_SIZE "font-size"
 
 /**
- * The name of the parameter that specifies/updates the username used by the
- * connection.
- */
-#define GUAC_SSH_ARGV_USERNAME "username"
-
-/**
- * The name of the parameter that specifies/updates the password used by the
- * connection.
- */
-#define GUAC_SSH_ARGV_PASSWORD "password"
-
-/**
- * The name of the parameter that specifies/updates the private key passphrase
- * used by the connection.
- */
-#define GUAC_SSH_ARGV_PASSPHRASE "passphrase"
-
-/**
  * Handles a received argument value from a Guacamole "argv" instruction,
  * updating the given connection parameter.
  */

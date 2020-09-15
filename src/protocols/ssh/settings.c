@@ -36,8 +36,8 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "hostname",
     "host-key",
     "port",
-    GUAC_SSH_ARGV_USERNAME,
-    GUAC_SSH_ARGV_PASSWORD,
+    "username",
+    "password",
     GUAC_SSH_ARGV_FONT_NAME,
     GUAC_SSH_ARGV_FONT_SIZE,
     "enable-sftp",
@@ -45,7 +45,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "sftp-disable-download",
     "sftp-disable-upload",
     "private-key",
-    GUAC_SSH_ARGV_PASSPHRASE,
+    "passphrase",
 #ifdef ENABLE_SSH_AGENT
     "enable-agent",
 #endif

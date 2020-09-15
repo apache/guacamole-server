@@ -47,15 +47,12 @@ int guac_client_init(guac_client* client) {
 
     /* Init clipboard */
     ssh_client->clipboard = guac_common_clipboard_alloc(GUAC_SSH_CLIPBOARD_MAX_LENGTH);
-    
+
     /* Set handlers */
     client->join_handler = guac_ssh_user_join_handler;
     client->free_handler = guac_ssh_client_free_handler;
 
     /* Register handlers for argument values that may be sent after the handshake */
-    guac_argv_register(GUAC_SSH_ARGV_USERNAME, guac_ssh_argv_callback, NULL, 0);
-    guac_argv_register(GUAC_SSH_ARGV_PASSWORD, guac_ssh_argv_callback, NULL, 0);
-    guac_argv_register(GUAC_SSH_ARGV_PASSPHRASE, guac_ssh_argv_callback, NULL, 0);
     guac_argv_register(GUAC_SSH_ARGV_COLOR_SCHEME, guac_ssh_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
     guac_argv_register(GUAC_SSH_ARGV_FONT_NAME, guac_ssh_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
     guac_argv_register(GUAC_SSH_ARGV_FONT_SIZE, guac_ssh_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
@@ -123,10 +120,6 @@ int guac_ssh_client_free_handler(guac_client* client) {
     guac_common_clipboard_free(ssh_client->clipboard);
     free(ssh_client);
 
-    /* Destroy the pthread conditional handler */
-    pthread_cond_destroy(&(ssh_client->ssh_credential_cond));
-    pthread_mutex_destroy(&(ssh_client->ssh_credential_lock));
-    
     guac_common_ssh_uninit();
     return 0;
 }
