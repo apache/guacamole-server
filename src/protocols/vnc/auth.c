@@ -63,6 +63,7 @@ char* guac_vnc_get_password(rfbClient* client) {
 }
 
 rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
+    
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = ((guac_vnc_client*) gc->data);
     guac_vnc_settings* settings = vnc_client->settings;
@@ -71,43 +72,46 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
     if (credentialType == rfbCredentialTypeUser) {
         rfbCredential *creds = malloc(sizeof(rfbCredential));
         
-        /* If the client does not support the "required" instruction, just return
-           the parameters already configured. */
-        if (!guac_client_owner_supports_required(gc)) {
-            creds->userCredential.username = settings->username;
-            creds->userCredential.password = settings->password;
-            return creds;
+        /* If the client supports the "required" instruction, prompt for and
+           update those. */
+        if (guac_client_owner_supports_required(gc)) {
+            char* params[3] = {NULL};
+            int i = 0;
+
+            /* Check if username is null or empty. */
+            if (settings->username == NULL) {
+                guac_argv_register(GUAC_VNC_ARGV_USERNAME, guac_vnc_argv_callback, NULL, 0);
+                params[i] = GUAC_VNC_ARGV_USERNAME;
+                i++;
+            }
+
+            /* Check if password is null or empty. */
+            if (settings->password == NULL) {
+                guac_argv_register(GUAC_VNC_ARGV_PASSWORD, guac_vnc_argv_callback, NULL, 0);
+                params[i] = GUAC_VNC_ARGV_PASSWORD;
+                i++;
+            }
+
+            params[i] = NULL;
+
+            /* If we have empty parameters, request them. */
+            if (i > 0) {
+
+                /* Send required parameters to owner. */
+                guac_client_owner_send_required(gc, (const char**) params);
+
+                /* Wait for the parameters to be returned. */
+                guac_argv_await((const char**) params);
+
+                return creds;
+
+            }
         }
         
-        char* params[2] = {NULL};
-        int i = 0;
-        
-        /* Check if username is null or empty. */
-        if (settings->username == NULL) {
-            guac_argv_register(GUAC_VNC_ARGV_USERNAME, guac_vnc_argv_callback, NULL, 0);
-            params[i] = GUAC_VNC_ARGV_USERNAME;
-            i++;
-        }
-        
-        /* Check if password is null or empty. */
-        if (settings->password == NULL) {
-            guac_argv_register(GUAC_VNC_ARGV_PASSWORD, guac_vnc_argv_callback, NULL, 0);
-            params[i] = GUAC_VNC_ARGV_PASSWORD;
-            i++;
-        }
-        
-        /* If we have empty parameters, request them. */
-        if (i > 0) {
-            
-            /* Send required parameters to owner. */
-            guac_client_owner_send_required(gc, (const char**) params);
-            
-            /* Wait for the parameters to be returned. */
-            guac_argv_await((const char**) params);
-            
-            return creds;
-            
-        }
+        /* Copy the values and return the credential set. */
+        creds->userCredential.username = strdup(settings->username);
+        creds->userCredential.password = strdup(settings->password);
+        return creds;
         
     }
 

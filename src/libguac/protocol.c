@@ -1302,7 +1302,7 @@ int guac_protocol_decode_base64(char* base64) {
 
 }
 
-guac_protocol_version guac_protocol_string_to_version(char* version_string) {
+guac_protocol_version guac_protocol_string_to_version(const char* version_string) {
     
     guac_protocol_version_mapping* current = guac_protocol_version_table;
     while (current->version != GUAC_PROTOCOL_VERSION_UNKNOWN) {
@@ -1321,11 +1321,12 @@ guac_protocol_version guac_protocol_string_to_version(char* version_string) {
 const char* guac_protocol_version_to_string(guac_protocol_version version) {
     
     guac_protocol_version_mapping* current = guac_protocol_version_table;
-    while (current->version) {
+    while (current->version != GUAC_PROTOCOL_VERSION_UNKNOWN) {
         
-        if (current->version == version) {
+        if (current->version == version)
             return (const char*) current->version_string;
-        }
+        
+        current++;
         
     }
     

@@ -277,8 +277,8 @@ typedef enum guac_line_join_style {
 } guac_line_join_style;
 
 /**
- * The set of protocol versions known to guacd to help negotiate features that
- * may not be supported by various versions of the client.
+ * The set of protocol versions known to guacd to handle negotiation or feature
+ * support between differing versions of Guacamole clients and guacd.
  */
 typedef enum guac_protocol_version {
     

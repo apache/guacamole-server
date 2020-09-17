@@ -43,6 +43,7 @@
 #include "pointer.h"
 #include "print-job.h"
 #include "rdp.h"
+#include "settings.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
@@ -70,6 +71,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/wol.h>
 #include <winpr/error.h>
@@ -236,7 +238,7 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
-    char* params[4] = {};
+    char* params[4] = {NULL};
     int i = 0;
     
     /* If the client does not support the "required" instruction, warn and
@@ -275,15 +277,17 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
     
     if (i > 0) {
         
-        /* Send required parameters to the owner. */
+        /* Send required parameters to the owner and wait for the response. */
         guac_client_owner_send_required(client, (const char**) params);
-        
         guac_argv_await((const char**) params);
         
-        /* Get new values from settings. */
-        *username = settings->username;
-        *password = settings->password;
-        *domain = settings->domain;
+        /* Free old values and get new values from settings. */
+        free(*username);
+        free(*password);
+        free(*domain);
+        *username = guac_strdup(settings->username);
+        *password = guac_strdup(settings->password);
+        *domain = guac_strdup(settings->domain);
         
     }
     

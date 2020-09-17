@@ -492,15 +492,17 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
  *     passed on to the owner to continue the connection.
  * 
  * @return
- *     A pointer to an integer containing the return status of the send
- *     operation.
+ *     Zero if the operation succeeds or non-zero on failure, cast as a void*.
  */
 static void* guac_client_owner_send_required_callback(guac_user* user, void* data) {
     
     const char** required = (const char **) data;
     
     /* Send required parameters to owner. */
-    return (void*) ((intptr_t) guac_protocol_send_required(user->socket, required));
+    if (user != NULL)
+        return (void*) ((intptr_t) guac_protocol_send_required(user->socket, required));
+    
+    return (void*) ((intptr_t) -1);
     
 }
 
@@ -672,38 +674,30 @@ static void* __webp_support_callback(guac_user* user, void* data) {
 /**
  * A callback function which is invoked by guac_client_owner_supports_required()
  * to determine if the owner of a client supports the "required" instruction,
- * updating the flag to indicate support.
+ * returning zero if the user does not support the instruction or non-zero if
+ * the user supports it.
  * 
  * @param user
  *     The guac_user that will be checked for "required" instruction support.
  * 
  * @param data
- *     A pointer to an int containing the status for support of the "required"
- *     instruction.  This will be 0 if the owner does not support this
- *     instruction, or 1 if the owner does support it.
+ *     Data provided to the callback. This value is never used within this
+ *     callback.
  * 
  * @return
- *     Always NULL.
+ *     A non-zero integer if the provided user who owns the connection supports
+ *     the "required" instruction, or zero if the user does not. The integer
+ *     is cast as a void*.
  */
 static void* guac_owner_supports_required_callback(guac_user* user, void* data) {
     
-    int* required_supported = (int *) data;
-    
-    /* Check if owner supports required */
-    if (*required_supported)
-        *required_supported = guac_user_supports_required(user);
-    
-    return NULL;
+    return (void*) ((intptr_t) guac_user_supports_required(user));
     
 }
 
 int guac_client_owner_supports_required(guac_client* client) {
     
-    int required_supported = 1;
-    
-    guac_client_for_owner(client, guac_owner_supports_required_callback, &required_supported);
-    
-    return required_supported;
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_owner_supports_required_callback, NULL));
     
 }
 

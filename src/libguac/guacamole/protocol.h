@@ -797,7 +797,7 @@ int guac_protocol_send_rect(guac_socket* socket, const guac_layer* layer,
 /**
  * Sends a "required" instruction over the given guac_socket connection.  This
  * instruction indicates to the client that one or more additional parameters
- * is needed to continue the connection.
+ * are needed to continue the connection.
  * 
  * @param socket
  *     The guac_socket connection to which to send the instruction.
@@ -1024,18 +1024,18 @@ int guac_protocol_send_name(guac_socket* socket, const char* name);
 int guac_protocol_decode_base64(char* base64);
 
 /**
- * Given a string representation of a protocol version, search the mapping
- * to find the matching enum version, or GUAC_PROTOCOL_VERSION_UNKNOWN if no
- * match is found.
+ * Given a string representation of a protocol version, return the enum value of
+ * that protocol version, or GUAC_PROTOCOL_VERSION_UNKNOWN if the value is not a
+ * known version.
  * 
  * @param version_string
  *     The string representation of the protocol version.
  * 
  * @return 
  *     The enum value of the protocol version, or GUAC_PROTOCOL_VERSION_UNKNOWN
- *     if no match is found.
+ *     if the provided version is not known.
  */
-guac_protocol_version guac_protocol_string_to_version(char* version_string);
+guac_protocol_version guac_protocol_string_to_version(const char* version_string);
 
 /**
  * Given the enum value of the protocol version, return a pointer to the string

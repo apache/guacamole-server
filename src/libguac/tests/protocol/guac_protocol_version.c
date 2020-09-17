@@ -31,9 +31,9 @@ void test_guac_protocol__version_to_string() {
     guac_protocol_version version_b = GUAC_PROTOCOL_VERSION_1_0_0;
     guac_protocol_version version_c = GUAC_PROTOCOL_VERSION_UNKNOWN;
     
-    CU_ASSERT_STRING_EQUAL_FATAL(guac_protocol_version_to_string(version_a), "VERSION_1_3_0");
-    CU_ASSERT_STRING_EQUAL_FATAL(guac_protocol_version_to_string(version_b), "VERSION_1_0_0");
-    CU_ASSERT_PTR_NULL_FATAL(guac_protocol_version_to_string(version_c));
+    CU_ASSERT_STRING_EQUAL(guac_protocol_version_to_string(version_a), "VERSION_1_3_0");
+    CU_ASSERT_STRING_EQUAL(guac_protocol_version_to_string(version_b), "VERSION_1_0_0");
+    CU_ASSERT_PTR_NULL(guac_protocol_version_to_string(version_c));
     
 }
 
@@ -50,10 +50,10 @@ void test_guac_protocol__string_to_version() {
     char* str_version_c = "AVACADO";
     char* str_version_d = "VERSION_31_4_1";
     
-    CU_ASSERT_EQUAL_FATAL(guac_protocol_string_to_version(str_version_a), GUAC_PROTOCOL_VERSION_1_3_0);
-    CU_ASSERT_EQUAL_FATAL(guac_protocol_string_to_version(str_version_b), GUAC_PROTOCOL_VERSION_1_1_0);
-    CU_ASSERT_EQUAL_FATAL(guac_protocol_string_to_version(str_version_c), GUAC_PROTOCOL_VERSION_UNKNOWN);
-    CU_ASSERT_EQUAL_FATAL(guac_protocol_string_to_version(str_version_d), GUAC_PROTOCOL_VERSION_UNKNOWN);
+    CU_ASSERT_EQUAL(guac_protocol_string_to_version(str_version_a), GUAC_PROTOCOL_VERSION_1_3_0);
+    CU_ASSERT_EQUAL(guac_protocol_string_to_version(str_version_b), GUAC_PROTOCOL_VERSION_1_1_0);
+    CU_ASSERT_EQUAL(guac_protocol_string_to_version(str_version_c), GUAC_PROTOCOL_VERSION_UNKNOWN);
+    CU_ASSERT_EQUAL(guac_protocol_string_to_version(str_version_d), GUAC_PROTOCOL_VERSION_UNKNOWN);
     
 }
 
@@ -63,7 +63,7 @@ void test_guac_protocol__string_to_version() {
  */
 void test_gauc_protocol__version_comparison() {
     
-    CU_ASSERT_TRUE_FATAL(GUAC_PROTOCOL_VERSION_1_3_0 > GUAC_PROTOCOL_VERSION_1_0_0);
-    CU_ASSERT_TRUE_FATAL(GUAC_PROTOCOL_VERSION_UNKNOWN < GUAC_PROTOCOL_VERSION_1_1_0);
+    CU_ASSERT_TRUE(GUAC_PROTOCOL_VERSION_1_3_0 > GUAC_PROTOCOL_VERSION_1_0_0);
+    CU_ASSERT_TRUE(GUAC_PROTOCOL_VERSION_UNKNOWN < GUAC_PROTOCOL_VERSION_1_1_0);
     
 }

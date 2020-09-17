@@ -100,8 +100,9 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
         if (!settings->disable_paste)
             user->clipboard_handler = guac_vnc_clipboard_handler;
         
-        /* Updates to connection parameters */
-        user->argv_handler = guac_argv_handler;
+        /* Updates to connection parameters if we own the connection */
+        if (user->owner)
+            user->argv_handler = guac_argv_handler;
 
 #ifdef ENABLE_COMMON_SSH
         /* Set generic (non-filesystem) file upload handler */
