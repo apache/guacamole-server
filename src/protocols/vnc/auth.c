@@ -27,6 +27,7 @@
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>
 
@@ -41,10 +42,10 @@ char* guac_vnc_get_password(rfbClient* client) {
     /* If the client does not support the "required" instruction, just return
         the configuration data. */
     if (!guac_client_owner_supports_required(gc))
-        return ((guac_vnc_client*) gc->data)->settings->password;
+        return guac_strdup(settings->password);
     
     /* If password isn't around, prompt for it. */
-    if (settings->password == NULL || strcmp(settings->password, "") == 0) {
+    if (settings->password == NULL) {
         
         guac_argv_register(GUAC_VNC_ARGV_PASSWORD, guac_vnc_argv_callback, NULL, 0);
         
@@ -58,7 +59,7 @@ char* guac_vnc_get_password(rfbClient* client) {
 
     }
     
-    return settings->password;
+    return guac_strdup(settings->password);
     
 }
 
@@ -78,14 +79,14 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
             char* params[3] = {NULL};
             int i = 0;
 
-            /* Check if username is null or empty. */
+            /* Check if username is not provided. */
             if (settings->username == NULL) {
                 guac_argv_register(GUAC_VNC_ARGV_USERNAME, guac_vnc_argv_callback, NULL, 0);
                 params[i] = GUAC_VNC_ARGV_USERNAME;
                 i++;
             }
 
-            /* Check if password is null or empty. */
+            /* Check if password is not provided. */
             if (settings->password == NULL) {
                 guac_argv_register(GUAC_VNC_ARGV_PASSWORD, guac_vnc_argv_callback, NULL, 0);
                 params[i] = GUAC_VNC_ARGV_PASSWORD;
@@ -94,23 +95,16 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
 
             params[i] = NULL;
 
-            /* If we have empty parameters, request them. */
+            /* If we have empty parameters, request them and await response. */
             if (i > 0) {
-
-                /* Send required parameters to owner. */
                 guac_client_owner_send_required(gc, (const char**) params);
-
-                /* Wait for the parameters to be returned. */
                 guac_argv_await((const char**) params);
-
-                return creds;
-
             }
         }
         
         /* Copy the values and return the credential set. */
-        creds->userCredential.username = strdup(settings->username);
-        creds->userCredential.password = strdup(settings->password);
+        creds->userCredential.username = guac_strdup(settings->username);
+        creds->userCredential.password = guac_strdup(settings->password);
         return creds;
         
     }

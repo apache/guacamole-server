@@ -393,11 +393,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
 
     settings->username =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_USERNAME, ""); /* NOTE: freed by libvncclient */
+                IDX_USERNAME, NULL);
     
     settings->password =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
-                IDX_PASSWORD, ""); /* NOTE: freed by libvncclient */
+                IDX_PASSWORD, NULL);
     
     /* Remote cursor */
     if (strcmp(argv[IDX_CURSOR], "remote") == 0) {
@@ -625,8 +625,10 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
     free(settings->clipboard_encoding);
     free(settings->encodings);
     free(settings->hostname);
+    free(settings->password);
     free(settings->recording_name);
     free(settings->recording_path);
+    free(settings->username);
 
 #ifdef ENABLE_VNC_REPEATER
     /* Free VNC repeater settings */
