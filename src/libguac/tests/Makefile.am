@@ -43,6 +43,7 @@ test_libguac_SOURCES =               \
     protocol/guac_protocol_version.c \
     socket/fd_send_instruction.c     \
     socket/nested_send_instruction.c \
+    string/strdup.c                  \
     string/strlcat.c                 \
     string/strlcpy.c                 \
     string/strljoin.c                \
