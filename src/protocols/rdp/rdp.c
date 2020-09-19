@@ -256,19 +256,20 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
         guac_argv_register(GUAC_RDP_ARGV_USERNAME, guac_rdp_argv_callback, NULL, 0);
         params[i] = GUAC_RDP_ARGV_USERNAME;
         i++;
+        
+        /* If username is undefined and domain is also undefined, request domain. */
+        if (settings->domain == NULL) {
+            guac_argv_register(GUAC_RDP_ARGV_DOMAIN, guac_rdp_argv_callback, NULL, 0);
+            params[i] = GUAC_RDP_ARGV_DOMAIN;
+            i++;
+        }
+        
     }
     
     /* If the password is undefined, add it to the requested parameters. */
     if (settings->password == NULL) {
         guac_argv_register(GUAC_RDP_ARGV_PASSWORD, guac_rdp_argv_callback, NULL, 0);
         params[i] = GUAC_RDP_ARGV_PASSWORD;
-        i++;
-    }
-    
-    /* If the domain is undefined, add it to the requested parameters. */
-    if (settings->domain == NULL) {
-        guac_argv_register(GUAC_RDP_ARGV_DOMAIN, guac_rdp_argv_callback, NULL, 0);
-        params[i] = GUAC_RDP_ARGV_DOMAIN;
         i++;
     }
     
