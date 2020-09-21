@@ -33,6 +33,7 @@
 #include "sftp.h"
 #endif
 
+#include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -116,6 +117,10 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
         /* Inbound arbitrary named pipes */
         user->pipe_handler = guac_rdp_pipe_svc_pipe_handler;
+        
+        /* If we own it, register handler for updating parameters during connection. */
+        if (user->owner)
+            user->argv_handler = guac_argv_handler;
 
     }
 

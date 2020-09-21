@@ -259,9 +259,6 @@ void* guac_vnc_client_thread(void* data) {
                 "clipboard encoding: '%s'.", settings->clipboard_encoding);
     }
 
-    /* Ensure connection is kept alive during lengthy connects */
-    guac_socket_require_keep_alive(client->socket);
-
     /* Set up libvncclient logging */
     rfbClientLog = guac_vnc_client_log_info;
     rfbClientErr = guac_vnc_client_log_error;

@@ -110,6 +110,19 @@ size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n);
 size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n);
 
 /**
+ * Simple wrapper for strdup() which behaves identically to standard strdup(),
+ * except that NULL will be returned if the provided string is NULL.
+ *
+ * @param str
+ *     The string to duplicate as a newly-allocated string.
+ *
+ * @return
+ *     A newly-allocated string containing identically the same content as the
+ *     given string, or NULL if the given string was NULL.
+ */
+char* guac_strdup(const char* str);
+
+/**
  * Concatenates each of the given strings, separated by the given delimiter,
  * storing the result within a destination buffer. The number of bytes written
  * will be no more than the given number of bytes, and the destination buffer

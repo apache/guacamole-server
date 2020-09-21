@@ -550,6 +550,22 @@ int guac_client_load_plugin(guac_client* client, const char* protocol);
 int guac_client_get_processing_lag(guac_client* client);
 
 /**
+ * Sends a request to the owner of the given guac_client for parameters required
+ * to continue the connection started by the client. The function returns zero
+ * on success or non-zero on failure.
+ * 
+ * @param client
+ *     The client where additional connection parameters are required.
+ * 
+ * @param required
+ *     The NULL-terminated array of required parameters.
+ * 
+ * @return
+ *     Zero on success, non-zero on failure.
+ */
+int guac_client_owner_send_required(guac_client* client, const char** required);
+
+/**
  * Streams the given connection parameter value over an argument value stream
  * ("argv" instruction), exposing the current value of the named connection
  * parameter to all users of the given client. The argument value stream will
@@ -691,6 +707,21 @@ void guac_client_stream_jpeg(guac_client* client, guac_socket* socket,
 void guac_client_stream_webp(guac_client* client, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
         cairo_surface_t* surface, int quality, int lossless);
+
+/**
+ * Returns whether the owner of the given client supports the "required"
+ * instruction, returning non-zero if the client owner does support the
+ * instruction, or zero if the owner does not.
+ * 
+ * @param client
+ *     The Guacamole client whose owner should be checked for supporting
+ *     the "required" instruction.
+ * 
+ * @return 
+ *     Non-zero if the owner of the given client supports the "required"
+ *     instruction, zero otherwise.
+ */
+int guac_client_owner_supports_required(guac_client* client);
 
 /**
  * Returns whether all users of the given client support WebP. If any user does

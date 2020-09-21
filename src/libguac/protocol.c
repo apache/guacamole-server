@@ -23,6 +23,7 @@
 #include "guacamole/layer.h"
 #include "guacamole/object.h"
 #include "guacamole/protocol.h"
+#include "guacamole/protocol-types.h"
 #include "guacamole/socket.h"
 #include "guacamole/stream.h"
 #include "guacamole/unicode.h"
@@ -38,6 +39,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+
+/**
+ * A structure mapping the enum value of a Guacamole protocol version to the
+ * string representation of the version.
+ */
+typedef struct guac_protocol_version_mapping {
+    
+    /**
+     * The enum value of the protocol version.
+     */
+    guac_protocol_version version;
+    
+    /**
+     * The string value representing the protocol version.
+     */
+    char* version_string;
+    
+} guac_protocol_version_mapping;
+
+/**
+ * The map of known protocol versions to the corresponding string value.
+ */
+guac_protocol_version_mapping guac_protocol_version_table[] = {
+    { GUAC_PROTOCOL_VERSION_1_0_0,   "VERSION_1_0_0" },
+    { GUAC_PROTOCOL_VERSION_1_1_0,   "VERSION_1_1_0" },
+    { GUAC_PROTOCOL_VERSION_1_3_0,   "VERSION_1_3_0" },
+    { GUAC_PROTOCOL_VERSION_UNKNOWN, NULL }
+};
 
 /* Output formatting functions */
 
@@ -66,6 +95,38 @@ ssize_t __guac_socket_write_length_double(guac_socket* socket, double d) {
 
 }
 
+/**
+ * Loop through the provided NULL-terminated array, writing the values in the
+ * array to the given socket. Values are written as a series of Guacamole
+ * protocol elements, including the leading comma and the value length in
+ * addition to the value itself. Returns zero on success, non-zero on error.
+ *
+ * @param socket
+ *     The socket to which the data should be written.
+ *
+ * @param array
+ *     The NULL-terminated array of values to write.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+static int guac_socket_write_array(guac_socket* socket, const char** array) {
+
+    /* Loop through array, writing provided values to the socket. */
+    for (int i=0; array[i] != NULL; i++) {
+
+        if (guac_socket_write_string(socket, ","))
+            return -1;
+
+        if (__guac_socket_write_length_string(socket, array[i]))
+            return -1;
+
+    }
+
+    return 0;
+
+}
+
 /* Protocol functions */
 
 int guac_protocol_send_ack(guac_socket* socket, guac_stream* stream,
@@ -90,8 +151,6 @@ int guac_protocol_send_ack(guac_socket* socket, guac_stream* stream,
 
 static int __guac_protocol_send_args(guac_socket* socket, const char** args) {
 
-    int i;
-
     if (guac_socket_write_string(socket, "4.args")) return -1;
     
     /* Send protocol version ahead of other args. */
@@ -99,15 +158,8 @@ static int __guac_protocol_send_args(guac_socket* socket, const char** args) {
             || __guac_socket_write_length_string(socket, GUACAMOLE_PROTOCOL_VERSION))
         return -1;
 
-    for (i=0; args[i] != NULL; i++) {
-
-        if (guac_socket_write_string(socket, ","))
-            return -1;
-
-        if (__guac_socket_write_length_string(socket, args[i]))
-            return -1;
-
-    }
+    if (guac_socket_write_array(socket, args))
+        return -1;
 
     return guac_socket_write_string(socket, ";");
 
@@ -308,19 +360,11 @@ int guac_protocol_send_close(guac_socket* socket, const guac_layer* layer) {
 
 static int __guac_protocol_send_connect(guac_socket* socket, const char** args) {
 
-    int i;
+    if (guac_socket_write_string(socket, "7.connect"))
+        return -1;
 
-    if (guac_socket_write_string(socket, "7.connect")) return -1;
-
-    for (i=0; args[i] != NULL; i++) {
-
-        if (guac_socket_write_string(socket, ","))
-            return -1;
-
-        if (__guac_socket_write_length_string(socket, args[i]))
-            return -1;
-
-    }
+    if (guac_socket_write_array(socket, args))
+        return -1;
 
     return guac_socket_write_string(socket, ";");
 
@@ -961,6 +1005,23 @@ int guac_protocol_send_rect(guac_socket* socket,
 
 }
 
+int guac_protocol_send_required(guac_socket* socket, const char** required) {
+    
+    int ret_val;
+    
+    guac_socket_instruction_begin(socket);
+
+    ret_val = guac_socket_write_string(socket, "8.required")
+        || guac_socket_write_array(socket, required)
+        || guac_socket_write_string(socket, ";")
+        || guac_socket_flush(socket);
+    
+    guac_socket_instruction_end(socket);
+
+    return ret_val;
+    
+}
+
 int guac_protocol_send_reset(guac_socket* socket, const guac_layer* layer) {
 
     int ret_val;
@@ -1239,5 +1300,37 @@ int guac_protocol_decode_base64(char* base64) {
     /* Return number of bytes written */
     return length;
 
+}
+
+guac_protocol_version guac_protocol_string_to_version(const char* version_string) {
+    
+    guac_protocol_version_mapping* current = guac_protocol_version_table;
+    while (current->version != GUAC_PROTOCOL_VERSION_UNKNOWN) {
+        
+        if (strcmp(current->version_string, version_string) == 0)
+            return current->version;
+        
+        current++;
+        
+    }
+    
+    return GUAC_PROTOCOL_VERSION_UNKNOWN;
+    
+}
+
+const char* guac_protocol_version_to_string(guac_protocol_version version) {
+    
+    guac_protocol_version_mapping* current = guac_protocol_version_table;
+    while (current->version != GUAC_PROTOCOL_VERSION_UNKNOWN) {
+        
+        if (current->version == version)
+            return (const char*) current->version_string;
+        
+        current++;
+        
+    }
+    
+    return NULL;
+    
 }
 
