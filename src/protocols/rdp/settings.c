@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "argv.h"
 #include "common/defaults.h"
 #include "common/string.h"
 #include "config.h"
@@ -42,9 +43,9 @@
 const char* GUAC_RDP_CLIENT_ARGS[] = {
     "hostname",
     "port",
-    "domain",
-    "username",
-    "password",
+    GUAC_RDP_ARGV_DOMAIN,
+    GUAC_RDP_ARGV_USERNAME,
+    GUAC_RDP_ARGV_PASSWORD,
     "width",
     "height",
     "dpi",
@@ -1266,47 +1267,25 @@ static int guac_rdp_get_performance_flags(guac_rdp_settings* guac_settings) {
 
 }
 
-/**
- * Simple wrapper for strdup() which behaves identically to standard strdup(),
- * execpt that NULL will be returned if the provided string is NULL.
- *
- * @param str
- *     The string to duplicate as a newly-allocated string.
- *
- * @return
- *     A newly-allocated string containing identically the same content as the
- *     given string, or NULL if the given string was NULL.
- */
-static char* guac_rdp_strdup(const char* str) {
-
-    /* Return NULL if no string provided */
-    if (str == NULL)
-        return NULL;
-
-    /* Otherwise just invoke strdup() */
-    return strdup(str);
-
-}
-
 void guac_rdp_push_settings(guac_client* client,
         guac_rdp_settings* guac_settings, freerdp* rdp) {
 
     rdpSettings* rdp_settings = rdp->settings;
 
     /* Authentication */
-    rdp_settings->Domain = guac_rdp_strdup(guac_settings->domain);
-    rdp_settings->Username = guac_rdp_strdup(guac_settings->username);
-    rdp_settings->Password = guac_rdp_strdup(guac_settings->password);
+    rdp_settings->Domain = guac_strdup(guac_settings->domain);
+    rdp_settings->Username = guac_strdup(guac_settings->username);
+    rdp_settings->Password = guac_strdup(guac_settings->password);
 
     /* Connection */
-    rdp_settings->ServerHostname = guac_rdp_strdup(guac_settings->hostname);
+    rdp_settings->ServerHostname = guac_strdup(guac_settings->hostname);
     rdp_settings->ServerPort = guac_settings->port;
 
     /* Session */
     rdp_settings->ColorDepth = guac_settings->color_depth;
     rdp_settings->DesktopWidth = guac_settings->width;
     rdp_settings->DesktopHeight = guac_settings->height;
-    rdp_settings->AlternateShell = guac_rdp_strdup(guac_settings->initial_program);
+    rdp_settings->AlternateShell = guac_strdup(guac_settings->initial_program);
     rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
 
     /* Performance flags */
@@ -1424,9 +1403,9 @@ void guac_rdp_push_settings(guac_client* client,
         rdp_settings->Workarea = TRUE;
         rdp_settings->RemoteApplicationMode = TRUE;
         rdp_settings->RemoteAppLanguageBarSupported = TRUE;
-        rdp_settings->RemoteApplicationProgram = guac_rdp_strdup(guac_settings->remote_app);
-        rdp_settings->ShellWorkingDirectory = guac_rdp_strdup(guac_settings->remote_app_dir);
-        rdp_settings->RemoteApplicationCmdLine = guac_rdp_strdup(guac_settings->remote_app_args);
+        rdp_settings->RemoteApplicationProgram = guac_strdup(guac_settings->remote_app);
+        rdp_settings->ShellWorkingDirectory = guac_strdup(guac_settings->remote_app_dir);
+        rdp_settings->RemoteApplicationCmdLine = guac_strdup(guac_settings->remote_app_args);
     }
 
     /* Preconnection ID */
@@ -1440,7 +1419,7 @@ void guac_rdp_push_settings(guac_client* client,
     if (guac_settings->preconnection_blob != NULL) {
         rdp_settings->NegotiateSecurityLayer = FALSE;
         rdp_settings->SendPreconnectionPdu = TRUE;
-        rdp_settings->PreconnectionBlob = guac_rdp_strdup(guac_settings->preconnection_blob);
+        rdp_settings->PreconnectionBlob = guac_strdup(guac_settings->preconnection_blob);
     }
 
     /* Enable use of RD gateway if a gateway hostname is provided */
@@ -1450,20 +1429,20 @@ void guac_rdp_push_settings(guac_client* client,
         rdp_settings->GatewayEnabled = TRUE;
 
         /* RD gateway connection details */
-        rdp_settings->GatewayHostname = guac_rdp_strdup(guac_settings->gateway_hostname);
+        rdp_settings->GatewayHostname = guac_strdup(guac_settings->gateway_hostname);
         rdp_settings->GatewayPort = guac_settings->gateway_port;
 
         /* RD gateway credentials */
         rdp_settings->GatewayUseSameCredentials = FALSE;
-        rdp_settings->GatewayDomain = guac_rdp_strdup(guac_settings->gateway_domain);
-        rdp_settings->GatewayUsername = guac_rdp_strdup(guac_settings->gateway_username);
-        rdp_settings->GatewayPassword = guac_rdp_strdup(guac_settings->gateway_password);
+        rdp_settings->GatewayDomain = guac_strdup(guac_settings->gateway_domain);
+        rdp_settings->GatewayUsername = guac_strdup(guac_settings->gateway_username);
+        rdp_settings->GatewayPassword = guac_strdup(guac_settings->gateway_password);
 
     }
 
     /* Store load balance info (and calculate length) if provided */
     if (guac_settings->load_balance_info != NULL) {
-        rdp_settings->LoadBalanceInfo = (BYTE*) guac_rdp_strdup(guac_settings->load_balance_info);
+        rdp_settings->LoadBalanceInfo = (BYTE*) guac_strdup(guac_settings->load_balance_info);
         rdp_settings->LoadBalanceInfoLength = strlen(guac_settings->load_balance_info);
     }
 

@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "argv.h"
 #include "beep.h"
 #include "bitmap.h"
 #include "channels/audio-input/audio-buffer.h"
@@ -42,6 +43,7 @@
 #include "pointer.h"
 #include "print-job.h"
 #include "rdp.h"
+#include "settings.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
@@ -64,10 +66,12 @@
 #include <freerdp/primary.h>
 #include <freerdp/settings.h>
 #include <freerdp/update.h>
+#include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/wol.h>
 #include <winpr/error.h>
@@ -200,10 +204,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 }
 
 /**
- * Callback invoked by FreeRDP when authentication is required but a username
- * and password has not already been given. In the case of Guacamole, this
- * function always succeeds but does not populate the usename or password. The
- * username/password must be given within the connection parameters.
+ * Callback invoked by FreeRDP when authentication is required but the required
+ * parameters have not been provided. In the case of Guacamole clients that
+ * support the "required" instruction, this function will send any of the three
+ * unpopulated RDP authentication parameters back to the client so that the
+ * connection owner can provide the required information.  If the values have
+ * been provided in the original connection parameters the user will not be
+ * prompted for updated parameters. If the version of Guacamole Client in use
+ * by the connection owner does not support the "required" instruction then the
+ * connection will fail. This function always returns true.
  *
  * @param instance
  *     The FreeRDP instance associated with the RDP session requesting
@@ -227,10 +236,63 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+    char* params[4] = {NULL};
+    int i = 0;
+    
+    /* If the client does not support the "required" instruction, warn and
+     * quit.
+     */
+    if (!guac_client_owner_supports_required(client)) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Client does not support the "
+                "\"required\" instruction. No authentication parameters will "
+                "be requested.");
+        return TRUE;
+    }
 
-    /* Warn if connection is likely to fail due to lack of credentials */
-    guac_client_log(client, GUAC_LOG_INFO,
-            "Authentication requested but username or password not given");
+    /* If the username is undefined, add it to the requested parameters. */
+    if (settings->username == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_USERNAME, guac_rdp_argv_callback, NULL, 0);
+        params[i] = GUAC_RDP_ARGV_USERNAME;
+        i++;
+        
+        /* If username is undefined and domain is also undefined, request domain. */
+        if (settings->domain == NULL) {
+            guac_argv_register(GUAC_RDP_ARGV_DOMAIN, guac_rdp_argv_callback, NULL, 0);
+            params[i] = GUAC_RDP_ARGV_DOMAIN;
+            i++;
+        }
+        
+    }
+    
+    /* If the password is undefined, add it to the requested parameters. */
+    if (settings->password == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_PASSWORD, guac_rdp_argv_callback, NULL, 0);
+        params[i] = GUAC_RDP_ARGV_PASSWORD;
+        i++;
+    }
+    
+    /* NULL-terminate the array. */
+    params[i] = NULL;
+    
+    if (i > 0) {
+        
+        /* Send required parameters to the owner and wait for the response. */
+        guac_client_owner_send_required(client, (const char**) params);
+        guac_argv_await((const char**) params);
+        
+        /* Free old values and get new values from settings. */
+        free(*username);
+        free(*password);
+        free(*domain);
+        *username = guac_strdup(settings->username);
+        *password = guac_strdup(settings->password);
+        *domain = guac_strdup(settings->domain);
+        
+    }
+    
+    /* Always return TRUE allowing connection to retry. */
     return TRUE;
 
 }

@@ -81,6 +81,17 @@ size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n) {
 
 }
 
+char* guac_strdup(const char* str) {
+
+    /* Return NULL if no string provided */
+    if (str == NULL)
+        return NULL;
+
+    /* Otherwise just invoke strdup() */
+    return strdup(str);
+
+}
+
 size_t guac_strljoin(char* restrict dest, const char* restrict const* elements,
         int nmemb, const char* restrict delim, size_t n) {
 

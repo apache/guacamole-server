@@ -50,8 +50,8 @@ int guac_client_init(guac_client* client) {
     client->data = vnc_client;
 
 #ifdef ENABLE_VNC_TLS_LOCKING
-    /* Initialize the write lock */
-    pthread_mutex_init(&(vnc_client->tls_lock), NULL);
+    /* Initialize the TLS write lock */
+    pthread_mutex_init(&vnc_client->tls_lock, NULL);
 #endif
 
     /* Init clipboard */
