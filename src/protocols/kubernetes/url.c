@@ -91,7 +91,7 @@ int guac_kubernetes_escape_url_component(char* output, int length,
 
 int guac_kubernetes_endpoint_uri(char* buffer, int length,
         const char* kubernetes_namespace, const char* kubernetes_pod,
-        const char* kubernetes_container, int use_exec, const char* exec_command) {
+        const char* kubernetes_container, const char* exec_command) {
 
     int written;
 
@@ -111,26 +111,32 @@ int guac_kubernetes_endpoint_uri(char* buffer, int length,
         return 1;
 
     /* Generate endpoint path depending on the call type */
-    char* call="attach";
-    if (use_exec)
+    char* call = "attach";
+    if (exec_command != NULL)
         call = "exec";
 
     char endpoint_path[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
-    snprintf(endpoint_path, GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH*3, 
-    "/api/v1/namespaces/%s/pods/%s/%s", escaped_namespace, escaped_pod, call);
+
+    written = snprintf(endpoint_path, sizeof(endpoint_path), 
+        "/api/v1/namespaces/%s/pods/%s/%s", escaped_namespace, escaped_pod, call);
+        
+    if (written < 0 || written >= sizeof(endpoint_path))
+        return 1;
 
     /* Generate endpoint params */
     char endpoint_params[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH]="";
-    int param_length=0;
 
-    if(use_exec){
+    if (exec_command != NULL) {
         /* Escape exec command */
         if (guac_kubernetes_escape_url_component(escaped_exec_command,
                     sizeof(escaped_exec_command), exec_command))
             return 1;
 
-        param_length += snprintf(endpoint_params, GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH, 
-        "command=%s&", escaped_exec_command);
+        written = snprintf(endpoint_params, sizeof(endpoint_params), 
+            "command=%s&", escaped_exec_command);
+
+        if (written < 0 || written >= sizeof(endpoint_params))
+            return 1;
     }
 
     if (kubernetes_container != NULL) {
@@ -139,13 +145,17 @@ int guac_kubernetes_endpoint_uri(char* buffer, int length,
                     sizeof(escaped_container), kubernetes_container))
             return 1;
 
-        snprintf(endpoint_params+param_length, GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH-param_length,
+        written = snprintf(endpoint_params, sizeof(endpoint_params),
                 "container=%s&", escaped_container);
+                
+        if (written < 0 || written >= sizeof(endpoint_params))
+            return 1;
     }
 
     /* Combine path and params to uri */
     written = snprintf(buffer, length, "%s?%sstdin=true&stdout=true&tty=true", 
-    endpoint_path, endpoint_params);
+        endpoint_path, endpoint_params);
+        
     /* Endpoint URL was successfully generated if it was written to the given
      * buffer without truncation */
     return !(written < length - 1);

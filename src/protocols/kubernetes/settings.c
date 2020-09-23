@@ -31,7 +31,6 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "namespace",
     "pod",
     "container",
-    "use-exec",
     "exec-command",
     "use-ssl",
     "client-cert",
@@ -89,12 +88,7 @@ enum KUBERNETES_ARGS_IDX {
     IDX_CONTAINER,
 
     /**
-     * Whether exec call should be used. If omitted, attach call will be used.
-     */
-    IDX_USE_EXEC,
-
-    /**
-     * The command used by exec call.
+     * The command used by exec call. If omitted, attach call will be used.
      */
     IDX_EXEC_COMMAND,
 
@@ -287,15 +281,10 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_CONTAINER, NULL);
 
-    /* Parse whether exec call should be used */
-    settings->use_exec =
-        guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_USE_EXEC, false);
-
     /* Read exec command (optional) */
     settings->exec_command =
         guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_EXEC_COMMAND, GUAC_KUBERNETES_DEFAULT_EXEC_COMMAND);
+                IDX_EXEC_COMMAND, NULL);
 
     /* Parse whether SSL should be used */
     settings->use_ssl =

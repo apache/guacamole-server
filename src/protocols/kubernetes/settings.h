@@ -48,12 +48,6 @@
 #define GUAC_KUBERNETES_DEFAULT_NAMESPACE "default"
 
 /**
- * The command that should be used by default for exec call if no
- * specific command is provided.
- */
-#define GUAC_KUBERNETES_DEFAULT_EXEC_COMMAND "/bin/sh"
-
-/**
  * The filename to use for the typescript, if not specified.
  */
 #define GUAC_KUBERNETES_DEFAULT_TYPESCRIPT_NAME "typescript" 
@@ -104,12 +98,8 @@ typedef struct guac_kubernetes_settings {
     char* kubernetes_container;
 
     /**
-     * Whether exec call should be used, default attach.
-     */
-    bool use_exec;
-
-    /**
-     * Exec command, default /bin/sh.
+     * The command to generate api endpoint for call exec. 
+     * If omitted call attach will be used.
      */
     char* exec_command;
 

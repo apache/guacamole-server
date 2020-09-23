@@ -217,7 +217,6 @@ void* guac_kubernetes_client_thread(void* data) {
                 settings->kubernetes_namespace,
                 settings->kubernetes_pod,
                 settings->kubernetes_container,
-                settings->use_exec,
                 settings->exec_command)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Unable to generate path for Kubernetes API endpoint: "

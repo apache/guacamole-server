@@ -72,13 +72,10 @@ int guac_kubernetes_escape_url_component(char* output, int length,
  * @param kubernetes_container
  *     The name of the container to attach to, or NULL to arbitrarily attach
  *     to the first container in the pod.
- * 
- * @param use_exec
- *     Whether use call exec.
- *     Execute a command in a container and attach to it instead of main container process.
- * 
+ *  
  * @param exec_command
- *     The command used in conjunction with exec call.
+ *     The command used to run a new process and attach to it,
+ *     instead of the main container process.
  *
  * @return
  *     Zero if the endpoint path was successfully written to the provided
@@ -86,7 +83,7 @@ int guac_kubernetes_escape_url_component(char* output, int length,
  */
 int guac_kubernetes_endpoint_uri(char* buffer, int length,
         const char* kubernetes_namespace, const char* kubernetes_pod,
-        const char* kubernetes_container, int use_exec, const char* exec_command);
+        const char* kubernetes_container, const char* exec_command);
 
 #endif
 
