@@ -731,6 +731,12 @@ void* guac_rdp_client_thread(void* data) {
             return NULL;
         }
 
+        /* Configure destination for basic uploads, if specified */
+        if (settings->sftp_directory != NULL)
+            guac_common_ssh_sftp_set_upload_path(
+                    rdp_client->sftp_filesystem,
+                    settings->sftp_directory);
+
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "SFTP connection succeeded.");
 
