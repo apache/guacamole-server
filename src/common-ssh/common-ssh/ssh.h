@@ -20,6 +20,8 @@
 #ifndef GUAC_COMMON_SSH_H
 #define GUAC_COMMON_SSH_H
 
+#include <stdbool.h>
+
 #include "user.h"
 
 #include <guacamole/client.h>
@@ -35,12 +37,15 @@
  * @param cred_name
  *     The name of the credential being requested, which will be shared
  *     with the client in order to generate a meaningful prompt.
+ *
+ * @param echo
+ *     Should echo be enabled?
  * 
  * @return
  *     A newly-allocated string containing the credentials provided by
  *     the user, which must be freed by a call to free().
  */
-typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name);
+typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name, bool echo);
 
 /**
  * An SSH session, backed by libssh2 and associated with a particular

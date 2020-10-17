@@ -156,14 +156,17 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
  * @param cred_name
  *     The prompt text to display to the screen when prompting for the
  *     additional credentials.
+ *
+ * @param echo
+ *     Should echo be enabled?
  * 
  * @return 
  *     The string of credentials gathered from the user.
  */
-static char* guac_ssh_get_credential(guac_client *client, char* cred_name) {
+static char* guac_ssh_get_credential(guac_client *client, char* cred_name, bool echo) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
-    return guac_terminal_prompt(ssh_client->term, cred_name, false);
+    return guac_terminal_prompt(ssh_client->term, cred_name, echo);
     
 }
 
