@@ -89,6 +89,23 @@ int guac_kubernetes_escape_url_component(char* output, int length,
 
 }
 
+int guac_kubernetes_append_endpoint_param(char* buffer, int length, 
+        const char* param_name, const char* param_value) {
+
+    char escaped_param_value[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
+
+    /* Escape value */
+    if (guac_kubernetes_escape_url_component(escaped_param_value,
+                    sizeof(escaped_param_value), param_value))
+            return 1;
+    
+    int written;
+    written = snprintf(buffer + strlen(buffer), length - strlen(buffer), 
+            "%s=%s&", param_name, escaped_param_value);
+
+    return (written < 0 || written >= length);
+}
+
 int guac_kubernetes_endpoint_uri(char* buffer, int length,
         const char* kubernetes_namespace, const char* kubernetes_pod,
         const char* kubernetes_container, const char* exec_command) {
@@ -124,31 +141,20 @@ int guac_kubernetes_endpoint_uri(char* buffer, int length,
         return 1;
 
     /* Generate endpoint params */
-    char endpoint_params[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH]="";
+    char endpoint_params[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
+    endpoint_params[0] = 0;
 
     if (exec_command != NULL) {
-        /* Escape exec command */
-        if (guac_kubernetes_escape_url_component(escaped_exec_command,
-                    sizeof(escaped_exec_command), exec_command))
-            return 1;
-
-        written = snprintf(endpoint_params, sizeof(endpoint_params), 
-            "command=%s&", escaped_exec_command);
-
-        if (written < 0 || written >= sizeof(endpoint_params))
+        /* Append exec command param */
+        if (guac_kubernetes_append_endpoint_param(endpoint_params, 
+                    sizeof(endpoint_params), "command", exec_command))
             return 1;
     }
 
     if (kubernetes_container != NULL) {
-        /* Escape container name */
-        if (guac_kubernetes_escape_url_component(escaped_container,
-                    sizeof(escaped_container), kubernetes_container))
-            return 1;
-
-        written = snprintf(endpoint_params, sizeof(endpoint_params),
-                "container=%s&", escaped_container);
-                
-        if (written < 0 || written >= sizeof(endpoint_params))
+        /* Append kubernetes container param */
+        if (guac_kubernetes_append_endpoint_param(endpoint_params, 
+                    sizeof(endpoint_params), "container", kubernetes_container))
             return 1;
     }
 
