@@ -417,6 +417,9 @@ void guac_kubernetes_settings_free(guac_kubernetes_settings* settings) {
     free(settings->kubernetes_pod);
     free(settings->kubernetes_container);
 
+    /* Free Kubernetes exec command */
+    free(settings->exec_command);
+
     /* Free SSL/TLS details */
     free(settings->client_cert);
     free(settings->client_key);
