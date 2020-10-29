@@ -623,7 +623,7 @@ then
 
 fi
 
-# Variation in memory internal allocation/free behavior
+# Variation in memory internal allocation/free behavior for bitmaps
 if test "x${have_freerdp2}" = "xyes"
 then
 
@@ -646,6 +646,29 @@ then
     [AC_MSG_RESULT([no])])
 
 fi
+
+# Variation in memory internal allocation/free behavior for channel streams
+if test "x${have_freerdp2}" = "xyes"
+then
+
+    # FreeRDP 2.0.0-rc3 through 2.0.0-rc4 automatically free the wStream
+    # provided to pVirtualChannelWriteEx(). This changed in commit 1b78b59, and
+    # implementations must manually free the wStream after it is no longer
+    # needed (after the write is complete or cancelled).
+    AC_MSG_CHECKING([whether pVirtualChannelWriteEx() frees the wStream upon completion])
+    AC_EGREP_CPP([\"2\\.0\\.0-(rc|dev)[3-4]\"], [
+
+        #include <freerdp/version.h>
+        FREERDP_VERSION_FULL
+
+    ],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([FREERDP_SVC_CORE_FREES_WSTREAM],,
+               [Whether pVirtualChannelWriteEx() frees the wStream upon completion])],
+    [AC_MSG_RESULT([no])])
+
+fi
+
 
 # Glyph callback variants
 if test "x${have_freerdp2}" = "xyes"

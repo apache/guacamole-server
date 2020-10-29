@@ -81,12 +81,14 @@ static VOID guac_rdp_common_svc_handle_open_event(LPVOID user_param,
         DWORD open_handle, UINT event, LPVOID data, UINT32 data_length,
         UINT32 total_length, UINT32 data_flags) {
 
+#ifndef FREERDP_SVC_CORE_FREES_WSTREAM
     /* Free stream data after send is complete */
     if ((event == CHANNEL_EVENT_WRITE_CANCELLED
             || event == CHANNEL_EVENT_WRITE_COMPLETE) && data != NULL) {
         Stream_Free((wStream*) data, TRUE);
         return;
     }
+#endif
 
     /* Ignore all events except for received data */
     if (event != CHANNEL_EVENT_DATA_RECEIVED)
