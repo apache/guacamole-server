@@ -366,7 +366,9 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     guac_client_log(clipboard->client, GUAC_LOG_TRACE, "CLIPRDR: Sending "
             "format data response.");
 
-    return cliprdr->ClientFormatDataResponse(cliprdr, &data_response);
+    UINT result = cliprdr->ClientFormatDataResponse(cliprdr, &data_response);
+    free(start);
+    return result;
 
 }
 
