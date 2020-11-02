@@ -461,8 +461,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Error connecting to RDP server");
+        guac_rdp_client_abort(client, rdp_inst);
         goto fail;
     }
 
@@ -542,7 +541,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
         /* Close connection cleanly if server is disconnecting */
         if (connection_closing)
-            guac_rdp_client_abort(client);
+            guac_rdp_client_abort(client, rdp_inst);
 
         /* If a low-level connection error occurred, fail */
         else if (wait_result < 0)
