@@ -55,41 +55,70 @@ static void guac_rdp_translate_last_error(freerdp* rdp_inst,
             *message = "Disconnected.";
             break;
 
-        /* Authentication failure */
-        case FREERDP_ERROR_AUTHENTICATION_FAILED:
-        case FREERDP_ERROR_CONNECT_ACCESS_DENIED:
-        case FREERDP_ERROR_CONNECT_ACCOUNT_DISABLED:
+        /* Account expired */
         case FREERDP_ERROR_CONNECT_ACCOUNT_EXPIRED:
-        case FREERDP_ERROR_CONNECT_ACCOUNT_LOCKED_OUT:
-        case FREERDP_ERROR_CONNECT_ACCOUNT_RESTRICTION:
-        case FREERDP_ERROR_CONNECT_CLIENT_REVOKED:
-        case FREERDP_ERROR_CONNECT_LOGON_FAILURE:
-        case FREERDP_ERROR_CONNECT_LOGON_TYPE_NOT_GRANTED:
-        case FREERDP_ERROR_CONNECT_NO_OR_MISSING_CREDENTIALS:
         case FREERDP_ERROR_CONNECT_PASSWORD_CERTAINLY_EXPIRED:
         case FREERDP_ERROR_CONNECT_PASSWORD_EXPIRED:
         case FREERDP_ERROR_CONNECT_PASSWORD_MUST_CHANGE:
-        case FREERDP_ERROR_CONNECT_WRONG_PASSWORD:
-        case FREERDP_ERROR_INSUFFICIENT_PRIVILEGES:
+        case FREERDP_ERROR_SERVER_FRESH_CREDENTIALS_REQUIRED:
+            *status = GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN;
+            *message = "Credentials expired.";
+            break;
+
+        /* Security negotiation failed */
         case FREERDP_ERROR_SECURITY_NEGO_CONNECT_FAILED:
+            *status = GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED;
+            *message = "Security negotiation failed (wrong security type?)";
+            break;
+
+        /* Access denied */
+        case FREERDP_ERROR_CONNECT_ACCESS_DENIED:
+        case FREERDP_ERROR_CONNECT_ACCOUNT_DISABLED:
+        case FREERDP_ERROR_CONNECT_ACCOUNT_LOCKED_OUT:
+        case FREERDP_ERROR_CONNECT_ACCOUNT_RESTRICTION:
+        case FREERDP_ERROR_CONNECT_CLIENT_REVOKED:
+        case FREERDP_ERROR_CONNECT_LOGON_TYPE_NOT_GRANTED:
+        case FREERDP_ERROR_INSUFFICIENT_PRIVILEGES:
         case FREERDP_ERROR_SERVER_DENIED_CONNECTION:
         case FREERDP_ERROR_SERVER_INSUFFICIENT_PRIVILEGES:
-        case FREERDP_ERROR_SERVER_FRESH_CREDENTIALS_REQUIRED:
             *status = GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED;
-            *message = "Authentication failure.";
+            *message = "Access denied by server (account locked/disabled?)";
+            break;
+
+        /* General, unspecified authentication failure */
+        case FREERDP_ERROR_AUTHENTICATION_FAILED:
+        case FREERDP_ERROR_CONNECT_LOGON_FAILURE:
+        case FREERDP_ERROR_CONNECT_NO_OR_MISSING_CREDENTIALS:
+        case FREERDP_ERROR_CONNECT_WRONG_PASSWORD:
+            *status = GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED;
+            *message = "Authentication failure (invalid credentials?)";
+            break;
+
+        /* SSL/TLS connection failed */
+        case FREERDP_ERROR_TLS_CONNECT_FAILED:
+            *status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+            *message = "SSL/TLS connection failed (untrusted/self-signed certificate?)";
+            break;
+
+        /* DNS lookup failed */
+        case FREERDP_ERROR_DNS_ERROR:
+        case FREERDP_ERROR_DNS_NAME_NOT_FOUND:
+            *status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+            *message = "DNS lookup failed (incorrect hostname?)";
+            break;
+
+        case FREERDP_ERROR_CONNECT_TRANSPORT_FAILED:
+            *status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
+            *message = "Server refused connection (wrong security type?)";
             break;
 
         /* Connection failed */
         case FREERDP_ERROR_CONNECT_CANCELLED:
         case FREERDP_ERROR_CONNECT_FAILED:
         case FREERDP_ERROR_CONNECT_KDC_UNREACHABLE:
-        case FREERDP_ERROR_CONNECT_TRANSPORT_FAILED:
-        case FREERDP_ERROR_DNS_ERROR:
-        case FREERDP_ERROR_DNS_NAME_NOT_FOUND:
         case FREERDP_ERROR_MCS_CONNECT_INITIAL_ERROR:
-        case FREERDP_ERROR_TLS_CONNECT_FAILED:
             *status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
-            *message = "Connection failed.";
+            *message = "Connection failed (server unreachable?)";
             break;
 
         /* All other errors */
