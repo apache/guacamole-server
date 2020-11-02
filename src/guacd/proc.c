@@ -330,6 +330,9 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
     /* The first file descriptor is the owner */
     int owner = 1;
 
+    /* Enable keep alive on the broadcast socket */
+    guac_socket_require_keep_alive(client->socket);
+
     /* Add each received file descriptor as a new user */
     int received_fd;
     while ((received_fd = guacd_recv_fd(proc->fd_socket)) != -1) {
@@ -341,9 +344,6 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
 
     }
     
-    /* Enable keep alive on the broadcast socket */
-    guac_socket_require_keep_alive(client->socket);
-
 cleanup_client:
 
     /* Request client to stop/disconnect */
