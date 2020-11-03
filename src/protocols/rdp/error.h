@@ -20,17 +20,22 @@
 #ifndef GUAC_RDP_ERROR_H
 #define GUAC_RDP_ERROR_H
 
+#include <freerdp/freerdp.h>
 #include <guacamole/client.h>
 
 /**
- * Stops the current connection due to the RDP server disconnecting. If the RDP
- * server provided a reason for disconnecting, that reason will be logged, and
- * an appropriate error code will be sent to the Guacamole client.
+ * Stops the current connection due to the RDP server disconnecting or the
+ * connection attempt failing. If the RDP server or FreeRDP provided a reason
+ * for for the failure/disconnect, that reason will be logged, and an
+ * appropriate error code will be sent to the Guacamole client.
  *
  * @param client
  *     The Guacamole client to disconnect.
+ *
+ * @param rdp_inst
+ *     The FreeRDP client instance handling the RDP connection that failed.
  */
-void guac_rdp_client_abort(guac_client* client);
+void guac_rdp_client_abort(guac_client* client, freerdp* rdp_inst);
 
 #endif
 
