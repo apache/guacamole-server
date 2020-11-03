@@ -48,71 +48,137 @@ static void guac_rdp_translate_last_error(freerdp* rdp_inst,
     UINT32 last_error = freerdp_get_last_error(rdp_inst->context);
     switch (last_error) {
 
-        /* Normal disconnect */
+        /*
+         * Normal disconnect (no error at all)
+         */
+
         case FREERDP_ERROR_NONE:
         case FREERDP_ERROR_SUCCESS:
             *status = GUAC_PROTOCOL_STATUS_SUCCESS;
             *message = "Disconnected.";
             break;
 
-        /* Account expired */
+        /*
+         * General credentials expired (password has expired, password must be
+         * reset before it can be used for the first time, etc.)
+         */
+
+#ifdef FREERDP_ERROR_CONNECT_ACCOUNT_EXPIRED
         case FREERDP_ERROR_CONNECT_ACCOUNT_EXPIRED:
+#endif
+
+#ifdef FREERDP_ERROR_CONNECT_PASSWORD_MUST_CHANGE
+        case FREERDP_ERROR_CONNECT_PASSWORD_MUST_CHANGE:
+#endif
+
         case FREERDP_ERROR_CONNECT_PASSWORD_CERTAINLY_EXPIRED:
         case FREERDP_ERROR_CONNECT_PASSWORD_EXPIRED:
-        case FREERDP_ERROR_CONNECT_PASSWORD_MUST_CHANGE:
         case FREERDP_ERROR_SERVER_FRESH_CREDENTIALS_REQUIRED:
             *status = GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN;
             *message = "Credentials expired.";
             break;
 
-        /* Security negotiation failed */
+        /*
+         * Security negotiation failed (the server is refusing the connection
+         * because the security negotiation process failed)
+         */
+
         case FREERDP_ERROR_SECURITY_NEGO_CONNECT_FAILED:
             *status = GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED;
             *message = "Security negotiation failed (wrong security type?)";
             break;
 
-        /* Access denied */
+        /*
+         * General access denied/revoked (regardless of any credentials
+         * provided, the server is denying the requested access by this
+         * account)
+         */
+
+#ifdef FREERDP_ERROR_CONNECT_ACCESS_DENIED
         case FREERDP_ERROR_CONNECT_ACCESS_DENIED:
+#endif
+
+#ifdef FREERDP_ERROR_CONNECT_ACCOUNT_DISABLED
         case FREERDP_ERROR_CONNECT_ACCOUNT_DISABLED:
+#endif
+
+#ifdef FREERDP_ERROR_CONNECT_ACCOUNT_LOCKED_OUT
         case FREERDP_ERROR_CONNECT_ACCOUNT_LOCKED_OUT:
+#endif
+
+#ifdef FREERDP_ERROR_CONNECT_ACCOUNT_RESTRICTION
         case FREERDP_ERROR_CONNECT_ACCOUNT_RESTRICTION:
-        case FREERDP_ERROR_CONNECT_CLIENT_REVOKED:
+#endif
+
+#ifdef FREERDP_ERROR_CONNECT_LOGON_TYPE_NOT_GRANTED
         case FREERDP_ERROR_CONNECT_LOGON_TYPE_NOT_GRANTED:
+#endif
+
+        case FREERDP_ERROR_CONNECT_CLIENT_REVOKED:
         case FREERDP_ERROR_INSUFFICIENT_PRIVILEGES:
         case FREERDP_ERROR_SERVER_DENIED_CONNECTION:
         case FREERDP_ERROR_SERVER_INSUFFICIENT_PRIVILEGES:
-            *status = GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED;
+            *status = GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN;
             *message = "Access denied by server (account locked/disabled?)";
             break;
 
-        /* General, unspecified authentication failure */
-        case FREERDP_ERROR_AUTHENTICATION_FAILED:
-        case FREERDP_ERROR_CONNECT_LOGON_FAILURE:
+        /*
+         * General authentication failure (no credentials provided or wrong
+         * credentials provided)
+         */
+
+#ifdef FREERDP_ERROR_CONNECT_NO_OR_MISSING_CREDENTIALS
         case FREERDP_ERROR_CONNECT_NO_OR_MISSING_CREDENTIALS:
+#endif
+
+#ifdef FREERDP_ERROR_CONNECT_LOGON_FAILURE
+        case FREERDP_ERROR_CONNECT_LOGON_FAILURE:
+#endif
+
+#ifdef FREERDP_ERROR_CONNECT_WRONG_PASSWORD
         case FREERDP_ERROR_CONNECT_WRONG_PASSWORD:
+#endif
+
+        case FREERDP_ERROR_AUTHENTICATION_FAILED:
             *status = GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED;
             *message = "Authentication failure (invalid credentials?)";
             break;
 
-        /* SSL/TLS connection failed */
+        /*
+         * SSL/TLS connection failed (the server's certificate is not trusted)
+         */
+
         case FREERDP_ERROR_TLS_CONNECT_FAILED:
             *status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
             *message = "SSL/TLS connection failed (untrusted/self-signed certificate?)";
             break;
 
-        /* DNS lookup failed */
+        /*
+         * DNS lookup failed (hostname resolution failed or invalid IP address)
+         */
+
         case FREERDP_ERROR_DNS_ERROR:
         case FREERDP_ERROR_DNS_NAME_NOT_FOUND:
             *status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
             *message = "DNS lookup failed (incorrect hostname?)";
             break;
 
+        /*
+         * Connection refused (the server is outright refusing to handle the
+         * inbound connection, typically due to the client requesting a
+         * security type that is not allowed)
+         */
+
         case FREERDP_ERROR_CONNECT_TRANSPORT_FAILED:
             *status = GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND;
             *message = "Server refused connection (wrong security type?)";
             break;
 
-        /* Connection failed */
+        /*
+         * Connection failed (the network connection to the server did not
+         * succeed)
+         */
+
         case FREERDP_ERROR_CONNECT_CANCELLED:
         case FREERDP_ERROR_CONNECT_FAILED:
         case FREERDP_ERROR_CONNECT_KDC_UNREACHABLE:
@@ -121,7 +187,9 @@ static void guac_rdp_translate_last_error(freerdp* rdp_inst,
             *message = "Connection failed (server unreachable?)";
             break;
 
-        /* All other errors */
+        /*
+         * All other (unknown) errors
+         */
         default:
             *status = GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR;
             *message = "Upstream error.";
