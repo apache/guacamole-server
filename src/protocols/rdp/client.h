@@ -88,6 +88,11 @@
 #define GUAC_RDP_AUDIO_BPS 16
 
 /**
+ * The default interval to send the audio input packet to a remote server, in ms.
+ */
+#define GUAC_RDP_AUDIO_INPUT_SEND_DEFAULT_INTERVAL 5
+
+/**
  * The maximum number of file descriptors which can be associated with an RDP
  * connection.
  */

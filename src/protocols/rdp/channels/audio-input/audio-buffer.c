@@ -19,6 +19,7 @@
 
 #include "channels/audio-input/audio-buffer.h"
 #include "rdp.h"
+#include "client.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -120,6 +121,11 @@ void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
         void* data) {
 
     pthread_mutex_lock(&(audio_buffer->lock));
+    
+    /* Create a thread */
+    audio_buffer->stop_thread = 0;
+    pthread_create(&audio_buffer->send_thread, NULL,
+                   guac_rdp_audio_send_thread, audio_buffer);
 
     /* Reset buffer state to provided values */
     audio_buffer->bytes_written = 0;
@@ -130,6 +136,19 @@ void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
     audio_buffer->packet_size = packet_frames
                               * audio_buffer->out_format.channels
                               * audio_buffer->out_format.bps;
+
+    /* Calculate the interval to send each packet in ms.
+     * We need to set half of the time duration designated
+     * by packet frames according to Nyquist's theorem.
+     */
+    audio_buffer->packet_interval = packet_frames
+                                  * 1000
+                                  / audio_buffer->out_format.rate
+                                  / 2;
+    if (audio_buffer->packet_interval == 0) {
+        audio_buffer->packet_interval =
+            GUAC_RDP_AUDIO_INPUT_SEND_DEFAULT_INTERVAL;
+    }
 
     /* Allocate new buffer */
     free(audio_buffer->packet);
@@ -233,6 +252,97 @@ static int guac_rdp_audio_buffer_read_sample(
 void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
         char* buffer, int length) {
 
+    pthread_mutex_lock(&(audio_buffer->lock));
+
+    /* Ignore packet if there is no buffer */
+    if (audio_buffer->packet_size == 0 || audio_buffer->packet == NULL) {
+        pthread_mutex_unlock(&(audio_buffer->lock));
+        return;
+    }
+
+    /* Allocate the new buffer. */
+    audio_stream_list *new_stream = (audio_stream_list*)malloc(sizeof(audio_stream_list));
+    new_stream->stream_data = malloc(length);
+
+    /* Write the stream data to the new buffer. */
+    new_stream->length = length;
+    new_stream->next_stream = NULL;
+    memcpy(new_stream->stream_data, buffer, new_stream->length);
+    
+    /* Add the new buffer into the list. */
+    if (audio_buffer->first_stream_list == NULL) {
+        audio_buffer->first_stream_list = new_stream;
+        audio_buffer->last_stream_list = new_stream;
+    }
+    else {
+        audio_buffer->last_stream_list->next_stream = new_stream;
+        audio_buffer->last_stream_list =
+            (audio_stream_list*)audio_buffer->last_stream_list->next_stream;
+    }
+
+    pthread_mutex_unlock(&(audio_buffer->lock));
+
+}
+
+void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer) {
+
+    /* Set the flag to stop the thread */
+    pthread_mutex_lock(&(audio_buffer->lock));
+    audio_buffer->stop_thread = 1;
+    pthread_mutex_unlock(&(audio_buffer->lock));
+
+    /* Stop the thread */
+    pthread_join(audio_buffer->send_thread, NULL);
+
+    pthread_mutex_lock(&(audio_buffer->lock));
+
+    /* The stream is now closed */
+    guac_rdp_audio_buffer_ack(audio_buffer,
+            "CLOSED", GUAC_PROTOCOL_STATUS_RESOURCE_CLOSED);
+
+    /* Unset user and stream */
+    audio_buffer->user = NULL;
+    audio_buffer->stream = NULL;
+
+    /* Reset buffer state */
+    audio_buffer->bytes_written = 0;
+    audio_buffer->packet_size = 0;
+    audio_buffer->flush_handler = NULL;
+
+    /* Reset I/O counters */
+    audio_buffer->total_bytes_sent = 0;
+    audio_buffer->total_bytes_received = 0;
+
+    /* Free packet (if any) */
+    free(audio_buffer->packet);
+    audio_buffer->packet = NULL;
+
+    /* Free stream list */
+    audio_stream_list* current = audio_buffer->first_stream_list;
+    while (current != NULL) {
+
+        audio_buffer->first_stream_list =
+            audio_buffer->first_stream_list->next_stream;
+
+        free(current->stream_data);
+        free(current);
+
+        current = audio_buffer->first_stream_list;
+    }
+
+    pthread_mutex_unlock(&(audio_buffer->lock));
+
+}
+
+void guac_rdp_audio_buffer_free(guac_rdp_audio_buffer* audio_buffer) {
+    pthread_mutex_destroy(&(audio_buffer->lock));
+    free(audio_buffer->packet);
+    free(audio_buffer);
+}
+
+void guac_rdp_audio_buffer_send(guac_rdp_audio_buffer* audio_buffer,
+        char* buffer, int length) {
+
     int16_t sample;
 
     pthread_mutex_lock(&(audio_buffer->lock));
@@ -242,6 +352,7 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
         pthread_mutex_unlock(&(audio_buffer->lock));
         return;
     }
+    pthread_mutex_unlock(&(audio_buffer->lock));
 
     int out_bps = audio_buffer->out_format.bps;
 
@@ -276,6 +387,9 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
             /* Reset buffer in all cases */
             audio_buffer->bytes_written = 0;
 
+            /* Wait in a specified interval. */
+            guac_timestamp_msleep(audio_buffer->packet_interval);
+
         }
 
     } /* end packet write loop */
@@ -283,42 +397,44 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
     /* Track current position in audio stream */
     audio_buffer->total_bytes_received += length;
 
-    pthread_mutex_unlock(&(audio_buffer->lock));
-
 }
 
-void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer) {
+void* guac_rdp_audio_send_thread(void* data) {
 
-    pthread_mutex_lock(&(audio_buffer->lock));
+    guac_rdp_audio_buffer* audio_buffer = (guac_rdp_audio_buffer*)data;
 
-    /* The stream is now closed */
-    guac_rdp_audio_buffer_ack(audio_buffer,
-            "CLOSED", GUAC_PROTOCOL_STATUS_RESOURCE_CLOSED);
+    /* Handle the audio packets while client is running */
+    while (!audio_buffer->stop_thread) {
 
-    /* Unset user and stream */
-    audio_buffer->user = NULL;
-    audio_buffer->stream = NULL;
+        /* Get the audio buffer from the list */
+        pthread_mutex_lock(&(audio_buffer->lock));
+        audio_stream_list* current = audio_buffer->first_stream_list;
+        pthread_mutex_unlock(&(audio_buffer->lock));
 
-    /* Reset buffer state */
-    audio_buffer->bytes_written = 0;
-    audio_buffer->packet_size = 0;
-    audio_buffer->flush_handler = NULL;
+        /* Check whether the audio buffer will be sent. */
+        if (current != NULL) {
+            
+            /* Send the audio buffer to the remote server. */
+            char* stream = current->stream_data;
+            int length = current->length;
+            guac_rdp_audio_buffer_send(audio_buffer, stream, length);
 
-    /* Reset I/O counters */
-    audio_buffer->total_bytes_sent = 0;
-    audio_buffer->total_bytes_received = 0;
+            /* Remove the audio buffer from the list. */
+            pthread_mutex_lock(&audio_buffer->lock);
+            audio_buffer->first_stream_list = 
+                (audio_stream_list*)audio_buffer->first_stream_list->next_stream;
+            pthread_mutex_unlock(&audio_buffer->lock);
 
-    /* Free packet (if any) */
-    free(audio_buffer->packet);
-    audio_buffer->packet = NULL;
+            /* Free the audio buffer. */
+            free(current->stream_data);
+            free(current);
+        }
+        else {
+            /* Wait again if there is no any audio buffer */
+            guac_timestamp_msleep(audio_buffer->packet_interval);
+        }
+    }
 
-    pthread_mutex_unlock(&(audio_buffer->lock));
-
-}
-
-void guac_rdp_audio_buffer_free(guac_rdp_audio_buffer* audio_buffer) {
-    pthread_mutex_destroy(&(audio_buffer->lock));
-    free(audio_buffer->packet);
-    free(audio_buffer);
+    return NULL;
 }
 

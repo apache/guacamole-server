@@ -67,6 +67,29 @@ typedef struct guac_rdp_audio_format {
 } guac_rdp_audio_format;
 
 /**
+ * A structure of linked list to store the audio stream periodically
+ * sent by the client.
+ */
+typedef struct audio_stream_list audio_stream_list;
+struct audio_stream_list {
+    /**
+     * The pointer of audio stream
+     */
+    char* stream_data;
+
+    /**
+     * The length of audio stream
+     */
+    int length;
+
+    /**
+     * The pointer of the next audio stream
+     */
+    audio_stream_list* next_stream;
+
+};
+
+/**
  * A buffer of arbitrary audio data. Received audio data can be written to this
  * buffer, and will automatically be flushed via a given handler once the
  * internal buffer reaches capacity.
@@ -144,6 +167,27 @@ typedef struct guac_rdp_audio_buffer {
      * Arbitrary data assigned by the AUDIO_INPUT plugin implementation.
      */
     void* data;
+
+    /**
+     * The thread to send the audio input stream.
+     */
+    pthread_t send_thread;
+
+    /**
+     * The flag to stop the thread.
+     */
+    int stop_thread;
+
+    /**
+     * The list to take the audio buffers.
+     */
+    audio_stream_list* first_stream_list;
+    audio_stream_list* last_stream_list;
+
+    /**
+     * The interval to send the audio packet to the remote server.
+     */
+    int packet_interval;
 
 } guac_rdp_audio_buffer;
 
@@ -272,6 +316,23 @@ void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer);
  *     The audio buffer to free.
  */
 void guac_rdp_audio_buffer_free(guac_rdp_audio_buffer* audio_buffer);
+
+/**
+ * This thread handler sends the audio input stream data to the remote server
+ * in the uniform interval.
+ * When sending it via the MME interface of the remote server as soon as
+ * receiving the audio input stream from the client, the missing some audio stream
+ * occurs due to the lack of remote audio buffer.
+ * So, to prevent the remote audio buffer from running out of space seems,
+ * we need to use the thread to send the audio stream in the uniform interval.
+ *
+ * @param data
+ *     The pointer to the guac_rdp_audio_buffer object maintained by RDP session.
+ *
+ * @return
+ *     NULL. This is a normal format of the general thread callback functions.
+ */
+void* guac_rdp_audio_send_thread(void* data);
 
 #endif
 
