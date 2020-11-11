@@ -28,10 +28,8 @@
 #include <stdlib.h>
 
 /**
- * Event handler for events which deal with data transmitted over an open SVC.
- * This specific implementation of the event handler currently handles only the
- * CHANNEL_EVENT_DATA_RECEIVED event, delegating actual handling of that event
- * to guac_rdp_common_svc_process_receive().
+ * Event handler for events which deal with data transmitted over an open SVC,
+ * including receipt of inbound data and completion of outbound writes.
  *
  * The FreeRDP requirements for this function follow those of the
  * VirtualChannelOpenEventEx callback defined within Microsoft's RDP API:
@@ -83,6 +81,15 @@ static VOID guac_rdp_common_svc_handle_open_event(LPVOID user_param,
         DWORD open_handle, UINT event, LPVOID data, UINT32 data_length,
         UINT32 total_length, UINT32 data_flags) {
 
+#ifndef FREERDP_SVC_CORE_FREES_WSTREAM
+    /* Free stream data after send is complete */
+    if ((event == CHANNEL_EVENT_WRITE_CANCELLED
+            || event == CHANNEL_EVENT_WRITE_COMPLETE) && data != NULL) {
+        Stream_Free((wStream*) data, TRUE);
+        return;
+    }
+#endif
+
     /* Ignore all events except for received data */
     if (event != CHANNEL_EVENT_DATA_RECEIVED)
         return;
@@ -116,6 +123,10 @@ static VOID guac_rdp_common_svc_handle_open_event(LPVOID user_param,
         svc->_input_stream = Stream_New(NULL, total_length);
     }
 
+    /* leave if we don't have a stream. */
+    if (svc->_input_stream == NULL)
+        return;
+    
     /* Add chunk to buffer only if sufficient space remains */
     if (Stream_EnsureRemainingCapacity(svc->_input_stream, data_length))
         Stream_Write(svc->_input_stream, data, data_length);
@@ -137,6 +148,7 @@ static VOID guac_rdp_common_svc_handle_open_event(LPVOID user_param,
             svc->_receive_handler(svc, svc->_input_stream);
 
         Stream_Free(svc->_input_stream, TRUE);
+        svc->_input_stream = NULL;
 
     }
 

@@ -25,6 +25,9 @@
 
 #include <cairo/cairo.h>
 #include <libavcodec/avcodec.h>
+#ifndef AVFORMAT_AVFORMAT_H
+#include <libavformat/avformat.h>
+#endif
 #include <libavutil/common.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
@@ -34,14 +37,30 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         int width, int height, int bitrate) {
+
+    AVOutputFormat *container_format;
+    AVFormatContext *container_format_context;
+    AVStream *video_stream;
+    int ret;
+    int failed_header = 0;
+
+    /* allocate the output media context */
+    avformat_alloc_output_context2(&container_format_context, NULL, NULL, path);
+    if (container_format_context == NULL) {
+        guacenc_log(GUAC_LOG_ERROR, "Failed to determine container from output file name");
+        goto fail_codec;
+    }
+
+    container_format = container_format_context->oformat;
 
     /* Pull codec based on name */
     AVCodec* codec = avcodec_find_encoder_by_name(codec_name);
@@ -51,25 +70,35 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         goto fail_codec;
     }
 
+    /* create stream */
+    video_stream = NULL;
+    video_stream = avformat_new_stream(container_format_context, codec);
+    if (video_stream == NULL) {
+        guacenc_log(GUAC_LOG_ERROR, "Could not allocate encoder stream. Cannot continue.");
+        goto fail_format_context;
+    }
+    video_stream->id = container_format_context->nb_streams - 1;
+
     /* Retrieve encoding context */
-    AVCodecContext* context = avcodec_alloc_context3(codec);
-    if (context == NULL) {
+    AVCodecContext* avcodec_context =
+            guacenc_build_avcodeccontext(video_stream, codec, bitrate, width,
+                    height, /*gop size*/ 10, /*qmax*/ 31, /*qmin*/ 2,
+                    /*pix fmt*/ AV_PIX_FMT_YUV420P,
+                    /*time base*/ (AVRational) { 1, GUACENC_VIDEO_FRAMERATE });
+
+    if (avcodec_context == NULL) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to allocate context for "
                 "codec \"%s\".", codec_name);
         goto fail_context;
     }
 
-    /* Init context with encoding parameters */
-    context->bit_rate = bitrate;
-    context->width = width;
-    context->height = height;
-    context->time_base = (AVRational) { 1, GUACENC_VIDEO_FRAMERATE };
-    context->gop_size = 10;
-    context->max_b_frames = 1;
-    context->pix_fmt = AV_PIX_FMT_YUV420P;
+    /* If format needs global headers, write them */
+    if (container_format_context->oformat->flags & AVFMT_GLOBALHEADER) {
+        avcodec_context->flags |= GUACENC_FLAG_GLOBAL_HEADER;
+    }
 
     /* Open codec for use */
-    if (avcodec_open2(context, codec, NULL) < 0) {
+    if (guacenc_open_avcodec(avcodec_context, codec, NULL, video_stream) < 0) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to open codec \"%s\".", codec_name);
         goto fail_codec_open;
     }
@@ -81,9 +110,9 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     }
 
     /* Copy necessary data for frame from context */
-    frame->format = context->pix_fmt;
-    frame->width = context->width;
-    frame->height = context->height;
+    frame->format = avcodec_context->pix_fmt;
+    frame->width = avcodec_context->width;
+    frame->height = avcodec_context->height;
 
     /* Allocate actual backing data for frame */
     if (av_image_alloc(frame->data, frame->linesize, frame->width,
@@ -91,31 +120,32 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         goto fail_frame_data;
     }
 
-    /* Open output file */
-    int fd = open(path, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR);
-    if (fd == -1) {
-        guacenc_log(GUAC_LOG_ERROR, "Failed to open output file \"%s\": %s",
-                path, strerror(errno));
-        goto fail_output_fd;
+    /* Open output file, if the container needs it */
+    if (!(container_format->flags & AVFMT_NOFILE)) {
+        ret = avio_open(&container_format_context->pb, path, AVIO_FLAG_WRITE);
+        if (ret < 0) {
+            guacenc_log(GUAC_LOG_ERROR, "Error occurred while opening output file.");
+            goto fail_output_avio;
+        }
     }
 
-    /* Create stream for output file */
-    FILE* output = fdopen(fd, "wb");
-    if (output == NULL) {
-        guacenc_log(GUAC_LOG_ERROR, "Failed to allocate stream for output "
-                "file \"%s\": %s", path, strerror(errno));
+    /* write the stream header, if needed */
+    ret = avformat_write_header(container_format_context, NULL);
+    if (ret < 0) {
+        guacenc_log(GUAC_LOG_ERROR, "Error occurred while writing output file header.");
+        failed_header = true;
         goto fail_output_file;
     }
 
     /* Allocate video structure */
     guacenc_video* video = malloc(sizeof(guacenc_video));
-    if (video == NULL) {
-        goto fail_video;
-    }
+    if (video == NULL)
+        goto fail_alloc_video;
 
     /* Init properties of video */
-    video->output = output;
-    video->context = context;
+    video->output_stream = video_stream;
+    video->context = avcodec_context;
+    video->container_format_context = container_format_context;
     video->next_frame = frame;
     video->width = width;
     video->height = height;
@@ -128,13 +158,16 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     return video;
 
     /* Free all allocated data in case of failure */
-fail_video:
-    fclose(output);
-
+fail_alloc_video:
 fail_output_file:
-    close(fd);
+    avio_close(container_format_context->pb);
 
-fail_output_fd:
+    /* Delete the file that was created if it was actually created */
+    if (unlink(path) == -1 && errno != ENOENT)
+        guacenc_log(GUAC_LOG_WARNING, "Failed output file \"%s\" could not "
+                "be automatically deleted: %s", path, strerror(errno));
+
+fail_output_avio:
     av_freep(&frame->data[0]);
 
 fail_frame_data:
@@ -142,7 +175,13 @@ fail_frame_data:
 
 fail_frame:
 fail_codec_open:
-    avcodec_free_context(&context);
+    avcodec_free_context(&avcodec_context);
+
+fail_format_context:
+    /* failing to write the container implicitly frees the context */
+    if (!failed_header) {
+        avformat_free_context(container_format_context);
+    }
 
 fail_context:
 fail_codec:
@@ -435,26 +474,34 @@ int guacenc_video_free(guacenc_video* video) {
     /* Write final frame */
     guacenc_video_flush_frame(video);
 
-    /* Init video packet for final flush of encoded data */
-    AVPacket packet;
-    av_init_packet(&packet);
-
     /* Flush any unwritten frames */
     int retval;
     do {
         retval = guacenc_video_write_frame(video, NULL);
     } while (retval > 0);
 
+    /* write trailer, if needed */
+    if (video->container_format_context != NULL &&
+            video->output_stream != NULL) {
+        guacenc_log(GUAC_LOG_DEBUG, "Writing trailer: %s",
+                av_write_trailer(video->container_format_context) == 0 ?
+                        "success" : "failure");
+    }
+
     /* File is now completely written */
-    fclose(video->output);
+    if (video->container_format_context != NULL) {
+        avio_close(video->container_format_context->pb);
+    }
 
     /* Free frame encoding data */
     av_freep(&video->next_frame->data[0]);
     av_frame_free(&video->next_frame);
 
     /* Clean up encoding context */
-    avcodec_close(video->context);
-    avcodec_free_context(&(video->context));
+    if (video->context != NULL) {
+        avcodec_close(video->context);
+        avcodec_free_context(&(video->context));
+    }
 
     free(video);
     return 0;

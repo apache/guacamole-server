@@ -366,7 +366,9 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     guac_client_log(clipboard->client, GUAC_LOG_TRACE, "CLIPRDR: Sending "
             "format data response.");
 
-    return cliprdr->ClientFormatDataResponse(cliprdr, &data_response);
+    UINT result = cliprdr->ClientFormatDataResponse(cliprdr, &data_response);
+    free(start);
+    return result;
 
 }
 
@@ -397,8 +399,19 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
     guac_rdp_clipboard* clipboard = (guac_rdp_clipboard*) cliprdr->custom;
     assert(clipboard != NULL);
 
-    guac_client_log(clipboard->client, GUAC_LOG_TRACE, "CLIPRDR: Received "
-            "format data response.");
+    guac_client* client = clipboard->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+
+    guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format data response.");
+
+    /* Ignore received data if copy has been disabled */
+    if (settings->disable_copy) {
+        guac_client_log(clipboard->client, GUAC_LOG_DEBUG, "Ignoring received "
+                "clipboard data as copying from within the remote desktop has "
+                "been explicitly disabled.");
+        return CHANNEL_RC_OK;
+    }
 
     char received_data[GUAC_RDP_CLIPBOARD_MAX_LENGTH];
 

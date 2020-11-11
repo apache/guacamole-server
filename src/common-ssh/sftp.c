@@ -376,6 +376,18 @@ int guac_common_ssh_sftp_handle_file_stream(
     char fullpath[GUAC_COMMON_SSH_SFTP_MAX_PATH];
     LIBSSH2_SFTP_HANDLE* file;
 
+    /* Ignore upload if uploads have been disabled */
+    if (filesystem->disable_upload) {
+        guac_user_log(user, GUAC_LOG_WARNING, "A upload attempt has "
+                "been blocked due to uploads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        guac_protocol_send_ack(user->socket, stream, "SFTP: Upload disabled",
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
+        guac_socket_flush(user->socket);
+        return 0;
+    }
+
     /* Concatenate filename with path */
     if (!guac_ssh_append_filename(fullpath, filesystem->upload_path,
                 filename)) {
@@ -429,7 +441,7 @@ int guac_common_ssh_sftp_handle_file_stream(
 
 /**
  * Handler for ack messages which continue an outbound SFTP data transfer
- * (download), signalling the current status and requesting additional data.
+ * (download), signaling the current status and requesting additional data.
  * The data associated with the given stream is expected to be a pointer to an
  * open LIBSSH2_SFTP_HANDLE for the file from which the data is to be read.
  *
@@ -516,6 +528,15 @@ guac_stream* guac_common_ssh_sftp_download_file(
     guac_stream* stream;
     LIBSSH2_SFTP_HANDLE* file;
 
+    /* Ignore download if downloads have been disabled */
+    if (filesystem->disable_download) {
+        guac_user_log(user, GUAC_LOG_WARNING, "A download attempt has "
+                "been blocked due to downloads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        return NULL;
+    }
+
     /* Attempt to open file for reading */
     file = libssh2_sftp_open(filesystem->sftp_session, filename,
             LIBSSH2_FXF_READ, 0);
@@ -586,7 +607,6 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
         guac_stream* stream, char* message, guac_protocol_status status) {
 
     int bytes_read;
-    int blob_written = 0;
 
     char filename[GUAC_COMMON_SSH_SFTP_MAX_PATH];
     LIBSSH2_SFTP_ATTRIBUTES attributes;
@@ -608,8 +628,7 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
 
     /* While directory entries remain */
     while ((bytes_read = libssh2_sftp_readdir(list_state->directory,
-                filename, sizeof(filename), &attributes)) > 0
-            && !blob_written) {
+                filename, sizeof(filename), &attributes)) > 0) {
 
         char absolute_path[GUAC_COMMON_SSH_SFTP_MAX_PATH];
 
@@ -639,9 +658,10 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
         else
             mimetype = "application/octet-stream";
 
-        /* Write entry */
-        blob_written |= guac_common_json_write_property(user, stream,
-                &list_state->json_state, absolute_path, mimetype);
+        /* Write entry, waiting for next ack if a blob is written */
+        if (guac_common_json_write_property(user, stream,
+                    &list_state->json_state, absolute_path, mimetype))
+            break;
 
     }
 
@@ -787,6 +807,14 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
     /* Otherwise, send file contents */
     else {
 
+        /* If downloads are disabled, log and return. */
+        if (filesystem->disable_download) {
+            guac_user_log(user, GUAC_LOG_INFO,
+                    "Unable to download file \"%s\", "
+                    "file downloads have been disabled.", fullpath);
+            return 0;
+        }
+        
         /* Open as normal file */
         LIBSSH2_SFTP_HANDLE* file = libssh2_sftp_open(sftp, fullpath,
             LIBSSH2_FXF_READ, 0);
@@ -842,6 +870,18 @@ static int guac_common_ssh_sftp_put_handler(guac_user* user,
 
     guac_common_ssh_sftp_filesystem* filesystem =
         (guac_common_ssh_sftp_filesystem*) object->data;
+
+    /* Ignore upload if uploads have been disabled */
+    if (filesystem->disable_upload) {
+        guac_user_log(user, GUAC_LOG_WARNING, "A upload attempt has "
+                "been blocked due to uploads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        guac_protocol_send_ack(user->socket, stream, "SFTP: Upload disabled",
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
+        guac_socket_flush(user->socket);
+        return 0;
+    }
 
     LIBSSH2_SFTP* sftp = filesystem->sftp_session;
 
@@ -903,7 +943,11 @@ guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
     /* Init filesystem */
     guac_object* fs_object = guac_user_alloc_object(user);
     fs_object->get_handler = guac_common_ssh_sftp_get_handler;
-    fs_object->put_handler = guac_common_ssh_sftp_put_handler;
+    
+    /* Only handle uploads if not disabled. */
+    if (!filesystem->disable_upload)
+        fs_object->put_handler = guac_common_ssh_sftp_put_handler;
+    
     fs_object->data = filesystem;
 
     /* Send filesystem to user */
@@ -916,7 +960,7 @@ guac_object* guac_common_ssh_alloc_sftp_filesystem_object(
 
 guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
         guac_common_ssh_session* session, const char* root_path,
-        const char* name) {
+        const char* name, int disable_download, int disable_upload) {
 
     /* Request SFTP */
     LIBSSH2_SFTP* sftp_session = libssh2_sftp_init(session->session);
@@ -930,6 +974,10 @@ guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
     /* Associate SSH session with SFTP data and user */
     filesystem->ssh_session = session;
     filesystem->sftp_session = sftp_session;
+    
+    /* Copy over disable flags */
+    filesystem->disable_download = disable_download;
+    filesystem->disable_upload = disable_upload;
 
     /* Normalize and store the provided root path */
     if (!guac_common_ssh_sftp_normalize_path(filesystem->root_path,

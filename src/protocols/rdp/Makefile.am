@@ -38,6 +38,7 @@ nodist_libguac_client_rdp_la_SOURCES =  \
     _generated_keymaps.c
 
 libguac_client_rdp_la_SOURCES =                  \
+    argv.c                                       \
     beep.c                                       \
     bitmap.c                                     \
     channels/audio-input/audio-buffer.c          \
@@ -82,6 +83,7 @@ libguac_client_rdp_la_SOURCES =                  \
     user.c
 
 noinst_HEADERS =                                 \
+    argv.h                                       \
     beep.h                                       \
     bitmap.h                                     \
     channels/audio-input/audio-buffer.h          \
@@ -241,7 +243,7 @@ rdp_keymaps =                                \
     $(srcdir)/keymaps/da_dk_qwerty.keymap    \
     $(srcdir)/keymaps/tr_tr_qwerty.keymap
 
-_generated_keymaps.c: $(rdp_keymaps)
+_generated_keymaps.c: $(rdp_keymaps) $(srcdir)/keymaps/generate.pl
 	$(AM_V_GEN) $(srcdir)/keymaps/generate.pl $(rdp_keymaps)
 
 _generated_channel_entry_wrappers.c: $(srcdir)/plugins/channels.h $(srcdir)/plugins/generate-entry-wrappers.pl

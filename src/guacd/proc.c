@@ -267,24 +267,24 @@ static int guacd_timed_client_free(guac_client* client, int timeout) {
         .tv_nsec = current_time.tv_usec * 1000
     };
 
-    /* Free the client in a separate thread, so we can time the free operation */
-    if (pthread_create(&client_free_thread, NULL,
-                guacd_client_free_thread, &free_operation))
-        return 1;
-
     /* The mutex associated with the pthread conditional and flag MUST be
      * acquired before attempting to wait for the condition */
     if (pthread_mutex_lock(&free_operation.completed_mutex))
         return 1;
 
-    /* Wait a finite amount of time for the free operation to finish */
-    if (pthread_cond_timedwait(&free_operation.completed_cond,
-                &free_operation.completed_mutex, &deadline))
-        return 1;
+    /* Free the client in a separate thread, so we can time the free operation */
+    if (!pthread_create(&client_free_thread, NULL,
+                guacd_client_free_thread, &free_operation)) {
+
+        /* Wait a finite amount of time for the free operation to finish */
+        (void) pthread_cond_timedwait(&free_operation.completed_cond,
+                    &free_operation.completed_mutex, &deadline);
+    }
+
+    (void) pthread_mutex_unlock(&free_operation.completed_mutex);
 
     /* Return status of free operation */
     return !free_operation.completed;
-
 }
 
 /**
@@ -330,6 +330,9 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
     /* The first file descriptor is the owner */
     int owner = 1;
 
+    /* Enable keep alive on the broadcast socket */
+    guac_socket_require_keep_alive(client->socket);
+
     /* Add each received file descriptor as a new user */
     int received_fd;
     while ((received_fd = guacd_recv_fd(proc->fd_socket)) != -1) {
@@ -340,7 +343,7 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
         owner = 0;
 
     }
-
+    
 cleanup_client:
 
     /* Request client to stop/disconnect */

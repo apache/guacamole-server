@@ -39,6 +39,11 @@
 #define RDP_DEFAULT_PORT 3389
 
 /**
+ * The default RDP port used by Hyper-V "VMConnect".
+ */
+#define RDP_DEFAULT_VMCONNECT_PORT 2179
+
+/**
  * Default screen width, in pixels.
  */
 #define RDP_DEFAULT_WIDTH  1024
@@ -92,6 +97,11 @@ typedef enum guac_rdp_security {
      * Extended network level authentication.
      */
     GUAC_SECURITY_EXTENDED_NLA,
+
+    /**
+     * Negotiate security methods supported by Hyper-V's "VMConnect" feature.
+     */
+    GUAC_SECURITY_VMCONNECT,
 
     /**
      * Negotiate a security method supported by both server and client.
@@ -218,6 +228,16 @@ typedef struct guac_rdp_settings {
      * exist.
      */
     int create_drive_path;
+    
+    /**
+     * Whether or not to disable file download over RDP.
+     */
+    int disable_download;
+    
+    /**
+     * Wether or not to disable file upload over RDP.
+     */
+    int disable_upload;
 
     /**
      * Whether this session is a console session.
@@ -377,7 +397,7 @@ typedef struct guac_rdp_settings {
 
 #ifdef ENABLE_COMMON_SSH
     /**
-     * Whether SFTP should be enabled for the VNC connection.
+     * Whether SFTP should be enabled for the RDP connection.
      */
     int enable_sftp;
 
@@ -440,6 +460,16 @@ typedef struct guac_rdp_settings {
      * cases.
      */
     int sftp_server_alive_interval;
+    
+    /**
+     * Whether or not to disable file download over SFTP.
+     */
+    int sftp_disable_download;
+    
+    /**
+     * Whether or not to disable file upload over SFTP.
+     */
+    int sftp_disable_upload;
 #endif
 
     /**
@@ -535,6 +565,29 @@ typedef struct guac_rdp_settings {
      * the connection broker, if a connection broker is being used.
      */
     char* load_balance_info;
+    
+    /**
+     * Whether or not to send a magic WoL packet to wake up the host before
+     * trying to connect.  Zero will disable sending the packet, non-zero
+     * values will trigger sending the packet.
+     */
+    int wol_send_packet;
+    
+    /**
+     * The mac address to put in the magic WoL packet.
+     */
+    char* wol_mac_addr;
+    
+    /**
+     * The broadcast address to send the magic WoL packet to.
+     */
+    char* wol_broadcast_addr;
+    
+    /**
+     * The amount of time to wait after sending the magic WoL packet before
+     * continuing the connection.
+     */
+    int wol_wait_time;
 
 } guac_rdp_settings;
 

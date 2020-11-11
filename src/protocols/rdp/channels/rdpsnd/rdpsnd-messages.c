@@ -50,6 +50,17 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
     /* Reset own format count */
     rdpsnd->format_count = 0;
 
+    /* 
+     * Check to make sure the stream has at least 20 bytes (14 byte seek,
+     * 2 x UTF16 reads, and 2 x UTF8 seeks).
+     */
+    if (Stream_GetRemainingLength(input_stream) < 20) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Server Audio Formats and "
+                "Version PDU does not contain the expected number of bytes. "
+                "Audio redirection may not work as expected.");
+        return;
+    }
+    
     /* Format header */
     Stream_Seek(input_stream, 14);
     Stream_Read_UINT16(input_stream, server_format_count);
@@ -96,6 +107,15 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
             /* Remember position in stream */
             Stream_GetPointer(input_stream, format_start);
 
+            /* Check to make sure Stream has at least 18 bytes. */
+            if (Stream_GetRemainingLength(input_stream) < 18) {
+                guac_client_log(client, GUAC_LOG_WARNING, "Server Audio "
+                        "Formats and Version PDU does not contain the expected "
+                        "number of bytes. Audio redirection may not work as "
+                        "expected.");
+                return;
+            }
+            
             /* Read format */
             Stream_Read_UINT16(input_stream, format_tag);
             Stream_Read_UINT16(input_stream, channels);
@@ -106,6 +126,16 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
 
             /* Skip past extra data */
             Stream_Read_UINT16(input_stream, body_size);
+            
+            /* Check that Stream has at least body_size bytes remaining. */
+            if (Stream_GetRemainingLength(input_stream) < body_size) {
+                guac_client_log(client, GUAC_LOG_WARNING, "Server Audio "
+                        "Formats and Version PDU does not contain the expected "
+                        "number of bytes. Audio redirection may not work as "
+                        "expected.");
+                return;
+            }
+            
             Stream_Seek(input_stream, body_size);
 
             /* If PCM, accept */
@@ -205,6 +235,14 @@ void guac_rdpsnd_training_handler(guac_rdp_common_svc* svc,
 
     guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
 
+    /* Check to make sure audio stream contains a minimum number of bytes. */
+    if (Stream_GetRemainingLength(input_stream) < 4) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Training PDU "
+                "does not contain the expected number of bytes. Audio "
+                "redirection may not work as expected.");
+        return;
+    }
+    
     /* Read timestamp and data size */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
     Stream_Read_UINT16(input_stream, data_size);
@@ -232,6 +270,14 @@ void guac_rdpsnd_wave_info_handler(guac_rdp_common_svc* svc,
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_audio_stream* audio = rdp_client->audio;
 
+    /* Check to make sure audio stream contains a minimum number of bytes. */
+    if (Stream_GetRemainingLength(input_stream) < 12) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio WaveInfo PDU "
+                "does not contain the expected number of bytes. Sound may not "
+                "work as expected.");
+        return;
+    }
+    
     /* Read wave information */
     Stream_Read_UINT16(input_stream, rdpsnd->server_timestamp);
     Stream_Read_UINT16(input_stream, format);
@@ -250,11 +296,18 @@ void guac_rdpsnd_wave_info_handler(guac_rdp_common_svc* svc,
     rdpsnd->next_pdu_is_wave = TRUE;
 
     /* Reset audio stream if format has changed */
-    if (audio != NULL)
-        guac_audio_stream_reset(audio, NULL,
-                rdpsnd->formats[format].rate,
-                rdpsnd->formats[format].channels,
-                rdpsnd->formats[format].bps);
+    if (audio != NULL) {
+        if (format < GUAC_RDP_MAX_FORMATS)
+            guac_audio_stream_reset(audio, NULL,
+                    rdpsnd->formats[format].rate,
+                    rdpsnd->formats[format].channels,
+                    rdpsnd->formats[format].bps);
+    
+        else
+            guac_client_log(svc->client, GUAC_LOG_WARNING, "RDP server "
+                    "attempted to specify an invalid audio format. Sound may "
+                    "not work as expected.");
+    }
 
 }
 
@@ -266,6 +319,14 @@ void guac_rdpsnd_wave_handler(guac_rdp_common_svc* svc,
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_audio_stream* audio = rdp_client->audio;
+    
+    /* Verify that the stream has bytes to cover the wave size plus header. */
+    if (Stream_Length(input_stream) < (rdpsnd->incoming_wave_size + 4)) {
+        guac_client_log(svc->client, GUAC_LOG_WARNING, "Audio Wave PDU does "
+                "not contain the expected number of bytes. Sound may not work "
+                "as expected.");
+        return;
+    }
 
     /* Wave Confirmation PDU */
     wStream* output_stream = Stream_New(NULL, 8);

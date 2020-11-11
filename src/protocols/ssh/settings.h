@@ -179,6 +179,20 @@ typedef struct guac_ssh_settings {
      * filesystem guac_object.
      */
     char* sftp_root_directory;
+    
+    /**
+     * Whether file download over SFTP should be disabled.  If set to true, file
+     * downloads will not be allowed over SFTP.  If not set or set to false, file
+     * downloads will be allowed.
+     */
+    bool sftp_disable_download;
+    
+    /**
+     * Whether file uploads over SFTP should be disabled.  If set to true, file
+     * uploads will not be allowed over SFTP.  If not set or set to false, file
+     * uploads will be allowed.
+     */
+    bool sftp_disable_upload;
 
 #ifdef ENABLE_SSH_AGENT
     /**
@@ -272,6 +286,26 @@ typedef struct guac_ssh_settings {
      * The client timezone to pass to the remote system.
      */
     char* timezone;
+    
+    /**
+     * Whether or not to send the Wake-on-LAN magic packet.
+     */
+    bool wol_send_packet;
+    
+    /**
+     * The MAC address to put in the magic WoL packet for the host to wake.
+     */
+    char* wol_mac_addr;
+    
+    /**
+     * The broadcast address to which to send the magic WoL packet.
+     */
+    char* wol_broadcast_addr;
+    
+    /**
+     * The amount of time to wait for the system to wake after sending the packet.
+     */
+    int wol_wait_time;
 
 } guac_ssh_settings;
 

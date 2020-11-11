@@ -21,28 +21,6 @@
 
 #include <string.h>
 
-const int GUAC_KEYSYMS_SHIFT[] = {0xFFE1, 0};
-const int GUAC_KEYSYMS_ALL_SHIFT[] = {0xFFE1, 0xFFE2, 0};
-
-const int GUAC_KEYSYMS_ALTGR[] = {0xFFEA, 0};
-const int GUAC_KEYSYMS_SHIFT_ALTGR[] = {0xFFE1, 0xFFEA, 0};
-const int GUAC_KEYSYMS_ALL_SHIFT_ALTGR[] = {0xFFE1, 0xFFE2, 0xFFEA, 0};
-
-const int GUAC_KEYSYMS_CTRL[] = {0xFFE3, 0};
-const int GUAC_KEYSYMS_ALL_CTRL[] = {0xFFE3, 0xFFE4, 0};
-
-const int GUAC_KEYSYMS_ALT[] = {0xFFE9, 0};
-const int GUAC_KEYSYMS_ALL_ALT[] = {0xFFE9, 0xFFEA, 0};
-
-const int GUAC_KEYSYMS_CTRL_ALT[] = {0xFFE3, 0xFFE9, 0};
-
-const int GUAC_KEYSYMS_ALL_MODIFIERS[] = {
-    0xFFE1, 0xFFE2, /* Left and right shift */
-    0xFFE3, 0xFFE4, /* Left and right control */
-    0xFFE9, 0xFFEA, /* Left and right alt (AltGr) */
-    0
-};
-
 const guac_rdp_keymap* guac_rdp_keymap_find(const char* name) {
 
     /* For each keymap */

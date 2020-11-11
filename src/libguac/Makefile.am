@@ -32,6 +32,9 @@ SUBDIRS = . tests
 libguacincdir = $(includedir)/guacamole
 
 libguacinc_HEADERS =                  \
+    guacamole/argv.h                  \
+    guacamole/argv-constants.h        \
+    guacamole/argv-fntypes.h          \
     guacamole/audio.h                 \
     guacamole/audio-fntypes.h         \
     guacamole/audio-types.h           \
@@ -69,7 +72,9 @@ libguacinc_HEADERS =                  \
     guacamole/user.h                  \
     guacamole/user-constants.h        \
     guacamole/user-fntypes.h          \
-    guacamole/user-types.h
+    guacamole/user-types.h            \
+    guacamole/wol.h                   \
+    guacamole/wol-constants.h
 
 noinst_HEADERS =      \
     id.h              \
@@ -81,6 +86,7 @@ noinst_HEADERS =      \
     wait-fd.h
 
 libguac_la_SOURCES =   \
+    argv.c             \
     audio.c            \
     client.c           \
     encode-jpeg.c      \
@@ -104,7 +110,8 @@ libguac_la_SOURCES =   \
     user.c             \
     user-handlers.c    \
     user-handshake.c   \
-    wait-fd.c
+    wait-fd.c	       \
+    wol.c
 
 # Compile WebP support if available
 if ENABLE_WEBP
@@ -128,7 +135,7 @@ libguac_la_CFLAGS = \
     -Werror -Wall -pedantic
 
 libguac_la_LDFLAGS =     \
-    -version-info 17:0:0 \
+    -version-info 19:0:0 \
     -no-undefined        \
     @CAIRO_LIBS@         \
     @DL_LIBS@            \

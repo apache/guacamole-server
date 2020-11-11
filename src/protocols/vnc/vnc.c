@@ -46,6 +46,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/wol.h>
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>
 
@@ -238,14 +239,25 @@ void* guac_vnc_client_thread(void* data) {
     guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
     guac_vnc_settings* settings = vnc_client->settings;
 
+    /* If Wake-on-LAN is enabled, attempt to wake. */
+    if (settings->wol_send_packet) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
+                "and pausing for %d seconds.", settings->wol_wait_time);
+        
+        /* Send the Wake-on-LAN request. */
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr))
+            return NULL;
+        
+        /* If wait time is specified, sleep for that amount of time. */
+        if (settings->wol_wait_time > 0)
+            guac_timestamp_msleep(settings->wol_wait_time * 1000);
+    }
+    
     /* Configure clipboard encoding */
     if (guac_vnc_set_clipboard_encoding(client, settings->clipboard_encoding)) {
         guac_client_log(client, GUAC_LOG_INFO, "Using non-standard VNC "
                 "clipboard encoding: '%s'.", settings->clipboard_encoding);
     }
-
-    /* Ensure connection is kept alive during lengthy connects */
-    guac_socket_require_keep_alive(client->socket);
 
     /* Set up libvncclient logging */
     rfbClientLog = guac_vnc_client_log_info;
@@ -342,7 +354,9 @@ void* guac_vnc_client_thread(void* data) {
         /* Load filesystem */
         vnc_client->sftp_filesystem =
             guac_common_ssh_create_sftp_filesystem(vnc_client->sftp_session,
-                    settings->sftp_root_directory, NULL);
+                    settings->sftp_root_directory, NULL,
+                    settings->sftp_disable_download,
+                    settings->sftp_disable_upload);
 
         /* Expose filesystem to connection owner */
         guac_client_for_owner(client,

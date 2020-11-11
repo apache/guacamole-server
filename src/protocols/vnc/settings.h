@@ -211,6 +211,20 @@ typedef struct guac_vnc_settings {
      * cases.
      */
     int sftp_server_alive_interval;
+    
+    /**
+     * Whether file downloads over SFTP should be blocked.  If set to "true",
+     * the local client will not be able to download files from the SFTP server.
+     * If set to "false" or not set, file downloads will be allowed.
+     */
+    bool sftp_disable_download;
+    
+    /**
+     * Whether file uploads over SFTP should be blocked.  If set to "true", the
+     * local client will not be able to upload files to the SFTP server.  If set
+     * to "false" or not set, file uploads will be allowed.
+     */
+    bool sftp_disable_upload;
 #endif
 
     /**
@@ -255,6 +269,31 @@ typedef struct guac_vnc_settings {
      * as passwords, credit card numbers, etc.
      */
     bool recording_include_keys;
+    
+    /**
+     * Whether or not to send the magic Wake-on-LAN (WoL) packet prior to
+     * trying to connect to the remote host.  By default this will not be sent.
+     * If this option is enabled but a MAC address is not provided a warning will
+     * be logged and the packet will not be sent.
+     */
+    bool wol_send_packet;
+    
+    /**
+     * The MAC address to place in the magic WoL packet to wake the remote host.
+     */
+    char* wol_mac_addr;
+    
+    /**
+     * The broadcast address to which to send the magic WoL packet to wake
+     * the remote host.
+     */
+    char* wol_broadcast_addr;
+    
+    /**
+     * The number of seconds after sending the magic WoL packet to wait before
+     * attempting to connect to the remote host.
+     */
+    int wol_wait_time;
 
 } guac_vnc_settings;
 

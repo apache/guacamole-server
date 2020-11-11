@@ -87,6 +87,18 @@ int guac_rdp_upload_file_handler(guac_user* user, guac_stream* stream,
         return 0;
     }
 
+    /* Ignore upload if uploads have been disabled */
+    if (fs->disable_upload) {
+        guac_client_log(client, GUAC_LOG_WARNING, "A upload attempt has "
+                "been blocked due to uploads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        guac_protocol_send_ack(user->socket, stream, "FAIL (UPLOAD DISABLED)",
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
+        guac_socket_flush(user->socket);
+        return 0;
+    }
+
     /* Translate name */
     __generate_upload_path(filename, file_path);
 
@@ -201,6 +213,18 @@ int guac_rdp_upload_put_handler(guac_user* user, guac_object* object,
     if (fs == NULL) {
         guac_protocol_send_ack(user->socket, stream, "FAIL (NO FS)",
                 GUAC_PROTOCOL_STATUS_SERVER_ERROR);
+        guac_socket_flush(user->socket);
+        return 0;
+    }
+
+    /* Ignore upload if uploads have been disabled */
+    if (fs->disable_upload) {
+        guac_client_log(client, GUAC_LOG_WARNING, "A upload attempt has "
+                "been blocked due to uploads being disabled, however it "
+                "should have been blocked at a higher level. This is likely "
+                "a bug.");
+        guac_protocol_send_ack(user->socket, stream, "FAIL (UPLOAD DISABLED)",
+                GUAC_PROTOCOL_STATUS_CLIENT_FORBIDDEN);
         guac_socket_flush(user->socket);
         return 0;
     }

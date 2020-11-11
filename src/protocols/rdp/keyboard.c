@@ -46,19 +46,19 @@ static int guac_rdp_keyboard_lock_flag(int keysym) {
     switch (keysym) {
 
         /* Scroll lock */
-        case 0xFF14:
+        case GUAC_RDP_KEYSYM_SCROLL_LOCK:
             return KBD_SYNC_SCROLL_LOCK;
 
         /* Kana lock */
-        case 0xFF2D:
+        case GUAC_RDP_KEYSYM_KANA_LOCK:
             return KBD_SYNC_KANA_LOCK;
 
         /* Num lock */
-        case 0xFF7F:
+        case GUAC_RDP_KEYSYM_NUM_LOCK:
             return KBD_SYNC_NUM_LOCK;
 
         /* Caps lock */
-        case 0xFFE5:
+        case GUAC_RDP_KEYSYM_CAPS_LOCK:
             return KBD_SYNC_CAPS_LOCK;
 
     }
@@ -153,7 +153,7 @@ static void guac_rdp_send_unicode_event(guac_rdp_client* rdp_client,
  *     lock keys will be active.
  */
 static void guac_rdp_send_synchronize_event(guac_rdp_client* rdp_client,
-        int flags) {
+        UINT32 flags) {
 
     /* Skip if not yet connected */
     freerdp* rdp_inst = rdp_client->rdp_inst;
@@ -166,10 +166,10 @@ static void guac_rdp_send_synchronize_event(guac_rdp_client* rdp_client,
 }
 
 /**
- * Given a keyboard instance and X11 keysym, returns a pointer to the key
- * structure that represents or can represent the key having that keysym within
- * the keyboard, regardless of whether the key is currently defined. If no such
- * key can exist (the keysym cannot be mapped or is out of range), NULL is
+ * Given a keyboard instance and X11 keysym, returns a pointer to the
+ * keys_by_keysym entry that represents the key having that keysym within the
+ * keyboard, regardless of whether the key is currently defined. If no such key
+ * can exist (the keysym cannot be mapped or is out of range), NULL is
  * returned.
  *
  * @param keyboard
@@ -179,11 +179,11 @@ static void guac_rdp_send_synchronize_event(guac_rdp_client* rdp_client,
  *     The keysym of the key to lookup within the given keyboard.
  *
  * @return
- *     A pointer to the guac_rdp_key structure which represents or can
- *     represent the key having the given keysym, or NULL if no such keysym can
- *     be defined within a guac_rdp_keyboard structure.
+ *     A pointer to the keys_by_keysym entry which represents or can represent
+ *     the key having the given keysym, or NULL if no such keysym can be
+ *     defined within a guac_rdp_keyboard structure.
  */
-static guac_rdp_key* guac_rdp_keyboard_map_key(guac_rdp_keyboard* keyboard,
+static guac_rdp_key** guac_rdp_keyboard_map_key(guac_rdp_keyboard* keyboard,
         int keysym) {
 
     int index;
@@ -201,14 +201,81 @@ static guac_rdp_key* guac_rdp_keyboard_map_key(guac_rdp_keyboard* keyboard,
         return NULL;
 
     /* Corresponding key mapping (defined or not) has been located */
-    return &(keyboard->keys[index]);
+    return &(keyboard->keys_by_keysym[index]);
 
 }
 
 /**
- * Returns a pointer to the guac_rdp_key structure representing the definition
- * and state of the key having the given keysym. If no such key is defined
- * within the keyboard layout of the RDP server, NULL is returned.
+ * Returns the number of bits that are set within the given integer (the number
+ * of 1s in the binary expansion of the given integer).
+ *
+ * @param value
+ *     The integer to read.
+ *
+ * @return
+ *     The number of bits that are set within the given integer.
+ */
+static int guac_rdp_count_bits(unsigned int value) {
+
+    int bits = 0;
+
+    while (value) {
+        bits += value & 1;
+        value >>= 1;
+    }
+
+    return bits;
+
+}
+
+/**
+ * Returns an estimated cost for sending the necessary RDP events to type the
+ * key described by the given guac_rdp_keysym_desc, given the current lock and
+ * modifier state of the keyboard. A higher cost value indicates that a greater
+ * number of events are expected to be required.
+ *
+ * Lower-cost approaches should be preferred when multiple alternatives exist
+ * for typing a particular key, as the lower cost implies fewer additional key
+ * events required to produce the expected behavior. For example, if Caps Lock
+ * is enabled, typing an uppercase "A" by pressing the "A" key has a lower cost
+ * than disabling Caps Lock and pressing Shift+A.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param def
+ *     The guac_rdp_keysym_desc that describes the key being pressed, as well
+ *     as any requirements that must be satisfied for the key to be interpreted
+ *     as expected.
+ *
+ * @return
+ *     An arbitrary integer value which indicates the overall estimated
+ *     complexity of typing the given key.
+ */
+static int guac_rdp_keyboard_get_cost(guac_rdp_keyboard* keyboard,
+        const guac_rdp_keysym_desc* def) {
+
+    unsigned int modifier_flags = guac_rdp_keyboard_get_modifier_flags(keyboard);
+
+    /* Each change to any key requires one event, by definition */
+    int cost = 1;
+
+    /* Each change to a lock requires roughly two key events */
+    unsigned int update_locks = (def->set_locks & ~keyboard->lock_flags) | (def->clear_locks & keyboard->lock_flags);
+    cost += guac_rdp_count_bits(update_locks) * 2;
+
+    /* Each change to a modifier requires one key event */
+    unsigned int update_modifiers = (def->clear_modifiers & modifier_flags) | (def->set_modifiers & ~modifier_flags);
+    cost += guac_rdp_count_bits(update_modifiers);
+
+    return cost;
+
+}
+
+/**
+ * Returns a pointer to the guac_rdp_key structure representing the
+ * definition(s) and state of the key having the given keysym. If no such key
+ * is defined within the keyboard layout of the RDP server, NULL is returned.
  *
  * @param keyboard
  *     The guac_rdp_keyboard associated with the current RDP session.
@@ -217,20 +284,120 @@ static guac_rdp_key* guac_rdp_keyboard_map_key(guac_rdp_keyboard* keyboard,
  *     The keysym of the key to lookup within the given keyboard.
  *
  * @return
- *     A pointer to the guac_rdp_key structure representing the definition and
- *     state of the key having the given keysym, or NULL if no such key is
+ *     A pointer to the guac_rdp_key structure representing the definition(s)
+ *     and state of the key having the given keysym, or NULL if no such key is
  *     defined within the keyboard layout of the RDP server.
  */
 static guac_rdp_key* guac_rdp_keyboard_get_key(guac_rdp_keyboard* keyboard,
         int keysym) {
 
     /* Verify that the key is actually defined */
-    guac_rdp_key* key = guac_rdp_keyboard_map_key(keyboard, keysym);
-    if (key == NULL || key->definition == NULL)
+    guac_rdp_key** key_by_keysym = guac_rdp_keyboard_map_key(keyboard, keysym);
+    if (key_by_keysym == NULL)
         return NULL;
 
-    /* Key is defined within keyboard */
-    return key;
+    return *key_by_keysym;
+
+}
+
+/**
+ * Given a key which may have multiple possible definitions, returns the
+ * definition that currently has the lowest cost, taking into account the
+ * current keyboard lock and modifier states.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param key
+ *     The key whose lowest-cost possible definition should be retrieved.
+ *
+ * @return
+ *     A pointer to the guac_rdp_keysym_desc which defines the current
+ *     lowest-cost method of typing the given key.
+ */
+static const guac_rdp_keysym_desc* guac_rdp_keyboard_get_definition(guac_rdp_keyboard* keyboard,
+        guac_rdp_key* key) {
+
+    /* Consistently map the same entry so long as the key is held */
+    if (key->pressed != NULL)
+        return key->pressed;
+
+    /* Calculate cost of first definition of key (there must always be at least
+     * one definition) */
+    const guac_rdp_keysym_desc* best_def = key->definitions[0];
+    int best_cost = guac_rdp_keyboard_get_cost(keyboard, best_def);
+
+    /* If further definitions exist, choose the definition with the lowest
+     * overall cost */
+    for (int i = 1; i < key->num_definitions; i++) {
+
+        const guac_rdp_keysym_desc* def = key->definitions[i];
+        int cost = guac_rdp_keyboard_get_cost(keyboard, def);
+
+        if (cost < best_cost) {
+            best_def = def;
+            best_cost = cost;
+        }
+
+    }
+
+    return best_def;
+
+}
+
+/**
+ * Adds the keysym/scancode mapping described by the given guac_rdp_keysym_desc
+ * to the internal mapping of the keyboard. If insufficient space remains for
+ * additional keysyms, or the given keysym has already reached the maximum
+ * number of possible definitions, the mapping is ignored and the failure is
+ * logged.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param mapping
+ *     The keysym/scancode mapping that should be added to the given keyboard.
+ */
+static void guac_rdp_keyboard_add_mapping(guac_rdp_keyboard* keyboard,
+        const guac_rdp_keysym_desc* mapping) {
+
+    /* Locate corresponding keysym-to-key translation entry within keyboard
+     * structure */
+    guac_rdp_key** key_by_keysym = guac_rdp_keyboard_map_key(keyboard, mapping->keysym);
+    if (key_by_keysym == NULL) {
+        guac_client_log(keyboard->client, GUAC_LOG_DEBUG, "Ignoring unmappable keysym 0x%X", mapping->keysym);
+        return;
+    }
+
+    /* If not yet pointing to a key, point keysym-to-key translation entry at
+     * next available storage */
+    if (*key_by_keysym == NULL) {
+
+        if (keyboard->num_keys == GUAC_RDP_KEYBOARD_MAX_KEYSYMS) {
+            guac_client_log(keyboard->client, GUAC_LOG_DEBUG, "Key definition "
+                    "for keysym 0x%X dropped: Keymap exceeds maximum "
+                    "supported number of keysyms",
+                    mapping->keysym);
+            return;
+        }
+
+        *key_by_keysym = &keyboard->keys[keyboard->num_keys++];
+
+    }
+
+    guac_rdp_key* key = *key_by_keysym;
+
+    /* Add new definition only if sufficient space remains */
+    if (key->num_definitions == GUAC_RDP_KEY_MAX_DEFINITIONS) {
+        guac_client_log(keyboard->client, GUAC_LOG_DEBUG, "Key definition "
+                "for keysym 0x%X dropped: Maximum number of possible "
+                "definitions has been reached for this keysym",
+                mapping->keysym);
+        return;
+    }
+
+    /* Store new possible definition of key */
+    key->definitions[key->num_definitions++] = mapping;
 
 }
 
@@ -248,37 +415,21 @@ static guac_rdp_key* guac_rdp_keyboard_get_key(guac_rdp_keyboard* keyboard,
  *     The keymap to use to populate the given client's keysym/scancode
  *     mapping.
  */
-static void __guac_rdp_keyboard_load_keymap(guac_rdp_keyboard* keyboard,
+static void guac_rdp_keyboard_load_keymap(guac_rdp_keyboard* keyboard,
         const guac_rdp_keymap* keymap) {
-
-    /* Get mapping */
-    const guac_rdp_keysym_desc* mapping = keymap->mapping;
 
     /* If parent exists, load parent first */
     if (keymap->parent != NULL)
-        __guac_rdp_keyboard_load_keymap(keyboard, keymap->parent);
+        guac_rdp_keyboard_load_keymap(keyboard, keymap->parent);
 
     /* Log load */
     guac_client_log(keyboard->client, GUAC_LOG_INFO,
             "Loading keymap \"%s\"", keymap->name);
 
-    /* Load mapping into keymap */
+    /* Copy mapping into keymap */
+    const guac_rdp_keysym_desc* mapping = keymap->mapping;
     while (mapping->keysym != 0) {
-
-        /* Locate corresponding key definition within keyboard */
-        guac_rdp_key* key = guac_rdp_keyboard_map_key(keyboard,
-                mapping->keysym);
-
-        /* Copy mapping (if key is mappable) */
-        if (key != NULL)
-            key->definition = mapping;
-        else
-            guac_client_log(keyboard->client, GUAC_LOG_DEBUG,
-                    "Ignoring unmappable keysym 0x%X", mapping->keysym);
-
-        /* Next keysym */
-        mapping++;
-
+        guac_rdp_keyboard_add_mapping(keyboard, mapping++);
     }
 
 }
@@ -290,7 +441,7 @@ guac_rdp_keyboard* guac_rdp_keyboard_alloc(guac_client* client,
     keyboard->client = client;
 
     /* Load keymap into keyboard */
-    __guac_rdp_keyboard_load_keymap(keyboard, keymap);
+    guac_rdp_keyboard_load_keymap(keyboard, keymap);
 
     return keyboard;
 
@@ -307,127 +458,135 @@ int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym) {
 
 }
 
-int guac_rdp_keyboard_send_event(guac_rdp_keyboard* keyboard,
-        int keysym, int pressed) {
+int guac_rdp_keyboard_is_pressed(guac_rdp_keyboard* keyboard, int keysym) {
+
+    guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
+    return key != NULL && key->pressed != NULL;
+
+}
+
+unsigned int guac_rdp_keyboard_get_modifier_flags(guac_rdp_keyboard* keyboard) {
+
+    unsigned int modifier_flags = 0;
+
+    /* Shift */
+    if (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LSHIFT)
+            || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RSHIFT))
+        modifier_flags |= GUAC_RDP_KEYMAP_MODIFIER_SHIFT;
+
+    /* Dedicated AltGr key */
+    if (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RALT)
+            || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_ALTGR))
+        modifier_flags |= GUAC_RDP_KEYMAP_MODIFIER_ALTGR;
+
+    /* AltGr via Ctrl+Alt */
+    if (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LALT)
+            && (guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_RCTRL)
+                || guac_rdp_keyboard_is_pressed(keyboard, GUAC_RDP_KEYSYM_LCTRL)))
+        modifier_flags |= GUAC_RDP_KEYMAP_MODIFIER_ALTGR;
+
+    return modifier_flags;
+
+}
+
+/**
+ * Presses/releases the requested key by sending one or more RDP key events, as
+ * defined within the keymap defining that key.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param key
+ *     The guac_rdp_keysym_desc of the key being pressed or released, as
+ *     retrieved from the relevant keymap.
+ *
+ * @param pressed
+ *     Zero if the key is being released, non-zero otherwise.
+ *
+ * @return
+ *     Zero if the key was successfully pressed/released, non-zero if the key
+ *     cannot be sent using RDP key events.
+ */
+static const guac_rdp_keysym_desc* guac_rdp_keyboard_send_defined_key(guac_rdp_keyboard* keyboard,
+        guac_rdp_key* key, int pressed) {
 
     guac_client* client = keyboard->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    /* If keysym is actually defined within keyboard */
-    guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
-    if (key != NULL) {
+    const guac_rdp_keysym_desc* keysym_desc = guac_rdp_keyboard_get_definition(keyboard, key);
+    if (keysym_desc->scancode == 0)
+        return NULL;
 
-        /* Look up scancode mapping */
-        const guac_rdp_keysym_desc* keysym_desc = key->definition;
-
-        /* If defined, send event */
-        if (keysym_desc->scancode != 0) {
-
-            /* Update remote lock state as necessary */
-            guac_rdp_keyboard_update_locks(keyboard,
-                    keysym_desc->set_locks,
-                    keysym_desc->clear_locks);
-
-            /* If defined, send any prerequesite keys that must be set */
-            if (keysym_desc->set_keysyms != NULL)
-                guac_rdp_keyboard_send_events(keyboard,
-                        keysym_desc->set_keysyms,
-                        GUAC_RDP_KEY_RELEASED,
-                        GUAC_RDP_KEY_PRESSED);
-
-            /* If defined, release any keys that must be cleared */
-            if (keysym_desc->clear_keysyms != NULL)
-                guac_rdp_keyboard_send_events(keyboard,
-                        keysym_desc->clear_keysyms,
-                        GUAC_RDP_KEY_PRESSED,
-                        GUAC_RDP_KEY_RELEASED);
-
-            /* Fire actual key event for target key */
-            guac_rdp_send_key_event(rdp_client, keysym_desc->scancode,
-                    keysym_desc->flags, pressed);
-
-            /* If defined, release any keys that were originally released */
-            if (keysym_desc->set_keysyms != NULL)
-                guac_rdp_keyboard_send_events(keyboard,
-                        keysym_desc->set_keysyms,
-                        GUAC_RDP_KEY_RELEASED,
-                        GUAC_RDP_KEY_RELEASED);
-
-            /* If defined, send any keys that were originally set */
-            if (keysym_desc->clear_keysyms != NULL)
-                guac_rdp_keyboard_send_events(keyboard,
-                        keysym_desc->clear_keysyms,
-                        GUAC_RDP_KEY_PRESSED,
-                        GUAC_RDP_KEY_PRESSED);
-
-            return 0;
-
-        }
-    }
-
-    /* Fall back to dead keys or Unicode events if otherwise undefined inside
-     * current keymap (note that we only handle "pressed" here, as neither
-     * Unicode events nor dead keys can have a pressed/released state) */
+    /* Update state of required locks and modifiers only when key is just
+     * now being pressed */
     if (pressed) {
+        guac_rdp_keyboard_update_locks(keyboard,
+                keysym_desc->set_locks,
+                keysym_desc->clear_locks);
 
-        /* Attempt to type using dead keys */
-        if (!guac_rdp_decompose_keysym(keyboard, keysym))
-            return 0;
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Sending keysym 0x%x as Unicode", keysym);
-
-        /* Translate keysym into codepoint */
-        int codepoint;
-        if (keysym <= 0xFF)
-            codepoint = keysym;
-        else if (keysym >= 0x1000000)
-            codepoint = keysym & 0xFFFFFF;
-        else {
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Unmapped keysym has no equivalent unicode "
-                    "value: 0x%x", keysym);
-            return 0;
-        }
-
-        /* Send as Unicode event */
-        guac_rdp_send_unicode_event(rdp_client, codepoint);
-
+        guac_rdp_keyboard_update_modifiers(keyboard,
+                keysym_desc->set_modifiers,
+                keysym_desc->clear_modifiers);
     }
-    
-    return 0;
+
+    /* Fire actual key event for target key */
+    guac_rdp_send_key_event(rdp_client, keysym_desc->scancode,
+            keysym_desc->flags, pressed);
+
+    return keysym_desc;
+
 }
 
-void guac_rdp_keyboard_send_events(guac_rdp_keyboard* keyboard,
-        const int* keysym_string, guac_rdp_key_state from,
-        guac_rdp_key_state to) {
+/**
+ * Presses and releases the requested key by sending one or more RDP events,
+ * without relying on a keymap for that key. This will typically involve either
+ * sending the key using a Unicode event or decomposing the key into a series
+ * of keypresses involving deadkeys.
+ *
+ * @param keyboard
+ *     The guac_rdp_keyboard associated with the current RDP session.
+ *
+ * @param keysym
+ *     The keysym of the key to press and release.
+ */
+static void guac_rdp_keyboard_send_missing_key(guac_rdp_keyboard* keyboard,
+        int keysym) {
 
-    int keysym;
+    guac_client* client = keyboard->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    /* Send all keysyms in string, NULL terminated */
-    while ((keysym = *keysym_string) != 0) {
+    /* Attempt to type using dead keys */
+    if (!guac_rdp_decompose_keysym(keyboard, keysym))
+        return;
 
-        /* If key is currently in given state, send event for changing it to
-         * specified "to" state */
-        guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
-        if (key != NULL && key->state == from)
-            guac_rdp_keyboard_send_event(keyboard, *keysym_string, to);
+    guac_client_log(client, GUAC_LOG_DEBUG, "Sending keysym 0x%x as "
+            "Unicode", keysym);
 
-        /* Next keysym */
-        keysym_string++;
-
+    /* Translate keysym into codepoint */
+    int codepoint;
+    if (keysym <= 0xFF)
+        codepoint = keysym;
+    else if (keysym >= 0x1000000)
+        codepoint = keysym & 0xFFFFFF;
+    else {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Unmapped keysym has no "
+                "equivalent unicode value: 0x%x", keysym);
+        return;
     }
+
+    /* Send as Unicode event */
+    guac_rdp_send_unicode_event(rdp_client, codepoint);
 
 }
 
 void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
-        int set_flags, int clear_flags) {
+        unsigned int set_flags, unsigned int clear_flags) {
 
     guac_client* client = keyboard->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Calculate updated lock flags */
-    int lock_flags = (keyboard->lock_flags | set_flags) & ~clear_flags;
+    unsigned int lock_flags = (keyboard->lock_flags | set_flags) & ~clear_flags;
 
     /* Synchronize remote side only if lock flags have changed */
     if (lock_flags != keyboard->lock_flags) {
@@ -437,8 +596,42 @@ void guac_rdp_keyboard_update_locks(guac_rdp_keyboard* keyboard,
 
 }
 
+void guac_rdp_keyboard_update_modifiers(guac_rdp_keyboard* keyboard,
+        unsigned int set_flags, unsigned int clear_flags) {
+
+    unsigned int modifier_flags = guac_rdp_keyboard_get_modifier_flags(keyboard);
+
+    /* Only clear modifiers that are set */
+    clear_flags &= modifier_flags;
+
+    /* Only set modifiers that are currently cleared */
+    set_flags &= ~modifier_flags;
+
+    /* Press/release Shift as needed */
+    if (set_flags & GUAC_RDP_KEYMAP_MODIFIER_SHIFT) {
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LSHIFT, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+    }
+    else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_SHIFT) {
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LSHIFT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_RSHIFT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+    }
+
+    /* Press/release AltGr as needed */
+    if (set_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_ALTGR, 1, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+    }
+    else if (clear_flags & GUAC_RDP_KEYMAP_MODIFIER_ALTGR) {
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_ALTGR, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LALT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_RALT, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_LCTRL, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+        guac_rdp_keyboard_update_keysym(keyboard, GUAC_RDP_KEYSYM_RCTRL, 0, GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+    }
+
+}
+
 int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
-        int keysym, int pressed) {
+        int keysym, int pressed, guac_rdp_key_source source) {
 
     /* Synchronize lock keys states, if this has not yet been done */
     if (!keyboard->synchronized) {
@@ -452,16 +645,88 @@ int guac_rdp_keyboard_update_keysym(guac_rdp_keyboard* keyboard,
 
     }
 
-    /* Toggle lock flag, if any */
-    if (pressed)
-        keyboard->lock_flags ^= guac_rdp_keyboard_lock_flag(keysym);
-
-    /* Update keysym state */
     guac_rdp_key* key = guac_rdp_keyboard_get_key(keyboard, keysym);
-    if (key != NULL)
-        key->state = pressed ? GUAC_RDP_KEY_PRESSED : GUAC_RDP_KEY_RELEASED;
 
-    return guac_rdp_keyboard_send_event(keyboard, keysym, pressed);
+    /* Update tracking of client-side keyboard state but only for keys which
+     * are tracked server-side, as well (to ensure that the key count remains
+     * correct, even if a user sends extra unbalanced or excessive press and
+     * release events) */
+    if (source == GUAC_RDP_KEY_SOURCE_CLIENT && key != NULL) {
+        if (pressed && !key->user_pressed) {
+            keyboard->user_pressed_keys++;
+            key->user_pressed = 1;
+        }
+        else if (!pressed && key->user_pressed) {
+            keyboard->user_pressed_keys--;
+            key->user_pressed = 0;
+        }
+    }
+
+    /* Send events and update server-side lock state only if server-side key
+     * state is changing (or if server-side state of this key is untracked) */
+    if (key == NULL || (pressed && key->pressed == NULL) || (!pressed && key->pressed != NULL)) {
+
+        /* Toggle locks on keydown */
+        if (pressed)
+            keyboard->lock_flags ^= guac_rdp_keyboard_lock_flag(keysym);
+
+        /* If key is known, update state and attempt to send using normal RDP key
+         * events */
+        const guac_rdp_keysym_desc* definition = NULL;
+        if (key != NULL) {
+            definition = guac_rdp_keyboard_send_defined_key(keyboard, key, pressed);
+            key->pressed = pressed ? definition : NULL;
+        }
+
+        /* Fall back to dead keys or Unicode events if otherwise undefined inside
+         * current keymap (note that we only handle "pressed" here, as neither
+         * Unicode events nor dead keys can have a pressed/released state) */
+        if (definition == NULL && pressed) {
+            guac_rdp_keyboard_send_missing_key(keyboard, keysym);
+        }
+
+    }
+
+    /* Reset RDP server keyboard state (releasing any automatically
+     * pressed keys) once all keys have been released on the client
+     * side */
+    if (source == GUAC_RDP_KEY_SOURCE_CLIENT && keyboard->user_pressed_keys == 0)
+        guac_rdp_keyboard_reset(keyboard);
+
+    return 0;
 
 }
 
+void guac_rdp_keyboard_reset(guac_rdp_keyboard* keyboard) {
+
+    /* Release all pressed keys */
+    for (int i = 0; i < keyboard->num_keys; i++) {
+        guac_rdp_key* key = &keyboard->keys[i];
+        if (key->pressed != NULL)
+            guac_rdp_keyboard_update_keysym(keyboard, key->pressed->keysym, 0,
+                    GUAC_RDP_KEY_SOURCE_SYNTHETIC);
+    }
+
+}
+
+BOOL guac_rdp_keyboard_set_indicators(rdpContext* context, UINT16 flags) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    pthread_rwlock_rdlock(&(rdp_client->lock));
+
+    /* Skip if keyboard not yet ready */
+    guac_rdp_keyboard* keyboard = rdp_client->keyboard;
+    if (keyboard == NULL)
+        goto complete;
+
+    /* Update with received locks */
+    guac_client_log(client, GUAC_LOG_DEBUG, "Received updated keyboard lock flags from RDP server: 0x%X", flags);
+    keyboard->lock_flags = flags;
+
+complete:
+    pthread_rwlock_unlock(&(rdp_client->lock));
+    return TRUE;
+
+}

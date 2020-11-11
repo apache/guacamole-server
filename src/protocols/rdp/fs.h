@@ -109,14 +109,6 @@
 #define GUAC_RDP_FS_ENOTSUP -10
 
 /**
- * Converts a Windows timestamp (100 nanosecond intervals since Jan 1, 1601
- * UTC) to UNIX timestamp (seconds since Jan 1, 1970 UTC).
- *
- * This conversion is lossy.
- */
-#define UNIX_TIME(t)    ((time_t) ((t / 10000000 + ((uint64_t) 11644473600))))
-
-/**
  * Converts a UNIX timestamp (seconds since Jan 1, 1970 UTC) to Windows
  * timestamp (100 nanosecond intervals since Jan 1, 1601 UTC).
  */
@@ -219,6 +211,16 @@ typedef struct guac_rdp_fs {
      * All available file structures.
      */
     guac_rdp_fs_file files[GUAC_RDP_FS_MAX_FILES];
+    
+    /**
+     * If downloads from the remote server to the browser should be disabled.
+     */
+    int disable_download;
+    
+    /**
+     * If uploads from the browser to the remote server should be disabled.
+     */
+    int disable_upload;
 
 } guac_rdp_fs;
 
@@ -258,12 +260,20 @@ typedef struct guac_rdp_fs_info {
  * @param create_drive_path
  *     Non-zero if the drive path specified should be automatically created if
  *     it does not yet exist, zero otherwise.
+ * 
+ * @param disable_download
+ *     Non-zero if downloads from the remote server to the local browser should
+ *     be disabled.
+ * 
+ * @param disable_upload
+ *     Non-zero if uploads from the browser to the remote server should be
+ *     disabled.
  *
  * @return
  *     The newly-allocated filesystem.
  */
 guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
-        int create_drive_path);
+        int create_drive_path, int disable_download, int disable_upload);
 
 /**
  * Frees the given filesystem.

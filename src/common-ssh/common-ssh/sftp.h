@@ -69,6 +69,16 @@ typedef struct guac_common_ssh_sftp_filesystem {
      * instruction.
      */
     char upload_path[GUAC_COMMON_SSH_SFTP_MAX_PATH];
+    
+    /**
+     * If downloads from SFTP to the local browser should be disabled.
+     */
+    int disable_download;
+    
+    /**
+     * If uploads from the local browser to SFTP should be disabled.
+     */
+    int disable_upload;
 
 } guac_common_ssh_sftp_filesystem;
 
@@ -122,13 +132,20 @@ typedef struct guac_common_ssh_sftp_ls_state {
  *     The name to send as the name of the filesystem whenever it is exposed
  *     to a user, or NULL to automatically generate a name from the provided
  *     root_path.
+ * 
+ * @param disable_download
+ *     Whether downloads from the SFTP share to the local browser should be
+ *     disabled.
+ * 
+ * @param disable_upload
+ *     Whether uploads from the local browser to SFTP should be disabled.
  *
  * @return
  *     A new SFTP filesystem object, not yet exposed to users.
  */
 guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
         guac_common_ssh_session* session, const char* root_path,
-        const char* name);
+        const char* name, int disable_download, int disable_upload);
 
 /**
  * Destroys the given filesystem object, disconnecting from SFTP and freeing

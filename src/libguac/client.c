@@ -479,6 +479,44 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
 }
 
 /**
+ * A callback function which is invoked by guac_client_owner_send_required() to
+ * send the required parameters to the specified user, who is the owner of the
+ * client session.
+ * 
+ * @param user
+ *     The guac_user that will receive the required parameters, who is the owner
+ *     of the client.
+ * 
+ * @param data
+ *     A pointer to a NULL-terminated array of required parameters that will be
+ *     passed on to the owner to continue the connection.
+ * 
+ * @return
+ *     Zero if the operation succeeds or non-zero on failure, cast as a void*.
+ */
+static void* guac_client_owner_send_required_callback(guac_user* user, void* data) {
+    
+    const char** required = (const char **) data;
+    
+    /* Send required parameters to owner. */
+    if (user != NULL)
+        return (void*) ((intptr_t) guac_protocol_send_required(user->socket, required));
+    
+    return (void*) ((intptr_t) -1);
+    
+}
+
+int guac_client_owner_send_required(guac_client* client, const char** required) {
+
+    /* Don't send required instruction if client does not support it. */
+    if (!guac_client_owner_supports_required(client))
+        return -1;
+    
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_send_required_callback, required));
+
+}
+
+/**
  * Updates the provided approximate processing lag, taking into account the
  * processing lag of the given user.
  *
@@ -632,6 +670,36 @@ static void* __webp_support_callback(guac_user* user, void* data) {
 
 }
 #endif
+
+/**
+ * A callback function which is invoked by guac_client_owner_supports_required()
+ * to determine if the owner of a client supports the "required" instruction,
+ * returning zero if the user does not support the instruction or non-zero if
+ * the user supports it.
+ * 
+ * @param user
+ *     The guac_user that will be checked for "required" instruction support.
+ * 
+ * @param data
+ *     Data provided to the callback. This value is never used within this
+ *     callback.
+ * 
+ * @return
+ *     A non-zero integer if the provided user who owns the connection supports
+ *     the "required" instruction, or zero if the user does not. The integer
+ *     is cast as a void*.
+ */
+static void* guac_owner_supports_required_callback(guac_user* user, void* data) {
+    
+    return (void*) ((intptr_t) guac_user_supports_required(user));
+    
+}
+
+int guac_client_owner_supports_required(guac_client* client) {
+    
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_owner_supports_required_callback, NULL));
+    
+}
 
 int guac_client_supports_webp(guac_client* client) {
 

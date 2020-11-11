@@ -67,12 +67,28 @@ void guac_rdpdr_process_print_job_write(guac_rdp_common_svc* svc,
     int length;
     int status;
 
+    /* Verify that Stream contains at least 32 bytes (UINT32 + 8 + 20) */
+    if (Stream_GetRemainingLength(input_stream) < 32) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Print job write stream does "
+                "not contain the expected number of bytes. Printer redirection "
+                "may not work as expected.");
+        return;
+    }
+    
     /* Read buffer of print data */
     Stream_Read_UINT32(input_stream, length);
     Stream_Seek(input_stream, 8);  /* Offset */
     Stream_Seek(input_stream, 20); /* Padding */
     buffer = Stream_Pointer(input_stream);
 
+    /* Verify the stream has at least length number of bytes remaining. */
+    if (Stream_GetRemainingLength(input_stream) < length) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Print job write stream does "
+                "not contain the expected number of bytes. Printer redirection "
+                "may not work as expected.");
+        return;
+    }
+    
     /* Write data only if job exists, translating status for RDP */
     if (job != NULL && (length = guac_rdp_print_job_write(job,
                     buffer, length)) >= 0) {

@@ -89,10 +89,9 @@ void guac_rdp_common_svc_write(guac_rdp_common_svc* svc,
         return;
     }
 
-    /* NOTE: Data sent via pVirtualChannelWriteEx MUST always be dynamically
-     * allocated, as it will be automatically freed using free(). If provided,
-     * the last parameter (user data) MUST be a pointer to a wStream, as it
-     * will automatically be freed by FreeRDP using Stream_Free() */
+    /* NOTE: The wStream sent via pVirtualChannelWriteEx will automatically be
+     * freed later with a call to Stream_Free() when handling the
+     * corresponding write cancel/completion event. */
     svc->_entry_points.pVirtualChannelWriteEx(svc->_init_handle,
             svc->_open_handle, Stream_Buffer(output_stream),
             Stream_GetPosition(output_stream), output_stream);

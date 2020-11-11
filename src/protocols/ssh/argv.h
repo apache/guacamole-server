@@ -23,19 +23,32 @@
 
 #include "config.h"
 
+#include <guacamole/argv.h>
 #include <guacamole/user.h>
 
 /**
- * The maximum number of bytes to allow for any argument value received via an
- * argv stream, including null terminator.
+ * The name of the parameter that specifies/updates the color scheme used by
+ * the terminal emulator.
  */
-#define GUAC_SSH_ARGV_MAX_LENGTH 16384
+#define GUAC_SSH_ARGV_COLOR_SCHEME "color-scheme"
 
 /**
- * Handles an incoming stream from a Guacamole "argv" instruction, updating the
- * given connection parameter if that parameter is allowed to be updated.
+ * The name of the parameter that specifies/updates the name of the font used
+ * by the terminal emulator.
  */
-guac_user_argv_handler guac_ssh_argv_handler;
+#define GUAC_SSH_ARGV_FONT_NAME "font-name"
+
+/**
+ * The name of the parameter that specifies/updates the font size used by the
+ * terminal emulator.
+ */
+#define GUAC_SSH_ARGV_FONT_SIZE "font-size"
+
+/**
+ * Handles a received argument value from a Guacamole "argv" instruction,
+ * updating the given connection parameter.
+ */
+guac_argv_callback guac_ssh_argv_callback;
 
 /**
  * Sends the current values of all non-sensitive parameters which may be set

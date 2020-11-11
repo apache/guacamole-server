@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "argv.h"
 #include "client.h"
 #include "common/recording.h"
 #include "settings.h"
@@ -31,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <guacamole/argv.h>
 #include <guacamole/client.h>
 
 int guac_client_init(guac_client* client) {
@@ -53,6 +55,11 @@ int guac_client_init(guac_client* client) {
     /* Set handlers */
     client->join_handler = guac_telnet_user_join_handler;
     client->free_handler = guac_telnet_client_free_handler;
+
+    /* Register handlers for argument values that may be sent after the handshake */
+    guac_argv_register(GUAC_TELNET_ARGV_COLOR_SCHEME, guac_telnet_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
+    guac_argv_register(GUAC_TELNET_ARGV_FONT_NAME, guac_telnet_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
+    guac_argv_register(GUAC_TELNET_ARGV_FONT_SIZE, guac_telnet_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
 
     /* Set locale and warn if not UTF-8 */
     setlocale(LC_CTYPE, "");

@@ -29,6 +29,7 @@
 #include "ssh.h"
 #include "settings.h"
 
+#include <guacamole/argv.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
@@ -93,13 +94,13 @@ int guac_ssh_user_join_handler(guac_user* user, int argc, char** argv) {
         user->pipe_handler = guac_ssh_pipe_handler;
 
         /* Updates to connection parameters */
-        user->argv_handler = guac_ssh_argv_handler;
+        user->argv_handler = guac_argv_handler;
 
         /* Display size change events */
         user->size_handler = guac_ssh_user_size_handler;
 
         /* Set generic (non-filesystem) file upload handler */
-        if (settings->enable_sftp)
+        if (settings->enable_sftp && !settings->sftp_disable_upload)
             user->file_handler = guac_sftp_file_handler;
 
     }

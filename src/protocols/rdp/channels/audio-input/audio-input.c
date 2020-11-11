@@ -40,7 +40,7 @@
  * number of channels, and bytes per sample.
  *
  * @param mimetype
- *     The raw auduio mimetype to parse.
+ *     The raw audio mimetype to parse.
  *
  * @param rate
  *     A pointer to an int where the sample rate for the PCM format described

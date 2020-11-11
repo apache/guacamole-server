@@ -795,6 +795,22 @@ int guac_protocol_send_rect(guac_socket* socket, const guac_layer* layer,
         int x, int y, int width, int height);
 
 /**
+ * Sends a "required" instruction over the given guac_socket connection.  This
+ * instruction indicates to the client that one or more additional parameters
+ * are needed to continue the connection.
+ * 
+ * @param socket
+ *     The guac_socket connection to which to send the instruction.
+ * 
+ * @param required
+ *     A NULL-terminated array of required parameters.
+ * 
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_required(guac_socket* socket, const char** required);
+
+/**
  * Sends a reset instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -1006,6 +1022,33 @@ int guac_protocol_send_name(guac_socket* socket, const char* name);
  * @return The number of bytes resulting from the decode operation.
  */
 int guac_protocol_decode_base64(char* base64);
+
+/**
+ * Given a string representation of a protocol version, return the enum value of
+ * that protocol version, or GUAC_PROTOCOL_VERSION_UNKNOWN if the value is not a
+ * known version.
+ * 
+ * @param version_string
+ *     The string representation of the protocol version.
+ * 
+ * @return 
+ *     The enum value of the protocol version, or GUAC_PROTOCOL_VERSION_UNKNOWN
+ *     if the provided version is not known.
+ */
+guac_protocol_version guac_protocol_string_to_version(const char* version_string);
+
+/**
+ * Given the enum value of the protocol version, return a pointer to the string
+ * representation of the version, or NULL if the version is unknown.
+ * 
+ * @param version
+ *     The enum value of the protocol version.
+ * 
+ * @return 
+ *     A pointer to the string representation of the protocol version, or NULL
+ *     if the version is unknown.
+ */
+const char* guac_protocol_version_to_string(guac_protocol_version version);
 
 #endif
 

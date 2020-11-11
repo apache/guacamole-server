@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "argv.h"
 #include "beep.h"
 #include "bitmap.h"
 #include "channels/audio-input/audio-buffer.h"
@@ -42,6 +43,7 @@
 #include "pointer.h"
 #include "print-job.h"
 #include "rdp.h"
+#include "settings.h"
 
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
@@ -64,11 +66,14 @@
 #include <freerdp/primary.h>
 #include <freerdp/settings.h>
 #include <freerdp/update.h>
+#include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/wol.h>
 #include <winpr/error.h>
 #include <winpr/synch.h>
 #include <winpr/wtypes.h>
@@ -172,6 +177,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Beep on receipt of Play Sound PDU */
     instance->update->PlaySound = guac_rdp_beep_play_sound;
 
+    /* Automatically synchronize keyboard locks when changed server-side */
+    instance->update->SetKeyboardIndicators = guac_rdp_keyboard_set_indicators;
+
     /* Set up GDI */
     instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
@@ -179,8 +187,10 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     rdpPrimaryUpdate* primary = instance->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;
+    primary->PatBlt = guac_rdp_gdi_patblt;
     primary->ScrBlt = guac_rdp_gdi_scrblt;
     primary->MemBlt = guac_rdp_gdi_memblt;
+    primary->OpaqueRect = guac_rdp_gdi_opaquerect;
 
     pointer_cache_register_callbacks(instance->update);
     glyph_cache_register_callbacks(instance->update);
@@ -194,10 +204,15 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 }
 
 /**
- * Callback invoked by FreeRDP when authentication is required but a username
- * and password has not already been given. In the case of Guacamole, this
- * function always succeeds but does not populate the usename or password. The
- * username/password must be given within the connection parameters.
+ * Callback invoked by FreeRDP when authentication is required but the required
+ * parameters have not been provided. In the case of Guacamole clients that
+ * support the "required" instruction, this function will send any of the three
+ * unpopulated RDP authentication parameters back to the client so that the
+ * connection owner can provide the required information.  If the values have
+ * been provided in the original connection parameters the user will not be
+ * prompted for updated parameters. If the version of Guacamole Client in use
+ * by the connection owner does not support the "required" instruction then the
+ * connection will fail. This function always returns true.
  *
  * @param instance
  *     The FreeRDP instance associated with the RDP session requesting
@@ -221,10 +236,63 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
+    char* params[4] = {NULL};
+    int i = 0;
+    
+    /* If the client does not support the "required" instruction, warn and
+     * quit.
+     */
+    if (!guac_client_owner_supports_required(client)) {
+        guac_client_log(client, GUAC_LOG_WARNING, "Client does not support the "
+                "\"required\" instruction. No authentication parameters will "
+                "be requested.");
+        return TRUE;
+    }
 
-    /* Warn if connection is likely to fail due to lack of credentials */
-    guac_client_log(client, GUAC_LOG_INFO,
-            "Authentication requested but username or password not given");
+    /* If the username is undefined, add it to the requested parameters. */
+    if (settings->username == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_USERNAME, guac_rdp_argv_callback, NULL, 0);
+        params[i] = GUAC_RDP_ARGV_USERNAME;
+        i++;
+        
+        /* If username is undefined and domain is also undefined, request domain. */
+        if (settings->domain == NULL) {
+            guac_argv_register(GUAC_RDP_ARGV_DOMAIN, guac_rdp_argv_callback, NULL, 0);
+            params[i] = GUAC_RDP_ARGV_DOMAIN;
+            i++;
+        }
+        
+    }
+    
+    /* If the password is undefined, add it to the requested parameters. */
+    if (settings->password == NULL) {
+        guac_argv_register(GUAC_RDP_ARGV_PASSWORD, guac_rdp_argv_callback, NULL, 0);
+        params[i] = GUAC_RDP_ARGV_PASSWORD;
+        i++;
+    }
+    
+    /* NULL-terminate the array. */
+    params[i] = NULL;
+    
+    if (i > 0) {
+        
+        /* Send required parameters to the owner and wait for the response. */
+        guac_client_owner_send_required(client, (const char**) params);
+        guac_argv_await((const char**) params);
+        
+        /* Free old values and get new values from settings. */
+        free(*username);
+        free(*password);
+        free(*domain);
+        *username = guac_strdup(settings->username);
+        *password = guac_strdup(settings->password);
+        *domain = guac_strdup(settings->domain);
+        
+    }
+    
+    /* Always return TRUE allowing connection to retry. */
     return TRUE;
 
 }
@@ -343,6 +411,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Init random number generator */
     srandom(time(NULL));
 
+    pthread_rwlock_wrlock(&(rdp_client->lock));
+
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
         rdp_client->recording = guac_common_recording_create(client,
@@ -377,7 +447,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 "FreeRDP initialization failed before connecting. Please "
                 "check for errors earlier in the logs and/or enable "
                 "debug-level logging for guacd.");
-        return 1;
+        goto fail;
     }
 
     ((rdp_freerdp_context*) rdp_inst->context)->client = client;
@@ -391,9 +461,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Error connecting to RDP server");
-        return 1;
+        guac_rdp_client_abort(client, rdp_inst);
+        goto fail;
     }
 
     /* Connection complete */
@@ -403,6 +472,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Signal that reconnect has been completed */
     guac_rdp_disp_reconnect_complete(rdp_client->disp);
+
+    pthread_rwlock_unlock(&(rdp_client->lock));
 
     /* Handle messages from RDP server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING
@@ -470,7 +541,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
         /* Close connection cleanly if server is disconnecting */
         if (connection_closing)
-            guac_rdp_client_abort(client);
+            guac_rdp_client_abort(client, rdp_inst);
 
         /* If a low-level connection error occurred, fail */
         else if (wait_result < 0)
@@ -485,6 +556,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
         }
 
     }
+
+    pthread_rwlock_wrlock(&(rdp_client->lock));
 
     /* Clean up print job, if active */
     if (rdp_client->active_job != NULL) {
@@ -507,17 +580,26 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     /* Free SVC list */
     guac_common_list_free(rdp_client->available_svc);
+    rdp_client->available_svc = NULL;
 
     /* Free RDP keyboard state */
     guac_rdp_keyboard_free(rdp_client->keyboard);
+    rdp_client->keyboard = NULL;
 
     /* Free display */
     guac_common_display_free(rdp_client->display);
+    rdp_client->display = NULL;
+
+    pthread_rwlock_unlock(&(rdp_client->lock));
 
     /* Client is now disconnected */
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
 
     return 0;
+
+fail:
+    pthread_rwlock_unlock(&(rdp_client->lock));
+    return 1;
 
 }
 
@@ -527,6 +609,20 @@ void* guac_rdp_client_thread(void* data) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
 
+    /* If Wake-on-LAN is enabled, try to wake. */
+    if (settings->wol_send_packet) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
+                "and pausing for %d seconds.", settings->wol_wait_time);
+        
+        /* Send the Wake-on-LAN request. */
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr))
+            return NULL;
+        
+        /* If wait time is specified, sleep for that amount of time. */
+        if (settings->wol_wait_time > 0)
+            guac_timestamp_msleep(settings->wol_wait_time * 1000);
+    }
+    
     /* If audio enabled, choose an encoder */
     if (settings->audio_enabled) {
 
@@ -548,7 +644,8 @@ void* guac_rdp_client_thread(void* data) {
         /* Allocate actual emulated filesystem */
         rdp_client->filesystem =
             guac_rdp_fs_alloc(client, settings->drive_path,
-                    settings->create_drive_path);
+                    settings->create_drive_path, settings->disable_download,
+                    settings->disable_upload);
 
         /* Expose filesystem to owner */
         guac_client_for_owner(client, guac_rdp_fs_expose,
@@ -617,7 +714,9 @@ void* guac_rdp_client_thread(void* data) {
         /* Load and expose filesystem */
         rdp_client->sftp_filesystem =
             guac_common_ssh_create_sftp_filesystem(rdp_client->sftp_session,
-                    settings->sftp_root_directory, NULL);
+                    settings->sftp_root_directory, NULL,
+                    settings->sftp_disable_download,
+                    settings->sftp_disable_upload);
 
         /* Expose filesystem to connection owner */
         guac_client_for_owner(client,
@@ -630,6 +729,12 @@ void* guac_rdp_client_thread(void* data) {
                     "SFTP connection failed.");
             return NULL;
         }
+
+        /* Configure destination for basic uploads, if specified */
+        if (settings->sftp_directory != NULL)
+            guac_common_ssh_sftp_set_upload_path(
+                    rdp_client->sftp_filesystem,
+                    settings->sftp_directory);
 
         guac_client_log(client, GUAC_LOG_DEBUG,
                 "SFTP connection succeeded.");

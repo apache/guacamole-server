@@ -32,6 +32,7 @@
 #include "pulse/pulse.h"
 #endif
 
+#include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/socket.h>
@@ -98,10 +99,14 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
         /* Inbound (client to server) clipboard transfer */
         if (!settings->disable_paste)
             user->clipboard_handler = guac_vnc_clipboard_handler;
+        
+        /* Updates to connection parameters if we own the connection */
+        if (user->owner)
+            user->argv_handler = guac_argv_handler;
 
 #ifdef ENABLE_COMMON_SSH
         /* Set generic (non-filesystem) file upload handler */
-        if (settings->enable_sftp)
+        if (settings->enable_sftp && !settings->sftp_disable_upload)
             user->file_handler = guac_vnc_sftp_file_handler;
 #endif
 
