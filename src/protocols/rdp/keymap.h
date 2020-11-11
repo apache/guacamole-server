@@ -97,29 +97,29 @@ struct guac_rdp_keymap {
     const guac_rdp_keysym_desc* mapping;
 
     /**
-     * FreeRDP keyboard layout associated with this
+     * Keyboard layout associated with this
      * keymap. If this keymap is selected, this layout
      * will be requested from the server.
      */
-    const UINT32 freerdp_keyboard_layout;
+    const UINT32 keyboard_layout;
 
     /**
-     * FreeRDP keyboard type definition.
+     * Keyboard type definition.
      * See https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeyboardtype
      */
-    const UINT32 freerdp_keyboard_type;
+    const UINT32 keyboard_type;
 
     /**
-     * FreeRDP keyboard subtype definition.
+     * Keyboard subtype definition.
      * See https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeyboardtype
      */
-    const UINT32 freerdp_keyboard_subtype;
+    const UINT32 keyboard_subtype;
 
     /**
-     * FreeRDP keyboard number of function keys.
+     * Keyboard number of function keys.
      * See https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeyboardtype
      */
-    const UINT32 freerdp_keyboard_function_key;
+    const UINT32 keyboard_function_key;
 
 };
 

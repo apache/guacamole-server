@@ -1188,15 +1188,15 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->DesktopWidth = guac_settings->width;
     rdp_settings->DesktopHeight = guac_settings->height;
     rdp_settings->AlternateShell = guac_rdp_strdup(guac_settings->initial_program);
-    rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
-    if (guac_settings->server_layout->freerdp_keyboard_type != 0) {
-        rdp_settings->KeyboardType = guac_settings->server_layout->freerdp_keyboard_type;
+    rdp_settings->KeyboardLayout = guac_settings->server_layout->keyboard_layout;
+    if (guac_settings->server_layout->keyboard_type != 0) {
+        rdp_settings->KeyboardType = guac_settings->server_layout->keyboard_type;
     }
-    if (guac_settings->server_layout->freerdp_keyboard_subtype != 0) {
-        rdp_settings->KeyboardSubType = guac_settings->server_layout->freerdp_keyboard_subtype;
+    if (guac_settings->server_layout->keyboard_subtype != 0) {
+        rdp_settings->KeyboardSubType = guac_settings->server_layout->keyboard_subtype;
     }
-    if (guac_settings->server_layout->freerdp_keyboard_function_key != 0) {
-        rdp_settings->KeyboardFunctionKey = guac_settings->server_layout->freerdp_keyboard_function_key;
+    if (guac_settings->server_layout->keyboard_function_key != 0) {
+        rdp_settings->KeyboardFunctionKey = guac_settings->server_layout->keyboard_function_key;
     }
 
     /* Performance flags */
