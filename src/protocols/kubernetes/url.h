@@ -50,6 +50,31 @@ int guac_kubernetes_escape_url_component(char* output, int length,
         const char* str);
 
 /**
+ * Append the parameter to the endpoint path.
+ * Value within the path will be URL-escaped as necessary.
+ *
+ * @param buffer
+ *     The buffer which should receive the parameter. It could contain the endpoint path.
+ *     The parameter will be written to the end of the buffer.
+ *
+ * @param length
+ *     The number of bytes available in the given buffer.
+ *
+ * @param param_name
+ *     The name of the parameter.
+ *
+ * @param param_value
+ *     The value of the parameter.
+ *
+ * @return
+ *     Zero if the parameter was successfully attached to the buffer,
+ *     non-zero if insufficient space exists within the buffer or
+ *     buffer not null terminated.
+ */
+int guac_kubernetes_append_endpoint_param(char* buffer, int length,
+        const char* param_name, const char* param_value);
+
+/**
  * Generates the full path to the Kubernetes API endpoint which handles
  * attaching to running containers within specific pods. Values within the path
  * will be URL-escaped as necessary.
