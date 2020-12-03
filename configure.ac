@@ -573,6 +573,34 @@ then
 fi
 
 #
+# Generic credential support within libVNCServer (authentication beyond
+# basic, standard VNC passwords)
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_creds=yes
+    AC_CHECK_MEMBERS([rfbClient.GetCredential],
+                     [], [have_vnc_creds=no],
+                     [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_creds}" = "xno"
+    then
+        AC_MSG_WARN([
+      --------------------------------------------
+       No generic credential support found in libvncclient.
+       VNC authentication support will be limited to passwords.
+      --------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_VNC_GENERIC_CREDENTIALS],,
+                  [Whether support for generic VNC credentials is available.])
+    fi
+
+fi
+
+
+#
 # FreeRDP 2 (libfreerdp2, libfreerdp-client2, and libwinpr2)
 #
 
