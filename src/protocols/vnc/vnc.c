@@ -154,8 +154,10 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
 
     }
 
+#ifdef ENABLE_VNC_GENERIC_CREDENTIALS
     /* Authentication */
     rfb_client->GetCredential = guac_vnc_get_credentials;
+#endif
     
     /* Password */
     rfb_client->GetPassword = guac_vnc_get_password;

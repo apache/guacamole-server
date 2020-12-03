@@ -38,6 +38,7 @@
  */
 char* guac_vnc_get_password(rfbClient* client);
 
+#ifdef ENABLE_VNC_GENERIC_CREDENTIALS
 /**
  * Callback which is invoked by libVNCServer when it needs to read the user's
  * VNC credentials.  The credentials are stored in the connection settings,
@@ -55,6 +56,7 @@ char* guac_vnc_get_password(rfbClient* client);
  *     The rfbCredential object that contains the required credentials.
  */
 rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType);
+#endif
 
 #endif
 
