@@ -115,7 +115,9 @@ HEALTHCHECK --interval=5m --timeout=5s CMD nc -z 127.0.0.1 4822 || exit 1
 
 # Create a new user guacd
 ARG UID=1000
-RUN useradd --system --create-home --shell /usr/sbin/nologin --uid $UID --no-user-group guacd
+ARG GID=1000
+RUN groupadd --gid $GID guacd
+RUN useradd --system --create-home --shell /usr/sbin/nologin --uid $UID --gid $GID guacd
 
 # Run with user guacd
 USER guacd
