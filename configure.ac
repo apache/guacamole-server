@@ -1215,11 +1215,7 @@ AC_ARG_WITH([xorg],
             [with_xorg=check])
 
 # X.Org module directory
-AC_ARG_WITH(xorg-module-dir,
-            AS_HELP_STRING([--with-xorg-module-dir=DIR],
-                           [Install directory for X.Org modules]),
-            [XORG_MODULE_DIR="$withval"],
-            [XORG_MODULE_DIR="$libdir/xorg/modules"])
+PKG_CHECK_VAR([XORG_MODULE_DIR], [xorg-server], [moduledir])
 
 if test "x$with_xorg" != "xno"
 then
