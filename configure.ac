@@ -1210,9 +1210,9 @@ AC_SUBST(XCB_XFIXES_LIBS)
 have_xorg=disabled
 AC_ARG_WITH([xorg],
             [AS_HELP_STRING([--with-xorg],
-                            [support X.Org @<:@default=check@:>@])],
+                            [support X.Org (EXPERIMENTAL) @<:@default=no@:>@])],
             [],
-            [with_xorg=check])
+            [with_xorg=no])
 
 # X.Org module directory
 PKG_CHECK_VAR([XORG_MODULE_DIR], [xorg-server], [moduledir])
@@ -1387,7 +1387,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
    Drivers:
 
-      X.Org .... ${build_xorg}
+      X.Org (EXPERIMENTAL) .... ${build_xorg}
 
    Services / tools:
 
