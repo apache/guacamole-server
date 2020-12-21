@@ -72,7 +72,7 @@ static void write_instructions(int fd) {
 
 /**
  * Reads and parses instructions from the given file descriptor using a
- * guac_socket and guac_parser, verfying that those instructions match the
+ * guac_socket and guac_parser, verifying that those instructions match the
  * series of Guacamole instructions expected to be written by
  * write_instructions(). The given file descriptor is automatically closed as a
  * result of calling this function.
