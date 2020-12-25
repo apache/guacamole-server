@@ -627,7 +627,13 @@ fi
 # between releases, as the change in behavior may not (yet) be associated with
 # a corresponding change in version number and may not have any detectable
 # effect on the FreeRDP API
-if test "x${have_freerdp2}" = "xyes"
+
+AC_ARG_ENABLE(allow_freerdp_snapshots,
+              [AS_HELP_STRING([--enable-allow-freerdp-snapshots],
+                              [allow building against unknown development snapshots of FreeRDP])
+              ],allow_freerdp_snapshots=yes)
+
+if test "x${have_freerdp2}" = "xyes" -a "x${allow_freerdp_snapshots}" != "xyes"
 then
 
     AC_MSG_CHECKING([whether FreeRDP appears to be a development version])
@@ -639,7 +645,7 @@ then
     ],
     [AC_MSG_RESULT([no])],
     [AC_MSG_RESULT([yes])]
-    [AC_MSG_WARN([
+    [AC_MSG_ERROR([
   --------------------------------------------
    You are building against a development version of FreeRDP. Non-release
    versions of FreeRDP may have differences in behavior that are impossible to
@@ -647,6 +653,9 @@ then
    behavior.
 
    *** PLEASE USE A RELEASED VERSION OF FREERDP IF POSSIBLE ***
+
+   If you are ABSOLUTELY CERTAIN that building against this version of FreeRDP
+   is OK, rerun configure with the --enable-allow-freerdp-snapshots
   --------------------------------------------])])
 
 fi

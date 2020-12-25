@@ -21,13 +21,30 @@
 # Dockerfile for guacamole-server
 #
 
+# The Debian image that should be used as the basis for the guacd image
+ARG DEBIAN_BASE_IMAGE=buster-slim
 
 # Use Debian as base for the build
-ARG DEBIAN_VERSION=stable
-FROM debian:${DEBIAN_VERSION} AS builder
+FROM debian:${DEBIAN_BASE_IMAGE} AS builder
 
+#
+# The Debian repository that should be preferred for dependencies (this will be
+# added to /etc/apt/sources.list if not already present)
+#
+# NOTE: Due to limitations of the Docker image build process, this value is
+# duplicated in an ARG in the second stage of the build.
+#
+ARG DEBIAN_RELEASE=buster-backports
+
+# Add repository for specified Debian release if not already present in
+# sources.list
+RUN grep " ${DEBIAN_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
+    "deb http://deb.debian.org/debian ${DEBIAN_RELEASE} main contrib non-free"
+
+#
 # Base directory for installed build artifacts.
-# Due to limitations of the Docker image build process, this value is
+#
+# NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the second stage of the build.
 #
 ARG PREFIX_DIR=/usr/local/guacamole
@@ -53,9 +70,12 @@ ARG BUILD_DEPENDENCIES="              \
         libwebp-dev                   \
         make"
 
+# Do not require interaction during build
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Bring build environment up to date and install build dependencies
-RUN apt-get update                         && \
-    apt-get install -y $BUILD_DEPENDENCIES && \
+RUN apt-get update                                              && \
+    apt-get install -t ${DEBIAN_RELEASE} -y $BUILD_DEPENDENCIES && \
     rm -rf /var/lib/apt/lists/*
 
 # Add configuration scripts
@@ -68,19 +88,35 @@ COPY . "$BUILD_DIR"
 RUN ${PREFIX_DIR}/bin/build-guacd.sh "$BUILD_DIR" "$PREFIX_DIR"
 
 # Record the packages of all runtime library dependencies
-RUN ${PREFIX_DIR}/bin/list-dependencies.sh    \
-        ${PREFIX_DIR}/sbin/guacd              \
-        ${PREFIX_DIR}/lib/libguac-client-*.so \
-        ${PREFIX_DIR}/lib/freerdp2/guac*.so   \
+RUN ${PREFIX_DIR}/bin/list-dependencies.sh     \
+        ${PREFIX_DIR}/sbin/guacd               \
+        ${PREFIX_DIR}/lib/libguac-client-*.so  \
+        ${PREFIX_DIR}/lib/freerdp2/*guac*.so   \
         > ${PREFIX_DIR}/DEPENDENCIES
 
 # Use same Debian as the base for the runtime image
-FROM debian:${DEBIAN_VERSION}-slim
+FROM debian:${DEBIAN_BASE_IMAGE}
 
-# Base directory for installed build artifacts.
-# Due to limitations of the Docker image build process, this value is
-# duplicated in an ARG in the first stage of the build. See also the
+#
+# The Debian repository that should be preferred for dependencies (this will be
+# added to /etc/apt/sources.list if not already present)
+#
+# NOTE: Due to limitations of the Docker image build process, this value is
+# duplicated in an ARG in the first stage of the build.
+#
+ARG DEBIAN_RELEASE=buster-backports
+
+# Add repository for specified Debian release if not already present in
+# sources.list
+RUN grep " ${DEBIAN_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
+    "deb http://deb.debian.org/debian ${DEBIAN_RELEASE} main contrib non-free"
+
+#
+# Base directory for installed build artifacts. See also the
 # CMD directive at the end of this build stage.
+#
+# NOTE: Due to limitations of the Docker image build process, this value is
+# duplicated in an ARG in the first stage of the build.
 #
 ARG PREFIX_DIR=/usr/local/guacamole
 
@@ -97,13 +133,16 @@ ARG RUNTIME_DEPENDENCIES="            \
         fonts-dejavu                  \
         xfonts-terminus"
 
+# Do not require interaction during build
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Copy build artifacts into this stage
 COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
 
 # Bring runtime environment up to date and install runtime dependencies
-RUN apt-get update                                                                  && \
-    apt-get install -y --no-install-recommends $RUNTIME_DEPENDENCIES                && \
-    apt-get install -y --no-install-recommends $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
+RUN apt-get update                                                                                       && \
+    apt-get install -t ${DEBIAN_RELEASE} -y --no-install-recommends $RUNTIME_DEPENDENCIES                && \
+    apt-get install -t ${DEBIAN_RELEASE} -y --no-install-recommends $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
     rm -rf /var/lib/apt/lists/*
 
 # Link FreeRDP plugins into proper path
