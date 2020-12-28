@@ -69,6 +69,9 @@ static void __guac_wol_create_magic_packet(unsigned char packet[],
  * @param broadcast_addr
  *     The broadcast address to which to send the magic WoL packet.
  * 
+ * @param udp_port
+ *     The UDP port to use when sending the WoL packet.
+ * 
  * @param packet
  *     The magic WoL packet to send.
  * 
@@ -76,13 +79,13 @@ static void __guac_wol_create_magic_packet(unsigned char packet[],
  *     The number of bytes sent, or zero if nothing could be sent.
  */
 static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
-        unsigned char packet[]) {
+        const unsigned short udp_port, unsigned char packet[]) {
     
     struct sockaddr_in wol_dest;
     int wol_socket;
     
     /* Determine the IP version, starting with IPv4. */
-    wol_dest.sin_port = htons(GUAC_WOL_PORT);
+    wol_dest.sin_port = htons(udp_port);
     wol_dest.sin_family = AF_INET;
     int retval = inet_pton(wol_dest.sin_family, broadcast_addr, &(wol_dest.sin_addr));
     
@@ -165,7 +168,8 @@ static ssize_t __guac_wol_send_packet(const char* broadcast_addr,
  
 }
 
-int guac_wol_wake(const char* mac_addr, const char* broadcast_addr) {
+int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
+        const unsigned short udp_port) {
     
     unsigned char wol_packet[GUAC_WOL_PACKET_SIZE];
     unsigned int dest_mac[6];
@@ -183,7 +187,8 @@ int guac_wol_wake(const char* mac_addr, const char* broadcast_addr) {
     __guac_wol_create_magic_packet(wol_packet, dest_mac);
     
     /* Send the packet and record bytes sent. */
-    int bytes_sent = __guac_wol_send_packet(broadcast_addr, wol_packet);
+    int bytes_sent = __guac_wol_send_packet(broadcast_addr, udp_port, 
+            wol_packet);
     
     /* Return 0 if bytes were sent, otherwise return an error. */
     if (bytes_sent)

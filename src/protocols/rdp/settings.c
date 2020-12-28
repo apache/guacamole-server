@@ -124,6 +124,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "wol-send-packet",
     "wol-mac-addr",
     "wol-broadcast-addr",
+    "wol-udp-port",
     "wol-wait-time",
     NULL
 };
@@ -608,6 +609,11 @@ enum RDP_ARGS_IDX {
      * the remote host.
      */
     IDX_WOL_BROADCAST_ADDR,
+    
+    /**
+     * The UDP port to use in the magic WoL packet.
+     */
+    IDX_WOL_UDP_PORT,
     
     /**
      * The amount of time, in seconds, to wait after sending the WoL packet
@@ -1133,6 +1139,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
             guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
         
+        /* Parse the WoL broadcast port. */
+        settings->wol_udp_port = (unsigned short)
+            guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+        
         /* Parse the WoL wait time. */
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -1202,6 +1213,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     /* Free load balancer information string */
     free(settings->load_balance_info);
     
+    /* Free Wake-on-LAN strings */
     free(settings->wol_mac_addr);
     free(settings->wol_broadcast_addr);
 
