@@ -134,6 +134,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
 
     "gateway-hostname",
     "gateway-port",
+    "gateway-type",
     "gateway-domain",
     "gateway-username",
     "gateway-password",
@@ -632,6 +633,13 @@ enum RDP_ARGS_IDX {
      * effect. FreeRDP instead uses a hard-coded value of 443.
      */
     IDX_GATEWAY_PORT,
+    
+    /**
+     * Explicitly set the mode for the RDP gateway. This can either be set to
+     * auto, in which case the RDP client will attempt to auto-detect the mode,
+     * or can be forced to either HTTP or RPC.
+     */
+    IDX_GATEWAY_TYPE,
 
     /**
      * The domain of the user authenticating with the remote desktop gateway,
@@ -1263,6 +1271,20 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->gateway_port =
         guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_GATEWAY_PORT, 443);
+    
+    char* gateway_type = guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS,
+            argv, IDX_GATEWAY_TYPE, NULL);
+    
+    if (strcmp(gateway_type, "auto") == 0)
+        settings->gateway_type = GUAC_RDP_GATEWAY_AUTO;
+    
+    else if (strcmp(gateway_type, "http") == 0)
+        settings->gateway_type = GUAC_RDP_GATEWAY_HTTP;
+    
+    else if (strcmp(gateway_type, "rpc") == 0)
+        settings->gateway_type = GUAC_RDP_GATEWAY_RPC;
+    
+    free(gateway_type);
 
     /* Set gateway domain */
     settings->gateway_domain =
@@ -1960,7 +1982,29 @@ void guac_rdp_push_settings(guac_client* client,
         rdp_settings->GatewayDomain = guac_strdup(guac_settings->gateway_domain);
         rdp_settings->GatewayUsername = guac_strdup(guac_settings->gateway_username);
         rdp_settings->GatewayPassword = guac_strdup(guac_settings->gateway_password);
-
+        
+        /* Check RD gateway type setting and set options appropriately. */
+        switch(guac_settings->gateway_type) {
+            
+            /* Gateway is set to auto, so enable either transport. */
+            case GUAC_RDP_GATEWAY_AUTO:
+                rdp_settings->GatewayHttpTransport = TRUE;
+                rdp_settings->GatewayRpcTransport = TRUE;
+                break;
+                
+            /* Gateway is forced to HTTP, so only enable HTTP transport. */
+            case GUAC_RDP_GATEWAY_HTTP:
+                rdp_settings->GatewayHttpTransport = TRUE;
+                rdp_settings->GatewayRpcTransport = FALSE;
+                break;
+                
+            /* Gateway is forced to RPC, so only enable RPC transport. */
+            case GUAC_RDP_GATEWAY_RPC:
+                rdp_settings->GatewayHttpTransport = FALSE;
+                rdp_settings->GatewayRpcTransport = TRUE;
+                break;
+        }
+        
     }
 
     /* Store load balance info (and calculate length) if provided */
