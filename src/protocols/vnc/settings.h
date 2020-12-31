@@ -290,6 +290,11 @@ typedef struct guac_vnc_settings {
     char* wol_broadcast_addr;
     
     /**
+     * The UDP port to use when sending the WoL packet.
+     */
+    unsigned short wol_udp_port;
+    
+    /**
      * The number of seconds after sending the magic WoL packet to wait before
      * attempting to connect to the remote host.
      */

@@ -615,7 +615,8 @@ void* guac_rdp_client_thread(void* data) {
                 "and pausing for %d seconds.", settings->wol_wait_time);
         
         /* Send the Wake-on-LAN request. */
-        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr))
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
+                settings->wol_udp_port))
             return NULL;
         
         /* If wait time is specified, sleep for that amount of time. */

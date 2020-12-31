@@ -584,6 +584,11 @@ typedef struct guac_rdp_settings {
     char* wol_broadcast_addr;
     
     /**
+     * The UDP port to use when sending the magic WoL packet.
+     */
+    unsigned short wol_udp_port;
+    
+    /**
      * The amount of time to wait after sending the magic WoL packet before
      * continuing the connection.
      */

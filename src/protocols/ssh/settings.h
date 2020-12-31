@@ -303,6 +303,11 @@ typedef struct guac_ssh_settings {
     char* wol_broadcast_addr;
     
     /**
+     * The UDP port to use when sending the magic WoL packet.
+     */
+    unsigned short wol_udp_port;
+    
+    /**
      * The amount of time to wait for the system to wake after sending the packet.
      */
     int wol_wait_time;
