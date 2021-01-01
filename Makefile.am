@@ -37,6 +37,7 @@ DIST_SUBDIRS =               \
     src/pulse                \
     src/protocols/kubernetes \
     src/protocols/rdp        \
+    src/protocols/spice      \
     src/protocols/ssh        \
     src/protocols/telnet     \
     src/protocols/vnc
@@ -63,6 +64,10 @@ endif
 
 if ENABLE_RDP
 SUBDIRS += src/protocols/rdp
+endif
+
+if ENABLE_SPICE
+SUBDIRS += src/protocols/spice
 endif
 
 if ENABLE_SSH

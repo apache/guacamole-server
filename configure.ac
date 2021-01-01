@@ -634,6 +634,27 @@ then
 
 fi
 
+#
+# spice-glib
+#
+
+have_spice_glib=disabled
+AC_ARG_WITH([spice],
+            [AS_HELP_STRING([--with-spice],
+                            [support SPICE @<:@default=check@:>@])],
+            [],
+            [with_spice=check])
+
+if test "x$with_spice" != "xno"
+then
+    have_spice_glib=yes
+    PKG_CHECK_MODULES([GLIB2], [glib-2.0],, [have_spice_glib=no])
+    PKG_CHECK_MODULES([SPICE], [spice-client-glib-2.0],, [have_spice_glib=no])
+fi
+
+AM_CONDITIONAL([ENABLE_SPICE], [test "x${have_spice_glib}" = "xyes"])
+AC_SUBST(SPICE_LIBS)
+
 
 #
 # FreeRDP 2 (libfreerdp2, libfreerdp-client2, and libwinpr2)
@@ -1188,6 +1209,7 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/kubernetes/tests/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/rdp/tests/Makefile
+                 src/protocols/spice/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
                  src/protocols/vnc/Makefile])
@@ -1199,6 +1221,7 @@ AC_OUTPUT
 
 AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
+AM_COND_IF([ENABLE_SPICE],      [build_spice=yes],      [build_spice=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
 AM_COND_IF([ENABLE_TELNET],     [build_telnet=yes],     [build_telnet=no])
 AM_COND_IF([ENABLE_VNC],        [build_vnc=yes],        [build_vnc=no])
@@ -1260,6 +1283,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
       Kubernetes .... ${build_kubernetes}
       RDP ........... ${build_rdp}
+      SPICE ......... ${build_spice}
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
       VNC ........... ${build_vnc}
