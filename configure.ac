@@ -75,21 +75,50 @@ AC_CHECK_LIB([dl], [dlopen],
                             AC_MSG_ERROR("libdl is required on systems which do not otherwise provide dlopen()"),
                             [#include <dlfcn.h>])])
 
-# OSSP UUID
-AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
-             AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
-                          AC_MSG_ERROR("The OSSP UUID library is required")))
+#
+# libuuid
+#
 
-# Check for and validate OSSP uuid.h header
-AC_CHECK_HEADERS([ossp/uuid.h])
-AC_CHECK_DECL([uuid_make],,
-              AC_MSG_ERROR("No OSSP uuid.h found in include path"),
-              [#ifdef HAVE_OSSP_UUID_H
-               #include <ossp/uuid.h>
-               #else
-               #include <uuid.h>
-               #endif
-               ])
+have_libuuid=disabled
+AC_ARG_WITH([libuuid],
+            [AS_HELP_STRING([--with-libuuid],
+                            [use libuuid to generate unique identifiers @<:@default=check@:>@])],
+            [],
+            [with_libuuid=check])
+
+if test "x$with_libuuid" != "xno"
+then
+    have_libuuid=yes
+    AC_CHECK_LIB([uuid], [uuid_generate],
+                 [UUID_LIBS=-luuid]
+                 [AC_DEFINE([HAVE_LIBUUID],, [Whether libuuid is available])],
+                 [have_libuuid=no])
+fi
+
+# OSSP UUID (if libuuid is unavilable)
+if test "x${have_libuuid}" != "xyes"
+then
+
+    AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
+                 AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
+                              AC_MSG_ERROR([
+  --------------------------------------------
+   Unable to find libuuid or the OSSP UUID library.
+   Either libuuid (from util-linux) or the OSSP UUID library is required for
+   guacamole-server to be built.
+  --------------------------------------------])))
+
+    # Check for and validate OSSP uuid.h header
+    AC_CHECK_HEADERS([ossp/uuid.h])
+    AC_CHECK_DECL([uuid_make],,
+                  AC_MSG_ERROR("No OSSP uuid.h found in include path"),
+                  [#ifdef HAVE_OSSP_UUID_H
+                   #include <ossp/uuid.h>
+                   #else
+                   #include <uuid.h>
+                   #endif
+                   ])
+fi
 
 # cunit
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
