@@ -36,6 +36,7 @@ TESTS = $(check_PROGRAMS)
 test_libguac_SOURCES =               \
     client/buffer_pool.c             \
     client/layer_pool.c              \
+    id/generate.c                    \
     parser/append.c                  \
     parser/read.c                    \
     pool/next_free.c                 \

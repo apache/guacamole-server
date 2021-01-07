@@ -22,7 +22,9 @@
 #include "guacamole/error.h"
 #include "id.h"
 
-#ifdef HAVE_OSSP_UUID_H
+#if defined(HAVE_LIBUUID)
+#include <uuid/uuid.h>
+#elif defined(HAVE_OSSP_UUID_H)
 #include <ossp/uuid.h>
 #else
 #include <uuid.h>
@@ -30,54 +32,73 @@
 
 #include <stdlib.h>
 
+/**
+ * The length of a UUID in bytes. All UUIDs are guaranteed to be 36 1-byte
+ * characters long.
+ */
+#define GUAC_UUID_LEN 36
+
 char* guac_generate_id(char prefix) {
 
     char* buffer;
     char* identifier;
-    size_t identifier_length;
 
+    /* Prepare object to receive generated UUID */
+#ifdef HAVE_LIBUUID
+    uuid_t uuid;
+#else
     uuid_t* uuid;
-
-    /* Attempt to create UUID object */
     if (uuid_create(&uuid) != UUID_RC_OK) {
         guac_error = GUAC_STATUS_NO_MEMORY;
         guac_error_message = "Could not allocate memory for UUID";
         return NULL;
     }
+#endif
 
-    /* Generate random UUID */
+    /* Generate unique identifier */
+#ifdef HAVE_LIBUUID
+    uuid_generate(uuid);
+#else
     if (uuid_make(uuid, UUID_MAKE_V4) != UUID_RC_OK) {
         uuid_destroy(uuid);
         guac_error = GUAC_STATUS_NO_MEMORY;
         guac_error_message = "UUID generation failed";
         return NULL;
     }
+#endif
 
     /* Allocate buffer for future formatted ID */
-    buffer = malloc(UUID_LEN_STR + 2);
+    buffer = malloc(GUAC_UUID_LEN + 2);
     if (buffer == NULL) {
+#ifndef HAVE_LIBUUID
         uuid_destroy(uuid);
+#endif
         guac_error = GUAC_STATUS_NO_MEMORY;
-        guac_error_message = "Could not allocate memory for connection ID";
+        guac_error_message = "Could not allocate memory for unique ID";
         return NULL;
     }
 
     identifier = &(buffer[1]);
-    identifier_length = UUID_LEN_STR + 1;
 
-    /* Build connection ID from UUID */
+    /* Convert UUID to string to produce unique identifier */
+#ifdef HAVE_LIBUUID
+    uuid_unparse_lower(uuid, identifier);
+#else
+    size_t identifier_length = GUAC_UUID_LEN + 1;
     if (uuid_export(uuid, UUID_FMT_STR, &identifier, &identifier_length) != UUID_RC_OK) {
         free(buffer);
         uuid_destroy(uuid);
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
-        guac_error_message = "Conversion of UUID to connection ID failed";
+        guac_error_message = "Conversion of UUID to unique ID failed";
         return NULL;
     }
 
+    /* Clean up generated UUID */
     uuid_destroy(uuid);
+#endif
 
     buffer[0] = prefix;
-    buffer[UUID_LEN_STR + 1] = '\0';
+    buffer[GUAC_UUID_LEN + 1] = '\0';
     return buffer;
 
 }
