@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "config.h"
 #include "channels/common-svc.h"
 
 #include <freerdp/svc.h>
