@@ -167,6 +167,8 @@ guac_common_recording* guac_common_recording_create(guac_client* client,
     recording->include_mouse = include_mouse;
     recording->include_keys = include_keys;
 
+    guac_socket_set_filename(recording->socket, filename);
+
     /* Replace client socket with wrapped recording socket only if including
      * output within the recording */
     if (include_output)

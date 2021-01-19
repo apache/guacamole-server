@@ -173,6 +173,14 @@ void guac_socket_instruction_end(guac_socket* socket);
 guac_socket* guac_socket_open(int fd);
 
 /**
+ * Sets the filename of the recording associated with this socket.
+ *
+ * @param socket the socket of which to set the filename on
+ * @param filename the filename of the recording
+ */
+void guac_socket_set_filename(guac_socket* socket, char* filename);
+
+/**
  * Allocates and initializes a new guac_socket which writes all data via
  * nest instructions to the given existing, open guac_socket. Freeing the
  * returned guac_socket has no effect on the underlying, nested guac_socket.

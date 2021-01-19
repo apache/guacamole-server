@@ -35,6 +35,8 @@
 #include <winsock2.h>
 #endif
 
+#define GUAC_RECORDING_PATH_MAX 2048
+
 /**
  * Data associated with an open socket which writes to a file descriptor.
  */
@@ -68,7 +70,35 @@ typedef struct guac_socket_fd_data {
      */
     pthread_mutex_t buffer_lock;
 
+    /**
+     * The associated file path;
+     */
+    char path[GUAC_RECORDING_PATH_MAX];
+
 } guac_socket_fd_data;
+
+/**
+ * add a file extension to the filename so that it is clear the recording has finished.
+ */
+static int guac_socket_fd_rename(const char* path) {
+
+    int retval = 0;
+
+    if (path[0]) {
+        char newpath[GUAC_RECORDING_PATH_MAX+5];
+        strcpy(newpath, path);
+        strcat(newpath, ".guac");
+        retval = rename(path, newpath);
+
+        if (retval < 0) {
+            guac_error = GUAC_STATUS_SEE_ERRNO;
+            guac_error_message = "Error renaming recording";
+        }
+    }
+
+    return retval;
+}
+
 
 /**
  * Writes the entire contents of the given buffer to the file descriptor
@@ -368,8 +398,7 @@ static int guac_socket_fd_select_handler(guac_socket* socket,
  *     The guac_socket whose associated data should be freed.
  *
  * @return
- *     Zero if the data was successfully freed, non-zero otherwise. This
- *     implementation always succeeds, and will always return zero.
+ *     Zero if the data was successfully freed and the associated recording has been renamed, non-zero otherwise.
  */
 static int guac_socket_fd_free_handler(guac_socket* socket) {
 
@@ -382,9 +411,10 @@ static int guac_socket_fd_free_handler(guac_socket* socket) {
     /* Close file descriptor */
     close(data->fd);
 
-    free(data);
-    return 0;
+    int retval = guac_socket_fd_rename(data->path);
 
+    free(data);
+    return retval;
 }
 
 /**
@@ -417,6 +447,11 @@ static void guac_socket_fd_unlock_handler(guac_socket* socket) {
 
 }
 
+void guac_socket_set_filename(guac_socket* socket, char* filename) {
+    guac_socket_fd_data* data = (guac_socket_fd_data*) socket->data;
+    strcpy(data->path, filename);
+}
+
 guac_socket* guac_socket_open(int fd) {
 
     pthread_mutexattr_t lock_attributes;
@@ -428,6 +463,7 @@ guac_socket* guac_socket_open(int fd) {
     /* Store file descriptor as socket data */
     data->fd = fd;
     data->written = 0;
+    data->path[0] = '\0';
     socket->data = data;
 
     pthread_mutexattr_init(&lock_attributes);
@@ -449,4 +485,3 @@ guac_socket* guac_socket_open(int fd) {
     return socket;
 
 }
-
