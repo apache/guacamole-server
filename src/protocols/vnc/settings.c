@@ -91,6 +91,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "wol-broadcast-addr",
     "wol-udp-port",
     "wol-wait-time",
+    "disable-server-input",
     NULL
 };
 
@@ -373,6 +374,11 @@ enum VNC_ARGS_IDX {
      */
     IDX_WOL_WAIT_TIME,
 
+    /*
+     * Whether or not to disable the input on the server side. The default is not to disable the input.
+     */
+    IDX_DISABLE_SERVER_INPUT,
+
     VNC_ARGS_COUNT
 };
 
@@ -426,6 +432,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->read_only =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_READ_ONLY, false);
+
+    /* Disable server input */
+    settings->disable_server_input =
+            guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                                         IDX_DISABLE_SERVER_INPUT, false);
 
     /* Parse color depth */
     settings->color_depth =

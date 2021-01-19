@@ -300,6 +300,11 @@ typedef struct guac_vnc_settings {
      */
     int wol_wait_time;
 
+    /**
+     * Whether or not to disable the input on the server side.
+     */
+    bool disable_server_input;
+
 } guac_vnc_settings;
 
 /**

@@ -385,6 +385,17 @@ void* guac_vnc_client_thread(void* data) {
     }
 #endif
 
+    /* Disable remote console (Server input) */
+    if (settings->disable_server_input) {
+        rfbSetServerInputMsg msg;
+        msg.type = rfbSetServerInput;
+        msg.status = 1;
+        msg.pad = 0;
+
+        rfbBool success = WriteToRFBServer(rfb_client, (char*)&msg, sz_rfbSetServerInputMsg);
+        guac_client_log(client, GUAC_LOG_DEBUG, "%s send request to disable server input", success ? "Successfully" : "Failed to");
+    }
+
     /* Set remaining client data */
     vnc_client->rfb_client = rfb_client;
 
