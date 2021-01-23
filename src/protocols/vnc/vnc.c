@@ -48,11 +48,21 @@
 #include <guacamole/timestamp.h>
 #include <guacamole/wol.h>
 #include <rfb/rfbclient.h>
+#include <rfb/rfbconfig.h>
 #include <rfb/rfbproto.h>
+
+#ifdef LIBVNCSERVER_WITH_CLIENT_GCRYPT
+#include <errno.h>
+#include <gcrypt.h>
+#endif
 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#ifdef LIBVNCSERVER_WITH_CLIENT_GCRYPT
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+#endif
 
 char* GUAC_VNC_CLIENT_KEY = "GUAC_VNC";
 
@@ -133,6 +143,27 @@ rfbClient* guac_vnc_get_client(guac_client* client) {
     /* TLS Locking and Unlocking */
     rfb_client->LockWriteToTLS = guac_vnc_lock_write_to_tls;
     rfb_client->UnlockWriteToTLS = guac_vnc_unlock_write_to_tls;
+#endif
+    
+#ifdef LIBVNCSERVER_WITH_CLIENT_GCRYPT
+    
+    /* Check if GCrypt is initialized, do it if not. */
+    if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P)) {
+    
+        guac_client_log(client, GUAC_LOG_DEBUG, "GCrypt initialization started.");
+
+        /* Initialize thread control. */
+        gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+
+        /* Basic GCrypt library initialization. */
+        gcry_check_version(NULL);
+
+        /* Mark initialization as completed. */
+        gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+        guac_client_log(client, GUAC_LOG_DEBUG, "GCrypt initialization completed.");
+    
+    }
+    
 #endif
 
     /* Do not handle clipboard and local cursor if read-only */
