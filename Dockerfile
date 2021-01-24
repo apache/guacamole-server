@@ -57,6 +57,7 @@ ARG BUILD_DEPENDENCIES="              \
         freerdp2-dev                  \
         gcc                           \
         libcairo2-dev                 \
+        libgcrypt-dev                 \
         libjpeg62-turbo-dev           \
         libossp-uuid-dev              \
         libpango1.0-dev               \
