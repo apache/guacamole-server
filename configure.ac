@@ -519,6 +519,27 @@ then
     AC_CHECK_LIB([vncclient], [rfbInitClient], [VNC_LIBS="$VNC_LIBS -lvncclient"], [have_libvncserver=no])
 fi
 
+#
+# Underlying libvncserver usage of gcrypt
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    # Whether libvncserver was built against libgcrypt
+    AC_CHECK_DECL([LIBVNCSERVER_WITH_CLIENT_GCRYPT],
+                         [AC_CHECK_HEADER(gcrypt.h,,
+                                          [AC_MSG_WARN([
+  --------------------------------------------
+   libvncserver appears to be built against
+   libgcrypt, but the libgcrypt headers
+   could not be found. VNC will be disabled.
+  --------------------------------------------])
+                                           have_libvncserver=no])],,
+                    [[#include <rfb/rfbconfig.h>]])
+
+fi
+
 AM_CONDITIONAL([ENABLE_VNC], [test "x${have_libvncserver}" = "xyes"])
 AC_SUBST(VNC_LIBS)
 
