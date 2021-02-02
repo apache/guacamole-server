@@ -25,22 +25,22 @@ freerdp "KBD_BELGIAN_FRENCH"
 # Basic keys
 #
 
-map -caps -altgr -shift 0x29 0x02..0x0D      ~ "²&é"'(§è!çà)_"
+map -caps -altgr -shift 0x29 0x02..0x0D      ~ "²&é"'(§è!çà)-"
 map -caps -altgr -shift      0x10..0x19 0x1B ~ "azertyuiop$"
 map -caps -altgr -shift      0x1E..0x28 0x2B ~ "qsdfghjklmùµ"
 map -caps -altgr -shift 0x56 0x2C..0x35      ~ "<wxcvbn,;:="
 
-map -caps -altgr +shift 0x29 0x02..0x0D      ~ "³1234567890°-"
+map -caps -altgr +shift 0x29 0x02..0x0D      ~ "³1234567890°_"
 map -caps -altgr +shift      0x10..0x19 0x1B ~ "AZERTYUIOP£"
 map -caps -altgr +shift      0x1E..0x28 0x2B ~ "QSDFGHJKLM%£"
 map -caps -altgr +shift 0x56 0x2C..0x35      ~ ">WXCVBN?./+"
 
-map +caps -altgr -shift 0x29 0x02..0x0D      ~ "²1234567890°-"
+map +caps -altgr -shift 0x29 0x02..0x0D      ~ "²1234567890°_"
 map +caps -altgr -shift      0x10..0x19 0x1B ~ "AZERTYUIOP£"
 map +caps -altgr -shift      0x1E..0x28 0x2B ~ "QSDFGHJKLM%£"
 map +caps -altgr -shift 0x56 0x2C..0x35      ~ "<WXCVBN?./+"
 
-map +caps -altgr +shift 0x29 0x02..0x0D      ~ "³&é"'(§è!çà)_"
+map +caps -altgr +shift 0x29 0x02..0x0D      ~ "³&é"'(§è!çà)-"
 map +caps -altgr +shift      0x10..0x19 0x1B ~ "azertyuiop$"
 map +caps -altgr +shift      0x1E..0x28 0x2B ~ "qsdfghjklmùµ"
 map +caps -altgr +shift 0x56 0x2C..0x35      ~ ">wxcvbn,;:="
