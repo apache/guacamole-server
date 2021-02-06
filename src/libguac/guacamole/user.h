@@ -509,6 +509,27 @@ struct guac_user {
      */
     guac_user_argv_handler* argv_handler;
 
+    /**
+     * Handler for touch events sent by the Guacamole web-client.
+     *
+     * The handler takes the integer X and Y coordinates representing the
+     * center of the touch contact, as well as several parameters describing
+     * the general shape of the contact area. The force parameter indicates the
+     * amount of force exerted by the contact, including whether the contact
+     * has been lifted.
+     *
+     * Example:
+     * @code
+     *     int touch_handler(guac_user* user, int id, int x, int y,
+     *             int x_radius, int y_radius, double angle, double force);
+     *
+     *     int guac_user_init(guac_user* user, int argc, char** argv) {
+     *         user->touch_handler = touch_handler;
+     *     }
+     * @endcode
+     */
+    guac_user_touch_handler* touch_handler;
+
 };
 
 /**
