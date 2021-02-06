@@ -234,6 +234,7 @@ void* guac_kubernetes_client_thread(void* data) {
                 settings->create_recording_path,
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
+                0, /* Touch events not supported */
                 settings->recording_include_keys);
     }
 

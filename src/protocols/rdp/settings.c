@@ -104,6 +104,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-name",
     "recording-exclude-output",
     "recording-exclude-mouse",
+    "recording-exclude-touch",
     "recording-include-keys",
     "create-recording-path",
     "resize-method",
@@ -499,6 +500,13 @@ enum RDP_ARGS_IDX {
      * rendered in any resulting video.
      */
     IDX_RECORDING_EXCLUDE_MOUSE,
+
+    /**
+     * Whether changes to touch contact state should NOT be included in the
+     * session recording. Touch state is included by default, as it may be
+     * necessary for touch interactions to be rendered in any resulting video.
+     */
+    IDX_RECORDING_EXCLUDE_TOUCH,
 
     /**
      * Whether keys pressed and released should be included in the session
@@ -1041,6 +1049,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->recording_exclude_mouse =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_RECORDING_EXCLUDE_MOUSE, 0);
+
+    /* Parse touch exclusion flag */
+    settings->recording_exclude_touch =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_RECORDING_EXCLUDE_TOUCH, 0);
 
     /* Parse key event inclusion flag */
     settings->recording_include_keys =

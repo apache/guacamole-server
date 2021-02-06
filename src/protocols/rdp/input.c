@@ -136,6 +136,11 @@ int guac_rdp_user_touch_handler(guac_user* user, int id, int x, int y,
     if (rdp_inst == NULL)
         goto complete;
 
+    /* Report touch event within recording */
+    if (rdp_client->recording != NULL)
+        guac_common_recording_report_touch(rdp_client->recording, id, x, y,
+                x_radius, y_radius, angle, force);
+
     /* Forward touch event along RDPEI channel */
     guac_rdp_rdpei_touch_update(rdp_client->rdpei, id, x, y, force);
 

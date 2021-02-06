@@ -72,6 +72,15 @@ typedef struct guac_common_recording {
     int include_mouse;
 
     /**
+     * Non-zero if multi-touch events should be included in the session
+     * recording, zero otherwise. Depending on whether the remote desktop will
+     * automatically provide graphical feedback for touches, including touch
+     * events may be necessary for multi-touch interactions to be rendered in
+     * any resulting video.
+     */
+    int include_touch;
+
+    /**
      * Non-zero if keys pressed and released should be included in the session
      * recording, zero otherwise. Including key events within the recording may
      * be necessary in certain auditing contexts, but should only be done with
@@ -119,6 +128,13 @@ typedef struct guac_common_recording {
  *     otherwise. Including mouse state is necessary for the mouse cursor to be
  *     rendered in any resulting video.
  *
+ * @param include_touch
+ *     Non-zero if touch events should be included in the session recording,
+ *     zero otherwise. Depending on whether the remote desktop will
+ *     automatically provide graphical feedback for touches, including touch
+ *     events may be necessary for multi-touch interactions to be rendered in
+ *     any resulting video.
+ *
  * @param include_keys
  *     Non-zero if keys pressed and released should be included in the session
  *     recording, zero otherwise. Including key events within the recording may
@@ -133,7 +149,8 @@ typedef struct guac_common_recording {
  */
 guac_common_recording* guac_common_recording_create(guac_client* client,
         const char* path, const char* name, int create_path,
-        int include_output, int include_mouse, int include_keys);
+        int include_output, int include_mouse, int include_touch,
+        int include_keys);
 
 /**
  * Frees the resources associated with the given in-progress recording. Note
@@ -173,6 +190,44 @@ void guac_common_recording_free(guac_common_recording* recording);
  */
 void guac_common_recording_report_mouse(guac_common_recording* recording,
         int x, int y, int button_mask);
+
+/**
+ * Reports the current state of a touch contact within the recording.
+ *
+ * @param recording
+ *     The guac_common_recording associated with the touch contact that
+ *     has changed state.
+ *
+ * @param id
+ *     An arbitrary integer ID which uniquely identifies this contact relative
+ *     to other active contacts.
+ *
+ * @param x
+ *     The X coordinate of the center of the touch contact.
+ *
+ * @param y
+ *     The Y coordinate of the center of the touch contact.
+ *
+ * @param x_radius
+ *     The X radius of the ellipse covering the general area of the touch
+ *     contact, in pixels.
+ *
+ * @param y_radius
+ *     The Y radius of the ellipse covering the general area of the touch
+ *     contact, in pixels.
+ *
+ * @param angle
+ *     The rough angle of clockwise rotation of the general area of the touch
+ *     contact, in degrees.
+ *
+ * @param force
+ *     The relative force exerted by the touch contact, where 0 is no force
+ *     (the touch has been lifted) and 1 is maximum force (the maximum amount
+ *     of force representable by the device).
+ */
+void guac_common_recording_report_touch(guac_common_recording* recording,
+        int id, int x, int y, int x_radius, int y_radius,
+        double angle, double force);
 
 /**
  * Reports a change in the state of an individual key within the recording.

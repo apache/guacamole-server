@@ -426,6 +426,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 settings->create_recording_path,
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
+                !settings->recording_exclude_touch,
                 settings->recording_include_keys);
     }
 
