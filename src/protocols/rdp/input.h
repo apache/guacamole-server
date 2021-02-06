@@ -28,6 +28,11 @@
 guac_user_mouse_handler guac_rdp_user_mouse_handler;
 
 /**
+ * Handler for Guacamole user touch events.
+ */
+guac_user_touch_handler guac_rdp_user_touch_handler;
+
+/**
  * Handler for Guacamole user key events.
  */
 guac_user_key_handler guac_rdp_user_key_handler;

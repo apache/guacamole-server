@@ -108,6 +108,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "create-recording-path",
     "resize-method",
     "enable-audio-input",
+    "enable-touch",
     "read-only",
 
     "gateway-hostname",
@@ -526,6 +527,12 @@ enum RDP_ARGS_IDX {
      * connection, "false" or blank otherwise.
      */
     IDX_ENABLE_AUDIO_INPUT,
+
+    /**
+     * "true" if multi-touch support should be enabled for the RDP connection,
+     * "false" or blank otherwise.
+     */
+    IDX_ENABLE_TOUCH,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -1069,6 +1076,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 "Defaulting to no resize method.", argv[IDX_RESIZE_METHOD]);
         settings->resize_method = GUAC_RESIZE_NONE;
     }
+
+    /* Multi-touch input enable/disable */
+    settings->enable_touch =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_TOUCH, 0);
 
     /* Audio input enable/disable */
     settings->enable_audio_input =
