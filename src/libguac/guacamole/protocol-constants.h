@@ -49,5 +49,20 @@
  */
 #define GUAC_PROTOCOL_BLOB_MAX_LENGTH 6048
 
+/**
+ * The name of the layer parameter defining the number of simultaneous points
+ * of contact supported by a layer. This parameter should be set to a non-zero
+ * value if the associated layer should receive touch events ("touch"
+ * instructions).
+ *
+ * This value specified for this parameter is advisory, and the client is not
+ * required to honor the declared level of touch support.  Implementations are
+ * expected to safely handle or ignore any received touch events, regardless of
+ * the level of touch support declared.
+ *
+ * @see guac_protocol_send_set_int()
+ */
+#define GUAC_PROTOCOL_LAYER_PARAMETER_MULTI_TOUCH "multi-touch"
+
 #endif
 

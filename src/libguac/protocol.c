@@ -1057,6 +1057,26 @@ int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
 
 }
 
+int guac_protocol_send_set_int(guac_socket* socket, const guac_layer* layer,
+        const char* name, int value) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "3.set,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, value)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_select(guac_socket* socket, const char* protocol) {
 
     int ret_val;

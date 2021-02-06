@@ -272,6 +272,32 @@ int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
         const char* name, const char* value);
 
 /**
+ * Sends a set instruction over the given guac_socket connection. This function
+ * behavies identically to guac_protocol_send_set() except that the provided
+ * parameter value is an integer, rather than a string.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param layer
+ *     The layer to set the parameter of.
+ *
+ * @param name
+ *     The name of the parameter to set.
+ *
+ * @param value
+ *     The value to set the parameter to.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_set_int(guac_socket* socket, const guac_layer* layer,
+        const char* name, int value);
+
+/**
  * Sends a select instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is

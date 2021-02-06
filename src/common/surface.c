@@ -103,6 +103,19 @@
  */
 #define GUAC_SURFACE_WEBP_BLOCK_SIZE 8
 
+void guac_common_surface_set_multitouch(guac_common_surface* surface,
+        int touches) {
+
+    pthread_mutex_lock(&surface->_lock);
+
+    surface->touches = touches;
+    guac_protocol_send_set_int(surface->socket, surface->layer,
+            GUAC_PROTOCOL_LAYER_PARAMETER_MULTI_TOUCH, touches);
+
+    pthread_mutex_unlock(&surface->_lock);
+
+}
+
 void guac_common_surface_move(guac_common_surface* surface, int x, int y) {
 
     pthread_mutex_lock(&surface->_lock);
@@ -1980,6 +1993,11 @@ void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
         /* Synchronize location and hierarchy */
         guac_protocol_send_move(socket, surface->layer,
                 surface->parent, surface->x, surface->y, surface->z);
+
+        /* Synchronize multi-touch support level */
+        guac_protocol_send_set_int(surface->socket, surface->layer,
+                GUAC_PROTOCOL_LAYER_PARAMETER_MULTI_TOUCH,
+                surface->touches);
 
     }
 
