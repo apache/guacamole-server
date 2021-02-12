@@ -18,6 +18,7 @@
  */
 
 #include "channels/disp.h"
+#include "channels/rdpei.h"
 #include "common/cursor.h"
 #include "common/display.h"
 #include "common/recording.h"
@@ -115,6 +116,33 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
         rdp_client->mouse_button_mask = mask;
     }
+
+complete:
+    pthread_rwlock_unlock(&(rdp_client->lock));
+
+    return 0;
+}
+
+int guac_rdp_user_touch_handler(guac_user* user, int id, int x, int y,
+        int x_radius, int y_radius, double angle, double force) {
+
+    guac_client* client = user->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    pthread_rwlock_rdlock(&(rdp_client->lock));
+
+    /* Skip if not yet connected */
+    freerdp* rdp_inst = rdp_client->rdp_inst;
+    if (rdp_inst == NULL)
+        goto complete;
+
+    /* Report touch event within recording */
+    if (rdp_client->recording != NULL)
+        guac_common_recording_report_touch(rdp_client->recording, id, x, y,
+                x_radius, y_radius, angle, force);
+
+    /* Forward touch event along RDPEI channel */
+    guac_rdp_rdpei_touch_update(rdp_client->rdpei, id, x, y, force);
 
 complete:
     pthread_rwlock_unlock(&(rdp_client->lock));

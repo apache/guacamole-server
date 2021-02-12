@@ -23,6 +23,7 @@
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
+#include "channels/rdpei.h"
 #include "common/clipboard.h"
 #include "common/display.h"
 #include "common/list.h"
@@ -147,6 +148,11 @@ typedef struct guac_rdp_client {
      * Display size update module.
      */
     guac_rdp_disp* disp;
+
+    /**
+     * Multi-touch support module (RDPEI).
+     */
+    guac_rdp_rdpei* rdpei;
 
     /**
      * List of all available static virtual channels.

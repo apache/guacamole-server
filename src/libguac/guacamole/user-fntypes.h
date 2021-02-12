@@ -96,6 +96,51 @@ typedef int guac_user_mouse_handler(guac_user* user, int x, int y,
         int button_mask);
 
 /**
+ * Handler for Guacamole touch events, invoked when a "touch" instruction has
+ * been received from a user.
+ *
+ * @param user
+ *     The user that sent the touch event.
+ *
+ * @param id
+ *     An arbitrary integer ID which uniquely identifies this contact relative
+ *     to other active contacts.
+ *
+ * @param x
+ *     The X coordinate of the center of the touch contact within the display
+ *     when the event occurred, in pixels. This value is not guaranteed to be
+ *     within the bounds of the display area.
+ *
+ * @param y
+ *     The Y coordinate of the center of the touch contact within the display
+ *     when the event occurred, in pixels. This value is not guaranteed to be
+ *     within the bounds of the display area.
+ *
+ * @param x_radius
+ *     The X radius of the ellipse covering the general area of the touch
+ *     contact, in pixels.
+ *
+ * @param y_radius
+ *     The Y radius of the ellipse covering the general area of the touch
+ *     contact, in pixels.
+ *
+ * @param angle
+ *     The rough angle of clockwise rotation of the general area of the touch
+ *     contact, in degrees.
+ *
+ * @param force
+ *     The relative force exerted by the touch contact, where 0 is no force
+ *     (the touch has been lifted) and 1 is maximum force (the maximum amount
+ *     of force representable by the device).
+ *
+ * @return
+ *     Zero if the touch event was handled successfully, or non-zero if an
+ *     error occurred.
+ */
+typedef int guac_user_touch_handler(guac_user* user, int id, int x, int y,
+        int x_radius, int y_radius, double angle, double force);
+
+/**
  * Handler for Guacamole key events, invoked when a "key" event has been
  * received from a user.
  *

@@ -37,6 +37,7 @@
 
 __guac_instruction_handler_mapping __guac_instruction_handler_map[] = {
    {"sync",       __guac_handle_sync},
+   {"touch",      __guac_handle_touch},
    {"mouse",      __guac_handle_mouse},
    {"key",        __guac_handle_key},
    {"clipboard",  __guac_handle_clipboard},
@@ -147,6 +148,21 @@ int __guac_handle_sync(guac_user* user, int argc, char** argv) {
 
     if (user->sync_handler)
         return user->sync_handler(user, timestamp);
+    return 0;
+}
+
+int __guac_handle_touch(guac_user* user, int argc, char** argv) {
+    if (user->touch_handler)
+        return user->touch_handler(
+            user,
+            atoi(argv[0]), /* id */
+            atoi(argv[1]), /* x */
+            atoi(argv[2]), /* y */
+            atoi(argv[3]), /* x_radius */
+            atoi(argv[4]), /* y_radius */
+            atof(argv[5]), /* angle */
+            atof(argv[6])  /* force */
+        );
     return 0;
 }
 

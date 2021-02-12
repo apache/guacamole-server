@@ -147,6 +147,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Init display update module */
     rdp_client->disp = guac_rdp_disp_alloc();
 
+    /* Init multi-touch support module (RDPEI) */
+    rdp_client->rdpei = guac_rdp_rdpei_alloc();
+
     /* Redirect FreeRDP log messages to guac_client_log() */
     guac_rdp_redirect_wlog(client);
 
@@ -186,6 +189,9 @@ int guac_rdp_client_free_handler(guac_client* client) {
 
     /* Free display update module */
     guac_rdp_disp_free(rdp_client->disp);
+
+    /* Free multi-touch support module (RDPEI) */
+    guac_rdp_rdpei_free(rdp_client->rdpei);
 
     /* Clean up filesystem, if allocated */
     if (rdp_client->filesystem != NULL)

@@ -104,10 +104,12 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-name",
     "recording-exclude-output",
     "recording-exclude-mouse",
+    "recording-exclude-touch",
     "recording-include-keys",
     "create-recording-path",
     "resize-method",
     "enable-audio-input",
+    "enable-touch",
     "read-only",
 
     "gateway-hostname",
@@ -500,6 +502,13 @@ enum RDP_ARGS_IDX {
     IDX_RECORDING_EXCLUDE_MOUSE,
 
     /**
+     * Whether changes to touch contact state should NOT be included in the
+     * session recording. Touch state is included by default, as it may be
+     * necessary for touch interactions to be rendered in any resulting video.
+     */
+    IDX_RECORDING_EXCLUDE_TOUCH,
+
+    /**
      * Whether keys pressed and released should be included in the session
      * recording. Key events are NOT included by default within the recording,
      * as doing so has privacy and security implications. Including key events
@@ -526,6 +535,12 @@ enum RDP_ARGS_IDX {
      * connection, "false" or blank otherwise.
      */
     IDX_ENABLE_AUDIO_INPUT,
+
+    /**
+     * "true" if multi-touch support should be enabled for the RDP connection,
+     * "false" or blank otherwise.
+     */
+    IDX_ENABLE_TOUCH,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -1050,6 +1065,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_RECORDING_EXCLUDE_MOUSE, 0);
 
+    /* Parse touch exclusion flag */
+    settings->recording_exclude_touch =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_RECORDING_EXCLUDE_TOUCH, 0);
+
     /* Parse key event inclusion flag */
     settings->recording_include_keys =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -1084,6 +1104,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 "Defaulting to no resize method.", argv[IDX_RESIZE_METHOD]);
         settings->resize_method = GUAC_RESIZE_NONE;
     }
+
+    /* Multi-touch input enable/disable */
+    settings->enable_touch =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_TOUCH, 0);
 
     /* Audio input enable/disable */
     settings->enable_audio_input =

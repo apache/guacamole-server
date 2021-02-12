@@ -27,6 +27,7 @@
 #include "channels/pipe-svc.h"
 #include "channels/rail.h"
 #include "channels/rdpdr/rdpdr.h"
+#include "channels/rdpei.h"
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
 #include "color.h"
@@ -99,6 +100,10 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Load "disp" plugin for display update */
     if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
         guac_rdp_disp_load_plugin(context);
+
+    /* Load "rdpei" plugin for multi-touch support */
+    if (settings->enable_touch)
+        guac_rdp_rdpei_load_plugin(context);
 
     /* Load "AUDIO_INPUT" plugin for audio input*/
     if (settings->enable_audio_input) {
@@ -421,6 +426,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 settings->create_recording_path,
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
+                !settings->recording_exclude_touch,
                 settings->recording_include_keys);
     }
 

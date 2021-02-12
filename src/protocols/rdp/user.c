@@ -105,6 +105,10 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
         user->mouse_handler = guac_rdp_user_mouse_handler;
         user->key_handler = guac_rdp_user_key_handler;
 
+        /* Multi-touch events */
+        if (settings->enable_touch)
+            user->touch_handler = guac_rdp_user_touch_handler;
+
         /* Inbound (client to server) clipboard transfer */
         if (!settings->disable_paste)
             user->clipboard_handler = guac_rdp_clipboard_handler;
