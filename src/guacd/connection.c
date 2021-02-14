@@ -287,7 +287,7 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
 
             guacd_log(GUAC_LOG_INFO, message);
             guac_protocol_send_error(socket, message,
-                    GUAC_PROTOCOL_STATUS_CLIENT_BAD_REQUEST);
+                    GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND);
         }
 
         else
