@@ -123,10 +123,14 @@ int guac_kubernetes_append_endpoint_param(char* buffer, int length,
     char delimiter = '?';
     if (qmark) delimiter = '&';
 
-    /* Write the parameter to the buffer */
-    int written;
-    written = snprintf(buffer + str_len, length - str_len,
-            "%c%s=%s", delimiter, param_name, escaped_param_value);
+    /* Advance to end of buffer, where the new parameter and delimiter need to
+     * be appended */
+    buffer += str_len;
+    length -= str_len;
+
+    /* Write the parameter and delimiter to the buffer */
+    int written = snprintf(buffer, length, "%c%s=%s", delimiter,
+            param_name, escaped_param_value);
 
     /* The parameter was successfully added if it was written to the given
      * buffer without truncation */
