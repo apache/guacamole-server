@@ -89,15 +89,56 @@ int guac_kubernetes_escape_url_component(char* output, int length,
 
 }
 
-int guac_kubernetes_endpoint_attach(char* buffer, int length,
-        const char* kubernetes_namespace, const char* kubernetes_pod,
-        const char* kubernetes_container) {
+int guac_kubernetes_append_endpoint_param(char* buffer, int length, 
+        const char* param_name, const char* param_value) {
 
+    char escaped_param_value[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
+
+    /* Escape value */
+    if (guac_kubernetes_escape_url_component(escaped_param_value,
+                    sizeof(escaped_param_value), param_value))
+            return 1;
+    
+    char* str = buffer;
+
+    int str_len = 0;
+    int qmark = 0;
+
+    while (*str != '\0') {
+
+        /* Look for a question mark */
+        if (*str=='?') qmark = 1;
+
+        /* Compute the buffer string length */
+        str_len++;
+
+        /* Verify the buffer null terminated */
+        if (str_len >= length) return 1;
+
+        /* Next character */
+        str++;
+    }
+
+    /* Determine the parameter delimiter */
+    char delimiter = '?';
+    if (qmark) delimiter = '&';
+
+    /* Write the parameter to the buffer */
     int written;
+    written = snprintf(buffer + str_len, length - str_len,
+            "%c%s=%s", delimiter, param_name, escaped_param_value);
+
+    /* The parameter was successfully added if it was written to the given
+     * buffer without truncation */
+    return (written < 0 || written >= length);
+}
+
+int guac_kubernetes_endpoint_uri(char* buffer, int length,
+        const char* kubernetes_namespace, const char* kubernetes_pod,
+        const char* kubernetes_container, const char* exec_command) {
 
     char escaped_namespace[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
     char escaped_pod[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
-    char escaped_container[GUAC_KUBERNETES_MAX_ENDPOINT_LENGTH];
 
     /* Escape Kubernetes namespace */
     if (guac_kubernetes_escape_url_component(escaped_namespace,
@@ -109,29 +150,38 @@ int guac_kubernetes_endpoint_attach(char* buffer, int length,
                 sizeof(escaped_pod), kubernetes_pod))
         return 1;
 
-    /* Generate attachment endpoint URL */
-    if (kubernetes_container != NULL) {
+    /* Determine the call type */
+    char* call = "attach";
+    if (exec_command != NULL)
+        call = "exec";
 
-        /* Escape container name */
-        if (guac_kubernetes_escape_url_component(escaped_container,
-                    sizeof(escaped_container), kubernetes_container))
-            return 1;
+    int written;
 
-        written = snprintf(buffer, length,
-                "/api/v1/namespaces/%s/pods/%s/attach"
-                "?container=%s&stdin=true&stdout=true&tty=true",
-                escaped_namespace, escaped_pod, escaped_container);
-    }
-    else {
-        written = snprintf(buffer, length,
-                "/api/v1/namespaces/%s/pods/%s/attach"
-                "?stdin=true&stdout=true&tty=true",
-                escaped_namespace, escaped_pod);
-    }
+    /* Generate the endpoint path and write to the buffer */
+    written = snprintf(buffer, length,
+        "/api/v1/namespaces/%s/pods/%s/%s", escaped_namespace, escaped_pod, call);
 
-    /* Endpoint URL was successfully generated if it was written to the given
+    /* Operation successful if the endpoint path was written to the given
      * buffer without truncation */
-    return !(written < length - 1);
+    if (written < 0 || written >= length)
+        return 1;
 
+    /* Append exec command parameter */
+    if (exec_command != NULL) {
+        if (guac_kubernetes_append_endpoint_param(buffer,
+                    length, "command", exec_command))
+            return 1;
+    }
+
+    /* Append kubernetes container parameter */
+    if (kubernetes_container != NULL) {
+        if (guac_kubernetes_append_endpoint_param(buffer,
+                    length, "container", kubernetes_container))
+            return 1;
+    }
+
+    /* Append stdin, stdout and tty parameters */
+    return (guac_kubernetes_append_endpoint_param(buffer, length, "stdin", "true"))
+        || (guac_kubernetes_append_endpoint_param(buffer, length, "stdout", "true"))
+        || (guac_kubernetes_append_endpoint_param(buffer, length, "tty", "true"));
 }
-

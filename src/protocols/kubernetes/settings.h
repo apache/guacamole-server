@@ -98,6 +98,12 @@ typedef struct guac_kubernetes_settings {
     char* kubernetes_container;
 
     /**
+     * The command to generate api endpoint for call exec. 
+     * If omitted call attach will be used.
+     */
+    char* exec_command;
+
+    /**
      * Whether SSL/TLS should be used.
      */
     bool use_ssl;
