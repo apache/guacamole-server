@@ -50,8 +50,11 @@ int guac_kubernetes_escape_url_component(char* output, int length,
         const char* str);
 
 /**
- * Append the parameter to the endpoint path.
- * Value within the path will be URL-escaped as necessary.
+ * Appends the given query parameter and value to the given buffer. If the
+ * buffer does not already contain the '?' character denoting the start of the
+ * query string, it will be added. If the buffer already contains a query
+ * string, a '&' character will be added before the new parameter. The
+ * parameter value will automatically be URL-escaped as necessary.
  *
  * @param buffer
  *     The buffer which should receive the parameter. It could contain the endpoint path.
@@ -61,7 +64,8 @@ int guac_kubernetes_escape_url_component(char* output, int length,
  *     The number of bytes available in the given buffer.
  *
  * @param param_name
- *     The name of the parameter.
+ *     The name of the parameter. If the parameter name contains characters
+ *     with special meaning to URLs, it must already be URL-escaped.
  *
  * @param param_value
  *     The value of the parameter.

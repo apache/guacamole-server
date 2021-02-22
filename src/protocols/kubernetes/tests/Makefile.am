@@ -26,48 +26,41 @@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
-lib_LTLIBRARIES = libguac-client-kubernetes.la
-SUBDIRS = . tests
+#
+# Unit tests for Kubernetes support
+#
 
-libguac_client_kubernetes_la_SOURCES = \
-    argv.c                             \
-    client.c                           \
-    clipboard.c                        \
-    input.c                            \
-    io.c                               \
-    pipe.c                             \
-    settings.c                         \
-    ssl.c                              \
-    kubernetes.c                       \
-    url.c                              \
-    user.c
+check_PROGRAMS = test_kubernetes
+TESTS = $(check_PROGRAMS)
 
-noinst_HEADERS = \
-    argv.h       \
-    client.h     \
-    clipboard.h  \
-    input.h      \
-    io.h         \
-    pipe.h       \
-    settings.h   \
-    ssl.h        \
-    kubernetes.h \
-    url.h        \
-    user.h
+test_kubernetes_SOURCES = \
+    url/append.c          \
+    url/escape.c
 
-libguac_client_kubernetes_la_CFLAGS = \
-    -Werror -Wall -Iinclude           \
-    @LIBGUAC_INCLUDE@                 \
-    @TERMINAL_INCLUDE@
+test_kubernetes_CFLAGS =                \
+    -Werror -Wall -pedantic             \
+    @LIBGUAC_CLIENT_KUBERNETES_INCLUDE@ \
+    @LIBGUAC_INCLUDE@
 
-libguac_client_kubernetes_la_LIBADD = \
-    @COMMON_LTLIB@                    \
-    @LIBGUAC_LTLIB@                   \
-    @TERMINAL_LTLIB@
+test_kubernetes_LDADD =               \
+    @CUNIT_LIBS@                      \
+    @LIBGUAC_CLIENT_KUBERNETES_LTLIB@
 
-libguac_client_kubernetes_la_LDFLAGS = \
-    -version-info 0:0:0                \
-    @PTHREAD_LIBS@                     \
-    @SSL_LIBS@                         \
-    @WEBSOCKETS_LIBS@
+#
+# Autogenerate test runner
+#
+
+GEN_RUNNER = $(top_srcdir)/util/generate-test-runner.pl
+CLEANFILES = _generated_runner.c
+
+_generated_runner.c: $(test_kubernetes_SOURCES)
+	$(AM_V_GEN) $(GEN_RUNNER) $(test_kubernetes_SOURCES) > $@
+
+nodist_test_kubernetes_SOURCES = \
+    _generated_runner.c
+
+# Use automake's TAP test driver for running any tests
+LOG_DRIVER =                \
+    env AM_TAP_AWK='$(AWK)' \
+    $(SHELL) $(top_srcdir)/build-aux/tap-driver.sh
 
