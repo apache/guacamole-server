@@ -116,6 +116,15 @@ void guac_common_surface_set_multitouch(guac_common_surface* surface,
 
 }
 
+void guac_common_surface_set_lossless(guac_common_surface* surface,
+        int lossless) {
+
+    pthread_mutex_lock(&surface->_lock);
+    surface->lossless = lossless;
+    pthread_mutex_unlock(&surface->_lock);
+
+}
+
 void guac_common_surface_move(guac_common_surface* surface, int x, int y) {
 
     pthread_mutex_lock(&surface->_lock);
@@ -533,6 +542,10 @@ static int __guac_common_surface_png_optimality(guac_common_surface* surface,
  */
 static int __guac_common_surface_should_use_jpeg(guac_common_surface* surface,
         const guac_common_rect* rect) {
+
+    /* Do not use JPEG if lossless quality is required */
+    if (surface->lossless)
+        return 0;
 
     /* Calculate the average framerate for the given rect */
     int framerate = __guac_common_surface_calculate_framerate(surface, rect);
@@ -1806,7 +1819,8 @@ static void __guac_common_surface_flush_to_webp(guac_common_surface* surface,
         /* Send WebP for rect */
         guac_client_stream_webp(surface->client, socket, GUAC_COMP_OVER, layer,
                 surface->dirty_rect.x, surface->dirty_rect.y, rect,
-                guac_common_surface_suggest_quality(surface->client), 0);
+                guac_common_surface_suggest_quality(surface->client),
+                surface->lossless ? 1 : 0);
 
         cairo_surface_destroy(rect);
         surface->realized = 1;
