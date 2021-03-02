@@ -193,6 +193,12 @@ typedef struct guac_rdp_settings {
     int resolution;
 
     /**
+     * Whether all graphical updates for this connection should use lossless
+     * compression only.
+     */
+    int lossless;
+
+    /**
      * Whether audio is enabled.
      */
     int audio_enabled;
