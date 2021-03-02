@@ -77,6 +77,12 @@ typedef struct guac_vnc_settings {
      */
     bool read_only;
 
+    /**
+     * Whether all graphical updates for this connection should use lossless
+     * compression only.
+     */
+    bool lossless;
+
 #ifdef ENABLE_VNC_REPEATER
     /**
      * The VNC host to connect to, if using a repeater.

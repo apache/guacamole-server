@@ -435,6 +435,10 @@ void* guac_vnc_client_thread(void* data) {
     vnc_client->display = guac_common_display_alloc(client,
             rfb_client->width, rfb_client->height);
 
+    /* Use lossless compression only if requested (otherwise, use default
+     * heuristics) */
+    guac_common_display_set_lossless(vnc_client->display, settings->lossless);
+
     /* If not read-only, set an appropriate cursor */
     if (settings->read_only == 0) {
         if (settings->remote_cursor)
