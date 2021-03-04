@@ -127,6 +127,13 @@ typedef struct guac_common_surface {
     int touches;
 
     /**
+     * Non-zero if all graphical updates for this surface should use lossless
+     * compression, 0 otherwise. By default, newly-created surfaces will use
+     * lossy compression when heuristics determine it is appropriate.
+     */
+    int lossless;
+
+    /**
      * The X coordinate of the upper-left corner of this layer, in pixels,
      * relative to its parent layer. This is only applicable to visible
      * (non-buffer) layers which are not the default layer.
@@ -509,6 +516,24 @@ void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
  */
 void guac_common_surface_set_multitouch(guac_common_surface* surface,
         int touches);
+
+/**
+ * Sets the lossless compression policy of the given surface to the given
+ * value. By default, newly-created surfaces will use lossy compression for
+ * graphical updates when heuristics determine that doing so is appropriate.
+ * Specifying a non-zero value here will force all graphical updates to always
+ * use lossless compression, whereas specifying zero will restore the default
+ * policy.
+ *
+ * @param surface
+ *     The surface to modify.
+ *
+ * @param lossless
+ *     Non-zero if all graphical updates for this surface should use lossless
+ *     compression, 0 otherwise.
+ */
+void guac_common_surface_set_lossless(guac_common_surface* surface,
+        int lossless);
 
 #endif
 

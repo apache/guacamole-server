@@ -221,6 +221,9 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     display->display_surface = guac_common_surface_alloc(client,
             client->socket, display->display_layer, 0, 0);
 
+    /* Never use lossy compression for terminal contents */
+    guac_common_surface_set_lossless(display->display_surface, 1);
+
     /* Select layer is a child of the display layer */
     guac_protocol_send_move(client->socket, display->select_layer,
             display->display_layer, 0, 0, 0);

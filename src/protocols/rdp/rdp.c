@@ -435,6 +435,10 @@ static int guac_rdp_handle_connection(guac_client* client) {
             rdp_client->settings->width,
             rdp_client->settings->height);
 
+    /* Use lossless compression only if requested (otherwise, use default
+     * heuristics) */
+    guac_common_display_set_lossless(rdp_client->display, settings->lossless);
+
     rdp_client->current_surface = rdp_client->display->default_surface;
 
     rdp_client->available_svc = guac_common_list_alloc();
