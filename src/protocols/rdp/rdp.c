@@ -302,6 +302,52 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
 
 }
 
+#ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
+/**
+ * Callback invoked by FreeRDP when the SSL/TLS certificate of the RDP server
+ * needs to be verified. If this ever happens, this function implementation
+ * will always fail unless the connection has been configured to ignore
+ * certificate validity.
+ *
+ * @param instance
+ *     The FreeRDP instance associated with the RDP session whose SSL/TLS
+ *     certificate needs to be verified.
+ *
+ * @param hostname
+ *     The hostname or address of the RDP server being connected to.
+ *
+ * @param port
+ *     The TCP port number of the RDP server being connected to.
+ *
+ * @param common_name
+ *     The name of the server protected by the certificate. This should match
+ *     the hostname/address of the RDP server.
+ *
+ * @param subject
+ *     The subject to whom the certificate was issued.
+ *
+ * @param issuer
+ *     The authority that issued the certificate,
+ *
+ * @param fingerprint
+ *     The cryptographic fingerprint of the certificate.
+ *
+ * @param flags
+ *     Bitwise OR of any applicable certificate verification flags. Valid flags are
+ *     VERIFY_CERT_FLAG_NONE, VERIFY_CERT_FLAG_LEGACY, VERIFY_CERT_FLAG_REDIRECT,
+ *     VERIFY_CERT_FLAG_GATEWAY, VERIFY_CERT_FLAG_CHANGED, and
+ *     VERIFY_CERT_FLAG_MISMATCH.
+ *
+ * @return
+ *     1 to accept the certificate and store within FreeRDP's configuration
+ *     directory, 2 to accept the certificate only within this session, or 0 to
+ *     reject the certificate.
+ */
+static DWORD rdp_freerdp_verify_certificate(freerdp* instance,
+        const char* hostname, UINT16 port, const char* common_name,
+        const char* subject, const char* issuer, const char* fingerprint,
+        DWORD flags) {
+#else
 /**
  * Callback invoked by FreeRDP when the SSL/TLS certificate of the RDP server
  * needs to be verified. If this ever happens, this function implementation
@@ -321,12 +367,19 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
  * @param fingerprint
  *     The cryptographic fingerprint of the certificate.
  *
+ * @param host_mismatch
+ *     TRUE if the certificate does not match the destination hostname, FALSE
+ *     otherwise.
+ *
  * @return
- *     TRUE if the certificate passes verification, FALSE otherwise.
+ *     1 to accept the certificate and store within FreeRDP's configuration
+ *     directory, 2 to accept the certificate only within this session, or 0 to
+ *     reject the certificate.
  */
 static DWORD rdp_freerdp_verify_certificate(freerdp* instance,
         const char* common_name, const char* subject, const char* issuer,
         const char* fingerprint, BOOL host_mismatch) {
+#endif
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -447,7 +500,12 @@ static int guac_rdp_handle_connection(guac_client* client) {
     freerdp* rdp_inst = freerdp_new();
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
+
+#ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
+    rdp_inst->VerifyCertificateEx = rdp_freerdp_verify_certificate;
+#else
     rdp_inst->VerifyCertificate = rdp_freerdp_verify_certificate;
+#endif
 
     /* Allocate FreeRDP context */
     rdp_inst->ContextSize = sizeof(rdp_freerdp_context);

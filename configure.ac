@@ -897,6 +897,14 @@ then
                      [[#include <freerdp/freerdp.h>]])
 fi
 
+# Updated certificate verification callback (introduced with 2.0.0, not present
+# in 2.0.0-rc4 or earlier)
+if test "x${have_freerdp2}" = "xyes"
+then
+    AC_CHECK_MEMBERS([freerdp.VerifyCertificateEx],,,
+                     [[#include <freerdp/freerdp.h>]])
+fi
+
 # Restore CPPFLAGS, removing FreeRDP-specific options needed for testing
 CPPFLAGS="$OLDCPPFLAGS"
 
