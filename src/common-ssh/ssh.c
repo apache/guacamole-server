@@ -269,29 +269,41 @@ static int guac_common_ssh_sign_callback(LIBSSH2_SESSION* session,
  *     The value of the abstract parameter provided when the SSH session was
  *     created with libssh2_session_init_ex().
  */
+const char* GUAC_SSH_DEFAULT_PASSWORD_PROMPT = "Password:";
+const char* DEFAULT_SRA_PASSWORD = "";
+
 static void guac_common_ssh_kbd_callback(const char *name, int name_len,
         const char *instruction, int instruction_len, int num_prompts,
         const LIBSSH2_USERAUTH_KBDINT_PROMPT *prompts,
         LIBSSH2_USERAUTH_KBDINT_RESPONSE *responses,
         void **abstract) {
 
+    char* title;
+    char* answer;
+
     guac_common_ssh_session* common_session =
         (guac_common_ssh_session*) *abstract;
 
     guac_client* client = common_session->client;
 
-    /* Send password if only one prompt */
-    if (num_prompts == 1) {
-        char* password = common_session->user->password;
-        responses[0].text = strdup(password);
-        responses[0].length = strlen(password);
-    }
+    char* password = common_session->user->password;
 
-    /* If more than one prompt, a single password is not enough */
-    else
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Unsupported number of keyboard-interactive prompts: %i",
-                num_prompts);
+    for (int i = 0; i < num_prompts; i++) {
+        title = strndup(prompts[i].text, prompts[i].length);
+
+        //If it's the "Password:" prompt, input user password (if given)
+        if (strncmp(title, GUAC_SSH_DEFAULT_PASSWORD_PROMPT, strlen(GUAC_SSH_DEFAULT_PASSWORD_PROMPT)) == 0 && password != 0) {
+            responses[i].text = strdup(password);
+            responses[i].length = strlen(password);
+        }
+        //If not, ask the user for the answer
+        else {
+            answer = common_session->credential_handler(client, title, prompts[i].echo);
+            responses[i].text = answer;
+            responses[i].length = strlen(answer);
+        }
+        free(title);
+    }
 
 }
 
@@ -369,8 +381,11 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     }
 
     /* Attempt authentication with username + password. */
-    if (user->password == NULL && common_session->credential_handler)
-            user->password = common_session->credential_handler(client, "Password: ");
+    //if (user->password == NULL && common_session->credential_handler)
+    //        user->password = common_session->credential_handler(client, "Password: ", false);
+    if (user->password == NULL) {
+        user->password = strdup(DEFAULT_SRA_PASSWORD);
+    }
     
     /* Authenticate with password, if provided */
     if (user->password != NULL) {
