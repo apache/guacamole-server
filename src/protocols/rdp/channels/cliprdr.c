@@ -283,7 +283,8 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
     if (guac_rdp_cliprdr_format_supported(format_list, CF_TEXT))
         return guac_rdp_cliprdr_send_format_data_request(cliprdr, CF_TEXT);
 
-    /* Ignore any unsupported data */
+    /* Suppose that any unsupported data is raw data (in this case, CF_RAW) */
+    guac_rdp_cliprdr_send_format_data_request(cliprdr, CF_RAW);
     guac_client_log(clipboard->client, GUAC_LOG_DEBUG, "Ignoring unsupported "
             "clipboard data. Only Unicode and text clipboard formats are "
             "currently supported.");
@@ -437,11 +438,15 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
          * Either incorrect values are (somehow) being stored, or support for
          * the format indicated by that value is incomplete and must be added
          * here. The values which may be stored within requested_format are
-         * completely within our control. */
+         * completely within our control.
+         * But because some data rather than text was copied, it needs to reset 
+         * the current local clipboard. */
         default:
             guac_client_log(clipboard->client, GUAC_LOG_DEBUG, "Requested "
                     "clipboard data in unsupported format (0x%X).",
                     clipboard->requested_format);
+            guac_common_clipboard_reset(clipboard->clipboard, "text/plain");
+            guac_common_clipboard_send(clipboard->clipboard, clipboard->client);
             return CHANNEL_RC_OK;
 
     }
@@ -612,6 +617,11 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
      * the data that was received */
     guac_rdp_clipboard* clipboard = rdp_client->clipboard;
     if (clipboard == NULL)
+        return 0;
+
+    /* Don't need to send it to the remote server, if the local clipboard is
+     * empty */
+    if (clipboard->clipboard->length == 0)
         return 0;
 
     /* Terminate clipboard data with NULL */
