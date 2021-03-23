@@ -278,7 +278,6 @@ static void guac_common_ssh_kbd_callback(const char *name, int name_len,
         LIBSSH2_USERAUTH_KBDINT_RESPONSE *responses,
         void **abstract) {
 
-    char* title;
     char* answer;
 
     guac_common_ssh_session* common_session =
@@ -286,25 +285,11 @@ static void guac_common_ssh_kbd_callback(const char *name, int name_len,
 
     guac_client* client = common_session->client;
 
-    char* password = common_session->user->password;
-
     for (int i = 0; i < num_prompts; i++) {
-        title = strndup(prompts[i].text, prompts[i].length);
-
-        //If it's the "Password:" prompt, input user password (if given)
-        if (strncmp(title, GUAC_SSH_DEFAULT_PASSWORD_PROMPT, strlen(GUAC_SSH_DEFAULT_PASSWORD_PROMPT)) == 0 && password != 0) {
-            responses[i].text = strdup(password);
-            responses[i].length = strlen(password);
-        }
-        //If not, ask the user for the answer
-        else {
-            answer = common_session->credential_handler(client, title, prompts[i].echo);
-            responses[i].text = answer;
-            responses[i].length = strlen(answer);
-        }
-        free(title);
+        answer = common_session->credential_handler(client, prompts[i].text, prompts[i].echo);
+        responses[i].text = answer;
+        responses[i].length = strlen(answer);
     }
-
 }
 
 /**
