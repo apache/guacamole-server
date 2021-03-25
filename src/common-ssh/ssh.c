@@ -222,6 +222,33 @@ static int guac_common_ssh_sign_callback(LIBSSH2_SESSION* session,
     return 0;
 }
 
+int password_auth_with_retry(guac_common_ssh_session* common_session) {
+    guac_client* client = common_session->client;
+    guac_common_ssh_user* user = common_session->user;
+    LIBSSH2_SESSION* session = common_session->session;
+    int NUMBER_OF_TRIES = 3;
+
+    char* prompt = "Password: ";
+    for (int i=0; i < NUMBER_OF_TRIES; ++i) {
+        user->password = common_session->credential_handler(client, prompt, 0);
+        if (libssh2_userauth_password(session, user->username, user->password)) {
+            /* Retry with new prompt */
+            prompt = "Wrong password. Password: ";
+        } else {
+            /* Success, early return */
+            return 0;
+        }
+    }
+
+    char* error_message;
+    libssh2_session_last_error(session, &error_message, NULL, 0);
+    guac_client_abort(client,
+            GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+            "Password authentication failed: %s", error_message);
+
+    return 1;
+}
+
 /**
  * Callback for the keyboard-interactive authentication method. Currently
  * supports just one prompt for the password. This callback is invoked as
@@ -268,7 +295,6 @@ static void guac_common_ssh_kbd_callback(const char *name, int name_len,
         LIBSSH2_USERAUTH_KBDINT_RESPONSE *responses,
         void **abstract) {
 
-    char* title;
     char* answer;
 
     guac_common_ssh_session* common_session =
@@ -276,25 +302,11 @@ static void guac_common_ssh_kbd_callback(const char *name, int name_len,
 
     guac_client* client = common_session->client;
 
-    char* password = common_session->user->password;
-
     for (int i = 0; i < num_prompts; i++) {
-        title = strndup(prompts[i].text, prompts[i].length);
-
-        //If it's the "Password:" prompt, input user password (if given)
-        if (strncmp(title, GUAC_SSH_DEFAULT_PASSWORD_PROMPT, strlen(GUAC_SSH_DEFAULT_PASSWORD_PROMPT)) == 0 && password != 0) {
-            responses[i].text = strdup(password);
-            responses[i].length = strlen(password);
-        }
-        //If not, ask the user for the answer
-        else {
-            answer = common_session->credential_handler(client, title, prompts[i].echo);
-            responses[i].text = answer;
-            responses[i].length = strlen(answer);
-        }
-        free(title);
+        answer = common_session->credential_handler(client, prompts[i].text, prompts[i].echo);
+        responses[i].text = answer;
+        responses[i].length = strlen(answer);
     }
-
 }
 
 /**
@@ -383,45 +395,23 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
         /* Check if password auth is supported on the server */
         if (strstr(user_authlist, "password") != NULL) {
 
-            /* Attempt password authentication */
-            if (libssh2_userauth_password(session, user->username, user->password)) {
-
-                /* Abort on failure */
-                char* error_message;
-                libssh2_session_last_error(session, &error_message, NULL, 0);
-                guac_client_abort(client,
-                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                        "Password authentication failed: %s", error_message);
-
-                return 1;
-            }
-
-            /* Password authentication succeeded */
-            return 0;
-
+            return password_auth_with_retry(common_session);
         }
 
         /* Check if keyboard-interactive auth is supported on the server */
         if (strstr(user_authlist, "keyboard-interactive") != NULL) {
 
             /* Attempt keyboard-interactive auth using provided password */
-            if (libssh2_userauth_keyboard_interactive(session, user->username,
-                        &guac_common_ssh_kbd_callback)) {
+            int result = libssh2_userauth_keyboard_interactive(session, user->username,
+                        &guac_common_ssh_kbd_callback);
 
-                /* Abort on failure */
-                char* error_message;
-                libssh2_session_last_error(session, &error_message, NULL, 0);
-                guac_client_abort(client,
-                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                        "Keyboard-interactive authentication failed: %s",
-                        error_message);
-
-                return 1;
+            if (result == LIBSSH2_ERROR_AUTHENTICATION_FAILED) {
+                /* server changes to password authentication at this point */
+                return password_auth_with_retry(common_session);
             }
 
             /* Keyboard-interactive authentication succeeded */
             return 0;
-
         }
 
         /* No known authentication types available */
