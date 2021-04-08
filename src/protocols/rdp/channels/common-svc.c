@@ -89,12 +89,16 @@ void guac_rdp_common_svc_write(guac_rdp_common_svc* svc,
         return;
     }
 
+    guac_rdp_client* rdp_client = (guac_rdp_client*) svc->client->data;
+
     /* NOTE: The wStream sent via pVirtualChannelWriteEx will automatically be
      * freed later with a call to Stream_Free() when handling the
      * corresponding write cancel/completion event. */
+    pthread_mutex_lock(&(rdp_client->message_lock));
     svc->_entry_points.pVirtualChannelWriteEx(svc->_init_handle,
             svc->_open_handle, Stream_Buffer(output_stream),
             Stream_GetPosition(output_stream), output_stream);
+    pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }
 

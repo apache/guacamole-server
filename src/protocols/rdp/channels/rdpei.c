@@ -32,9 +32,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-guac_rdp_rdpei* guac_rdp_rdpei_alloc() {
+guac_rdp_rdpei* guac_rdp_rdpei_alloc(guac_client* client) {
 
     guac_rdp_rdpei* rdpei = malloc(sizeof(guac_rdp_rdpei));
+    rdpei->client = client;
 
     /* Not yet connected */
     rdpei->rdpei = NULL;
@@ -107,6 +108,9 @@ void guac_rdp_rdpei_load_plugin(rdpContext* context) {
 int guac_rdp_rdpei_touch_update(guac_rdp_rdpei* rdpei, int id, int x, int y,
         double force) {
 
+    guac_client* client = rdpei->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
     int contact_id; /* Ignored */
 
     /* Track touches only if channel is connected */
@@ -149,20 +153,31 @@ int guac_rdp_rdpei_touch_update(guac_rdp_rdpei* rdpei, int id, int x, int y,
         if (!touch->active)
             return 1;
 
+        pthread_mutex_lock(&(rdp_client->message_lock));
         context->TouchEnd(context, id, x, y, &contact_id);
+        pthread_mutex_unlock(&(rdp_client->message_lock));
+
         touch->active = 0;
 
     }
 
     /* Signal the start of a touch if this is the first we've seen it */
     else if (!touch->active) {
+
+        pthread_mutex_lock(&(rdp_client->message_lock));
         context->TouchBegin(context, id, x, y, &contact_id);
+        pthread_mutex_unlock(&(rdp_client->message_lock));
+
         touch->active = 1;
+
     }
 
     /* Established touches need only be updated */
-    else
+    else {
+        pthread_mutex_lock(&(rdp_client->message_lock));
         context->TouchUpdate(context, id, x, y, &contact_id);
+        pthread_mutex_unlock(&(rdp_client->message_lock));
+    }
 
     return 0;
 

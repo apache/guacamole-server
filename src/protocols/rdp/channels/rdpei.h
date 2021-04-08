@@ -67,6 +67,11 @@ typedef struct guac_rdp_rdpei_touch {
 typedef struct guac_rdp_rdpei {
 
     /**
+     * The guac_client instance handling the relevant RDP connection.
+     */
+    guac_client* client;
+
+    /**
      * RDPEI control interface.
      */
     RdpeiClientContext* rdpei;
@@ -83,10 +88,13 @@ typedef struct guac_rdp_rdpei {
  * channel once connected. The RDPEI channel allows multi-touch input
  * events to be sent to the RDP server.
  *
+ * @param client
+ *     The guac_client instance handling the relevant RDP connection.
+ *
  * @return
  *     A newly-allocated RDPEI module.
  */
-guac_rdp_rdpei* guac_rdp_rdpei_alloc();
+guac_rdp_rdpei* guac_rdp_rdpei_alloc(guac_client* client);
 
 /**
  * Frees the resources associated with support for the RDPEI channel. Only
