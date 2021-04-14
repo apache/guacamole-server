@@ -36,23 +36,15 @@ typedef struct guac_rdp_audio_buffer guac_rdp_audio_buffer;
  * buffer has reached capacity and must be flushed.
  *
  * @param audio_buffer
- *     The guac_rdp_audio_buffer that has reached capacity and is being
+ *     The guac_rdp_audio_buffer that has reached capacity and needs to be
  *     flushed.
- *
- * @param buffer
- *     The buffer which needs to be flushed as an audio packet.
  *
  * @param length
  *     The number of bytes stored within the buffer. This is guaranteed to be
  *     identical to the packet_size value specified when the audio buffer was
  *     initialized.
- *
- * @param data
- *     The arbitrary data pointer provided when the audio buffer was
- *     initialized.
  */
-typedef void guac_rdp_audio_buffer_flush_handler(guac_rdp_audio_buffer* audio_buffer,
-        char* buffer, int length, void* data);
+typedef void guac_rdp_audio_buffer_flush_handler(guac_rdp_audio_buffer* audio_buffer, int length);
 
 /**
  * A description of an arbitrary PCM audio format.

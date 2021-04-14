@@ -333,17 +333,16 @@ void guac_rdp_ai_process_formats(guac_client* client,
 
 }
 
-void guac_rdp_ai_flush_packet(guac_rdp_audio_buffer* audio_buffer,
-        char* buffer, int length, void* data) {
+void guac_rdp_ai_flush_packet(guac_rdp_audio_buffer* audio_buffer, int length) {
 
     guac_client* client = audio_buffer->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-    IWTSVirtualChannel* channel = (IWTSVirtualChannel*) data;
+    IWTSVirtualChannel* channel = (IWTSVirtualChannel*) audio_buffer->data;
 
     /* Send data over channel */
     pthread_mutex_lock(&(rdp_client->message_lock));
     guac_rdp_ai_send_incoming_data(channel);
-    guac_rdp_ai_send_data(channel, buffer, length);
+    guac_rdp_ai_send_data(channel, audio_buffer->packet, length);
     pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }
