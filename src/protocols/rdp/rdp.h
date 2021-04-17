@@ -172,6 +172,12 @@ typedef struct guac_rdp_client {
      */
     pthread_rwlock_t lock;
 
+    /**
+     * Lock which synchronizes the sending of each RDP message, ensuring
+     * attempts to send RDP messages never overlap.
+     */
+    pthread_mutex_t message_lock;
+
 } guac_rdp_client;
 
 /**

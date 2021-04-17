@@ -107,7 +107,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Load "AUDIO_INPUT" plugin for audio input*/
     if (settings->enable_audio_input) {
-        rdp_client->audio_input = guac_rdp_audio_buffer_alloc();
+        rdp_client->audio_input = guac_rdp_audio_buffer_alloc(client);
         guac_rdp_audio_load_plugin(instance->context);
     }
 
@@ -564,13 +564,16 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 guac_timestamp frame_end;
                 int frame_remaining;
 
-                /* Check the libfreerdp fds */
-                if (!freerdp_check_event_handles(rdp_inst->context)) {
+                /* Handle any queued FreeRDP events (this may result in RDP
+                 * messages being sent) */
+                pthread_mutex_lock(&(rdp_client->message_lock));
+                int event_result = freerdp_check_event_handles(rdp_inst->context);
+                pthread_mutex_unlock(&(rdp_client->message_lock));
 
-                    /* Flag connection failure */
+                /* Abort if FreeRDP event handling fails */
+                if (!event_result) {
                     wait_result = -1;
                     break;
-
                 }
 
                 /* Calculate time remaining in frame */
@@ -634,7 +637,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
     }
 
     /* Disconnect client and channels */
+    pthread_mutex_lock(&(rdp_client->message_lock));
     freerdp_disconnect(rdp_inst);
+    pthread_mutex_unlock(&(rdp_client->message_lock));
 
     /* Clean up FreeRDP internal GDI implementation */
     gdi_free(rdp_inst);

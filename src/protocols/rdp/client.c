@@ -145,10 +145,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rdp_client->clipboard = guac_rdp_clipboard_alloc(client);
 
     /* Init display update module */
-    rdp_client->disp = guac_rdp_disp_alloc();
+    rdp_client->disp = guac_rdp_disp_alloc(client);
 
     /* Init multi-touch support module (RDPEI) */
-    rdp_client->rdpei = guac_rdp_rdpei_alloc();
+    rdp_client->rdpei = guac_rdp_rdpei_alloc(client);
 
     /* Redirect FreeRDP log messages to guac_client_log() */
     guac_rdp_redirect_wlog(client);
@@ -158,8 +158,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     pthread_mutexattr_settype(&(rdp_client->attributes),
             PTHREAD_MUTEX_RECURSIVE);
 
-    /* Initalize the lock */
+    /* Init required locks */
     pthread_rwlock_init(&(rdp_client->lock), NULL);
+    pthread_mutex_init(&(rdp_client->message_lock), &(rdp_client->attributes));
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
@@ -226,6 +227,7 @@ int guac_rdp_client_free_handler(guac_client* client) {
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
 
     pthread_rwlock_destroy(&(rdp_client->lock));
+    pthread_mutex_destroy(&(rdp_client->message_lock));
 
     /* Free client data */
     free(rdp_client);

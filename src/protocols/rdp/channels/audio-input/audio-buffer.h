@@ -25,23 +25,26 @@
 #include <pthread.h>
 
 /**
+ * A buffer of arbitrary audio data. Received audio data can be written to this
+ * buffer, and will automatically be flushed via a given handler once the
+ * internal buffer reaches capacity.
+ */
+typedef struct guac_rdp_audio_buffer guac_rdp_audio_buffer;
+
+/**
  * Handler which is invoked when a guac_rdp_audio_buffer's internal packet
  * buffer has reached capacity and must be flushed.
  *
- * @param buffer
- *     The buffer which needs to be flushed as an audio packet.
+ * @param audio_buffer
+ *     The guac_rdp_audio_buffer that has reached capacity and needs to be
+ *     flushed.
  *
  * @param length
  *     The number of bytes stored within the buffer. This is guaranteed to be
  *     identical to the packet_size value specified when the audio buffer was
  *     initialized.
- *
- * @param data
- *     The arbitrary data pointer provided when the audio buffer was
- *     initialized.
  */
-typedef void guac_rdp_audio_buffer_flush_handler(char* buffer, int length,
-        void* data);
+typedef void guac_rdp_audio_buffer_flush_handler(guac_rdp_audio_buffer* audio_buffer, int length);
 
 /**
  * A description of an arbitrary PCM audio format.
@@ -66,18 +69,18 @@ typedef struct guac_rdp_audio_format {
 
 } guac_rdp_audio_format;
 
-/**
- * A buffer of arbitrary audio data. Received audio data can be written to this
- * buffer, and will automatically be flushed via a given handler once the
- * internal buffer reaches capacity.
- */
-typedef struct guac_rdp_audio_buffer {
+struct guac_rdp_audio_buffer {
 
     /**
      * Lock which is acquired/released to ensure accesses to the audio buffer
      * are atomic.
      */
     pthread_mutex_t lock;
+
+    /**
+     * The guac_client instance handling the relevant RDP connection.
+     */
+    guac_client* client;
 
     /**
      * The user from which this audio buffer will receive data. If no user has
@@ -145,17 +148,20 @@ typedef struct guac_rdp_audio_buffer {
      */
     void* data;
 
-} guac_rdp_audio_buffer;
+};
 
 /**
  * Allocates a new audio buffer. The new audio buffer will ignore any received
  * data until guac_rdp_audio_buffer_begin() is invoked, and will resume
  * ignoring received data once guac_rdp_audio_buffer_end() is invoked.
  *
+ * @param client
+ *     The guac_client instance handling the relevant RDP connection.
+ *
  * @return
  *     A newly-allocated audio buffer.
  */
-guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc();
+guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc(guac_client* client);
 
 /**
  * Associates the given audio buffer with the underlying audio stream which

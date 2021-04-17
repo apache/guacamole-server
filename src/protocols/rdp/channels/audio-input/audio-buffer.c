@@ -31,9 +31,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc() {
+guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc(guac_client* client) {
     guac_rdp_audio_buffer* buffer = calloc(1, sizeof(guac_rdp_audio_buffer));
     pthread_mutex_init(&(buffer->lock), NULL);
+    buffer->client = client;
     return buffer;
 }
 
@@ -270,8 +271,8 @@ void guac_rdp_audio_buffer_write(guac_rdp_audio_buffer* audio_buffer,
 
             /* Only actually invoke if defined */
             if (audio_buffer->flush_handler)
-                audio_buffer->flush_handler(audio_buffer->packet,
-                        audio_buffer->bytes_written, audio_buffer->data);
+                audio_buffer->flush_handler(audio_buffer,
+                        audio_buffer->bytes_written);
 
             /* Reset buffer in all cases */
             audio_buffer->bytes_written = 0;

@@ -247,6 +247,8 @@ static void guac_rdp_ai_send_formatchange(IWTSVirtualChannel* channel,
 void guac_rdp_ai_process_version(guac_client* client,
         IWTSVirtualChannel* channel, wStream* stream) {
 
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
     /* Verify we have at least 4 bytes available (UINT32) */
     if (Stream_GetRemainingLength(stream) < 4) {
         guac_client_log(client, GUAC_LOG_WARNING, "Audio input Versoin PDU "
@@ -269,8 +271,9 @@ void guac_rdp_ai_process_version(guac_client* client,
     Stream_Write_UINT32(response, 1); /* Version */
 
     /* Send response */
-    channel->Write(channel, (UINT32) Stream_GetPosition(response),
-            Stream_Buffer(response), NULL);
+    pthread_mutex_lock(&(rdp_client->message_lock));
+    channel->Write(channel, (UINT32) Stream_GetPosition(response), Stream_Buffer(response), NULL);
+    pthread_mutex_unlock(&(rdp_client->message_lock));
     Stream_Free(response, TRUE);
 
 }
@@ -313,26 +316,34 @@ void guac_rdp_ai_process_formats(guac_client* client,
                 format.channels, format.bps / 8);
 
         /* Accept single format */
+        pthread_mutex_lock(&(rdp_client->message_lock));
         guac_rdp_ai_send_incoming_data(channel);
         guac_rdp_ai_send_formats(channel, &format, 1);
+        pthread_mutex_unlock(&(rdp_client->message_lock));
         return;
 
     }
 
     /* No formats available */
     guac_client_log(client, GUAC_LOG_WARNING, "AUDIO_INPUT: No WAVE format.");
+    pthread_mutex_lock(&(rdp_client->message_lock));
     guac_rdp_ai_send_incoming_data(channel);
     guac_rdp_ai_send_formats(channel, NULL, 0);
+    pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }
 
-void guac_rdp_ai_flush_packet(char* buffer, int length, void* data) {
+void guac_rdp_ai_flush_packet(guac_rdp_audio_buffer* audio_buffer, int length) {
 
-    IWTSVirtualChannel* channel = (IWTSVirtualChannel*) data;
+    guac_client* client = audio_buffer->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    IWTSVirtualChannel* channel = (IWTSVirtualChannel*) audio_buffer->data;
 
     /* Send data over channel */
+    pthread_mutex_lock(&(rdp_client->message_lock));
     guac_rdp_ai_send_incoming_data(channel);
-    guac_rdp_ai_send_data(channel, buffer, length);
+    guac_rdp_ai_send_data(channel, audio_buffer->packet, length);
+    pthread_mutex_unlock(&(rdp_client->message_lock));
 
 }
 
@@ -363,8 +374,10 @@ void guac_rdp_ai_process_open(guac_client* client,
             audio_buffer->out_format.bps);
 
     /* Success */
+    pthread_mutex_lock(&(rdp_client->message_lock));
     guac_rdp_ai_send_formatchange(channel, initial_format);
     guac_rdp_ai_send_open_reply(channel, 0);
+    pthread_mutex_unlock(&(rdp_client->message_lock));
 
     /* Begin receiving audio data */
     guac_rdp_audio_buffer_begin(audio_buffer, packet_frames,
