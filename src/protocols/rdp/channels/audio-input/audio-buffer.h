@@ -23,6 +23,16 @@
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 #include <pthread.h>
+#include <time.h>
+
+/**
+ * The minimum number of milliseconds of audio data that each instance of
+ * guac_rdp_audio_buffer should provide storage for. This buffer space does not
+ * induce additional latency, but is required to compensate for latency and
+ * functions as an upper limit on the amount of latency the buffer will
+ * compensate for.
+ */
+#define GUAC_RDP_AUDIO_BUFFER_MIN_DURATION 250
 
 /**
  * A buffer of arbitrary audio data. Received audio data can be written to this
@@ -73,9 +83,17 @@ struct guac_rdp_audio_buffer {
 
     /**
      * Lock which is acquired/released to ensure accesses to the audio buffer
-     * are atomic.
+     * are atomic. This lock is also bound to the modified pthread_cond_t,
+     * which should be signalled whenever the audio buffer structure has been
+     * modified.
      */
     pthread_mutex_t lock;
+
+    /**
+     * Condition which is signalled when any part of the audio buffer structure
+     * has been modified.
+     */
+    pthread_cond_t modified;
 
     /**
      * The guac_client instance handling the relevant RDP connection.
@@ -84,13 +102,15 @@ struct guac_rdp_audio_buffer {
 
     /**
      * The user from which this audio buffer will receive data. If no user has
-     * yet opened an associated audio stream, this will be NULL.
+     * yet opened an associated audio stream, or if the audio stream has been
+     * closed, this will be NULL.
      */
     guac_user* user;
 
     /**
      * The stream from which this audio buffer will receive data. If no user
-     * has yet opened an associated audio stream, this will be NULL.
+     * has yet opened an associated audio stream, or if the audio stream has
+     * been closed, this will be NULL.
      */
     guac_stream* stream;
 
@@ -115,6 +135,11 @@ struct guac_rdp_audio_buffer {
     int packet_size;
 
     /**
+     * The total number of bytes available within the packet buffer.
+     */
+    int packet_buffer_size;
+
+    /**
      * The number of bytes currently stored within the packet buffer.
      */
     int bytes_written;
@@ -137,11 +162,31 @@ struct guac_rdp_audio_buffer {
     char* packet;
 
     /**
+     * Thread which flushes the audio buffer at a rate that does not exceed the
+     * the audio sample rate (which might result in dropped samples due to
+     * overflow of the remote audio buffer).
+     */
+    pthread_t flush_thread;
+
+    /**
+     * The absolute point in time that the next packet of audio data sould be
+     * flushed. Another packet of received data should not be flushed prior to
+     * this time.
+     */
+    struct timespec next_flush;
+
+    /**
      * Handler function which will be invoked when a full audio packet is
      * ready to be flushed to the AUDIO_INPUT channel, if defined. If NULL,
      * audio packets will simply be ignored.
      */
     guac_rdp_audio_buffer_flush_handler* flush_handler;
+
+    /**
+     * Whether guac_rdp_audio_buffer_free() has been invoked and the audio
+     * buffer is being cleaned up.
+     */
+    int stopping;
 
     /**
      * Arbitrary data assigned by the AUDIO_INPUT plugin implementation.
