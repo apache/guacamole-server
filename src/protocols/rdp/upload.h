@@ -37,7 +37,7 @@ typedef struct guac_rdp_upload_status {
      * The overall offset within the file that the next write should
      * occur at.
      */
-    int offset;
+    uint64_t offset;
 
     /**
      * The ID of the file being written to.
