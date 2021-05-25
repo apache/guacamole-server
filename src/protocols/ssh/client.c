@@ -51,6 +51,7 @@ int guac_client_init(guac_client* client) {
     /* Set handlers */
     client->join_handler = guac_ssh_user_join_handler;
     client->free_handler = guac_ssh_client_free_handler;
+    client->leave_handler = guac_ssh_user_leave_handler;
 
     /* Register handlers for argument values that may be sent after the handshake */
     guac_argv_register(GUAC_SSH_ARGV_COLOR_SCHEME, guac_ssh_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);

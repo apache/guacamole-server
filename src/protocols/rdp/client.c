@@ -165,6 +165,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
     client->free_handler = guac_rdp_client_free_handler;
+    client->leave_handler = guac_rdp_user_leave_handler;
 
 #ifdef ENABLE_COMMON_SSH
     guac_common_ssh_init(client);
