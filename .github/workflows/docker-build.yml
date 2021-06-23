@@ -1,4 +1,4 @@
-name: buildx
+name: ci
 
 on:
   pull_request:
@@ -37,6 +37,12 @@ jobs:
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
             --build-arg VCS_REF=${GITHUB_SHA::8} \
             ${TAGS} --file ./Dockerfile ./
+      -
+        name: Set up QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@v1.2.0
+        with:
+          platforms: arm64,arm
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1.3.0
