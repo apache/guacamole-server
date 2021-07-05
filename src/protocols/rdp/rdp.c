@@ -28,6 +28,7 @@
 #include "channels/rail.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpei.h"
+#include "channels/rdpgfx.h"
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
 #include "color.h"
@@ -137,15 +138,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     }
 
-    /* Load plugin providing Dynamic Virtual Channel support, if required */
-    if (instance->settings->SupportDynamicChannels &&
-            guac_freerdp_channels_load_plugin(context, "drdynvc",
-                instance->settings)) {
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Failed to load drdynvc plugin. Display update and audio "
-                "input support will be disabled.");
-    }
-
     /* Init FreeRDP internal GDI implementation */
     if (!gdi_init(instance, guac_rdp_get_native_pixel_format(FALSE)))
         return FALSE;
@@ -203,6 +195,18 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     bitmap_cache_register_callbacks(instance->update);
     offscreen_cache_register_callbacks(instance->update);
     palette_cache_register_callbacks(instance->update);
+
+    /* Load "rdpgfx" plugin for Graphics Pipeline Extension */
+    guac_rdp_rdpgfx_load_plugin(context);
+
+    /* Load plugin providing Dynamic Virtual Channel support, if required */
+    if (instance->settings->SupportDynamicChannels &&
+            guac_freerdp_channels_load_plugin(context, "drdynvc",
+                instance->settings)) {
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Failed to load drdynvc plugin. Display update and audio "
+                "input support will be disabled.");
+    }
 
     return TRUE;
 

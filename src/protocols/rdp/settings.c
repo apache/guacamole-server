@@ -1397,6 +1397,17 @@ void guac_rdp_push_settings(guac_client* client,
     /* Explicitly set flag value */
     rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
 
+    rdp_settings->SupportGraphicsPipeline = TRUE;
+    rdp_settings->RemoteFxCodec = TRUE;
+
+    /* Required for RemoteFX / Graphics Pipeline */
+    rdp_settings->FastPathOutput = TRUE;
+    rdp_settings->FrameMarkerCommandEnabled = TRUE;
+    rdp_settings->ColorDepth = 32;
+    rdp_settings->SoftwareGdi = TRUE;
+    /*rdp_settings->GfxH264 = TRUE;
+    rdp_settings->GfxAVC444 = TRUE;*/
+
     /* Set individual flags - some FreeRDP versions overwrite the above */
     rdp_settings->AllowFontSmoothing = guac_settings->font_smoothing_enabled;
     rdp_settings->DisableWallpaper = !guac_settings->wallpaper_enabled;
