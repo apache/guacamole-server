@@ -26,6 +26,7 @@
 
 #include <cairo/cairo.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/gdi/gdi.h>
 #include <freerdp/graphics.h>
 #include <freerdp/primary.h>
 #include <guacamole/client.h>
@@ -372,8 +373,37 @@ BOOL guac_rdp_gdi_set_bounds(rdpContext* context, const rdpBounds* bounds) {
 }
 
 BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
-    /* IGNORE */
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    rdpGdi* gdi = context->gdi;
+
+    /* Ignore paint if GDI output is suppressed */
+    if (gdi->suppressOutput)
+        return TRUE;
+
+    /* Ignore paint if nothing has been done (empty rect) */
+    if (gdi->primary->hdc->hwnd->invalid->null)
+        return TRUE;
+
+    INT32 x = gdi->primary->hdc->hwnd->invalid->x;
+    INT32 y = gdi->primary->hdc->hwnd->invalid->y;
+    UINT32 w = gdi->primary->hdc->hwnd->invalid->w;
+    UINT32 h = gdi->primary->hdc->hwnd->invalid->h;
+
+    /* Create surface from image data */
+    cairo_surface_t* surface = cairo_image_surface_create_for_data(
+        gdi->primary_buffer + 4*x + y*gdi->stride,
+        CAIRO_FORMAT_RGB24, w, h, gdi->stride);
+
+    /* Send surface to buffer */
+    guac_common_surface_draw(rdp_client->display->default_surface, x, y, surface);
+
+    /* Free surface */
+    cairo_surface_destroy(surface);
+
     return TRUE;
+
 }
 
 BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
