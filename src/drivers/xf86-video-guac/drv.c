@@ -28,8 +28,9 @@
 #include <xf86str.h>
 
 /*
- * Driver record.
+ * Driver function to report back to respond to X probing the driver.
  */
+static Bool guac_drv_driver_func(ScrnInfoPtr, xorgDriverFuncOp, pointer);
 
 _X_EXPORT DriverRec GUAC = {
 
@@ -42,7 +43,7 @@ _X_EXPORT DriverRec GUAC = {
 
     .module = NULL,
     .refCount = 0,
-    .driverFunc = NULL
+    .driverFunc = guac_drv_driver_func
 
 };
 
@@ -197,3 +198,21 @@ Bool guac_drv_probe(DriverPtr drv, int flags) {
 
 }
 
+/*
+ * When X checks with this driver what devices are needed this will report back
+ * to HW_SKIP_CONSOLE so X does not require being connected to a virtual
+ * console.
+ */
+static Bool guac_drv_driver_func(ScrnInfoPtr p_scrn, xorgDriverFuncOp op,
+            pointer ptr) {
+
+    CARD32 *flag;
+    switch (op) {
+        case GET_REQUIRED_HW_INTERFACES:
+            flag = (CARD32*) ptr;
+            (*flag) = HW_SKIP_CONSOLE;
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
