@@ -1214,13 +1214,18 @@ AC_ARG_WITH([xorg],
             [],
             [with_xorg=no])
 
-# X.Org module directory
-PKG_CHECK_VAR([XORG_MODULE_DIR], [xorg-server], [moduledir])
-
 if test "x$with_xorg" != "xno"
 then
     have_xorg=yes
-    PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto xfont],, [have_xorg=no])
+    PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto xfont],
+                      [AS_IF([test "x${XORG_MODULE_DIR}" = "x"],
+                          [XORG_MODULE_DIR="`$PKG_CONFIG --variable=moduledir xorg-server`"])],
+                          [AC_MSG_WARN([
+  --------------------------------------------
+    Unable to find Xorg (xorg-server / xproto / fontsproto / xfont)
+    Xorg will be disabled.
+  --------------------------------------------])
+                          have_xorg=no])
 fi
 
 AM_CONDITIONAL([ENABLE_XORG], [test "x${have_xorg}"       = "xyes" \
