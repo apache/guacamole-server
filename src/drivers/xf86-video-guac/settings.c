@@ -42,6 +42,7 @@ const char* GUAC_DRV_CLIENT_ARGS[] = {
     "sftp-directory",
 #endif
 
+    "force-lossless",
     NULL
 };
 
@@ -103,6 +104,12 @@ enum GUAC_DRV_ARGS_IDX {
      */
     IDX_SFTP_DIRECTORY,
 #endif
+
+    /**
+     * "true" if all graphical updates for this connection should use lossless
+     * compression only, "false" or blank otherwise.
+     */
+    IDX_FORCE_LOSSLESS,
 
     DRV_ARGS_COUNT
 };
@@ -166,6 +173,11 @@ guac_drv_settings* guac_drv_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_DRV_CLIENT_ARGS, argv,
                 IDX_SFTP_DIRECTORY, NULL);
 #endif
+
+    /* Lossless compression */
+    settings->lossless =
+        guac_user_parse_args_boolean(user, GUAC_DRV_CLIENT_ARGS, argv,
+                IDX_FORCE_LOSSLESS, 0);
 
     return settings;
 

@@ -85,6 +85,12 @@ typedef struct guac_drv_settings {
     char* sftp_directory;
 #endif
 
+    /*
+     * Whether all graphical updates for this connection should use lossless
+     * compressoin only.
+     */
+    int lossless;
+
 } guac_drv_settings;
 
 /**

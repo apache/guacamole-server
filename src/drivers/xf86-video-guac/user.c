@@ -100,6 +100,10 @@ int guac_drv_user_join_handler(guac_user* user, int argc, char** argv) {
 
     }
 
+    /* Use lossless compression only if requested (otherwise, use default
+     * heuristics) */
+    guac_common_display_set_lossless(display->display, settings->lossless);
+
     /* Init user display state */
     guac_drv_display_sync_user(display, user);
 
