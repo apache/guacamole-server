@@ -53,6 +53,11 @@
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
 
+#ifdef ENABLE_SSL
+#include <openssl/ssl.h>
+#include <guacamole/socket-ssl.h>
+#endif
+
 #include "log.h"
 
 /**
@@ -66,6 +71,14 @@ typedef struct guac_drv_connection_thread_params {
      */
     guac_client* client;
 
+#ifdef ENABLE_SSL
+    /**
+     * SSL context for encrypted connections to guacd. If SSL is not active,
+     * this will be NULL.
+     */
+    SSL_CTX* ssl_context;
+#endif
+
     /**
      * The file descriptor of the socket of the inbound connection of the
      * joining user.
@@ -73,6 +86,7 @@ typedef struct guac_drv_connection_thread_params {
     int fd;
 
 } guac_drv_connection_thread_params;
+
 
 /**
  * Connection thread which is created for each user joining the current X11
@@ -96,9 +110,31 @@ static void* guac_drv_connection_thread(void* data) {
     int fd = params->fd;
 
     /* Open guac_socket */
-    guac_socket* socket = guac_socket_open(fd);
-    if (socket == NULL)
+    guac_socket* socket = NULL;
+#ifdef ENABLE_SSL
+
+    SSL_CTX* ssl_context = params->ssl_context;
+    if (ssl_context != NULL) {
+        socket = guac_socket_open_secure(ssl_context, fd);
+        if (socket == NULL) {
+            guac_drv_log_guac_error(GUAC_LOG_ERROR, "Unable to set up SSL/TLS");
+            close(fd);
+            free(params);
+            return NULL;
+        }
+    } else {
+        socket = guac_socket_open(fd);
+    }
+
+#else
+
+    socket = guac_socket_open(fd);
+
+#endif
+    
+    if (socket == NULL) {
         return NULL;
+    }
 
     /* Create parser for new connection */
     guac_parser* parser = guac_parser_alloc();
@@ -266,6 +302,51 @@ void* guac_drv_listen_thread(void* arg) {
         return NULL;
     }
 
+#ifdef ENABLE_SSL
+    /* Init SSL if enabled */
+    SSL_CTX* ssl_context = NULL;
+
+    if (display->key_file != NULL || display->cert_file != NULL) {
+
+        guac_drv_log(GUAC_LOG_INFO, "Communication will require SSL/TLS.");
+
+#ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
+        /* Init threadsafety in OpenSSL */
+        guacd_openssl_init_thread_safety();
+#endif
+
+        /* Init SSL */
+        SSL_library_init();
+        SSL_load_error_strings();
+        ssl_context = SSL_CTX_new(SSLv23_server_method());
+
+        /* Load key */
+        if (display->key_file != NULL) {
+            guac_drv_log(GUAC_LOG_INFO, "Using PEM keyfile %s", display->key_file);
+            if (!SSL_CTX_use_PrivateKey_file(ssl_context, display->key_file, SSL_FILETYPE_PEM)) {
+                guac_drv_log(GUAC_LOG_ERROR, "Unable to load keyfile.");
+                exit(EXIT_FAILURE);
+            }
+        }
+        else {
+            guac_drv_log(GUAC_LOG_WARNING, "No PEM keyfile given - SSL/TLS may not work.");
+        }
+
+        /* Load cert file if specified */
+        if (display->cert_file != NULL) {
+            guac_drv_log(GUAC_LOG_INFO, "Using certificate file %s", display->cert_file);
+            if (!SSL_CTX_use_certificate_chain_file(ssl_context, display->cert_file)) {
+                guac_drv_log(GUAC_LOG_ERROR, "Unable to load certificate.");
+                exit(EXIT_FAILURE);
+            }
+        }
+        else {
+            guac_drv_log(GUAC_LOG_WARNING, "No certificate file given - SSL/TLS may not work.");
+        }
+
+    }
+#endif
+
     /* Log listening status */
     guac_drv_log(GUAC_LOG_INFO, "Listening on host %s, port %s",
             bound_address, bound_port);
@@ -291,8 +372,9 @@ void* guac_drv_listen_thread(void* arg) {
         if (connected_socket_fd < 0) {
 
             /* Try again if interrupted */
-            if (errno == EINTR)
+            if (errno == EINTR) {
                 continue;
+            }
 
             guac_drv_log(GUAC_LOG_ERROR, "Could not accept client "
                     "connection: %s", strerror(errno));
@@ -306,11 +388,16 @@ void* guac_drv_listen_thread(void* arg) {
         params->client = display->client;
         params->fd = connected_socket_fd;
 
+#ifdef ENABLE_SSL
+        params->ssl_context = ssl_context;
+#endif
+
         /* Start connection thread */
         pthread_t connection_thread;
         if (!pthread_create(&connection_thread, NULL,
-                    guac_drv_connection_thread, params))
+                    guac_drv_connection_thread, params)) {
             pthread_detach(connection_thread);
+        }
 
         /* Log thread creation failures */
         else {
@@ -320,6 +407,15 @@ void* guac_drv_listen_thread(void* arg) {
         }
 
     }
+
+#ifdef ENABLE_SSL
+    if (ssl_context != NULL) {
+#ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
+        guacd_openssl_free_thread_safety();
+#endif
+        SSL_CTX_free(ssl_context);
+    }
+#endif
 
     /* Close socket */
     if (close(socket_fd) < 0) {

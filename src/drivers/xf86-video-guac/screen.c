@@ -774,10 +774,20 @@ Bool guac_drv_screen_init(ScreenPtr screen, int argc, char** argv) {
                 "defaults.", log_level_str);
 
     /* Init display */
+#ifdef ENABLE_SSL
+    const char* cert_file = options[GUAC_DRV_OPTION_SSL_CERT_FILE].value.str;
+    const char* key_file = options[GUAC_DRV_OPTION_SSL_KEY_FILE].value.str;
+#else
+    const char* cert_file = NULL;
+    const char* key_file = NULL;
+#endif
+
     guac_screen->display = guac_drv_display_alloc(screen,
             options[GUAC_DRV_OPTION_LISTEN_ADDRESS].value.str,
             options[GUAC_DRV_OPTION_LISTEN_PORT].value.str,
-            options[GUAC_DRV_OPTION_PULSE_AUDIO_SERVER_NAME].value.str);
+            options[GUAC_DRV_OPTION_PULSE_AUDIO_SERVER_NAME].value.str,
+            cert_file,
+            key_file);
 
     screen->SaveScreen = guac_drv_save_screen;
 

@@ -79,6 +79,18 @@ typedef struct guac_drv_display {
      */
     const char* listen_port;
 
+#ifdef ENABLE_SSL
+    /**
+     * The certificate file used for...
+     */
+    const char* cert_file;
+
+    /**
+     * The key file used for...
+     */
+    const char* key_file;
+#endif
+
     /**
      * The thread which listens for incoming Guacamole connections.
      */
@@ -148,7 +160,8 @@ typedef struct guac_drv_display {
  * Allocates a new multicast display.
  */
 guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
-        const char* address, const char* port, const char* pa_server_name);
+        const char* address, const char* port, const char* pa_server_name,
+        const char* cert_file, const char* key_file);
 
 /**
  * Immediately resizes the Guacamole display to the given width and height.

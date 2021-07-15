@@ -174,7 +174,8 @@ void* guac_drv_render_thread(void* arg) {
 }
 
 guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
-        const char* address, const char* port, const char* pa_server_name) {
+        const char* address, const char* port, const char* pa_server_name,
+        const char* cert_file, const char* key_file) {
 
     guac_drv_display* display = malloc(sizeof(guac_drv_display));
 
@@ -192,6 +193,11 @@ guac_drv_display* guac_drv_display_alloc(ScreenPtr screen,
             screen->width, screen->height);
     display->client = client;
     display->modified = 0;
+
+#ifdef ENABLE_SSL
+    display->cert_file = cert_file;
+    display->key_file = key_file;
+#endif
 
     /* Set default pointer */
     guac_common_cursor_set_pointer(display->display->cursor);

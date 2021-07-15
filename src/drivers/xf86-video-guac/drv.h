@@ -91,6 +91,18 @@ enum {
      */
     GUAC_DRV_OPTION_LOG_LEVEL,
 
+#ifdef ENABLE_SSL
+    /**
+     * SSL certificate file
+     */
+    GUAC_DRV_OPTION_SSL_CERT_FILE,
+
+    /**
+     * SSL key file
+     */
+    GUAC_DRV_OPTION_SSL_KEY_FILE,
+#endif
+
     /**
      * The total number of options defined for the Guacamole X.Org driver.
      */

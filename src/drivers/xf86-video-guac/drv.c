@@ -77,6 +77,22 @@ const OptionInfoRec GUAC_OPTIONS[GUAC_DRV_OPTIONINFOREC_SIZE] = {
         "LogLevel", OPTV_STRING, { .str = "info" }, FALSE
     },
 
+#ifdef ENABLE_SSL
+
+    /* SSL certificate file */
+    {
+        GUAC_DRV_OPTION_SSL_CERT_FILE,
+        "SSLCertFile", OPTV_STRING, { .str = NULL }, FALSE
+    },
+
+    /* SSL key file */
+    {
+        GUAC_DRV_OPTION_SSL_KEY_FILE,
+        "SSLKeyFile", OPTV_STRING, { .str = NULL }, FALSE
+    },
+
+#endif
+
     /* End of options */
     { -1, NULL, OPTV_NONE, {0}, FALSE }
 
