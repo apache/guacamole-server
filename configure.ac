@@ -1204,6 +1204,16 @@ AM_CONDITIONAL([ENABLE_XCB_XFIXES], [test "x${have_xcb_xfixes}" = "xyes"])
 AC_SUBST(XCB_XFIXES_LIBS)
 
 #
+# libXfont vs. libXfont2
+#
+
+AC_CHECK_LIB([Xfont2],
+             [xfont2_query_glyph_extents],
+             [xfont_pc=xfont2
+              AC_DEFINE([HAVE_XFONT2],, [Whether version 2 of libXfont is available])],
+             [xfont_pc=xfont])
+
+#
 # X.Org video driver
 #
 
@@ -1217,12 +1227,12 @@ AC_ARG_WITH([xorg],
 if test "x$with_xorg" != "xno"
 then
     have_xorg=yes
-    PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto xfont],
+    PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto $xfont_pc],
                       [AS_IF([test "x${XORG_MODULE_DIR}" = "x"],
                           [XORG_MODULE_DIR="`$PKG_CONFIG --variable=moduledir xorg-server`"])],
                           [AC_MSG_WARN([
   --------------------------------------------
-    Unable to find Xorg (xorg-server / xproto / fontsproto / xfont)
+    Unable to find Xorg (xorg-server / xproto / fontsproto / $xfont_pc)
     Xorg will be disabled.
   --------------------------------------------])
                           have_xorg=no])

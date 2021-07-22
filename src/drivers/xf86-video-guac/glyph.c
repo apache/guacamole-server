@@ -29,7 +29,12 @@
 #include <xf86.h>
 #include <dixfont.h>
 #include <fb.h>
+
+#ifdef HAVE_XFONT2
+#include <X11/fonts/libxfont2.h>
+#else
 #include <X11/fonts/fontutil.h>
+#endif
 
 /**
  * Common base implementation of ImageGlyphBlt / PolyGlyphBlt (both use the
@@ -50,7 +55,11 @@ static void guac_drv_copy_glyphs(DrawablePtr drawable, GCPtr gc, int x, int y,
 
     /* Get glyph extents */
     ExtentInfoRec extents;
+#ifdef HAVE_XFONT2
+    xfont2_query_glyph_extents(gc->font, char_info, nglyph, &extents);
+#else
     QueryGlyphExtents(gc->font, char_info, nglyph, &extents);
+#endif
 
     /* Get guac_drv_screen */
     guac_drv_screen* guac_screen =
