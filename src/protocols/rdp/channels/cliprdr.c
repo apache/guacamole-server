@@ -546,6 +546,48 @@ static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
 
 }
 
+/**
+ * Callback which disassociates Guacamole from the CliprdrClientContext
+ * instance that was originally allocated by FreeRDP and is about to be
+ * deallocated.
+ *
+ * This function is called whenever a channel disconnects via the PubSub event
+ * system within FreeRDP, but only has any effect if the disconnected channel
+ * is the CLIPRDR channel. This specific callback is registered with the PubSub
+ * system of the relevant rdpContext when guac_rdp_clipboard_load_plugin() is
+ * called.
+ *
+ * @param context
+ *     The rdpContext associated with the active RDP session.
+ *
+ * @param e
+ *     Event-specific arguments, mainly the name of the channel, and a
+ *     reference to the associated plugin loaded for that channel by FreeRDP.
+ */
+static void guac_rdp_cliprdr_channel_disconnected(rdpContext* context,
+        ChannelDisconnectedEventArgs* e) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_clipboard* clipboard = rdp_client->clipboard;
+
+    /* FreeRDP-specific handlers for CLIPRDR are not assigned, and thus not
+     * callable, until after the relevant guac_rdp_clipboard structure is
+     * allocated and associated with the guac_rdp_client */
+    assert(clipboard != NULL);
+
+    /* Ignore disconnection event if it's not for the CLIPRDR channel */
+    if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
+        return;
+
+    /* Channel is no longer connected */
+    clipboard->cliprdr = NULL;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "CLIPRDR (clipboard redirection) "
+            "channel disconnected.");
+
+}
+
 guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client) {
 
     /* Allocate clipboard and underlying storage */
@@ -574,6 +616,10 @@ void guac_rdp_clipboard_load_plugin(guac_rdp_clipboard* clipboard,
     /* Complete RDP side of initialization when channel is connected */
     PubSub_SubscribeChannelConnected(context->pubSub,
             (pChannelConnectedEventHandler) guac_rdp_cliprdr_channel_connected);
+
+    /* Clean up any RDP-specific resources when channel is disconnected */
+    PubSub_SubscribeChannelDisconnected(context->pubSub,
+            (pChannelDisconnectedEventHandler) guac_rdp_cliprdr_channel_disconnected);
 
     guac_client_log(clipboard->client, GUAC_LOG_DEBUG, "Support for CLIPRDR "
             "(clipboard redirection) registered. Awaiting channel "
