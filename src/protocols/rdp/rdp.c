@@ -471,18 +471,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     pthread_rwlock_wrlock(&(rdp_client->lock));
 
-    /* Set up screen recording, if requested */
-    if (settings->recording_path != NULL) {
-        rdp_client->recording = guac_common_recording_create(client,
-                settings->recording_path,
-                settings->recording_name,
-                settings->create_recording_path,
-                !settings->recording_exclude_output,
-                !settings->recording_exclude_mouse,
-                !settings->recording_exclude_touch,
-                settings->recording_include_keys);
-    }
-
     /* Create display */
     rdp_client->display = guac_common_display_alloc(client,
             rdp_client->settings->width,
@@ -815,6 +803,18 @@ void* guac_rdp_client_thread(void* data) {
 
     }
 #endif
+
+    /* Set up screen recording, if requested */
+    if (settings->recording_path != NULL) {
+        rdp_client->recording = guac_common_recording_create(client,
+                settings->recording_path,
+                settings->recording_name,
+                settings->create_recording_path,
+                !settings->recording_exclude_output,
+                !settings->recording_exclude_mouse,
+                !settings->recording_exclude_touch,
+                settings->recording_include_keys);
+    }
 
     /* Continue handling connections until error or client disconnect */
     while (client->state == GUAC_CLIENT_RUNNING) {
