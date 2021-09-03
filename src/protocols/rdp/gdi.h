@@ -156,8 +156,22 @@ BOOL guac_rdp_gdi_opaquerect(rdpContext* context,
 BOOL guac_rdp_gdi_set_bounds(rdpContext* context, const rdpBounds* bounds);
 
 /**
- * Handler called when a paint operation is complete. We don't actually
- * use this, but FreeRDP requires it. Calling this function has no effect.
+ * Handler called when a paint operation is beginning. This function is
+ * expected to be called by the FreeRDP GDI implementation of RemoteFX when a
+ * new frame is beginning.
+ *
+ * @param context
+ *     The rdpContext associated with the current RDP session.
+ *
+ * @return
+ *     TRUE if successful, FALSE otherwise.
+ */
+BOOL guac_rdp_gdi_begin_paint(rdpContext* context);
+
+/**
+ * Handler called when a paint operation is complete. This function is
+ * expected to be called by the FreeRDP GDI implementation of RemoteFX when a
+ * new frame has been completed.
  *
  * @param context
  *     The rdpContext associated with the current RDP session.

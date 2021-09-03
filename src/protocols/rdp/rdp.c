@@ -179,6 +179,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Set up GDI */
     instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
+    instance->update->BeginPaint = guac_rdp_gdi_begin_paint;
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
 
@@ -530,6 +531,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     rdp_client->rdp_inst = rdp_inst;
 
     guac_timestamp last_frame_end = guac_timestamp_current();
+    rdp_client->frame_start = guac_timestamp_current();
 
     /* Signal that reconnect has been completed */
     guac_rdp_disp_reconnect_complete(rdp_client->disp);
@@ -567,6 +569,13 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 if (!event_result) {
                     wait_result = -1;
                     break;
+                }
+
+                /* Continue handling inbound data if we are in the middle of an RDP frame */
+                if (rdp_client->in_frame) {
+                    wait_result = rdp_guac_client_wait_for_messages(client, GUAC_RDP_FRAME_START_TIMEOUT);
+                    if (wait_result >= 0)
+                        continue;
                 }
 
                 /* Calculate time remaining in frame */
@@ -612,11 +621,17 @@ static int guac_rdp_handle_connection(guac_client* client) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                     "Connection closed.");
 
-        /* Flush frame only if successful */
-        else {
+        /* Flush frame only if successful and an RDP frame is not known to be
+         * in progress */
+        else if (rdp_client->frames_received) {
+
             guac_common_display_flush(rdp_client->display);
-            guac_client_end_frame(client);
+            guac_client_end_multiple_frames(client, rdp_client->frames_received);
             guac_socket_flush(client->socket);
+
+            rdp_client->frame_start = guac_timestamp_current();
+            rdp_client->frames_received = 0;
+
         }
 
     }

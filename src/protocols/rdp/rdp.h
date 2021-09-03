@@ -92,6 +92,27 @@ typedef struct guac_rdp_client {
     guac_common_surface* current_surface;
 
     /**
+     * Whether the RDP server has reported that a new frame is in progress, and
+     * we are now receiving updates relevant to that frame.
+     */
+    int in_frame;
+
+    /**
+     * The number of distinct frames received from the RDP server since last
+     * flush, if the RDP server supports reporting frame boundaries. If the RDP
+     * server does not support tracking frames, this will be zero.
+     */
+    int frames_received;
+
+    /**
+     * The server timestamp of the end of the last frame received from the RDP
+     * server, as returned by guac_timestamp_current(), if the RDP server
+     * supports reporting frame boundaries. If the RDP server does not support
+     * tracking frames, this will be zero.
+     */
+    guac_timestamp frame_start;
+
+    /**
      * The current state of the keyboard with respect to the RDP session.
      */
     guac_rdp_keyboard* keyboard;
