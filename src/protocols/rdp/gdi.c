@@ -388,7 +388,7 @@ void guac_rdp_gdi_mark_frame(rdpContext* context, int starting) {
 
     /* The current frame has ended */
     guac_timestamp frame_end = guac_timestamp_current();
-    int time_elapsed = frame_end - rdp_client->frame_start;
+    int time_elapsed = frame_end - client->last_sent_timestamp;
     rdp_client->in_frame = 0;
 
     /* A new frame has been received from the RDP server and processed */
@@ -396,14 +396,10 @@ void guac_rdp_gdi_mark_frame(rdpContext* context, int starting) {
 
     /* Flush a new frame if the client is ready for it */
     if (time_elapsed >= guac_client_get_processing_lag(client)) {
-
         guac_common_display_flush(rdp_client->display);
         guac_client_end_multiple_frames(client, rdp_client->frames_received);
         guac_socket_flush(client->socket);
-
-        rdp_client->frame_start = frame_end;
         rdp_client->frames_received = 0;
-
     }
 
 }

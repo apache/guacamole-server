@@ -110,14 +110,6 @@ typedef struct guac_rdp_client {
     int frames_received;
 
     /**
-     * The server timestamp of the end of the last frame received from the RDP
-     * server, as returned by guac_timestamp_current(), if the RDP server
-     * supports reporting frame boundaries. If the RDP server does not support
-     * tracking frames, this will be zero.
-     */
-    guac_timestamp frame_start;
-
-    /**
      * The current state of the keyboard with respect to the RDP session.
      */
     guac_rdp_keyboard* keyboard;

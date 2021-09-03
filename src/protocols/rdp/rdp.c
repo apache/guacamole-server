@@ -534,7 +534,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     rdp_client->rdp_inst = rdp_inst;
 
     guac_timestamp last_frame_end = guac_timestamp_current();
-    rdp_client->frame_start = guac_timestamp_current();
 
     /* Signal that reconnect has been completed */
     guac_rdp_disp_reconnect_complete(rdp_client->disp);
@@ -554,7 +553,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
         if (wait_result > 0) {
 
             int processing_lag = guac_client_get_processing_lag(client);
-            guac_timestamp frame_start = guac_timestamp_current();
 
             /* Read server messages until frame is built */
             do {
@@ -582,6 +580,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 }
 
                 /* Calculate time remaining in frame */
+                guac_timestamp frame_start = client->last_sent_timestamp;
                 frame_end = guac_timestamp_current();
                 frame_remaining = frame_start + GUAC_RDP_FRAME_DURATION
                                 - frame_end;
@@ -604,12 +603,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
             } while (wait_result > 0);
 
-            /* Record end of frame, excluding server-side rendering time (we
-             * assume server-side rendering time will be consistent between any
-             * two subsequent frames, and that this time should thus be
-             * excluded from the required wait period of the next frame). */
-            last_frame_end = frame_start;
-
         }
 
         /* Test whether the RDP server is closing the connection */
@@ -630,8 +623,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
             guac_common_display_flush(rdp_client->display);
             guac_client_end_multiple_frames(client, rdp_client->frames_received);
             guac_socket_flush(client->socket);
-
-            rdp_client->frame_start = guac_timestamp_current();
             rdp_client->frames_received = 0;
         }
 
