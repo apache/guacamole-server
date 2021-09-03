@@ -1409,6 +1409,10 @@ void guac_rdp_push_settings(guac_client* client,
     /* Explicitly set flag value */
     rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
 
+    /* Always request frame markers */
+    rdp_settings->FrameMarkerCommandEnabled = TRUE;
+    rdp_settings->SurfaceFrameMarkerEnabled = TRUE;
+
     /* Enable RemoteFX / Graphics Pipeline */
     if (guac_settings->enable_gfx) {
 
@@ -1423,7 +1427,6 @@ void guac_rdp_push_settings(guac_client* client,
 
         /* Required for RemoteFX / Graphics Pipeline */
         rdp_settings->FastPathOutput = TRUE;
-        rdp_settings->FrameMarkerCommandEnabled = TRUE;
         rdp_settings->ColorDepth = 32;
         rdp_settings->SoftwareGdi = TRUE;
 

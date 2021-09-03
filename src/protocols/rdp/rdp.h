@@ -92,6 +92,11 @@ typedef struct guac_rdp_client {
     guac_common_surface* current_surface;
 
     /**
+     * Whether the RDP server supports defining explicit frame boundaries.
+     */
+    int frames_supported;
+
+    /**
      * Whether the RDP server has reported that a new frame is in progress, and
      * we are now receiving updates relevant to that frame.
      */

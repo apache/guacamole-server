@@ -372,13 +372,67 @@ BOOL guac_rdp_gdi_set_bounds(rdpContext* context, const rdpBounds* bounds) {
 
 }
 
+void guac_rdp_gdi_mark_frame(rdpContext* context, int starting) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    /* The server supports defining explicit frames */
+    rdp_client->frames_supported = 1;
+
+    /* A new frame is beginning */
+    if (starting) {
+        rdp_client->in_frame = 1;
+        return;
+    }
+
+    /* The current frame has ended */
+    guac_timestamp frame_end = guac_timestamp_current();
+    int time_elapsed = frame_end - rdp_client->frame_start;
+    rdp_client->in_frame = 0;
+
+    /* A new frame has been received from the RDP server and processed */
+    rdp_client->frames_received++;
+
+    /* Flush a new frame if the client is ready for it */
+    if (time_elapsed >= guac_client_get_processing_lag(client)) {
+
+        guac_common_display_flush(rdp_client->display);
+        guac_client_end_multiple_frames(client, rdp_client->frames_received);
+        guac_socket_flush(client->socket);
+
+        rdp_client->frame_start = frame_end;
+        rdp_client->frames_received = 0;
+
+    }
+
+}
+
+BOOL guac_rdp_gdi_frame_marker(rdpContext* context, const FRAME_MARKER_ORDER* frame_marker) {
+    guac_rdp_gdi_mark_frame(context, frame_marker->action == FRAME_START);
+    return TRUE;
+}
+
+BOOL guac_rdp_gdi_surface_frame_marker(rdpContext* context, const SURFACE_FRAME_MARKER* surface_frame_marker) {
+
+    guac_rdp_gdi_mark_frame(context, surface_frame_marker->frameAction == SURFACECMD_FRAMEACTION_END);
+
+    if (context->settings->FrameAcknowledge > 0)
+        IFCALL(context->update->SurfaceFrameAcknowledge, context,
+                surface_frame_marker->frameId);
+
+    return TRUE;
+
+}
+
 BOOL guac_rdp_gdi_begin_paint(rdpContext* context) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    /* A new frame is beginning */
-    rdp_client->in_frame = 1;
+    /* Leverage BeginPaint handler to detect start of frame for RDPGFX channel */
+    if (rdp_client->settings->enable_gfx)
+        guac_rdp_gdi_mark_frame(context, 1);
 
     return TRUE;
 
@@ -390,8 +444,10 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     rdpGdi* gdi = context->gdi;
 
-    /* The current frame has ended */
-    rdp_client->in_frame = 0;
+    /* Leverage EndPaint handler to detect end of frame for RDPGFX channel
+     * (ignore otherwise) */
+    if (!rdp_client->settings->enable_gfx)
+        return TRUE;
 
     /* Ignore paint if GDI output is suppressed */
     if (gdi->suppressOutput)
@@ -411,28 +467,15 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
         gdi->primary_buffer + 4*x + y*gdi->stride,
         CAIRO_FORMAT_RGB24, w, h, gdi->stride);
 
-    guac_timestamp frame_end = guac_timestamp_current();
-    int time_elapsed = frame_end - rdp_client->frame_start;
-
     /* Send surface to buffer */
     guac_common_surface_draw(rdp_client->display->default_surface, x, y, surface);
 
     /* Free surface */
     cairo_surface_destroy(surface);
 
-    /* A new frame has been received from the RDP server and processed */
-    rdp_client->frames_received++;
-
-    /* Flush a new frame if the client is ready for it */
-    if (time_elapsed >= guac_client_get_processing_lag(client)) {
-
-        guac_common_display_flush(rdp_client->display);
-        guac_client_end_multiple_frames(client, rdp_client->frames_received);
-        guac_socket_flush(client->socket);
-
-        rdp_client->frame_start = frame_end;
-        rdp_client->frames_received = 0;
-
+    /* Next frame */
+    if (gdi->inGfxFrame) {
+        guac_rdp_gdi_mark_frame(context, 0);
     }
 
     return TRUE;

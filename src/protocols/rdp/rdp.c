@@ -183,6 +183,9 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
 
+    instance->update->SurfaceFrameMarker = guac_rdp_gdi_surface_frame_marker;
+    instance->update->altsec->FrameMarker = guac_rdp_gdi_frame_marker;
+
     rdpPrimaryUpdate* primary = instance->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;
     primary->PatBlt = guac_rdp_gdi_patblt;
@@ -623,15 +626,13 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
         /* Flush frame only if successful and an RDP frame is not known to be
          * in progress */
-        else if (rdp_client->frames_received) {
-
+        else if (!rdp_client->frames_supported || rdp_client->frames_received) {
             guac_common_display_flush(rdp_client->display);
             guac_client_end_multiple_frames(client, rdp_client->frames_received);
             guac_socket_flush(client->socket);
 
             rdp_client->frame_start = guac_timestamp_current();
             rdp_client->frames_received = 0;
-
         }
 
     }
