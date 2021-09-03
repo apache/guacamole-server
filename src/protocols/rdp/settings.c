@@ -109,6 +109,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "create-recording-path",
     "resize-method",
     "enable-audio-input",
+    "enable-gfx",
     "enable-touch",
     "read-only",
 
@@ -538,6 +539,12 @@ enum RDP_ARGS_IDX {
      * connection, "false" or blank otherwise.
      */
     IDX_ENABLE_AUDIO_INPUT,
+
+    /**
+     * "true" if the RDP Graphics Pipeline Extension should be used, "false" or
+     * blank if traditional RDP graphics should be used instead.
+     */
+    IDX_ENABLE_GFX,
 
     /**
      * "true" if multi-touch support should be enabled for the RDP connection,
@@ -1129,6 +1136,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->resize_method = GUAC_RESIZE_NONE;
     }
 
+    /* RDP Graphics Pipeline enable/disable */
+    settings->enable_gfx =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_GFX, 0);
+
     /* Multi-touch input enable/disable */
     settings->enable_touch =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -1397,16 +1409,25 @@ void guac_rdp_push_settings(guac_client* client,
     /* Explicitly set flag value */
     rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
 
-    rdp_settings->SupportGraphicsPipeline = TRUE;
-    rdp_settings->RemoteFxCodec = TRUE;
+    /* Enable RemoteFX / Graphics Pipeline */
+    if (guac_settings->enable_gfx) {
 
-    /* Required for RemoteFX / Graphics Pipeline */
-    rdp_settings->FastPathOutput = TRUE;
-    rdp_settings->FrameMarkerCommandEnabled = TRUE;
-    rdp_settings->ColorDepth = 32;
-    rdp_settings->SoftwareGdi = TRUE;
-    /*rdp_settings->GfxH264 = TRUE;
-    rdp_settings->GfxAVC444 = TRUE;*/
+        rdp_settings->SupportGraphicsPipeline = TRUE;
+        rdp_settings->RemoteFxCodec = TRUE;
+
+        if (rdp_settings->ColorDepth != 32) {
+            guac_client_log(client, GUAC_LOG_WARNING, "Ignoring requested "
+                    "color depth of %i bpp, as the RDP Graphics Pipeline "
+                    "requires 32 bpp.", rdp_settings->ColorDepth);
+        }
+
+        /* Required for RemoteFX / Graphics Pipeline */
+        rdp_settings->FastPathOutput = TRUE;
+        rdp_settings->FrameMarkerCommandEnabled = TRUE;
+        rdp_settings->ColorDepth = 32;
+        rdp_settings->SoftwareGdi = TRUE;
+
+    }
 
     /* Set individual flags - some FreeRDP versions overwrite the above */
     rdp_settings->AllowFontSmoothing = guac_settings->font_smoothing_enabled;

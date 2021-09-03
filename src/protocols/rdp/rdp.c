@@ -197,7 +197,8 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     palette_cache_register_callbacks(instance->update);
 
     /* Load "rdpgfx" plugin for Graphics Pipeline Extension */
-    guac_rdp_rdpgfx_load_plugin(context);
+    if (settings->enable_gfx)
+        guac_rdp_rdpgfx_load_plugin(context);
 
     /* Load plugin providing Dynamic Virtual Channel support, if required */
     if (instance->settings->SupportDynamicChannels &&

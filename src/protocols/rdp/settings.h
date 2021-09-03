@@ -553,6 +553,11 @@ typedef struct guac_rdp_settings {
     int enable_audio_input;
 
     /**
+     * Whether the RDP Graphics Pipeline Extension is enabled.
+     */
+    int enable_gfx;
+
+    /**
      * Whether multi-touch support is enabled.
      */
     int enable_touch;
