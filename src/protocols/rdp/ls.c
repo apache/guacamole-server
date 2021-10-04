@@ -26,6 +26,7 @@
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 #include <winpr/nt.h>
+#include <winpr/file.h>
 #include <winpr/shell.h>
 
 #include <stdlib.h>
