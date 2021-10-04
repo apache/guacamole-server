@@ -39,7 +39,7 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
 
     wStream* output_stream;
     int output_body_size;
-    unsigned char* output_stream_end;
+    size_t output_stream_end;
 
     guac_client* client = svc->client;
     guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
@@ -193,7 +193,7 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
 
     /* Calculate size of PDU */
     output_body_size = Stream_GetPosition(output_stream) - 4;
-    Stream_GetPointer(output_stream, output_stream_end);
+    output_stream_end = Stream_GetPosition(output_stream);
 
     /* Set body size */
     Stream_SetPosition(output_stream, 0x02);
@@ -204,7 +204,7 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
     Stream_Write_UINT16(output_stream, rdpsnd->format_count);
 
     /* Reposition cursor at end (necessary for message send) */
-    Stream_SetPointer(output_stream, output_stream_end);
+    Stream_SetPosition(output_stream, output_stream_end);
 
     /* Send accepted formats */
     guac_rdp_common_svc_write(svc, output_stream);
