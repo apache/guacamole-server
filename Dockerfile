@@ -22,7 +22,7 @@
 #
 
 # The Debian image that should be used as the basis for the guacd image
-ARG DEBIAN_BASE_IMAGE=buster-slim
+ARG DEBIAN_BASE_IMAGE=bullseye-slim
 
 # Use Debian as base for the build
 FROM debian:${DEBIAN_BASE_IMAGE} AS builder
@@ -34,7 +34,7 @@ FROM debian:${DEBIAN_BASE_IMAGE} AS builder
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the second stage of the build.
 #
-ARG DEBIAN_RELEASE=buster-backports
+ARG DEBIAN_RELEASE=bullseye-backports
 
 # Add repository for specified Debian release if not already present in
 # sources.list
@@ -105,7 +105,7 @@ FROM debian:${DEBIAN_BASE_IMAGE}
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the first stage of the build.
 #
-ARG DEBIAN_RELEASE=buster-backports
+ARG DEBIAN_RELEASE=bullseye-backports
 
 # Add repository for specified Debian release if not already present in
 # sources.list
