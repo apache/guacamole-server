@@ -158,6 +158,8 @@ ARG UID=1000
 ARG GID=1000
 RUN groupadd --gid $GID guacd
 RUN useradd --system --create-home --shell /usr/sbin/nologin --uid $UID --gid $GID guacd
+RUN cp -r /usr/local/guacamole/lib/* /usr/lib/x86_64-linux-gnu/freerdp2/
+RUN cp -r /usr/local/guacamole/lib/freerdp2/* /usr/lib/x86_64-linux-gnu/freerdp2/
 
 # Run with user guacd
 USER guacd
