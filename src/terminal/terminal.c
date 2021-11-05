@@ -1590,8 +1590,8 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
                 if (keysym == 0xFF54 || keysym == 0xFF99) return guac_terminal_send_string(term, "\x1B[B"); /* Down */
             }
 
-            if (term->mod_shift) 
-            {
+            /* Shift + Function keys. */
+            if (term->mod_shift) { 
                 if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_send_string(term, "\x1B[1;2P"); /* F1  */
                 if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_send_string(term, "\x1B[1;2Q"); /* F2  */
                 if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1B[1;2R"); /* F3  */
