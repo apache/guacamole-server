@@ -135,6 +135,15 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
 
 #else
 
+/* For libavcodec < 57.37.100: input/output was not decoupled and static
+ * allocation of AVPacket was supported.
+ *
+ * NOTE: Since dynamic allocation of AVPacket was added before this point (in
+ * 57.12.100) and static allocation was deprecated later (in 58.133.100), it is
+ * convenient to tie static vs. dynamic allocation to the old vs. new I/O
+ * mechanism and avoid further complicating the version comparison logic. */
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 37, 100)
+
     /* Init video packet */
     AVPacket packet;
     av_init_packet(&packet);
@@ -142,9 +151,6 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
     /* Request that encoder allocate data for packet */
     packet.data = NULL;
     packet.size = 0;
-
-/* For libavcodec < 57.37.100: input/output was not decoupled */
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,37,100)
 
     /* Write frame to video */
     int got_data;
@@ -176,18 +182,24 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
         return -1;
     }
 
+    AVPacket* packet = av_packet_alloc();
+    if (packet == NULL)
+        return -1;
+
     /* Flush all available packets */
     int got_data = 0;
-    while (avcodec_receive_packet(video->context, &packet) == 0) {
+    while (avcodec_receive_packet(video->context, packet) == 0) {
 
         /* Data was received */
         got_data = 1;
 
         /* Attempt to write data to output file */
-        guacenc_write_packet(video, (void*) &packet, packet.size);
-        av_packet_unref(&packet);
+        guacenc_write_packet(video, (void*) packet, packet->size);
+        av_packet_unref(packet);
 
     }
+
+    av_packet_free(&packet);
 
 #endif
 
