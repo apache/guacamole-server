@@ -564,7 +564,8 @@ void* guac_telnet_client_thread(void* data) {
                 "and pausing for %d seconds.", settings->wol_wait_time);
         
         /* Send the Wake-on-LAN request. */
-        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr))
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
+                settings->wol_udp_port))
             return NULL;
         
         /* If wait time is specified, sleep for that amount of time. */
@@ -580,6 +581,7 @@ void* guac_telnet_client_thread(void* data) {
                 settings->create_recording_path,
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
+                0, /* Touch events not supported */
                 settings->recording_include_keys);
     }
 

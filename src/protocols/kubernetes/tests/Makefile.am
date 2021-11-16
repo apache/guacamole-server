@@ -23,44 +23,28 @@
 # to you by the ASF under the Apache License, Version 2.0, as described above.
 #
 
-AUTOMAKE_OPTIONS = foreign 
+AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 #
-# Unit tests for libguac
+# Unit tests for Kubernetes support
 #
 
-check_PROGRAMS = test_libguac
+check_PROGRAMS = test_kubernetes
 TESTS = $(check_PROGRAMS)
 
-test_libguac_SOURCES =               \
-    client/buffer_pool.c             \
-    client/layer_pool.c              \
-    id/generate.c                    \
-    parser/append.c                  \
-    parser/read.c                    \
-    pool/next_free.c                 \
-    protocol/base64_decode.c         \
-    protocol/guac_protocol_version.c \
-    socket/fd_send_instruction.c     \
-    socket/nested_send_instruction.c \
-    string/strdup.c                  \
-    string/strlcat.c                 \
-    string/strlcpy.c                 \
-    string/strljoin.c                \
-    unicode/charsize.c               \
-    unicode/read.c                   \
-    unicode/strlen.c                 \
-    unicode/write.c
+test_kubernetes_SOURCES = \
+    url/append.c          \
+    url/escape.c
 
-
-test_libguac_CFLAGS =       \
-    -Werror -Wall -pedantic \
+test_kubernetes_CFLAGS =                \
+    -Werror -Wall -pedantic             \
+    @LIBGUAC_CLIENT_KUBERNETES_INCLUDE@ \
     @LIBGUAC_INCLUDE@
 
-test_libguac_LDADD = \
-    @CUNIT_LIBS@     \
-    @LIBGUAC_LTLIB@
+test_kubernetes_LDADD =               \
+    @CUNIT_LIBS@                      \
+    @LIBGUAC_CLIENT_KUBERNETES_LTLIB@
 
 #
 # Autogenerate test runner
@@ -69,10 +53,10 @@ test_libguac_LDADD = \
 GEN_RUNNER = $(top_srcdir)/util/generate-test-runner.pl
 CLEANFILES = _generated_runner.c
 
-_generated_runner.c: $(test_libguac_SOURCES)
-	$(AM_V_GEN) $(GEN_RUNNER) $(test_libguac_SOURCES) > $@
+_generated_runner.c: $(test_kubernetes_SOURCES)
+	$(AM_V_GEN) $(GEN_RUNNER) $(test_kubernetes_SOURCES) > $@
 
-nodist_test_libguac_SOURCES = \
+nodist_test_kubernetes_SOURCES = \
     _generated_runner.c
 
 # Use automake's TAP test driver for running any tests

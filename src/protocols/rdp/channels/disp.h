@@ -49,6 +49,11 @@
 typedef struct guac_rdp_disp {
 
     /**
+     * The guac_client instance handling the relevant RDP connection.
+     */
+    guac_client* client;
+
+    /**
      * Display control interface.
      */
     DispClientContext* disp;
@@ -81,10 +86,13 @@ typedef struct guac_rdp_disp {
  * Allocates a new display update module, which will ultimately control the
  * display update channel once connected.
  *
+ * @param client
+ *     The guac_client instance handling the relevant RDP connection.
+ *
  * @return
  *     A newly-allocated display update module.
  */
-guac_rdp_disp* guac_rdp_disp_alloc();
+guac_rdp_disp* guac_rdp_disp_alloc(guac_client* client);
 
 /**
  * Frees the resources associated with support for the RDP Display Update

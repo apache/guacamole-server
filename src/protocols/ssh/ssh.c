@@ -208,7 +208,8 @@ void* ssh_client_thread(void* data) {
                 "and pausing for %d seconds.", settings->wol_wait_time);
         
         /* Send the Wake-on-LAN request. */
-        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr))
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
+                settings->wol_udp_port))
             return NULL;
         
         /* If wait time is specified, sleep for that amount of time. */
@@ -233,6 +234,7 @@ void* ssh_client_thread(void* data) {
                 settings->create_recording_path,
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
+                0, /* Touch events not supported */
                 settings->recording_include_keys);
     }
 
@@ -436,8 +438,10 @@ void* ssh_client_thread(void* data) {
         /* Send keepalive at configured interval */
         if (settings->server_alive_interval > 0) {
             timeout = 0;
-            if (libssh2_keepalive_send(ssh_client->session->session, &timeout) > 0)
+            if (libssh2_keepalive_send(ssh_client->session->session, &timeout) > 0) {
+                pthread_mutex_unlock(&(ssh_client->term_channel_lock));
                 break;
+            }
             timeout *= 1000;
         }
         /* If keepalive is not configured, sleep for the default of 1 second */

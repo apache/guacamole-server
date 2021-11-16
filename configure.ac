@@ -75,21 +75,50 @@ AC_CHECK_LIB([dl], [dlopen],
                             AC_MSG_ERROR("libdl is required on systems which do not otherwise provide dlopen()"),
                             [#include <dlfcn.h>])])
 
-# OSSP UUID
-AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
-             AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
-                          AC_MSG_ERROR("The OSSP UUID library is required")))
+#
+# libuuid
+#
 
-# Check for and validate OSSP uuid.h header
-AC_CHECK_HEADERS([ossp/uuid.h])
-AC_CHECK_DECL([uuid_make],,
-              AC_MSG_ERROR("No OSSP uuid.h found in include path"),
-              [#ifdef HAVE_OSSP_UUID_H
-               #include <ossp/uuid.h>
-               #else
-               #include <uuid.h>
-               #endif
-               ])
+have_libuuid=disabled
+AC_ARG_WITH([libuuid],
+            [AS_HELP_STRING([--with-libuuid],
+                            [use libuuid to generate unique identifiers @<:@default=check@:>@])],
+            [],
+            [with_libuuid=check])
+
+if test "x$with_libuuid" != "xno"
+then
+    have_libuuid=yes
+    AC_CHECK_LIB([uuid], [uuid_generate],
+                 [UUID_LIBS=-luuid]
+                 [AC_DEFINE([HAVE_LIBUUID],, [Whether libuuid is available])],
+                 [have_libuuid=no])
+fi
+
+# OSSP UUID (if libuuid is unavilable)
+if test "x${have_libuuid}" != "xyes"
+then
+
+    AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
+                 AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
+                              AC_MSG_ERROR([
+  --------------------------------------------
+   Unable to find libuuid or the OSSP UUID library.
+   Either libuuid (from util-linux) or the OSSP UUID library is required for
+   guacamole-server to be built.
+  --------------------------------------------])))
+
+    # Check for and validate OSSP uuid.h header
+    AC_CHECK_HEADERS([ossp/uuid.h])
+    AC_CHECK_DECL([uuid_make],,
+                  AC_MSG_ERROR("No OSSP uuid.h found in include path"),
+                  [#ifdef HAVE_OSSP_UUID_H
+                   #include <ossp/uuid.h>
+                   #else
+                   #include <uuid.h>
+                   #endif
+                   ])
+fi
 
 # cunit
 AC_CHECK_LIB([cunit], [CU_run_test], [CUNIT_LIBS=-lcunit])
@@ -150,6 +179,10 @@ AC_SUBST([PULSE_INCLUDE], '-I$(top_srcdir)/src/pulse')
 # Common base SSH client
 AC_SUBST([COMMON_SSH_LTLIB],   '$(top_builddir)/src/common-ssh/libguac_common_ssh.la')
 AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
+
+# Kubernetes support
+AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_LTLIB],   '$(top_builddir)/src/protocols/kubernetes/libguac-client-kubernetes.la')
+AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_INCLUDE], '-I$(top_srcdir)/src/protocols/kubernetes')
 
 # RDP support
 AC_SUBST([LIBGUAC_CLIENT_RDP_LTLIB],   '$(top_builddir)/src/protocols/rdp/libguac-client-rdp.la')
@@ -490,6 +523,27 @@ then
     AC_CHECK_LIB([vncclient], [rfbInitClient], [VNC_LIBS="$VNC_LIBS -lvncclient"], [have_libvncserver=no])
 fi
 
+#
+# Underlying libvncserver usage of gcrypt
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    # Whether libvncserver was built against libgcrypt
+    AC_CHECK_DECL([LIBVNCSERVER_WITH_CLIENT_GCRYPT],
+                         [AC_CHECK_HEADER(gcrypt.h,,
+                                          [AC_MSG_WARN([
+  --------------------------------------------
+   libvncserver appears to be built against
+   libgcrypt, but the libgcrypt headers
+   could not be found. VNC will be disabled.
+  --------------------------------------------])
+                                           have_libvncserver=no])],,
+                    [[#include <rfb/rfbconfig.h>]])
+
+fi
+
 AM_CONDITIONAL([ENABLE_VNC], [test "x${have_libvncserver}" = "xyes"])
 AC_SUBST(VNC_LIBS)
 
@@ -571,6 +625,34 @@ then
     fi
 
 fi
+
+#
+# Generic credential support within libVNCServer (authentication beyond
+# basic, standard VNC passwords)
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_creds=yes
+    AC_CHECK_MEMBERS([rfbClient.GetCredential],
+                     [], [have_vnc_creds=no],
+                     [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_creds}" = "xno"
+    then
+        AC_MSG_WARN([
+      --------------------------------------------
+       No generic credential support found in libvncclient.
+       VNC authentication support will be limited to passwords.
+      --------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_VNC_GENERIC_CREDENTIALS],,
+                  [Whether support for generic VNC credentials is available.])
+    fi
+
+fi
+
 
 #
 # FreeRDP 2 (libfreerdp2, libfreerdp-client2, and libwinpr2)
@@ -812,6 +894,14 @@ then
 
    See: https://issues.apache.org/jira/browse/GUACAMOLE-962
   --------------------------------------------])],
+                     [[#include <freerdp/freerdp.h>]])
+fi
+
+# Updated certificate verification callback (introduced with 2.0.0, not present
+# in 2.0.0-rc4 or earlier)
+if test "x${have_freerdp2}" = "xyes"
+then
+    AC_CHECK_MEMBERS([freerdp.VerifyCertificateEx],,,
                      [[#include <freerdp/freerdp.h>]])
 fi
 
@@ -1113,6 +1203,7 @@ AC_CONFIG_FILES([Makefile
                  src/guaclog/man/guaclog.1
                  src/pulse/Makefile
                  src/protocols/kubernetes/Makefile
+                 src/protocols/kubernetes/tests/Makefile
                  src/protocols/rdp/Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile

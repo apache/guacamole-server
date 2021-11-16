@@ -97,15 +97,15 @@ int guac_common_json_write_string(guac_user* user,
     const char* current = str;
     for (; *current != '\0'; current++) {
 
-        /* Escape all quotes */
-        if (*current == '"') {
+        /* Escape all quotes and back-slashes */
+        if (*current == '"' || *current == '\\') {
 
             /* Write any string content up to current character */
             if (current != str)
                 blob_written |= guac_common_json_write(user, stream,
                         json_state, str, current - str);
 
-            /* Escape the quote that was just read */
+            /* Escape the character that was just read */
             blob_written |= guac_common_json_write(user, stream,
                     json_state, "\\", 1);
 

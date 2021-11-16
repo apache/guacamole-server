@@ -100,6 +100,13 @@ typedef struct guac_common_display {
     guac_common_display_layer* buffers;
 
     /**
+     * Non-zero if all graphical updates for this display should use lossless
+     * compression, 0 otherwise. By default, newly-created displays will use
+     * lossy compression when heuristics determine it is appropriate.
+     */
+    int lossless;
+
+    /**
      * Mutex which is locked internally when access to the display must be
      * synchronized. All public functions of guac_common_display should be
      * considered threadsafe.
@@ -227,6 +234,28 @@ void guac_common_display_free_layer(guac_common_display* display,
  */
 void guac_common_display_free_buffer(guac_common_display* display,
         guac_common_display_layer* display_buffer);
+
+/**
+ * Sets the overall lossless compression policy of the given display to the
+ * given value, affecting all current and future layers/buffers maintained by
+ * the display. By default, newly-created displays will use lossy compression
+ * for graphical updates when heuristics determine that doing so is
+ * appropriate. Specifying a non-zero value here will force all graphical
+ * updates to always use lossless compression, whereas specifying zero will
+ * restore the default policy.
+ *
+ * Note that this can also be adjusted on a per-layer / per-buffer basis with
+ * guac_common_surface_set_lossless().
+ *
+ * @param display
+ *     The display to modify.
+ *
+ * @param lossless
+ *     Non-zero if all graphical updates for this display should use lossless
+ *     compression, 0 otherwise.
+ */
+void guac_common_display_set_lossless(guac_common_display* display,
+        int lossless);
 
 #endif
 

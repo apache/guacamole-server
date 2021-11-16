@@ -820,6 +820,37 @@ int guac_protocol_send_mouse(guac_socket* socket, int x, int y,
 
 }
 
+int guac_protocol_send_touch(guac_socket* socket, int id, int x, int y,
+        int x_radius, int y_radius, double angle, double force,
+        guac_timestamp timestamp) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "5.touch,")
+        || __guac_socket_write_length_int(socket, id)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, x)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, x_radius)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, y_radius)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, angle)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_double(socket, force)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, timestamp)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
 int guac_protocol_send_move(guac_socket* socket, const guac_layer* layer,
         const guac_layer* parent, int x, int y, int z) {
 
@@ -1050,6 +1081,26 @@ int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
         || __guac_socket_write_length_string(socket, name)
         || guac_socket_write_string(socket, ",")
         || __guac_socket_write_length_string(socket, value)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
+    return ret_val;
+
+}
+
+int guac_protocol_send_set_int(guac_socket* socket, const guac_layer* layer,
+        const char* name, int value) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "3.set,")
+        || __guac_socket_write_length_int(socket, layer->index)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_string(socket, name)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, value)
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);

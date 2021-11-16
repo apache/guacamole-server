@@ -75,7 +75,7 @@ static void write_instructions(int fd) {
 
 /**
  * Reads raw bytes from the given file descriptor until no further bytes
- * remain, verfying that those bytes represent the series of Guacamole
+ * remain, verifying that those bytes represent the series of Guacamole
  * instructions expected to be written by write_instructions(). The given
  * file descriptor is automatically closed as a result of calling this
  * function.

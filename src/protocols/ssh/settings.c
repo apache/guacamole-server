@@ -72,6 +72,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "wol-send-packet",
     "wol-mac-addr",
     "wol-broadcast-addr",
+    "wol-udp-port",
     "wol-wait-time",
     NULL
 };
@@ -318,6 +319,11 @@ enum SSH_ARGS_IDX {
     IDX_WOL_BROADCAST_ADDR,
     
     /**
+     * The UDP port to use when sending the WoL packet. 
+     */
+    IDX_WOL_UDP_PORT,
+    
+    /**
      * The amount of time to wait after sending the magic WoL packet prior to
      * continuing the connection attempt.  The default is no wait time
      * (0 seconds).
@@ -532,6 +538,10 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         settings->wol_broadcast_addr =
             guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
+        
+        settings->wol_udp_port = (unsigned short)
+            guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
         
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,

@@ -89,7 +89,10 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "wol-send-packet",
     "wol-mac-addr",
     "wol-broadcast-addr",
+    "wol-udp-port",
     "wol-wait-time",
+
+    "force-lossless",
     NULL
 };
 
@@ -361,11 +364,22 @@ enum VNC_ARGS_IDX {
     IDX_WOL_BROADCAST_ADDR,
     
     /**
+     * The UDP port to use when sending the WoL packet.
+     */
+    IDX_WOL_UDP_PORT,
+    
+    /**
      * The number of seconds to wait after sending the magic WoL packet before
      * attempting to connect to the remote host.  The default is not to wait
      * at all (0 seconds).
      */
     IDX_WOL_WAIT_TIME,
+
+    /**
+     * "true" if all graphical updates for this connection should use lossless
+     * compresion only, "false" or blank otherwise.
+     */
+    IDX_FORCE_LOSSLESS,
 
     VNC_ARGS_COUNT
 };
@@ -425,6 +439,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->color_depth =
         guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_COLOR_DEPTH, 0);
+
+    /* Lossless compression */
+    settings->lossless =
+        guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_FORCE_LOSSLESS, false);
 
 #ifdef ENABLE_VNC_REPEATER
     /* Set repeater parameters if specified */
@@ -608,6 +627,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
             guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
         
+        /* Parse the WoL broadcast port. */
+        settings->wol_udp_port = (unsigned short)
+            guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+        
         /* Parse the WoL wait time. */
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
@@ -652,6 +676,10 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
     /* Free PulseAudio settings */
     free(settings->pa_servername);
 #endif
+    
+    /* Free Wake-on-LAN strings */
+    free(settings->wol_mac_addr);
+    free(settings->wol_broadcast_addr);
 
     /* Free settings structure */
     free(settings);

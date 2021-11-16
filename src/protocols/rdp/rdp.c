@@ -27,6 +27,7 @@
 #include "channels/pipe-svc.h"
 #include "channels/rail.h"
 #include "channels/rdpdr/rdpdr.h"
+#include "channels/rdpei.h"
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
 #include "color.h"
@@ -100,9 +101,13 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     if (settings->resize_method == GUAC_RESIZE_DISPLAY_UPDATE)
         guac_rdp_disp_load_plugin(context);
 
+    /* Load "rdpei" plugin for multi-touch support */
+    if (settings->enable_touch)
+        guac_rdp_rdpei_load_plugin(context);
+
     /* Load "AUDIO_INPUT" plugin for audio input*/
     if (settings->enable_audio_input) {
-        rdp_client->audio_input = guac_rdp_audio_buffer_alloc();
+        rdp_client->audio_input = guac_rdp_audio_buffer_alloc(client);
         guac_rdp_audio_load_plugin(instance->context);
     }
 
@@ -297,6 +302,52 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
 
 }
 
+#ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
+/**
+ * Callback invoked by FreeRDP when the SSL/TLS certificate of the RDP server
+ * needs to be verified. If this ever happens, this function implementation
+ * will always fail unless the connection has been configured to ignore
+ * certificate validity.
+ *
+ * @param instance
+ *     The FreeRDP instance associated with the RDP session whose SSL/TLS
+ *     certificate needs to be verified.
+ *
+ * @param hostname
+ *     The hostname or address of the RDP server being connected to.
+ *
+ * @param port
+ *     The TCP port number of the RDP server being connected to.
+ *
+ * @param common_name
+ *     The name of the server protected by the certificate. This should match
+ *     the hostname/address of the RDP server.
+ *
+ * @param subject
+ *     The subject to whom the certificate was issued.
+ *
+ * @param issuer
+ *     The authority that issued the certificate,
+ *
+ * @param fingerprint
+ *     The cryptographic fingerprint of the certificate.
+ *
+ * @param flags
+ *     Bitwise OR of any applicable certificate verification flags. Valid flags are
+ *     VERIFY_CERT_FLAG_NONE, VERIFY_CERT_FLAG_LEGACY, VERIFY_CERT_FLAG_REDIRECT,
+ *     VERIFY_CERT_FLAG_GATEWAY, VERIFY_CERT_FLAG_CHANGED, and
+ *     VERIFY_CERT_FLAG_MISMATCH.
+ *
+ * @return
+ *     1 to accept the certificate and store within FreeRDP's configuration
+ *     directory, 2 to accept the certificate only within this session, or 0 to
+ *     reject the certificate.
+ */
+static DWORD rdp_freerdp_verify_certificate(freerdp* instance,
+        const char* hostname, UINT16 port, const char* common_name,
+        const char* subject, const char* issuer, const char* fingerprint,
+        DWORD flags) {
+#else
 /**
  * Callback invoked by FreeRDP when the SSL/TLS certificate of the RDP server
  * needs to be verified. If this ever happens, this function implementation
@@ -316,12 +367,19 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
  * @param fingerprint
  *     The cryptographic fingerprint of the certificate.
  *
+ * @param host_mismatch
+ *     TRUE if the certificate does not match the destination hostname, FALSE
+ *     otherwise.
+ *
  * @return
- *     TRUE if the certificate passes verification, FALSE otherwise.
+ *     1 to accept the certificate and store within FreeRDP's configuration
+ *     directory, 2 to accept the certificate only within this session, or 0 to
+ *     reject the certificate.
  */
 static DWORD rdp_freerdp_verify_certificate(freerdp* instance,
         const char* common_name, const char* subject, const char* issuer,
         const char* fingerprint, BOOL host_mismatch) {
+#endif
 
     rdpContext* context = instance->context;
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -413,21 +471,14 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     pthread_rwlock_wrlock(&(rdp_client->lock));
 
-    /* Set up screen recording, if requested */
-    if (settings->recording_path != NULL) {
-        rdp_client->recording = guac_common_recording_create(client,
-                settings->recording_path,
-                settings->recording_name,
-                settings->create_recording_path,
-                !settings->recording_exclude_output,
-                !settings->recording_exclude_mouse,
-                settings->recording_include_keys);
-    }
-
     /* Create display */
     rdp_client->display = guac_common_display_alloc(client,
             rdp_client->settings->width,
             rdp_client->settings->height);
+
+    /* Use lossless compression only if requested (otherwise, use default
+     * heuristics) */
+    guac_common_display_set_lossless(rdp_client->display, settings->lossless);
 
     rdp_client->current_surface = rdp_client->display->default_surface;
 
@@ -437,7 +488,12 @@ static int guac_rdp_handle_connection(guac_client* client) {
     freerdp* rdp_inst = freerdp_new();
     rdp_inst->PreConnect = rdp_freerdp_pre_connect;
     rdp_inst->Authenticate = rdp_freerdp_authenticate;
+
+#ifdef HAVE_FREERDP_VERIFYCERTIFICATEEX
+    rdp_inst->VerifyCertificateEx = rdp_freerdp_verify_certificate;
+#else
     rdp_inst->VerifyCertificate = rdp_freerdp_verify_certificate;
+#endif
 
     /* Allocate FreeRDP context */
     rdp_inst->ContextSize = sizeof(rdp_freerdp_context);
@@ -496,13 +552,16 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 guac_timestamp frame_end;
                 int frame_remaining;
 
-                /* Check the libfreerdp fds */
-                if (!freerdp_check_event_handles(rdp_inst->context)) {
+                /* Handle any queued FreeRDP events (this may result in RDP
+                 * messages being sent) */
+                pthread_mutex_lock(&(rdp_client->message_lock));
+                int event_result = freerdp_check_event_handles(rdp_inst->context);
+                pthread_mutex_unlock(&(rdp_client->message_lock));
 
-                    /* Flag connection failure */
+                /* Abort if FreeRDP event handling fails */
+                if (!event_result) {
                     wait_result = -1;
                     break;
-
                 }
 
                 /* Calculate time remaining in frame */
@@ -566,7 +625,9 @@ static int guac_rdp_handle_connection(guac_client* client) {
     }
 
     /* Disconnect client and channels */
+    pthread_mutex_lock(&(rdp_client->message_lock));
     freerdp_disconnect(rdp_inst);
+    pthread_mutex_unlock(&(rdp_client->message_lock));
 
     /* Clean up FreeRDP internal GDI implementation */
     gdi_free(rdp_inst);
@@ -615,7 +676,8 @@ void* guac_rdp_client_thread(void* data) {
                 "and pausing for %d seconds.", settings->wol_wait_time);
         
         /* Send the Wake-on-LAN request. */
-        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr))
+        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
+                settings->wol_udp_port))
             return NULL;
         
         /* If wait time is specified, sleep for that amount of time. */
@@ -741,6 +803,18 @@ void* guac_rdp_client_thread(void* data) {
 
     }
 #endif
+
+    /* Set up screen recording, if requested */
+    if (settings->recording_path != NULL) {
+        rdp_client->recording = guac_common_recording_create(client,
+                settings->recording_path,
+                settings->recording_name,
+                settings->create_recording_path,
+                !settings->recording_exclude_output,
+                !settings->recording_exclude_mouse,
+                !settings->recording_exclude_touch,
+                settings->recording_include_keys);
+    }
 
     /* Continue handling connections until error or client disconnect */
     while (client->state == GUAC_CLIENT_RUNNING) {

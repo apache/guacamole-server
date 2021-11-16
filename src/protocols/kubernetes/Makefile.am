@@ -27,6 +27,7 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac-client-kubernetes.la
+SUBDIRS = . tests
 
 libguac_client_kubernetes_la_SOURCES = \
     argv.c                             \

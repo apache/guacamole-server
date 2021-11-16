@@ -42,11 +42,15 @@
  * @param broadcast_addr
  *     The broadcast address to which to send the magic Wake-on-LAN packet.
  * 
+ * @param udp_port
+ *     The UDP port to use when sending the WoL packet.
+ * 
  * @return 
  *     Zero if the packet is successfully sent to the destination; non-zero
  *     if the packet cannot be sent.
  */
-int guac_wol_wake(const char* mac_addr, const char* broadcast_addr);
+int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
+        const unsigned short udp_port);
 
 #endif /* GUAC_WOL_H */
 

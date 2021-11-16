@@ -193,6 +193,12 @@ typedef struct guac_rdp_settings {
     int resolution;
 
     /**
+     * Whether all graphical updates for this connection should use lossless
+     * compression only.
+     */
+    int lossless;
+
+    /**
      * Whether audio is enabled.
      */
     int audio_enabled;
@@ -506,6 +512,14 @@ typedef struct guac_rdp_settings {
     int recording_exclude_mouse;
 
     /**
+     * Non-zero if changes to touch state should NOT be included in the session
+     * recording, zero otherwise. Touch state is included by default, as it may
+     * be necessary for touch interactions to be rendered in any resulting
+     * video.
+     */
+    int recording_exclude_touch;
+
+    /**
      * Non-zero if keys pressed and released should be included in the session
      * recording, zero otherwise. Key events are NOT included by default within
      * the recording, as doing so has privacy and security implications.
@@ -524,6 +538,11 @@ typedef struct guac_rdp_settings {
      * Whether audio input (microphone) is enabled.
      */
     int enable_audio_input;
+
+    /**
+     * Whether multi-touch support is enabled.
+     */
+    int enable_touch;
 
     /**
      * The hostname of the remote desktop gateway that should be used as an
@@ -582,6 +601,11 @@ typedef struct guac_rdp_settings {
      * The broadcast address to send the magic WoL packet to.
      */
     char* wol_broadcast_addr;
+    
+    /**
+     * The UDP port to use when sending the magic WoL packet.
+     */
+    unsigned short wol_udp_port;
     
     /**
      * The amount of time to wait after sending the magic WoL packet before

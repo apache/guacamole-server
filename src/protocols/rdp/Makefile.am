@@ -56,6 +56,7 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/rdpdr/rdpdr-messages.c              \
     channels/rdpdr/rdpdr-printer.c               \
     channels/rdpdr/rdpdr.c                       \
+    channels/rdpei.c                             \
     channels/rdpsnd/rdpsnd-messages.c            \
     channels/rdpsnd/rdpsnd.c                     \
     client.c                                     \
@@ -101,6 +102,7 @@ noinst_HEADERS =                                 \
     channels/rdpdr/rdpdr-messages.h              \
     channels/rdpdr/rdpdr-printer.h               \
     channels/rdpdr/rdpdr.h                       \
+    channels/rdpei.h                             \
     channels/rdpsnd/rdpsnd-messages.h            \
     channels/rdpsnd/rdpsnd.h                     \
     client.h                                     \
@@ -238,6 +240,7 @@ rdp_keymaps =                                \
     $(srcdir)/keymaps/hu_hu_qwertz.keymap    \
     $(srcdir)/keymaps/it_it_qwerty.keymap    \
     $(srcdir)/keymaps/ja_jp_qwerty.keymap    \
+    $(srcdir)/keymaps/no_no_qwerty.keymap    \
     $(srcdir)/keymaps/pt_br_qwerty.keymap    \
     $(srcdir)/keymaps/sv_se_qwerty.keymap    \
     $(srcdir)/keymaps/da_dk_qwerty.keymap    \

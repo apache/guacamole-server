@@ -31,6 +31,7 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "namespace",
     "pod",
     "container",
+    "exec-command",
     "use-ssl",
     "client-cert",
     "client-key",
@@ -85,6 +86,11 @@ enum KUBERNETES_ARGS_IDX {
      * in the pod will be used.
      */
     IDX_CONTAINER,
+
+    /**
+     * The command used by exec call. If omitted, attach call will be used.
+     */
+    IDX_EXEC_COMMAND,
 
     /**
      * Whether SSL/TLS should be used. If omitted, SSL/TLS will not be used.
@@ -275,6 +281,11 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_CONTAINER, NULL);
 
+    /* Read exec command (optional) */
+    settings->exec_command =
+        guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_EXEC_COMMAND, NULL);
+
     /* Parse whether SSL should be used */
     settings->use_ssl =
         guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
@@ -405,6 +416,9 @@ void guac_kubernetes_settings_free(guac_kubernetes_settings* settings) {
     free(settings->kubernetes_namespace);
     free(settings->kubernetes_pod);
     free(settings->kubernetes_container);
+
+    /* Free Kubernetes exec command */
+    free(settings->exec_command);
 
     /* Free SSL/TLS details */
     free(settings->client_cert);

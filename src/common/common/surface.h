@@ -121,6 +121,19 @@ typedef struct guac_common_surface {
     guac_socket* socket;
 
     /**
+     * The number of simultaneous touches that this surface can accept, where 0
+     * indicates that the surface does not support touch events at all.
+     */
+    int touches;
+
+    /**
+     * Non-zero if all graphical updates for this surface should use lossless
+     * compression, 0 otherwise. By default, newly-created surfaces will use
+     * lossy compression when heuristics determine it is appropriate.
+     */
+    int lossless;
+
+    /**
      * The X coordinate of the upper-left corner of this layer, in pixels,
      * relative to its parent layer. This is only applicable to visible
      * (non-buffer) layers which are not the default layer.
@@ -485,6 +498,42 @@ void guac_common_surface_flush(guac_common_surface* surface);
  */
 void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
         guac_socket* socket);
+
+/**
+ * Declares that the given surface should receive touch events. By default,
+ * surfaces are assumed to not expect touch events. This value is advisory, and
+ * the client is not required to honor the declared level of touch support.
+ * Implementations are expected to safely handle or ignore any received touch
+ * events, regardless of the level of touch support declared.  regardless of
+ * the level of touch support declared.
+ *
+ * @param surface
+ *     The surface to modify.
+ *
+ * @param touches
+ *     The number of simultaneous touches that this surface can accept, where 0
+ *     indicates that the surface does not support touch events at all.
+ */
+void guac_common_surface_set_multitouch(guac_common_surface* surface,
+        int touches);
+
+/**
+ * Sets the lossless compression policy of the given surface to the given
+ * value. By default, newly-created surfaces will use lossy compression for
+ * graphical updates when heuristics determine that doing so is appropriate.
+ * Specifying a non-zero value here will force all graphical updates to always
+ * use lossless compression, whereas specifying zero will restore the default
+ * policy.
+ *
+ * @param surface
+ *     The surface to modify.
+ *
+ * @param lossless
+ *     Non-zero if all graphical updates for this surface should use lossless
+ *     compression, 0 otherwise.
+ */
+void guac_common_surface_set_lossless(guac_common_surface* surface,
+        int lossless);
 
 #endif
 

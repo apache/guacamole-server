@@ -77,6 +77,12 @@ typedef struct guac_vnc_settings {
      */
     bool read_only;
 
+    /**
+     * Whether all graphical updates for this connection should use lossless
+     * compression only.
+     */
+    bool lossless;
+
 #ifdef ENABLE_VNC_REPEATER
     /**
      * The VNC host to connect to, if using a repeater.
@@ -288,6 +294,11 @@ typedef struct guac_vnc_settings {
      * the remote host.
      */
     char* wol_broadcast_addr;
+    
+    /**
+     * The UDP port to use when sending the WoL packet.
+     */
+    unsigned short wol_udp_port;
     
     /**
      * The number of seconds after sending the magic WoL packet to wait before

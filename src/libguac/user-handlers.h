@@ -86,6 +86,13 @@ __guac_instruction_handler __guac_handle_sync;
 __guac_instruction_handler __guac_handle_mouse;
 
 /**
+ * Internal initial handler for the touch instruction. When a touch instruction
+ * is received, this handler will be called. The client's touch handler will
+ * be invoked if defined.
+ */
+__guac_instruction_handler __guac_handle_touch;
+
+/**
  * Internal initial handler for the key instruction. When a key instruction
  * is received, this handler will be called. The client's key handler will
  * be invoked if defined.

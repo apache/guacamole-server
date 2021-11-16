@@ -63,6 +63,7 @@ char* guac_vnc_get_password(rfbClient* client) {
     
 }
 
+#ifdef ENABLE_VNC_GENERIC_CREDENTIALS
 rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
     
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
@@ -117,3 +118,4 @@ rfbCredential* guac_vnc_get_credentials(rfbClient* client, int credentialType) {
     return NULL;
     
 }
+#endif

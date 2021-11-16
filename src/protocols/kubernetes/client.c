@@ -101,6 +101,7 @@ int guac_client_init(guac_client* client) {
     /* Set handlers */
     client->join_handler = guac_kubernetes_user_join_handler;
     client->free_handler = guac_kubernetes_client_free_handler;
+    client->leave_handler = guac_kubernetes_user_leave_handler;
 
     /* Register handlers for argument values that may be sent after the handshake */
     guac_argv_register(GUAC_KUBERNETES_ARGV_COLOR_SCHEME, guac_kubernetes_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);

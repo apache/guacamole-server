@@ -104,10 +104,12 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-name",
     "recording-exclude-output",
     "recording-exclude-mouse",
+    "recording-exclude-touch",
     "recording-include-keys",
     "create-recording-path",
     "resize-method",
     "enable-audio-input",
+    "enable-touch",
     "read-only",
 
     "gateway-hostname",
@@ -124,7 +126,10 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "wol-send-packet",
     "wol-mac-addr",
     "wol-broadcast-addr",
+    "wol-udp-port",
     "wol-wait-time",
+
+    "force-lossless",
     NULL
 };
 
@@ -499,6 +504,13 @@ enum RDP_ARGS_IDX {
     IDX_RECORDING_EXCLUDE_MOUSE,
 
     /**
+     * Whether changes to touch contact state should NOT be included in the
+     * session recording. Touch state is included by default, as it may be
+     * necessary for touch interactions to be rendered in any resulting video.
+     */
+    IDX_RECORDING_EXCLUDE_TOUCH,
+
+    /**
      * Whether keys pressed and released should be included in the session
      * recording. Key events are NOT included by default within the recording,
      * as doing so has privacy and security implications. Including key events
@@ -525,6 +537,12 @@ enum RDP_ARGS_IDX {
      * connection, "false" or blank otherwise.
      */
     IDX_ENABLE_AUDIO_INPUT,
+
+    /**
+     * "true" if multi-touch support should be enabled for the RDP connection,
+     * "false" or blank otherwise.
+     */
+    IDX_ENABLE_TOUCH,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -610,6 +628,11 @@ enum RDP_ARGS_IDX {
     IDX_WOL_BROADCAST_ADDR,
     
     /**
+     * The UDP port to use in the magic WoL packet.
+     */
+    IDX_WOL_UDP_PORT,
+    
+    /**
      * The amount of time, in seconds, to wait after sending the WoL packet
      * before attempting to connect to the host.  This should be a reasonable
      * amount of time to allow the remote host to fully boot and respond to
@@ -617,6 +640,12 @@ enum RDP_ARGS_IDX {
      * (0 seconds).
      */
     IDX_WOL_WAIT_TIME,
+
+    /**
+     * "true" if all graphical updates for this connection should use lossless
+     * compresion only, "false" or blank otherwise.
+     */
+    IDX_FORCE_LOSSLESS,
 
     RDP_ARGS_COUNT
 };
@@ -758,6 +787,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
             settings->height,
             settings->resolution);
 
+    /* Lossless compression */
+    settings->lossless =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_FORCE_LOSSLESS, 0);
+
     /* Domain */
     settings->domain =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -844,9 +878,24 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_DISABLE_OFFSCREEN_CACHING, 0);
 
-    settings->disable_glyph_caching =
-        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_DISABLE_GLYPH_CACHING, 0);
+    /* FreeRDP does not consider the glyph cache implementation to be stable as
+     * of 2.0.0, and it MUST NOT be used. Usage of the glyph cache results in
+     * unexpected disconnects when using older versions of Windows and recent
+     * versions of FreeRDP. See: https://issues.apache.org/jira/browse/GUACAMOLE-1191 */
+    settings->disable_glyph_caching = 1;
+
+    /* In case the user expects glyph caching to be enabled, either explicitly
+     * or by default, warn that this will not be the case as the glyph cache
+     * is not considered stable. */
+    if (!guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+            IDX_DISABLE_GLYPH_CACHING, 0)) {
+        guac_user_log(user, GUAC_LOG_DEBUG, "Glyph caching is currently "
+                "universally disabled, regardless of the value of the \"%s\" "
+                "parameter, as glyph caching support is not considered stable "
+                "by FreeRDP as of the FreeRDP 2.0.0 release. See: "
+                "https://issues.apache.org/jira/browse/GUACAMOLE-1191",
+                GUAC_RDP_CLIENT_ARGS[IDX_DISABLE_GLYPH_CACHING]);
+    }
 
     /* Session color depth */
     settings->color_depth = 
@@ -1029,6 +1078,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_RECORDING_EXCLUDE_MOUSE, 0);
 
+    /* Parse touch exclusion flag */
+    settings->recording_exclude_touch =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_RECORDING_EXCLUDE_TOUCH, 0);
+
     /* Parse key event inclusion flag */
     settings->recording_include_keys =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -1063,6 +1117,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 "Defaulting to no resize method.", argv[IDX_RESIZE_METHOD]);
         settings->resize_method = GUAC_RESIZE_NONE;
     }
+
+    /* Multi-touch input enable/disable */
+    settings->enable_touch =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_ENABLE_TOUCH, 0);
 
     /* Audio input enable/disable */
     settings->enable_audio_input =
@@ -1133,6 +1192,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
             guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
         
+        /* Parse the WoL broadcast port. */
+        settings->wol_udp_port = (unsigned short)
+            guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+        
         /* Parse the WoL wait time. */
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -1202,6 +1266,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     /* Free load balancer information string */
     free(settings->load_balance_info);
     
+    /* Free Wake-on-LAN strings */
     free(settings->wol_mac_addr);
     free(settings->wol_broadcast_addr);
 

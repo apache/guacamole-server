@@ -304,20 +304,6 @@ int main(int argc, char* argv[]) {
 
     }
 
-    /* Get socket */
-    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket_fd < 0) {
-        guacd_log(GUAC_LOG_ERROR, "Error opening socket: %s", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    /* Allow socket reuse */
-    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR,
-                (void*) &opt_on, sizeof(opt_on))) {
-        guacd_log(GUAC_LOG_WARNING, "Unable to set socket options for reuse: %s",
-                strerror(errno));
-    }
-
     /* Attempt binding of each address until success */
     current_address = addresses;
     while (current_address != NULL) {
@@ -333,27 +319,47 @@ int main(int argc, char* argv[]) {
             guacd_log(GUAC_LOG_ERROR, "Unable to resolve host: %s",
                     gai_strerror(retval));
 
+        /* Get socket */
+        socket_fd = socket(current_address->ai_family, SOCK_STREAM, 0);
+        if (socket_fd < 0) {
+            guacd_log(GUAC_LOG_ERROR, "Error opening socket: %s", strerror(errno));
+
+            /* Unable to get a socket for the resolved address family, try next */
+            current_address = current_address->ai_next;
+            continue;
+        }
+
+        /* Allow socket reuse */
+        if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR,
+                    (void*) &opt_on, sizeof(opt_on))) {
+            guacd_log(GUAC_LOG_WARNING, "Unable to set socket options for reuse: %s",
+                    strerror(errno));
+        }
+
         /* Attempt to bind socket to address */
         if (bind(socket_fd,
                     current_address->ai_addr,
                     current_address->ai_addrlen) == 0) {
 
-            guacd_log(GUAC_LOG_DEBUG, "Successfully bound socket to "
-                    "host %s, port %s", bound_address, bound_port);
+            guacd_log(GUAC_LOG_DEBUG, "Successfully bound "
+                    "%s socket to host %s, port %s",
+                    (current_address->ai_family == AF_INET) ? "AF_INET" : "AF_INET6",
+                    bound_address, bound_port);
 
             /* Done if successful bind */
             break;
-
         }
 
         /* Otherwise log information regarding bind failure */
-        else
-            guacd_log(GUAC_LOG_DEBUG, "Unable to bind socket to "
-                    "host %s, port %s: %s",
-                    bound_address, bound_port, strerror(errno));
+        close(socket_fd);
+        socket_fd = -1;
+        guacd_log(GUAC_LOG_DEBUG, "Unable to bind %s socket to "
+                "host %s, port %s: %s",
+                (current_address->ai_family == AF_INET) ? "AF_INET" : "AF_INET6",
+                bound_address, bound_port, strerror(errno));
 
+        /* Try next address */
         current_address = current_address->ai_next;
-
     }
 
     /* If unable to bind to anything, fail */

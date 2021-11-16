@@ -182,6 +182,30 @@ void guac_common_display_dup(guac_common_display* display, guac_user* user,
 
 }
 
+void guac_common_display_set_lossless(guac_common_display* display,
+        int lossless) {
+
+    pthread_mutex_lock(&display->_lock);
+
+    /* Update lossless setting to be applied to all newly-allocated
+     * layers/buffers */
+    display->lossless = lossless;
+
+    /* Update losslessness of all allocated layers/buffers */
+    guac_common_display_layer* current = display->layers;
+    while (current != NULL) {
+        guac_common_surface_set_lossless(current->surface, lossless);
+        current = current->next;
+    }
+
+    /* Update losslessness of default display layer (not included within layers
+     * list) */
+    guac_common_surface_set_lossless(display->default_surface, lossless);
+
+    pthread_mutex_unlock(&display->_lock);
+
+}
+
 void guac_common_display_flush(guac_common_display* display) {
 
     pthread_mutex_lock(&display->_lock);
@@ -287,6 +311,9 @@ guac_common_display_layer* guac_common_display_alloc_layer(
     guac_common_surface* surface = guac_common_surface_alloc(display->client,
             display->client->socket, layer, width, height);
 
+    /* Apply current display losslessness */
+    guac_common_surface_set_lossless(surface, display->lossless);
+
     /* Add layer and surface to list */
     guac_common_display_layer* display_layer =
         guac_common_display_add_layer(&display->layers, layer, surface);
@@ -307,6 +334,9 @@ guac_common_display_layer* guac_common_display_alloc_buffer(
     /* Allocate corresponding surface */
     guac_common_surface* surface = guac_common_surface_alloc(display->client,
             display->client->socket, buffer, width, height);
+
+    /* Apply current display losslessness */
+    guac_common_surface_set_lossless(surface, display->lossless);
 
     /* Add buffer and surface to list */
     guac_common_display_layer* display_layer =

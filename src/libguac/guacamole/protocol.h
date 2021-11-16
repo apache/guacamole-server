@@ -210,6 +210,53 @@ int guac_protocol_send_mouse(guac_socket* socket, int x, int y,
         int button_mask, guac_timestamp timestamp);
 
 /**
+ * Sends a touch instruction over the given guac_socket connection.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param id
+ *     An arbitrary integer ID which uniquely identifies this contact relative
+ *     to other active contacts.
+ *
+ * @param x
+ *     The X coordinate of the center of the touch contact.
+ *
+ * @param y
+ *     The Y coordinate of the center of the touch contact.
+ *
+ * @param x_radius
+ *     The X radius of the ellipse covering the general area of the touch
+ *     contact, in pixels.
+ *
+ * @param y_radius
+ *     The Y radius of the ellipse covering the general area of the touch
+ *     contact, in pixels.
+ *
+ * @param angle
+ *     The rough angle of clockwise rotation of the general area of the touch
+ *     contact, in degrees.
+ *
+ * @param force
+ *     The relative force exerted by the touch contact, where 0 is no force
+ *     (the touch has been lifted) and 1 is maximum force (the maximum amount
+ *     of force representable by the device).
+ *
+ * @param timestamp
+ *     The server timestamp (in milliseconds) at the point in time this touch
+ *     event was acknowledged.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_touch(guac_socket* socket, int id, int x, int y,
+        int x_radius, int y_radius, double angle, double force,
+        guac_timestamp timestamp);
+
+/**
  * Sends a nest instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is
@@ -270,6 +317,32 @@ int guac_protocol_send_ready(guac_socket* socket, const char* id);
  */
 int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
         const char* name, const char* value);
+
+/**
+ * Sends a set instruction over the given guac_socket connection. This function
+ * behavies identically to guac_protocol_send_set() except that the provided
+ * parameter value is an integer, rather than a string.
+ *
+ * If an error occurs sending the instruction, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param layer
+ *     The layer to set the parameter of.
+ *
+ * @param name
+ *     The name of the parameter to set.
+ *
+ * @param value
+ *     The value to set the parameter to.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
+ */
+int guac_protocol_send_set_int(guac_socket* socket, const guac_layer* layer,
+        const char* name, int value);
 
 /**
  * Sends a select instruction over the given guac_socket connection.

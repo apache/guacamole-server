@@ -63,6 +63,7 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "wol-send-packet",
     "wol-mac-addr",
     "wol-broadcast-addr",
+    "wol-udp-port",
     "wol-wait-time",
     NULL
 };
@@ -257,6 +258,11 @@ enum TELNET_ARGS_IDX {
      * The broadcast address to which to send the magic WoL packet.
      */
     IDX_WOL_BROADCAST_ADDR,
+    
+    /**
+     * The UDP port to use when sending the WoL packet.
+     */
+    IDX_WOL_UDP_PORT,
     
     /**
      * The amount of time, in seconds, to wait after the magic WoL packet is
@@ -511,6 +517,11 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
             guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_WOL_BROADCAST_ADDR, GUAC_WOL_LOCAL_IPV4_BROADCAST);
         
+        /* Parse the WoL broadcast port. */
+        settings->wol_udp_port = (unsigned short)
+            guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_WOL_UDP_PORT, GUAC_WOL_PORT);
+        
         /* Parse the WoL wait time. */
         settings->wol_wait_time =
             guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
@@ -553,6 +564,10 @@ void guac_telnet_settings_free(guac_telnet_settings* settings) {
 
     /* Free terminal emulator type. */
     free(settings->terminal_type);
+    
+    /* Free WoL settings. */
+    free(settings->wol_mac_addr);
+    free(settings->wol_broadcast_addr);
 
     /* Free overall structure */
     free(settings);

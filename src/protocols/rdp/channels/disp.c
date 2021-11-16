@@ -31,9 +31,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-guac_rdp_disp* guac_rdp_disp_alloc() {
+guac_rdp_disp* guac_rdp_disp_alloc(guac_client* client) {
 
     guac_rdp_disp* disp = malloc(sizeof(guac_rdp_disp));
+    disp->client = client;
 
     /* Not yet connected */
     disp->disp = NULL;
@@ -95,11 +96,51 @@ static void guac_rdp_disp_channel_connected(rdpContext* context,
 
 }
 
+/**
+ * Callback which disassociates Guacamole from the DispClientContext instance
+ * that was originally allocated by FreeRDP and is about to be deallocated.
+ *
+ * This function is called whenever a channel disconnects via the PubSub event
+ * system within FreeRDP, but only has any effect if the disconnected channel
+ * is the Display Update channel. This specific callback is registered with the
+ * PubSub system of the relevant rdpContext when guac_rdp_disp_load_plugin() is
+ * called.
+ *
+ * @param context
+ *     The rdpContext associated with the active RDP session.
+ *
+ * @param e
+ *     Event-specific arguments, mainly the name of the channel, and a
+ *     reference to the associated plugin loaded for that channel by FreeRDP.
+ */
+static void guac_rdp_disp_channel_disconnected(rdpContext* context,
+        ChannelDisconnectedEventArgs* e) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_disp* guac_disp = rdp_client->disp;
+
+    /* Ignore disconnection event if it's not for the Display Update channel */
+    if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) != 0)
+        return;
+
+    /* Channel is no longer connected */
+    guac_disp->disp = NULL;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "Display update channel "
+            "disconnected.");
+
+}
+
 void guac_rdp_disp_load_plugin(rdpContext* context) {
 
     /* Subscribe to and handle channel connected events */
     PubSub_SubscribeChannelConnected(context->pubSub,
         (pChannelConnectedEventHandler) guac_rdp_disp_channel_connected);
+
+    /* Subscribe to and handle channel disconnected events */
+    PubSub_SubscribeChannelDisconnected(context->pubSub,
+            (pChannelDisconnectedEventHandler) guac_rdp_disp_channel_disconnected);
 
     /* Add "disp" channel */
     guac_freerdp_dynamic_channel_collection_add(context->settings, "disp", NULL);
@@ -220,8 +261,17 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
         }};
 
         /* Send display update notification if display channel is connected */
-        if (disp->disp != NULL)
+        if (disp->disp != NULL) {
+
+            guac_client* client = disp->client;
+            guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+            pthread_mutex_lock(&(rdp_client->message_lock));
             disp->disp->SendMonitorLayout(disp->disp, 1, monitors);
+            pthread_mutex_unlock(&(rdp_client->message_lock));
+
+        }
+
     }
 
 }

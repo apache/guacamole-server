@@ -140,11 +140,21 @@ static void guac_common_ssh_openssl_free_locks(int count) {
 int guac_common_ssh_init(guac_client* client) {
 
 #ifdef LIBSSH2_USES_GCRYPT
-    /* Init threadsafety in libgcrypt */
-    gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-    if (!gcry_check_version(GCRYPT_VERSION)) {
-        guac_client_log(client, GUAC_LOG_ERROR, "libgcrypt version mismatch.");
-        return 1;
+    
+    if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P)) {
+    
+        /* Init threadsafety in libgcrypt */
+        gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+        
+        /* Initialize GCrypt */
+        if (!gcry_check_version(GCRYPT_VERSION)) {
+            guac_client_log(client, GUAC_LOG_ERROR, "libgcrypt version mismatch.");
+            return 1;
+        }
+
+        /* Mark initialization as completed. */
+        gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+    
     }
 #endif
 

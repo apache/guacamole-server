@@ -137,7 +137,8 @@ static int guac_common_recording_open(const char* path,
 
 guac_common_recording* guac_common_recording_create(guac_client* client,
         const char* path, const char* name, int create_path,
-        int include_output, int include_mouse, int include_keys) {
+        int include_output, int include_mouse, int include_touch,
+        int include_keys) {
 
     char filename[GUAC_COMMON_RECORDING_MAX_NAME_LENGTH];
 
@@ -165,6 +166,7 @@ guac_common_recording* guac_common_recording_create(guac_client* client,
     recording->socket = guac_socket_open(fd);
     recording->include_output = include_output;
     recording->include_mouse = include_mouse;
+    recording->include_touch = include_touch;
     recording->include_keys = include_keys;
 
     /* Replace client socket with wrapped recording socket only if including
@@ -200,6 +202,17 @@ void guac_common_recording_report_mouse(guac_common_recording* recording,
     if (recording->include_mouse)
         guac_protocol_send_mouse(recording->socket, x, y, button_mask,
                 guac_timestamp_current());
+
+}
+
+void guac_common_recording_report_touch(guac_common_recording* recording,
+        int id, int x, int y, int x_radius, int y_radius,
+        double angle, double force) {
+
+    /* Report touches only if recording should contain touch events */
+    if (recording->include_touch)
+        guac_protocol_send_touch(recording->socket, id, x, y,
+                x_radius, y_radius, angle, force, guac_timestamp_current());
 
 }
 

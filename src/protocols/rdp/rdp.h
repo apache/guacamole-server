@@ -23,6 +23,7 @@
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
+#include "channels/rdpei.h"
 #include "common/clipboard.h"
 #include "common/display.h"
 #include "common/list.h"
@@ -149,6 +150,11 @@ typedef struct guac_rdp_client {
     guac_rdp_disp* disp;
 
     /**
+     * Multi-touch support module (RDPEI).
+     */
+    guac_rdp_rdpei* rdpei;
+
+    /**
      * List of all available static virtual channels.
      */
     guac_common_list* available_svc;
@@ -165,6 +171,12 @@ typedef struct guac_rdp_client {
      * by the client thread.
      */
     pthread_rwlock_t lock;
+
+    /**
+     * Lock which synchronizes the sending of each RDP message, ensuring
+     * attempts to send RDP messages never overlap.
+     */
+    pthread_mutex_t message_lock;
 
 } guac_rdp_client;
 
