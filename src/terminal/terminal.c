@@ -1600,89 +1600,18 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
 
                 keyseq = keyseq + 1;
                 
-                /* F1  */
-                if (keysym == 0xFFBE || keysym == 0xFF91) {
-                    char data[10];
-                    sprintf(data, "\x1B[1;%dP", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                }
-
-                /* F2  */
-                if (keysym == 0xFFBF || keysym == 0xFF92) {
-                    char data[10];
-                    sprintf(data, "\x1B[1;%dQ", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                }
-                
-                /* F3  */
-                if (keysym == 0xFFC0 || keysym == 0xFF93) {
-                    char data[10];
-                    sprintf(data, "\x1B[1;%dR", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                }
-                
-                /* F4 */
-                if (keysym == 0xFFC1 || keysym == 0xFF94) {
-                    char data[10];
-                    sprintf(data, "\x1B[1;%dS", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                }
-
-                /* F5 */
-                if (keysym == 0xFFC2) {
-                    char data[10];
-                    sprintf(data, "\x1B[15;%d~", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                }
-
-                /* F6 */
-                if (keysym == 0xFFC3) {
-                    char data[10];
-                    sprintf(data, "\x1B[17;%d~", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                }
-                
-                /* F7 */
-                if (keysym == 0xFFC4) {
-                    char data[10];
-                    sprintf(data, "\x1B[18;%d~", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                } 
-
-                /* F8 */
-                if (keysym == 0xFFC5) {
-                    char data[10];
-                    sprintf(data, "\x1B[19;%d~", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                } 
-
-                /* F9 */
-                if (keysym == 0xFFC6) {
-                    char data[10];
-                    sprintf(data, "\x1B[20;%d~", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                } 
-
-                /* F10 */
-                if (keysym == 0xFFC7) {
-                    char data[10];
-                    sprintf(data, "\x1B[21;%d~", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                } 
-
-                /* F11 */
-                if (keysym == 0xFFC8) {
-                    char data[10];
-                    sprintf(data, "\x1B[23;%d~", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                } 
-
-                /* F12 */
-                if (keysym == 0xFFC9) {
-                    char data[10];
-                    sprintf(data, "\x1B[24;%d~", keyseq);
-                    return guac_terminal_send_string(term, data); 
-                }     
+                if (keysym == 0xFFBE || keysym == 0xFF91) return guac_terminal_sendf(term, "\x1B[1;%dP", keyseq); /* F1  */
+                if (keysym == 0xFFBF || keysym == 0xFF92) return guac_terminal_sendf(term, "\x1B[1;%dQ", keyseq); /* F2  */
+                if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_sendf(term, "\x1B[1;%dR", keyseq); /* F3  */
+                if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_sendf(term, "\x1B[1;%dS", keyseq); /* F4  */
+                if (keysym == 0xFFC2) return guac_terminal_sendf(term, "\x1B[15;%d~", keyseq); /* F5  */
+                if (keysym == 0xFFC3) return guac_terminal_sendf(term, "\x1B[17;%d~", keyseq); /* F6  */
+                if (keysym == 0xFFC4) return guac_terminal_sendf(term, "\x1B[18;%d~", keyseq); /* F7  */
+                if (keysym == 0xFFC5) return guac_terminal_sendf(term, "\x1B[19;%d~", keyseq); /* F8  */
+                if (keysym == 0xFFC6) return guac_terminal_sendf(term, "\x1B[20;%d~", keyseq); /* F9  */
+                if (keysym == 0xFFC7) return guac_terminal_sendf(term, "\x1B[21;%d~", keyseq); /* F10 */
+                if (keysym == 0xFFC8) return guac_terminal_sendf(term, "\x1B[23;%d~", keyseq); /* F11 */
+                if (keysym == 0xFFC9) return guac_terminal_sendf(term, "\x1B[24;%d~", keyseq); /* F12 */
             }
             
             if (keysym == 0xFF55 || keysym == 0xFF9A) return guac_terminal_send_string(term, "\x1B[5~"); /* Page up */
@@ -1696,7 +1625,6 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
             if (keysym == 0xFFC0 || keysym == 0xFF93) return guac_terminal_send_string(term, "\x1B[[R"); /* F3  */
             if (keysym == 0xFFC1 || keysym == 0xFF94) return guac_terminal_send_string(term, "\x1B[[S"); /* F4  */
             if (keysym == 0xFFC2) return guac_terminal_send_string(term, "\x1B[15~"); /* F5  */
-
             if (keysym == 0xFFC3) return guac_terminal_send_string(term, "\x1B[17~"); /* F6  */
             if (keysym == 0xFFC4) return guac_terminal_send_string(term, "\x1B[18~"); /* F7  */
             if (keysym == 0xFFC5) return guac_terminal_send_string(term, "\x1B[19~"); /* F8  */
