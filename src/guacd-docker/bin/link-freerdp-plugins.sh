@@ -40,15 +40,14 @@
 ##
 where_is_freerdp() {
 
-    PLUGIN_FILE="$1"
+    PREFIX_DIR="$1"
 
     # Determine the location of all libfreerdp* libraries explicitly linked
-    # to given file
-    PATHS="$(ldd "$PLUGIN_FILE"              \
-                 | awk '/=>/{print $(NF-1)}' \
-                 | grep 'libfreerdp'         \
-                 | xargs -r dirname          \
-                 | xargs -r realpath         \
+    PATHS="$(ldd ${PREFIX_DIR}/lib/libguac-client-rdp.so   \
+                 | awk '/=>/{print $(NF-1)}'               \
+                 | grep 'libfreerdp'                       \
+                 | xargs -r dirname                        \
+                 | xargs -r realpath                       \
                  | sort -u)"
 
     # Verify that exactly one location was found
@@ -58,7 +57,6 @@ where_is_freerdp() {
     fi
 
     echo "$PATHS"
-
 }
 
 #
@@ -66,18 +64,18 @@ where_is_freerdp() {
 # search path of FreeRDP
 #
 
-while [ -n "$1" ]; do
+GUAC_PLUGIN="$1$2"
+FREERDP_DIR="$(where_is_freerdp "$1")"
+FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp2"
 
-    # Determine correct install location for FreeRDP plugins
-    FREERDP_DIR="$(where_is_freerdp "$1")"
-    FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp2"
+for value in $GUAC_PLUGIN; do
 
     # Add symbolic link if necessary
-    if [ ! -e "$FREERDP_PLUGIN_DIR/$(basename "$1")" ]; then
+    if [ ! -e "$FREERDP_PLUGIN_DIR/$(basename $value)" ]; then
         mkdir -p "$FREERDP_PLUGIN_DIR"
-        ln -s "$1" "$FREERDP_PLUGIN_DIR"
+        ln -s "$value" "$FREERDP_PLUGIN_DIR"
     else
-        echo "$1: Already in correct directory." >&2
+        echo "$value: Already in correct directory." >&2
     fi
 
     shift

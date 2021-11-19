@@ -148,7 +148,8 @@ RUN apt-get update                                                              
 
 # Link FreeRDP plugins into proper path
 RUN ${PREFIX_DIR}/bin/link-freerdp-plugins.sh \
-        ${PREFIX_DIR}/lib/freerdp2/libguac*.so
+        ${PREFIX_DIR}                         \
+        /lib/freerdp2/libguac*.so
 
 # Checks the operating status every 5 minutes with a timeout of 5 seconds
 HEALTHCHECK --interval=5m --timeout=5s CMD nc -z 127.0.0.1 4822 || exit 1
@@ -158,8 +159,6 @@ ARG UID=1000
 ARG GID=1000
 RUN groupadd --gid $GID guacd
 RUN useradd --system --create-home --shell /usr/sbin/nologin --uid $UID --gid $GID guacd
-RUN cp -r /usr/local/guacamole/lib/* /usr/lib/x86_64-linux-gnu/freerdp2/
-RUN cp -r /usr/local/guacamole/lib/freerdp2/* /usr/lib/x86_64-linux-gnu/freerdp2/
 
 # Run with user guacd
 USER guacd
