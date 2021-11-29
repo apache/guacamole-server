@@ -31,7 +31,7 @@
  * The number of milliseconds to wait for messages in any phase before
  * timing out and closing the connection with an error.
  */
-#define GUACD_TIMEOUT 20000
+#define GUACD_TIMEOUT 30000
 
 /**
  * The number of microseconds to wait for messages in any phase before
