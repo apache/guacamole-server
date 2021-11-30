@@ -22,6 +22,7 @@
 #include "conf.h"
 #include "conf-args.h"
 #include "conf-parse.h"
+#include "conf-file.h"
 
 #include <getopt.h>
 #include <stdio.h>
@@ -32,10 +33,16 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "l:b:p:L:C:K:fv")) != -1) {
+    while ((opt = getopt(argc, argv, "c:l:b:p:L:C:K:fv")) != -1) {
+
+        /* -c: Configuration file */
+        if (opt == 'c') {
+            if (guacd_conf_load(config, optarg))
+                return 1;
+        }
 
         /* -l: Bind port */
-        if (opt == 'l') {
+        else if (opt == 'l') {
             free(config->bind_port);
             config->bind_port = strdup(optarg);
         }
@@ -102,6 +109,7 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
         else {
 
             fprintf(stderr, "USAGE: %s"
+                    " [-c CONFIG_FILE]"
                     " [-l LISTENPORT]"
                     " [-b LISTENADDRESS]"
                     " [-p PIDFILE]"
@@ -121,4 +129,3 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
     return 0;
 
 }
-

@@ -25,6 +25,11 @@
 #include "conf.h"
 
 /**
+ * Creates a new configuration structure, filled with default settings.
+ */
+guacd_config* guacd_conf_create();
+
+/**
  * Reads the given file descriptor, parsing its contents into the guacd_config.
  * On success, zero is returned. If parsing fails, non-zero is returned, and an
  * error message is printed to stderr.
@@ -32,10 +37,17 @@
 int guacd_conf_parse_file(guacd_config* conf, int fd);
 
 /**
- * Loads the configuration from any of several default locations, if found. If
- * parsing fails, NULL is returned, and an error message is printed to stderr.
+ * Loads configuration settings from a file with the given path, if found.
+ * On success, zero is returned. If parsing fails, non-zero is returned, and an
+ * error message is printed to stderr.
  */
-guacd_config* guacd_conf_load();
+int guacd_conf_load(guacd_config* conf, const char* conf_file_path);
+
+/**
+ * Determines path to the default configuration file (environment variable or
+ * predefined path) and loads settings from it. On success, zero is returned.
+ */
+int guacd_conf_load_default(guacd_config* conf);
 
 #endif
 

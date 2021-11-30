@@ -35,6 +35,29 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+guacd_config* guacd_conf_create() {
+
+    guacd_config* conf = malloc(sizeof(guacd_config));
+    if (conf == NULL)
+        return NULL;
+
+    /* Load defaults */
+    conf->bind_host = NULL;
+    conf->bind_port = strdup("4822");
+    conf->pidfile = NULL;
+    conf->foreground = 0;
+    conf->print_version = 0;
+    conf->max_log_level = GUAC_LOG_INFO;
+
+#ifdef ENABLE_SSL
+    conf->cert_file = NULL;
+    conf->key_file = NULL;
+#endif
+
+    return conf;
+
+}
+
 /**
  * Updates the configuration with the given parameter/value pair, flagging
  * errors as necessary.
@@ -169,48 +192,40 @@ int guacd_conf_parse_file(guacd_config* conf, int fd) {
 
 }
 
-guacd_config* guacd_conf_load() {
-
-    guacd_config* conf = malloc(sizeof(guacd_config));
-    if (conf == NULL)
-        return NULL;
-
-    /* Load defaults */
-    conf->bind_host = NULL;
-    conf->bind_port = strdup("4822");
-    conf->pidfile = NULL;
-    conf->foreground = 0;
-    conf->print_version = 0;
-    conf->max_log_level = GUAC_LOG_INFO;
-
-#ifdef ENABLE_SSL
-    conf->cert_file = NULL;
-    conf->key_file = NULL;
-#endif
+int guacd_conf_load(guacd_config* conf, const char* conf_file_path) {
 
     /* Read configuration from file */
-    int fd = open(GUACD_CONF_FILE, O_RDONLY);
+    int fd = open(conf_file_path, O_RDONLY);
     if (fd > 0) {
 
         int retval = guacd_conf_parse_file(conf, fd);
         close(fd);
 
         if (retval != 0) {
-            fprintf(stderr, "Unable to parse \"" GUACD_CONF_FILE "\".\n");
-            free(conf);
-            return NULL;
+            fprintf(stderr, "Unable to parse \"%s\".\n", conf_file_path);
+            return 1;
         }
 
     }
 
     /* Notify of errors preventing reading */
     else if (errno != ENOENT) {
-        fprintf(stderr, "Unable to open \"" GUACD_CONF_FILE "\": %s\n", strerror(errno));
-        free(conf);
-        return NULL;
+        fprintf(stderr, "Unable to open \"%s\": %s\n", conf_file_path, strerror(errno));
+        return 1;
     }
 
-    return conf;
+    /* Load successfully */
+    return 0;
 
 }
 
+int guacd_conf_load_default(guacd_config* conf) {
+
+    /* Determine path to the default configuration file and load it */
+    char *path = getenv("GUACD_CONF_FILE");
+    if (path == NULL)
+        path = GUACD_CONF_FILE;
+
+    return guacd_conf_load(conf, path);
+
+}

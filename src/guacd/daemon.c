@@ -276,8 +276,10 @@ int main(int argc, char* argv[]) {
     int retval;
 
     /* Load configuration */
-    guacd_config* config = guacd_conf_load();
-    if (config == NULL || guacd_conf_parse_args(config, argc, argv))
+    guacd_config* config = guacd_conf_create();
+    if (config == NULL
+        || guacd_conf_load_default(config)
+        || guacd_conf_parse_args(config, argc, argv))
        exit(EXIT_FAILURE);
 
     /* If requested, simply print version and exit, without initializing the
