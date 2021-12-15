@@ -25,74 +25,26 @@
 #include <guacamole/client.h>
 #include <libssh2.h>
 
-#include <openssl/ossl_typ.h>
+/**
+ * OpenSSH v1 private keys are PEM-wrapped base64-encoded blobs. The encoded data begins with:
+ *   "openssh-key-v1\0"
+ */
+#define OPENSSH_V1_KEY_HEADER "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEA"
 
 /**
- * The expected header of RSA private keys.
+ * The base64-encoded prefix indicating an OpenSSH v1 private key is NOT protected by a
+ * passphrase. Specifically, it is the following data fields and values:
+ *   pascal string: cipher name ("none")
+ *   pascal string: kdf name ("none")
+ *   pascal string: kdf params (NULL)
+ *   32-bit int: number of keys (1)
  */
-#define SSH_RSA_KEY_HEADER "-----BEGIN RSA PRIVATE KEY-----"
-
-/**
- * The expected header of DSA private keys.
- */
-#define SSH_DSA_KEY_HEADER "-----BEGIN DSA PRIVATE KEY-----"
-
-/**
- * The size of single number within a DSA signature, in bytes.
- */
-#define DSA_SIG_NUMBER_SIZE 20
-
-/**
- * The size of a DSA signature, in bytes.
- */
-#define DSA_SIG_SIZE DSA_SIG_NUMBER_SIZE*2 
-
-/**
- * The type of an SSH key.
- */
-typedef enum guac_common_ssh_key_type {
-
-    /**
-     * RSA key.
-     */
-    SSH_KEY_RSA,
-
-    /**
-     * DSA key.
-     */
-    SSH_KEY_DSA
-
-} guac_common_ssh_key_type;
+#define OPENSSH_V1_UNENCRYPTED_KEY "AAAABG5vbmUAAAAEbm9uZQAAAAAAAAAB"
 
 /**
  * Abstraction of a key used for SSH authentication.
  */
 typedef struct guac_common_ssh_key {
-
-    /**
-     * The type of this key.
-     */
-    guac_common_ssh_key_type type;
-
-    /**
-     * Underlying RSA private key, if any.
-     */
-    RSA* rsa;
-
-    /**
-     * Underlying DSA private key, if any.
-     */
-    DSA* dsa;
-
-    /**
-     * The associated public key, encoded as necessary for SSH.
-     */
-    char* public_key;
-
-    /**
-     * The length of the public key, in bytes.
-     */
-    int public_key_length;
 
     /**
      * The private key, encoded as necessary for SSH.
@@ -103,6 +55,11 @@ typedef struct guac_common_ssh_key {
      * The length of the private key, in bytes.
      */
     int private_key_length;
+
+    /**
+     * The private key's passphrase, if any.
+     */
+    char *passphrase;
 
 } guac_common_ssh_key;
 
@@ -143,31 +100,6 @@ const char* guac_common_ssh_key_error();
  *     The key to free.
  */
 void guac_common_ssh_key_free(guac_common_ssh_key* key);
-
-/**
- * Signs the given data using the given key, returning the length of the
- * signature in bytes, or a value less than zero on error.
- *
- * @param key
- *     The key to use when signing the given data.
- *
- * @param data
- *     The arbitrary data to sign.
- *
- * @param length
- *     The length of the arbitrary data being signed, in bytes.
- *
- * @param sig
- *     The buffer into which the signature should be written. The buffer must
- *     be at least DSA_SIG_SIZE for DSA keys. For RSA keys, the signature size
- *     is dependent only on key size, and is equal to the length of the
- *     modulus, in bytes.
- *
- * @return
- *     The number of bytes in the resulting signature.
- */
-int guac_common_ssh_key_sign(guac_common_ssh_key* key, const char* data,
-        int length, unsigned char* sig);
 
 /**
  * Verifies the host key for the given hostname/port combination against

@@ -110,6 +110,28 @@ size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n);
 size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n);
 
 /**
+ * Search for the null-terminated string needle in the possibly null-
+ * terminated haystack, looking at no more than len bytes.
+ *
+ * @param haystack
+ *     The string to search. It may or may not be null-terminated. Only the
+ *     first len bytes are searched.
+ *
+ * @param needle
+ *     The string to look for. It must be null-terminated.
+ *
+ * @param len
+ *     The maximum number of bytes to examine in haystack.
+ *
+ * @return
+ *     A pointer to the first instance of needle within haystack, or NULL if
+ *     needle does not exist in haystack. If needle is the empty string,
+ *     haystack is returned.
+ *
+ */
+char* guac_strnstr(const char *haystack, const char *needle, size_t len);
+
+/**
  * Simple wrapper for strdup() which behaves identically to standard strdup(),
  * except that NULL will be returned if the provided string is NULL.
  *
