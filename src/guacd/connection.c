@@ -280,13 +280,8 @@ static int guacd_route_connection(guacd_proc_map* map, guac_socket* socket) {
 
         /* Warn and ward off client if requested connection does not exist */
         if (proc == NULL) {
-            char message[2048];
-
-            snprintf(message, sizeof(message),
-                    "Connection \"%s\" does not exist", identifier);
-
-            guacd_log(GUAC_LOG_INFO, message);
-            guac_protocol_send_error(socket, message,
+            guacd_log(GUAC_LOG_INFO, "Connection \"%s\" does not exist", identifier);
+            guac_protocol_send_error(socket, "No such connection.",
                     GUAC_PROTOCOL_STATUS_RESOURCE_NOT_FOUND);
         }
 
