@@ -324,6 +324,19 @@ typedef struct guac_rdp_settings {
     int disable_paste;
 
     /**
+     * Whether line endings within the clipboard should be automatically
+     * normalized to Unix-style newline characters.
+     */
+    int normalize_clipboard;
+
+    /**
+     * Whether Unix-style newline characters within the clipboard should be
+     * automatically translated to CRLF sequences before transmission to the
+     * RDP server.
+     */
+    int clipboard_crlf;
+
+    /**
      * Whether the desktop wallpaper should be visible. If unset, the desktop
      * wallpaper will be hidden, reducing the amount of bandwidth required.
      */

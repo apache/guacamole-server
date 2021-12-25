@@ -352,10 +352,11 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 
     guac_client* client = clipboard->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_rdp_settings* settings = rdp_client->settings;
 
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format data request.");
 
-    guac_iconv_write* writer;
+    guac_iconv_write* remote_writer;
     const char* input = clipboard->clipboard->buffer;
     char* output = malloc(GUAC_RDP_CLIPBOARD_MAX_LENGTH);
 
@@ -363,11 +364,11 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     switch (format_data_request->requestedFormatId) {
 
         case CF_TEXT:
-            writer = GUAC_WRITE_CP1252;
+            remote_writer = settings->clipboard_crlf ? GUAC_WRITE_CP1252_CRLF : GUAC_WRITE_CP1252;
             break;
 
         case CF_UNICODETEXT:
-            writer = GUAC_WRITE_UTF16;
+            remote_writer = settings->clipboard_crlf ? GUAC_WRITE_UTF16_CRLF : GUAC_WRITE_UTF16;
             break;
 
         /* Warn if clipboard data cannot be sent as intended due to a violation
@@ -386,8 +387,9 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     /* Send received clipboard data to the RDP server in the format
      * requested */
     BYTE* start = (BYTE*) output;
-    guac_iconv(GUAC_READ_UTF8, &input, clipboard->clipboard->length,
-               writer, &output, GUAC_RDP_CLIPBOARD_MAX_LENGTH);
+    guac_iconv_read* local_reader = settings->normalize_clipboard ? GUAC_READ_UTF8_NORMALIZED : GUAC_READ_UTF8;
+    guac_iconv(local_reader, &input, clipboard->clipboard->length,
+            remote_writer, &output, GUAC_RDP_CLIPBOARD_MAX_LENGTH);
 
     CLIPRDR_FORMAT_DATA_RESPONSE data_response = {
         .requestedFormatData = (BYTE*) start,
@@ -449,7 +451,7 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
 
     char received_data[GUAC_RDP_CLIPBOARD_MAX_LENGTH];
 
-    guac_iconv_read* reader;
+    guac_iconv_read* remote_reader;
     const char* input = (char*) format_data_response->requestedFormatData;
     char* output = received_data;
 
@@ -458,12 +460,12 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
 
         /* Non-Unicode (Windows CP-1252) */
         case CF_TEXT:
-            reader = GUAC_READ_CP1252;
+            remote_reader = settings->normalize_clipboard ? GUAC_READ_CP1252_NORMALIZED : GUAC_READ_CP1252;
             break;
 
         /* Unicode (UTF-16) */
         case CF_UNICODETEXT:
-            reader = GUAC_READ_UTF16;
+            remote_reader = settings->normalize_clipboard ? GUAC_READ_UTF16_NORMALIZED : GUAC_READ_UTF16;
             break;
 
         /* If the format ID stored within the guac_rdp_clipboard structure is actually
@@ -481,7 +483,7 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
 
     /* Convert, store, and forward the clipboard data received from RDP
      * server */
-    if (guac_iconv(reader, &input, format_data_response->dataLen,
+    if (guac_iconv(remote_reader, &input, format_data_response->dataLen,
             GUAC_WRITE_UTF8, &output, sizeof(received_data))) {
         int length = strnlen(received_data, sizeof(received_data));
         guac_common_clipboard_reset(clipboard->clipboard, "text/plain");

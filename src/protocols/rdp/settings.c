@@ -130,6 +130,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "wol-wait-time",
 
     "force-lossless",
+    "normalize-clipboard",
     NULL
 };
 
@@ -646,6 +647,16 @@ enum RDP_ARGS_IDX {
      * compresion only, "false" or blank otherwise.
      */
     IDX_FORCE_LOSSLESS,
+
+    /**
+     * Controls whether the text content of the clipboard should be
+     * automatically normalized to use a particular line ending format. Valid
+     * values are "preserve", to preserve line endings verbatim, "windows" to
+     * transform all line endings to Windows-style CRLF sequences, or "unix" to
+     * transform all line endings to Unix-style newline characters ('\n'). By
+     * default, line endings within the clipboard are preserved.
+     */
+    IDX_NORMALIZE_CLIPBOARD,
 
     RDP_ARGS_COUNT
 };
@@ -1167,7 +1178,36 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->disable_paste =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_DISABLE_PASTE, 0);
-    
+
+    /* Normalize clipboard line endings to Unix format */
+    if (strcmp(argv[IDX_NORMALIZE_CLIPBOARD], "unix") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Clipboard line ending normalization: Unix (LF)");
+        settings->normalize_clipboard = 1;
+        settings->clipboard_crlf = 0;
+    }
+
+    /* Normalize clipboard line endings to Windows format */
+    else if (strcmp(argv[IDX_NORMALIZE_CLIPBOARD], "windows") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Clipboard line ending normalization: Windows (CRLF)");
+        settings->normalize_clipboard = 1;
+        settings->clipboard_crlf = 1;
+    }
+
+    /* Preserve clipboard line ending format */
+    else if (strcmp(argv[IDX_NORMALIZE_CLIPBOARD], "preserve") == 0) {
+        guac_user_log(user, GUAC_LOG_INFO, "Clipboard line ending normalization: Preserve (none)");
+        settings->normalize_clipboard = 0;
+        settings->clipboard_crlf = 0;
+    }
+
+    /* If nothing given, default to preserving line endings */
+    else {
+        guac_user_log(user, GUAC_LOG_INFO, "No clipboard line-ending normalization specified. Defaulting to preserving the format of all line endings.");
+        settings->normalize_clipboard = 0;
+        settings->clipboard_crlf = 0;
+    }
+
+
     /* Parse Wake-on-LAN (WoL) settings */
     settings->wol_send_packet =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
