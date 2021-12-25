@@ -33,8 +33,12 @@ ACLOCAL_AMFLAGS = -I m4
 check_PROGRAMS = test_common
 TESTS = $(check_PROGRAMS)
 
+noinst_HEADERS =               \
+    iconv/convert-test-data.h
+
 test_common_SOURCES =          \
     iconv/convert.c            \
+    iconv/convert-test-data.c  \
     rect/clip_and_split.c      \
     rect/constrain.c           \
     rect/expand_to_grid.c      \
