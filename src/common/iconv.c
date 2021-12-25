@@ -138,6 +138,70 @@ int GUAC_READ_ISO8859_1(const char** input, int remaining) {
 
 }
 
+/**
+ * Invokes the given reader function, automatically normalizing newline
+ * sequences as Unix-style newline characters ('\n').  All other charaters are
+ * read verbatim.
+ *
+ * @param reader
+ *     The reader to use to read the given character.
+ *
+ * @param input
+ *     Pointer to the location within the input buffer that the next character
+ *     should be read from.
+ *
+ * @param remaining
+ *     The number of bytes remaining in the input buffer.
+ *
+ * @return
+ *     The codepoint that was read, or zero if the end of the input string has
+ *     been reached.
+ */
+static int guac_iconv_read_normalized(guac_iconv_read* reader,
+        const char** input, int remaining) {
+
+    /* Read requested character */
+    const char* input_start = *input;
+    int value = reader(input, remaining);
+
+    /* Automatically translate CRLF pairs to simple newlines */
+    if (value == '\r') {
+
+        /* Peek ahead by one character, adjusting remaining bytes relative to
+         * last read */
+        int peek_remaining = remaining - (*input - input_start);
+        const char* peek_input = *input;
+        int peek_value = reader(&peek_input, peek_remaining);
+
+        /* Consider read value to be a newline if we have encountered a "\r\n"
+         * (CRLF) pair */
+        if (peek_value == '\n') {
+            value = '\n';
+            *input = peek_input;
+        }
+
+    }
+
+    return value;
+
+}
+
+int GUAC_READ_UTF8_NORMALIZED(const char** input, int remaining) {
+    return guac_iconv_read_normalized(GUAC_READ_UTF8, input, remaining);
+}
+
+int GUAC_READ_UTF16_NORMALIZED(const char** input, int remaining) {
+    return guac_iconv_read_normalized(GUAC_READ_UTF16, input, remaining);
+}
+
+int GUAC_READ_CP1252_NORMALIZED(const char** input, int remaining) {
+    return guac_iconv_read_normalized(GUAC_READ_CP1252, input, remaining);
+}
+
+int GUAC_READ_ISO8859_1_NORMALIZED(const char** input, int remaining) {
+    return guac_iconv_read_normalized(GUAC_READ_ISO8859_1, input, remaining);
+}
+
 void GUAC_WRITE_UTF8(char** output, int remaining, int value) {
     *output += guac_utf8_write(value, *output, remaining);
 }
@@ -188,5 +252,55 @@ void GUAC_WRITE_ISO8859_1(char** output, int remaining, int value) {
 
     *((unsigned char*) *output) = (unsigned char) value;
     (*output)++;
+}
+
+/**
+ * Invokes the given writer function, automatically writing newline characters
+ * ('\n') as CRLF ("\r\n"). All other charaters are written verbatim.
+ *
+ * @param writer
+ *     The writer to use to write the given character.
+ *
+ * @param output
+ *     Pointer to the location within the output buffer that the next character
+ *     should be written.
+ *
+ * @param remaining
+ *     The number of bytes remaining in the output buffer.
+ *
+ * @param value
+ *     The codepoint of the character to write.
+ */
+static void guac_iconv_write_crlf(guac_iconv_write* writer, char** output,
+        int remaining, int value) {
+
+    if (value != '\n') {
+        writer(output, remaining, value);
+        return;
+    }
+
+    char* output_start = *output;
+    writer(output, remaining, '\r');
+
+    remaining -= *output - output_start;
+    if (remaining > 0)
+        writer(output, remaining, '\n');
+
+}
+
+void GUAC_WRITE_UTF8_CRLF(char** output, int remaining, int value) {
+    guac_iconv_write_crlf(GUAC_WRITE_UTF8, output, remaining, value);
+}
+
+void GUAC_WRITE_UTF16_CRLF(char** output, int remaining, int value) {
+    guac_iconv_write_crlf(GUAC_WRITE_UTF16, output, remaining, value);
+}
+
+void GUAC_WRITE_CP1252_CRLF(char** output, int remaining, int value) {
+    guac_iconv_write_crlf(GUAC_WRITE_CP1252, output, remaining, value);
+}
+
+void GUAC_WRITE_ISO8859_1_CRLF(char** output, int remaining, int value) {
+    guac_iconv_write_crlf(GUAC_WRITE_ISO8859_1, output, remaining, value);
 }
 
