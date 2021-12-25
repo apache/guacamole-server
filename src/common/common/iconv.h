@@ -77,6 +77,30 @@ guac_iconv_read GUAC_READ_CP1252;
 guac_iconv_read GUAC_READ_ISO8859_1;
 
 /**
+ * Read function for UTF-8 which normalizes newline character sequences like
+ * "\r\n" to Unix-style newlines ('\n').
+ */
+guac_iconv_read GUAC_READ_UTF8_NORMALIZED;
+
+/**
+ * Read function for UTF-16 which normalizes newline character sequences like
+ * "\r\n" to Unix-style newlines ('\n').
+ */
+guac_iconv_read GUAC_READ_UTF16_NORMALIZED;
+
+/**
+ * Read function for CP-1252 which normalizes newline character sequences like
+ * "\r\n" to Unix-style newlines ('\n').
+ */
+guac_iconv_read GUAC_READ_CP1252_NORMALIZED;
+
+/**
+ * Read function for ISO 8859-1 which normalizes newline character sequences
+ * like "\r\n" to Unix-style newlines ('\n').
+ */
+guac_iconv_read GUAC_READ_ISO8859_1_NORMALIZED;
+
+/**
  * Write function for UTF8.
  */
 guac_iconv_write GUAC_WRITE_UTF8;
@@ -95,6 +119,30 @@ guac_iconv_write GUAC_WRITE_CP1252;
  * Write function for ISO-8859-1
  */
 guac_iconv_write GUAC_WRITE_ISO8859_1;
+
+/**
+ * Write function for UTF-8 which writes newline characters ('\n') as
+ * Windows-style newlines ("\r\n").
+ */
+guac_iconv_write GUAC_WRITE_UTF8_CRLF;
+
+/**
+ * Write function for UTF-16 which writes newline characters ('\n') as
+ * Windows-style newlines ("\r\n").
+ */
+guac_iconv_write GUAC_WRITE_UTF16_CRLF;
+
+/**
+ * Write function for CP-1252 which writes newline characters ('\n') as
+ * Windows-style newlines ("\r\n").
+ */
+guac_iconv_write GUAC_WRITE_CP1252_CRLF;
+
+/**
+ * Write function for ISO 8859-1 which writes newline characters ('\n') as
+ * Windows-style newlines ("\r\n").
+ */
+guac_iconv_write GUAC_WRITE_ISO8859_1_CRLF;
 
 #endif
 
