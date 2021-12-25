@@ -176,8 +176,8 @@ guacd_config* guacd_conf_load() {
         return NULL;
 
     /* Load defaults */
-    conf->bind_host = NULL;
-    conf->bind_port = strdup("4822");
+    conf->bind_host = strdup(GUACD_DEFAULT_BIND_HOST);
+    conf->bind_port = strdup(GUACD_DEFAULT_BIND_PORT);
     conf->pidfile = NULL;
     conf->foreground = 0;
     conf->print_version = 0;

@@ -25,6 +25,18 @@
 #include <guacamole/client.h>
 
 /**
+ * The default host that guacd should bind to, if no other host is explicitly
+ * specified.
+ */
+#define GUACD_DEFAULT_BIND_HOST "localhost"
+
+/**
+ * The default port that guacd should bind to, if no other port is explicitly
+ * specified.
+ */
+#define GUACD_DEFAULT_BIND_PORT "4822"
+
+/**
  * The contents of a guacd configuration file.
  */
 typedef struct guacd_config {
