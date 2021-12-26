@@ -302,6 +302,10 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
         /* Update owner pointer if user is owner */
         if (user->owner)
             client->__owner = user;
+        
+        /* Notify owner of user joining connection. */
+        else
+            guac_client_owner_notify_join(client, user);
 
     }
 
@@ -330,6 +334,10 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
     /* Update owner pointer if user was owner */
     if (user->owner)
         client->__owner = NULL;
+
+    /* Update owner of user having left the connection. */
+    else
+        guac_client_owner_notify_leave(client, user);
 
     pthread_rwlock_unlock(&(client->__users_lock));
 
@@ -729,6 +737,126 @@ int guac_client_owner_supports_required(guac_client* client) {
     
     return (int) ((intptr_t) guac_client_for_owner(client, guac_owner_supports_required_callback, NULL));
     
+}
+
+/**
+ * A callback function that is invokved by guac_client_owner_notify_join() to
+ * notify the owner of a connection that another user has joined the
+ * connection, returning zero if the message is sent successfully, or non-zero
+ * if an error occurs.
+ *
+ * @param user
+ *     The user to send the notification to, which will be the owner of the
+ *     connection.
+ *
+ * @param data
+ *     The data provided to the callback, which is the user that is joining the
+ *     connection.
+ *
+ * @return
+ *     Zero if the message is sent successfully to the owner, otherwise
+ *     non-zero, cast as a void*.
+ */
+static void* guac_client_owner_notify_join_callback(guac_user* user, void* data) {
+
+    const guac_user* joiner = (const guac_user *) data;
+    int retval = 0;
+
+    char* owner = "owner";
+    if (user->info.name != NULL)
+        owner = strdup(user->info.name);
+
+    char* joinName = "anonymous";
+    if (joiner->info.name != NULL)
+        joinName = strdup(joiner->info.name);
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying %s of %s joining.", owner, joinName);
+
+    size_t msg_size = snprintf(NULL, 0, "User %s has joined the connection.", joinName);
+    char* msg = malloc(msg_size + 1);
+    sprintf(msg, "User %s has joined the connection.", joinName);
+    
+    /* Send required parameters to owner. */
+    if (user != NULL)
+        retval = guac_protocol_send_msg(user->socket, msg);
+
+    else
+        retval = -1;
+
+    free(owner);
+    free(joinName);
+    free(msg);
+
+    return (void*) ((intptr_t) retval);
+
+}
+
+int guac_client_owner_notify_join(guac_client* client, guac_user* joiner) {
+
+    /* Don't send msg instruction if client does not support it. */
+    if (!guac_client_owner_supports_msg(client))
+        return -1;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "Notifying owner of %s joining.", joiner->user_id);
+
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_notify_join_callback, joiner));
+
+}
+
+/**
+ * A callback function that is invokved by guac_client_owner_notify_leave() to
+ * notify the owner of a connection that another user has left the connection,
+ * returning zero if the message is sent successfully, or non-zero
+ * if an error occurs.
+ *
+ * @param user
+ *     The user to send the notification to, which will be the owner of the
+ *     connection.
+ *
+ * @param data
+ *     The data provided to the callback, which is the user that is leaving the
+ *     connection.
+ *
+ * @return
+ *     Zero if the message is sent successfully to the owner, otherwise
+ *     non-zero, cast as a void*.
+ */
+static void* guac_client_owner_notify_leave_callback(guac_user* user, void* data) {
+
+    const guac_user* quitter = (const guac_user *) data;
+
+    char* owner = "owner";
+    if (user->info.name != NULL)
+        owner = strdup(user->info.name);
+
+    char* quitterName = "anonymous";
+    if (quitter->info.name != NULL)
+        quitterName = strdup(quitter->info.name);
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying %s of %s leaving.", owner, quitterName);
+
+    size_t msg_size = snprintf(NULL, 0, "User %s has left the connection.", quitterName);
+    char* msg = malloc(msg_size + 1);
+    sprintf(msg, "User %s has left the connection.", quitterName);
+    
+    /* Send required parameters to owner. */
+    if (user != NULL)
+        return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, msg));
+    
+    return (void*) ((intptr_t) -1);
+
+}
+
+int guac_client_owner_notify_leave(guac_client* client, guac_user* quitter) {
+
+    /* Don't send msg instruction if client does not support it. */
+    if (!guac_client_owner_supports_msg(client))
+        return -1;
+
+    guac_client_log(client, GUAC_LOG_DEBUG, "Notifying owner of %s leaving.", quitter->user_id);
+
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_notify_leave_callback, quitter));
+
 }
 
 int guac_client_supports_webp(guac_client* client) {

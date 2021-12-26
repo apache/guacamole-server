@@ -739,6 +739,42 @@ int guac_client_owner_supports_msg(guac_client* client);
 int guac_client_owner_supports_required(guac_client* client);
 
 /**
+ * Notifies the owner of the given client that a user has joined the connection,
+ * and returns zero if the message was sent successfully, or non-zero if the
+ * notification failed.
+ *
+ * @param client
+ *     The Guacamole Client whose owner should be notified of a user joining
+ *     the connection.
+ *
+ * @param joiner
+ *     The Guacamole User who joined the connection.
+ * 
+ * @return
+ *     Zero if the notification to the owner was sent successfully, or non-zero
+ *     if an error occurred.
+ */
+int guac_client_owner_notify_join(guac_client* client, guac_user* joiner);
+
+/**
+ * Notifies the owner of the given client that a user has left the connection,
+ * and returns zero if the message was sent successfully, or non-zero if the
+ * notification failed.
+ *
+ * @param client
+ *     The Guacamole Client whose owner should be notified of a user leaving
+ *     the connection.
+ *
+ * @param quitter
+ *     The Guacamole User who left the connection.
+ * 
+ * @return
+ *     Zero if the notification to the owner was sent successfully, or non-zero
+ *     if an error occurred.
+ */
+int guac_client_owner_notify_leave(guac_client* client, guac_user* quitter);
+
+/**
  * Returns whether all users of the given client support WebP. If any user does
  * not support WebP, or the server cannot encode WebP images, zero is returned.
  *
