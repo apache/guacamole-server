@@ -310,7 +310,8 @@ typedef enum guac_protocol_version {
 
     /**
      * Protocol version 1.5.0, which supports the "msg" instruction, allowing
-     * messages to be sent to the client.
+     * messages to be sent to the client, and adds support for the "name"
+     * handshake instruction.
      */
     GUAC_PROTOCOL_VERSION_1_5_0 = 0x010500
 

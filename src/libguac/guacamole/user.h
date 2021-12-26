@@ -90,6 +90,12 @@ struct guac_user_info {
     int optimal_resolution;
     
     /**
+     * The human-readable name of the Guacamole user. If the client does not
+     * provide a name then this will be NULL.
+     */
+    const char* name;
+
+    /**
      * The timezone of the remote system.  If the client does not provide
      * a specific timezone then this will be NULL.  The format of the timezone
      * is the standard tzdata naming convention.
