@@ -172,6 +172,21 @@ int vguac_protocol_send_log(guac_socket* socket, const char* format,
         va_list args);
 
 /**
+ * Sends the given string over the socket to be displayed on the client. Returns
+ * zero if the message was sent successfully or non-zero if an error occurs.
+ *
+ * @param socket
+ *     The guac_socket connection to send the message to.
+ *
+ * @param message
+ *     The message to send to the client.
+ *
+ * @return
+ *     Zero if the message is sent successfully; otherwise non-zero.
+ */
+int guac_protocol_send_msg(guac_socket* socket, const char* message);
+
+/**
  * Sends a mouse instruction over the given guac_socket connection.
  *
  * If an error occurs sending the instruction, a non-zero value is

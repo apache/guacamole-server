@@ -672,6 +672,36 @@ static void* __webp_support_callback(guac_user* user, void* data) {
 #endif
 
 /**
+ * A callback function which is invoked by guac_client_owner_supports_msg()
+ * to determine if the owner of a client supports the "msg" instruction,
+ * returning zero if the user does not support the instruction or non-zero if
+ * the user supports it.
+ * 
+ * @param user
+ *     The guac_user that will be checked for "msg" instruction support.
+ * 
+ * @param data
+ *     Data provided to the callback. This value is never used within this
+ *     callback.
+ * 
+ * @return
+ *     A non-zero integer if the provided user who owns the connection supports
+ *     the "msg" instruction, or zero if the user does not. The integer is cast
+ *     as a void*.
+ */
+static void* guac_owner_supports_msg_callback(guac_user* user, void* data) {
+
+    return (void*) ((intptr_t) guac_user_supports_msg(user));
+
+}
+
+int guac_client_owner_supports_msg(guac_client* client) {
+
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_owner_supports_msg_callback, NULL));
+
+}
+
+/**
  * A callback function which is invoked by guac_client_owner_supports_required()
  * to determine if the owner of a client supports the "required" instruction,
  * returning zero if the user does not support the instruction or non-zero if

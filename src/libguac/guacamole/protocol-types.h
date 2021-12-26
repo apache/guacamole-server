@@ -306,7 +306,13 @@ typedef enum guac_protocol_version {
      * allowing connections in guacd to request information from the client and
      * await a response.
      */
-    GUAC_PROTOCOL_VERSION_1_3_0 = 0x010300
+    GUAC_PROTOCOL_VERSION_1_3_0 = 0x010300,
+
+    /**
+     * Protocol version 1.5.0, which supports the "msg" instruction, allowing
+     * messages to be sent to the client.
+     */
+    GUAC_PROTOCOL_VERSION_1_5_0 = 0x010500
 
 } guac_protocol_version;
 

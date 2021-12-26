@@ -851,6 +851,17 @@ void guac_user_stream_webp(guac_user* user, guac_socket* socket,
         cairo_surface_t* surface, int quality, int lossless);
 
 /**
+ * Returns whether the given user supports the "msg" instruction.
+ * 
+ * @param user
+ *     The Guacamole user to check for support of the "msg" instruction.
+ * 
+ * @return 
+ *     Non-zero if the user supports the "msg" instruction, otherwise zero.
+ */
+int guac_user_supports_msg(guac_user* user);
+
+/**
  * Returns whether the given user supports the "required" instruction.
  * 
  * @param user

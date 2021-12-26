@@ -27,11 +27,11 @@
  */
 void test_guac_protocol__version_to_string() {
     
-    guac_protocol_version version_a = GUAC_PROTOCOL_VERSION_1_3_0;
+    guac_protocol_version version_a = GUAC_PROTOCOL_VERSION_1_5_0;
     guac_protocol_version version_b = GUAC_PROTOCOL_VERSION_1_0_0;
     guac_protocol_version version_c = GUAC_PROTOCOL_VERSION_UNKNOWN;
     
-    CU_ASSERT_STRING_EQUAL(guac_protocol_version_to_string(version_a), "VERSION_1_3_0");
+    CU_ASSERT_STRING_EQUAL(guac_protocol_version_to_string(version_a), "VERSION_1_5_0");
     CU_ASSERT_STRING_EQUAL(guac_protocol_version_to_string(version_b), "VERSION_1_0_0");
     CU_ASSERT_PTR_NULL(guac_protocol_version_to_string(version_c));
     
