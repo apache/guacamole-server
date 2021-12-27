@@ -30,6 +30,7 @@
 #include <guacamole/stream.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
+#include <winpr/file.h>
 #include <winpr/nt.h>
 #include <winpr/shell.h>
 
