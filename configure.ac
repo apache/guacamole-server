@@ -46,6 +46,7 @@ AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslo
 # Source characteristics
 AC_DEFINE([_XOPEN_SOURCE], [700], [Uses X/Open and POSIX APIs])
 AC_DEFINE([__BSD_VISIBLE], [1], [Uses BSD-specific APIs (if available)])
+AC_DEFINE([_GNU_SOURCE], [1], [Use GNU sources (if available)])
 
 # Check for whether math library is required
 AC_CHECK_LIB([m], [cos],
@@ -71,6 +72,9 @@ AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
               AC_DEFINE([HAVE_LIBPTHREAD],,
                         [Whether libpthread was found])])
 
+# Check for pthread_setattr_default_np
+AC_CHECK_DECLS([pthread_setattr_default_np], , , [[#include <pthread.h>]])
+            
 # librt
 AC_CHECK_FUNC([timer_create], [AC_MSG_RESULT([timer_create was found without librt.])],
               [AC_CHECK_LIB([rt], [timer_create],
