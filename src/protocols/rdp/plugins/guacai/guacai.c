@@ -279,7 +279,7 @@ static UINT guac_rdp_ai_terminated(IWTSPlugin* plugin) {
 /**
  * Entry point for AUDIO_INPUT dynamic virtual channel.
  */
-int DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints) {
+UINT DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints) {
 
     /* Pull guac_client from arguments */
     ADDIN_ARGV* args = pEntryPoints->GetPluginData(pEntryPoints);
