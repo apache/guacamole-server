@@ -184,55 +184,6 @@ void guac_common_ssh_uninit() {
 }
 
 /**
- * Callback invoked by libssh2 when libssh2_userauth_publickkey() is invoked.
- * This callback must sign the given data, returning the signature as newly-
- * allocated buffer space.
- *
- * @param session
- *     The SSH session for which the signature is being generated.
- *
- * @param sig
- *     A pointer to the buffer space containing the signature. This callback
- *     MUST allocate and assign this space.
- *
- * @param sig_len
- *     The length of the signature within the allocated buffer space, in bytes.
- *     This value must be set to the size of the signature after the signing
- *     operation completes.
- *
- * @param data
- *     The arbitrary data that must be signed.
- *
- * @param data_len
- *     The length of the arbitrary data to be signed, in bytes.
- *
- * @param abstract
- *     The value of the abstract parameter provided with the corresponding call
- *     to libssh2_userauth_publickey().
- *
- * @return
- *     Zero on success, non-zero if the signing operation failed.
- */
-static int guac_common_ssh_sign_callback(LIBSSH2_SESSION* session,
-        unsigned char** sig, size_t* sig_len,
-        const unsigned char* data, size_t data_len, void **abstract) {
-
-    guac_common_ssh_key* key = (guac_common_ssh_key*) abstract;
-    int length;
-
-    /* Allocate space for signature */
-    *sig = malloc(4096);
-
-    /* Sign with key */
-    length = guac_common_ssh_key_sign(key, (const char*) data, data_len, *sig);
-    if (length < 0)
-        return 1;
-
-    *sig_len = length;
-    return 0;
-}
-
-/**
  * Callback for the keyboard-interactive authentication method. Currently
  * supports just one prompt for the password. This callback is invoked as
  * needed to fullfill a call to libssh2_userauth_keyboard_interactive().
@@ -324,8 +275,9 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     }
 
     /* Get list of supported authentication methods */
+    size_t username_len = strlen(user->username);
     char* user_authlist = libssh2_userauth_list(session, user->username,
-            strlen(user->username));
+            username_len);
 
     /* If auth list is NULL, then authentication has succeeded with NONE */
     if (user_authlist == NULL) {
@@ -349,9 +301,9 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
         }
 
         /* Attempt public key auth */
-        if (libssh2_userauth_publickey(session, user->username,
-                    (unsigned char*) key->public_key, key->public_key_length,
-                    guac_common_ssh_sign_callback, (void**) key)) {
+        if (libssh2_userauth_publickey_frommemory(session, user->username,
+                    username_len, NULL, 0, key->private_key,
+                    key->private_key_length, key->passphrase)) {
 
             /* Abort on failure */
             char* error_message;

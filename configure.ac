@@ -160,6 +160,11 @@ AC_CHECK_DECL([strlcat],
                [Whether strlcat() is defined])],,
 	[#include <string.h>])
 
+AC_CHECK_DECL([strnstr],
+	[AC_DEFINE([HAVE_STRNSTR],,
+               [Whether strnstr() is defined])],,
+	[#include <string.h>])
+
 # Typedefs
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
@@ -319,30 +324,6 @@ then
   --------------------------------------------])
     else
         AC_DEFINE([ENABLE_SSL],, [Whether SSL-related support is enabled])
-
-        # OpenSSL 1.1 accessor function for DSA signature values
-        AC_CHECK_DECL([DSA_SIG_get0],
-            [AC_DEFINE([HAVE_DSA_SIG_GET0],,
-                       [Whether libssl provides DSA_SIG_get0()])],,
-            [#include <openssl/dsa.h>])
-
-        # OpenSSL 1.1 accessor function for DSA public key parameters
-        AC_CHECK_DECL([DSA_get0_pqg],
-            [AC_DEFINE([HAVE_DSA_GET0_PQG],,
-                       [Whether libssl provides DSA_get0_pqg()])],,
-            [#include <openssl/dsa.h>])
-
-        # OpenSSL 1.1 accessor function for DSA public/private key values
-        AC_CHECK_DECL([DSA_get0_key],
-            [AC_DEFINE([HAVE_DSA_GET0_KEY],,
-                       [Whether libssl provides DSA_get0_key()])],,
-            [#include <openssl/dsa.h>])
-
-        # OpenSSL 1.1 accessor function for RSA public/private key values
-        AC_CHECK_DECL([RSA_get0_key],
-            [AC_DEFINE([HAVE_RSA_GET0_KEY],,
-                       [Whether libssl provides RSA_get0_key()])],,
-            [#include <openssl/rsa.h>])
 
         # OpenSSL 1.1 does away with explicit threading callbacks
         AC_MSG_CHECKING([whether libssl requires threading callbacks])
@@ -932,7 +913,7 @@ if test "x$with_ssh" != "xno"
 then
     have_libssh2=yes
 
-    AC_CHECK_LIB([ssh2], [libssh2_session_init_ex],
+    AC_CHECK_LIB([ssh2], [libssh2_userauth_publickey_frommemory],
                          [SSH_LIBS="$SSH_LIBS -lssh2"],
                          [have_libssh2=no])
 fi
