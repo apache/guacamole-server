@@ -32,5 +32,4 @@ map +shift      0x1E..0x28 0x2B ~ "ASDFGHJKL+*}"
 map +shift      0x2C..0x35 0x73 ~ "ZXCVBNM<>?_"
 
 map -shift      0x29            ~ 0xFF28
-map -shift      0x29            ~ 0xFF2A
-map +shift      0x29            ~ 0xFF29
+map -shift      0x29            ~ 0xFF29

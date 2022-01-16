@@ -1393,6 +1393,11 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->AlternateShell = guac_strdup(guac_settings->initial_program);
     rdp_settings->KeyboardLayout = guac_settings->server_layout->freerdp_keyboard_layout;
 
+    /* Add GUACAMOLE-1503: Fixed so that full-width and half-width keys work correctly and Japanese input switching works. */
+    rdp_settings->KeyboardType = 7;
+    rdp_settings->KeyboardSubType = 2;
+    rdp_settings->KeyboardFunctionKey = 12;
+
     /* Performance flags */
     /* Explicitly set flag value */
     rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
