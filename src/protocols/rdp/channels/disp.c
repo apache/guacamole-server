@@ -19,6 +19,7 @@
 
 #include "channels/disp.h"
 #include "plugins/channels.h"
+#include "fs.h"
 #include "rdp.h"
 #include "settings.h"
 
@@ -277,6 +278,17 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
 }
 
 int guac_rdp_disp_reconnect_needed(guac_rdp_disp* disp) {
+    guac_rdp_client* rdp_client = (guac_rdp_client*) disp->client->data;
+
+    /* Do not reconnect if files are open. */
+    if (rdp_client->filesystem->open_files > 0)
+        return 0;
+
+    /* Do not reconnect if an active print job is present */
+    if (rdp_client->active_job != NULL)
+        return 0;
+    
+    
     return disp->reconnect_needed;
 }
 
