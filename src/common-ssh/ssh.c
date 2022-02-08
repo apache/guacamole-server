@@ -183,6 +183,7 @@ void guac_common_ssh_uninit() {
 #endif
 }
 
+
 /**
  * Callback for the keyboard-interactive authentication method. Currently
  * supports just one prompt for the password. This callback is invoked as
@@ -204,8 +205,7 @@ void guac_common_ssh_uninit() {
  *
  * @param num_prompts
  *     The number of keyboard-interactive prompts for which responses are
- *     requested. This callback currently only supports one prompt, and assumes
- *     that this prompt is requesting the password.
+ *     requested. This callback will ask the user for input
  *
  * @param prompts
  *     An array of all keyboard-interactive prompts for which responses are
@@ -226,25 +226,28 @@ static void guac_common_ssh_kbd_callback(const char *name, int name_len,
         LIBSSH2_USERAUTH_KBDINT_RESPONSE *responses,
         void **abstract) {
 
-    guac_common_ssh_session* common_session =
-        (guac_common_ssh_session*) *abstract;
+        guac_common_ssh_session* common_session = (guac_common_ssh_session*) *abstract;
+        guac_client* client = common_session->client;
 
-    guac_client* client = common_session->client;
+	for (int i = 0; num_prompts > i; ++i)
+	{
+       		char *response = common_session->credential_handler(client, prompts[i].text);
 
-    /* Send password if only one prompt */
-    if (num_prompts == 1) {
-        char* password = common_session->user->password;
-        responses[0].text = strdup(password);
-        responses[0].length = strlen(password);
-    }
-
-    /* If more than one prompt, a single password is not enough */
-    else
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Unsupported number of keyboard-interactive prompts: %i",
-                num_prompts);
-
+        	if (response)
+	        {
+		        responses[i].text = response;
+		        responses[i].length = strlen(responses[i].text);
+       		}
+       		else
+       		{
+               	        guac_client_log(client, GUAC_LOG_WARNING,
+                               "User cancelled keyboard-interactive with prompts: %i",
+                                num_prompts);
+        		break;
+	        }
+	}
 }
+
 
 /**
  * Authenticates the user associated with the given session over SSH. All
