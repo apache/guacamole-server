@@ -32,6 +32,7 @@
 #include <libgen.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 int guac_common_ssh_sftp_normalize_path(char* fullpath,
         const char* path) {
