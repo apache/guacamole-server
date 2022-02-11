@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 int guac_rdp_ls_ack_handler(guac_user* user, guac_stream* stream,
         char* message, guac_protocol_status status) {
