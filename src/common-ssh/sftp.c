@@ -653,10 +653,26 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
 
         /* Determine mimetype */
         const char* mimetype;
-        if (LIBSSH2_SFTP_S_ISDIR(attributes.permissions))
-            mimetype = GUAC_USER_STREAM_INDEX_MIMETYPE;
-        else
-            mimetype = "application/octet-stream";
+//        if (LIBSSH2_SFTP_S_ISDIR(attributes.permissions))
+//            mimetype = GUAC_USER_STREAM_INDEX_MIMETYPE;
+//        else
+//            mimetype = "application/octet-stream";
+
+        //adding file size and permission
+        char tmpstr[150];
+		if (LIBSSH2_SFTP_S_ISDIR(attributes.permissions)) {
+			//mimetype = GUAC_USER_STREAM_INDEX_MIMETYPE;
+			sprintf(tmpstr, "{\"mime\":\"%s\",\"size\":%llu,\"perm\":%lu}",
+				GUAC_USER_STREAM_INDEX_MIMETYPE, attributes.filesize,
+				attributes.permissions);
+		}
+		else {
+			//mimetype = "application/octet-stream";
+			sprintf(tmpstr, "{\"mime\":\"%s\",\"size\":%llu,\"perm\":%lu}",
+				"application/octet-stream", attributes.filesize,
+				attributes.permissions);
+		}
+		mimetype = tmpstr;
 
         /* Write entry, waiting for next ack if a blob is written */
         if (guac_common_json_write_property(user, stream,
