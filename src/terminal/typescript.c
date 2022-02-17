@@ -79,7 +79,7 @@ static int guac_terminal_typescript_open_data_file(const char* path,
     /* Attempt to open typescript data file */
     int data_fd = open(basename,
             O_CREAT | O_EXCL | O_WRONLY,
-            S_IRUSR | S_IWUSR);
+            S_IRUSR | S_IWUSR | S_IRGRP);
 
     /* Continuously retry with alternate names on failure */
     if (data_fd == -1) {
@@ -98,7 +98,7 @@ static int guac_terminal_typescript_open_data_file(const char* path,
             /* Retry with newly-suffixed filename */
             data_fd = open(basename,
                     O_CREAT | O_EXCL | O_WRONLY,
-                    S_IRUSR | S_IWUSR);
+                    S_IRUSR | S_IWUSR | S_IRGRP);
 
         }
 
@@ -112,7 +112,8 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
         const char* name, int create_path) {
 
     /* Create path if it does not exist, fail if impossible */
-    if (create_path && mkdir(path, S_IRWXU) && errno != EEXIST)
+    if (create_path && mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP)
+            && errno != EEXIST)
         return NULL;
 
     /* Allocate space for new typescript */
@@ -141,7 +142,7 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
     /* Attempt to open typescript timing file */
     typescript->timing_fd = open(typescript->timing_filename,
             O_CREAT | O_EXCL | O_WRONLY,
-            S_IRUSR | S_IWUSR);
+            S_IRUSR | S_IWUSR | S_IRGRP);
     if (typescript->timing_fd == -1) {
         close(typescript->data_fd);
         free(typescript);

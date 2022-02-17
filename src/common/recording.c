@@ -84,7 +84,7 @@ static int guac_common_recording_open(const char* path,
     /* Attempt to open recording */
     int fd = open(basename,
             O_CREAT | O_EXCL | O_WRONLY,
-            S_IRUSR | S_IWUSR);
+            S_IRUSR | S_IWUSR | S_IRGRP);
 
     /* Continuously retry with alternate names on failure */
     if (fd == -1) {
@@ -103,7 +103,7 @@ static int guac_common_recording_open(const char* path,
             /* Retry with newly-suffixed filename */
             fd = open(basename,
                     O_CREAT | O_EXCL | O_WRONLY,
-                    S_IRUSR | S_IWUSR);
+                    S_IRUSR | S_IWUSR | S_IRGRP);
 
         }
 
@@ -144,7 +144,8 @@ guac_common_recording* guac_common_recording_create(guac_client* client,
 
     /* Create path if it does not exist, fail if impossible */
 #ifndef __MINGW32__
-    if (create_path && mkdir(path, S_IRWXU) && errno != EEXIST) {
+    if (create_path && mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP)
+            && errno != EEXIST) {
 #else
     if (create_path && _mkdir(path) && errno != EEXIST) {
 #endif
