@@ -26,9 +26,11 @@
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
 
-noinst_LTLIBRARIES = libguac_terminal.la
+lib_LTLIBRARIES = libguac_terminal.la
 
-noinst_HEADERS =                 \
+libguac_terminalincdir = $(includedir)/guacamole/terminal
+
+libguac_terminalinc_HEADERS =    \
     terminal/buffer.h            \
     terminal/char_mappings.h     \
     terminal/common.h            \
