@@ -241,6 +241,7 @@ rdp_keymaps =                                \
     $(srcdir)/keymaps/it_it_qwerty.keymap    \
     $(srcdir)/keymaps/ja_jp_qwerty.keymap    \
     $(srcdir)/keymaps/no_no_qwerty.keymap    \
+    $(srcdir)/keymaps/pl_pl_qwerty.keymap    \
     $(srcdir)/keymaps/pt_br_qwerty.keymap    \
     $(srcdir)/keymaps/sv_se_qwerty.keymap    \
     $(srcdir)/keymaps/da_dk_qwerty.keymap    \
