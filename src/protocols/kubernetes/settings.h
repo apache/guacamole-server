@@ -25,17 +25,6 @@
 #include <stdbool.h>
 
 /**
- * The name of the font to use for the terminal if no name is specified.
- */
-#define GUAC_KUBERNETES_DEFAULT_FONT_NAME "monospace" 
-
-/**
- * The size of the font to use for the terminal if no font size is specified,
- * in points.
- */
-#define GUAC_KUBERNETES_DEFAULT_FONT_SIZE 12
-
-/**
  * The port to connect to when initiating any Kubernetes connection, if no
  * other port is specified.
  */
@@ -56,11 +45,6 @@
  * The filename to use for the screen recording, if not specified.
  */
 #define GUAC_KUBERNETES_DEFAULT_RECORDING_NAME "recording"
-
-/**
- * The default maximum scrollback size in rows.
- */
-#define GUAC_KUBERNETES_DEFAULT_MAX_SCROLLBACK 1000
 
 /**
  * Settings for the Kubernetes connection. The values for this structure are

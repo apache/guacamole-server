@@ -238,12 +238,24 @@ void* ssh_client_thread(void* data) {
                 settings->recording_include_keys);
     }
 
+    /* Create terminal options with required parameters */
+    guac_terminal_options* options = guac_terminal_options_create(
+            client, ssh_client->clipboard,
+            settings->width, settings->height, settings->resolution);
+
+    /* Set optional parameters */
+    options->disable_copy = settings->disable_copy;
+    options->max_scrollback = settings->max_scrollback;
+    options->font_name = settings->font_name;
+    options->font_size = settings->font_size;
+    options->color_scheme = settings->color_scheme;
+    options->backspace = settings->backspace;
+
     /* Create terminal */
-    ssh_client->term = guac_terminal_create(client, ssh_client->clipboard,
-            settings->disable_copy, settings->max_scrollback,
-            settings->font_name, settings->font_size, settings->resolution,
-            settings->width, settings->height, settings->color_scheme,
-            settings->backspace);
+    ssh_client->term = guac_terminal_create(options);
+
+    /* Free options struct now that it's been used */
+    free(options);
 
     /* Fail if terminal init failed */
     if (ssh_client->term == NULL) {

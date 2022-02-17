@@ -23,6 +23,7 @@
 #include "client.h"
 #include "common/defaults.h"
 #include "settings.h"
+#include "terminal/terminal.h"
 
 #include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
@@ -248,8 +249,8 @@ enum SSH_ARGS_IDX {
 
     /**
      * The ASCII code, as an integer, to send for the backspace key, as configured
-     * by the SSH connection from the client.  By default this will be 127,
-     * the ASCII DELETE code.
+     * by the SSH connection from the client.  By default this will be
+     * GUAC_TERMINAL_DEFAULT_BACKSPACE.
      */
     IDX_BACKSPACE,
 
@@ -375,22 +376,22 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     /* Read maximum scrollback size */
     settings->max_scrollback =
         guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_SCROLLBACK, GUAC_SSH_DEFAULT_MAX_SCROLLBACK);
+                IDX_SCROLLBACK, GUAC_TERMINAL_DEFAULT_MAX_SCROLLBACK);
 
     /* Read font name */
     settings->font_name =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_FONT_NAME, GUAC_SSH_DEFAULT_FONT_NAME);
+                IDX_FONT_NAME, GUAC_TERMINAL_DEFAULT_FONT_NAME);
 
     /* Read font size */
     settings->font_size =
         guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_FONT_SIZE, GUAC_SSH_DEFAULT_FONT_SIZE);
+                IDX_FONT_SIZE, GUAC_TERMINAL_DEFAULT_FONT_SIZE);
 
     /* Copy requested color scheme */
     settings->color_scheme =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_COLOR_SCHEME, "");
+                IDX_COLOR_SCHEME, GUAC_TERMINAL_DEFAULT_COLOR_SCHEME);
 
     /* Pull width/height/resolution directly from user */
     settings->width      = user->info.optimal_width;
@@ -491,7 +492,7 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     /* Parse backspace key setting */
     settings->backspace =
         guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
-                IDX_BACKSPACE, 127);
+                IDX_BACKSPACE, GUAC_TERMINAL_DEFAULT_BACKSPACE);
 
     /* Read terminal emulator type. */
     settings->terminal_type =
