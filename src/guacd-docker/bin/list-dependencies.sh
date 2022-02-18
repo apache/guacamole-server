@@ -35,9 +35,14 @@ while [ -n "$1" ]; do
     ldd "$1" | grep -v 'libguac' | awk '/=>/{print $(NF-1)}' \
         | while read LIBRARY; do
 
+        # In some cases, the library that's linked against is a hard link
+        # to the file that's managed by the package, which dpkg doesn't understand.
+        # Searching by */basename ensures the package will be found in these cases.
+        LIBRARY_BASENAME=$(basename "$LIBRARY")
+
         # Determine the Debian package which is associated with that
         # library, if any
-        dpkg-query -S "$LIBRARY" 2> /dev/null || true
+        dpkg-query -S "*/$LIBRARY_BASENAME" || true
 
     done
 
