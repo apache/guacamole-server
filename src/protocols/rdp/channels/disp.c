@@ -281,7 +281,8 @@ int guac_rdp_disp_reconnect_needed(guac_rdp_disp* disp) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) disp->client->data;
 
     /* Do not reconnect if files are open. */
-    if (rdp_client->filesystem->open_files > 0)
+    if (rdp_client->filesystem != NULL
+            && rdp_client->filesystem->open_files > 0)
         return 0;
 
     /* Do not reconnect if an active print job is present */
