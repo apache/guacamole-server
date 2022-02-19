@@ -21,11 +21,11 @@
 # Dockerfile for guacamole-server
 #
 
-# The Debian image that should be used as the basis for the guacd image
-ARG DEBIAN_BASE_IMAGE=buster-slim
+# The Ubuntu image that should be used as the basis for the guacd image
+ARG UBUNTU_BASE_IMAGE=21.10
 
 # Use Debian as base for the build
-FROM debian:${DEBIAN_BASE_IMAGE} AS builder
+FROM ubuntu:${UBUNTU_BASE_IMAGE} AS builder
 
 #
 # The Debian repository that should be preferred for dependencies (this will be
@@ -34,12 +34,12 @@ FROM debian:${DEBIAN_BASE_IMAGE} AS builder
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the second stage of the build.
 #
-ARG DEBIAN_RELEASE=buster-backports
+ARG UBUNTU_RELEASE=impish-backports
 
-# Add repository for specified Debian release if not already present in
+# Add repository for specified Ubuntu release if not already present in
 # sources.list
-RUN grep " ${DEBIAN_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
-    "deb http://deb.debian.org/debian ${DEBIAN_RELEASE} main contrib non-free"
+RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
+    "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE} main contrib non-free"
 
 #
 # Base directory for installed build artifacts.
@@ -58,7 +58,7 @@ ARG BUILD_DEPENDENCIES="              \
         gcc                           \
         libcairo2-dev                 \
         libgcrypt-dev                 \
-        libjpeg62-turbo-dev           \
+        libjpeg-turbo8-dev            \
         libossp-uuid-dev              \
         libpango1.0-dev               \
         libpulse-dev                  \
@@ -76,7 +76,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Bring build environment up to date and install build dependencies
 RUN apt-get update                                              && \
-    apt-get install -t ${DEBIAN_RELEASE} -y $BUILD_DEPENDENCIES && \
+    apt-get install -t ${UBUNTU_RELEASE} -y $BUILD_DEPENDENCIES && \
     rm -rf /var/lib/apt/lists/*
 
 # Add configuration scripts
@@ -96,7 +96,7 @@ RUN ${PREFIX_DIR}/bin/list-dependencies.sh     \
         > ${PREFIX_DIR}/DEPENDENCIES
 
 # Use same Debian as the base for the runtime image
-FROM debian:${DEBIAN_BASE_IMAGE}
+FROM ubuntu:${UBUNTU_BASE_IMAGE}
 
 #
 # The Debian repository that should be preferred for dependencies (this will be
@@ -105,12 +105,12 @@ FROM debian:${DEBIAN_BASE_IMAGE}
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the first stage of the build.
 #
-ARG DEBIAN_RELEASE=buster-backports
+ARG UBUNTU_RELEASE=impish-backports
 
-# Add repository for specified Debian release if not already present in
+# Add repository for specified Ubuntu release if not already present in
 # sources.list
-RUN grep " ${DEBIAN_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
-    "deb http://deb.debian.org/debian ${DEBIAN_RELEASE} main contrib non-free"
+RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
+    "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE} main contrib non-free"
 
 #
 # Base directory for installed build artifacts. See also the
@@ -142,8 +142,8 @@ COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
 
 # Bring runtime environment up to date and install runtime dependencies
 RUN apt-get update                                                                                       && \
-    apt-get install -t ${DEBIAN_RELEASE} -y --no-install-recommends $RUNTIME_DEPENDENCIES                && \
-    apt-get install -t ${DEBIAN_RELEASE} -y --no-install-recommends $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
+    apt-get install -t ${UBUNTU_RELEASE} -y --no-install-recommends $RUNTIME_DEPENDENCIES                && \
+    apt-get install -t ${UBUNTU_RELEASE} -y --no-install-recommends $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
     rm -rf /var/lib/apt/lists/*
 
 # Link FreeRDP plugins into proper path
