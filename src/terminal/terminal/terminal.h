@@ -38,6 +38,37 @@
 #include <guacamole/stream.h>
 
 /**
+ * The name of the font to use for the terminal if no name is specified.
+ */
+#define GUAC_TERMINAL_DEFAULT_FONT_NAME "monospace"
+
+/**
+ * The size of the font to use for the terminal if no font size is specified,
+ * in points.
+ */
+#define GUAC_TERMINAL_DEFAULT_FONT_SIZE 12
+
+/**
+ * The default maximum scrollback size in rows.
+ */
+#define GUAC_TERMINAL_DEFAULT_MAX_SCROLLBACK 1000
+
+/**
+ * The default ASCII code to use for the backspace key.
+ */
+#define GUAC_TERMINAL_DEFAULT_BACKSPACE 127
+
+/**
+ * The default (unset) color scheme.
+ */
+#define GUAC_TERMINAL_DEFAULT_COLOR_SCHEME ""
+
+/**
+ * The default value for the "disable copy" flag; by default copying is enabled.
+ */
+#define GUAC_TERMINAL_DEFAULT_DISABLE_COPY false
+
+/**
  * The absolute maximum number of rows to allow within the display.
  */
 #define GUAC_TERMINAL_MAX_ROWS 1024
@@ -548,6 +579,88 @@ struct guac_terminal {
 };
 
 /**
+ * Configuration options that may be passed when creating a new guac_terminal.
+ *
+ * Note that guac_terminal_options should not be instantiated directly -
+ * to create a new options struct, use guac_terminal_options_create.
+ */
+typedef struct guac_terminal_options {
+
+    /**
+     * The client to which the terminal will be rendered.
+     */
+    guac_client* client;
+
+    /**
+     * The guac_common_clipboard which will contain the current clipboard
+     * state. It is expected that this clipboard instance will be updated
+     * both internally by the terminal and externally through received
+     * clipboard instructions. This clipboard will not be automatically
+     * freed when this terminal is freed.
+     */
+    guac_common_clipboard* clipboard;
+
+    /**
+     * Whether copying from the terminal clipboard should be blocked. If set,
+     * the contents of the terminal can still be copied, but will be usable
+     * only within the terminal itself. The clipboard contents will not be
+     * automatically streamed to the client.
+     */
+    bool disable_copy;
+
+    /**
+     * The maximum number of rows to allow within the scrollback buffer. The
+     * user may still alter the size of the scrollback buffer using terminal
+     * codes, however the size can never exceed the maximum size given here.
+     * Note that this space is shared with the display, with the scrollable
+     * area actually only containing the given number of rows less the number
+     * of rows currently displayed, and sufficient buffer space will always be
+     * allocated to represent the display area of the terminal regardless of
+     * the value given here.
+     */
+    int max_scrollback;
+
+    /**
+     * The name of the font to use when rendering glyphs.
+     */
+    char* font_name;
+
+    /**
+     * The size of each glyph, in points.
+     */
+    int font_size;
+
+    /**
+     * The DPI of the display. The given font size will be adjusted to produce
+     * glyphs at the given DPI.
+     */
+    int dpi;
+
+    /**
+     * The width of the terminal, in pixels.
+     */
+    int width;
+
+    /**
+     * The height of the terminal, in pixels.
+     */
+    int height;
+
+    /**
+     * The name of the color scheme to use. This string must be in the format
+     * accepted by guac_terminal_parse_color_scheme().
+     */
+    char* color_scheme;
+
+    /**
+     * The integer ASCII code to send when backspace is pressed in
+     * the terminal.
+     */
+    int backspace;
+
+} guac_terminal_options;
+
+/**
  * Creates a new guac_terminal, having the given width and height, and
  * rendering to the given client. As failover mechanisms and the Guacamole
  * client implementation typically use the receipt of a "sync" message to
@@ -557,41 +670,30 @@ struct guac_terminal {
  * either the underlying connection has truly succeeded, or until visible
  * terminal output or user input is required.
  *
- * @param client
+ * @param terminal_options
+ *     The configuration used for instantiating the terminal. For information
+ *     about the options, see the guac_terminal_options definition.
+ *
+ * @return
+ *     A new guac_terminal having the given font, dimensions, and attributes
+ *     which renders all text to the given client.
+ */
+guac_terminal* guac_terminal_create(guac_terminal_options* terminal_options);
+
+/**
+ * Create a new guac_terminal_options struct. All parameters are required.
+ * Any options that are not passed in this constructor will be set to
+ * default values unless overriden.
+ *
+ * The guac_terminal_options struct should only be created using this
+ * constructor.
+ *
+ * @param guac_client
  *     The client to which the terminal will be rendered.
  *
  * @param clipboard
  *     The guac_common_clipboard which will contain the current clipboard
- *     state. It is expected that this clipboard instance will be updated
- *     both internally by the terminal and externally through received
- *     clipboard instructions. This clipboard will not be automatically
- *     freed when this terminal is freed.
- *
- * @param disable_copy
- *     Whether copying from the terminal clipboard should be blocked. If set,
- *     the contents of the terminal can still be copied, but will be usable
- *     only within the terminal itself. The clipboard contents will not be
- *     automatically streamed to the client.
- *
- * @param max_scrollback
- *     The maximum number of rows to allow within the scrollback buffer. The
- *     user may still alter the size of the scrollback buffer using terminal
- *     codes, however the size can never exceed the maximum size given here.
- *     Note that this space is shared with the display, with the scrollable
- *     area actually only containing the given number of rows less the number
- *     of rows currently displayed, and sufficient buffer space will always be
- *     allocated to represent the display area of the terminal regardless of
- *     the value given here.
- *
- * @param font_name
- *     The name of the font to use when rendering glyphs.
- *
- * @param font_size
- *     The size of each glyph, in points.
- *
- * @param dpi
- *     The DPI of the display. The given font size will be adjusted to produce
- *     glyphs at the given DPI.
+ *     state.
  *
  * @param width
  *     The width of the terminal, in pixels.
@@ -599,23 +701,16 @@ struct guac_terminal {
  * @param height
  *     The height of the terminal, in pixels.
  *
- * @param color_scheme
- *     The name of the color scheme to use. This string must be in the format
- *     accepted by guac_terminal_parse_color_scheme().
- *
- * @param backspace
- *     The integer ASCII code to send when backspace is pressed in
- *     this terminal.
+ * @param dpi
+ *     The DPI of the display. The given font size will be adjusted to produce
+ *     glyphs at the given DPI.
  *
  * @return
- *     A new guac_terminal having the given font, dimensions, and attributes
- *     which renders all text to the given client.
+ *     A new terminal options struct with all required options populated,
+ *     ready to have any defaults overriden as needed.
  */
-guac_terminal* guac_terminal_create(guac_client* client,
-        guac_common_clipboard* clipboard, bool disable_copy,
-        int max_scrollback, const char* font_name, int font_size, int dpi,
-        int width, int height, const char* color_scheme,
-        const int backspace);
+guac_terminal_options* guac_terminal_options_create(guac_client* client,
+        guac_common_clipboard* clipboard, int width, int height, int dpi);
 
 /**
  * Frees all resources associated with the given terminal.

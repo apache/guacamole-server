@@ -19,6 +19,7 @@
 
 #include "argv.h"
 #include "settings.h"
+#include "terminal/terminal.h"
 
 #include <guacamole/user.h>
 
@@ -215,8 +216,8 @@ enum KUBERNETES_ARGS_IDX {
     IDX_READ_ONLY,
 
     /**
-     * ASCII code, as an integer to use for the backspace key, or 127
-     * if not specified.
+     * ASCII code, as an integer to use for the backspace key, or
+     * GUAC_TERMINAL_DEFAULT_BACKSPACE if not specified.
      */
     IDX_BACKSPACE,
 
@@ -320,22 +321,22 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     /* Read maximum scrollback size */
     settings->max_scrollback =
         guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_SCROLLBACK, GUAC_KUBERNETES_DEFAULT_MAX_SCROLLBACK);
+                IDX_SCROLLBACK, GUAC_TERMINAL_DEFAULT_MAX_SCROLLBACK);
 
     /* Read font name */
     settings->font_name =
         guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_FONT_NAME, GUAC_KUBERNETES_DEFAULT_FONT_NAME);
+                IDX_FONT_NAME, GUAC_TERMINAL_DEFAULT_FONT_NAME);
 
     /* Read font size */
     settings->font_size =
         guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_FONT_SIZE, GUAC_KUBERNETES_DEFAULT_FONT_SIZE);
+                IDX_FONT_SIZE, GUAC_TERMINAL_DEFAULT_FONT_SIZE);
 
     /* Copy requested color scheme */
     settings->color_scheme =
         guac_user_parse_args_string(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_COLOR_SCHEME, "");
+                IDX_COLOR_SCHEME, GUAC_TERMINAL_DEFAULT_COLOR_SCHEME);
 
     /* Pull width/height/resolution directly from user */
     settings->width      = user->info.optimal_width;
@@ -390,7 +391,7 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     /* Parse backspace key code */
     settings->backspace =
         guac_user_parse_args_int(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
-                IDX_BACKSPACE, 127);
+                IDX_BACKSPACE, GUAC_TERMINAL_DEFAULT_BACKSPACE);
 
     /* Parse clipboard copy disable flag */
     settings->disable_copy =
