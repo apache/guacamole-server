@@ -26,7 +26,7 @@
 AUTOMAKE_OPTIONS = foreign 
 ACLOCAL_AMFLAGS = -I m4
 
-lib_LTLIBRARIES = libguac_terminal.la
+lib_LTLIBRARIES = libguac-terminal.la
 
 libguac_terminalincdir = $(includedir)/guacamole/terminal
 
