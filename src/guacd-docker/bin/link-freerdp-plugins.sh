@@ -30,29 +30,20 @@
 ##
 
 ##
-## Given the full path to a FreeRDP plugin, locates the base directory of the
-## associated FreeRDP installation (where the FreeRDP library .so files are
-## located), printing the result to STDOUT. If the directory cannot be
+## Locates the base directory of the FreeRDP installation (where the FreeRDP library
+## .so files are located), printing the result to STDOUT. If the directory cannot be
 ## determined, an error is printed.
-##
-## @param PLUGIN_FILE
-##     The full path to the FreeRDP plugin to check.
 ##
 where_is_freerdp() {
 
-    PLUGIN_FILE="$1"
-
-    # Determine the location of all libfreerdp* libraries explicitly linked
-    # to given file
-    PATHS="$(ldd "$PLUGIN_FILE"              \
-                 | awk '/=>/{print $(NF-1)}' \
-                 | grep 'libfreerdp'         \
-                 | xargs -r dirname          \
-                 | xargs -r realpath         \
-                 | sort -u)"
+    # Determine the location of any freerdp2 .so files
+    PATHS="$(find / -iname '*libfreerdp2.so.*' \
+             | xargs -r dirname                \
+             | xargs -r realpath               \
+             | sort -u)"
 
     # Verify that exactly one location was found
-    if [ "$(echo "$PATHS" | wc -l)" != 1 ]; then
+    if [ -z "$PATHS" -o "$(echo "$PATHS" | wc -l)" != 1 ]; then
         echo "$1: Unable to locate FreeRDP install location." >&2
         return 1
     fi
@@ -66,11 +57,11 @@ where_is_freerdp() {
 # search path of FreeRDP
 #
 
-while [ -n "$1" ]; do
+# Determine correct install location for FreeRDP plugins
+FREERDP_DIR="$(where_is_freerdp)"
+FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp2"
 
-    # Determine correct install location for FreeRDP plugins
-    FREERDP_DIR="$(where_is_freerdp "$1")"
-    FREERDP_PLUGIN_DIR="${FREERDP_DIR}/freerdp2"
+while [ -n "$1" ]; do
 
     # Add symbolic link if necessary
     if [ ! -e "$FREERDP_PLUGIN_DIR/$(basename "$1")" ]; then
@@ -83,4 +74,3 @@ while [ -n "$1" ]; do
     shift
 
 done
-
