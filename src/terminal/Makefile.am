@@ -70,6 +70,7 @@ libguac_terminal_la_CFLAGS = \
     @PANGOCAIRO_CFLAGS@
 
 libguac_terminal_la_LIBADD = \
+    @COMMON_LTLIB@           \
     @LIBGUAC_LTLIB@
 
 libguac_terminal_la_LDFLAGS = \
