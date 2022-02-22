@@ -32,6 +32,11 @@
 #define GUAC_COMMON_CLIPBOARD_BLOCK_SIZE 4096
 
 /**
+ * The maximum number of bytes to allow within the clipboard.
+ */
+#define GUAC_COMMON_CLIPBOARD_MAX_LENGTH 262144
+
+/**
  * Generic clipboard structure.
  */
 typedef struct guac_common_clipboard {
@@ -66,12 +71,9 @@ typedef struct guac_common_clipboard {
 } guac_common_clipboard;
 
 /**
- * Creates a new clipboard having the given initial size.
- *
- * @param size The maximum number of bytes to allow within the clipboard.
- * @return A newly-allocated clipboard.
+ * Creates a new clipboard.
  */
-guac_common_clipboard* guac_common_clipboard_alloc(int size);
+guac_common_clipboard* guac_common_clipboard_alloc();
 
 /**
  * Frees the given clipboard.

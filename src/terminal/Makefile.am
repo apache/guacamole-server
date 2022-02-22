@@ -30,6 +30,9 @@ lib_LTLIBRARIES = libguac-terminal.la
 
 libguac_terminalincdir = $(includedir)/guacamole/terminal
 
+noinst_HEADERS =             \
+    terminal/terminal_priv.h
+
 libguac_terminalinc_HEADERS =    \
     terminal/buffer.h            \
     terminal/char_mappings.h     \

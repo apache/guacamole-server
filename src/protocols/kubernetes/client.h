@@ -23,11 +23,6 @@
 #include <guacamole/client.h>
 
 /**
- * The maximum number of bytes to allow within the clipboard.
- */
-#define GUAC_KUBERNETES_CLIPBOARD_MAX_LENGTH 262144
-
-/**
  * Static reference to the guac_client associated with the active Kubernetes
  * connection. While libwebsockets provides some means of storing and
  * retrieving custom data in some structures, this is not always available.

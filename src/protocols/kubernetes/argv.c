@@ -21,6 +21,7 @@
 #include "argv.h"
 #include "kubernetes.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal_priv.h"
 
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>

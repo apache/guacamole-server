@@ -55,7 +55,7 @@ int guac_client_init(guac_client* client) {
 #endif
 
     /* Init clipboard */
-    vnc_client->clipboard = guac_common_clipboard_alloc(GUAC_VNC_CLIPBOARD_MAX_LENGTH);
+    vnc_client->clipboard = guac_common_clipboard_alloc();
 
     /* Set handlers */
     client->join_handler = guac_vnc_user_join_handler;

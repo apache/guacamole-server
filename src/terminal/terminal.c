@@ -29,6 +29,7 @@
 #include "terminal/select.h"
 #include "terminal/terminal.h"
 #include "terminal/terminal_handlers.h"
+#include "terminal/terminal_priv.h"
 #include "terminal/types.h"
 #include "terminal/typescript.h"
 
@@ -307,14 +308,13 @@ void* guac_terminal_thread(void* data) {
 }
 
 guac_terminal_options* guac_terminal_options_create(guac_client* client,
-        guac_common_clipboard* clipboard, int width, int height, int dpi) {
+        int width, int height, int dpi) {
 
 
     guac_terminal_options* options = malloc(sizeof(guac_terminal_options));
 
     /* Set all required parameters */
     options->client = client;
-    options->clipboard = clipboard;
     options->width = width;
     options->height = height;
     options->dpi = dpi;
@@ -416,7 +416,7 @@ guac_terminal* guac_terminal_create(guac_terminal_options* options) {
     /* Init terminal state */
     term->current_attributes = default_char.attributes;
     term->default_char = default_char;
-    term->clipboard = options->clipboard;
+    term->clipboard = guac_common_clipboard_alloc();
     term->disable_copy = options->disable_copy;
 
     /* Calculate character size */
@@ -545,6 +545,9 @@ void guac_terminal_free(guac_terminal* term) {
     /* Free copies of font and color scheme information */
     free((char*) term->color_scheme);
     free((char*) term->font_name);
+
+    /* Free clipboard */
+    guac_common_clipboard_free(term->clipboard);
 
     /* Free the terminal itself */
     free(term);

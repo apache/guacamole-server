@@ -25,6 +25,7 @@
 #include "input.h"
 #include "user.h"
 #include "pipe.h"
+#include "terminal/terminal_priv.h"
 #include "sftp.h"
 #include "ssh.h"
 #include "settings.h"

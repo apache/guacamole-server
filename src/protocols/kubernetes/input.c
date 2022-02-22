@@ -21,6 +21,7 @@
 #include "input.h"
 #include "kubernetes.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal_priv.h"
 
 #include <guacamole/client.h>
 #include <guacamole/user.h>

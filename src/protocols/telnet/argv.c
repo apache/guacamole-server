@@ -21,6 +21,7 @@
 #include "argv.h"
 #include "telnet.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal_priv.h"
 
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>

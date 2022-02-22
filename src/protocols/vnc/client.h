@@ -50,11 +50,6 @@
 #define GUAC_VNC_CONNECT_INTERVAL 1000
 
 /**
- * The maximum number of bytes to allow within the clipboard.
- */
-#define GUAC_VNC_CLIPBOARD_MAX_LENGTH 262144
-
-/**
  * Handler which frees all data associated with the guac_client.
  */
 guac_client_free_handler guac_vnc_client_free_handler;

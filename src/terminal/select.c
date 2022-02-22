@@ -24,6 +24,7 @@
 #include "terminal/display.h"
 #include "terminal/select.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal_priv.h"
 #include "terminal/types.h"
 
 #include <guacamole/client.h>

@@ -25,6 +25,7 @@
 #include "pipe.h"
 #include "settings.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal_priv.h"
 #include "user.h"
 
 #include <guacamole/client.h>

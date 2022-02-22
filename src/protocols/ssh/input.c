@@ -24,6 +24,7 @@
 #include "common/recording.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal_priv.h"
 
 #include <guacamole/client.h>
 #include <guacamole/user.h>

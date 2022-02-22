@@ -358,7 +358,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 
     guac_iconv_write* remote_writer;
     const char* input = clipboard->clipboard->buffer;
-    char* output = malloc(GUAC_RDP_CLIPBOARD_MAX_LENGTH);
+    char* output = malloc(GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
 
     /* Map requested clipboard format to a guac_iconv writer */
     switch (format_data_request->requestedFormatId) {
@@ -389,7 +389,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     BYTE* start = (BYTE*) output;
     guac_iconv_read* local_reader = settings->normalize_clipboard ? GUAC_READ_UTF8_NORMALIZED : GUAC_READ_UTF8;
     guac_iconv(local_reader, &input, clipboard->clipboard->length,
-            remote_writer, &output, GUAC_RDP_CLIPBOARD_MAX_LENGTH);
+            remote_writer, &output, GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
 
     CLIPRDR_FORMAT_DATA_RESPONSE data_response = {
         .requestedFormatData = (BYTE*) start,
@@ -449,7 +449,7 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
         return CHANNEL_RC_OK;
     }
 
-    char received_data[GUAC_RDP_CLIPBOARD_MAX_LENGTH];
+    char received_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
 
     guac_iconv_read* remote_reader;
     const char* input = (char*) format_data_response->requestedFormatData;
@@ -595,7 +595,7 @@ guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client) {
     /* Allocate clipboard and underlying storage */
     guac_rdp_clipboard* clipboard = calloc(1, sizeof(guac_rdp_clipboard));
     clipboard->client = client;
-    clipboard->clipboard = guac_common_clipboard_alloc(GUAC_RDP_CLIPBOARD_MAX_LENGTH);
+    clipboard->clipboard = guac_common_clipboard_alloc();
     clipboard->requested_format = CF_TEXT;
 
     return clipboard;

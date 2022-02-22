@@ -23,6 +23,7 @@
 #include "common/recording.h"
 #include "telnet.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal_priv.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -587,8 +588,7 @@ void* guac_telnet_client_thread(void* data) {
 
     /* Create terminal options with required parameters */
     guac_terminal_options* options = guac_terminal_options_create(
-            client, telnet_client->clipboard,
-            settings->width, settings->height, settings->resolution);
+            client, settings->width, settings->height, settings->resolution);
 
     /* Set optional parameters */
     options->disable_copy = settings->disable_copy;
