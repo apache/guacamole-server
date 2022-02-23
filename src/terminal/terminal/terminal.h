@@ -168,11 +168,6 @@ typedef guac_stream* guac_terminal_file_download_handler(guac_client* client, ch
 typedef struct guac_terminal_options {
 
     /**
-     * The client to which the terminal will be rendered.
-     */
-    guac_client* client;
-
-    /**
      * Whether copying from the terminal clipboard should be blocked. If set,
      * the contents of the terminal can still be copied, but will be usable
      * only within the terminal itself. The clipboard contents will not be
@@ -242,6 +237,9 @@ typedef struct guac_terminal_options {
  * either the underlying connection has truly succeeded, or until visible
  * terminal output or user input is required.
  *
+ * @param client
+ *      The client to which the terminal will be rendered.
+ *
  * @param terminal_options
  *     The configuration used for instantiating the terminal. For information
  *     about the options, see the guac_terminal_options definition.
@@ -250,7 +248,8 @@ typedef struct guac_terminal_options {
  *     A new guac_terminal having the given font, dimensions, and attributes
  *     which renders all text to the given client.
  */
-guac_terminal* guac_terminal_create(guac_terminal_options* terminal_options);
+guac_terminal* guac_terminal_create(guac_client* client,
+        guac_terminal_options* terminal_options);
 
 /**
  * Create a new guac_terminal_options struct. All parameters are required.
@@ -259,9 +258,6 @@ guac_terminal* guac_terminal_create(guac_terminal_options* terminal_options);
  *
  * The guac_terminal_options struct should only be created using this
  * constructor.
- *
- * @param guac_client
- *     The client to which the terminal will be rendered.
  *
  * @param width
  *     The width of the terminal, in pixels.
@@ -277,7 +273,7 @@ guac_terminal* guac_terminal_create(guac_terminal_options* terminal_options);
  *     A new terminal options struct with all required options populated,
  *     ready to have any defaults overriden as needed.
  */
-guac_terminal_options* guac_terminal_options_create(guac_client* client,
+guac_terminal_options* guac_terminal_options_create(
         int width, int height, int dpi);
 
 /**
@@ -533,7 +529,7 @@ int guac_terminal_available_scroll(guac_terminal* term);
  * @return
  *     The height of the terminal, in characters.
  */
-int guac_terminal_term_height(guac_terminal* term);
+int guac_terminal_get_rows(guac_terminal* term);
 
 /**
  * Returns the width of the given terminal, in characters.
@@ -544,14 +540,16 @@ int guac_terminal_term_height(guac_terminal* term);
  * @return
  *     The width of the terminal, in characters.
  */
-int guac_terminal_term_width(guac_terminal* term);
+int guac_terminal_get_columns(guac_terminal* term);
 
 /**
  * Clears the clipboard contents for a given terminal, and assigns a new
  * mimetype for future data.
  *
- * @param terminal The terminal whose clipboard is being reset.
- * @param mimetype The mimetype of future data.
+ * @param terminal
+ *      The terminal whose clipboard is being reset.
+ * @param mimetype
+ *      The mimetype of future data.
  */
 void guac_terminal_clipboard_reset(guac_terminal* terminal,
         const char* mimetype);
@@ -561,9 +559,12 @@ void guac_terminal_clipboard_reset(guac_terminal* terminal,
  * terminal. The data must match the mimetype chosen for the clipboard data by
  * guac_terminal_clipboard_reset().
  *
- * @param terminal The terminal whose clipboard is being appended to.
- * @param data The data to append.
- * @param length The number of bytes to append from the data given.
+ * @param terminal
+ *      The terminal whose clipboard is being appended to.
+ * @param data
+ *      The data to append.
+ * @param length
+ *      The number of bytes to append from the data given.
  */
 void guac_terminal_clipboard_append(guac_terminal* terminal,
         const char* data, int length);
@@ -573,8 +574,10 @@ void guac_terminal_clipboard_append(guac_terminal* terminal,
  * given terminal. This function must be called whenever a user leaves a
  * terminal connection.
  *
- * @param terminal The terminal that the given user is leaving.
- * @param user The user who is disconnecting.
+ * @param terminal
+ *      The terminal that the given user is leaving.
+ * @param user
+ *      The user who is disconnecting.
  */
 void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user);
 

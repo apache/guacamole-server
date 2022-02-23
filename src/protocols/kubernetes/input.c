@@ -87,8 +87,8 @@ int guac_kubernetes_user_size_handler(guac_user* user, int width, int height) {
 
     /* Update Kubernetes terminal window size if connected */
     guac_kubernetes_resize(client,
-            guac_terminal_term_height(terminal),
-            guac_terminal_term_width(terminal));
+            guac_terminal_get_rows(terminal),
+            guac_terminal_get_columns(terminal));
 
     return 0;
 }

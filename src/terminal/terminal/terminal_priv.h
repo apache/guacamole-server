@@ -18,8 +18,8 @@
  */
 
 
-#ifndef _GUAC_TERMINAL_PRIV_H
-#define _GUAC_TERMINAL_PRIV_H
+#ifndef GUAC_TERMINAL_PRIV_H
+#define GUAC_TERMINAL_PRIV_H
 
 #include "common/clipboard.h"
 #include "terminal/terminal.h"

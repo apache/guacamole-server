@@ -240,7 +240,7 @@ void* ssh_client_thread(void* data) {
 
     /* Create terminal options with required parameters */
     guac_terminal_options* options = guac_terminal_options_create(
-            client, settings->width, settings->height, settings->resolution);
+            settings->width, settings->height, settings->resolution);
 
     /* Set optional parameters */
     options->disable_copy = settings->disable_copy;
@@ -251,7 +251,7 @@ void* ssh_client_thread(void* data) {
     options->backspace = settings->backspace;
 
     /* Create terminal */
-    ssh_client->term = guac_terminal_create(options);
+    ssh_client->term = guac_terminal_create(client, options);
 
     /* Free options struct now that it's been used */
     free(options);
@@ -377,8 +377,8 @@ void* ssh_client_thread(void* data) {
                 "  Backspace may not work as expected.");
 
     /* Request PTY */
-    int term_height = guac_terminal_term_height(ssh_client->term);
-    int term_width = guac_terminal_term_width(ssh_client->term);
+    int term_height = guac_terminal_get_rows(ssh_client->term);
+    int term_width = guac_terminal_get_columns(ssh_client->term);
     if (libssh2_channel_request_pty_ex(ssh_client->term_channel,
             settings->terminal_type, strlen(settings->terminal_type),
             ssh_ttymodes, ttymodeBytes, term_width, term_height, 0, 0)) {

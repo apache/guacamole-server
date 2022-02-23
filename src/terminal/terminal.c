@@ -190,11 +190,11 @@ int guac_terminal_available_scroll(guac_terminal* term) {
     return guac_terminal_effective_buffer_length(term) - term->term_height;
 }
 
-int guac_terminal_term_height(guac_terminal* term) {
+int guac_terminal_get_rows(guac_terminal* term) {
     return term->term_height;
 }
 
-int guac_terminal_term_width(guac_terminal* term) {
+int guac_terminal_get_columns(guac_terminal* term) {
     return term->term_width;
 }
 
@@ -315,14 +315,12 @@ void* guac_terminal_thread(void* data) {
 
 }
 
-guac_terminal_options* guac_terminal_options_create(guac_client* client,
+guac_terminal_options* guac_terminal_options_create(
         int width, int height, int dpi) {
-
 
     guac_terminal_options* options = malloc(sizeof(guac_terminal_options));
 
     /* Set all required parameters */
-    options->client = client;
     options->width = width;
     options->height = height;
     options->dpi = dpi;
@@ -338,7 +336,8 @@ guac_terminal_options* guac_terminal_options_create(guac_client* client,
     return options;
 }
 
-guac_terminal* guac_terminal_create(guac_terminal_options* options) {
+guac_terminal* guac_terminal_create(guac_client* client,
+        guac_terminal_options* options) {
 
     /* The width and height may need to be changed from what's requested */
     int width = options->width;
@@ -360,7 +359,7 @@ guac_terminal* guac_terminal_create(guac_terminal_options* options) {
     guac_terminal_color (*default_palette)[256] = (guac_terminal_color(*)[256])
             malloc(sizeof(guac_terminal_color[256]));
 
-    guac_terminal_parse_color_scheme(options->client, options->color_scheme,
+    guac_terminal_parse_color_scheme(client, options->color_scheme,
                                      &default_char.attributes.foreground,
                                      &default_char.attributes.background,
                                      default_palette);
@@ -372,7 +371,7 @@ guac_terminal* guac_terminal_create(guac_terminal_options* options) {
 
     guac_terminal* term = malloc(sizeof(guac_terminal));
     term->started = false;
-    term->client = options->client;
+    term->client = client;
     term->upload_path_handler = NULL;
     term->file_download_handler = NULL;
 
@@ -405,7 +404,7 @@ guac_terminal* guac_terminal_create(guac_terminal_options* options) {
             &default_char);
 
     /* Init display */
-    term->display = guac_terminal_display_alloc(options->client,
+    term->display = guac_terminal_display_alloc(client,
             options->font_name, options->font_size, options->dpi,
             &default_char.attributes.foreground,
             &default_char.attributes.background,
@@ -413,13 +412,13 @@ guac_terminal* guac_terminal_create(guac_terminal_options* options) {
 
     /* Fail if display init failed */
     if (term->display == NULL) {
-        guac_client_log(options->client, GUAC_LOG_DEBUG, "Display initialization failed");
+        guac_client_log(client, GUAC_LOG_DEBUG, "Display initialization failed");
         free(term);
         return NULL;
     }
 
     /* Init common cursor */
-    term->cursor = guac_common_cursor_alloc(options->client);
+    term->cursor = guac_common_cursor_alloc(client);
 
     /* Init terminal state */
     term->current_attributes = default_char.attributes;

@@ -54,8 +54,8 @@ int guac_kubernetes_argv_callback(guac_user* user, const char* mimetype,
 
     /* Update Kubernetes terminal size */
     guac_kubernetes_resize(client,
-            guac_terminal_term_height(terminal),
-            guac_terminal_term_width(terminal));
+            guac_terminal_get_rows(terminal),
+            guac_terminal_get_columns(terminal));
 
     return 0;
 

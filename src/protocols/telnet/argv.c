@@ -55,8 +55,8 @@ int guac_telnet_argv_callback(guac_user* user, const char* mimetype,
     /* Update terminal window size if connected */
     if (telnet_client->telnet != NULL && telnet_client->naws_enabled)
         guac_telnet_send_naws(telnet_client->telnet,
-                guac_terminal_term_width(terminal),
-                guac_terminal_term_height(terminal));
+                guac_terminal_get_columns(terminal),
+                guac_terminal_get_rows(terminal));
 
     return 0;
 

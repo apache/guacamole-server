@@ -303,8 +303,8 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
             if (event->neg.telopt == TELNET_TELOPT_NAWS) {
                 telnet_client->naws_enabled = 1;
                 guac_telnet_send_naws(telnet,
-                        guac_terminal_term_width(telnet_client->term),
-                        guac_terminal_term_height(telnet_client->term));
+                        guac_terminal_get_columns(telnet_client->term),
+                        guac_terminal_get_rows(telnet_client->term));
             }
             break;
 
@@ -589,7 +589,7 @@ void* guac_telnet_client_thread(void* data) {
 
     /* Create terminal options with required parameters */
     guac_terminal_options* options = guac_terminal_options_create(
-            client, settings->width, settings->height, settings->resolution);
+            settings->width, settings->height, settings->resolution);
 
     /* Set optional parameters */
     options->disable_copy = settings->disable_copy;
@@ -600,7 +600,7 @@ void* guac_telnet_client_thread(void* data) {
     options->backspace = settings->backspace;
 
     /* Create terminal */
-    telnet_client->term = guac_terminal_create(options);
+    telnet_client->term = guac_terminal_create(client, options);
 
     /* Free options struct now that it's been used */
     free(options);

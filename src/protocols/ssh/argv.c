@@ -54,8 +54,8 @@ int guac_ssh_argv_callback(guac_user* user, const char* mimetype,
     }
 
     /* Update SSH pty size if connected */
-    int term_width = guac_terminal_term_width(terminal);
-    int term_height = guac_terminal_term_height(terminal);
+    int term_width = guac_terminal_get_columns(terminal);
+    int term_height = guac_terminal_get_rows(terminal);
     if (ssh_client->term_channel != NULL) {
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
         libssh2_channel_request_pty_size(ssh_client->term_channel,
