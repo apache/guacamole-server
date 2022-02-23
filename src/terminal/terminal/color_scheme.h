@@ -20,6 +20,12 @@
 #ifndef GUAC_TERMINAL_COLOR_SCHEME_H
 #define GUAC_TERMINAL_COLOR_SCHEME_H
 
+/**
+ * Definitions and functions related to color scheme handling.
+ *
+ * @file color_scheme.h
+ */
+
 #include "config.h"
 
 #include "terminal/palette.h"

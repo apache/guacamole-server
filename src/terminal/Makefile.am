@@ -37,9 +37,9 @@ libguac_terminalinc_HEADERS =    \
     terminal/buffer.h            \
     terminal/char_mappings.h     \
     terminal/common.h            \
-    terminal/color-scheme.h      \
+    terminal/color_scheme.h      \
     terminal/display.h           \
-    terminal/named-colors.h      \
+    terminal/named_colors.h      \
     terminal/palette.h           \
     terminal/scrollbar.h         \
     terminal/select.h            \
@@ -52,16 +52,16 @@ libguac_terminalinc_HEADERS =    \
 libguac_terminal_la_SOURCES =   \
     buffer.c                    \
     char_mappings.c             \
-    color-scheme.c              \
+    color_scheme.c              \
     common.c                    \
     display.c                   \
-    named-colors.c              \
+    named_colors.c              \
     palette.c                   \
     scrollbar.c                 \
     select.c                    \
     terminal.c                  \
     terminal_handlers.c         \
-    terminal-stdin-stream.c     \
+    terminal_stdin_stream.c     \
     typescript.c                \
     xparsecolor.c
 

@@ -1167,7 +1167,8 @@ AM_CONDITIONAL([ENABLE_GUACLOG], [test "x${enable_guaclog}"  = "xyes"])
 #
 
 AC_CONFIG_FILES([Makefile
-                 doc/Doxyfile
+                 doc/libguac/Doxyfile
+                 doc/libguac-terminal/Doxyfile
                  src/common/Makefile
                  src/common/tests/Makefile
                  src/common-ssh/Makefile

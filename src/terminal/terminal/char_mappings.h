@@ -21,6 +21,12 @@
 #ifndef _GUAC_TERMINAL_CHAR_MAPPINGS_H
 #define _GUAC_TERMINAL_CHAR_MAPPINGS_H
 
+/**
+ * Graphics character mapping definitions.
+ *
+ * @file char_mappings.h
+ */
+
 #include "config.h"
 
 /**

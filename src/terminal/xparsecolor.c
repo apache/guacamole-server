@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "terminal/named-colors.h"
+#include "terminal/named_colors.h"
 #include "terminal/palette.h"
 
 #include <stdio.h>

@@ -56,5 +56,5 @@ tests/test_*
 !tests/test_*.[ch]
 
 # Generated docs
-doc/doxygen-output
+doc/*/doxygen-output
 

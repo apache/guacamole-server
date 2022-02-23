@@ -20,6 +20,12 @@
 #ifndef GUAC_TERMINAL_PALETTE_H
 #define GUAC_TERMINAL_PALETTE_H
 
+/**
+ * Constants, structures, and function definitions related to the terminal color pallate.
+ *
+ * @file palette.h
+ */
+
 #include "config.h"
 
 #include <stdint.h>

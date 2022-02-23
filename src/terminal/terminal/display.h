@@ -21,6 +21,12 @@
 #ifndef _GUAC_TERMINAL_DISPLAY_H
 #define _GUAC_TERMINAL_DISPLAY_H
 
+/**
+ * Structures and function definitions related to the graphical display.
+ *
+ * @file display.h
+ */
+
 #include "config.h"
 
 #include "common/surface.h"

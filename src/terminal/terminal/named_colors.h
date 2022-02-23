@@ -20,6 +20,12 @@
 #ifndef GUAC_TERMINAL_NAMED_COLORS_H
 #define GUAC_TERMINAL_NAMED_COLORS_H
 
+/**
+ * Function definitions for operating on individual terminal colors.
+ *
+ * @file named_colors.h
+ */
+
 #include "config.h"
 #include "terminal/palette.h"
 

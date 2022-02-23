@@ -21,6 +21,13 @@
 #ifndef _GUAC_TERMINAL_H
 #define _GUAC_TERMINAL_H
 
+/**
+ * Constants, structures, and function definitions defining the core
+ * functionality for the terminal library.
+ *
+ * @file terminal.h
+ */
+
 #include "config.h"
 
 #include "buffer.h"

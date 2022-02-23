@@ -22,7 +22,7 @@
 #include "common/clipboard.h"
 #include "common/cursor.h"
 #include "terminal/buffer.h"
-#include "terminal/color-scheme.h"
+#include "terminal/color_scheme.h"
 #include "terminal/common.h"
 #include "terminal/display.h"
 #include "terminal/palette.h"

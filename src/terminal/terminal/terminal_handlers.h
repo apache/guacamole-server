@@ -21,6 +21,12 @@
 #ifndef _GUAC_TERMINAL_HANDLERS
 #define _GUAC_TERMINAL_HANDLERS
 
+/**
+ * Function definitions for terminal event handlers.
+ *
+ * @file terminal_handlers.h
+ */
+
 #include "config.h"
 
 #include "terminal.h"

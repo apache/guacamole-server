@@ -20,6 +20,12 @@
 #ifndef GUAC_TERMINAL_SCROLLBAR_H
 #define GUAC_TERMINAL_SCROLLBAR_H
 
+/**
+ * Constants, structures, and function definitions related to the terminal scrollbar.
+ *
+ * @file scrollbar.h
+ */
+
 #include "config.h"
 
 #include <guacamole/client.h>

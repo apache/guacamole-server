@@ -21,6 +21,12 @@
 #ifndef GUAC_TERMINAL_SELECT_H
 #define GUAC_TERMINAL_SELECT_H
 
+/**
+ * Function definitions related to selecting text withing a terminal.
+ *
+ * @file select.h
+ */
+
 #include "config.h"
 #include "terminal.h"
 

@@ -21,6 +21,13 @@
 #ifndef _GUAC_TERMINAL_TYPES_H
 #define _GUAC_TERMINAL_TYPES_H
 
+/**
+ * Structures and function definitions related to individual characters
+ * within the terminal.
+ *
+ * @file types.h
+ */
+
 #include "config.h"
 #include "palette.h"
 
