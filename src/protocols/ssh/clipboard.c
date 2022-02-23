@@ -19,10 +19,8 @@
 
 #include "config.h"
 #include "clipboard.h"
-#include "common/clipboard.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_priv.h"
 
 #include <guacamole/client.h>
 #include <guacamole/stream.h>
@@ -34,7 +32,7 @@ int guac_ssh_clipboard_handler(guac_user* user, guac_stream* stream,
     /* Clear clipboard and prepare for new data */
     guac_client* client = user->client;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
-    guac_common_clipboard_reset(ssh_client->term->clipboard, mimetype);
+    guac_terminal_clipboard_reset(ssh_client->term, mimetype);
 
     /* Set handlers for clipboard stream */
     stream->blob_handler = guac_ssh_clipboard_blob_handler;
@@ -49,7 +47,7 @@ int guac_ssh_clipboard_blob_handler(guac_user* user, guac_stream* stream,
     /* Append new data */
     guac_client* client = user->client;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
-    guac_common_clipboard_append(ssh_client->term->clipboard, data, length);
+    guac_terminal_clipboard_append(ssh_client->term, data, length);
 
     return 0;
 }

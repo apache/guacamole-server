@@ -24,7 +24,6 @@
 #include "common/recording.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_priv.h"
 
 #include <guacamole/client.h>
 #include <guacamole/user.h>
@@ -89,7 +88,8 @@ int guac_ssh_user_size_handler(guac_user* user, int width, int height) {
     if (ssh_client->term_channel != NULL) {
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
         libssh2_channel_request_pty_size(ssh_client->term_channel,
-                terminal->term_width, terminal->term_height);
+                guac_terminal_term_width(terminal),
+                guac_terminal_term_height(terminal));
         pthread_mutex_unlock(&(ssh_client->term_channel_lock));
     }
 

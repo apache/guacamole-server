@@ -21,7 +21,6 @@
 #include "argv.h"
 #include "telnet.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_priv.h"
 
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -55,8 +54,9 @@ int guac_telnet_argv_callback(guac_user* user, const char* mimetype,
 
     /* Update terminal window size if connected */
     if (telnet_client->telnet != NULL && telnet_client->naws_enabled)
-        guac_telnet_send_naws(telnet_client->telnet, terminal->term_width,
-                terminal->term_height);
+        guac_telnet_send_naws(telnet_client->telnet,
+                guac_terminal_term_width(terminal),
+                guac_terminal_term_height(terminal));
 
     return 0;
 
@@ -69,15 +69,17 @@ void* guac_telnet_send_current_argv(guac_user* user, void* data) {
 
     /* Send current color scheme */
     guac_user_stream_argv(user, user->socket, "text/plain",
-            GUAC_TELNET_ARGV_COLOR_SCHEME, terminal->color_scheme);
+            GUAC_TELNET_ARGV_COLOR_SCHEME,
+            guac_terminal_color_scheme(terminal));
 
     /* Send current font name */
     guac_user_stream_argv(user, user->socket, "text/plain",
-            GUAC_TELNET_ARGV_FONT_NAME, terminal->font_name);
+            GUAC_TELNET_ARGV_FONT_NAME,
+            guac_terminal_font_name(terminal));
 
     /* Send current font size */
     char font_size[64];
-    sprintf(font_size, "%i", terminal->font_size);
+    sprintf(font_size, "%i", guac_terminal_font_size(terminal));
     guac_user_stream_argv(user, user->socket, "text/plain",
             GUAC_TELNET_ARGV_FONT_SIZE, font_size);
 

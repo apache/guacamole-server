@@ -114,6 +114,10 @@
  */
 #define GUAC_TERMINAL_PIPE_AUTOFLUSH 2
 
+/**
+ * Represents a terminal emulator which uses a given Guacamole client to
+ * render itself.
+ */
 typedef struct guac_terminal guac_terminal;
 
 /**
@@ -280,6 +284,32 @@ guac_terminal_options* guac_terminal_options_create(guac_client* client,
  * Frees all resources associated with the given terminal.
  */
 void guac_terminal_free(guac_terminal* term);
+
+/**
+ * Set the upload path handler for the given terminal.
+ *
+ * @param terminal
+ *     The terminal to set the upload path handler for.
+ *
+ * @param upload_path_handler
+ *      The handler to be called whenever the necessary terminal codes are sent
+ *      to the given terminal to change the path for future file uploads.
+ */
+void guac_terminal_set_upload_path_handler(guac_terminal* terminal,
+        guac_terminal_upload_path_handler* upload_path_handler);
+
+/**
+ * Set the file download handler for the given terminal.
+ *
+ * @param terminal
+ *     The terminal to set the file download handler for.
+ *
+ * @param upload_path_handler
+ *      The handler to be called whenever the necessary terminal codes are sent to
+ *      the given terminal to initiate a download of a given remote file.
+ */
+void guac_terminal_set_file_download_handler(guac_terminal* terminal,
+        guac_terminal_file_download_handler* file_download_handler);
 
 /**
  * Renders a single frame of terminal data. If data is not yet available,
@@ -478,6 +508,75 @@ void guac_terminal_scroll_handler(guac_terminal_scrollbar* scrollbar, int value)
  */
 void guac_terminal_dup(guac_terminal* term, guac_user* user,
         guac_socket* socket);
+
+/**
+ * Returns the number of rows within the buffer of the given terminal which are
+ * not currently displayed on screen. Adjustments to the desired scrollback
+ * size are taken into account, and rows which are within the buffer but
+ * unavailable due to being outside the desired scrollback range are ignored.
+ *
+ * @param term
+ *     The terminal whose off-screen row count should be determined.
+ *
+ * @return
+ *     The number of rows within the buffer which are not currently displayed
+ *     on screen.
+ */
+int guac_terminal_available_scroll(guac_terminal* term);
+
+/**
+ * Returns the height of the given terminal, in characters.
+ *
+ * @param term
+ *     The terminal whose height should be determined.
+ *
+ * @return
+ *     The height of the terminal, in characters.
+ */
+int guac_terminal_term_height(guac_terminal* term);
+
+/**
+ * Returns the width of the given terminal, in characters.
+ *
+ * @param term
+ *     The terminal whose width should be determined.
+ *
+ * @return
+ *     The width of the terminal, in characters.
+ */
+int guac_terminal_term_width(guac_terminal* term);
+
+/**
+ * Clears the clipboard contents for a given terminal, and assigns a new
+ * mimetype for future data.
+ *
+ * @param terminal The terminal whose clipboard is being reset.
+ * @param mimetype The mimetype of future data.
+ */
+void guac_terminal_clipboard_reset(guac_terminal* terminal,
+        const char* mimetype);
+
+/**
+ * Appends the given data to the contents of the clipboard for the given
+ * terminal. The data must match the mimetype chosen for the clipboard data by
+ * guac_terminal_clipboard_reset().
+ *
+ * @param terminal The terminal whose clipboard is being appended to.
+ * @param data The data to append.
+ * @param length The number of bytes to append from the data given.
+ */
+void guac_terminal_clipboard_append(guac_terminal* terminal,
+        const char* data, int length);
+
+/**
+ * Removes the given user from any user-specific resources internal to the
+ * given terminal. This function must be called whenever a user leaves a
+ * terminal connection.
+ *
+ * @param terminal The terminal that the given user is leaving.
+ * @param user The user who is disconnecting.
+ */
+void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user);
 
 /* INTERNAL FUNCTIONS */
 
@@ -768,21 +867,6 @@ int guac_terminal_create_typescript(guac_terminal* term, const char* path,
         const char* name, int create_path);
 
 /**
- * Returns the number of rows within the buffer of the given terminal which are
- * not currently displayed on screen. Adjustments to the desired scrollback
- * size are taken into account, and rows which are within the buffer but
- * unavailable due to being outside the desired scrollback range are ignored.
- *
- * @param term
- *     The terminal whose off-screen row count should be determined.
- *
- * @return
- *     The number of rows within the buffer which are not currently displayed
- *     on screen.
- */
-int guac_terminal_available_scroll(guac_terminal* term);
-
-/**
  * Immediately applies the given color scheme to the given terminal, overriding
  * the color scheme provided when the terminal was created. Valid color schemes
  * are those accepted by guac_terminal_parse_color_scheme().
@@ -795,6 +879,17 @@ int guac_terminal_available_scroll(guac_terminal* term);
  */
 void guac_terminal_apply_color_scheme(guac_terminal* terminal,
         const char* color_scheme);
+
+/**
+ * Returns name of the color scheme currently in use by the given terminal.
+ *
+ * @param terminal
+ *      The terminal whose color scheme should be returned.
+ *
+ * @return
+ *     The name of the color scheme currently in use by the given terminal.
+ */
+const char* guac_terminal_color_scheme(guac_terminal* terminal);
 
 /**
  * Alters the font of the terminal. The terminal will automatically be redrawn
@@ -820,5 +915,37 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
 void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
         int font_size, int dpi);
 
-#endif
+/**
+ * Returns the font name currently in use by the given terminal.
+ *
+ * @param terminal
+ *     The terminal whose font name is being retrieved.
+ *
+ * @return
+ *     The name of the font in use by the given terminal.
+ */
+const char* guac_terminal_font_name(guac_terminal* terminal);
 
+/**
+ * Returns the font size currently in use by the given terminal.
+ *
+ * @param terminal
+ *     The terminal whose font size is being retrieved.
+ *
+ * @return
+ *     The size of the font in use by the given terminal.
+ */
+int guac_terminal_font_size(guac_terminal* terminal);
+
+/**
+ * Returns the current state of the mod_ctrl flag in the given terminal.
+ *
+ * @param terminal
+ *     The terminal for which the mod_ctrl state is being checked.
+ *
+ * @return
+ *     The current state of the mod_ctrl flag.
+ */
+int guac_terminal_mod_ctrl(guac_terminal* terminal);
+
+#endif

@@ -190,6 +190,14 @@ int guac_terminal_available_scroll(guac_terminal* term) {
     return guac_terminal_effective_buffer_length(term) - term->term_height;
 }
 
+int guac_terminal_term_height(guac_terminal* term) {
+    return term->term_height;
+}
+
+int guac_terminal_term_width(guac_terminal* term) {
+    return term->term_width;
+}
+
 void guac_terminal_reset(guac_terminal* term) {
 
     int row;
@@ -2020,6 +2028,10 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
 
 }
 
+const char* guac_terminal_color_scheme(guac_terminal* terminal) {
+    return terminal->color_scheme;
+}
+
 void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
         int font_size, int dpi) {
 
@@ -2058,3 +2070,40 @@ void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
 
 }
 
+void guac_terminal_set_upload_path_handler(guac_terminal* terminal,
+        guac_terminal_upload_path_handler* upload_path_handler) {
+    terminal->upload_path_handler = upload_path_handler;
+}
+
+void guac_terminal_set_file_download_handler(guac_terminal* terminal,
+        guac_terminal_file_download_handler* file_download_handler) {
+    terminal->file_download_handler = file_download_handler;
+}
+
+const char* guac_terminal_font_name(guac_terminal* terminal) {
+    return terminal->font_name;
+}
+
+int guac_terminal_font_size(guac_terminal* terminal) {
+    return terminal->font_size;
+}
+
+int guac_terminal_mod_ctrl(guac_terminal* terminal) {
+    return terminal->mod_ctrl;
+}
+
+void guac_terminal_clipboard_reset(guac_terminal* terminal,
+        const char* mimetype) {
+    guac_common_clipboard_reset(terminal->clipboard, mimetype);
+}
+
+void guac_terminal_clipboard_append(guac_terminal* terminal,
+        const char* data, int length) {
+    guac_common_clipboard_append(terminal->clipboard, data, length);
+}
+
+void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
+
+    /* Remove the user from the terminal cursor */
+    guac_common_cursor_remove_user(terminal->cursor, user);
+}

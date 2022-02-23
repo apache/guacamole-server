@@ -25,7 +25,6 @@
 #include "pipe.h"
 #include "settings.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_priv.h"
 #include "user.h"
 
 #include <guacamole/client.h>
@@ -110,8 +109,8 @@ int guac_kubernetes_user_leave_handler(guac_user* user) {
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) user->client->data;
 
-    /* Update shared cursor state */
-    guac_common_cursor_remove_user(kubernetes_client->term->cursor, user);
+    /* Remove the user from the terminal */
+    guac_terminal_remove_user(kubernetes_client->term, user);
 
     /* Free settings if not owner (owner settings will be freed with client) */
     if (!user->owner) {

@@ -23,7 +23,6 @@
 #include "common/recording.h"
 #include "telnet.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_priv.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -303,7 +302,9 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
         case TELNET_EV_DO:
             if (event->neg.telopt == TELNET_TELOPT_NAWS) {
                 telnet_client->naws_enabled = 1;
-                guac_telnet_send_naws(telnet, telnet_client->term->term_width, telnet_client->term->term_height);
+                guac_telnet_send_naws(telnet,
+                        guac_terminal_term_width(telnet_client->term),
+                        guac_terminal_term_height(telnet_client->term));
             }
             break;
 

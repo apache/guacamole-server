@@ -27,7 +27,6 @@
 #include "sftp.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_priv.h"
 #include "ttymode.h"
 
 #ifdef ENABLE_SSH_AGENT
@@ -359,10 +358,12 @@ void* ssh_client_thread(void* data) {
 
         /* Init handlers for Guacamole-specific console codes */
         if (!settings->sftp_disable_upload)
-            ssh_client->term->upload_path_handler = guac_sftp_set_upload_path;
+            guac_terminal_set_upload_path_handler(ssh_client->term,
+                    guac_sftp_set_upload_path);
         
         if (!settings->sftp_disable_download)
-            ssh_client->term->file_download_handler = guac_sftp_download_file;
+            guac_terminal_set_file_download_handler(ssh_client->term,
+                    guac_sftp_download_file);
 
         guac_client_log(client, GUAC_LOG_DEBUG, "SFTP session initialized");
 
@@ -376,10 +377,11 @@ void* ssh_client_thread(void* data) {
                 "  Backspace may not work as expected.");
 
     /* Request PTY */
+    int term_height = guac_terminal_term_height(ssh_client->term);
+    int term_width = guac_terminal_term_width(ssh_client->term);
     if (libssh2_channel_request_pty_ex(ssh_client->term_channel,
             settings->terminal_type, strlen(settings->terminal_type),
-            ssh_ttymodes, ttymodeBytes, ssh_client->term->term_width,
-            ssh_client->term->term_height, 0, 0)) {
+            ssh_ttymodes, ttymodeBytes, term_width, term_height, 0, 0)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Unable to allocate PTY.");
         return NULL;
     }

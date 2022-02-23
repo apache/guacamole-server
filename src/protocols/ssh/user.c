@@ -25,7 +25,7 @@
 #include "input.h"
 #include "user.h"
 #include "pipe.h"
-#include "terminal/terminal_priv.h"
+#include "terminal/terminal.h"
 #include "sftp.h"
 #include "ssh.h"
 #include "settings.h"
@@ -114,8 +114,8 @@ int guac_ssh_user_leave_handler(guac_user* user) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) user->client->data;
 
-    /* Update shared cursor state */
-    guac_common_cursor_remove_user(ssh_client->term->cursor, user);
+    /* Remove the user from the terminal */
+    guac_terminal_remove_user(ssh_client->term, user);
 
     /* Free settings if not owner (owner settings will be freed with client) */
     if (!user->owner) {

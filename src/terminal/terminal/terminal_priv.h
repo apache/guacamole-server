@@ -24,10 +24,6 @@
 #include "common/clipboard.h"
 #include "terminal/terminal.h"
 
-/**
- * Represents a terminal emulator which uses a given Guacamole client to
- * render itself.
- */
 struct guac_terminal {
 
     /**

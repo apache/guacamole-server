@@ -26,7 +26,6 @@
 #include "kubernetes.h"
 #include "ssl.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_priv.h"
 #include "url.h"
 
 #include <guacamole/client.h>
@@ -414,8 +413,8 @@ void guac_kubernetes_force_redraw(guac_client* client) {
 
     /* Get current terminal dimensions */
     guac_terminal* term = kubernetes_client->term;
-    int rows = term->term_height;
-    int columns = term->term_width;
+    int rows = guac_terminal_term_height(term);
+    int columns = guac_terminal_term_width(term);
 
     /* Force a redraw by increasing the terminal size by one character in
      * each dimension and then resizing it back to normal (the same technique
