@@ -451,10 +451,13 @@ void* guac_vnc_client_thread(void* data) {
     guac_socket_flush(client->socket);
 
     guac_timestamp last_frame_end = guac_timestamp_current();
+    guac_timestamp server_running_end = last_frame_end;
 
     /* Handle messages from VNC server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING) {
 
+         /* Server Running Time. */
+        guac_timestamp server_running_start = guac_timestamp_current();
         /* Wait for start of frame */
         int wait_result = guac_vnc_wait_for_messages(rfb_client,
                 GUAC_VNC_FRAME_START_TIMEOUT);
@@ -462,6 +465,7 @@ void* guac_vnc_client_thread(void* data) {
 
             int processing_lag = guac_client_get_processing_lag(client);
             guac_timestamp frame_start = guac_timestamp_current();
+            server_running_end = frame_start;
 
             /* Read server messages until frame is built */
             do {
@@ -512,6 +516,17 @@ void* guac_vnc_client_thread(void* data) {
         if (wait_result < 0)
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed.");
 
+        if ((server_running_start - server_running_end) > GUAC_VNC_IDLE_TIMEOUT) {
+            rfb_client = guac_vnc_get_client(client);
+            server_running_end = guac_timestamp_current();
+
+            /* Check for VNC Client connection. */ 
+            if (!rfb_client) {
+                guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed due to Server Timeout.");
+                guac_client_log(client, GUAC_LOG_INFO, "Server Timeout. ");
+                break;
+            }
+        }
         /* Flush frame */
         guac_common_surface_flush(vnc_client->display->default_surface);
         guac_client_end_frame(client);

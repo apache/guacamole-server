@@ -55,6 +55,11 @@
 #define GUAC_VNC_CLIPBOARD_MAX_LENGTH 262144
 
 /**
+ * The amount of time in milliseconds to wait before sending a ping to VNC server.
+ */
+#define GUAC_VNC_IDLE_TIMEOUT 10000
+
+/**
  * Handler which frees all data associated with the guac_client.
  */
 guac_client_free_handler guac_vnc_client_free_handler;
