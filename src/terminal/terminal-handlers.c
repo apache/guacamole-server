@@ -1227,7 +1227,7 @@ int guac_terminal_set_scrollback(guac_terminal* term, unsigned char c) {
 
         /* Update scrollbar bounds */
         guac_terminal_scrollbar_set_bounds(term->scrollbar,
-                -guac_terminal_available_scroll(term), 0);
+                -guac_terminal_get_available_scroll(term), 0);
 
         /* Return to echo mode */
         term->char_handler = guac_terminal_echo;

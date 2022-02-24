@@ -186,7 +186,7 @@ static int guac_terminal_effective_buffer_length(guac_terminal* term) {
 
 }
 
-int guac_terminal_available_scroll(guac_terminal* term) {
+int guac_terminal_get_available_scroll(guac_terminal* term) {
     return guac_terminal_effective_buffer_length(term) - term->term_height;
 }
 
@@ -897,7 +897,7 @@ int guac_terminal_scroll_up(guac_terminal* term,
 
         /* Reset scrollbar bounds */
         guac_terminal_scrollbar_set_bounds(term->scrollbar,
-                -guac_terminal_available_scroll(term), 0);
+                -guac_terminal_get_available_scroll(term), 0);
 
         /* Update cursor location if within region */
         if (term->visible_cursor_row >= start_row &&
@@ -1107,7 +1107,7 @@ void guac_terminal_scroll_display_up(guac_terminal* terminal,
     int row, column;
 
     /* Limit scroll amount by size of scrollback buffer */
-    int available_scroll = guac_terminal_available_scroll(terminal);
+    int available_scroll = guac_terminal_get_available_scroll(terminal);
     if (terminal->scroll_offset + scroll_amount > available_scroll)
         scroll_amount = available_scroll - terminal->scroll_offset;
 
@@ -1308,7 +1308,7 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
     if (height > term->term_height) {
 
         /* If undisplayed rows exist in the buffer, shift them into view */
-        int available_scroll = guac_terminal_available_scroll(term);
+        int available_scroll = guac_terminal_get_available_scroll(term);
         if (available_scroll > 0) {
 
             /* If the new terminal bottom reveals N rows, shift down N rows */
@@ -1433,7 +1433,7 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     /* Notify scrollbar of resize */
     guac_terminal_scrollbar_parent_resized(terminal->scrollbar, width, height, rows);
     guac_terminal_scrollbar_set_bounds(terminal->scrollbar,
-            -guac_terminal_available_scroll(terminal), 0);
+            -guac_terminal_get_available_scroll(terminal), 0);
 
 
     /* Release terminal */
@@ -2027,7 +2027,7 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
 
 }
 
-const char* guac_terminal_color_scheme(guac_terminal* terminal) {
+const char* guac_terminal_get_color_scheme(guac_terminal* terminal) {
     return terminal->color_scheme;
 }
 
@@ -2079,15 +2079,15 @@ void guac_terminal_set_file_download_handler(guac_terminal* terminal,
     terminal->file_download_handler = file_download_handler;
 }
 
-const char* guac_terminal_font_name(guac_terminal* terminal) {
+const char* guac_terminal_get_font_name(guac_terminal* terminal) {
     return terminal->font_name;
 }
 
-int guac_terminal_font_size(guac_terminal* terminal) {
+int guac_terminal_get_font_size(guac_terminal* terminal) {
     return terminal->font_size;
 }
 
-int guac_terminal_mod_ctrl(guac_terminal* terminal) {
+int guac_terminal_get_mod_ctrl(guac_terminal* terminal) {
     return terminal->mod_ctrl;
 }
 

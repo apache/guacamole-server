@@ -75,16 +75,16 @@ void* guac_ssh_send_current_argv(guac_user* user, void* data) {
     /* Send current color scheme */
     guac_user_stream_argv(user, user->socket, "text/plain",
             GUAC_SSH_ARGV_COLOR_SCHEME,
-            guac_terminal_color_scheme(terminal));
+            guac_terminal_get_color_scheme(terminal));
 
     /* Send current font name */
     guac_user_stream_argv(user, user->socket, "text/plain",
             GUAC_SSH_ARGV_FONT_NAME,
-            guac_terminal_font_name(terminal));
+            guac_terminal_get_font_name(terminal));
 
     /* Send current font size */
     char font_size[64];
-    sprintf(font_size, "%i", guac_terminal_font_size(terminal));
+    sprintf(font_size, "%i", guac_terminal_get_font_size(terminal));
     guac_user_stream_argv(user, user->socket, "text/plain",
             GUAC_SSH_ARGV_FONT_SIZE, font_size);
 

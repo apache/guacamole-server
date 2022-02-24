@@ -101,7 +101,7 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
                 keysym == 0xFF13                  /* Pause */
              || keysym == 0xFF6B                  /* Break */
              || (
-                    guac_terminal_mod_ctrl(term)
+                    guac_terminal_get_mod_ctrl(term)
                     && keysym == '0'
                 )                                 /* Ctrl + 0 */
        )) {

@@ -525,7 +525,7 @@ void guac_terminal_dup(guac_terminal* term, guac_user* user,
  *     The number of rows within the buffer which are not currently displayed
  *     on screen.
  */
-int guac_terminal_available_scroll(guac_terminal* term);
+int guac_terminal_get_available_scroll(guac_terminal* term);
 
 /**
  * Returns the height of the given terminal, in characters.
@@ -899,7 +899,7 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
  * @return
  *     The name of the color scheme currently in use by the given terminal.
  */
-const char* guac_terminal_color_scheme(guac_terminal* terminal);
+const char* guac_terminal_get_color_scheme(guac_terminal* terminal);
 
 /**
  * Alters the font of the terminal. The terminal will automatically be redrawn
@@ -934,7 +934,7 @@ void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
  * @return
  *     The name of the font in use by the given terminal.
  */
-const char* guac_terminal_font_name(guac_terminal* terminal);
+const char* guac_terminal_get_font_name(guac_terminal* terminal);
 
 /**
  * Returns the font size currently in use by the given terminal.
@@ -945,7 +945,7 @@ const char* guac_terminal_font_name(guac_terminal* terminal);
  * @return
  *     The size of the font in use by the given terminal.
  */
-int guac_terminal_font_size(guac_terminal* terminal);
+int guac_terminal_get_font_size(guac_terminal* terminal);
 
 /**
  * Returns the current state of the mod_ctrl flag in the given terminal.
@@ -956,6 +956,6 @@ int guac_terminal_font_size(guac_terminal* terminal);
  * @return
  *     The current state of the mod_ctrl flag.
  */
-int guac_terminal_mod_ctrl(guac_terminal* terminal);
+int guac_terminal_get_mod_ctrl(guac_terminal* terminal);
 
 #endif
