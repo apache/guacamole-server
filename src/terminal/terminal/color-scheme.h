@@ -23,7 +23,7 @@
 /**
  * Definitions and functions related to color scheme handling.
  *
- * @file color_scheme.h
+ * @file color-scheme.h
  */
 
 #include "config.h"

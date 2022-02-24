@@ -24,7 +24,7 @@
 /**
  * Function definitions for terminal event handlers.
  *
- * @file terminal_handlers.h
+ * @file terminal-handlers.h
  */
 
 #include "config.h"

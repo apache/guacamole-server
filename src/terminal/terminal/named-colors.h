@@ -23,7 +23,7 @@
 /**
  * Function definitions for operating on individual terminal colors.
  *
- * @file named_colors.h
+ * @file named-colors.h
  */
 
 #include "config.h"

@@ -31,37 +31,37 @@ lib_LTLIBRARIES = libguac-terminal.la
 libguac_terminalincdir = $(includedir)/guacamole/terminal
 
 noinst_HEADERS =             \
-    terminal/terminal_priv.h
+    terminal/terminal-priv.h
 
 libguac_terminalinc_HEADERS =    \
     terminal/buffer.h            \
-    terminal/char_mappings.h     \
+    terminal/char-mappings.h     \
     terminal/common.h            \
-    terminal/color_scheme.h      \
+    terminal/color-scheme.h      \
     terminal/display.h           \
-    terminal/named_colors.h      \
+    terminal/named-colors.h      \
     terminal/palette.h           \
     terminal/scrollbar.h         \
     terminal/select.h            \
     terminal/terminal.h          \
-    terminal/terminal_handlers.h \
+    terminal/terminal-handlers.h \
     terminal/types.h             \
     terminal/typescript.h        \
     terminal/xparsecolor.h
 
 libguac_terminal_la_SOURCES =   \
     buffer.c                    \
-    char_mappings.c             \
-    color_scheme.c              \
+    char-mappings.c             \
+    color-scheme.c              \
     common.c                    \
     display.c                   \
-    named_colors.c              \
+    named-colors.c              \
     palette.c                   \
     scrollbar.c                 \
     select.c                    \
     terminal.c                  \
-    terminal_handlers.c         \
-    terminal_stdin_stream.c     \
+    terminal-handlers.c         \
+    terminal-stdin-stream.c     \
     typescript.c                \
     xparsecolor.c
 

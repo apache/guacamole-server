@@ -19,7 +19,7 @@
 
 #include "config.h"
 
-#include "terminal/color_scheme.h"
+#include "terminal/color-scheme.h"
 #include "terminal/palette.h"
 #include "terminal/xparsecolor.h"
 

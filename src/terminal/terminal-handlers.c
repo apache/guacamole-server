@@ -19,11 +19,11 @@
 
 #include "config.h"
 
-#include "terminal/char_mappings.h"
+#include "terminal/char-mappings.h"
 #include "terminal/palette.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_handlers.h"
-#include "terminal/terminal_priv.h"
+#include "terminal/terminal-handlers.h"
+#include "terminal/terminal-priv.h"
 #include "terminal/types.h"
 #include "terminal/xparsecolor.h"
 

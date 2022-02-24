@@ -24,7 +24,7 @@
 /**
  * Graphics character mapping definitions.
  *
- * @file char_mappings.h
+ * @file char-mappings.h
  */
 
 #include "config.h"
