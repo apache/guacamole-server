@@ -17,12 +17,13 @@
  * under the License.
  */
 
-#include "config.h"
 
 #include "common/surface.h"
 #include "terminal/common.h"
 #include "terminal/display.h"
 #include "terminal/palette.h"
+#include "terminal/terminal.h"
+#include "terminal/terminal-priv.h"
 #include "terminal/types.h"
 
 #include <math.h>

@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef GUAC_TERMINAL_GET_COLOR_SCHEME_H
-#define GUAC_TERMINAL_GET_COLOR_SCHEME_H
+#ifndef GUAC_TERMINAL_COLOR_SCHEME_H
+#define GUAC_TERMINAL_COLOR_SCHEME_H
 
 /**
  * Definitions and functions related to color scheme handling.
@@ -26,9 +26,8 @@
  * @file color-scheme.h
  */
 
-#include "config.h"
 
-#include "terminal/palette.h"
+#include "palette.h"
 
 #include <guacamole/client.h>
 

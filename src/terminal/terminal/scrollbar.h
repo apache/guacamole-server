@@ -26,7 +26,6 @@
  * @file scrollbar.h
  */
 
-#include "config.h"
 
 #include <guacamole/client.h>
 #include <guacamole/layer.h>

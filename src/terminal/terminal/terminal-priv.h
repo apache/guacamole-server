@@ -22,7 +22,12 @@
 #define GUAC_TERMINAL_PRIV_H
 
 #include "common/clipboard.h"
-#include "terminal/terminal.h"
+#include "common/cursor.h"
+#include "buffer.h"
+#include "display.h"
+#include "scrollbar.h"
+#include "terminal.h"
+#include "typescript.h"
 
 struct guac_terminal {
 
@@ -441,6 +446,195 @@ struct guac_terminal {
     bool disable_copy;
 
 };
+
+/**
+ * Handles a scroll event received from the scrollbar associated with a
+ * terminal.
+ *
+ * @param scrollbar
+ *     The scrollbar that has been scrolled.
+ *
+ * @param value
+ *     The new value that should be stored within the scrollbar, and
+ *     represented within the terminal display.
+ */
+void guac_terminal_scroll_handler(guac_terminal_scrollbar* scrollbar, int value);
+
+/**
+ * Sets the given range of columns within the given row to the given
+ * character.
+ */
+void guac_terminal_set_columns(guac_terminal* terminal, int row,
+        int start_column, int end_column, guac_terminal_char* character);
+
+/**
+ * Acquires exclusive access to the terminal. Note that enforcing this
+ * exclusive access requires that ALL users of the terminal call this
+ * function before making further calls to the terminal.
+ */
+void guac_terminal_lock(guac_terminal* terminal);
+
+/**
+ * Releases exclusive access to the terminal.
+ */
+void guac_terminal_unlock(guac_terminal* terminal);
+
+/**
+ * Resets the state of the given terminal, as if it were just allocated.
+ */
+void guac_terminal_reset(guac_terminal* term);
+
+/**
+ * Sets the character at the given row and column to the specified value.
+ */
+int guac_terminal_set(guac_terminal* term, int row, int col, int codepoint);
+
+/**
+ * Clears the given region within a single row.
+ */
+int guac_terminal_clear_columns(guac_terminal* term,
+        int row, int start_col, int end_col);
+
+/**
+ * Clears the given region from right-to-left, top-to-bottom, replacing
+ * all characters with the current background color and attributes.
+ */
+int guac_terminal_clear_range(guac_terminal* term,
+        int start_row, int start_col,
+        int end_row, int end_col);
+
+/**
+ * Scrolls the terminal's current scroll region up by one row.
+ */
+int guac_terminal_scroll_up(guac_terminal* term,
+        int start_row, int end_row, int amount);
+
+/**
+ * Scrolls the terminal's current scroll region down by one row.
+ */
+int guac_terminal_scroll_down(guac_terminal* term,
+        int start_row, int end_row, int amount);
+
+/**
+ * Commits the current cursor location, updating the visible cursor
+ * on the screen.
+ */
+void guac_terminal_commit_cursor(guac_terminal* term);
+
+/**
+ * Scroll down the display by the given amount, replacing the new space with
+ * data from the buffer. If not enough data is available, the maximum
+ * amount will be scrolled.
+ */
+void guac_terminal_scroll_display_down(guac_terminal* terminal, int amount);
+
+/**
+ * Scroll up the display by the given amount, replacing the new space with data
+ * from either the buffer or the terminal buffer.  If not enough data is
+ * available, the maximum amount will be scrolled.
+ */
+void guac_terminal_scroll_display_up(guac_terminal* terminal, int amount);
+
+/**
+ * Opens a new pipe stream, redirecting all output from the given terminal to
+ * that pipe stream. If a pipe stream is already open, that pipe stream will
+ * be flushed and closed prior to opening the new pipe stream.
+ *
+ * @param term
+ *     The terminal which should redirect output to a new pipe stream having
+ *     the given name.
+ *
+ * @param name
+ *     The name of the pipe stream to open.
+ *
+ * @param flags
+ *     A bitwise OR of all integer flags which should apply to the new pipe
+ *     stream.
+ *
+ *     @see GUAC_TERMINAL_PIPE_INTERPRET_OUTPUT
+ *     @see GUAC_TERMINAL_PIPE_AUTOFLUSH
+ */
+void guac_terminal_pipe_stream_open(guac_terminal* term, const char* name,
+        int flags);
+
+/**
+ * Writes a single byte of data to the pipe stream currently open and
+ * associated with the given terminal. The pipe stream must already have been
+ * opened via guac_terminal_pipe_stream_open(). If no pipe stream is currently
+ * open, this function has no effect. Data written through this function may
+ * be buffered.
+ *
+ * @param term
+ *     The terminal whose currently-open pipe stream should be written to.
+ *
+ * @param c
+ *     The byte of data to write to the pipe stream.
+ */
+void guac_terminal_pipe_stream_write(guac_terminal* term, char c);
+
+/**
+ * Flushes any data currently buffered for the currently-open pipe stream
+ * associated with the given terminal. The pipe stream must already have been
+ * opened via guac_terminal_pipe_stream_open(). If no pipe stream is currently
+ * open or no data is in the buffer, this function has no effect.
+ *
+ * @param term
+ *     The terminal whose pipe stream buffer should be flushed.
+ */
+void guac_terminal_pipe_stream_flush(guac_terminal* term);
+
+/**
+ * Closes the currently-open pipe stream associated with the given terminal,
+ * redirecting all output back to the terminal display.  Any data currently
+ * buffered for output to the pipe stream will be flushed prior to closure. The
+ * pipe stream must already have been opened via
+ * guac_terminal_pipe_stream_open(). If no pipe stream is currently open, this
+ * function has no effect.
+ *
+ * @param term
+ *     The terminal whose currently-open pipe stream should be closed.
+ */
+void guac_terminal_pipe_stream_close(guac_terminal* term);
+
+/**
+ * Sets a tabstop in the given column.
+ */
+void guac_terminal_set_tab(guac_terminal* term, int column);
+
+/**
+ * Removes the tabstop at the given column.
+ */
+void guac_terminal_unset_tab(guac_terminal* term, int column);
+
+/**
+ * Removes all tabstops.
+ */
+void guac_terminal_clear_tabs(guac_terminal* term);
+
+/**
+ * Given a column within the given terminal, returns the location of the
+ * next tabstop (or the rightmost character, if no more tabstops exist).
+ */
+int guac_terminal_next_tab(guac_terminal* term, int column);
+
+/**
+ * Copies the given range of columns to a new location, offset from
+ * the original by the given number of columns.
+ */
+void guac_terminal_copy_columns(guac_terminal* terminal, int row,
+        int start_column, int end_column, int offset);
+
+/**
+ * Copies the given range of rows to a new location, offset from the
+ * original by the given number of rows.
+ */
+void guac_terminal_copy_rows(guac_terminal* terminal,
+        int start_row, int end_row, int offset);
+
+/**
+ * Flushes all pending operations within the given guac_terminal.
+ */
+void guac_terminal_flush(guac_terminal* terminal);
 
 #endif
 

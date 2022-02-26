@@ -27,7 +27,6 @@
  * @file char-mappings.h
  */
 
-#include "config.h"
 
 /**
  * VT100 graphics mapping. Each entry is the corresponding Unicode codepoint

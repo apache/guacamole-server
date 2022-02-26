@@ -27,7 +27,6 @@
  * @file display.h
  */
 
-#include "config.h"
 
 #include "common/surface.h"
 #include "palette.h"

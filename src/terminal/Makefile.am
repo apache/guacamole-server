@@ -23,17 +23,14 @@
 # to you by the ASF under the Apache License, Version 2.0, as described above.
 #
 
-AUTOMAKE_OPTIONS = foreign 
+AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libguac-terminal.la
 
 libguac_terminalincdir = $(includedir)/guacamole/terminal
 
-noinst_HEADERS =             \
-    terminal/terminal-priv.h
-
-libguac_terminalinc_HEADERS =    \
+noinst_HEADERS =                 \
     terminal/buffer.h            \
     terminal/char-mappings.h     \
     terminal/common.h            \
@@ -43,11 +40,14 @@ libguac_terminalinc_HEADERS =    \
     terminal/palette.h           \
     terminal/scrollbar.h         \
     terminal/select.h            \
-    terminal/terminal.h          \
+    terminal/terminal-priv.h     \
     terminal/terminal-handlers.h \
     terminal/types.h             \
     terminal/typescript.h        \
     terminal/xparsecolor.h
+
+libguac_terminalinc_HEADERS =    \
+    terminal/terminal.h
 
 libguac_terminal_la_SOURCES =   \
     buffer.c                    \

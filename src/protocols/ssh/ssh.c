@@ -36,6 +36,8 @@
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 #include <guacamole/client.h>
+#include <guacamole/socket.h>
+#include <guacamole/timestamp.h>
 #include <guacamole/wol.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -98,7 +100,7 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
             guac_client_log(client, GUAC_LOG_DEBUG,
                     "Initial import failed: %s",
                     guac_common_ssh_key_error());
-  
+
             guac_client_log(client, GUAC_LOG_DEBUG,
                     "Re-attempting private key import (WITH passphrase)");
 
@@ -148,23 +150,23 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
  * A function used to generate a terminal prompt to gather additional
  * credentials from the guac_client during a connection, and using
  * the specified string to generate the prompt for the user.
- * 
+ *
  * @param client
  *     The guac_client object associated with the current connection
  *     where additional credentials are required.
- * 
+ *
  * @param cred_name
  *     The prompt text to display to the screen when prompting for the
  *     additional credentials.
- * 
- * @return 
+ *
+ * @return
  *     The string of credentials gathered from the user.
  */
 static char* guac_ssh_get_credential(guac_client *client, char* cred_name) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
     return guac_terminal_prompt(ssh_client->term, cred_name, false);
-    
+
 }
 
 void* ssh_input_thread(void* data) {
@@ -206,17 +208,17 @@ void* ssh_client_thread(void* data) {
     if (settings->wol_send_packet) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
                 "and pausing for %d seconds.", settings->wol_wait_time);
-        
+
         /* Send the Wake-on-LAN request. */
         if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
                 settings->wol_udp_port))
             return NULL;
-        
+
         /* If wait time is specified, sleep for that amount of time. */
         if (settings->wol_wait_time > 0)
             guac_timestamp_msleep(settings->wol_wait_time * 1000);
     }
-    
+
     /* Init SSH base libraries */
     if (guac_common_ssh_init(client)) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
@@ -360,7 +362,7 @@ void* ssh_client_thread(void* data) {
         if (!settings->sftp_disable_upload)
             guac_terminal_set_upload_path_handler(ssh_client->term,
                     guac_sftp_set_upload_path);
-        
+
         if (!settings->sftp_disable_download)
             guac_terminal_set_file_download_handler(ssh_client->term,
                     guac_sftp_download_file);

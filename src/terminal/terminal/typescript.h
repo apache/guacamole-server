@@ -28,7 +28,6 @@
  * @file typescript.h
  */
 
-#include "config.h"
 
 #include <guacamole/timestamp.h>
 

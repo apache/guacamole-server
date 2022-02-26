@@ -27,7 +27,6 @@
  * @file common.h
  */
 
-#include "config.h"
 #include "types.h"
 
 #include <stdbool.h>

@@ -26,8 +26,7 @@
  * @file named-colors.h
  */
 
-#include "config.h"
-#include "terminal/palette.h"
+#include "palette.h"
 
 /**
  * Searches for the color having the given name, storing that color within the

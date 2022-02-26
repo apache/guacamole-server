@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "terminal/types.h"
 
 #include <stdbool.h>

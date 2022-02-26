@@ -26,6 +26,7 @@
 #include <guacamole/socket.h>
 #include <guacamole/user.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

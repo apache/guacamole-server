@@ -27,7 +27,6 @@
  * @file select.h
  */
 
-#include "config.h"
 #include "terminal.h"
 
 #include <stdbool.h>

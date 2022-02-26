@@ -28,7 +28,6 @@
  * @file types.h
  */
 
-#include "config.h"
 #include "palette.h"
 
 #include <stdbool.h>

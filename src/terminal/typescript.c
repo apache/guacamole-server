@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "common/io.h"
 #include "terminal/typescript.h"
 
