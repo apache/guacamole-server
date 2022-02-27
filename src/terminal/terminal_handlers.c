@@ -23,6 +23,7 @@
 #include "terminal/palette.h"
 #include "terminal/terminal.h"
 #include "terminal/terminal_handlers.h"
+#include "terminal/ansi_escape_codes.h"
 #include "terminal/types.h"
 #include "terminal/xparsecolor.h"
 
@@ -33,6 +34,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <wchar.h>
+
+//#define GUAC_TERMINAL_MAX_COLORS 3
 
 /**
  * Response string sent when identification is requested.
@@ -300,28 +303,28 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
 
     switch (c) {
 
-        case '(':
+        case GUAC_TERMINAL_G0_CHARSET:
             term->char_handler = guac_terminal_g0_charset; 
             break;
 
-        case ')':
+        case GUAC_TERMINAL_G1_CHARSET:
             term->char_handler = guac_terminal_g1_charset; 
             break;
 
-        case ']':
+        case GUAC_TERMINAL_OSC:
             term->char_handler = guac_terminal_osc; 
             break;
 
-        case '[':
+        case GUAC_TERMINAL_CSI:
             term->char_handler = guac_terminal_csi; 
             break;
 
-        case '#':
+        case GUAC_TERMINAL_DEC:
             term->char_handler = guac_terminal_ctrl_func; 
             break;
 
         /* Save Cursor (DECSC) */
-        case '7':
+        case GUAC_TERMINAL_OSC_SAVE_CURSOR:
             term->saved_cursor_row = term->cursor_row;
             term->saved_cursor_col = term->cursor_col;
 
@@ -329,7 +332,7 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
             break;
 
         /* Restore Cursor (DECRC) */
-        case '8':
+        case GUAC_TERMINAL_OSC_RESTORE_CURSOR:
             guac_terminal_move_cursor(term,
                     term->saved_cursor_row,
                     term->saved_cursor_col);
@@ -338,38 +341,38 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
             break;
 
         /* Index (IND) */
-        case 'D':
+        case GUAC_TERMINAL_LINEFEED:
             guac_terminal_linefeed(term);
             term->char_handler = guac_terminal_echo; 
             break;
 
         /* Next Line (NEL) */
-        case 'E':
+        case GUAC_TERMINAL_NEWLINE:
             guac_terminal_move_cursor(term, term->cursor_row, 0);
             guac_terminal_linefeed(term);
             term->char_handler = guac_terminal_echo; 
             break;
 
         /* Set Tab (HTS) */
-        case 'H':
+        case GUAC_TERMINAL_TABSET:
             guac_terminal_set_tab(term, term->cursor_col);
             term->char_handler = guac_terminal_echo; 
             break;
 
         /* Reverse Linefeed */
-        case 'M':
+        case GUAC_TERMINAL_REVERSE_LINEFEED:
             guac_terminal_reverse_linefeed(term);
             term->char_handler = guac_terminal_echo; 
             break;
 
         /* DEC Identify */
-        case 'Z':
+        case GUAC_TERMINAL_PVT_ID:
             guac_terminal_send_string(term, GUAC_TERMINAL_VT102_ID);
             term->char_handler = guac_terminal_echo; 
             break;
 
         /* Reset */
-        case 'c':
+        case GUAC_TERMINAL_RESET:
             guac_terminal_reset(term);
             break;
 
@@ -396,10 +399,10 @@ static const int* __guac_terminal_get_char_mapping(char c) {
 
     /* Translate character specifier to actual mapping */
     switch (c) {
-        case 'B': return NULL;
-        case '0': return vt100_map;
-        case 'U': return null_map;
-        case 'K': return user_map;
+        case GUAC_TERMINAL_DEFAULT_MAPPING: return NULL;
+        case GUAC_TERMINAL_VT100: return vt100_map;
+        case GUAC_TERMINAL_NULL: return null_map;
+        case GUAC_TERMINAL_USER: return user_map;
     }
 
     /* Default to Unicode */
@@ -429,7 +432,7 @@ int guac_terminal_g1_charset(guac_terminal* term, unsigned char c) {
  */
 static bool* __guac_terminal_get_flag(guac_terminal* term, int num, char private_mode) {
 
-    if (private_mode == '?') {
+    if (private_mode == GUAC_TERMINAL_PVT_MODE) {
         switch (num) {
             case 1:  return &(term->application_cursor_keys); /* DECCKM */
             case 25: return &(term->cursor_visible); /* DECTECM */
@@ -438,8 +441,8 @@ static bool* __guac_terminal_get_flag(guac_terminal* term, int num, char private
 
     else if (private_mode == 0) {
         switch (num) {
-            case 4:  return &(term->insert_mode); /* DECIM */
-            case 20: return &(term->automatic_carriage_return); /* LF/NL */
+            case GUAC_TERMINAL_CSI_INSERT_MODE:  return &(term->insert_mode); /* DECIM */
+            case GUAC_TERMINAL_CSI_AUTOMATIC: return &(term->automatic_carriage_return); /* LF/NL */
         }
     }
 
@@ -479,9 +482,9 @@ static int guac_terminal_parse_xterm256_rgb(int argc, const int* argv,
     int blue  = argv[2];
 
     /* Ignore if components are out of range */
-    if (   red   < 0 || red   > 255
-        || green < 0 || green > 255
-        || blue  < 0 || blue  > 255)
+    if (   red   < 0 || red   > GUAC_TERMINAL_MAX_COLOR_RANGE
+        || green < 0 || green > GUAC_TERMINAL_MAX_COLOR_RANGE
+        || blue  < 0 || blue  > GUAC_TERMINAL_MAX_COLOR_RANGE)
         return 3;
 
     /* Store RGB components */
@@ -617,7 +620,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
         bool* flag;
 
         /* At most 16 parameters */
-        if (argc < 16) {
+        if (argc < GUAC_TERMINAL_CSI_MAX_ARGUMENTS) {
 
             /* Finish parameter */
             argv_buffer[argv_length] = 0;
@@ -632,7 +635,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
         switch (c) {
 
             /* @: Insert characters (scroll right) */
-            case '@':
+            case GUAC_TERMINAL_CSI_BLANK_CHARS:
 
                 amount = argv[0];
                 if (amount == 0) amount = 1;
@@ -650,7 +653,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* A: Move up */
-            case 'A':
+            case GUAC_TERMINAL_CSI_CURSOR_UP:
 
                 /* Get move amount */
                 amount = argv[0];
@@ -664,8 +667,8 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* B: Move down */
-            case 'e':
-            case 'B':
+            case GUAC_TERMINAL_CSI_ROW_DOWN:
+            case GUAC_TERMINAL_CSI_CURSOR_DOWN:
 
                 /* Get move amount */
                 amount = argv[0];
@@ -679,8 +682,8 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* C: Move right */
-            case 'a':
-            case 'C':
+            case GUAC_TERMINAL_CSI_COLUMN_RIGHT:
+            case GUAC_TERMINAL_CSI_CURSOR_RIGHT:
 
                 /* Get move amount */
                 amount = argv[0];
@@ -694,7 +697,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* D: Move left */
-            case 'D':
+            case GUAC_TERMINAL_CSI_CURSOR_LEFT:
 
                 /* Get move amount */
                 amount = argv[0];
@@ -708,7 +711,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* E: Move cursor down given number rows, column 1 */
-            case 'E':
+            case GUAC_TERMINAL_CSI_CURSOR_DOWN_COL_ONE:
 
                 /* Get move amount */
                 amount = argv[0];
@@ -722,7 +725,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* F: Move cursor up given number rows, column 1 */
-            case 'F':
+            case GUAC_TERMINAL_CSI_CURSOR_UP_COL_ONE:
 
                 /* Get move amount */
                 amount = argv[0];
@@ -736,15 +739,15 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* G: Move cursor, current row */
-            case '`':
-            case 'G':
+            case GUAC_TERMINAL_CSI_MOVE_HORIZONTAL:
+            case GUAC_TERMINAL_CSI_MOVE_TO_COLUMN:
                 col = argv[0]; if (col != 0) col--;
                 guac_terminal_move_cursor(term, term->cursor_row, col);
                 break;
 
             /* H: Move cursor */
-            case 'f':
-            case 'H':
+            case GUAC_TERMINAL_CSI_MOVE_CURSOR_ANYWHERE:
+            case GUAC_TERMINAL_CSI_MOVE_CURSOR:
 
                 row = argv[0]; if (row != 0) row--;
                 col = argv[1]; if (col != 0) col--;
@@ -753,7 +756,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* J: Erase display */
-            case 'J':
+            case GUAC_TERMINAL_CSI_ERASE_DISPLAY:
  
                 /* Erase from cursor to end of display */
                 if (argv[0] == 0)
@@ -762,20 +765,20 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                             term->term_height-1, term->term_width-1);
                 
                 /* Erase from start to cursor */
-                else if (argv[0] == 1)
+                else if (argv[0] == GUAC_TERMINAL_ERASE_DISPLAY_UPTO)
                     guac_terminal_clear_range(term,
                             0, 0,
                             term->cursor_row, term->cursor_col);
 
                 /* Entire screen */
-                else if (argv[0] == 2 || argv[0] == 3)
+                else if (argv[0] == GUAC_TERMINAL_ERASE_DISPLAY || argv[0] == GUAC_TERMINAL_ERASE_SCROLLBACK)
                     guac_terminal_clear_range(term,
                             0, 0, term->term_height - 1, term->term_width - 1);
 
                 break;
 
             /* K: Erase line */
-            case 'K':
+            case GUAC_TERMINAL_CSI_ERASE_LINE:
 
                 /* Erase from cursor to end of line */
                 if (argv[0] == 0)
@@ -783,19 +786,19 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                             term->cursor_col, term->term_width - 1);
 
                 /* Erase from start to cursor */
-                else if (argv[0] == 1)
+                else if (argv[0] == GUAC_TERMINAL_ERASE_LINE_UPTO)
                     guac_terminal_clear_columns(term, term->cursor_row,
                             0, term->cursor_col);
 
                 /* Erase line */
-                else if (argv[0] == 2)
+                else if (argv[0] == GUAC_TERMINAL_ERASE_WHOLE_LINE)
                     guac_terminal_clear_columns(term, term->cursor_row,
                             0, term->term_width - 1);
 
                 break;
 
             /* L: Insert blank lines (scroll down) */
-            case 'L':
+            case GUAC_TERMINAL_CSI_INSERT_LINES:
 
                 amount = argv[0];
                 if (amount == 0) amount = 1;
@@ -806,7 +809,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* M: Delete lines (scroll up) */
-            case 'M':
+            case GUAC_TERMINAL_CSI_DELETE_LINES:
 
                 amount = argv[0];
                 if (amount == 0) amount = 1;
@@ -817,7 +820,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* P: Delete characters (scroll left) */
-            case 'P':
+            case GUAC_TERMINAL_CSI_DELETE_CHARS:
 
                 amount = argv[0];
                 if (amount == 0) amount = 1;
@@ -835,7 +838,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* X: Erase characters (no scroll) */
-            case 'X':
+            case GUAC_TERMINAL_CSI_ERASE_CHARS:
 
                 amount = argv[0];
                 if (amount == 0) amount = 1;
@@ -847,37 +850,37 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* ]: Linux Private CSI */
-            case ']':
+            case GUAC_TERMINAL_LINUX_PRIVATE_CSI:
                 /* Explicitly ignored */
                 break;
 
             /* c: Identify */
-            case 'c':
+            case GUAC_TERMINAL_CSI_DISPLAY_ANSWER:
                 if (argv[0] == 0 && private_mode_character == 0)
                     guac_terminal_send_string(term, GUAC_TERMINAL_VT102_ID);
                 break;
 
             /* d: Move cursor, current col */
-            case 'd':
+            case GUAC_TERMINAL_CSI_CHANGE_ROW:
                 row = argv[0]; if (row != 0) row--;
                 guac_terminal_move_cursor(term, row, term->cursor_col);
                 break;
 
             /* g: Clear tab */
-            case 'g':
+            case GUAC_TERMINAL_CSI_CLEAR_TABSTOP:
 
                 /* Clear tab at current location */
                 if (argv[0] == 0)
                     guac_terminal_unset_tab(term, term->cursor_col);
 
                 /* Clear all tabs */
-                else if (argv[0] == 3)
+                else if (argv[0] == GUAC_TERMINAL_CLEAR_ALL_TABSTOPS)
                     guac_terminal_clear_tabs(term);
 
                 break;
 
             /* h: Set Mode */
-            case 'h':
+            case GUAC_TERMINAL_CSI_SET_MODE:
              
                 /* Look up flag and set */ 
                 flag = __guac_terminal_get_flag(term, argv[0], private_mode_character);
@@ -887,7 +890,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* l: Reset Mode */
-            case 'l':
+            case GUAC_TERMINAL_CSI_RESET_MODE:
               
                 /* Look up flag and clear */ 
                 flag = __guac_terminal_get_flag(term, argv[0], private_mode_character);
@@ -897,7 +900,7 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* m: Set graphics rendition */
-            case 'm':
+            case GUAC_TERMINAL_CSI_GRAPHICS_RENDITION:
 
                 for (i=0; i<argc; i++) {
 
@@ -908,44 +911,46 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                         term->current_attributes = term->default_char.attributes;
 
                     /* Bold */
-                    else if (value == 1)
+                    else if (value == GUAC_TERMINAL_CSI_BOLD_TEXT)
                         term->current_attributes.bold = true;
 
                     /* Faint (low intensity) */
-                    else if (value == 2)
+                    else if (value == GUAC_TERMINAL_FAINT)
                         term->current_attributes.half_bright = true;
 
                     /* Underscore on */
-                    else if (value == 4)
+                    else if (value == GUAC_TERMINAL_UNDERLINE_ON)
                         term->current_attributes.underscore = true;
 
                     /* Reverse video */
-                    else if (value == 7)
+                    else if (value == GUAC_TERMINAL_REVERSE_VIDEO)
                         term->current_attributes.reverse = true;
 
                     /* Normal intensity (not bold) */
-                    else if (value == 21 || value == 22) {
+                    else if (value == GUAC_TERMINAL_DOUBLY_UNDERLINED || 
+                            value == GUAC_TERMINAL_NORMAL_INTENSITY) {
                         term->current_attributes.bold = false;
                         term->current_attributes.half_bright = false;
                     }
 
                     /* Reset underscore */
-                    else if (value == 24)
+                    else if (value == GUAC_TERMINAL_UNDERLINE_OFF)
                         term->current_attributes.underscore = false;
 
                     /* Reset reverse video */
-                    else if (value == 27)
+                    else if (value == GUAC_TERMINAL_REVERSE_VIDEO_OFF)
                         term->current_attributes.reverse = false;
 
                     /* Foreground */
-                    else if (value >= 30 && value <= 37)
+                    else if (value >= GUAC_TERMINAL_BLACK_FOREGROUND && 
+                            value <= GUAC_TERMINAL_WHITE_FOREGROUND)
                         guac_terminal_display_lookup_color(term->display,
                                 value - 30,
                                 &term->current_attributes.foreground);
 
                     /* Underscore on, default foreground OR 256-color
                      * foreground */
-                    else if (value == 38) {
+                    else if (value == GUAC_TERMINAL_DEF_FOREGROUND_UNDERSCORE_ON) {
 
                         /* Attempt to set foreground with 256-color entry */
                         int xterm256_length =
@@ -968,37 +973,40 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                     }
 
                     /* Underscore off, default foreground */
-                    else if (value == 39) {
+                    else if (value == GUAC_TERMINAL_DEF_FOREGROUND_UNDERSCORE_OFF) {
                         term->current_attributes.underscore = false;
                         term->current_attributes.foreground =
                             term->default_char.attributes.foreground;
                     }
 
                     /* Background */
-                    else if (value >= 40 && value <= 47)
+                    else if (value >= GUAC_TERMINAL_BLACK_BACKGROUND && 
+                            value <= GUAC_TERMINAL_WHITE_BACKGROUND)
                         guac_terminal_display_lookup_color(term->display,
                                 value - 40,
                                 &term->current_attributes.background);
 
                     /* 256-color background */
-                    else if (value == 48)
+                    else if (value == GUAC_TERMINAL_SET_BACKGROUND)
                         i += guac_terminal_parse_xterm256(term,
                                 argc - i - 1, &argv[i + 1],
                                 &term->current_attributes.background);
 
                     /* Reset background */
-                    else if (value == 49)
+                    else if (value == GUAC_TERMINAL_DEFAULT_BACKGROUND)
                         term->current_attributes.background =
                             term->default_char.attributes.background;
 
                     /* Intense foreground */
-                    else if (value >= 90 && value <= 97)
+                    else if (value >= GUAC_TERMINAL_BRIGHT_FOREGROUND_LOW && 
+                            value <= GUAC_TERMINAL_BRIGHT_FOREGROUND_HIGH)
                         guac_terminal_display_lookup_color(term->display,
                                 value - 90 + GUAC_TERMINAL_FIRST_INTENSE,
                                 &term->current_attributes.foreground);
 
                     /* Intense background */
-                    else if (value >= 100 && value <= 107)
+                    else if (value >= GUAC_TERMINAL_BRIGHT_BACKGROUND_LOW && 
+                                value <= GUAC_TERMINAL_BRIGHT_BACKGROUND_HIGH)
                         guac_terminal_display_lookup_color(term->display,
                                 value - 100 + GUAC_TERMINAL_FIRST_INTENSE,
                                 &term->current_attributes.background);
@@ -1008,28 +1016,31 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* n: Status report */
-            case 'n':
+            case GUAC_TERMINAL_CSI_STATUS_REPORT:
 
                 /* Device status report */
-                if (argv[0] == 5 && private_mode_character == 0)
+                if (argv[0] == GUAC_TERMINAL_DEVICE_STATUS_REPORT && 
+                        private_mode_character == 0)
                     guac_terminal_send_string(term, GUAC_TERMINAL_OK);
 
                 /* Cursor position report */
-                else if (argv[0] == 6 && private_mode_character == 0)
-                    guac_terminal_sendf(term, "\x1B[%i;%iR", term->cursor_row+1, term->cursor_col+1);
+                else if (argv[0] == GUAC_TERMINAL_CURSOR_POSITION_REPORT && 
+                            private_mode_character == 0)
+                    guac_terminal_sendf(term, "\x1B[%i;%iR", term->cursor_row+1, 
+                        term->cursor_col+1);
 
                 break;
 
             /* q: Set keyboard LEDs */
-            case 'q':
+            case GUAC_TERMINAL_CSI_KEYBOARD_LED:
                 /* Explicitly ignored */
                 break;
 
             /* r: Set scrolling region */
-            case 'r':
+            case GUAC_TERMINAL_CSI_SET_SCROLLING_REGION:
 
                 /* If parameters given, set region */
-                if (argc == 2) {
+                if (argc == GUAC_TERMINAL_SCROLLING_REGION_PARAMS) {
                     term->scroll_start = argv[0]-1;
                     term->scroll_end   = argv[1]-1;
                 }
@@ -1043,13 +1054,13 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 break;
 
             /* Save Cursor */
-            case 's':
+            case GUAC_TERMINAL_SAVE_CURSOR_LOCATION:
                 term->saved_cursor_row = term->cursor_row;
                 term->saved_cursor_col = term->cursor_col;
                 break;
 
             /* Restore Cursor */
-            case 'u':
+            case GUAC_TERMINAL_RESTORE_CURSOR_LOCATION:
                 guac_terminal_move_cursor(term,
                         term->saved_cursor_row,
                         term->saved_cursor_col);
@@ -1339,7 +1350,7 @@ int guac_terminal_xterm_palette(guac_terminal* term, unsigned char c) {
 
         /* Append characters to color spec as long as available space is not
          * exceeded */
-        else if (color_spec_pos < 255) {
+        else if (color_spec_pos < GUAC_TERMINAL_MAX_COLOR_RANGE) {
             color_spec[color_spec_pos++] = c;
         }
 
@@ -1365,31 +1376,31 @@ int guac_terminal_osc(guac_terminal* term, unsigned char c) {
     else if (c == ';') {
 
         /* Download OSC */
-        if (operation == 482200)
+        if (operation == GUAC_TERMINAL_DOWNLOAD_INIT)
             term->char_handler = guac_terminal_download;
 
         /* Set upload directory OSC */
-        else if (operation == 482201)
+        else if (operation == GUAC_TERMINAL_UPLOAD_DIRECTORY)
             term->char_handler = guac_terminal_set_directory;
 
         /* Open and redirect output to pipe stream OSC */
-        else if (operation == 482202)
+        else if (operation == GUAC_TERMINAL_PIPESTREAM_REDIRECT)
             term->char_handler = guac_terminal_open_pipe_stream;
 
         /* Close pipe stream OSC */
-        else if (operation == 482203)
+        else if (operation == GUAC_TERMINAL_TERMINAL_REDIRECT)
             term->char_handler = guac_terminal_close_pipe_stream;
 
         /* Set scrollback size OSC */
-        else if (operation == 482204)
+        else if (operation == GUAC_TERMINAL_RESIZE_SCROLLBACK)
             term->char_handler = guac_terminal_set_scrollback;
 
         /* Set window title OSC */
-        else if (operation == 0 || operation == 2)
+        else if (operation == 0 || operation == GUAC_TERMINAL_SET_WINDOW_TITLE)
             term->char_handler = guac_terminal_window_title;
 
         /* xterm 256-color palette redefinition */
-        else if (operation == 4)
+        else if (operation == GUAC_TERMINAL_SET_COLOR)
             term->char_handler = guac_terminal_xterm_palette;
 
         /* Reset parameter for next OSC */
@@ -1423,7 +1434,7 @@ int guac_terminal_ctrl_func(guac_terminal* term, unsigned char c) {
     switch (c) {
 
         /* Alignment test (fill screen with E's) */
-        case '8':
+        case GUAC_TERMINAL_ALIGNMENT_TEST:
 
             for (row=0; row<term->term_height; row++)
                 guac_terminal_set_columns(term, row, 0, term->term_width-1, &guac_char);
