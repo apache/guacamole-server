@@ -59,6 +59,7 @@ libguacinc_HEADERS =                  \
     guacamole/protocol.h              \
     guacamole/protocol-constants.h    \
     guacamole/protocol-types.h        \
+    guacamole/recording.h             \
     guacamole/socket-constants.h      \
     guacamole/socket.h                \
     guacamole/socket-fntypes.h        \
@@ -99,6 +100,7 @@ libguac_la_SOURCES =   \
     pool.c             \
     protocol.c         \
     raw_encoder.c      \
+    recording.c             \
     socket.c           \
     socket-broadcast.c \
     socket-fd.c        \

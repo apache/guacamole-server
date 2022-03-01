@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include "common/recording.h"
 #include "client.h"
 #include "user.h"
 #include "vnc.h"
@@ -35,6 +34,7 @@
 #endif
 
 #include <guacamole/client.h>
+#include <guacamole/recording.h>
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -126,7 +126,7 @@ int guac_vnc_client_free_handler(guac_client* client) {
 
     /* Clean up recording, if in progress */
     if (vnc_client->recording != NULL)
-        guac_common_recording_free(vnc_client->recording);
+        guac_recording_free(vnc_client->recording);
 
     /* Free clipboard */
     if (vnc_client->clipboard != NULL)

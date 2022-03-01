@@ -21,10 +21,10 @@
 #define GUAC_TELNET_H
 
 #include "config.h"
-#include "common/recording.h"
 #include "settings.h"
 #include "terminal/terminal.h"
 
+#include <guacamole/recording.h>
 #include <libtelnet.h>
 
 #include <stdint.h>
@@ -75,7 +75,7 @@ typedef struct guac_telnet_client {
      * The in-progress session recording, or NULL if no recording is in
      * progress.
      */
-    guac_common_recording* recording;
+    guac_recording* recording;
 
 } guac_telnet_client;
 

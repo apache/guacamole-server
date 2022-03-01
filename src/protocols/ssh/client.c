@@ -21,7 +21,6 @@
 
 #include "argv.h"
 #include "client.h"
-#include "common/recording.h"
 #include "common-ssh/sftp.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
@@ -34,6 +33,7 @@
 
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
+#include <guacamole/recording.h>
 
 int guac_client_init(guac_client* client) {
 
@@ -99,7 +99,7 @@ int guac_ssh_client_free_handler(guac_client* client) {
 
     /* Clean up recording, if in progress */
     if (ssh_client->recording != NULL)
-        guac_common_recording_free(ssh_client->recording);
+        guac_recording_free(ssh_client->recording);
 
     /* Free interactive SSH session */
     if (ssh_client->session != NULL)

@@ -17,10 +17,16 @@
  * under the License.
  */
 
-#ifndef GUAC_COMMON_RECORDING_H
-#define GUAC_COMMON_RECORDING_H
+#ifndef GUAC_RECORDING_H
+#define GUAC_RECORDING_H
 
 #include <guacamole/client.h>
+
+/**
+ * Provides functions and structures to be use for session recording.
+ *
+ * @file recording.h
+ */
 
 /**
  * The maximum numeric value allowed for the .1, .2, .3, etc. suffix appended
@@ -47,7 +53,7 @@
  * that output Guacamole instructions may be dynamically intercepted and
  * written to a file.
  */
-typedef struct guac_common_recording {
+typedef struct guac_recording {
 
     /**
      * The guac_socket which writes directly to the recording file, rather than
@@ -89,7 +95,7 @@ typedef struct guac_common_recording {
      */
     int include_keys;
 
-} guac_common_recording;
+} guac_recording;
 
 /**
  * Replaces the socket of the given client such that all further Guacamole
@@ -143,11 +149,11 @@ typedef struct guac_common_recording {
  *     passwords, credit card numbers, etc.
  *
  * @return
- *     A new guac_common_recording structure representing the in-progress
+ *     A new guac_recording structure representing the in-progress
  *     recording if the recording file has been successfully created and a
  *     recording will be written, NULL otherwise.
  */
-guac_common_recording* guac_common_recording_create(guac_client* client,
+guac_recording* guac_recording_create(guac_client* client,
         const char* path, const char* name, int create_path,
         int include_output, int include_mouse, int include_touch,
         int include_keys);
@@ -159,15 +165,15 @@ guac_common_recording* guac_common_recording_create(guac_client* client,
  * freed when the guac_client is freed.
  *
  * @param recording
- *     The guac_common_recording to free.
+ *     The guac_recording to free.
  */
-void guac_common_recording_free(guac_common_recording* recording);
+void guac_recording_free(guac_recording* recording);
 
 /**
  * Reports the current mouse position and button state within the recording.
  *
  * @param recording
- *     The guac_common_recording associated with the mouse that has moved.
+ *     The guac_recording associated with the mouse that has moved.
  *
  * @param x
  *     The new X coordinate of the mouse cursor, in pixels.
@@ -188,14 +194,14 @@ void guac_common_recording_free(guac_common_recording* recording);
  *     @see GUAC_CLIENT_MOUSE_SCROLL_UP
  *     @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
  */
-void guac_common_recording_report_mouse(guac_common_recording* recording,
+void guac_recording_report_mouse(guac_recording* recording,
         int x, int y, int button_mask);
 
 /**
  * Reports the current state of a touch contact within the recording.
  *
  * @param recording
- *     The guac_common_recording associated with the touch contact that
+ *     The guac_recording associated with the touch contact that
  *     has changed state.
  *
  * @param id
@@ -225,7 +231,7 @@ void guac_common_recording_report_mouse(guac_common_recording* recording,
  *     (the touch has been lifted) and 1 is maximum force (the maximum amount
  *     of force representable by the device).
  */
-void guac_common_recording_report_touch(guac_common_recording* recording,
+void guac_recording_report_touch(guac_recording* recording,
         int id, int x, int y, int x_radius, int y_radius,
         double angle, double force);
 
@@ -233,7 +239,7 @@ void guac_common_recording_report_touch(guac_common_recording* recording,
  * Reports a change in the state of an individual key within the recording.
  *
  * @param recording
- *     The guac_common_recording associated with the key that was pressed or
+ *     The guac_recording associated with the key that was pressed or
  *     released.
  *
  * @param keysym
@@ -243,7 +249,7 @@ void guac_common_recording_report_touch(guac_common_recording* recording,
  *     Non-zero if the key represented by the given keysym is currently
  *     pressed, zero if it is released.
  */
-void guac_common_recording_report_key(guac_common_recording* recording,
+void guac_recording_report_key(guac_recording* recording,
         int keysym, int pressed);
 
 #endif

@@ -21,11 +21,11 @@
 
 #include "common/cursor.h"
 #include "common/display.h"
-#include "common/recording.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
 
 #include <guacamole/client.h>
+#include <guacamole/recording.h>
 #include <guacamole/user.h>
 #include <libssh2.h>
 
@@ -43,7 +43,7 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     /* Report mouse position within recording */
     if (ssh_client->recording != NULL)
-        guac_common_recording_report_mouse(ssh_client->recording, x, y, mask);
+        guac_recording_report_mouse(ssh_client->recording, x, y, mask);
 
     /* Send mouse event */
     guac_terminal_send_mouse(term, user, x, y, mask);
@@ -58,7 +58,7 @@ int guac_ssh_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     /* Report key state within recording */
     if (ssh_client->recording != NULL)
-        guac_common_recording_report_key(ssh_client->recording,
+        guac_recording_report_key(ssh_client->recording,
                 keysym, pressed);
 
     /* Skip if terminal not yet ready */
