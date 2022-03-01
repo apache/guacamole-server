@@ -241,7 +241,6 @@ void* guac_kubernetes_client_thread(void* data) {
 
     /* Create terminal options with required parameters */
     guac_terminal_options* options = guac_terminal_options_create(
-            client, kubernetes_client->clipboard,
             settings->width, settings->height, settings->resolution);
 
     /* Set optional parameters */
@@ -253,7 +252,7 @@ void* guac_kubernetes_client_thread(void* data) {
     options->backspace = settings->backspace;
 
     /* Create terminal */
-    kubernetes_client->term = guac_terminal_create(options);
+    kubernetes_client->term = guac_terminal_create(client, options);
 
     /* Free options struct now that it's been used */
     free(options);
@@ -414,8 +413,8 @@ void guac_kubernetes_force_redraw(guac_client* client) {
 
     /* Get current terminal dimensions */
     guac_terminal* term = kubernetes_client->term;
-    int rows = term->term_height;
-    int columns = term->term_width;
+    int rows = guac_terminal_get_rows(term);
+    int columns = guac_terminal_get_columns(term);
 
     /* Force a redraw by increasing the terminal size by one character in
      * each dimension and then resizing it back to normal (the same technique

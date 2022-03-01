@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 
 #include "terminal/buffer.h"
 #include "terminal/common.h"

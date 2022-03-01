@@ -108,8 +108,8 @@ int guac_telnet_user_leave_handler(guac_user* user) {
     guac_telnet_client* telnet_client =
         (guac_telnet_client*) user->client->data;
 
-    /* Update shared cursor state */
-    guac_common_cursor_remove_user(telnet_client->term->cursor, user);
+    /* Remove the user from the terminal */
+    guac_terminal_remove_user(telnet_client->term, user);
 
     /* Free settings if not owner (owner settings will be freed with client) */
     if (!user->owner) {

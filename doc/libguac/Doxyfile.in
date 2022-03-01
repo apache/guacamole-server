@@ -52,9 +52,9 @@ SHOW_INCLUDE_FILES    = NO
 CASE_SENSE_NAMES     = YES
 EXCLUDE_SYMBOLS      = __* guac_palette*
 FILE_PATTERNS        = *.h
-INPUT                = ../src/libguac/guacamole
+INPUT                = ../../src/libguac/guacamole
 JAVADOC_AUTOBRIEF    = YES
-STRIP_FROM_PATH      = ../src/libguac
+STRIP_FROM_PATH      = ../../src/libguac
 TAB_SIZE             = 4
 TYPEDEF_HIDES_STRUCT = YES
 

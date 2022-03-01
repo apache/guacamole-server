@@ -23,16 +23,16 @@
 # to you by the ASF under the Apache License, Version 2.0, as described above.
 #
 
-AUTOMAKE_OPTIONS = foreign 
+AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
-lib_LTLIBRARIES = libguac_terminal.la
+lib_LTLIBRARIES = libguac-terminal.la
 
 libguac_terminalincdir = $(includedir)/guacamole/terminal
 
-libguac_terminalinc_HEADERS =    \
+noinst_HEADERS =                 \
     terminal/buffer.h            \
-    terminal/char_mappings.h     \
+    terminal/char-mappings.h     \
     terminal/common.h            \
     terminal/color-scheme.h      \
     terminal/display.h           \
@@ -40,15 +40,18 @@ libguac_terminalinc_HEADERS =    \
     terminal/palette.h           \
     terminal/scrollbar.h         \
     terminal/select.h            \
-    terminal/terminal.h          \
-    terminal/terminal_handlers.h \
+    terminal/terminal-priv.h     \
+    terminal/terminal-handlers.h \
     terminal/types.h             \
     terminal/typescript.h        \
     terminal/xparsecolor.h
 
+libguac_terminalinc_HEADERS =    \
+    terminal/terminal.h
+
 libguac_terminal_la_SOURCES =   \
     buffer.c                    \
-    char_mappings.c             \
+    char-mappings.c             \
     color-scheme.c              \
     common.c                    \
     display.c                   \
@@ -57,7 +60,7 @@ libguac_terminal_la_SOURCES =   \
     scrollbar.c                 \
     select.c                    \
     terminal.c                  \
-    terminal_handlers.c         \
+    terminal-handlers.c         \
     terminal-stdin-stream.c     \
     typescript.c                \
     xparsecolor.c
@@ -70,6 +73,7 @@ libguac_terminal_la_CFLAGS = \
     @PANGOCAIRO_CFLAGS@
 
 libguac_terminal_la_LIBADD = \
+    @COMMON_LTLIB@           \
     @LIBGUAC_LTLIB@
 
 libguac_terminal_la_LDFLAGS = \

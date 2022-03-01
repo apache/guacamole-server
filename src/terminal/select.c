@@ -17,13 +17,13 @@
  * under the License.
  */
 
-#include "config.h"
 
 #include "common/clipboard.h"
 #include "terminal/buffer.h"
 #include "terminal/display.h"
 #include "terminal/select.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal-priv.h"
 #include "terminal/types.h"
 
 #include <guacamole/client.h>

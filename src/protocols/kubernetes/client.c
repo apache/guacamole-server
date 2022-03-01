@@ -19,7 +19,6 @@
 
 #include "argv.h"
 #include "client.h"
-#include "common/clipboard.h"
 #include "kubernetes.h"
 #include "settings.h"
 #include "user.h"
@@ -95,9 +94,6 @@ int guac_client_init(guac_client* client) {
     guac_kubernetes_client* kubernetes_client = calloc(1, sizeof(guac_kubernetes_client));
     client->data = kubernetes_client;
 
-    /* Init clipboard */
-    kubernetes_client->clipboard = guac_common_clipboard_alloc(GUAC_KUBERNETES_CLIPBOARD_MAX_LENGTH);
-
     /* Set handlers */
     client->join_handler = guac_kubernetes_user_join_handler;
     client->free_handler = guac_kubernetes_client_free_handler;
@@ -133,7 +129,6 @@ int guac_kubernetes_client_free_handler(guac_client* client) {
     if (kubernetes_client->settings != NULL)
         guac_kubernetes_settings_free(kubernetes_client->settings);
 
-    guac_common_clipboard_free(kubernetes_client->clipboard);
     free(kubernetes_client);
     return 0;
 

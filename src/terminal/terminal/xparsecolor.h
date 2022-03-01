@@ -20,9 +20,14 @@
 #ifndef GUAC_TERMINAL_XPARSECOLOR_H
 #define GUAC_TERMINAL_XPARSECOLOR_H
 
-#include "config.h"
+/**
+ * Function definitions related to handling X11 color specs.
+ *
+ * @file xparsecolor.h
+ */
 
-#include "terminal/palette.h"
+
+#include "palette.h"
 
 /**
  * Parses an X11 color spec, as defined by Xlib's XParseColor(), storing the

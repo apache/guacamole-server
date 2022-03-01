@@ -17,9 +17,9 @@
  * under the License.
  */
 
-#include "config.h"
 #include "terminal/common.h"
 #include "terminal/terminal.h"
+#include "terminal/terminal-priv.h"
 
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>

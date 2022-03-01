@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "terminal/scrollbar.h"
 
 #include <guacamole/client.h>

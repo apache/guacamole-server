@@ -91,11 +91,6 @@ typedef struct guac_ssh_client {
     pthread_mutex_t term_channel_lock;
 
     /**
-     * The current clipboard contents.
-     */
-    guac_common_clipboard* clipboard;
-
-    /**
      * The terminal which will render all output from the SSH client.
      */
     guac_terminal* term;

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 
 #include "terminal/color-scheme.h"
 #include "terminal/palette.h"

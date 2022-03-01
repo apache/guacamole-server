@@ -53,8 +53,9 @@ int guac_kubernetes_argv_callback(guac_user* user, const char* mimetype,
     }
 
     /* Update Kubernetes terminal size */
-    guac_kubernetes_resize(client, terminal->term_height,
-            terminal->term_width);
+    guac_kubernetes_resize(client,
+            guac_terminal_get_rows(terminal),
+            guac_terminal_get_columns(terminal));
 
     return 0;
 
@@ -67,20 +68,20 @@ void* guac_kubernetes_send_current_argv(guac_user* user, void* data) {
 
     /* Send current color scheme */
     guac_user_stream_argv(user, user->socket, "text/plain",
-            GUAC_KUBERNETES_ARGV_COLOR_SCHEME, terminal->color_scheme);
+            GUAC_KUBERNETES_ARGV_COLOR_SCHEME,
+            guac_terminal_get_color_scheme(terminal));
 
     /* Send current font name */
     guac_user_stream_argv(user, user->socket, "text/plain",
-            GUAC_KUBERNETES_ARGV_FONT_NAME, terminal->font_name);
+            GUAC_KUBERNETES_ARGV_FONT_NAME,
+            guac_terminal_get_font_name(terminal));
 
     /* Send current font size */
     char font_size[64];
-    sprintf(font_size, "%i", terminal->font_size);
+    sprintf(font_size, "%i", guac_terminal_get_font_size(terminal));
     guac_user_stream_argv(user, user->socket, "text/plain",
             GUAC_KUBERNETES_ARGV_FONT_SIZE, font_size);
 
     return NULL;
 
-
 }
-

@@ -100,7 +100,10 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
     if (pressed && (
                 keysym == 0xFF13                  /* Pause */
              || keysym == 0xFF6B                  /* Break */
-             || (term->mod_ctrl && keysym == '0') /* Ctrl + 0 */
+             || (
+                    guac_terminal_get_mod_ctrl(term)
+                    && keysym == '0'
+                )                                 /* Ctrl + 0 */
        )) {
 
         /* Send IAC BRK */
@@ -132,8 +135,9 @@ int guac_telnet_user_size_handler(guac_user* user, int width, int height) {
 
     /* Update terminal window size if connected */
     if (telnet_client->telnet != NULL && telnet_client->naws_enabled)
-        guac_telnet_send_naws(telnet_client->telnet, terminal->term_width,
-                terminal->term_height);
+        guac_telnet_send_naws(telnet_client->telnet,
+                guac_terminal_get_columns(terminal),
+                guac_terminal_get_rows(terminal));
 
     return 0;
 }

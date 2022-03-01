@@ -88,7 +88,8 @@ int guac_ssh_user_size_handler(guac_user* user, int width, int height) {
     if (ssh_client->term_channel != NULL) {
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
         libssh2_channel_request_pty_size(ssh_client->term_channel,
-                terminal->term_width, terminal->term_height);
+                guac_terminal_get_columns(terminal),
+                guac_terminal_get_rows(terminal));
         pthread_mutex_unlock(&(ssh_client->term_channel_lock));
     }
 

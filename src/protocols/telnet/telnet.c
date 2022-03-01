@@ -26,6 +26,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/timestamp.h>
 #include <guacamole/wol.h>
 #include <libtelnet.h>
 
@@ -302,7 +303,9 @@ static void __guac_telnet_event_handler(telnet_t* telnet, telnet_event_t* event,
         case TELNET_EV_DO:
             if (event->neg.telopt == TELNET_TELOPT_NAWS) {
                 telnet_client->naws_enabled = 1;
-                guac_telnet_send_naws(telnet, telnet_client->term->term_width, telnet_client->term->term_height);
+                guac_telnet_send_naws(telnet,
+                        guac_terminal_get_columns(telnet_client->term),
+                        guac_terminal_get_rows(telnet_client->term));
             }
             break;
 
@@ -557,17 +560,17 @@ void* guac_telnet_client_thread(void* data) {
     pthread_t input_thread;
     char buffer[8192];
     int wait_result;
-    
+
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
                 "and pausing for %d seconds.", settings->wol_wait_time);
-        
+
         /* Send the Wake-on-LAN request. */
         if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
                 settings->wol_udp_port))
             return NULL;
-        
+
         /* If wait time is specified, sleep for that amount of time. */
         if (settings->wol_wait_time > 0)
             guac_timestamp_msleep(settings->wol_wait_time * 1000);
@@ -587,7 +590,6 @@ void* guac_telnet_client_thread(void* data) {
 
     /* Create terminal options with required parameters */
     guac_terminal_options* options = guac_terminal_options_create(
-            client, telnet_client->clipboard,
             settings->width, settings->height, settings->resolution);
 
     /* Set optional parameters */
@@ -599,7 +601,7 @@ void* guac_telnet_client_thread(void* data) {
     options->backspace = settings->backspace;
 
     /* Create terminal */
-    telnet_client->term = guac_terminal_create(options);
+    telnet_client->term = guac_terminal_create(client, options);
 
     /* Free options struct now that it's been used */
     free(options);

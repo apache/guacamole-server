@@ -103,7 +103,7 @@ int guac_vnc_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
     rfbClient* rfb_client = vnc_client->rfb_client;
 
-    char output_data[GUAC_VNC_CLIPBOARD_MAX_LENGTH];
+    char output_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
 
     const char* input = vnc_client->clipboard->buffer;
     char* output = output_data;
@@ -129,7 +129,7 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
     if (vnc_client->settings->disable_copy)
         return;
 
-    char received_data[GUAC_VNC_CLIPBOARD_MAX_LENGTH];
+    char received_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
 
     const char* input = text;
     char* output = received_data;

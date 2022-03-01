@@ -27,6 +27,7 @@
 #include <guacamole/user.h>
 
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,10 +55,12 @@ int guac_ssh_argv_callback(guac_user* user, const char* mimetype,
     }
 
     /* Update SSH pty size if connected */
+    int term_width = guac_terminal_get_columns(terminal);
+    int term_height = guac_terminal_get_rows(terminal);
     if (ssh_client->term_channel != NULL) {
         pthread_mutex_lock(&(ssh_client->term_channel_lock));
         libssh2_channel_request_pty_size(ssh_client->term_channel,
-                terminal->term_width, terminal->term_height);
+                term_width, term_height);
         pthread_mutex_unlock(&(ssh_client->term_channel_lock));
     }
 
@@ -72,15 +75,17 @@ void* guac_ssh_send_current_argv(guac_user* user, void* data) {
 
     /* Send current color scheme */
     guac_user_stream_argv(user, user->socket, "text/plain",
-            GUAC_SSH_ARGV_COLOR_SCHEME, terminal->color_scheme);
+            GUAC_SSH_ARGV_COLOR_SCHEME,
+            guac_terminal_get_color_scheme(terminal));
 
     /* Send current font name */
     guac_user_stream_argv(user, user->socket, "text/plain",
-            GUAC_SSH_ARGV_FONT_NAME, terminal->font_name);
+            GUAC_SSH_ARGV_FONT_NAME,
+            guac_terminal_get_font_name(terminal));
 
     /* Send current font size */
     char font_size[64];
-    sprintf(font_size, "%i", terminal->font_size);
+    sprintf(font_size, "%i", guac_terminal_get_font_size(terminal));
     guac_user_stream_argv(user, user->socket, "text/plain",
             GUAC_SSH_ARGV_FONT_SIZE, font_size);
 

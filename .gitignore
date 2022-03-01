@@ -44,7 +44,7 @@ configure
 stamp-h1
 
 # Generated docs
-doc/doxygen-output
+doc/*/doxygen-output
 
 # IDE metadata
 nbproject/

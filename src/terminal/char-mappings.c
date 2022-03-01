@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 
 const int vt100_map[] = {
     ' ',    '!',    '"',    '#',    '$',    '%',    '&',    '\'',   '(',    ')',    '*',    '+',    ',',    '-',    '.',    '/',

@@ -21,7 +21,13 @@
 #ifndef _GUAC_TERMINAL_BUFFER_H
 #define _GUAC_TERMINAL_BUFFER_H
 
-#include "config.h"
+/**
+ * Data structures and functions related to the terminal buffer.
+ *
+ * @file buffer.h
+ */
+
+
 
 #include "types.h"
 

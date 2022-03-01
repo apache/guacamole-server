@@ -21,7 +21,12 @@
 #ifndef _GUAC_TERMINAL_COMMON_H
 #define _GUAC_TERMINAL_COMMON_H
 
-#include "config.h"
+/**
+ * Miscellaneous terminal function definitions.
+ *
+ * @file common.h
+ */
+
 #include "types.h"
 
 #include <stdbool.h>

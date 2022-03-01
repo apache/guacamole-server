@@ -21,7 +21,12 @@
 #ifndef _GUAC_TERMINAL_CHAR_MAPPINGS_H
 #define _GUAC_TERMINAL_CHAR_MAPPINGS_H
 
-#include "config.h"
+/**
+ * Graphics character mapping definitions.
+ *
+ * @file char-mappings.h
+ */
+
 
 /**
  * VT100 graphics mapping. Each entry is the corresponding Unicode codepoint

@@ -21,7 +21,13 @@
 #ifndef GUAC_TERMINAL_TYPESCRIPT_H
 #define GUAC_TERMINAL_TYPESCRIPT_H
 
-#include "config.h"
+/**
+ * Constants, structures, and function definitions related to terminal
+ * typescripts.
+ *
+ * @file typescript.h
+ */
+
 
 #include <guacamole/timestamp.h>
 

@@ -19,10 +19,11 @@
 
 #include "config.h"
 
-#include "terminal/char_mappings.h"
+#include "terminal/char-mappings.h"
 #include "terminal/palette.h"
 #include "terminal/terminal.h"
-#include "terminal/terminal_handlers.h"
+#include "terminal/terminal-handlers.h"
+#include "terminal/terminal-priv.h"
 #include "terminal/types.h"
 #include "terminal/xparsecolor.h"
 
@@ -1226,7 +1227,7 @@ int guac_terminal_set_scrollback(guac_terminal* term, unsigned char c) {
 
         /* Update scrollbar bounds */
         guac_terminal_scrollbar_set_bounds(term->scrollbar,
-                -guac_terminal_available_scroll(term), 0);
+                -guac_terminal_get_available_scroll(term), 0);
 
         /* Return to echo mode */
         term->char_handler = guac_terminal_echo;

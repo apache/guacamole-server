@@ -23,7 +23,6 @@
 #include "common/recording.h"
 #include "settings.h"
 #include "telnet.h"
-#include "terminal/terminal.h"
 #include "user.h"
 
 #include <langinfo.h>
@@ -31,6 +30,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
@@ -43,9 +43,6 @@ int guac_client_init(guac_client* client) {
     /* Allocate client instance data */
     guac_telnet_client* telnet_client = calloc(1, sizeof(guac_telnet_client));
     client->data = telnet_client;
-
-    /* Init clipboard */
-    telnet_client->clipboard = guac_common_clipboard_alloc(GUAC_TELNET_CLIPBOARD_MAX_LENGTH);
 
     /* Init telnet client */
     telnet_client->socket_fd = -1;
@@ -100,7 +97,6 @@ int guac_telnet_client_free_handler(guac_client* client) {
     if (telnet_client->settings != NULL)
         guac_telnet_settings_free(telnet_client->settings);
 
-    guac_common_clipboard_free(telnet_client->clipboard);
     free(telnet_client);
     return 0;
 

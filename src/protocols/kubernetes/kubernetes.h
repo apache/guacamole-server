@@ -103,11 +103,6 @@ typedef struct guac_kubernetes_client {
     pthread_t client_thread;
 
     /**
-     * The current clipboard contents.
-     */
-    guac_common_clipboard* clipboard;
-
-    /**
      * The terminal which will render all output from the Kubernetes pod.
      */
     guac_terminal* term;
