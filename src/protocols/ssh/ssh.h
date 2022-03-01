@@ -23,7 +23,6 @@
 #include "config.h"
 
 #include "common/clipboard.h"
-#include "common/recording.h"
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
 #include "common-ssh/user.h"
@@ -35,6 +34,7 @@
 #endif
 
 #include <guacamole/client.h>
+#include <guacamole/recording.h>
 
 #include <pthread.h>
 
@@ -99,7 +99,7 @@ typedef struct guac_ssh_client {
      * The in-progress session recording, or NULL if no recording is in
      * progress.
      */
-    guac_common_recording* recording;
+    guac_recording* recording;
 
 } guac_ssh_client ;
 

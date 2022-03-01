@@ -21,7 +21,6 @@
 
 #include "argv.h"
 #include "client.h"
-#include "common/recording.h"
 #include "io.h"
 #include "kubernetes.h"
 #include "ssl.h"
@@ -30,6 +29,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/recording.h>
 #include <libwebsockets.h>
 
 #include <pthread.h>
@@ -229,7 +229,7 @@ void* guac_kubernetes_client_thread(void* data) {
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
-        kubernetes_client->recording = guac_common_recording_create(client,
+        kubernetes_client->recording = guac_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,
                 settings->create_recording_path,
@@ -369,7 +369,7 @@ fail:
 
     /* Clean up recording, if in progress */
     if (kubernetes_client->recording != NULL)
-        guac_common_recording_free(kubernetes_client->recording);
+        guac_recording_free(kubernetes_client->recording);
 
     /* Free WebSocket context if successfully allocated */
     if (kubernetes_client->context != NULL)

@@ -20,7 +20,6 @@
 #include "config.h"
 #include "argv.h"
 #include "client.h"
-#include "common/recording.h"
 #include "settings.h"
 #include "telnet.h"
 #include "user.h"
@@ -34,6 +33,7 @@
 
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
+#include <guacamole/recording.h>
 
 int guac_client_init(guac_client* client) {
 
@@ -82,7 +82,7 @@ int guac_telnet_client_free_handler(guac_client* client) {
 
     /* Clean up recording, if in progress */
     if (telnet_client->recording != NULL)
-        guac_common_recording_free(telnet_client->recording);
+        guac_recording_free(telnet_client->recording);
 
     /* Kill terminal */
     guac_terminal_free(telnet_client->term);

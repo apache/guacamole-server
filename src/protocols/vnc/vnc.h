@@ -25,7 +25,6 @@
 #include "common/clipboard.h"
 #include "common/display.h"
 #include "common/iconv.h"
-#include "common/recording.h"
 #include "common/surface.h"
 #include "settings.h"
 
@@ -42,6 +41,8 @@
 #include "common-ssh/ssh.h"
 #include "common-ssh/user.h"
 #endif
+
+#include <guacamole/recording.h>
 
 #include <pthread.h>
 
@@ -122,7 +123,7 @@ typedef struct guac_vnc_client {
      * The in-progress session recording, or NULL if no recording is in
      * progress.
      */
-    guac_common_recording* recording;
+    guac_recording* recording;
 
     /**
      * Clipboard encoding-specific reader.

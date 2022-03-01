@@ -21,7 +21,6 @@
 #include "channels/rdpei.h"
 #include "common/cursor.h"
 #include "common/display.h"
-#include "common/recording.h"
 #include "input.h"
 #include "keyboard.h"
 #include "rdp.h"
@@ -30,6 +29,7 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/input.h>
 #include <guacamole/client.h>
+#include <guacamole/recording.h>
 #include <guacamole/user.h>
 
 #include <stdlib.h>
@@ -51,7 +51,7 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
 
     /* Report mouse position within recording */
     if (rdp_client->recording != NULL)
-        guac_common_recording_report_mouse(rdp_client->recording, x, y, mask);
+        guac_recording_report_mouse(rdp_client->recording, x, y, mask);
 
     /* If button mask unchanged, just send move event */
     if (mask == rdp_client->mouse_button_mask) {
@@ -145,7 +145,7 @@ int guac_rdp_user_touch_handler(guac_user* user, int id, int x, int y,
 
     /* Report touch event within recording */
     if (rdp_client->recording != NULL)
-        guac_common_recording_report_touch(rdp_client->recording, id, x, y,
+        guac_recording_report_touch(rdp_client->recording, id, x, y,
                 x_radius, y_radius, angle, force);
 
     /* Forward touch event along RDPEI channel */
@@ -167,7 +167,7 @@ int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed) {
 
     /* Report key state within recording */
     if (rdp_client->recording != NULL)
-        guac_common_recording_report_key(rdp_client->recording,
+        guac_recording_report_key(rdp_client->recording,
                 keysym, pressed);
 
     /* Skip if keyboard not yet ready */

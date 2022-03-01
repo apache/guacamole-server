@@ -33,7 +33,6 @@
 #include "color.h"
 #include "common/cursor.h"
 #include "common/display.h"
-#include "common/recording.h"
 #include "config.h"
 #include "error.h"
 #include "fs.h"
@@ -71,6 +70,7 @@
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
+#include <guacamole/recording.h>
 #include <guacamole/socket.h>
 #include <guacamole/string.h>
 #include <guacamole/timestamp.h>
@@ -806,7 +806,7 @@ void* guac_rdp_client_thread(void* data) {
 
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
-        rdp_client->recording = guac_common_recording_create(client,
+        rdp_client->recording = guac_recording_create(client,
                 settings->recording_path,
                 settings->recording_name,
                 settings->create_recording_path,
