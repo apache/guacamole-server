@@ -42,6 +42,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <syslog.h>
 
 /**
  * Parameters for the user thread.
@@ -352,6 +353,12 @@ cleanup_client:
     /* Attempt to free client cleanly */
     guacd_log(GUAC_LOG_DEBUG, "Requesting termination of client...");
     result = guacd_timed_client_free(client, GUACD_CLIENT_FREE_TIMEOUT);
+
+    /* Reopen syslog now that client plugins have been unloaded. This fixes
+       guacd_log() segfaults in cases where the client plugins have called
+       openlog() causing syslog ident string to point to the plugin's
+       memory region. */
+    openlog(GUACD_LOG_NAME, LOG_PID, LOG_DAEMON);
 
     /* If client was unable to be freed, warn and forcibly kill */
     if (result) {
