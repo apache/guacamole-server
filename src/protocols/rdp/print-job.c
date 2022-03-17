@@ -28,6 +28,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -665,6 +666,9 @@ void guac_rdp_print_job_free(guac_rdp_print_job* job) {
 }
 
 void guac_rdp_print_job_kill(guac_rdp_print_job* job) {
+
+    /* Forcibly kill filter process, if running */
+    kill(job->filter_pid, SIGKILL);
 
     /* Stop all handling of I/O */
     close(job->input_fd);
