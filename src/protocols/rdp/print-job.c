@@ -18,6 +18,7 @@
  */
 
 #include "print-job.h"
+#include "rdp.h"
 
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
@@ -27,6 +28,7 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -603,6 +605,9 @@ static void guac_rdp_print_job_read_filename(guac_rdp_print_job* job,
 int guac_rdp_print_job_write(guac_rdp_print_job* job,
         void* buffer, int length) {
 
+    guac_client* client = job->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
     /* Create print job, if not yet created */
     if (job->bytes_received == 0) {
 
@@ -618,18 +623,39 @@ int guac_rdp_print_job_write(guac_rdp_print_job* job,
     /* Update counter of bytes received */
     job->bytes_received += length;
 
-    /* Write data to filter process */
-    return write(job->input_fd, buffer, length);
+    /* Write data to filter process, unblocking any threads waiting on the
+     * generic RDP message lock as this may be a lengthy operation that depends
+     * on other threads sending outstanding messages (resulting in deadlock if
+     * those messages are blocked) */
+    int unlock_status = pthread_mutex_unlock(&(rdp_client->message_lock));
+    int write_status = write(job->input_fd, buffer, length);
+
+    /* Restore RDP message lock state */
+    if (!unlock_status)
+        pthread_mutex_lock(&(rdp_client->message_lock));
+
+    return write_status;
 
 }
 
 void guac_rdp_print_job_free(guac_rdp_print_job* job) {
 
+    guac_client* client = job->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
     /* No more input will be provided */
     close(job->input_fd);
 
-    /* Wait for job to terminate */
+    /* Wait for job to terminate, unblocking any threads waiting on the generic
+     * RDP message lock as this may be a lengthy operation that depends on
+     * other threads sending outstanding messages (resulting in deadlock if
+     * those messages are blocked) */
+    int unlock_status = pthread_mutex_unlock(&(rdp_client->message_lock));
     pthread_join(job->output_thread, NULL);
+
+    /* Restore RDP message lock state */
+    if (!unlock_status)
+        pthread_mutex_lock(&(rdp_client->message_lock));
 
     /* Destroy lock */
     pthread_mutex_destroy(&(job->state_lock));
@@ -640,6 +666,9 @@ void guac_rdp_print_job_free(guac_rdp_print_job* job) {
 }
 
 void guac_rdp_print_job_kill(guac_rdp_print_job* job) {
+
+    /* Forcibly kill filter process, if running */
+    kill(job->filter_pid, SIGKILL);
 
     /* Stop all handling of I/O */
     close(job->input_fd);
