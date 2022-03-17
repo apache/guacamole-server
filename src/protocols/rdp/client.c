@@ -199,6 +199,14 @@ int guac_rdp_client_free_handler(guac_client* client) {
     if (rdp_client->filesystem != NULL)
         guac_rdp_fs_free(rdp_client->filesystem);
 
+    /* End active print job, if any */
+    guac_rdp_print_job* job = (guac_rdp_print_job*) rdp_client->active_job;
+    if (job != NULL) {
+        guac_rdp_print_job_kill(job);
+        guac_rdp_print_job_free(job);
+        rdp_client->active_job = NULL;
+    }
+
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP filesystem, if loaded */
     if (rdp_client->sftp_filesystem)
