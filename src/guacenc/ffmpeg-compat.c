@@ -213,7 +213,7 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
 #endif
 }
 
-AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec, 
+AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, const AVCodec* codec,
         int bitrate, int width, int height, int gop_size, int qmax, int qmin,
         int pix_fmt, AVRational time_base) {
 
@@ -249,7 +249,7 @@ AVCodecContext* guacenc_build_avcodeccontext(AVStream* stream, AVCodec* codec,
 }
 
 int guacenc_open_avcodec(AVCodecContext *avcodec_context,
-        AVCodec *codec, AVDictionary **options,
+        const AVCodec *codec, AVDictionary **options,
         AVStream* stream) {
 
     int ret = avcodec_open2(avcodec_context, codec, options);
