@@ -219,11 +219,11 @@ __guac_instruction_handler __guac_handshake_video_handler;
 __guac_instruction_handler __guac_handshake_image_handler;
 
 /**
- * Internal handler function that is called when the name instruction is
+ * Internal handler function that is called when the username instruction is
  * received during the handshake process, specifying the name of the Guacamole
  * user establishing the connection.
  */
-__guac_instruction_handler __guac_handshake_name_handler;
+__guac_instruction_handler __guac_handshake_username_handler;
 
 /**
  * Internal handler function that is called when the timezone instruction is

@@ -64,7 +64,7 @@ __guac_instruction_handler_mapping __guac_handshake_handler_map[] = {
     {"video",    __guac_handshake_video_handler},
     {"image",    __guac_handshake_image_handler},
     {"timezone", __guac_handshake_timezone_handler},
-    {"name",     __guac_handshake_name_handler},
+    {"username", __guac_handshake_username_handler},
     {NULL,       NULL}
 };
 
@@ -677,16 +677,18 @@ int __guac_handshake_image_handler(guac_user* user, int argc, char** argv) {
     
 }
 
-int __guac_handshake_name_handler(guac_user* user, int argc, char** argv) {
+int __guac_handshake_username_handler(guac_user* user, int argc, char** argv) {
 
-    /* Free any past value */
-    free((char *) user->info.name);
+    /* Free any past value for the user's name */
+    free((char *) user->info.username);
 
+    /* If a value is provided for the username, copy it into guac_user. */
     if (argc > 0 && strcmp(argv[0], ""))
-        user->info.name = (const char*) strdup(argv[0]);
+        user->info.username = (const char*) strdup(argv[0]);
 
+    /* No or empty value was provided, so make sure this is NULLed out. */
     else
-        user->info.name = NULL;
+        user->info.username = NULL;
 
     return 0;
 

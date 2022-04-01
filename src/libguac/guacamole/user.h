@@ -93,7 +93,7 @@ struct guac_user_info {
      * The human-readable name of the Guacamole user. If the client does not
      * provide a name then this will be NULL.
      */
-    const char* name;
+    const char* username;
 
     /**
      * The timezone of the remote system.  If the client does not provide

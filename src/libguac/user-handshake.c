@@ -296,7 +296,7 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     user->info.audio_mimetypes = NULL;
     user->info.image_mimetypes = NULL;
     user->info.video_mimetypes = NULL;
-    user->info.name = NULL;
+    user->info.username = NULL;
     user->info.timezone = NULL;
     
     /* Count number of arguments. */
@@ -371,8 +371,8 @@ int guac_user_handle_connection(guac_user* user, int usec_timeout) {
     guac_free_mimetypes((char **) user->info.image_mimetypes);
     guac_free_mimetypes((char **) user->info.video_mimetypes);
     
-    /* Free name and timezone info. */
-    free((char *) user->info.name);
+    /* Free username and timezone info. */
+    free((char *) user->info.username);
     free((char *) user->info.timezone);
     
     guac_parser_free(parser);
