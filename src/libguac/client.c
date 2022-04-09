@@ -762,30 +762,31 @@ static void* guac_client_owner_notify_join_callback(guac_user* user, void* data)
     const guac_user* joiner = (const guac_user *) data;
     int retval = 0;
 
-    char* owner = "owner";
-    if (user->info.username != NULL)
+    char* owner = strdup("owner");
+    if (user->info.username != NULL) {
+        free(owner);
         owner = strdup(user->info.username);
+    }
 
-    char* joinName = "anonymous";
-    if (joiner->info.username != NULL)
+    char* joinName = strdup("anonymous");
+    if (joiner->info.username != NULL) {
+        free(joinName);
         joinName = strdup(joiner->info.username);
+    }
 
-    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying %s of %s joining.", owner, joinName);
-
-    size_t msg_size = snprintf(NULL, 0, "User %s has joined the connection.", joinName);
-    char* msg = malloc(msg_size + 1);
-    sprintf(msg, "User %s has joined the connection.", joinName);
+    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner %s of %s joining.", owner, joinName);
     
     /* Send required parameters to owner. */
-    if (user != NULL)
-        retval = guac_protocol_send_msg(user->socket, msg);
+    if (user != NULL) {
+        const char* args[] = { (const char*)joinName, NULL };
+        retval = guac_protocol_send_msg(user->socket, GUAC_MSG_CLIENT_JOINED, args);
+    }
 
     else
         retval = -1;
 
     free(owner);
     free(joinName);
-    free(msg);
 
     return (void*) ((intptr_t) retval);
 
@@ -796,8 +797,6 @@ int guac_client_owner_notify_join(guac_client* client, guac_user* joiner) {
     /* Don't send msg instruction if client does not support it. */
     if (!guac_client_owner_supports_msg(client))
         return -1;
-
-    guac_client_log(client, GUAC_LOG_DEBUG, "Notifying owner of %s joining.", joiner->user_id);
 
     return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_notify_join_callback, joiner));
 
@@ -825,24 +824,29 @@ static void* guac_client_owner_notify_leave_callback(guac_user* user, void* data
 
     const guac_user* quitter = (const guac_user *) data;
 
-    char* owner = "owner";
-    if (user->info.username != NULL)
-        owner = strdup(user->info.username);
+    char* ownerName = strdup("owner");
+    if (user->info.username != NULL) {
+        free(ownerName);
+        ownerName = strdup(user->info.username);
+    }
 
-    char* quitterName = "anonymous";
-    if (quitter->info.username != NULL)
+    char* quitterName = strdup("anonymous");
+    if (quitter->info.username != NULL) {
+        free(quitterName);
         quitterName = strdup(quitter->info.username);
+    }
 
-    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying %s of %s leaving.", owner, quitterName);
-
-    size_t msg_size = snprintf(NULL, 0, "User %s has left the connection.", quitterName);
-    char* msg = malloc(msg_size + 1);
-    sprintf(msg, "User %s has left the connection.", quitterName);
+    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner %s of %s leaving.", ownerName, quitterName);
     
     /* Send required parameters to owner. */
-    if (user != NULL)
-        return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, msg));
+    if (user != NULL) {
+        const char* args[] = { (const char*)quitterName, NULL };
+        return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MSG_CLIENT_LEFT, args));
+    }
     
+    free(ownerName);
+    free(quitterName);
+
     return (void*) ((intptr_t) -1);
 
 }
@@ -852,8 +856,6 @@ int guac_client_owner_notify_leave(guac_client* client, guac_user* quitter) {
     /* Don't send msg instruction if client does not support it. */
     if (!guac_client_owner_supports_msg(client))
         return -1;
-
-    guac_client_log(client, GUAC_LOG_DEBUG, "Notifying owner of %s leaving.", quitter->user_id);
 
     return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_notify_leave_callback, quitter));
 

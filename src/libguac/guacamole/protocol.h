@@ -178,13 +178,19 @@ int vguac_protocol_send_log(guac_socket* socket, const char* format,
  * @param socket
  *     The guac_socket connection to send the message to.
  *
- * @param message
- *     The message to send to the client.
+ * @param msg
+ *     The message code to send to the client.
+ *
+ * @param args
+ *     A null-terminated array of strings that will be provided to the client
+ *     as part of the message, that the client may then place in the message,
+ *     or null if the message requires no arguments.
  *
  * @return
  *     Zero if the message is sent successfully; otherwise non-zero.
  */
-int guac_protocol_send_msg(guac_socket* socket, const char* message);
+int guac_protocol_send_msg(guac_socket* socket, guac_msg_client msg,
+        const char** args);
 
 /**
  * Sends a mouse instruction over the given guac_socket connection.

@@ -659,14 +659,16 @@ int guac_protocol_send_log(guac_socket* socket, const char* format, ...) {
 
 }
 
-int guac_protocol_send_msg(guac_socket* socket, const char* message) {
+int guac_protocol_send_msg(guac_socket* socket, guac_msg_client msg,
+        const char** args) {
 
     int ret_val;
 
     guac_socket_instruction_begin(socket);
     ret_val =
            guac_socket_write_string(socket, "3.msg,")
-        || __guac_socket_write_length_string(socket, message)
+        || __guac_socket_write_length_int(socket, msg)
+        || guac_socket_write_array(socket, args)
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);
