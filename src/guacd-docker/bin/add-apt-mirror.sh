@@ -1,7 +1,7 @@
 #!/bin/sh -e
 UBUNTU_RELEASE=$1
-APT_SOURCE="http://mirrors.tuna.tsinghua.edu.cn/ubuntu/"
-APT_SECURITY_SOURCE="http://mirrors.tuna.tsinghua.edu.cn/ubuntu/"
+APT_SOURCE=""
+APT_SECURITY_SOURCE=""
 test -n "$APT_SOURCE" && test -n "$APT_SECURITY_SOURCE"  || ( echo "Please set mirror repo location when you set USE_DEFAULT_REPO to false" && exit 1)
 echo "Add apt mirror $APT_SOURCE $APT_SECURITY_SOURCE"
 cp /etc/apt/sources.list  /etc/apt/sources.list.bak
