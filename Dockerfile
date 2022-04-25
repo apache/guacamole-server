@@ -34,12 +34,21 @@ FROM ubuntu:${UBUNTU_BASE_IMAGE} AS builder
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the second stage of the build.
 #
-ARG UBUNTU_RELEASE=impish-backports
+ARG UBUNTU_RELEASE=impish
+
+ARG USE_DEFAULT_REPO=false
+
+ARG PREFIX_DIR=/usr/local/guacamole
+
+COPY src/guacd-docker/bin "${PREFIX_DIR}/bin/"
+
+RUN $USE_DEFAULT_REPO || $PREFIX_DIR/bin/add-apt-mirror.sh $UBUNTU_RELEASE
+
 
 # Add repository for specified Ubuntu release if not already present in
 # sources.list
-RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
-    "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE} main contrib non-free"
+RUN grep "${UBUNTU_RELEASE}-backports" /etc/apt/sources.list || echo >> /etc/apt/sources.list \
+    "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE}-backports main restricted universe multiverse"
 
 #
 # Base directory for installed build artifacts.
@@ -47,7 +56,6 @@ RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the second stage of the build.
 #
-ARG PREFIX_DIR=/usr/local/guacamole
 
 # Build arguments
 ARG BUILD_DIR=/tmp/guacd-docker-BUILD
@@ -80,7 +88,7 @@ RUN apt-get update                                              && \
     rm -rf /var/lib/apt/lists/*
 
 # Add configuration scripts
-COPY src/guacd-docker/bin "${PREFIX_DIR}/bin/"
+
 
 # Copy source to container for sake of build
 COPY . "$BUILD_DIR"
@@ -105,12 +113,18 @@ FROM ubuntu:${UBUNTU_BASE_IMAGE}
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the first stage of the build.
 #
-ARG UBUNTU_RELEASE=impish-backports
+ARG UBUNTU_RELEASE=impish
+
+ARG USE_DEFAULT_REPO=false
+
+COPY src/guacd-docker/bin/add-apt-mirror.sh /tmp
+
+RUN $USE_DEFAULT_REPO ||/tmp/add-apt-mirror.sh $UBUNTU_RELEASE
 
 # Add repository for specified Ubuntu release if not already present in
 # sources.list
-RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
-    "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE} main contrib non-free"
+RUN grep "${UBUNTU_RELEASE}-backports" /etc/apt/sources.list || echo >> /etc/apt/sources.list \
+    "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE}-backports main restricted universe multiverse "
 
 #
 # Base directory for installed build artifacts. See also the
