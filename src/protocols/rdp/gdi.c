@@ -440,8 +440,8 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     rdpGdi* gdi = context->gdi;
 
-    /* Leverage EndPaint handler to detect end of frame for RDPGFX channel
-     * (ignore otherwise) */
+    /* Ignore EndPaint handler unless needed to detect end of frame for RDPGFX
+     * channel */
     if (!rdp_client->settings->enable_gfx)
         return TRUE;
 
