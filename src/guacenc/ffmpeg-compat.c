@@ -54,11 +54,8 @@ static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
     int ret;
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54,1,0)
-
-    AVPacket pkt;
-
     /* Have to create a packet around the encoded data we have */
-    av_init_packet(&pkt);
+    AVPacket* pkt = av_packet_alloc();
 
     if (video->context->coded_frame->pts != AV_NOPTS_VALUE) {
         pkt.pts = av_rescale_q(video->context->coded_frame->pts,
@@ -69,8 +66,8 @@ static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
         pkt->flags |= AV_PKT_FLAG_KEY;
     }
 
-    pkt.data = data;
-    pkt.size = size;
+    pkt->data = data;
+    pkt->size = size;
     pkt.stream_index = video->output_stream->index;
     ret = av_interleaved_write_frame(video->container_format_context, &pkt);
 
@@ -145,12 +142,11 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 37, 100)
 
     /* Init video packet */
-    AVPacket packet;
-    av_init_packet(&packet);
+    AVPacket* packet = av_packet_alloc();
 
     /* Request that encoder allocate data for packet */
-    packet.data = NULL;
-    packet.size = 0;
+    packet->data = NULL;
+    packet->size = 0;
 
     /* Write frame to video */
     int got_data;
