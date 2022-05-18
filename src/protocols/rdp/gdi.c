@@ -427,7 +427,7 @@ BOOL guac_rdp_gdi_begin_paint(rdpContext* context) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Leverage BeginPaint handler to detect start of frame for RDPGFX channel */
-    if (rdp_client->settings->enable_gfx)
+    if (rdp_client->settings->enable_gfx && rdp_client->frames_supported)
         guac_rdp_gdi_mark_frame(context, 1);
 
     return TRUE;
