@@ -916,11 +916,6 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 GUAC_RDP_CLIENT_ARGS[IDX_DISABLE_GLYPH_CACHING]);
     }
 
-    /* Session color depth */
-    settings->color_depth = 
-        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_COLOR_DEPTH, RDP_DEFAULT_DEPTH);
-
     /* Preconnection ID */
     settings->preconnection_id = -1;
     if (argv[IDX_PRECONNECTION_ID][0] != '\0') {
@@ -1141,6 +1136,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->enable_gfx =
         !guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_DISABLE_GFX, 0);
+
+    /* Session color depth */
+    settings->color_depth =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_COLOR_DEPTH, settings->enable_gfx ? RDP_GFX_REQUIRED_DEPTH : RDP_DEFAULT_DEPTH);
 
     /* Multi-touch input enable/disable */
     settings->enable_touch =
@@ -1420,15 +1420,15 @@ void guac_rdp_push_settings(guac_client* client,
         rdp_settings->SupportGraphicsPipeline = TRUE;
         rdp_settings->RemoteFxCodec = TRUE;
 
-        if (rdp_settings->ColorDepth != 32) {
+        if (rdp_settings->ColorDepth != RDP_GFX_REQUIRED_DEPTH) {
             guac_client_log(client, GUAC_LOG_WARNING, "Ignoring requested "
                     "color depth of %i bpp, as the RDP Graphics Pipeline "
-                    "requires 32 bpp.", rdp_settings->ColorDepth);
+                    "requires %i bpp.", rdp_settings->ColorDepth, RDP_GFX_REQUIRED_DEPTH);
         }
 
         /* Required for RemoteFX / Graphics Pipeline */
         rdp_settings->FastPathOutput = TRUE;
-        rdp_settings->ColorDepth = 32;
+        rdp_settings->ColorDepth = RDP_GFX_REQUIRED_DEPTH;
         rdp_settings->SoftwareGdi = TRUE;
 
     }
