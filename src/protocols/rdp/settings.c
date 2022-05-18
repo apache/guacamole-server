@@ -80,6 +80,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "disable-bitmap-caching",
     "disable-offscreen-caching",
     "disable-glyph-caching",
+    "disable-gfx",
     "preconnection-id",
     "preconnection-blob",
     "timezone",
@@ -109,7 +110,6 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "create-recording-path",
     "resize-method",
     "enable-audio-input",
-    "enable-gfx",
     "enable-touch",
     "read-only",
 
@@ -373,6 +373,13 @@ enum RDP_ARGS_IDX {
     IDX_DISABLE_GLYPH_CACHING,
 
     /**
+     * "true" if the RDP Graphics Pipeline Extension should not be used, and
+     * traditional RDP graphics should be used instead, "false" or blank if the
+     * Graphics Pipeline Extension should be used if available.
+     */
+    IDX_DISABLE_GFX,
+
+    /**
      * The preconnection ID to send within the preconnection PDU when
      * initiating an RDP connection, if any.
      */
@@ -539,12 +546,6 @@ enum RDP_ARGS_IDX {
      * connection, "false" or blank otherwise.
      */
     IDX_ENABLE_AUDIO_INPUT,
-
-    /**
-     * "true" if the RDP Graphics Pipeline Extension should be used, "false" or
-     * blank if traditional RDP graphics should be used instead.
-     */
-    IDX_ENABLE_GFX,
 
     /**
      * "true" if multi-touch support should be enabled for the RDP connection,
@@ -1138,8 +1139,8 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
 
     /* RDP Graphics Pipeline enable/disable */
     settings->enable_gfx =
-        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_ENABLE_GFX, 0);
+        !guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_GFX, 0);
 
     /* Multi-touch input enable/disable */
     settings->enable_touch =
