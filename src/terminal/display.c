@@ -202,6 +202,19 @@ int __guac_terminal_set(guac_terminal_display* display, int row, int col, int co
 
 }
 
+/**
+ * Calculate the size of margins around the terminal based on DPI.
+ *
+ * @param dpi
+ *     The resolution of the display in DPI.
+ *
+ * @return
+ *     Calculated size of margin in pixels.
+ */
+static int get_margin_by_dpi(int dpi) {
+    return dpi * GUAC_TERMINAL_MARGINS / GUAC_TERMINAL_MM_PER_INCH;
+}
+
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
         const char* font_name, int font_size, int dpi,
         guac_terminal_color* foreground, guac_terminal_color* background,
@@ -228,6 +241,13 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     /* Select layer is a child of the display layer */
     guac_protocol_send_move(client->socket, display->select_layer,
             display->display_layer, 0, 0, 0);
+
+    /* Calculate margin size by DPI */
+    display->margin = get_margin_by_dpi(dpi);
+
+    /* Offset the Default Layer to make margins even on all sides */
+    guac_protocol_send_move(client->socket, display->display_layer,
+        GUAC_DEFAULT_LAYER, display->margin, display->margin, 0);
 
     display->default_foreground = display->glyph_foreground = *foreground;
     display->default_background = display->glyph_background = *background;
@@ -446,6 +466,10 @@ void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
 }
 
 void guac_terminal_display_resize(guac_terminal_display* display, int width, int height) {
+
+    /* Resize display only if dimensions have changed */
+    if (width == display->width && height == display->height)
+        return;
 
     guac_terminal_operation* current;
     int x, y;
@@ -828,6 +852,10 @@ void guac_terminal_display_dup(guac_terminal_display* display, guac_user* user,
     guac_protocol_send_move(socket, display->select_layer,
             display->display_layer, 0, 0, 0);
 
+    /* Offset the Default Layer to make margins even on all sides */
+    guac_protocol_send_move(socket, display->display_layer,
+        GUAC_DEFAULT_LAYER, display->margin, display->margin, 0);
+
     /* Send select layer size */
     guac_protocol_send_size(socket, display->select_layer,
             display->char_width  * display->width,
@@ -1020,7 +1048,7 @@ int guac_terminal_display_set_font(guac_terminal_display* display,
     if (new_width != display->width || new_height != display->height)
         guac_terminal_display_resize(display, new_width, new_height);
 
+
     return 0;
 
 }
-
