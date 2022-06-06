@@ -493,7 +493,8 @@ BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
             guac_rdp_get_width(context->instance),
             guac_rdp_get_height(context->instance));
 
-    return TRUE;
+    return gdi_resize(context->gdi, guac_rdp_get_width(context->instance),
+            guac_rdp_get_height(context->instance));
 
 }
 
