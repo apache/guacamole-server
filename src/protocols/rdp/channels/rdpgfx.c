@@ -45,21 +45,21 @@
  * @param context
  *     The rdpContext associated with the active RDP session.
  *
- * @param e
+ * @param args
  *     Event-specific arguments, mainly the name of the channel, and a
  *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_rdpgfx_channel_connected(rdpContext* context,
-        ChannelConnectedEventArgs* e) {
+        ChannelConnectedEventArgs* args) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
     /* Ignore connection event if it's not for the RDPGFX channel */
-    if (strcmp(e->name, RDPGFX_DVC_CHANNEL_NAME) != 0)
+    if (strcmp(args->name, RDPGFX_DVC_CHANNEL_NAME) != 0)
         return;
 
     /* Init GDI-backed support for the Graphics Pipeline */
-    RdpgfxClientContext* rdpgfx = (RdpgfxClientContext*) e->pInterface;
+    RdpgfxClientContext* rdpgfx = (RdpgfxClientContext*) args->pInterface;
     rdpGdi* gdi = context->gdi;
 
     if (!gdi_graphics_pipeline_init(gdi, rdpgfx))
@@ -83,21 +83,21 @@ static void guac_rdp_rdpgfx_channel_connected(rdpContext* context,
  * @param context
  *     The rdpContext associated with the active RDP session.
  *
- * @param e
+ * @param args
  *     Event-specific arguments, mainly the name of the channel, and a
  *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_rdpgfx_channel_disconnected(rdpContext* context,
-        ChannelDisconnectedEventArgs* e) {
+        ChannelDisconnectedEventArgs* args) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
     /* Ignore disconnection event if it's not for the RDPGFX channel */
-    if (strcmp(e->name, RDPGFX_DVC_CHANNEL_NAME) != 0)
+    if (strcmp(args->name, RDPGFX_DVC_CHANNEL_NAME) != 0)
         return;
 
     /* Un-init GDI-backed support for the Graphics Pipeline */
-    RdpgfxClientContext* rdpgfx = (RdpgfxClientContext*) e->pInterface;
+    RdpgfxClientContext* rdpgfx = (RdpgfxClientContext*) args->pInterface;
     rdpGdi* gdi = context->gdi;
     gdi_graphics_pipeline_uninit(gdi, rdpgfx);
 
