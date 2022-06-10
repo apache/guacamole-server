@@ -59,6 +59,11 @@
 #define RDP_DEFAULT_DEPTH  16 
 
 /**
+ * The color depth required by the RDPGFX channel, in bits.
+ */
+#define RDP_GFX_REQUIRED_DEPTH 32
+
+/**
  * The filename to use for the screen recording, if not specified.
  */
 #define GUAC_RDP_DEFAULT_RECORDING_NAME "recording"
@@ -551,6 +556,11 @@ typedef struct guac_rdp_settings {
      * Whether audio input (microphone) is enabled.
      */
     int enable_audio_input;
+
+    /**
+     * Whether the RDP Graphics Pipeline Extension is enabled.
+     */
+    int enable_gfx;
 
     /**
      * Whether multi-touch support is enabled.

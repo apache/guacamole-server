@@ -1181,7 +1181,8 @@ int guac_protocol_send_start(guac_socket* socket, const guac_layer* layer,
 
 }
 
-int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp) {
+int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp,
+        int frames) {
 
     int ret_val;
 
@@ -1189,6 +1190,8 @@ int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp) {
     ret_val = 
            guac_socket_write_string(socket, "4.sync,")
         || __guac_socket_write_length_int(socket, timestamp)
+        || guac_socket_write_string(socket, ",")
+        || __guac_socket_write_length_int(socket, frames)
         || guac_socket_write_string(socket, ";");
 
     guac_socket_instruction_end(socket);

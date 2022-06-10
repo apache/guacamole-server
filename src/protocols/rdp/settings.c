@@ -80,6 +80,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "disable-bitmap-caching",
     "disable-offscreen-caching",
     "disable-glyph-caching",
+    "disable-gfx",
     "preconnection-id",
     "preconnection-blob",
     "timezone",
@@ -370,6 +371,13 @@ enum RDP_ARGS_IDX {
      * remain enabled.
      */
     IDX_DISABLE_GLYPH_CACHING,
+
+    /**
+     * "true" if the RDP Graphics Pipeline Extension should not be used, and
+     * traditional RDP graphics should be used instead, "false" or blank if the
+     * Graphics Pipeline Extension should be used if available.
+     */
+    IDX_DISABLE_GFX,
 
     /**
      * The preconnection ID to send within the preconnection PDU when
@@ -908,11 +916,6 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 GUAC_RDP_CLIENT_ARGS[IDX_DISABLE_GLYPH_CACHING]);
     }
 
-    /* Session color depth */
-    settings->color_depth = 
-        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_COLOR_DEPTH, RDP_DEFAULT_DEPTH);
-
     /* Preconnection ID */
     settings->preconnection_id = -1;
     if (argv[IDX_PRECONNECTION_ID][0] != '\0') {
@@ -1128,6 +1131,16 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 "Defaulting to no resize method.", argv[IDX_RESIZE_METHOD]);
         settings->resize_method = GUAC_RESIZE_NONE;
     }
+
+    /* RDP Graphics Pipeline enable/disable */
+    settings->enable_gfx =
+        !guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_DISABLE_GFX, 0);
+
+    /* Session color depth */
+    settings->color_depth =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_COLOR_DEPTH, settings->enable_gfx ? RDP_GFX_REQUIRED_DEPTH : RDP_DEFAULT_DEPTH);
 
     /* Multi-touch input enable/disable */
     settings->enable_touch =
@@ -1396,6 +1409,29 @@ void guac_rdp_push_settings(guac_client* client,
     /* Performance flags */
     /* Explicitly set flag value */
     rdp_settings->PerformanceFlags = guac_rdp_get_performance_flags(guac_settings);
+
+    /* Always request frame markers */
+    rdp_settings->FrameMarkerCommandEnabled = TRUE;
+    rdp_settings->SurfaceFrameMarkerEnabled = TRUE;
+
+    /* Enable RemoteFX / Graphics Pipeline */
+    if (guac_settings->enable_gfx) {
+
+        rdp_settings->SupportGraphicsPipeline = TRUE;
+        rdp_settings->RemoteFxCodec = TRUE;
+
+        if (rdp_settings->ColorDepth != RDP_GFX_REQUIRED_DEPTH) {
+            guac_client_log(client, GUAC_LOG_WARNING, "Ignoring requested "
+                    "color depth of %i bpp, as the RDP Graphics Pipeline "
+                    "requires %i bpp.", rdp_settings->ColorDepth, RDP_GFX_REQUIRED_DEPTH);
+        }
+
+        /* Required for RemoteFX / Graphics Pipeline */
+        rdp_settings->FastPathOutput = TRUE;
+        rdp_settings->ColorDepth = RDP_GFX_REQUIRED_DEPTH;
+        rdp_settings->SoftwareGdi = TRUE;
+
+    }
 
     /* Set individual flags - some FreeRDP versions overwrite the above */
     rdp_settings->AllowFontSmoothing = guac_settings->font_smoothing_enabled;

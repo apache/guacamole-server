@@ -413,15 +413,19 @@ void* guac_client_for_user(guac_client* client, guac_user* user,
 }
 
 int guac_client_end_frame(guac_client* client) {
+    return guac_client_end_multiple_frames(client, 0);
+}
+
+int guac_client_end_multiple_frames(guac_client* client, int frames) {
 
     /* Update and send timestamp */
     client->last_sent_timestamp = guac_timestamp_current();
 
     /* Log received timestamp and calculated lag (at TRACE level only) */
     guac_client_log(client, GUAC_LOG_TRACE, "Server completed "
-            "frame %" PRIu64 "ms.", client->last_sent_timestamp);
+            "frame %" PRIu64 "ms (%i logical frames)", client->last_sent_timestamp, frames);
 
-    return guac_protocol_send_sync(client->socket, client->last_sent_timestamp);
+    return guac_protocol_send_sync(client->socket, client->last_sent_timestamp, frames);
 
 }
 

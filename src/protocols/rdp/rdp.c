@@ -28,6 +28,7 @@
 #include "channels/rail.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "channels/rdpei.h"
+#include "channels/rdpgfx.h"
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
 #include "color.h"
@@ -137,15 +138,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     }
 
-    /* Load plugin providing Dynamic Virtual Channel support, if required */
-    if (instance->settings->SupportDynamicChannels &&
-            guac_freerdp_channels_load_plugin(context, "drdynvc",
-                instance->settings)) {
-        guac_client_log(client, GUAC_LOG_WARNING,
-                "Failed to load drdynvc plugin. Display update and audio "
-                "input support will be disabled.");
-    }
-
     /* Init FreeRDP internal GDI implementation */
     if (!gdi_init(instance, guac_rdp_get_native_pixel_format(FALSE)))
         return FALSE;
@@ -187,8 +179,12 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Set up GDI */
     instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
+    instance->update->BeginPaint = guac_rdp_gdi_begin_paint;
     instance->update->EndPaint = guac_rdp_gdi_end_paint;
     instance->update->SetBounds = guac_rdp_gdi_set_bounds;
+
+    instance->update->SurfaceFrameMarker = guac_rdp_gdi_surface_frame_marker;
+    instance->update->altsec->FrameMarker = guac_rdp_gdi_frame_marker;
 
     rdpPrimaryUpdate* primary = instance->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;
@@ -203,6 +199,19 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     bitmap_cache_register_callbacks(instance->update);
     offscreen_cache_register_callbacks(instance->update);
     palette_cache_register_callbacks(instance->update);
+
+    /* Load "rdpgfx" plugin for Graphics Pipeline Extension */
+    if (settings->enable_gfx)
+        guac_rdp_rdpgfx_load_plugin(context);
+
+    /* Load plugin providing Dynamic Virtual Channel support, if required */
+    if (instance->settings->SupportDynamicChannels &&
+            guac_freerdp_channels_load_plugin(context, "drdynvc",
+                instance->settings)) {
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "Failed to load drdynvc plugin. Display update and audio "
+                "input support will be disabled.");
+    }
 
     return TRUE;
 
@@ -544,7 +553,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
         if (wait_result > 0) {
 
             int processing_lag = guac_client_get_processing_lag(client);
-            guac_timestamp frame_start = guac_timestamp_current();
 
             /* Read server messages until frame is built */
             do {
@@ -564,7 +572,15 @@ static int guac_rdp_handle_connection(guac_client* client) {
                     break;
                 }
 
+                /* Continue handling inbound data if we are in the middle of an RDP frame */
+                if (rdp_client->in_frame) {
+                    wait_result = rdp_guac_client_wait_for_messages(client, GUAC_RDP_FRAME_START_TIMEOUT);
+                    if (wait_result >= 0)
+                        continue;
+                }
+
                 /* Calculate time remaining in frame */
+                guac_timestamp frame_start = client->last_sent_timestamp;
                 frame_end = guac_timestamp_current();
                 frame_remaining = frame_start + GUAC_RDP_FRAME_DURATION
                                 - frame_end;
@@ -587,12 +603,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
             } while (wait_result > 0);
 
-            /* Record end of frame, excluding server-side rendering time (we
-             * assume server-side rendering time will be consistent between any
-             * two subsequent frames, and that this time should thus be
-             * excluded from the required wait period of the next frame). */
-            last_frame_end = frame_start;
-
         }
 
         /* Test whether the RDP server is closing the connection */
@@ -607,11 +617,13 @@ static int guac_rdp_handle_connection(guac_client* client) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE,
                     "Connection closed.");
 
-        /* Flush frame only if successful */
-        else {
+        /* Flush frame only if successful and an RDP frame is not known to be
+         * in progress */
+        else if (!rdp_client->frames_supported || rdp_client->frames_received) {
             guac_common_display_flush(rdp_client->display);
-            guac_client_end_frame(client);
+            guac_client_end_multiple_frames(client, rdp_client->frames_received);
             guac_socket_flush(client->socket);
+            rdp_client->frames_received = 0;
         }
 
     }

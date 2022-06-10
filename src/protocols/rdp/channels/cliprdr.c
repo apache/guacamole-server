@@ -509,12 +509,12 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
  * @param context
  *     The rdpContext associated with the active RDP session.
  *
- * @param e
+ * @param args
  *     Event-specific arguments, mainly the name of the channel, and a
  *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
-        ChannelConnectedEventArgs* e) {
+        ChannelConnectedEventArgs* args) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -526,12 +526,12 @@ static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
     assert(clipboard != NULL);
 
     /* Ignore connection event if it's not for the CLIPRDR channel */
-    if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
+    if (strcmp(args->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
         return;
 
     /* The structure pointed to by pInterface is guaranteed to be a
      * CliprdrClientContext if the channel is CLIPRDR */
-    CliprdrClientContext* cliprdr = (CliprdrClientContext*) e->pInterface;
+    CliprdrClientContext* cliprdr = (CliprdrClientContext*) args->pInterface;
 
     /* Associate FreeRDP CLIPRDR context and its Guacamole counterpart with
      * eachother */
@@ -562,12 +562,12 @@ static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
  * @param context
  *     The rdpContext associated with the active RDP session.
  *
- * @param e
+ * @param args
  *     Event-specific arguments, mainly the name of the channel, and a
  *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_cliprdr_channel_disconnected(rdpContext* context,
-        ChannelDisconnectedEventArgs* e) {
+        ChannelDisconnectedEventArgs* args) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -579,7 +579,7 @@ static void guac_rdp_cliprdr_channel_disconnected(rdpContext* context,
     assert(clipboard != NULL);
 
     /* Ignore disconnection event if it's not for the CLIPRDR channel */
-    if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
+    if (strcmp(args->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
         return;
 
     /* Channel is no longer connected */
