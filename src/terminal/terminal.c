@@ -336,29 +336,29 @@ guac_terminal_options* guac_terminal_options_create(
 }
 
 /**
- * Calculate the available height and width in pixels within the terminal
- * and set those values on the terminal struct.
- * Then use the pixel height and width to calculate the available height and 
- * width in characters and store the results in the pointer arguments.
+ * Calculate the available height and width in characters for text display in 
+ * the terminal and store the results in the pointer arguments.
  *
  * @param terminal
  *     The terminal provides character width and height for calculations.
- *     This function requires outer_width, outer_height, 
- *     display->margin, display->char_height, and display->char_width
- *     to be set on terminal in order to calculate available dimensions.
  * 
- * @param columns
- *     Set with the available width for text of the terminal, by column count.
+ * @param height
+ *     The outer height of the terminal, in pixels.
+ * 
+ * @param width
+ *     The outer width of the terminal, in pixels.
  * 
  * @param rows
- *     Set with the available height for text of the terminal, by row count.
+ *     Calculated height of the terminal for text display, in characters.
+ * 
+ * @param columns
+ *     Calculated width of the terminal for text display, in characters.
+ *
  */
-static void calculate_and_save_available_dimensions(guac_terminal* term,
-    int* columns, int* rows) {
+static void calculate_rows_and_columns(guac_terminal* term,
+    int height, int width, int *rows, int *columns) {
 
     int margin = term->display->margin;
-    int width = term->outer_width;
-    int height = term->outer_height;
     int char_width = term->display->char_width;
     int char_height = term->display->char_height;
     
@@ -378,20 +378,43 @@ static void calculate_and_save_available_dimensions(guac_terminal* term,
     /* Keep height within predefined maximum */
     if (*rows > GUAC_TERMINAL_MAX_ROWS) {
         *rows = GUAC_TERMINAL_MAX_ROWS;
-        available_height = *rows * char_height;
-        height = available_height + 2 * margin;
     }
 
     /* Keep width within predefined maximum */
     if (*columns > GUAC_TERMINAL_MAX_COLUMNS) {
         *columns = GUAC_TERMINAL_MAX_COLUMNS;
-        available_width = *columns * char_width;
-        width = available_width + GUAC_TERMINAL_SCROLLBAR_WIDTH + 2 * margin;
     }
+}
 
-    /* Set pixel size */
-    term->width = width;
-    term->height = height;
+/**
+ * Calculate the available height and width in pixels of the terminal for text 
+ * display in the terminal and store the results in the pointer arguments.
+ *
+ * @param terminal
+ *     The terminal provides character width and height for calculations.
+ * 
+ * @param rows
+ *     The available height of the terminal for text display, in characters.
+ * 
+ * @param columns
+ *     The available width of the terminal for text display, in characters.
+ *
+ * @param height
+ *     Calculated available height of the terminal for text display, in pixels.
+ * 
+ * @param width
+ *     Calculated available width of the terminal for text display, in pixels.
+ * 
+ */
+static void calculate_height_and_width(guac_terminal* term,
+    int rows, int columns, int *height, int *width) {
+
+    int margin = term->display->margin;
+    int char_width = term->display->char_width;
+    int char_height = term->display->char_height;
+    
+    *height = rows * char_height + 2 * margin;
+    *width = columns * char_width + GUAC_TERMINAL_SCROLLBAR_WIDTH + 2 * margin;
 }
 
 guac_terminal* guac_terminal_create(guac_client* client,
@@ -475,17 +498,26 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->clipboard = guac_common_clipboard_alloc();
     term->disable_copy = options->disable_copy;
 
-    /* Set size of available screen area */
-    term->outer_width = width;
-    term->outer_height = height;
-
-    /* Set available screen area on the terminal */
+    /* Calculate available text display area by character size */
     int rows, columns;
-    calculate_and_save_available_dimensions(term, &columns, &rows);
+    calculate_rows_and_columns(term, height, width, &rows, &columns);
+
+    /* Calculate available text display area in pixels */
+    int available_height, available_width;
+    calculate_height_and_width(term, rows, columns,
+        &available_height, &available_width);
+
+    /* Set size of available screen area */
+    term->outer_height = height;
+    term->outer_width = width;
 
     /* Set rows and columns size */
-    term->term_width  = columns;
     term->term_height = rows;
+    term->term_width  = columns;
+
+    /* Set pixel size */
+    term->height = available_height;
+    term->width = available_width;
 
     /* Open STDIN pipe */
     if (pipe(term->stdin_pipe_fd)) {
@@ -1424,13 +1456,22 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     /* Acquire exclusive access to terminal */
     guac_terminal_lock(terminal);
 
-    /* Set size of available screen area */
-    terminal->outer_width = width;
-    terminal->outer_height = height;
-
-    /* Set available screen area on the terminal */
+    /* Calculate available text display area by character size */
     int rows, columns;
-    calculate_and_save_available_dimensions(terminal, &columns, &rows);
+    calculate_rows_and_columns(terminal, height, width, &rows, &columns);
+
+    /* Calculate available text display area in pixels */
+    int available_height, available_width;
+    calculate_height_and_width(terminal, rows, columns,
+        &available_height, &available_width);
+
+    /* Set size of available screen area */
+    terminal->outer_height = height;
+    terminal->outer_width = width;
+
+    /* Set pixel size */
+    terminal->height = available_height;
+    terminal->width = available_width;
 
     /* Resize default layer to given pixel dimensions */
     guac_terminal_repaint_default_layer(terminal, client->socket);
