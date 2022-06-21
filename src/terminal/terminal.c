@@ -349,11 +349,12 @@ guac_terminal_options* guac_terminal_options_create(
  *     The outer width of the terminal, in pixels.
  * 
  * @param rows
- *     Calculated height of the terminal for text display, in characters.
+ *     Pointer to the calculated height of the terminal for text display,
+ *     in characters.
  * 
  * @param columns
- *     Calculated width of the terminal for text display, in characters.
- *
+ *     Pointer to the calculated width of the terminal for text display,
+ *     in characters.
  */
 static void calculate_rows_and_columns(guac_terminal* term,
     int height, int width, int *rows, int *columns) {
@@ -400,11 +401,12 @@ static void calculate_rows_and_columns(guac_terminal* term,
  *     The available width of the terminal for text display, in characters.
  *
  * @param height
- *     Calculated available height of the terminal for text display, in pixels.
+ *     Pointer to the calculated available height of the terminal for text 
+ *     display, in pixels.
  * 
  * @param width
- *     Calculated available width of the terminal for text display, in pixels.
- * 
+ *     Pointer to the calculated available width of the terminal for text 
+ *     display, in pixels.
  */
 static void calculate_height_and_width(guac_terminal* term,
     int rows, int columns, int *height, int *width) {
