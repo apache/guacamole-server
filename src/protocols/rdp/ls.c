@@ -25,6 +25,7 @@
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
+#include <winpr/file.h>
 #include <winpr/nt.h>
 #include <winpr/shell.h>
 
