@@ -251,7 +251,7 @@ void guac_rdp_ai_process_version(guac_client* client,
 
     /* Verify we have at least 4 bytes available (UINT32) */
     if (Stream_GetRemainingLength(stream) < 4) {
-        guac_client_log(client, GUAC_LOG_WARNING, "Audio input Versoin PDU "
+        guac_client_log(client, GUAC_LOG_WARNING, "Audio input Version PDU "
                 "does not contain the expected number of bytes. Audio input "
                 "redirection may not work as expected.");
         return;
