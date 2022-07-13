@@ -361,7 +361,7 @@ enum RDP_ARGS_IDX {
     IDX_DISABLE_BITMAP_CACHING,
 
     /**
-     * "true" if the offscreen caching should be disabled, false if offscren
+     * "true" if the offscreen caching should be disabled, false if offscreen
      * caching should remain enabled.
      */
     IDX_DISABLE_OFFSCREEN_CACHING,
