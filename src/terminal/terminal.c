@@ -377,14 +377,12 @@ static void calculate_rows_and_columns(guac_terminal* term,
     *columns = available_width / char_width;
 
     /* Keep height within predefined maximum */
-    if (*rows > GUAC_TERMINAL_MAX_ROWS) {
+    if (*rows > GUAC_TERMINAL_MAX_ROWS)
         *rows = GUAC_TERMINAL_MAX_ROWS;
-    }
 
     /* Keep width within predefined maximum */
-    if (*columns > GUAC_TERMINAL_MAX_COLUMNS) {
+    if (*columns > GUAC_TERMINAL_MAX_COLUMNS)
         *columns = GUAC_TERMINAL_MAX_COLUMNS;
-    }
 }
 
 /**
@@ -414,9 +412,18 @@ static void calculate_height_and_width(guac_terminal* term,
     int margin = term->display->margin;
     int char_width = term->display->char_width;
     int char_height = term->display->char_height;
-    
-    *height = rows * char_height + 2 * margin;
-    *width = columns * char_width + GUAC_TERMINAL_SCROLLBAR_WIDTH + 2 * margin;
+
+    /* Recalculate height if max rows reached */
+    if (rows == GUAC_TERMINAL_MAX_ROWS) {
+        int available_height = GUAC_TERMINAL_MAX_ROWS * char_height;
+        *height = available_height + 2 * margin;
+    }
+
+    /* Recalculate width if max columns reached */
+    if (columns == GUAC_TERMINAL_MAX_COLUMNS) {
+        int available_width = GUAC_TERMINAL_MAX_COLUMNS * char_width;
+        *width = available_width + GUAC_TERMINAL_SCROLLBAR_WIDTH + 2 * margin;
+    }
 }
 
 guac_terminal* guac_terminal_create(guac_client* client,
@@ -504,10 +511,11 @@ guac_terminal* guac_terminal_create(guac_client* client,
     int rows, columns;
     calculate_rows_and_columns(term, height, width, &rows, &columns);
 
-    /* Calculate available text display area in pixels */
-    int available_height, available_width;
+    /* Calculate available display area in pixels */
+    int adjusted_height = height; 
+    int adjusted_width = width;
     calculate_height_and_width(term, rows, columns,
-        &available_height, &available_width);
+        &adjusted_height, &adjusted_width);
 
     /* Set size of available screen area */
     term->outer_height = height;
@@ -518,8 +526,8 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->term_width  = columns;
 
     /* Set pixel size */
-    term->height = available_height;
-    term->width = available_width;
+    term->height = adjusted_height;
+    term->width = adjusted_width;
 
     /* Open STDIN pipe */
     if (pipe(term->stdin_pipe_fd)) {
@@ -1462,18 +1470,19 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     int rows, columns;
     calculate_rows_and_columns(terminal, height, width, &rows, &columns);
 
-    /* Calculate available text display area in pixels */
-    int available_height, available_width;
+    /* Calculate available display area in pixels */
+    int adjusted_height = height; 
+    int adjusted_width = width;
     calculate_height_and_width(terminal, rows, columns,
-        &available_height, &available_width);
+        &adjusted_height, &adjusted_width);
 
     /* Set size of available screen area */
     terminal->outer_height = height;
     terminal->outer_width = width;
 
     /* Set pixel size */
-    terminal->height = available_height;
-    terminal->width = available_width;
+    terminal->height = adjusted_height;
+    terminal->width = adjusted_width;
 
     /* Resize default layer to given pixel dimensions */
     guac_terminal_repaint_default_layer(terminal, client->socket);
