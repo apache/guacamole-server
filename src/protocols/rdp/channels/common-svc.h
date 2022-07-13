@@ -115,7 +115,7 @@ struct guac_rdp_common_svc {
     guac_rdp_common_svc_receive_handler* _receive_handler;
 
     /**
-     * Handler which is invokved when the SVC has been disconnected and is
+     * Handler which is involved when the SVC has been disconnected and is
      * about to be freed.
      */
     guac_rdp_common_svc_terminate_handler* _terminate_handler;
