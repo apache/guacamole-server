@@ -29,7 +29,7 @@
 /**
  * Adds FreeRDP's "rdpgfx" plugin to the list of dynamic virtual channel plugins
  * to be loaded by FreeRDP's "drdynvc" plugin. The context of the plugin will
- * automatically be assicated with the guac_rdp_rdpgfx instance pointed to by the
+ * automatically be associated with the guac_rdp_rdpgfx instance pointed to by the
  * current guac_rdp_client. The plugin will only be loaded once the "drdynvc"
  * plugin is loaded. The "rdpgfx" plugin ultimately adds support for the RDP
  * Graphics Pipeline Extension.

@@ -140,7 +140,7 @@ static void guac_rdp_send_unicode_event(guac_rdp_client* rdp_client,
 }
 
 /**
- * Immediately sends an RDP synchonize event having the given flags. An RDP
+ * Immediately sends an RDP synchronize event having the given flags. An RDP
  * synchronize event sets the state of remote lock keys absolutely, where a
  * lock key will be active only if its corresponding flag is set in the event.
  *

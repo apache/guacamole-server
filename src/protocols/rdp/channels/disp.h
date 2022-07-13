@@ -109,7 +109,7 @@ void guac_rdp_disp_free(guac_rdp_disp* disp);
 /**
  * Adds FreeRDP's "disp" plugin to the list of dynamic virtual channel plugins
  * to be loaded by FreeRDP's "drdynvc" plugin. The context of the plugin will
- * automatically be assicated with the guac_rdp_disp instance pointed to by the
+ * automatically be associated with the guac_rdp_disp instance pointed to by the
  * current guac_rdp_client. The plugin will only be loaded once the "drdynvc"
  * plugin is loaded. The "disp" plugin ultimately adds support for the Display
  * Update channel.

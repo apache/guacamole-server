@@ -110,7 +110,7 @@ void guac_rdp_rdpei_free(guac_rdp_rdpei* rdpei);
 /**
  * Adds FreeRDP's "rdpei" plugin to the list of dynamic virtual channel plugins
  * to be loaded by FreeRDP's "drdynvc" plugin. The context of the plugin will
- * automatically be assicated with the guac_rdp_rdpei instance pointed to by the
+ * automatically be associated with the guac_rdp_rdpei instance pointed to by the
  * current guac_rdp_client. The plugin will only be loaded once the "drdynvc"
  * plugin is loaded. The "rdpei" plugin ultimately adds support for multi-touch
  * input via the RDPEI channel.
