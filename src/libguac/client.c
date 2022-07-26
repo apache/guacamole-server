@@ -760,35 +760,23 @@ int guac_client_owner_supports_required(guac_client* client) {
 static void* guac_client_owner_notify_join_callback(guac_user* user, void* data) {
 
     const guac_user* joiner = (const guac_user *) data;
-    int retval = 0;
 
-    char* owner = strdup("owner");
-    if (user->info.username != NULL) {
-        free(owner);
-        owner = strdup(user->info.username);
-    }
+    if (user == NULL)
+        return (void*) ((intptr_t) -1);
 
-    char* joinName = strdup("anonymous");
-    if (joiner->info.username != NULL) {
-        free(joinName);
-        joinName = strdup(joiner->info.username);
-    }
+    char* owner = "owner";
+    if (user->info.username != NULL)
+        owner = (char *) user->info.username;
+
+    char* joinName = "anonymous";
+    if (joiner->info.username != NULL)
+        joinName = (char *) joiner->info.username;
 
     guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner %s of %s joining.", owner, joinName);
     
     /* Send required parameters to owner. */
-    if (user != NULL) {
-        const char* args[] = { (const char*)joinName, NULL };
-        retval = guac_protocol_send_msg(user->socket, GUAC_MSG_CLIENT_JOINED, args);
-    }
-
-    else
-        retval = -1;
-
-    free(owner);
-    free(joinName);
-
-    return (void*) ((intptr_t) retval);
+    const char* args[] = { (const char*)joinName, NULL };
+    return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MSG_CLIENT_JOINED, args));
 
 }
 
@@ -824,30 +812,22 @@ static void* guac_client_owner_notify_leave_callback(guac_user* user, void* data
 
     const guac_user* quitter = (const guac_user *) data;
 
-    char* ownerName = strdup("owner");
-    if (user->info.username != NULL) {
-        free(ownerName);
-        ownerName = strdup(user->info.username);
-    }
+    if (user == NULL)
+        return (void*) ((intptr_t) -1);
 
-    char* quitterName = strdup("anonymous");
-    if (quitter->info.username != NULL) {
-        free(quitterName);
-        quitterName = strdup(quitter->info.username);
-    }
+    char* ownerName = "owner";
+    if (user->info.username != NULL)
+        ownerName = (char *) user->info.username;
+
+    char* quitterName = "anonymous";
+    if (quitter->info.username != NULL)
+        quitterName = (char *) quitter->info.username;
 
     guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner %s of %s leaving.", ownerName, quitterName);
     
     /* Send required parameters to owner. */
-    if (user != NULL) {
-        const char* args[] = { (const char*)quitterName, NULL };
-        return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MSG_CLIENT_LEFT, args));
-    }
-    
-    free(ownerName);
-    free(quitterName);
-
-    return (void*) ((intptr_t) -1);
+    const char* args[] = { (const char*)quitterName, NULL };
+    return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MSG_CLIENT_LEFT, args));
 
 }
 
