@@ -165,9 +165,11 @@ int guac_common_ssh_init(guac_client* client) {
     CRYPTO_set_locking_callback(guac_common_ssh_openssl_locking_callback);
 #endif
 
-    /* Init OpenSSL */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    /* Init OpenSSL - only required for OpenSSL Versions < 1.1.0 */
     SSL_library_init();
     ERR_load_crypto_strings();
+#endif
 
     /* Init libssh2 */
     libssh2_init(0);
