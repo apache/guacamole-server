@@ -21,25 +21,32 @@
 # Dockerfile for guacamole-server
 #
 
-# The Ubuntu image that should be used as the basis for the guacd image
-ARG UBUNTU_BASE_IMAGE=21.10
+# The Alpine Linux image that should be used as the basis for the guacd image
+ARG ALPINE_BASE_IMAGE=latest
+FROM alpine:${ALPINE_BASE_IMAGE} AS builder
 
-# Use Debian as base for the build
-FROM ubuntu:${UBUNTU_BASE_IMAGE} AS builder
+# Install build dependencies
+RUN apk add --no-cache                \
+        autoconf                      \
+        automake                      \
+        build-base                    \
+        cairo-dev                     \
+        cmake                         \
+        git                           \
+        grep                          \
+        libjpeg-turbo-dev             \
+        libpng-dev                    \
+        libtool                       \
+        libwebp-dev                   \
+        make                          \
+        openssl-dev                   \
+        pango-dev                     \
+        pulseaudio-dev                \
+        util-linux-dev
 
-#
-# The Debian repository that should be preferred for dependencies (this will be
-# added to /etc/apt/sources.list if not already present)
-#
-# NOTE: Due to limitations of the Docker image build process, this value is
-# duplicated in an ARG in the second stage of the build.
-#
-ARG UBUNTU_RELEASE=impish-backports
-
-# Add repository for specified Ubuntu release if not already present in
-# sources.list
-RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
-    "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE} main contrib non-free"
+# Copy source to container for sake of build
+ARG BUILD_DIR=/tmp/guacamole-server
+COPY . ${BUILD_DIR}
 
 #
 # Base directory for installed build artifacts.
@@ -47,70 +54,99 @@ RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the second stage of the build.
 #
-ARG PREFIX_DIR=/usr/local/guacamole
+ARG PREFIX_DIR=/opt/guacamole
 
-# Build arguments
-ARG BUILD_DIR=/tmp/guacd-docker-BUILD
-ARG BUILD_DEPENDENCIES="              \
-        autoconf                      \
-        automake                      \
-        freerdp2-dev                  \
-        gcc                           \
-        libcairo2-dev                 \
-        libgcrypt-dev                 \
-        libjpeg-turbo8-dev            \
-        libossp-uuid-dev              \
-        libpango1.0-dev               \
-        libpulse-dev                  \
-        libssh2-1-dev                 \
-        libssl-dev                    \
-        libtelnet-dev                 \
-        libtool                       \
-        libvncserver-dev              \
-        libwebsockets-dev             \
-        libwebp-dev                   \
-        make"
+#
+# Automatically select the latest versions of each core protocol support
+# library (these can be overridden at build time if a specific version is
+# needed)
+#
+ARG WITH_FREERDP='2(\.\d+)+'
+ARG WITH_LIBSSH2='libssh2-\d+(\.\d+)+'
+ARG WITH_LIBTELNET='\d+(\.\d+)+'
+ARG WITH_LIBVNCCLIENT='LibVNCServer-\d+(\.\d+)+'
+ARG WITH_LIBWEBSOCKETS='v\d+(\.\d+)+'
 
-# Do not require interaction during build
-ARG DEBIAN_FRONTEND=noninteractive
+#
+# Default build options for each core protocol support library, as well as
+# guacamole-server itself (these can be overridden at build time if different
+# options are needed)
+#
 
-# Bring build environment up to date and install build dependencies
-RUN apt-get update                                              && \
-    apt-get install -t ${UBUNTU_RELEASE} -y $BUILD_DEPENDENCIES && \
-    rm -rf /var/lib/apt/lists/*
+ARG FREERDP_OPTS="\
+    -DBUILTIN_CHANNELS=OFF \
+    -DCHANNEL_URBDRC=OFF \
+    -DWITH_ALSA=OFF \
+    -DWITH_CAIRO=ON \
+    -DWITH_CHANNELS=ON \
+    -DWITH_CLIENT=ON \
+    -DWITH_CUPS=OFF \
+    -DWITH_DIRECTFB=OFF \
+    -DWITH_FFMPEG=OFF \
+    -DWITH_GSM=OFF \
+    -DWITH_GSSAPI=OFF \
+    -DWITH_IPP=OFF \
+    -DWITH_JPEG=ON \
+    -DWITH_LIBSYSTEMD=OFF \
+    -DWITH_MANPAGES=OFF \
+    -DWITH_OPENH264=OFF \
+    -DWITH_OPENSSL=ON \
+    -DWITH_OSS=OFF \
+    -DWITH_PCSC=OFF \
+    -DWITH_PULSE=OFF \
+    -DWITH_SERVER=OFF \
+    -DWITH_SERVER_INTERFACE=OFF \
+    -DWITH_SHADOW_MAC=OFF \
+    -DWITH_SHADOW_X11=OFF \
+    -DWITH_SSE2=ON \
+    -DWITH_WAYLAND=OFF \
+    -DWITH_X11=OFF \
+    -DWITH_X264=OFF \
+    -DWITH_XCURSOR=ON \
+    -DWITH_XEXT=ON \
+    -DWITH_XI=OFF \
+    -DWITH_XINERAMA=OFF \
+    -DWITH_XKBFILE=ON \
+    -DWITH_XRENDER=OFF \
+    -DWITH_XTEST=OFF \
+    -DWITH_XV=OFF \
+    -DWITH_ZLIB=ON"
 
-# Add configuration scripts
-COPY src/guacd-docker/bin "${PREFIX_DIR}/bin/"
+ARG GUACAMOLE_SERVER_OPTS="\
+    --disable-guaclog"
 
-# Copy source to container for sake of build
-COPY . "$BUILD_DIR"
+ARG LIBSSH2_OPTS="\
+    -DBUILD_EXAMPLES=OFF \
+    -DBUILD_SHARED_LIBS=ON"
 
-# Build guacamole-server from local source
-RUN ${PREFIX_DIR}/bin/build-guacd.sh "$BUILD_DIR" "$PREFIX_DIR"
+ARG LIBTELNET_OPTS="\
+    --disable-static \
+    --disable-util"
+
+ARG LIBVNCCLIENT_OPTS=""
+
+ARG LIBWEBSOCKETS_OPTS="\
+    -DDISABLE_WERROR=ON \
+    -DLWS_WITHOUT_SERVER=ON \
+    -DLWS_WITHOUT_TESTAPPS=ON \
+    -DLWS_WITHOUT_TEST_CLIENT=ON \
+    -DLWS_WITHOUT_TEST_PING=ON \
+    -DLWS_WITHOUT_TEST_SERVER=ON \
+    -DLWS_WITHOUT_TEST_SERVER_EXTPOLL=ON \
+    -DLWS_WITH_STATIC=OFF"
+
+# Build guacamole-server and its core protocol library dependencies
+RUN ${BUILD_DIR}/src/guacd-docker/bin/build-all.sh
 
 # Record the packages of all runtime library dependencies
-RUN ${PREFIX_DIR}/bin/list-dependencies.sh     \
+RUN ${BUILD_DIR}/src/guacd-docker/bin/list-dependencies.sh \
         ${PREFIX_DIR}/sbin/guacd               \
         ${PREFIX_DIR}/lib/libguac-client-*.so  \
         ${PREFIX_DIR}/lib/freerdp2/*guac*.so   \
         > ${PREFIX_DIR}/DEPENDENCIES
 
-# Use same Debian as the base for the runtime image
-FROM ubuntu:${UBUNTU_BASE_IMAGE}
-
-#
-# The Debian repository that should be preferred for dependencies (this will be
-# added to /etc/apt/sources.list if not already present)
-#
-# NOTE: Due to limitations of the Docker image build process, this value is
-# duplicated in an ARG in the first stage of the build.
-#
-ARG UBUNTU_RELEASE=impish-backports
-
-# Add repository for specified Ubuntu release if not already present in
-# sources.list
-RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources.list \
-    "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE} main contrib non-free"
+# Use same Alpine version as the base for the runtime image
+FROM alpine:${ALPINE_BASE_IMAGE}
 
 #
 # Base directory for installed build artifacts. See also the
@@ -119,36 +155,27 @@ RUN grep " ${UBUNTU_RELEASE} " /etc/apt/sources.list || echo >> /etc/apt/sources
 # NOTE: Due to limitations of the Docker image build process, this value is
 # duplicated in an ARG in the first stage of the build.
 #
-ARG PREFIX_DIR=/usr/local/guacamole
+ARG PREFIX_DIR=/opt/guacamole
 
 # Runtime environment
 ENV LC_ALL=C.UTF-8
 ENV LD_LIBRARY_PATH=${PREFIX_DIR}/lib
 ENV GUACD_LOG_LEVEL=info
 
-ARG RUNTIME_DEPENDENCIES="            \
-        netcat-openbsd                \
-        ca-certificates               \
-        ghostscript                   \
-        fonts-liberation              \
-        fonts-dejavu                  \
-        xfonts-terminus"
-
-# Do not require interaction during build
-ARG DEBIAN_FRONTEND=noninteractive
-
 # Copy build artifacts into this stage
 COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
 
 # Bring runtime environment up to date and install runtime dependencies
-RUN apt-get update                                                                                       && \
-    apt-get install -t ${UBUNTU_RELEASE} -y --no-install-recommends $RUNTIME_DEPENDENCIES                && \
-    apt-get install -t ${UBUNTU_RELEASE} -y --no-install-recommends $(cat "${PREFIX_DIR}"/DEPENDENCIES)  && \
-    rm -rf /var/lib/apt/lists/*
-
-# Link FreeRDP plugins into proper path
-RUN ${PREFIX_DIR}/bin/link-freerdp-plugins.sh \
-        ${PREFIX_DIR}/lib/freerdp2/libguac*.so
+RUN apk add --no-cache                \
+        ca-certificates               \
+        ghostscript                   \
+        netcat-openbsd                \
+        shadow                        \
+        terminus-font                 \
+        ttf-dejavu                    \
+        ttf-liberation                \
+        util-linux-login && \
+    xargs apk add --no-cache < ${PREFIX_DIR}/DEPENDENCIES
 
 # Checks the operating status every 5 minutes with a timeout of 5 seconds
 HEALTHCHECK --interval=5m --timeout=5s CMD nc -z 127.0.0.1 4822 || exit 1
@@ -157,7 +184,7 @@ HEALTHCHECK --interval=5m --timeout=5s CMD nc -z 127.0.0.1 4822 || exit 1
 ARG UID=1000
 ARG GID=1000
 RUN groupadd --gid $GID guacd
-RUN useradd --system --create-home --shell /usr/sbin/nologin --uid $UID --gid $GID guacd
+RUN useradd --system --create-home --shell /sbin/nologin --uid $UID --gid $GID guacd
 
 # Run with user guacd
 USER guacd
@@ -170,5 +197,5 @@ EXPOSE 4822
 # Note the path here MUST correspond to the value specified in the 
 # PREFIX_DIR build argument.
 #
-CMD /usr/local/guacamole/sbin/guacd -b 0.0.0.0 -L $GUACD_LOG_LEVEL -f
+CMD /opt/guacamole/sbin/guacd -b 0.0.0.0 -L $GUACD_LOG_LEVEL -f
 
