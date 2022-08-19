@@ -37,7 +37,7 @@ while [ -n "$1" ]; do
 
         # List the package providing that library, if any
         apk info -W "$LIBRARY" 2> /dev/null \
-            | grep 'is owned by' | grep -o '[^ ]*$'
+            | grep 'is owned by' | grep -o '[^ ]*$' || true
 
     done
 
@@ -47,5 +47,5 @@ while [ -n "$1" ]; do
 # Strip the "-VERSION" suffix from each package name, listing each resulting
 # package uniquely ("apk add" cannot handle package names that include the
 # version number)
-done | sed 's/\(.*\)-[0-9]\..*$/\1/' | sort -u
+done | sed 's/\(.*\)-[0-9]\+\..*$/\1/' | sort -u
 
