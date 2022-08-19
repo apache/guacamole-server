@@ -37,7 +37,7 @@ while [ -n "$1" ]; do
 
         # List the package providing that library, if any
         apk info -W "$LIBRARY" 2> /dev/null \
-            | grep 'is owned by' | grep -o '[^ ]*$'
+            | grep 'is owned by' | grep -o '[^ ]*$' || true
 
     done
 
