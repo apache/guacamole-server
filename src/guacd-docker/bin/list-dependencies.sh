@@ -47,5 +47,5 @@ while [ -n "$1" ]; do
 # Strip the "-VERSION" suffix from each package name, listing each resulting
 # package uniquely ("apk add" cannot handle package names that include the
 # version number)
-done | sed 's/\(.*\)-[0-9]\..*$/\1/' | sort -u
+done | sed 's/\(.*\)-[0-9]\+\..*$/\1/' | sort -u
 
