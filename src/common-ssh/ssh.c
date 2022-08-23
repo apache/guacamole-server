@@ -22,6 +22,7 @@
 #include "common-ssh/user.h"
 
 #include <guacamole/client.h>
+#include <guacamole/fips.h>
 #include <libssh2.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
@@ -45,6 +46,17 @@
 #ifdef LIBSSH2_USES_GCRYPT
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
+
+/**
+ * A list of all key exchange algorithms that are both FIPS-compliant, and
+ * OpenSSL-supported.
+ */
+#define FIPS_COMPLIANT_KEX_ALGORITHMS "diffie-hellman-group-exchange-sha256"
+
+/**
+ * A list of ciphers that are both FIPS-compliant, and OpenSSL-supported.
+ */
+#define FIPS_COMPLIANT_CIPHERS "aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,aes192-cbc,aes256-cbc"
 
 #ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
 /**
@@ -482,6 +494,17 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         free(common_session);
         close(fd);
         return NULL;
+    }
+
+    /*
+     * If FIPS mode is enabled, prefer only FIPS-compatible algorithms and
+     * ciphers that are also supported by libssh2. For more info, see:
+     * https://csrc.nist.gov/CSRC/media/projects/cryptographic-module-validation-program/documents/security-policies/140sp2906.pdf
+     */
+    if (guac_fips_enabled()) {
+        libssh2_session_method_pref(session, LIBSSH2_METHOD_KEX, FIPS_COMPLIANT_KEX_ALGORITHMS);
+        libssh2_session_method_pref(session, LIBSSH2_METHOD_CRYPT_CS, FIPS_COMPLIANT_CIPHERS);
+        libssh2_session_method_pref(session, LIBSSH2_METHOD_CRYPT_SC, FIPS_COMPLIANT_CIPHERS);
     }
 
     /* Perform handshake */
