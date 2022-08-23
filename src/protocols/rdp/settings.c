@@ -27,6 +27,7 @@
 #include <freerdp/constants.h>
 #include <freerdp/settings.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/version.h>
 #include <guacamole/client.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
@@ -38,6 +39,13 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+
+// OpenSSL TLS version constants
+# define TLS1_VERSION                    0x0301
+# define TLS1_1_VERSION                  0x0302
+# define TLS1_2_VERSION                  0x0303
+# define TLS1_3_VERSION                  0x0304
+# define TLS_MAX_VERSION                 TLS1_3_VERSION
 
 /* Client plugin arguments */
 const char* GUAC_RDP_CLIENT_ARGS[] = {
@@ -1603,6 +1611,17 @@ void guac_rdp_push_settings(guac_client* client,
     rdp_settings->OrderSupport[NEG_GLYPH_INDEX_INDEX] = !guac_settings->disable_glyph_caching;
     rdp_settings->OrderSupport[NEG_FAST_INDEX_INDEX] = !guac_settings->disable_glyph_caching;
     rdp_settings->OrderSupport[NEG_FAST_GLYPH_INDEX] = !guac_settings->disable_glyph_caching;
+
+    // FreeRDP allows for TLS Version control starting 2.8.0
+#if (defined FREERDP_VERSION_MAJOR && FREERDP_VERSION_MAJOR >=2 && defined FREERDP_VERSION_MINOR && FREERDP_VERSION_MINOR >=8 && defined FREERDP_VERSION_REVISION && FREERDP_VERSION_REVISION >=0)
+    // Faulty servers with partial support for TLSv1.3, like windows server 2019, 
+    // trick FreeRDP into negotiating TLSv1.3 and then send back a RST response after initial "Client Hello" during handshake.
+    // Setting the min and max versions of TLS version allows us to enforce the TLS version the client(FreeRDP) chooses.
+    // Note that older versions of FreeRDP that relied on older versions of Openssl that didn't have TLS1.3 don't run into 
+    // this issue as the max TLS version supported by those clients is TLS1.2.
+    rdp_settings->TLSMinVersion = 0;
+    rdp_settings->TLSMaxVersion = TLS1_2_VERSION;
+#endif
 
 #ifdef HAVE_RDPSETTINGS_ALLOWUNANOUNCEDORDERSFROMSERVER
     /* Do not consider server use of unannounced orders to be a fatal error */
