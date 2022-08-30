@@ -28,6 +28,7 @@
 #include <freerdp/settings.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/fips.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
@@ -38,6 +39,16 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+
+/**
+ * A warning to log when NLA mode is selected while FIPS mode is active on the
+ * guacd server.
+ */
+const char fips_nla_mode_warning[] = (
+        "NLA security mode was selected, but is known to be currently incompatible "
+        "with FIPS mode (see FreeRDP/FreeRDP#3412). Security negotiation with the "
+        "RDP server may fail unless TLS security mode is selected instead."
+);
 
 /* Client plugin arguments */
 const char* GUAC_RDP_CLIENT_ARGS[] = {
@@ -698,12 +709,27 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     if (strcmp(argv[IDX_SECURITY], "nla") == 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Security mode: NLA");
         settings->security_mode = GUAC_SECURITY_NLA;
+
+        /*
+         * NLA is known not to work with FIPS; allow the mode selection but
+         * warn that it will not work.
+         */
+        if (guac_fips_enabled())
+            guac_user_log(user, GUAC_LOG_WARNING, fips_nla_mode_warning);
+
     }
 
     /* Extended NLA security */
     else if (strcmp(argv[IDX_SECURITY], "nla-ext") == 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Security mode: Extended NLA");
         settings->security_mode = GUAC_SECURITY_EXTENDED_NLA;
+
+        /*
+         * NLA is known not to work with FIPS; allow the mode selection but
+         * warn that it will not work.
+         */
+        if (guac_fips_enabled())
+            guac_user_log(user, GUAC_LOG_WARNING, fips_nla_mode_warning);
     }
 
     /* TLS security */
@@ -1493,7 +1519,21 @@ void guac_rdp_push_settings(guac_client* client,
         case GUAC_SECURITY_ANY:
             rdp_settings->RdpSecurity = TRUE;
             rdp_settings->TlsSecurity = TRUE;
-            rdp_settings->NlaSecurity = guac_settings->username && guac_settings->password;
+
+            /* Explicitly disable NLA if FIPS mode is enabled - it won't work */
+            if (guac_fips_enabled()) {
+
+                guac_client_log(client, GUAC_LOG_INFO,
+                        "FIPS mode is enabled. Excluding NLA security mode from security negotiation "
+                        "(see: https://github.com/FreeRDP/FreeRDP/issues/3412).");
+                rdp_settings->NlaSecurity = FALSE;
+
+            }
+
+            /* NLA mode is allowed if FIPS is not enabled */
+            else
+                rdp_settings->NlaSecurity = TRUE;
+
             rdp_settings->ExtSecurity = FALSE;
             break;
 
