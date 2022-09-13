@@ -49,9 +49,12 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 /**
  * A list of all key exchange algorithms that are both FIPS-compliant, and
- * OpenSSL-supported.
+ * OpenSSL-supported. Note that "ext-info-c" is also included. While not a key
+ * exchange algorithm per se, it must be in the list to ensure that the server
+ * will send a SSH_MSG_EXT_INFO response, which is required to perform RSA key
+ * upgrades.
  */
-#define FIPS_COMPLIANT_KEX_ALGORITHMS "diffie-hellman-group-exchange-sha256"
+#define FIPS_COMPLIANT_KEX_ALGORITHMS "diffie-hellman-group-exchange-sha256,ext-info-c"
 
 /**
  * A list of ciphers that are both FIPS-compliant, and OpenSSL-supported.
