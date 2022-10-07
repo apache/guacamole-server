@@ -20,6 +20,7 @@
 
 #include "common/clipboard.h"
 #include "common/cursor.h"
+#include "common/iconv.h"
 #include "terminal/buffer.h"
 #include "terminal/color-scheme.h"
 #include "terminal/common.h"
@@ -2165,7 +2166,16 @@ void guac_terminal_clipboard_reset(guac_terminal* terminal,
 
 void guac_terminal_clipboard_append(guac_terminal* terminal,
         const char* data, int length) {
-    guac_common_clipboard_append(terminal->clipboard, data, length);
+
+    /* Allocate and clear space for the converted data */
+    char output_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
+    char* output = output_data;
+
+    /* Convert clipboard contents */
+    guac_iconv(GUAC_READ_UTF8_NORMALIZED, &data, length,
+            GUAC_WRITE_UTF8, &output, GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+
+    guac_common_clipboard_append(terminal->clipboard, output_data, output - output_data);
 }
 
 void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
