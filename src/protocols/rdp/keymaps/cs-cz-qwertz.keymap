@@ -40,7 +40,7 @@ map +caps -altgr -shift      0x10..0x1B      ~ "QWERTZUIOPÚ)"
 map +caps -altgr -shift      0x1E..0x28 0x2B ~ "ASDFGHJKLŮ§¨"
 map +caps -altgr -shift      0x2C..0x35      ~ "YXCVBNM,.-"
 
-map +caps -altgr +shift 0x29 0x02..0x0D      ~ "°123456789%ˇ"
+map +caps -altgr +shift 0x29 0x02..0x0D      ~ "°1234567890%ˇ"
 map +caps -altgr +shift      0x10..0x1B      ~ "qwertzuiop/("
 map +caps -altgr +shift      0x1E..0x28 0x2B ~ "asdfghjkl"!'"
 map +caps -altgr +shift      0x2C..0x35      ~ "yxcvbnm?:_"
