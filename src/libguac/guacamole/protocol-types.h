@@ -310,7 +310,7 @@ typedef enum guac_protocol_version {
 
     /**
      * Protocol version 1.5.0, which supports the "msg" instruction, allowing
-     * messages to be sent to the client, and adds support for the "username"
+     * messages to be sent to the client, and adds support for the "name"
      * handshake instruction.
      */
     GUAC_PROTOCOL_VERSION_1_5_0 = 0x010500
@@ -327,15 +327,15 @@ typedef enum guac_message_type {
 
     /**
      * A message that notifies the owner of a connection that another user has
-     * joined their connection. There should be a single argument, the username
-     * of the user who has joined.
+     * joined their connection. There should be a single argument provided, the
+     * name of the user who has joined.
      */
     GUAC_MESSAGE_USER_JOINED = 0x0001,
 
     /**
      * A message that notifies the owner of a connection that another user has
      * left their connection. There should be a single argument provided, the
-     * username of the user who has left.
+     * name of the user who has left.
      */
     GUAC_MESSAGE_USER_LEFT = 0x0002
 

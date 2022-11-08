@@ -88,12 +88,6 @@ struct guac_user_info {
      * stated resolution of the display size request is recommended.
      */
     int optimal_resolution;
-    
-    /**
-     * The human-readable name of the Guacamole user. If the client does not
-     * provide a name then this will be NULL.
-     */
-    const char* username;
 
     /**
      * The timezone of the remote system.  If the client does not provide
@@ -107,6 +101,14 @@ struct guac_user_info {
      * for feature support to be negotiated between client and server.
      */
     guac_protocol_version protocol_version;
+
+    /**
+     * The human-readable name of the Guacamole user, supplied by the client
+     * during the handshake. This is an arbitrary value, with no requirements or
+     * constraints, including that it need not uniquely identify the user.
+     * If the client does not provide a name then this will be NULL.
+     */
+    const char* name;
 
 };
 

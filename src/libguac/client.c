@@ -765,12 +765,12 @@ static void* guac_client_owner_notify_join_callback(guac_user* user, void* data)
         return (void*) ((intptr_t) -1);
 
     char* owner = "owner";
-    if (user->info.username != NULL)
-        owner = (char *) user->info.username;
+    if (user->info.name != NULL)
+        owner = (char *) user->info.name;
 
     char* joinName = "anonymous";
-    if (joiner->info.username != NULL)
-        joinName = (char *) joiner->info.username;
+    if (joiner->info.name != NULL)
+        joinName = (char *) joiner->info.name;
 
     guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner \"%s\" of \"%s\" joining.", owner, joinName);
     
@@ -820,12 +820,12 @@ static void* guac_client_owner_notify_leave_callback(guac_user* user, void* data
         return (void*) ((intptr_t) -1);
 
     char* ownerName = "owner";
-    if (user->info.username != NULL)
-        ownerName = (char *) user->info.username;
+    if (user->info.name != NULL)
+        ownerName = (char *) user->info.name;
 
     char* quitterName = "anonymous";
-    if (quitter->info.username != NULL)
-        quitterName = (char *) quitter->info.username;
+    if (quitter->info.name != NULL)
+        quitterName = (char *) quitter->info.name;
 
     guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner \"%s\" of \"%s\" leaving.", ownerName, quitterName);
     
