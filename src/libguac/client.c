@@ -776,7 +776,7 @@ static void* guac_client_owner_notify_join_callback(guac_user* user, void* data)
     
     /* Send required parameters to owner. */
     const char* args[] = { (const char*)joinName, NULL };
-    return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MSG_CLIENT_JOINED, args));
+    return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MESSAGE_USER_JOINED, args));
 
 }
 
@@ -831,7 +831,7 @@ static void* guac_client_owner_notify_leave_callback(guac_user* user, void* data
     
     /* Send required parameters to owner. */
     const char* args[] = { (const char*)quitterName, NULL };
-    return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MSG_CLIENT_LEFT, args));
+    return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MESSAGE_USER_LEFT, args));
 
 }
 

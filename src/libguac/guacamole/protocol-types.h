@@ -323,23 +323,23 @@ typedef enum guac_protocol_version {
  * The codes will be interpreted by the client into translatable messages, and
  * make take arguments, as noted below.
  */
-typedef enum guac_msg_client {
+typedef enum guac_message_type {
 
     /**
      * A message that notifies the owner of a connection that another user has
      * joined their connection. There should be a single argument, the username
      * of the user who has joined.
      */
-    GUAC_MSG_CLIENT_JOINED = 0x0001,
+    GUAC_MESSAGE_USER_JOINED = 0x0001,
 
     /**
      * A message that notifies the owner of a connection that another user has
      * left their connection. There should be a single argument provided, the
      * username of the user who has left.
      */
-    GUAC_MSG_CLIENT_LEFT = 0x0002
+    GUAC_MESSAGE_USER_LEFT = 0x0002
 
-} guac_msg_client;
+} guac_message_type;
 
 #endif
 

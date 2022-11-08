@@ -189,7 +189,7 @@ int vguac_protocol_send_log(guac_socket* socket, const char* format,
  * @return
  *     Zero if the message is sent successfully; otherwise non-zero.
  */
-int guac_protocol_send_msg(guac_socket* socket, guac_msg_client msg,
+int guac_protocol_send_msg(guac_socket* socket, guac_message_type msg,
         const char** args);
 
 /**

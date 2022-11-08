@@ -659,7 +659,7 @@ int guac_protocol_send_log(guac_socket* socket, const char* format, ...) {
 
 }
 
-int guac_protocol_send_msg(guac_socket* socket, guac_msg_client msg,
+int guac_protocol_send_msg(guac_socket* socket, guac_message_type msg,
         const char** args) {
 
     int ret_val;
