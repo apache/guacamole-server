@@ -309,8 +309,12 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
 
             int codepoint = buffer_row->characters[i].value;
 
+            /* Keep consistency with vim display */
+            if (codepoint == 0)
+                codepoint = 32;
+            
             /* Ignore null (blank) characters */
-            if (codepoint == 0 || codepoint == GUAC_CHAR_CONTINUATION)
+            if (codepoint == GUAC_CHAR_CONTINUATION)
                 continue;
 
             /* Encode current codepoint as UTF-8 */
