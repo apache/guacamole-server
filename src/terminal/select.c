@@ -298,10 +298,11 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
         end = buffer_row->length - 1;
 
     int j = end;
-    while(!buffer_row->characters[j].value){
+    while((!buffer_row->characters[j].value)&& (j > start)){
         j--;
     }
-    end = j;
+    if(j != start)
+        end = j;
 
     /* Repeatedly convert chunks of terminal buffer rows until entire specified
      * region has been appended to clipboard */
