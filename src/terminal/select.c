@@ -361,15 +361,19 @@ void guac_terminal_select_end(guac_terminal* terminal) {
 
         /* Store first row */
         guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, start_row, 0);
-        guac_terminal_clipboard_append_row(terminal, start_row, start_col, buffer_row->length - 2);
+        guac_terminal_clipboard_append_row(terminal, start_row, start_col, buffer_row->length - 1);
 
         /* Store all middle rows */
         for (int row = start_row + 1; row < end_row; row++) {
             guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, start_row, 0);
-            guac_terminal_clipboard_append_row(terminal, row, 0, buffer_row->length - 2);
-            if(!(buffer_row->characters[buffer_row->length - 1].value == 0 && buffer_row->characters[buffer_row->length - 2].value > 0))
+            guac_terminal_clipboard_append_row(terminal, row, 0, buffer_row->length - 1);
+
+            /* If line breaks, add break sign */
+            if (!(buffer_row->characters[buffer_row->length - 1].value == 0 && buffer_row->characters[buffer_row->length - 2].value > 0))
                 guac_common_clipboard_append(terminal->clipboard, "\n", 1);
             
+            /* If no spaces visible at the boundary, this line may got broken due to insufficient terminal length, no "\n" added */
+
         }
 
         /* Store last row */
