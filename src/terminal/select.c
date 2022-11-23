@@ -296,9 +296,10 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
     /* Clip given range to actual bounds of row */
     if (end < 0 || end > buffer_row->length - 1)
         end = buffer_row->length - 1;
-
+    
+    /* Skip blank chars at the end of a line */
     int j = end;
-    while((!buffer_row->characters[j].value)&& (j > start)){
+    while ((!buffer_row->characters[j].value) && (j > start)) {
         j--;
     }
     if(j != start)
