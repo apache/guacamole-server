@@ -764,18 +764,22 @@ static void* guac_client_owner_notify_join_callback(guac_user* user, void* data)
     if (user == NULL)
         return (void*) ((intptr_t) -1);
 
-    char* owner = "owner";
+    char* log_owner = "owner";
     if (user->info.name != NULL)
-        owner = (char *) user->info.name;
+        log_owner = (char *) user->info.name;
 
-    char* joinName = "anonymous";
-    if (joiner->info.name != NULL)
-        joinName = (char *) joiner->info.name;
+    char* log_joiner = "anonymous";
+    char* send_joiner = "";
+    if (joiner->info.name != NULL) {
+        log_joiner = (char *) joiner->info.name;
+        send_joiner = (char *) joiner->info.name;
+    }
 
-    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner \"%s\" of \"%s\" joining.", owner, joinName);
+    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner \"%s\" of \"%s\" joining.",
+            log_owner, log_joiner);
     
-    /* Send required parameters to owner. */
-    const char* args[] = { (const char*)joinName, NULL };
+    /* Send user joined notification to owner. */
+    const char* args[] = { (const char*)joiner->user_id, (const char*)send_joiner, NULL };
     return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MESSAGE_USER_JOINED, args));
 
 }
@@ -819,18 +823,22 @@ static void* guac_client_owner_notify_leave_callback(guac_user* user, void* data
     if (user == NULL)
         return (void*) ((intptr_t) -1);
 
-    char* ownerName = "owner";
+    char* log_owner = "owner";
     if (user->info.name != NULL)
-        ownerName = (char *) user->info.name;
+        log_owner = (char *) user->info.name;
 
-    char* quitterName = "anonymous";
-    if (quitter->info.name != NULL)
-        quitterName = (char *) quitter->info.name;
+    char* log_quitter = "anonymous";
+    char* send_quitter = "";
+    if (quitter->info.name != NULL) {
+        log_quitter = (char *) quitter->info.name;
+        send_quitter = (char *) quitter->info.name;
+    }
 
-    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner \"%s\" of \"%s\" leaving.", ownerName, quitterName);
+    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner \"%s\" of \"%s\" leaving.",
+            log_owner, log_quitter);
     
-    /* Send required parameters to owner. */
-    const char* args[] = { (const char*)quitterName, NULL };
+    /* Send user left notification to owner. */
+    const char* args[] = { (const char*)quitter->user_id, (const char*)send_quitter, NULL };
     return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MESSAGE_USER_LEFT, args));
 
 }
