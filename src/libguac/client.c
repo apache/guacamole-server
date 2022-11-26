@@ -302,6 +302,10 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
         /* Update owner pointer if user is owner */
         if (user->owner)
             client->__owner = user;
+        
+        /* Notify owner of user joining connection. */
+        else
+            guac_client_owner_notify_join(client, user);
 
     }
 
@@ -330,6 +334,10 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
     /* Update owner pointer if user was owner */
     if (user->owner)
         client->__owner = NULL;
+
+    /* Update owner of user having left the connection. */
+    else
+        guac_client_owner_notify_leave(client, user);
 
     pthread_rwlock_unlock(&(client->__users_lock));
 
@@ -672,6 +680,36 @@ static void* __webp_support_callback(guac_user* user, void* data) {
 #endif
 
 /**
+ * A callback function which is invoked by guac_client_owner_supports_msg()
+ * to determine if the owner of a client supports the "msg" instruction,
+ * returning zero if the user does not support the instruction or non-zero if
+ * the user supports it.
+ * 
+ * @param user
+ *     The guac_user that will be checked for "msg" instruction support.
+ * 
+ * @param data
+ *     Data provided to the callback. This value is never used within this
+ *     callback.
+ * 
+ * @return
+ *     A non-zero integer if the provided user who owns the connection supports
+ *     the "msg" instruction, or zero if the user does not. The integer is cast
+ *     as a void*.
+ */
+static void* guac_owner_supports_msg_callback(guac_user* user, void* data) {
+
+    return (void*) ((intptr_t) guac_user_supports_msg(user));
+
+}
+
+int guac_client_owner_supports_msg(guac_client* client) {
+
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_owner_supports_msg_callback, NULL));
+
+}
+
+/**
  * A callback function which is invoked by guac_client_owner_supports_required()
  * to determine if the owner of a client supports the "required" instruction,
  * returning zero if the user does not support the instruction or non-zero if
@@ -699,6 +737,124 @@ int guac_client_owner_supports_required(guac_client* client) {
     
     return (int) ((intptr_t) guac_client_for_owner(client, guac_owner_supports_required_callback, NULL));
     
+}
+
+/**
+ * A callback function that is invokved by guac_client_owner_notify_join() to
+ * notify the owner of a connection that another user has joined the
+ * connection, returning zero if the message is sent successfully, or non-zero
+ * if an error occurs.
+ *
+ * @param user
+ *     The user to send the notification to, which will be the owner of the
+ *     connection.
+ *
+ * @param data
+ *     The data provided to the callback, which is the user that is joining the
+ *     connection.
+ *
+ * @return
+ *     Zero if the message is sent successfully to the owner, otherwise
+ *     non-zero, cast as a void*.
+ */
+static void* guac_client_owner_notify_join_callback(guac_user* user, void* data) {
+
+    const guac_user* joiner = (const guac_user *) data;
+
+    if (user == NULL)
+        return (void*) ((intptr_t) -1);
+
+    char* log_owner = "owner";
+    if (user->info.name != NULL)
+        log_owner = (char *) user->info.name;
+
+    char* log_joiner = "anonymous";
+    char* send_joiner = "";
+    if (joiner->info.name != NULL) {
+        log_joiner = (char *) joiner->info.name;
+        send_joiner = (char *) joiner->info.name;
+    }
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner \"%s\" of \"%s\" joining.",
+            log_owner, log_joiner);
+    
+    /* Send user joined notification to owner. */
+    const char* args[] = { (const char*)joiner->user_id, (const char*)send_joiner, NULL };
+    return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MESSAGE_USER_JOINED, args));
+
+}
+
+int guac_client_owner_notify_join(guac_client* client, guac_user* joiner) {
+
+    /* Don't send msg instruction if client does not support it. */
+    if (!guac_client_owner_supports_msg(client)) {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                        "Client does not support the \"msg\" instruction and "
+                        "will not be notified of the user joining the connection.");
+        return -1;
+    }
+
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_notify_join_callback, joiner));
+
+}
+
+/**
+ * A callback function that is invokved by guac_client_owner_notify_leave() to
+ * notify the owner of a connection that another user has left the connection,
+ * returning zero if the message is sent successfully, or non-zero
+ * if an error occurs.
+ *
+ * @param user
+ *     The user to send the notification to, which will be the owner of the
+ *     connection.
+ *
+ * @param data
+ *     The data provided to the callback, which is the user that is leaving the
+ *     connection.
+ *
+ * @return
+ *     Zero if the message is sent successfully to the owner, otherwise
+ *     non-zero, cast as a void*.
+ */
+static void* guac_client_owner_notify_leave_callback(guac_user* user, void* data) {
+
+    const guac_user* quitter = (const guac_user *) data;
+
+    if (user == NULL)
+        return (void*) ((intptr_t) -1);
+
+    char* log_owner = "owner";
+    if (user->info.name != NULL)
+        log_owner = (char *) user->info.name;
+
+    char* log_quitter = "anonymous";
+    char* send_quitter = "";
+    if (quitter->info.name != NULL) {
+        log_quitter = (char *) quitter->info.name;
+        send_quitter = (char *) quitter->info.name;
+    }
+
+    guac_user_log(user, GUAC_LOG_DEBUG, "Notifying owner \"%s\" of \"%s\" leaving.",
+            log_owner, log_quitter);
+    
+    /* Send user left notification to owner. */
+    const char* args[] = { (const char*)quitter->user_id, (const char*)send_quitter, NULL };
+    return (void*) ((intptr_t) guac_protocol_send_msg(user->socket, GUAC_MESSAGE_USER_LEFT, args));
+
+}
+
+int guac_client_owner_notify_leave(guac_client* client, guac_user* quitter) {
+
+    /* Don't send msg instruction if client does not support it. */
+    if (!guac_client_owner_supports_msg(client)) {
+        guac_client_log(client, GUAC_LOG_DEBUG,
+                        "Client does not support the \"msg\" instruction and "
+                        "will not be notified of the user leaving the connection.");
+        return -1;
+    }
+
+    return (int) ((intptr_t) guac_client_for_owner(client, guac_client_owner_notify_leave_callback, quitter));
+
 }
 
 int guac_client_supports_webp(guac_client* client) {

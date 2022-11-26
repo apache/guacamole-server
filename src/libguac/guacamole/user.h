@@ -88,7 +88,7 @@ struct guac_user_info {
      * stated resolution of the display size request is recommended.
      */
     int optimal_resolution;
-    
+
     /**
      * The timezone of the remote system.  If the client does not provide
      * a specific timezone then this will be NULL.  The format of the timezone
@@ -101,6 +101,14 @@ struct guac_user_info {
      * for feature support to be negotiated between client and server.
      */
     guac_protocol_version protocol_version;
+
+    /**
+     * The human-readable name of the Guacamole user, supplied by the client
+     * during the handshake. This is an arbitrary value, with no requirements or
+     * constraints, including that it need not uniquely identify the user.
+     * If the client does not provide a name then this will be NULL.
+     */
+    const char* name;
 
 };
 
@@ -849,6 +857,17 @@ void guac_user_stream_jpeg(guac_user* user, guac_socket* socket,
 void guac_user_stream_webp(guac_user* user, guac_socket* socket,
         guac_composite_mode mode, const guac_layer* layer, int x, int y,
         cairo_surface_t* surface, int quality, int lossless);
+
+/**
+ * Returns whether the given user supports the "msg" instruction.
+ * 
+ * @param user
+ *     The Guacamole user to check for support of the "msg" instruction.
+ * 
+ * @return 
+ *     Non-zero if the user supports the "msg" instruction, otherwise zero.
+ */
+int guac_user_supports_msg(guac_user* user);
 
 /**
  * Returns whether the given user supports the "required" instruction.
