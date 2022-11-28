@@ -302,14 +302,14 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
         /* Update owner pointer if user is owner */
         if (user->owner)
             client->__owner = user;
-        
-        /* Notify owner of user joining connection. */
-        else
-            guac_client_owner_notify_join(client, user);
 
     }
 
     pthread_rwlock_unlock(&(client->__users_lock));
+
+    /* Notify owner of user joining connection. */
+    if (retval == 0 && !user->owner)
+        guac_client_owner_notify_join(client, user);
 
     return retval;
 
@@ -335,11 +335,11 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
     if (user->owner)
         client->__owner = NULL;
 
-    /* Update owner of user having left the connection. */
-    else
-        guac_client_owner_notify_leave(client, user);
-
     pthread_rwlock_unlock(&(client->__users_lock));
+
+    /* Update owner of user having left the connection. */
+    if (!user->owner)
+        guac_client_owner_notify_leave(client, user);
 
     /* Call handler, if defined */
     if (user->leave_handler)
