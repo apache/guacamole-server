@@ -65,6 +65,7 @@ guac_protocol_version_mapping guac_protocol_version_table[] = {
     { GUAC_PROTOCOL_VERSION_1_0_0,   "VERSION_1_0_0" },
     { GUAC_PROTOCOL_VERSION_1_1_0,   "VERSION_1_1_0" },
     { GUAC_PROTOCOL_VERSION_1_3_0,   "VERSION_1_3_0" },
+    { GUAC_PROTOCOL_VERSION_1_5_0,   "VERSION_1_5_0" },
     { GUAC_PROTOCOL_VERSION_UNKNOWN, NULL }
 };
 
@@ -654,6 +655,23 @@ int guac_protocol_send_log(guac_socket* socket, const char* format, ...) {
     ret_val = vguac_protocol_send_log(socket, format, args);
     va_end(args);
 
+    return ret_val;
+
+}
+
+int guac_protocol_send_msg(guac_socket* socket, guac_message_type msg,
+        const char** args) {
+
+    int ret_val;
+
+    guac_socket_instruction_begin(socket);
+    ret_val =
+           guac_socket_write_string(socket, "3.msg,")
+        || __guac_socket_write_length_int(socket, msg)
+        || guac_socket_write_array(socket, args)
+        || guac_socket_write_string(socket, ";");
+
+    guac_socket_instruction_end(socket);
     return ret_val;
 
 }

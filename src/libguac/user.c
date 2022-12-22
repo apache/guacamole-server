@@ -316,6 +316,15 @@ void guac_user_stream_webp(guac_user* user, guac_socket* socket,
 
 }
 
+int guac_user_supports_msg(guac_user* user) {
+
+    if (user == NULL)
+        return 0;
+
+    return (user->info.protocol_version >= GUAC_PROTOCOL_VERSION_1_5_0);
+
+}
+
 int guac_user_supports_required(guac_user* user) {
     
     if (user == NULL)
