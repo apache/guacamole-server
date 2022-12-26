@@ -29,6 +29,101 @@
 #include "terminal.h"
 #include "typescript.h"
 
+/**
+ * The ASCII number of NULL
+ */
+#define GUAC_TERMINAL_ASCII_NULL 0
+
+/**
+ * The ASCII number of space
+ */
+#define GUAC_TERMINAL_ASCII_SPACE 32
+
+/**
+ * The ASCII number of !
+ */
+#define GUAC_TERMINAL_ASCII_EXCLAMATION 33
+
+/**
+ * The ASCII number of /
+ */
+#define GUAC_TERMINAL_ASCII_SLASH 47
+
+/**
+ * The ASCII number of 0
+ */
+#define GUAC_TERMINAL_ASCII_0 48
+
+/**
+ * The ASCII number of 9
+ */
+#define GUAC_TERMINAL_ASCII_9 57
+
+/**
+ * The ASCII number of :
+ */
+#define GUAC_TERMINAL_ASCII_COLON 58
+
+/**
+ * The ASCII number of @
+ */
+#define GUAC_TERMINAL_ASCII_AT 64
+
+/**
+ * The ASCII number of A
+ */
+#define GUAC_TERMINAL_ASCII_A 65
+
+/**
+ * The ASCII number of Z
+ */
+#define GUAC_TERMINAL_ASCII_Z 90
+
+/**
+ * The ASCII number of [
+ */
+#define GUAC_TERMINAL_ASCII_SQRBRK 91
+
+/**
+ * The ASCII number of ^
+ */
+#define GUAC_TERMINAL_ASCII_CARET 94
+
+/**
+ * The ASCII number of _
+ */
+#define GUAC_TERMINAL_ASCII_UDL 95
+
+/**
+ * The ASCII number of `
+ */
+#define GUAC_TERMINAL_ASCII_SIGQUO 96
+
+/**
+ * The ASCII number of a
+ */
+#define GUAC_TERMINAL_ASCII_a 97
+
+/**
+ * The ASCII number of z
+ */
+#define GUAC_TERMINAL_ASCII_z 122
+
+/**
+ * The ASCII number of {
+ */
+#define GUAC_TERMINAL_ASCII_BRACE 123
+
+/**
+ * The ASCII number of ~
+ */
+#define GUAC_TERMINAL_ASCII_WAVE 126
+
+/**
+ * The ASCII number of DEL
+ */
+#define GUAC_TERMINAL_ASCII_DEL 127
+
 struct guac_terminal {
 
     /**
@@ -635,6 +730,71 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
  * Flushes all pending operations within the given guac_terminal.
  */
 void guac_terminal_flush(guac_terminal* terminal);
+
+/**
+ * Make visual effect of selection.
+ */
+void guac_terminal_draw_select(guac_terminal* terminal);
+
+/**
+ * Discard visual effect when not on selection.
+ */
+void guac_terminal_draw_blank(guac_terminal* terminal);
+
+/**
+ * Write selected word to clipboard.
+ */
+void guac_terminal_select_word(guac_terminal* terminal);
+
+/**
+ * Write selected blank to clipboard.
+ */
+void guac_terminal_select_blank(guac_terminal* terminal);
+
+/**
+ * Write selected punctuation mark to clipboard.
+ */
+void guac_terminal_select_punc(guac_terminal* terminal);
+
+/**
+ * Write selected line to clipboard.
+ */
+void guac_terminal_select_line(guac_terminal* terminal);
+
+/**
+ * Determination of part of word
+ */
+bool guac_terminal_is_part_of_word(int col);
+
+/**
+ * Determination of blank
+ */
+bool guac_terminal_is_blank(int col);
+
+/**
+ * Determination of part of punctuation mark
+ */
+bool guac_terminal_is_punc(int col);
+
+/**
+ * Get the border of the word to be selected.
+ */
+guac_terminal* guac_terminal_get_word_border(guac_terminal* terminal);
+
+/**
+ * Get the border of the blank to be selected.
+ */
+guac_terminal* guac_terminal_get_blank_border(guac_terminal* terminal);
+
+/**
+ * Double click event
+ */
+void guac_terminal_double_click(guac_terminal* terminal);
+
+/**
+ * Triple click event
+ */
+void guac_terminal_triple_click(guac_terminal* terminal);
 
 #endif
 
