@@ -42,7 +42,6 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     /* Get mouse information */
     term->select_row = y / term->display->char_height - term->scroll_offset;
     term->select_col = x / term->display->char_width;
-    printf("Column: %d\n", term->select_col);
     term->select_head = term->select_col;
     term->select_tail = term->select_col;
     int released_mask =  term->mouse_mask & ~mask;
