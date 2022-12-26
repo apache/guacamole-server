@@ -2200,7 +2200,7 @@ void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
     guac_common_cursor_remove_user(terminal->cursor, user);
 }
 
-void guac_terminal_draw_select(guac_terminal* terminal){
+void guac_terminal_draw_select(guac_terminal* terminal) {
 
     int height = terminal->display->char_height;
     int width = terminal->display->char_width;
@@ -2214,7 +2214,7 @@ void guac_terminal_draw_select(guac_terminal* terminal){
 
 }
 
-void guac_terminal_draw_blank(guac_terminal* terminal){
+void guac_terminal_draw_blank(guac_terminal* terminal) {
 
     guac_protocol_send_rect(terminal->display->client->socket, terminal->display->select_layer, 0, 0, 1, 1);
 
@@ -2223,7 +2223,7 @@ void guac_terminal_draw_blank(guac_terminal* terminal){
 
 }
 
-void guac_terminal_select_word(guac_terminal* terminal){
+void guac_terminal_select_word(guac_terminal* terminal) {
 
     int head = terminal->select_head;
     int tail = terminal->select_tail;
@@ -2250,7 +2250,7 @@ void guac_terminal_select_word(guac_terminal* terminal){
     /* Write each character to clipboard */
     
 
-    while (i <= tail){
+    while (i <= tail) {
 
         int remaining = sizeof(buffer);
         char* current = buffer;
@@ -2274,7 +2274,7 @@ void guac_terminal_select_word(guac_terminal* terminal){
     }    
 }
 
-void guac_terminal_select_blank(guac_terminal* terminal){
+void guac_terminal_select_blank(guac_terminal* terminal) {
 
     int head = terminal->select_head;
     int tail = terminal->select_tail;
@@ -2321,7 +2321,7 @@ void guac_terminal_select_blank(guac_terminal* terminal){
     }    
 }
 
-void guac_terminal_select_punc(guac_terminal* terminal){
+void guac_terminal_select_punc(guac_terminal* terminal) {
 
     /* Clear clipboard for new selection */
     guac_common_clipboard_reset(terminal->clipboard, "text/plain");
@@ -2340,7 +2340,7 @@ void guac_terminal_select_punc(guac_terminal* terminal){
 
 }
 
-void guac_terminal_select_line(guac_terminal* terminal){
+void guac_terminal_select_line(guac_terminal* terminal) {
     
     /* Clear clipboard for new selection */
     guac_common_clipboard_reset(terminal->clipboard, "text/plain");
@@ -2357,7 +2357,7 @@ void guac_terminal_select_line(guac_terminal* terminal){
     
     /* Write each character to clipboard */
     
-    while (i <= length){
+    while (i <= length) {
 
         int remaining = sizeof(buffer);
         char* current = buffer;
@@ -2413,7 +2413,7 @@ bool guac_terminal_is_punc(int col){
         return false;
 }
 
-guac_terminal* guac_terminal_get_word_border(guac_terminal* terminal){
+guac_terminal* guac_terminal_get_word_border(guac_terminal* terminal) {
     
     /* Set select information */
     int row = terminal->select_row;
@@ -2424,7 +2424,7 @@ guac_terminal* guac_terminal_get_word_border(guac_terminal* terminal){
     int flag = sentinel;
 
     /* Get head*/
-    while (guac_terminal_is_part_of_word(flag) && (head >= 0 && head <= terminal->display->width)){
+    while (guac_terminal_is_part_of_word(flag) && (head >= 0 && head <= terminal->display->width)) {
         flag = terminal->display->operations[row * terminal->display->width + head].character.value;
         head--;
     }
@@ -2433,16 +2433,13 @@ guac_terminal* guac_terminal_get_word_border(guac_terminal* terminal){
     flag = sentinel;
 
     /* Get tail */
-    while (guac_terminal_is_part_of_word(flag) && (tail >= 0 && tail <= terminal->display->width)){
+    while (guac_terminal_is_part_of_word(flag) && (tail >= 0 && tail <= terminal->display->width)) {
         flag = terminal->display->operations[row * terminal->display->width + tail].character.value;
         tail++;
     }
 
     head += 2;
     tail -= 2;
-
-    printf("Head: %d\n", head);
-    printf("Tail: %d\n", tail);
     
     /* Decide if head reaches first column */
     int h = terminal->display->operations[row * terminal->display->width + head - 1].character.value;
@@ -2456,7 +2453,7 @@ guac_terminal* guac_terminal_get_word_border(guac_terminal* terminal){
 
 }
 
-guac_terminal* guac_terminal_get_blank_border(guac_terminal* terminal){
+guac_terminal* guac_terminal_get_blank_border(guac_terminal* terminal) {
     
     /* Set select information */
     int row = terminal->select_row;
@@ -2467,7 +2464,7 @@ guac_terminal* guac_terminal_get_blank_border(guac_terminal* terminal){
     int flag = sentinel;
 
     /* Get head*/
-    while (guac_terminal_is_blank(flag) && (head >= 0 && head <= terminal->display->width)){
+    while (guac_terminal_is_blank(flag) && (head >= 0 && head <= terminal->display->width)) {
         flag = terminal->display->operations[row * terminal->display->width + head].character.value;
         head--;
     }
@@ -2476,16 +2473,13 @@ guac_terminal* guac_terminal_get_blank_border(guac_terminal* terminal){
     flag = sentinel;
 
     /* Get tail */
-    while (guac_terminal_is_blank(flag) && (tail >= 0 && tail <= terminal->display->width)){
+    while (guac_terminal_is_blank(flag) && (tail >= 0 && tail <= terminal->display->width)) {
         flag = terminal->display->operations[row * terminal->display->width + tail].character.value;
         tail++;
     }
 
     head += 2;
     tail -= 2;
-
-    printf("Head: %d\n", head);
-    printf("Tail: %d\n", tail);
     
     /* Decide if head reaches first column */
     int h = terminal->display->operations[row * terminal->display->width + head - 1].character.value;
@@ -2498,7 +2492,7 @@ guac_terminal* guac_terminal_get_blank_border(guac_terminal* terminal){
     return terminal;
 }
 
-void guac_terminal_double_click(guac_terminal* terminal){
+void guac_terminal_double_click(guac_terminal* terminal) {
 
     /* Set selection variables */
     int row = terminal->select_row;
@@ -2508,25 +2502,22 @@ void guac_terminal_double_click(guac_terminal* terminal){
     /* Determination of which kind of selection */
 
     /* Word */
-    if(guac_terminal_is_part_of_word(sentinel)){
+    if(guac_terminal_is_part_of_word(sentinel)) {
         
         /* Get border */
         terminal = guac_terminal_get_word_border(terminal);
         
-
         /* Copy to clipboard */
         guac_terminal_select_word(terminal);
 
         /* Draw selection */
         guac_terminal_draw_select(terminal);
 
-        printf("Word selected\n");
-
         return;
     }
 
     /* Punctuation Marks */
-    else if (guac_terminal_is_punc(sentinel)){
+    else if (guac_terminal_is_punc(sentinel)) {
 
         /* Set selection border */
         terminal->select_head = terminal->select_col;
@@ -2538,13 +2529,11 @@ void guac_terminal_double_click(guac_terminal* terminal){
         /* Draw selection */
         guac_terminal_draw_select(terminal);
 
-        printf("Mark selected\n");
-
         return;
     }
 
     /* Blank */
-    else if (guac_terminal_is_blank(sentinel)){
+    else if (guac_terminal_is_blank(sentinel)) {
         
         /* Get blank border */
         terminal = guac_terminal_get_blank_border(terminal);
@@ -2574,7 +2563,7 @@ void guac_terminal_double_click(guac_terminal* terminal){
             
             /*Move selected column*/
             sentinel = terminal->display->operations[row * terminal->display->width + col].character.value;
-            while(guac_terminal_is_blank(sentinel)){
+            while(guac_terminal_is_blank(sentinel)) {
                 col--;
                 sentinel = terminal->display->operations[row * terminal->display->width + col].character.value;
             }
@@ -2588,7 +2577,7 @@ void guac_terminal_double_click(guac_terminal* terminal){
             /* Determination of which kind of selection */
 
             /* Word */
-            if (guac_terminal_is_part_of_word(sentinel)){
+            if (guac_terminal_is_part_of_word(sentinel)) {
 
                 /* Get word border */
                 terminal = guac_terminal_get_word_border(terminal);
@@ -2603,7 +2592,7 @@ void guac_terminal_double_click(guac_terminal* terminal){
             }
 
             /* Punctuation marks */
-            else if (guac_terminal_is_punc(sentinel)){
+            else if (guac_terminal_is_punc(sentinel)) {
                 
                 /* Set selection border */
                 terminal->select_head = terminal->select_col;

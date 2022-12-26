@@ -57,7 +57,7 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
         guac_common_recording_report_mouse(ssh_client->recording, x, y, mask);
     
     /* Clear the selection effect if not on selecting*/
-    if (term->mouse_state == 0 && (pressed_mask & GUAC_CLIENT_MOUSE_LEFT)){
+    if (term->mouse_state == 0 && (pressed_mask & GUAC_CLIENT_MOUSE_LEFT)) {
 
         /* Clear selection effect */
         guac_terminal_draw_blank(term);
@@ -68,7 +68,7 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     }
 
     /* Start time recoding when mouse first pressed */
-    else if (term->mouse_state == 0 && (released_mask & GUAC_CLIENT_MOUSE_LEFT)){
+    else if (term->mouse_state == 0 && (released_mask & GUAC_CLIENT_MOUSE_LEFT)) {
         
         /* Start timer */
         term->start_1 = guac_timestamp_current();
@@ -80,7 +80,7 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     }
 
     /* Second click events */
-    else if (term->mouse_state == 1 && (pressed_mask & GUAC_CLIENT_MOUSE_LEFT)){
+    else if (term->mouse_state == 1 && (pressed_mask & GUAC_CLIENT_MOUSE_LEFT)) {
 
         term->end_1 = guac_timestamp_current();
         guac_timestamp interval_1 = term->end_1 - term->start_1;
@@ -99,7 +99,7 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     }
 
     /* After second events */
-    else if (term->mouse_state == 1 && (released_mask & GUAC_CLIENT_MOUSE_LEFT)){
+    else if (term->mouse_state == 1 && (released_mask & GUAC_CLIENT_MOUSE_LEFT)) {
         term->end_2 = guac_timestamp_current();
         guac_timestamp interval_2 = term->end_2 - term->start_2;
 
@@ -117,7 +117,7 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     }
 
     /* Third click events */
-    else if (term->mouse_state == 2 && (pressed_mask & GUAC_CLIENT_MOUSE_LEFT)){
+    else if (term->mouse_state == 2 && (pressed_mask & GUAC_CLIENT_MOUSE_LEFT)) {
         term->end_3 = guac_timestamp_current();
         guac_timestamp interval_3 = term->end_3 - term->start_3;
 
@@ -136,7 +136,7 @@ int guac_ssh_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     }
 
     /* Other conditions */
-    else if (term->mouse_state == 2 && (released_mask & GUAC_CLIENT_MOUSE_LEFT)){
+    else if (term->mouse_state == 2 && (released_mask & GUAC_CLIENT_MOUSE_LEFT)) {
         term->mouse_state = 0;
 
         /* Send mouse event */
