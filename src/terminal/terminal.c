@@ -49,6 +49,7 @@
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/unicode.h>
 
 /**
  * Sets the given range of columns to the given character.
@@ -587,6 +588,21 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Configure backspace */
     term->backspace = options->backspace;
+
+    /* Initialize mouse event related value */
+    term->mouse_state = 0;
+    term->start_1 = 0;
+    term->start_2 = 0;
+    term->start_3 = 0;
+    term->end_1 = 0;
+    term->end_2 = 0;
+    term->end_3 = 0;
+
+    /* Initialize selection related value */
+    term->select_row = 0;
+    term->select_col = 0;
+    term->select_head = 0;
+    term->select_tail = 0;
 
     return term;
 
@@ -2183,3 +2199,438 @@ void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
     /* Remove the user from the terminal cursor */
     guac_common_cursor_remove_user(terminal->cursor, user);
 }
+
+void guac_terminal_draw_select(guac_terminal* terminal){
+
+    int height = terminal->display->char_height;
+    int width = terminal->display->char_width;
+
+    guac_protocol_send_rect(terminal->display->client->socket, terminal->display->select_layer, 
+    terminal->select_head * width, terminal->select_row * height,
+    (terminal->select_tail - terminal->select_head + 1) * width, height);
+
+    guac_protocol_send_cfill(terminal->display->client->socket, GUAC_COMP_SRC, terminal->display->select_layer,
+    0x00, 0x80, 0xFF, 0x60);
+
+}
+
+void guac_terminal_draw_blank(guac_terminal* terminal){
+
+    guac_protocol_send_rect(terminal->display->client->socket, terminal->display->select_layer, 0, 0, 1, 1);
+
+    guac_protocol_send_cfill(terminal->display->client->socket, GUAC_COMP_SRC, terminal->display->select_layer,
+    0x00, 0x00, 0x00, 0x00);
+
+}
+
+void guac_terminal_select_word(guac_terminal* terminal){
+
+    int head = terminal->select_head;
+    int tail = terminal->select_tail;
+    
+    /* Clear clipboard for new selection */
+    guac_common_clipboard_reset(terminal->clipboard, "text/plain");
+    char buffer[1024];
+    int i = head;
+
+    /* Get information of selected row */
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, terminal->select_row, 0);
+    int index = (terminal->buffer->top + terminal->select_row) % terminal->buffer->available;
+    int length = buffer_row->length;
+
+    if(index < 0)
+        index += terminal->buffer->available;
+
+    if(head < 0 || head > length - 1)
+        return;
+
+    if(tail < 0 || tail > length - 1)
+        tail = length - 1;
+    
+    /* Write each character to clipboard */
+    
+
+    while (i <= tail){
+
+        int remaining = sizeof(buffer);
+        char* current = buffer;
+
+        for(i = head; i <= tail; i++) {
+            int codepoint = buffer_row->characters[i].value;
+
+            if (codepoint == 0 || codepoint == GUAC_CHAR_CONTINUATION)
+                continue;
+
+            int bytes = guac_utf8_write(codepoint, current, remaining);
+
+            if (bytes == 0)
+                break;
+
+            current += bytes;
+            remaining -= bytes;
+        }
+        guac_common_clipboard_append(terminal->clipboard, buffer, current - buffer);
+        guac_common_clipboard_send(terminal->clipboard, terminal->client);
+    }    
+}
+
+void guac_terminal_select_blank(guac_terminal* terminal){
+
+    int head = terminal->select_head;
+    int tail = terminal->select_tail;
+    
+    /* Clear clipboard for new selection */
+    guac_common_clipboard_reset(terminal->clipboard, "text/plain");
+    char buffer[1024];
+
+    /* Get information of selected row */
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, terminal->select_row, 0);
+    int index = (terminal->buffer->top + terminal->select_row) % terminal->buffer->available;
+    int l = buffer_row->length;
+
+    if(index < 0)
+        index += terminal->buffer->available;
+
+    if(head < 0 || head > l - 1)
+        return;
+
+    if(tail < 0 || tail > l - 1)
+        tail = l - 1;
+    
+    int i = head;
+
+    /* Write blank to clipboard */
+    while (i <= tail)
+    {
+        int remaining = sizeof(buffer);
+        char* current = buffer;
+
+        for(i = head; i <= tail; i++) {
+            int codepoint = 32;
+
+            int bytes = guac_utf8_write(codepoint, current, remaining);
+
+            if (bytes == 0)
+                    break;
+                    
+            current += bytes;
+            remaining -= bytes;
+        }
+        guac_common_clipboard_append(terminal->clipboard, buffer, current - buffer);
+        guac_common_clipboard_send(terminal->clipboard, terminal->client);
+    }    
+}
+
+void guac_terminal_select_punc(guac_terminal* terminal){
+
+    /* Clear clipboard for new selection */
+    guac_common_clipboard_reset(terminal->clipboard, "text/plain");
+    char buffer[1024];
+    char* current = buffer;
+
+    /* Get information of selected row */
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, terminal->select_row, 0);
+    
+    /* Write char to clipboard */
+    int bytes = guac_utf8_write(buffer_row->characters[terminal->select_col].value, current, sizeof(buffer));
+    current += bytes;
+
+    guac_common_clipboard_append(terminal->clipboard, buffer, current - buffer);
+    guac_common_clipboard_send(terminal->clipboard, terminal->client);
+
+}
+
+void guac_terminal_select_line(guac_terminal* terminal){
+    
+    /* Clear clipboard for new selection */
+    guac_common_clipboard_reset(terminal->clipboard, "text/plain");
+    char buffer[1024];
+
+    /* Get information of selected row */
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, terminal->select_row, 0);
+    int index = (terminal->buffer->top + terminal->select_row) % terminal->buffer->available;
+    int i = 0;
+    int length = buffer_row->length;
+
+    if(index < 0)
+        index += terminal->buffer->available;
+    
+    /* Write each character to clipboard */
+    
+    while (i <= length){
+
+        int remaining = sizeof(buffer);
+        char* current = buffer;
+
+        for(i = 0; i <= length; i++) {
+            int codepoint = buffer_row->characters[i].value;
+
+            if (codepoint == 0)
+                codepoint = 32;
+
+            if (codepoint == GUAC_CHAR_CONTINUATION)
+                continue;
+
+            int bytes = guac_utf8_write(codepoint, current, remaining);
+
+            if (bytes == 0)
+                break;
+
+            current += bytes;
+            remaining -= bytes;
+        }
+
+        guac_common_clipboard_append(terminal->clipboard, buffer, current - buffer);
+        guac_common_clipboard_send(terminal->clipboard, terminal->client);
+    }    
+}
+
+bool guac_terminal_is_part_of_word(int col){
+    if ((col > GUAC_TERMINAL_ASCII_SLASH && col < GUAC_TERMINAL_ASCII_COLON) || 
+        (col > GUAC_TERMINAL_ASCII_AT && col < GUAC_TERMINAL_ASCII_SQRBRK) || 
+        (col > GUAC_TERMINAL_ASCII_SIGQUO && col < GUAC_TERMINAL_ASCII_BRACE) ||
+        (col == GUAC_TERMINAL_ASCII_UDL) )
+        return true;
+    else
+        return false;
+}
+
+bool guac_terminal_is_blank(int col){
+    if (col == GUAC_TERMINAL_ASCII_NULL || col == GUAC_TERMINAL_ASCII_SPACE)
+        return true;
+    else
+        return false;
+}
+
+bool guac_terminal_is_punc(int col){
+    if ((col > GUAC_TERMINAL_ASCII_SPACE && col < GUAC_TERMINAL_ASCII_0) ||
+        (col > GUAC_TERMINAL_ASCII_9 && col < GUAC_TERMINAL_ASCII_A) || 
+        (col > GUAC_TERMINAL_ASCII_Z && col < GUAC_TERMINAL_ASCII_UDL) || 
+        (col > GUAC_TERMINAL_ASCII_z && col < GUAC_TERMINAL_ASCII_DEL) ||
+        (col == GUAC_TERMINAL_ASCII_SIGQUO))
+        return true;
+    else
+        return false;
+}
+
+guac_terminal* guac_terminal_get_word_border(guac_terminal* terminal){
+    
+    /* Set select information */
+    int row = terminal->select_row;
+    int col = terminal->select_col;
+    int head = terminal->select_head;
+    int tail = terminal->select_tail;
+    int sentinel = terminal->display->operations[row * terminal->display->width + col].character.value;
+    int flag = sentinel;
+
+    /* Get head*/
+    while (guac_terminal_is_part_of_word(flag) && (head >= 0 && head <= terminal->display->width)){
+        flag = terminal->display->operations[row * terminal->display->width + head].character.value;
+        head--;
+    }
+
+    /* Reset falg */
+    flag = sentinel;
+
+    /* Get tail */
+    while (guac_terminal_is_part_of_word(flag) && (tail >= 0 && tail <= terminal->display->width)){
+        flag = terminal->display->operations[row * terminal->display->width + tail].character.value;
+        tail++;
+    }
+
+    head += 2;
+    tail -= 2;
+
+    printf("Head: %d\n", head);
+    printf("Tail: %d\n", tail);
+    
+    /* Decide if head reaches first column */
+    int h = terminal->display->operations[row * terminal->display->width + head - 1].character.value;
+    if (head == 1 && guac_terminal_is_part_of_word(h))
+        head = 0;
+
+    terminal->select_head = head;
+    terminal->select_tail = tail;
+
+    return terminal;
+
+}
+
+guac_terminal* guac_terminal_get_blank_border(guac_terminal* terminal){
+    
+    /* Set select information */
+    int row = terminal->select_row;
+    int col = terminal->select_col;
+    int head = terminal->select_head;
+    int tail = terminal->select_tail;
+    int sentinel = terminal->display->operations[row * terminal->display->width + col].character.value;
+    int flag = sentinel;
+
+    /* Get head*/
+    while (guac_terminal_is_blank(flag) && (head >= 0 && head <= terminal->display->width)){
+        flag = terminal->display->operations[row * terminal->display->width + head].character.value;
+        head--;
+    }
+
+    /* Reset falg */
+    flag = sentinel;
+
+    /* Get tail */
+    while (guac_terminal_is_blank(flag) && (tail >= 0 && tail <= terminal->display->width)){
+        flag = terminal->display->operations[row * terminal->display->width + tail].character.value;
+        tail++;
+    }
+
+    head += 2;
+    tail -= 2;
+
+    printf("Head: %d\n", head);
+    printf("Tail: %d\n", tail);
+    
+    /* Decide if head reaches first column */
+    int h = terminal->display->operations[row * terminal->display->width + head - 1].character.value;
+    if (head == 1 && guac_terminal_is_blank(h))
+        head = 0;
+
+    terminal->select_head = head;
+    terminal->select_tail = tail;
+
+    return terminal;
+}
+
+void guac_terminal_double_click(guac_terminal* terminal){
+
+    /* Set selection variables */
+    int row = terminal->select_row;
+    int col = terminal->select_col;
+    int sentinel = terminal->display->operations[row * terminal->display->width + col].character.value;
+
+    /* Determination of which kind of selection */
+
+    /* Word */
+    if(guac_terminal_is_part_of_word(sentinel)){
+        
+        /* Get border */
+        terminal = guac_terminal_get_word_border(terminal);
+        
+
+        /* Copy to clipboard */
+        guac_terminal_select_word(terminal);
+
+        /* Draw selection */
+        guac_terminal_draw_select(terminal);
+
+        printf("Word selected\n");
+
+        return;
+    }
+
+    /* Punctuation Marks */
+    else if (guac_terminal_is_punc(sentinel)){
+
+        /* Set selection border */
+        terminal->select_head = terminal->select_col;
+        terminal->select_tail = terminal->select_col;
+
+        /* Copy to clipboard */
+        guac_terminal_select_punc(terminal);
+
+        /* Draw selection */
+        guac_terminal_draw_select(terminal);
+
+        printf("Mark selected\n");
+
+        return;
+    }
+
+    /* Blank */
+    else if (guac_terminal_is_blank(sentinel)){
+        
+        /* Get blank border */
+        terminal = guac_terminal_get_blank_border(terminal);
+
+        /* Get border information */
+        int head = terminal->select_head;
+        int tail = terminal->select_tail;
+        int width = terminal->display->width;
+
+        /* Blank before text ends */
+        if (head == 0 || tail < width - 1){
+
+            /* Get border */
+            terminal = guac_terminal_get_blank_border(terminal);
+
+            /* Copy to clipboard */
+            guac_terminal_select_blank(terminal);
+
+            /* Draw selection */
+            guac_terminal_draw_select(terminal);
+
+            return;
+        }
+
+        /* Blank at end of text ends */
+        else if (head > 0 && tail == width - 1){
+            
+            /*Move selected column*/
+            sentinel = terminal->display->operations[row * terminal->display->width + col].character.value;
+            while(guac_terminal_is_blank(sentinel)){
+                col--;
+                sentinel = terminal->display->operations[row * terminal->display->width + col].character.value;
+            }
+
+            /* Set information and make selection at the end of text */
+            terminal->select_col = col;
+            terminal->select_head = col;
+            terminal->select_tail = col;
+            sentinel = terminal->display->operations[row * terminal->display->width + col].character.value;
+
+            /* Determination of which kind of selection */
+
+            /* Word */
+            if (guac_terminal_is_part_of_word(sentinel)){
+
+                /* Get word border */
+                terminal = guac_terminal_get_word_border(terminal);
+
+                /* Copy to clipboard */
+                guac_terminal_select_word(terminal);
+
+                /* Draw selection */
+                guac_terminal_draw_select(terminal);
+
+                return;
+            }
+
+            /* Punctuation marks */
+            else if (guac_terminal_is_punc(sentinel)){
+                
+                /* Set selection border */
+                terminal->select_head = terminal->select_col;
+                terminal->select_tail = terminal->select_col;
+
+                /* Copy to clipboard */
+                guac_terminal_select_punc(terminal);
+
+                /* Draw selection */
+                guac_terminal_draw_select(terminal);
+
+                return;
+            }
+        }
+    }
+}
+
+void guac_terminal_triple_click(guac_terminal* terminal){
+
+    /* Set selection border */
+    terminal->select_head = 0;
+    terminal->select_tail = terminal->display->width;
+
+    /* Make selection */
+    guac_terminal_select_line(terminal);
+    guac_terminal_draw_select(terminal);
+
+    return;
+}
+

@@ -30,7 +30,6 @@ lib_LTLIBRARIES = libguac-client-ssh.la
 
 libguac_client_ssh_la_SOURCES = \
     argv.c                      \
-    click.c
     client.c                    \
     clipboard.c                 \
     input.c                     \
@@ -43,7 +42,6 @@ libguac_client_ssh_la_SOURCES = \
 
 noinst_HEADERS =                \
     argv.h                      \
-    click.h
     client.h                    \
     clipboard.h                 \
     input.h                     \
