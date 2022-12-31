@@ -30,20 +30,26 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char* argv[]) {
 
-    int i;
+    int i, size;
+    bool codec_valid = false;
+    char* codec_names[] = { "mpeg4", "libvpx" };
+    char* codec_suffixes[] = { "m4v", "avi" };
 
     /* Load defaults */
     bool force = false;
     int width = GUACENC_DEFAULT_WIDTH;
     int height = GUACENC_DEFAULT_HEIGHT;
     int bitrate = GUACENC_DEFAULT_BITRATE;
+    int codec_suffix = 0;
+    char* codec_name = codec_names[codec_suffix];
 
     /* Parse arguments */
     int opt;
-    while ((opt = getopt(argc, argv, "s:r:f")) != -1) {
+    while ((opt = getopt(argc, argv, "s:r:f:c:")) != -1) {
 
         /* -s: Dimensions (WIDTHxHEIGHT) */
         if (opt == 's') {
@@ -64,6 +70,35 @@ int main(int argc, char* argv[]) {
         /* -f: Force */
         else if (opt == 'f')
             force = true;
+
+        /* -c: Codec */
+        else if (opt == 'c') {
+            codec_name = optarg;
+
+            size = sizeof(codec_names) / sizeof(codec_names[0]);
+            for (i = 0; i < size; i++) {
+                if (strcmp(codec_name, codec_names[i]) == 0) {
+                    codec_valid = true;
+                    codec_suffix = i;
+                    break;
+                }
+            }
+
+            if (codec_valid != true) {
+                guacenc_log(GUAC_LOG_ERROR, "Invalid codec.");
+                fprintf(stderr, "ERROR: Unsupported codec! "
+                        "Supported codecs are: ");
+
+                size = sizeof(codec_names) / sizeof(codec_names[0]);
+                for (i = 0; i < size; i++) {
+                    fprintf(stderr, "%s ", codec_names[i]);
+                }
+
+                fprintf(stderr, "\n");
+
+                exit(1);
+            }
+        }
 
         /* Invalid option */
         else {
@@ -108,7 +143,8 @@ int main(int argc, char* argv[]) {
 
         /* Generate output filename */
         char out_path[4096];
-        int len = snprintf(out_path, sizeof(out_path), "%s.m4v", path);
+        int len = snprintf(out_path, sizeof(out_path), "%s.%s", path,
+                codec_suffixes[codec_suffix]);
 
         /* Do not write if filename exceeds maximum length */
         if (len >= sizeof(out_path)) {
@@ -118,7 +154,7 @@ int main(int argc, char* argv[]) {
         }
 
         /* Attempt encoding, log granular success/failure at debug level */
-        if (guacenc_encode(path, out_path, "mpeg4",
+        if (guacenc_encode(path, out_path, codec_name,
                     width, height, bitrate, force)) {
             failures++;
             guacenc_log(GUAC_LOG_DEBUG,
@@ -148,6 +184,7 @@ invalid_options:
             " [-s WIDTHxHEIGHT]"
             " [-r BITRATE]"
             " [-f]"
+            " [-c CODEC]"
             " [FILE]...\n", argv[0]);
 
     return 1;
