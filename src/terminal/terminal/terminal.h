@@ -141,19 +141,35 @@ typedef enum guac_terminal_cursor_type {
 } guac_terminal_cursor_type;
 
 /**
- * Handler for characters printed to the terminal. When a character is printed,
- * the current char handler for the terminal is called and given that
- * character.
- */
-typedef int guac_terminal_char_handler(guac_terminal* term, unsigned char c);
-
-/**
- * Handler for setting the destination path for file uploads.
+ * Handler that is invoked whenever the necessary terminal codes are sent to
+ * to the given terminal to change the path for future file uploads.
+ *
+ * @param client
+ *     The guac_client associated with the terminal receiving the upload path
+ *     change terminal code.
+ *
+ * @param path
+ *     The requested path.
  */
 typedef void guac_terminal_upload_path_handler(guac_client* client, char* path);
 
 /**
- * Handler for creating an outbound file download stream for a specified file.
+ * Handler that is invoked whenever the necessary terminal codes are sent to
+ * initiate a download of a given remote file.
+ *
+ * @param client
+ *     The guac_client associated with the terminal receiving the file download
+ *     terminal code.
+ *
+ * @param filename
+ *     The name of the requested file. This may be a relative or absolute path,
+ *     and it is up to the implementation to define how this value is
+ *     interpreted.
+ *
+ * @return
+ *     The file stream created for the file download, already configured to
+ *     properly handle "ack" responses, etc. from the client, or NULL if the
+ *     stream could not be created.
  */
 typedef guac_stream* guac_terminal_file_download_handler(guac_client* client, char* filename);
 
@@ -283,7 +299,9 @@ guac_terminal_options* guac_terminal_options_create(
 void guac_terminal_free(guac_terminal* term);
 
 /**
- * Set the upload path handler for the given terminal.
+ * Sets the upload path handler for the given terminal. The upload path handler
+ * is invoked whenever the terminal codes requesting an upload path change are
+ * sent.
  *
  * @param terminal
  *     The terminal to set the upload path handler for.
@@ -296,7 +314,9 @@ void guac_terminal_set_upload_path_handler(guac_terminal* terminal,
         guac_terminal_upload_path_handler* upload_path_handler);
 
 /**
- * Set the file download handler for the given terminal.
+ * Sets the file download handler for the given terminal. The file download
+ * handler is invoked whenever the terminal codes requesting download of a
+ * given remote file are sent.
  *
  * @param terminal
  *     The terminal to set the file download handler for.
