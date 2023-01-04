@@ -29,6 +29,22 @@
 #include "terminal.h"
 #include "typescript.h"
 
+/**
+ * Handler for characters printed to the terminal. When a character is printed,
+ * the current char handler for the terminal is called and given that
+ * character.
+ *
+ * @param term
+ *     The terminal receiving the character.
+ *
+ * @param c
+ *     The received character.
+ *
+ * @return
+ *     Zero if the character was handled successfully, non-zero otherwise.
+ */
+typedef int guac_terminal_char_handler(guac_terminal* term, unsigned char c);
+
 struct guac_terminal {
 
     /**
