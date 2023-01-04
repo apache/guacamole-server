@@ -852,14 +852,13 @@ void guac_terminal_commit_cursor(guac_terminal* term) {
 
 }
 
-int guac_terminal_write(guac_terminal* term, const char* c, int size) {
+int guac_terminal_write(guac_terminal* term, const char* buffer, int length) {
 
     guac_terminal_lock(term);
-    while (size > 0) {
+    for (int written = 0; written < length; written++) {
 
         /* Read and advance to next character */
-        char current = *(c++);
-        size--;
+        char current = *(buffer++);
 
         /* Write character to typescript, if any */
         if (term->typescript != NULL)
@@ -872,7 +871,7 @@ int guac_terminal_write(guac_terminal* term, const char* c, int size) {
     guac_terminal_unlock(term);
 
     guac_terminal_notify(term);
-    return 0;
+    return length;
 
 }
 
