@@ -461,6 +461,57 @@ struct guac_terminal {
      */
     bool disable_copy;
 
+    /**
+     * The backup of scroll handle height. The value will be restored after leaving 
+     * alternate buffer.
+     */
+    int handle_height_backup;
+
+    /**
+     * The backup of scroll minimum value. The value will be restored after leaving 
+     * alternate buffer.
+     */
+    int min_scroll_backup;
+
+    /**
+     * The backup of x point of scroll handle. The value will be restored after leaving 
+     * alternate buffer.
+     */
+    int handle_x_backup;
+
+    /**
+     * The backup of y point of scroll handle. The value will be restored after leaving 
+     * alternate buffer.
+     */
+    int handle_y_backup;
+
+
+    /**
+     * The backup of cursol row. The value will be used for recording the row of cursor
+     * and restored after leaving alternate buffer.
+     */
+    int cursor_row_backup;
+
+    /**
+     * The backup of cursol col. The value will be used for recording the col of cursor
+     * and restored after leaving alternate buffer.
+     */
+    int cursor_col_backup;
+
+    /**
+     * A backup of display area. This is used for recording the screen content before
+     * entering alternate screen buffer and restored for display after leaving alternate
+     * buffer.
+     */
+    guac_terminal_display* disbak;
+    
+    /**
+     * A backup of buffer content. This is used for recording the buffer content before
+     * entering alternate screen buffer and restored for buffer after leaving alternate
+     * buffer.
+     */
+    guac_terminal_buffer* altbuf;   
+
 };
 
 /**
@@ -651,6 +702,49 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
  * Flushes all pending operations within the given guac_terminal.
  */
 void guac_terminal_flush(guac_terminal* terminal);
+
+/**
+ * Making backup of buffer for restoring.
+ * 
+ * @param term 
+ */
+
+void guac_terminal_buffer_backup(guac_terminal* term);
+
+/**
+ * Making backup of display for restoring.
+ * 
+ * @param term 
+ */
+void guac_terminal_display_backup(guac_terminal* term);
+
+/**
+ * Restoring buffer content from altbuf.
+ * 
+ * @param term 
+ */
+void guac_terminal_buffer_restore(guac_terminal* term);
+
+/**
+ * Restoring display content from disbak.
+ * 
+ * @param term 
+ */
+void guac_terminal_display_restore(guac_terminal* term);
+
+/**
+ * Making backup of scroll related value for restoring.
+ * 
+ * @param term 
+ */
+void guac_terminal_scroll_backup(guac_terminal* term);
+
+/**
+ * Restoring scroll state from backup value.
+ * 
+ * @param term 
+ */
+void guac_terminal_scroll_restore(guac_terminal* term);
 
 #endif
 

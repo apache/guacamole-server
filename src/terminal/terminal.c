@@ -485,9 +485,20 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->buffer = guac_terminal_buffer_alloc(initial_scrollback,
             &default_char);
 
+    /* Init alternate buffer */
+    term->altbuf = guac_terminal_buffer_alloc(initial_scrollback,
+            &default_char);
+
     /* Init display */
     term->display = guac_terminal_display_alloc(client,
             options->font_name, options->font_size, options->dpi,
+            &default_char.attributes.foreground,
+            &default_char.attributes.background,
+            (guac_terminal_color(*)[256]) default_palette);
+
+    /* Init display backup */
+    term->disbak = guac_terminal_display_alloc(client,
+            font_name, font_size, dpi,
             &default_char.attributes.foreground,
             &default_char.attributes.background,
             (guac_terminal_color(*)[256]) default_palette);
@@ -2181,4 +2192,153 @@ void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
 
     /* Remove the user from the terminal cursor */
     guac_common_cursor_remove_user(terminal->cursor, user);
+}
+
+void guac_terminal_buffer_backup(guac_terminal* term){
+
+    /* Allocate and assign value for alternate buffer */
+    int row, col;
+    term->altbuf->available = term->buffer->available;
+    term->altbuf->default_character = term->buffer->default_character;
+    term->altbuf->length = term->buffer->length;
+    term->altbuf->top = term->buffer->top;
+    term->altbuf->rows = malloc(sizeof(guac_terminal_buffer_row) * term->altbuf->length);
+    guac_terminal_buffer_row* current = term->altbuf->rows;
+
+    /* Copy value from buffer to alternate buffer */
+    for (row = 0; row < term->buffer->length; row++){
+        current->available = term->buffer->rows[row].available;
+        current->length = term->buffer->rows[row].length;
+        current->characters = malloc(sizeof(guac_terminal_char) * current->available);
+        for (col = 0; col < term->buffer->rows[row].length; col++){
+            memcpy(&(current->characters[col]), &(term->buffer->rows[row].characters[col]), 
+                    sizeof(guac_terminal_char));
+        }
+        current++;
+    }
+
+}
+
+void guac_terminal_display_backup(guac_terminal* term){
+
+    /* Backup cursor position */
+    term->cursor_row_backup = term->cursor_row;
+    term->cursor_col_backup = term->cursor_col;
+    
+    /* Allocate and assign value for display content */
+    int row, col;
+    guac_terminal_operation* src = term->display->operations;
+    guac_terminal_operation* dst;
+    term->disbak->height = term->display->height;
+    term->disbak->width = term->display->width;
+    term->disbak->client = term->display->client;
+    term->disbak->operations = malloc(term->display->height * term->display->width 
+                                            * sizeof(guac_terminal_operation));
+    dst = term->disbak->operations;
+
+    /* Copy value from display to display backup */                                        
+    for (row = 0; row < term->display->height; row++){
+        for (col = 0; col < term->display->width; col++){
+            memcpy(dst, src, sizeof(guac_terminal_operation));
+            dst->type = GUAC_CHAR_SET;
+            src++;
+            dst++;
+        }
+    }
+}
+
+void guac_terminal_buffer_restore(guac_terminal* term){
+
+    /* Restoring value from alternate buffer */
+    int row, col;
+    guac_terminal_buffer_free(term->buffer);
+    term->buffer = guac_terminal_buffer_alloc(term->altbuf->available, &(term->altbuf->default_character));
+    term->buffer->length = term->altbuf->length;
+    term->buffer->top = term->altbuf->top;
+    term->buffer->available = term->altbuf->available;
+    guac_terminal_buffer_row* current = term->buffer->rows;
+
+    /* Get buffer content from alternate buffer */
+    for (row = 0; row < term->altbuf->length; row++){
+        current->available = term->altbuf->rows[row].available;
+        current->length = term->altbuf->rows[row].length;
+        for (col = 0; col < term->buffer->rows[row].length; col++){
+            memcpy(&(current->characters[col]), &(term->altbuf->rows[row].characters[col]), 
+                    sizeof(guac_terminal_char));
+        }
+        current++;
+    }
+
+}
+
+void guac_terminal_display_restore(guac_terminal * term){
+    
+    /* Restoring value from display backup */
+    int row, col;
+    guac_terminal_operation* src = term->disbak->operations;
+    guac_terminal_operation* dst = term->display->operations;
+    for (row = 0; row < term->display->height; row++){
+        for (col = 0; col < term->display->width; col++){
+            memcpy(dst, src, sizeof(guac_terminal_operation));
+            dst->type = GUAC_CHAR_SET;
+            src++;
+            dst++;
+        }
+    }
+
+    /* Ensure cursor row is within terminal bounds */
+    if (term->cursor_row_backup >= term->term_height)
+        term->cursor_row_backup = term->term_height - 1;
+    else if (term->cursor_row_backup < 0)
+        term->cursor_row_backup = 0;
+
+    /* Ensure cursor column is within terminal bounds */
+    if (term->cursor_col_backup >= term->term_width)
+        term->cursor_col_backup = term->term_width - 1;
+    else if (term->cursor_col_backup < 0)
+        term->cursor_col_backup = 0;
+
+    /* Update cursor position */
+    term->cursor_row = term->cursor_row_backup;
+    term->cursor_col = term->cursor_col_backup;
+
+}
+
+void guac_terminal_scroll_backup(guac_terminal* term){
+
+    /* Backup any influential variables for scroll handle */
+    term->handle_height_backup = term->scrollbar->render_state.handle_height;
+    term->handle_x_backup = term->scrollbar->render_state.handle_x;
+    term->handle_y_backup = term->scrollbar->render_state.handle_y;
+    term->min_scroll_backup = term->scrollbar->min;
+
+}
+
+void guac_terminal_scroll_restore(guac_terminal* term){
+
+    /* Restore scroll value */
+    term->scrollbar->render_state.handle_height = term->handle_height_backup;
+    term->scrollbar->render_state.handle_x = term->handle_x_backup;
+    term->scrollbar->render_state.handle_y = term->handle_y_backup;
+    term->scrollbar->min = term->min_scroll_backup;
+
+    /* Send handle position */
+    guac_protocol_send_move(term->client->socket,
+            term->scrollbar->handle, term->scrollbar->container,
+            term->scrollbar->render_state.handle_x,
+            term->scrollbar->render_state.handle_y,
+            0);
+    
+    /* Set handle size */
+    guac_protocol_send_size(term->client->socket, term->scrollbar->handle,
+            term->scrollbar->render_state.handle_width,
+            term->scrollbar->render_state.handle_height);
+
+    /* Fill handle with solid color */
+    guac_protocol_send_rect(term->client->socket, term->scrollbar->handle, 0, 0,
+            term->scrollbar->render_state.handle_width,
+            term->scrollbar->render_state.handle_height);
+
+    guac_protocol_send_cfill(term->client->socket, GUAC_COMP_SRC, term->scrollbar->handle,
+            0xA0, 0xA0, 0xA0, 0x8F);
 }
