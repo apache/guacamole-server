@@ -166,6 +166,8 @@ void guac_common_display_free(guac_common_display* display) {
 void guac_common_display_dup(guac_common_display* display, guac_user* user,
         guac_socket* socket) {
 
+    guac_client* client = user->client;
+
     pthread_mutex_lock(&display->_lock);
 
     /* Sunchronize shared cursor */
@@ -177,6 +179,9 @@ void guac_common_display_dup(guac_common_display* display, guac_user* user,
     /* Synchronize all layers and buffers */
     guac_common_display_dup_layers(display->layers, user, socket);
     guac_common_display_dup_layers(display->buffers, user, socket);
+
+    /* Sends a sync instruction to mark the boundary of the first frame */
+    guac_protocol_send_sync(socket, client->last_sent_timestamp, 1);
 
     pthread_mutex_unlock(&display->_lock);
 
@@ -384,4 +389,3 @@ void guac_common_display_free_buffer(guac_common_display* display,
     pthread_mutex_unlock(&display->_lock);
 
 }
-
