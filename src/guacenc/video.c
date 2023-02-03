@@ -47,7 +47,7 @@
 guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
         int width, int height, int bitrate) {
 
-    AVOutputFormat *container_format;
+    const AVOutputFormat *container_format;
     AVFormatContext *container_format_context;
     AVStream *video_stream;
     int ret;
@@ -63,7 +63,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     container_format = container_format_context->oformat;
 
     /* Pull codec based on name */
-    AVCodec* codec = avcodec_find_encoder_by_name(codec_name);
+    const AVCodec* codec = avcodec_find_encoder_by_name(codec_name);
     if (codec == NULL) {
         guacenc_log(GUAC_LOG_ERROR, "Failed to locate codec \"%s\".",
                 codec_name);
