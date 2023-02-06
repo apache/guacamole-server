@@ -99,9 +99,9 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
             else              alpha = 0x00;
 
             /* Translate value to RGB */
-            red   = (v >> client->format.redShift)   * 0x100 / (client->format.redMax  + 1);
-            green = (v >> client->format.greenShift) * 0x100 / (client->format.greenMax+ 1);
-            blue  = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax + 1);
+            red   = ((v >> client->format.redShift)   & client->format.redMax)  * 0xFF / client->format.redMax;
+            green = ((v >> client->format.greenShift) & client->format.greenMax)* 0xFF / client->format.greenMax;
+            blue  = ((v >> client->format.blueShift)  & client->format.blueMax) * 0xFF / client->format.blueMax;
 
             /* Output ARGB */
             if (vnc_client->settings->swap_red_blue)
