@@ -37,6 +37,7 @@
 const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "hostname",
     "port",
+    "timeout",
     "username",
     "username-regex",
     "password",
@@ -80,6 +81,11 @@ enum TELNET_ARGS_IDX {
      * The port to connect to. Optional.
      */
     IDX_PORT,
+
+    /**
+     * The number of seconds to wait for the remote server to respond. Optional.
+     */
+    IDX_TIMEOUT,
 
     /**
      * The name of the user to login as. Optional.
@@ -428,6 +434,11 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
     settings->port =
         guac_user_parse_args_string(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_PORT, GUAC_TELNET_DEFAULT_PORT);
+
+    /* Read connection timeout */
+    settings->timeout =
+        guac_user_parse_args_int(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_TIMEOUT, GUAC_TELNET_DEFAULT_TIMEOUT);
 
     /* Read typescript path */
     settings->typescript_path =

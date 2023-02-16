@@ -34,6 +34,12 @@
 #define GUAC_TELNET_DEFAULT_PORT "23"
 
 /**
+ * The default number of seconds to wait for a successful connection before
+ * timing out.
+ */
+#define GUAC_TELNET_DEFAULT_TIMEOUT 10
+
+/**
  * The filename to use for the typescript, if not specified.
  */
 #define GUAC_TELNET_DEFAULT_TYPESCRIPT_NAME "typescript" 
@@ -71,6 +77,11 @@ typedef struct guac_telnet_settings {
      * The port of the telnet server to connect to.
      */
     char* port;
+
+    /**
+     * The number of seconds to wait for a connection before timing out.
+     */
+    int timeout;
 
     /**
      * The name of the user to login as, if any. If no username is specified,
