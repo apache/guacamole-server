@@ -39,6 +39,11 @@
 #define RDP_DEFAULT_PORT 3389
 
 /**
+ * The default SFTP connection timeout, in seconds.
+ */
+#define RDP_DEFAULT_SFTP_TIMEOUT 10
+
+/**
  * The default RDP port used by Hyper-V "VMConnect".
  */
 #define RDP_DEFAULT_VMCONNECT_PORT 2179
@@ -451,6 +456,12 @@ typedef struct guac_rdp_settings {
      * The port of the SSH server to connect to for SFTP.
      */
     char* sftp_port;
+
+    /**
+     * The number of seconds to attempt to connect to the SSH server before
+     * timing out.
+     */
+    int sftp_timeout;
 
     /**
      * The username to provide when authenticating with the SSH server for

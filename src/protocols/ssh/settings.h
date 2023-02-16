@@ -33,6 +33,12 @@
 #define GUAC_SSH_DEFAULT_PORT "22"
 
 /**
+ * The default number of seconds to attempt a connection to the SSH/SFTP
+ * server before giving up.
+ */
+#define GUAC_SSH_DEFAULT_TIMEOUT 10
+
+/**
  * The filename to use for the typescript, if not specified.
  */
 #define GUAC_SSH_DEFAULT_TYPESCRIPT_NAME "typescript" 
@@ -68,6 +74,12 @@ typedef struct guac_ssh_settings {
      * The port of the SSH server to connect to.
      */
     char* port;
+
+    /**
+     * The number of seconds to attempt to connect to the SSH server before
+     * timing out.
+     */
+    int timeout;
 
     /**
      * The name of the user to login as, if any. If no username is specified,

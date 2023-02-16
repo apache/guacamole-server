@@ -250,7 +250,8 @@ void* ssh_client_thread(void* data) {
                     settings->wol_wait_time,
                     GUAC_WOL_DEFAULT_CONNECT_RETRIES,
                     settings->hostname,
-                    settings->port)) {
+                    settings->port,
+                    settings->timeout)) {
                 guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet or connect to remote server.");
                 return NULL;
             }
@@ -336,7 +337,8 @@ void* ssh_client_thread(void* data) {
 
     /* Open SSH session */
     ssh_client->session = guac_common_ssh_create_session(client,
-            settings->hostname, settings->port, ssh_client->user, settings->server_alive_interval,
+            settings->hostname, settings->port, ssh_client->user,
+            settings->timeout, settings->server_alive_interval,
             settings->host_key, guac_ssh_get_credential);
     if (ssh_client->session == NULL) {
         /* Already aborted within guac_common_ssh_create_session() */
@@ -387,8 +389,8 @@ void* ssh_client_thread(void* data) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Reconnecting for SFTP...");
         ssh_client->sftp_session =
             guac_common_ssh_create_session(client, settings->hostname,
-                    settings->port, ssh_client->user, settings->server_alive_interval,
-                    settings->host_key, NULL);
+                    settings->port, ssh_client->user, settings->timeout,
+                    settings->server_alive_interval, settings->host_key, NULL);
         if (ssh_client->sftp_session == NULL) {
             /* Already aborted within guac_common_ssh_create_session() */
             return NULL;

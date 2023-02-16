@@ -22,11 +22,13 @@
 #include "guacamole/socket.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 
-int guac_socket_tcp_connect(const char* hostname, const char* port) {
+int guac_socket_tcp_connect(const char* hostname, const char* port, const int timeout) {
 
     int retval;
 
@@ -73,15 +75,31 @@ int guac_socket_tcp_connect(const char* hostname, const char* port) {
             return fd;
         }
 
-        /* Connect */
-        if (connect(fd, current_address->ai_addr,
-                        current_address->ai_addrlen) == 0) {
+        /* Set socket to non-blocking */
+        fcntl(fd, F_SETFL, O_NONBLOCK);
 
-            /* Done if successful connect */
+        /* Set up timeout. */
+        fd_set fdset;
+        FD_ZERO(&fdset);
+        FD_SET(fd, &fdset);
+
+        struct timeval tv;
+        tv.tv_sec = timeout;
+        tv.tv_usec = 0;
+
+        /* Connect and wait for timeout */
+        if (connect(fd, current_address->ai_addr, current_address->ai_addrlen) < 0) {
+            guac_error = GUAC_STATUS_REFUSED;
+            guac_error_message = "Unable to connect via socket.";
+            close(fd);
             break;
-
         }
 
+        /* Check for the connection and break if successful */
+        if (select(fd + 1, NULL, &fdset, NULL, &tv) > 0)
+            break;
+
+        /* Connection not successful - free resources and go to the next address. */
         close(fd);
         current_address = current_address->ai_next;
 
