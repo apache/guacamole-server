@@ -33,6 +33,7 @@
 #include <openssl/ssl.h>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <pthread.h>
@@ -40,6 +41,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -405,7 +407,7 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         const char* hostname, const char* port, guac_common_ssh_user* user,
-        int keepalive, const char* host_key,
+        int timeout, int keepalive, const char* host_key,
         guac_ssh_credential_handler* credential_handler) {
 
     int retval;
@@ -453,17 +455,43 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
             return NULL;
         }
 
-        /* Connect */
-        if (connect(fd, current_address->ai_addr,
-                        current_address->ai_addrlen) == 0) {
+        /* Set socket to non-blocking */
+        fcntl(fd, F_SETFL, O_NONBLOCK);
+        
+        /* Set up timeout. */
+        fd_set fdset;
+        FD_ZERO(&fdset);
+        FD_SET(fd, &fdset);
 
+        struct timeval tv;
+        tv.tv_sec = timeout;             /* 10 second timeout */
+        tv.tv_usec = 0;
+
+        /* Connect and wait for timeout */
+        if (connect(fd, current_address->ai_addr, current_address->ai_addrlen) < 0) {
+            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
+                    "Unable to connect to socket: %s", strerror(errno));
+            return NULL;
+        }
+        
+        retval = select(fd + 1, NULL, &fdset, NULL, &tv);
+
+        /* Timeout has occured - log the failure and move to the next address. */
+        if (retval == 0) {
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Timeout connecting to host %s, port %s",
+                    connected_address, connected_port);
+            continue;
+        }
+
+        /* Connection is successful - log it and break the loop. */
+        else if (retval > 0) {
             guac_client_log(client, GUAC_LOG_DEBUG,
                     "Successfully connected to host %s, port %s",
                     connected_address, connected_port);
 
             /* Done if successful connect */
             break;
-
         }
 
         /* Otherwise log information regarding bind failure */
