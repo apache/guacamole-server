@@ -26,6 +26,7 @@
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
+#include "common-ssh/tunnel.h"
 #include "common-ssh/user.h"
 #endif
 
@@ -120,6 +121,10 @@ int guac_client_init(guac_client* client) {
     client->leave_handler = guac_vnc_user_leave_handler;
     client->free_handler = guac_vnc_client_free_handler;
 
+#ifdef ENABLE_COMMON_SSH
+    guac_common_ssh_init(client);
+#endif
+
     return 0;
 }
 
@@ -178,6 +183,9 @@ int guac_vnc_client_free_handler(guac_client* client) {
     /* Free SFTP user */
     if (vnc_client->sftp_user)
         guac_common_ssh_destroy_user(vnc_client->sftp_user);
+
+    if (vnc_client->ssh_tunnel)
+        guac_common_ssh_tunnel_cleanup(vnc_client->ssh_tunnel);
 
     guac_common_ssh_uninit();
 #endif

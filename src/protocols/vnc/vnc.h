@@ -39,6 +39,7 @@
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
+#include "common-ssh/tunnel.h"
 #include "common-ssh/user.h"
 #endif
 
@@ -117,6 +118,11 @@ typedef struct guac_vnc_client {
      * An SFTP-based filesystem.
      */
     guac_common_ssh_sftp_filesystem* sftp_filesystem;
+
+    /**
+     * The data structure containing SSH tunnel-related information.
+     */
+    guac_ssh_tunnel* ssh_tunnel;
 #endif
 
     /**
