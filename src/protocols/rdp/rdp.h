@@ -37,6 +37,7 @@
 #ifdef ENABLE_COMMON_SSH
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
+#include "common-ssh/tunnel.h"
 #include "common-ssh/user.h"
 #endif
 
@@ -65,6 +66,8 @@
 #else
 #define GUAC_RDP_CONTEXT(rdp_instance) ((rdp_instance))
 #endif
+
+#define GUAC_RDP_DEFAULT_CONNECTION_TIMEOUT 30
 
 /**
  * RDP-specific client data.
@@ -170,6 +173,11 @@ typedef struct guac_rdp_client {
      * An SFTP-based filesystem.
      */
     guac_common_ssh_sftp_filesystem* sftp_filesystem;
+
+    /**
+     * The SSH session used for the tunnel.
+     */
+    guac_ssh_tunnel* ssh_tunnel;
 #endif
 
     /**
