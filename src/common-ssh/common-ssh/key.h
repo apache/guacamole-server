@@ -25,6 +25,8 @@
 #include <guacamole/client.h>
 #include <libssh2.h>
 
+#define GUAC_COMMON_SSH_KEY_DEFAULT_KNOWN_HOSTS "/etc/guacamole/ssh_known_hosts"
+
 /**
  * OpenSSH v1 private keys are PEM-wrapped base64-encoded blobs. The encoded data begins with:
  *   "openssh-key-v1\0"
