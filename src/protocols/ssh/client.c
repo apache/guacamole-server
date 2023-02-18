@@ -22,6 +22,7 @@
 #include "argv.h"
 #include "client.h"
 #include "common-ssh/sftp.h"
+#include "common-ssh/tunnel.h"
 #include "ssh.h"
 #include "terminal/terminal.h"
 #include "user.h"
@@ -129,6 +130,9 @@ int guac_ssh_client_free_handler(guac_client* client) {
     /* Clean up recording, if in progress */
     if (ssh_client->recording != NULL)
         guac_recording_free(ssh_client->recording);
+
+    if (ssh_client->ssh_tunnel != NULL)
+        guac_common_ssh_tunnel_cleanup(ssh_client->ssh_tunnel);
 
     /* Free interactive SSH session */
     if (ssh_client->session != NULL)
