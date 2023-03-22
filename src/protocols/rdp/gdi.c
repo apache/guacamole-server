@@ -34,7 +34,6 @@
 #include <winpr/wtypes.h>
 
 #include <stddef.h>
-#include <stddef.h>
 
 guac_transfer_function guac_rdp_rop3_transfer_function(guac_client* client,
         int rop3) {
@@ -411,7 +410,7 @@ BOOL guac_rdp_gdi_frame_marker(rdpContext* context, const FRAME_MARKER_ORDER* fr
 
 BOOL guac_rdp_gdi_surface_frame_marker(rdpContext* context, const SURFACE_FRAME_MARKER* surface_frame_marker) {
 
-    guac_rdp_gdi_mark_frame(context, surface_frame_marker->frameAction == SURFACECMD_FRAMEACTION_END);
+    guac_rdp_gdi_mark_frame(context, surface_frame_marker->frameAction != SURFACECMD_FRAMEACTION_END);
 
     if (context->settings->FrameAcknowledge > 0)
         IFCALL(context->update->SurfaceFrameAcknowledge, context,
@@ -497,5 +496,3 @@ BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
             guac_rdp_get_height(context->instance));
 
 }
-
-

@@ -533,8 +533,6 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Connection complete */
     rdp_client->rdp_inst = rdp_inst;
 
-    guac_timestamp last_frame_end = guac_timestamp_current();
-
     /* Signal that reconnect has been completed */
     guac_rdp_disp_reconnect_complete(rdp_client->disp);
 
@@ -586,7 +584,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                                 - frame_end;
 
                 /* Calculate time that client needs to catch up */
-                int time_elapsed = frame_end - last_frame_end;
+                int time_elapsed = frame_end - frame_start;
                 int required_wait = processing_lag - time_elapsed;
 
                 /* Increase the duration of this frame if client is lagging */
@@ -837,4 +835,3 @@ void* guac_rdp_client_thread(void* data) {
     return NULL;
 
 }
-
