@@ -20,7 +20,9 @@
 
 #include <config.h>
 
-#ifdef HAVE_OSSP_UUID_H
+#if defined(HAVE_LIBUUID)
+#include <uuid/uuid.h>
+#elif defined(HAVE_OSSP_UUID_H)
 #include <ossp/uuid.h>
 #else
 #include <uuid.h>
@@ -54,21 +56,40 @@
  */
 static int guac_drv_generate_cookie_data(char** data, int* data_length) {
 
-    uuid_t* uuid;
+    size_t identifier_length;
+    char* identifier;
 
-    /* Attempt to create UUID object */
+    /* Prepare object to receive generated UUID */
+#ifdef HAVE_LIBUUID
+    uuid_t uuid;
+#else
+    uuid_t* uuid;
     if (uuid_create(&uuid) != UUID_RC_OK)
         return 1;
+#endif
 
     /* Generate random UUID */
+#ifdef HAVE_LIBUUID
+    uuid_generate(uuid);
+#else
     if (uuid_make(uuid, UUID_MAKE_V4) != UUID_RC_OK) {
         uuid_destroy(uuid);
         return 1;
     }
+#endif
 
     /* Allocate buffer for future formatted ID */
-    size_t identifier_length = UUID_LEN_BIN;
-    char* identifier = malloc(UUID_LEN_BIN);
+#ifdef HAVE_LIBUUID
+    identifier_length = sizeof(uuid);
+#else
+    identifier_length = UUID_LEN_BIN;
+#endif
+    identifier = malloc(identifier_length);
+
+    /* Convert UUID to binary to produce unique identifier */
+#ifdef HAVE_LIBUUID
+    memcpy(identifier, uuid, identifier_length);
+#else
 
     /* Build connection ID from UUID */
     if (uuid_export(uuid, UUID_FMT_BIN, &identifier,
@@ -78,7 +99,9 @@ static int guac_drv_generate_cookie_data(char** data, int* data_length) {
         return 1;
     }
 
+    /* Clean up generated UUID */
     uuid_destroy(uuid);
+#endif
 
     /* Generation was successful */
     *data_length = identifier_length;
