@@ -50,7 +50,7 @@ void guac_drv_display_sync_user(guac_drv_display* display, guac_user* user) {
     guac_common_display_dup(display->display, user, user->socket);
 
     /* End initial frame */
-    guac_protocol_send_sync(socket, client->last_sent_timestamp);
+    guac_protocol_send_sync(socket, client->last_sent_timestamp, 1);
     guac_socket_flush(socket);
 
 }
