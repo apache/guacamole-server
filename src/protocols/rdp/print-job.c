@@ -47,8 +47,6 @@ char* const guac_rdp_pdf_filter_command[] = {
     "-dPARANOIDSAFER",
     "-sDEVICE=pdfwrite",
     "-sOutputFile=-",
-    "-c",
-    ".setpdfwrite",
     "-sstdout=/dev/null",
     "-f",
     "-",
