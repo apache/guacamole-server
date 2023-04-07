@@ -28,6 +28,7 @@
 
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
+#include <guacamole/socket-ssl.h>
 #endif
 
 #include <errno.h>
@@ -151,99 +152,6 @@ static int daemonize() {
     return 0;
 
 }
-
-#ifdef ENABLE_SSL
-#ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
-/**
- * Array of mutexes, used by OpenSSL.
- */
-static pthread_mutex_t* guacd_openssl_locks = NULL;
-
-/**
- * Called by OpenSSL when locking or unlocking the Nth mutex.
- *
- * @param mode
- *     A bitmask denoting the action to be taken on the Nth lock, such as
- *     CRYPTO_LOCK or CRYPTO_UNLOCK.
- *
- * @param n
- *     The index of the lock to lock or unlock.
- *
- * @param file
- *     The filename of the function setting the lock, for debugging purposes.
- *
- * @param line
- *     The line number of the function setting the lock, for debugging
- *     purposes.
- */
-static void guacd_openssl_locking_callback(int mode, int n,
-        const char* file, int line){
-
-    /* Lock given mutex upon request */
-    if (mode & CRYPTO_LOCK)
-        pthread_mutex_lock(&(guacd_openssl_locks[n]));
-
-    /* Unlock given mutex upon request */
-    else if (mode & CRYPTO_UNLOCK)
-        pthread_mutex_unlock(&(guacd_openssl_locks[n]));
-
-}
-
-/**
- * Called by OpenSSL when determining the current thread ID.
- *
- * @return
- *     An ID which uniquely identifies the current thread.
- */
-static unsigned long guacd_openssl_id_callback() {
-    return (unsigned long) pthread_self();
-}
-
-/**
- * Creates the given number of mutexes, such that OpenSSL will have at least
- * this number of mutexes at its disposal.
- *
- * @param count
- *     The number of mutexes (locks) to create.
- */
-static void guacd_openssl_init_locks(int count) {
-
-    int i;
-
-    /* Allocate required number of locks */
-    guacd_openssl_locks =
-        malloc(sizeof(pthread_mutex_t) * count);
-
-    /* Initialize each lock */
-    for (i=0; i < count; i++)
-        pthread_mutex_init(&(guacd_openssl_locks[i]), NULL);
-
-}
-
-/**
- * Frees the given number of mutexes.
- *
- * @param count
- *     The number of mutexes (locks) to free.
- */
-static void guacd_openssl_free_locks(int count) {
-
-    int i;
-
-    /* SSL lock array was not initialized */
-    if (guacd_openssl_locks == NULL)
-        return;
-
-    /* Free all locks */
-    for (i=0; i < count; i++)
-        pthread_mutex_destroy(&(guacd_openssl_locks[i]));
-
-    /* Free lock array */
-    free(guacd_openssl_locks);
-
-}
-#endif
-#endif
 
 int main(int argc, char* argv[]) {
 
@@ -376,9 +284,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
         /* Init threadsafety in OpenSSL */
-        guacd_openssl_init_locks(CRYPTO_num_locks());
-        CRYPTO_set_id_callback(guacd_openssl_id_callback);
-        CRYPTO_set_locking_callback(guacd_openssl_locking_callback);
+        guacd_openssl_init_thread_safety();
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -513,7 +419,7 @@ int main(int argc, char* argv[]) {
 #ifdef ENABLE_SSL
     if (ssl_context != NULL) {
 #ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
-        guacd_openssl_free_locks(CRYPTO_num_locks());
+        guacd_openssl_free_thread_safety();
 #endif
         SSL_CTX_free(ssl_context);
     }

@@ -26,19 +26,20 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Subprojects
-DIST_SUBDIRS =               \
-    src/libguac              \
-    src/common               \
-    src/common-ssh           \
-    src/terminal             \
-    src/guacd                \
-    src/guacenc              \
-    src/guaclog              \
-    src/pulse                \
-    src/protocols/kubernetes \
-    src/protocols/rdp        \
-    src/protocols/ssh        \
-    src/protocols/telnet     \
+DIST_SUBDIRS =                  \
+    src/libguac                 \
+    src/common                  \
+    src/common-ssh              \
+    src/drivers/xf86-video-guac \
+    src/terminal                \
+    src/guacd                   \
+    src/guacenc                 \
+    src/guaclog                 \
+    src/pulse                   \
+    src/protocols/kubernetes    \
+    src/protocols/rdp           \
+    src/protocols/ssh           \
+    src/protocols/telnet        \
     src/protocols/vnc
 
 SUBDIRS =        \
@@ -75,6 +76,10 @@ endif
 
 if ENABLE_VNC
 SUBDIRS += src/protocols/vnc
+endif
+
+if ENABLE_XORG
+SUBDIRS += src/drivers/xf86-video-guac
 endif
 
 if ENABLE_GUACD

@@ -17,8 +17,15 @@
 # under the License.
 #
 
+# Version definitions
+m4_define([guac_major],   [1])
+m4_define([guac_minor],   [5])
+m4_define([guac_patch],   [0])
+m4_define([guac_version], [guac_major.guac_minor.guac_patch])
+
+# Init
 AC_PREREQ([2.61])
-AC_INIT([guacamole-server], [1.5.0])
+AC_INIT([guacamole-server], [guac_version])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
@@ -31,6 +38,12 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # Use TAP test driver for tests (part of automake)
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
+
+# Version definitions
+AC_DEFINE([GUAC_MAJOR],   [guac_major],   [Guacamole major version number])
+AC_DEFINE([GUAC_MINOR],   [guac_minor],   [Guacamole minor version number])
+AC_DEFINE([GUAC_PATCH],   [guac_patch],   [Guacamole patch version number])
+AC_DEFINE([GUAC_VERSION], [guac_version], [Guacamole version number])
 
 # Programs
 AC_PROG_CC
@@ -1123,6 +1136,116 @@ AM_CONDITIONAL([ENABLE_KUBERNETES], [test "x${enable_kubernetes}"  = "xyes" \
                                        -a "x${have_terminal}"      = "xyes"])
 
 #
+# X protocol C-language Binding
+#
+
+have_xcb=disabled
+XCB_LIBS=
+AC_ARG_WITH([xcb],
+            [AS_HELP_STRING([--with-xcb],
+                            [support X protocol with XCB @<:@default=check@:>@])],
+            [],
+            [with_xcb=check])
+
+if test "x$with_xcb" != "xno"
+then
+    have_xcb=yes
+    AC_CHECK_LIB([xcb], [xcb_connect],
+                 [XCB_LIBS="$XCB_LIBS -lxcb"], [have_xcb=no])
+fi
+
+AM_CONDITIONAL([ENABLE_XCB], [test "x${have_xcb}" = "xyes"])
+AC_SUBST(XCB_LIBS)
+
+#
+# X protocol C-language Binding - support for RANDR
+#
+
+have_xcb_randr=disabled
+XCB_RANDR_LIBS=
+AC_ARG_WITH([xcb-randr],
+            [AS_HELP_STRING([--with-xcb-randr],
+                            [support X11 RANDR extension with XCB @<:@default=check@:>@])],
+            [],
+            [with_xcb_randr=check])
+
+if test "x$with_xcb_randr" != "xno"
+then
+    have_xcb_randr=yes
+    AC_CHECK_LIB([xcb-randr], [xcb_randr_set_screen_size],
+                 [XCB_RANDR_LIBS="$XCB_RANDR_LIBS -lxcb-randr"],
+                 [have_xcb_randr=no])
+fi
+
+AM_CONDITIONAL([ENABLE_XCB_RANDR], [test "x${have_xcb_randr}" = "xyes"])
+AC_SUBST(XCB_RANDR_LIBS)
+
+#
+# X protocol C-language Binding - support for XFixes
+#
+
+have_xcb_xfixes=disabled
+XCB_XFIXES_LIBS=
+AC_ARG_WITH([xcb-xfixes],
+            [AS_HELP_STRING([--with-xcb-xfixes],
+                            [support X11 XFixes extension with XCB @<:@default=check@:>@])],
+            [],
+            [with_xcb_xfixes=check])
+
+if test "x$with_xcb_xfixes" != "xno"
+then
+    have_xcb_xfixes=yes
+    AC_CHECK_LIB([xcb-xfixes], [xcb_xfixes_query_version],
+                 [XCB_XFIXES_LIBS="$XCB_XFIXES_LIBS -lxcb-xfixes"],
+                 [have_xcb_xfixes=no])
+fi
+
+AM_CONDITIONAL([ENABLE_XCB_XFIXES], [test "x${have_xcb_xfixes}" = "xyes"])
+AC_SUBST(XCB_XFIXES_LIBS)
+
+#
+# libXfont vs. libXfont2
+#
+
+AC_CHECK_LIB([Xfont2],
+             [xfont2_query_glyph_extents],
+             [xfont_pc=xfont2
+              AC_DEFINE([HAVE_XFONT2],, [Whether version 2 of libXfont is available])],
+             [xfont_pc=xfont])
+
+#
+# X.Org video driver
+#
+
+have_xorg=disabled
+AC_ARG_WITH([xorg],
+            [AS_HELP_STRING([--with-xorg],
+                            [support X.Org (EXPERIMENTAL) @<:@default=no@:>@])],
+            [],
+            [with_xorg=no])
+
+if test "x$with_xorg" != "xno"
+then
+    have_xorg=yes
+    PKG_CHECK_MODULES([XORG], [xorg-server xproto fontsproto $xfont_pc],
+                      [AS_IF([test "x${XORG_MODULE_DIR}" = "x"],
+                          [XORG_MODULE_DIR="`$PKG_CONFIG --variable=moduledir xorg-server`"])],
+                          [AC_MSG_WARN([
+  --------------------------------------------
+    Unable to find Xorg (xorg-server / xproto / fontsproto / $xfont_pc)
+    Xorg will be disabled.
+  --------------------------------------------])
+                          have_xorg=no])
+fi
+
+AM_CONDITIONAL([ENABLE_XORG], [test "x${have_xorg}"       = "xyes" \
+                                 -a "x${have_xcb}"        = "xyes" \
+                                 -a "x${have_xcb_randr}"  = "xyes" \
+                                 -a "x${have_xcb_xfixes}" = "xyes"])
+AC_SUBST([XORG_MODULE_DIR])
+AC_SUBST([XORG_CFLAGS])
+
+#
 # guacd
 #
 
@@ -1190,7 +1313,8 @@ AC_CONFIG_FILES([Makefile
                  src/protocols/rdp/tests/Makefile
                  src/protocols/ssh/Makefile
                  src/protocols/telnet/Makefile
-                 src/protocols/vnc/Makefile])
+                 src/protocols/vnc/Makefile
+                 src/drivers/xf86-video-guac/Makefile])
 AC_OUTPUT
 
 #
@@ -1230,6 +1354,14 @@ AM_COND_IF([ENABLE_SYSTEMD], [build_systemd="${systemd_dir}"], [build_systemd=no
 AM_COND_IF([ENABLE_RDP], [build_rdp_plugins="${FREERDP2_PLUGIN_DIR}"], [build_rdp_plugins=no])
 
 #
+# X.Org driver
+#
+
+AM_COND_IF([ENABLE_XORG],
+           [build_xorg="yes ($XORG_MODULE_DIR)"],
+           [build_xorg=no])
+
+#
 # Display summary
 #
 
@@ -1242,6 +1374,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
      freerdp2 ............ ${have_freerdp2}
      pango ............... ${have_pango}
+     xorg-server ......... ${have_xorg}
      libavcodec .......... ${have_libavcodec}
      libavformat.......... ${have_libavformat}
      libavutil ........... ${have_libavutil}
@@ -1254,6 +1387,9 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libpulse ............ ${have_pulse}
      libwebsockets ....... ${have_libwebsockets}
      libwebp ............. ${have_webp}
+     libxcb .............. ${have_xcb}
+     libxcb-randr ........ ${have_xcb_randr}
+     libxcb-xfixes ....... ${have_xcb_xfixes}
      wsock32 ............. ${have_winsock}
 
    Protocol support:
@@ -1263,6 +1399,10 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       SSH ........... ${build_ssh}
       Telnet ........ ${build_telnet}
       VNC ........... ${build_vnc}
+
+   Drivers:
+
+      X.Org (EXPERIMENTAL) .... ${build_xorg}
 
    Services / tools:
 
@@ -1276,4 +1416,3 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
-

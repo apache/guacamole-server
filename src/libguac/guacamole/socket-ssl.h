@@ -73,5 +73,18 @@ typedef struct guac_socket_ssl_data {
  */
 guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd);
 
+
+#ifdef OPENSSL_REQUIRES_THREADING_CALLBACKS
+/**
+ * Sets up the the necessary callbacks for thread safety in OpenSSL.
+ */
+void guacd_openssl_init_thread_safety();
+
+/**
+ * Frees the locks associated with OpenSSL thread safety.
+ */
+void guacd_openssl_free_thread_safety();
+#endif
+
 #endif
 

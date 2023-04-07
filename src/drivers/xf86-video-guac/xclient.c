@@ -1,0 +1,240 @@
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include <config.h>
+
+#if defined(HAVE_LIBUUID)
+#include <uuid/uuid.h>
+#elif defined(HAVE_OSSP_UUID_H)
+#include <ossp/uuid.h>
+#else
+#include <uuid.h>
+#endif
+
+#include <xf86.h>
+#include <xf86str.h>
+#include <opaque.h>
+
+#include <xcb/xcb.h>
+#include <xcb/xfixes.h>
+
+#include <string.h>
+
+/**
+ * Generates a 128-bit cryptographically-random value for use with X
+ * authorization. This value will be dynamically allocated, and must eventually
+ * be freed by a call to free().
+ *
+ * @param data
+ *     A pointer to the pointer which should contain the address of the
+ *     newly-allocated random value.
+ *
+ * @param data_length
+ *     A pointer to an integer which should receive the length of the
+ *     newly-allocated random value.
+ *
+ * @return
+ *     Zero on success, non-zero if the value could not be generated. Neither
+ *     data nor data_length will be touched if generation fails.
+ */
+static int guac_drv_generate_cookie_data(char** data, int* data_length) {
+
+    size_t identifier_length;
+    char* identifier;
+
+    /* Prepare object to receive generated UUID */
+#ifdef HAVE_LIBUUID
+    uuid_t uuid;
+#else
+    uuid_t* uuid;
+    if (uuid_create(&uuid) != UUID_RC_OK)
+        return 1;
+#endif
+
+    /* Generate random UUID */
+#ifdef HAVE_LIBUUID
+    uuid_generate(uuid);
+#else
+    if (uuid_make(uuid, UUID_MAKE_V4) != UUID_RC_OK) {
+        uuid_destroy(uuid);
+        return 1;
+    }
+#endif
+
+    /* Allocate buffer for future formatted ID */
+#ifdef HAVE_LIBUUID
+    identifier_length = sizeof(uuid);
+#else
+    identifier_length = UUID_LEN_BIN;
+#endif
+    identifier = malloc(identifier_length);
+
+    /* Convert UUID to binary to produce unique identifier */
+#ifdef HAVE_LIBUUID
+    memcpy(identifier, uuid, identifier_length);
+#else
+
+    /* Build connection ID from UUID */
+    if (uuid_export(uuid, UUID_FMT_BIN, &identifier,
+                &identifier_length) != UUID_RC_OK) {
+        free(identifier);
+        uuid_destroy(uuid);
+        return 1;
+    }
+
+    /* Clean up generated UUID */
+    uuid_destroy(uuid);
+#endif
+
+    /* Generation was successful */
+    *data_length = identifier_length;
+    *data = identifier;
+    return 0;
+
+}
+
+xcb_auth_info_t* guac_drv_authorize() {
+
+    const char* name = "MIT-MAGIC-COOKIE-1";
+    int name_length = strlen(name);
+
+    char* data;
+    int data_length;
+
+    /* Generate random data for cookie */
+    if (guac_drv_generate_cookie_data(&data, &data_length))
+        return NULL;
+
+    /* Attempt to add generated authorization */
+    if (!AddAuthorization(name_length, name, data_length, data)) {
+        free(data);
+        return NULL;
+    }
+
+    /* Allocate new authorization structure */
+    xcb_auth_info_t* auth = malloc(sizeof(xcb_auth_info_t));
+
+    /* Copy name (which must be dynamically-allocated) */
+    auth->name = strdup(name);
+    auth->namelen = name_length;
+
+    /* Point to newly-allocated cookie data */
+    auth->data = data;
+    auth->datalen = data_length;
+
+    return auth;
+
+}
+
+void guac_drv_revoke_authorization(xcb_auth_info_t* auth) {
+
+    RemoveAuthorization(auth->namelen, auth->name,
+            auth->datalen, auth->data);
+
+    /* Free cookie type name and data */
+    free(auth->name);
+    free(auth->data);
+
+    /* Free structure itself */
+    free(auth);
+
+}
+
+xcb_connection_t* guac_drv_get_connection(xcb_auth_info_t* auth) {
+
+    char display_name[64];
+
+    /* Get display name of display served by Guacamole X.Org driver */
+    sprintf(display_name, ":%s", display);
+
+    /* Connect to X server hosting display */
+    xcb_connection_t* connection = xcb_connect_to_display_with_auth_info(
+            display_name, auth, NULL);
+
+    /* Return NULL if connection fails */
+    if (xcb_connection_has_error(connection)) {
+        xcb_disconnect(connection);
+        return NULL;
+    }
+
+    /* Connection succeeded */
+    return connection;
+
+}
+
+xcb_atom_t guac_drv_get_atom(xcb_connection_t* connection,
+        const char* name) {
+
+    /* Request definition of atom */
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(connection, 0,
+            strlen(name), name);
+
+    /* Wait for reply */
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(connection,
+            cookie, NULL);
+
+    /* If request succeeds, returned defined atom */
+    if (reply) {
+        xcb_atom_t atom = reply->atom;
+        free(reply);
+        return atom;
+    }
+
+    /* Otherwise, return XCB_ATOM_NONE */
+    return XCB_ATOM_NONE;
+
+}
+
+const xcb_query_extension_reply_t* guac_drv_init_xfixes(
+        xcb_connection_t* connection) {
+
+    xcb_generic_error_t* error;
+
+    /* Query existence of the XFixes extension */
+    const xcb_query_extension_reply_t* xfixes_reply = xcb_get_extension_data(
+            connection, &xcb_xfixes_id);
+
+    /* If XFixes is not present, initialization failed */
+    if (!xfixes_reply->present)
+        return NULL;
+
+    /* Query version of XFixes extension */
+    xcb_xfixes_query_version_cookie_t version_cookie =
+        xcb_xfixes_query_version(connection, XCB_XFIXES_MAJOR_VERSION,
+                XCB_XFIXES_MINOR_VERSION);
+
+    /* Wait for version to be reported */
+    xcb_xfixes_query_version_reply_t* version =
+        xcb_xfixes_query_version_reply(connection, version_cookie, &error);
+
+    /* Version response is ignored */
+    free(version);
+
+    /* If an error occurred, XFixes initialization failed */
+    if (error != NULL) {
+        free(error);
+        return NULL;
+    }
+
+    /* Initialization succeeded */
+    return xfixes_reply;
+
+}
+
