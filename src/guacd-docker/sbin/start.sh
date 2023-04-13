@@ -25,8 +25,27 @@
 ##
 
 
-# guacd default value if not overridden
+##
+## Adds SSL command-line options to guacd
+##
+enable_ssl() {
+    if [ -z "$GUACD_CERTIFICATE_CRT" ] || [ -z "$GUACD_CERTIFICATE_KEY" ]; then
+        cat <<END
+FATAL: Missing required environment variables
+-------------------------------------------------------------------------------
+If using a SSL encryption, you must provide both GUACD_CERTIFICATE_CRT
+and GUACD_CERTIFICATE_KEY environment variables.
 
+END
+        exit 1;
+    fi
+    
+    args+=( -C "$GUACD_CERTIFICATE_CRT" )
+    args+=( -K "$GUACD_CERTIFICATE_KEY" )
+}
+
+
+# guacd default value if not overridden
 if [ -z "$GUACD_LISTEN_ADDRESS" ]; then
     export GUACD_LISTEN_ADDRESS=0.0.0.0
 fi
@@ -39,13 +58,11 @@ fi
 
 args=( -b "${GUACD_LISTEN_ADDRESS}" -L "${GUACD_LOG_LEVEL}" -l "${GUACD_PORT}" -f )
 
-# guacd certificate files
-if [ -n "$GUACD_CERTIFICATE_CRT" ]; then
-    args+=( -C "$GUACD_CERTIFICATE_CRT" )
+# guacd certificate files
+if [ -n "$GUACD_CERTIFICATE_CRT" ] || [ -n "$GUACD_CERTIFICATE_KEY" ]; then
+    enable_ssl
 fi
-if [ -n "$GUACD_CERTIFICATE_KEY" ]; then
-    args+=( -K "$GUACD_CERTIFICATE_KEY" )
-fi
+
 
 /opt/guacamole/sbin/guacd "${args[@]}"
 
