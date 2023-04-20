@@ -35,6 +35,7 @@ DIST_SUBDIRS =               \
     src/guacenc              \
     src/guaclog              \
     src/pulse                \
+    src/protocols/http \
     src/protocols/kubernetes \
     src/protocols/rdp        \
     src/protocols/ssh        \
@@ -55,6 +56,10 @@ endif
 
 if ENABLE_PULSE
 SUBDIRS += src/pulse
+endif
+
+if ENABLE_HTTP
+SUBDIRS += src/protocols/http
 endif
 
 if ENABLE_KUBERNETES
@@ -100,4 +105,3 @@ EXTRA_DIST =                         \
     doc/libguac-terminal/Doxyfile.in \
     src/guacd-docker                 \
     util/generate-test-runner.pl
-

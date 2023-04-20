@@ -1650,4 +1650,3 @@ void guac_rdp_push_settings(guac_client* client,
 #endif
 
 }
-

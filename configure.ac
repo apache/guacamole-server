@@ -185,6 +185,10 @@ AC_SUBST([PULSE_INCLUDE], '-I$(top_srcdir)/src/pulse')
 AC_SUBST([COMMON_SSH_LTLIB],   '$(top_builddir)/src/common-ssh/libguac_common_ssh.la')
 AC_SUBST([COMMON_SSH_INCLUDE], '-I$(top_srcdir)/src/common-ssh')
 
+# HTTP support
+AC_SUBST([LIBGUAC_CLIENT_HTTP_LTLIB],   '$(top_builddir)/src/protocols/http/libguac-client-http.la')
+AC_SUBST([LIBGUAC_CLIENT_HTTP_INCLUDE], '-I$(top_srcdir)/src/protocols/http')
+
 # Kubernetes support
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_LTLIB],   '$(top_builddir)/src/protocols/kubernetes/libguac-client-kubernetes.la')
 AC_SUBST([LIBGUAC_CLIENT_KUBERNETES_INCLUDE], '-I$(top_srcdir)/src/protocols/kubernetes')
@@ -1108,6 +1112,64 @@ AM_CONDITIONAL([ENABLE_WEBSOCKETS],
 AC_SUBST(WEBSOCKETS_LIBS)
 
 #
+# http
+#
+
+AC_ARG_ENABLE([http],
+              [AS_HELP_STRING([--disable-http],
+                              [do not build support for http])],
+              [],
+              [enable_http=yes])
+
+if test "x${enable_http}" = "xyes"; then
+  AC_ARG_WITH([cef],
+    [AS_HELP_STRING([--with-cef=path],
+      [Specifies the path to the Chromium Embedded Framework])],
+    [
+      cef_inc="$with_cef/"
+      cef_lib="$with_cef/Release"
+      cef_resources="$with_cef/Resources"
+      cef_locales="$with_cef/Resources/locales"
+
+      CPPFLAGS_SAVE="$CPPFLAGS"
+      CPPFLAGS="-I$cef_inc $CPPFLAGS"
+      
+      LDFLAGS_SAVE="$LDFLAGS"
+      LDFLAGS="-L$cef_lib $LDFLAGS"
+      
+      AC_MSG_NOTICE([Using CPPFLAGS: $CPPFLAGS])
+      AC_CHECK_HEADERS([include/capi/cef_app_capi.h include/capi/cef_base_capi.h include/capi/cef_browser_capi.h include/capi/cef_client_capi.h],
+                       [have_cef_headers="yes"], [have_cef_headers="no"])
+      AC_CHECK_LIB([cef], [cef_initialize],
+                   [have_cef_lib="yes"], [have_cef_lib="no"])
+                   
+      CPPFLAGS="$CPPFLAGS_SAVE"
+      LDFLAGS="$LDFLAGS_SAVE"
+
+      if test "x$have_cef_headers" = "xyes" -a "x$have_cef_lib" = "xyes"
+      then
+          have_cef=yes
+          AC_SUBST([CEF_INCLUDE], [-I$cef_inc])
+          AC_SUBST([CEF_LIBS], ["-L$cef_lib -lcef"])
+          AC_SUBST([CEF_RELEASE], ["$cef_lib"])
+          AC_SUBST([_CEF_RESOURCE_PATH], [$cef_resources])
+          AC_SUBST([_CEF_LOCALES_PATH], [$cef_locales])
+      else
+          have_cef=no
+      fi
+    ],
+    [
+      AC_MSG_RESULT([Chromium Embedded Framework not specified.])
+    ]
+  )
+else
+  have_cef=no
+fi
+
+AM_CONDITIONAL([ENABLE_HTTP], [test "x${enable_http}"  = "xyes" \
+                                     -a "x${have_cef}" = "xyes"])
+
+#
 # Kubernetes
 #
 
@@ -1184,6 +1246,7 @@ AC_CONFIG_FILES([Makefile
                  src/guaclog/Makefile
                  src/guaclog/man/guaclog.1
                  src/pulse/Makefile
+                 src/protocols/http/Makefile
                  src/protocols/kubernetes/Makefile
                  src/protocols/kubernetes/tests/Makefile
                  src/protocols/rdp/Makefile
@@ -1197,6 +1260,7 @@ AC_OUTPUT
 # Protocol build status
 #
 
+AM_COND_IF([ENABLE_HTTP], [build_http=yes], [build_http=no])
 AM_COND_IF([ENABLE_KUBERNETES], [build_kubernetes=yes], [build_kubernetes=no])
 AM_COND_IF([ENABLE_RDP],        [build_rdp=yes],        [build_rdp=no])
 AM_COND_IF([ENABLE_SSH],        [build_ssh=yes],        [build_ssh=no])
@@ -1255,9 +1319,11 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      libwebsockets ....... ${have_libwebsockets}
      libwebp ............. ${have_webp}
      wsock32 ............. ${have_winsock}
+     cef ............. ${have_cef}
 
    Protocol support:
 
+      HTTP .... ${build_http}
       Kubernetes .... ${build_kubernetes}
       RDP ........... ${build_rdp}
       SSH ........... ${build_ssh}
@@ -1276,4 +1342,3 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
 Type \"make\" to compile $PACKAGE_NAME.
 "
-
