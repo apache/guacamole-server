@@ -126,6 +126,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Load RAIL plugin if RemoteApp in use */
     if (settings->remote_app != NULL)
+    /* remoteapp has no input method when opened since version 1.0 */
         guac_rdp_rail_load_plugin(context);
 
     /* Load SVC plugin instances for all static channels */
