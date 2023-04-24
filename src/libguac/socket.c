@@ -237,10 +237,32 @@ ssize_t guac_socket_write_string(guac_socket* socket, const char* str) {
 
 }
 
-ssize_t __guac_socket_write_base64_triplet(guac_socket* socket,
-        int a, int b, int c) {
-
-    char output[4];
+/**
+ * Encodes one to three bytes of data as four characters in base64 encoding.
+ *
+ * This function takes int arguments even though it's working with bytes to
+ * allow -1 to be used as distinct sentinel value for missing data.
+ *
+ * @param a An int holding the first byte of data to encode. Only the
+ *          least-significant byte will be used. This will always be inserted
+ *          into the output.
+ *
+ * @param b An int holding the second byte of data to encode. Only the
+ *          least-significant byte will be used. If this is less than zero,
+ *          the second and third bytes will be ignored and the last two
+ *          characters of the output will be '=' padding characters.
+ *
+ * @param c An int holding the third byte of data to encode. Only the
+ *          least-significant byte will be used. If this is less than zero,
+ *          the third byte will be ignored and the last character of the
+ *          output will be a '=' padding character.
+ *
+ * @param output Character buffer to hold the output. Exactly four characters
+ *               will be written to the buffer starting at this location.
+ *
+ * @return Returns zero.
+ */
+ssize_t __guac_socket_encode_base64(int a, int b, int c, char* output) {
 
     /* Byte 0:[AAAAAA] AABBBB BBBBCC CCCCCC */
     output[0] = __guac_socket_BASE64_CHARACTERS[(a & 0xFC) >> 2];
@@ -250,7 +272,7 @@ ssize_t __guac_socket_write_base64_triplet(guac_socket* socket,
         /* Byte 1: AAAAAA [AABBBB] BBBBCC CCCCCC */
         output[1] = __guac_socket_BASE64_CHARACTERS[((a & 0x03) << 4) | ((b & 0xF0) >> 4)];
 
-        /* 
+        /*
          * Bytes 2 and 3, zero characters of padding:
          *
          * AAAAAA  AABBBB [BBBBCC] CCCCCC
@@ -261,19 +283,19 @@ ssize_t __guac_socket_write_base64_triplet(guac_socket* socket,
             output[3] = __guac_socket_BASE64_CHARACTERS[c & 0x3F];
         }
 
-        /* 
+        /*
          * Bytes 2 and 3, one character of padding:
          *
          * AAAAAA  AABBBB [BBBB--] ------
          * AAAAAA  AABBBB  BBBB-- [------]
          */
-        else { 
+        else {
             output[2] = __guac_socket_BASE64_CHARACTERS[((b & 0x0F) << 2)];
             output[3] = '=';
         }
     }
 
-    /* 
+    /*
      * Bytes 1, 2, and 3, two characters of padding:
      *
      * AAAAAA [AA----] ------  ------
@@ -286,56 +308,70 @@ ssize_t __guac_socket_write_base64_triplet(guac_socket* socket,
         output[3] = '=';
     }
 
-    /* At this point, 4 base64 bytes have been written */
-    if (guac_socket_write(socket, output, 4))
-        return -1;
-
-    /* If no second byte was provided, only one byte was written */
-    if (b < 0)
-        return 1;
-
-    /* If no third byte was provided, only two bytes were written */
-    if (c < 0)
-        return 2;
-
-    /* Otherwise, three bytes were written */
-    return 3;
-
+    return 0;
 }
 
-ssize_t __guac_socket_write_base64_byte(guac_socket* socket, int buf) {
+ssize_t guac_socket_flush_base64(guac_socket* socket) {
+    const unsigned char* src = socket->__ready_buf;
 
-    int* __ready_buf = socket->__ready_buf;
+    int encodedCount = 0;
+    int remaining = socket->__ready;
 
-    int retval;
+    /* Encode bytes in groups of three */
+    while (remaining > 2) {
+        __guac_socket_encode_base64(src[0], src[1], src[2], socket->__encoded_buf + encodedCount);
 
-    __ready_buf[socket->__ready++] = buf;
-
-    /* Flush triplet */
-    if (socket->__ready == 3) {
-        retval = __guac_socket_write_base64_triplet(socket, __ready_buf[0], __ready_buf[1], __ready_buf[2]);
-        if (retval < 0)
-            return retval;
-
-        socket->__ready = 0;
+        remaining -= 3;
+        src += 3;
+        encodedCount += 4;
     }
 
-    return 1;
+    /* Take care of partial remnants */
+    if (remaining == 2) {
+        __guac_socket_encode_base64(src[0], src[1], -1, socket->__encoded_buf + encodedCount);
+        encodedCount += 4;
+    }
+    else if (remaining == 1) {
+        __guac_socket_encode_base64(src[0], -1, -1, socket->__encoded_buf + encodedCount);
+        encodedCount += 4;
+    }
+
+    /* Write buffer to socket */
+    int retval = guac_socket_write(socket, socket->__encoded_buf, encodedCount);
+    if (retval < 0)
+        return retval;
+
+    socket->__ready = 0;
+
+    return 0;
+
 }
 
 ssize_t guac_socket_write_base64(guac_socket* socket, const void* buf, size_t count) {
 
+    const unsigned char* src = (const unsigned char*)buf;
+    size_t remaining = count;
+    int len;
     int retval;
 
-    const unsigned char* char_buf = (const unsigned char*) buf;
-    const unsigned char* end = char_buf + count;
+    while (remaining > 0) {
+        /* Fill ready buffer as much as possible */
+        len = GUAC_SOCKET_BASE64_READY_BUFFER_SIZE - socket->__ready;
+        if (remaining < len)
+            len = remaining;
 
-    while (char_buf < end) {
+        memcpy(socket->__ready_buf + socket->__ready, src, len);
 
-        retval = __guac_socket_write_base64_byte(socket, *(char_buf++));
-        if (retval < 0)
-            return retval;
+        socket->__ready += len;
+        src += len;
+        remaining -= len;
 
+        /* Flush ready buffer when full */
+        if (socket->__ready == GUAC_SOCKET_BASE64_READY_BUFFER_SIZE) {
+            retval = guac_socket_flush_base64(socket);
+            if (retval < 0)
+                return retval;
+        }
     }
 
     return 0;
@@ -352,21 +388,3 @@ ssize_t guac_socket_flush(guac_socket* socket) {
     return 0;
 
 }
-
-ssize_t guac_socket_flush_base64(guac_socket* socket) {
-
-    int retval;
-
-    /* Flush triplet to output buffer */
-    while (socket->__ready > 0) {
-
-        retval = __guac_socket_write_base64_byte(socket, -1);
-        if (retval < 0)
-            return retval;
-
-    }
-
-    return 0;
-
-}
-
