@@ -485,6 +485,10 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Init terminal */
     guac_terminal_reset(term);
 
+    /* All mouse buttons are released */
+    term->mouse_mask = 0;
+
+    /* All keyboard modifiers are released */
     term->mod_alt   =
     term->mod_ctrl  =
     term->mod_shift = 0;
