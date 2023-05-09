@@ -96,11 +96,11 @@ BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph);
  *     The height of the glyph being drawn.
  *
  * @param sx
- *     The X coordinare of the upper-left corner of the glyph within the source
+ *     The X coordinate of the upper-left corner of the glyph within the source
  *     cache surface containing the glyph.
  *
  * @param sy
- *     The Y coordinare of the upper-left corner of the glyph within the source
+ *     The Y coordinate of the upper-left corner of the glyph within the source
  *     cache surface containing the glyph.
  *
  * @param redundant
