@@ -44,6 +44,7 @@ libguacinc_HEADERS =                  \
     guacamole/client-types.h          \
     guacamole/error.h                 \
     guacamole/error-types.h           \
+    guacamole/fips.h                  \
     guacamole/hash.h                  \
     guacamole/layer.h                 \
     guacamole/layer-types.h           \
@@ -93,6 +94,7 @@ libguac_la_SOURCES =   \
     encode-jpeg.c      \
     encode-png.c       \
     error.c            \
+    fips.c             \
     hash.c             \
     id.c               \
     palette.c          \
@@ -100,7 +102,7 @@ libguac_la_SOURCES =   \
     pool.c             \
     protocol.c         \
     raw_encoder.c      \
-    recording.c             \
+    recording.c        \
     socket.c           \
     socket-broadcast.c \
     socket-fd.c        \
