@@ -98,10 +98,15 @@ struct guac_socket {
     int __ready;
 
     /**
-     * The base64 "ready" buffer. Once this buffer is filled, base64 data is
-     * flushed to the main write buffer.
+     * The base64 "ready" buffer. Once this buffer is filled, the data is encoded
+     * as base64 and flushed to the main write buffer.
      */
-    int __ready_buf[3];
+    unsigned char __ready_buf[GUAC_SOCKET_BASE64_READY_BUFFER_SIZE];
+
+    /**
+     * The buffer to hold the result of encoding the ready buffer as base64.
+     */
+    char __encoded_buf[GUAC_SOCKET_BASE64_ENCODED_BUFFER_SIZE];
 
     /**
      * Whether automatic keep-alive is enabled.

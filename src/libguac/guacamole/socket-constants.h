@@ -37,5 +37,16 @@
  */
 #define GUAC_SOCKET_KEEP_ALIVE_INTERVAL 5000
 
+/**
+ * The number of bytes of data to buffer prior to bulk conversion to base64.
+ */
+#define GUAC_SOCKET_BASE64_READY_BUFFER_SIZE 768
+
+/**
+ * The size of the buffer required to hold GUAC_SOCKET_BASE64_READY_BUFFER_SIZE
+ * bytes encoded as base64.
+ */
+#define GUAC_SOCKET_BASE64_ENCODED_BUFFER_SIZE 1024
+
 #endif
 
