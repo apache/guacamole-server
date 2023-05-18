@@ -32,6 +32,7 @@ RUN apk add --no-cache                \
         build-base                    \
         cairo-dev                     \
         cmake                         \
+        cunit-dev                     \
         git                           \
         grep                          \
         libjpeg-turbo-dev             \
