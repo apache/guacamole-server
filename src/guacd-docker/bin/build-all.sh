@@ -103,7 +103,7 @@ install_from_git "https://github.com/FreeRDP/FreeRDP" "$WITH_FREERDP" $FREERDP_O
 install_from_git "https://github.com/libssh2/libssh2" "$WITH_LIBSSH2" $LIBSSH2_OPTS
 install_from_git "https://github.com/seanmiddleditch/libtelnet" "$WITH_LIBTELNET" $LIBTELNET_OPTS
 install_from_git "https://github.com/LibVNC/libvncserver" "$WITH_LIBVNCCLIENT" $LIBVNCCLIENT_OPTS
-install_from_git "https://libwebsockets.org/repo/libwebsockets" "$WITH_LIBWEBSOCKETS" $LIBWEBSOCKETS_OPTS
+install_from_git "https://github.com/warmcat/libwebsockets" "$WITH_LIBWEBSOCKETS" $LIBWEBSOCKETS_OPTS
 
 #
 # Build guacamole-server
