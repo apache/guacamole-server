@@ -41,7 +41,7 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
             rdp_client->display, pointer->width, pointer->height);
 
     /* Allocate data for image */
-    unsigned char* data = _aligned_recalloc(NULL, 1, pointer->width * pointer->height * 4, 16);
+    unsigned char* data = _aligned_malloc(pointer->width * pointer->height * 4, 16);
 
     cairo_surface_t* surface;
 
