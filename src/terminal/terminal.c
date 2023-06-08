@@ -1591,6 +1591,15 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         if ((keysym == 'V' && term->mod_ctrl) || (keysym == 'v' && term->mod_meta))
             return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
 
+        /*
+         * Ctrl+Shift+C and Cmd+c shortcuts for copying are not handled, as
+         * selecting text in the terminal automatically copies it. To avoid
+         * attempts to use these shortcuts causing unexpected results in the
+         * terminal, these are just ignored.
+         */
+        if ((keysym == 'C' && term->mod_ctrl) || (keysym == 'c' && term->mod_meta))
+            return 0;
+
         /* Shift+PgUp / Shift+PgDown shortcuts for scrolling */
         if (term->mod_shift) {
 
