@@ -407,6 +407,11 @@ struct guac_terminal {
     int mod_ctrl;
 
     /**
+     * Whether the meta (command on Mac) key is currently being held down.
+     */
+    int mod_meta;
+
+    /**
      * Whether the shift key is currently being held down.
      */
     int mod_shift;

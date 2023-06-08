@@ -572,6 +572,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* All keyboard modifiers are released */
     term->mod_alt   =
     term->mod_ctrl  =
+    term->mod_meta  =
     term->mod_shift = 0;
 
     /* Initialize mouse cursor */
@@ -1576,6 +1577,8 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     /* Track modifiers */
     if (keysym == 0xFFE3)
         term->mod_ctrl = pressed;
+    else if (keysym == 0xFFE7)
+        term->mod_meta = pressed;
     else if (keysym == 0xFFE9)
         term->mod_alt = pressed;
     else if (keysym == 0xFFE1)
@@ -1584,8 +1587,8 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     /* If key pressed */
     else if (pressed) {
 
-        /* Ctrl+Shift+V shortcut for paste */
-        if (keysym == 'V' && term->mod_ctrl)
+        /* Ctrl+Shift+V or Cmd+v (mac style) shortcuts for paste */
+        if ((keysym == 'V' && term->mod_ctrl) || (keysym == 'v' && term->mod_meta))
             return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
 
         /* Shift+PgUp / Shift+PgDown shortcuts for scrolling */
