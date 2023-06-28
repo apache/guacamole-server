@@ -284,6 +284,8 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     /* Get user credentials */
     guac_common_ssh_key* key = user->private_key;
 
+    char* public_key = user->public_key;
+
     /* Validate username provided */
     if (user->username == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
@@ -317,9 +319,11 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
             return 1;
         }
 
+        int public_key_length = public_key == NULL ? 0 : strlen(public_key);
+
         /* Attempt public key auth */
         if (libssh2_userauth_publickey_frommemory(session, user->username,
-                    username_len, NULL, 0, key->private_key,
+                    username_len, public_key, public_key_length, key->private_key,
                     key->private_key_length, key->passphrase)) {
 
             /* Abort on failure */

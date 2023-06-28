@@ -31,6 +31,7 @@ guac_common_ssh_user* guac_common_ssh_create_user(const char* username) {
     user->username = strdup(username);
     user->password = NULL;
     user->private_key = NULL;
+    user->public_key = NULL;
 
     return user;
 
@@ -45,6 +46,7 @@ void guac_common_ssh_destroy_user(guac_common_ssh_user* user) {
     /* Free all other data */
     free(user->password);
     free(user->username);
+    free(user->public_key);
     free(user);
 
 }
@@ -77,6 +79,18 @@ int guac_common_ssh_user_import_key(guac_common_ssh_user* user,
 
     /* Fail if key could not be read */
     return user->private_key == NULL;
+
+}
+
+int guac_common_ssh_user_import_public_key(guac_common_ssh_user* user,
+        char* public_key) {
+
+    /* Free existing public key, if present */
+    free(user->public_key);
+    user->public_key = strdup(public_key);
+
+    /* Fail if key could not be read */
+    return user->public_key == NULL;
 
 }
 
