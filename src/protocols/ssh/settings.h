@@ -94,8 +94,8 @@ typedef struct guac_ssh_settings {
     char* key_passphrase;
 
     /**
-     * The public key, if any. If no public key is
-     * specified, this will be NULL.
+     * The public key, encoded as base64, if any. If no public key is specified,
+     * this will be NULL.
      */
     char* public_key_base64;
 

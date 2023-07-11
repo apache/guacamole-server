@@ -119,6 +119,7 @@ int guac_common_ssh_user_import_key(guac_common_ssh_user* user,
  *     The user to associate with the given private key.
  *
  * @param public_key
+ *     The base64-encoded public key to import.
  *
  * @return
  *     Zero if public key is successfully imported, or non-zero if the
