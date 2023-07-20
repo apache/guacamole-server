@@ -287,6 +287,18 @@ typedef struct guac_rdp_settings {
     int ignore_certificate;
 
     /**
+     * Whether or not a certificate should be added to the local trust
+     * store on first use.
+     */
+    int certificate_tofu;
+
+    /**
+     * The fingerprints of host certificates that should be trusted for
+     * this connection.
+     */
+    char* certificate_fingerprints;
+
+    /**
      * Whether authentication should be disabled. This is different from the
      * authentication that takes place when a user provides their username
      * and password. Authentication is required by definition for NLA.

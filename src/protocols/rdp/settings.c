@@ -76,6 +76,8 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "server-layout",
     "security",
     "ignore-cert",
+    "cert-tofu",
+    "cert-fingerprints",
     "disable-auth",
     "remote-app",
     "remote-app-dir",
@@ -288,6 +290,21 @@ enum RDP_ARGS_IDX {
      * connect.
      */
     IDX_IGNORE_CERT,
+
+    /**
+     * "true" if a server certificate should be trusted the first time that
+     * a connection is established, and then subsequently checked for validity,
+     * or "false" if that behavior should not be forced. Whether or not the
+     * connection succeeds will be dependent upon other certificate settings,
+     * like ignore and/or provided fingerprints.
+     */
+    IDX_CERTIFICATE_TOFU,
+
+    /**
+     * A comma-separate list of fingerprints of certificates that should be
+     * trusted when establishing this RDP connection.
+     */
+    IDX_CERTIFICATE_FINGERPRINTS,
 
     /**
      * "true" if authentication should be disabled, "false" or blank otherwise.
@@ -707,6 +724,16 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->ignore_certificate =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_IGNORE_CERT, 0);
+
+    /* Add new certificates to trust list */
+    settings->certificate_tofu =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_CERTIFICATE_TOFU, 0);
+
+    /* Fingerprints of certificates that should be trusted */
+    settings->certificate_fingerprints =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_CERTIFICATE_FINGERPRINTS, NULL);
 
     /* Disable authentication */
     settings->disable_authentication =
@@ -1296,6 +1323,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     free(settings->drive_name);
     free(settings->drive_path);
     free(settings->hostname);
+    free(settings->certificate_fingerprints);
     free(settings->initial_program);
     free(settings->password);
     free(settings->preconnection_blob);
@@ -1575,9 +1603,12 @@ void guac_rdp_push_settings(guac_client* client,
 
     }
 
-    /* Authentication */
+    /* Security */
     rdp_settings->Authentication = !guac_settings->disable_authentication;
     rdp_settings->IgnoreCertificate = guac_settings->ignore_certificate;
+    rdp_settings->AutoAcceptCertificate = guac_settings->certificate_tofu;
+    if (guac_settings->certificate_fingerprints != NULL)
+        rdp_settings->CertificateAcceptedFingerprints = guac_strdup(guac_settings->certificate_fingerprints);
 
     /* RemoteApp */
     if (guac_settings->remote_app != NULL) {
