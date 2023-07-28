@@ -55,7 +55,7 @@ noinst_HEADERS =      \
     vnc.h
 
 libguac_client_vnc_la_CFLAGS =        \
-    -Werror -Wall -pedantic -Iinclude \
+    @GENERAL_CFLAGS@                   \
     @COMMON_INCLUDE@                  \
     @COMMON_SSH_INCLUDE@              \
     @LIBGUAC_INCLUDE@                 \
@@ -64,7 +64,8 @@ libguac_client_vnc_la_CFLAGS =        \
 libguac_client_vnc_la_LDFLAGS = \
     -version-info 0:0:0         \
     @CAIRO_LIBS@                \
-    @VNC_LIBS@ 
+    @VNC_LIBS@                  \
+    @GENERAL_LDFLAGS@
 
 libguac_client_vnc_la_LIBADD = \
     @COMMON_LTLIB@             \

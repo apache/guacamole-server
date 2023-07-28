@@ -34,6 +34,14 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef WINDOWS_BUILD
+#include <io.h>
+#include <stdio.h>
+#include <processthreadsapi.h>
+#include <guacamole/pipe.h>
+#include <windows.h>
+#endif
+
 /**
  * The command to run when filtering postscript to produce PDF. This must be
  * a NULL-terminated array of arguments, where the first argument is the name
@@ -273,10 +281,10 @@ static int guac_rdp_print_filter_ack_handler(guac_user* user,
 }
 
 /**
- * Forks a new print filtering process which accepts PostScript input and
- * produces PDF output. File descriptors for writing input and reading output
- * will automatically be allocated and must be manually closed when processing
- * is complete.
+ * Creates a new print filtering process which accepts PostScript (or XPS, if
+ * being built on Windows) input and produces PDF output. File descriptors for
+ * writing input and reading output will automatically be allocated and must be
+ * manually closed when processing is complete.
  *
  * @param client
  *     The guac_client associated with the print job for which this filter
@@ -299,6 +307,79 @@ static int guac_rdp_print_filter_ack_handler(guac_user* user,
  */
 static pid_t guac_rdp_create_filter_process(guac_client* client,
         int* input_fd, int* output_fd) {
+
+#ifdef WINDOWS_BUILD
+
+    /* Only the XPS format is supported by the Windows implementation */
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    if (!rdp_client->xps_printer_mode_enabled) {
+        guac_client_log(client, GUAC_LOG_WARNING,
+                "XPS mode not enabled by server; cancelling print job.");
+        return -1;
+    }
+
+    /* Make sure that that the pipes can be shared with the child process */
+    SECURITY_ATTRIBUTES security_attributes = { 0 };
+    security_attributes.nLength = sizeof(security_attributes);
+    security_attributes.bInheritHandle = TRUE;
+    security_attributes.lpSecurityDescriptor = NULL;
+
+    /* Create pipes to flow data in and out of the created process */
+    HANDLE stdin_read = NULL;
+    HANDLE stdin_write = NULL;
+    HANDLE stdout_read = NULL;
+    HANDLE stdout_write = NULL;
+
+    if (!CreatePipe(&stdin_read, &stdin_write, &security_attributes, 0)) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+                "Could not create stdin pipe for RDP print job: %u",
+                GetLastError());
+        return -1;
+    }
+
+    if (!CreatePipe(&stdout_read, &stdout_write, &security_attributes, 0)) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+                "Could not create stdout pipe for RDP print job: %u",
+                GetLastError());
+        CloseHandle(stdin_read);
+        CloseHandle(stdin_write);
+        return -1;
+    }
+
+    /* Ensure that the write handle is _not_ inherited by the child */
+    SetHandleInformation(stdin_read,  HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(stdout_read, HANDLE_FLAG_INHERIT, 0);
+
+    /* Set the provided file descriptors */
+    *input_fd = _open_osfhandle((intptr_t ) stdin_write, _O_APPEND);
+    *output_fd = _open_osfhandle((intptr_t ) stdout_read, _O_APPEND);
+
+    /* Set up a structure with all the handles we just set up */
+    STARTUPINFO startup_info = { 0 };
+    startup_info.cb = sizeof(startup_info);
+    startup_info.hStdError = ((HANDLE) _get_osfhandle(STDERR_FILENO));
+    startup_info.hStdOutput = stdout_write;
+    startup_info.hStdInput = stdin_read;
+
+    PROCESS_INFORMATION process_info = { 0 };
+    if (!CreateProcess("C:/mingw64/bin/guacxpstopdf.exe",
+            NULL, NULL, NULL, 0, STARTF_USESTDHANDLES, NULL, NULL, &startup_info, &process_info)) {
+        guac_client_log(client, GUAC_LOG_ERROR,
+                "Could not start guacxpstopdf.exe: %u", GetLastError());
+        CloseHandle(stdin_read);
+        CloseHandle(stdin_write);
+        CloseHandle(stdout_read);
+        CloseHandle(stdout_write);
+        return -1;
+    }
+
+    /* These handles are always opened, and must be manually closed */
+    CloseHandle(process_info.hProcess);
+    CloseHandle(process_info.hThread);
+
+    return process_info.dwProcessId;
+
+#else
 
     int child_pid;
     int stdin_pipe[2];
@@ -367,12 +448,15 @@ static pid_t guac_rdp_create_filter_process(guac_client* client,
 
     /* Log fork success */
     guac_client_log(client, GUAC_LOG_INFO, "Created PDF filter process "
-            "PID=%i", child_pid);
+            "PID=%i",
+            child_pid);
 
     /* Close unneeded ends of pipe */
     close(stdin_pipe[0]);
     close(stdout_pipe[1]);
     return child_pid;
+
+#endif
 
 }
 
@@ -667,7 +751,13 @@ void guac_rdp_print_job_free(guac_rdp_print_job* job) {
 void guac_rdp_print_job_kill(guac_rdp_print_job* job) {
 
     /* Forcibly kill filter process, if running */
+#ifdef WINDOWS_BUILD
+    HANDLE job_handle = OpenProcess(PROCESS_TERMINATE, 0, job->filter_pid);
+    TerminateProcess(job_handle, 1);
+    CloseHandle(job_handle);
+#else
     kill(job->filter_pid, SIGKILL);
+#endif
 
     /* Stop all handling of I/O */
     close(job->input_fd);

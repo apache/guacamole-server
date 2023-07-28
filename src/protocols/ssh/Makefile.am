@@ -60,6 +60,7 @@ endif
 
 libguac_client_ssh_la_CFLAGS = \
     -Werror -Wall -Iinclude    \
+    @GENERAL_CFLAGS@            \
     @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@          \
     @TERMINAL_INCLUDE@
@@ -74,5 +75,5 @@ libguac_client_ssh_la_LDFLAGS = \
     -version-info 0:0:0         \
     @PTHREAD_LIBS@              \
     @SSH_LIBS@                  \
-    @SSL_LIBS@
-
+    @SSL_LIBS@                  \
+    @GENERAL_LDFLAGS@

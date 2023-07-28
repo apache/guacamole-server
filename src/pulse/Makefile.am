@@ -34,13 +34,14 @@ noinst_HEADERS =            \
 libguac_pulse_la_SOURCES = \
     pulse.c
 
-libguac_pulse_la_CFLAGS =  \
-    -Werror -Wall -pedantic \
+libguac_pulse_la_CFLAGS =   \
+    @GENERAL_CFLAGS@         \
     @LIBGUAC_INCLUDE@
 
 libguac_pulse_la_LIBADD = \
     @LIBGUAC_LTLIB@
 
 libguac_pulse_la_LDFLAGS = \
-    @PULSE_LIBS@
+    @PULSE_LIBS@           \
+    @GENERAL_LDFLAGS@
 

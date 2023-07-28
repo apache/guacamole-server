@@ -51,7 +51,8 @@ test_common_SOURCES =          \
 test_common_CFLAGS =        \
     -Werror -Wall -pedantic \
     @COMMON_INCLUDE@        \
-    @LIBGUAC_INCLUDE@
+    @LIBGUAC_INCLUDE@       \
+    @GENERAL_CFLAGS@
 
 test_common_LDADD =  \
     @COMMON_LTLIB@   \

@@ -232,17 +232,17 @@ typedef struct guac_rdp_fs_info {
     /**
      * The number of free blocks available.
      */
-    int blocks_available;
+    unsigned int blocks_available;
 
     /**
      * The number of blocks in the filesystem.
      */
-    int blocks_total;
+    unsigned int blocks_total;
 
     /**
      * The number of bytes per block.
      */
-    int block_size;
+    unsigned int block_size;
 
 } guac_rdp_fs_info;
 
@@ -619,12 +619,11 @@ guac_rdp_fs_file* guac_rdp_fs_get_file(guac_rdp_fs* fs, int file_id);
 
 /**
  * Returns whether the given filename matches the given pattern. The pattern
- * given is a shell wildcard pattern as accepted by the POSIX fnmatch()
- * function. Backslashes will be interpreted as literal backslashes, not
- * escape characters.
+ * given is a wildcard pattern as accepted by the FreeRDP FilePatternMatchA()
+ * function.
  *
  * @param filename
- *     The filename to check
+ *     The filename to check.
  *
  * @param pattern
  *     The pattern to check the filename against.

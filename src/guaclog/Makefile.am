@@ -49,6 +49,7 @@ guaclog_SOURCES =     \
 
 guaclog_CFLAGS =      \
     -Werror -Wall     \
+    @GENERAL_CFLAGS@   \
     @LIBGUAC_INCLUDE@
 
 guaclog_LDADD =     \
