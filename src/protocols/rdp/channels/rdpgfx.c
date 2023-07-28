@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/rdpgfx.h"
 #include "plugins/channels.h"
 #include "rdp.h"
@@ -62,10 +64,19 @@ static void guac_rdp_rdpgfx_channel_connected(rdpContext* context,
     RdpgfxClientContext* rdpgfx = (RdpgfxClientContext*) args->pInterface;
     rdpGdi* gdi = context->gdi;
 
+#ifdef CYGWIN_BUILD
+
+    /* Return type is void under cygwin */
+    gdi_graphics_pipeline_init(gdi, rdpgfx);
+
+#else
+
     if (!gdi_graphics_pipeline_init(gdi, rdpgfx))
         guac_client_log(client, GUAC_LOG_WARNING, "Rendering backend for RDPGFX "
                 "channel could not be loaded. Graphics may not render at all!");
     else
+
+#endif
         guac_client_log(client, GUAC_LOG_DEBUG, "RDPGFX channel will be used for "
                 "the RDP Graphics Pipeline Extension.");
 

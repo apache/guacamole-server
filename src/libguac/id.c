@@ -20,7 +20,7 @@
 #include "config.h"
 
 #include "guacamole/error.h"
-#include "id.h"
+#include <guacamole/id.h>
 
 #if defined(HAVE_LIBUUID)
 #include <uuid/uuid.h>
@@ -31,12 +31,6 @@
 #endif
 
 #include <stdlib.h>
-
-/**
- * The length of a UUID in bytes. All UUIDs are guaranteed to be 36 1-byte
- * characters long.
- */
-#define GUAC_UUID_LEN 36
 
 char* guac_generate_id(char prefix) {
 
@@ -68,7 +62,7 @@ char* guac_generate_id(char prefix) {
 #endif
 
     /* Allocate buffer for future formatted ID */
-    buffer = malloc(GUAC_UUID_LEN + 2);
+    buffer = malloc(GUAC_UUID_LEN + 1);
     if (buffer == NULL) {
 #ifndef HAVE_LIBUUID
         uuid_destroy(uuid);
@@ -84,7 +78,7 @@ char* guac_generate_id(char prefix) {
 #ifdef HAVE_LIBUUID
     uuid_unparse_lower(uuid, identifier);
 #else
-    size_t identifier_length = GUAC_UUID_LEN + 1;
+    size_t identifier_length = GUAC_UUID_LEN;
     if (uuid_export(uuid, UUID_FMT_STR, &identifier, &identifier_length) != UUID_RC_OK) {
         free(buffer);
         uuid_destroy(uuid);
@@ -98,7 +92,7 @@ char* guac_generate_id(char prefix) {
 #endif
 
     buffer[0] = prefix;
-    buffer[GUAC_UUID_LEN + 1] = '\0';
+    buffer[GUAC_UUID_LEN] = '\0';
     return buffer;
 
 }

@@ -83,5 +83,6 @@ libguac_terminal_la_LDFLAGS = \
     @MATH_LIBS@               \
     @PANGO_LIBS@              \
     @PANGOCAIRO_LIBS@         \
-    @PTHREAD_LIBS@
+    @PTHREAD_LIBS@            \
+    @CYWGIN_LDFLAGS@
 

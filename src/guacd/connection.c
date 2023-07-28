@@ -21,12 +21,12 @@
 
 #include "connection.h"
 #include "log.h"
-#include "move-fd.h"
 #include "proc.h"
 #include "proc-map.h"
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
+#include <guacamole/id.h>
 #include <guacamole/parser.h>
 #include <guacamole/plugin.h>
 #include <guacamole/protocol.h>
@@ -44,6 +44,58 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+
+#ifdef CYGWIN_BUILD
+
+#include <io.h>
+#include <sddl.h>
+#include <windows.h>
+
+#include <guacamole/handle-helpers.h>
+#include <guacamole/socket-handle.h>
+
+#include "move-pipe.h"
+
+/**
+ * Behaves exactly as write(), but writes as much as possible, returning
+ * successfully only if the entire buffer was written. If the write fails for
+ * any reason, a negative value is returned.
+ *
+ * @param handle
+ *     The file handle to write to.
+ *
+ * @param buffer
+ *     The buffer containing the data to be written.
+ *
+ * @param length
+ *     The number of bytes in the buffer to write.
+ *
+ * @return
+ *     The number of bytes written, or -1 if an error occurs. As this function
+ *     is guaranteed to write ALL bytes, this will always be the number of
+ *     bytes specified by length unless an error occurs.
+ */
+static int __write_all(HANDLE handle, char* buffer, int length) {
+
+    /* Repeatedly write to the handle until all data is written */
+    while (length > 0) {
+        
+        DWORD written;
+        if (guac_write_to_handle(handle, buffer, length, &written))
+            return -1;
+
+        length -= written;
+        buffer += written;
+
+    }
+
+    return length;
+
+}
+
+#else
+
+#include "move-fd.h"
 
 /**
  * Behaves exactly as write(), but writes as much as possible, returning
@@ -83,10 +135,12 @@ static int __write_all(int fd, char* buffer, int length) {
 
 }
 
+#endif
+
 /**
  * Continuously reads from a guac_socket, writing all data read to a file
- * descriptor. Any data already buffered from that guac_socket by a given
- * guac_parser is read first, prior to reading further data from the
+ * descriptor or handle. Any data already buffered from that guac_socket by a
+ * given guac_parser is read first, prior to reading further data from the
  * guac_socket. The provided guac_parser will be freed once its buffers have
  * been emptied, but the guac_socket will not.
  *
@@ -111,7 +165,13 @@ static void* guacd_connection_write_thread(void* data) {
 
     /* Read all buffered data from parser first */
     while ((length = guac_parser_shift(params->parser, buffer, sizeof(buffer))) > 0) {
+
+#ifdef CYGWIN_BUILD
+        if (__write_all(params->handle, buffer, length) < 0)
+#else
         if (__write_all(params->fd, buffer, length) < 0)
+#endif
+
             break;
     }
 
@@ -120,7 +180,13 @@ static void* guacd_connection_write_thread(void* data) {
 
     /* Transfer data from file descriptor to socket */
     while ((length = guac_socket_read(params->socket, buffer, sizeof(buffer))) > 0) {
+
+#ifdef CYGWIN_BUILD
+        if (__write_all(params->handle, buffer, length) < 0)
+#else
         if (__write_all(params->fd, buffer, length) < 0)
+#endif
+
             break;
     }
 
@@ -133,24 +199,49 @@ void* guacd_connection_io_thread(void* data) {
     guacd_connection_io_thread_params* params = (guacd_connection_io_thread_params*) data;
     char buffer[8192];
 
-    int length;
-
     pthread_t write_thread;
     pthread_create(&write_thread, NULL, guacd_connection_write_thread, params);
 
+#ifdef CYGWIN_BUILD
+
+    /* Transfer data from file handle to socket */
+    while (1) {
+        
+        DWORD bytes_read;
+        if (guac_read_from_handle(params->handle, buffer, sizeof(buffer), &bytes_read))
+            break;
+
+        if (guac_socket_write(params->socket, buffer, bytes_read))
+            break;
+
+        guac_socket_flush(params->socket);
+
+    }
+
+#else
+
     /* Transfer data from file descriptor to socket */
+    int length;
     while ((length = read(params->fd, buffer, sizeof(buffer))) > 0) {
         if (guac_socket_write(params->socket, buffer, length))
             break;
         guac_socket_flush(params->socket);
     }
 
+#endif
+
     /* Wait for write thread to die */
     pthread_join(write_thread, NULL);
 
     /* Clean up */
     guac_socket_free(params->socket);
+
+#ifdef CYGWIN_BUILD
+    CloseHandle(params->handle);
+#else
     close(params->fd);
+#endif
+
     free(params);
 
     return NULL;
@@ -182,6 +273,129 @@ void* guacd_connection_io_thread(void* data) {
  */
 static int guacd_add_user(guacd_proc* proc, guac_parser* parser, guac_socket* socket) {
 
+#ifdef CYGWIN_BUILD
+
+    SECURITY_ATTRIBUTES attributes = { 0 };
+    attributes.nLength = sizeof(SECURITY_ATTRIBUTES);
+
+    /*
+     * Attempt to create a Windows security descriptor that grants access only
+     * to the owner of this process.
+     */
+    if (!ConvertStringSecurityDescriptorToSecurityDescriptor(
+
+            /* 
+             * An SDDL string that uses DACL to grant the General Access (GA)
+             * permission, only to the owner (OW). For more, see
+             * https://learn.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-string-format.
+             */
+            "D:P(A;;GA;;;OW)",
+            SDDL_REVISION_1,
+
+            /* The populated security descriptor output */
+            &(attributes.lpSecurityDescriptor),
+
+            /* There's no need to capture the descriptor size */
+            NULL
+
+    )) {
+        guacd_log(GUAC_LOG_ERROR, "Unable to initialize named pipe security descriptor.");
+        return 1;
+    }
+
+    char pipe_name[GUAC_PIPE_NAME_LENGTH];
+
+    /* Required pipe name prefix */
+    memcpy(pipe_name, PIPE_NAME_PREFIX, strlen(PIPE_NAME_PREFIX));
+
+    /* UUID to ensure the pipe name is unique */
+    char* uuid = guac_generate_id('G');
+    if (uuid == NULL) {
+        guacd_log(GUAC_LOG_ERROR, "Unable to generate UUID for pipe name.");
+        return 1;
+    }
+
+    memcpy(pipe_name + strlen(PIPE_NAME_PREFIX), uuid, GUAC_UUID_LEN);
+
+    /* Null terminator */
+    pipe_name[GUAC_PIPE_NAME_LENGTH - 1] = '\0';
+
+    /* 
+     * Set up a named pipe for communication with the user. For more, see
+     * https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea
+     */
+    HANDLE pipe_handle = CreateNamedPipe(
+        pipe_name, 
+
+        /*
+         * Read/write and "overlapped" (async) modes. PIPE_WAIT ensures
+         * that completion actions do not occur until data is actually
+         * ready, i.e. it's actually possible to wait for data.
+         */
+        PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+
+        /* Allow only one instance of this named pipe to be opened. 
+         * PIPE_WAIT ensures that completion actions do not occur until data
+         * is actually ready, i.e. it's actually possible to wait for data.
+         * Also, allow only connections from the local machine.
+         */
+        PIPE_TYPE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
+
+        /* Only this one instance of this named pipe is needed */
+        1,
+
+        /* Output and input buffer sizes */
+        8192, 8192,
+
+        /* Use the default timeout for the unused function WaitNamedPipe() */
+        0,
+
+        /* Set our custom security descriptor to allow only owner usage */
+        &attributes
+
+    );
+
+    LocalFree(attributes.lpSecurityDescriptor);
+
+    if (pipe_handle == INVALID_HANDLE_VALUE) {
+        guacd_log(GUAC_LOG_ERROR, "Unable to create named pipe for IPC.");
+        return 1;
+    }
+    
+    /* If pipe creation failed, the error will already have been logged */
+    if (pipe_handle == NULL)
+        return 1;
+
+    /* Send pipe name to process so it can connect to the pipe */
+    if (!guacd_send_pipe(proc->fd_socket, pipe_name)) {
+        CloseHandle(pipe_handle);
+        guacd_log(GUAC_LOG_ERROR, "Unable to add user.");
+        return 1;
+    }
+
+    /* Wait for the other end of the pipe to connect before attempting IO */
+    HANDLE event = CreateEvent(NULL, FALSE, FALSE, NULL);
+    OVERLAPPED overlapped = { 0 };
+    overlapped.hEvent = event;
+    ConnectNamedPipe(pipe_handle, &overlapped);
+        
+    /* Wait for 1 second for the other end to be connected */
+    DWORD result = WaitForSingleObject(event, 1000);
+    if (result == WAIT_FAILED) {
+
+        /* 
+         * If the wait failed for any reason other than the pipe being
+         * already connected 
+         */
+        if (GetLastError() != ERROR_PIPE_CONNECTED) {
+            guacd_log(GUAC_LOG_ERROR, "Named pipe connection not established.");
+            return 1;
+        }
+        
+    }
+
+#else
+
     int sockets[2];
 
     /* Set up socket pair */
@@ -202,10 +416,17 @@ static int guacd_add_user(guacd_proc* proc, guac_parser* parser, guac_socket* so
     /* Close our end of the process file descriptor */
     close(proc_fd);
 
+#endif
+
     guacd_connection_io_thread_params* params = malloc(sizeof(guacd_connection_io_thread_params));
     params->parser = parser;
     params->socket = socket;
+
+#ifdef CYGWIN_BUILD
+    params->handle = pipe_handle;
+#else
     params->fd = user_fd;
+#endif
 
     /* Start I/O thread */
     pthread_t io_thread;
@@ -390,7 +611,7 @@ void* guacd_connection_thread(void* data) {
 
 #else
     /* Open guac_socket */
-    socket = guac_socket_open(connected_socket_fd);
+    socket = guac_socket_open(connected_handle);
 #endif
 
     /* Route connection according to Guacamole, creating a new process if needed */

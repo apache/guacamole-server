@@ -54,5 +54,6 @@ libguac_common_ssh_la_LIBADD = \
 libguac_common_ssh_la_LDFLAGS = \
     @PTHREAD_LIBS@              \
     @SSH_LIBS@                  \
-    @SSL_LIBS@
+    @SSL_LIBS@                  \
+    @CYWGIN_LDFLAGS@
 

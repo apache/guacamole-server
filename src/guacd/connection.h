@@ -28,6 +28,10 @@
 #include <openssl/ssl.h>
 #endif
 
+#ifdef CYGWIN_BUILD
+#include <handleapi.h>
+#endif
+
 /**
  * Parameters required by each connection thread.
  */
@@ -92,11 +96,24 @@ typedef struct guacd_connection_io_thread_params {
      */
     guac_socket* socket;
 
+
+#ifdef CYGWIN_BUILD
+
+    /**
+     * The named pipe handle which is being handled by a guac_socket within the
+     * connection-specific process.
+     */
+    HANDLE handle;
+
+#else
+
     /**
      * The file descriptor which is being handled by a guac_socket within the
      * connection-specific process.
      */
     int fd;
+
+#endif
 
 } guacd_connection_io_thread_params;
 

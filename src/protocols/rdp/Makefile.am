@@ -144,7 +144,8 @@ libguac_client_rdp_la_LDFLAGS = \
     -version-info 0:0:0         \
     @CAIRO_LIBS@                \
     @PTHREAD_LIBS@              \
-    @RDP_LIBS@
+    @RDP_LIBS@                  \
+    @CYWGIN_LDFLAGS@
 
 libguac_client_rdp_la_LIBADD = \
     @COMMON_LTLIB@             \
@@ -174,7 +175,8 @@ libguac_common_svc_client_la_CFLAGS = \
 
 libguac_common_svc_client_la_LDFLAGS = \
     -module -avoid-version -shared     \
-    @RDP_LIBS@
+    @RDP_LIBS@                         \
+    @CYWGIN_LDFLAGS@
 
 libguac_common_svc_client_la_LIBADD = \
     @LIBGUAC_LTLIB@
@@ -199,7 +201,8 @@ libguacai_client_la_CFLAGS = \
 libguacai_client_la_LDFLAGS =      \
     -module -avoid-version -shared \
     @PTHREAD_LIBS@                 \
-    @RDP_LIBS@
+    @RDP_LIBS@                     \
+    @CYWGIN_LDFLAGS@
 
 libguacai_client_la_LIBADD = \
     @COMMON_LTLIB@           \
@@ -264,4 +267,3 @@ EXTRA_DIST =                           \
     $(rdp_keymaps)                     \
     keymaps/generate.pl                \
     plugins/generate-entry-wrappers.pl
-

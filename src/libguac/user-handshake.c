@@ -78,9 +78,11 @@ static void guac_user_log_guac_error(guac_user* user,
                     guac_error_message);
 
         /* Otherwise just log with standard status string */
-        else
-            guac_user_log(user, level, "%s: %s", message,
-                    guac_status_string(guac_error));
+        else {
+            char* status_string = guac_status_string(guac_error);
+            guac_user_log(user, level, "%s: %s", message, status_string);
+            free(status_string);
+        }
 
     }
 
@@ -107,10 +109,12 @@ static void guac_user_log_handshake_failure(guac_user* user) {
                 "Guacamole protocol violation. Perhaps the version of "
                 "guacamole-client is incompatible with this version of "
                 "libguac?");
-    else
+    else {
+        char* status_string = guac_status_string(guac_error);
         guac_user_log(user, GUAC_LOG_WARNING,
-                "Guacamole handshake failed: %s",
-                guac_status_string(guac_error));
+                "Guacamole handshake failed: %s", status_string);
+        free(status_string);
+    }
 
 }
 

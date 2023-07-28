@@ -30,7 +30,7 @@
 #include "guacamole/stream.h"
 #include "guacamole/timestamp.h"
 #include "guacamole/user.h"
-#include "id.h"
+#include <guacamole/id.h>
 #include "user-handlers.h"
 
 #include <errno.h>

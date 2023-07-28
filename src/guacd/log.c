@@ -25,6 +25,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <syslog.h>
 #include <unistd.h>
 
@@ -117,10 +118,11 @@ void guacd_log_guac_error(guac_client_log_level level, const char* message) {
                     guac_error_message);
 
         /* Otherwise just log with standard status string */
-        else
-            guacd_log(level, "%s: %s",
-                    message,
-                    guac_status_string(guac_error));
+        else {
+            char* status_string = guac_status_string(guac_error);
+            guacd_log(level, "%s: %s", message, status_string);
+            free(status_string);
+        }
 
     }
 
@@ -140,10 +142,13 @@ void guacd_log_handshake_failure() {
                 "Guacamole protocol violation. Perhaps the version of "
                 "guacamole-client is incompatible with this version of "
                 "guacd?");
-    else
+    else {
+    
+        char* status_string = guac_status_string(guac_error);
         guacd_log(GUAC_LOG_WARNING,
-                "Guacamole handshake failed: %s",
-                guac_status_string(guac_error));
+                "Guacamole handshake failed: %s", status_string);
+        free(status_string);
+    }
 
 }
 

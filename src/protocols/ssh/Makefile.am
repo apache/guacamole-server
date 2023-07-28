@@ -74,5 +74,5 @@ libguac_client_ssh_la_LDFLAGS = \
     -version-info 0:0:0         \
     @PTHREAD_LIBS@              \
     @SSH_LIBS@                  \
-    @SSL_LIBS@
-
+    @SSL_LIBS@                  \
+    @CYWGIN_LDFLAGS@

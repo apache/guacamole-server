@@ -40,9 +40,28 @@ AC_PROG_LIBTOOL
 # Headers
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h pngstruct.h])
 
+# Cygwin build
+CYWGIN_LDFLAGS=
+AC_ARG_WITH([cygwin],
+            [AS_HELP_STRING([--with-cygwin],
+                            [use Cygwin to build under Windows @<:@default=no@:>@])],
+            [with_cygwin=yes], [with_cygwin=no])
+
+AM_CONDITIONAL([CYGWIN_BUILD], [test "x${with_cygwin}" = "xyes"])
+
+if test "x$with_cygwin" = "xyes"
+then
+    CYWGIN_LDFLAGS=-no-undefined
+    AC_DEFINE([CYGWIN_BUILD],,[Build against Cygwin on Windows])
+fi
+
 # Source characteristics
 AC_DEFINE([_XOPEN_SOURCE], [700], [Uses X/Open and POSIX APIs])
-AC_DEFINE([__BSD_VISIBLE], [1], [Uses BSD-specific APIs (if available)])
+
+if test "x$with_cygwin" = "xno"
+then
+    AC_DEFINE([__BSD_VISIBLE], [1], [Uses BSD-specific APIs (if available)])
+fi
 
 # Check for whether math library is required
 AC_CHECK_LIB([m], [cos],
@@ -131,6 +150,7 @@ AC_SUBST(CAIRO_LIBS)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(UUID_LIBS)
 AC_SUBST(CUNIT_LIBS)
+AC_SUBST(CYWGIN_LDFLAGS)
 
 # Library functions
 AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
@@ -357,20 +377,24 @@ AC_SUBST(SSL_LIBS)
 
 have_winsock=disabled
 WINSOCK_LIBS=
-AC_ARG_WITH([winsock],
-            [AS_HELP_STRING([--with-winsock],
-                            [support Windows Sockets API @<:@default=check@:>@])],
-            [],
-            [with_winsock=check])
 
-if test "x$with_winsock" != "xno"
+if test "x$with_cygwin" = "xno"
 then
-    have_winsock=yes
-    AC_CHECK_LIB([wsock32], [main],
-                 [WINSOCK_LIBS="-lwsock32"]
-                 [AC_DEFINE([ENABLE_WINSOCK],,
-                            [Whether Windows Socket API support is enabled])],
-                 [have_winsock=no])
+    AC_ARG_WITH([winsock],
+                [AS_HELP_STRING([--with-winsock],
+                                [support Windows Sockets API @<:@default=check@:>@])],
+                [],
+                [with_winsock=check])
+
+    if test "x$with_winsock" != "xno"
+    then
+        have_winsock=yes
+        AC_CHECK_LIB([wsock32], [main],
+                    [WINSOCK_LIBS="-lwsock32"]
+                    [AC_DEFINE([ENABLE_WINSOCK],,
+                                [Whether Windows Socket API support is enabled])],
+                    [have_winsock=no])
+    fi
 fi
 
 AM_CONDITIONAL([ENABLE_WINSOCK], [test "x${have_winsock}" = "xyes"])
@@ -513,7 +537,7 @@ then
 
     # Whether libvncserver was built against libgcrypt
     AC_CHECK_DECL([LIBVNCSERVER_WITH_CLIENT_GCRYPT],
-                         [AC_CHECK_HEADER(gcrypt.h,,
+                         [AC_CHECK_HEADER(gcrypt.h, [VNC_LIBS="$VNC_LIBS -lgcrypt"],
                                           [AC_MSG_WARN([
   --------------------------------------------
    libvncserver appears to be built against
@@ -940,7 +964,7 @@ then
     # Whether libssh2 was built against libgcrypt
     AC_CHECK_LIB([ssh2], [gcry_control],
                          [AC_CHECK_HEADER(gcrypt.h,
-                                          [AC_DEFINE([LIBSSH2_USES_GCRYPT],,
+                                          [AC_DEFINE([LIBSSH2_USES_GCRYPT],[SSH_LIBS="$SSH_LIBS -lgcrypt"],
                                                      [Whether libssh2 was built against libgcrypt])],
                                           [AC_MSG_WARN([
   --------------------------------------------

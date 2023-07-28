@@ -69,5 +69,6 @@ libguac_client_kubernetes_la_LDFLAGS = \
     -version-info 0:0:0                \
     @PTHREAD_LIBS@                     \
     @SSL_LIBS@                         \
-    @WEBSOCKETS_LIBS@
+    @WEBSOCKETS_LIBS@                  \
+    @CYWGIN_LDFLAGS@
 

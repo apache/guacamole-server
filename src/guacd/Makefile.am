@@ -53,6 +53,12 @@ guacd_SOURCES =  \
     proc.c       \
     proc-map.c
 
+# Cygwin build
+if CYGWIN_BUILD
+noinst_HEADERS += move-pipe.h
+guacd_SOURCES += move-pipe.c
+endif
+
 guacd_CFLAGS =              \
     -Werror -Wall -pedantic \
     @COMMON_INCLUDE@        \

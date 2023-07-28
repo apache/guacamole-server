@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "id.h"
+#include <guacamole/id.h>
 
 #include <CUnit/CUnit.h>
 #include <stdlib.h>

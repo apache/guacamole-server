@@ -43,6 +43,13 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 
+#ifdef CYGWIN_BUILD
+#include "move-pipe.h"
+#include "guacamole/socket-handle.h"
+#include <io.h>
+#include <handleapi.h>
+#endif
+
 /**
  * Parameters for the user thread.
  */
@@ -53,10 +60,21 @@ typedef struct guacd_user_thread_params {
      */
     guacd_proc* proc;
 
+#ifdef CYGWIN_BUILD
+
+    /**
+     * The file handle for communicating with the joining user.
+     */
+    HANDLE handle;
+
+#else
+
     /**
      * The file descriptor of the joining user's socket.
      */
     int fd;
+
+#endif
 
     /**
      * Whether the joining user is the connection owner.
@@ -84,9 +102,16 @@ static void* guacd_user_thread(void* data) {
     guac_client* client = proc->client;
 
     /* Get guac_socket for user's file descriptor */
+#ifdef CYGWIN_BUILD
+    guac_socket* socket = guac_socket_open_handle(params->handle);
+#else
     guac_socket* socket = guac_socket_open(params->fd);
-    if (socket == NULL)
+#endif
+
+    if (socket == NULL) {
+        free(params);
         return NULL;
+    }
 
     /* Create skeleton user */
     guac_user* user = guac_user_alloc();
@@ -111,6 +136,39 @@ static void* guacd_user_thread(void* data) {
     return NULL;
 
 }
+
+#ifdef CYGWIN_BUILD
+
+/**
+ * Begins a new user connection under a given process, using the given file
+ * handle. The connection will be managed by a separate and detached thread
+ * which is started by this function.
+ *
+ * @param proc
+ *     The process that the user is being added to.
+ 
+ * @param handle
+ *     The handle associated with the user's connection to guacd.
+ *
+ * @param owner
+ *     Non-zero if the user is the owner of the connection being joined (they
+ *     are the first user to join), or zero otherwise.
+ */
+static void guacd_proc_add_user(guacd_proc* proc, HANDLE handle, int owner) {
+
+    guacd_user_thread_params* params = malloc(sizeof(guacd_user_thread_params));
+    params->proc = proc;
+    params->handle = handle;
+    params->owner = owner;
+
+    /* Start user thread */
+    pthread_t user_thread;
+    pthread_create(&user_thread, NULL, guacd_user_thread, params);
+    pthread_detach(user_thread);
+
+}
+
+#else
 
 /**
  * Begins a new user connection under a given process, using the given file
@@ -141,6 +199,8 @@ static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
     pthread_detach(user_thread);
 
 }
+
+#endif
 
 /**
  * Forcibly kills all processes within the current process group, including the
@@ -359,12 +419,24 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
     struct sigaction signal_stop_action = { .sa_handler = signal_stop_handler };
     sigaction(SIGINT, &signal_stop_action, NULL);
     sigaction(SIGTERM, &signal_stop_action, NULL);
+    
+#ifdef CYGWIN_BUILD
+
+    /* Add each received file handle as a new user */
+    HANDLE handle;
+    while ((handle = guacd_recv_pipe(proc->fd_socket)) != NULL) {
+
+        guacd_proc_add_user(proc, handle, owner);
+
+#else
 
     /* Add each received file descriptor as a new user */
     int received_fd;
     while ((received_fd = guacd_recv_fd(proc->fd_socket)) != -1) {
 
         guacd_proc_add_user(proc, received_fd, owner);
+
+#endif
 
         /* Future file descriptors are not owners */
         owner = 0;

@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "config.h"
 
 #include "terminal/color-scheme.h"
 #include "terminal/palette.h"
@@ -71,6 +72,20 @@ static int guac_terminal_color_scheme_compare_token(const char* str_start,
  */
 static void guac_terminal_color_scheme_strip_spaces(const char** str_start,
         const char** str_end) {
+     
+#ifdef CYGWIN_BUILD
+
+    /* Cast to unsigned below to avoid error: array subscript has type 'char' */
+
+    /* Strip leading spaces. */
+    while (*str_start < *str_end && isspace((const unsigned char) (**str_start)))
+        (*str_start)++;
+
+    /* Strip trailing spaces. */
+    while (*str_end > *str_start && isspace((const unsigned char) *(*str_end - 1)))
+        (*str_end)--;
+
+#else
 
     /* Strip leading spaces. */
     while (*str_start < *str_end && isspace(**str_start))
@@ -79,6 +94,9 @@ static void guac_terminal_color_scheme_strip_spaces(const char** str_start,
     /* Strip trailing spaces. */
     while (*str_end > *str_start && isspace(*(*str_end - 1)))
         (*str_end)--;
+
+#endif
+
 }
 
 /**

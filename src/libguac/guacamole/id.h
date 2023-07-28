@@ -21,6 +21,12 @@
 #define __GUAC_ID_H
 
 /**
+ * The length of a guac UUID in bytes. All UUIDs returned by guac_generate_id()
+ * are guaranteed to be 37 1-byte characters long.
+ */
+#define GUAC_UUID_LEN 37
+
+/**
  * Generates a guaranteed-unique identifier which is a total of 37 characters
  * long, having the given single-character prefix. The resulting identifier
  * must be freed with a call to free() when no longer needed.  If an error
