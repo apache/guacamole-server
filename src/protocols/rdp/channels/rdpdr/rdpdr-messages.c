@@ -17,7 +17,10 @@
  * under the License.
  */
 
+#include "config.h"
+
 #include "channels/rdpdr/rdpdr-messages.h"
+#include "channels/rdpdr/rdpdr-printer.h"
 #include "channels/rdpdr/rdpdr.h"
 #include "rdp.h"
 #include "settings.h"
@@ -226,7 +229,7 @@ void guac_rdpdr_process_server_announce(guac_rdp_common_svc* svc,
 
     /* Must choose own client ID if minor not >= 12 */
     if (minor < 12)
-        client_id = random() & 0xFFFF;
+        client_id = rand() & 0xFFFF;
 
     guac_client_log(svc->client, GUAC_LOG_INFO, "Connected to RDPDR %u.%u as client 0x%04x", major, minor, client_id);
 
@@ -395,5 +398,20 @@ void guac_rdpdr_process_prn_cache_data(guac_rdp_common_svc* svc,
 
 void guac_rdpdr_process_prn_using_xps(guac_rdp_common_svc* svc,
         wStream* input_stream) {
+
+/* Support XPS mode only on Windows*/
+#ifdef WINDOWS_BUILD
+
+    guac_client_log(svc->client, GUAC_LOG_INFO, "Printer switched to XPS mode");
+
+    /* Mark the client as XPS mode being enabled for the printer */
+    guac_rdp_client* client = (guac_rdp_client*) svc->client->data;
+    client->xps_printer_mode_enabled = 1;
+
+#else
+
     guac_client_log(svc->client, GUAC_LOG_WARNING, "Printer unexpectedly switched to XPS mode");
+
+#endif
+
 }

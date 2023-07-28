@@ -89,6 +89,7 @@ endif
 
 guacenc_CFLAGS =            \
     -Werror -Wall           \
+    @GENERAL_CFLAGS@         \
     @AVCODEC_CFLAGS@        \
     @AVFORMAT_CFLAGS@       \
     @AVUTIL_CFLAGS@         \
