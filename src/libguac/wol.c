@@ -28,9 +28,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef WINDOWS_BUILD
+#include <ws2tcpip.h>
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
 
 /**
  * Generate the magic Wake-on-LAN (WoL) packet for the specified MAC address

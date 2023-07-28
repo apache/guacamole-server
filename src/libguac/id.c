@@ -21,9 +21,13 @@
 
 #include "guacamole/mem.h"
 #include "guacamole/error.h"
-#include "id.h"
+#include <guacamole/id.h>
 
-#if defined(HAVE_LIBUUID)
+
+#ifdef WINDOWS_BUILD
+#include <rpc.h>
+#include <rpcdce.h>
+#elif defined(HAVE_LIBUUID)
 #include <uuid/uuid.h>
 #elif defined(HAVE_OSSP_UUID_H)
 #include <ossp/uuid.h>
@@ -33,16 +37,42 @@
 
 #include <stdlib.h>
 
-/**
- * The length of a UUID in bytes. All UUIDs are guaranteed to be 36 1-byte
- * characters long.
- */
-#define GUAC_UUID_LEN 36
-
 char* guac_generate_id(char prefix) {
 
     char* buffer;
     char* identifier;
+
+    /* Allocate buffer for future formatted ID */
+    buffer = malloc(GUAC_UUID_LEN + 1);
+    if (buffer == NULL) {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for unique ID";
+        return NULL;
+    }
+
+    identifier = &(buffer[1]);
+
+#ifdef WINDOWS_BUILD
+
+    /* Generate a UUID using a built in windows function */
+    UUID uuid;
+    UuidCreate(&uuid);
+
+    /* Convert the UUID to an all-caps, null-terminated tring */
+    RPC_CSTR uuid_string;
+    if (UuidToString(&uuid, &uuid_string) == RPC_S_OUT_OF_MEMORY)  {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for unique ID";
+        return NULL;
+    }
+
+    /* Copy over lowercase letters to the final target string */
+    for (int i = 0; i < GUAC_UUID_LEN; i++)
+        identifier[i] = tolower(uuid_string[i]);
+
+    RpcStringFree(&uuid_string);
+
+#else
 
     /* Prepare object to receive generated UUID */
 #ifdef HAVE_LIBUUID
@@ -85,7 +115,7 @@ char* guac_generate_id(char prefix) {
 #ifdef HAVE_LIBUUID
     uuid_unparse_lower(uuid, identifier);
 #else
-    size_t identifier_length = GUAC_UUID_LEN + 1;
+    size_t identifier_length = GUAC_UUID_LEN;
     if (uuid_export(uuid, UUID_FMT_STR, &identifier, &identifier_length) != UUID_RC_OK) {
         guac_mem_free(buffer);
         uuid_destroy(uuid);
@@ -97,9 +127,10 @@ char* guac_generate_id(char prefix) {
     /* Clean up generated UUID */
     uuid_destroy(uuid);
 #endif
+#endif
 
     buffer[0] = prefix;
-    buffer[GUAC_UUID_LEN + 1] = '\0';
+    buffer[GUAC_UUID_LEN] = '\0';
     return buffer;
 
 }

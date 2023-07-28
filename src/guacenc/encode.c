@@ -72,8 +72,11 @@ static int guacenc_read_instructions(guacenc_display* display,
 
     /* Fail on read/parse error */
     if (guac_error != GUAC_STATUS_CLOSED) {
-        guacenc_log(GUAC_LOG_ERROR, "%s: %s",
-                path, guac_status_string(guac_error));
+        
+        char* status_string = guac_status_string(guac_error);
+        guacenc_log(GUAC_LOG_ERROR, "%s: %s", path, status_string);
+        free(status_string);
+
         guac_parser_free(parser);
         return 1;
     }
@@ -132,8 +135,11 @@ int guacenc_encode(const char* path, const char* out_path, const char* codec,
     /* Obtain guac_socket wrapping file descriptor */
     guac_socket* socket = guac_socket_open(fd);
     if (socket == NULL) {
-        guacenc_log(GUAC_LOG_ERROR, "%s: %s", path,
-                guac_status_string(guac_error));
+        
+        char* status_string = guac_status_string(guac_error);
+        guacenc_log(GUAC_LOG_ERROR, "%s: %s", path, status_string);
+        free(status_string);
+
         close(fd);
         guacenc_display_free(display);
         return 1;

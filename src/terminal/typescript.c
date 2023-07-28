@@ -32,6 +32,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#ifdef WINDOWS_BUILD
+#include <direct.h>
+#endif
+
 /**
  * Attempts to open a typescript data file within the given path and having
  * the given name. If such a file already exists and allow_write_existing is
@@ -116,7 +120,12 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
         const char* name, int create_path, int allow_write_existing) {
 
     /* Create path if it does not exist, fail if impossible */
-    if (create_path && mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP)
+    if (create_path
+#ifdef WINDOWS_BUILD
+            && _mkdir(path)
+#else
+            && mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP)
+#endif
             && errno != EEXIST)
         return NULL;
 

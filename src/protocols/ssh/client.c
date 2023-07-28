@@ -26,7 +26,10 @@
 #include "terminal/terminal.h"
 #include "user.h"
 
+#ifndef WINDOWS_BUILD
 #include <langinfo.h>
+#endif
+
 #include <locale.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,12 +87,15 @@ int guac_client_init(guac_client* client) {
     guac_argv_register(GUAC_SSH_ARGV_FONT_SIZE, guac_ssh_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
 
     /* Set locale and warn if not UTF-8 */
+#ifdef WINDOWS_BUILD
+    if(!setlocale(LC_CTYPE, ".UTF8"))
+#else
     setlocale(LC_CTYPE, "");
-    if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0) {
+    if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0)
+#endif
         guac_client_log(client, GUAC_LOG_INFO,
                 "Current locale does not use UTF-8. Some characters may "
                 "not render correctly.");
-    }
 
     /* Success */
     return 0;

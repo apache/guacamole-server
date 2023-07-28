@@ -65,8 +65,15 @@ libguac_terminal_la_SOURCES =   \
     typescript.c                \
     xparsecolor.c
 
+# Windows Build
+if WINDOWS_BUILD
+noinst_HEADERS += terminal/wcwidth.h
+libguac_terminal_la_SOURCES += wcwidth.c
+endif
+
 libguac_terminal_la_CFLAGS = \
     -Werror -Wall            \
+    @GENERAL_CFLAGS@         \
     @COMMON_INCLUDE@         \
     @LIBGUAC_INCLUDE@        \
     @PANGO_CFLAGS@           \
@@ -83,5 +90,6 @@ libguac_terminal_la_LDFLAGS = \
     @MATH_LIBS@               \
     @PANGO_LIBS@              \
     @PANGOCAIRO_LIBS@         \
-    @PTHREAD_LIBS@
+    @PTHREAD_LIBS@            \
+    @GENERAL_LDFLAGS@
 

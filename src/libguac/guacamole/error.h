@@ -29,40 +29,15 @@
 
 #include "error-types.h"
 
-/**
- * Returns a human-readable explanation of the status code given.
- */
-const char* guac_status_string(guac_status status);
+#ifdef WINDOWS_BUILD
+#include <windef.h>
+#endif
 
 /**
- * Returns the status code associated with the error which occurred during the
- * last function call. This value will only be set by functions documented to
- * use it (most libguac functions), and is undefined if no error occurred.
- *
- * The storage of this value is thread-local. Assignment of a status code to
- * guac_error in one thread will not affect its value in another thread.
+ * Returns a newly-allocated, null-terminated, and human-readable explanation 
+ * of the status code given.
  */
-#define guac_error (*__guac_error())
-
-guac_status* __guac_error();
-
-/**
- * Returns a message describing the error which occurred during the last
- * function call. If an error occurred, but no message is associated with it,
- * NULL is returned. This value is undefined if no error occurred.
- *
- * The storage of this value is thread-local. Assignment of a message to
- * guac_error_message in one thread will not affect its value in another
- * thread.
- */
-#define guac_error_message (*__guac_error_message())
-
-const char** __guac_error_message();
-
-/**
- * Returns a human-readable explanation of the status code given.
- */
-const char* guac_status_string(guac_status status);
+char* guac_status_string(guac_status status);
 
 /**
  * Returns the status code associated with the error which occurred during the
@@ -87,7 +62,24 @@ guac_status* __guac_error();
  */
 #define guac_error_message (*__guac_error_message())
 
-const char** __guac_error_message();
+char** __guac_error_message();
+
+#ifdef WINDOWS_BUILD
+
+/**
+ * Returns an error code describing the Windows error that occured when
+ * attempting the Windows function call that induced the guac_error status
+ * being set to GUAC_STATUS_SEE_WINDOWS_ERROR. This value is meaningless if
+ * any other guac status is set.
+ *
+ * The storage of this value is thread-local. Assignment of an error code in
+ * one thread will not affect its value in another thread.
+ */
+#define guac_windows_error_code (*__guac_windows_code())
+
+DWORD* __guac_windows_code();
+
+#endif
 
 #endif
 

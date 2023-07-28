@@ -206,7 +206,14 @@ void guac_rdpdr_register_printer(guac_rdp_common_svc* svc, char* printer_name) {
     /* Begin printer-specific information */
     Stream_Write_UINT32(device->device_announce,
               RDPDR_PRINTER_ANNOUNCE_FLAG_DEFAULTPRINTER
-            | RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER); /* Printer flags */
+            | RDPDR_PRINTER_ANNOUNCE_FLAG_NETWORKPRINTER
+#ifdef WINDOWS_BUILD
+            /*
+             * For windows, only support printing XPS to PDF using libgxps.
+             */
+            | RDPDR_PRINTER_ANNOUNCE_FLAG_XPSFORMAT
+#endif
+            ); /* Printer flags */
     Stream_Write_UINT32(device->device_announce, 0); /* Reserved - must be 0. */
     Stream_Write_UINT32(device->device_announce, 0); /* PnPName Length - ignored. */
     Stream_Write_UINT32(device->device_announce, GUAC_PRINTER_DRIVER_LENGTH);

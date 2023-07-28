@@ -26,6 +26,8 @@
  * @file client.h
  */
 
+#include "config.h"
+
 #include "client-fntypes.h"
 #include "client-types.h"
 #include "client-constants.h"
@@ -44,6 +46,15 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <time.h>
+
+#ifdef WINDOWS_BUILD
+#include <windef.h>
+#endif
+
+/**
+ * Internal values for libguac use only.
+ */
+typedef struct guac_client_internal guac_client_internal;
 
 struct guac_client {
 
@@ -133,31 +144,6 @@ struct guac_client {
      * @endcode
      */
     guac_client_log_handler* log_handler;
-
-    /**
-     * Pool of buffer indices. Buffers are simply layers with negative indices.
-     * Note that because guac_pool always gives non-negative indices starting
-     * at 0, the output of this guac_pool will be adjusted.
-     */
-    guac_pool* __buffer_pool;
-
-    /**
-     * Pool of layer indices. Note that because guac_pool always gives
-     * non-negative indices starting at 0, the output of this guac_pool will
-     * be adjusted.
-     */
-    guac_pool* __layer_pool;
-
-    /**
-     * Pool of stream indices.
-     */
-    guac_pool* __stream_pool;
-
-    /**
-     * All available client-level output streams (data going to all connected
-     * users).
-     */
-    guac_stream* __output_streams;
 
     /**
      * The unique identifier allocated for the connection, which may
@@ -305,11 +291,9 @@ struct guac_client {
     const char** args;
 
     /**
-     * Handle to the dlopen()'d plugin, which should be given to dlclose() when
-     * this client is freed. This is only assigned if guac_client_load_plugin()
-     * is used.
+     * Internal-only client data.
      */
-    void* __plugin_handle;
+    guac_client_internal* internal;
 
 };
 

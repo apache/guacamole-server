@@ -34,16 +34,27 @@
 #include <libtelnet.h>
 
 #include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <poll.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#ifdef WINDOWS_BUILD
+#include <winsock2.h>
+#include <ws2def.h>
+#include <ws2tcpip.h>
+#else
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#    ifdef HAVE_POLL
+#        include <poll.h>
+#    else
+#        include <sys/select.h>
+#    endif
+#endif
 
 /**
  * Support levels for various telnet options, required for connection
@@ -471,6 +482,8 @@ void guac_telnet_send_user(telnet_t* telnet, const char* username) {
  */
 static int __guac_telnet_wait(int socket_fd) {
 
+#ifdef HAVE_POLL
+
     /* Build array of file descriptors */
     struct pollfd fds[] = {{
         .fd      = socket_fd,
@@ -480,6 +493,25 @@ static int __guac_telnet_wait(int socket_fd) {
 
     /* Wait for one second */
     return poll(fds, 1, 1000);
+
+#else
+
+    /* Initialize fd_set with single underlying file descriptor */
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(socket_fd, &fds);
+
+    /* Handle timeout if specified */
+    struct timeval timeout = {
+        .tv_sec  = 1,
+        .tv_usec = 0
+    };
+
+    /* Wait up to computed timeout */
+    return select(socket_fd, &fds, NULL, NULL, &timeout);
+
+
+#endif
 
 }
 

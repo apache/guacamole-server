@@ -20,11 +20,27 @@
 #ifndef _GUAC_PLUGIN_CONSTANTS_H
 #define _GUAC_PLUGIN_CONSTANTS_H
 
+#include "config.h"
+
 /**
  * Constants related to client plugins.
  *
  * @file plugin-constants.h
  */
+
+#ifdef WINDOWS_BUILD
+
+/**
+ * String prefix which begins the library filename of all client plugins.
+ */
+#define GUAC_PROTOCOL_LIBRARY_PREFIX "msys-client-"
+
+/**
+ * String suffix which ends the library filename of all client plugins.
+ */
+#define GUAC_PROTOCOL_LIBRARY_SUFFIX "-0.dll"
+
+#else
 
 /**
  * String prefix which begins the library filename of all client plugins.
@@ -35,6 +51,8 @@
  * String suffix which ends the library filename of all client plugins.
  */
 #define GUAC_PROTOCOL_LIBRARY_SUFFIX ".so"
+
+#endif
 
 /**
  * The maximum number of characters (COUNTING NULL TERMINATOR) to allow

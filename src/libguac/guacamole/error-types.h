@@ -20,6 +20,8 @@
 #ifndef _GUAC_ERROR_TYPES_H
 #define _GUAC_ERROR_TYPES_H
 
+#include "config.h"
+
 /**
  * Type definitions related to return values and errors.
  *
@@ -57,6 +59,16 @@ typedef enum guac_status {
      * stored in errno.
      */
     GUAC_STATUS_SEE_ERRNO,
+    
+#ifdef WINDOWS_BUILD
+
+    /**
+     * An error occurred, and further information about the error can be
+     * retrieved using the GetLastError function.
+     */
+    GUAC_STATUS_SEE_WINDOWS_ERROR,
+
+#endif
 
     /**
      * An I/O error prevented the operation from succeeding.
