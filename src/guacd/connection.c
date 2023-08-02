@@ -373,8 +373,14 @@ static int guacd_add_user(guacd_proc* proc, guac_parser* parser, guac_socket* so
         return 1;
     }
 
-    /* Wait for the other end of the pipe to connect before attempting IO */
+    /* Create an event to monitor for pipe connection */
     HANDLE event = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (event == NULL) {
+        guacd_log(GUAC_LOG_ERROR, "Event creation failed.");
+        return 1;
+    }
+
+    /* Wait for the other end of the pipe to connect before attempting IO */
     OVERLAPPED overlapped = { 0 };
     overlapped.hEvent = event;
     ConnectNamedPipe(pipe_handle, &overlapped);

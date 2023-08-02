@@ -39,6 +39,8 @@ int guac_read_from_handle(
      */
     OVERLAPPED overlapped = { 0 };
     overlapped.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (overlapped.hEvent == NULL) 
+        return GetLastError();
 
     /* Attempt to start the async read operation */
     if (!ReadFile(handle, buffer, count, NULL, &overlapped)) {
@@ -50,6 +52,7 @@ int guac_read_from_handle(
          * return it as the error code immediately.
          */ 
         if (error != ERROR_IO_PENDING) {
+            CloseHandle(overlapped.hEvent);
             return error;
         }
         
@@ -59,10 +62,14 @@ int guac_read_from_handle(
      * Wait on the result of the read. If any error occurs when waiting,
      * return the error.
      */
-    if (!GetOverlappedResult(handle, &overlapped, num_bytes_read, TRUE)) 
-        return GetLastError();
+    if (!GetOverlappedResult(handle, &overlapped, num_bytes_read, TRUE)) {
+        DWORD error = GetLastError();
+        CloseHandle(overlapped.hEvent);
+        return error;
+    }
     
     /* No errors occured, so the read was successful */
+    CloseHandle(overlapped.hEvent);
     return 0;
 
 }
@@ -75,6 +82,8 @@ int guac_write_to_handle(
      */
     OVERLAPPED overlapped = { 0 };
     overlapped.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (overlapped.hEvent == NULL) 
+        return GetLastError();
 
     /* Attempt to start the async write operation */
     if (!WriteFile(handle, buffer, count, NULL, &overlapped)) {
@@ -85,8 +94,10 @@ int guac_write_to_handle(
          * If an error other than the expected ERROR_IO_PENDING happens,
          * return it as the error code immediately.
          */ 
-        if (error != ERROR_IO_PENDING) 
+        if (error != ERROR_IO_PENDING) {
+            CloseHandle(overlapped.hEvent);
             return error;
+        }
         
     }
 
@@ -94,10 +105,14 @@ int guac_write_to_handle(
      * Wait on the result of the write. If any error occurs when waiting,
      * return the error.
      */
-    if (!GetOverlappedResult(handle, &overlapped, num_bytes_written, TRUE)) 
-        return GetLastError();
+    if (!GetOverlappedResult(handle, &overlapped, num_bytes_written, TRUE)) {
+        DWORD error = GetLastError();
+        CloseHandle(overlapped.hEvent);
+        return error;
+    }
 
     /* No errors occured, so the write was successful */
+    CloseHandle(overlapped.hEvent);
     return 0;
     
 }

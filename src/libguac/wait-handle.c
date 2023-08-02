@@ -28,10 +28,12 @@
 
 int guac_wait_for_handle(HANDLE handle, int usec_timeout) {
 
+    /* Create an event to be used to signal comm events */
     HANDLE event = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (event == NULL) 
+        return GetLastError();
+
     OVERLAPPED overlapped = { 0 };
-    
-    /* Set the event to be used to signal comm events */
     overlapped.hEvent = event;
 
     /* Request to wait for new data to be available */
@@ -41,8 +43,10 @@ int guac_wait_for_handle(HANDLE handle, int usec_timeout) {
         DWORD error = GetLastError();
 
         /* ERROR_IO_PENDING is expected in overlapped mode */
-        if (error != ERROR_IO_PENDING) 
+        if (error != ERROR_IO_PENDING) {
+            CloseHandle(event);
             return error;
+        }
 
     }
 
@@ -51,17 +55,22 @@ int guac_wait_for_handle(HANDLE handle, int usec_timeout) {
     DWORD result = WaitForSingleObject(event, millis);
     
     /* The wait attempt failed */ 
-    if (result == WAIT_FAILED)
+    if (result == WAIT_FAILED) {
+        CloseHandle(event);
         return GetLastError();
+    }
 
     /* The event was signalled, which should indicate data is ready */
-    else if (result == WAIT_OBJECT_0)
+    else if (result == WAIT_OBJECT_0) {
+        CloseHandle(event);
         return 0;
+    }
 
     /* 
      * If the event didn't trigger and the wait didn't fail, data just isn't 
      * ready yet.
      */
+    CloseHandle(event);
     return -1;
     
 }
