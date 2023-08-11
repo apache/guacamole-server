@@ -49,6 +49,16 @@
 typedef int guac_client_free_handler(guac_client* client);
 
 /**
+ * Handler that will run before pending users are promoted to full users.
+ * Any required operations for pending users should be applied using
+ * guac_client_foreach_pending_user().
+ *
+ * @param client
+ *     The client whose handler was invoked.
+ */
+typedef void guac_client_join_pending_handler(guac_client* client);
+
+/**
  * Handler for logging messages related to a given guac_client instance.
  *
  * @param client

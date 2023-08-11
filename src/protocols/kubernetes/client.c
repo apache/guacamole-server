@@ -25,6 +25,7 @@
 
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
+#include <guacamole/socket.h>
 #include <libwebsockets.h>
 
 #include <langinfo.h>
@@ -77,6 +78,47 @@ static void guac_kubernetes_log(int level, const char* line) {
 
 }
 
+/**
+ * Synchronize the connection state for the given pending user.
+ *
+ * @param user
+ *    The pending user whose connection state should be synced.
+ *
+ * @param data
+ *    Unused.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_kubernetes_sync_pending_user(guac_user* user, void* data) {
+
+    guac_client* client = user->client;
+    guac_kubernetes_client* kubernetes_client =
+        (guac_kubernetes_client*) client->data;
+
+    guac_terminal_dup(kubernetes_client->term, user, user->socket);
+    guac_kubernetes_send_current_argv(user, kubernetes_client);
+    guac_socket_flush(user->socket);
+
+    return NULL;
+
+}
+
+/**
+ * A pending join handler implementation that will synchronize the connection
+ * state for all pending users prior to them being promoted to full user.
+ *
+ * @param client
+ *     The client whose pending users are about to be promoted.
+ */
+static void guac_kubernetes_join_pending_handler(guac_client* client) {
+
+    /* Synchronize each user one at a time */
+    guac_client_foreach_pending_user(
+        client, guac_kubernetes_sync_pending_user, NULL);
+
+}
+
 int guac_client_init(guac_client* client) {
 
     /* Ensure reference to main guac_client remains available in all
@@ -96,6 +138,7 @@ int guac_client_init(guac_client* client) {
 
     /* Set handlers */
     client->join_handler = guac_kubernetes_user_join_handler;
+    client->join_pending_handler = guac_kubernetes_join_pending_handler;
     client->free_handler = guac_kubernetes_client_free_handler;
     client->leave_handler = guac_kubernetes_user_leave_handler;
 

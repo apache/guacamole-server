@@ -40,6 +40,51 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * Synchronize the connection state for the given pending user.
+ *
+ * @param user
+ *    The pending user whose connection state should be synced.
+ *
+ * @param data
+ *    Unused.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_vnc_sync_pending_user(guac_user* user, void* data) {
+
+    guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
+
+#ifdef ENABLE_PULSE
+    /* Synchronize an audio stream */
+    if (vnc_client->audio)
+        guac_pa_stream_add_user(vnc_client->audio, user);
+#endif
+
+    /* Synchronize with current display */
+    guac_common_display_dup(vnc_client->display, user, user->socket);
+    guac_socket_flush(user->socket);
+
+    return NULL;
+
+}
+
+/**
+ * A pending join handler implementation that will synchronize the connection
+ * state for all pending users prior to them being promoted to full user.
+ *
+ * @param client
+ *     The client whose pending users are about to be promoted.
+ */
+static void guac_vnc_join_pending_handler(guac_client* client) {
+
+    /* Synchronize each user one at a time */
+    guac_client_foreach_pending_user(
+        client, guac_vnc_sync_pending_user, NULL);
+
+}
+
 int guac_client_init(guac_client* client) {
 
     /* Set client args */
@@ -59,6 +104,7 @@ int guac_client_init(guac_client* client) {
 
     /* Set handlers */
     client->join_handler = guac_vnc_user_join_handler;
+    client->join_pending_handler = guac_vnc_join_pending_handler;
     client->leave_handler = guac_vnc_user_leave_handler;
     client->free_handler = guac_vnc_client_free_handler;
 

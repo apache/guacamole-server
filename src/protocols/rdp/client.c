@@ -21,6 +21,7 @@
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
+#include "channels/pipe-svc.h"
 #include "config.h"
 #include "fs.h"
 #include "log.h"
@@ -75,6 +76,53 @@ static int is_writable_directory(const char* path) {
     /* Path is both writable and a directory */
     closedir(dir);
     return 1;
+
+}
+
+/**
+ * Synchronize the connection state for the given pending user.
+ *
+ * @param user
+ *    The pending user whose connection state should be synced.
+ *
+ * @param data
+ *    Unused.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_rdp_sync_pending_user(guac_user* user, void* data) {
+
+    guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
+
+    /* Synchronize any audio stream */
+    if (rdp_client->audio)
+        guac_audio_stream_add_user(rdp_client->audio, user);
+
+    /* Bring user up to date with any registered static channels */
+    guac_rdp_pipe_svc_send_pipes(user);
+
+    /* Synchronize with current display */
+    guac_common_display_dup(rdp_client->display, user, user->socket);
+
+    guac_socket_flush(user->socket);
+
+    return NULL;
+
+}
+
+/**
+ * A pending join handler implementation that will synchronize the connection
+ * state for all pending users prior to them being promoted to full user.
+ *
+ * @param client
+ *     The client whose pending users are about to be promoted.
+ */
+static void guac_rdp_join_pending_handler(guac_client* client) {
+
+    /* Synchronize each user one at a time */
+    guac_client_foreach_pending_user(
+        client, guac_rdp_sync_pending_user, NULL);
 
 }
 
@@ -164,6 +212,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
+    client->join_pending_handler = guac_rdp_join_pending_handler;
     client->free_handler = guac_rdp_client_free_handler;
     client->leave_handler = guac_rdp_user_leave_handler;
 
