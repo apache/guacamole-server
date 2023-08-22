@@ -30,7 +30,9 @@
 #include "client-types.h"
 #include "object-types.h"
 #include "protocol-types.h"
+#include "socket.h"
 #include "stream-types.h"
+#include "user-fntypes.h"
 #include "user-types.h"
 
 #include <stdarg.h>
@@ -49,9 +51,9 @@
 typedef int guac_client_free_handler(guac_client* client);
 
 /**
- * Handler that will run before pending users are promoted to full users.
- * Any required operations for pending users should be applied using
- * guac_client_foreach_pending_user().
+ * Handler that will run before immediately before pending users are promoted
+ * to full users. The pending user socket should be used to communicate to the
+ * pending users.
  *
  * @param client
  *     The client whose handler was invoked.

@@ -37,20 +37,20 @@
  *     The head element of the linked list of layers to synchronize, which may
  *     be NULL if the list is currently empty.
  *
- * @param user
- *     The user receiving the layers.
+ * @param client
+ *     The client associated with the users receiving the layers.
  *
  * @param socket
  *     The socket over which each layer should be sent.
  */
 static void guac_common_display_dup_layers(guac_common_display_layer* layers,
-        guac_user* user, guac_socket* socket) {
+        guac_client* client, guac_socket* socket) {
 
     guac_common_display_layer* current = layers;
 
     /* Synchronize all surfaces in given list */
     while (current != NULL) {
-        guac_common_surface_dup(current->surface, user, socket);
+        guac_common_surface_dup(current->surface, client, socket);
         current = current->next;
     }
 
@@ -163,20 +163,21 @@ void guac_common_display_free(guac_common_display* display) {
 
 }
 
-void guac_common_display_dup(guac_common_display* display, guac_user* user,
+void guac_common_display_dup(
+        guac_common_display* display, guac_client* client,
         guac_socket* socket) {
 
     pthread_mutex_lock(&display->_lock);
 
     /* Sunchronize shared cursor */
-    guac_common_cursor_dup(display->cursor, user, socket);
+    guac_common_cursor_dup(display->cursor, client, socket);
 
     /* Synchronize default surface */
-    guac_common_surface_dup(display->default_surface, user, socket);
+    guac_common_surface_dup(display->default_surface, client, socket);
 
     /* Synchronize all layers and buffers */
-    guac_common_display_dup_layers(display->layers, user, socket);
-    guac_common_display_dup_layers(display->buffers, user, socket);
+    guac_common_display_dup_layers(display->layers, client, socket);
+    guac_common_display_dup_layers(display->buffers, client, socket);
 
     pthread_mutex_unlock(&display->_lock);
 

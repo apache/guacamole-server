@@ -1989,8 +1989,8 @@ void guac_common_surface_flush(guac_common_surface* surface) {
 
 }
 
-void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
-        guac_socket* socket) {
+void guac_common_surface_dup(guac_common_surface* surface,
+        guac_client* client, guac_socket* socket) {
 
     pthread_mutex_lock(&surface->_lock);
 
@@ -2028,7 +2028,7 @@ void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
                 surface->width, surface->height, surface->stride);
 
         /* Send PNG for rect */
-        guac_user_stream_png(user, socket, GUAC_COMP_OVER, surface->layer,
+        guac_client_stream_png(client, socket, GUAC_COMP_OVER, surface->layer,
                 0, 0, rect);
         cairo_surface_destroy(rect);
 
@@ -2038,4 +2038,3 @@ complete:
     pthread_mutex_unlock(&surface->_lock);
 
 }
-

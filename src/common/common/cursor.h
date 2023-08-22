@@ -153,14 +153,14 @@ void guac_common_cursor_free(guac_common_cursor* cursor);
  * @param cursor
  *     The cursor to send.
  *
- * @param user
+ * @param client
  *     The user receiving the updated cursor.
  *
  * @param socket
  *     The socket over which the updated cursor should be sent.
  */
-void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
-        guac_socket* socket);
+void guac_common_cursor_dup(
+        guac_common_cursor* cursor, guac_client* client, guac_socket* socket);
 
 /**
  * Updates the current position and button state of the mouse cursor, marking

@@ -69,5 +69,23 @@ guac_argv_callback guac_ssh_argv_callback;
  */
 void* guac_ssh_send_current_argv(guac_user* user, void* data);
 
+/**
+ * Sends the current values of all non-sensitive parameters which may be set
+ * while the connection is running to the users associated with the provided
+ * socket. Note that the users receiving these values will not necessarily be
+ * able to set new values themselves if their connection is read-only.
+ *
+ * @param client
+ *     The client associated with the users that should receive the values of
+ *     all non-sensitive parameters which may be set while the connection is running.
+ *
+ * @param socket
+ *     The socket to the arguments to the batch of users along.
+ *
+ * @return
+ *     Always NULL.
+ */
+void guac_ssh_send_current_argv_batch(guac_client* client, guac_socket* socket);
+
 #endif
 

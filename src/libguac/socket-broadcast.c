@@ -28,8 +28,25 @@
 #include <stdlib.h>
 
 /**
- * Data associated with an open socket which writes to all connected users of
- * a particular guac_client.
+ * A function that will broadcast arbitrary data to a subset of users for
+ * the provided client, using the provided user callback for any user-specific
+ * operations.
+ *
+ * @param client
+ *     The guac_client associated with the users to broadcast to.
+ *
+ * @param callback
+ *     A callback that should be invoked with each broadcasted user.
+ *
+ * @param data
+ *     Arbitrary data that may be used to broadcast to the subset of users.
+ */
+typedef void guac_socket_broadcast_handler(
+        guac_client* client, guac_user_callback* callback, void* data);
+
+/**
+ * Data associated with an open socket which writes to a subset of connected
+ * users of a particular guac_client.
  */
 typedef struct guac_socket_broadcast_data {
 
@@ -44,6 +61,11 @@ typedef struct guac_socket_broadcast_data {
      * released when the instruction is finished being written.
      */
     pthread_mutex_t socket_lock;
+
+    /**
+     * The function to broadcast
+     */
+    guac_socket_broadcast_handler* broadcast_handler;
 
 } guac_socket_broadcast_data;
 
@@ -91,7 +113,7 @@ static ssize_t __guac_socket_broadcast_read_handler(guac_socket* socket,
 }
 
 /**
- * Callback invoked by guac_client_foreach_user() which write a given chunk of
+ * Callback invoked by the broadcast handler which write a given chunk of
  * data to that user's socket. If the write attempt fails, the user is
  * signalled to stop with guac_user_stop().
  *
@@ -146,15 +168,15 @@ static ssize_t __guac_socket_broadcast_write_handler(guac_socket* socket,
     chunk.buffer = buf;
     chunk.length = count;
 
-    /* Broadcast chunk to all users */
-    guac_client_foreach_user(data->client, __write_chunk_callback, &chunk);
+    /* Broadcast chunk to the users */
+    data->broadcast_handler(data->client, __write_chunk_callback, &chunk);
 
     return count;
 
 }
 
 /**
- * Callback which is invoked by guac_client_foreach_user() to flush all
+ * Callback which is invoked by the broadcast handler to flush all
  * pending data on the given user's socket. If an error occurs while flushing
  * a user's socket, that user is signalled to stop with guac_user_stop().
  *
@@ -162,7 +184,7 @@ static ssize_t __guac_socket_broadcast_write_handler(guac_socket* socket,
  *     The user whose socket should be flushed.
  *
  * @param data
- *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     Arbitrary data passed to the broadcast handler. This is not needed
  *     by this callback, and should be left as NULL.
  *
  * @return
@@ -195,15 +217,15 @@ static ssize_t __guac_socket_broadcast_flush_handler(guac_socket* socket) {
     guac_socket_broadcast_data* data =
         (guac_socket_broadcast_data*) socket->data;
 
-    /* Flush all users */
-    guac_client_foreach_user(data->client, __flush_callback, NULL);
+    /* Flush the users */
+    data->broadcast_handler(data->client, __flush_callback, NULL);
 
     return 0;
 
 }
 
 /**
- * Callback which is invoked by guac_client_foreach_user() to lock the given
+ * Callback which is invoked by the broadcast handler to lock the given
  * user's socket in preparation for the beginning of a Guacamole protocol
  * instruction.
  *
@@ -211,7 +233,7 @@ static ssize_t __guac_socket_broadcast_flush_handler(guac_socket* socket) {
  *     The user whose socket should be locked.
  *
  * @param data
- *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     Arbitrary data passed to the broadcast handler. This is not needed
  *     by this callback, and should be left as NULL.
  *
  * @return
@@ -243,20 +265,20 @@ static void __guac_socket_broadcast_lock_handler(guac_socket* socket) {
     /* Acquire exclusive access to socket */
     pthread_mutex_lock(&(data->socket_lock));
 
-    /* Lock sockets of all users */
-    guac_client_foreach_user(data->client, __lock_callback, NULL);
+    /* Lock sockets of the users */
+    data->broadcast_handler(data->client, __lock_callback, NULL);
 
 }
 
 /**
- * Callback which is invoked by guac_client_foreach_user() to unlock the given
+ * Callback which is invoked by the broadcast handler to unlock the given
  * user's socket at the end of a Guacamole protocol instruction.
  *
  * @param user
  *     The user whose socket should be unlocked.
  *
  * @param data
- *     Arbitrary data passed to guac_client_foreach_user(). This is not needed
+ *     Arbitrary data passed to the broadcast handler. This is not needed
  *     by this callback, and should be left as NULL.
  *
  * @return
@@ -285,7 +307,7 @@ static void __guac_socket_broadcast_unlock_handler(guac_socket* socket) {
         (guac_socket_broadcast_data*) socket->data;
 
     /* Unlock sockets of all users */
-    guac_client_foreach_user(data->client, __unlock_callback, NULL);
+    data->broadcast_handler(data->client, __unlock_callback, NULL);
 
     /* Relinquish exclusive access to socket */
     pthread_mutex_unlock(&(data->socket_lock));
@@ -343,7 +365,22 @@ static int __guac_socket_broadcast_free_handler(guac_socket* socket) {
 
 }
 
-guac_socket* guac_socket_broadcast(guac_client* client) {
+/**
+ * Construct and return a socket that will broadcast to the users given by
+ * by the provided broadcast handler.
+ *
+ * @param client
+ *     The client who's users are being broadcast to.
+ *
+ * @param broadcast_handler
+ *     The handler that will peform the broadcast against a subset of users
+ *     of the provided client.
+ *
+ * @return
+ *     The newly constructed broadcast socket
+ */
+static guac_socket* __guac_socket_init(
+        guac_client* client, guac_socket_broadcast_handler* broadcast_handler) {
 
     pthread_mutexattr_t lock_attributes;
 
@@ -351,6 +388,9 @@ guac_socket* guac_socket_broadcast(guac_client* client) {
     guac_socket* socket = guac_socket_alloc();
     guac_socket_broadcast_data* data =
         malloc(sizeof(guac_socket_broadcast_data));
+
+    /* Set the provided broadcast handler */
+    data->broadcast_handler = broadcast_handler;
 
     /* Store client as socket data */
     data->client = client;
@@ -361,7 +401,7 @@ guac_socket* guac_socket_broadcast(guac_client* client) {
 
     /* Init lock */
     pthread_mutex_init(&(data->socket_lock), &lock_attributes);
-    
+
     /* Set read/write handlers */
     socket->read_handler   = __guac_socket_broadcast_read_handler;
     socket->write_handler  = __guac_socket_broadcast_write_handler;
@@ -372,6 +412,20 @@ guac_socket* guac_socket_broadcast(guac_client* client) {
     socket->free_handler   = __guac_socket_broadcast_free_handler;
 
     return socket;
+
+}
+
+guac_socket* guac_socket_broadcast(guac_client* client) {
+
+    /* Broadcast to all connected non-pending users*/
+    return __guac_socket_init(client, guac_client_foreach_user);
+
+}
+
+guac_socket* guac_socket_broadcast_pending(guac_client* client) {
+
+    /* Broadcast to all connected pending users*/
+    return __guac_socket_init(client, guac_client_foreach_pending_user);
 
 }
 

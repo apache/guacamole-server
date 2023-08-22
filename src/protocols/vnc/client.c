@@ -40,35 +40,29 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef ENABLE_PULSE
 /**
- * Synchronize the connection state for the given pending user.
+ * Add the provided user to the provided audio stream.
  *
  * @param user
- *    The pending user whose connection state should be synced.
+ *    The pending user who should be added to the audio stream.
  *
  * @param data
- *    Unused.
+ *    The audio stream that the user should be added to.
  *
  * @return
  *     Always NULL.
  */
-static void* guac_vnc_sync_pending_user(guac_user* user, void* data) {
+static void* guac_vnc_sync_pending_user_audio(guac_user* user, void* data) {
 
-    guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
-
-#ifdef ENABLE_PULSE
-    /* Synchronize an audio stream */
-    if (vnc_client->audio)
-        guac_pa_stream_add_user(vnc_client->audio, user);
-#endif
-
-    /* Synchronize with current display */
-    guac_common_display_dup(vnc_client->display, user, user->socket);
-    guac_socket_flush(user->socket);
+    /* Add the user to the stream */
+    guac_pa_stream* audio = (guac_pa_stream*) data;
+    guac_pa_stream_add_user(audio, user);
 
     return NULL;
 
 }
+#endif
 
 /**
  * A pending join handler implementation that will synchronize the connection
@@ -79,9 +73,19 @@ static void* guac_vnc_sync_pending_user(guac_user* user, void* data) {
  */
 static void guac_vnc_join_pending_handler(guac_client* client) {
 
-    /* Synchronize each user one at a time */
-    guac_client_foreach_pending_user(
-        client, guac_vnc_sync_pending_user, NULL);
+    guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
+    guac_socket* broadcast_socket = client->pending_socket;
+
+#ifdef ENABLE_PULSE
+    /* Synchronize any audio stream for each pending user */
+    if (vnc_client->audio)
+        guac_client_foreach_pending_user(
+            client, guac_vnc_sync_pending_user_audio, vnc_client->audio);
+#endif
+
+    /* Synchronize with current display */
+    guac_common_display_dup(vnc_client->display, client, broadcast_socket);
+    guac_socket_flush(broadcast_socket);
 
 }
 

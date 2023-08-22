@@ -193,7 +193,7 @@ static void guac_client_promote_pending_users(union sigval data) {
 
     guac_release_lock(&(client->__users_lock));
 
-    /* Release the lock (this is done AFTER updating the non-pending user list
+    /* Release the lock (this is done AFTER updating the connected user list
      * to ensure that all users are always on exactly one of these lists) */
     guac_release_lock(&(client->__pending_users_lock));
 
@@ -253,8 +253,9 @@ guac_client* guac_client_alloc() {
     /* Ensure the timer is constructed only once */
     pthread_mutex_init(&(client->__pending_users_timer_mutex), NULL);
 
-    /* Set up socket to broadcast to all users */
+    /* Set up broadcast sockets */
     client->socket = guac_socket_broadcast(client);
+    client->pending_socket = guac_socket_broadcast_pending(client);
 
     /* Set the timer event thread as initially inactive, since it hasn't run */
     atomic_flag_clear(&(client->__pending_timer_event_active));
@@ -280,8 +281,9 @@ void guac_client_free(guac_client* client) {
 
     }
 
-    /* Free socket */
+    /* Free sockets */
     guac_socket_free(client->socket);
+    guac_socket_free(client->pending_socket);
 
     /* Free layer pools */
     guac_pool_free(client->__buffer_pool);

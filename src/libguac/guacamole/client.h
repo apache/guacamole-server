@@ -49,15 +49,23 @@
 struct guac_client {
 
     /**
-     * The guac_socket structure to be used to communicate with all connected
-     * web-clients (users). Unlike the user-level guac_socket, this guac_socket
-     * will broadcast instructions to all connected users simultaneously.  It
-     * is expected that the implementor of any Guacamole proxy client will
-     * provide their own mechanism of I/O for their protocol. The guac_socket
-     * structure is used only to communicate conveniently with the Guacamole
-     * web-client.
+     * The guac_socket structure to be used to communicate with all non-pending
+     * connected web-clients (users). Unlike the user-level guac_socket, this
+     * guac_socket will broadcast instructions to all non-pending connected users
+     * simultaneously. It is expected that the implementor of any Guacamole proxy
+     * client will provide their own mechanism of I/O for their protocol. The
+     * guac_socket structure is used only to communicate conveniently with the
+     * Guacamole web-client.
      */
     guac_socket* socket;
+
+    /**
+     * The guac_socket structure to be used to communicate with all pending
+     * connected web-clients (users). Aside from operating on a different
+     * subset of users, this socket has all the same behavior and semantics as
+     * the non-pending socket.
+     */
+    guac_socket* pending_socket;
 
     /**
      * The current state of the client. When the client is first allocated,
@@ -248,8 +256,8 @@ struct guac_client {
 
     /**
      * A handler that will be run prior to pending users being promoted to full
-     * users. Any required pending user operations should be applied
-     * guac_client_foreach_pending_user().
+     * users. Any required pending user operations should be performed using
+     * the client's pending user socket.
      *
      * Example:
      * @code

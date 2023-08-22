@@ -80,32 +80,22 @@ static int is_writable_directory(const char* path) {
 }
 
 /**
- * Synchronize the connection state for the given pending user.
+ * Add the provided user to the provided audio stream.
  *
  * @param user
- *    The pending user whose connection state should be synced.
+ *    The pending user who should be added to the audio stream.
  *
  * @param data
- *    Unused.
+ *    The audio stream that the user should be added to.
  *
  * @return
  *     Always NULL.
  */
-static void* guac_rdp_sync_pending_user(guac_user* user, void* data) {
+static void* guac_rdp_sync_pending_user_audio(guac_user* user, void* data) {
 
-    guac_rdp_client* rdp_client = (guac_rdp_client*) user->client->data;
-
-    /* Synchronize any audio stream */
-    if (rdp_client->audio)
-        guac_audio_stream_add_user(rdp_client->audio, user);
-
-    /* Bring user up to date with any registered static channels */
-    guac_rdp_pipe_svc_send_pipes(user);
-
-    /* Synchronize with current display */
-    guac_common_display_dup(rdp_client->display, user, user->socket);
-
-    guac_socket_flush(user->socket);
+    /* Add the user to the stream */
+    guac_audio_stream* audio = (guac_audio_stream*) data;
+    guac_audio_stream_add_user(audio, user);
 
     return NULL;
 
@@ -120,9 +110,21 @@ static void* guac_rdp_sync_pending_user(guac_user* user, void* data) {
  */
 static void guac_rdp_join_pending_handler(guac_client* client) {
 
-    /* Synchronize each user one at a time */
-    guac_client_foreach_pending_user(
-        client, guac_rdp_sync_pending_user, NULL);
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_socket* broadcast_socket = client->pending_socket;
+
+    /* Synchronize any audio stream for each pending user */
+    if (rdp_client->audio)
+        guac_client_foreach_pending_user(
+            client, guac_rdp_sync_pending_user_audio, rdp_client->audio);
+
+    /* Bring user up to date with any registered static channels */
+    guac_rdp_pipe_svc_send_pipes(client, broadcast_socket);
+
+    /* Synchronize with current display */
+    guac_common_display_dup(rdp_client->display, client, broadcast_socket);
+
+    guac_socket_flush(broadcast_socket);
 
 }
 

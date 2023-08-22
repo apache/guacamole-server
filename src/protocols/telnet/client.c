@@ -37,31 +37,6 @@
 #include <guacamole/socket.h>
 
 /**
- * Synchronize the connection state for the given pending user.
- *
- * @param user
- *    The pending user whose connection state should be synced.
- *
- * @param data
- *    Unused.
- *
- * @return
- *     Always NULL.
- */
-static void* guac_telnet_sync_pending_user(guac_user* user, void* data) {
-
-    guac_client* client = user->client;
-    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
-
-    guac_terminal_dup(telnet_client->term, user, user->socket);
-    guac_telnet_send_current_argv(user, telnet_client);
-    guac_socket_flush(user->socket);
-
-    return NULL;
-
-}
-
-/**
  * A pending join handler implementation that will synchronize the connection
  * state for all pending users prior to them being promoted to full user.
  *
@@ -70,9 +45,13 @@ static void* guac_telnet_sync_pending_user(guac_user* user, void* data) {
  */
 static void guac_telnet_join_pending_handler(guac_client* client) {
 
-    /* Synchronize each user one at a time */
-    guac_client_foreach_pending_user(
-        client, guac_telnet_sync_pending_user, NULL);
+    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+
+    /* Synchronize the terminal state to all pending users */
+    guac_socket* broadcast_socket = client->pending_socket;
+    guac_terminal_sync_users(telnet_client->term, client, broadcast_socket);
+    guac_telnet_send_current_argv_batch(client, broadcast_socket);
+    guac_socket_flush(broadcast_socket);
 
 }
 

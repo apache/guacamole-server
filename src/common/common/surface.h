@@ -490,14 +490,14 @@ void guac_common_surface_flush(guac_common_surface* surface);
  * @param surface
  *     The surface to duplicate.
  *
- * @param user
- *     The user receiving the surface.
+ * @param client
+ *     The client whos users are receiving the surface.
  *
  * @param socket
  *     The socket over which the surface contents should be sent.
  */
-void guac_common_surface_dup(guac_common_surface* surface, guac_user* user,
-        guac_socket* socket);
+void guac_common_surface_dup(guac_common_surface* surface,
+        guac_client* client, guac_socket* socket);
 
 /**
  * Declares that the given surface should receive touch events. By default,
