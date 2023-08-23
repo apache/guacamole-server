@@ -42,7 +42,6 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdarg.h>
-#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,6 +51,24 @@
  * synchronized and emptied (250 milliseconds aka 1/4 second).
  */
 #define GUAC_CLIENT_PENDING_USERS_REFRESH_INTERVAL 250000000
+
+/**
+ * A value that indicates that the pending users timer has yet to be
+ * initialized and started.
+ */
+#define GUAC_CLIENT_PENDING_TIMER_UNREGISTERED 0
+
+/**
+ * A value that indicates that the pending users timer has been initialized
+ * and started, but that the timer handler is not currently running.
+ */
+#define GUAC_CLIENT_PENDING_TIMER_REGISTERED 1
+
+/**
+ * A value that indicates that the pending users timer has been initialized
+ * and started, and that the timer handler is currently running.
+ */
+#define GUAC_CLIENT_PENDING_TIMER_TRIGGERED 2
 
 /**
  * Empty NULL-terminated array of argument names.
@@ -149,8 +166,20 @@ static void guac_client_promote_pending_users(union sigval data) {
 
     guac_client* client = (guac_client*) data.sival_ptr;
 
-    /* Do not start if the previous promotion event is still running */
-    if (atomic_flag_test_and_set(&(client->__pending_timer_event_active)))
+    pthread_mutex_lock(&(client->__pending_users_timer_mutex));
+
+    /* Check if the previous instance of this handler is still running */
+    int already_running = (
+            client->__pending_users_timer_state
+            == GUAC_CLIENT_PENDING_TIMER_TRIGGERED);
+
+    /* Mark the handler as running if it isn't already */
+    client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_TRIGGERED;
+
+    pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+
+    /* Do not start the handler if the previous instance is still running */
+    if (already_running)
         return;
 
     /* Acquire the lock for reading and modifying the list of pending users */
@@ -197,8 +226,10 @@ static void guac_client_promote_pending_users(union sigval data) {
      * to ensure that all users are always on exactly one of these lists) */
     guac_release_lock(&(client->__pending_users_lock));
 
-    /* Mark the timer event as complete so the next instance can run */
-    atomic_flag_clear(&(client->__pending_timer_event_active));
+    /* Mark the handler as complete so the next instance can run */
+    pthread_mutex_lock(&(client->__pending_users_timer_mutex));
+    client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;
+    pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
 
 }
 
@@ -250,15 +281,15 @@ guac_client* guac_client_alloc() {
     pthread_key_create(&(client->__users_lock.key), (void *) 0);
     pthread_key_create(&(client->__pending_users_lock.key), (void *) 0);
 
-    /* Ensure the timer is constructed only once */
+    /* The timer will be lazily created in the child process */
+    client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_UNREGISTERED;
+
+    /* Set up the pending user promotion mutex */
     pthread_mutex_init(&(client->__pending_users_timer_mutex), NULL);
 
     /* Set up broadcast sockets */
     client->socket = guac_socket_broadcast(client);
     client->pending_socket = guac_socket_broadcast_pending(client);
-
-    /* Set the timer event thread as initially inactive, since it hasn't run */
-    atomic_flag_clear(&(client->__pending_timer_event_active));
 
     return client;
 
@@ -301,12 +332,20 @@ void guac_client_free(guac_client* client) {
             guac_client_log(client, GUAC_LOG_ERROR, "Unable to close plugin: %s", dlerror());
     }
 
-    /* Destroy the pending users timer */
-    pthread_mutex_destroy(&(client->__pending_users_timer_mutex));
-    if (client->__pending_users_timer_running != 0)
+    /* Find out if the pending user promotion timer was ever started */
+    pthread_mutex_lock(&(client->__pending_users_timer_mutex));
+    int was_started = (
+            client->__pending_users_timer_state
+            != GUAC_CLIENT_PENDING_TIMER_UNREGISTERED);
+    pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+
+    /* If the timer was registered, stop it before destroying the lock */
+    if (was_started)
         timer_delete(client->__pending_users_timer);
 
-    /* Destroy the reenrant read-write locks */
+    pthread_mutex_destroy(&(client->__pending_users_timer_mutex));
+
+    /* Destroy the reentrant read-write locks */
     guac_destroy_reentrant_rwlock(&(client->__users_lock));
     guac_destroy_reentrant_rwlock(&(client->__pending_users_lock));
 
@@ -423,7 +462,8 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
     pthread_mutex_lock(&(client->__pending_users_timer_mutex));
 
     /* Return success if the timer is already created and running */
-    if (client->__pending_users_timer_running != 0) {
+    if (client->__pending_users_timer_state
+            != GUAC_CLIENT_PENDING_TIMER_UNREGISTERED) {
         pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
         return 0;
     }
@@ -456,7 +496,9 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
         return 1;
     }
 
-    client->__pending_users_timer_running = 1;
+    /* Mark the timer as registered but not yet running */
+    client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;
+
     pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
     return 0;
 

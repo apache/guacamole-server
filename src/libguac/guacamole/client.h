@@ -196,21 +196,15 @@ struct guac_client {
     timer_t __pending_users_timer;
 
     /**
-     * Non-zero if the pending users timer is configured and running, or zero
-     * otherwise.
+     * A flag storing the current state of the pending users timer.
      */
-    int __pending_users_timer_running;
+    int __pending_users_timer_state;
 
     /**
-     * A mutex that must be acquired before modifying the pending users timer.
+     * A mutex that must be acquired before modifying or checking the value of
+     * the timer state.
      */
     pthread_mutex_t __pending_users_timer_mutex;
-
-    /**
-     * A flag that indicates whether the pending users timer event thread is
-     * currently running.
-     */
-    volatile atomic_flag __pending_timer_event_active;
 
     /**
      * The first user within the list of connected users who have not yet had
