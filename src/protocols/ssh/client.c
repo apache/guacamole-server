@@ -43,8 +43,11 @@
  *
  * @param client
  *     The client whose pending users are about to be promoted.
+ *
+ * @return
+ *     Always zero.
  */
-static void guac_ssh_join_pending_handler(guac_client* client) {
+static int guac_ssh_join_pending_handler(guac_client* client) {
 
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
 
@@ -53,6 +56,8 @@ static void guac_ssh_join_pending_handler(guac_client* client) {
     guac_terminal_sync_users(ssh_client->term, client, broadcast_socket);
     guac_ssh_send_current_argv_batch(client, broadcast_socket);
     guac_socket_flush(broadcast_socket);
+
+    return 0;
 
 }
 

@@ -255,7 +255,7 @@ struct guac_client {
      *
      * Example:
      * @code
-     *     void join_pending_handler(guac_client* client);
+     *     int join_pending_handler(guac_client* client);
      *
      *     int guac_client_init(guac_client* client) {
      *         client->join_pending_handler = join_pending_handler;

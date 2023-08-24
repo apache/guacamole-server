@@ -85,8 +85,11 @@ static void guac_kubernetes_log(int level, const char* line) {
  * @param client
  *     The client whose pending users are about to be promoted to full users,
  *     and therefore need their connection state synchronized.
+ *
+ * @return
+ *     Always zero.
  */
-static void guac_kubernetes_join_pending_handler(guac_client* client) {
+static int guac_kubernetes_join_pending_handler(guac_client* client) {
 
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
@@ -96,6 +99,8 @@ static void guac_kubernetes_join_pending_handler(guac_client* client) {
     guac_terminal_sync_users(kubernetes_client->term, client, broadcast_socket);
     guac_kubernetes_send_current_argv_batch(client, broadcast_socket);
     guac_socket_flush(broadcast_socket);
+
+    return 0;
 
 }
 

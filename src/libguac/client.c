@@ -186,8 +186,25 @@ static void guac_client_promote_pending_users(union sigval data) {
     guac_acquire_write_lock(&(client->__pending_users_lock));
 
     /* Run the pending join handler, if one is defined */
-    if (client->join_pending_handler)
-        client->join_pending_handler(client);
+    if (client->join_pending_handler) {
+
+        /* If an error occurs in the pending handler */
+        if(client->join_pending_handler(client)) {
+
+            guac_release_lock(&(client->__pending_users_lock));
+
+            /* Mark the handler as not running */
+            pthread_mutex_lock(&(client->__pending_users_timer_mutex));
+            client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;
+            pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+
+            /* Log a warning and abort the promotion of the pending users */
+            guac_client_log(client, GUAC_LOG_WARNING,
+                    "join_pending_handler did not successfully complete;"
+                    " any pending users have not been promoted.\n");
+            return;
+        }
+    }
 
     /* The first pending user in the list, if any */
     guac_user* first_user = client->__pending_users;

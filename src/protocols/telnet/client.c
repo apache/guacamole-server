@@ -42,8 +42,11 @@
  *
  * @param client
  *     The client whose pending users are about to be promoted.
+ *
+ * @return
+ *     Always zero.
  */
-static void guac_telnet_join_pending_handler(guac_client* client) {
+static int guac_telnet_join_pending_handler(guac_client* client) {
 
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
 
@@ -52,6 +55,8 @@ static void guac_telnet_join_pending_handler(guac_client* client) {
     guac_terminal_sync_users(telnet_client->term, client, broadcast_socket);
     guac_telnet_send_current_argv_batch(client, broadcast_socket);
     guac_socket_flush(broadcast_socket);
+
+    return 0;
 
 }
 

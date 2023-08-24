@@ -70,8 +70,11 @@ static void* guac_vnc_sync_pending_user_audio(guac_user* user, void* data) {
  *
  * @param client
  *     The client whose pending users are about to be promoted.
+ *
+ * @return
+ *     Always zero.
  */
-static void guac_vnc_join_pending_handler(guac_client* client) {
+static int guac_vnc_join_pending_handler(guac_client* client) {
 
     guac_vnc_client* vnc_client = (guac_vnc_client*) client->data;
     guac_socket* broadcast_socket = client->pending_socket;
@@ -86,6 +89,8 @@ static void guac_vnc_join_pending_handler(guac_client* client) {
     /* Synchronize with current display */
     guac_common_display_dup(vnc_client->display, client, broadcast_socket);
     guac_socket_flush(broadcast_socket);
+
+    return 0;
 
 }
 
