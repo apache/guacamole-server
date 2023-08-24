@@ -288,6 +288,26 @@ static int guacd_timed_client_free(guac_client* client, int timeout) {
 }
 
 /**
+ * A reference to the current guacd process.
+ */
+guacd_proc* guacd_proc_self = NULL;
+
+/**
+ * A signal handler that will be invoked when a signal is caught telling this
+ * guacd process to immediately exit.
+ *
+ * @param signal
+ *     The signal that was received. Unused in this function since only
+ *     signals that should result in stopping the proc should invoke this.
+ */
+static void signal_stop_handler(int signal) {
+
+    /* Stop the current guacd proc */
+    guacd_proc_stop(guacd_proc_self);
+
+}
+
+/**
  * Starts protocol-specific handling on the given process by loading the client
  * plugin for that protocol. This function does NOT return. It initializes the
  * process with protocol-specific handlers and then runs until the guacd_proc's
@@ -332,6 +352,14 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
 
     /* Enable keep alive on the broadcast socket */
     guac_socket_require_keep_alive(client->socket);
+
+    guacd_proc_self = proc;
+
+    /* Clean up and exit if SIGINT or SIGTERM signals are caught */
+    struct sigaction signal_stop_action = { 0 };
+    signal_stop_action.sa_handler = signal_stop_handler;
+    sigaction(SIGINT, &signal_stop_action, NULL);
+    sigaction(SIGTERM, &signal_stop_action, NULL);
 
     /* Add each received file descriptor as a new user */
     int received_fd;
@@ -458,7 +486,42 @@ guacd_proc* guacd_create_proc(const char* protocol) {
 
 }
 
+/**
+ * Kill the provided child guacd process. This function must be called by the
+ * parent process, and will block until all processes associated with the
+ * child process have terminated.
+ *
+ * @param proc
+ *     The child guacd process to kill.
+ */
+static void guacd_proc_kill(guacd_proc* proc) {
+
+    /* Request orderly termination of process */
+    if (kill(proc->pid, SIGTERM))
+        guacd_log(GUAC_LOG_DEBUG, "Unable to request termination of "
+                "client process: %s ", strerror(errno));
+
+    /* Wait for all processes within process group to terminate */
+    pid_t child_pid;
+    while ((child_pid = waitpid(-proc->pid, NULL, 0)) > 0 || errno == EINTR) {
+        guacd_log(GUAC_LOG_DEBUG, "Child process %i of connection \"%s\" has terminated",
+            child_pid, proc->client->connection_id);
+    }
+
+    guacd_log(GUAC_LOG_DEBUG, "All child processes for connection \"%s\" have been terminated.",
+        proc->client->connection_id);
+
+}
+
 void guacd_proc_stop(guacd_proc* proc) {
+
+    /* A non-zero PID means that this is the parent process */
+    if (proc->pid != 0) {
+        guacd_proc_kill(proc);
+        return;
+    }
+
+    /* Otherwise, this is the child process */
 
     /* Signal client to stop */
     guac_client_stop(proc->client);
@@ -473,4 +536,3 @@ void guacd_proc_stop(guacd_proc* proc) {
     close(proc->fd_socket);
 
 }
-

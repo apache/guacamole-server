@@ -76,11 +76,25 @@ typedef struct guac_common_list {
 guac_common_list* guac_common_list_alloc();
 
 /**
+ * A handler that will be invoked with the data pointer of each element of
+ * the list when guac_common_list_free() is invoked.
+ *
+ * @param data
+ *     The arbitrary data pointed to by the list element.
+ */
+typedef void guac_common_list_element_free_handler(void* data);
+
+/**
  * Frees the given list.
  *
  * @param list The list to free.
+ *
+ * @param free_element_handler
+ *     A handler that will be invoked with each arbitrary data pointer in the
+ *     list, if not NULL.
  */
-void guac_common_list_free(guac_common_list* list);
+void guac_common_list_free(guac_common_list* list,
+        guac_common_list_element_free_handler* free_element_handler);
 
 /**
  * Adds the given data to the list as a new element, returning the created

@@ -314,6 +314,10 @@ guac_client* guac_client_alloc() {
 
 void guac_client_free(guac_client* client) {
 
+    /* Acquire write locks before referencing user pointers */
+    guac_acquire_write_lock(&(client->__pending_users_lock));
+    guac_acquire_write_lock(&(client->__users_lock));
+
     /* Remove all pending users */
     while (client->__pending_users != NULL)
         guac_client_remove_user(client, client->__pending_users);
@@ -321,6 +325,10 @@ void guac_client_free(guac_client* client) {
     /* Remove all users */
     while (client->__users != NULL)
         guac_client_remove_user(client, client->__users);
+
+    /* Release the locks */
+    guac_release_lock(&(client->__users_lock));
+    guac_release_lock(&(client->__pending_users_lock));
 
     if (client->free_handler) {
 
@@ -545,9 +553,9 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
     if (retval == 0) {
 
         /*
-        * Add the user to the list of pending users, to have their connection
-        * state synchronized asynchronously.
-        */
+         * Add the user to the list of pending users, to have their connection
+         * state synchronized asynchronously.
+         */
         guac_client_add_pending_user(client, user);
 
         /* Update owner pointer if user is owner */
@@ -566,8 +574,8 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
 
 void guac_client_remove_user(guac_client* client, guac_user* user) {
 
-    guac_acquire_write_lock(&(client->__users_lock));
     guac_acquire_write_lock(&(client->__pending_users_lock));
+    guac_acquire_write_lock(&(client->__users_lock));
 
     /* Update prev / head */
     if (user->__prev != NULL)
@@ -587,8 +595,8 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
     if (user->owner)
         client->__owner = NULL;
 
-    guac_release_lock(&(client->__pending_users_lock));
     guac_release_lock(&(client->__users_lock));
+    guac_release_lock(&(client->__pending_users_lock));
 
     /* Update owner of user having left the connection. */
     if (!user->owner)

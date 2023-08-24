@@ -41,9 +41,8 @@
 
 #include <cairo/cairo.h>
 
-#include <signal.h>
+#include <pthread.h>
 #include <stdarg.h>
-#include <stdatomic.h>
 #include <time.h>
 
 struct guac_client {
