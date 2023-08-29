@@ -30,6 +30,7 @@
 #include "client-types.h"
 #include "client-constants.h"
 #include "layer-types.h"
+#include "reentrant-rwlock.h"
 #include "object-types.h"
 #include "pool-types.h"
 #include "socket-types.h"
@@ -42,19 +43,28 @@
 
 #include <pthread.h>
 #include <stdarg.h>
+#include <time.h>
 
 struct guac_client {
 
     /**
-     * The guac_socket structure to be used to communicate with all connected
-     * web-clients (users). Unlike the user-level guac_socket, this guac_socket
-     * will broadcast instructions to all connected users simultaneously.  It
-     * is expected that the implementor of any Guacamole proxy client will
-     * provide their own mechanism of I/O for their protocol. The guac_socket
-     * structure is used only to communicate conveniently with the Guacamole
-     * web-client.
+     * The guac_socket structure to be used to communicate with all non-pending
+     * connected web-clients (users). Unlike the user-level guac_socket, this
+     * guac_socket will broadcast instructions to all non-pending connected users
+     * simultaneously. It is expected that the implementor of any Guacamole proxy
+     * client will provide their own mechanism of I/O for their protocol. The
+     * guac_socket structure is used only to communicate conveniently with the
+     * Guacamole web-client.
      */
     guac_socket* socket;
+
+    /**
+     * The guac_socket structure to be used to communicate with all pending
+     * connected web-clients (users). Aside from operating on a different
+     * subset of users, this socket has all the same behavior and semantics as
+     * the non-pending socket.
+     */
+    guac_socket* pending_socket;
 
     /**
      * The current state of the client. When the client is first allocated,
@@ -162,13 +172,44 @@ struct guac_client {
      * Lock which is acquired when the users list is being manipulated, or when
      * the users list is being iterated.
      */
-    pthread_rwlock_t __users_lock;
+    guac_reentrant_rwlock __users_lock;
 
     /**
      * The first user within the list of all connected users, or NULL if no
      * users are currently connected.
      */
     guac_user* __users;
+
+    /**
+     * Lock which is acquired when the pending users list is being manipulated,
+     * or when the pending users list is being iterated.
+     */
+    guac_reentrant_rwlock __pending_users_lock;
+
+    /**
+     * A timer that will periodically synchronize the list of pending users,
+     * emptying the list once synchronization is complete. Only for internal
+     * use within the client. This will be NULL until the first user joins
+     * the connection, as it is lazily instantiated at that time.
+     */
+    timer_t __pending_users_timer;
+
+    /**
+     * A flag storing the current state of the pending users timer.
+     */
+    int __pending_users_timer_state;
+
+    /**
+     * A mutex that must be acquired before modifying or checking the value of
+     * the timer state.
+     */
+    pthread_mutex_t __pending_users_timer_mutex;
+
+    /**
+     * The first user within the list of connected users who have not yet had
+     * their connection states synchronized after joining.
+     */
+    guac_user* __pending_users;
 
     /**
      * The user that first created this connection. This user will also have
@@ -205,6 +246,22 @@ struct guac_client {
      * @endcode
      */
     guac_user_join_handler* join_handler;
+
+    /**
+     * A handler that will be run prior to pending users being promoted to full
+     * users. Any required pending user operations should be performed using
+     * the client's pending user socket.
+     *
+     * Example:
+     * @code
+     *     int join_pending_handler(guac_client* client);
+     *
+     *     int guac_client_init(guac_client* client) {
+     *         client->join_pending_handler = join_pending_handler;
+     *     }
+     * @endcode
+     */
+    guac_client_join_pending_handler* join_pending_handler;
 
     /**
      * Handler for leave events, called whenever a new user is leaving an
@@ -444,6 +501,26 @@ void guac_client_remove_user(guac_client* client, guac_user* user);
  *     Arbitrary data to pass to the callback each time it is invoked.
  */
 void guac_client_foreach_user(guac_client* client,
+        guac_user_callback* callback, void* data);
+
+/**
+ * Calls the given function on all pending users of the given client. The
+ * function will be given a reference to a guac_user and the specified
+ * arbitrary data. The value returned by the callback will be ignored.
+ *
+ * This function is reentrant, but the pending user list MUST NOT be manipulated
+ * within the same thread as a callback to this function.
+ *
+ * @param client
+ *     The client whose users should be iterated.
+ *
+ * @param callback
+ *     The function to call for each pending user.
+ *
+ * @param data
+ *     Arbitrary data to pass to the callback each time it is invoked.
+ */
+void guac_client_foreach_pending_user(guac_client* client,
         guac_user_callback* callback, void* data);
 
 /**

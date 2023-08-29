@@ -21,6 +21,7 @@
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
+#include "channels/pipe-svc.h"
 #include "config.h"
 #include "fs.h"
 #include "log.h"
@@ -75,6 +76,60 @@ static int is_writable_directory(const char* path) {
     /* Path is both writable and a directory */
     closedir(dir);
     return 1;
+
+}
+
+/**
+ * Add the provided user to the provided audio stream.
+ *
+ * @param user
+ *    The pending user who should be added to the audio stream.
+ *
+ * @param data
+ *    The audio stream that the user should be added to.
+ *
+ * @return
+ *     Always NULL.
+ */
+static void* guac_rdp_sync_pending_user_audio(guac_user* user, void* data) {
+
+    /* Add the user to the stream */
+    guac_audio_stream* audio = (guac_audio_stream*) data;
+    guac_audio_stream_add_user(audio, user);
+
+    return NULL;
+
+}
+
+/**
+ * A pending join handler implementation that will synchronize the connection
+ * state for all pending users prior to them being promoted to full user.
+ *
+ * @param client
+ *     The client whose pending users are about to be promoted.
+ *
+ * @return
+ *     Always zero.
+ */
+static int guac_rdp_join_pending_handler(guac_client* client) {
+
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+    guac_socket* broadcast_socket = client->pending_socket;
+
+    /* Synchronize any audio stream for each pending user */
+    if (rdp_client->audio)
+        guac_client_foreach_pending_user(
+            client, guac_rdp_sync_pending_user_audio, rdp_client->audio);
+
+    /* Bring user up to date with any registered static channels */
+    guac_rdp_pipe_svc_send_pipes(client, broadcast_socket);
+
+    /* Synchronize with current display */
+    guac_common_display_dup(rdp_client->display, client, broadcast_socket);
+
+    guac_socket_flush(broadcast_socket);
+
+    return 0;
 
 }
 
@@ -164,6 +219,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     /* Set handlers */
     client->join_handler = guac_rdp_user_join_handler;
+    client->join_pending_handler = guac_rdp_join_pending_handler;
     client->free_handler = guac_rdp_client_free_handler;
     client->leave_handler = guac_rdp_user_leave_handler;
 

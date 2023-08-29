@@ -78,13 +78,14 @@ libguacinc_HEADERS =                  \
     guacamole/wol.h                   \
     guacamole/wol-constants.h
 
-noinst_HEADERS =      \
-    id.h              \
-    encode-jpeg.h     \
-    encode-png.h      \
-    palette.h         \
-    user-handlers.h   \
-    raw_encoder.h     \
+noinst_HEADERS =       \
+    id.h               \
+    encode-jpeg.h      \
+    encode-png.h       \
+    reentrant-rwlock.h \
+    palette.h          \
+    user-handlers.h    \
+    raw_encoder.h      \
     wait-fd.h
 
 libguac_la_SOURCES =   \
@@ -97,6 +98,7 @@ libguac_la_SOURCES =   \
     fips.c             \
     hash.c             \
     id.c               \
+    reentrant-rwlock.c \
     palette.c          \
     parser.c           \
     pool.c             \

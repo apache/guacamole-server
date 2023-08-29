@@ -842,11 +842,11 @@ void guac_terminal_display_flush(guac_terminal_display* display) {
 
 }
 
-void guac_terminal_display_dup(guac_terminal_display* display, guac_user* user,
-        guac_socket* socket) {
+void guac_terminal_display_dup(
+        guac_terminal_display* display, guac_client* client, guac_socket* socket) {
 
     /* Create default surface */
-    guac_common_surface_dup(display->display_surface, user, socket);
+    guac_common_surface_dup(display->display_surface, client, socket);
 
     /* Select layer is a child of the display layer */
     guac_protocol_send_move(socket, display->select_layer,

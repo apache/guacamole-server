@@ -65,26 +65,34 @@ int guac_telnet_argv_callback(guac_user* user, const char* mimetype,
 
 void* guac_telnet_send_current_argv(guac_user* user, void* data) {
 
-    guac_telnet_client* telnet_client = (guac_telnet_client*) data;
+    /* Defer to the batch handler, using the user's socket to send the data */
+    guac_telnet_send_current_argv_batch(user->client, user->socket);
+
+    return NULL;
+
+}
+
+void guac_telnet_send_current_argv_batch(
+        guac_client* client, guac_socket* socket) {
+
+    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_terminal* terminal = telnet_client->term;
 
     /* Send current color scheme */
-    guac_user_stream_argv(user, user->socket, "text/plain",
+    guac_client_stream_argv(client, socket, "text/plain",
             GUAC_TELNET_ARGV_COLOR_SCHEME,
             guac_terminal_get_color_scheme(terminal));
 
     /* Send current font name */
-    guac_user_stream_argv(user, user->socket, "text/plain",
+    guac_client_stream_argv(client, socket, "text/plain",
             GUAC_TELNET_ARGV_FONT_NAME,
             guac_terminal_get_font_name(terminal));
 
     /* Send current font size */
     char font_size[64];
     sprintf(font_size, "%i", guac_terminal_get_font_size(terminal));
-    guac_user_stream_argv(user, user->socket, "text/plain",
+    guac_client_stream_argv(client, socket, "text/plain",
             GUAC_TELNET_ARGV_FONT_SIZE, font_size);
-
-    return NULL;
 
 }
 

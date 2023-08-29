@@ -23,6 +23,7 @@
 #include <guacamole/layer.h>
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
+#include <guacamole/user.h>
 
 #include <stdlib.h>
 
@@ -332,7 +333,7 @@ static void calculate_state(guac_terminal_scrollbar* scrollbar,
 }
 
 void guac_terminal_scrollbar_dup(guac_terminal_scrollbar* scrollbar,
-        guac_user* user, guac_socket* socket) {
+        guac_client* client, guac_socket* socket) {
 
     /* Get old state */
     guac_terminal_scrollbar_render_state* state = &scrollbar->render_state;

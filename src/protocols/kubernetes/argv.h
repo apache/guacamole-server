@@ -22,6 +22,7 @@
 #define GUAC_KUBERNETES_ARGV_H
 
 #include "config.h"
+#include "kubernetes.h"
 
 #include <guacamole/argv.h>
 #include <guacamole/user.h>
@@ -55,7 +56,7 @@ guac_argv_callback guac_kubernetes_argv_callback;
  * while the connection is running to the given user. Note that the user
  * receiving these values will not necessarily be able to set new values
  * themselves if their connection is read-only. This function can be used as
- * the callback for guac_client_foreach_user() and guac_client_for_owner()
+ * the callback for guac_client_foreach_user() and guac_client_for_owner().
  *
  * @param user
  *     The user that should receive the values of all non-sensitive parameters
@@ -69,6 +70,24 @@ guac_argv_callback guac_kubernetes_argv_callback;
  *     Always NULL.
  */
 void* guac_kubernetes_send_current_argv(guac_user* user, void* data);
+
+/**
+ * Sends the current values of all non-sensitive parameters which may be set
+ * while the connection is running to the all users associated with the
+ * provided socket. Note that the users receiving these values will not
+ * necessarily be able to set new values themselves if their connection is
+ * read-only.
+ *
+ * @param client
+ *     The client associated with the users who should receive the values of
+ *     all non-sensitive parameters which may be set while the connection is
+ *     running.
+ *
+ * @return
+ *     Always NULL.
+ */
+void* guac_kubernetes_send_current_argv_batch(
+        guac_client* client, guac_socket* socket);
 
 #endif
 

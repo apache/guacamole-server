@@ -34,8 +34,26 @@ guac_common_list* guac_common_list_alloc() {
 
 }
 
-void guac_common_list_free(guac_common_list* list) {
+void guac_common_list_free(
+        guac_common_list* list,
+        guac_common_list_element_free_handler* free_element_handler) {
+
+    /* Free every element of the list */
+    guac_common_list_element* element = list->head;
+    while(element != NULL) {
+
+        guac_common_list_element* next = element->next;
+
+        if (free_element_handler != NULL)
+            free_element_handler(element->data);
+
+        free(element);
+        element = next;
+    }
+
+    /* Free the list itself */
     free(list);
+
 }
 
 guac_common_list_element* guac_common_list_add(guac_common_list* list,

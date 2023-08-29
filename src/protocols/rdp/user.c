@@ -82,22 +82,6 @@ int guac_rdp_user_join_handler(guac_user* user, int argc, char** argv) {
 
     }
 
-    /* If not owner, synchronize with current state */
-    else {
-
-        /* Synchronize any audio stream */
-        if (rdp_client->audio)
-            guac_audio_stream_add_user(rdp_client->audio, user);
-
-        /* Bring user up to date with any registered static channels */
-        guac_rdp_pipe_svc_send_pipes(user);
-
-        /* Synchronize with current display */
-        guac_common_display_dup(rdp_client->display, user, user->socket);
-        guac_socket_flush(user->socket);
-
-    }
-
     /* Only handle events if not read-only */
     if (!settings->read_only) {
 

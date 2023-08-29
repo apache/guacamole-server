@@ -49,6 +49,12 @@ typedef struct guacd_proc_map {
      */
     guac_common_list* __buckets[GUACD_PROC_MAP_BUCKETS];
 
+    /**
+     * All processes present in the map. For internal use only. To operate on these
+     * keys, use guacd_proc_map_foreach().
+     */
+    guac_common_list* processes;
+
 } guacd_proc_map;
 
 /**
@@ -59,6 +65,16 @@ typedef struct guacd_proc_map {
  *     A newly-allocated client process map.
  */
 guacd_proc_map* guacd_proc_map_alloc();
+
+/**
+ * Free all resources allocated for the provided map. Note that this function
+ * will _not_ clean up the processes contained within the map, only the map
+ * itself.
+ *
+ * @param map
+ *    The guacd proc map to free.
+ */
+void guacd_proc_map_free(guacd_proc_map* map);
 
 /**
  * Adds the given process to the client process map. On success, zero is
@@ -111,6 +127,37 @@ guacd_proc* guacd_proc_map_retrieve(guacd_proc_map* map, const char* id);
  *     been removed from the given map, or NULL if no such process exists.
  */
 guacd_proc* guacd_proc_map_remove(guacd_proc_map* map, const char* id);
+
+/**
+ * A callback function that will be invoked with every guacd_proc stored
+ * in the provided map, when provided to guacd_proc_map_foreach(), along with
+ * any provided arbitrary data.
+ *
+ * @param proc
+ *     The current guacd process.
+ *
+ * @param data
+ *     The arbitrary data provided to guacd_proc_map_foreach().
+ */
+typedef void guacd_proc_map_foreach_callback(guacd_proc* proc, void* data);
+
+/**
+ * Invoke the provided callback with any provided arbitrary data and each guacd
+ * proc contained in the provided map, once each and in no particular order.
+ *
+ * @param map
+ *     The map from which all guacd processes should be extracted and provided
+ *     to the callback.
+ *
+ * @param callback
+ *     The callback function to be invoked once with each guacd process
+ *     contained in the provided map.
+ *
+ * @param data
+ *     Arbitrary data to be provided to the callback function.
+ */
+void guacd_proc_map_foreach(guacd_proc_map* map,
+        guacd_proc_map_foreach_callback* callback, void* data);
 
 #endif
 

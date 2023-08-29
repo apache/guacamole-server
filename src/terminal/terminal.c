@@ -2053,18 +2053,47 @@ int guac_terminal_create_typescript(guac_terminal* term, const char* path,
 
 }
 
-void guac_terminal_dup(guac_terminal* term, guac_user* user,
-        guac_socket* socket) {
+/**
+ * Synchronize the state of the provided terminal to a subset of users of
+ * the provided guac_client using the provided socket.
+ *
+ * @param client
+ *     The client whose users should be synchronized.
+ *
+ * @param term
+ *     The terminal state that should be synchronized to the users.
+ *
+ * @param socket
+ *     The socket that should be used to communicate with the users.
+ */
+static void __guac_terminal_sync_socket(
+        guac_client* client, guac_terminal* term, guac_socket* socket) {
 
     /* Synchronize display state with new user */
     guac_terminal_repaint_default_layer(term, socket);
-    guac_terminal_display_dup(term->display, user, socket);
+    guac_terminal_display_dup(term->display, client, socket);
 
     /* Synchronize mouse cursor */
-    guac_common_cursor_dup(term->cursor, user, socket);
+    guac_common_cursor_dup(term->cursor, client, socket);
 
-    /* Paint scrollbar for joining user */
-    guac_terminal_scrollbar_dup(term->scrollbar, user, socket);
+    /* Paint scrollbar for joining users */
+    guac_terminal_scrollbar_dup(term->scrollbar, client, socket);
+
+}
+
+void guac_terminal_dup(guac_terminal* term, guac_user* user,
+        guac_socket* socket) {
+
+    /* Ignore the user and just use the provided socket directly */
+    __guac_terminal_sync_socket(user->client, term, socket);
+
+}
+
+void guac_terminal_sync_users(
+        guac_terminal* term, guac_client* client, guac_socket* socket) {
+
+    /* Use the provided socket to synchronize state to the users */
+    __guac_terminal_sync_socket(client, term, socket);
 
 }
 
