@@ -151,13 +151,14 @@ void guac_common_display_free(guac_common_display* display);
  * @param display
  *     The display whose state should be sent along the given socket.
  *
- * @param user
- *     The user receiving the display state.
+ * @param client
+ *     The client associated with the users receiving the display state.
  *
  * @param socket
  *     The socket over which the display state should be sent.
  */
-void guac_common_display_dup(guac_common_display* display, guac_user* user,
+void guac_common_display_dup(
+        guac_common_display* display, guac_client* client,
         guac_socket* socket);
 
 /**

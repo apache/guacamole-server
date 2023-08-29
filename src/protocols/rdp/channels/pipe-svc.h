@@ -95,14 +95,18 @@ void guac_rdp_pipe_svc_send_pipe(guac_socket* socket, guac_rdp_pipe_svc* svc);
 
 /**
  * Sends the "pipe" instructions describing all static virtual channels
- * available to the given user along that user's socket. Each pipe instruction
- * will relate the associated SVC's underlying output stream with the SVC's
- * name and the mimetype "application/octet-stream".
+ * available to the all users associated with the provided socket. Each pipe
+ * instruction will relate the associated SVC's underlying output stream with
+ * the SVC's name and the mimetype "application/octet-stream".
  *
- * @param user
- *     The user to send the "pipe" instructions to.
+ * @param client
+ *     The client associated with the users being sent the pipe instruction.
+ *
+ * @param socket
+ *     The socket to send the pipe instruction accross.
  */
-void guac_rdp_pipe_svc_send_pipes(guac_user* user);
+void guac_rdp_pipe_svc_send_pipes(
+        guac_client* client, guac_socket* socket);
 
 /**
  * Add the given SVC to the list of all available SVCs. This function must be

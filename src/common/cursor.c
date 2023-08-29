@@ -99,8 +99,8 @@ void guac_common_cursor_free(guac_common_cursor* cursor) {
 
 }
 
-void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
-        guac_socket* socket) {
+void guac_common_cursor_dup(
+        guac_common_cursor* cursor, guac_client* client, guac_socket* socket) {
 
     /* Synchronize location */
     guac_protocol_send_mouse(socket, cursor->x, cursor->y, cursor->button_mask,
@@ -111,7 +111,7 @@ void guac_common_cursor_dup(guac_common_cursor* cursor, guac_user* user,
         guac_protocol_send_size(socket, cursor->buffer,
                 cursor->width, cursor->height);
 
-        guac_user_stream_png(user, socket, GUAC_COMP_SRC,
+        guac_client_stream_png(client, socket, GUAC_COMP_SRC,
                 cursor->buffer, 0, 0, cursor->surface);
 
         guac_protocol_send_cursor(socket,

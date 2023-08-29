@@ -640,7 +640,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     rdp_client->rdp_inst = NULL;
 
     /* Free SVC list */
-    guac_common_list_free(rdp_client->available_svc);
+    guac_common_list_free(rdp_client->available_svc, NULL);
     rdp_client->available_svc = NULL;
 
     /* Free RDP keyboard state */

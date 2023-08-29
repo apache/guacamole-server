@@ -619,6 +619,9 @@ int guac_terminal_sendf(guac_terminal* term, const char* format, ...);
  * connection. All instructions necessary to replicate state are sent over the
  * given socket.
  *
+ * @deprecated The guac_terminal_sync_users method should be used when
+ * duplicating display state to a set of users.
+ *
  * @param term
  *     The terminal emulator associated with the connection being joined.
  *
@@ -631,6 +634,24 @@ int guac_terminal_sendf(guac_terminal* term, const char* format, ...);
  */
 void guac_terminal_dup(guac_terminal* term, guac_user* user,
         guac_socket* socket);
+
+/**
+ * Replicates the current display state to one or more users that are joining
+ * the connection. All instructions necessary to replicate state are sent over
+ * the given socket. The set of users receiving these instructions is
+ * determined solely by the socket chosen.
+ *
+ * @param term
+ *     The terminal whose state should be synchronized to the users.
+ *
+ * @param client
+ *     The client associated with the users to be synchronized.
+ *
+ * @param socket
+ *     The socket to which the terminal state will be broadcast.
+ */
+void guac_terminal_sync_users(
+        guac_terminal* term, guac_client* client, guac_socket* socket);
 
 /**
  * Resize the client display and terminal to the given pixel dimensions.

@@ -43,6 +43,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define GUACD_DEV_NULL "/dev/null"
@@ -244,6 +245,49 @@ static void guacd_openssl_free_locks(int count) {
 }
 #endif
 #endif
+
+/**
+ * A flag that, if non-zero, indicates that the daemon should immediately stop
+ * accepting new connections.
+ */
+int stop_everything = 0;
+
+/**
+ * A signal handler that will set a flag telling the daemon to immediately stop
+ * accepting new connections. Note that the signal itself will cause any pending
+ * accept() calls to be interrupted, causing the daemon to unlock and begin
+ * cleaning up.
+ *
+ * @param signal
+ *     The signal that was received. Unused in this function since only
+ *     signals that should result in stopping the daemon should invoke this.
+ */
+static void signal_stop_handler(int signal) {
+
+    /* Instruct the daemon to stop accepting new connections */
+    stop_everything = 1;
+
+}
+
+/**
+ * A callback for guacd_proc_map_foreach which will stop every process in the
+ * map.
+ *
+ * @param proc
+ *     The guacd process to stop.
+ *
+ * @param data
+ *     Unused.
+ */
+static void stop_process_callback(guacd_proc* proc, void* data) {
+
+    guacd_log(GUAC_LOG_DEBUG,
+            "Killing connection %s (%i)\n",
+            proc->client->connection_id, (int) proc->pid);
+
+    guacd_proc_stop(proc);
+
+}
 
 int main(int argc, char* argv[]) {
 
@@ -452,6 +496,12 @@ int main(int argc, char* argv[]) {
                 "Child processes may pile up in the process table.");
     }
 
+    /* Clean up and exit if SIGINT or SIGTERM signals are caught */
+    struct sigaction signal_stop_action = { 0 };
+    signal_stop_action.sa_handler = signal_stop_handler;
+    sigaction(SIGINT, &signal_stop_action, NULL);
+    sigaction(SIGTERM, &signal_stop_action, NULL);
+
     /* Log listening status */
     guacd_log(GUAC_LOG_INFO, "Listening on host %s, port %s", bound_address, bound_port);
 
@@ -465,7 +515,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* Daemon loop */
-    for (;;) {
+    while (!stop_everything) {
 
         pthread_t child_thread;
 
@@ -475,7 +525,10 @@ int main(int argc, char* argv[]) {
                 (struct sockaddr*) &client_addr, &client_addr_len);
 
         if (connected_socket_fd < 0) {
-            guacd_log(GUAC_LOG_ERROR, "Could not accept client connection: %s", strerror(errno));
+            if (errno == EINTR)
+                guacd_log(GUAC_LOG_DEBUG, "Accepting of further client connection(s) interrupted by signal.");
+            else
+                guacd_log(GUAC_LOG_ERROR, "Could not accept client connection: %s", strerror(errno));
             continue;
         }
 
@@ -496,6 +549,26 @@ int main(int argc, char* argv[]) {
         /* Spawn thread to handle connection */
         pthread_create(&child_thread, NULL, guacd_connection_thread, params);
         pthread_detach(child_thread);
+
+    }
+
+    /* Stop all connections */
+    if (map != NULL) {
+
+        guacd_proc_map_foreach(map, stop_process_callback, NULL);
+
+        /*
+         * FIXME: Clean up the proc map. This is not as straightforward as it
+         * might seem, since the detached connection threads will attempt to
+         * remove the connection proccesses from the map when they complete,
+         * which will also happen upon shutdown. So there's a good chance that
+         * this map cleanup will happen at the same time as the thread cleanup.
+         * The map _does_ have locking mechanisms in place for ensuring thread
+         * safety, but cleaning up the map also requires destroying those locks,
+         * making them unusable for this case. One potential fix could be to
+         * join every one of the connection threads instead of detaching them,
+         * but that does complicate the cleanup of thread resources.
+         */
 
     }
 
