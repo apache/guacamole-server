@@ -61,6 +61,7 @@ libguacinc_HEADERS =                  \
     guacamole/protocol-constants.h    \
     guacamole/protocol-types.h        \
     guacamole/recording.h             \
+    guacamole/rwlock.h                \
     guacamole/socket-constants.h      \
     guacamole/socket.h                \
     guacamole/socket-fntypes.h        \
@@ -82,7 +83,6 @@ noinst_HEADERS =       \
     id.h               \
     encode-jpeg.h      \
     encode-png.h       \
-    reentrant-rwlock.h \
     palette.h          \
     user-handlers.h    \
     raw_encoder.h      \
@@ -98,7 +98,7 @@ libguac_la_SOURCES =   \
     fips.c             \
     hash.c             \
     id.c               \
-    reentrant-rwlock.c \
+    rwlock.c           \
     palette.c          \
     parser.c           \
     pool.c             \

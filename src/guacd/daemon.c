@@ -497,8 +497,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* Clean up and exit if SIGINT or SIGTERM signals are caught */
-    struct sigaction signal_stop_action = { 0 };
-    signal_stop_action.sa_handler = signal_stop_handler;
+    struct sigaction signal_stop_action = { .sa_handler = signal_stop_handler };
     sigaction(SIGINT, &signal_stop_action, NULL);
     sigaction(SIGTERM, &signal_stop_action, NULL);
 
