@@ -123,6 +123,14 @@ typedef struct guac_common_cursor {
      */
     guac_timestamp timestamp;
 
+    /**
+     * Lock which restricts simultaneous access to the cursor, guaranteeing
+     * ordered modifications to the cursor and that incompatible operations
+     * do not occur simultaneously. This lock is for internal use within the
+     * cursor only.
+     */
+    pthread_mutex_t _lock;
+
 } guac_common_cursor;
 
 /**
