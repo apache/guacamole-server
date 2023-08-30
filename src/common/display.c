@@ -167,8 +167,6 @@ void guac_common_display_dup(
         guac_common_display* display, guac_client* client,
         guac_socket* socket) {
 
-    guac_client* client = user->client;
-
     pthread_mutex_lock(&display->_lock);
 
     /* Sunchronize shared cursor */
