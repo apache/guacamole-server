@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef __GUAC_REENTRANT_LOCK_H
-#define __GUAC_REENTRANT_LOCK_H
+#ifndef __GUAC_RWLOCK_H
+#define __GUAC_RWLOCK_H
 
 #include <pthread.h>
 
@@ -39,27 +39,13 @@
  */
 
 /**
- * An error code indicating that the calling thread is attempting to release a
- * lock that it does not control.
- */
-#define GUAC_REEANTRANT_LOCK_ERROR_DOUBLE_RELEASE 1
-
-/**
- * The lock cannot be acquired because the lock has been already been
- * reentrantly acquired too many times, exhausting the capacity of this library
- * to track this lock. The lock must be released using guac_release_lock()
- * before it can be reacquired.
- */
-#define GUAC_REEANTRANT_LOCK_ERROR_TOO_MANY 2
-
-/**
  * A structure packaging together a pthread rwlock along with a key to a
  * thread-local property to keep track of the current status of the lock,
  * allowing the functions defined in this header to provide reentrant behavior.
  * Note that both the lock and key must be initialized before being provided
  * to any of these functions.
  */
-typedef struct guac_reentrant_rwlock {
+typedef struct guac_rwlock {
 
     /**
      * A non-reentrant pthread rwlock to be wrapped by the local lock,
@@ -73,7 +59,7 @@ typedef struct guac_reentrant_rwlock {
      */
     pthread_key_t key;
 
-} guac_reentrant_rwlock;
+} guac_rwlock;
 
 /**
  * Initialize the provided guac reentrant rwlock. The lock will be configured to be
@@ -82,7 +68,7 @@ typedef struct guac_reentrant_rwlock {
  * @param lock
  *     The guac reentrant rwlock to be initialized.
  */
-void guac_init_reentrant_rwlock(guac_reentrant_rwlock* lock);
+void guac_rwlock_init(guac_rwlock* lock);
 
 /**
  * Clean up and destroy the provided guac reentrant rwlock.
@@ -90,7 +76,7 @@ void guac_init_reentrant_rwlock(guac_reentrant_rwlock* lock);
  * @param lock
  *     The guac reentrant rwlock to be destroyed.
  */
-void guac_destroy_reentrant_rwlock(guac_reentrant_rwlock* lock);
+void guac_rwlock_destroy(guac_rwlock* lock);
 
 /**
  * Aquire the write lock for the provided guac reentrant rwlock, if the key does not
@@ -99,15 +85,18 @@ void guac_destroy_reentrant_rwlock(guac_reentrant_rwlock* lock);
  * write lock is acquired. The thread local property associated with the key
  * will be updated as necessary to track the thread's ownership of the lock.
  *
+ * If an error occurs while attempting to acquire the lock, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param reentrant_rwlock
  *     The guac reentrant rwlock for which the write lock should be acquired
  *     reentrantly.
  *
  * @return
- *     Zero if the lock is succesfully acquired, or an error code defined above
- *     by a GUAC_REEANTRANT_LOCK_ERROR_* constant if the lock cannot be acquired.
+ *     Zero if the lock is succesfully acquired, or a non-zero value if an
+ *     error occured.
  */
-int guac_acquire_write_lock(guac_reentrant_rwlock* reentrant_rwlock);
+int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock);
 
 /**
  * Aquire the read lock for the provided guac reentrant rwlock, if the key does not
@@ -115,15 +104,18 @@ int guac_acquire_write_lock(guac_reentrant_rwlock* reentrant_rwlock);
  * property associated with the key will be updated as necessary to track the
  * thread's ownership of the lock.
  *
+ * If an error occurs while attempting to acquire the lock, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param reentrant_rwlock
  *     The guac reentrant rwlock for which the read lock should be acquired
  *     reentrantly.
  *
  * @return
- *     Zero if the lock is succesfully acquired, or an error code defined above
- *     by a GUAC_REEANTRANT_LOCK_ERROR_* constant if the lock cannot be acquired.
+ *     Zero if the lock is succesfully acquired, or a non-zero value if an
+ *     error occured.
  */
-int guac_acquire_read_lock(guac_reentrant_rwlock* reentrant_rwlock);
+int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock);
 
 /**
  * Release the the rwlock associated with the provided guac reentrant rwlock if this
@@ -131,14 +123,17 @@ int guac_acquire_read_lock(guac_reentrant_rwlock* reentrant_rwlock);
  * local property associated with the key will be updated as needed to ensure
  * that the correct number of release requests will finally release the lock.
  *
+ * If an error occurs while attempting to release the lock, a non-zero value is
+ * returned, and guac_error is set appropriately.
+ *
  * @param reentrant_rwlock
  *     The guac reentrant rwlock that should be released.
  *
  * @return
- *     Zero if the lock is succesfully released, or an error code defined above
- *     by a GUAC_REEANTRANT_LOCK_ERROR_* constant if the lock cannot be released.
+ *     Zero if the lock is succesfully released, or a non-zero value if an
+ *     error occured.
  */
-int guac_release_lock(guac_reentrant_rwlock* reentrant_rwlock);
+int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock);
 
 #endif
 

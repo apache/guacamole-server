@@ -19,7 +19,8 @@
 
 #include <pthread.h>
 #include <stdint.h>
-#include "reentrant-rwlock.h"
+#include "guacamole/error.h"
+#include "guacamole/rwlock.h"
 
 /**
  * The value indicating that the current thread holds neither the read or write
@@ -37,7 +38,7 @@
  */
 #define GUAC_REENTRANT_LOCK_WRITE_LOCK 2
 
-void guac_init_reentrant_rwlock(guac_reentrant_rwlock* lock) {
+void guac_rwlock_init(guac_rwlock* lock) {
 
     /* Configure to allow sharing this lock with child processes */
     pthread_rwlockattr_t lock_attributes;
@@ -52,7 +53,7 @@ void guac_init_reentrant_rwlock(guac_reentrant_rwlock* lock) {
 
 }
 
-void guac_destroy_reentrant_rwlock(guac_reentrant_rwlock* lock) {
+void guac_rwlock_destroy(guac_rwlock* lock) {
 
     /* Destroy the rwlock */
     pthread_rwlock_destroy(&(lock->lock));
@@ -68,7 +69,7 @@ void guac_destroy_reentrant_rwlock(guac_reentrant_rwlock* lock) {
  * @param lock
  *     The guac reentrant rwlock to be destroyed.
  */
-void guac_destroy_reentrant_rwlock(guac_reentrant_rwlock* lock);
+void guac_rwlock_destroy(guac_rwlock* lock);
 
 /**
  * Extract and return the flag indicating which lock is held, if any, from the
@@ -125,7 +126,7 @@ static void* get_value_from_flag_and_count(
 
 /**
  * Return zero if adding one to the current count would overflow the storage
- *     allocated to the count, or a non-zero value otherwise.
+ * allocated to the count, or a non-zero value otherwise.
  *
  * @param current_count
  *     The current count for a lock that the current thread is trying to
@@ -145,15 +146,22 @@ static int would_overflow_count(uintptr_t current_count) {
 
 }
 
-int guac_acquire_write_lock(guac_reentrant_rwlock* reentrant_rwlock) {
+int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
 
     uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
     uintptr_t flag = get_lock_flag(key_value);
     uintptr_t count = get_lock_count(key_value);
 
     /* If acquiring this lock again would overflow the counter storage */
-    if (would_overflow_count(count))
-        return GUAC_REEANTRANT_LOCK_ERROR_TOO_MANY;
+    if (would_overflow_count(count)) {
+
+        guac_error = GUAC_STATUS_TOO_MANY;
+        guac_error_message = "Unable to acquire write lock because there's"
+                " insufficient space to store another level of lock depth";
+
+        return 1;
+
+    }
 
     /* If the current thread already holds the write lock, increment the count */
     if (flag == GUAC_REENTRANT_LOCK_WRITE_LOCK) {
@@ -185,15 +193,22 @@ int guac_acquire_write_lock(guac_reentrant_rwlock* reentrant_rwlock) {
 
 }
 
-int guac_acquire_read_lock(guac_reentrant_rwlock* reentrant_rwlock) {
+int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock) {
 
     uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
     uintptr_t flag = get_lock_flag(key_value);
     uintptr_t count = get_lock_count(key_value);
 
     /* If acquiring this lock again would overflow the counter storage */
-    if (would_overflow_count(count))
-        return GUAC_REEANTRANT_LOCK_ERROR_TOO_MANY;
+    if (would_overflow_count(count)) {
+
+        guac_error = GUAC_STATUS_TOO_MANY;
+        guac_error_message = "Unable to acquire read lock because there's"
+                " insufficient space to store another level of lock depth";
+
+        return 1;
+
+    }
 
     /* The current thread may read if either the read or write lock is held */
     if (
@@ -220,7 +235,7 @@ int guac_acquire_read_lock(guac_reentrant_rwlock* reentrant_rwlock) {
 
 }
 
-int guac_release_lock(guac_reentrant_rwlock* reentrant_rwlock) {
+int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock) {
 
     uintptr_t key_value = (uintptr_t) pthread_getspecific(reentrant_rwlock->key);
     uintptr_t flag = get_lock_flag(key_value);
@@ -230,8 +245,15 @@ int guac_release_lock(guac_reentrant_rwlock* reentrant_rwlock) {
      * Return an error if an attempt is made to release a lock that the current
      * thread does not control.
      */
-    if (count <= 0)
-        return GUAC_REEANTRANT_LOCK_ERROR_DOUBLE_RELEASE;
+    if (count <= 0) {
+
+        guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+        guac_error_message = "Unable to free rwlock because it's not held by"
+                " the current thread";
+
+        return 1;
+
+    }
 
     /* Release the lock if this is the last locked level */
     if (count == 1) {

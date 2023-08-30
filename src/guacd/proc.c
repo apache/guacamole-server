@@ -356,8 +356,7 @@ static void guacd_exec_proc(guacd_proc* proc, const char* protocol) {
     guacd_proc_self = proc;
 
     /* Clean up and exit if SIGINT or SIGTERM signals are caught */
-    struct sigaction signal_stop_action = { 0 };
-    signal_stop_action.sa_handler = signal_stop_handler;
+    struct sigaction signal_stop_action = { .sa_handler = signal_stop_handler };
     sigaction(SIGINT, &signal_stop_action, NULL);
     sigaction(SIGTERM, &signal_stop_action, NULL);
 
