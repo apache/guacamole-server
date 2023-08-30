@@ -291,8 +291,8 @@ guac_client* guac_client_alloc() {
     }
 
     /* Init locks */
-    guac_init_rwlock(&(client->__users_lock));
-    guac_init_rwlock(&(client->__pending_users_lock));
+    guac_rwlock_init(&(client->__users_lock));
+    guac_rwlock_init(&(client->__pending_users_lock));
 
     /* Initialize the write lock flags to 0, as threads won't have yet */
     pthread_key_create(&(client->__users_lock.key), (void *) 0);
@@ -371,8 +371,8 @@ void guac_client_free(guac_client* client) {
     pthread_mutex_destroy(&(client->__pending_users_timer_mutex));
 
     /* Destroy the reentrant read-write locks */
-    guac_destroy_rwlock(&(client->__users_lock));
-    guac_destroy_rwlock(&(client->__pending_users_lock));
+    guac_rwlock_destroy(&(client->__users_lock));
+    guac_rwlock_destroy(&(client->__pending_users_lock));
 
     free(client->connection_id);
     free(client);
