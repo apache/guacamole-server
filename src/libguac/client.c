@@ -185,24 +185,22 @@ static void guac_client_promote_pending_users(union sigval data) {
     /* Acquire the lock for reading and modifying the list of pending users */
     guac_rwlock_acquire_write_lock(&(client->__pending_users_lock));
 
+    /* Skip user promotion entirely if there's no pending users */
+    if (client->__pending_users == NULL)
+        goto promotion_complete;
+
     /* Run the pending join handler, if one is defined */
     if (client->join_pending_handler) {
 
         /* If an error occurs in the pending handler */
         if(client->join_pending_handler(client)) {
 
-            guac_rwlock_release_lock(&(client->__pending_users_lock));
-
-            /* Mark the handler as not running */
-            pthread_mutex_lock(&(client->__pending_users_timer_mutex));
-            client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;
-            pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
-
             /* Log a warning and abort the promotion of the pending users */
             guac_client_log(client, GUAC_LOG_WARNING,
                     "join_pending_handler did not successfully complete;"
                     " any pending users have not been promoted.\n");
-            return;
+
+            goto promotion_complete;
         }
     }
 
@@ -238,6 +236,8 @@ static void guac_client_promote_pending_users(union sigval data) {
     }
 
     guac_rwlock_release_lock(&(client->__users_lock));
+
+promotion_complete:
 
     /* Release the lock (this is done AFTER updating the connected user list
      * to ensure that all users are always on exactly one of these lists) */
