@@ -52,10 +52,12 @@ static int guac_ssh_join_pending_handler(guac_client* client) {
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
 
     /* Synchronize the terminal state to all pending users */
-    guac_socket* broadcast_socket = client->pending_socket;
-    guac_terminal_sync_users(ssh_client->term, client, broadcast_socket);
-    guac_ssh_send_current_argv_batch(client, broadcast_socket);
-    guac_socket_flush(broadcast_socket);
+    if (ssh_client->term != NULL) {
+        guac_socket* broadcast_socket = client->pending_socket;
+        guac_terminal_sync_users(ssh_client->term, client, broadcast_socket);
+        guac_ssh_send_current_argv_batch(client, broadcast_socket);
+        guac_socket_flush(broadcast_socket);
+    }
 
     return 0;
 
