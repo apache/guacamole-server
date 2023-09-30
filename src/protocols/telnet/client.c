@@ -51,10 +51,12 @@ static int guac_telnet_join_pending_handler(guac_client* client) {
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
 
     /* Synchronize the terminal state to all pending users */
-    guac_socket* broadcast_socket = client->pending_socket;
-    guac_terminal_sync_users(telnet_client->term, client, broadcast_socket);
-    guac_telnet_send_current_argv_batch(client, broadcast_socket);
-    guac_socket_flush(broadcast_socket);
+    if (telnet_client->term != NULL) {
+        guac_socket* broadcast_socket = client->pending_socket;
+        guac_terminal_sync_users(telnet_client->term, client, broadcast_socket);
+        guac_telnet_send_current_argv_batch(client, broadcast_socket);
+        guac_socket_flush(broadcast_socket);
+    }
 
     return 0;
 
