@@ -87,8 +87,10 @@ static int guac_vnc_join_pending_handler(guac_client* client) {
 #endif
 
     /* Synchronize with current display */
-    guac_common_display_dup(vnc_client->display, client, broadcast_socket);
-    guac_socket_flush(broadcast_socket);
+    if (vnc_client->display != NULL) {
+        guac_common_display_dup(vnc_client->display, client, broadcast_socket);
+        guac_socket_flush(broadcast_socket);
+    }
 
     return 0;
 
