@@ -2,22 +2,21 @@
 The `guacamole-server` Windows build relies on compatibility features provided by Cygwin (most notably, a `fork()` implmentation), and therefore _must_ be built using Cygwin tools. Since no Cygwin cross-compilation environment exists, this means that `guacamole-server` can only be built for Windows using the Windows OS. This document describes a build that produces a working `guacd.exe`, as well as shared libraries for every supported protocol.
 
 ## Build Specifics
-In this example, `guacamole-server` was built under Cygwin, on a Windows Server 2022 x86_64 build node. Dependencies were installed using packages from Cygwin and MSYS2 (and built from source where no package is available, in the case of `libtelnet`).
+In this example, `guacamole-server` was built under Cygwin, on a Windows Server 2022 x86_64 build node. Dependencies were installed using packages from Cygwin and MSYS2 (and built from source where no suitable package is available, in the case of `libtelnet` and `libfreerdp2`).
 
 ### Build Steps
 1. Install Cygwin (version 2.926 used here)
 2. Install MSYS2 (version 20230718 used here)
 3. Install Cygwin packages:
-    * git
-    * make
-    * automake
     * autoconf
+    * automake
+    * cmake
+    * git
     * gcc-core
     * libtool
-    * pkg-config
     * libuuid-devel
-    * libwinpr2-devel
-    * libfreerdp2-devel
+    * make
+    * pkg-config
 4. Install MSYS2 packages:
     * autoconf-wrapper
     * automake-wrapper
@@ -54,7 +53,54 @@ In this example, `guacamole-server` was built under Cygwin, on a Windows Server 
     # Required for the Cygwin build to understand how to link against this DLL
     ln -s /usr/bin/msys-telnet-2.dll /usr/bin/libtelnet.dll
     ```
-6. Build `guacamole-server` from source using Cygwin bash shell
+5. Build `libfreerdp2` from source using Cygwin bash shell
+    ```
+    curl -s -L https://github.com/FreeRDP/FreeRDP/archive/2.10.0/FreeRDP-2.10.0.tar.gz | tar xz
+    cd FreeRDP-2.10.0
+
+    cmake \
+    -DWITH_ALSA=OFF \
+    -DWITH_CUPS=OFF \
+    -DWITH_CHANNELS=ON \
+    -DBUILTIN_CHANNELS=OFF \
+    -DCHANNEL_URBDRC=OFF \
+    -DWITH_CLIENT=ON \
+    -DWITH_DIRECTFB=OFF \
+    -DWITH_FFMPEG=OFF \
+    -DWITH_GSM=OFF \
+    -DWITH_GSSAPI=OFF \
+    -DWITH_GSTREAMER_1_0=OFF \
+    -DWITH_GSTREAMER_0_10=OFF \
+    -DWITH_IPP=OFF \
+    -DWITH_JPEG=ON \
+    -DWITH_MANPAGES=ON \
+    -DWITH_OPENH264=OFF \
+    -DWITH_OPENSSL=ON \
+    -DWITH_PCSC=OFF \
+    -DWITH_PULSE=OFF \
+    -DWITH_SERVER=OFF \
+    -DWITH_SERVER_INTERFACE=OFF \
+    -DWITH_SHADOW_X11=OFF \
+    -DWITH_SHADOW_MAC=OFF \
+    -DWITH_SSE2=$SSE2_SETTING \
+    -DWITH_WAYLAND=OFF \
+    -DWITH_X11=OFF \
+    -DWITH_X264=OFF \
+    -DWITH_XCURSOR=ON \
+    -DWITH_XEXT=ON \
+    -DWITH_XKBFILE=ON \
+    -DWITH_XI=OFF \
+    -DWITH_XINERAMA=OFF \
+    -DWITH_XRENDER=OFF \
+    -DWITH_XTEST=OFF \
+    -DWITH_XV=OFF \
+    -DWITH_ZLIB=ON \
+    .
+    cmake . -G"Unix Makefiles"
+    make
+    make install
+    ```
+7. Build `guacamole-server` from source using Cygwin bash shell
     ```
     # FIXME: Update this to check out master once this PR is ready for merge
     git clone https://github.com/jmuehlner/guacamole-server.git
@@ -63,12 +109,9 @@ In this example, `guacamole-server` was built under Cygwin, on a Windows Server 
 
     autoreconf -fi
     export LDFLAGS="-L/usr/bin/ -L/usr/lib/ -L/usr/local/lib -L/usr/local/bin -L/cygdrive/c/msys64/mingw64/bin -L/cygdrive/c/msys64/mingw64/lib -L/cygdrive/c/msys64/usr/bin"
-    export CFLAGS="-idirafter /cygdrive/c/msys64/mingw64/include/winpr2 -idirafter /usr/include/ -idirafter /cygdrive/c/msys64/mingw64/include -idirafter /cygdrive/c/msys64/mingw64/include/pango-1.0 -idirafter /cygdrive/c/msys64/mingw64/include/cairo -idirafter /cygdrive/c/msys64/mingw64/include/freerdp2 -idirafter /cygdrive/c/msys64/mingw64/include/glib-2.0 -idirafter /cygdrive/c/msys64/mingw64/include/harfbuzz -idirafter /cygdrive/c/msys64/mingw64/lib/glib-2.0/include -idirafter /cygdrive/c/msys64/usr/include"
-    export PKG_CONFIG_PATH="/cygdrive/c/msys64/mingw64/lib/pkgconfig/"
-
-    # NOTE: The libfreerdp2-devel package provided by Cygwin is detected as a snapshot version, and must be explicitly allowed
-    ./configure --with-cygwin --enable-allow-freerdp-snapshots || cat config.log
-
+    export CFLAGS="-idirafter /cygdrive/c/msys64/mingw64/include/winpr2 -idirafter /usr/include/ -idirafter /cygdrive/c/msys64/mingw64/include -idirafter /cygdrive/c/msys64/mingw64/include/pango-1.0 -idirafter /cygdrive/c/msys64/mingw64/include/cairo -idirafter /usr/local/include/freerdp2 -idirafter /cygdrive/c/msys64/mingw64/include/glib-2.0 -idirafter /cygdrive/c/msys64/mingw64/include/harfbuzz -idirafter /cygdrive/c/msys64/mingw64/lib/glib-2.0/include -idirafter /cygdrive/c/msys64/usr/include"
+    export PKG_CONFIG_PATH="/cygdrive/c/msys64/mingw64/lib/pkgconfig/:/usr/local/lib/pkgconfig"
+    ./configure --with-cygwin || cat config.log
     make
     ```
 
