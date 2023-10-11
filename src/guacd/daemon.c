@@ -46,6 +46,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#ifdef CYGWIN_BUILD
+#include <sys/cygwin.h>
+#endif
+
 #define GUACD_DEV_NULL "/dev/null"
 #define GUACD_ROOT     "/"
 
@@ -106,9 +110,20 @@ static int daemonize() {
         return 1;
     }
 
+#ifdef CYGWIN_BUILD
+        /* Convert to a windows PID for logging */
+        pid_t windows_pid = cygwin_internal(CW_CYGWIN_PID_TO_WINPID, pid);
+#endif
+
     /* Exit if we are the parent */
     if (pid > 0) {
-        guacd_log(GUAC_LOG_DEBUG, "Exiting and passing control to PID %i", pid);
+
+        guacd_log(GUAC_LOG_DEBUG, "Exiting and passing control to PID %i",
+#ifdef CYGWIN_BUILD
+                windows_pid);
+#else
+                pid);
+#endif
         _exit(0);
     }
 
@@ -124,7 +139,12 @@ static int daemonize() {
 
     /* Exit if we are the parent */
     if (pid > 0) {
-        guacd_log(GUAC_LOG_DEBUG, "Exiting and passing control to PID %i", pid);
+        guacd_log(GUAC_LOG_DEBUG, "Exiting and passing control to PID %i",
+#ifdef CYGWIN_BUILD
+                windows_pid);
+#else
+                pid);
+#endif
         _exit(0);
     }
 
@@ -281,9 +301,19 @@ static void signal_stop_handler(int signal) {
  */
 static void stop_process_callback(guacd_proc* proc, void* data) {
 
+#ifdef CYGWIN_BUILD
+        /* Convert to a windows PID for logging */
+        pid_t windows_pid = cygwin_internal(CW_CYGWIN_PID_TO_WINPID, proc->pid);
+#endif
+
     guacd_log(GUAC_LOG_DEBUG,
             "Killing connection %s (%i)\n",
-            proc->client->connection_id, (int) proc->pid);
+            proc->client->connection_id,
+#ifdef CYGWIN_BUILD
+            windows_pid);
+#else
+            proc->pid);
+#endif
 
     guacd_proc_stop(proc);
 

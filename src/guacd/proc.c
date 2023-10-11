@@ -48,6 +48,7 @@
 #include "guacamole/socket-handle.h"
 #include <io.h>
 #include <handleapi.h>
+#include <sys/cygwin.h>
 #endif
 
 /**
@@ -465,8 +466,19 @@ cleanup_client:
     /* Verify whether children were all properly reaped */
     pid_t child_pid;
     while ((child_pid = waitpid(0, NULL, WNOHANG)) > 0) {
+
+#ifdef CYGWIN_BUILD
+        /* Convert to a windows PID for logging */
+        pid_t windows_pid = cygwin_internal(CW_CYGWIN_PID_TO_WINPID, child_pid);
+#endif
+
         guacd_log(GUAC_LOG_DEBUG, "Automatically reaped unreaped "
-                "(zombie) child process with PID %i.", child_pid);
+                "(zombie) child process with PID %i.",
+#ifdef CYGWIN_BUILD
+                windows_pid);
+#else
+                child_pid);
+#endif
     }
 
     /* If running children remain, warn and forcibly kill */
@@ -575,8 +587,19 @@ static void guacd_proc_kill(guacd_proc* proc) {
     /* Wait for all processes within process group to terminate */
     pid_t child_pid;
     while ((child_pid = waitpid(-proc->pid, NULL, 0)) > 0 || errno == EINTR) {
+
+#ifdef CYGWIN_BUILD
+        /* Convert to a windows PID for logging */
+        pid_t windows_pid = cygwin_internal(CW_CYGWIN_PID_TO_WINPID, child_pid);
+#endif
+
         guacd_log(GUAC_LOG_DEBUG, "Child process %i of connection \"%s\" has terminated",
-            child_pid, proc->client->connection_id);
+#ifdef CYGWIN_BUILD
+            windows_pid,
+#else
+            child_pid,
+#endif
+            proc->client->connection_id);
     }
 
     guacd_log(GUAC_LOG_DEBUG, "All child processes for connection \"%s\" have been terminated.",
