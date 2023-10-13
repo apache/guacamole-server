@@ -29,6 +29,10 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libguac.la
 SUBDIRS = . tests
 
+#
+# Public headers
+#
+
 libguacincdir = $(includedir)/guacamole
 
 libguacinc_HEADERS =                  \
@@ -48,6 +52,7 @@ libguacinc_HEADERS =                  \
     guacamole/hash.h                  \
     guacamole/layer.h                 \
     guacamole/layer-types.h           \
+    guacamole/mem.h                   \
     guacamole/object.h                \
     guacamole/object-types.h          \
     guacamole/parser-constants.h      \
@@ -79,6 +84,19 @@ libguacinc_HEADERS =                  \
     guacamole/wol.h                   \
     guacamole/wol-constants.h
 
+#
+# Private, installed headers
+#
+
+libguacprivincdir = $(includedir)/guacamole/private
+
+libguacprivinc_HEADERS =              \
+    guacamole/private/mem.h
+
+#
+# Private, non-installed headers
+#
+
 noinst_HEADERS =       \
     id.h               \
     encode-jpeg.h      \
@@ -98,6 +116,7 @@ libguac_la_SOURCES =   \
     fips.c             \
     hash.c             \
     id.c               \
+    mem.c              \
     rwlock.c           \
     palette.c          \
     parser.c           \

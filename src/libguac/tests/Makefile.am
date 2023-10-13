@@ -33,10 +33,23 @@ ACLOCAL_AMFLAGS = -I m4
 check_PROGRAMS = test_libguac
 TESTS = $(check_PROGRAMS)
 
+noinst_HEADERS =                     \
+    assert-signal.h
+
 test_libguac_SOURCES =               \
     client/buffer_pool.c             \
     client/layer_pool.c              \
     id/generate.c                    \
+    mem/alloc.c                      \
+    mem/ckd_add.c                    \
+    mem/ckd_add_or_die.c             \
+    mem/ckd_mul.c                    \
+    mem/ckd_mul_or_die.c             \
+    mem/ckd_sub.c                    \
+    mem/ckd_sub_or_die.c             \
+    mem/free.c                       \
+    mem/realloc.c                    \
+    mem/zalloc.c                     \
     parser/append.c                  \
     parser/read.c                    \
     pool/next_free.c                 \
