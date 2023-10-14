@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "guacamole/socket-ssl.h"
 #include "guacamole/socket.h"
@@ -96,7 +97,7 @@ static int __guac_socket_ssl_free_handler(guac_socket* socket) {
     /* Close file descriptor */
     close(data->fd);
 
-    free(data);
+    guac_mem_free(data);
     return 0;
 }
 
@@ -109,7 +110,7 @@ guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
-    guac_socket_ssl_data* data = malloc(sizeof(guac_socket_ssl_data));
+    guac_socket_ssl_data* data = guac_mem_alloc(sizeof(guac_socket_ssl_data));
 
     /* Init SSL */
     data->context = context;
@@ -122,7 +123,7 @@ guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd) {
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = "SSL accept failed";
 
-        free(data);
+        guac_mem_free(data);
         guac_socket_free(socket);
         SSL_free(ssl);
         return NULL;

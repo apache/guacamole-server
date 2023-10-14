@@ -18,6 +18,7 @@
  */
 
 #include <CUnit/CUnit.h>
+#include <guacamole/mem.h>
 #include <guacamole/string.h>
 
 #include <stdlib.h>
@@ -45,5 +46,7 @@ void test_string__strdup() {
     /* Run the tests. */
     CU_ASSERT_STRING_EQUAL(dest_string, "Mashing avocados.");
     CU_ASSERT_PTR_NULL(null_copy);
+
+    guac_mem_free(dest_string);
 
 }

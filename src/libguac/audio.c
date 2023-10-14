@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/audio.h"
 #include "guacamole/client.h"
 #include "guacamole/protocol.h"
@@ -113,13 +114,13 @@ guac_audio_stream* guac_audio_stream_alloc(guac_client* client,
     guac_audio_stream* audio;
 
     /* Allocate stream */
-    audio = (guac_audio_stream*) calloc(1, sizeof(guac_audio_stream));
+    audio = (guac_audio_stream*) guac_mem_zalloc(sizeof(guac_audio_stream));
     audio->client = client;
     audio->stream = guac_client_alloc_stream(client);
 
     /* Abort allocation if underlying stream cannot be allocated */
     if (audio->stream == NULL) {
-        free(audio);
+        guac_mem_free(audio);
         return NULL;
     }
 
@@ -198,7 +199,7 @@ void guac_audio_stream_free(guac_audio_stream* audio) {
     guac_client_free_stream(audio->client, audio->stream);
 
     /* Free associated data */
-    free(audio);
+    guac_mem_free(audio);
 
 }
 

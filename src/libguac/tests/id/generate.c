@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "guacamole/mem.h"
 #include "id.h"
 
 #include <CUnit/CUnit.h>
@@ -40,8 +41,8 @@ void test_id__unique() {
     /* Both strings should be different */
     CU_ASSERT_STRING_NOT_EQUAL(id1, id2);
 
-    free(id1);
-    free(id2);
+    guac_mem_free(id1);
+    guac_mem_free(id2);
 
 }
 
@@ -62,7 +63,7 @@ void test_id__format() {
     CU_ASSERT_EQUAL(items_read, 6);
     CU_ASSERT_EQUAL(strlen(id), 37);
 
-    free(id);
+    guac_mem_free(id);
 
 }
 
@@ -77,12 +78,12 @@ void test_id__prefix() {
     id = guac_generate_id('a');
     CU_ASSERT_PTR_NOT_NULL_FATAL(id);
     CU_ASSERT_EQUAL(id[0], 'a');
-    free(id);
+    guac_mem_free(id);
 
     id = guac_generate_id('b');
     CU_ASSERT_PTR_NOT_NULL_FATAL(id);
     CU_ASSERT_EQUAL(id[0], 'b');
-    free(id);
+    guac_mem_free(id);
 
 }
 

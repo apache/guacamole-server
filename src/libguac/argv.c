@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/argv.h"
 #include "guacamole/client.h"
 #include "guacamole/protocol.h"
@@ -273,7 +274,7 @@ static int guac_argv_end_handler(guac_user* user, guac_stream* stream) {
 
     pthread_mutex_unlock(&await_state.lock);
 
-    free(argv);
+    guac_mem_free(argv);
     return 0;
 
 }
@@ -293,7 +294,7 @@ int guac_argv_received(guac_stream* stream, const char* mimetype, const char* na
         /* Argument matched */
         if (strcmp(state->name, name) == 0) {
 
-            guac_argv* argv = malloc(sizeof(guac_argv));
+            guac_argv* argv = guac_mem_alloc(sizeof(guac_argv));
             guac_strlcpy(argv->mimetype, mimetype, sizeof(argv->mimetype));
             argv->state = state;
             argv->length = 0;

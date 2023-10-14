@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/audio.h"
 #include "guacamole/client.h"
 #include "guacamole/protocol.h"
@@ -52,13 +53,12 @@ static void raw_encoder_begin_handler(guac_audio_stream* audio) {
     raw_encoder_send_audio(audio, audio->client->socket);
 
     /* Allocate and init encoder state */
-    audio->data = state = malloc(sizeof(raw_encoder_state));
+    audio->data = state = guac_mem_alloc(sizeof(raw_encoder_state));
     state->written = 0;
-    state->length = GUAC_RAW_ENCODER_BUFFER_SIZE
-                    * audio->rate * audio->channels * audio->bps
-                    / 8 / 1000;
+    state->length = guac_mem_ckd_mul_or_die(GUAC_RAW_ENCODER_BUFFER_SIZE,
+            audio->rate, audio->channels, audio->bps) / 8 / 1000;
 
-    state->buffer = malloc(state->length);
+    state->buffer = guac_mem_alloc(state->length);
 
 }
 
@@ -78,8 +78,8 @@ static void raw_encoder_end_handler(guac_audio_stream* audio) {
     guac_protocol_send_end(audio->client->socket, audio->stream);
 
     /* Free state information */
-    free(state->buffer);
-    free(state);
+    guac_mem_free(state->buffer);
+    guac_mem_free(state);
 
 }
 

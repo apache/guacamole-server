@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"
 #include "guacamole/unicode.h"
@@ -274,7 +275,7 @@ static int guac_socket_nest_free_handler(guac_socket* socket) {
 
     /* Free associated data */
     guac_socket_nest_data* data = (guac_socket_nest_data*) socket->data;
-    free(data);
+    guac_mem_free(data);
 
     return 0;
 
@@ -314,7 +315,7 @@ guac_socket* guac_socket_nest(guac_socket* parent, int index) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
-    guac_socket_nest_data* data = malloc(sizeof(guac_socket_nest_data));
+    guac_socket_nest_data* data = guac_mem_alloc(sizeof(guac_socket_nest_data));
 
     /* Store nested socket details as socket data */
     data->parent = parent;

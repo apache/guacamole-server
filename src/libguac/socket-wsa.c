@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "guacamole/socket.h"
 
@@ -378,7 +379,7 @@ static int guac_socket_wsa_free_handler(guac_socket* socket) {
     /* Close socket */
     closesocket(data->sock);
 
-    free(data);
+    guac_mem_free(data);
     return 0;
 
 }
@@ -419,7 +420,7 @@ guac_socket* guac_socket_open_wsa(SOCKET sock) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
-    guac_socket_wsa_data* data = malloc(sizeof(guac_socket_wsa_data));
+    guac_socket_wsa_data* data = guac_mem_alloc(sizeof(guac_socket_wsa_data));
 
     /* Store socket as socket data */
     data->sock = sock;

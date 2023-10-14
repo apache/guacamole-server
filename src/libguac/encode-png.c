@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "encode-png.h"
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "guacamole/protocol.h"
 #include "guacamole/stream.h"
@@ -342,11 +343,11 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
             guac_png_flush_handler);
 
     /* Copy data from surface into PNG data */
-    png_rows = (png_byte**) malloc(sizeof(png_byte*) * height);
+    png_rows = (png_byte**) guac_mem_alloc(sizeof(png_byte*), height);
     for (y=0; y<height; y++) {
 
         /* Allocate new PNG row */
-        png_byte* row = (png_byte*) malloc(sizeof(png_byte) * width);
+        png_byte* row = (png_byte*) guac_mem_alloc(sizeof(png_byte), width);
         png_rows[y] = row;
 
         /* Copy data from surface into current row */
@@ -393,8 +394,8 @@ int guac_png_write(guac_socket* socket, guac_stream* stream,
 
     /* Free PNG data */
     for (y=0; y<height; y++)
-        free(png_rows[y]);
-    free(png_rows);
+        guac_mem_free(png_rows[y]);
+    guac_mem_free(png_rows);
 
     /* Ensure all data is written */
     guac_png_flush_data(&write_state);

@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "id.h"
 
@@ -68,7 +69,7 @@ char* guac_generate_id(char prefix) {
 #endif
 
     /* Allocate buffer for future formatted ID */
-    buffer = malloc(GUAC_UUID_LEN + 2);
+    buffer = guac_mem_alloc(GUAC_UUID_LEN + 2);
     if (buffer == NULL) {
 #ifndef HAVE_LIBUUID
         uuid_destroy(uuid);
@@ -86,7 +87,7 @@ char* guac_generate_id(char prefix) {
 #else
     size_t identifier_length = GUAC_UUID_LEN + 1;
     if (uuid_export(uuid, UUID_FMT_STR, &identifier, &identifier_length) != UUID_RC_OK) {
-        free(buffer);
+        guac_mem_free(buffer);
         uuid_destroy(uuid);
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
         guac_error_message = "Conversion of UUID to unique ID failed";
