@@ -28,6 +28,7 @@
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
 #include <guacamole/layer.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <rfb/rfbclient.h>
@@ -51,7 +52,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     /* Cairo image buffer */
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);
-    unsigned char* buffer = malloc(h*stride);
+    unsigned char* buffer = guac_mem_alloc(h, stride);
     unsigned char* buffer_row_current = buffer;
 
     /* VNC image buffer */
@@ -120,7 +121,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
             buffer, w, h, stride);
 
     /* Free surface */
-    free(buffer);
+    guac_mem_free(buffer);
 
     /* libvncclient does not free rcMask as it does rcSource */
     free(client->rcMask);

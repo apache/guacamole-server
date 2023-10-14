@@ -24,6 +24,7 @@
 #include "common/defaults.h"
 #include "settings.h"
 
+#include <guacamole/mem.h>
 #include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
 
@@ -395,7 +396,7 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         return NULL;
     }
 
-    guac_vnc_settings* settings = calloc(1, sizeof(guac_vnc_settings));
+    guac_vnc_settings* settings = guac_mem_zalloc(sizeof(guac_vnc_settings));
 
     settings->hostname =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
@@ -646,43 +647,43 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
 void guac_vnc_settings_free(guac_vnc_settings* settings) {
 
     /* Free settings strings */
-    free(settings->clipboard_encoding);
-    free(settings->encodings);
-    free(settings->hostname);
-    free(settings->password);
-    free(settings->recording_name);
-    free(settings->recording_path);
-    free(settings->username);
+    guac_mem_free(settings->clipboard_encoding);
+    guac_mem_free(settings->encodings);
+    guac_mem_free(settings->hostname);
+    guac_mem_free(settings->password);
+    guac_mem_free(settings->recording_name);
+    guac_mem_free(settings->recording_path);
+    guac_mem_free(settings->username);
 
 #ifdef ENABLE_VNC_REPEATER
     /* Free VNC repeater settings */
-    free(settings->dest_host);
+    guac_mem_free(settings->dest_host);
 #endif
 
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP settings */
-    free(settings->sftp_directory);
-    free(settings->sftp_root_directory);
-    free(settings->sftp_host_key);
-    free(settings->sftp_hostname);
-    free(settings->sftp_passphrase);
-    free(settings->sftp_password);
-    free(settings->sftp_port);
-    free(settings->sftp_private_key);
-    free(settings->sftp_username);
+    guac_mem_free(settings->sftp_directory);
+    guac_mem_free(settings->sftp_root_directory);
+    guac_mem_free(settings->sftp_host_key);
+    guac_mem_free(settings->sftp_hostname);
+    guac_mem_free(settings->sftp_passphrase);
+    guac_mem_free(settings->sftp_password);
+    guac_mem_free(settings->sftp_port);
+    guac_mem_free(settings->sftp_private_key);
+    guac_mem_free(settings->sftp_username);
 #endif
 
 #ifdef ENABLE_PULSE
     /* Free PulseAudio settings */
-    free(settings->pa_servername);
+    guac_mem_free(settings->pa_servername);
 #endif
     
     /* Free Wake-on-LAN strings */
-    free(settings->wol_mac_addr);
-    free(settings->wol_broadcast_addr);
+    guac_mem_free(settings->wol_mac_addr);
+    guac_mem_free(settings->wol_broadcast_addr);
 
     /* Free settings structure */
-    free(settings);
+    guac_mem_free(settings);
 
 }
 
