@@ -23,6 +23,7 @@
 #include <freerdp/channels/channels.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/addin.h>
+#include <guacamole/mem.h>
 #include <winpr/wtypes.h>
 
 #include <stdarg.h>
@@ -126,7 +127,7 @@ void guac_freerdp_dynamic_channel_collection_add(rdpSettings* settings,
     va_start(args, name);
 
     /* Copy argument values into DVC entry */
-    freerdp_args->argv = malloc(sizeof(char*) * freerdp_args->argc);
+    freerdp_args->argv = malloc(guac_mem_ckd_mul_or_die(sizeof(char*), freerdp_args->argc));
     freerdp_args->argv[0] = strdup(name);
     int i;
     for (i = 1; i < freerdp_args->argc; i++)

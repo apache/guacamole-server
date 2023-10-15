@@ -25,6 +25,7 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/input.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 
 #include <stdlib.h>
 
@@ -440,7 +441,7 @@ static void guac_rdp_keyboard_load_keymap(guac_rdp_keyboard* keyboard,
 guac_rdp_keyboard* guac_rdp_keyboard_alloc(guac_client* client,
         const guac_rdp_keymap* keymap) {
 
-    guac_rdp_keyboard* keyboard = calloc(1, sizeof(guac_rdp_keyboard));
+    guac_rdp_keyboard* keyboard = guac_mem_zalloc(sizeof(guac_rdp_keyboard));
     keyboard->client = client;
 
     /* Load keymap into keyboard */
@@ -451,7 +452,7 @@ guac_rdp_keyboard* guac_rdp_keyboard_alloc(guac_client* client,
 }
 
 void guac_rdp_keyboard_free(guac_rdp_keyboard* keyboard) {
-    free(keyboard);
+    guac_mem_free(keyboard);
 }
 
 int guac_rdp_keyboard_is_defined(guac_rdp_keyboard* keyboard, int keysym) {

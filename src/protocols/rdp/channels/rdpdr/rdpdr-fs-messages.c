@@ -29,6 +29,7 @@
 
 #include <freerdp/channels/rdpdr.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <winpr/nt.h>
 #include <winpr/stream.h>
 #include <winpr/wtypes.h>
@@ -165,7 +166,7 @@ void guac_rdpdr_fs_process_read(guac_rdp_common_svc* svc,
         length = GUAC_RDP_MAX_READ_BUFFER;
 
     /* Allocate buffer */
-    buffer = malloc(length);
+    buffer = guac_mem_alloc(length);
 
     /* Attempt read */
     bytes_read = guac_rdp_fs_read((guac_rdp_fs*) device->data,
@@ -187,7 +188,7 @@ void guac_rdpdr_fs_process_read(guac_rdp_common_svc* svc,
     }
 
     guac_rdp_common_svc_write(svc, output_stream);
-    free(buffer);
+    guac_mem_free(buffer);
 
 }
 

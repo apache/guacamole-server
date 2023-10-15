@@ -29,6 +29,7 @@
 #include <freerdp/event.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/stream.h>
 #include <guacamole/user.h>
 #include <winpr/wtsapi.h>
@@ -358,7 +359,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 
     guac_iconv_write* remote_writer;
     const char* input = clipboard->clipboard->buffer;
-    char* output = malloc(GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+    char* output = guac_mem_alloc(GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
 
     /* Map requested clipboard format to a guac_iconv writer */
     switch (format_data_request->requestedFormatId) {
@@ -379,7 +380,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
                     "server has requested a clipboard format which was not "
                     "declared as available. This violates the specification "
                     "for the CLIPRDR channel.");
-            free(output);
+            guac_mem_free(output);
             return CHANNEL_RC_OK;
 
     }
@@ -403,7 +404,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
     UINT result = cliprdr->ClientFormatDataResponse(cliprdr, &data_response);
     pthread_mutex_unlock(&(rdp_client->message_lock));
 
-    free(start);
+    guac_mem_free(start);
     return result;
 
 }
@@ -593,7 +594,7 @@ static void guac_rdp_cliprdr_channel_disconnected(rdpContext* context,
 guac_rdp_clipboard* guac_rdp_clipboard_alloc(guac_client* client) {
 
     /* Allocate clipboard and underlying storage */
-    guac_rdp_clipboard* clipboard = calloc(1, sizeof(guac_rdp_clipboard));
+    guac_rdp_clipboard* clipboard = guac_mem_zalloc(sizeof(guac_rdp_clipboard));
     clipboard->client = client;
     clipboard->clipboard = guac_common_clipboard_alloc();
     clipboard->requested_format = CF_TEXT;
@@ -637,7 +638,7 @@ void guac_rdp_clipboard_free(guac_rdp_clipboard* clipboard) {
 
     /* Free clipboard and underlying storage */
     guac_common_clipboard_free(clipboard->clipboard);
-    free(clipboard);
+    guac_mem_free(clipboard);
 
 }
 

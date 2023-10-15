@@ -24,6 +24,7 @@
 #include "rdp.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/object.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -72,7 +73,7 @@ int guac_rdp_download_ack_handler(guac_user* user, guac_stream* stream,
         else if (bytes_read == 0) {
             guac_protocol_send_end(user->socket, stream);
             guac_user_free_stream(user, stream);
-            free(download_status);
+            guac_mem_free(download_status);
         }
 
         /* Otherwise, fail stream */
@@ -81,7 +82,7 @@ int guac_rdp_download_ack_handler(guac_user* user, guac_stream* stream,
                     "Error reading file for download");
             guac_protocol_send_end(user->socket, stream);
             guac_user_free_stream(user, stream);
-            free(download_status);
+            guac_mem_free(download_status);
         }
 
         guac_socket_flush(user->socket);
@@ -128,7 +129,7 @@ int guac_rdp_download_get_handler(guac_user* user, guac_object* object,
     if (file->attributes & FILE_ATTRIBUTE_DIRECTORY) {
 
         /* Create stream data */
-        guac_rdp_ls_status* ls_status = malloc(sizeof(guac_rdp_ls_status));
+        guac_rdp_ls_status* ls_status = guac_mem_alloc(sizeof(guac_rdp_ls_status));
         ls_status->fs = fs;
         ls_status->file_id = file_id;
         guac_strlcpy(ls_status->directory_name, name,
@@ -153,7 +154,7 @@ int guac_rdp_download_get_handler(guac_user* user, guac_object* object,
     else if (!fs->disable_download) {
 
         /* Create stream data */
-        guac_rdp_download_status* download_status = malloc(sizeof(guac_rdp_download_status));
+        guac_rdp_download_status* download_status = guac_mem_alloc(sizeof(guac_rdp_download_status));
         download_status->file_id = file_id;
         download_status->offset = 0;
 
@@ -209,7 +210,7 @@ void* guac_rdp_download_to_user(guac_user* user, void* data) {
 
         /* Associate stream with transfer status */
         guac_stream* stream = guac_user_alloc_stream(user);
-        guac_rdp_download_status* download_status = malloc(sizeof(guac_rdp_download_status));
+        guac_rdp_download_status* download_status = guac_mem_alloc(sizeof(guac_rdp_download_status));
         stream->data = download_status;
         stream->ack_handler = guac_rdp_download_ack_handler;
         download_status->file_id = file_id;
