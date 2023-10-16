@@ -22,6 +22,9 @@
 #include "log.h"
 #include "state.h"
 
+#include <guacamole/mem.h>
+#include <guacamole/string.h>
+
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -50,7 +53,7 @@ guaclog_state* guaclog_state_alloc(const char* path) {
     }
 
     /* Allocate state */
-    guaclog_state* state = (guaclog_state*) calloc(1, sizeof(guaclog_state));
+    guaclog_state* state = (guaclog_state*) guac_mem_zalloc(sizeof(guaclog_state));
     if (state == NULL) {
         goto fail_state;
     }
@@ -90,7 +93,7 @@ int guaclog_state_free(guaclog_state* state) {
     /* Close output file */
     fclose(state->output);
 
-    free(state);
+    guac_mem_free(state);
     return 0;
 
 }
