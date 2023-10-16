@@ -21,6 +21,7 @@
 #include "settings.h"
 #include "terminal/terminal.h"
 
+#include <guacamole/mem.h>
 #include <guacamole/user.h>
 
 #include <stdlib.h>
@@ -255,7 +256,7 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     }
 
     guac_kubernetes_settings* settings =
-        calloc(1, sizeof(guac_kubernetes_settings));
+        guac_mem_zalloc(sizeof(guac_kubernetes_settings));
 
     /* Read hostname */
     settings->hostname =
@@ -411,35 +412,35 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
 void guac_kubernetes_settings_free(guac_kubernetes_settings* settings) {
 
     /* Free network connection information */
-    free(settings->hostname);
+    guac_mem_free(settings->hostname);
 
     /* Free Kubernetes pod/container details */
-    free(settings->kubernetes_namespace);
-    free(settings->kubernetes_pod);
-    free(settings->kubernetes_container);
+    guac_mem_free(settings->kubernetes_namespace);
+    guac_mem_free(settings->kubernetes_pod);
+    guac_mem_free(settings->kubernetes_container);
 
     /* Free Kubernetes exec command */
-    free(settings->exec_command);
+    guac_mem_free(settings->exec_command);
 
     /* Free SSL/TLS details */
-    free(settings->client_cert);
-    free(settings->client_key);
-    free(settings->ca_cert);
+    guac_mem_free(settings->client_cert);
+    guac_mem_free(settings->client_key);
+    guac_mem_free(settings->ca_cert);
 
     /* Free display preferences */
-    free(settings->font_name);
-    free(settings->color_scheme);
+    guac_mem_free(settings->font_name);
+    guac_mem_free(settings->color_scheme);
 
     /* Free typescript settings */
-    free(settings->typescript_name);
-    free(settings->typescript_path);
+    guac_mem_free(settings->typescript_name);
+    guac_mem_free(settings->typescript_path);
 
     /* Free screen recording settings */
-    free(settings->recording_name);
-    free(settings->recording_path);
+    guac_mem_free(settings->recording_name);
+    guac_mem_free(settings->recording_path);
 
     /* Free overall structure */
-    free(settings);
+    guac_mem_free(settings);
 
 }
 
