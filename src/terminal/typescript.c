@@ -20,6 +20,7 @@
 #include "common/io.h"
 #include "terminal/typescript.h"
 
+#include <guacamole/mem.h>
 #include <guacamole/timestamp.h>
 
 #include <errno.h>
@@ -117,7 +118,7 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
 
     /* Allocate space for new typescript */
     guac_terminal_typescript* typescript =
-        malloc(sizeof(guac_terminal_typescript));
+        guac_mem_alloc(sizeof(guac_terminal_typescript));
 
     /* Attempt to open typescript data file */
     typescript->data_fd = guac_terminal_typescript_open_data_file(
@@ -125,7 +126,7 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
             sizeof(typescript->data_filename)
                 - sizeof(GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX));
     if (typescript->data_fd == -1) {
-        free(typescript);
+        guac_mem_free(typescript);
         return NULL;
     }
 
@@ -134,7 +135,7 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
                 "%s.%s", typescript->data_filename, GUAC_TERMINAL_TYPESCRIPT_TIMING_SUFFIX)
             >= sizeof(typescript->timing_filename)) {
         close(typescript->data_fd);
-        free(typescript);
+        guac_mem_free(typescript);
         return NULL;
     }
 
@@ -144,7 +145,7 @@ guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
             S_IRUSR | S_IWUSR | S_IRGRP);
     if (typescript->timing_fd == -1) {
         close(typescript->data_fd);
-        free(typescript);
+        guac_mem_free(typescript);
         return NULL;
     }
 
@@ -228,7 +229,7 @@ void guac_terminal_typescript_free(guac_terminal_typescript* typescript) {
     close(typescript->timing_fd);
 
     /* Free allocated typescript data */
-    free(typescript);
+    guac_mem_free(typescript);
 
 }
 
