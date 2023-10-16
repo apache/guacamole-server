@@ -22,6 +22,7 @@
 #include "common-ssh/buffer.h"
 #include "common-ssh/key.h"
 
+#include <guacamole/mem.h>
 #include <guacamole/string.h>
 
 #include <openssl/bio.h>
@@ -137,13 +138,13 @@ guac_common_ssh_key* guac_common_ssh_key_alloc(char* data, int length,
     if (is_passphrase_needed(data, length) && (passphrase == NULL || *passphrase == '\0'))
         return NULL;
 
-    guac_common_ssh_key* key = malloc(sizeof(guac_common_ssh_key));
+    guac_common_ssh_key* key = guac_mem_alloc(sizeof(guac_common_ssh_key));
 
     /* Copy private key to structure */
     key->private_key_length = length;
-    key->private_key = malloc(length);
+    key->private_key = guac_mem_alloc(length);
     memcpy(key->private_key, data, length);
-    key->passphrase = strdup(passphrase);
+    key->passphrase = guac_strdup(passphrase);
 
     return key;
 
@@ -157,10 +158,9 @@ const char* guac_common_ssh_key_error() {
 }
 
 void guac_common_ssh_key_free(guac_common_ssh_key* key) {
-
-    free(key->private_key);
-    free(key->passphrase);
-    free(key);
+    guac_mem_free(key->private_key);
+    guac_mem_free(key->passphrase);
+    guac_mem_free(key);
 }
 
 int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* client,

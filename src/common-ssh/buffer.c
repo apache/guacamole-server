@@ -22,6 +22,8 @@
 #include <openssl/bn.h>
 #include <openssl/ossl_typ.h>
 
+#include <guacamole/mem.h>
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -67,7 +69,7 @@ void guac_common_ssh_buffer_write_bignum(char** buffer, const BIGNUM* value) {
 
     /* Allocate output buffer, add padding byte */
     length = BN_num_bytes(value);
-    bn_buffer = malloc(length);
+    bn_buffer = guac_mem_alloc(length);
 
     /* Convert BIGNUM */
     BN_bn2bin(value, bn_buffer);
@@ -84,7 +86,7 @@ void guac_common_ssh_buffer_write_bignum(char** buffer, const BIGNUM* value) {
     memcpy(*buffer, bn_buffer, length);
     *buffer += length;
 
-    free(bn_buffer);
+    guac_mem_free(bn_buffer);
 
 }
 

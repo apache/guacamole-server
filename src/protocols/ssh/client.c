@@ -33,6 +33,7 @@
 
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
 
@@ -69,7 +70,7 @@ int guac_client_init(guac_client* client) {
     client->args = GUAC_SSH_CLIENT_ARGS;
 
     /* Allocate client instance data */
-    guac_ssh_client* ssh_client = calloc(1, sizeof(guac_ssh_client));
+    guac_ssh_client* ssh_client = guac_mem_zalloc(sizeof(guac_ssh_client));
     client->data = ssh_client;
 
     /* Set handlers */
@@ -143,7 +144,7 @@ int guac_ssh_client_free_handler(guac_client* client) {
         guac_ssh_settings_free(ssh_client->settings);
 
     /* Free client structure */
-    free(ssh_client);
+    guac_mem_free(ssh_client);
 
     guac_common_ssh_uninit();
     return 0;

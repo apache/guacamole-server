@@ -25,6 +25,7 @@
 #include "settings.h"
 #include "terminal/terminal.h"
 
+#include <guacamole/mem.h>
 #include <guacamole/user.h>
 #include <guacamole/wol-constants.h>
 
@@ -345,7 +346,7 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         return NULL;
     }
 
-    guac_ssh_settings* settings = calloc(1, sizeof(guac_ssh_settings));
+    guac_ssh_settings* settings = guac_mem_zalloc(sizeof(guac_ssh_settings));
 
     /* Read parameters */
     settings->hostname =
@@ -558,48 +559,48 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
 void guac_ssh_settings_free(guac_ssh_settings* settings) {
 
     /* Free network connection information */
-    free(settings->hostname);
-    free(settings->host_key);
-    free(settings->port);
+    guac_mem_free(settings->hostname);
+    guac_mem_free(settings->host_key);
+    guac_mem_free(settings->port);
 
     /* Free credentials */
-    free(settings->username);
-    free(settings->password);
-    free(settings->key_base64);
-    free(settings->key_passphrase);
+    guac_mem_free(settings->username);
+    guac_mem_free(settings->password);
+    guac_mem_free(settings->key_base64);
+    guac_mem_free(settings->key_passphrase);
 
     /* Free display preferences */
-    free(settings->font_name);
-    free(settings->color_scheme);
+    guac_mem_free(settings->font_name);
+    guac_mem_free(settings->color_scheme);
 
     /* Free requested command */
-    free(settings->command);
+    guac_mem_free(settings->command);
 
     /* Free SFTP settings */
-    free(settings->sftp_root_directory);
+    guac_mem_free(settings->sftp_root_directory);
 
     /* Free typescript settings */
-    free(settings->typescript_name);
-    free(settings->typescript_path);
+    guac_mem_free(settings->typescript_name);
+    guac_mem_free(settings->typescript_path);
 
     /* Free screen recording settings */
-    free(settings->recording_name);
-    free(settings->recording_path);
+    guac_mem_free(settings->recording_name);
+    guac_mem_free(settings->recording_path);
 
     /* Free terminal emulator type. */
-    free(settings->terminal_type);
+    guac_mem_free(settings->terminal_type);
 
     /* Free locale */
-    free(settings->locale);
+    guac_mem_free(settings->locale);
 
     /* Free the client timezone. */
-    free(settings->timezone);
+    guac_mem_free(settings->timezone);
     
     /* Free Wake-on-LAN settings. */
-    free(settings->wol_mac_addr);
-    free(settings->wol_broadcast_addr);
+    guac_mem_free(settings->wol_mac_addr);
+    guac_mem_free(settings->wol_broadcast_addr);
 
     /* Free overall structure */
-    free(settings);
+    guac_mem_free(settings);
 
 }

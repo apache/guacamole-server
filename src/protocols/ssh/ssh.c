@@ -35,6 +35,7 @@
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
@@ -256,7 +257,7 @@ void* ssh_client_thread(void* data) {
     ssh_client->term = guac_terminal_create(client, options);
 
     /* Free options struct now that it's been used */
-    free(options);
+    guac_mem_free(options);
 
     /* Fail if terminal init failed */
     if (ssh_client->term == NULL) {
