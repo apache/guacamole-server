@@ -43,6 +43,9 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 
+// Don't do it
+#include <stdio.h>
+
 #ifdef CYGWIN_BUILD
 #include "move-pipe.h"
 #include "guacamole/socket-handle.h"
@@ -275,15 +278,32 @@ static void* guacd_client_free_thread(void* data) {
 
     guacd_client_free* free_operation = (guacd_client_free*) data;
 
+    FILE* the_file = fopen("./guacd_client_free_thread.txt","a+");
+    fprintf(the_file, "In guacd_client_free_thread\n");
+    fclose(the_file);
+
     /* Attempt to free client (this may never return if the client is
      * malfunctioning) */
     guac_client_free(free_operation->client);
 
+    the_file = fopen("./guacd_client_free_thread.txt","a+");
+    fprintf(the_file, "In guacd_client_free_thread, did guac_client_free()\n");
+    fclose(the_file);
+
     /* Signal that the client was successfully freed */
     pthread_mutex_lock(&free_operation->completed_mutex);
     free_operation->completed = 1;
+
+    the_file = fopen("./guacd_client_free_thread.txt","a+");
+    fprintf(the_file, "In guacd_client_free_thread, set completed=1\n");
+    fclose(the_file);
+
     pthread_cond_broadcast(&free_operation->completed_cond);
     pthread_mutex_unlock(&free_operation->completed_mutex);
+
+    the_file = fopen("./guacd_client_free_thread.txt","a+");
+    fprintf(the_file, "Done with guacd_client_free_thread\n");
+    fclose(the_file);
 
     return NULL;
 
@@ -317,10 +337,14 @@ static int guacd_timed_client_free(guac_client* client, int timeout) {
         .completed = 0
     };
 
+    fprintf(stderr, "In client_free_thread, waiting %i seconds\n", timeout);
+
     /* Get current time */
     struct timeval current_time;
     if (gettimeofday(&current_time, NULL))
         return 1;
+
+    fprintf(stderr, "In client_free_thread, got time of day\n");
 
     /* Calculate exact time that the free operation MUST complete by */
     struct timespec deadline = {
@@ -333,9 +357,16 @@ static int guacd_timed_client_free(guac_client* client, int timeout) {
     if (pthread_mutex_lock(&free_operation.completed_mutex))
         return 1;
 
+    fprintf(stderr, "In client_free_thread, got completed_mutex\n");
+
     /* Free the client in a separate thread, so we can time the free operation */
-    if (!pthread_create(&client_free_thread, NULL,
-                guacd_client_free_thread, &free_operation)) {
+    int the_return = pthread_create(&client_free_thread, NULL,
+                                    guacd_client_free_thread, &free_operation);
+    fprintf(stderr, "pthread_create(): %i, errno: %i\n", the_return, errno);
+
+    if (!the_return) {
+
+        fprintf(stderr, "In client_free_thread, started guacd_client_free_thread...\n");
 
         /* Wait a finite amount of time for the free operation to finish */
         (void) pthread_cond_timedwait(&free_operation.completed_cond,
@@ -362,6 +393,13 @@ guacd_proc* guacd_proc_self = NULL;
  *     signals that should result in stopping the proc should invoke this.
  */
 static void signal_stop_handler(int signal) {
+
+#ifdef CYGWIN_BUILD
+        /* Convert to a windows PID for logging */
+        pid_t windows_pid = cygwin_internal(CW_CYGWIN_PID_TO_WINPID, guacd_proc_self->pid);
+        fprintf(stderr, "I caught signal %i and am accordingly killing self with cyg %i, win %i\n",
+                signal, guacd_proc_self->pid, windows_pid);
+#endif
 
     /* Stop the current guacd proc */
     guacd_proc_stop(guacd_proc_self);
@@ -579,6 +617,14 @@ guacd_proc* guacd_create_proc(const char* protocol) {
  */
 static void guacd_proc_kill(guacd_proc* proc) {
 
+
+#ifdef CYGWIN_BUILD
+    pid_t windows_pid = cygwin_internal(CW_CYGWIN_PID_TO_WINPID, proc->pid);
+
+    guacd_log(GUAC_LOG_DEBUG, "Trying to kill child - cyg: %i, win: %i", proc->pid, windows_pid);
+#endif
+
+
     /* Request orderly termination of process */
     if (kill(proc->pid, SIGTERM))
         guacd_log(GUAC_LOG_DEBUG, "Unable to request termination of "
@@ -624,7 +670,7 @@ void guacd_proc_stop(guacd_proc* proc) {
     if (shutdown(proc->fd_socket, SHUT_RDWR) == -1)
         guacd_log(GUAC_LOG_ERROR, "Unable to shutdown internal socket for "
                 "connection %s. Corresponding process may remain running but "
-                "inactive.", proc->client->connection_id);
+                "inactive. errno: %i", proc->client->connection_id, errno);
 
     /* Clean up our end of the socket */
     close(proc->fd_socket);
