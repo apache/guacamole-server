@@ -50,7 +50,8 @@ SHOW_INCLUDE_FILES    = NO
 #
 
 CASE_SENSE_NAMES     = YES
-EXCLUDE_SYMBOLS      = __* guac_palette*
+EXCLUDE_SYMBOLS      = __* guac_palette* PRIV_*
+EXCLUDE_PATTERNS     = **/private/*.h
 FILE_PATTERNS        = *.h
 INPUT                = ../../src/libguac/guacamole
 JAVADOC_AUTOBRIEF    = YES
