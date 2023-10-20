@@ -21,6 +21,7 @@
 #include "common/clipboard.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/stream.h>
 #include <guacamole/string.h>
@@ -31,11 +32,11 @@
 
 guac_common_clipboard* guac_common_clipboard_alloc() {
 
-    guac_common_clipboard* clipboard = malloc(sizeof(guac_common_clipboard));
+    guac_common_clipboard* clipboard = guac_mem_alloc(sizeof(guac_common_clipboard));
 
     /* Init clipboard */
     clipboard->mimetype[0] = '\0';
-    clipboard->buffer = malloc(GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+    clipboard->buffer = guac_mem_alloc(GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
     clipboard->available = GUAC_COMMON_CLIPBOARD_MAX_LENGTH;
     clipboard->length = 0;
 
@@ -51,10 +52,11 @@ void guac_common_clipboard_free(guac_common_clipboard* clipboard) {
     pthread_mutex_destroy(&(clipboard->lock));
 
     /* Free buffer */
-    free(clipboard->buffer);
+    guac_mem_free(clipboard->buffer);
 
     /* Free base structure */
-    free(clipboard);
+    guac_mem_free(clipboard);
+
 }
 
 /**

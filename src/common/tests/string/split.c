@@ -20,6 +20,7 @@
 #include "common/string.h"
 
 #include <CUnit/CUnit.h>
+#include <guacamole/mem.h>
 
 #include <stdlib.h>
 
@@ -52,12 +53,12 @@ void test_string__split() {
     CU_ASSERT_PTR_NULL(tokens[5]);
 
     /* Clean up */
-    free(tokens[0]);
-    free(tokens[1]);
-    free(tokens[2]);
-    free(tokens[3]);
-    free(tokens[4]);
-    free(tokens);
+    guac_mem_free(tokens[0]);
+    guac_mem_free(tokens[1]);
+    guac_mem_free(tokens[2]);
+    guac_mem_free(tokens[3]);
+    guac_mem_free(tokens[4]);
+    guac_mem_free(tokens);
 
 }
 
