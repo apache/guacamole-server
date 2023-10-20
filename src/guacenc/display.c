@@ -23,6 +23,7 @@
 #include "video.h"
 
 #include <cairo/cairo.h>
+#include <guacamole/mem.h>
 
 #include <stdlib.h>
 
@@ -93,7 +94,7 @@ guacenc_display* guacenc_display_alloc(const char* path, const char* codec,
 
     /* Allocate display */
     guacenc_display* display =
-        (guacenc_display*) calloc(1, sizeof(guacenc_display));
+        (guacenc_display*) guac_mem_zalloc(sizeof(guacenc_display));
 
     /* Associate display with video output */
     display->output = video;
@@ -131,7 +132,7 @@ int guacenc_display_free(guacenc_display* display) {
     /* Free cursor */
     guacenc_cursor_free(display->cursor);
 
-    free(display);
+    guac_mem_free(display);
     return retval;
 
 }

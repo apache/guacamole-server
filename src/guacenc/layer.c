@@ -21,19 +21,21 @@
 #include "buffer.h"
 #include "layer.h"
 
+#include <guacamole/mem.h>
+
 #include <stdlib.h>
 
 guacenc_layer* guacenc_layer_alloc() {
 
     /* Allocate new layer */
-    guacenc_layer* layer = (guacenc_layer*) calloc(1, sizeof(guacenc_layer));
+    guacenc_layer* layer = (guacenc_layer*) guac_mem_zalloc(sizeof(guacenc_layer));
     if (layer == NULL)
         return NULL;
 
     /* Allocate associated buffer (width, height, and image storage) */
     layer->buffer = guacenc_buffer_alloc();
     if (layer->buffer == NULL) {
-        free(layer);
+        guac_mem_free(layer);
         return NULL;
     }
 
@@ -41,7 +43,7 @@ guacenc_layer* guacenc_layer_alloc() {
     layer->frame = guacenc_buffer_alloc();
     if (layer->frame== NULL) {
         guacenc_buffer_free(layer->buffer);
-        free(layer);
+        guac_mem_free(layer);
         return NULL;
     }
 
@@ -67,7 +69,7 @@ void guacenc_layer_free(guacenc_layer* layer) {
     /* Free underlying buffer */
     guacenc_buffer_free(layer->buffer);
 
-    free(layer);
+    guac_mem_free(layer);
 
 }
 

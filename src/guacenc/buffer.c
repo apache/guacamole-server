@@ -21,12 +21,13 @@
 #include "buffer.h"
 
 #include <cairo/cairo.h>
+#include <guacamole/mem.h>
 
 #include <assert.h>
 #include <stdlib.h>
 
 guacenc_buffer* guacenc_buffer_alloc() {
-    return calloc(1, sizeof(guacenc_buffer));
+    return guac_mem_zalloc(sizeof(guacenc_buffer));
 }
 
 /**
@@ -52,7 +53,7 @@ static void guacenc_buffer_free_image(guacenc_buffer* buffer) {
     }
 
     /* Free image data (previously wrapped by Cairo surface */
-    free(buffer->image);
+    guac_mem_free(buffer->image);
     buffer->image = NULL;
 
 }
@@ -65,7 +66,7 @@ void guacenc_buffer_free(guacenc_buffer* buffer) {
 
     /* Free buffer and underlying image */
     guacenc_buffer_free_image(buffer);
-    free(buffer);
+    guac_mem_free(buffer);
 
 }
 
@@ -86,7 +87,7 @@ int guacenc_buffer_resize(guacenc_buffer* buffer, int width, int height) {
 
     /* Allocate data for new image */
     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
-    unsigned char* image = calloc(1, stride*height);
+    unsigned char* image = guac_mem_zalloc(stride, height);
 
     /* Wrap data in surface */
     cairo_surface_t* surface = cairo_image_surface_create_for_data(image,
