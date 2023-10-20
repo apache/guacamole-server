@@ -24,6 +24,8 @@
 #include "conf-parse.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
+#include <guacamole/string.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -48,15 +50,15 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
 
         /* Bind host */
         if (strcmp(param, "bind_host") == 0) {
-            free(config->bind_host);
-            config->bind_host = strdup(value);
+            guac_mem_free(config->bind_host);
+            config->bind_host = guac_strdup(value);
             return 0;
         }
 
         /* Bind port */
         else if (strcmp(param, "bind_port") == 0) {
-            free(config->bind_port);
-            config->bind_port = strdup(value);
+            guac_mem_free(config->bind_port);
+            config->bind_port = guac_strdup(value);
             return 0;
         }
 
@@ -67,8 +69,8 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
 
         /* PID file */
         if (strcmp(param, "pid_file") == 0) {
-            free(config->pidfile);
-            config->pidfile = strdup(value);
+            guac_mem_free(config->pidfile);
+            config->pidfile = guac_strdup(value);
             return 0;
         }
 
@@ -96,15 +98,15 @@ static int guacd_conf_callback(const char* section, const char* param, const cha
 #ifdef ENABLE_SSL
         /* SSL certificate */
         if (strcmp(param, "server_certificate") == 0) {
-            free(config->cert_file);
-            config->cert_file = strdup(value);
+            guac_mem_free(config->cert_file);
+            config->cert_file = guac_strdup(value);
             return 0;
         }
 
         /* SSL key */
         else if (strcmp(param, "server_key") == 0) {
-            free(config->key_file);
-            config->key_file = strdup(value);
+            guac_mem_free(config->key_file);
+            config->key_file = guac_strdup(value);
             return 0;
         }
 #else
@@ -171,13 +173,13 @@ int guacd_conf_parse_file(guacd_config* conf, int fd) {
 
 guacd_config* guacd_conf_load() {
 
-    guacd_config* conf = malloc(sizeof(guacd_config));
+    guacd_config* conf = guac_mem_alloc(sizeof(guacd_config));
     if (conf == NULL)
         return NULL;
 
     /* Load defaults */
-    conf->bind_host = strdup(GUACD_DEFAULT_BIND_HOST);
-    conf->bind_port = strdup(GUACD_DEFAULT_BIND_PORT);
+    conf->bind_host = guac_strdup(GUACD_DEFAULT_BIND_HOST);
+    conf->bind_port = guac_strdup(GUACD_DEFAULT_BIND_PORT);
     conf->pidfile = NULL;
     conf->foreground = 0;
     conf->print_version = 0;
@@ -197,7 +199,7 @@ guacd_config* guacd_conf_load() {
 
         if (retval != 0) {
             fprintf(stderr, "Unable to parse \"" GUACD_CONF_FILE "\".\n");
-            free(conf);
+            guac_mem_free(conf);
             return NULL;
         }
 
@@ -206,7 +208,7 @@ guacd_config* guacd_conf_load() {
     /* Notify of errors preventing reading */
     else if (errno != ENOENT) {
         fprintf(stderr, "Unable to open \"" GUACD_CONF_FILE "\": %s\n", strerror(errno));
-        free(conf);
+        guac_mem_free(conf);
         return NULL;
     }
 
