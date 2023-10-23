@@ -308,13 +308,13 @@
 
 /**
  * Reallocates a contiguous block of memory that was previously allocated with
- * guac_mem_alloc(), guac_mem_zalloc(), or guac_mem_realloc(), returning a
- * pointer to the first byte of that reallocated block of memory. If multiple
- * sizes are provided, these sizes are multiplied together to produce the final
- * size of the new block. If memory of the specified size cannot be allocated,
- * or if multiplying the sizes would result in integer overflow, guac_error is
- * set appropriately, the original block of memory is left untouched, and NULL
- * is returned.
+ * guac_mem_alloc(), guac_mem_zalloc(), guac_mem_realloc(), or one of their
+ * *_or_die() variants, returning a pointer to the first byte of that
+ * reallocated block of memory. If multiple sizes are provided, these sizes are
+ * multiplied together to produce the final size of the new block. If memory of
+ * the specified size cannot be allocated, or if multiplying the sizes would
+ * result in integer overflow, guac_error is set appropriately, the original
+ * block of memory is left untouched, and NULL is returned.
  *
  * This macro is analogous to the standard realloc(), but accepts a list of
  * size factors instead of a requiring exactly one integer size.
@@ -345,10 +345,48 @@
     )
 
 /**
+ * Reallocates a contiguous block of memory that was previously allocated with
+ * guac_mem_alloc(), guac_mem_zalloc(), guac_mem_realloc(), or one of their
+ * *_or_die() variants, returning a pointer to the first byte of that
+ * reallocated block of memory. If multiple sizes are provided, these sizes are
+ * multiplied together to produce the final size of the new block. If memory of
+ * the specified size cannot be allocated, execution of the current process is
+ * aborted entirely, and this function does not return.
+ *
+ * This macro is analogous to the standard realloc(), but accepts a list of
+ * size factors instead of a requiring exactly one integer size and does not
+ * return in the event a block cannot be allocated.
+ *
+ * The returned pointer may be the same as the original pointer, but this is
+ * not guaranteed. If the returned pointer is different, the original pointer
+ * is automatically freed.
+ *
+ * The pointer returned by guac_mem_realloc() SHOULD be freed with a subsequent
+ * call to guac_mem_free(), but MAY instead be freed with a subsequent call to
+ * free().
+ *
+ * @param ...
+ *     A series of one or more size_t values that should be multiplied together
+ *     to produce the desired block size. At least one value MUST be provided.
+ *
+ * @returns
+ *     A pointer to the first byte of the reallocated block of memory. If a
+ *     block of memory could not be allocated, execution of the current process
+ *     is aborted, and this function does not return.
+ */
+#define guac_mem_realloc_or_die(mem, ...) \
+    PRIV_guac_mem_realloc_or_die(                                             \
+        mem,                                                                  \
+        sizeof((const size_t[]) { __VA_ARGS__ }) / sizeof(const size_t),      \
+        (const size_t[]) { __VA_ARGS__ }                                      \
+    )
+
+/**
  * Frees the memory block at the given pointer, which MUST have been allocated
- * with guac_mem_alloc(), guac_mem_zalloc(), or guac_mem_realloc(). The pointer
- * is automatically assigned a value of NULL after memory is freed. If the
- * provided pointer is already NULL, this macro has no effect.
+ * with guac_mem_alloc(), guac_mem_zalloc(), guac_mem_realloc(), or one of
+ * their *_or_die() variants. The pointer is automatically assigned a value of
+ * NULL after memory is freed. If the provided pointer is already NULL, this
+ * macro has no effect.
  *
  * @param mem
  *     A pointer to the memory to be freed.
@@ -357,10 +395,10 @@
 
 /**
  * Frees the memory block at the given const pointer, which MUST have been
- * allocated with guac_mem_alloc(), guac_mem_zalloc(), or guac_mem_realloc().
- * As the pointer is presumed constant, it is not automatically assigned a
- * value of NULL after memory is freed. If the provided pointer is NULL, this
- * macro has no effect.
+ * allocated with guac_mem_alloc(), guac_mem_zalloc(), guac_mem_realloc(), or
+ * one of their *_or_die() variants. As the pointer is presumed constant, it is
+ * not automatically assigned a value of NULL after memory is freed. If the
+ * provided pointer is NULL, this macro has no effect.
  *
  * The guac_mem_free() macro should be used in favor of this macro. This macro
  * should only be used in cases where a constant pointer is absolutely

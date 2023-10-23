@@ -97,7 +97,7 @@ guac_terminal_buffer_row* guac_terminal_buffer_get_row(guac_terminal_buffer* buf
         /* Expand if necessary */
         if (width > buffer_row->available) {
             buffer_row->available = guac_mem_ckd_mul_or_die(width, 2);
-            buffer_row->characters = guac_mem_realloc(buffer_row->characters,
+            buffer_row->characters = guac_mem_realloc_or_die(buffer_row->characters,
                     sizeof(guac_terminal_char), buffer_row->available);
         }
 

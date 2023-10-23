@@ -231,12 +231,12 @@ size_t PRIV_guac_mem_ckd_sub_or_die(size_t term_count, const size_t* terms);
 /**
  * Reallocates a contiguous block of memory that was previously allocated with
  * guac_mem_alloc(), guac_mem_zalloc(), guac_mem_realloc(), or one of their
- * PRIV_guac_*() variants, returning a pointer to the first byte of that
- * reallocated block of memory. If multiple sizes are provided, these sizes are
- * multiplied together to produce the final size of the new block. If memory of
- * the specified size cannot be allocated, or if multiplying the sizes would
- * result in integer overflow, guac_error is set appropriately, the original
- * block of memory is left untouched, and NULL is returned.
+ * PRIV_guac_*() or *_or_die() variants, returning a pointer to the first byte
+ * of that reallocated block of memory. If multiple sizes are provided, these
+ * sizes are multiplied together to produce the final size of the new block. If
+ * memory of the specified size cannot be allocated, or if multiplying the
+ * sizes would result in integer overflow, guac_error is set appropriately, the
+ * original block of memory is left untouched, and NULL is returned.
  *
  * This function is analogous to the standard realloc(), but accepts a list of
  * size factors instead of a requiring exactly one integer size.
@@ -266,10 +266,47 @@ size_t PRIV_guac_mem_ckd_sub_or_die(size_t term_count, const size_t* terms);
 void* PRIV_guac_mem_realloc(void* mem, size_t factor_count, const size_t* factors);
 
 /**
+ * Reallocates a contiguous block of memory that was previously allocated with
+ * guac_mem_alloc(), guac_mem_zalloc(), guac_mem_realloc(), or one of their
+ * PRIV_guac_*() or *_or_die() variants, returning a pointer to the first byte
+ * of that reallocated block of memory. If multiple sizes are provided, these
+ * sizes are multiplied together to produce the final size of the new block. If
+ * memory of the specified size cannot be allocated, or if multiplying the
+ * sizes would result in integer overflow, execution of the current process is
+ * aborted entirely, and this function does not return.
+ *
+ * This function is analogous to the standard realloc(), but accepts a list of
+ * size factors instead of a requiring exactly one integer size and does not
+ * return in the event a block cannot be allocated.
+ *
+ * The returned pointer may be the same as the original pointer, but this is
+ * not guaranteed. If the returned pointer is different, the original pointer
+ * is automatically freed.
+ *
+ * The pointer returned by guac_mem_realloc() SHOULD be freed with a subsequent
+ * call to guac_mem_free() or PRIV_guac_mem_free(), but MAY instead be freed
+ * with a subsequent call to free().
+ *
+ * @param factor_count
+ *     The number of factors to multiply together to produce the desired block
+ *     size.
+ *
+ * @param factors
+ *     An array of one or more size_t values that should be multiplied together
+ *     to produce the desired block size. At least one value MUST be provided.
+ *
+ * @returns
+ *     A pointer to the first byte of the reallocated block of memory. If a
+ *     block of memory could not be allocated, execution of the current process
+ *     is aborted, and this function does not return.
+ */
+void* PRIV_guac_mem_realloc_or_die(void* mem, size_t factor_count, const size_t* factors);
+
+/**
  * Frees the memory block at the given pointer, which MUST have been allocated
  * with guac_mem_alloc(), guac_mem_zalloc(), guac_mem_realloc(), or one of
- * their PRIV_guac_*() variants. If the provided pointer is NULL, this function
- * has no effect.
+ * their PRIV_guac_*() or *_or_die() variants. If the provided pointer is NULL,
+ * this function has no effect.
  *
  * @param mem
  *     A pointer to the memory to be freed.

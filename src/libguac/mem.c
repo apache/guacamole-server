@@ -230,6 +230,21 @@ void* PRIV_guac_mem_realloc(void* mem, size_t factor_count, const size_t* factor
 
 }
 
+void* PRIV_guac_mem_realloc_or_die(void* mem, size_t factor_count, const size_t* factors) {
+
+    /* Reset any past errors for upcoming error check */
+    guac_error = GUAC_STATUS_SUCCESS;
+
+    /* Perform requested resize, aborting the entire process if this cannot be
+     * done */
+    void* resized_mem = PRIV_guac_mem_realloc(mem, factor_count, factors);
+    if (resized_mem == NULL && guac_error != GUAC_STATUS_SUCCESS)
+        abort();
+
+    return resized_mem;
+
+}
+
 void PRIV_guac_mem_free(void* mem) {
     free(mem);
 }

@@ -49,6 +49,7 @@ test_libguac_SOURCES =               \
     mem/ckd_sub_or_die.c             \
     mem/free.c                       \
     mem/realloc.c                    \
+    mem/realloc_or_die.c             \
     mem/zalloc.c                     \
     parser/append.c                  \
     parser/read.c                    \
