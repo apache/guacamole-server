@@ -25,6 +25,8 @@
 
 #include <cairo/cairo.h>
 
+#include <stddef.h>
+
 /**
  * The initial number of bytes to allocate for the image data buffer. If this
  * buffer is not sufficiently large, it will be dynamically reallocated as it
@@ -87,13 +89,13 @@ typedef struct guacenc_image_stream {
     /**
      * The number of bytes currently stored in the buffer.
      */
-    int length;
+    size_t length;
 
     /**
      * The maximum number of bytes that can be stored in the current buffer
      * before it must be reallocated.
      */
-    int max_length;
+    size_t max_length;
 
     /**
      * The decoder to use when decoding the raw data received along this

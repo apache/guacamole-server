@@ -21,19 +21,21 @@
 #include "buffer.h"
 #include "cursor.h"
 
+#include <guacamole/mem.h>
+
 #include <stdlib.h>
 
 guacenc_cursor* guacenc_cursor_alloc() {
 
     /* Allocate new cursor */
-    guacenc_cursor* cursor = (guacenc_cursor*) malloc(sizeof(guacenc_cursor));
+    guacenc_cursor* cursor = (guacenc_cursor*) guac_mem_alloc(sizeof(guacenc_cursor));
     if (cursor == NULL)
         return NULL;
 
     /* Allocate associated buffer (image) */
     cursor->buffer = guacenc_buffer_alloc();
     if (cursor->buffer == NULL) {
-        free(cursor);
+        guac_mem_free(cursor);
         return NULL;
     }
 
@@ -53,7 +55,7 @@ void guacenc_cursor_free(guacenc_cursor* cursor) {
     /* Free underlying buffer */
     guacenc_buffer_free(cursor->buffer);
 
-    free(cursor);
+    guac_mem_free(cursor);
 
 }
 

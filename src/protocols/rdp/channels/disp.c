@@ -27,6 +27,7 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/event.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/timestamp.h>
 
 #include <stdlib.h>
@@ -34,7 +35,7 @@
 
 guac_rdp_disp* guac_rdp_disp_alloc(guac_client* client) {
 
-    guac_rdp_disp* disp = malloc(sizeof(guac_rdp_disp));
+    guac_rdp_disp* disp = guac_mem_alloc(sizeof(guac_rdp_disp));
     disp->client = client;
 
     /* Not yet connected */
@@ -51,7 +52,7 @@ guac_rdp_disp* guac_rdp_disp_alloc(guac_client* client) {
 }
 
 void guac_rdp_disp_free(guac_rdp_disp* disp) {
-    free(disp);
+    guac_mem_free(disp);
 }
 
 /**

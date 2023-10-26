@@ -23,13 +23,16 @@
 /**
  * Generates a guaranteed-unique identifier which is a total of 37 characters
  * long, having the given single-character prefix. The resulting identifier
- * must be freed with a call to free() when no longer needed.  If an error
+ * must be freed with a call to guac_mem_free() when no longer needed. If an error
  * occurs, NULL is returned, no memory is allocated, and guac_error is set
  * appropriately.
  *
- * @param prefix The single-character prefix to use.
- * @return A newly-allocated unique identifier with the given prefix, or
- *         NULL if the identifier could not be generated.
+ * @param prefix
+ *     The single-character prefix to use.
+ *
+ * @return
+ *     A newly-allocated unique identifier with the given prefix, or NULL if
+ *     the identifier could not be generated.
  */
 char* guac_generate_id(char prefix);
 

@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 
 #include <errno.h>
@@ -176,24 +177,24 @@ static pthread_once_t __guac_error_key_init = PTHREAD_ONCE_INIT;
 static pthread_key_t  __guac_error_message_key;
 static pthread_once_t __guac_error_message_key_init = PTHREAD_ONCE_INIT;
 
-static void __guac_free_pointer(void* pointer) {
+static void __guac_mem_free_pointer(void* pointer) {
 
     /* Free memory allocated to status variable */
-    free(pointer);
+    guac_mem_free(pointer);
 
 }
 
 static void __guac_alloc_error_key() {
 
     /* Create key, destroy any allocated variable on thread exit */
-    pthread_key_create(&__guac_error_key, __guac_free_pointer);
+    pthread_key_create(&__guac_error_key, __guac_mem_free_pointer);
 
 }
 
 static void __guac_alloc_error_message_key() {
 
     /* Create key, destroy any allocated variable on thread exit */
-    pthread_key_create(&__guac_error_message_key, __guac_free_pointer);
+    pthread_key_create(&__guac_error_message_key, __guac_mem_free_pointer);
 
 }
 
@@ -210,7 +211,7 @@ guac_status* __guac_error() {
 
     /* Allocate thread-local status variable if not already allocated */
     if (status == NULL) {
-        status = malloc(sizeof(guac_status));
+        status = guac_mem_alloc(sizeof(guac_status));
         pthread_setspecific(__guac_error_key, status);
     }
 
@@ -234,7 +235,7 @@ const char** __guac_error_message() {
 
     /* Allocate thread-local message variable if not already allocated */
     if (message == NULL) {
-        message = malloc(sizeof(const char*));
+        message = guac_mem_alloc(sizeof(const char*));
         pthread_setspecific(__guac_error_message_key, message);
     }
 

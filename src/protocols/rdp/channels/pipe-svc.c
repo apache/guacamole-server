@@ -24,6 +24,7 @@
 
 #include <freerdp/settings.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
@@ -172,7 +173,7 @@ int guac_rdp_pipe_svc_blob_handler(guac_user* user, guac_stream* stream,
 void guac_rdp_pipe_svc_process_connect(guac_rdp_common_svc* svc) {
 
     /* Associate SVC with new Guacamole pipe */
-    guac_rdp_pipe_svc* pipe_svc = malloc(sizeof(guac_rdp_pipe_svc));
+    guac_rdp_pipe_svc* pipe_svc = guac_mem_alloc(sizeof(guac_rdp_pipe_svc));
     pipe_svc->svc = svc;
     pipe_svc->output_pipe = guac_client_alloc_stream(svc->client);
     svc->data = pipe_svc;
@@ -214,7 +215,7 @@ void guac_rdp_pipe_svc_process_terminate(guac_rdp_common_svc* svc) {
 
     /* Remove and free SVC */
     guac_rdp_pipe_svc_remove(svc->client, svc->name);
-    free(pipe_svc);
+    guac_mem_free(pipe_svc);
 
 }
 

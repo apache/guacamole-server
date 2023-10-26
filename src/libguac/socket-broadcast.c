@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/client.h"
 #include "guacamole/error.h"
 #include "guacamole/socket.h"
@@ -360,7 +361,7 @@ static int __guac_socket_broadcast_free_handler(guac_socket* socket) {
     /* Destroy locks */
     pthread_mutex_destroy(&(data->socket_lock));
 
-    free(data);
+    guac_mem_free(data);
     return 0;
 
 }
@@ -387,7 +388,7 @@ static guac_socket* __guac_socket_init(
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
     guac_socket_broadcast_data* data =
-        malloc(sizeof(guac_socket_broadcast_data));
+        guac_mem_alloc(sizeof(guac_socket_broadcast_data));
 
     /* Set the provided broadcast handler */
     data->broadcast_handler = broadcast_handler;

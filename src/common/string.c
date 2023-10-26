@@ -21,18 +21,20 @@
 
 #include "common/string.h"
 
+#include <guacamole/mem.h>
+
 #include <stdlib.h>
 #include <string.h>
 
-int guac_count_occurrences(const char* string, char c) {
+size_t guac_count_occurrences(const char* string, char c) {
 
-    int count = 0;
+    size_t count = 0;
 
     while (*string != 0) {
 
         /* Count each occurrence */
         if (*string == c)
-            count++;
+            count = guac_mem_ckd_add_or_die(count, 1);
 
         /* Next character */
         string++;
@@ -45,17 +47,18 @@ int guac_count_occurrences(const char* string, char c) {
 
 char** guac_split(const char* string, char delim) {
 
-    int i = 0;
+    size_t i = 0;
 
-    int token_count = guac_count_occurrences(string, delim) + 1;
+    /* Calculate number of tokens present based on number of delimiters */
+    size_t token_count = guac_mem_ckd_add_or_die(guac_count_occurrences(string, delim), 1);
     const char* token_start = string;
 
-    /* Allocate space for tokens */
-    char** tokens = malloc(sizeof(char*) * (token_count+1));
+    /* Allocate space for tokens, including NULL terminator */
+    char** tokens = guac_mem_alloc(sizeof(char*), guac_mem_ckd_add_or_die(token_count, 1));
 
     do {
 
-        int length;
+        size_t length;
         char* token;
 
         /* Find end of token */
@@ -66,7 +69,7 @@ char** guac_split(const char* string, char delim) {
         length = string - token_start;
 
         /* Allocate space for token and NULL terminator */
-        tokens[i++] = token = malloc(length + 1);
+        tokens[i++] = token = guac_mem_alloc(guac_mem_ckd_add_or_die(length, 1));
 
         /* Copy token, store null */
         memcpy(token, token_start, length);

@@ -22,6 +22,7 @@
 #include "upload.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/object.h>
 #include <guacamole/pool.h>
 #include <guacamole/protocol.h>
@@ -59,10 +60,10 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
         }
     }
 
-    guac_rdp_fs* fs = malloc(sizeof(guac_rdp_fs));
+    guac_rdp_fs* fs = guac_mem_alloc(sizeof(guac_rdp_fs));
 
     fs->client = client;
-    fs->drive_path = strdup(drive_path);
+    fs->drive_path = guac_strdup(drive_path);
     fs->file_id_pool = guac_pool_alloc(0);
     fs->open_files = 0;
     fs->disable_download = disable_download;
@@ -74,8 +75,8 @@ guac_rdp_fs* guac_rdp_fs_alloc(guac_client* client, const char* drive_path,
 
 void guac_rdp_fs_free(guac_rdp_fs* fs) {
     guac_pool_free(fs->file_id_pool);
-    free(fs->drive_path);
-    free(fs);
+    guac_mem_free(fs->drive_path);
+    guac_mem_free(fs);
 }
 
 guac_object* guac_rdp_fs_alloc_object(guac_rdp_fs* fs, guac_user* user) {
@@ -366,8 +367,8 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     file->fd  = fd;
     file->dir = NULL;
     file->dir_pattern[0] = '\0';
-    file->absolute_path = strdup(normalized_path);
-    file->real_path = strdup(real_path);
+    file->absolute_path = guac_strdup(normalized_path);
+    file->real_path = guac_strdup(real_path);
     file->bytes_written = 0;
 
     guac_client_log(fs->client, GUAC_LOG_DEBUG,
@@ -574,8 +575,8 @@ void guac_rdp_fs_close(guac_rdp_fs* fs, int file_id) {
     close(file->fd);
 
     /* Free name */
-    free(file->absolute_path);
-    free(file->real_path);
+    guac_mem_free(file->absolute_path);
+    guac_mem_free(file->real_path);
 
     /* Free ID back to pool */
     guac_pool_free_int(fs->file_id_pool, file_id);

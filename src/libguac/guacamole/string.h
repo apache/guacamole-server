@@ -132,8 +132,17 @@ size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n);
 char* guac_strnstr(const char *haystack, const char *needle, size_t len);
 
 /**
- * Simple wrapper for strdup() which behaves identically to standard strdup(),
- * except that NULL will be returned if the provided string is NULL.
+ * Duplicates the given string, returning a newly-allocated string containing
+ * the same contents. The provided string must be null-terminated. The size of
+ * the memory block for the newly-allocated string is only guaranteed to
+ * include enough space for the contents of the provided string, including null
+ * terminator.
+ *
+ * The pointer returned by guac_strdup() SHOULD be freed with a subsequent call
+ * to guac_mem_free(), but MAY instead be freed with a subsequent call to free().
+ *
+ * This function behaves identically to standard strdup(), except that NULL
+ * will be returned if the provided string is NULL.
  *
  * @param str
  *     The string to duplicate as a newly-allocated string.

@@ -23,6 +23,7 @@
 #include "telnet.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/user.h>
 #include <libtelnet.h>
@@ -79,7 +80,7 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
                 "Stopping password prompt search due to user input.");
 
         regfree(settings->password_regex);
-        free(settings->password_regex);
+        guac_mem_free(settings->password_regex);
         settings->password_regex = NULL;
 
     }
@@ -91,7 +92,7 @@ int guac_telnet_user_key_handler(guac_user* user, int keysym, int pressed) {
                 "Stopping username prompt search due to user input.");
 
         regfree(settings->username_regex);
-        free(settings->username_regex);
+        guac_mem_free(settings->username_regex);
         settings->username_regex = NULL;
 
     }

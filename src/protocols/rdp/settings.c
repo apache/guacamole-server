@@ -28,6 +28,7 @@
 #include <freerdp/settings.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/fips.h>
 #include <guacamole/string.h>
 #include <guacamole/user.h>
@@ -708,7 +709,7 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         return NULL;
     }
 
-    guac_rdp_settings* settings = calloc(1, sizeof(guac_rdp_settings));
+    guac_rdp_settings* settings = guac_mem_zalloc(sizeof(guac_rdp_settings));
 
     /* Use console */
     settings->console =
@@ -992,7 +993,7 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     /* Preconnection BLOB */
     settings->preconnection_blob = NULL;
     if (argv[IDX_PRECONNECTION_BLOB][0] != '\0') {
-        settings->preconnection_blob = strdup(argv[IDX_PRECONNECTION_BLOB]);
+        settings->preconnection_blob = guac_strdup(argv[IDX_PRECONNECTION_BLOB]);
         guac_user_log(user, GUAC_LOG_DEBUG,
                 "Preconnection BLOB: \"%s\"", settings->preconnection_blob);
     }
@@ -1318,23 +1319,23 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
 void guac_rdp_settings_free(guac_rdp_settings* settings) {
 
     /* Free settings strings */
-    free(settings->client_name);
-    free(settings->domain);
-    free(settings->drive_name);
-    free(settings->drive_path);
-    free(settings->hostname);
-    free(settings->certificate_fingerprints);
-    free(settings->initial_program);
-    free(settings->password);
-    free(settings->preconnection_blob);
-    free(settings->recording_name);
-    free(settings->recording_path);
-    free(settings->remote_app);
-    free(settings->remote_app_args);
-    free(settings->remote_app_dir);
-    free(settings->timezone);
-    free(settings->username);
-    free(settings->printer_name);
+    guac_mem_free(settings->client_name);
+    guac_mem_free(settings->domain);
+    guac_mem_free(settings->drive_name);
+    guac_mem_free(settings->drive_path);
+    guac_mem_free(settings->hostname);
+    guac_mem_free(settings->certificate_fingerprints);
+    guac_mem_free(settings->initial_program);
+    guac_mem_free(settings->password);
+    guac_mem_free(settings->preconnection_blob);
+    guac_mem_free(settings->recording_name);
+    guac_mem_free(settings->recording_path);
+    guac_mem_free(settings->remote_app);
+    guac_mem_free(settings->remote_app_args);
+    guac_mem_free(settings->remote_app_dir);
+    guac_mem_free(settings->timezone);
+    guac_mem_free(settings->username);
+    guac_mem_free(settings->printer_name);
 
     /* Free channel name array */
     if (settings->svc_names != NULL) {
@@ -1342,43 +1343,43 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
         /* Free all elements of array */
         char** current = &(settings->svc_names[0]);
         while (*current != NULL) {
-            free(*current);
+            guac_mem_free(*current);
             current++;
         }
 
         /* Free array itself */
-        free(settings->svc_names);
+        guac_mem_free(settings->svc_names);
 
     }
 
 #ifdef ENABLE_COMMON_SSH
     /* Free SFTP settings */
-    free(settings->sftp_directory);
-    free(settings->sftp_root_directory);
-    free(settings->sftp_host_key);
-    free(settings->sftp_hostname);
-    free(settings->sftp_passphrase);
-    free(settings->sftp_password);
-    free(settings->sftp_port);
-    free(settings->sftp_private_key);
-    free(settings->sftp_username);
+    guac_mem_free(settings->sftp_directory);
+    guac_mem_free(settings->sftp_root_directory);
+    guac_mem_free(settings->sftp_host_key);
+    guac_mem_free(settings->sftp_hostname);
+    guac_mem_free(settings->sftp_passphrase);
+    guac_mem_free(settings->sftp_password);
+    guac_mem_free(settings->sftp_port);
+    guac_mem_free(settings->sftp_private_key);
+    guac_mem_free(settings->sftp_username);
 #endif
 
     /* Free RD gateway information */
-    free(settings->gateway_hostname);
-    free(settings->gateway_domain);
-    free(settings->gateway_username);
-    free(settings->gateway_password);
+    guac_mem_free(settings->gateway_hostname);
+    guac_mem_free(settings->gateway_domain);
+    guac_mem_free(settings->gateway_username);
+    guac_mem_free(settings->gateway_password);
 
     /* Free load balancer information string */
-    free(settings->load_balance_info);
+    guac_mem_free(settings->load_balance_info);
     
     /* Free Wake-on-LAN strings */
-    free(settings->wol_mac_addr);
-    free(settings->wol_broadcast_addr);
+    guac_mem_free(settings->wol_mac_addr);
+    guac_mem_free(settings->wol_broadcast_addr);
 
     /* Free settings structure */
-    free(settings);
+    guac_mem_free(settings);
 
 }
 

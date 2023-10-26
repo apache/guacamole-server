@@ -132,12 +132,12 @@ struct guac_rdp_audio_buffer {
      * The size that each audio packet must be, in bytes. The packet buffer
      * within this structure will be at least this size.
      */
-    int packet_size;
+    size_t packet_size;
 
     /**
      * The total number of bytes available within the packet buffer.
      */
-    int packet_buffer_size;
+    size_t packet_buffer_size;
 
     /**
      * The number of bytes currently stored within the packet buffer.

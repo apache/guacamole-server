@@ -19,6 +19,8 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
+
 #include <stddef.h>
 #include <string.h>
 
@@ -119,8 +121,18 @@ char* guac_strdup(const char* str) {
     if (str == NULL)
         return NULL;
 
-    /* Otherwise just invoke strdup() */
-    return strdup(str);
+    /* Do not attempt to duplicate if the length is somehow magically so
+     * obscenely large that it will not be possible to add a null terminator */
+    size_t length;
+    if (guac_mem_ckd_add(&length, strlen(str), 1))
+        return NULL;
+
+    /* Otherwise just copy to a new string in same manner as strdup() */
+    void* new_str = guac_mem_alloc(length);
+    if (new_str != NULL)
+        memcpy(new_str, str, length);
+
+    return new_str;
 
 }
 

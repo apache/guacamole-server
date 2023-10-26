@@ -413,7 +413,7 @@ void guac_terminal_notify(guac_terminal* terminal);
  * @return
  *     A newly-allocated string containing a single line of input read from the
  *     provided terminal's STDIN. This string must eventually be manually
- *     freed with a call to free().
+ *     freed with a call to guac_mem_free().
  */
 char* guac_terminal_prompt(guac_terminal* terminal, const char* title,
         bool echo);

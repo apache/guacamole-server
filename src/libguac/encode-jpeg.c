@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "encode-jpeg.h"
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "guacamole/protocol.h"
 #include "guacamole/stream.h"
@@ -211,9 +212,7 @@ int guac_jpeg_write(guac_socket* socket, guac_stream* stream,
 
     /* Create a buffer for the write scan line which is where we will
      * put the converted pixels (BGRx -> RGB) */
-    int write_stride = cinfo.image_width * cinfo.input_components;
-    unsigned char *scanline_data = malloc(write_stride);
-    memset(scanline_data, 0, write_stride);
+    unsigned char *scanline_data = guac_mem_zalloc(cinfo.image_width, cinfo.input_components);
 #endif
 
     /* Initialize the JPEG compressor */
@@ -254,7 +253,7 @@ int guac_jpeg_write(guac_socket* socket, guac_stream* stream,
     }
 
 #ifndef JCS_EXTENSIONS
-    free(scanline_data);
+    guac_mem_free(scanline_data);
 #endif
 
     /* Finalize compression */

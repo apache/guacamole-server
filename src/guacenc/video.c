@@ -32,6 +32,7 @@
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/timestamp.h>
 
 #include <sys/types.h>
@@ -138,7 +139,7 @@ guacenc_video* guacenc_video_alloc(const char* path, const char* codec_name,
     }
 
     /* Allocate video structure */
-    guacenc_video* video = malloc(sizeof(guacenc_video));
+    guacenc_video* video = guac_mem_alloc(sizeof(guacenc_video));
     if (video == NULL)
         goto fail_alloc_video;
 
@@ -503,7 +504,7 @@ int guacenc_video_free(guacenc_video* video) {
         avcodec_free_context(&(video->context));
     }
 
-    free(video);
+    guac_mem_free(video);
     return 0;
 
 }

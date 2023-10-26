@@ -68,7 +68,7 @@ typedef struct guac_common_cursor {
     /**
      * The size of the image data buffer, in bytes.
      */
-    int image_buffer_size;
+    size_t image_buffer_size;
 
     /**
      * The current cursor image, if any. If the mouse cursor has not yet been

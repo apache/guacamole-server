@@ -37,6 +37,7 @@
 
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/recording.h>
 
 #include <dirent.h>
@@ -194,7 +195,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     client->args = GUAC_RDP_CLIENT_ARGS;
 
     /* Alloc client data */
-    guac_rdp_client* rdp_client = calloc(1, sizeof(guac_rdp_client));
+    guac_rdp_client* rdp_client = guac_mem_zalloc(sizeof(guac_rdp_client));
     client->data = rdp_client;
 
     /* Init clipboard */
@@ -296,7 +297,7 @@ int guac_rdp_client_free_handler(guac_client* client) {
     pthread_mutex_destroy(&(rdp_client->message_lock));
 
     /* Free client data */
-    free(rdp_client);
+    guac_mem_free(rdp_client);
 
     return 0;
 

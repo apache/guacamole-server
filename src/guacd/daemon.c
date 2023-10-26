@@ -26,6 +26,8 @@
 #include "log.h"
 #include "proc-map.h"
 
+#include <guacamole/mem.h>
+
 #ifdef ENABLE_SSL
 #include <openssl/ssl.h>
 #endif
@@ -212,8 +214,7 @@ static void guacd_openssl_init_locks(int count) {
     int i;
 
     /* Allocate required number of locks */
-    guacd_openssl_locks =
-        malloc(sizeof(pthread_mutex_t) * count);
+    guacd_openssl_locks = guac_mem_alloc(sizeof(pthread_mutex_t), count);
 
     /* Initialize each lock */
     for (i=0; i < count; i++)
@@ -240,7 +241,7 @@ static void guacd_openssl_free_locks(int count) {
         pthread_mutex_destroy(&(guacd_openssl_locks[i]));
 
     /* Free lock array */
-    free(guacd_openssl_locks);
+    guac_mem_free(guacd_openssl_locks);
 
 }
 #endif
@@ -537,7 +538,7 @@ int main(int argc, char* argv[]) {
         }
 
         /* Create parameters for connection thread */
-        guacd_connection_thread_params* params = malloc(sizeof(guacd_connection_thread_params));
+        guacd_connection_thread_params* params = guac_mem_alloc(sizeof(guacd_connection_thread_params));
         if (params == NULL) {
             guacd_log(GUAC_LOG_ERROR, "Could not create connection thread: %s", strerror(errno));
             continue;

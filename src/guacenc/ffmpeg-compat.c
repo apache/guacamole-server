@@ -26,6 +26,7 @@
 #include <libavutil/common.h>
 #include <libavutil/imgutils.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 
 #include <stdio.h>
 #include <stdint.h>
@@ -106,10 +107,11 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
     AVCodecContext* context = video->context;
 
     /* Calculate appropriate buffer size */
-    int length = FF_MIN_BUFFER_SIZE + 12 * context->width * context->height;
+    size_t length = guac_mem_ckd_add_or_die(FF_MIN_BUFFER_SIZE,
+            guac_mem_ckd_mul_or_die(12, context->width, context->height));
 
     /* Allocate space for output */
-    uint8_t* data = malloc(length);
+    uint8_t* data = guac_mem_alloc(length);
     if (data == NULL)
         return -1;
 
@@ -118,19 +120,19 @@ int guacenc_avcodec_encode_video(guacenc_video* video, AVFrame* frame) {
     if (used < 0) {
         guacenc_log(GUAC_LOG_WARNING, "Error encoding frame #%" PRId64,
                 video->next_pts);
-        free(data);
+        guac_mem_free(data);
         return -1;
     }
 
     /* Report if no data needs to be written */
     if (used == 0) {
-        free(data);
+        guac_mem_free(data);
         return 0;
     }
 
     /* Write data, logging any errors */
     guacenc_write_packet(video, data, used);
-    free(data);
+    guac_mem_free(data);
     return 1;
 
 #else

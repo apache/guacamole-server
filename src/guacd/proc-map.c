@@ -23,6 +23,7 @@
 #include "proc-map.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -129,7 +130,7 @@ static guac_common_list_element* __guacd_proc_find(guac_common_list* bucket,
 
 guacd_proc_map* guacd_proc_map_alloc() {
 
-    guacd_proc_map* map = malloc(sizeof(guacd_proc_map));
+    guacd_proc_map* map = guac_mem_alloc(sizeof(guacd_proc_map));
     map->processes = guac_common_list_alloc();
     guac_common_list** current;
 
@@ -160,7 +161,7 @@ int guacd_proc_map_add(guacd_proc_map* map, guacd_proc* proc) {
     /* If no such element, we can add the new client successfully */
     if (found == NULL) {
 
-        guacd_proc_map_entry* entry = malloc(sizeof(guacd_proc_map_entry));
+        guacd_proc_map_entry* entry = guac_mem_alloc(sizeof(guacd_proc_map_entry));
 
         guac_common_list_lock(map->processes);
         entry->element = guac_common_list_add(map->processes, proc);

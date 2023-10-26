@@ -25,6 +25,7 @@
 #include <freerdp/codec/audio.h>
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <winpr/stream.h>
 
 #include <stdlib.h>
@@ -86,14 +87,13 @@ void guac_rdpsnd_process_receive(guac_rdp_common_svc* svc,
 
 void guac_rdpsnd_process_connect(guac_rdp_common_svc* svc) {
 
-    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) calloc(1, sizeof(guac_rdpsnd));
+    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) guac_mem_zalloc(sizeof(guac_rdpsnd));
     svc->data = rdpsnd;
 
 }
 
 void guac_rdpsnd_process_terminate(guac_rdp_common_svc* svc) {
-    guac_rdpsnd* rdpsnd = (guac_rdpsnd*) svc->data;
-    free(rdpsnd);
+    guac_mem_free(svc->data);
 }
 
 void guac_rdpsnd_load_plugin(rdpContext* context) {

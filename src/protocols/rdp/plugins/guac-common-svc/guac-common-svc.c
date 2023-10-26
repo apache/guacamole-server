@@ -22,6 +22,7 @@
 
 #include <freerdp/svc.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <winpr/stream.h>
 #include <winpr/wtsapi.h>
 #include <winpr/wtypes.h>
@@ -203,7 +204,7 @@ static void guac_rdp_common_svc_process_terminate(guac_rdp_common_svc* svc) {
 
     guac_client_log(svc->client, GUAC_LOG_DEBUG, "SVC \"%s\" disconnected.",
             svc->name);
-    free(svc);
+    guac_mem_free(svc);
 
 }
 

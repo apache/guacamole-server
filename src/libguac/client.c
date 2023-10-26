@@ -22,6 +22,7 @@
 #include "encode-jpeg.h"
 #include "encode-png.h"
 #include "encode-webp.h"
+#include "guacamole/mem.h"
 #include "guacamole/client.h"
 #include "guacamole/error.h"
 #include "guacamole/layer.h"
@@ -84,7 +85,7 @@ const guac_layer* GUAC_DEFAULT_LAYER = &__GUAC_DEFAULT_LAYER;
 guac_layer* guac_client_alloc_layer(guac_client* client) {
 
     /* Init new layer */
-    guac_layer* allocd_layer = malloc(sizeof(guac_layer));
+    guac_layer* allocd_layer = guac_mem_alloc(sizeof(guac_layer));
     allocd_layer->index = guac_pool_next_int(client->__layer_pool)+1;
 
     return allocd_layer;
@@ -94,7 +95,7 @@ guac_layer* guac_client_alloc_layer(guac_client* client) {
 guac_layer* guac_client_alloc_buffer(guac_client* client) {
 
     /* Init new layer */
-    guac_layer* allocd_layer = malloc(sizeof(guac_layer));
+    guac_layer* allocd_layer = guac_mem_alloc(sizeof(guac_layer));
     allocd_layer->index = -guac_pool_next_int(client->__buffer_pool) - 1;
 
     return allocd_layer;
@@ -107,7 +108,7 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
     guac_pool_free_int(client->__buffer_pool, -layer->index - 1);
 
     /* Free layer */
-    free(layer);
+    guac_mem_free(layer);
 
 }
 
@@ -117,7 +118,7 @@ void guac_client_free_layer(guac_client* client, guac_layer* layer) {
     guac_pool_free_int(client->__layer_pool, layer->index);
 
     /* Free layer */
-    free(layer);
+    guac_mem_free(layer);
 
 }
 
@@ -255,7 +256,7 @@ guac_client* guac_client_alloc() {
     int i;
 
     /* Allocate new client */
-    guac_client* client = malloc(sizeof(guac_client));
+    guac_client* client = guac_mem_alloc(sizeof(guac_client));
     if (client == NULL) {
         guac_error = GUAC_STATUS_NO_MEMORY;
         guac_error_message = "Could not allocate memory for client";
@@ -272,7 +273,7 @@ guac_client* guac_client_alloc() {
     /* Generate ID */
     client->connection_id = guac_generate_id(GUAC_CLIENT_ID_PREFIX);
     if (client->connection_id == NULL) {
-        free(client);
+        guac_mem_free(client);
         return NULL;
     }
 
@@ -284,7 +285,7 @@ guac_client* guac_client_alloc() {
     client->__stream_pool = guac_pool_alloc(0);
 
     /* Initialize streams */
-    client->__output_streams = malloc(sizeof(guac_stream) * GUAC_CLIENT_MAX_STREAMS);
+    client->__output_streams = guac_mem_alloc(sizeof(guac_stream), GUAC_CLIENT_MAX_STREAMS);
 
     for (i=0; i<GUAC_CLIENT_MAX_STREAMS; i++) {
         client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
@@ -346,7 +347,7 @@ void guac_client_free(guac_client* client) {
     guac_pool_free(client->__layer_pool);
 
     /* Free streams */
-    free(client->__output_streams);
+    guac_mem_free(client->__output_streams);
 
     /* Free stream pool */
     guac_pool_free(client->__stream_pool);
@@ -374,8 +375,8 @@ void guac_client_free(guac_client* client) {
     guac_rwlock_destroy(&(client->__users_lock));
     guac_rwlock_destroy(&(client->__pending_users_lock));
 
-    free(client->connection_id);
-    free(client);
+    guac_mem_free(client->connection_id);
+    guac_mem_free(client);
 }
 
 void vguac_client_log(guac_client* client, guac_client_log_level level,

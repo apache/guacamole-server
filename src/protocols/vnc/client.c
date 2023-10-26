@@ -34,6 +34,7 @@
 #endif
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/recording.h>
 
 #include <pthread.h>
@@ -102,7 +103,7 @@ int guac_client_init(guac_client* client) {
     client->args = GUAC_VNC_CLIENT_ARGS;
 
     /* Alloc client data */
-    guac_vnc_client* vnc_client = calloc(1, sizeof(guac_vnc_client));
+    guac_vnc_client* vnc_client = guac_mem_zalloc(sizeof(guac_vnc_client));
     client->data = vnc_client;
 
 #ifdef ENABLE_VNC_TLS_LOCKING
@@ -209,7 +210,7 @@ int guac_vnc_client_free_handler(guac_client* client) {
 #endif
 
     /* Free generic data struct */
-    free(client->data);
+    guac_mem_free(client->data);
 
     return 0;
 }

@@ -28,6 +28,7 @@
 #include "url.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <libwebsockets.h>
@@ -255,7 +256,7 @@ void* guac_kubernetes_client_thread(void* data) {
     kubernetes_client->term = guac_terminal_create(client, options);
 
     /* Free options struct now that it's been used */
-    free(options);
+    guac_mem_free(options);
 
     /* Fail if terminal init failed */
     if (kubernetes_client->term == NULL) {

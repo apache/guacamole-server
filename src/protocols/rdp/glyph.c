@@ -25,6 +25,7 @@
 
 #include <freerdp/freerdp.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <winpr/wtypes.h>
 
 #include <stdint.h>
@@ -48,7 +49,7 @@ BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph) {
 
     /* Init Cairo buffer */
     stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width);
-    image_buffer = malloc(height*stride);
+    image_buffer = guac_mem_alloc(height, stride);
     image_buffer_row = image_buffer;
 
     /* Copy image data from image data to buffer */
@@ -118,7 +119,7 @@ void guac_rdp_glyph_free(rdpContext* context, rdpGlyph* glyph) {
 
     /* Free surface */
     cairo_surface_destroy(((guac_rdp_glyph*) glyph)->surface);
-    free(image_buffer);
+    guac_mem_free(image_buffer);
 
     /* NOTE: FreeRDP-allocated memory for the rdpGlyph will NOT be
      * automatically released after this free handler is invoked, thus we must

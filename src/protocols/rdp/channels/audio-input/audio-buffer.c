@@ -21,6 +21,7 @@
 #include "rdp.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
@@ -116,8 +117,8 @@ static int guac_rdp_audio_buffer_duration(const guac_rdp_audio_format* format, i
  *     The number of bytes required to store audio data in the given format
  *     covering the given length of time.
  */
-static int guac_rdp_audio_buffer_length(const guac_rdp_audio_format* format, int duration) {
-    return duration * format->rate * format->bps * format->channels / 1000;
+static size_t guac_rdp_audio_buffer_length(const guac_rdp_audio_format* format, int duration) {
+    return guac_mem_ckd_mul_or_die(duration, format->rate, format->bps, format->channels) / 1000;
 }
 
 /**
@@ -261,7 +262,7 @@ static void* guac_rdp_audio_buffer_flush_thread(void* data) {
 
 guac_rdp_audio_buffer* guac_rdp_audio_buffer_alloc(guac_client* client) {
 
-    guac_rdp_audio_buffer* buffer = calloc(1, sizeof(guac_rdp_audio_buffer));
+    guac_rdp_audio_buffer* buffer = guac_mem_zalloc(sizeof(guac_rdp_audio_buffer));
 
     pthread_mutex_init(&(buffer->lock), NULL);
     pthread_cond_init(&(buffer->modified), NULL);
@@ -395,21 +396,23 @@ void guac_rdp_audio_buffer_begin(guac_rdp_audio_buffer* audio_buffer,
     audio_buffer->data = data;
 
     /* Calculate size of each packet in bytes */
-    audio_buffer->packet_size = packet_frames
-                              * audio_buffer->out_format.channels
-                              * audio_buffer->out_format.bps;
+    audio_buffer->packet_size = guac_mem_ckd_mul_or_die(packet_frames,
+                audio_buffer->out_format.channels,
+                audio_buffer->out_format.bps);
 
     /* Ensure outbound buffer includes enough space for at least 250ms of
      * audio */
-    int ideal_size = guac_rdp_audio_buffer_length(&audio_buffer->out_format,
+    size_t ideal_size = guac_rdp_audio_buffer_length(&audio_buffer->out_format,
             GUAC_RDP_AUDIO_BUFFER_MIN_DURATION);
 
     /* Round up to nearest whole packet */
-    int ideal_packets = (ideal_size + audio_buffer->packet_size - 1) / audio_buffer->packet_size;
+    size_t ideal_packets = guac_mem_ckd_sub_or_die(
+                guac_mem_ckd_add_or_die(ideal_size, audio_buffer->packet_size), 1
+            ) / audio_buffer->packet_size;
 
     /* Allocate new buffer */
-    audio_buffer->packet_buffer_size = ideal_packets * audio_buffer->packet_size;
-    audio_buffer->packet = malloc(audio_buffer->packet_buffer_size);
+    audio_buffer->packet_buffer_size = guac_mem_ckd_mul_or_die(ideal_packets, audio_buffer->packet_size);
+    audio_buffer->packet = guac_mem_alloc(audio_buffer->packet_buffer_size);
 
     guac_client_log(audio_buffer->client, GUAC_LOG_DEBUG, "Output buffer for "
             "audio input is %i bytes (up to %i ms).", audio_buffer->packet_buffer_size,
@@ -609,8 +612,7 @@ void guac_rdp_audio_buffer_end(guac_rdp_audio_buffer* audio_buffer) {
     audio_buffer->total_bytes_received = 0;
 
     /* Free packet (if any) */
-    free(audio_buffer->packet);
-    audio_buffer->packet = NULL;
+    guac_mem_free(audio_buffer->packet);
 
     pthread_cond_broadcast(&(audio_buffer->modified));
     pthread_mutex_unlock(&(audio_buffer->lock));
@@ -632,7 +634,7 @@ void guac_rdp_audio_buffer_free(guac_rdp_audio_buffer* audio_buffer) {
 
     pthread_mutex_destroy(&(audio_buffer->lock));
     pthread_cond_destroy(&(audio_buffer->modified));
-    free(audio_buffer);
+    guac_mem_free(audio_buffer);
 
 }
 

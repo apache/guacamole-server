@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "palette.h"
 
 #include <cairo/cairo.h>
@@ -38,8 +39,7 @@ guac_palette* guac_palette_alloc(cairo_surface_t* surface) {
     unsigned char* data = cairo_image_surface_get_data(surface);
 
     /* Allocate palette */
-    guac_palette* palette = (guac_palette*) malloc(sizeof(guac_palette));
-    memset(palette, 0, sizeof(guac_palette));
+    guac_palette* palette = (guac_palette*) guac_mem_zalloc(sizeof(guac_palette));
 
     for (y=0; y<height; y++) {
         for (x=0; x<width; x++) {
@@ -129,6 +129,6 @@ int guac_palette_find(guac_palette* palette, int color) {
 }
 
 void guac_palette_free(guac_palette* palette) {
-    free(palette);
+    guac_mem_free(palette);
 }
 

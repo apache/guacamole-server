@@ -23,6 +23,9 @@
 #include "conf-args.h"
 #include "conf-parse.h"
 
+#include <guacamole/mem.h>
+#include <guacamole/string.h>
+
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,14 +39,14 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
         /* -l: Bind port */
         if (opt == 'l') {
-            free(config->bind_port);
-            config->bind_port = strdup(optarg);
+            guac_mem_free(config->bind_port);
+            config->bind_port = guac_strdup(optarg);
         }
 
         /* -b: Bind host */
         else if (opt == 'b') {
-            free(config->bind_host);
-            config->bind_host = strdup(optarg);
+            guac_mem_free(config->bind_host);
+            config->bind_host = guac_strdup(optarg);
         }
 
         /* -f: Run in foreground */
@@ -58,8 +61,8 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 
         /* -p: PID file */
         else if (opt == 'p') {
-            free(config->pidfile);
-            config->pidfile = strdup(optarg);
+            guac_mem_free(config->pidfile);
+            config->pidfile = guac_strdup(optarg);
         }
 
         /* -L: Log level */
@@ -79,14 +82,14 @@ int guacd_conf_parse_args(guacd_config* config, int argc, char** argv) {
 #ifdef ENABLE_SSL
         /* -C SSL certificate */
         else if (opt == 'C') {
-            free(config->cert_file);
-            config->cert_file = strdup(optarg);
+            guac_mem_free(config->cert_file);
+            config->cert_file = guac_strdup(optarg);
         }
 
         /* -K SSL key */
         else if (opt == 'K') {
-            free(config->key_file);
-            config->key_file = strdup(optarg);
+            guac_mem_free(config->key_file);
+            config->key_file = guac_strdup(optarg);
         }
 #else
         else if (opt == 'C' || opt == 'K') {

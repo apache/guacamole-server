@@ -19,6 +19,8 @@
 
 #include "fs.h"
 
+#include <guacamole/mem.h>
+
 #include <CUnit/CUnit.h>
 #include <stdlib.h>
 
@@ -160,7 +162,7 @@ void test_fs__normalize_relative_mixed() {
  * Generates a dynamically-allocated path having the given number of bytes, not
  * counting the null-terminator. The path will contain only Windows-style path
  * separators. The returned path must eventually be freed with a call to
- * free().
+ * guac_mem_free().
  *
  * @param length
  *     The number of bytes to include in the generated path, not counting the
@@ -174,7 +176,7 @@ void test_fs__normalize_relative_mixed() {
  * @return
  *     A dynamically-allocated path containing the given number of bytes, not
  *     counting the null-terminator. This path must eventually be freed with a
- *     call to free().
+ *     call to guac_mem_free().
  */
 static char* generate_path(int length, int max_depth) {
 
@@ -183,7 +185,7 @@ static char* generate_path(int length, int max_depth) {
         length = max_depth * 2;
 
     int i;
-    char* input = malloc(length + 1);
+    char* input = guac_mem_alloc(guac_mem_ckd_add_or_die(length, 1));
 
     /* Fill path with \x\x\x\x\x\x\x\x\x\x\...\xxxxxxxxx... */
     for (i = 0; i < length; i++) {
@@ -214,17 +216,17 @@ void test_fs__normalize_long() {
     /* Exceeds maximum length by a factor of 2 */
     input = generate_path(GUAC_RDP_FS_MAX_PATH * 2, GUAC_RDP_MAX_PATH_DEPTH);
     CU_ASSERT_NOT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
-    free(input);
+    guac_mem_free(input);
 
     /* Exceeds maximum length by one byte */
     input = generate_path(GUAC_RDP_FS_MAX_PATH, GUAC_RDP_MAX_PATH_DEPTH);
     CU_ASSERT_NOT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
-    free(input);
+    guac_mem_free(input);
 
     /* Exactly maximum length */
     input = generate_path(GUAC_RDP_FS_MAX_PATH - 1, GUAC_RDP_MAX_PATH_DEPTH);
     CU_ASSERT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
-    free(input);
+    guac_mem_free(input);
 
 }
 
@@ -240,17 +242,17 @@ void test_fs__normalize_deep() {
     /* Exceeds maximum depth by a factor of 2 */
     input = generate_path(-1, GUAC_RDP_MAX_PATH_DEPTH * 2);
     CU_ASSERT_NOT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
-    free(input);
+    guac_mem_free(input);
 
     /* Exceeds maximum depth by one component */
     input = generate_path(-1, GUAC_RDP_MAX_PATH_DEPTH + 1);
     CU_ASSERT_NOT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
-    free(input);
+    guac_mem_free(input);
 
     /* Exactly maximum depth */
     input = generate_path(-1, GUAC_RDP_MAX_PATH_DEPTH);
     CU_ASSERT_EQUAL(guac_rdp_fs_normalize_path(input, normalized), 0);
-    free(input);
+    guac_mem_free(input);
 
 }
 

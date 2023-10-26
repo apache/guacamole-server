@@ -21,8 +21,10 @@
 #include "argv.h"
 #include "vnc.h"
 
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <guacamole/user.h>
 
 #include <pthread.h>
@@ -38,14 +40,14 @@ int guac_vnc_argv_callback(guac_user* user, const char* mimetype,
 
     /* Update username */
     if (strcmp(name, GUAC_VNC_ARGV_USERNAME) == 0) {
-        free(settings->username);
-        settings->username = strdup(value);
+        guac_mem_free(settings->username);
+        settings->username = guac_strdup(value);
     }
     
     /* Update password */
     else if (strcmp(name, GUAC_VNC_ARGV_PASSWORD) == 0) {
-        free(settings->password);
-        settings->password = strdup(value);
+        guac_mem_free(settings->password);
+        settings->password = guac_strdup(value);
     }
 
     return 0;

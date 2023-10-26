@@ -29,6 +29,7 @@
 #endif
 
 #include <cairo/cairo.h>
+#include <guacamole/mem.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +68,7 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
         const char* mimetype, int x, int y) {
 
     /* Allocate stream */
-    guacenc_image_stream* stream = malloc(sizeof(guacenc_image_stream));
+    guacenc_image_stream* stream = guac_mem_alloc(sizeof(guacenc_image_stream));
     if (stream == NULL)
         return NULL;
 
@@ -83,7 +84,7 @@ guacenc_image_stream* guacenc_image_stream_alloc(int mask, int index,
     /* Allocate initial buffer */
     stream->length = 0;
     stream->max_length = GUACENC_IMAGE_STREAM_INITIAL_LENGTH;
-    stream->buffer = (unsigned char*) malloc(stream->max_length);
+    stream->buffer = (unsigned char*) guac_mem_alloc(stream->max_length);
 
     return stream;
 
@@ -96,11 +97,12 @@ int guacenc_image_stream_receive(guacenc_image_stream* stream,
     if (stream->max_length - stream->length < length) {
 
         /* Calculate a reasonable new max length guaranteed to fit buffer */
-        int new_max_length = stream->max_length * 2 + length;
+        size_t new_max_length = guac_mem_ckd_add_or_die(
+                guac_mem_ckd_mul_or_die(stream->max_length, 2), length);
 
         /* Attempt to resize buffer */
         unsigned char* new_buffer =
-            (unsigned char*) realloc(stream->buffer, new_max_length);
+            (unsigned char*) guac_mem_realloc(stream->buffer, new_max_length);
         if (new_buffer == NULL)
             return 1;
 
@@ -158,10 +160,10 @@ int guacenc_image_stream_free(guacenc_image_stream* stream) {
         return 0;
 
     /* Free image buffer */
-    free(stream->buffer);
+    guac_mem_free(stream->buffer);
 
     /* Free actual stream */
-    free(stream);
+    guac_mem_free(stream);
     return 0;
 
 }

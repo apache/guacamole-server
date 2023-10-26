@@ -24,6 +24,7 @@
 #include "terminal/terminal.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <guacamole/timestamp.h>
@@ -624,7 +625,7 @@ void* guac_telnet_client_thread(void* data) {
     telnet_client->term = guac_terminal_create(client, options);
 
     /* Free options struct now that it's been used */
-    free(options);
+    guac_mem_free(options);
 
     /* Fail if terminal init failed */
     if (telnet_client->term == NULL) {
