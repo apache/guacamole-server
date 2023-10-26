@@ -21,6 +21,7 @@
 #include "ls.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/stream.h>
@@ -44,7 +45,7 @@ int guac_rdp_ls_ack_handler(guac_user* user, guac_stream* stream,
     if (status != GUAC_PROTOCOL_STATUS_SUCCESS) {
         guac_rdp_fs_close(ls_status->fs, ls_status->file_id);
         guac_user_free_stream(user, stream);
-        free(ls_status);
+        guac_mem_free(ls_status);
         return 0;
     }
 
@@ -108,7 +109,7 @@ int guac_rdp_ls_ack_handler(guac_user* user, guac_stream* stream,
 
         /* Clean up resources */
         guac_rdp_fs_close(ls_status->fs, ls_status->file_id);
-        free(ls_status);
+        guac_mem_free(ls_status);
 
         /* Signal of stream */
         guac_protocol_send_end(user->socket, stream);

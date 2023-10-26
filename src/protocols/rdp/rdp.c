@@ -69,6 +69,7 @@
 #include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
@@ -288,9 +289,9 @@ static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
         guac_argv_await((const char**) params);
         
         /* Free old values and get new values from settings. */
-        free(*username);
-        free(*password);
-        free(*domain);
+        guac_mem_free(*username);
+        guac_mem_free(*password);
+        guac_mem_free(*domain);
         *username = guac_strdup(settings->username);
         *password = guac_strdup(settings->password);
         *domain = guac_strdup(settings->domain);

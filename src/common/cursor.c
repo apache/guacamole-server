@@ -26,6 +26,7 @@
 
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <guacamole/timestamp.h>
@@ -48,7 +49,7 @@
  */
 guac_common_cursor* guac_common_cursor_alloc(guac_client* client) {
 
-    guac_common_cursor* cursor = malloc(sizeof(guac_common_cursor));
+    guac_common_cursor* cursor = guac_mem_alloc(sizeof(guac_common_cursor));
     if (cursor == NULL)
         return NULL;
 
@@ -58,7 +59,7 @@ guac_common_cursor* guac_common_cursor_alloc(guac_client* client) {
 
     /* Allocate initial image buffer */
     cursor->image_buffer_size = GUAC_COMMON_CURSOR_DEFAULT_SIZE;
-    cursor->image_buffer = malloc(cursor->image_buffer_size);
+    cursor->image_buffer = guac_mem_alloc(cursor->image_buffer_size);
 
     /* No cursor image yet */
     cursor->width = 0;
@@ -90,7 +91,7 @@ void guac_common_cursor_free(guac_common_cursor* cursor) {
     cairo_surface_t* surface = cursor->surface;
 
     /* Free image buffer and surface */
-    free(cursor->image_buffer);
+    guac_mem_free(cursor->image_buffer);
     if (surface != NULL)
         cairo_surface_destroy(surface);
 
@@ -100,7 +101,7 @@ void guac_common_cursor_free(guac_common_cursor* cursor) {
     /* Return buffer to pool */
     guac_client_free_buffer(client, buffer);
 
-    free(cursor);
+    guac_mem_free(cursor);
 
 }
 
@@ -206,17 +207,17 @@ void guac_common_cursor_update(guac_common_cursor* cursor, guac_user* user,
 static void guac_common_cursor_resize(guac_common_cursor* cursor,
         int width, int height, int stride) {
 
-    int minimum_size = height * stride;
+    size_t minimum_size = guac_mem_ckd_mul_or_die(height, stride);
 
     /* Grow image buffer if necessary */
     if (cursor->image_buffer_size < minimum_size) {
 
         /* Calculate new size */
-        cursor->image_buffer_size = minimum_size*2;
+        cursor->image_buffer_size = guac_mem_ckd_mul_or_die(minimum_size, 2);
 
         /* Destructively reallocate image buffer */
-        free(cursor->image_buffer);
-        cursor->image_buffer = malloc(cursor->image_buffer_size);
+        guac_mem_free(cursor->image_buffer);
+        cursor->image_buffer = guac_mem_alloc(cursor->image_buffer_size);
 
     }
 

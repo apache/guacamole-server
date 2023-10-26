@@ -22,6 +22,7 @@
 #include "upload.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/object.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -113,7 +114,7 @@ int guac_rdp_upload_file_handler(guac_user* user, guac_stream* stream,
     }
 
     /* Init upload status */
-    guac_rdp_upload_status* upload_status = malloc(sizeof(guac_rdp_upload_status));
+    guac_rdp_upload_status* upload_status = guac_mem_alloc(sizeof(guac_rdp_upload_status));
     upload_status->offset = 0;
     upload_status->file_id = file_id;
     stream->data = upload_status;
@@ -197,7 +198,7 @@ int guac_rdp_upload_end_handler(guac_user* user, guac_stream* stream) {
             GUAC_PROTOCOL_STATUS_SUCCESS);
     guac_socket_flush(user->socket);
 
-    free(upload_status);
+    guac_mem_free(upload_status);
     return 0;
 
 }
@@ -242,7 +243,7 @@ int guac_rdp_upload_put_handler(guac_user* user, guac_object* object,
     }
 
     /* Init upload stream data */
-    guac_rdp_upload_status* upload_status = malloc(sizeof(guac_rdp_upload_status));
+    guac_rdp_upload_status* upload_status = guac_mem_alloc(sizeof(guac_rdp_upload_status));
     upload_status->offset = 0;
     upload_status->file_id = file_id;
 

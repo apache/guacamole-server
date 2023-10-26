@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "guacamole/socket.h"
 #include "wait-fd.h"
@@ -382,7 +383,7 @@ static int guac_socket_fd_free_handler(guac_socket* socket) {
     /* Close file descriptor */
     close(data->fd);
 
-    free(data);
+    guac_mem_free(data);
     return 0;
 
 }
@@ -423,7 +424,7 @@ guac_socket* guac_socket_open(int fd) {
 
     /* Allocate socket and associated data */
     guac_socket* socket = guac_socket_alloc();
-    guac_socket_fd_data* data = malloc(sizeof(guac_socket_fd_data));
+    guac_socket_fd_data* data = guac_mem_alloc(sizeof(guac_socket_fd_data));
 
     /* Store file descriptor as socket data */
     data->fd = fd;

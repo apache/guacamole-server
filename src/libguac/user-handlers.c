@@ -19,10 +19,12 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/client.h"
 #include "guacamole/object.h"
 #include "guacamole/protocol.h"
 #include "guacamole/stream.h"
+#include "guacamole/string.h"
 #include "guacamole/timestamp.h"
 #include "guacamole/user.h"
 #include "user-handlers.h"
@@ -680,11 +682,11 @@ int __guac_handshake_image_handler(guac_user* user, int argc, char** argv) {
 int __guac_handshake_name_handler(guac_user* user, int argc, char** argv) {
 
     /* Free any past value for the user's name */
-    free((char *) user->info.name);
+    guac_mem_free_const(user->info.name);
 
     /* If a value is provided for the name, copy it into guac_user. */
     if (argc > 0 && strcmp(argv[0], ""))
-        user->info.name = (const char*) strdup(argv[0]);
+        user->info.name = (const char*) guac_strdup(argv[0]);
 
     /* No or empty value was provided, so make sure this is NULLed out. */
     else
@@ -697,11 +699,11 @@ int __guac_handshake_name_handler(guac_user* user, int argc, char** argv) {
 int __guac_handshake_timezone_handler(guac_user* user, int argc, char** argv) {
     
     /* Free any past value */
-    free((char *) user->info.timezone);
+    guac_mem_free_const(user->info.timezone);
     
     /* Store timezone, if present */
     if (argc > 0 && strcmp(argv[0], ""))
-        user->info.timezone = (const char*) strdup(argv[0]);
+        user->info.timezone = (const char*) guac_strdup(argv[0]);
     
     else
         user->info.timezone = NULL;
@@ -715,11 +717,12 @@ char** guac_copy_mimetypes(char** mimetypes, int count) {
     int i;
 
     /* Allocate sufficient space for NULL-terminated array of mimetypes */
-    char** mimetypes_copy = malloc(sizeof(char*) * (count+1));
+    char** mimetypes_copy = guac_mem_alloc(sizeof(char*),
+            guac_mem_ckd_add_or_die(count, 1));
 
     /* Copy each provided mimetype */
     for (i = 0; i < count; i++)
-        mimetypes_copy[i] = strdup(mimetypes[i]);
+        mimetypes_copy[i] = guac_strdup(mimetypes[i]);
 
     /* Terminate with NULL */
     mimetypes_copy[count] = NULL;
@@ -737,12 +740,12 @@ void guac_free_mimetypes(char** mimetypes) {
 
     /* Free all strings within NULL-terminated mimetype array */
     while (*current_mimetype != NULL) {
-        free(*current_mimetype);
+        guac_mem_free(*current_mimetype);
         current_mimetype++;
     }
 
     /* Free the array itself, now that its contents have been freed */
-    free(mimetypes);
+    guac_mem_free(mimetypes);
 
 }
 

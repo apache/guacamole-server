@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/pool.h"
 
 #include <stdlib.h>
@@ -26,7 +27,7 @@
 guac_pool* guac_pool_alloc(int size) {
 
     pthread_mutexattr_t lock_attributes;
-    guac_pool* pool = malloc(sizeof(guac_pool));
+    guac_pool* pool = guac_mem_alloc(sizeof(guac_pool));
 
     /* If unable to allocate, just return NULL. */
     if (pool == NULL)
@@ -57,14 +58,14 @@ void guac_pool_free(guac_pool* pool) {
         guac_pool_int* old = current;
         current = current->__next;
 
-        free(old);
+        guac_mem_free(old);
     }
 
     /* Destroy lock */
     pthread_mutex_destroy(&(pool->__lock));
 
     /* Free pool */
-    free(pool);
+    guac_mem_free(pool);
 
 }
 
@@ -89,7 +90,7 @@ int guac_pool_next_int(guac_pool* pool) {
 
     /* If only one element exists, reset pool to empty. */
     if (pool->__tail == pool->__head) {
-        free(pool->__head);
+        guac_mem_free(pool->__head);
         pool->__head = NULL;
         pool->__tail = NULL;
     }
@@ -98,7 +99,7 @@ int guac_pool_next_int(guac_pool* pool) {
     else {
         guac_pool_int* old_head = pool->__head;
         pool->__head = old_head->__next;
-        free(old_head);
+        guac_mem_free(old_head);
     }
 
     /* Return retrieved value. */
@@ -109,7 +110,7 @@ int guac_pool_next_int(guac_pool* pool) {
 void guac_pool_free_int(guac_pool* pool, int value) {
 
     /* Allocate and initialize new returned value */
-    guac_pool_int* pool_int = malloc(sizeof(guac_pool_int));
+    guac_pool_int* pool_int = guac_mem_alloc(sizeof(guac_pool_int));
     pool_int->value = value;
     pool_int->__next = NULL;
 

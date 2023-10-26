@@ -34,6 +34,7 @@
 #include <cairo/cairo.h>
 #include <glib-object.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <pango/pangocairo.h>
@@ -208,7 +209,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
         guac_terminal_color (*palette)[256]) {
 
     /* Allocate display */
-    guac_terminal_display* display = malloc(sizeof(guac_terminal_display));
+    guac_terminal_display* display = guac_mem_alloc(sizeof(guac_terminal_display));
     display->client = client;
 
     /* Initially no font loaded */
@@ -245,7 +246,7 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     if (guac_terminal_display_set_font(display, font_name, font_size, dpi)) {
         guac_client_abort(display->client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
                 "Unable to set initial font \"%s\"", font_name);
-        free(display);
+        guac_mem_free(display);
         return NULL;
     }
 
@@ -259,13 +260,13 @@ void guac_terminal_display_free(guac_terminal_display* display) {
     pango_font_description_free(display->font_desc);
 
     /* Free default palette. */
-    free(display->default_palette);
+    guac_mem_free(display->default_palette);
 
     /* Free operations buffers */
-    free(display->operations);
+    guac_mem_free(display->operations);
 
     /* Free display */
-    free(display);
+    guac_mem_free(display);
 
 }
 
@@ -462,10 +463,10 @@ void guac_terminal_display_resize(guac_terminal_display* display, int width, int
 
     /* Free old operations buffer */
     if (display->operations != NULL)
-        free(display->operations);
+        guac_mem_free(display->operations);
 
     /* Alloc operations */
-    display->operations = malloc(width * height *
+    display->operations = guac_mem_alloc(width, height,
             sizeof(guac_terminal_operation));
 
     /* Init each operation buffer row */

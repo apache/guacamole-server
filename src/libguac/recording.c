@@ -17,6 +17,7 @@
  * under the License.
  */
 
+#include "guacamole/mem.h"
 #include "guacamole/client.h"
 #include "guacamole/protocol.h"
 #include "guacamole/recording.h"
@@ -162,7 +163,7 @@ guac_recording* guac_recording_create(guac_client* client,
     }
 
     /* Create recording structure with reference to underlying socket */
-    guac_recording* recording = malloc(sizeof(guac_recording));
+    guac_recording* recording = guac_mem_alloc(sizeof(guac_recording));
     recording->socket = guac_socket_open(fd);
     recording->include_output = include_output;
     recording->include_mouse = include_mouse;
@@ -191,7 +192,7 @@ void guac_recording_free(guac_recording* recording) {
         guac_socket_free(recording->socket);
 
     /* Free recording itself */
-    free(recording);
+    guac_mem_free(recording);
 
 }
 

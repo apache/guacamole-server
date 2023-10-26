@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "guacamole/parser.h"
 #include "guacamole/socket.h"
@@ -39,7 +40,7 @@ static void guac_parser_reset(guac_parser* parser) {
 guac_parser* guac_parser_alloc() {
 
     /* Allocate space for parser */
-    guac_parser* parser = malloc(sizeof(guac_parser));
+    guac_parser* parser = guac_mem_alloc(sizeof(guac_parser));
     if (parser == NULL) {
         guac_error = GUAC_STATUS_NO_MEMORY;
         guac_error_message = "Insufficient memory to allocate parser";
@@ -313,6 +314,6 @@ int guac_parser_shift(guac_parser* parser, void* buffer, int length) {
 }
 
 void guac_parser_free(guac_parser* parser) {
-    free(parser);
+    guac_mem_free(parser);
 }
 

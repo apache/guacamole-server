@@ -21,6 +21,9 @@
 #include "keydef.h"
 #include "log.h"
 
+#include <guacamole/mem.h>
+#include <guacamole/string.h>
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -279,16 +282,16 @@ static guaclog_keydef* guaclog_get_unicode_key(int keysym) {
  */
 static guaclog_keydef* guaclog_copy_key(guaclog_keydef* keydef) {
 
-    guaclog_keydef* copy = malloc(sizeof(guaclog_keydef));
+    guaclog_keydef* copy = guac_mem_alloc(sizeof(guaclog_keydef));
 
     /* Always copy keysym and name */
     copy->keysym = keydef->keysym;
-    copy->name = strdup(keydef->name);
+    copy->name = guac_strdup(keydef->name);
     copy->modifier = keydef->modifier;
 
     /* Copy value only if defined */
     if (keydef->value != NULL)
-        copy->value = strdup(keydef->value);
+        copy->value = guac_strdup(keydef->value);
     else
         copy->value = NULL;
 
@@ -322,9 +325,9 @@ void guaclog_keydef_free(guaclog_keydef* keydef) {
     if (keydef == NULL)
         return;
 
-    free(keydef->name);
-    free(keydef->value);
-    free(keydef);
+    guac_mem_free(keydef->name);
+    guac_mem_free(keydef->value);
+    guac_mem_free(keydef);
 
 }
 

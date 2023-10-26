@@ -21,6 +21,7 @@
 #include "common-ssh/ssh.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/object.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
@@ -622,7 +623,7 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
     if (status != GUAC_PROTOCOL_STATUS_SUCCESS) {
         libssh2_sftp_closedir(list_state->directory);
         guac_user_free_stream(user, stream);
-        free(list_state);
+        guac_mem_free(list_state);
         return 0;
     }
 
@@ -674,7 +675,7 @@ static int guac_common_ssh_sftp_ls_ack_handler(guac_user* user,
 
         /* Clean up resources */
         libssh2_sftp_closedir(list_state->directory);
-        free(list_state);
+        guac_mem_free(list_state);
 
         /* Signal of stream */
         guac_protocol_send_end(user->socket, stream);
@@ -774,7 +775,7 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
 
         /* Init directory listing state */
         guac_common_ssh_sftp_ls_state* list_state =
-            malloc(sizeof(guac_common_ssh_sftp_ls_state));
+            guac_mem_alloc(sizeof(guac_common_ssh_sftp_ls_state));
 
         list_state->directory = dir;
         list_state->filesystem = filesystem;
@@ -786,7 +787,7 @@ static int guac_common_ssh_sftp_get_handler(guac_user* user,
         if (length >= sizeof(list_state->directory_name)) {
             guac_user_log(user, GUAC_LOG_INFO, "Unable to read directory "
                     "\"%s\": Path too long", fullpath);
-            free(list_state);
+            guac_mem_free(list_state);
             return 0;
         }
 
@@ -969,7 +970,7 @@ guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
 
     /* Allocate data for SFTP session */
     guac_common_ssh_sftp_filesystem* filesystem =
-        malloc(sizeof(guac_common_ssh_sftp_filesystem));
+        guac_mem_alloc(sizeof(guac_common_ssh_sftp_filesystem));
 
     /* Associate SSH session with SFTP data and user */
     filesystem->ssh_session = session;
@@ -984,15 +985,15 @@ guac_common_ssh_sftp_filesystem* guac_common_ssh_create_sftp_filesystem(
                 root_path)) {
         guac_client_log(session->client, GUAC_LOG_WARNING, "Cannot create "
                 "SFTP filesystem - \"%s\" is not a valid path.", root_path);
-        free(filesystem);
+        guac_mem_free(filesystem);
         return NULL;
     }
 
     /* Generate filesystem name from root path if no name is provided */
     if (name != NULL)
-        filesystem->name = strdup(name);
+        filesystem->name = guac_strdup(name);
     else
-        filesystem->name = strdup(filesystem->root_path);
+        filesystem->name = guac_strdup(filesystem->root_path);
 
     /* Initially upload files to current directory */
     strcpy(filesystem->upload_path, ".");
@@ -1009,8 +1010,8 @@ void guac_common_ssh_destroy_sftp_filesystem(
     libssh2_sftp_shutdown(filesystem->sftp_session);
 
     /* Free associated memory */
-    free(filesystem->name);
-    free(filesystem);
+    guac_mem_free(filesystem->name);
+    guac_mem_free(filesystem);
 
 }
 

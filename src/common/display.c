@@ -22,6 +22,7 @@
 #include "common/surface.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/socket.h>
 
 #include <pthread.h>
@@ -92,7 +93,7 @@ static void guac_common_display_free_layers(guac_common_display_layer* layers,
             guac_client_free_layer(client, layer);
 
         /* Free current element and advance to next */
-        free(current);
+        guac_mem_free(current);
         current = next;
 
     }
@@ -119,14 +120,14 @@ guac_common_display* guac_common_display_alloc(guac_client* client,
         int width, int height) {
 
     /* Allocate display */
-    guac_common_display* display = malloc(sizeof(guac_common_display));
+    guac_common_display* display = guac_mem_alloc(sizeof(guac_common_display));
     if (display == NULL)
         return NULL;
 
     /* Allocate shared cursor */
     display->cursor = guac_common_cursor_alloc(client);
     if (display->cursor == NULL) {
-        free(display);
+        guac_mem_free(display);
         return NULL;
     }
 
@@ -159,7 +160,7 @@ void guac_common_display_free(guac_common_display* display) {
     guac_common_display_free_layers(display->layers, display->client);
 
     pthread_mutex_destroy(&display->_lock);
-    free(display);
+    guac_mem_free(display);
 
 }
 
@@ -252,7 +253,7 @@ static guac_common_display_layer* guac_common_display_add_layer(
     guac_common_display_layer* old_head = *head;
 
     guac_common_display_layer* display_layer =
-        malloc(sizeof(guac_common_display_layer));
+        guac_mem_alloc(sizeof(guac_common_display_layer));
 
     /* Init layer/surface pair */
     display_layer->layer = layer;
@@ -361,7 +362,7 @@ void guac_common_display_free_layer(guac_common_display* display,
     guac_client_free_layer(display->client, display_layer->layer);
 
     /* Free list element */
-    free(display_layer);
+    guac_mem_free(display_layer);
 
     pthread_mutex_unlock(&display->_lock);
 
@@ -380,7 +381,7 @@ void guac_common_display_free_buffer(guac_common_display* display,
     guac_client_free_buffer(display->client, display_buffer->layer);
 
     /* Free list element */
-    free(display_buffer);
+    guac_mem_free(display_buffer);
 
     pthread_mutex_unlock(&display->_lock);
 

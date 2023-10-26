@@ -21,6 +21,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/layer.h>
+#include <guacamole/mem.h>
 #include <guacamole/socket.h>
 #include <guacamole/protocol.h>
 #include <guacamole/user.h>
@@ -32,7 +33,7 @@ guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
 
     /* Allocate scrollbar */
     guac_terminal_scrollbar* scrollbar =
-        malloc(sizeof(guac_terminal_scrollbar));
+        guac_mem_alloc(sizeof(guac_terminal_scrollbar));
 
     /* Associate client */
     scrollbar->client = client;
@@ -82,7 +83,7 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
     guac_client_free_layer(scrollbar->client, scrollbar->container);
 
     /* Free scrollbar */
-    free(scrollbar);
+    guac_mem_free(scrollbar);
 
 }
 

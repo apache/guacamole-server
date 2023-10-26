@@ -28,6 +28,7 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/settings.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <winpr/stream.h>
 
 #include <stdlib.h>
@@ -145,7 +146,7 @@ void guac_rdpdr_process_connect(guac_rdp_common_svc* svc) {
     guac_client* client = svc->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    guac_rdpdr* rdpdr = (guac_rdpdr*) calloc(1, sizeof(guac_rdpdr));
+    guac_rdpdr* rdpdr = (guac_rdpdr*) guac_mem_zalloc(sizeof(guac_rdpdr));
     svc->data = rdpdr;
 
     /* Register printer if enabled */
@@ -173,7 +174,7 @@ void guac_rdpdr_process_terminate(guac_rdp_common_svc* svc) {
         device->free_handler(svc, device);
     }
 
-    free(rdpdr);
+    guac_mem_free(svc->data); /* rdpdr */
 
 }
 

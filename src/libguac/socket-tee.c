@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/socket.h"
 
 #include <stdlib.h>
@@ -202,7 +203,7 @@ static int __guac_socket_tee_free_handler(guac_socket* socket) {
     guac_socket_free(data->secondary);
 
     /* Freeing the tee socket always succeeds */
-    free(data);
+    guac_mem_free(data);
     return 0;
 
 }
@@ -210,7 +211,7 @@ static int __guac_socket_tee_free_handler(guac_socket* socket) {
 guac_socket* guac_socket_tee(guac_socket* primary, guac_socket* secondary) {
 
     /* Set up socket to split outout into a file */
-    guac_socket_tee_data* data = malloc(sizeof(guac_socket_tee_data));
+    guac_socket_tee_data* data = guac_mem_alloc(sizeof(guac_socket_tee_data));
     data->primary = primary;
     data->secondary = secondary;
 

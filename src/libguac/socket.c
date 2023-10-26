@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "guacamole/mem.h"
 #include "guacamole/error.h"
 #include "guacamole/protocol.h"
 #include "guacamole/socket.h"
@@ -141,7 +142,7 @@ int guac_socket_select(guac_socket* socket, int usec_timeout) {
 
 guac_socket* guac_socket_alloc() {
 
-    guac_socket* socket = malloc(sizeof(guac_socket));
+    guac_socket* socket = guac_mem_alloc(sizeof(guac_socket));
 
     /* If no memory available, return with error */
     if (socket == NULL) {
@@ -213,7 +214,7 @@ void guac_socket_free(guac_socket* socket) {
         pthread_join(socket->__keep_alive_thread, NULL);
     }
 
-    free(socket);
+    guac_mem_free(socket);
 }
 
 ssize_t guac_socket_write_int(guac_socket* socket, int64_t i) {

@@ -26,6 +26,7 @@
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
+#include <guacamole/mem.h>
 #include <guacamole/parser.h>
 #include <guacamole/plugin.h>
 #include <guacamole/protocol.h>
@@ -106,7 +107,7 @@ static void* guacd_user_thread(void* data) {
     /* Clean up */
     guac_socket_free(socket);
     guac_user_free(user);
-    free(params);
+    guac_mem_free(params);
 
     return NULL;
 
@@ -130,7 +131,7 @@ static void* guacd_user_thread(void* data) {
  */
 static void guacd_proc_add_user(guacd_proc* proc, int fd, int owner) {
 
-    guacd_user_thread_params* params = malloc(sizeof(guacd_user_thread_params));
+    guacd_user_thread_params* params = guac_mem_alloc(sizeof(guacd_user_thread_params));
     params->proc = proc;
     params->fd = fd;
     params->owner = owner;
@@ -409,7 +410,7 @@ cleanup_process:
 
     /* Free up all internal resources outside the client */
     close(proc->fd_socket);
-    free(proc);
+    guac_mem_free(proc);
 
     exit(result);
 
@@ -429,7 +430,7 @@ guacd_proc* guacd_create_proc(const char* protocol) {
     int child_socket = sockets[1];
 
     /* Allocate process */
-    guacd_proc* proc = calloc(1, sizeof(guacd_proc));
+    guacd_proc* proc = guac_mem_zalloc(sizeof(guacd_proc));
     if (proc == NULL) {
         close(parent_socket);
         close(child_socket);
@@ -442,7 +443,7 @@ guacd_proc* guacd_create_proc(const char* protocol) {
         guacd_log_guac_error(GUAC_LOG_ERROR, "Unable to create client");
         close(parent_socket);
         close(child_socket);
-        free(proc);
+        guac_mem_free(proc);
         return NULL;
     }
 
@@ -456,7 +457,7 @@ guacd_proc* guacd_create_proc(const char* protocol) {
         close(parent_socket);
         close(child_socket);
         guac_client_free(proc->client);
-        free(proc);
+        guac_mem_free(proc);
         return NULL;
     }
 

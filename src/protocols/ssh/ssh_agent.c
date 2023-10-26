@@ -24,6 +24,7 @@
 #include "ssh_buffer.h"
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <libssh2.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
@@ -189,7 +190,7 @@ void ssh_auth_agent_callback(LIBSSH2_SESSION *session,
     ssh_guac_client_data* client_data = (ssh_guac_client_data*) client->data;
 
     /* Init auth agent */
-    ssh_auth_agent* auth_agent = malloc(sizeof(ssh_auth_agent));
+    ssh_auth_agent* auth_agent = guac_mem_alloc(sizeof(ssh_auth_agent));
     auth_agent->channel = channel;
     auth_agent->identity = client_data->key;
     auth_agent->buffer_length = 0;

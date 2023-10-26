@@ -45,8 +45,10 @@
 
 #include <guacamole/client.h>
 #include <guacamole/error.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <guacamole/timestamp.h>
 
 /**
@@ -317,7 +319,7 @@ void* guac_terminal_thread(void* data) {
 guac_terminal_options* guac_terminal_options_create(
         int width, int height, int dpi) {
 
-    guac_terminal_options* options = malloc(sizeof(guac_terminal_options));
+    guac_terminal_options* options = guac_mem_alloc(sizeof(guac_terminal_options));
 
     /* Set all required parameters */
     options->width = width;
@@ -356,7 +358,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Initialized by guac_terminal_parse_color_scheme. */
     guac_terminal_color (*default_palette)[256] = (guac_terminal_color(*)[256])
-            malloc(sizeof(guac_terminal_color[256]));
+            guac_mem_alloc(sizeof(guac_terminal_color[256]));
 
     guac_terminal_parse_color_scheme(client, options->color_scheme,
                                      &default_char.attributes.foreground,
@@ -368,15 +370,15 @@ guac_terminal* guac_terminal_create(guac_client* client,
     if (available_width < 0)
         available_width = 0;
 
-    guac_terminal* term = malloc(sizeof(guac_terminal));
+    guac_terminal* term = guac_mem_alloc(sizeof(guac_terminal));
     term->started = false;
     term->client = client;
     term->upload_path_handler = NULL;
     term->file_download_handler = NULL;
 
     /* Copy initially-provided color scheme and font details */
-    term->color_scheme = strdup(options->color_scheme);
-    term->font_name = strdup(options->font_name);
+    term->color_scheme = guac_strdup(options->color_scheme);
+    term->font_name = guac_strdup(options->font_name);
     term->font_size = options->font_size;
 
     /* Set size of available screen area */
@@ -412,7 +414,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* Fail if display init failed */
     if (term->display == NULL) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Display initialization failed");
-        free(term);
+        guac_mem_free(term);
         return NULL;
     }
 
@@ -453,7 +455,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     if (pipe(term->stdin_pipe_fd)) {
         guac_error = GUAC_STATUS_SEE_ERRNO;
         guac_error_message = "Unable to open pipe for STDIN";
-        free(term);
+        guac_mem_free(term);
         return NULL;
     }
 
@@ -553,14 +555,14 @@ void guac_terminal_free(guac_terminal* term) {
     guac_terminal_scrollbar_free(term->scrollbar);
 
     /* Free copies of font and color scheme information */
-    free((char*) term->color_scheme);
-    free((char*) term->font_name);
+    guac_mem_free_const(term->color_scheme);
+    guac_mem_free_const(term->font_name);
 
     /* Free clipboard */
     guac_common_clipboard_free(term->clipboard);
 
     /* Free the terminal itself */
-    free(term);
+    guac_mem_free(term);
 
 }
 
@@ -783,7 +785,7 @@ char* guac_terminal_prompt(guac_terminal* terminal, const char* title,
     buffer[pos] = 0;
 
     /* Return newly-allocated string containing result */
-    return strdup(buffer);
+    return guac_strdup(buffer);
 
 }
 
@@ -2048,8 +2050,8 @@ void guac_terminal_apply_color_scheme(guac_terminal* terminal,
     guac_terminal_lock(terminal);
 
     /* Update stored copy of color scheme */
-    free((char*) terminal->color_scheme);
-    terminal->color_scheme = strdup(color_scheme);
+    guac_mem_free_const(terminal->color_scheme);
+    terminal->color_scheme = guac_strdup(color_scheme);
 
     /* Release terminal */
     guac_terminal_unlock(terminal);
@@ -2087,7 +2089,7 @@ void guac_terminal_apply_font(guac_terminal* terminal, const char* font_name,
 
     /* Update stored copy of font name, if changed */
     if (font_name != NULL)
-        terminal->font_name = strdup(font_name);
+        terminal->font_name = guac_strdup(font_name);
 
     /* Update stored copy of font size, if changed */
     if (font_size != -1)

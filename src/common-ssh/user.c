@@ -20,15 +20,18 @@
 #include "common-ssh/key.h"
 #include "common-ssh/user.h"
 
+#include <guacamole/mem.h>
+#include <guacamole/string.h>
+
 #include <stdlib.h>
 #include <string.h>
 
 guac_common_ssh_user* guac_common_ssh_create_user(const char* username) {
 
-    guac_common_ssh_user* user = malloc(sizeof(guac_common_ssh_user));
+    guac_common_ssh_user* user = guac_mem_alloc(sizeof(guac_common_ssh_user));
 
     /* Init user */
-    user->username = strdup(username);
+    user->username = guac_strdup(username);
     user->password = NULL;
     user->private_key = NULL;
 
@@ -43,9 +46,9 @@ void guac_common_ssh_destroy_user(guac_common_ssh_user* user) {
         guac_common_ssh_key_free(user->private_key);
 
     /* Free all other data */
-    free(user->password);
-    free(user->username);
-    free(user);
+    guac_mem_free(user->password);
+    guac_mem_free(user->username);
+    guac_mem_free(user);
 
 }
 
@@ -53,8 +56,8 @@ void guac_common_ssh_user_set_password(guac_common_ssh_user* user,
         const char* password) {
 
     /* Replace current password with given value */
-    free(user->password);
-    user->password = strdup(password);
+    guac_mem_free(user->password);
+    user->password = guac_strdup(password);
 
 }
 

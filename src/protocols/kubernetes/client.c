@@ -25,6 +25,7 @@
 
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/socket.h>
 #include <libwebsockets.h>
 
@@ -120,7 +121,7 @@ int guac_client_init(guac_client* client) {
     client->args = GUAC_KUBERNETES_CLIENT_ARGS;
 
     /* Allocate client instance data */
-    guac_kubernetes_client* kubernetes_client = calloc(1, sizeof(guac_kubernetes_client));
+    guac_kubernetes_client* kubernetes_client = guac_mem_zalloc(sizeof(guac_kubernetes_client));
     client->data = kubernetes_client;
 
     /* Set handlers */
@@ -159,7 +160,7 @@ int guac_kubernetes_client_free_handler(guac_client* client) {
     if (kubernetes_client->settings != NULL)
         guac_kubernetes_settings_free(kubernetes_client->settings);
 
-    free(kubernetes_client);
+    guac_mem_free(kubernetes_client);
     return 0;
 
 }

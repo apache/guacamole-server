@@ -33,6 +33,7 @@
 
 #include <guacamole/argv.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
 
@@ -68,7 +69,7 @@ int guac_client_init(guac_client* client) {
     client->args = GUAC_TELNET_CLIENT_ARGS;
 
     /* Allocate client instance data */
-    guac_telnet_client* telnet_client = calloc(1, sizeof(guac_telnet_client));
+    guac_telnet_client* telnet_client = guac_mem_zalloc(sizeof(guac_telnet_client));
     client->data = telnet_client;
 
     /* Init telnet client */
@@ -125,7 +126,7 @@ int guac_telnet_client_free_handler(guac_client* client) {
     if (telnet_client->settings != NULL)
         guac_telnet_settings_free(telnet_client->settings);
 
-    free(telnet_client);
+    guac_mem_free(telnet_client);
     return 0;
 
 }

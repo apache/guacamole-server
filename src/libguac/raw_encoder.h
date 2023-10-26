@@ -52,7 +52,7 @@ typedef struct raw_encoder_state {
     /**
      * Size of the PCM buffer, in bytes.
      */
-    int length;
+    size_t length;
 
     /**
      * The current number of bytes stored within the PCM buffer.

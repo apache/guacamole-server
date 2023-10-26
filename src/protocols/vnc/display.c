@@ -27,6 +27,7 @@
 #include <cairo/cairo.h>
 #include <guacamole/client.h>
 #include <guacamole/layer.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <rfb/rfbclient.h>
@@ -69,7 +70,7 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
     /* Init Cairo buffer */
     stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
-    buffer = malloc(h*stride);
+    buffer = guac_mem_alloc(h, stride);
     buffer_row_current = buffer;
 
     bpp = client->format.bitsPerPixel/8;
@@ -134,7 +135,7 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
     /* Free surface */
     cairo_surface_destroy(surface);
-    free(buffer);
+    guac_mem_free(buffer);
 
 }
 

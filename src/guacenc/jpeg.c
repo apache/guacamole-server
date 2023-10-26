@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include <cairo/cairo.h>
+#include <guacamole/mem.h>
 #include <jpeglib.h>
 
 #include <stdlib.h>
@@ -109,7 +110,7 @@ cairo_surface_t* guacenc_jpeg_decoder(unsigned char* data, int length) {
     int height = cinfo.output_height;
 
     /* Allocate sufficient buffer space for one JPEG scanline */
-    unsigned char* jpeg_scanline = malloc(width * 3);
+    unsigned char* jpeg_scanline = guac_mem_alloc(width, 3);
 
     /* Create blank Cairo surface (no transparency in JPEG) */
     cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
@@ -135,7 +136,7 @@ cairo_surface_t* guacenc_jpeg_decoder(unsigned char* data, int length) {
     }
 
     /* Scanline buffer is no longer needed */
-    free(jpeg_scanline);
+    guac_mem_free(jpeg_scanline);
 
     /* End decompression */
     jpeg_finish_decompress(&cinfo);

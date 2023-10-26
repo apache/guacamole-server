@@ -38,7 +38,7 @@
  * 
  * @return
  *     A newly-allocated string containing the credentials provided by
- *     the user, which must be freed by a call to free().
+ *     the user, which must be freed by a call to guac_mem_free().
  */
 typedef char* guac_ssh_credential_handler(guac_client* client, char* cred_name);
 

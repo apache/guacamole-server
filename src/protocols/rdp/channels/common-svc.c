@@ -23,6 +23,7 @@
 
 #include <freerdp/settings.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/string.h>
 #include <winpr/stream.h>
 #include <winpr/wtsapi.h>
@@ -38,7 +39,7 @@ int guac_rdp_common_svc_load_plugin(rdpContext* context,
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
-    guac_rdp_common_svc* svc = calloc(1, sizeof(guac_rdp_common_svc));
+    guac_rdp_common_svc* svc = guac_mem_zalloc(sizeof(guac_rdp_common_svc));
     svc->client = client;
     svc->name = svc->_channel_def.name;
     svc->_connect_handler = connect_handler;
@@ -65,7 +66,7 @@ int guac_rdp_common_svc_load_plugin(rdpContext* context,
         guac_client_log(client, GUAC_LOG_WARNING, "Cannot create static "
                 "channel \"%s\": failed to load \"guac-common-svc\" plugin "
                 "for FreeRDP.", svc->name);
-        free(svc);
+        guac_mem_free(svc);
     }
 
     /* Store and log on success (SVC structure will be freed on channel termination) */

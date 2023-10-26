@@ -22,6 +22,7 @@
 #include "pulse/pulse.h"
 
 #include <guacamole/audio.h>
+#include <guacamole/mem.h>
 #include <guacamole/client.h>
 #include <guacamole/user.h>
 #include <pulse/pulseaudio.h>
@@ -312,7 +313,7 @@ guac_pa_stream* guac_pa_stream_alloc(guac_client* client,
         return NULL;
 
     /* Init main loop */
-    guac_pa_stream* stream = malloc(sizeof(guac_pa_stream));
+    guac_pa_stream* stream = guac_mem_alloc(sizeof(guac_pa_stream));
     stream->client = client;
     stream->audio = audio;
     stream->pa_mainloop = pa_threaded_mainloop_new();
@@ -347,7 +348,7 @@ void guac_pa_stream_free(guac_pa_stream* stream) {
 
     /* Stream now ended */
     guac_client_log(stream->client, GUAC_LOG_INFO, "Audio stream finished");
-    free(stream);
+    guac_mem_free(stream);
 
 }
 
