@@ -55,7 +55,8 @@ test_common_CFLAGS =        \
 
 test_common_LDADD =  \
     @COMMON_LTLIB@   \
-    @CUNIT_LIBS@
+    @CUNIT_LIBS@     \
+    @LIBGUAC_LTLIB@
 
 #
 # Autogenerate test runner
