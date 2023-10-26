@@ -45,7 +45,8 @@ test_common_ssh_CFLAGS =    \
 test_common_ssh_LDADD = \
     @CUNIT_LIBS@        \
     @COMMON_SSH_LTLIB@  \
-    @COMMON_LTLIB@
+    @COMMON_LTLIB@      \
+    @LIBGUAC_LTLIB@
 
 #
 # Autogenerate test runner
