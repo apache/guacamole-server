@@ -51,7 +51,7 @@ int PRIV_guac_mem_ckd_mul(size_t* result, size_t factor_count, const size_t* fac
         return 1;
 
     /* Multiply all provided factors together */
-    ssize_t size = *(factors++);
+    size_t size = *(factors++);
     while (--factor_count && size) {
 
         size_t factor = *(factors++);
@@ -77,7 +77,7 @@ int PRIV_guac_mem_ckd_add(size_t* result, size_t term_count, const size_t* terms
         return 1;
 
     /* Multiply all provided terms together */
-    ssize_t size = *(terms++);
+    size_t size = *(terms++);
     while (--term_count) {
 
         size_t term = *(terms++);
@@ -103,7 +103,7 @@ int PRIV_guac_mem_ckd_sub(size_t* result, size_t term_count, const size_t* terms
         return 1;
 
     /* Multiply all provided terms together */
-    ssize_t size = *(terms++);
+    size_t size = *(terms++);
     while (--term_count) {
 
         size_t term = *(terms++);
