@@ -89,8 +89,8 @@ int guac_common_ssh_user_import_public_key(guac_common_ssh_user* user,
         char* public_key) {
 
     /* Free existing public key, if present */
-    free(user->public_key);
-    user->public_key = strdup(public_key);
+    guac_mem_free(user->public_key);
+    user->public_key = guac_strdup(public_key);
 
     /* Fail if key could not be read */
     return user->public_key == NULL;
