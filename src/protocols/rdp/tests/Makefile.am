@@ -44,7 +44,8 @@ test_rdp_CFLAGS =                \
 
 test_rdp_LDADD =               \
     @CUNIT_LIBS@               \
-    @LIBGUAC_CLIENT_RDP_LTLIB@
+    @LIBGUAC_CLIENT_RDP_LTLIB@ \
+    @LIBGUAC_LTLIB@
 
 #
 # Autogenerate test runner
