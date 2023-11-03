@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 /**
  * The width of an update which should be considered negible and thus
@@ -1805,24 +1806,34 @@ static void __guac_common_surface_flush_to_webp(guac_common_surface* surface,
         cairo_surface_t* rect;
 
         /* Use RGB24 if the image is fully opaque */
-        if (opaque)
+        if (opaque) {
+            fprintf(stderr, "About to cairo_image_surface_create_for_data(CAIRO_FORMAT_RGB24)\n");
             rect = cairo_image_surface_create_for_data(buffer,
                     CAIRO_FORMAT_RGB24, surface->dirty_rect.width,
                     surface->dirty_rect.height, surface->stride);
+            fprintf(stderr, "Did cairo_image_surface_create_for_data(CAIRO_FORMAT_RGB24)\n");
+        }
 
         /* Otherwise ARGB32 is needed */
-        else
+        else {
+            fprintf(stderr, "About to cairo_image_surface_create_for_data(CAIRO_FORMAT_ARGB32)\n");
             rect = cairo_image_surface_create_for_data(buffer,
                     CAIRO_FORMAT_ARGB32, surface->dirty_rect.width,
                     surface->dirty_rect.height, surface->stride);
+            fprintf(stderr, "Did cairo_image_surface_create_for_data(CAIRO_FORMAT_ARGB32)\n");
+        }
 
         /* Send WebP for rect */
+        fprintf(stderr, "About to guac_client_stream_webp()\n");
         guac_client_stream_webp(surface->client, socket, GUAC_COMP_OVER, layer,
                 surface->dirty_rect.x, surface->dirty_rect.y, rect,
                 guac_common_surface_suggest_quality(surface->client),
                 surface->lossless ? 1 : 0);
+        fprintf(stderr, "Did guac_client_stream_webp()\n");
 
+        fprintf(stderr, "About to cairo_surface_destroy()\n");
         cairo_surface_destroy(rect);
+        fprintf(stderr, "Did cairo_surface_destroy()\n");
         surface->realized = 1;
 
         /* Surface is no longer dirty */
@@ -1892,6 +1903,8 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
     /* Flush final dirty rectangle to queue. */
     __guac_common_surface_flush_to_queue(surface);
 
+    fprintf(stderr, "__guac_common_surface_flush did __guac_common_surface_flush_to_queue(surface)\n");
+
     guac_common_surface_bitmap_rect* current = surface->bitmap_queue;
     int i, j;
     int original_queue_length;
@@ -1902,6 +1915,8 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
     /* Sort updates to make combination less costly */
     qsort(surface->bitmap_queue, surface->bitmap_queue_length, sizeof(guac_common_surface_bitmap_rect),
           __guac_common_surface_bitmap_rect_compare);
+
+    fprintf(stderr, "__guac_common_surface_flush did qsort()\n");
 
     /* Flush all rects in queue */
     for (i=0; i < surface->bitmap_queue_length; i++) {
@@ -1929,6 +1944,8 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
                         combined++;
                     }
 
+                    fprintf(stderr, "__guac_common_surface_flush did __guac_common_bound_rect()\n");
+
                 }
 
                 candidate++;
@@ -1937,8 +1954,12 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
 
             /* Re-add to queue if there's room and this update was modified or we expect others might be */
             if ((combined > 1 || i < original_queue_length)
-                    && surface->bitmap_queue_length < GUAC_COMMON_SURFACE_QUEUE_SIZE)
+                    && surface->bitmap_queue_length < GUAC_COMMON_SURFACE_QUEUE_SIZE) {
+
                 __guac_common_surface_flush_to_queue(surface);
+
+                    fprintf(stderr, "__guac_common_surface_flush did __guac_common_surface_flush_to_queue()\n");
+            }
 
             /* Flush as bitmap otherwise */
             else if (surface->dirty) {
@@ -1948,19 +1969,34 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
                 int opaque = __guac_common_surface_is_opaque(surface,
                             &surface->dirty_rect);
 
+                fprintf(stderr, "__guac_common_surface_flush did __guac_common_surface_is_opaque()\n");
+
                 /* Prefer WebP when reasonable */
                 if (__guac_common_surface_should_use_webp(surface,
-                            &surface->dirty_rect))
+                            &surface->dirty_rect)) {
+
+                    fprintf(stderr, "__guac_common_surface_flush about to __guac_common_surface_flush_to_webp()\n");
                     __guac_common_surface_flush_to_webp(surface, opaque);
+
+                    fprintf(stderr, "__guac_common_surface_flush did __guac_common_surface_flush_to_webp()\n");
+                }
 
                 /* If not WebP, JPEG is the next best (lossy) choice */
                 else if (opaque && __guac_common_surface_should_use_jpeg(
-                            surface, &surface->dirty_rect))
+                            surface, &surface->dirty_rect)) {
+                    fprintf(stderr, "__guac_common_surface_flush about to __guac_common_surface_flush_to_jpeg()\n");
                     __guac_common_surface_flush_to_jpeg(surface);
 
+                    fprintf(stderr, "__guac_common_surface_flush did __guac_common_surface_flush_to_jpeg()\n");
+                }
+
                 /* Use PNG if no lossy formats are appropriate */
-                else
+                else {
+                    fprintf(stderr, "__guac_common_surface_flush about to __guac_common_surface_flush_to_png()\n");
                     __guac_common_surface_flush_to_png(surface, opaque);
+
+                    fprintf(stderr, "__guac_common_surface_flush did __guac_common_surface_flush_to_png()\n");
+                }
 
             }
 
@@ -1968,7 +2004,11 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
 
         current++;
 
+        fprintf(stderr, "__guac_common_surface_flush did current++ - %p\n", (void*) current);
+
     }
+
+    fprintf(stderr, "__guac_common_surface_flush Flush complete\n");
 
     /* Flush complete */
     surface->bitmap_queue_length = 0;
@@ -1977,15 +2017,22 @@ static void __guac_common_surface_flush(guac_common_surface* surface) {
 
 void guac_common_surface_flush(guac_common_surface* surface) {
 
+    fprintf(stderr, "guac_common_surface_flush about to pthread_mutex_lock(&surface->_lock)\n");
     pthread_mutex_lock(&surface->_lock);
+    fprintf(stderr, "guac_common_surface_flush got pthread_mutex_lock(&surface->_lock)\n");
 
     /* Flush any applicable layer properties */
     __guac_common_surface_flush_properties(surface);
+    fprintf(stderr, "guac_common_surface_flush did __guac_common_surface_flush_properties(surface)\n");
 
     /* Flush surface contents */
     __guac_common_surface_flush(surface);
+    fprintf(stderr, "guac_common_surface_flush did __guac_common_surface_flush(surface)\n");
 
     pthread_mutex_unlock(&surface->_lock);
+
+    fprintf(stderr, "guac_common_surface_flush did pthread_mutex_unlock(&surface->_lock)\n");
+
 
 }
 

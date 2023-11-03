@@ -167,7 +167,8 @@ static void guacd_proc_add_user(guacd_proc* proc, HANDLE handle, int owner) {
 
     /* Start user thread */
     pthread_t user_thread;
-    pthread_create(&user_thread, NULL, guacd_user_thread, params);
+    int the_return = pthread_create(&user_thread, NULL, guacd_user_thread, params);
+    fprintf(stderr, "guacd_proc_add_user pthread_create(): %i, errno: %i\n", the_return, errno);
     pthread_detach(user_thread);
 
 }
@@ -362,7 +363,7 @@ static int guacd_timed_client_free(guac_client* client, int timeout) {
     /* Free the client in a separate thread, so we can time the free operation */
     int the_return = pthread_create(&client_free_thread, NULL,
                                     guacd_client_free_thread, &free_operation);
-    fprintf(stderr, "pthread_create(): %i, errno: %i\n", the_return, errno);
+    fprintf(stderr, "guacd_timed_client_free pthread_create(): %i, errno: %i\n", the_return, errno);
 
     if (!the_return) {
 

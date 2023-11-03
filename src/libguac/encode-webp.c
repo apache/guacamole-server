@@ -171,11 +171,19 @@ int guac_webp_write(guac_socket* socket, guac_stream* stream,
 
     int x, y;
 
+    fprintf(stderr, "guac_webp_write about to cairo_image_surface_get_width()\n");
+
     int width = cairo_image_surface_get_width(surface);
+
+    fprintf(stderr, "guac_webp_write did cairo_image_surface_get_width()\n");
     int height = cairo_image_surface_get_height(surface);
+    fprintf(stderr, "guac_webp_write did cairo_image_surface_get_height()\n");
     int stride = cairo_image_surface_get_stride(surface);
+    fprintf(stderr, "guac_webp_write did cairo_image_surface_get_stride()\n");
     cairo_format_t format = cairo_image_surface_get_format(surface);
+    fprintf(stderr, "guac_webp_write did cairo_image_surface_get_format()\n");
     unsigned char* data = cairo_image_surface_get_data(surface);
+    fprintf(stderr, "guac_webp_write did cairo_image_surface_get_data()\n");
 
     if (format != CAIRO_FORMAT_RGB24 && format != CAIRO_FORMAT_ARGB32) {
         guac_error = GUAC_STATUS_INTERNAL_ERROR;
@@ -185,11 +193,18 @@ int guac_webp_write(guac_socket* socket, guac_stream* stream,
 
     /* Flush pending operations to surface */
     cairo_surface_flush(surface);
+    fprintf(stderr, "guac_webp_write did cairo_surface_flush()\n");
 
     /* Configure WebP compression bits */
     WebPConfig config;
-    if (!WebPConfigPreset(&config, WEBP_PRESET_DEFAULT, quality))
+    if (!WebPConfigPreset(&config, WEBP_PRESET_DEFAULT, quality)) {
+
+        fprintf(stderr, "not WebPConfigPreset()\n");
+
         return -1;
+    }
+
+    fprintf(stderr, "guac_webp_write did WebPConfigPreset()\n");
 
     /* Add additional tuning */
     config.lossless = lossless;
@@ -200,17 +215,25 @@ int guac_webp_write(guac_socket* socket, guac_stream* stream,
     /* Validate configuration */
     WebPValidateConfig(&config);
 
+    fprintf(stderr, "guac_webp_write did WebPValidateConfig()\n");
+
     /* Set up WebP picture */
     WebPPictureInit(&picture);
     picture.use_argb = 1;
     picture.width = width;
     picture.height = height;
 
+    fprintf(stderr, "guac_webp_write did WebPPictureInit()\n");
+
     /* Allocate and init writer */
     WebPPictureAlloc(&picture);
+
+    fprintf(stderr, "guac_webp_write did WebPPictureAlloc()\n");
     picture.writer = guac_webp_stream_write;
     picture.custom_ptr = &writer;
     guac_webp_stream_writer_init(&writer, socket, stream);
+
+    fprintf(stderr, "guac_webp_write did guac_webp_stream_writer_init()\n");
 
     /* Copy image data into WebP picture */
     argb_output = picture.argb;
@@ -246,11 +269,17 @@ int guac_webp_write(guac_socket* socket, guac_stream* stream,
     /* Encode image */
     WebPEncode(&config, &picture);
 
+    fprintf(stderr, "guac_webp_write did WebPEncode()\n");
+
     /* Free picture */
     WebPPictureFree(&picture);
 
+    fprintf(stderr, "guac_webp_write did WebPPictureFree()\n");
+
     /* Ensure all data is written */
     guac_webp_flush_data(&writer);
+
+    fprintf(stderr, "guac_webp_write did guac_webp_flush_data()\n");
 
     return 0;
 

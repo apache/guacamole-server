@@ -262,7 +262,10 @@ static int guac_vnc_wait_for_messages(rfbClient* rfb_client, int timeout) {
         return 1;
 
     /* If no data on buffer, wait for data on socket */
-    return WaitForMessage(rfb_client, timeout);
+    fprintf(stderr, "About to WaitForMessage(%p, %i)\n", (void*) rfb_client, timeout);
+    int the_value = WaitForMessage(rfb_client, timeout);
+    fprintf(stderr, "Succesfully got WaitForMessage() value: %i\n", the_value);
+    return the_value;
 
 }
 
@@ -419,6 +422,8 @@ void* guac_vnc_client_thread(void* data) {
     /* Set remaining client data */
     vnc_client->rfb_client = rfb_client;
 
+    fprintf(stderr, "Did vnc_client->rfb_client = rfb_client\n");
+
     /* Set up screen recording, if requested */
     if (settings->recording_path != NULL) {
         vnc_client->recording = guac_recording_create(client,
@@ -431,13 +436,19 @@ void* guac_vnc_client_thread(void* data) {
                 settings->recording_include_keys);
     }
 
+    fprintf(stderr, "Did guac_recording_create\n");
+
     /* Create display */
     vnc_client->display = guac_common_display_alloc(client,
             rfb_client->width, rfb_client->height);
 
+    fprintf(stderr, "Did guac_common_display_alloc\n");
+
     /* Use lossless compression only if requested (otherwise, use default
      * heuristics) */
     guac_common_display_set_lossless(vnc_client->display, settings->lossless);
+
+    fprintf(stderr, "Did guac_common_display_set_lossless\n");
 
     /* If not read-only, set an appropriate cursor */
     if (settings->read_only == 0) {
@@ -448,9 +459,16 @@ void* guac_vnc_client_thread(void* data) {
 
     }
 
+    fprintf(stderr, "Did guac_common_cursor_set_\n");
+
     guac_socket_flush(client->socket);
 
+    fprintf(stderr, "Did guac_socket_flush\n");
+
     guac_timestamp last_frame_end = guac_timestamp_current();
+
+    fprintf(stderr, "last_frame_end: %lu\n", last_frame_end);
+    fprintf(stderr, "client->state: %i\n", client->state);
 
     /* Handle messages from VNC server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING) {
@@ -458,10 +476,17 @@ void* guac_vnc_client_thread(void* data) {
         /* Wait for start of frame */
         int wait_result = guac_vnc_wait_for_messages(rfb_client,
                 GUAC_VNC_FRAME_START_TIMEOUT);
+
+        fprintf(stderr, "guac_vnc_wait_for_messages result: %i\n", wait_result);
+
         if (wait_result > 0) {
 
             int processing_lag = guac_client_get_processing_lag(client);
+
+            fprintf(stderr, "processing_lag: %i\n", processing_lag);
             guac_timestamp frame_start = guac_timestamp_current();
+
+            fprintf(stderr, "frame_start: %lu\n", frame_start);
 
             /* Read server messages until frame is built */
             do {
@@ -482,21 +507,34 @@ void* guac_vnc_client_thread(void* data) {
                 frame_remaining = frame_start + GUAC_VNC_FRAME_DURATION
                                 - frame_end;
 
+                fprintf(stderr, "frame_end: %lu\n", frame_end);
+
                 /* Calculate time that client needs to catch up */
                 int time_elapsed = frame_end - last_frame_end;
                 int required_wait = processing_lag - time_elapsed;
 
+                fprintf(stderr, "required_wait: %i\n", required_wait);
+
                 /* Increase the duration of this frame if client is lagging */
-                if (required_wait > GUAC_VNC_FRAME_TIMEOUT)
+                if (required_wait > GUAC_VNC_FRAME_TIMEOUT) {
+
+                    fprintf(stderr, "waiting for: %i\n", required_wait);
                     wait_result = guac_vnc_wait_for_messages(rfb_client,
                             required_wait*1000);
+                    fprintf(stderr, "wait_result: %i\n", wait_result);
+                }
 
                 /* Wait again if frame remaining */
-                else if (frame_remaining > 0)
+                else if (frame_remaining > 0) {
+                    fprintf(stderr, "frame_remaining: %i, waiting for: %i\n", frame_remaining, GUAC_VNC_FRAME_TIMEOUT);
                     wait_result = guac_vnc_wait_for_messages(rfb_client,
                             GUAC_VNC_FRAME_TIMEOUT*1000);
-                else
+                    fprintf(stderr, "wait_result: %i\n", wait_result);
+                }
+                else {
+                    fprintf(stderr, "breaking\n");
                     break;
+                }
 
             } while (wait_result > 0);
 
@@ -505,21 +543,32 @@ void* guac_vnc_client_thread(void* data) {
              * two subsequent frames, and that this time should thus be
              * excluded from the required wait period of the next frame). */
             last_frame_end = frame_start;
+            fprintf(stderr, "final last_frame_end: %lu\n", last_frame_end);
 
         }
 
+        fprintf(stderr, "final wait_result: %i\n", wait_result);
+
         /* If an error occurs, log it and fail */
-        if (wait_result < 0)
+        if (wait_result < 0) {
             guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR, "Connection closed.");
+        }
 
         /* Flush frame */
+        fprintf(stderr, "about to guac_common_surface_flush()\n");
         guac_common_surface_flush(vnc_client->display->default_surface);
+        fprintf(stderr, "did guac_common_surface_flush()\n");
+
         guac_client_end_frame(client);
+        fprintf(stderr, "did guac_client_end_frame()\n");
+
         guac_socket_flush(client->socket);
+        fprintf(stderr, "did guac_socket_flush()\n");
 
     }
 
     /* Kill client and finish connection */
+    fprintf(stderr, "about to guac_client_stop()\n");
     guac_client_stop(client);
     guac_client_log(client, GUAC_LOG_INFO, "Internal VNC client disconnected");
     return NULL;
