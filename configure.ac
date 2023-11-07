@@ -1243,7 +1243,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      freerdp2 ............ ${have_freerdp2}
      pango ............... ${have_pango}
      libavcodec .......... ${have_libavcodec}
-     libavformat.......... ${have_libavformat}
+     libavformat ......... ${have_libavformat}
      libavutil ........... ${have_libavutil}
      libssh2 ............. ${have_libssh2}
      libssl .............. ${have_ssl}
