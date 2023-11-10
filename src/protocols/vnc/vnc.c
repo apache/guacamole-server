@@ -498,12 +498,15 @@ void* guac_vnc_client_thread(void* data) {
                 int frame_remaining;
 
                 /* Handle any message received */
+                fprintf(stderr, "About to HandleRFBServerMessage()\n");
                 if (!HandleRFBServerMessage(rfb_client)) {
+                    fprintf(stderr, "Failed to HandleRFBServerMessage()\n");
                     guac_client_abort(client,
                             GUAC_PROTOCOL_STATUS_UPSTREAM_ERROR,
                             "Error handling message from VNC server.");
                     break;
                 }
+                fprintf(stderr, "Succeeded at HandleRFBServerMessage()\n");
 
                 /* Calculate time remaining in frame */
                 frame_end = guac_timestamp_current();
