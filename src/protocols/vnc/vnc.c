@@ -261,6 +261,9 @@ static int guac_vnc_wait_for_messages(rfbClient* rfb_client, int timeout) {
     if (rfb_client->buffered)
         return 1;
 
+    // LOLNO
+    timeout = 0;
+
     /* If no data on buffer, wait for data on socket */
     fprintf(stderr, "About to WaitForMessage(%p, %i)\n", (void*) rfb_client, timeout);
     int the_value = WaitForMessage(rfb_client, timeout);
