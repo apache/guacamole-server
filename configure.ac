@@ -94,49 +94,52 @@ AC_CHECK_LIB([dl], [dlopen],
                             AC_MSG_ERROR("libdl is required on systems which do not otherwise provide dlopen()"),
                             [#include <dlfcn.h>])])
 
-#
-# libuuid
-#
-
-have_libuuid=disabled
-AC_ARG_WITH([libuuid],
-            [AS_HELP_STRING([--with-libuuid],
-                            [use libuuid to generate unique identifiers @<:@default=check@:>@])],
-            [],
-            [with_libuuid=check])
-
-if test "x$with_libuuid" != "xno"
+if test "x$with_cygwin" = "xno"
 then
-    have_libuuid=yes
-    AC_CHECK_LIB([uuid], [uuid_generate],
-                 [UUID_LIBS=-luuid]
-                 [AC_DEFINE([HAVE_LIBUUID],, [Whether libuuid is available])],
-                 [have_libuuid=no])
-fi
+    #
+    # libuuid
+    #
 
-# OSSP UUID (if libuuid is unavilable)
-if test "x${have_libuuid}" != "xyes"
-then
+    have_libuuid=disabled
+    AC_ARG_WITH([libuuid],
+                [AS_HELP_STRING([--with-libuuid],
+                                [use libuuid to generate unique identifiers @<:@default=check@:>@])],
+                [],
+                [with_libuuid=check])
 
-    AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
-                 AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
-                              AC_MSG_ERROR([
-  --------------------------------------------
-   Unable to find libuuid or the OSSP UUID library.
-   Either libuuid (from util-linux) or the OSSP UUID library is required for
-   guacamole-server to be built.
-  --------------------------------------------])))
+    if test "x$with_libuuid" != "xno"
+    then
+        have_libuuid=yes
+        AC_CHECK_LIB([uuid], [uuid_generate],
+                    [UUID_LIBS=-luuid]
+                    [AC_DEFINE([HAVE_LIBUUID],, [Whether libuuid is available])],
+                    [have_libuuid=no])
+    fi
 
-    # Check for and validate OSSP uuid.h header
-    AC_CHECK_HEADERS([ossp/uuid.h])
-    AC_CHECK_DECL([uuid_make],,
-                  AC_MSG_ERROR("No OSSP uuid.h found in include path"),
-                  [#ifdef HAVE_OSSP_UUID_H
-                   #include <ossp/uuid.h>
-                   #else
-                   #include <uuid.h>
-                   #endif
-                   ])
+    # OSSP UUID (if libuuid is unavilable)
+    if test "x${have_libuuid}" != "xyes"
+    then
+
+        AC_CHECK_LIB([ossp-uuid], [uuid_make], [UUID_LIBS=-lossp-uuid],
+                    AC_CHECK_LIB([uuid], [uuid_make], [UUID_LIBS=-luuid],
+                                AC_MSG_ERROR([
+    --------------------------------------------
+    Unable to find libuuid or the OSSP UUID library.
+    Either libuuid (from util-linux) or the OSSP UUID library is required for
+    guacamole-server to be built.
+    --------------------------------------------])))
+
+        # Check for and validate OSSP uuid.h header
+        AC_CHECK_HEADERS([ossp/uuid.h])
+        AC_CHECK_DECL([uuid_make],,
+                    AC_MSG_ERROR("No OSSP uuid.h found in include path"),
+                    [#ifdef HAVE_OSSP_UUID_H
+                    #include <ossp/uuid.h>
+                    #else
+                    #include <uuid.h>
+                    #endif
+                    ])
+    fi
 fi
 
 # cunit

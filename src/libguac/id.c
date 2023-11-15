@@ -22,7 +22,10 @@
 #include "guacamole/error.h"
 #include <guacamole/id.h>
 
-#if defined(HAVE_LIBUUID)
+
+#ifdef CYGWIN_BUILD
+#include <rpcdce.h>
+#elif defined(HAVE_LIBUUID)
 #include <uuid/uuid.h>
 #elif defined(HAVE_OSSP_UUID_H)
 #include <ossp/uuid.h>
@@ -36,6 +39,38 @@ char* guac_generate_id(char prefix) {
 
     char* buffer;
     char* identifier;
+
+    /* Allocate buffer for future formatted ID */
+    buffer = malloc(GUAC_UUID_LEN + 1);
+    if (buffer == NULL) {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for unique ID";
+        return NULL;
+    }
+
+    identifier = &(buffer[1]);
+
+#ifdef CYGWIN_BUILD
+
+    /* Generate a UUID using a built in windows function */
+    UUID uuid;
+    UuidCreate(&uuid);
+
+    /* Convert the UUID to an all-caps, null-terminated tring */
+    RPC_CSTR uuid_string;
+    if (UuidToString(uuid, &uuid_string) == RPC_S_OUT_OF_MEMORY)  {
+        guac_error = GUAC_STATUS_NO_MEMORY;
+        guac_error_message = "Could not allocate memory for unique ID";
+        return NULL;
+    }
+
+    /* Copy over lowercase letters to the final target string */
+    for (int i = 0; i < GUAC_UUID_LEN; i++)
+        identifier[i] = tolower(uuid_string[i]);
+
+    RpcStringFree(uuid_string);
+
+#else
 
     /* Prepare object to receive generated UUID */
 #ifdef HAVE_LIBUUID
@@ -61,19 +96,6 @@ char* guac_generate_id(char prefix) {
     }
 #endif
 
-    /* Allocate buffer for future formatted ID */
-    buffer = malloc(GUAC_UUID_LEN + 1);
-    if (buffer == NULL) {
-#ifndef HAVE_LIBUUID
-        uuid_destroy(uuid);
-#endif
-        guac_error = GUAC_STATUS_NO_MEMORY;
-        guac_error_message = "Could not allocate memory for unique ID";
-        return NULL;
-    }
-
-    identifier = &(buffer[1]);
-
     /* Convert UUID to string to produce unique identifier */
 #ifdef HAVE_LIBUUID
     uuid_unparse_lower(uuid, identifier);
@@ -89,6 +111,7 @@ char* guac_generate_id(char prefix) {
 
     /* Clean up generated UUID */
     uuid_destroy(uuid);
+#endif
 #endif
 
     buffer[0] = prefix;

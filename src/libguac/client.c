@@ -46,6 +46,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef CYGWIN_BUILD
+#include <synchapi.h>
+#endif
+
 /**
  * The number of nanoseconds between times that the pending users list will be
  * synchronized and emptied (250 milliseconds aka 1/4 second).
@@ -161,10 +165,24 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream) {
  *
  * @param data
  *     The client for which all pending users should be promoted.
+ *
+ * @param timerOrWaitFired
+ *     Unused - Windows only.
  */
-static void guac_client_promote_pending_users(union sigval data) {
+static void guac_client_promote_pending_users(
+#ifdef CYGWIN_BUILD
+        LPVOID data,
+        BOOLEAN timerOrWaitFired
+#else
+        union sigval data
+#endif
+    ) {
 
+#ifdef CYGWIN_BUILD
+    guac_client* client = (guac_client*) data;
+#else
     guac_client* client = (guac_client*) data.sival_ptr;
+#endif
 
     pthread_mutex_lock(&(client->__pending_users_timer_mutex));
 
@@ -365,8 +383,13 @@ void guac_client_free(guac_client* client) {
     pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
 
     /* If the timer was registered, stop it before destroying the lock */
-    if (was_started)
+    if (was_started) {
+#ifdef CYGWIN_BUILD
+        DeleteTimerQueueTimer(NULL, client->__pending_users_timer, NULL);
+#else
         timer_delete(client->__pending_users_timer);
+#endif
+    }
 
     pthread_mutex_destroy(&(client->__pending_users_timer_mutex));
 
@@ -493,6 +516,21 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
         return 0;
     }
 
+#ifdef CYGWIN_BUILD
+    if (!CreateTimerQueueTimer(
+            &(client->__pending_users_timer)),
+            NULL,
+            guac_client_promote_pending_users,
+            client,
+            GUAC_CLIENT_PENDING_USERS_REFRESH_INTERVAL,
+            GUAC_CLIENT_PENDING_USERS_REFRESH_INTERVAL
+            0) {
+
+        // oh noes error
+        return 1;
+    }
+#else
+
     /* Configure the timer to synchronize and clear the pending users */
     struct sigevent signal_config = {
             .sigev_notify = SIGEV_THREAD,
@@ -507,6 +545,7 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
         pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
         return 1;
     }
+#endif
 
     /* Configure the pending users timer to run on the defined interval */
     struct itimerspec time_config = {
