@@ -1,0 +1,30 @@
+FROM ubuntu:22.04
+
+RUN apt-get -y update
+RUN apt-get -y install software-properties-common
+
+RUN apt-get -y install \
+    autoconf \
+    autotools-dev \
+    cmake \
+    git \
+    libtool \
+    make \
+    meson \
+    pkg-config \
+    wget \
+    zstd \
+    gpg \
+    wine \
+    gcc-mingw-w64-x86-64-win32 \
+    gcc-mingw-w64-x86-64-win32-runtime
+
+COPY scripts/install-msys2.sh /install-msys2.sh
+RUN bash /install-msys2.sh
+
+RUN mkdir /guacamole-server
+COPY . /guacamole-server
+
+COPY /scripts/build-guac.sh /build-guac.sh
+RUN bash /build-guac.sh
+

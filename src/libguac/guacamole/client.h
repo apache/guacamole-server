@@ -46,7 +46,7 @@
 #include <time.h>
 
 #ifdef CYGWIN_BUILD
-#include <winnt.h>
+#include <windef.h>
 #endif
 
 struct guac_client {
