@@ -59,7 +59,8 @@ noinst_HEADERS += ssh_agent.h
 endif
 
 libguac_client_ssh_la_CFLAGS = \
-    -Werror -Wexpansion-to-defined -Wall -Iinclude    \
+    -Werror -Wall -Iinclude    \
+    @CYGWIN_CFLAGS@            \
     @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@          \
     @TERMINAL_INCLUDE@

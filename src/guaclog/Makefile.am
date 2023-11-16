@@ -48,7 +48,8 @@ guaclog_SOURCES =     \
     state.c
 
 guaclog_CFLAGS =      \
-    -Werror -Wexpansion-to-defined -Wall     \
+    -Werror -Wall     \
+    @CYGWIN_CFLAGS@   \
     @LIBGUAC_INCLUDE@
 
 guaclog_LDADD =     \

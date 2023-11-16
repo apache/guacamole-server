@@ -20,7 +20,7 @@
 AC_PREREQ([2.61])
 AC_INIT([guacamole-server], [1.5.3])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([-Wall -Werror -Wexpansion-to-defined foreign subdir-objects])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
 LT_PREREQ([2.2])
@@ -42,6 +42,7 @@ AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslo
 
 # Cygwin build
 CYWGIN_LDFLAGS=
+CYGWIN_CFLAGS=
 AC_ARG_WITH([cygwin],
             [AS_HELP_STRING([--with-cygwin],
                             [use Cygwin to build under Windows @<:@default=no@:>@])],
@@ -52,6 +53,7 @@ AM_CONDITIONAL([CYGWIN_BUILD], [test "x${with_cygwin}" = "xyes"])
 if test "x$with_cygwin" = "xyes"
 then
     CYWGIN_LDFLAGS=-no-undefined
+    CYGWIN_CFLAGS=-Wno-error=expansion-to-defined
     AC_DEFINE([CYGWIN_BUILD],,[Build against Cygwin on Windows])
 fi
 
@@ -154,6 +156,7 @@ AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(UUID_LIBS)
 AC_SUBST(CUNIT_LIBS)
 AC_SUBST(CYWGIN_LDFLAGS)
+AC_SUBST(CYGWIN_CFLAGS)
 
 # Library functions
 AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])

@@ -66,7 +66,9 @@ libguac_terminal_la_SOURCES =   \
     xparsecolor.c
 
 libguac_terminal_la_CFLAGS = \
-    -Werror -Wexpansion-to-defined -Wall            \
+    -Werror -Wall            \
+    @CYGWIN_CFLAGS@          \
+    @CYGWIN_CFLAGS@          \
     @COMMON_INCLUDE@         \
     @LIBGUAC_INCLUDE@        \
     @PANGO_CFLAGS@           \

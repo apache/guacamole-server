@@ -134,7 +134,8 @@ noinst_HEADERS =                                 \
     user.h
 
 libguac_client_rdp_la_CFLAGS = \
-    -Werror -Wexpansion-to-defined -Wall -Iinclude    \
+    -Werror -Wall -Iinclude    \
+    @CYGWIN_CFLAGS@            \
     @COMMON_INCLUDE@           \
     @COMMON_SSH_INCLUDE@       \
     @LIBGUAC_INCLUDE@          \
@@ -169,7 +170,8 @@ libguac_common_svc_client_la_SOURCES =        \
     plugins/guac-common-svc/guac-common-svc.c
 
 libguac_common_svc_client_la_CFLAGS = \
-    -Werror -Wexpansion-to-defined -Wall -Iinclude           \
+    -Werror -Wall -Iinclude           \
+    @CYGWIN_CFLAGS@                   \
     @LIBGUAC_INCLUDE@                 \
     @RDP_CFLAGS@
 
@@ -192,7 +194,8 @@ libguacai_client_la_SOURCES =           \
     plugins/ptr-string.c
 
 libguacai_client_la_CFLAGS = \
-    -Werror -Wexpansion-to-defined -Wall -Iinclude  \
+    -Werror -Wall -Iinclude  \
+    @CYGWIN_CFLAGS@          \
     @COMMON_INCLUDE@         \
     @COMMON_SSH_INCLUDE@     \
     @LIBGUAC_INCLUDE@        \

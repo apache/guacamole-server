@@ -49,7 +49,8 @@ test_common_SOURCES =          \
     string/split.c
 
 test_common_CFLAGS =        \
-    -Werror -Wexpansion-to-defined -Wall -pedantic \
+    -Werror -Wall -pedantic \
+    @CYGWIN_CFLAGS@         \
     @COMMON_INCLUDE@
 
 test_common_LDADD =  \

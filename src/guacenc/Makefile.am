@@ -88,7 +88,8 @@ noinst_HEADERS  += webp.h
 endif
 
 guacenc_CFLAGS =            \
-    -Werror -Wexpansion-to-defined -Wall           \
+    -Werror -Wall           \
+    @CYGWIN_CFLAGS@         \
     @AVCODEC_CFLAGS@        \
     @AVFORMAT_CFLAGS@       \
     @AVUTIL_CFLAGS@         \

@@ -63,7 +63,8 @@ libguac_common_la_SOURCES = \
     surface.c
 
 libguac_common_la_CFLAGS =  \
-    -Werror -Wexpansion-to-defined -Wall -pedantic \
+    -Werror -Wall -pedantic \
+    @CYGWIN_CFLAGS@         \
     @LIBGUAC_INCLUDE@
 
 libguac_common_la_LIBADD = \

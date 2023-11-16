@@ -34,8 +34,9 @@ noinst_HEADERS =            \
 libguac_pulse_la_SOURCES = \
     pulse.c
 
-libguac_pulse_la_CFLAGS =  \
-    -Werror -Wexpansion-to-defined -Wall -pedantic \
+libguac_pulse_la_CFLAGS =   \
+    -Werror -Wall -pedantic \
+    @CYGWIN_CFLAGS@         \
     @LIBGUAC_INCLUDE@
 
 libguac_pulse_la_LIBADD = \

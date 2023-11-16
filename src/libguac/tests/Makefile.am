@@ -56,7 +56,8 @@ test_libguac_SOURCES =               \
 
 
 test_libguac_CFLAGS =       \
-    -Werror -Wexpansion-to-defined -Wall -pedantic \
+    -Werror -Wall -pedantic \
+    @CYGWIN_CFLAGS@         \
     @LIBGUAC_INCLUDE@
 
 test_libguac_LDADD = \
