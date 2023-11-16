@@ -3,6 +3,10 @@
 
 cd guacamole-server
 
+echo looking for it...
+find . -name 'Makefile.am'
+echo looked for it...
+
 export PKG_CONFIG_PATH="/quasi-msys2/root/ucrt64/lib/pkgconfig/"
 export LDFLAGS="-L/quasi-msys2/root/ucrt64/bin/"
 export CFLAGS="-I/quasi-msys2/root/ucrt64/include/ -I/usr/x86_64-w64-mingw32/include"

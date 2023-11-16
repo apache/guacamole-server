@@ -148,7 +148,7 @@ libguacinc_HEADERS += guacamole/wait-handle.h
 endif
 
 libguac_la_CFLAGS = \
-    -Werror -Wall -pedantic
+    -Werror -Wexpansion-to-defined -Wall -pedantic
 
 libguac_la_LDFLAGS =     \
     -version-info 22:0:1 \

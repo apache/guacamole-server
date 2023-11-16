@@ -49,7 +49,7 @@ noinst_HEADERS = \
     user.h
 
 libguac_client_telnet_la_CFLAGS = \
-    -Werror -Wall -Iinclude       \
+    -Werror -Wexpansion-to-defined -Wall -Iinclude       \
     @LIBGUAC_INCLUDE@             \
     @TERMINAL_INCLUDE@
 

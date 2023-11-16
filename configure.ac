@@ -20,7 +20,7 @@
 AC_PREREQ([2.61])
 AC_INIT([guacamole-server], [1.5.3])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
+AM_INIT_AUTOMAKE([-Wall -Werror -Wexpansion-to-defined foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
 LT_PREREQ([2.2])
@@ -689,7 +689,7 @@ if test "x$with_rdp" != "xno"
 then
     have_freerdp2=yes
     PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
-                      [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
+                      [CPPFLAGS="${RDP_CFLAGS} -Werror -Wexpansion-to-defined $CPPFLAGS"]
                       [AS_IF([test "x${FREERDP2_PLUGIN_DIR}" = "x"],
                              [FREERDP2_PLUGIN_DIR="`$PKG_CONFIG --variable=libdir freerdp2`/freerdp2"])],
                       [AC_MSG_WARN([

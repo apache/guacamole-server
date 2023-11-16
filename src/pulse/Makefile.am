@@ -35,7 +35,7 @@ libguac_pulse_la_SOURCES = \
     pulse.c
 
 libguac_pulse_la_CFLAGS =  \
-    -Werror -Wall -pedantic \
+    -Werror -Wexpansion-to-defined -Wall -pedantic \
     @LIBGUAC_INCLUDE@
 
 libguac_pulse_la_LIBADD = \

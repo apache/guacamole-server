@@ -37,7 +37,7 @@ test_common_ssh_SOURCES = \
     sftp/normalize_path.c
 
 test_common_ssh_CFLAGS =    \
-    -Werror -Wall -pedantic \
+    -Werror -Wexpansion-to-defined -Wall -pedantic \
     @COMMON_INCLUDE@        \
     @COMMON_SSH_INCLUDE@    \
     @LIBGUAC_INCLUDE@

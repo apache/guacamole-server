@@ -38,7 +38,7 @@ test_kubernetes_SOURCES = \
     url/escape.c
 
 test_kubernetes_CFLAGS =                \
-    -Werror -Wall -pedantic             \
+    -Werror -Wexpansion-to-defined -Wall -pedantic             \
     @LIBGUAC_CLIENT_KUBERNETES_INCLUDE@ \
     @LIBGUAC_INCLUDE@
 

@@ -60,7 +60,7 @@ guacd_SOURCES += move-pipe.c
 endif
 
 guacd_CFLAGS =              \
-    -Werror -Wall -pedantic \
+    -Werror -Wexpansion-to-defined -Wall -pedantic \
     @COMMON_INCLUDE@        \
     @LIBGUAC_INCLUDE@
 

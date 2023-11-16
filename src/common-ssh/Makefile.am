@@ -44,7 +44,7 @@ noinst_HEADERS =            \
     common-ssh/user.h
 
 libguac_common_ssh_la_CFLAGS = \
-    -Werror -Wall -pedantic    \
+    -Werror -Wexpansion-to-defined -Wall -pedantic    \
     @COMMON_INCLUDE@           \
     @LIBGUAC_INCLUDE@
 

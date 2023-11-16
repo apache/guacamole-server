@@ -49,7 +49,7 @@ test_common_SOURCES =          \
     string/split.c
 
 test_common_CFLAGS =        \
-    -Werror -Wall -pedantic \
+    -Werror -Wexpansion-to-defined -Wall -pedantic \
     @COMMON_INCLUDE@
 
 test_common_LDADD =  \

@@ -46,7 +46,7 @@ modified to contain a sections like the following:
         ...all source files...
 
     test_myproj_CFLAGS =        \
-        -Werror -Wall -pedantic \
+        -Werror -Wexpansion-to-defined -Wall -pedantic \
         ...other flags...
 
     test_myproj_LDADD = \
