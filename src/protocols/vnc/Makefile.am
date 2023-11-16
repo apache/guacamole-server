@@ -55,7 +55,6 @@ noinst_HEADERS =      \
     vnc.h
 
 libguac_client_vnc_la_CFLAGS =        \
-    -Werror -Wall -pedantic -Iinclude \
     @CYGWIN_CFLAGS@                   \
     @COMMON_INCLUDE@                  \
     @COMMON_SSH_INCLUDE@              \

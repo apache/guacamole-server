@@ -77,6 +77,7 @@ libguacinc_HEADERS =                  \
     guacamole/user-constants.h        \
     guacamole/user-fntypes.h          \
     guacamole/user-types.h            \
+    guacamole/wait-fd.h               \
     guacamole/wol.h                   \
     guacamole/wol-constants.h
 
@@ -85,8 +86,7 @@ noinst_HEADERS =      \
     encode-png.h      \
     palette.h         \
     user-handlers.h   \
-    raw_encoder.h     \
-    wait-fd.h
+    raw_encoder.h
 
 libguac_la_SOURCES =   \
     argv.c             \
@@ -116,7 +116,7 @@ libguac_la_SOURCES =   \
     user.c             \
     user-handlers.c    \
     user-handshake.c   \
-    wait-fd.c	       \
+    wait-fd.c          \
     wol.c
 
 # Compile WebP support if available
@@ -145,11 +145,14 @@ libguac_la_SOURCES += wait-handle.c
 libguacinc_HEADERS += guacamole/handle-helpers.h
 libguacinc_HEADERS += guacamole/socket-handle.h
 libguacinc_HEADERS += guacamole/wait-handle.h
+else
+libguac_la_SOURCES += wait-fd.c
+libguac_la_SOURCES += socket-fd.c
+libguacinc_HEADERS += guacamole/wait-fd.h
 endif
 
 libguac_la_CFLAGS = \
-    @CYGWIN_CFLAGS@ \
-    -Werror -Wall -pedantic
+    @CYGWIN_CFLAGS@
 
 libguac_la_LDFLAGS =     \
     -version-info 22:0:1 \

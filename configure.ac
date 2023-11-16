@@ -42,7 +42,7 @@ AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslo
 
 # Cygwin build
 CYWGIN_LDFLAGS=
-CYGWIN_CFLAGS=
+CYGWIN_CFLAGS=-Werror -Wall -pedantic
 AC_ARG_WITH([cygwin],
             [AS_HELP_STRING([--with-cygwin],
                             [use Cygwin to build under Windows @<:@default=no@:>@])],
@@ -53,7 +53,7 @@ AM_CONDITIONAL([CYGWIN_BUILD], [test "x${with_cygwin}" = "xyes"])
 if test "x$with_cygwin" = "xyes"
 then
     CYWGIN_LDFLAGS=-no-undefined
-    CYGWIN_CFLAGS=-Wno-error=expansion-to-defined
+    CYGWIN_CFLAGS=-Werror -Wall -Wno-error=expansion-to-defined
     AC_DEFINE([CYGWIN_BUILD],,[Build against Cygwin on Windows])
 fi
 

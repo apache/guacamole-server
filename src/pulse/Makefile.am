@@ -35,7 +35,6 @@ libguac_pulse_la_SOURCES = \
     pulse.c
 
 libguac_pulse_la_CFLAGS =   \
-    -Werror -Wall -pedantic \
     @CYGWIN_CFLAGS@         \
     @LIBGUAC_INCLUDE@
 

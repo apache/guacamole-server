@@ -24,6 +24,7 @@
 
 
 #ifdef CYGWIN_BUILD
+#include <rpc.h>
 #include <rpcdce.h>
 #elif defined(HAVE_LIBUUID)
 #include <uuid/uuid.h>
@@ -58,7 +59,7 @@ char* guac_generate_id(char prefix) {
 
     /* Convert the UUID to an all-caps, null-terminated tring */
     RPC_CSTR uuid_string;
-    if (UuidToString(uuid, &uuid_string) == RPC_S_OUT_OF_MEMORY)  {
+    if (UuidToString(&uuid, &uuid_string) == RPC_S_OUT_OF_MEMORY)  {
         guac_error = GUAC_STATUS_NO_MEMORY;
         guac_error_message = "Could not allocate memory for unique ID";
         return NULL;
@@ -68,7 +69,7 @@ char* guac_generate_id(char prefix) {
     for (int i = 0; i < GUAC_UUID_LEN; i++)
         identifier[i] = tolower(uuid_string[i]);
 
-    RpcStringFree(uuid_string);
+    RpcStringFree(&uuid_string);
 
 #else
 

@@ -48,6 +48,7 @@
 
 #ifdef CYGWIN_BUILD
 #include <synchapi.h>
+#include <threadpoollegacyapiset.h>
 #endif
 
 /**
@@ -518,13 +519,13 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
 
 #ifdef CYGWIN_BUILD
     if (!CreateTimerQueueTimer(
-            &(client->__pending_users_timer)),
+            &(client->__pending_users_timer),
             NULL,
             guac_client_promote_pending_users,
             client,
             GUAC_CLIENT_PENDING_USERS_REFRESH_INTERVAL,
-            GUAC_CLIENT_PENDING_USERS_REFRESH_INTERVAL
-            0) {
+            GUAC_CLIENT_PENDING_USERS_REFRESH_INTERVAL,
+            0)) {
 
         // oh noes error
         return 1;
@@ -545,7 +546,6 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
         pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
         return 1;
     }
-#endif
 
     /* Configure the pending users timer to run on the defined interval */
     struct itimerspec time_config = {
@@ -560,6 +560,7 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
         pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
         return 1;
     }
+#endif
 
     /* Mark the timer as registered but not yet running */
     client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;

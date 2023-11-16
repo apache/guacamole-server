@@ -56,7 +56,6 @@ test_libguac_SOURCES =               \
 
 
 test_libguac_CFLAGS =       \
-    -Werror -Wall -pedantic \
     @CYGWIN_CFLAGS@         \
     @LIBGUAC_INCLUDE@
 

@@ -26,6 +26,8 @@
  * @file client.h
  */
 
+#include "config.h"
+
 #include "client-fntypes.h"
 #include "client-types.h"
 #include "client-constants.h"
