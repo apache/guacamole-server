@@ -160,7 +160,7 @@ libguac_la_CFLAGS = \
     -Werror -Wall -pedantic
 
 libguac_la_LDFLAGS =     \
-    -version-info 22:0:1 \
+    -version-info 23:0:0 \
     -no-undefined        \
     @CAIRO_LIBS@         \
     @DL_LIBS@            \
