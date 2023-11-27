@@ -34,5 +34,9 @@ guac_user_mouse_handler guac_vnc_user_mouse_handler;
  */
 guac_user_key_handler guac_vnc_user_key_handler;
 
-#endif
+/**
+ * Handler for Guacamole user resize events.
+ */
+guac_user_size_handler guac_vnc_user_size_handler;
 
+#endif // GUAC_VNC_INPUT_H

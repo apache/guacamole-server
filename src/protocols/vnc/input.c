@@ -21,6 +21,7 @@
 
 #include "common/cursor.h"
 #include "common/display.h"
+#include "display.h"
 #include "vnc.h"
 
 #include <guacamole/recording.h>
@@ -64,3 +65,14 @@ int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
     return 0;
 }
 
+int guac_vnc_user_size_handler(guac_user* user, int width, int height) {
+
+    guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
+    rfbClient* rfb_client = vnc_client->rfb_client;
+
+    /* Send display update */
+    guac_vnc_display_set_size(vnc_client->vnc_display, rfb_client, width, height);
+
+    return 0;
+
+}
