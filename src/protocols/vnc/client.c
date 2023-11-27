@@ -106,10 +106,20 @@ int guac_client_init(guac_client* client) {
     guac_vnc_client* vnc_client = guac_mem_zalloc(sizeof(guac_vnc_client));
     client->data = vnc_client;
 
+#ifdef ENABLE_VNC_DESKTOP_SIZE
+    guac_client_log(client, GUAC_LOG_DEBUG, "Support for desktop sizing enabled.");
+    vnc_client->vnc_display = guac_vnc_display_update_alloc(client);
+#else
+    guac_client_log(client, GUAC_LOG_WARNING, "VNC client does not support desktop sizing.");
+#endif
+
 #ifdef ENABLE_VNC_TLS_LOCKING
     /* Initialize the TLS write lock */
     pthread_mutex_init(&vnc_client->tls_lock, NULL);
 #endif
+
+    /* Initialize the message lock. */
+    pthread_mutex_init(&(vnc_client->message_lock), NULL);
 
     /* Init clipboard */
     vnc_client->clipboard = guac_common_clipboard_alloc();
@@ -207,6 +217,13 @@ int guac_vnc_client_free_handler(guac_client* client) {
 #ifdef ENABLE_VNC_TLS_LOCKING
     /* Clean up TLS lock mutex. */
     pthread_mutex_destroy(&(vnc_client->tls_lock));
+#endif
+
+    /* Clean up the message lock. */
+    pthread_mutex_destroy(&(vnc_client->message_lock));
+
+#ifdef ENABLE_VNC_DESKTOP_SIZE
+    guac_vnc_display_update_free(vnc_client->vnc_display);
 #endif
 
     /* Free generic data struct */
