@@ -634,6 +634,32 @@ then
 
 fi
 
+#
+# SendExtDesktopSize support within libVNCServer
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_desktop_size=yes
+    AC_CHECK_DECL([SendExtDesktopSize],
+                  [], [have_vnc_deesktop_size=no],
+                  [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_desktop_size}" = "xno"
+    then
+        AC_MSG_WARN([
+      -------------------------------------------------------------
+       No support in libvncclient for SendExtDesktopSize.
+       Support for setting remote desktop size will not be present.
+      -------------------------------------------------------------])
+    else
+        AC_DEFINE([ENABLE_VNC_DESKTOP_SIZE],,
+                  [Whether support for setting remote desktop size in VNC connections is enabled.])
+    fi
+
+fi
+
 
 #
 # FreeRDP 2 (libfreerdp2, libfreerdp-client2, and libwinpr2)
