@@ -29,6 +29,22 @@
 #include <pthread.h>
 
 /**
+ * The minimum display size (height or width) in pixels.
+ */
+#define GUAC_COMMON_DISPLAY_MIN_SIZE 200
+
+/**
+ * The maximum display size (height or width) in pixels.
+ */
+#define GUAC_COMMON_DISPLAY_MAX_SIZE 8192
+
+/**
+ * The minimum amount of time that must elapse between display size updates,
+ * in milliseconds.
+ */
+#define GUAC_COMMON_DISPLAY_UPDATE_INTERVAL 500
+
+/**
  * A list element representing a pairing of a Guacamole layer with a
  * corresponding guac_common_surface which wraps that layer. Adjacent layers
  * within the same list are pointed to with traditional prev/next pointers. The
@@ -134,6 +150,19 @@ typedef struct guac_common_display {
  */
 guac_common_display* guac_common_display_alloc(guac_client* client,
         int width, int height);
+
+/**
+ * Fits a given dimension within the allowed bounds for display sizing,
+ * adjusting the other dimension such that aspect ratio is maintained.
+ *
+ * @param a
+ *     The dimension to fit within allowed bounds.
+ *
+ * @param b
+ *     The other dimension to adjust if and only if necessary to preserve
+ *     aspect ratio.
+ */
+void guac_common_display_fit(int* a, int* b);
 
 /**
  * Frees the given display, and any associated resources, including any
@@ -257,6 +286,8 @@ void guac_common_display_free_buffer(guac_common_display* display,
  */
 void guac_common_display_set_lossless(guac_common_display* display,
         int lossless);
+
+
 
 #endif
 
