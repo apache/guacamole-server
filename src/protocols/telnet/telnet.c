@@ -27,6 +27,7 @@
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
+#include <guacamole/socket-tcp.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/wol.h>
 #include <libtelnet.h>
@@ -381,101 +382,10 @@ static void* __guac_telnet_input_thread(void* data) {
  */
 static telnet_t* __guac_telnet_create_session(guac_client* client) {
 
-    int retval;
-
-    int fd;
-    struct addrinfo* addresses;
-    struct addrinfo* current_address;
-
-    char connected_address[1024];
-    char connected_port[64];
-
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
 
-    struct addrinfo hints = {
-        .ai_family   = AF_UNSPEC,
-        .ai_socktype = SOCK_STREAM,
-        .ai_protocol = IPPROTO_TCP
-    };
-
-    /* Get socket */
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-
-    /* Get addresses connection */
-    if ((retval = getaddrinfo(settings->hostname, settings->port,
-                    &hints, &addresses))) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error parsing given address or port: %s",
-                gai_strerror(retval));
-        return NULL;
-
-    }
-
-    /* Attempt connection to each address until success */
-    current_address = addresses;
-    while (current_address != NULL) {
-
-        int retval;
-
-        /* Resolve hostname */
-        if ((retval = getnameinfo(current_address->ai_addr,
-                current_address->ai_addrlen,
-                connected_address, sizeof(connected_address),
-                connected_port, sizeof(connected_port),
-                NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to resolve host: %s", gai_strerror(retval));
-
-        fd_set fdset;
-        FD_ZERO(&fdset);
-        FD_SET(fd, &fdset);
-
-        struct timeval timeout_tv;
-        timeout_tv.tv_sec = settings->timeout;
-        timeout_tv.tv_usec = 0;
-
-        if (connect(fd, current_address->ai_addr, current_address->ai_addrlen) < 0) {
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Failed to connect: %s", strerror(errno));
-            return NULL;
-        }
-        
-        retval = select(fd + 1, NULL, &fdset, NULL, &timeout_tv);
-
-        if (retval == 0) {
-            guac_client_log(client, GUAC_LOG_ERROR, "Timeout connecting to "
-                    "host %s, port %s", connected_address, connected_port);
-            continue;
-        }
-
-        else if (retval > 0) {
-
-            guac_client_log(client, GUAC_LOG_DEBUG, "Successfully connected to "
-                    "host %s, port %s", connected_address, connected_port);
-
-            /* Done if successful connect */
-            break;
-
-        }
-
-        /* Otherwise log information regarding bind failure */
-        else
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
-                    "host %s, port %s: %s",
-                    connected_address, connected_port, strerror(errno));
-
-        current_address = current_address->ai_next;
-
-    }
-
-    /* If unable to connect to anything, fail */
-    if (current_address == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Unable to connect to any addresses.");
-        return NULL;
-    }
-
-    /* Free addrinfo */
-    freeaddrinfo(addresses);
+    int fd = guac_socket_tcp_connect(settings->hostname, settings->port);
 
     /* Open telnet session */
     telnet_t* telnet = telnet_init(__telnet_options, __guac_telnet_event_handler, 0, client);
