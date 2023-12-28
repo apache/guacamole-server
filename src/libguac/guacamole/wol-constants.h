@@ -28,6 +28,12 @@
  */
 
 /**
+ * The default number of times to retry a connection to a server after waking
+ * the server with a WOL packet before giving up.
+ */
+#define GUAC_WOL_DEFAULT_CONNECT_RETRIES 5
+
+/**
  * The value for the local IPv4 broadcast address.
  */
 #define GUAC_WOL_LOCAL_IPV4_BROADCAST "255.255.255.255"

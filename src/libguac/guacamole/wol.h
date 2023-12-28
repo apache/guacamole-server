@@ -52,5 +52,45 @@
 int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
         const unsigned short udp_port);
 
+/**
+ * Send the wake-up packet to the specified destination, returning zero if the
+ * wake was sent successfully, or non-zero if an error occurs sending the
+ * wake packet.  Note that the return value does not specify whether the
+ * system actually wakes up successfully, only whether or not the packet
+ * is transmitted.
+ * 
+ * @param mac_addr
+ *     The MAC address to place in the magic Wake-on-LAN packet.
+ * 
+ * @param broadcast_addr
+ *     The broadcast address to which to send the magic Wake-on-LAN packet.
+ * 
+ * @param udp_port
+ *     The UDP port to use when sending the WoL packet.
+ *
+ * @param wait_time
+ *     The number of seconds to wait between connection attempts after the WOL
+ *     packet has been sent.
+ *
+ * @param retries
+ *     The number of attempts to make to connect to the system before giving up
+ *     on the connection.
+ *
+ * @param hostname
+ *     The hostname or IP address of the system that has been woken up and to
+ *     to which the connection will be attempted.
+ *
+ * @param port
+ *     The TCP port of the remote system on which the connection will be
+ *     attempted after the system has been woken.
+ * 
+ * @return 
+ *     Zero if the packet is successfully sent to the destination; non-zero
+ *     if the packet cannot be sent.
+ */
+int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
+        const unsigned short udp_port, int wait_time, int retries,
+        const char* hostname, const char* port);
+
 #endif /* GUAC_WOL_H */
 
