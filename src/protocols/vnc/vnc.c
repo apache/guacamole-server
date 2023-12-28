@@ -42,10 +42,13 @@
 #endif
 
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
+#include <guacamole/string.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/wol-constants.h>
 #include <guacamole/wol.h>
 #include <rfb/rfbclient.h>
 #include <rfb/rfbconfig.h>
@@ -274,17 +277,47 @@ void* guac_vnc_client_thread(void* data) {
 
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
-        guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
-                "and pausing for %d seconds.", settings->wol_wait_time);
-        
-        /* Send the Wake-on-LAN request. */
-        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
-                settings->wol_udp_port))
+
+        /**
+         * If wait time is set, send the wake packet and try to connect to the
+         * server, failing if the server does not respond.
+         */
+        if (settings->wol_wait_time > 0) {
+            guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
+                    "and pausing for %d seconds.", settings->wol_wait_time);
+
+            /* char representation of a port should be, at most, 5 characters plus terminator. */
+            char* str_port = guac_mem_alloc(6);
+            if (guac_itoa(str_port, settings->port) < 1) {
+                guac_client_log(client, GUAC_LOG_ERROR, "Failed to convert port to integer for WOL function.");
+                guac_mem_free(str_port);
+                return NULL;
+            }
+
+            /* Send the Wake-on-LAN request and wait until the server is responsive. */
+            if (guac_wol_wake_and_wait(settings->wol_mac_addr,
+                    settings->wol_broadcast_addr,
+                    settings->wol_udp_port,
+                    settings->wol_wait_time,
+                    GUAC_WOL_DEFAULT_CONNECT_RETRIES,
+                    settings->hostname,
+                    (const char *) str_port)) {
+                guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet or connect to remote system.");
+                guac_mem_free(str_port);
+                return NULL;
+            }
+
+            guac_mem_free(str_port);
+
+        }
+
+        /* Just send the packet and continue the connection, or return if failed. */
+        else if(guac_wol_wake(settings->wol_mac_addr,
+                    settings->wol_broadcast_addr,
+                    settings->wol_udp_port)) {
+            guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet.");
             return NULL;
-        
-        /* If wait time is specified, sleep for that amount of time. */
-        if (settings->wol_wait_time > 0)
-            guac_timestamp_msleep(settings->wol_wait_time * 1000);
+        }
     }
     
     /* Configure clipboard encoding */
