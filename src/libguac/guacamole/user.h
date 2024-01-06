@@ -42,6 +42,7 @@
 
 #include <pthread.h>
 #include <stdarg.h>
+#include <sys/types.h>
 
 struct guac_user_info {
 
@@ -1000,6 +1001,37 @@ int guac_user_parse_args_int(guac_user* user, const char** arg_names,
  */
 int guac_user_parse_args_boolean(guac_user* user, const char** arg_names,
         const char** argv, int index, int default_value);
+
+/**
+ * Parses a string representation of file permissions (e.g., "rwxrwxrwx")
+ * and converts it to a mode_t value.
+ *
+ * @param user
+ *     The user joining the connection and providing the given arguments.
+ *
+ * @param arg_names
+ *     A NULL-terminated array of argument names, corresponding to the provided
+ *     array of argument values. This array must be exactly the same size as
+ *     the argument value array, with one additional entry for the NULL
+ *     terminator.
+ *
+ * @param argv
+ *     An array of all argument values, corresponding to the provided array of
+ *     argument names. This array must be exactly the same size as the argument
+ *     name array, with the exception of the NULL terminator.
+ *
+ * @param index
+ *     The index of the entry in both the arg_names and argv arrays which
+ *     corresponds to the argument being parsed.
+ *
+ * @param default_value
+ *     The value to return if the provided argument is blank or invalid.
+ *
+ * @return
+ *     The parsed mode_t value.
+ */
+mode_t guac_user_parse_args_mode(guac_user* user, const char** arg_names,
+        const char** argv, int index, mode_t default_value);
 
 #endif
 

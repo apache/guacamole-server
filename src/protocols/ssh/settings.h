@@ -25,6 +25,8 @@
 #include <guacamole/user.h>
 
 #include <stdbool.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 /**
  * The port to connect to when initiating any SSH connection, if no other port
@@ -41,6 +43,16 @@
  * The filename to use for the screen recording, if not specified.
  */
 #define GUAC_SSH_DEFAULT_RECORDING_NAME "recording"
+
+/**
+ * The permissions to use for the screen recording file, if not specified.
+ */
+#define GUAC_SSH_DEFAULT_RECORDING_FILE_PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP)
+
+/**
+ * The permissions to use for the screen recording path, if not specified.
+ */
+#define GUAC_SSH_DEFAULT_RECORDING_PATH_PERMISSIONS (S_IRWXU | S_IRGRP | S_IXGRP)
 
 /**
  * The default polling timeout for SSH activity in milliseconds.
@@ -224,6 +236,16 @@ typedef struct guac_ssh_settings {
      * does not already exist.
      */
     bool create_recording_path;
+
+    /**
+     * The permissions to apply for the screen recording file.
+     */
+    mode_t recording_file_permissions;
+
+    /**
+     * The permissions to apply for the screen recording path.
+     */
+    mode_t recording_path_permissions;
 
     /**
      * Whether output which is broadcast to each connected client (graphics,

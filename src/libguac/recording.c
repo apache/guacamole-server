@@ -65,7 +65,7 @@
  *     failure.
  */
 static int guac_recording_open(const char* path,
-        const char* name, char* basename, int basename_size) {
+        const char* name, char* basename, int basename_size, mode_t file_permissions) {
 
     int i;
 
@@ -83,8 +83,7 @@ static int guac_recording_open(const char* path,
 
     /* Attempt to open recording */
     int fd = open(basename,
-            O_CREAT | O_EXCL | O_WRONLY,
-            S_IRUSR | S_IWUSR | S_IRGRP);
+            O_CREAT | O_EXCL | O_WRONLY, file_permissions);
 
     /* Continuously retry with alternate names on failure */
     if (fd == -1) {
@@ -102,8 +101,7 @@ static int guac_recording_open(const char* path,
 
             /* Retry with newly-suffixed filename */
             fd = open(basename,
-                    O_CREAT | O_EXCL | O_WRONLY,
-                    S_IRUSR | S_IWUSR | S_IRGRP);
+                    O_CREAT | O_EXCL | O_WRONLY, file_permissions);
 
         }
 
@@ -136,15 +134,15 @@ static int guac_recording_open(const char* path,
 }
 
 guac_recording* guac_recording_create(guac_client* client,
-        const char* path, const char* name, int create_path,
-        int include_output, int include_mouse, int include_touch,
+        const char* path, const char* name, int create_path, mode_t file_permissions,
+        mode_t path_permissions, int include_output, int include_mouse, int include_touch,
         int include_keys) {
 
     char filename[GUAC_COMMON_RECORDING_MAX_NAME_LENGTH];
 
     /* Create path if it does not exist, fail if impossible */
 #ifndef __MINGW32__
-    if (create_path && mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP)
+    if (create_path && mkdir(path, path_permissions)
             && errno != EEXIST) {
 #else
     if (create_path && _mkdir(path) && errno != EEXIST) {
@@ -155,7 +153,7 @@ guac_recording* guac_recording_create(guac_client* client,
     }
 
     /* Attempt to open recording file */
-    int fd = guac_recording_open(path, name, filename, sizeof(filename));
+    int fd = guac_recording_open(path, name, filename, sizeof(filename), file_permissions);
     if (fd == -1) {
         guac_client_log(client, GUAC_LOG_ERROR,
                 "Creation of recording failed: %s", strerror(errno));

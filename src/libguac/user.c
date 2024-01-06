@@ -39,6 +39,8 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 guac_user* guac_user_alloc() {
 
@@ -466,3 +468,67 @@ int guac_user_parse_args_boolean(guac_user* user, const char** arg_names,
 
 }
 
+mode_t guac_user_parse_args_mode(guac_user* user, const char** arg_names,
+        const char** argv, int index, mode_t default_value) {
+
+    /* Pull parameter value from argv */
+    const char* value = argv[index];
+
+    /* Use default value if blank */
+    if (value[0] == 0) {
+
+        /* Log use of default */
+        guac_user_log(user, GUAC_LOG_DEBUG, "Parameter \"%s\" omitted. Using "
+                "default value of %i.", arg_names[index], default_value);
+
+        return default_value;
+
+    }
+
+    mode_t result = 0;
+
+    /* Check if the provided value has the correct length */
+    if (strlen(value) != 9) {
+        /* Log a warning and return the default value if the length is incorrect */
+        guac_user_log(user, GUAC_LOG_WARNING, "Parameter \"%s\" must have length 9. Using default value.", arg_names[index]);
+        return default_value;
+    }
+
+    // Define the permission bits
+    const char *permissions = "rwxr-xr-x";
+
+    /* Iterate over each character in the permission string */
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            int permissionIndex = i * 3 + j;
+            /* If the character '-' is present in the permission string, no action needed */
+            if (value[permissionIndex] == '-') {
+                /* No action needed for '-' */
+            } else if (value[permissionIndex] == permissions[permissionIndex]) {
+                // Calculate the permission bit based on the position in the permission string:
+                // Example: For the first set of three characters ("rwx"):
+                // S_IRUSR is the constant representing the read permission for the owner.
+                // (S_IRUSR >> (i * 3 + j)) dynamically adjusts the permission bit based on the position.
+                // When i = 0 and j takes values 0, 1, 2:
+                //   - For j = 0, it gives (0400 >> 0), which is 0400 (read permission).
+                //   - For j = 1, it gives (0400 >> 1), which is 0200 (write permission).
+                //   - For j = 2, it gives (0400 >> 2), which is 0100 (execute permission).
+                // These values represent the read, write, and execute permission bits for the owner.
+                result |= (S_IRUSR >> (permissionIndex));
+            }
+            /* If the character is equal 'w' for groups and others log a warning and return the default value */
+            else if (value[permissionIndex] == 'w') {
+                guac_user_log(user, GUAC_LOG_WARNING, "Parameter \"%s\" with value \"%s\" has invalid permission character at position %d. Writing is locked for the current running process. Using default value %o.", arg_names[index], value, permissionIndex, default_value);
+                return default_value;
+            }
+            /* If the character is neither 'r', 'w', nor 'x', log a warning and return the default value */
+            else {
+                guac_user_log(user, GUAC_LOG_WARNING, "Parameter \"%s\" with value \"%s\" has invalid permission character at position %d. Only 'r', 'w', 'x' and '-' characthers are allowed. Using default value %o.", arg_names[index], value, permissionIndex, default_value);
+                return default_value;
+            }
+        }
+    }
+
+    /* Return the parsed mode_t value */
+    return result;
+}

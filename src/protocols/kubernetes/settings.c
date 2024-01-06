@@ -51,6 +51,8 @@ const char* GUAC_KUBERNETES_CLIENT_ARGS[] = {
     "recording-exclude-mouse",
     "recording-include-keys",
     "create-recording-path",
+    "recording-file-permissions",
+    "recording-path-permissions",
     "read-only",
     "backspace",
     "scrollback",
@@ -209,6 +211,18 @@ enum KUBERNETES_ARGS_IDX {
      * created if it does not yet exist.
      */
     IDX_CREATE_RECORDING_PATH,
+
+    /**
+     * The permissions that should be given to screen recording file which is written in
+     * the given path.
+     */
+    IDX_RECORDING_FILE_PERMISSIONS,
+
+    /**
+     * The permissions that should be given to screen recording path which is written in
+     * the given path.
+     */
+    IDX_RECORDING_PATH_PERMISSIONS,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -388,6 +402,16 @@ guac_kubernetes_settings* guac_kubernetes_parse_args(guac_user* user,
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, false);
+
+    /* Parse file permissions flag */
+    settings->recording_file_permissions =
+        guac_user_parse_args_mode(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_RECORDING_FILE_PERMISSIONS, GUAC_KUBERNETES_DEFAULT_RECORDING_FILE_PERMISSIONS);
+
+    /* Parse path permissions flag */
+    settings->recording_path_permissions =
+        guac_user_parse_args_mode(user, GUAC_KUBERNETES_CLIENT_ARGS, argv,
+                IDX_RECORDING_PATH_PERMISSIONS, GUAC_KUBERNETES_DEFAULT_RECORDING_PATH_PERMISSIONS);
 
     /* Parse backspace key code */
     settings->backspace =

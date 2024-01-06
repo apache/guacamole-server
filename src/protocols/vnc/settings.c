@@ -84,6 +84,8 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "recording-exclude-mouse",
     "recording-include-keys",
     "create-recording-path",
+    "recording-file-permissions",
+    "recording-path-permissions",
     "disable-copy",
     "disable-paste",
     
@@ -330,6 +332,18 @@ enum VNC_ARGS_IDX {
      * created if it does not yet exist.
      */
     IDX_CREATE_RECORDING_PATH,
+
+    /**
+     * The permissions that should be given to screen recording file which is written in
+     * the given path.
+     */
+    IDX_RECORDING_FILE_PERMISSIONS,
+
+    /**
+     * The permissions that should be given to screen recording path which is written in
+     * the given path.
+     */
+    IDX_RECORDING_PATH_PERMISSIONS,
 
     /**
      * Whether outbound clipboard access should be blocked. If set to "true",
@@ -593,6 +607,16 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, false);
+
+    /* Parse path creation flag */
+    settings->recording_file_permissions =
+        guac_user_parse_args_mode(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_RECORDING_FILE_PERMISSIONS, GUAC_VNC_DEFAULT_RECORDING_FILE_PERMISSIONS);
+
+    /* Parse path creation flag */
+    settings->recording_path_permissions =
+        guac_user_parse_args_mode(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_RECORDING_PATH_PERMISSIONS, GUAC_VNC_DEFAULT_RECORDING_PATH_PERMISSIONS);
 
     /* Parse clipboard copy disable flag */
     settings->disable_copy =

@@ -603,6 +603,8 @@ void* guac_telnet_client_thread(void* data) {
                 settings->recording_path,
                 settings->recording_name,
                 settings->create_recording_path,
+                settings->recording_file_permissions,
+                settings->recording_path_permissions,
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
                 0, /* Touch events not supported */
