@@ -117,6 +117,8 @@ static int guac_rdp_join_pending_handler(guac_client* client) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_socket* broadcast_socket = client->pending_socket;
 
+    pthread_rwlock_rdlock(&(rdp_client->lock));
+
     /* Synchronize any audio stream for each pending user */
     if (rdp_client->audio)
         guac_client_foreach_pending_user(
@@ -130,6 +132,8 @@ static int guac_rdp_join_pending_handler(guac_client* client) {
         guac_common_display_dup(rdp_client->display, client, broadcast_socket);
         guac_socket_flush(broadcast_socket);
     }
+
+    pthread_rwlock_unlock(&(rdp_client->lock));
 
     return 0;
 
