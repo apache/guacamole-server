@@ -48,16 +48,18 @@ void guac_rdp_pipe_svc_send_pipes(
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    guac_common_list_lock(rdp_client->available_svc);
+    if (rdp_client->available_svc != NULL) {
+        guac_common_list_lock(rdp_client->available_svc);
 
-    /* Send pipe for each allocated SVC's output stream */
-    guac_common_list_element* current = rdp_client->available_svc->head;
-    while (current != NULL) {
-        guac_rdp_pipe_svc_send_pipe(socket, (guac_rdp_pipe_svc*) current->data);
-        current = current->next;
+        /* Send pipe for each allocated SVC's output stream */
+        guac_common_list_element* current = rdp_client->available_svc->head;
+        while (current != NULL) {
+            guac_rdp_pipe_svc_send_pipe(socket, (guac_rdp_pipe_svc*) current->data);
+            current = current->next;
+        }
+
+        guac_common_list_unlock(rdp_client->available_svc);
     }
-
-    guac_common_list_unlock(rdp_client->available_svc);
 }
 
 void guac_rdp_pipe_svc_add(guac_client* client, guac_rdp_pipe_svc* pipe_svc) {
