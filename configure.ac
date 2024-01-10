@@ -68,6 +68,14 @@ AC_CHECK_LIB([pthread], [pthread_create], [PTHREAD_LIBS=-lpthread
               AC_DEFINE([HAVE_LIBPTHREAD],,
                         [Whether libpthread was found])])
 
+# librt
+AC_CHECK_FUNC([timer_create], [AC_MSG_RESULT([timer_create was found without librt.])],
+              [AC_CHECK_LIB([rt], [timer_create],
+                            [AC_MSG_RESULT([timer_create was found in librt.])
+                                           RT_LIBS=-lrt],
+                            [AC_MSG_ERROR([timer_create could not be found.])])
+              ])
+
 # Include libdl for dlopen() if necessary
 AC_CHECK_LIB([dl], [dlopen],
              [DL_LIBS=-ldl],
@@ -128,6 +136,7 @@ AC_SUBST(MATH_LIBS)
 AC_SUBST(PNG_LIBS)
 AC_SUBST(JPEG_LIBS)
 AC_SUBST(CAIRO_LIBS)
+AC_SUBST(RT_LIBS)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(UUID_LIBS)
 AC_SUBST(CUNIT_LIBS)
