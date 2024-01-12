@@ -1324,7 +1324,7 @@ void guac_common_surface_resize(guac_common_surface* surface, int w, int h) {
 
     /* Allocate completely new heat map (can safely discard old stats) */
     guac_mem_free(surface->heat_map);
-    surface->heat_map = guac_mem_alloc(heat_width, heat_height,
+    surface->heat_map = guac_mem_zalloc(heat_width, heat_height,
             sizeof(guac_common_surface_heat_cell));
 
     /* Resize dirty rect to fit new surface dimensions */
