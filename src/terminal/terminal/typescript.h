@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_TERMINAL_TYPESCRIPT_H
 #define GUAC_TERMINAL_TYPESCRIPT_H
 
@@ -27,7 +26,6 @@
  *
  * @file typescript.h
  */
-
 
 #include <guacamole/timestamp.h>
 

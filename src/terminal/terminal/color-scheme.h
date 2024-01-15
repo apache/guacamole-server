@@ -26,7 +26,6 @@
  * @file color-scheme.h
  */
 
-
 #include "palette.h"
 
 #include <guacamole/client.h>

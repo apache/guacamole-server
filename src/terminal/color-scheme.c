@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #include "terminal/color-scheme.h"
 #include "terminal/palette.h"
 #include "terminal/xparsecolor.h"

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_TERMINAL_HANDLERS
 #define _GUAC_TERMINAL_HANDLERS
 
