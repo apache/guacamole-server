@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_RAW_ENCODER_H
 #define GUAC_RAW_ENCODER_H
 

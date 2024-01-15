@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef __GUAC_AUDIO_H
 #define __GUAC_AUDIO_H
 

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_UNICODE_H
 #define _GUAC_UNICODE_H
 
