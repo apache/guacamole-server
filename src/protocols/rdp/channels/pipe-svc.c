@@ -42,7 +42,6 @@ void guac_rdp_pipe_svc_send_pipe(guac_socket* socket, guac_rdp_pipe_svc* pipe_sv
 
 }
 
-
 void guac_rdp_pipe_svc_send_pipes(
         guac_client* client, guac_socket* socket) {
 

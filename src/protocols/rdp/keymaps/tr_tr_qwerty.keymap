@@ -61,7 +61,6 @@ map +altgr -shift 0x1F ~ "ß"
 
 map +altgr -shift 0x56 ~ "|"
 
-
 #
 # Keys requiring AltGr and vary by Shift and Caps Lock
 #

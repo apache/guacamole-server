@@ -395,4 +395,3 @@ BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
 
 }
 
-

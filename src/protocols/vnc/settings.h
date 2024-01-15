@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef __GUAC_VNC_SETTINGS_H
 #define __GUAC_VNC_SETTINGS_H
 

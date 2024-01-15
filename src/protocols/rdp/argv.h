@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_RDP_ARGV_H
 #define GUAC_RDP_ARGV_H
 

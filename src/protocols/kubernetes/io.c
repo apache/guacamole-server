@@ -140,4 +140,3 @@ bool guac_kubernetes_write_pending_message(guac_client* client) {
 
 }
 
-

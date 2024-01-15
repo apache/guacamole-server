@@ -37,7 +37,6 @@
 #include <guacamole/recording.h>
 #include <guacamole/socket.h>
 
-
 /**
  * A pending join handler implementation that will synchronize the connection
  * state for all pending users prior to them being promoted to full user.
