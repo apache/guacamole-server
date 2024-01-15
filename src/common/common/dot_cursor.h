@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_COMMON_DOT_CURSOR_H
 #define _GUAC_COMMON_DOT_CURSOR_H
 

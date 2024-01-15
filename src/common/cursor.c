@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 /**
  * Allocates a cursor as well as an image buffer where the cursor is rendered.
  *
