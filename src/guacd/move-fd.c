@@ -76,7 +76,6 @@ int guacd_recv_fd(int sock) {
     message.msg_iov    = io_vector;
     message.msg_iovlen = 1;
 
-
     /* Assign ancillary data buffer */
     char buffer[CMSG_SPACE(sizeof(fd))];
     message.msg_control = buffer;

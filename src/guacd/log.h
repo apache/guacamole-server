@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef __GUACD_LOG_H
 #define __GUACD_LOG_H
 
