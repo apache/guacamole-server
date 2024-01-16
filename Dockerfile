@@ -168,6 +168,7 @@ COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
 # Bring runtime environment up to date and install runtime dependencies
 RUN apk add --no-cache                \
         ca-certificates               \
+        font-noto-cjk                 \
         ghostscript                   \
         netcat-openbsd                \
         shadow                        \
