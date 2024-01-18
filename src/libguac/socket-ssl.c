@@ -25,6 +25,7 @@
 #include "guacamole/socket.h"
 #include "wait-fd.h"
 
+#include <pthread.h>
 #include <stdlib.h>
 
 #include <openssl/ssl.h>
@@ -97,8 +98,40 @@ static int __guac_socket_ssl_free_handler(guac_socket* socket) {
     /* Close file descriptor */
     close(data->fd);
 
+    pthread_mutex_destroy(&(data->socket_lock));
+
     guac_mem_free(data);
     return 0;
+}
+
+/**
+ * Acquires exclusive access to the given socket.
+ *
+ * @param socket
+ *      The guac_socket to which exclusive access is requested.
+ */
+static void __guac_socket_ssl_lock_handler(guac_socket* socket) {
+
+    guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
+
+    /* Acquire exclusive access to the socket */
+    pthread_mutex_lock(&(data->socket_lock));
+
+}
+
+/**
+ * Releases exclusive access to the given socket.
+ *
+ * @param socket
+ *      The guac_socket to which exclusive access is released.
+ */
+static void __guac_socket_ssl_unlock_handler(guac_socket* socket) {
+
+    guac_socket_ssl_data* data = (guac_socket_ssl_data*) socket->data;
+
+    /* Relinquish exclusive access to the socket */
+    pthread_mutex_unlock(&(data->socket_lock));
+
 }
 
 guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd) {
@@ -129,6 +162,11 @@ guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd) {
         return NULL;
     }
 
+    pthread_mutexattr_t lock_attributes;
+    pthread_mutexattr_init(&lock_attributes);
+    pthread_mutexattr_setpshared(&lock_attributes, PTHREAD_PROCESS_SHARED);
+    pthread_mutex_init(&(data->socket_lock), &lock_attributes);
+
     /* Store file descriptor as socket data */
     data->fd = fd;
     socket->data = data;
@@ -138,6 +176,8 @@ guac_socket* guac_socket_open_secure(SSL_CTX* context, int fd) {
     socket->write_handler  = __guac_socket_ssl_write_handler;
     socket->select_handler = __guac_socket_ssl_select_handler;
     socket->free_handler   = __guac_socket_ssl_free_handler;
+    socket->lock_handler   = __guac_socket_ssl_lock_handler;
+    socket->unlock_handler = __guac_socket_ssl_unlock_handler;
 
     return socket;
 
