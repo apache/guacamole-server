@@ -124,6 +124,9 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
     guac_mem_free(buffer);
 
     /* libvncclient does not free rcMask as it does rcSource */
-    free(client->rcMask);
+    if (client->rcMask) {
+        free(client->rcMask);
+        client->rcMask = NULL;
+    }
 }
 
