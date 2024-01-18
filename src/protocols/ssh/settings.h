@@ -94,6 +94,12 @@ typedef struct guac_ssh_settings {
     char* key_passphrase;
 
     /**
+     * The public key, encoded as base64, if any. If no public key is specified,
+     * this will be NULL.
+     */
+    char* public_key_base64;
+
+    /**
      * Whether this connection is read-only, and user input should be dropped.
      */
     bool read_only;

@@ -54,7 +54,7 @@ static void write_instructions(int fd) {
 
     /* Write instructions */
     guac_protocol_send_name(socket, "a" UTF8_4 "b" UTF8_4 "c");
-    guac_protocol_send_sync(socket, 12345);
+    guac_protocol_send_sync(socket, 12345, 1);
     guac_socket_flush(socket);
 
     /* Close and free socket */
@@ -76,7 +76,7 @@ static void read_expected_instructions(int fd) {
 
     char expected[] =
         "4.name,11.a" UTF8_4 "b" UTF8_4 "c;"
-        "4.sync,5.12345;";
+        "4.sync,5.12345,1.1;";
 
     int numread;
     char buffer[1024];

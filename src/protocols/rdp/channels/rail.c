@@ -230,22 +230,22 @@ static UINT guac_rdp_rail_handshake_ex(RailClientContext* rail,
  * @param context
  *     The rdpContext associated with the active RDP session.
  *
- * @param e
+ * @param args
  *     Event-specific arguments, mainly the name of the channel, and a
  *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_rail_channel_connected(rdpContext* context,
-        ChannelConnectedEventArgs* e) {
+        ChannelConnectedEventArgs* args) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
 
     /* Ignore connection event if it's not for the RAIL channel */
-    if (strcmp(e->name, RAIL_SVC_CHANNEL_NAME) != 0)
+    if (strcmp(args->name, RAIL_SVC_CHANNEL_NAME) != 0)
         return;
 
     /* The structure pointed to by pInterface is guaranteed to be a
      * RailClientContext if the channel is RAIL */
-    RailClientContext* rail = (RailClientContext*) e->pInterface;
+    RailClientContext* rail = (RailClientContext*) args->pInterface;
 
     /* Init FreeRDP RAIL context, ensuring the guac_client can be accessed from
      * within any RAIL-specific callbacks */

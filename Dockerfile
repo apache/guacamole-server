@@ -22,7 +22,9 @@
 #
 
 # The Alpine Linux image that should be used as the basis for the guacd image
-ARG ALPINE_BASE_IMAGE=latest
+# NOTE: Using 3.18 because the required openssl1.1-compat-dev package was
+# removed in more recent versions.
+ARG ALPINE_BASE_IMAGE=3.18
 FROM alpine:${ALPINE_BASE_IMAGE} AS builder
 
 # Install build dependencies
@@ -32,6 +34,7 @@ RUN apk add --no-cache                \
         build-base                    \
         cairo-dev                     \
         cmake                         \
+        cunit-dev                     \
         git                           \
         grep                          \
         libjpeg-turbo-dev             \

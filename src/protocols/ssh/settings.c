@@ -48,6 +48,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "sftp-disable-upload",
     "private-key",
     "passphrase",
+    "public-key",
 #ifdef ENABLE_SSH_AGENT
     "enable-agent",
 #endif
@@ -148,6 +149,11 @@ enum SSH_ARGS_IDX {
      * The passphrase required to decrypt the private key, if any.
      */
     IDX_PASSPHRASE,
+
+    /**
+     * The public key to use for authentication, if any.
+     */
+    IDX_PUBLIC_KEY,
 
 #ifdef ENABLE_SSH_AGENT
     /**
@@ -374,6 +380,10 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_PASSPHRASE, NULL);
 
+    settings->public_key_base64 =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_PUBLIC_KEY, NULL);
+
     /* Read maximum scrollback size */
     settings->max_scrollback =
         guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
@@ -568,6 +578,7 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
     guac_mem_free(settings->password);
     guac_mem_free(settings->key_base64);
     guac_mem_free(settings->key_passphrase);
+    guac_mem_free(settings->public_key_base64);
 
     /* Free display preferences */
     guac_mem_free(settings->font_name);

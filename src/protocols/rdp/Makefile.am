@@ -57,6 +57,7 @@ libguac_client_rdp_la_SOURCES =                  \
     channels/rdpdr/rdpdr-printer.c               \
     channels/rdpdr/rdpdr.c                       \
     channels/rdpei.c                             \
+    channels/rdpgfx.c                            \
     channels/rdpsnd/rdpsnd-messages.c            \
     channels/rdpsnd/rdpsnd.c                     \
     client.c                                     \
@@ -103,6 +104,7 @@ noinst_HEADERS =                                 \
     channels/rdpdr/rdpdr-printer.h               \
     channels/rdpdr/rdpdr.h                       \
     channels/rdpei.h                             \
+    channels/rdpgfx.h                            \
     channels/rdpsnd/rdpsnd-messages.h            \
     channels/rdpsnd/rdpsnd.h                     \
     client.h                                     \
@@ -227,7 +229,9 @@ BUILT_SOURCES =                         \
 
 rdp_keymaps =                                \
     $(srcdir)/keymaps/base.keymap            \
+    $(srcdir)/keymaps/base_altgr.keymap      \
     $(srcdir)/keymaps/failsafe.keymap        \
+    $(srcdir)/keymaps/cs-cz-qwertz.keymap    \
     $(srcdir)/keymaps/de_de_qwertz.keymap    \
     $(srcdir)/keymaps/de_ch_qwertz.keymap    \
     $(srcdir)/keymaps/en_gb_qwerty.keymap    \
@@ -235,6 +239,7 @@ rdp_keymaps =                                \
     $(srcdir)/keymaps/es_es_qwerty.keymap    \
     $(srcdir)/keymaps/es_latam_qwerty.keymap \
     $(srcdir)/keymaps/fr_be_azerty.keymap    \
+    $(srcdir)/keymaps/fr_ca_qwerty.keymap    \
     $(srcdir)/keymaps/fr_ch_qwertz.keymap    \
     $(srcdir)/keymaps/fr_fr_azerty.keymap    \
     $(srcdir)/keymaps/hu_hu_qwertz.keymap    \
@@ -243,6 +248,8 @@ rdp_keymaps =                                \
     $(srcdir)/keymaps/no_no_qwerty.keymap    \
     $(srcdir)/keymaps/pl_pl_qwerty.keymap    \
     $(srcdir)/keymaps/pt_br_qwerty.keymap    \
+    $(srcdir)/keymaps/pt_pt_qwerty.keymap    \
+    $(srcdir)/keymaps/ro_ro_qwerty.keymap    \
     $(srcdir)/keymaps/sv_se_qwerty.keymap    \
     $(srcdir)/keymaps/da_dk_qwerty.keymap    \
     $(srcdir)/keymaps/tr_tr_qwerty.keymap

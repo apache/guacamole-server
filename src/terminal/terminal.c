@@ -20,6 +20,7 @@
 
 #include "common/clipboard.h"
 #include "common/cursor.h"
+#include "common/iconv.h"
 #include "terminal/buffer.h"
 #include "terminal/color-scheme.h"
 #include "terminal/common.h"
@@ -337,6 +338,97 @@ guac_terminal_options* guac_terminal_options_create(
     return options;
 }
 
+/**
+ * Calculate the available height and width in characters for text display in 
+ * the terminal and store the results in the pointer arguments.
+ *
+ * @param terminal
+ *     The terminal provides character width and height for calculations.
+ * 
+ * @param height
+ *     The outer height of the terminal, in pixels.
+ * 
+ * @param width
+ *     The outer width of the terminal, in pixels.
+ * 
+ * @param rows
+ *     Pointer to the calculated height of the terminal for text display,
+ *     in characters.
+ * 
+ * @param columns
+ *     Pointer to the calculated width of the terminal for text display,
+ *     in characters.
+ */
+static void calculate_rows_and_columns(guac_terminal* term,
+    int height, int width, int *rows, int *columns) {
+
+    int margin = term->display->margin;
+    int char_width = term->display->char_width;
+    int char_height = term->display->char_height;
+    
+    /* Calculate available display area */
+    int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH - 2 * margin;
+    if (available_width < 0)
+        available_width = 0;
+
+    int available_height = height - 2 * margin;
+    if (available_height < 0)
+        available_height = 0;
+
+    /* Calculate dimensions */
+    *rows    = available_height / char_height;
+    *columns = available_width / char_width;
+
+    /* Keep height within predefined maximum */
+    if (*rows > GUAC_TERMINAL_MAX_ROWS)
+        *rows = GUAC_TERMINAL_MAX_ROWS;
+
+    /* Keep width within predefined maximum */
+    if (*columns > GUAC_TERMINAL_MAX_COLUMNS)
+        *columns = GUAC_TERMINAL_MAX_COLUMNS;
+}
+
+/**
+ * Calculate the available height and width in pixels of the terminal for text 
+ * display in the terminal and store the results in the pointer arguments.
+ *
+ * @param terminal
+ *     The terminal provides character width and height for calculations.
+ * 
+ * @param rows
+ *     The available height of the terminal for text display, in characters.
+ * 
+ * @param columns
+ *     The available width of the terminal for text display, in characters.
+ *
+ * @param height
+ *     Pointer to the calculated available height of the terminal for text 
+ *     display, in pixels.
+ * 
+ * @param width
+ *     Pointer to the calculated available width of the terminal for text 
+ *     display, in pixels.
+ */
+static void calculate_height_and_width(guac_terminal* term,
+    int rows, int columns, int *height, int *width) {
+
+    int margin = term->display->margin;
+    int char_width = term->display->char_width;
+    int char_height = term->display->char_height;
+
+    /* Recalculate height if max rows reached */
+    if (rows == GUAC_TERMINAL_MAX_ROWS) {
+        int available_height = GUAC_TERMINAL_MAX_ROWS * char_height;
+        *height = available_height + 2 * margin;
+    }
+
+    /* Recalculate width if max columns reached */
+    if (columns == GUAC_TERMINAL_MAX_COLUMNS) {
+        int available_width = GUAC_TERMINAL_MAX_COLUMNS * char_width;
+        *width = available_width + GUAC_TERMINAL_SCROLLBAR_WIDTH + 2 * margin;
+    }
+}
+
 guac_terminal* guac_terminal_create(guac_client* client,
         guac_terminal_options* options) {
 
@@ -365,11 +457,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
                                      &default_char.attributes.background,
                                      default_palette);
 
-    /* Calculate available display area */
-    int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
-    if (available_width < 0)
-        available_width = 0;
-
     guac_terminal* term = guac_mem_alloc(sizeof(guac_terminal));
     term->started = false;
     term->client = client;
@@ -380,10 +467,6 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->color_scheme = guac_strdup(options->color_scheme);
     term->font_name = guac_strdup(options->font_name);
     term->font_size = options->font_size;
-
-    /* Set size of available screen area */
-    term->outer_width = width;
-    term->outer_height = height;
 
     /* Init modified flag and conditional */
     term->modified = 0;
@@ -427,29 +510,27 @@ guac_terminal* guac_terminal_create(guac_client* client,
     term->clipboard = guac_common_clipboard_alloc();
     term->disable_copy = options->disable_copy;
 
-    /* Calculate character size */
-    int rows    = height / term->display->char_height;
-    int columns = available_width / term->display->char_width;
+    /* Calculate available text display area by character size */
+    int rows, columns;
+    calculate_rows_and_columns(term, height, width, &rows, &columns);
 
-    /* Keep height within predefined maximum */
-    if (rows > GUAC_TERMINAL_MAX_ROWS) {
-        rows = GUAC_TERMINAL_MAX_ROWS;
-        height = rows * term->display->char_height;
-    }
+    /* Calculate available display area in pixels */
+    int adjusted_height = height; 
+    int adjusted_width = width;
+    calculate_height_and_width(term, rows, columns,
+        &adjusted_height, &adjusted_width);
 
-    /* Keep width within predefined maximum */
-    if (columns > GUAC_TERMINAL_MAX_COLUMNS) {
-        columns = GUAC_TERMINAL_MAX_COLUMNS;
-        available_width = columns * term->display->char_width;
-        width = available_width + GUAC_TERMINAL_SCROLLBAR_WIDTH;
-    }
+    /* Set size of available screen area */
+    term->outer_height = height;
+    term->outer_width = width;
+
+    /* Set rows and columns size */
+    term->term_height = rows;
+    term->term_width  = columns;
 
     /* Set pixel size */
-    term->width = width;
-    term->height = height;
-
-    term->term_width  = columns;
-    term->term_height = rows;
+    term->height = adjusted_height;
+    term->width = adjusted_width;
 
     /* Open STDIN pipe */
     if (pipe(term->stdin_pipe_fd)) {
@@ -478,7 +559,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
 
     /* Allocate scrollbar */
     term->scrollbar = guac_terminal_scrollbar_alloc(term->client, GUAC_DEFAULT_LAYER,
-            width, height, term->term_height);
+            term->outer_width, term->outer_height, term->term_height);
 
     /* Associate scrollbar with this terminal */
     term->scrollbar->data = term;
@@ -493,6 +574,7 @@ guac_terminal* guac_terminal_create(guac_client* client,
     /* All keyboard modifiers are released */
     term->mod_alt   =
     term->mod_ctrl  =
+    term->mod_meta  =
     term->mod_shift = 0;
 
     /* Initialize mouse cursor */
@@ -1304,7 +1386,7 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
     guac_terminal_display_flush(term->display);
     guac_terminal_display_resize(term->display, width, height);
 
-    /* Reraw any characters on right if widening */
+    /* Redraw any characters on right if widening */
     if (width > term->term_width)
         __guac_terminal_redraw_rect(term, 0, term->term_width-1, height-1, width-1);
 
@@ -1387,55 +1469,39 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     /* Acquire exclusive access to terminal */
     guac_terminal_lock(terminal);
 
+    /* Calculate available text display area by character size */
+    int rows, columns;
+    calculate_rows_and_columns(terminal, height, width, &rows, &columns);
+
+    /* Calculate available display area in pixels */
+    int adjusted_height = height; 
+    int adjusted_width = width;
+    calculate_height_and_width(terminal, rows, columns,
+        &adjusted_height, &adjusted_width);
+
     /* Set size of available screen area */
-    terminal->outer_width = width;
     terminal->outer_height = height;
+    terminal->outer_width = width;
 
-    /* Calculate available display area */
-    int available_width = width - GUAC_TERMINAL_SCROLLBAR_WIDTH;
-    if (available_width < 0)
-        available_width = 0;
-
-    /* Calculate dimensions */
-    int rows    = height / display->char_height;
-    int columns = available_width / display->char_width;
-
-    /* Keep height within predefined maximum */
-    if (rows > GUAC_TERMINAL_MAX_ROWS) {
-        rows = GUAC_TERMINAL_MAX_ROWS;
-        height = rows * display->char_height;
-    }
-
-    /* Keep width within predefined maximum */
-    if (columns > GUAC_TERMINAL_MAX_COLUMNS) {
-        columns = GUAC_TERMINAL_MAX_COLUMNS;
-        available_width = columns * display->char_width;
-        width = available_width + GUAC_TERMINAL_SCROLLBAR_WIDTH;
-    }
-
-    /* Set pixel sizes */
-    terminal->width = width;
-    terminal->height = height;
+    /* Set pixel size */
+    terminal->height = adjusted_height;
+    terminal->width = adjusted_width;
 
     /* Resize default layer to given pixel dimensions */
     guac_terminal_repaint_default_layer(terminal, client->socket);
 
     /* Resize terminal if row/column dimensions have changed */
     if (columns != terminal->term_width || rows != terminal->term_height) {
-
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Resizing terminal to %ix%i", rows, columns);
-
-        /* Resize terminal */
+        /* Resize terminal and set the columns and rows on the terminal struct */
         __guac_terminal_resize(terminal, columns, rows);
 
         /* Reset scroll region */
         terminal->scroll_end = rows - 1;
-
     }
 
     /* Notify scrollbar of resize */
-    guac_terminal_scrollbar_parent_resized(terminal->scrollbar, width, height, rows);
+    guac_terminal_scrollbar_parent_resized(terminal->scrollbar, 
+        terminal->outer_width, terminal->outer_height, terminal->term_height);
     guac_terminal_scrollbar_set_bounds(terminal->scrollbar,
             -guac_terminal_get_available_scroll(terminal), 0);
 
@@ -1511,19 +1577,30 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
     }
 
     /* Track modifiers */
-    if (keysym == 0xFFE3)
+    if (keysym == 0xFFE3 || keysym == 0xFFE4)
         term->mod_ctrl = pressed;
-    else if (keysym == 0xFFE9)
+    else if (keysym == 0xFFE7 || keysym == 0xFFE8)
+        term->mod_meta = pressed;
+    else if (keysym == 0xFFE9 || keysym == 0xFFEA)
         term->mod_alt = pressed;
-    else if (keysym == 0xFFE1)
+    else if (keysym == 0xFFE1 || keysym == 0xFFE2)
         term->mod_shift = pressed;
         
     /* If key pressed */
     else if (pressed) {
 
-        /* Ctrl+Shift+V shortcut for paste */
-        if (keysym == 'V' && term->mod_ctrl)
+        /* Ctrl+Shift+V or Cmd+v (mac style) shortcuts for paste */
+        if ((keysym == 'V' && term->mod_ctrl) || (keysym == 'v' && term->mod_meta))
             return guac_terminal_send_data(term, term->clipboard->buffer, term->clipboard->length);
+
+        /*
+         * Ctrl+Shift+C and Cmd+c shortcuts for copying are not handled, as
+         * selecting text in the terminal automatically copies it. To avoid
+         * attempts to use these shortcuts causing unexpected results in the
+         * terminal, these are just ignored.
+         */
+        if ((keysym == 'C' && term->mod_ctrl) || (keysym == 'c' && term->mod_meta))
+            return 0;
 
         /* Shift+PgUp / Shift+PgDown shortcuts for scrolling */
         if (term->mod_shift) {
@@ -2131,7 +2208,16 @@ void guac_terminal_clipboard_reset(guac_terminal* terminal,
 
 void guac_terminal_clipboard_append(guac_terminal* terminal,
         const char* data, int length) {
-    guac_common_clipboard_append(terminal->clipboard, data, length);
+
+    /* Allocate and clear space for the converted data */
+    char output_data[GUAC_COMMON_CLIPBOARD_MAX_LENGTH];
+    char* output = output_data;
+
+    /* Convert clipboard contents */
+    guac_iconv(GUAC_READ_UTF8_NORMALIZED, &data, length,
+            GUAC_WRITE_UTF8, &output, GUAC_COMMON_CLIPBOARD_MAX_LENGTH);
+
+    guac_common_clipboard_append(terminal->clipboard, output_data, output - output_data);
 }
 
 void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
