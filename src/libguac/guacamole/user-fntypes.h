@@ -375,7 +375,7 @@ typedef int guac_user_ack_handler(guac_user* user, guac_stream* stream,
  *     The stream that is being closed.
  *
  * @return
- *     Zero if the end-of-stream condition has been sucessfully handled,
+ *     Zero if the end-of-stream condition has been successfully handled,
  *     non-zero otherwise.
  */
 typedef int guac_user_end_handler(guac_user* user, guac_stream* stream);
