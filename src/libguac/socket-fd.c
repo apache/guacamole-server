@@ -325,7 +325,7 @@ static ssize_t guac_socket_fd_write_handler(guac_socket* socket,
 }
 
 /**
- * Waits for data on the underlying file desriptor of the given socket to
+ * Waits for data on the underlying file descriptor of the given socket to
  * become available such that the next read operation will not block.
  *
  * @param socket
