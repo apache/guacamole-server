@@ -255,7 +255,7 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar);
 void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar);
 
 /**
- * Forces a complete redraw / resync of scrollbar state for all joinging users
+ * Forces a complete redraw / resync of scrollbar state for all joining users
  * associated with the provided socket, sending the necessary instructions to
  * completely recreate and redraw the scrollbar rendering over the given
  * socket.

@@ -170,7 +170,7 @@ void guac_common_display_dup(
 
     pthread_mutex_lock(&display->_lock);
 
-    /* Sunchronize shared cursor */
+    /* Synchronize shared cursor */
     guac_common_cursor_dup(display->cursor, client, socket);
 
     /* Synchronize default surface */

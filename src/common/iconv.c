@@ -140,7 +140,7 @@ int GUAC_READ_ISO8859_1(const char** input, int remaining) {
 
 /**
  * Invokes the given reader function, automatically normalizing newline
- * sequences as Unix-style newline characters ('\n').  All other charaters are
+ * sequences as Unix-style newline characters ('\n').  All other characters are
  * read verbatim.
  *
  * @param reader
@@ -256,7 +256,7 @@ void GUAC_WRITE_ISO8859_1(char** output, int remaining, int value) {
 
 /**
  * Invokes the given writer function, automatically writing newline characters
- * ('\n') as CRLF ("\r\n"). All other charaters are written verbatim.
+ * ('\n') as CRLF ("\r\n"). All other characters are written verbatim.
  *
  * @param writer
  *     The writer to use to write the given character.

@@ -35,7 +35,7 @@
 
 /**
  * The number of microseconds to wait for messages in any phase before
- * timing out and closing the conncetion with an error. This is always
+ * timing out and closing the connection with an error. This is always
  * equal to GUACD_TIMEOUT * 1000.
  */
 #define GUACD_USEC_TIMEOUT (GUACD_TIMEOUT*1000)

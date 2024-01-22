@@ -643,7 +643,7 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
     for (row=0; row<display->height; row++) {
         for (col=0; col<display->width; col++) {
 
-            /* If operation is a cler operation (set to space) */
+            /* If operation is a clear operation (set to space) */
             if (current->type == GUAC_CHAR_SET &&
                     !guac_terminal_has_glyph(current->character.value)) {
 

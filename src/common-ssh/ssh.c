@@ -203,7 +203,7 @@ void guac_common_ssh_uninit() {
 /**
  * Callback for the keyboard-interactive authentication method. Currently
  * supports just one prompt for the password. This callback is invoked as
- * needed to fullfill a call to libssh2_userauth_keyboard_interactive().
+ * needed to fulfill a call to libssh2_userauth_keyboard_interactive().
  *
  * @param name
  *     An arbitrary name which should be printed to the terminal for the

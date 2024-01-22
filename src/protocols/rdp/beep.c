@@ -115,7 +115,7 @@ BOOL guac_rdp_beep_play_sound(rdpContext* context,
     /* Ignore if audio is not enabled */
     if (!settings->audio_enabled) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Ignoring request to beep "
-                "for %" PRIu32 " millseconds at %" PRIu32 " Hz as audio is "
+                "for %" PRIu32 " milliseconds at %" PRIu32 " Hz as audio is "
                 "disabled.", play_sound->duration, play_sound->frequency);
         return TRUE;
     }
@@ -128,7 +128,7 @@ BOOL guac_rdp_beep_play_sound(rdpContext* context,
     /* Stream availability is not guaranteed */
     if (beep == NULL) {
         guac_client_log(client, GUAC_LOG_DEBUG, "Ignoring request to beep "
-                "for %" PRIu32 " millseconds at %" PRIu32 " Hz as no audio "
+                "for %" PRIu32 " milliseconds at %" PRIu32 " Hz as no audio "
                 "stream could be allocated.", play_sound->duration,
                 play_sound->frequency);
         return TRUE;

@@ -537,7 +537,7 @@ static int guac_terminal_parse_xterm256_index(guac_terminal* terminal,
 
 /**
  * Parses an xterm SGR sequence specifying the index of a color within the
- * 256-color palette, or specfying the RGB values of a color. The number of
+ * 256-color palette, or specifying the RGB values of a color. The number of
  * arguments required by these sequences varies. If a 256-color sequence is
  * recognized, the number of arguments parsed is returned.
  *
