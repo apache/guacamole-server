@@ -200,7 +200,7 @@ int guac_jpeg_write(guac_socket* socket, guac_stream* stream,
     cinfo.arith_code = TRUE;
 
 #ifdef JCS_EXTENSIONS
-    /* The Turbo JPEG extentions allows us to use the Cairo surface
+    /* The Turbo JPEG extensions allows us to use the Cairo surface
      * (BGRx) as input without converting it */
     cinfo.input_components = 4;
     cinfo.in_color_space = JCS_EXT_BGRX;
