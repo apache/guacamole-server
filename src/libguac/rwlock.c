@@ -139,7 +139,7 @@ static void* get_value_from_flag_and_count(
 static int would_overflow_count(uintptr_t current_count) {
 
     /**
-     * The count will overflow if it's already equal or greated to the maximum
+     * The count will overflow if it's already equal or greater to the maximum
      * possible value that can be stored in a uintptr_t excluding the first nibble.
      */
     return current_count >= (UINTPTR_MAX >> 4);

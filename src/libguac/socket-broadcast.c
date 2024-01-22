@@ -374,7 +374,7 @@ static int __guac_socket_broadcast_free_handler(guac_socket* socket) {
  *     The client who's users are being broadcast to.
  *
  * @param broadcast_handler
- *     The handler that will peform the broadcast against a subset of users
+ *     The handler that will perform the broadcast against a subset of users
  *     of the provided client.
  *
  * @return
