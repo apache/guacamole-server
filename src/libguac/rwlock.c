@@ -109,7 +109,7 @@ static uintptr_t get_lock_count(uintptr_t value) {
  * in the least-significant nibble, and the count in the rest.
  *
  * @param flag
- *     A flag indiciating which lock, if any, is held by the current thread.
+ *     A flag indicating which lock, if any, is held by the current thread.
  *
  * @param count
  *     The depth of the lock attempt by the current thread, i.e. the number of
