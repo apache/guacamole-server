@@ -341,7 +341,7 @@ int guac_protocol_send_set(guac_socket* socket, const guac_layer* layer,
 
 /**
  * Sends a set instruction over the given guac_socket connection. This function
- * behavies identically to guac_protocol_send_set() except that the provided
+ * behaves identically to guac_protocol_send_set() except that the provided
  * parameter value is an integer, rather than a string.
  *
  * If an error occurs sending the instruction, a non-zero value is
