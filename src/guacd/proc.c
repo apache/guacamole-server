@@ -232,7 +232,7 @@ static void* guacd_client_free_thread(void* data) {
 /**
  * Attempts to free the given guac_client, restricting the time taken by the
  * free handler of the guac_client to a finite number of seconds. If the free
- * handler does not complete within the time alotted, this function returns
+ * handler does not complete within the time allotted, this function returns
  * and the intended free operation is left in an undefined state.
  *
  * @param client
@@ -243,7 +243,7 @@ static void* guacd_client_free_thread(void* data) {
  *     in seconds.
  *
  * @return
- *     Zero if the guac_client was successfully freed within the time alotted,
+ *     Zero if the guac_client was successfully freed within the time allotted,
  *     non-zero otherwise.
  */
 static int guacd_timed_client_free(guac_client* client, int timeout) {
