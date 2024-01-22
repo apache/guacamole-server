@@ -94,7 +94,7 @@ void guac_rwlock_destroy(guac_rwlock* lock);
  *
  * @return
  *     Zero if the lock is succesfully acquired, or a non-zero value if an
- *     error occured.
+ *     error occurred.
  */
 int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock);
 
@@ -113,7 +113,7 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock);
  *
  * @return
  *     Zero if the lock is succesfully acquired, or a non-zero value if an
- *     error occured.
+ *     error occurred.
  */
 int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock);
 
@@ -131,7 +131,7 @@ int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock);
  *
  * @return
  *     Zero if the lock is succesfully released, or a non-zero value if an
- *     error occured.
+ *     error occurred.
  */
 int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock);
 

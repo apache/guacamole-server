@@ -59,8 +59,8 @@ typedef int guac_client_free_handler(guac_client* client);
  *     The client whose handler was invoked.
  *
  * @return
- *     Zero if the pending handler ran successfuly, or a non-zero value if an
- *     error occured.
+ *     Zero if the pending handler ran successfully, or a non-zero value if an
+ *     error occurred.
  */
 typedef int guac_client_join_pending_handler(guac_client* client);
 

@@ -327,7 +327,7 @@ guac_client* guac_client_alloc();
 /**
  * Free all resources associated with the given client.
  *
- * @param client The proxy client to free all reasources of.
+ * @param client The proxy client to free all resources of.
  */
 void guac_client_free(guac_client* client);
 
