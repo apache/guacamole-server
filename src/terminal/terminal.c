@@ -1304,7 +1304,7 @@ static void __guac_terminal_resize(guac_terminal* term, int width, int height) {
     guac_terminal_display_flush(term->display);
     guac_terminal_display_resize(term->display, width, height);
 
-    /* Reraw any characters on right if widening */
+    /* Redraw any characters on right if widening */
     if (width > term->term_width)
         __guac_terminal_redraw_rect(term, 0, term->term_width-1, height-1, width-1);
 
