@@ -656,7 +656,7 @@ enum RDP_ARGS_IDX {
 
     /**
      * "true" if all graphical updates for this connection should use lossless
-     * compresion only, "false" or blank otherwise.
+     * compression only, "false" or blank otherwise.
      */
     IDX_FORCE_LOSSLESS,
 
