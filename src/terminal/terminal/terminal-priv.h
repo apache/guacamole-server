@@ -185,7 +185,7 @@ struct guac_terminal {
     int max_scrollback;
 
     /**
-     * The number of rows that the user has requested be avalable within the
+     * The number of rows that the user has requested be available within the
      * terminal buffer. This value may be adjusted by the user while the
      * terminal is running through console codes, and will adjust the number
      * of rows available within the terminal buffer, subject to the maximum

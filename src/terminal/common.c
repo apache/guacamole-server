@@ -94,7 +94,7 @@ int guac_terminal_write_all(int fd, const char* buffer, int size) {
         if (ret_val <= 0)
             return -1;
 
-        /* If successful, contine with what data remains (if any) */
+        /* If successful, continue with what data remains (if any) */
         remaining -= ret_val;
         buffer += ret_val;
 
