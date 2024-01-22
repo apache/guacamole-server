@@ -29,7 +29,7 @@
  *
  * A thread will attempt to acquire the requested lock on the first acquire
  * function call, and will release it once the number of unlock requests
- * matches the number of lock requests. Therefore, it is safe to aquire a lock
+ * matches the number of lock requests. Therefore, it is safe to acquire a lock
  * and then call a function that also acquires the same lock, provided that
  * the caller and the callee request to unlock the lock when done with it.
  *
@@ -79,7 +79,7 @@ void guac_rwlock_init(guac_rwlock* lock);
 void guac_rwlock_destroy(guac_rwlock* lock);
 
 /**
- * Aquire the write lock for the provided guac reentrant rwlock, if the key does not
+ * Acquire the write lock for the provided guac reentrant rwlock, if the key does not
  * indicate that the write lock is already acquired. If the key indicates that
  * the read lock is already acquired, the read lock will be dropped before the
  * write lock is acquired. The thread local property associated with the key
@@ -93,13 +93,13 @@ void guac_rwlock_destroy(guac_rwlock* lock);
  *     reentrantly.
  *
  * @return
- *     Zero if the lock is succesfully acquired, or a non-zero value if an
+ *     Zero if the lock is successfully acquired, or a non-zero value if an
  *     error occurred.
  */
 int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock);
 
 /**
- * Aquire the read lock for the provided guac reentrant rwlock, if the key does not
+ * Acquire the read lock for the provided guac reentrant rwlock, if the key does not
  * indicate that the read or write lock is already acquired. The thread local
  * property associated with the key will be updated as necessary to track the
  * thread's ownership of the lock.
@@ -112,7 +112,7 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock);
  *     reentrantly.
  *
  * @return
- *     Zero if the lock is succesfully acquired, or a non-zero value if an
+ *     Zero if the lock is successfully acquired, or a non-zero value if an
  *     error occurred.
  */
 int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock);
@@ -130,7 +130,7 @@ int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock);
  *     The guac reentrant rwlock that should be released.
  *
  * @return
- *     Zero if the lock is succesfully released, or a non-zero value if an
+ *     Zero if the lock is successfully released, or a non-zero value if an
  *     error occurred.
  */
 int guac_rwlock_release_lock(guac_rwlock* reentrant_rwlock);
