@@ -291,7 +291,7 @@ int guac_protocol_send_touch(guac_socket* socket, int id, int x, int y,
  *     socket directly.
  *
  * @param socket The guac_socket connection to use.
- * @param index The integer index of the stram to send the protocol
+ * @param index The integer index of the stream to send the protocol
  *              data over.
  * @param data A string containing protocol data, which must be UTF-8
  *             encoded and null-terminated.

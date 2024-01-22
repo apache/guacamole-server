@@ -143,7 +143,7 @@ void guac_parser_free(guac_parser* parser);
  * Reads a single instruction from the given guac_socket connection. This
  * may result in additional data being read from the guac_socket, stored
  * internally within a buffer for future parsing. Future calls to
- * guac_parser_read() will read from the interal buffer before reading
+ * guac_parser_read() will read from the internal buffer before reading
  * from the guac_socket. Data from the internal buffer can be removed
  * and used elsewhere through guac_parser_shift().
  *
