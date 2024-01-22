@@ -118,7 +118,7 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock);
 int guac_rwlock_acquire_read_lock(guac_rwlock* reentrant_rwlock);
 
 /**
- * Release the the rwlock associated with the provided guac reentrant rwlock if this
+ * Release the rwlock associated with the provided guac reentrant rwlock if this
  * is the last level of the lock held by this thread. Otherwise, the thread
  * local property associated with the key will be updated as needed to ensure
  * that the correct number of release requests will finally release the lock.

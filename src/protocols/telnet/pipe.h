@@ -33,7 +33,7 @@
 
 /**
  * Handles an incoming stream from a Guacamole "pipe" instruction. If the pipe
- * is named "STDIN", the the contents of the pipe stream are redirected to
+ * is named "STDIN", the contents of the pipe stream are redirected to
  * STDIN of the terminal emulator for as long as the pipe is open.
  */
 guac_user_pipe_handler guac_telnet_pipe_handler;

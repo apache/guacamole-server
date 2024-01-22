@@ -91,7 +91,7 @@ size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n);
  *     buffer will remain untouched (and unterminated) in this case.
  *
  * @param src
- *     The source string to append to the the destination buffer. This string
+ *     The source string to append to the destination buffer. This string
  *     MUST be null-terminated.
  *
  * @param n
