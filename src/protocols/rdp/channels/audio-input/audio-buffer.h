@@ -169,7 +169,7 @@ struct guac_rdp_audio_buffer {
     pthread_t flush_thread;
 
     /**
-     * The absolute point in time that the next packet of audio data sould be
+     * The absolute point in time that the next packet of audio data should be
      * flushed. Another packet of received data should not be flushed prior to
      * this time.
      */

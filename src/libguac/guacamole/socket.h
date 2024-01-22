@@ -21,7 +21,7 @@
 #define _GUAC_SOCKET_H
 
 /**
- * Defines the guac_socket object and functionss for using and manipulating it.
+ * Defines the guac_socket object and functions for using and manipulating it.
  *
  * @file socket.h
  */

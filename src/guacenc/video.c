@@ -191,7 +191,7 @@ fail_codec:
 }
 
 /**
- * Flushes the specied frame as a new frame of video, updating the internal
+ * Flushes the specified frame as a new frame of video, updating the internal
  * video timestamp by one frame's worth of time. The pts member of the given
  * frame structure will be updated with the current presentation timestamp of
  * the video. If pending frames of the video are being flushed, the given frame

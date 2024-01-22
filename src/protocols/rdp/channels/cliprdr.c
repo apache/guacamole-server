@@ -412,7 +412,7 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 /**
  * Callback invoked by the FreeRDP CLIPRDR plugin for received Format Data
  * Response PDUs. The Format Data Response PDU is sent by the RDP server when
- * fullfilling a request for clipboard data received via a Format Data Request
+ * fulfilling a request for clipboard data received via a Format Data Request
  * PDU.
  *
  * @param cliprdr

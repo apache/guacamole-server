@@ -107,7 +107,7 @@ void guac_common_ssh_key_free(guac_common_ssh_key* key);
  * single host_key, provided by the client, or a set of known_hosts entries
  * provided in the /etc/guacamole/ssh_known_hosts file.  Failure to correctly
  * load the known_hosts entries will result in a connection abort and a returned
- * error code.  A return code of zero indiciates that either no known_hosts entries
+ * error code.  A return code of zero indicates that either no known_hosts entries
  * were provided, or that the verification succeeded (match).  Negative values
  * indicate internal libssh2 error codes; positive values indicate a failure
  * during verification of the host key against the known hosts.

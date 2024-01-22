@@ -491,7 +491,7 @@ void guac_common_surface_flush(guac_common_surface* surface);
  *     The surface to duplicate.
  *
  * @param client
- *     The client whos users are receiving the surface.
+ *     The client whose users are receiving the surface.
  *
  * @param socket
  *     The socket over which the surface contents should be sent.

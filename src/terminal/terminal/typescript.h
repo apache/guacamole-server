@@ -120,7 +120,7 @@ typedef struct guac_terminal_typescript {
 
     /**
      * The last time that this typescript was flushed. If this typescript was
-     * never flushed, this will be the time the typescripe was created.
+     * never flushed, this will be the time the typescript was created.
      */
     guac_timestamp last_flush;
 

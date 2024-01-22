@@ -103,7 +103,7 @@ void guac_rdp_pipe_svc_send_pipe(guac_socket* socket, guac_rdp_pipe_svc* svc);
  *     The client associated with the users being sent the pipe instruction.
  *
  * @param socket
- *     The socket to send the pipe instruction accross.
+ *     The socket to send the pipe instruction across.
  */
 void guac_rdp_pipe_svc_send_pipes(
         guac_client* client, guac_socket* socket);

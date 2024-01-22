@@ -7,7 +7,7 @@ RDP sessions. This example is intended to demonstrate how bidirectional
 communication between the Guacamole client and applications within the RDP
 server can be accomplished.
 
-Arbitrary SVCs are enabled on RDP connections by specfying their names as the
+Arbitrary SVCs are enabled on RDP connections by specifying their names as the
 value of [the `static-channels`
 parameter](http://guacamole.apache.org/doc/gug/configuring-guacamole.html#rdp-device-redirection).
 Each name is limited to a maximum of 7 characters. Multiple names may be listed

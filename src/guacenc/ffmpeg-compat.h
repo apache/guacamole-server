@@ -69,7 +69,7 @@
 #endif
 
 /**
- * Writes the specied frame as a new frame of video. If pending frames of the
+ * Writes the specified frame as a new frame of video. If pending frames of the
  * video are being flushed, the given frame may be NULL (as required by
  * avcodec_encode_video2()). If avcodec_encode_video2() does not exist, this
  * function will transparently use avcodec_encode_video().

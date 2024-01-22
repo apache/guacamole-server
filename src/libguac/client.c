@@ -1025,7 +1025,7 @@ int guac_client_owner_supports_required(guac_client* client) {
 }
 
 /**
- * A callback function that is invokved by guac_client_owner_notify_join() to
+ * A callback function that is invoked by guac_client_owner_notify_join() to
  * notify the owner of a connection that another user has joined the
  * connection, returning zero if the message is sent successfully, or non-zero
  * if an error occurs.
@@ -1084,7 +1084,7 @@ int guac_client_owner_notify_join(guac_client* client, guac_user* joiner) {
 }
 
 /**
- * A callback function that is invokved by guac_client_owner_notify_leave() to
+ * A callback function that is invoked by guac_client_owner_notify_leave() to
  * notify the owner of a connection that another user has left the connection,
  * returning zero if the message is sent successfully, or non-zero
  * if an error occurs.

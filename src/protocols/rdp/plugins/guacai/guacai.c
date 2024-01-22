@@ -220,7 +220,7 @@ static UINT guac_rdp_ai_new_connection(
  * needs to be initialized with other callbacks and data.
  *
  * @param plugin
- *     The AUDIO_INPUT plugin that needs to be initialied.
+ *     The AUDIO_INPUT plugin that needs to be initialized.
  *
  * @param manager
  *     The IWTSVirtualChannelManager instance with which the AUDIO_INPUT plugin

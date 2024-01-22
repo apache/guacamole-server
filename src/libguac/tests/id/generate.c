@@ -48,7 +48,7 @@ void test_id__unique() {
 
 /**
  * Test which verifies that guac_generate_id() produces strings are in the
- * correc UUID-based format.
+ * correct UUID-based format.
  */
 void test_id__format() {
 

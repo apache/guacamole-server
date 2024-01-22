@@ -27,7 +27,7 @@
 #include <guacamole/timestamp.h>
 
 /**
- * A mouse cursor, having a current location, hostspot, and associated cursor
+ * A mouse cursor, having a current location, hotspot, and associated cursor
  * image.
  */
 typedef struct guacenc_cursor {

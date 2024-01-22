@@ -85,7 +85,7 @@ static int redirect_fd(int fd, int flags) {
 
 /**
  * Turns the current process into a daemon through a series of fork() calls.
- * The standard I/O file desriptors for STDIN, STDOUT, and STDERR will be
+ * The standard I/O file descriptors for STDIN, STDOUT, and STDERR will be
  * redirected to /dev/null, and the working directory is changed to root.
  * Execution within the caller of this function will terminate before this
  * function returns, while execution within the daemonized child process will
@@ -565,7 +565,7 @@ int main(int argc, char* argv[]) {
         /*
          * FIXME: Clean up the proc map. This is not as straightforward as it
          * might seem, since the detached connection threads will attempt to
-         * remove the connection proccesses from the map when they complete,
+         * remove the connection processes from the map when they complete,
          * which will also happen upon shutdown. So there's a good chance that
          * this map cleanup will happen at the same time as the thread cleanup.
          * The map _does_ have locking mechanisms in place for ensuring thread

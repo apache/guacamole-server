@@ -60,7 +60,7 @@ guac_user* guac_user_alloc() {
     /* Allocate stream pool */
     user->__stream_pool = guac_pool_alloc(0);
 
-    /* Initialze streams */
+    /* Initialize streams */
     user->__input_streams = guac_mem_alloc(sizeof(guac_stream), GUAC_USER_MAX_STREAMS);
     user->__output_streams = guac_mem_alloc(sizeof(guac_stream), GUAC_USER_MAX_STREAMS);
 

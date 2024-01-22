@@ -32,7 +32,7 @@
 /**
  * The Guacamole video encoder display related to the current qsort()
  * operation. As qsort() does not provide a means of passing arbitrary data to
- * the comparitor, this value must be set prior to invoking qsort() with
+ * the comparator, this value must be set prior to invoking qsort() with
  * guacenc_display_layer_comparator.
  */
 guacenc_display* __qsort_display;

@@ -25,7 +25,7 @@
 #include <string.h>
 
 /*
- * Arbitrary hash function whhich maps ALL 32-bit numbers onto 24-bit numbers
+ * Arbitrary hash function which maps ALL 32-bit numbers onto 24-bit numbers
  * evenly, while guaranteeing that all 24-bit numbers are mapped onto
  * themselves.
  */
