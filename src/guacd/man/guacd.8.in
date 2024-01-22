@@ -104,7 +104,7 @@ command. Beware that the certificate for
 be the first certificate in the file.
 .TP
 \fB-C\fR \fICERTIFICATE FILE\fR
-Enables SSL/TLS using the given cerficiate file. Future connections to
+Enables SSL/TLS using the given certificate file. Future connections to
 this instance of
 .B guacd
 will require SSL/TLS enabled in the client (the web application). If
