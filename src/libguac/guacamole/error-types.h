@@ -116,7 +116,7 @@ typedef enum guac_status {
     /**
      * Support for the requested operation is not yet implemented.
      */
-    GUAC_STATUS_NOT_INPLEMENTED,
+    GUAC_STATUS_NOT_IMPLEMENTED = 15,
 
     /**
      * The operation is temporarily unable to be performed, but may succeed if
