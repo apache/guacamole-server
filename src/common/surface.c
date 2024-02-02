@@ -2009,12 +2009,13 @@ void guac_common_surface_dup(guac_common_surface* surface,
         guac_protocol_send_move(socket, surface->layer,
                 surface->parent, surface->x, surface->y, surface->z);
 
-        /* Synchronize multi-touch support level */
-        guac_protocol_send_set_int(surface->socket, surface->layer,
-                GUAC_PROTOCOL_LAYER_PARAMETER_MULTI_TOUCH,
-                surface->touches);
-
     }
+
+    /* Synchronize multi-touch support level */
+    else if (surface->layer->index == 0)
+        guac_protocol_send_set_int(socket, surface->layer,
+                GUAC_PROTOCOL_LAYER_PARAMETER_MULTI_TOUCH,
+                    surface->touches);
 
     /* Sync size to new socket */
     guac_protocol_send_size(socket, surface->layer,
