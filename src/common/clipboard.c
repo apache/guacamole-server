@@ -114,6 +114,7 @@ static void* __send_user_clipboard(guac_user* user, void* data) {
 
     /* End stream */
     guac_protocol_send_end(user->socket, stream);
+    guac_socket_flush(user->socket);
     guac_user_free_stream(user, stream);
 
     return NULL;
