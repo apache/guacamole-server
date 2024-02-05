@@ -26,6 +26,8 @@
  * @file client.h
  */
 
+#include "config.h"
+
 #include "client-fntypes.h"
 #include "client-types.h"
 #include "client-constants.h"
@@ -44,6 +46,15 @@
 #include <pthread.h>
 #include <stdarg.h>
 #include <time.h>
+
+#ifdef WINDOWS_BUILD
+#include <windef.h>
+#endif
+
+/**
+ * Internal values for libguac use only.
+ */
+typedef struct guac_client_internal guac_client_internal;
 
 struct guac_client {
 
@@ -135,31 +146,6 @@ struct guac_client {
     guac_client_log_handler* log_handler;
 
     /**
-     * Pool of buffer indices. Buffers are simply layers with negative indices.
-     * Note that because guac_pool always gives non-negative indices starting
-     * at 0, the output of this guac_pool will be adjusted.
-     */
-    guac_pool* __buffer_pool;
-
-    /**
-     * Pool of layer indices. Note that because guac_pool always gives
-     * non-negative indices starting at 0, the output of this guac_pool will
-     * be adjusted.
-     */
-    guac_pool* __layer_pool;
-
-    /**
-     * Pool of stream indices.
-     */
-    guac_pool* __stream_pool;
-
-    /**
-     * All available client-level output streams (data going to all connected
-     * users).
-     */
-    guac_stream* __output_streams;
-
-    /**
      * The unique identifier allocated for the connection, which may
      * be used within the Guacamole protocol to refer to this connection.
      * This identifier is guaranteed to be unique from all existing
@@ -167,56 +153,6 @@ struct guac_client {
      * names.
      */
     char* connection_id;
-
-    /**
-     * Lock which is acquired when the users list is being manipulated, or when
-     * the users list is being iterated.
-     */
-    guac_rwlock __users_lock;
-
-    /**
-     * The first user within the list of all connected users, or NULL if no
-     * users are currently connected.
-     */
-    guac_user* __users;
-
-    /**
-     * Lock which is acquired when the pending users list is being manipulated,
-     * or when the pending users list is being iterated.
-     */
-    guac_rwlock __pending_users_lock;
-
-    /**
-     * A timer that will periodically synchronize the list of pending users,
-     * emptying the list once synchronization is complete. Only for internal
-     * use within the client. This will be NULL until the first user joins
-     * the connection, as it is lazily instantiated at that time.
-     */
-    timer_t __pending_users_timer;
-
-    /**
-     * A flag storing the current state of the pending users timer.
-     */
-    int __pending_users_timer_state;
-
-    /**
-     * A mutex that must be acquired before modifying or checking the value of
-     * the timer state.
-     */
-    pthread_mutex_t __pending_users_timer_mutex;
-
-    /**
-     * The first user within the list of connected users who have not yet had
-     * their connection states synchronized after joining.
-     */
-    guac_user* __pending_users;
-
-    /**
-     * The user that first created this connection. This user will also have
-     * their "owner" flag set to a non-zero value. If the owner has left the
-     * connection, this will be NULL.
-     */
-    guac_user* __owner;
 
     /**
      * The number of currently-connected users. This value may include inactive
@@ -308,11 +244,9 @@ struct guac_client {
     const char** args;
 
     /**
-     * Handle to the dlopen()'d plugin, which should be given to dlclose() when
-     * this client is freed. This is only assigned if guac_client_load_plugin()
-     * is used.
+     * Internal-only client data.
      */
-    void* __plugin_handle;
+    guac_client_internal* internal;
 
 };
 

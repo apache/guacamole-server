@@ -27,6 +27,10 @@
 #include "terminal/types.h"
 #include "terminal/xparsecolor.h"
 
+#ifdef WINDOWS_BUILD
+#include <terminal/wcwidth.h>
+#endif
+
 #include <guacamole/client.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>

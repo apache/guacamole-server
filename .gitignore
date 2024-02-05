@@ -48,3 +48,6 @@ doc/*/doxygen-output
 
 # IDE metadata
 nbproject/
+
+# Crash Reports
+**/*.stackdump

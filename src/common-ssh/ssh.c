@@ -35,15 +35,21 @@
 #include <openssl/ssl.h>
 
 #include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <pthread.h>
-#include <pwd.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
+
+#ifdef WINDOWS_BUILD
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pwd.h>
+#include <sys/socket.h>
+#endif
 
 #ifdef LIBSSH2_USES_GCRYPT
 GCRY_THREAD_OPTION_PTHREAD_IMPL;

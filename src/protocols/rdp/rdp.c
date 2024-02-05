@@ -477,7 +477,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_rdp_settings* settings = rdp_client->settings;
 
     /* Init random number generator */
-    srandom(time(NULL));
+    srand(time(NULL));
 
     pthread_rwlock_wrlock(&(rdp_client->lock));
 

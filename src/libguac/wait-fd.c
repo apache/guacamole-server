@@ -19,8 +19,9 @@
 
 #include "config.h"
 
-#ifdef ENABLE_WINSOCK
-#    include <winsock2.h>
+#ifdef WINDOWS_BUILD
+#include <ws2tcpip.h>
+#include <winsock2.h>
 #else
 #    ifdef HAVE_POLL
 #        include <poll.h>
