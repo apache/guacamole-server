@@ -295,10 +295,6 @@ guac_client* guac_client_alloc() {
     guac_rwlock_init(&(client->__users_lock));
     guac_rwlock_init(&(client->__pending_users_lock));
 
-    /* Initialize the write lock flags to 0, as threads won't have yet */
-    pthread_key_create(&(client->__users_lock.key), (void *) 0);
-    pthread_key_create(&(client->__pending_users_lock.key), (void *) 0);
-
     /* The timer will be lazily created in the child process */
     client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_UNREGISTERED;
 
