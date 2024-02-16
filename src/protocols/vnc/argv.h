@@ -28,6 +28,12 @@
 /**
  * Handles a received argument value from a Guacamole "argv" instruction,
  * updating the given connection parameter.
+ *
+ * As noted in the user.c file, care should be taken when updating this
+ * callback to make sure that arguments are handled correctly when
+ * a connection is marked as read-only, and to make sure that any
+ * usage of this callback for non-owner users of a connection does
+ * not have unintended security implications.
  */
 guac_argv_callback guac_vnc_argv_callback;
 
