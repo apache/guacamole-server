@@ -82,4 +82,3 @@ guac_timestamp guacenc_parse_timestamp(const char* str);
 
 #endif
 
-

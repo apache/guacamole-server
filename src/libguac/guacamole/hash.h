@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_HASH_H
 #define _GUAC_HASH_H
 

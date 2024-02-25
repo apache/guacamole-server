@@ -26,7 +26,6 @@
  * @file xparsecolor.h
  */
 
-
 #include "palette.h"
 
 /**

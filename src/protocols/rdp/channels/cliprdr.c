@@ -684,7 +684,6 @@ int guac_rdp_clipboard_blob_handler(guac_user* user, guac_stream* stream,
 
 }
 
-
 int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
 
     guac_client* client = user->client;

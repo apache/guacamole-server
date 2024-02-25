@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_SSH_AGENT_H
 #define _GUAC_SSH_AGENT_H
 

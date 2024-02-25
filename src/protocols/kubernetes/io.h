@@ -83,7 +83,6 @@ typedef struct guac_kubernetes_message {
 
 } guac_kubernetes_message;
 
-
 /**
  * Handles data received from Kubernetes over WebSocket, decoding the channel
  * index of the received data and forwarding that data accordingly.

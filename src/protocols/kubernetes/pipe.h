@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_KUBERNETES_PIPE_H
 #define GUAC_KUBERNETES_PIPE_H
 

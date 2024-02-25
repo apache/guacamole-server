@@ -1242,7 +1242,6 @@ int guac_terminal_set_scrollback(guac_terminal* term, unsigned char c) {
 
 }
 
-
 int guac_terminal_window_title(guac_terminal* term, unsigned char c) {
 
     static int position = 0;

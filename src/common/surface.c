@@ -280,7 +280,6 @@ static int __guac_common_surface_is_opaque(guac_common_surface* surface,
 
 }
 
-
 /**
  * Returns whether the given rectangle should be combined into the existing
  * dirty rectangle, to be eventually flushed as image data, or would be best

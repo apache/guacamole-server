@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_PULSE_H
 #define GUAC_PULSE_H
 

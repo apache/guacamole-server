@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #include "common/clipboard.h"
 #include "terminal/buffer.h"
 #include "terminal/display.h"

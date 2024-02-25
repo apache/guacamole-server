@@ -26,7 +26,6 @@
  * @file palette.h
  */
 
-
 #include <stdint.h>
 
 /**

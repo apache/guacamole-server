@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_TERMINAL_PRIV_H
 #define GUAC_TERMINAL_PRIV_H
 

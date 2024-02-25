@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_TERMINAL_DISPLAY_H
 #define _GUAC_TERMINAL_DISPLAY_H
 
@@ -26,7 +25,6 @@
  *
  * @file display.h
  */
-
 
 #include "common/surface.h"
 #include "palette.h"
