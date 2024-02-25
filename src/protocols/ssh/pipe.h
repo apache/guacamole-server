@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_SSH_PIPE_H
 #define GUAC_SSH_PIPE_H
 

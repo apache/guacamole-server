@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #include "common/surface.h"
 #include "terminal/common.h"
 #include "terminal/display.h"
@@ -791,7 +790,6 @@ void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
     }
 
 }
-
 
 void __guac_terminal_display_flush_set(guac_terminal_display* display) {
 

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_TERMINAL_BUFFER_H
 #define _GUAC_TERMINAL_BUFFER_H
 
@@ -26,8 +25,6 @@
  *
  * @file buffer.h
  */
-
-
 
 #include "types.h"
 

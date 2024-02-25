@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_COMMON_CURSOR_H
 #define GUAC_COMMON_CURSOR_H
 

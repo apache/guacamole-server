@@ -1274,7 +1274,6 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->clipboard_crlf = 0;
     }
 
-
     /* Parse Wake-on-LAN (WoL) settings */
     settings->wol_send_packet =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,

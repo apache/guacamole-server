@@ -84,11 +84,9 @@ map +altgr -shift 0x33 ~ ";"
 map +altgr -shift 0x34 ~ ">"
 map +altgr -shift 0x35 ~ "*"
 
-
 #
 # Keys requiring AltGr & Shift
 #
-
 
 #
 # Dead keys
@@ -104,6 +102,5 @@ map +altgr -shift 0x0A ~ 0xFE51 # Dead acute
 map +altgr -shift 0x0B ~ 0xFE59 # Dead doubleacute
 map +altgr -shift 0x0C ~ 0xFE57 # Dead diaeresis
 map +altgr -shift 0x0D ~ 0xFE5B # Dead cedilla
-
 
 # END

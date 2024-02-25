@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef __GUACD_SOCKET_SSL_H
 #define __GUACD_SOCKET_SSL_H
 

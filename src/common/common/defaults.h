@@ -26,6 +26,5 @@
  */
 #define GUAC_WOL_DEFAULT_BOOT_WAIT_TIME 0
 
-
 #endif /* GUAC_COMMON_DEFAULTS_H */
 

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #include "common/clipboard.h"
 #include "common/cursor.h"
 #include "common/iconv.h"
@@ -1504,7 +1503,6 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
         terminal->outer_width, terminal->outer_height, terminal->term_height);
     guac_terminal_scrollbar_set_bounds(terminal->scrollbar,
             -guac_terminal_get_available_scroll(terminal), 0);
-
 
     /* Release terminal */
     guac_terminal_unlock(terminal);

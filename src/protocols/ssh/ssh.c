@@ -343,7 +343,6 @@ void* ssh_client_thread(void* data) {
         }
     }
 
-
 #ifdef ENABLE_SSH_AGENT
     /* Start SSH agent forwarding, if enabled */
     if (ssh_client->enable_agent) {

@@ -212,7 +212,6 @@ int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* clien
         return known_hosts;
     }
 
-
     /* Check remote host key against known hosts */
     int kh_check = libssh2_knownhost_checkp(ssh_known_hosts, hostname, port,
                                             remote_hostkey, remote_hostkey_len,

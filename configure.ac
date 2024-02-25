@@ -643,7 +643,6 @@ then
 
 fi
 
-
 #
 # FreeRDP 2 (libfreerdp2, libfreerdp-client2, and libwinpr2)
 #
@@ -777,7 +776,6 @@ then
     [AC_MSG_RESULT([no])])
 
 fi
-
 
 # Glyph callback variants
 if test "x${have_freerdp2}" = "xyes"

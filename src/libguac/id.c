@@ -104,4 +104,3 @@ char* guac_generate_id(char prefix) {
 
 }
 
-

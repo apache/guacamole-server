@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _SSH_GUAC_SFTP_H
 #define _SSH_GUAC_SFTP_H
 

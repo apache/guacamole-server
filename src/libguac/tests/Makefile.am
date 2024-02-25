@@ -68,7 +68,6 @@ test_libguac_SOURCES =               \
     unicode/strlen.c                 \
     unicode/write.c
 
-
 test_libguac_CFLAGS =       \
     -Werror -Wall -pedantic \
     @LIBGUAC_INCLUDE@

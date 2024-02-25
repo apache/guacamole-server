@@ -115,8 +115,16 @@ typedef enum guac_status {
 
     /**
      * Support for the requested operation is not yet implemented.
+     *
+     * @deprecated This constant contains a typo in its name and will be
+     * removed in a future release. Use GUAC_STATUS_NOT_IMPLEMENTED instead.
      */
-    GUAC_STATUS_NOT_INPLEMENTED,
+    GUAC_STATUS_NOT_INPLEMENTED = 15,
+
+    /**
+     * Support for the requested operation is not yet implemented.
+     */
+    GUAC_STATUS_NOT_IMPLEMENTED = 15,
 
     /**
      * The operation is temporarily unable to be performed, but may succeed if
