@@ -115,7 +115,6 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
         /* Downgrade the lock to allow for concurrent read access */
         guac_rwlock_release_lock(&(rdp_client->lock));
-        guac_rwlock_acquire_read_lock(&(rdp_client->lock));
     }
 
     /* Load "cliprdr" service if not disabled */
@@ -537,6 +536,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     }
 
     /* Upgrade to write lock again for further exclusive operations */
+    guac_rwlock_release_lock(&(rdp_client->lock));
     guac_rwlock_acquire_write_lock(&(rdp_client->lock));
 
     /* Connection complete */
@@ -843,4 +843,3 @@ void* guac_rdp_client_thread(void* data) {
     return NULL;
 
 }
-
