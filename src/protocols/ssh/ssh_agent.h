@@ -22,8 +22,6 @@
 
 #include "config.h"
 
-#include "ssh_key.h"
-
 /**
  * Packet type of an agent identity request.
  */
