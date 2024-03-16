@@ -22,6 +22,7 @@
 #include "channels/cliprdr.h"
 #include "channels/disp.h"
 #include "channels/pipe-svc.h"
+#include "channels/rail.h"
 #include "config.h"
 #include "fs.h"
 #include "log.h"

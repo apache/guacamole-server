@@ -42,6 +42,7 @@
 
 #include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/client/rail.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/rwlock.h>
@@ -196,6 +197,12 @@ typedef struct guac_rdp_client {
      * attempts to send RDP messages never overlap.
      */
     pthread_mutex_t message_lock;
+
+    /**
+     * A pointer to the RAIL interface provided by the RDP client when rail is
+     * in use.
+     */
+    RailClientContext* rail_interface;
 
 } guac_rdp_client;
 
