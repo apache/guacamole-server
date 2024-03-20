@@ -885,6 +885,20 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 if (flag != NULL)
                     *flag = true;
 
+                /* Proceed for entering alternate screen buffer with non-linux term type */
+                if (argv[0] == 1049){
+                    guac_terminal_scroll_backup(term);
+                    guac_terminal_buffer_backup(term);
+                    guac_terminal_display_backup(term);
+                    int save = term->cursor_row;
+                    int amount = term->term_height - save;
+                    term->buffer->length += amount;
+                    guac_terminal_move_cursor(term, term->term_height - 1, 0);
+                    for (int i = 0; i < save; i++){
+                        guac_terminal_linefeed(term);
+                    }
+                }
+
                 break;
 
             /* l: Reset Mode */
@@ -894,6 +908,13 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 flag = __guac_terminal_get_flag(term, argv[0], private_mode_character);
                 if (flag != NULL)
                     *flag = false;
+
+                /* Proceed for leaving alternate screen buffer with non-linux term type */
+                if (argv[0] == 1049){
+                    guac_terminal_buffer_restore(term);
+                    guac_terminal_display_restore(term);
+                    guac_terminal_scroll_restore(term);
+                }
 
                 break;
 
