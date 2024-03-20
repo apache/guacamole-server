@@ -295,6 +295,14 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
     /* Clip given range to actual bounds of row */
     if (end < 0 || end > buffer_row->length - 1)
         end = buffer_row->length - 1;
+    
+    /* Skip blank chars at the end of a line */
+    int j = end;
+    while ((!buffer_row->characters[j].value) && (j > start)) {
+        j--;
+    }
+    if(j != start)
+        end = j;
 
     /* Repeatedly convert chunks of terminal buffer rows until entire specified
      * region has been appended to clipboard */
@@ -308,8 +316,12 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
 
             int codepoint = buffer_row->characters[i].value;
 
+            /* Keep consistency with vim display */
+            if (codepoint == 0)
+                codepoint = 32;
+            
             /* Ignore null (blank) characters */
-            if (codepoint == 0 || codepoint == GUAC_CHAR_CONTINUATION)
+            if (codepoint == GUAC_CHAR_CONTINUATION)
                 continue;
 
             /* Encode current codepoint as UTF-8 */
