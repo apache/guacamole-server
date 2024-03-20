@@ -301,7 +301,7 @@ UINT DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints) {
 
         /* Register plugin as "guacai" for later retrieval */
         pEntryPoints->RegisterPlugin(pEntryPoints, "guacai",
-                (IWTSPlugin*) ai_plugin);
+                &ai_plugin->parent);
 
         guac_client_log(client, GUAC_LOG_DEBUG, "AUDIO_INPUT plugin loaded.");
     }
