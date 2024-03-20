@@ -173,6 +173,33 @@ guacd currently takes several command-line options:
 Additional information can be found in the guacd man page:
 
     $ man guacd
+    
+    
+------------------------------------------------------------
+Enabling guacd ssl
+------------------------------------------------------------
+
+This explains how to enable ssl between guacamole and guacd using a self signed certificate.
+
+1. Generate a new certificate
+You need to create the new certificate on the guacd host.
+
+    $ openssl genrsa -out /etc/guacd/server.key 2048
+    $ openssl req -new -key /etc/guacd/server.key -out /etc/guacd/cert.csr
+    $ openssl x509 -in /etc/guacd/cert.csr -out /etc/guacd/server.crt -req -signkey /etc/guacd/server.key -days 3650
+    $ openssl pkcs12 -export -in /etc/guacd/server.crt -inkey /etc/guacd/server.key  -out /etc/guacd/server.p12 -CAfile ca.crt -caname root
+
+2. Configure guacd
+
+On debian, edit /etc/default/guacd and modify the following variables.
+    # listen on all interface
+    LISTEN_ADDRESS=0.0.0.0
+
+    # certificates
+    DAEMON_ARGS=-C /etc/guacd/server.crt -K /etc/guacd/server.key
+
+Restart guacd! 
+You may now enable, within Guacamole, guacd/proxy ssl connexion.
 
 ------------------------------------------------------------
  Reporting problems
