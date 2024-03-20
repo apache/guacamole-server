@@ -25,6 +25,7 @@
 #include <guacamole/user.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <regex.h>
 #include <stdbool.h>
 /**
@@ -48,6 +49,16 @@
  * The filename to use for the screen recording, if not specified.
  */
 #define GUAC_TELNET_DEFAULT_RECORDING_NAME "recording"
+
+/**
+ * The permissions to use for the screen recording file, if not specified.
+ */
+#define GUAC_TELNET_DEFAULT_RECORDING_FILE_PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP)
+
+/**
+ * The permissions to use for the screen recording path, if not specified.
+ */
+#define GUAC_TELNET_DEFAULT_RECORDING_PATH_PERMISSIONS (S_IRWXU | S_IRGRP | S_IXGRP)
 
 /**
  * The regular expression to use when searching for the username/login prompt
@@ -212,6 +223,16 @@ typedef struct guac_telnet_settings {
      * does not already exist.
      */
     bool create_recording_path;
+
+    /**
+     * The permissions to apply for the screen recording file.
+     */
+    mode_t recording_file_permissions;
+
+    /**
+     * The permissions to apply for the screen recording file.
+     */
+    mode_t recording_path_permissions;
 
     /**
      * Whether output which is broadcast to each connected client (graphics,

@@ -22,6 +22,8 @@
 
 #include <guacamole/client.h>
 
+#include <sys/types.h>
+
 /**
  * Provides functions and structures to be use for session recording.
  *
@@ -122,6 +124,14 @@ typedef struct guac_recording {
  *     written, or non-zero if the path should be created if it does not yet
  *     exist.
  *
+ * @param file_permissions
+ *     The permissions to apply for the recording file created within the specified
+ *     path.
+ *
+ * @param path_permissions
+ *     The permissions to apply for the recording path created within the specified
+ *     path.
+ *
  * @param include_output
  *     Non-zero if output which is broadcast to each connected client
  *     (graphics, streams, etc.) should be included in the session recording,
@@ -154,8 +164,8 @@ typedef struct guac_recording {
  *     recording will be written, NULL otherwise.
  */
 guac_recording* guac_recording_create(guac_client* client,
-        const char* path, const char* name, int create_path,
-        int include_output, int include_mouse, int include_touch,
+        const char* path, const char* name, int create_path, mode_t file_permissions,
+        mode_t path_permissions, int include_output, int include_mouse, int include_touch,
         int include_keys);
 
 /**

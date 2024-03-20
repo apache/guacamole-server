@@ -838,6 +838,8 @@ void* guac_rdp_client_thread(void* data) {
                 settings->recording_path,
                 settings->recording_name,
                 settings->create_recording_path,
+                settings->recording_file_permissions,
+                settings->recording_path_permissions,
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
                 !settings->recording_exclude_touch,

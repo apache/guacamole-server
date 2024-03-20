@@ -122,6 +122,8 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-exclude-touch",
     "recording-include-keys",
     "create-recording-path",
+    "recording-file-permissions",
+    "recording-path-permissions",
     "resize-method",
     "enable-audio-input",
     "enable-touch",
@@ -563,6 +565,18 @@ enum RDP_ARGS_IDX {
      * created if it does not yet exist.
      */
     IDX_CREATE_RECORDING_PATH,
+
+    /**
+     * The permissions that should be given to screen recording file which is written in
+     * the given path.
+     */
+    IDX_RECORDING_FILE_PERMISSIONS,
+
+    /**
+     * The permissions that should be given to screen recording path which is written in
+     * the given path.
+     */
+    IDX_RECORDING_PATH_PERMISSIONS,
 
     /**
      * The method to use to apply screen size changes requested by the user.
@@ -1160,6 +1174,16 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, 0);
+
+    /* Parse file permissions flag */
+    settings->recording_file_permissions =
+        guac_user_parse_args_mode(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_RECORDING_FILE_PERMISSIONS, GUAC_RDP_DEFAULT_RECORDING_FILE_PERMISSIONS);
+
+    /* Parse path permissions flag */
+    settings->recording_path_permissions =
+        guac_user_parse_args_mode(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_RECORDING_PATH_PERMISSIONS, GUAC_RDP_DEFAULT_RECORDING_PATH_PERMISSIONS);
 
     /* No resize method */
     if (strcmp(argv[IDX_RESIZE_METHOD], "") == 0) {

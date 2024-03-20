@@ -27,6 +27,9 @@
 #include <guacamole/client.h>
 #include <guacamole/user.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 /**
  * The maximum number of bytes in the client hostname claimed during
  * connection.
@@ -67,6 +70,16 @@
  * The filename to use for the screen recording, if not specified.
  */
 #define GUAC_RDP_DEFAULT_RECORDING_NAME "recording"
+
+/**
+ * The permissions to use for the screen recording file, if not specified.
+ */
+#define GUAC_RDP_DEFAULT_RECORDING_FILE_PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP)
+
+/**
+ * The permissions to use for the screen recording path, if not specified.
+ */
+#define GUAC_RDP_DEFAULT_RECORDING_PATH_PERMISSIONS (S_IRWXU | S_IRGRP | S_IXGRP)
 
 /**
  * The number of entries contained within the OrderSupport BYTE array
@@ -524,6 +537,16 @@ typedef struct guac_rdp_settings {
      * does not already exist.
      */
     int create_recording_path;
+
+    /**
+     * The permissions to apply for the screen recording file.
+     */
+    mode_t recording_file_permissions;
+
+    /**
+     * The permissions to apply for the screen recording path.
+     */
+    mode_t recording_path_permissions;
 
     /**
      * Non-zero if output which is broadcast to each connected client
