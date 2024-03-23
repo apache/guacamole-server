@@ -96,10 +96,26 @@ install_from_git() {
 }
 
 #
+# Determine any option overrides to guarantee successful build
+#
+
+export BUILD_ARCHITECTURE="$(arch)" # Determine architecture building on
+echo "Build architecture: $BUILD_ARCHITECTURE"
+
+case $BUILD_ARCHITECTURE in
+    armv6l|armv7l|aarch64)
+        export FREERDP_OPTS_OVERRIDES="-DWITH_SSE2=OFF" # Disable SSE2 on ARM
+        ;;
+    *)
+        export FREERDP_OPTS_OVERRIDES=""
+        ;;
+esac
+
+#
 # Build and install core protocol library dependencies
 #
 
-install_from_git "https://github.com/FreeRDP/FreeRDP" "$WITH_FREERDP" $FREERDP_OPTS
+install_from_git "https://github.com/FreeRDP/FreeRDP" "$WITH_FREERDP" $FREERDP_OPTS $FREERDP_OPTS_OVERRIDES
 install_from_git "https://github.com/libssh2/libssh2" "$WITH_LIBSSH2" $LIBSSH2_OPTS
 install_from_git "https://github.com/seanmiddleditch/libtelnet" "$WITH_LIBTELNET" $LIBTELNET_OPTS
 install_from_git "https://github.com/LibVNC/libvncserver" "$WITH_LIBVNCCLIENT" $LIBVNCCLIENT_OPTS
