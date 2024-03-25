@@ -30,6 +30,24 @@
 #include <string.h>
 
 /**
+ * Convert the provided unsigned integer into a string, returning the number of
+ * characters written into the destination string, or a negative value if an
+ * error occurs.
+ *
+ * @param dest
+ *     The destination string to copy the data into, which should already be
+ *     allocated and at a size that can handle the string representation of the
+ *     inteer.
+ *
+ * @param integer
+ *     The unsigned integer to convert to a string.
+ * 
+ * @return
+ *     The number of characters written into the dest string.
+ */
+int guac_itoa(char* restrict dest, unsigned int integer);
+
+/**
  * Copies a limited number of bytes from the given source string to the given
  * destination buffer. The resulting buffer will always be null-terminated,
  * even if doing so means that the intended string is truncated, unless the
