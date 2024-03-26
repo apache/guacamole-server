@@ -55,6 +55,7 @@ const char* GUAC_TELNET_CLIENT_ARGS[] = {
     "recording-exclude-mouse",
     "recording-include-keys",
     "create-recording-path",
+    "recording-write-existing",
     "read-only",
     "backspace",
     "terminal-type",
@@ -192,6 +193,12 @@ enum TELNET_ARGS_IDX {
      * created if it does not yet exist.
      */
     IDX_CREATE_RECORDING_PATH,
+
+    /**
+     * Whether existing files should be appended to when creating a new recording.
+     * Disabled by default.
+     */
+    IDX_RECORDING_WRITE_EXISTING,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -485,6 +492,11 @@ guac_telnet_settings* guac_telnet_parse_args(guac_user* user,
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, false);
+
+    /* Parse allow write existing file flag */
+    settings->recording_write_existing =
+        guac_user_parse_args_boolean(user, GUAC_TELNET_CLIENT_ARGS, argv,
+                IDX_RECORDING_WRITE_EXISTING, false);
 
     /* Parse backspace key code */
     settings->backspace =

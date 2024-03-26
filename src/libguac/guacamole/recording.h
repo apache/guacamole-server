@@ -148,6 +148,10 @@ typedef struct guac_recording {
  *     caution. Key events can easily contain sensitive information, such as
  *     passwords, credit card numbers, etc.
  *
+ * @param allow_write_existing
+ *     Non-zero if writing to an existing file should be allowed, or zero
+ *     otherwise.
+ *
  * @return
  *     A new guac_recording structure representing the in-progress
  *     recording if the recording file has been successfully created and a
@@ -156,7 +160,7 @@ typedef struct guac_recording {
 guac_recording* guac_recording_create(guac_client* client,
         const char* path, const char* name, int create_path,
         int include_output, int include_mouse, int include_touch,
-        int include_keys);
+        int include_keys, int allow_write_existing);
 
 /**
  * Frees the resources associated with the given in-progress recording. Note

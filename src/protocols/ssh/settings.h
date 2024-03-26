@@ -252,6 +252,12 @@ typedef struct guac_ssh_settings {
     bool recording_include_keys;
 
     /**
+     * Whether existing files should be appended to when creating a new recording.
+     * Disabled by default.
+     */
+    bool recording_write_existing;
+
+    /**
      * The number of seconds between sending server alive messages.
      */
     int server_alive_interval;

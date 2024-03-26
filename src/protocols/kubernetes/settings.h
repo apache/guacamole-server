@@ -235,6 +235,12 @@ typedef struct guac_kubernetes_settings {
     bool recording_include_keys;
 
     /**
+     * Whether existing files should be appended to when creating a new recording.
+     * Disabled by default.
+     */
+    bool recording_write_existing;
+
+    /**
      * The ASCII code, as an integer, that the Kubernetes client will use when
      * the backspace key is pressed. By default, this is 127, ASCII delete, if
      * not specified in the client settings.
