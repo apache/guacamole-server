@@ -192,6 +192,12 @@ typedef struct guac_kubernetes_settings {
     bool create_typescript_path;
 
     /**
+     * Whether existing files should be appended to when creating a new
+     * typescript. Disabled by default.
+     */
+    bool typescript_write_existing;
+
+    /**
      * The path in which the screen recording should be saved, if enabled. If
      * no screen recording should be saved, this will be NULL.
      */

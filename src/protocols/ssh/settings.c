@@ -57,6 +57,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "typescript-path",
     "typescript-name",
     "create-typescript-path",
+    "typescript-write-existing",
     "recording-path",
     "recording-name",
     "recording-exclude-output",
@@ -197,6 +198,12 @@ enum SSH_ARGS_IDX {
      * if it does not yet exist.
      */
     IDX_CREATE_TYPESCRIPT_PATH,
+
+    /**
+     * Whether existing files should be appended to when creating a new
+     * typescript. Disabled by default.
+     */
+    IDX_TYPESCRIPT_WRITE_EXISTING,
 
     /**
      * The full absolute path to the directory in which screen recordings
@@ -471,6 +478,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->create_typescript_path =
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_CREATE_TYPESCRIPT_PATH, false);
+
+    /* Parse allow write existing file flag */
+    settings->typescript_write_existing =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_TYPESCRIPT_WRITE_EXISTING, false);
 
     /* Read recording path */
     settings->recording_path =
