@@ -560,6 +560,12 @@ typedef struct guac_rdp_settings {
     int recording_include_keys;
 
     /**
+     * Non-zero if existing files should be appended to when creating a new 
+     * recording. Disabled by default.
+     */
+    int recording_write_existing;
+
+    /** 
      * The method to apply when the user's display changes size.
      */
     guac_rdp_resize_method resize_method;

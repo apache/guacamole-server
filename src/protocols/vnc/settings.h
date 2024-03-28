@@ -274,6 +274,12 @@ typedef struct guac_vnc_settings {
      * as passwords, credit card numbers, etc.
      */
     bool recording_include_keys;
+
+    /**
+     * Whether existing files should be appended to when creating a new recording.
+     * Disabled by default.
+     */
+    bool recording_write_existing;
     
     /**
      * Whether or not to send the magic Wake-on-LAN (WoL) packet prior to
