@@ -644,7 +644,8 @@ void* guac_telnet_client_thread(void* data) {
         guac_terminal_create_typescript(telnet_client->term,
                 settings->typescript_path,
                 settings->typescript_name,
-                settings->create_typescript_path);
+                settings->create_typescript_path,
+                settings->typescript_write_existing);
     }
 
     /* Open telnet session */
