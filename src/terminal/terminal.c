@@ -2029,10 +2029,11 @@ void guac_terminal_pipe_stream_close(guac_terminal* term) {
 }
 
 int guac_terminal_create_typescript(guac_terminal* term, const char* path,
-        const char* name, int create_path) {
+        const char* name, int create_path, int allow_write_existing) {
 
     /* Create typescript */
-    term->typescript = guac_terminal_typescript_alloc(path, name, create_path);
+    term->typescript = guac_terminal_typescript_alloc(
+            path, name, create_path, allow_write_existing);
 
     /* Log failure */
     if (term->typescript == NULL) {
