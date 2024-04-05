@@ -440,6 +440,13 @@ void* guac_vnc_client_thread(void* data) {
      * heuristics) */
     guac_common_display_set_lossless(vnc_client->display, settings->lossless);
 
+    /* If compression and display quality have been configured, set those. */
+    if (settings->compress_level >= 0 && settings->compress_level <= 9)
+        rfb_client->appData.compressLevel = settings->compress_level;
+
+    if (settings->quality_level >= 0 && settings->quality_level <= 9)
+        rfb_client->appData.qualityLevel = settings->quality_level;
+
     /* If not read-only, set an appropriate cursor */
     if (settings->read_only == 0) {
         if (settings->remote_cursor)
