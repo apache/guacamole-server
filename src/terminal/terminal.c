@@ -1468,8 +1468,20 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
         if ((keysym == 'C' && term->mod_ctrl) || (keysym == 'c' && term->mod_meta))
             return 0;
 
-        /* Shift+PgUp / Shift+PgDown shortcuts for scrolling */
+        /* Shortcuts for scrolling history with shift */
         if (term->mod_shift) {
+
+            /* Home */
+            if (keysym == 0xFF50 || keysym == 0xFF95) {
+                guac_terminal_scroll_display_up(term, term->max_scrollback);
+                return 0;
+            }
+
+            /* End */
+            if (keysym == 0xFF57 || keysym == 0xFF9C) {
+                guac_terminal_scroll_display_down(term, term->max_scrollback);
+                return 0;
+            }
 
             /* Page up */
             if (keysym == 0xFF55) {
@@ -1480,6 +1492,18 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
             /* Page down */
             if (keysym == 0xFF56) {
                 guac_terminal_scroll_display_down(term, term->term_height);
+                return 0;
+            }
+
+            /* Up */
+            if (keysym == 0xFF52 || keysym == 0xFF97) {
+                guac_terminal_scroll_display_up(term, 1);
+                return 0;
+            }
+
+            /* Down */
+            if (keysym == 0xFF54 || keysym == 0xFF99) {
+                guac_terminal_scroll_display_down(term, 1);
                 return 0;
             }
 
@@ -1517,6 +1541,22 @@ static int __guac_terminal_send_key(guac_terminal* term, int keysym, int pressed
             /* Map Ctrl+3 through Ctrl-7 to the remaining C0 characters such that Ctrl+6 is the same as Ctrl+^ */
             else if (keysym >= '3' && keysym <= '7')
                 data = (char) (keysym - '3' + 0x1B);
+
+            /* CTRL+Left: return to previous word  */
+            else if (keysym == 0xFF51 || keysym == 0xFF96)
+                return guac_terminal_send_string(term, "\033[1;5D");
+
+            /* CTRL+Right: go to next word */
+            else if (keysym == 0xFF53 || keysym == 0xFF98)
+                return guac_terminal_send_string(term, "\033[1;5C");
+
+            /* CTRL+Backspace: remove word (map to CTRL+w) */
+            else if (keysym == 0xFF08)
+                data = (char) 23;
+
+            /* CTRL+Supr: remove word to right */
+            else if (keysym == 0xFFFF)
+                return guac_terminal_send_string(term, "\033D");
 
             /* Otherwise ignore */
             else
