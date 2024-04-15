@@ -194,7 +194,7 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
 
     /* Only update if selection has changed */
     if (row != terminal->selection_end_row
-        || column <  terminal->selection_end_column
+        || column <=  terminal->selection_end_column
         || column >= terminal->selection_end_column + terminal->selection_end_width) {
 
         int width = guac_terminal_find_char(terminal, row, &column);
