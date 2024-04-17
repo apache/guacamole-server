@@ -82,6 +82,16 @@ typedef struct guac_vnc_settings {
      */
     bool lossless;
 
+    /**
+     * The level of compression to ask the VNC client library to perform.
+     */
+    int compress_level;
+
+     /**
+      * The quality level to ask the VNC client library to maintain.
+      */
+    int quality_level;
+
 #ifdef ENABLE_VNC_REPEATER
     /**
      * The VNC host to connect to, if using a repeater.
