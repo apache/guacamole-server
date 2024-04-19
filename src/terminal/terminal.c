@@ -1751,6 +1751,10 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         int x, int y, int mask) {
 
+    /* Remove display margin from mouse position without going below 0 */
+    y = y >= term->display->margin ? y - term->display->margin : 0;
+    x = x >= term->display->margin ? x - term->display->margin : 0;
+
     /* Ignore user input if terminal is not started */
     if (!term->started) {
         guac_client_log(term->client, GUAC_LOG_DEBUG, "Ignoring user input "
