@@ -57,8 +57,16 @@
  *
  * @param term
  *     The guac_terminal whose cursor should be advanced to the next row.
+ *
+ * @param force_wrap
+ *     True if the line wrap was forced, false otherwise
  */
-static void guac_terminal_linefeed(guac_terminal* term) {
+static void guac_terminal_linefeed(guac_terminal* term, bool force_wrap) {
+
+    /* Assign in wrapped_row: 1 to avoid \n in clipboard or 0 to add \n */
+    guac_terminal_buffer_row* buffer_row = 
+            guac_terminal_buffer_get_row(term->buffer, term->cursor_row, 0);
+    buffer_row->wrapped_row = force_wrap;
 
     /* Scroll up if necessary */
     if (term->cursor_row == term->scroll_end)
@@ -221,7 +229,7 @@ int guac_terminal_echo(guac_terminal* term, unsigned char c) {
         case 0x0C: /* FF */
 
             /* Advance to next row */
-            guac_terminal_linefeed(term);
+            guac_terminal_linefeed(term, false);
 
             /* If automatic carriage return, fall through to CR handler */
             if (!term->automatic_carriage_return)
@@ -269,8 +277,10 @@ int guac_terminal_echo(guac_terminal* term, unsigned char c) {
 
             /* Wrap if necessary */
             if (term->cursor_col >= term->term_width) {
+
+                /* New line */
                 term->cursor_col = 0;
-                guac_terminal_linefeed(term);
+                guac_terminal_linefeed(term, true);
             }
 
             /* If insert mode, shift other characters right by 1 */
@@ -340,14 +350,14 @@ int guac_terminal_escape(guac_terminal* term, unsigned char c) {
 
         /* Index (IND) */
         case 'D':
-            guac_terminal_linefeed(term);
+            guac_terminal_linefeed(term, false);
             term->char_handler = guac_terminal_echo; 
             break;
 
         /* Next Line (NEL) */
         case 'E':
             guac_terminal_move_cursor(term, term->cursor_row, 0);
-            guac_terminal_linefeed(term);
+            guac_terminal_linefeed(term, false);
             term->char_handler = guac_terminal_echo; 
             break;
 
