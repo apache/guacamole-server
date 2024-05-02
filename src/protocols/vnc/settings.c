@@ -87,6 +87,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "recording-write-existing",
     "disable-copy",
     "disable-paste",
+    "disable-server-input",
     
     "wol-send-packet",
     "wol-mac-addr",
@@ -353,6 +354,12 @@ enum VNC_ARGS_IDX {
      * using the clipboard. By default, clipboard access is not blocked.
      */
     IDX_DISABLE_PASTE,
+
+    /**
+     * Whether or not to disable the input on the server side when the VNC client
+     * is connected. The default is not to disable the input.
+     */
+    IDX_DISABLE_SERVER_INPUT,
     
     /**
      * Whether to send the magic Wake-on-LAN (WoL) packet to wake the remote
@@ -456,6 +463,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->read_only =
         guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_READ_ONLY, false);
+
+    /* Disable server input */
+    settings->disable_server_input =
+            guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                                         IDX_DISABLE_SERVER_INPUT, false);
 
     /* Parse color depth */
     settings->color_depth =
