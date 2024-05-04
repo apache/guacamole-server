@@ -500,7 +500,9 @@ int guacenc_video_free(guacenc_video* video) {
 
     /* Clean up encoding context */
     if (video->context != NULL) {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(61, 3, 100)
         avcodec_close(video->context);
+#endif
         avcodec_free_context(&(video->context));
     }
 
