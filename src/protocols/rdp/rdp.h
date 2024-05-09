@@ -51,6 +51,20 @@
 #include <pthread.h>
 #include <stdint.h>
 
+#ifdef HAVE_WINPR_ALIGNED
+#define GUAC_ALIGNED_FREE winpr_aligned_free
+#define GUAC_ALIGNED_MALLOC winpr_aligned_malloc
+#else
+#define GUAC_ALIGNED_FREE _aligned_free
+#define GUAC_ALIGNED_MALLOC _aligned_malloc
+#endif
+
+#ifdef FREERDP_HAS_CONTEXT
+#define GUAC_RDP_CONTEXT(rdp_instance) ((rdp_instance)->context)
+#else
+#define GUAC_RDP_CONTEXT(rdp_instance) ((rdp_instance))
+#endif
+
 /**
  * RDP-specific client data.
  */

@@ -158,7 +158,7 @@ freerdp_LTLIBRARIES =            \
     libguac-common-svc-client.la \
     libguacai-client.la
 
-freerdpdir = @FREERDP2_PLUGIN_DIR@
+freerdpdir = @FREERDP_PLUGIN_DIR@
 
 #
 # Common SVC plugin (shared by RDPDR, RDPSND, etc.)
@@ -264,4 +264,3 @@ EXTRA_DIST =                           \
     $(rdp_keymaps)                     \
     keymaps/generate.pl                \
     plugins/generate-entry-wrappers.pl
-

@@ -128,4 +128,3 @@ install_from_git "https://github.com/warmcat/libwebsockets" "$WITH_LIBWEBSOCKETS
 cd "$BUILD_DIR"
 autoreconf -fi && ./configure --prefix="$PREFIX_DIR" $GUACAMOLE_SERVER_OPTS
 make && make check && make install
-

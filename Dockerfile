@@ -27,16 +27,21 @@
 ARG ALPINE_BASE_IMAGE=3.18
 FROM alpine:${ALPINE_BASE_IMAGE} AS builder
 
+# FreeRDP version (default to version 3)
+ARG FREERDP_VERSION=3
+
 # Install build dependencies
 RUN apk add --no-cache                \
         autoconf                      \
         automake                      \
         build-base                    \
         cairo-dev                     \
+        cjson-dev                     \
         cmake                         \
         cunit-dev                     \
         git                           \
         grep                          \
+        krb5-dev                      \
         libjpeg-turbo-dev             \
         libpng-dev                    \
         libtool                       \
@@ -45,7 +50,10 @@ RUN apk add --no-cache                \
         openssl1.1-compat-dev         \
         pango-dev                     \
         pulseaudio-dev                \
-        util-linux-dev
+        sdl2-dev                      \
+        sdl2_ttf-dev                  \
+        util-linux-dev                \
+        webkit2gtk-dev
 
 # Copy source to container for sake of build
 ARG BUILD_DIR=/tmp/guacamole-server
@@ -64,7 +72,7 @@ ARG PREFIX_DIR=/opt/guacamole
 # library (these can be overridden at build time if a specific version is
 # needed)
 #
-ARG WITH_FREERDP='2(\.\d+)+'
+ARG WITH_FREERDP="${FREERDP_VERSION}(\.\d+)+"
 ARG WITH_LIBSSH2='libssh2-\d+(\.\d+)+'
 ARG WITH_LIBTELNET='\d+(\.\d+)+'
 ARG WITH_LIBVNCCLIENT='LibVNCServer-\d+(\.\d+)+'
@@ -77,6 +85,7 @@ ARG WITH_LIBWEBSOCKETS='v\d+(\.\d+)+'
 #
 
 ARG FREERDP_OPTS="\
+    -DALLOW_IN_SOURCE_BUILD=ON \
     -DBUILTIN_CHANNELS=OFF \
     -DCHANNEL_URBDRC=OFF \
     -DWITH_ALSA=OFF \
@@ -86,22 +95,26 @@ ARG FREERDP_OPTS="\
     -DWITH_CUPS=OFF \
     -DWITH_DIRECTFB=OFF \
     -DWITH_FFMPEG=OFF \
+    -DWITH_FUSE=OFF \
     -DWITH_GSM=OFF \
     -DWITH_GSSAPI=OFF \
     -DWITH_IPP=OFF \
     -DWITH_JPEG=ON \
+    -DWITH_KRB5=ON \
     -DWITH_LIBSYSTEMD=OFF \
     -DWITH_MANPAGES=OFF \
     -DWITH_OPENH264=OFF \
     -DWITH_OPENSSL=ON \
     -DWITH_OSS=OFF \
     -DWITH_PCSC=OFF \
+    -DWITH_PKCS11=OFF \
     -DWITH_PULSE=OFF \
     -DWITH_SERVER=OFF \
     -DWITH_SERVER_INTERFACE=OFF \
     -DWITH_SHADOW_MAC=OFF \
     -DWITH_SHADOW_X11=OFF \
     -DWITH_SSE2=ON \
+    -DWITH_SWSCALE=OFF \
     -DWITH_WAYLAND=OFF \
     -DWITH_X11=OFF \
     -DWITH_X264=OFF \
@@ -141,11 +154,14 @@ ARG LIBWEBSOCKETS_OPTS="\
 # Build guacamole-server and its core protocol library dependencies
 RUN ${BUILD_DIR}/src/guacd-docker/bin/build-all.sh
 
+# Determine location of the FREERDP library based on the version.
+ARG FREERDP_LIB_PATH=${PREFIX_DIR}/lib/freerdp${FREERDP_VERSION}
+
 # Record the packages of all runtime library dependencies
 RUN ${BUILD_DIR}/src/guacd-docker/bin/list-dependencies.sh \
         ${PREFIX_DIR}/sbin/guacd               \
         ${PREFIX_DIR}/lib/libguac-client-*.so  \
-        ${PREFIX_DIR}/lib/freerdp2/*guac*.so   \
+        ${FREERDP_LIB_PATH}/*guac*.so   \
         > ${PREFIX_DIR}/DEPENDENCIES
 
 # Use same Alpine version as the base for the runtime image
@@ -202,4 +218,3 @@ EXPOSE 4822
 # PREFIX_DIR build argument.
 #
 CMD /opt/guacamole/sbin/guacd -b 0.0.0.0 -L $GUACD_LOG_LEVEL -f
-
