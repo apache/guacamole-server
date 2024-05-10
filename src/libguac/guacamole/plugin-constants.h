@@ -33,7 +33,7 @@
 /**
  * String prefix which begins the library filename of all client plugins.
  */
-#define GUAC_PROTOCOL_LIBRARY_PREFIX "msys-client-"
+#define GUAC_PROTOCOL_LIBRARY_PREFIX "libguac-client-"
 
 /**
  * String suffix which ends the library filename of all client plugins.
