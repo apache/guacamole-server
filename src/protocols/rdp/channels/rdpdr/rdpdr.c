@@ -178,7 +178,6 @@ void guac_rdpdr_process_terminate(guac_rdp_common_svc* svc) {
 
 }
 
-
 void guac_rdpdr_load_plugin(rdpContext* context) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;

@@ -289,7 +289,6 @@ resize_scrollback() {
 
 }
 
-
 #
 # Get script name
 #

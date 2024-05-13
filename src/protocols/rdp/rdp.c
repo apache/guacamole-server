@@ -109,8 +109,13 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Load "AUDIO_INPUT" plugin for audio input*/
     if (settings->enable_audio_input) {
+        /* Upgrade the lock to write temporarily for setting the newly allocated audio buffer */
+        guac_rwlock_acquire_write_lock(&(rdp_client->lock));
         rdp_client->audio_input = guac_rdp_audio_buffer_alloc(client);
         guac_rdp_audio_load_plugin(instance->context);
+
+        /* Downgrade the lock to allow for concurrent read access */
+        guac_rwlock_release_lock(&(rdp_client->lock));
     }
 
     /* Load "cliprdr" service if not disabled */
@@ -479,7 +484,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Init random number generator */
     srandom(time(NULL));
 
-    pthread_rwlock_wrlock(&(rdp_client->lock));
+    guac_rwlock_acquire_write_lock(&(rdp_client->lock));
 
     /* Create display */
     rdp_client->display = guac_common_display_alloc(client,
@@ -525,11 +530,23 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Set default pointer */
     guac_common_cursor_set_pointer(rdp_client->display->cursor);
 
+    /* 
+     * Downgrade the lock to allow for concurrent read access.
+     * Access to read locks needs to be made available for other processes such
+     * as the join_pending_handler to use while we await credentials from the user.
+     */
+    guac_rwlock_release_lock(&(rdp_client->lock));
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
+
     /* Connect to RDP server */
     if (!freerdp_connect(rdp_inst)) {
         guac_rdp_client_abort(client, rdp_inst);
         goto fail;
     }
+
+    /* Upgrade to write lock again for further exclusive operations */
+    guac_rwlock_release_lock(&(rdp_client->lock));
+    guac_rwlock_acquire_write_lock(&(rdp_client->lock));
 
     /* Connection complete */
     rdp_client->rdp_inst = rdp_inst;
@@ -537,7 +554,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     /* Signal that reconnect has been completed */
     guac_rdp_disp_reconnect_complete(rdp_client->disp);
 
-    pthread_rwlock_unlock(&(rdp_client->lock));
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     /* Handle messages from RDP server while client is running */
     while (client->state == GUAC_CLIENT_RUNNING
@@ -627,7 +644,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
     }
 
-    pthread_rwlock_wrlock(&(rdp_client->lock));
+    guac_rwlock_acquire_write_lock(&(rdp_client->lock));
 
     /* Clean up print job, if active */
     if (rdp_client->active_job != NULL) {
@@ -662,7 +679,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_common_display_free(rdp_client->display);
     rdp_client->display = NULL;
 
-    pthread_rwlock_unlock(&(rdp_client->lock));
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     /* Client is now disconnected */
     guac_client_log(client, GUAC_LOG_INFO, "Internal RDP client disconnected");
@@ -670,7 +687,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     return 0;
 
 fail:
-    pthread_rwlock_unlock(&(rdp_client->lock));
+    guac_rwlock_release_lock(&(rdp_client->lock));
     return 1;
 
 }
@@ -824,7 +841,8 @@ void* guac_rdp_client_thread(void* data) {
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
                 !settings->recording_exclude_touch,
-                settings->recording_include_keys);
+                settings->recording_include_keys,
+                settings->recording_write_existing);
     }
 
     /* Continue handling connections until error or client disconnect */

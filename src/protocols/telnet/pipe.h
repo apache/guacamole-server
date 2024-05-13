@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_TELNET_PIPE_H
 #define GUAC_TELNET_PIPE_H
 

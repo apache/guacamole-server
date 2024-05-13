@@ -30,6 +30,7 @@
 #include <freerdp/input.h>
 #include <guacamole/client.h>
 #include <guacamole/recording.h>
+#include <guacamole/rwlock.h>
 #include <guacamole/user.h>
 
 #include <stdlib.h>
@@ -39,7 +40,7 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    pthread_rwlock_rdlock(&(rdp_client->lock));
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
 
     /* Skip if not yet connected */
     freerdp* rdp_inst = rdp_client->rdp_inst;
@@ -125,7 +126,7 @@ int guac_rdp_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     }
 
 complete:
-    pthread_rwlock_unlock(&(rdp_client->lock));
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     return 0;
 }
@@ -136,7 +137,7 @@ int guac_rdp_user_touch_handler(guac_user* user, int id, int x, int y,
     guac_client* client = user->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    pthread_rwlock_rdlock(&(rdp_client->lock));
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
 
     /* Skip if not yet connected */
     freerdp* rdp_inst = rdp_client->rdp_inst;
@@ -152,7 +153,7 @@ int guac_rdp_user_touch_handler(guac_user* user, int id, int x, int y,
     guac_rdp_rdpei_touch_update(rdp_client->rdpei, id, x, y, force);
 
 complete:
-    pthread_rwlock_unlock(&(rdp_client->lock));
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     return 0;
 }
@@ -163,7 +164,7 @@ int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     int retval = 0;
 
-    pthread_rwlock_rdlock(&(rdp_client->lock));
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
 
     /* Report key state within recording */
     if (rdp_client->recording != NULL)
@@ -179,7 +180,7 @@ int guac_rdp_user_key_handler(guac_user* user, int keysym, int pressed) {
                 keysym, pressed, GUAC_RDP_KEY_SOURCE_CLIENT);
 
 complete:
-    pthread_rwlock_unlock(&(rdp_client->lock));
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     return retval;
 
@@ -202,4 +203,3 @@ int guac_rdp_user_size_handler(guac_user* user, int width, int height) {
     return 0;
 
 }
-

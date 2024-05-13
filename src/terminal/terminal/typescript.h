@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_TERMINAL_TYPESCRIPT_H
 #define GUAC_TERMINAL_TYPESCRIPT_H
 
@@ -27,7 +26,6 @@
  *
  * @file typescript.h
  */
-
 
 #include <guacamole/timestamp.h>
 
@@ -127,11 +125,13 @@ typedef struct guac_terminal_typescript {
 } guac_terminal_typescript;
 
 /**
- * Creates a new pair of typescript files within the given path and using the
+ * Creates a pair of typescript files within the given path and using the
  * given base name, returning an abstraction which represents those files.
- * Terminal output will be written to these new files, along with timing
+ * Terminal output will be written to these files, along with timing
  * information. If the create_path flag is non-zero, the given path will be
- * created if it does not yet exist.
+ * created if it does not yet exist. If allow_write_existing is non-zero,
+ * these may be existing files; otherwise, any existing file will cause this
+ * function to fail, returning NULL.
  *
  * @param path
  *     The full absolute path to a directory in which the typescript files
@@ -146,12 +146,16 @@ typedef struct guac_terminal_typescript {
  *     written, or non-zero if the path should be created if it does not yet
  *     exist.
  *
+ * @param allow_write_existing
+ *     Non-zero if writing to existing files should be allowed, or zero
+ *     otherwise.
+ *
  * @return
  *     A new guac_terminal_typescript representing the typescript files
  *     requested, or NULL if creation of the typescript files failed.
  */
 guac_terminal_typescript* guac_terminal_typescript_alloc(const char* path,
-        const char* name, int create_path);
+        const char* name, int create_path, int allow_write_existing);
 
 /**
  * Writes a single byte of terminal data to the typescript, flushing and

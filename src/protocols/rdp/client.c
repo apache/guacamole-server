@@ -35,10 +35,12 @@
 #include "common-ssh/user.h"
 #endif
 
+#include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/mem.h>
 #include <guacamole/recording.h>
+#include <guacamole/rwlock.h>
 
 #include <dirent.h>
 #include <errno.h>
@@ -117,7 +119,7 @@ static int guac_rdp_join_pending_handler(guac_client* client) {
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_socket* broadcast_socket = client->pending_socket;
 
-    pthread_rwlock_rdlock(&(rdp_client->lock));
+    guac_rwlock_acquire_read_lock(&(rdp_client->lock));
 
     /* Synchronize any audio stream for each pending user */
     if (rdp_client->audio)
@@ -133,7 +135,7 @@ static int guac_rdp_join_pending_handler(guac_client* client) {
         guac_socket_flush(broadcast_socket);
     }
 
-    pthread_rwlock_unlock(&(rdp_client->lock));
+    guac_rwlock_release_lock(&(rdp_client->lock));
 
     return 0;
 
@@ -220,7 +222,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
             PTHREAD_MUTEX_RECURSIVE);
 
     /* Init required locks */
-    pthread_rwlock_init(&(rdp_client->lock), NULL);
+    guac_rwlock_init(&(rdp_client->lock));
     pthread_mutex_init(&(rdp_client->message_lock), &(rdp_client->attributes));
 
     /* Set handlers */
@@ -240,6 +242,14 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 int guac_rdp_client_free_handler(guac_client* client) {
 
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    /*
+     * Signals any threads that are blocked awaiting user input for authentication
+     * (e.g., username or password) to terminate their wait. By broadcasting a
+     * condition signal, the authentication process is interrupted, allowing for
+     * premature termination and cleanup during client disconnection.
+     */
+    guac_argv_stop();
 
     /* Wait for client thread */
     pthread_join(rdp_client->client_thread, NULL);
@@ -297,7 +307,7 @@ int guac_rdp_client_free_handler(guac_client* client) {
     if (rdp_client->audio_input != NULL)
         guac_rdp_audio_buffer_free(rdp_client->audio_input);
 
-    pthread_rwlock_destroy(&(rdp_client->lock));
+    guac_rwlock_destroy(&(rdp_client->lock));
     pthread_mutex_destroy(&(rdp_client->message_lock));
 
     /* Free client data */
@@ -306,4 +316,3 @@ int guac_rdp_client_free_handler(guac_client* client) {
     return 0;
 
 }
-

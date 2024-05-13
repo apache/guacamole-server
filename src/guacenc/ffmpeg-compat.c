@@ -85,7 +85,6 @@ static int guacenc_write_packet(guacenc_video* video, void* data, int size) {
 
 #endif
 
-
     if (ret != 0) {
         guacenc_log(GUAC_LOG_ERROR, "Unable to write frame "
                 "#%" PRId64 ": %s", video->next_pts, strerror(errno));

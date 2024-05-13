@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_VNC_INPUT_H
 #define GUAC_VNC_INPUT_H
 

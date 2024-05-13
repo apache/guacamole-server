@@ -44,6 +44,7 @@
 #include <freerdp/freerdp.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/rwlock.h>
 #include <guacamole/recording.h>
 #include <winpr/wtypes.h>
 
@@ -188,7 +189,7 @@ typedef struct guac_rdp_client {
      * from running when RDP data structures are allocated or freed
      * by the client thread.
      */
-    pthread_rwlock_t lock;
+    guac_rwlock lock;
 
     /**
      * Lock which synchronizes the sending of each RDP message, ensuring
@@ -237,4 +238,3 @@ typedef struct rdp_freerdp_context {
 void* guac_rdp_client_thread(void* data);
 
 #endif
-

@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_TERMINAL_H
 #define _GUAC_TERMINAL_H
 
@@ -748,13 +747,18 @@ void guac_terminal_clipboard_append(guac_terminal* terminal,
 void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user);
 
 /**
- * Requests that the terminal write all output to a new pair of typescript
- * files within the given path and using the given base name. Terminal output
- * will be written to these new files, along with timing information. If the
- * create_path flag is non-zero, the given path will be created if it does not
- * yet exist. If creation of the typescript files or path fails, error messages
- * will automatically be logged, and no typescript will be written. The
- * typescript will automatically be closed once the terminal is freed.
+ * Requests that the terminal write all output to a pair of typescript
+ * files within the given path and using the given base name. If
+ * allow_write_existing is non-zero, these may be existing files; otherwise,
+ * the existing files may not be written to, and a non-zero value will be
+ * returned.
+ *
+ * Terminal output will be written to the files, along with timing information.
+ * If the create_path flag is non-zero, the given path will be created if it
+ * does not yet exist. If creation of the typescript files or path fails,
+ * error messages will automatically be logged, and no typescript will be
+ * written. The typescript will automatically be closed once the terminal is
+ * freed.
  *
  * @param term
  *     The terminal whose output should be written to a typescript.
@@ -772,12 +776,16 @@ void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user);
  *     written, or non-zero if the path should be created if it does not yet
  *     exist.
  *
+ * @param allow_write_existing
+ *     Non-zero if writing to existing files should be allowed, or zero
+ *     otherwise.
+ *
  * @return
  *     Zero if the typescript files have been successfully created and a
  *     typescript will be written, non-zero otherwise.
  */
 int guac_terminal_create_typescript(guac_terminal* term, const char* path,
-        const char* name, int create_path);
+        const char* name, int create_path, int allow_write_existing);
 
 /**
  * Immediately applies the given color scheme to the given terminal, overriding

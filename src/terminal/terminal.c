@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #include "common/clipboard.h"
 #include "common/cursor.h"
 #include "common/iconv.h"
@@ -1505,7 +1504,6 @@ int guac_terminal_resize(guac_terminal* terminal, int width, int height) {
     guac_terminal_scrollbar_set_bounds(terminal->scrollbar,
             -guac_terminal_get_available_scroll(terminal), 0);
 
-
     /* Release terminal */
     guac_terminal_unlock(terminal);
 
@@ -1752,6 +1750,10 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
 static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         int x, int y, int mask) {
+
+    /* Remove display margin from mouse position without going below 0 */
+    y = y >= term->display->margin ? y - term->display->margin : 0;
+    x = x >= term->display->margin ? x - term->display->margin : 0;
 
     /* Ignore user input if terminal is not started */
     if (!term->started) {
@@ -2031,10 +2033,11 @@ void guac_terminal_pipe_stream_close(guac_terminal* term) {
 }
 
 int guac_terminal_create_typescript(guac_terminal* term, const char* path,
-        const char* name, int create_path) {
+        const char* name, int create_path, int allow_write_existing) {
 
     /* Create typescript */
-    term->typescript = guac_terminal_typescript_alloc(path, name, create_path);
+    term->typescript = guac_terminal_typescript_alloc(
+            path, name, create_path, allow_write_existing);
 
     /* Log failure */
     if (term->typescript == NULL) {

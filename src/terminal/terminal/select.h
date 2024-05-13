@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef GUAC_TERMINAL_SELECT_H
 #define GUAC_TERMINAL_SELECT_H
 

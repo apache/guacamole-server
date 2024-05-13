@@ -37,6 +37,9 @@ AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
+# Initialize pkg-config support
+PKG_PROG_PKG_CONFIG()
+
 # Headers
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h time.h sys/time.h syslog.h unistd.h cairo/cairo.h pngstruct.h])
 
@@ -145,34 +148,34 @@ AC_SUBST(CUNIT_LIBS)
 AC_CHECK_FUNCS([clock_gettime gettimeofday memmove memset select strdup nanosleep])
 
 AC_CHECK_DECL([png_get_io_ptr],
-	[AC_DEFINE([HAVE_PNG_GET_IO_PTR],,
+    [AC_DEFINE([HAVE_PNG_GET_IO_PTR],,
                [Whether png_get_io_ptr() is defined])],,
-	[#include <png.h>])
+    [#include <png.h>])
 
 AC_CHECK_DECL([cairo_format_stride_for_width],
-	[AC_DEFINE([HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH],,
+    [AC_DEFINE([HAVE_CAIRO_FORMAT_STRIDE_FOR_WIDTH],,
                [Whether cairo_format_stride_for_width() is defined])],,
-	[#include <cairo/cairo.h>])
+    [#include <cairo/cairo.h>])
 
 AC_CHECK_DECL([poll],
-	[AC_DEFINE([HAVE_POLL],,
+    [AC_DEFINE([HAVE_POLL],,
                [Whether poll() is defined])],,
-	[#include <poll.h>])
+    [#include <poll.h>])
 
 AC_CHECK_DECL([strlcpy],
-	[AC_DEFINE([HAVE_STRLCPY],,
+    [AC_DEFINE([HAVE_STRLCPY],,
                [Whether strlcpy() is defined])],,
-	[#include <string.h>])
+    [#include <string.h>])
 
 AC_CHECK_DECL([strlcat],
-	[AC_DEFINE([HAVE_STRLCAT],,
+    [AC_DEFINE([HAVE_STRLCAT],,
                [Whether strlcat() is defined])],,
-	[#include <string.h>])
+    [#include <string.h>])
 
 AC_CHECK_DECL([strnstr],
-	[AC_DEFINE([HAVE_STRNSTR],,
+    [AC_DEFINE([HAVE_STRNSTR],,
                [Whether strnstr() is defined])],,
-	[#include <string.h>])
+    [#include <string.h>])
 
 # Typedefs
 AC_TYPE_SIZE_T
@@ -255,10 +258,11 @@ AM_CONDITIONAL([ENABLE_AVCODEC], [test "x${have_libavcodec}" = "xyes"])
 
 have_libavformat=disabled
 AC_ARG_WITH([libavformat],
-	    [AS_HELP_STRING([--with-libavformat],
-	                    [use libavformat when encoding video @<:@default=check@:>@])],
-            [].
+            [AS_HELP_STRING([--with-libavformat],
+                            [use libavformat when encoding video @<:@default=check@:>@])],
+            [],
             [with_libavformat=check])
+
 if test "x$with_libavformat" != "xno"
 then
     have_libavformat=yes
@@ -643,7 +647,6 @@ then
 
 fi
 
-
 #
 # FreeRDP 2 (libfreerdp2, libfreerdp-client2, and libwinpr2)
 #
@@ -777,7 +780,6 @@ then
     [AC_MSG_RESULT([no])])
 
 fi
-
 
 # Glyph callback variants
 if test "x${have_freerdp2}" = "xyes"
@@ -986,9 +988,8 @@ then
 
 fi
 
-AM_CONDITIONAL([ENABLE_SSH_AGENT],
-	   [test "x${have_ssh_agent}"   = "xyes" \
-	      -a "x${enable_ssh_agent}" = "xyes"])
+AM_CONDITIONAL([ENABLE_SSH_AGENT], [test "x${have_ssh_agent}"   = "xyes" \
+                                      -a "x${enable_ssh_agent}" = "xyes"])
 
 #
 # libtelnet

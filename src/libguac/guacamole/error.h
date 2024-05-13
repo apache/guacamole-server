@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_ERROR_H
 #define _GUAC_ERROR_H
 

@@ -179,7 +179,7 @@ int guac_rwlock_acquire_write_lock(guac_rwlock* reentrant_rwlock) {
      * write lock by another function without the caller knowing about it. This
      * shouldn't cause any issues, however.
      */
-    if (key_value == GUAC_REENTRANT_LOCK_READ_LOCK)
+    if (flag == GUAC_REENTRANT_LOCK_READ_LOCK)
         pthread_rwlock_unlock(&(reentrant_rwlock->lock));
 
     /* Acquire the write lock */

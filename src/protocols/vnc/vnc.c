@@ -416,6 +416,20 @@ void* guac_vnc_client_thread(void* data) {
     }
 #endif
 
+    /* Disable remote console (Server input) */
+    if (settings->disable_server_input) {
+        rfbSetServerInputMsg msg;
+        msg.type = rfbSetServerInput;
+        msg.status = 1;
+        msg.pad = 0;
+
+        if (WriteToRFBServer(rfb_client, (char*)&msg, sz_rfbSetServerInputMsg))
+            guac_client_log(client, GUAC_LOG_DEBUG, "Successfully sent request to disable server input.");
+
+        else
+            guac_client_log(client, GUAC_LOG_WARNING, "Failed to send request to disable server input.");
+    }
+
     /* Set remaining client data */
     vnc_client->rfb_client = rfb_client;
 
@@ -428,7 +442,8 @@ void* guac_vnc_client_thread(void* data) {
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
                 0, /* Touch events not supported */
-                settings->recording_include_keys);
+                settings->recording_include_keys,
+                settings->recording_write_existing);
     }
 
     /* Create display */
@@ -438,6 +453,13 @@ void* guac_vnc_client_thread(void* data) {
     /* Use lossless compression only if requested (otherwise, use default
      * heuristics) */
     guac_common_display_set_lossless(vnc_client->display, settings->lossless);
+
+    /* If compression and display quality have been configured, set those. */
+    if (settings->compress_level >= 0 && settings->compress_level <= 9)
+        rfb_client->appData.compressLevel = settings->compress_level;
+
+    if (settings->quality_level >= 0 && settings->quality_level <= 9)
+        rfb_client->appData.qualityLevel = settings->quality_level;
 
     /* If not read-only, set an appropriate cursor */
     if (settings->read_only == 0) {

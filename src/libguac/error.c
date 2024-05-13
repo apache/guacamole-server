@@ -49,7 +49,7 @@ const char* __GUAC_STATUS_PERMISSION_DENIED_STR = "Permission denied";
 const char* __GUAC_STATUS_BUSY_STR              = "Resource busy";
 const char* __GUAC_STATUS_NOT_AVAILABLE_STR     = "Resource not available";
 const char* __GUAC_STATUS_NOT_SUPPORTED_STR     = "Not supported";
-const char* __GUAC_STATUS_NOT_INPLEMENTED_STR   = "Not implemented";
+const char* __GUAC_STATUS_NOT_IMPLEMENTED_STR   = "Not implemented";
 const char* __GUAC_STATUS_TRY_AGAIN_STR         = "Temporary failure";
 const char* __GUAC_STATUS_PROTOCOL_ERROR_STR    = "Protocol violation";
 const char* __GUAC_STATUS_NOT_FOUND_STR         = "Not found";
@@ -124,8 +124,8 @@ const char* guac_status_string(guac_status status) {
             return __GUAC_STATUS_NOT_SUPPORTED_STR;
 
         /* Not implemented */
-        case GUAC_STATUS_NOT_INPLEMENTED:
-            return __GUAC_STATUS_NOT_INPLEMENTED_STR;
+        case GUAC_STATUS_NOT_IMPLEMENTED:
+            return __GUAC_STATUS_NOT_IMPLEMENTED_STR;
 
         /* Temporary failure */
         case GUAC_STATUS_TRY_AGAIN:

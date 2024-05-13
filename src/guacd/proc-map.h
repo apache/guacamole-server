@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUACD_PROC_MAP_H
 #define _GUACD_PROC_MAP_H
 

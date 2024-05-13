@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef _GUAC_USER_HANDLERS__H
 #define _GUAC_USER_HANDLERS__H
 

@@ -264,7 +264,8 @@ void* ssh_client_thread(void* data) {
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
                 0, /* Touch events not supported */
-                settings->recording_include_keys);
+                settings->recording_include_keys,
+                settings->recording_write_existing);
     }
 
     /* Create terminal options with required parameters */
@@ -300,7 +301,8 @@ void* ssh_client_thread(void* data) {
         guac_terminal_create_typescript(ssh_client->term,
                 settings->typescript_path,
                 settings->typescript_name,
-                settings->create_typescript_path);
+                settings->create_typescript_path,
+                settings->typescript_write_existing);
     }
 
     /* Get user and credentials */
@@ -342,7 +344,6 @@ void* ssh_client_thread(void* data) {
                     "refused to set \"TZ\" variable.");
         }
     }
-
 
 #ifdef ENABLE_SSH_AGENT
     /* Start SSH agent forwarding, if enabled */

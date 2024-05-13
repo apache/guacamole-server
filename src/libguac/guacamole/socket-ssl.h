@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef __GUACD_SOCKET_SSL_H
 #define __GUACD_SOCKET_SSL_H
 
@@ -31,6 +30,7 @@
 #include "socket-types.h"
 
 #include <openssl/ssl.h>
+#include <pthread.h>
 
 /**
  * SSL socket-specific data.
@@ -53,6 +53,12 @@ typedef struct guac_socket_ssl_data {
      * guac_socket_open_secure().
      */
     SSL* ssl;
+
+    /**
+     * Lock that is acquired when an instruction is being written, and released
+     * when the instruction is finished being written.
+     */
+    pthread_mutex_t socket_lock;
 
 } guac_socket_ssl_data;
 

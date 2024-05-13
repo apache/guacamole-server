@@ -17,7 +17,6 @@
  * under the License.
  */
 
-
 #ifndef __GUAC_PALETTE_H
 #define __GUAC_PALETTE_H
 

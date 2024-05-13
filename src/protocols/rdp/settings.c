@@ -122,6 +122,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "recording-exclude-touch",
     "recording-include-keys",
     "create-recording-path",
+    "recording-write-existing",
     "resize-method",
     "enable-audio-input",
     "enable-touch",
@@ -563,6 +564,12 @@ enum RDP_ARGS_IDX {
      * created if it does not yet exist.
      */
     IDX_CREATE_RECORDING_PATH,
+
+    /**
+     * Whether existing files should be appended to when creating a new recording.
+     * Disabled by default.
+     */
+    IDX_RECORDING_WRITE_EXISTING,
 
     /**
      * The method to use to apply screen size changes requested by the user.
@@ -1161,6 +1168,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, 0);
 
+    /* Parse allow write existing file flag */
+    settings->recording_write_existing =
+        guac_user_parse_args_boolean(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_RECORDING_WRITE_EXISTING, 0);
+
     /* No resize method */
     if (strcmp(argv[IDX_RESIZE_METHOD], "") == 0) {
         guac_user_log(user, GUAC_LOG_INFO, "Resize method: none");
@@ -1273,7 +1285,6 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         settings->normalize_clipboard = 0;
         settings->clipboard_crlf = 0;
     }
-
 
     /* Parse Wake-on-LAN (WoL) settings */
     settings->wol_send_packet =
