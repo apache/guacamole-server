@@ -164,6 +164,10 @@ ARG PREFIX_DIR=/opt/guacamole
 ENV LC_ALL=C.UTF-8
 ENV LD_LIBRARY_PATH=${PREFIX_DIR}/lib
 ENV GUACD_LOG_LEVEL=info
+# IPv4 is used by default, which is set to 127.0.0.1. If IPv6 is used, set it to ::1
+ENV LOCAL_HOST=127.0.0.1
+# By default, IPv4 is set to 0.0.0.0. If IPv6 is used, set to ::
+ENV ANY_IP_ADDRESS=0.0.0.0
 
 # Copy build artifacts into this stage
 COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
@@ -182,7 +186,7 @@ RUN apk add --no-cache                \
     xargs apk add --no-cache < ${PREFIX_DIR}/DEPENDENCIES
 
 # Checks the operating status every 5 minutes with a timeout of 5 seconds
-HEALTHCHECK --interval=5m --timeout=5s CMD nc -z 127.0.0.1 4822 || exit 1
+HEALTHCHECK --interval=5m --timeout=5s CMD nc -z ${LOCAL_HOST} 4822 || exit 1
 
 # Create a new user guacd
 ARG UID=1000
@@ -201,5 +205,5 @@ EXPOSE 4822
 # Note the path here MUST correspond to the value specified in the 
 # PREFIX_DIR build argument.
 #
-CMD /opt/guacamole/sbin/guacd -b 0.0.0.0 -L $GUACD_LOG_LEVEL -f
+CMD /opt/guacamole/sbin/guacd -b ${ANY_IP_ADDRESS} -L $GUACD_LOG_LEVEL -f
 
