@@ -86,7 +86,11 @@ static int __guac_telnet_write_all(int fd, const char* buffer, int size) {
     while (remaining > 0) {
 
         /* Attempt to write data */
+#ifdef WINDOWS_BUILD
+        int ret_val = send(fd, buffer, remaining, 0);
+#else
         int ret_val = write(fd, buffer, remaining);
+#endif
         if (ret_val <= 0)
             return -1;
 
@@ -638,8 +642,11 @@ void* guac_telnet_client_thread(void* data) {
         /* Resume waiting of no data available */
         if (wait_result == 0)
             continue;
-
+#ifdef WINDOWS_BUILD
+        int bytes_read = recv(telnet_client->socket_fd, buffer, sizeof(buffer), 0);
+#else
         int bytes_read = read(telnet_client->socket_fd, buffer, sizeof(buffer));
+#endif
         if (bytes_read <= 0)
             break;
 
