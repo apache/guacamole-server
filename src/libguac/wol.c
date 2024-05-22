@@ -20,6 +20,8 @@
 #include "config.h"
 
 #include "guacamole/error.h"
+#include "guacamole/socket-tcp.h"
+#include "guacamole/timestamp.h"
 #include "guacamole/wol.h"
 
 #include <stdio.h>
@@ -195,4 +197,50 @@ int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
         return 0;
     
     return -1;
+}
+
+int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
+        const unsigned short udp_port, int wait_time, int retries,
+        const char* hostname, const char* port) {
+
+    /* Attempt to connect, first. */
+    int sockfd = guac_socket_tcp_connect(hostname, port);
+
+    /* If connection succeeds, no need to wake the system. */
+    if (sockfd > 0) {
+        close(sockfd);
+        return 0;
+    }
+
+    /* Send the magic WOL packet and store return value. */
+    int retval = guac_wol_wake(mac_addr, broadcast_addr, udp_port);
+
+    /* If sending WOL packet fails, just return the received return value. */
+    if (retval)
+        return retval;
+
+    /* Try to connect on the specified TCP port and hostname or IP. */
+    for (int i = 0; i < retries; i++) {
+
+        sockfd = guac_socket_tcp_connect(hostname, port);
+
+        /* Connection succeeded - close socket and exit. */
+        if (sockfd > 0) {
+            close(sockfd);
+            return 0;
+        }
+
+        /**
+         * Connection did not succed - close the socket and sleep for the
+         * specified amount of time before retrying.
+         */
+        close(sockfd);
+        guac_timestamp_msleep(wait_time * 1000);
+    }
+
+    /* Failed to connect, set error message and return an error. */
+    guac_error = GUAC_STATUS_REFUSED;
+    guac_error_message = "Unable to connect to remote host.";
+    return -1;
+
 }
