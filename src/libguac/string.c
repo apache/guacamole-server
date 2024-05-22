@@ -22,6 +22,7 @@
 #include "guacamole/mem.h"
 
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 /**
@@ -43,6 +44,20 @@
  *     size of the buffer, zero will be returned.
  */
 #define REMAINING(n, length) (((n) < (length)) ? 0 : ((n) - (length)))
+
+int guac_itoa(char* restrict dest, unsigned int integer) {
+
+    /* Determine size of string. */
+    int str_size = snprintf(dest, 0, "%i", integer);
+
+    /* If an error occurs, just return that and skip the conversion. */
+    if (str_size < 0)
+        return str_size;
+
+    /* Do the conversion and return. */
+    return snprintf(dest, (str_size + 1), "%i", integer);
+
+}
 
 size_t guac_strlcpy(char* restrict dest, const char* restrict src, size_t n) {
 
