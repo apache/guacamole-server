@@ -212,6 +212,9 @@ int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
         return 0;
     }
 
+    /* Close the fd to avoid resource leak. */
+    close(sockfd);
+
     /* Send the magic WOL packet and store return value. */
     int retval = guac_wol_wake(mac_addr, broadcast_addr, udp_port);
 
