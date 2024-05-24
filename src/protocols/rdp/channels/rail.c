@@ -169,6 +169,37 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
 }
 
 /**
+ * A callback function that is invoked when the RDP server sends the result
+ * of the Remote App (RAIL) execution command back to the client, so that the
+ * client can handle any required actions associated with the result.
+ * 
+ * @param context
+ *     A pointer to the RAIL data structure associated with the current
+ *     RDP connection.
+ *
+ * @param execResult
+ *     A data structure containing the result of the RAIL command.
+ *
+ * @return
+ *     CHANNEL_RC_OK (zero) if the result was handled successfully, otherwise
+ *     a non-zero error code. This implementation always returns
+ *     CHANNEL_RC_OK.
+ */
+static UINT guac_rdp_rail_execute_result(RailClientContext* context,
+        const RAIL_EXEC_RESULT_ORDER* execResult) {
+
+    guac_client* client = (guac_client*) context->custom;
+
+    if (execResult->execResult != RAIL_EXEC_S_OK) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Failed to execute RAIL command on server: %d", execResult->execResult);
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE, "Failed to execute RAIL command.");
+    }
+
+    return CHANNEL_RC_OK;
+
+}
+
+/**
  * Callback which is invoked when a Handshake PDU is received from the RDP
  * server. No communication for RemoteApp may occur until the Handshake PDU
  * (or, alternatively, the HandshakeEx PDU) is received. See:
@@ -250,6 +281,7 @@ static void guac_rdp_rail_channel_connected(rdpContext* context,
     /* Init FreeRDP RAIL context, ensuring the guac_client can be accessed from
      * within any RAIL-specific callbacks */
     rail->custom = client;
+    rail->ServerExecuteResult = guac_rdp_rail_execute_result;
     rail->ServerHandshake = guac_rdp_rail_handshake;
     rail->ServerHandshakeEx = guac_rdp_rail_handshake_ex;
 
