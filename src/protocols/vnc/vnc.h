@@ -141,11 +141,6 @@ typedef struct guac_vnc_client {
      */
     guac_iconv_write* clipboard_writer;
 
-    /**
-     * VNC display update module.
-     */
-    guac_vnc_display* vnc_display;
-
 } guac_vnc_client;
 
 /**

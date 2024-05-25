@@ -26,34 +26,6 @@
 #include <rfb/rfbproto.h>
 
 /**
- * Display size update module for VNC.
- */
-typedef struct guac_vnc_display {
-
-    /**
-     * The guac_client instance handling the relevant VNC connection.
-     */
-    guac_client* client;
-
-    /**
-     * The timestamp of the last display update request, or 0 if no request
-     * has been sent yet.
-     */
-    guac_timestamp last_request;
-
-    /**
-     * The last requested screen width, in pixels.
-     */
-    int requested_width;
-
-    /**
-     * The last requested screen height, in pixels.
-     */
-    int requested_height;
-
-} guac_vnc_display;
-
-/**
  * Callback invoked by libVNCServer when it receives a new binary image data
  * from the VNC server. The image itself will be stored in the designated sub-
  * rectangle of client->framebuffer.
@@ -113,41 +85,12 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h,
         int dest_x, int dest_y);
 
 /**
- * Allocates a new VNC display update module, which will keep track of the data
- * needed to handle display updates.
- *
- * @param client
- *     The guac_client instance handling the relevant VNC connection.
- *
- * @return
- *     A newly-allocated VNC display update module.
- */
-guac_vnc_display* guac_vnc_display_update_alloc(guac_client* client);
-
-/**
- * Frees the resources associated with the data structure that keeps track of
- * items related to VNC display updates. Only resources specific to Guacamole
- * are freed. Resources that are part of the rfbClient will be freed separately.
- * If no resources are currently allocated for Display Update support, this
- * function has no effect.
- *
- * @param display
- *     The display update module to free.
- */
-void guac_vnc_display_update_free(guac_vnc_display* display);
-
-/**
  * Attempts to set the display size of the remote server to the size requested
  * by the client, usually as part of a client (browser) resize, if supported by
  * both the VNC client and the remote server.
  *
  * @param display
- *     The VNC display update object that tracks information related to display
- *     update requests.
- *
- * @param rfb_client
- *     The data structure containing the VNC client that is used by this
- *     connection.
+ *     The VNC client to which the display size update should be sent.
  *
  * @param width
  *     The width that is being requested, in pixels.
@@ -155,8 +98,7 @@ void guac_vnc_display_update_free(guac_vnc_display* display);
  * @param height
  *     The height that is being requested, in pixels.
  */
-void guac_vnc_display_set_size(guac_vnc_display* display, rfbClient* rfb_client,
-        int width, int height);
+void guac_vnc_display_set_size(rfbClient* client, int width, int height);
 
 /**
  * Sets the pixel format to request of the VNC server. The request will be made

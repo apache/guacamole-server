@@ -106,8 +106,6 @@ int guac_client_init(guac_client* client) {
     guac_vnc_client* vnc_client = guac_mem_zalloc(sizeof(guac_vnc_client));
     client->data = vnc_client;
 
-    vnc_client->vnc_display = guac_vnc_display_update_alloc(client);
-
 #ifdef ENABLE_VNC_TLS_LOCKING
     /* Initialize the TLS write lock */
     pthread_mutex_init(&vnc_client->tls_lock, NULL);
@@ -216,8 +214,6 @@ int guac_vnc_client_free_handler(guac_client* client) {
 
     /* Clean up the message lock. */
     pthread_mutex_destroy(&(vnc_client->message_lock));
-
-    guac_vnc_display_update_free(vnc_client->vnc_display);
 
     /* Free generic data struct */
     guac_mem_free(client->data);

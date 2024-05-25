@@ -155,68 +155,11 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
 
 }
 
-guac_vnc_display* guac_vnc_display_update_alloc(guac_client* client) {
+void guac_vnc_display_set_size(rfbClient* client, int width, int height) {
 
-    guac_vnc_display* display = guac_mem_alloc(sizeof(guac_vnc_display));
-    display->client = client;
-
-    /* No requests have been made */
-    display->last_request = guac_timestamp_current();
-    display->requested_width  = 0;
-    display->requested_height = 0;
-
-    return display;
-
-}
-
-void guac_vnc_display_update_free(guac_vnc_display* display) {
-    guac_mem_free(display);
-}
-
-/**
- * This function does the actual work of updating the display size if adequate
- * time has passed since the last update and the size is actually different.
-*
- * @param display
- *     The data structure that contains information used for determing if and
- *     when display updates should be allowed.
- *
- * @param rfb_client
- *     A pointer to the VNC (RFB) client.
- */
-static void guac_vnc_display_update_size(guac_vnc_display* display,
-        rfbClient* rfb_client) {
-
-    int width = display->requested_width;
-    int height = display->requested_height;
-
-    /* Do not update size if no requests have been received */
-    if (width == 0 || height == 0)
-        return;
-
-    guac_timestamp now = guac_timestamp_current();
-
-    /* Limit display update frequency */
-    if (now - display->last_request <= GUAC_COMMON_DISPLAY_UPDATE_INTERVAL)
-        return;
-
-    /* Do NOT send requests unless the size will change */
-    if (rfb_client != NULL
-            && width == rfb_client->screen.width
-            && height == rfb_client->screen.height)
-        return;
-
-    /* Send the display size update. */
-    guac_vnc_client* vnc_client = (guac_vnc_client*) display->client->data;
-    pthread_mutex_lock(&(vnc_client->message_lock));
-    SendExtDesktopSize(rfb_client, width, height);
-    display->last_request = now;
-    pthread_mutex_unlock(&(vnc_client->message_lock));
-
-}
-
-void guac_vnc_display_set_size(guac_vnc_display* display,
-        rfbClient* rfb_client, int width, int height) {
+    /* Get the VNC client */
+    guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
+    guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
     /* Fit width within bounds, adjusting height to maintain aspect ratio */
     guac_common_display_fit(&width, &height);
@@ -224,16 +167,10 @@ void guac_vnc_display_set_size(guac_vnc_display* display,
     /* Fit height within bounds, adjusting width to maintain aspect ratio */
     guac_common_display_fit(&height, &width);
 
-    /* Width must be even */
-    if (width % 2 == 1)
-        width -= 1;
-
-    /* Store deferred size */
-    display->requested_width = width;
-    display->requested_height = height;
-
-    /* Send display update notification if possible */
-    guac_vnc_display_update_size(display, rfb_client);
+    /* Send the display size update. */
+    pthread_mutex_lock(&(vnc_client->message_lock));
+    SendExtDesktopSize(client, width, height);
+    pthread_mutex_unlock(&(vnc_client->message_lock));
 
 }
 
