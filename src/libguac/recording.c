@@ -37,6 +37,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef WINDOWS_BUILD
+#include <direct.h>
+#endif
+
 /**
  * Attempts to open a new recording within the given path and having the given
  * name. If opening the file fails for any reason, or if such a file already

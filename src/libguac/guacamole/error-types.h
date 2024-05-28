@@ -20,6 +20,8 @@
 #ifndef _GUAC_ERROR_TYPES_H
 #define _GUAC_ERROR_TYPES_H
 
+#include "config.h"
+
 /**
  * Type definitions related to return values and errors.
  *
@@ -57,6 +59,16 @@ typedef enum guac_status {
      * stored in errno.
      */
     GUAC_STATUS_SEE_ERRNO,
+    
+#ifdef WINDOWS_BUILD
+
+    /**
+     * An error occurred, and further information about the error can be
+     * retrieved using the GetLastError function.
+     */
+    GUAC_STATUS_SEE_WINDOWS_ERROR,
+
+#endif
 
     /**
      * An I/O error prevented the operation from succeeding.
@@ -113,6 +125,23 @@ typedef enum guac_status {
      */
     GUAC_STATUS_NOT_SUPPORTED,
 
+#ifdef WINDOWS_BUILD
+
+    /**
+     * Support for the requested operation is not yet implemented.
+     *
+     * @deprecated This constant contains a typo in its name and will be
+     * removed in a future release. Use GUAC_STATUS_NOT_IMPLEMENTED instead.
+     */
+    GUAC_STATUS_NOT_INPLEMENTED = 16,
+
+    /**
+     * Support for the requested operation is not yet implemented.
+     */
+    GUAC_STATUS_NOT_IMPLEMENTED = 16,
+
+#else
+
     /**
      * Support for the requested operation is not yet implemented.
      *
@@ -125,6 +154,8 @@ typedef enum guac_status {
      * Support for the requested operation is not yet implemented.
      */
     GUAC_STATUS_NOT_IMPLEMENTED = 15,
+
+#endif
 
     /**
      * The operation is temporarily unable to be performed, but may succeed if

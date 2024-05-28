@@ -50,6 +50,7 @@ libguacinc_HEADERS =                  \
     guacamole/error-types.h           \
     guacamole/fips.h                  \
     guacamole/hash.h                  \
+    guacamole/id.h                    \
     guacamole/layer.h                 \
     guacamole/layer-types.h           \
     guacamole/mem.h                   \
@@ -99,12 +100,12 @@ libguacprivinc_HEADERS =              \
 #
 
 noinst_HEADERS =       \
-    id.h               \
-    encode-jpeg.h      \
-    encode-png.h       \
-    palette.h          \
-    user-handlers.h    \
-    raw_encoder.h      \
+    client-internal.h \
+    encode-jpeg.h     \
+    encode-png.h      \
+    palette.h         \
+    user-handlers.h   \
+    raw_encoder.h     \
     wait-fd.h
 
 libguac_la_SOURCES =   \
@@ -137,7 +138,7 @@ libguac_la_SOURCES =   \
     user.c             \
     user-handlers.c    \
     user-handshake.c   \
-    wait-fd.c	       \
+    wait-fd.c          \
     wol.c
 
 # Compile WebP support if available
@@ -159,7 +160,7 @@ libguacinc_HEADERS += guacamole/socket-wsa.h
 endif
 
 libguac_la_CFLAGS = \
-    -Werror -Wall -pedantic
+    @GENERAL_CFLAGS@
 
 libguac_la_LDFLAGS =     \
     -version-info 24:0:0 \
@@ -175,4 +176,15 @@ libguac_la_LDFLAGS =     \
     @VORBIS_LIBS@        \
     @WEBP_LIBS@          \
     @WINSOCK_LIBS@
+
+# Windows Build
+if WINDOWS_BUILD
+libguac_la_SOURCES += handle-helpers.c
+libguac_la_SOURCES += socket-handle.c
+libguac_la_SOURCES += wait-handle.c
+libguacinc_HEADERS += guacamole/socket-handle.h
+libguacinc_HEADERS += guacamole/handle-helpers.h
+libguacinc_HEADERS += guacamole/pipe.h
+libguacinc_HEADERS += wait-handle.h
+endif
 

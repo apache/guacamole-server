@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "client-internal.h"
 #include "encode-jpeg.h"
 #include "encode-png.h"
 #include "encode-webp.h"
@@ -35,7 +36,7 @@
 #include "guacamole/string.h"
 #include "guacamole/timestamp.h"
 #include "guacamole/user.h"
-#include "id.h"
+#include <guacamole/id.h>
 
 #include <dlfcn.h>
 #include <errno.h>
@@ -46,6 +47,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef WINDOWS_BUILD
+#include <synchapi.h>
+#include <threadpoollegacyapiset.h>
+#endif
 
 /**
  * The number of nanoseconds between times that the pending users list will be
@@ -86,7 +92,7 @@ guac_layer* guac_client_alloc_layer(guac_client* client) {
 
     /* Init new layer */
     guac_layer* allocd_layer = guac_mem_alloc(sizeof(guac_layer));
-    allocd_layer->index = guac_pool_next_int(client->__layer_pool)+1;
+    allocd_layer->index = guac_pool_next_int(client->internal->__layer_pool)+1;
 
     return allocd_layer;
 
@@ -96,7 +102,7 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
 
     /* Init new layer */
     guac_layer* allocd_layer = guac_mem_alloc(sizeof(guac_layer));
-    allocd_layer->index = -guac_pool_next_int(client->__buffer_pool) - 1;
+    allocd_layer->index = -guac_pool_next_int(client->internal->__buffer_pool) - 1;
 
     return allocd_layer;
 
@@ -105,7 +111,7 @@ guac_layer* guac_client_alloc_buffer(guac_client* client) {
 void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
 
     /* Release index to pool */
-    guac_pool_free_int(client->__buffer_pool, -layer->index - 1);
+    guac_pool_free_int(client->internal->__buffer_pool, -layer->index - 1);
 
     /* Free layer */
     guac_mem_free(layer);
@@ -115,7 +121,7 @@ void guac_client_free_buffer(guac_client* client, guac_layer* layer) {
 void guac_client_free_layer(guac_client* client, guac_layer* layer) {
 
     /* Release index to pool */
-    guac_pool_free_int(client->__layer_pool, layer->index);
+    guac_pool_free_int(client->internal->__layer_pool, layer->index);
 
     /* Free layer */
     guac_mem_free(layer);
@@ -128,14 +134,14 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
     int stream_index;
 
     /* Refuse to allocate beyond maximum */
-    if (client->__stream_pool->active == GUAC_CLIENT_MAX_STREAMS)
+    if (client->internal->__stream_pool->active == GUAC_CLIENT_MAX_STREAMS)
         return NULL;
 
     /* Allocate stream */
-    stream_index = guac_pool_next_int(client->__stream_pool);
+    stream_index = guac_pool_next_int(client->internal->__stream_pool);
 
     /* Initialize stream with odd index (even indices are user-level) */
-    allocd_stream = &(client->__output_streams[stream_index]);
+    allocd_stream = &(client->internal->__output_streams[stream_index]);
     allocd_stream->index = (stream_index * 2) + 1;
     allocd_stream->data = NULL;
     allocd_stream->ack_handler = NULL;
@@ -149,7 +155,7 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
 void guac_client_free_stream(guac_client* client, guac_stream* stream) {
 
     /* Release index to pool */
-    guac_pool_free_int(client->__stream_pool, (stream->index - 1) / 2);
+    guac_pool_free_int(client->internal->__stream_pool, (stream->index - 1) / 2);
 
     /* Mark stream as closed */
     stream->index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
@@ -162,32 +168,46 @@ void guac_client_free_stream(guac_client* client, guac_stream* stream) {
  *
  * @param data
  *     The client for which all pending users should be promoted.
+ *
+ * @param timerOrWaitFired
+ *     Unused - Windows only.
  */
-static void guac_client_promote_pending_users(union sigval data) {
+static void guac_client_promote_pending_users(
+#ifdef WINDOWS_BUILD
+        LPVOID data,
+        BOOLEAN timerOrWaitFired
+#else
+        union sigval data
+#endif
+    ) {
 
+#ifdef WINDOWS_BUILD
+    guac_client* client = (guac_client*) data;
+#else
     guac_client* client = (guac_client*) data.sival_ptr;
+#endif
 
-    pthread_mutex_lock(&(client->__pending_users_timer_mutex));
+    pthread_mutex_lock(&(client->internal->__pending_users_timer_mutex));
 
     /* Check if the previous instance of this handler is still running */
     int already_running = (
-            client->__pending_users_timer_state
+            client->internal->__pending_users_timer_state
             == GUAC_CLIENT_PENDING_TIMER_TRIGGERED);
 
     /* Mark the handler as running if it isn't already */
-    client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_TRIGGERED;
+    client->internal->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_TRIGGERED;
 
-    pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+    pthread_mutex_unlock(&(client->internal->__pending_users_timer_mutex));
 
     /* Do not start the handler if the previous instance is still running */
     if (already_running)
         return;
 
     /* Acquire the lock for reading and modifying the list of pending users */
-    guac_rwlock_acquire_write_lock(&(client->__pending_users_lock));
+    guac_rwlock_acquire_write_lock(&(client->internal->__pending_users_lock));
 
     /* Skip user promotion entirely if there's no pending users */
-    if (client->__pending_users == NULL)
+    if (client->internal->__pending_users == NULL)
         goto promotion_complete;
 
     /* Run the pending join handler, if one is defined */
@@ -206,7 +226,7 @@ static void guac_client_promote_pending_users(union sigval data) {
     }
 
     /* The first pending user in the list, if any */
-    guac_user* first_user = client->__pending_users;
+    guac_user* first_user = client->internal->__pending_users;
 
     /* The final user in the list, if any */
     guac_user* last_user = first_user;
@@ -219,35 +239,35 @@ static void guac_client_promote_pending_users(union sigval data) {
     }
 
     /* Mark the list as empty */
-    client->__pending_users = NULL;
+    client->internal->__pending_users = NULL;
 
     /* Acquire the lock for reading and modifying the list of full users. */
-    guac_rwlock_acquire_write_lock(&(client->__users_lock));
+    guac_rwlock_acquire_write_lock(&(client->internal->__users_lock));
 
     /* If any users were removed from the pending list, promote them now */
     if (last_user != NULL) {
 
         /* Add all formerly-pending users to the start of the user list */
-        if (client->__users != NULL)
-            client->__users->__prev = last_user;
+        if (client->internal->__users != NULL)
+            client->internal->__users->__prev = last_user;
 
-        last_user->__next = client->__users;
-        client->__users = first_user;
+        last_user->__next = client->internal->__users;
+        client->internal->__users = first_user;
 
     }
 
-    guac_rwlock_release_lock(&(client->__users_lock));
+    guac_rwlock_release_lock(&(client->internal->__users_lock));
 
 promotion_complete:
 
     /* Release the lock (this is done AFTER updating the connected user list
      * to ensure that all users are always on exactly one of these lists) */
-    guac_rwlock_release_lock(&(client->__pending_users_lock));
+    guac_rwlock_release_lock(&(client->internal->__pending_users_lock));
 
     /* Mark the handler as complete so the next instance can run */
-    pthread_mutex_lock(&(client->__pending_users_timer_mutex));
-    client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;
-    pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+    pthread_mutex_lock(&(client->internal->__pending_users_timer_mutex));
+    client->internal->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;
+    pthread_mutex_unlock(&(client->internal->__pending_users_timer_mutex));
 
 }
 
@@ -266,6 +286,10 @@ guac_client* guac_client_alloc() {
     /* Init new client */
     memset(client, 0, sizeof(guac_client));
 
+    /* Init internal struct */
+    guac_client_internal* internal = guac_mem_zalloc(sizeof(guac_client_internal));
+    client->internal = internal;
+
     client->args = __GUAC_CLIENT_NO_ARGS;
     client->state = GUAC_CLIENT_RUNNING;
     client->last_sent_timestamp = guac_timestamp_current();
@@ -278,28 +302,28 @@ guac_client* guac_client_alloc() {
     }
 
     /* Allocate buffer and layer pools */
-    client->__buffer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
-    client->__layer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
+    client->internal->__buffer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
+    client->internal->__layer_pool = guac_pool_alloc(GUAC_BUFFER_POOL_INITIAL_SIZE);
 
     /* Allocate stream pool */
-    client->__stream_pool = guac_pool_alloc(0);
+    client->internal->__stream_pool = guac_pool_alloc(0);
 
     /* Initialize streams */
-    client->__output_streams = guac_mem_alloc(sizeof(guac_stream), GUAC_CLIENT_MAX_STREAMS);
+    client->internal->__output_streams = guac_mem_alloc(sizeof(guac_stream), GUAC_CLIENT_MAX_STREAMS);
 
     for (i=0; i<GUAC_CLIENT_MAX_STREAMS; i++) {
-        client->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
+        client->internal->__output_streams[i].index = GUAC_CLIENT_CLOSED_STREAM_INDEX;
     }
 
     /* Init locks */
-    guac_rwlock_init(&(client->__users_lock));
-    guac_rwlock_init(&(client->__pending_users_lock));
+    guac_rwlock_init(&(client->internal->__users_lock));
+    guac_rwlock_init(&(client->internal->__pending_users_lock));
 
     /* The timer will be lazily created in the child process */
-    client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_UNREGISTERED;
+    client->internal->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_UNREGISTERED;
 
     /* Set up the pending user promotion mutex */
-    pthread_mutex_init(&(client->__pending_users_timer_mutex), NULL);
+    pthread_mutex_init(&(client->internal->__pending_users_timer_mutex), NULL);
 
     /* Set up broadcast sockets */
     client->socket = guac_socket_broadcast(client);
@@ -312,20 +336,20 @@ guac_client* guac_client_alloc() {
 void guac_client_free(guac_client* client) {
 
     /* Acquire write locks before referencing user pointers */
-    guac_rwlock_acquire_write_lock(&(client->__pending_users_lock));
-    guac_rwlock_acquire_write_lock(&(client->__users_lock));
+    guac_rwlock_acquire_write_lock(&(client->internal->__pending_users_lock));
+    guac_rwlock_acquire_write_lock(&(client->internal->__users_lock));
 
     /* Remove all pending users */
-    while (client->__pending_users != NULL)
-        guac_client_remove_user(client, client->__pending_users);
+    while (client->internal->__pending_users != NULL)
+        guac_client_remove_user(client, client->internal->__pending_users);
 
     /* Remove all users */
-    while (client->__users != NULL)
-        guac_client_remove_user(client, client->__users);
+    while (client->internal->__users != NULL)
+        guac_client_remove_user(client, client->internal->__users);
 
     /* Release the locks */
-    guac_rwlock_release_lock(&(client->__users_lock));
-    guac_rwlock_release_lock(&(client->__pending_users_lock));
+    guac_rwlock_release_lock(&(client->internal->__users_lock));
+    guac_rwlock_release_lock(&(client->internal->__pending_users_lock));
 
     if (client->free_handler) {
 
@@ -339,38 +363,44 @@ void guac_client_free(guac_client* client) {
     guac_socket_free(client->pending_socket);
 
     /* Free layer pools */
-    guac_pool_free(client->__buffer_pool);
-    guac_pool_free(client->__layer_pool);
+    guac_pool_free(client->internal->__buffer_pool);
+    guac_pool_free(client->internal->__layer_pool);
 
     /* Free streams */
-    guac_mem_free(client->__output_streams);
+    guac_mem_free(client->internal->__output_streams);
 
     /* Free stream pool */
-    guac_pool_free(client->__stream_pool);
+    guac_pool_free(client->internal->__stream_pool);
 
     /* Close associated plugin */
-    if (client->__plugin_handle != NULL) {
-        if (dlclose(client->__plugin_handle))
+    if (client->internal->__plugin_handle != NULL) {
+        if (dlclose(client->internal->__plugin_handle))
             guac_client_log(client, GUAC_LOG_ERROR, "Unable to close plugin: %s", dlerror());
     }
 
     /* Find out if the pending user promotion timer was ever started */
-    pthread_mutex_lock(&(client->__pending_users_timer_mutex));
+    pthread_mutex_lock(&(client->internal->__pending_users_timer_mutex));
     int was_started = (
-            client->__pending_users_timer_state
+            client->internal->__pending_users_timer_state
             != GUAC_CLIENT_PENDING_TIMER_UNREGISTERED);
-    pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+    pthread_mutex_unlock(&(client->internal->__pending_users_timer_mutex));
 
     /* If the timer was registered, stop it before destroying the lock */
-    if (was_started)
-        timer_delete(client->__pending_users_timer);
+    if (was_started) {
+#ifdef WINDOWS_BUILD
+        DeleteTimerQueueTimer(NULL, client->internal->__pending_users_timer, NULL);
+#else
+        timer_delete(client->internal->__pending_users_timer);
+#endif
+    }
 
-    pthread_mutex_destroy(&(client->__pending_users_timer_mutex));
+    pthread_mutex_destroy(&(client->internal->__pending_users_timer_mutex));
 
     /* Destroy the reentrant read-write locks */
-    guac_rwlock_destroy(&(client->__users_lock));
-    guac_rwlock_destroy(&(client->__pending_users_lock));
+    guac_rwlock_destroy(&(client->internal->__users_lock));
+    guac_rwlock_destroy(&(client->internal->__pending_users_lock));
 
+    guac_mem_free(client->internal);
     guac_mem_free(client->connection_id);
     guac_mem_free(client);
 }
@@ -448,21 +478,21 @@ static void guac_client_add_pending_user(
         guac_client* client, guac_user* user) {
 
     /* Acquire the lock for modifying the list of pending users */
-    guac_rwlock_acquire_write_lock(&(client->__pending_users_lock));
+    guac_rwlock_acquire_write_lock(&(client->internal->__pending_users_lock));
 
     user->__prev = NULL;
-    user->__next = client->__pending_users;
+    user->__next = client->internal->__pending_users;
 
-    if (client->__pending_users != NULL)
-        client->__pending_users->__prev = user;
+    if (client->internal->__pending_users != NULL)
+        client->internal->__pending_users->__prev = user;
 
-    client->__pending_users = user;
+    client->internal->__pending_users = user;
 
     /* Increment the user count */
     client->connected_users++;
 
     /* Release the lock */
-    guac_rwlock_release_lock(&(client->__pending_users_lock));
+    guac_rwlock_release_lock(&(client->internal->__pending_users_lock));
 
 }
 
@@ -481,14 +511,30 @@ static void guac_client_add_pending_user(
  */
 static int guac_client_start_pending_users_timer(guac_client* client) {
 
-    pthread_mutex_lock(&(client->__pending_users_timer_mutex));
+    pthread_mutex_lock(&(client->internal->__pending_users_timer_mutex));
 
     /* Return success if the timer is already created and running */
-    if (client->__pending_users_timer_state
+    if (client->internal->__pending_users_timer_state
             != GUAC_CLIENT_PENDING_TIMER_UNREGISTERED) {
-        pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+        pthread_mutex_unlock(&(client->internal->__pending_users_timer_mutex));
         return 0;
     }
+
+#ifdef WINDOWS_BUILD
+
+    int refresh_millis = GUAC_CLIENT_PENDING_USERS_REFRESH_INTERVAL / 1000000;
+    if (!CreateTimerQueueTimer(
+            &(client->internal->__pending_users_timer),
+            NULL,
+            guac_client_promote_pending_users,
+            client,
+            refresh_millis,
+            refresh_millis,
+            0)) {
+
+        return 1;
+    }
+#else
 
     /* Configure the timer to synchronize and clear the pending users */
     struct sigevent signal_config = {
@@ -500,8 +546,8 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
     if (timer_create(
             CLOCK_MONOTONIC,
             &signal_config,
-            &(client->__pending_users_timer))) {
-        pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+            &(client->internal->__pending_users_timer))) {
+        pthread_mutex_unlock(&(client->internal->__pending_users_timer_mutex));
         return 1;
     }
 
@@ -513,16 +559,17 @@ static int guac_client_start_pending_users_timer(guac_client* client) {
 
     /* Start the timer */
     if (timer_settime(
-            client->__pending_users_timer, 0, &time_config, NULL) < 0) {
-        timer_delete(client->__pending_users_timer);
-        pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+            client->internal->__pending_users_timer, 0, &time_config, NULL) < 0) {
+        timer_delete(client->internal->__pending_users_timer);
+        pthread_mutex_unlock(&(client->internal->__pending_users_timer_mutex));
         return 1;
     }
+#endif
 
     /* Mark the timer as registered but not yet running */
-    client->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;
+    client->internal->__pending_users_timer_state = GUAC_CLIENT_PENDING_TIMER_REGISTERED;
 
-    pthread_mutex_unlock(&(client->__pending_users_timer_mutex));
+    pthread_mutex_unlock(&(client->internal->__pending_users_timer_mutex));
     return 0;
 
 }
@@ -558,7 +605,7 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
 
         /* Update owner pointer if user is owner */
         if (user->owner)
-            client->__owner = user;
+            client->internal->__owner = user;
 
     }
 
@@ -572,16 +619,16 @@ int guac_client_add_user(guac_client* client, guac_user* user, int argc, char** 
 
 void guac_client_remove_user(guac_client* client, guac_user* user) {
 
-    guac_rwlock_acquire_write_lock(&(client->__pending_users_lock));
-    guac_rwlock_acquire_write_lock(&(client->__users_lock));
+    guac_rwlock_acquire_write_lock(&(client->internal->__pending_users_lock));
+    guac_rwlock_acquire_write_lock(&(client->internal->__users_lock));
 
     /* Update prev / head */
     if (user->__prev != NULL)
         user->__prev->__next = user->__next;
-    else if (client->__users == user)
-        client->__users = user->__next;
-    else if (client->__pending_users == user)
-        client->__pending_users = user->__next;
+    else if (client->internal->__users == user)
+        client->internal->__users = user->__next;
+    else if (client->internal->__pending_users == user)
+        client->internal->__pending_users = user->__next;
 
     /* Update next */
     if (user->__next != NULL)
@@ -591,10 +638,10 @@ void guac_client_remove_user(guac_client* client, guac_user* user) {
 
     /* Update owner pointer if user was owner */
     if (user->owner)
-        client->__owner = NULL;
+        client->internal->__owner = NULL;
 
-    guac_rwlock_release_lock(&(client->__users_lock));
-    guac_rwlock_release_lock(&(client->__pending_users_lock));
+    guac_rwlock_release_lock(&(client->internal->__users_lock));
+    guac_rwlock_release_lock(&(client->internal->__pending_users_lock));
 
     /* Update owner of user having left the connection. */
     if (!user->owner)
@@ -612,16 +659,16 @@ void guac_client_foreach_user(guac_client* client, guac_user_callback* callback,
 
     guac_user* current;
 
-    guac_rwlock_acquire_read_lock(&(client->__users_lock));
+    guac_rwlock_acquire_read_lock(&(client->internal->__users_lock));
 
     /* Call function on each user */
-    current = client->__users;
+    current = client->internal->__users;
     while (current != NULL) {
         callback(current, data);
         current = current->__next;
     }
 
-    guac_rwlock_release_lock(&(client->__users_lock));
+    guac_rwlock_release_lock(&(client->internal->__users_lock));
 
 }
 
@@ -630,16 +677,16 @@ void guac_client_foreach_pending_user(
 
     guac_user* current;
 
-    guac_rwlock_acquire_read_lock(&(client->__pending_users_lock));
+    guac_rwlock_acquire_read_lock(&(client->internal->__pending_users_lock));
 
     /* Call function on each pending user */
-    current = client->__pending_users;
+    current = client->internal->__pending_users;
     while (current != NULL) {
         callback(current, data);
         current = current->__next;
     }
 
-    guac_rwlock_release_lock(&(client->__pending_users_lock));
+    guac_rwlock_release_lock(&(client->internal->__pending_users_lock));
 
 }
 
@@ -648,12 +695,12 @@ void* guac_client_for_owner(guac_client* client, guac_user_callback* callback,
 
     void* retval;
 
-    guac_rwlock_acquire_read_lock(&(client->__users_lock));
+    guac_rwlock_acquire_read_lock(&(client->internal->__users_lock));
 
     /* Invoke callback with current owner */
-    retval = callback(client->__owner, data);
+    retval = callback(client->internal->__owner, data);
 
-    guac_rwlock_release_lock(&(client->__users_lock));
+    guac_rwlock_release_lock(&(client->internal->__users_lock));
 
     /* Return value from callback */
     return retval;
@@ -668,10 +715,10 @@ void* guac_client_for_user(guac_client* client, guac_user* user,
     int user_valid = 0;
     void* retval;
 
-    guac_rwlock_acquire_read_lock(&(client->__users_lock));
+    guac_rwlock_acquire_read_lock(&(client->internal->__users_lock));
 
     /* Loop through all users, searching for a pointer to the given user */
-    current = client->__users;
+    current = client->internal->__users;
     while (current != NULL) {
 
         /* If the user's pointer exists in the list, they are indeed valid */
@@ -690,7 +737,7 @@ void* guac_client_for_user(guac_client* client, guac_user* user,
     /* Invoke callback with requested user (if they exist) */
     retval = callback(user, data);
 
-    guac_rwlock_release_lock(&(client->__users_lock));
+    guac_rwlock_release_lock(&(client->internal->__users_lock));
 
     /* Return value from callback */
     return retval;
@@ -761,7 +808,7 @@ int guac_client_load_plugin(guac_client* client, const char* protocol) {
     }
 
     /* Init client */
-    client->__plugin_handle = client_plugin_handle;
+    client->internal->__plugin_handle = client_plugin_handle;
 
     return alias.client_init(client);
 
@@ -910,6 +957,7 @@ void guac_client_stream_webp(guac_client* client, guac_socket* socket,
         cairo_surface_t* surface, int quality, int lossless) {
 
 #ifdef ENABLE_WEBP
+
     /* Allocate new stream for image */
     guac_stream* stream = guac_client_alloc_stream(client);
 
@@ -918,9 +966,9 @@ void guac_client_stream_webp(guac_client* client, guac_socket* socket,
 
     /* Write WebP data */
     guac_webp_write(socket, stream, surface, quality, lossless);
-
     /* Terminate stream */
     guac_protocol_send_end(socket, stream);
+
 
     /* Free allocated stream */
     guac_client_free_stream(client, stream);
