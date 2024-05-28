@@ -20,7 +20,34 @@
 #ifndef GUAC_RDP_CHANNELS_RAIL_H
 #define GUAC_RDP_CHANNELS_RAIL_H
 
+#include "config.h"
+
 #include <freerdp/freerdp.h>
+#include <freerdp/window.h>
+
+#ifdef FREERDP_RAIL_CALLBACKS_REQUIRE_CONST
+/**
+ * FreeRDP 2.0.0-rc4 and newer requires the final arguments for RAIL
+ * callbacks to be const.
+ */
+#define RAIL_CONST const
+#else
+/**
+ * FreeRDP 2.0.0-rc3 and older requires the final arguments for RAIL
+ * callbacks to NOT be const.
+ */
+#define RAIL_CONST
+#endif
+
+/**
+ * The RAIL window state that indicates a hidden window.
+ */
+#define GUAC_RDP_RAIL_WINDOW_STATE_HIDDEN 0x00
+
+/**
+ * The RAIL window state that indicates a visible but minimized window.
+ */
+#define GUAC_RDP_RAIL_WINDOW_STATE_MINIMIZED 0x02
 
 /**
  * Initializes RemoteApp support for RDP and handling of the RAIL channel. If
