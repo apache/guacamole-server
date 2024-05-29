@@ -465,6 +465,16 @@ struct guac_terminal {
      */
     bool disable_copy;
 
+    /**
+     * The time betwen two left clicks.
+     */
+    guac_timestamp click_timer;
+
+    /**
+     * Counter for left clicks.
+     */
+    int click_counter;
+
 };
 
 /**
