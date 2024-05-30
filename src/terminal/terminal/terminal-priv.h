@@ -244,6 +244,11 @@ struct guac_terminal {
     int cursor_row;
 
     /**
+     * Backup of cursor_row when using alternate buffer.
+     */
+    int cursor_row_alt;
+
+    /**
      * The current column location of the cursor. Note that while most
      * terminal operations will clip the cursor location within the bounds
      * of the terminal, this is not guaranteed. There are times when the
@@ -251,6 +256,11 @@ struct guac_terminal {
      * end of a line is reached, but it is not yet necessary to scroll up).
      */
     int cursor_col;
+
+    /**
+     * Backup of cursor_col when using alternate buffer.
+     */
+    int cursor_col_alt;
 
     /**
      * The desired visibility state of the cursor.
@@ -264,10 +274,20 @@ struct guac_terminal {
     int visible_cursor_row;
 
     /**
+     * Backup of visible_cursor_row when using alternate buffer.
+     */
+    int visible_cursor_row_alt;
+
+    /**
      * The column of the rendered cursor.
      * Will be set to -1 if the cursor is not visible.
      */
     int visible_cursor_col;
+
+    /**
+     * Backup of visible_cursor_col when using alternate buffer.
+     */
+    int visible_cursor_col_alt;
 
     /**
      * The row of the saved cursor (ESC 7).
@@ -310,6 +330,18 @@ struct guac_terminal {
      * facilitates transfer of a set of changes to the remote display.
      */
     guac_terminal_buffer* buffer;
+
+    /**
+     * Alternate buffer.
+     */
+    guac_terminal_buffer* buffer_alt;
+
+    /**
+     * Actual state of the buffer:
+     *  - true if switched to alternate buffer.
+     *  - false if normal buffer.
+     */
+    bool buffer_switched;
 
     /**
      * Automatically place a tabstop every N characters. If zero, then no
@@ -665,6 +697,19 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
  * Flushes all pending operations within the given guac_terminal.
  */
 void guac_terminal_flush(guac_terminal* terminal);
+
+/**
+ * Swith betwen normal and alternate buffer.
+ *
+ * @param terminal
+ *      Terminal on which we switch buffers.
+ *
+ * @param to_alt
+ *      Direction of buffer inversion.
+ *      True if normal to alternate buffer.
+ *      False if alternate to normal buffer.
+ */
+void guac_terminal_switch_buffers(guac_terminal* terminal, bool to_alt);
 
 #endif
 
