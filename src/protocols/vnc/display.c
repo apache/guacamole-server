@@ -259,13 +259,17 @@ void guac_vnc_display_set_size(rfbClient* client, int width, int height) {
     /* Fit height within bounds, adjusting width to maintain aspect ratio */
     guac_common_display_fit(&height, &width);
 
-    /* Send the display size update. */
+    /* Acquire the lock for sending messages to server. */
     pthread_mutex_lock(&(vnc_client->message_lock));
+
+    /* Send the display size update. */
     guac_client_log(gc, GUAC_LOG_TRACE, "Setting VNC display size.");
     if (guac_vnc_send_desktop_size(client, width, height))
         guac_client_log(gc, GUAC_LOG_TRACE, "Successfully sent desktop size message.");
     else
         guac_client_log(gc, GUAC_LOG_TRACE, "Failed to send desktop size message.");
+    
+    /* Release the lock. */
     pthread_mutex_unlock(&(vnc_client->message_lock));
 
 }

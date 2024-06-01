@@ -456,11 +456,17 @@ void* guac_vnc_client_thread(void* data) {
         msg.status = 1;
         msg.pad = 0;
 
+        /* Acquire lock for writing to server. */
+        pthread_mutex_lock(&(vnc_client->message_lock));
+
         if (WriteToRFBServer(rfb_client, (char*)&msg, sz_rfbSetServerInputMsg))
             guac_client_log(client, GUAC_LOG_DEBUG, "Successfully sent request to disable server input.");
 
         else
             guac_client_log(client, GUAC_LOG_WARNING, "Failed to send request to disable server input.");
+
+        /* Release lock. */
+        pthread_mutex_unlock(&(vnc_client->message_lock));
     }
 
     /* Set remaining client data */
