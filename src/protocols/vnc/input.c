@@ -67,6 +67,8 @@ int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
 
 int guac_vnc_user_size_handler(guac_user* user, int width, int height) {
 
+    guac_user_log(user, GUAC_LOG_TRACE, "Running user size handler.");
+
     /* Get the Guacamole VNC client */
     guac_vnc_client* vnc_client = (guac_vnc_client*) user->client->data;
 

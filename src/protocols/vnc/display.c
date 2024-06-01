@@ -155,6 +155,98 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
 
 }
 
+/**
+ * This function does the actual work of sending the message to the RFB/VNC
+ * server to request the resize, and then makes sure that the client frame
+ * buffer is updated, as well.
+ *
+ * @param client
+ *     The remote frame buffer client that is triggering the resize
+ *     request.
+ *
+ * @param width
+ *     The updated width of the screen.
+ *
+ * @param height
+ *     The updated height of the screen.
+ *
+ * @return
+ *     TRUE if the screen update was sent to the server, otherwise false. Note
+ *     that a successful send of the resize message to the server does NOT mean
+ *     that the server has any obligation to resize the display - it only
+ *     indicates that the VNC library has successfully sent the request.
+ */
+static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int height) {
+
+    /* Get the Guacamole client data */
+    guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
+
+    /* Don't send an update if the sreen appears to be uninitialized. */
+    if (client->screen.width == 0 || client->screen.height == 0) {
+        guac_client_log(gc, GUAC_LOG_ERROR, "Screen has not been initialized, cannot send resize.");
+        return FALSE;
+    }
+    
+    /* Don't send an update if the requested dimensions are identical to current dimensions. */
+    if (client->screen.width == rfbClientSwap16IfLE(width) && client->screen.height == rfbClientSwap16IfLE(height)) {
+        guac_client_log(gc, GUAC_LOG_WARNING, "Screen size has not changed, not sending update.");
+        return FALSE;
+    }
+
+    /**
+     * Note: The RFB protocol requires two message types to be sent during a
+     * resize request - the first for the desktop size (total size of all
+     * monitors), and then a message for each screen that is attached to the 
+     * remote server. Both libvncclient and Guacamole only support a single
+     * screen, so we send the desktop resize and screen resize with (nearly)
+     * identical data, but if one or both of these components is updated in the
+     * future to support multiple screens, this will need to be re-worked.
+     */
+
+    /* Set up the messages. */
+    rfbSetDesktopSizeMsg size_msg;
+    rfbExtDesktopScreen new_screen;
+
+    /* Configure the desktop size update message. */
+    size_msg.type = rfbSetDesktopSize;
+    size_msg.width = rfbClientSwap16IfLE(width);
+    size_msg.height = rfbClientSwap16IfLE(height);
+    size_msg.numberOfScreens = 1;
+
+    /* Configure the screen update message. */
+    new_screen.id = client->screen.id;
+    new_screen.x = client->screen.x;
+    new_screen.y = client->screen.y;
+    new_screen.flags = client->screen.flags;
+    new_screen.width = rfbClientSwap16IfLE(width);
+    new_screen.height = rfbClientSwap16IfLE(height);
+
+    /* Stop updates while the resize is in progress. */
+    client->requestedResize = TRUE;
+
+    /* Send the resize messages to the remote server. */
+    if (!WriteToRFBServer(client, (char *)&size_msg, sz_rfbSetDesktopSizeMsg)
+        || !WriteToRFBServer(client, (char *)&new_screen, sz_rfbExtDesktopScreen)) {
+
+        guac_client_log(gc, GUAC_LOG_ERROR, "Failed to send new desktop and screen size to the VNC server.");
+        return FALSE;
+
+    }
+
+    /* Update the client frame buffer with the requested size. */
+    client->screen.width = rfbClientSwap16IfLE(width);
+    client->screen.height = rfbClientSwap16IfLE(height);
+
+    /* Request a full screen update. */
+    client->requestedResize = FALSE;
+    if (!SendFramebufferUpdateRequest(client, 0, 0, width, height, FALSE)) {
+        guac_client_log(gc, GUAC_LOG_WARNING, "Failed to request a full screen update.");
+    }
+
+    /* Update should be successful. */
+    return TRUE;
+}
+
 void guac_vnc_display_set_size(rfbClient* client, int width, int height) {
 
     /* Get the VNC client */
@@ -169,7 +261,11 @@ void guac_vnc_display_set_size(rfbClient* client, int width, int height) {
 
     /* Send the display size update. */
     pthread_mutex_lock(&(vnc_client->message_lock));
-    SendExtDesktopSize(client, width, height);
+    guac_client_log(gc, GUAC_LOG_TRACE, "Setting VNC display size.");
+    if (guac_vnc_send_desktop_size(client, width, height))
+        guac_client_log(gc, GUAC_LOG_TRACE, "Successfully sent desktop size message.");
+    else
+        guac_client_log(gc, GUAC_LOG_TRACE, "Failed to send desktop size message.");
     pthread_mutex_unlock(&(vnc_client->message_lock));
 
 }
