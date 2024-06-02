@@ -247,6 +247,21 @@ static rfbBool guac_vnc_send_desktop_size(rfbClient* client, int width, int heig
     return TRUE;
 }
 
+void* guac_vnc_display_set_owner_size(guac_user* owner, void* data) {
+
+    /* Pull RFB clients from provided data. */
+    rfbClient* rfb_client = (rfbClient*) data;
+
+    guac_user_log(owner, GUAC_LOG_DEBUG, "Sending VNC display size for owner's display.");
+    
+    /* Set the display size. */
+    guac_vnc_display_set_size(rfb_client, owner->info.optimal_width, owner->info.optimal_height);
+
+    /* Always return NULL. */
+    return NULL;
+
+}
+
 void guac_vnc_display_set_size(rfbClient* client, int width, int height) {
 
     /* Get the VNC client */

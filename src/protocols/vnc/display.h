@@ -85,6 +85,23 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h,
         int dest_x, int dest_y);
 
 /**
+ * A callback for guac_client_for_owner that sets the VNC display size to the
+ * width and height of the owner's display.
+ *
+ * @param owner
+ *     A pointer to the  guac_user data structure that contains the owner of
+ *     the current connection.
+ *
+ * @param data
+ *     A pointer to the rfbClient data structure that represents the current
+ *     VNC client for the current connection.
+ *
+ * @return
+ *     This callback always returns NULL.
+ */
+void* guac_vnc_display_set_owner_size(guac_user* owner, void* data);
+
+/**
  * Attempts to set the display size of the remote server to the size requested
  * by the client, usually as part of a client (browser) resize, if supported by
  * both the VNC client and the remote server.

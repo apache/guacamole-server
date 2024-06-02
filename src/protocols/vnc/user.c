@@ -91,8 +91,9 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
             user->file_handler = guac_vnc_sftp_file_handler;
 #endif
 
-        /* Handle display size changes. */
-        user->size_handler = guac_vnc_user_size_handler;
+        /* If user is owner, set size handler. */
+        if (user->owner)
+            user->size_handler = guac_vnc_user_size_handler;
 
     }
 
