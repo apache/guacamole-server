@@ -1,0 +1,616 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#ifndef GUAC_DISPLAY_H
+#define GUAC_DISPLAY_H
+
+/**
+ * Provides an abstract display implementation (guac_display), which handles
+ * optimization automatically. Current optimizations include:
+ *
+ * - Scroll/copy detection
+ * - Solid color detection
+ * - Dirty rectangle reduction
+ * - Dynamic selection of PNG/JPEG/WebP compression depending on update content
+ *   and frequency
+ * - Combining/rewriting of updates based on estimated cost
+ *
+ * @file display.h
+ */
+
+#include "client.h"
+#include "display-constants.h"
+#include "display-types.h"
+#include "rect.h"
+#include "socket.h"
+
+#include <cairo/cairo.h>
+#include <unistd.h>
+
+/**
+ * Returns the memory address of the given rectangle within the image buffer of
+ * the given guac_display_layer_raw_context, where the upper-left corner of the
+ * given buffer is (0, 0). If the memory address cannot be calculated because
+ * doing so would overflow the maximum value of a size_t, execution of the
+ * current process is automatically aborted.
+ *
+ * IMPORTANT: No checks are performed on whether the rectangle extends beyond
+ * the bounds of the buffer, including considering whether the left/top
+ * position of the rectangle is negative. If the rectangle has not already been
+ * contrained to be within the bounds of the buffer, such checks must be
+ * performed before dereferencing the value returned by this macro.
+ *
+ * @param context
+ *     The guac_display_layer_raw_context associated with the image buffer
+ *     within which the address of the given rectangle should be determined.
+ *
+ * @param rect
+ *     The rectangle to determine the offset of.
+ */
+#define GUAC_DISPLAY_LAYER_RAW_BUFFER(context, rect) \
+    GUAC_RECT_MUTABLE_BUFFER(rect, context->buffer, context->stride, GUAC_DISPLAY_LAYER_RAW_BPP)
+
+struct guac_display_layer_cairo_context {
+
+    /**
+     * A Cairo context created for the Cairo surface. This Cairo context is
+     * persistent and will maintain its state between different calls to
+     * guac_display_layer_open_cairo() for the same layer.
+     */
+    cairo_t* cairo;
+
+    /**
+     * A Cairo image surface wrapping the image buffer of this
+     * guac_display_layer.
+     */
+    cairo_surface_t* surface;
+
+    /**
+     * A rectangle covering the current bounds of the graphical surface.
+     */
+    guac_rect bounds;
+
+    /**
+     * A rectangle covering the region of the guac_display_layer that has
+     * changed since the last frame. This rectangle must be manually updated to
+     * cover any additional changed regions before closing the
+     * guac_display_layer_cairo_context.
+     */
+    guac_rect dirty;
+
+};
+
+struct guac_display_layer_raw_context {
+
+    /**
+     * The raw, underlying image buffer of the guac_display_layer. If the layer
+     * was created as opaque, this image is 32-bit RGB with 8 bits per color
+     * component, where the lowest-order byte is the blue component and the
+     * highest-order byte is ignored. If the layer was not created as opaque,
+     * this image is 32-bit ARGB with 8 bits per color component, where the
+     * lowest-order byte is the blue component and the highest-order byte is
+     * alpha.
+     */
+    unsigned char* buffer;
+
+    /**
+     * The number of bytes in each row of image data. This value is not
+     * necessarily the same as the width of the image multiplied by the size of
+     * each pixel. Additional space may be allocated to allow for memory
+     * alignment or to make future resize operations more efficient.
+     */
+    size_t stride;
+
+    /**
+     * A rectangle covering the current bounds of the graphical surface. The
+     * buffer must not be addressed outside these bounds.
+     */
+    guac_rect bounds;
+
+    /**
+     * A rectangle covering the region of the guac_display_layer that has
+     * changed since the last frame. This rectangle must be manually updated to
+     * cover any additional changed regions before closing the
+     * guac_display_layer_raw_context.
+     */
+    guac_rect dirty;
+
+};
+
+/**
+ * Allocates a new guac_display representing the remote display shared by all
+ * connected users of the given guac_client. The dimensions of the display
+ * should be set with guac_display_defaulta_layer() and
+ * guac_display_layer_resize() once the desired display size is known. The
+ * guac_display must eventually be freed through a call to guac_display_free().
+ *
+ * @param client
+ *     The guac_client whose remote display should be represented by the new
+ *     guac_display.
+ *
+ * @return
+ *     A newly-allocated guac_display representing the remote display of the
+ *     given guac_client.
+ */
+guac_display* guac_display_alloc(guac_client* client);
+
+/**
+ * Frees all resources associated with the given guac_display.
+ *
+ * @param display
+ *     The guac_display to free.
+ */
+void guac_display_free(guac_display* display);
+
+/**
+ * Replicates the current remote display state across the given socket. When
+ * new users join a particular guac_client, this function should be used to
+ * synchronize those users with the current display state.
+ *
+ * @param display
+ *     The display that should be synchronized to all users at the other end of
+ *     the given guac_socket.
+ *
+ * @param socket
+ *     The socket to send the current remote display state over.
+ */
+void guac_display_dup(guac_display* display, guac_socket* socket);
+
+/**
+ * Notifies the given guac_display that a specific user has left the connection
+ * and need no longer be considered for future updates/events. This SHOULD
+ * always be called when a user leaves the connection to ensure other future,
+ * user-related events are interpreted correctly.
+ *
+ * @param display
+ *     The guac_display to notify.
+ *
+ * @param user
+ *     The user that left the connection.
+ */
+void guac_display_notify_user_left(guac_display* display, guac_user* user);
+
+/**
+ * Notifies the given guac_display that a specific user has changed the state
+ * of the mouse, such as through moving the pointer or pressing/releasing a
+ * mouse button.
+ *
+ * @param display
+ *     The guac_display to notify.
+ *
+ * @param user
+ *     The user that moved the mouse or pressed/released a mouse button.
+ *
+ * @param x
+ *     The X position of the mouse, in pixels.
+ *
+ * @param y
+ *     The Y position of the mouse, in pixels.
+ *
+ * @param mask
+ *     An integer value representing the current state of each button, where
+ *     the Nth bit within the integer is set to 1 if and only if the Nth mouse
+ *     button is currently pressed. The lowest-order bit is the left mouse
+ *     button, followed by the middle button, right button, and finally the up
+ *     and down buttons of the scroll wheel.
+ *
+ *     @see GUAC_CLIENT_MOUSE_LEFT
+ *     @see GUAC_CLIENT_MOUSE_MIDDLE
+ *     @see GUAC_CLIENT_MOUSE_RIGHT
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_UP
+ *     @see GUAC_CLIENT_MOUSE_SCROLL_DOWN
+ */
+void guac_display_notify_user_moved_mouse(guac_display* display, guac_user* user, int x, int y, int mask);
+
+/**
+ * Ends the current frame, where the number of input frames that were
+ * considered in creating this frame is either unknown or inapplicable,
+ * allowing the guac_display to complete sending the frame to connected
+ * clients.
+ *
+ * @param display
+ *     The guac_display that should send the current frame.
+ */
+void guac_display_end_frame(guac_display* display);
+
+/**
+ * Ends the current frame, where that frame may combine or otherwise represent the
+ * changes of an arbitrary number of input frames, allowing the guac_display to
+ * complete sending the frame to connected clients.
+ *
+ * @param display
+ *     The guac_display that should send the current frame.
+ *
+ * @param
+ *     The number of distinct frames that were considered or combined when
+ *     generating the current frame, or zero if the boundaries of relevant
+ *     frames are unknown.
+ */
+void guac_display_end_multiple_frames(guac_display* display, int frames);
+
+/**
+ * Returns the default layer for the given display. The default layer is the
+ * only layer that always exists and serves as the root-level layer for all
+ * other layers.
+ *
+ * @see GUAC_DEFAULT_LAYER
+ *
+ * @param display
+ *     The guac_display to return the default layer from.
+ *
+ * @return
+ *     A guac_display_layer representing the default layer for the given
+ *     guac_display.
+ */
+guac_display_layer* guac_display_default_layer(guac_display* display);
+
+/**
+ * Allocates a new layer for the given display. The new layer will initially be
+ * a direct child of the display's default layer. When the layer is no longer
+ * needed, it may be freed through calling guac_display_free_layer(). If not
+ * freed manually through a call to guac_display_free_layer(), it will be freed
+ * when the display is freed with guac_display_free().
+ *
+ * @param display
+ *     The guac_display to allocate a new layer for.
+ *
+ * @param opaque
+ *     Non-zero if the new layer will only ever contain opaque image contents
+ *     (the alpha channel should be ignored), zero otherwise.
+ *
+ * @return
+ *     A newly-allocated guac_display_layer that is initially a direct child of
+ *     the default layer.
+ */
+guac_display_layer* guac_display_alloc_layer(guac_display* display, int opaque);
+
+/**
+ * Allocates a new buffer (offscreen layer) for the given display. When the
+ * buffer is no longer needed, it may be freed through calling
+ * guac_display_free_layer(). If not freed manually through a call to
+ * guac_display_free_layer(), it will be freed when the display is freed with
+ * guac_display_free().
+ *
+ * @param display
+ *     The guac_display to allocate a new buffer for.
+ *
+ * @param opaque
+ *     Non-zero if the new buffer will only ever contain opaque image contents
+ *     (the alpha channel should be ignored), zero otherwise.
+ *
+ * @return
+ *     A newly-allocated guac_display_layer representing the new buffer.
+ */
+guac_display_layer* guac_display_alloc_buffer(guac_display* display, int opaque);
+
+/**
+ * Frees the given layer, releasing any underlying memory. If the layer has
+ * already been used for rendering, it will be freed on the remote side, as
+ * well, when the current pending frame is complete.
+ *
+ * @param display_layer
+ *     The layer to free.
+ */
+void guac_display_free_layer(guac_display_layer* display_layer);
+
+/**
+ * Returns a layer representing the current mouse cursor icon. Changes to the
+ * contents of this layer will affect the remote mouse cursor after the current
+ * pending frame is complete.
+ *
+ * @param display
+ *     The guac_display to return the cursor layer for.
+ *
+ * @return
+ *     A guac_display_layer representing the mouse cursor of the given
+ *     guac_display.
+ */
+guac_display_layer* guac_display_cursor(guac_display* display);
+
+/**
+ * Sets the remote mouse cursor to the given built-in cursor icon. Changes to
+ * the remote mouse cursor will take effect after the current pending frame is
+ * complete.
+ *
+ * @param display
+ *     The guac_display to set the cursor of.
+ *
+ * @param cursor_type
+ *     The built-in cursor icon to set the remote cursor to.
+ */
+void guac_display_set_cursor(guac_display* display,
+        guac_display_cursor_type cursor_type);
+
+/**
+ * Sets the hotspot location of the remote mouse cursor. The hotspot is the
+ * point within the mouse cursor where the click occurs. Changes to the hotspot
+ * of the remote mouse cursor will take effect after the current pending frame
+ * is complete.
+ *
+ * @param display
+ *     The guac_display to set the cursor hotspot of.
+ *
+ * @param x
+ *     The X coordinate of the cursor hotspot, in pixels.
+ *
+ * @param y
+ *     The Y coordinate of the cursor hotspot, in pixels.
+ */
+void guac_display_set_cursor_hotspot(guac_display* display, int x, int y);
+
+/**
+ * Stores the current bounding rectangle of the given layer in the given
+ * guac_rect. The boundary stored will be the boundary of the current pending
+ * frame.
+ *
+ * @oaram layer
+ *     The layer to determine the dimensions of.
+ *
+ * @param bounds
+ *     The guac_rect that should receive the bounding rectangle of the given
+ *     layer.
+ */
+void guac_display_layer_get_bounds(guac_display_layer* layer, guac_rect* bounds);
+
+/**
+ * Moves the given layer to the given coordinates. The changes to the given
+ * layer will be made as part of the current pending frame, and will not take
+ * effect on remote displays until the pending frame is complete.
+ *
+ * @param layer
+ *     The layer to set the position of.
+ *
+ * @param x
+ *     The X coordinate of the upper-left corner of the layer, in pixels.
+ *
+ * @param y
+ *     The Y coordinate of the upper-left corner of the layer, in pixels.
+ */
+void guac_display_layer_move(guac_display_layer* layer, int x, int y);
+
+/**
+ * Sets the stacking position of the given layer relative to all other sibling
+ * layers (direct children of the same parent). The change in relative layer
+ * stacking position will be made as part of the current pending frame, and
+ * will not take effect on remote displays until the pending frame is complete.
+ *
+ * @param layer
+ *     The layer to set the stacking position of.
+ *
+ * #param z
+ *     The relative order of this layer.
+ */
+void guac_display_layer_stack(guac_display_layer* layer, int z);
+
+/**
+ * Reparents the given layer such that it is a direct child of the given parent
+ * layer. The change in layer hierarchy will be made as part of the current
+ * pending frame, and will not take effect on remote displays until the pending
+ * frame is complete.
+ *
+ * @param layer
+ *     The layer to change the parent of.
+ *
+ * @param parent
+ *     The layer that should be the new parent.
+ */
+void guac_display_layer_set_parent(guac_display_layer* layer, const guac_display_layer* parent);
+
+/**
+ * Sets the opacity of the given layer. The change in layer opacity will be
+ * made as part of the current pending frame, and will not take effect on
+ * remote displays until the pending frame is complete.
+ *
+ * @param layer
+ *     The layer to change the opacity of.
+ *
+ * @param opacity
+ *     The opacity to assign to the given layer, as a value between 0 and 255
+ *     inclusive, where 0 is completely transparent and 255 is completely
+ *     opaque.
+ */
+void guac_display_layer_set_opacity(guac_display_layer* layer, int opacity);
+
+/**
+ * Sets whether graphical changes to the given layer are allowed to be
+ * represented, updated, or sent using methods that can cause some loss of
+ * information, such as JPEG or WebP compression. By default, layers are
+ * allowed to use lossy methods. Changes to lossy vs. lossless behavior will
+ * affect the current pending frame, as well as any frames that follow.
+ *
+ * @param layer
+ *     The layer to change the lossy behavior of.
+ *
+ * @param lossless
+ *     Non-zero if the layer should be allowed to use lossy methods (the
+ *     default behavior), zero if the layer should use strictly lossless
+ *     methods.
+ */
+void guac_display_layer_set_lossless(guac_display_layer* layer, int lossless);
+
+/**
+ * Sets the level of multitouch support available for the given layer. The
+ * change in layer multitouch support will be made as part of the current
+ * pending frame, and will not take effect on remote displays until the pending
+ * frame is complete. Setting multitouch support only has any effect on the
+ * default layer.
+ *
+ * @param layer
+ *     The layer to set the multitouch support level of.
+ *
+ * @param touches
+ *     The maximum number of simultaneous touches tracked by the layer, where 0
+ *     represents no touch support.
+ */
+void guac_display_layer_set_multitouch(guac_display_layer* layer, int touches);
+
+/**
+ * Resizes the given layer to the given dimensions. The change in layer size
+ * will be made as part of the current pending frame, and will not take effect
+ * on remote displays until the pending frame is complete.
+ *
+ * IMPORTANT: While it is safe to call this function while holding an open
+ * context (raw or Cairo), this should only be done if the underlying buffer is
+ * maintained externally or if the context is finished being used. Resizing a
+ * layer can result in the underlying buffer being replaced.
+ *
+ * @param layer
+ *     The layer to set the size of.
+ *
+ * @param width
+ *     The new width to assign to the layer, in pixels. Any values provided
+ *     that are greater than GUAC_DISPLAY_MAX_WIDTH will instead be interpreted
+ *     as equal to GUAC_DISPLAY_MAX_WIDTH.
+ *
+ * @param height
+ *     The new height to assign to the layer, in pixels. Any values provided
+ *     that are greater than GUAC_DISPLAY_MAX_HEIGHT will instead be
+ *     interpreted as equal to GUAC_DISPLAY_MAX_HEIGHT.
+ */
+void guac_display_layer_resize(guac_display_layer* layer, int width, int height);
+
+/**
+ * Begins a drawing operation for the given layer, returning a context that can
+ * be used to draw directly to the raw image buffer containing the layer's
+ * current pending frame.
+ *
+ * Starting a draw operation acquires exclusive access to the display for the
+ * current thread. When complete, the original calling thread must relinquish
+ * exclusive access and free the graphical context by calling
+ * guac_display_layer_close_raw(). It is the responsibility of the caller to
+ * ensure the dirty rect within the returned context is updated to contain the
+ * region modified, such as by calling guac_rect_expand().
+ *
+ * @param layer
+ *     The layer to draw to.
+ *
+ * @return
+ *     A mutable graphical context containing the current raw pending frame
+ *     state of the given layer.
+ */
+guac_display_layer_raw_context* guac_display_layer_open_raw(guac_display_layer* layer);
+
+/**
+ * Ends a drawing operation that was started with a call to
+ * guac_display_layer_open_raw() and relinquishes exclusive access to the
+ * display. All graphical changes made to the layer through the raw context
+ * will be committed to the layer and will be included in the current pending
+ * frame.
+ *
+ * This function MUST NOT be called by any thread other than the thread that called 
+ * guac_display_layer_open_raw() to obtain the given context.
+ *
+ * @param layer
+ *     The layer that finished being drawn to.
+ *
+ * @param context
+ *     The raw context of the drawing operation that has completed, as returned
+ *     by a previous call to guac_display_layer_open_raw().
+ */
+void guac_display_layer_close_raw(guac_display_layer* layer, guac_display_layer_raw_context* context);
+
+/**
+ * Fills a rectangle of image data within the given raw context with a single
+ * color. All pixels within the rectangle are replaced with the given color. If
+ * applicable, this includes the alpha channel. Compositing is not performed by
+ * this function.
+ *
+ * @param context
+ *     The raw context of the layer that is being drawn to.
+ *
+ * @param dst
+ *     The rectangular area that should be filled with the given color.
+ *
+ * @param color
+ *     The color that should replace all current pixel values within the given
+ *     rectangular region.
+ */
+void guac_display_layer_raw_context_set(guac_display_layer_raw_context* context,
+        const guac_rect* dst, uint32_t color);
+
+/**
+ * Copies a rectangle of image data from the given buffer to the given raw
+ * context, replacing all pixel values within the given rectangle. Compositing
+ * is not performed by this function.
+ *
+ * The size of the image data copied and the destination location of that data
+ * within the layer are dictated by the given rectangle. If any offset needs to
+ * be applied to the source image buffer, it is expected that this offset will
+ * already have been applied via the address of the buffer provided to this
+ * function, such as through an earlier call to GUAC_RECT_CONST_BUFFER().
+ *
+ * @param context
+ *     The raw context of the layer that is being drawn to.
+ *
+ * @param dst
+ *     The rectangular area that should be filled with the image data from the
+ *     given buffer.
+ *
+ * @param buffer
+ *     The containing the image data that should replace all current pixel
+ *     values within the given rectangular region.
+ *
+ * @param stride
+ *     The number of bytes in each row of image data within the given buffer.
+ */
+void guac_display_layer_raw_context_put(guac_display_layer_raw_context* context,
+        const guac_rect* dst, const void* restrict buffer, size_t stride);
+
+/**
+ * Begins a drawing operation for the given layer, returning a context that can
+ * be used to draw to a Cairo surface containing the layer's current pending
+ * frame. The underlying Cairo state within the returned context will be
+ * preserved between calls to guac_display_layer_open_cairo().
+ *
+ * Starting a draw operation acquires exclusive access to the display for the
+ * current thread.  When complete, the original calling thread must relinquish
+ * exclusive access and free the graphical context by calling
+ * guac_display_layer_close_cairo(). It is the responsibility of the caller to
+ * ensure the dirty rect within the returned context is updated to contain the
+ * region modified, such as by calling guac_rect_expand().
+ *
+ * @param layer
+ *     The layer to draw to.
+ *
+ * @return
+ *     A mutable graphical context containing the current pending frame state
+ *     of the given layer in the form of a Cairo surface.
+ */
+guac_display_layer_cairo_context* guac_display_layer_open_cairo(guac_display_layer* layer);
+
+/**
+ * Ends a drawing operation that was started with a call to
+ * guac_display_layer_open_cairo() and relinquishes exclusive access to the
+ * display. All graphical changes made to the layer through the Cairo context
+ * will be committed to the layer and will be included in the current pending
+ * frame.
+ *
+ * This function MUST NOT be called by any thread other than the thread that called 
+ * guac_display_layer_open_cairo() to obtain the given context.
+ *
+ * @param layer
+ *     The layer that finished being drawn to.
+ *
+ * @param context
+ *     The Cairo context of the drawing operation that has completed, as
+ *     returned by a previous call to guac_display_layer_open_cairo().
+ */
+void guac_display_layer_close_cairo(guac_display_layer* layer, guac_display_layer_cairo_context* context);
+
+#endif
