@@ -38,6 +38,29 @@ Connecting to guacd from an application
 
     docker run --name some-app --link some-guacd:guacd -d application-that-uses-guacd
 
+
+Enabling guacd ssl
+------------------
+This explains how to enable ssl between guacamole and guacd using a self signed certificate.
+
+1. Generate a new certificate
+You need to create the new certificate on the guacd host.
+
+    $ openssl genrsa -out /path/guacd/server.key 2048
+    $ openssl req -new -key /path/guacd/server.key -out /path/guacd/cert.csr
+    $ openssl x509 -in /path/guacd/cert.csr -out /path/guacd/server.crt -req -signkey /path/guacd/server.key -days 3650
+    $ openssl pkcs12 -export -in /path/guacd/server.crt -inkey /path/guacd/server.key  -out /path/guacd/server.p12 -CAfile ca.crt -caname root
+
+2. run guacd
+
+    docker run --name some-guacd -d -p 4822:4822 \
+      --env GUACD_CERTIFICATE_CRT=/etc/guacd/server.crt \
+      --env GUACD_CERTIFICATE_KEY=/etc/guacd/server.key \
+      --volume /path/guacd:/etc/guacd \
+      guacamole/guacd
+
+You may now enable, within Guacamole, guacd/proxy ssl connexion.
+
 Reporting issues
 ================
 

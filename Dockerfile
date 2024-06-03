@@ -170,6 +170,7 @@ COPY --from=builder ${PREFIX_DIR} ${PREFIX_DIR}
 
 # Bring runtime environment up to date and install runtime dependencies
 RUN apk add --no-cache                \
+        bash                          \
         ca-certificates               \
         font-noto-cjk                 \
         ghostscript                   \
@@ -196,10 +197,9 @@ USER guacd
 # Expose the default listener port
 EXPOSE 4822
 
-# Start guacd, listening on port 0.0.0.0:4822
-#
-# Note the path here MUST correspond to the value specified in the 
-# PREFIX_DIR build argument.
-#
-CMD /opt/guacamole/sbin/guacd -b 0.0.0.0 -L $GUACD_LOG_LEVEL -f
+# Add configuration scripts
+COPY src/guacd-docker/sbin /opt/guacamole/sbin/
+
+# Start guacd
+CMD [ "/opt/guacamole/sbin/start.sh" ]
 
