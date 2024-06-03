@@ -39,6 +39,8 @@ noinst_HEADERS =                     \
 test_libguac_SOURCES =               \
     client/buffer_pool.c             \
     client/layer_pool.c              \
+    fifo/fifo.c                      \
+    flag/flag.c                      \
     id/generate.c                    \
     mem/alloc.c                      \
     mem/ckd_add.c                    \
@@ -56,6 +58,11 @@ test_libguac_SOURCES =               \
     pool/next_free.c                 \
     protocol/base64_decode.c         \
     protocol/guac_protocol_version.c \
+    rect/align.c                     \
+    rect/constrain.c                 \
+    rect/extend.c                    \
+    rect/init.c                      \
+    rect/intersects.c                \
     socket/fd_send_instruction.c     \
     socket/nested_send_instruction.c \
     string/strdup.c                  \
