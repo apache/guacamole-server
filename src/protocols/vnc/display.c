@@ -21,7 +21,6 @@
 
 #include "client.h"
 #include "common/iconv.h"
-#include "common/surface.h"
 #include "vnc.h"
 
 #include <cairo/cairo.h>
@@ -49,93 +48,87 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
-    int dx, dy;
+    /* Begin drawing operation directly to default layer */
+    guac_display_layer* default_layer = guac_display_default_layer(vnc_client->display);
+    guac_display_layer_raw_context* context = guac_display_layer_open_raw(default_layer);
 
-    /* Cairo image buffer */
-    int stride;
-    unsigned char* buffer;
-    unsigned char* buffer_row_current;
-    cairo_surface_t* surface;
+    /* Convert operation coordinates to guac_rect for easier manipulation */
+    guac_rect op_bounds;
+    guac_rect_init(&op_bounds, x, y, w, h);
+
+    /* Ensure draw is within current bounds of the pending frame */
+    guac_rect_constrain(&op_bounds, &context->bounds);
 
     /* VNC framebuffer */
-    unsigned int bpp;
-    unsigned int fb_stride;
-    unsigned char* fb_row_current;
+    unsigned int   vnc_bpp               = client->format.bitsPerPixel / 8;
+    size_t         vnc_stride            = guac_mem_ckd_mul_or_die(vnc_bpp, client->width);
+    const unsigned char* vnc_current_row = GUAC_RECT_CONST_BUFFER(op_bounds, client->frameBuffer, vnc_stride, vnc_bpp);
 
-    /* Ignore extra update if already handled by copyrect */
-    if (vnc_client->copy_rect_used) {
-        vnc_client->copy_rect_used = 0;
-        return;
-    }
+    unsigned char* layer_current_row = GUAC_RECT_MUTABLE_BUFFER(op_bounds, context->buffer, context->stride, GUAC_DISPLAY_LAYER_RAW_BPP);
+    for (int dy = op_bounds.top; dy < op_bounds.bottom; dy++) {
 
-    /* Init Cairo buffer */
-    stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);
-    buffer = guac_mem_alloc(h, stride);
-    buffer_row_current = buffer;
+        /* Get current Guacamole buffer row, advance to next */
+        uint32_t* layer_current_pixel = (uint32_t*) layer_current_row;
+        layer_current_row += context->stride;
 
-    bpp = client->format.bitsPerPixel/8;
-    fb_stride = bpp * client->width;
-    fb_row_current = client->frameBuffer + (y * fb_stride) + (x * bpp);
+        /* Get current VNC framebuffer row, advance to next */
+        const unsigned char* vnc_current_pixel = vnc_current_row;
+        vnc_current_row += vnc_stride;
 
-    /* Copy image data from VNC client to PNG */
-    for (dy = y; dy<y+h; dy++) {
+        for (int dx = op_bounds.left; dx < op_bounds.right; dx++) {
 
-        unsigned int*  buffer_current;
-        unsigned char* fb_current;
-        
-        /* Get current buffer row, advance to next */
-        buffer_current      = (unsigned int*) buffer_row_current;
-        buffer_row_current += stride;
-
-        /* Get current framebuffer row, advance to next */
-        fb_current      = fb_row_current;
-        fb_row_current += fb_stride;
-
-        for (dx = x; dx<x+w; dx++) {
-
-            unsigned char red, green, blue;
-            unsigned int v;
-
-            switch (bpp) {
+            /* Read current VNC pixel value */
+            uint32_t v;
+            switch (vnc_bpp) {
                 case 4:
-                    v = *((uint32_t*)  fb_current);
+                    v = *((uint32_t*) vnc_current_pixel);
                     break;
 
                 case 2:
-                    v = *((uint16_t*) fb_current);
+                    v = *((uint16_t*) vnc_current_pixel);
                     break;
 
                 default:
-                    v = *((uint8_t*)  fb_current);
+                    v = *((uint8_t*) vnc_current_pixel);
             }
 
-            /* Translate value to RGB */
-            red   = (v >> client->format.redShift)   * 0x100 / (client->format.redMax  + 1);
-            green = (v >> client->format.greenShift) * 0x100 / (client->format.greenMax+ 1);
-            blue  = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax + 1);
+            /* Translate value to 32-bit RGB */
+            uint8_t red   = (v >> client->format.redShift)   * 0x100 / (client->format.redMax   + 1);
+            uint8_t green = (v >> client->format.greenShift) * 0x100 / (client->format.greenMax + 1);
+            uint8_t blue  = (v >> client->format.blueShift)  * 0x100 / (client->format.blueMax  + 1);
 
             /* Output RGB */
             if (vnc_client->settings->swap_red_blue)
-                *(buffer_current++) = (blue << 16) | (green << 8) | red;
+                *(layer_current_pixel++) = 0xFF000000 | (blue << 16) | (green << 8) | red;
             else
-                *(buffer_current++) = (red  << 16) | (green << 8) | blue;
+                *(layer_current_pixel++) = 0xFF000000 | (red  << 16) | (green << 8) | blue;
 
-            fb_current += bpp;
+            /* Advance to next pixel in VNC framebuffer */
+            vnc_current_pixel += vnc_bpp;
 
         }
     }
 
-    /* Create surface from decoded buffer */
-    surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24,
-            w, h, stride);
+    /* Mark modified region as dirty */
+    guac_rect_extend(&context->dirty, &op_bounds);
 
-    /* Draw directly to default layer */
-    guac_common_surface_draw(vnc_client->display->default_surface,
-            x, y, surface);
+    /* Hint at source of copied data if this update involved CopyRect */
+    if (vnc_client->copy_rect_used) {
+        context->hint_from = default_layer;
+        vnc_client->copy_rect_used = 0;
+    }
 
-    /* Free surface */
-    cairo_surface_destroy(surface);
-    guac_mem_free(buffer);
+    /* Draw operation is now complete */
+    guac_display_layer_close_raw(default_layer, context);
+
+}
+
+void guac_vnc_update_finished(rfbClient* client) {
+
+    guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
+    guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
+
+    guac_display_end_multiple_frames(vnc_client->display, 1);
 
 }
 
@@ -143,11 +136,6 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
 
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
-
-    /* Copy specified rectangle within default layer */
-    guac_common_surface_copy(vnc_client->display->default_surface,
-            src_x, src_y, w, h,
-            vnc_client->display->default_surface, dest_x, dest_y);
 
     vnc_client->copy_rect_used = 1;
 
@@ -199,7 +187,7 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
 
     /* Resize surface */
     if (vnc_client->display != NULL)
-        guac_common_surface_resize(vnc_client->display->default_surface,
+        guac_display_layer_resize(guac_display_default_layer(vnc_client->display),
                 rfb_client->width, rfb_client->height);
 
     /* Use original, wrapped proc */
