@@ -42,7 +42,7 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
             rdp_client->display, pointer->width, pointer->height);
 
     /* Allocate data for image */
-    unsigned char* data = _aligned_malloc(pointer->width * pointer->height * 4, 16);
+    unsigned char* data = GUAC_ALIGNED_MALLOC(pointer->width * pointer->height * 4, 16);
 
     cairo_surface_t* surface;
 
@@ -64,7 +64,7 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
     /* Free surface */
     cairo_surface_destroy(surface);
-    _aligned_free(data);
+    GUAC_ALIGNED_FREE(data);
 
     /* Remember buffer */
     ((guac_rdp_pointer*) pointer)->layer = buffer;
@@ -73,7 +73,7 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
 }
 
-BOOL guac_rdp_pointer_set(rdpContext* context, const rdpPointer* pointer) {
+BOOL guac_rdp_pointer_set(rdpContext* context, POINTER_SET_CONST rdpPointer* pointer) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -156,4 +156,3 @@ BOOL guac_rdp_pointer_set_default(rdpContext* context) {
 
     return TRUE;
 }
-

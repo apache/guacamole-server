@@ -36,7 +36,7 @@
 #define cairo_format_stride_for_width(format, width) (width*4)
 #endif
 
-BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph) {
+BOOL guac_rdp_glyph_new(rdpContext* context, GLYPH_NEW_CONST rdpGlyph* glyph) {
 
     int x, y, i;
     int stride;
@@ -168,4 +168,3 @@ BOOL guac_rdp_glyph_enddraw(rdpContext* context,
     /* IGNORE */
     return TRUE;
 }
-

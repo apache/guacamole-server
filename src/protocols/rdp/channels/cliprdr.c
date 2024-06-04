@@ -82,7 +82,13 @@ static UINT guac_rdp_cliprdr_send_format_list(CliprdrClientContext* cliprdr) {
 
     /* We support CP-1252 and UTF-16 text */
     CLIPRDR_FORMAT_LIST format_list = {
+#ifdef HAVE_CLIPRDR_HEADER
+        .common = {
+            .msgType = CB_FORMAT_LIST
+        },
+#else
         .msgType = CB_FORMAT_LIST,
+#endif
         .formats = (CLIPRDR_FORMAT[]) {
             { .formatId = CF_TEXT },
             { .formatId = CF_UNICODETEXT }
@@ -298,9 +304,15 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format list.");
 
     CLIPRDR_FORMAT_LIST_RESPONSE format_list_response = {
+#ifdef HAVE_CLIPRDR_HEADER
+        .common = {
+            .msgType = CB_FORMAT_LIST_RESPONSE,
+            .msgFlags = CB_RESPONSE_OK
+        }
+#else
         .msgFlags = CB_RESPONSE_OK
+#endif
     };
-
     /* Report successful processing of format list */
     pthread_mutex_lock(&(rdp_client->message_lock));
     cliprdr->ClientFormatListResponse(cliprdr, &format_list_response);
@@ -394,8 +406,16 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 
     CLIPRDR_FORMAT_DATA_RESPONSE data_response = {
         .requestedFormatData = (BYTE*) start,
+#ifdef HAVE_CLIPRDR_HEADER
+        .common = {
+            .msgType = CB_FORMAT_DATA_RESPONSE,
+            .msgFlags = CB_RESPONSE_OK,
+            .dataLen = ((BYTE*) output) - start,
+        }
+#else
         .dataLen = ((BYTE*) output) - start,
         .msgFlags = CB_RESPONSE_OK
+#endif
     };
 
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format data response.");
@@ -482,9 +502,16 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
 
     }
 
+    int data_len;
+    #ifdef HAVE_CLIPRDR_HEADER
+    data_len = format_data_response->common.dataLen;
+    #else
+    data_len = format_data_response->dataLen;
+    #endif
+
     /* Convert, store, and forward the clipboard data received from RDP
      * server */
-    if (guac_iconv(remote_reader, &input, format_data_response->dataLen,
+    if (guac_iconv(remote_reader, &input, data_len,
             GUAC_WRITE_UTF8, &output, sizeof(received_data))) {
         int length = strnlen(received_data, sizeof(received_data));
         guac_common_clipboard_reset(clipboard->clipboard, "text/plain");
@@ -712,4 +739,3 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     return 0;
 
 }
-
