@@ -53,12 +53,6 @@
 #endif
 
 #include <freerdp/addin.h>
-#include <freerdp/cache/bitmap.h>
-#include <freerdp/cache/brush.h>
-#include <freerdp/cache/glyph.h>
-#include <freerdp/cache/offscreen.h>
-#include <freerdp/cache/palette.h>
-#include <freerdp/cache/pointer.h>
 #include <freerdp/channels/channels.h>
 #include <freerdp/client/channels.h>
 #include <freerdp/freerdp.h>
@@ -87,7 +81,7 @@
 
 BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
-    rdpContext* context = instance->context;
+    rdpContext* context = GUAC_RDP_CONTEXT(instance);
     rdpGraphics* graphics = context->graphics;
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
@@ -113,7 +107,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
         /* Upgrade the lock to write temporarily for setting the newly allocated audio buffer */
         guac_rwlock_acquire_write_lock(&(rdp_client->lock));
         rdp_client->audio_input = guac_rdp_audio_buffer_alloc(client);
-        guac_rdp_audio_load_plugin(instance->context);
+        guac_rdp_audio_load_plugin(GUAC_RDP_CONTEXT(instance));
 
         /* Downgrade the lock to allow for concurrent read access */
         guac_rwlock_release_lock(&(rdp_client->lock));
@@ -179,42 +173,35 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     graphics_register_pointer(graphics, &pointer);
 
     /* Beep on receipt of Play Sound PDU */
-    instance->update->PlaySound = guac_rdp_beep_play_sound;
+    GUAC_RDP_CONTEXT(instance)->update->PlaySound = guac_rdp_beep_play_sound;
 
     /* Automatically synchronize keyboard locks when changed server-side */
-    instance->update->SetKeyboardIndicators = guac_rdp_keyboard_set_indicators;
+    GUAC_RDP_CONTEXT(instance)->update->SetKeyboardIndicators = guac_rdp_keyboard_set_indicators;
 
     /* Set up GDI */
-    instance->update->DesktopResize = guac_rdp_gdi_desktop_resize;
-    instance->update->BeginPaint = guac_rdp_gdi_begin_paint;
-    instance->update->EndPaint = guac_rdp_gdi_end_paint;
-    instance->update->SetBounds = guac_rdp_gdi_set_bounds;
+    GUAC_RDP_CONTEXT(instance)->update->DesktopResize = guac_rdp_gdi_desktop_resize;
+    GUAC_RDP_CONTEXT(instance)->update->BeginPaint = guac_rdp_gdi_begin_paint;
+    GUAC_RDP_CONTEXT(instance)->update->EndPaint = guac_rdp_gdi_end_paint;
+    GUAC_RDP_CONTEXT(instance)->update->SetBounds = guac_rdp_gdi_set_bounds;
 
-    instance->update->SurfaceFrameMarker = guac_rdp_gdi_surface_frame_marker;
-    instance->update->altsec->FrameMarker = guac_rdp_gdi_frame_marker;
+    GUAC_RDP_CONTEXT(instance)->update->SurfaceFrameMarker = guac_rdp_gdi_surface_frame_marker;
+    GUAC_RDP_CONTEXT(instance)->update->altsec->FrameMarker = guac_rdp_gdi_frame_marker;
 
-    rdpPrimaryUpdate* primary = instance->update->primary;
+    rdpPrimaryUpdate* primary = GUAC_RDP_CONTEXT(instance)->update->primary;
     primary->DstBlt = guac_rdp_gdi_dstblt;
     primary->PatBlt = guac_rdp_gdi_patblt;
     primary->ScrBlt = guac_rdp_gdi_scrblt;
     primary->MemBlt = guac_rdp_gdi_memblt;
     primary->OpaqueRect = guac_rdp_gdi_opaquerect;
 
-    pointer_cache_register_callbacks(instance->update);
-    glyph_cache_register_callbacks(instance->update);
-    brush_cache_register_callbacks(instance->update);
-    bitmap_cache_register_callbacks(instance->update);
-    offscreen_cache_register_callbacks(instance->update);
-    palette_cache_register_callbacks(instance->update);
-
     /* Load "rdpgfx" plugin for Graphics Pipeline Extension */
     if (settings->enable_gfx)
         guac_rdp_rdpgfx_load_plugin(context);
 
     /* Load plugin providing Dynamic Virtual Channel support, if required */
-    if (instance->settings->SupportDynamicChannels &&
+    if (freerdp_settings_get_bool(GUAC_RDP_CONTEXT(instance)->settings, FreeRDP_SupportDynamicChannels) &&
             guac_freerdp_channels_load_plugin(context, "drdynvc",
-                instance->settings)) {
+                GUAC_RDP_CONTEXT(instance)->settings)) {
         guac_client_log(client, GUAC_LOG_WARNING,
                 "Failed to load drdynvc plugin. Display update and audio "
                 "input support will be disabled.");
@@ -255,7 +242,7 @@ BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 static BOOL rdp_freerdp_authenticate(freerdp* instance, char** username,
         char** password, char** domain) {
 
-    rdpContext* context = instance->context;
+    rdpContext* context = GUAC_RDP_CONTEXT(instance);
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
     guac_rdp_settings* settings = rdp_client->settings;
@@ -397,7 +384,7 @@ static DWORD rdp_freerdp_verify_certificate(freerdp* instance,
         const char* fingerprint, BOOL host_mismatch) {
 #endif
 
-    rdpContext* context = instance->context;
+    rdpContext* context = GUAC_RDP_CONTEXT(instance);
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client =
         (guac_rdp_client*) client->data;
@@ -433,7 +420,7 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
     freerdp* rdp_inst = rdp_client->rdp_inst;
 
     HANDLE handles[GUAC_RDP_MAX_FILE_DESCRIPTORS];
-    int num_handles = freerdp_get_event_handles(rdp_inst->context, handles,
+    int num_handles = freerdp_get_event_handles(GUAC_RDP_CONTEXT(rdp_inst), handles,
             GUAC_RDP_MAX_FILE_DESCRIPTORS);
 
     /* Wait for data and construct a reasonable frame */
@@ -522,7 +509,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
         goto fail;
     }
 
-    ((rdp_freerdp_context*) rdp_inst->context)->client = client;
+    ((rdp_freerdp_context*) GUAC_RDP_CONTEXT(rdp_inst))->client = client;
 
     /* Load keymap into client */
     rdp_client->keyboard = guac_rdp_keyboard_alloc(client,
@@ -580,7 +567,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
                 /* Handle any queued FreeRDP events (this may result in RDP
                  * messages being sent) */
                 pthread_mutex_lock(&(rdp_client->message_lock));
-                int event_result = freerdp_check_event_handles(rdp_inst->context);
+                int event_result = freerdp_check_event_handles(GUAC_RDP_CONTEXT(rdp_inst));
                 pthread_mutex_unlock(&(rdp_client->message_lock));
 
                 /* Abort if FreeRDP event handling fails */
@@ -623,7 +610,12 @@ static int guac_rdp_handle_connection(guac_client* client) {
         }
 
         /* Test whether the RDP server is closing the connection */
-        int connection_closing = freerdp_shall_disconnect(rdp_inst);
+        int connection_closing;
+#ifdef HAVE_DISCONNECT_CONTEXT
+        connection_closing = freerdp_shall_disconnect_context(rdp_inst->context);
+#else
+        connection_closing = freerdp_shall_disconnect(rdp_inst);
+#endif
 
         /* Close connection cleanly if server is disconnecting */
         if (connection_closing)

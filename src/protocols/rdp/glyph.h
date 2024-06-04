@@ -41,6 +41,12 @@
 #define GLYPH_CALLBACK_INT32 UINT32
 #endif
 
+#ifdef RDP_GLYPH_NEW_REQUIRES_CONST
+#define GLYPH_NEW_CONST const
+#else
+#define GLYPH_NEW_CONST
+#endif
+
 /**
  * Guacamole-specific rdpGlyph data.
  */
@@ -71,7 +77,7 @@ typedef struct guac_rdp_glyph {
  * @return
  *     TRUE if successful, FALSE otherwise.
  */
-BOOL guac_rdp_glyph_new(rdpContext* context, const rdpGlyph* glyph);
+BOOL guac_rdp_glyph_new(rdpContext* context, GLYPH_NEW_CONST rdpGlyph* glyph);
 
 /**
  * Draws a previously-cached glyph at the given coordinates within the current

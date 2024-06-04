@@ -204,7 +204,7 @@ void guac_rdpsnd_formats_handler(guac_rdp_common_svc* svc,
     Stream_Write_UINT16(output_stream, rdpsnd->format_count);
 
     /* Reposition cursor at end (necessary for message send) */
-    Stream_SetPointer(output_stream, output_stream_end);
+    Stream_SetPosition(output_stream, output_stream_end - Stream_Buffer(output_stream));
 
     /* Send accepted formats */
     guac_rdp_common_svc_write(svc, output_stream);
@@ -366,4 +366,3 @@ void guac_rdpsnd_close_handler(guac_rdp_common_svc* svc,
     /* Do nothing */
 
 }
-

@@ -26,6 +26,12 @@
 #include <freerdp/graphics.h>
 #include <winpr/wtypes.h>
 
+#ifdef RDP_POINTER_SET_REQUIRES_CONST
+#define POINTER_SET_CONST const
+#else
+#define POINTER_SET_CONST
+#endif
+
 /**
  * Guacamole-specific rdpPointer data.
  */
@@ -71,7 +77,7 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer);
  * @return
  *     TRUE if successful, FALSE otherwise.
  */
-BOOL guac_rdp_pointer_set(rdpContext* context, const rdpPointer* pointer);
+BOOL guac_rdp_pointer_set(rdpContext* context, POINTER_SET_CONST rdpPointer* pointer);
 
 /**
  * Frees all Guacamole-related data associated with the given pointer, allowing

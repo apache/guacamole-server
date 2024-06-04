@@ -412,7 +412,14 @@ BOOL guac_rdp_gdi_surface_frame_marker(rdpContext* context, const SURFACE_FRAME_
 
     guac_rdp_gdi_mark_frame(context, surface_frame_marker->frameAction != SURFACECMD_FRAMEACTION_END);
 
-    if (context->settings->FrameAcknowledge > 0)
+    int frame_acknowledge;
+#ifdef HAVE_SETTERS_GETTERS
+    frame_acknowledge = freerdp_settings_get_uint32(context->settings, FreeRDP_FrameAcknowledge);
+#else
+    frame_acknowledge = context->settings->FrameAcknowledge;
+#endif
+
+    if (frame_acknowledge > 0)
         IFCALL(context->update->SurfaceFrameAcknowledge, context,
                 surface_frame_marker->frameId);
 
@@ -496,4 +503,3 @@ BOOL guac_rdp_gdi_desktop_resize(rdpContext* context) {
             guac_rdp_get_height(context->instance));
 
 }
-
