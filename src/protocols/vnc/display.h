@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include <guacamole/user.h>
 #include <rfb/rfbclient.h>
 #include <rfb/rfbproto.h>
 
@@ -49,6 +50,17 @@
  *     The height of the image, in pixels.
  */
 void guac_vnc_update(rfbClient* client, int x, int y, int w, int h);
+
+/**
+ * Callback invoked by libVNCServer when all binary image data for the current
+ * frame has been received from the VNC server. The image data that frame will
+ * have been exposed via previous calls to guac_vnc_update().
+ *
+ * @param client
+ *     The VNC client associated with the VNC session in which the new image
+ *     was received.
+ */
+void guac_vnc_update_finished(rfbClient* client);
 
 /**
  * Callback invoked by libVNCServer when it receives a CopyRect message.
@@ -109,13 +121,13 @@ void* guac_vnc_display_set_owner_size(guac_user* owner, void* data);
  * @param display
  *     The VNC client to which the display size update should be sent.
  *
- * @param width
+ * @param requested_width
  *     The width that is being requested, in pixels.
  *
- * @param height
+ * @param requested_height
  *     The height that is being requested, in pixels.
  */
-void guac_vnc_display_set_size(rfbClient* client, int width, int height);
+void guac_vnc_display_set_size(rfbClient* client, int requested_width, int requested_height);
 
 /**
  * Sets the pixel format to request of the VNC server. The request will be made

@@ -19,11 +19,10 @@
 
 #include "config.h"
 
-#include "common/cursor.h"
-#include "common/display.h"
 #include "display.h"
 #include "vnc.h"
 
+#include <guacamole/display.h>
 #include <guacamole/recording.h>
 #include <guacamole/user.h>
 #include <rfb/rfbclient.h>
@@ -35,7 +34,7 @@ int guac_vnc_user_mouse_handler(guac_user* user, int x, int y, int mask) {
     rfbClient* rfb_client = vnc_client->rfb_client;
 
     /* Store current mouse location/state */
-    guac_common_cursor_update(vnc_client->display->cursor, user, x, y, mask);
+    guac_display_notify_user_moved_mouse(vnc_client->display, user, x, y, mask);
 
     /* Report mouse position within recording */
     if (vnc_client->recording != NULL)

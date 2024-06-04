@@ -23,13 +23,12 @@
 #include "config.h"
 
 #include "common/clipboard.h"
-#include "common/display.h"
 #include "common/iconv.h"
-#include "common/surface.h"
 #include "display.h"
 #include "settings.h"
 
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/layer.h>
 #include <rfb/rfbclient.h>
 
@@ -100,7 +99,7 @@ typedef struct guac_vnc_client {
     /**
      * The current display state.
      */
-    guac_common_display* display;
+    guac_display* display;
 
     /**
      * Internal clipboard.
