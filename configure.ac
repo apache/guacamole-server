@@ -1067,11 +1067,6 @@ AC_ARG_WITH([ssh],
             [],
             [with_ssh=check])
 
-AC_ARG_ENABLE(ssh_agent,
-              [AS_HELP_STRING([--enable-ssh-agent],
-                              [enable built-in ssh-agent])
-              ],enable_ssh_agent=yes)
-
 if test "x$with_ssh" != "xno"
 then
     have_libssh2=yes
@@ -1119,19 +1114,22 @@ fi
 #
 
 have_ssh_agent=no
-if test "x${have_libssh2}" = "xyes" -a "x${enable_ssh_agent}" = "xyes"
+if test "x${have_libssh2}" = "xyes"
 then
 
-    AC_CHECK_DECL([libssh2_channel_request_auth_agent],
+    AC_CHECK_DECL([libssh2_agent_sign],
                   [have_ssh_agent=yes], [],
                   [[#include <libssh2.h>]])
 
     if test "x${have_ssh_agent}" = "xno"
     then
-        AC_MSG_ERROR([
+        AC_MSG_WARN([
       --------------------------------------------
-       Agent forwarding support was requested but no such support was found
-       in libssh2.
+       Support for ssh-agent forwarding requires
+       libssh2 1.11.0 or later, and the version
+       detected does not meet that requirement.
+       Support for ssh-agent forwarding will not
+       be enabled.
       --------------------------------------------])
     else
         AC_DEFINE([ENABLE_SSH_AGENT],,
@@ -1140,8 +1138,7 @@ then
 
 fi
 
-AM_CONDITIONAL([ENABLE_SSH_AGENT], [test "x${have_ssh_agent}"   = "xyes" \
-                                      -a "x${enable_ssh_agent}" = "xyes"])
+AM_CONDITIONAL([ENABLE_SSH_AGENT], [test "x${have_ssh_agent}"   = "xyes"])
 
 #
 # libtelnet
