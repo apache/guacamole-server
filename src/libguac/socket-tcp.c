@@ -22,15 +22,22 @@
 #include "guacamole/socket.h"
 
 #include <errno.h>
+
+#ifdef WINDOWS_BUILD
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
 
 int guac_socket_tcp_connect(const char* hostname, const char* port) {
 
     int retval;
 
-    int fd = EBADFD;
+    int fd = -1;
+
     struct addrinfo* addresses;
     struct addrinfo* current_address;
 
