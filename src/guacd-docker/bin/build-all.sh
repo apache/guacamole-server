@@ -84,15 +84,21 @@ install_from_git() {
     # Configure build using CMake or GNU Autotools, whichever happens to be
     # used by the library being built
     if [ -e CMakeLists.txt ]; then
-        cmake -DCMAKE_INSTALL_PREFIX:PATH="$PREFIX_DIR" "$@" .
+        cmake \
+            -B "${REPO_DIR}-build" -S . \
+            -DCMAKE_INSTALL_PREFIX:PATH="$PREFIX_DIR" \
+            "$@"
+
+        # Build and install
+        cmake --build "${REPO_DIR}-build"
+        cmake --install "${REPO_DIR}-build"
     else
         [ -e configure ] || autoreconf -fi
         ./configure --prefix="$PREFIX_DIR" "$@"
+
+        # Build and install
+        make && make install
     fi
-
-    # Build and install
-    make && make install
-
 }
 
 #
