@@ -42,6 +42,11 @@
 #define GUAC_CHAR_CONTINUATION -1
 
 /**
+ * The ASCII code of space.
+ */
+#define GUAC_CHAR_SPACE 32
+
+/**
  * Terminal attributes, as can be applied to a single character.
  */
 typedef struct guac_terminal_attributes {
