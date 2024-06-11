@@ -283,6 +283,7 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
 
     char buffer[1024];
     int i = start;
+    int eol;
 
     guac_terminal_buffer_row* buffer_row =
         guac_terminal_buffer_get_row(terminal->buffer, row, 0);
@@ -296,6 +297,14 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
     if (end < 0 || end > buffer_row->length - 1)
         end = buffer_row->length - 1;
 
+    /* Get position of last not null char */
+    for (eol = buffer_row->length; eol > start; eol--) {
+
+        if (buffer_row->characters[eol].value != 0)
+            break;
+
+    }
+
     /* Repeatedly convert chunks of terminal buffer rows until entire specified
      * region has been appended to clipboard */
     while (i <= end) {
@@ -307,6 +316,10 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
         for (i = start; i <= end; i++) {
 
             int codepoint = buffer_row->characters[i].value;
+
+            /* Fill empty with spaces if not at end of line */
+            if (codepoint == 0 && i < eol)
+                codepoint = GUAC_CHAR_SPACE;
 
             /* Ignore null (blank) characters */
             if (codepoint == 0 || codepoint == GUAC_CHAR_CONTINUATION)
