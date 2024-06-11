@@ -482,9 +482,11 @@ guac_terminal* guac_terminal_create(guac_client* client,
     if (initial_scrollback < GUAC_TERMINAL_MAX_ROWS)
         initial_scrollback = GUAC_TERMINAL_MAX_ROWS;
 
-    /* Init buffer */
+    /* Init current and alternate buffer */
     term->buffer = guac_terminal_buffer_alloc(initial_scrollback,
             &default_char);
+    term->buffer_alt = NULL;
+    term->buffer_switched = false;
 
     /* Init display */
     term->display = guac_terminal_display_alloc(client,
@@ -633,8 +635,10 @@ void guac_terminal_free(guac_terminal* term) {
     /* Free display */
     guac_terminal_display_free(term->display);
 
-    /* Free buffer */
+    /* Free buffers */
     guac_terminal_buffer_free(term->buffer);
+    if (term->buffer_alt != NULL)
+        guac_terminal_buffer_free(term->buffer_alt);
 
     /* Free scrollbar */
     guac_terminal_scrollbar_free(term->scrollbar);
@@ -2383,4 +2387,69 @@ void guac_terminal_remove_user(guac_terminal* terminal, guac_user* user) {
 
     /* Remove the user from the terminal cursor */
     guac_common_cursor_remove_user(terminal->cursor, user);
+}
+
+void guac_terminal_switch_buffers(guac_terminal* terminal, bool to_alt) {
+
+    /* Already on requested buffer */
+    if (terminal->buffer_switched == to_alt)
+        return;
+
+    /* Allocate alternate buffer */
+    if (terminal->buffer_alt == NULL)
+        terminal->buffer_alt = guac_terminal_buffer_alloc(
+                terminal->display->height, &terminal->default_char);
+
+    /* Keep new buffer state */
+    terminal->buffer_switched = to_alt;
+
+    /* Inversion of buffers pointers to switch to alternate */
+    guac_terminal_buffer* temp_buffer = terminal->buffer;
+    terminal->buffer = terminal->buffer_alt;
+    terminal->buffer_alt = temp_buffer;
+
+    /* Switch to alternate buffer */
+    if (to_alt) {
+
+        /* Backup cursor position before switching alternate buffer */
+        terminal->visible_cursor_col_alt = terminal->visible_cursor_col;
+        terminal->visible_cursor_row_alt = terminal->visible_cursor_row;
+        terminal->cursor_col_alt = terminal->cursor_col;
+        terminal->cursor_row_alt = terminal->cursor_row;
+
+        /* Clear screen content and selection */
+        guac_terminal_reset(terminal);
+
+    }
+
+    /* Switch to normal buffer */
+    else {
+
+        /* Restore cursor position before switching normal buffer */
+        terminal->visible_cursor_col = terminal->visible_cursor_col_alt;
+        terminal->visible_cursor_row = terminal->visible_cursor_row_alt;
+        terminal->cursor_col = terminal->cursor_col_alt;
+        terminal->cursor_row = terminal->cursor_row_alt;
+
+        /* Repaint and resize overall display */
+        guac_terminal_repaint_default_layer(terminal, terminal->client->socket);
+        __guac_terminal_redraw_rect(terminal, 0, 0,
+                terminal->term_height - 1,
+                terminal->term_width - 1);
+
+        /* Restore scrollbar state */
+        guac_terminal_scrollbar_set_bounds(terminal->scrollbar,
+                -guac_terminal_get_available_scroll(terminal), 0);
+
+        /* Clear selection */
+        terminal->text_selected = false;
+        terminal->selection_committed = false;
+        guac_terminal_notify(terminal);
+
+        /* Free alternate buffer when unused */
+        guac_terminal_buffer_free(terminal->buffer_alt);
+        terminal->buffer_alt = NULL;
+
+    }
+
 }
