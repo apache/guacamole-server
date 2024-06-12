@@ -72,6 +72,71 @@ static void guac_display_plan_mark_dirty(guac_display_layer* layer,
 
 }
 
+/**
+ * Variant of memcmp() which specifically compares series of 32-bit quantities
+ * and determines the overall location and length of the differences in the two
+ * provided buffers. The length and location determined are the length and
+ * location of the smallest contiguous series of 32-bit quantities that differ
+ * between the buffers.
+ *
+ * @param buffer_a
+ *     The first buffer to compare.
+ *
+ * @param buffer_b
+ *     The buffer to compare with buffer_a.
+ *
+ * @param count
+ *     The number of 32-bit quantities in each buffer.
+ *
+ * @param pos
+ *     A pointer to a size_t that should receive the offset of the difference,
+ *     if the two buffers turn out to contain different data. The value of the
+ *     size_t will only be modified if at least one difference is found.
+ *
+ * @return
+ *     The number of 32-bit quantities after and including the offset returned
+ *     via pos that are different between buffer_a and buffer_b, or zero if
+ *     there are no such differences.
+ */
+static size_t guac_display_memcmp(const uint32_t* restrict buffer_a,
+        const uint32_t* restrict buffer_b, size_t count, size_t* pos) {
+
+    /* Locate first difference between the buffers, if any */
+    size_t first = 0;
+    while (first < count) {
+
+        if (*(buffer_a++) != *(buffer_b++))
+            break;
+
+        first++;
+
+    }
+
+    /* If we reached the end without finding any differences, no need to search
+     * further - the buffers are identical */
+    if (first >= count)
+        return 0;
+
+    /* Search through all remaining values in the buffers for the last
+     * difference (which may be identical to the first) */
+    size_t last = first;
+    size_t offset = first + 1;
+    while (offset < count) {
+
+        if (*(buffer_a++) != *(buffer_b++))
+            last = offset;
+
+        offset++;
+
+    }
+
+    /* Final difference found - provide caller with the starting offset and
+     * length (in 32-bit quantities) of differences */
+    *pos = first;
+    return last - first + 1;
+
+}
+
 guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
 
     guac_display_layer* current;
@@ -162,9 +227,9 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
 
                     /* Mark the relevant region of the cell as dirty if the
                      * current 64-pixel line has changed in any way */
-                    size_t length = guac_mem_ckd_mul_or_die(width, GUAC_DISPLAY_LAYER_RAW_BPP);
-                    if (memcmp(current_buffer, current_flushed, length)) {
-                        guac_display_plan_mark_dirty(current, current_cell, &op_count, x, y + y_off, width);
+                    size_t length, pos;
+                    if ((length = guac_display_memcmp(current_buffer, current_flushed, width, &pos)) != 0) {
+                        guac_display_plan_mark_dirty(current, current_cell, &op_count, x + pos, y + y_off, length);
                         guac_rect_extend(&current->pending_frame.dirty, &current_cell->dirty);
                     }
 
