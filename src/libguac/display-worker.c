@@ -572,9 +572,9 @@ void* guac_display_worker_thread(void* data) {
                         guac_timestamp_msleep(required_wait);
                     }
 
-                    guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
-                    has_outstanding_frames = display->pending_dirty;
-                    guac_rwlock_release_lock(&display->pending_frame.lock);
+                    guac_fifo_lock(&display->ops);
+                    has_outstanding_frames = display->frame_deferred;
+                    guac_fifo_unlock(&display->ops);
 
                 }
 

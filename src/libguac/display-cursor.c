@@ -36,7 +36,6 @@ void guac_display_set_cursor_hotspot(guac_display* display, int x, int y) {
 
     display->pending_frame.cursor_hotspot_x = x;
     display->pending_frame.cursor_hotspot_y = y;
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 }

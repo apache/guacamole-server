@@ -49,7 +49,6 @@ void guac_display_layer_move(guac_display_layer* layer, int x, int y) {
 
     layer->pending_frame.x = x;
     layer->pending_frame.y = y;
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
@@ -61,7 +60,6 @@ void guac_display_layer_stack(guac_display_layer* layer, int z) {
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
 
     layer->pending_frame.z = z;
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
@@ -73,7 +71,6 @@ void guac_display_layer_set_parent(guac_display_layer* layer, const guac_display
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
 
     layer->pending_frame.parent = parent->layer;
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
@@ -85,7 +82,6 @@ void guac_display_layer_set_opacity(guac_display_layer* layer, int opacity) {
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
 
     layer->pending_frame.opacity = opacity;
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
@@ -97,7 +93,6 @@ void guac_display_layer_set_lossless(guac_display_layer* layer, int lossless) {
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
 
     layer->pending_frame.lossless = lossless;
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
@@ -109,7 +104,6 @@ void guac_display_layer_set_multitouch(guac_display_layer* layer, int touches) {
     guac_rwlock_acquire_write_lock(&display->pending_frame.lock);
 
     layer->pending_frame.touches = touches;
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
@@ -122,7 +116,6 @@ void guac_display_layer_resize(guac_display_layer* layer, int width, int height)
     guac_rwlock_acquire_write_lock(&display->last_frame.lock);
 
     PFW_LFW_guac_display_layer_resize(layer, width, height);
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->last_frame.lock);
     guac_rwlock_release_lock(&display->pending_frame.lock);
@@ -200,7 +193,6 @@ void guac_display_layer_close_raw(guac_display_layer* layer, guac_display_layer_
     guac_display* display = layer->display;
 
     guac_rect_extend(&layer->pending_frame.dirty, &context->dirty);
-    display->pending_dirty = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
@@ -241,10 +233,7 @@ guac_display_layer_cairo_context* guac_display_layer_open_cairo(guac_display_lay
 void guac_display_layer_close_cairo(guac_display_layer* layer, guac_display_layer_cairo_context* context) {
 
     guac_display* display = layer->display;
-
     guac_rect_extend(&layer->pending_frame.dirty, &context->dirty);
-    display->pending_dirty = 1;
-
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
 }
