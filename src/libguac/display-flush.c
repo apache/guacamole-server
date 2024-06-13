@@ -192,7 +192,6 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
     display->last_frame.frames = display->pending_frame.frames;
 
     display->pending_frame.frames = 0;
-    display->pending_dirty = 0;
 
     /* Commit cursor hotspot */
     display->last_frame.cursor_hotspot_x = display->pending_frame.cursor_hotspot_x;
@@ -226,10 +225,11 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
      * the pending frame. */
 
     guac_fifo_lock(&display->ops);
-    int encoding_in_progress = display->ops.state.value & GUAC_FIFO_STATE_NONEMPTY || display->active_workers;
+    int defer_frame = display->frame_deferred =
+        (display->ops.state.value & GUAC_FIFO_STATE_NONEMPTY) || display->active_workers;
     guac_fifo_unlock(&display->ops);
 
-    if (encoding_in_progress)
+    if (defer_frame)
         goto finished_with_pending_frame_lock;
 
     guac_rwlock_acquire_write_lock(&display->last_frame.lock);

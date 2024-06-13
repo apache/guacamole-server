@@ -72,17 +72,16 @@
  */
 
 /*
- * IMPORTANT: In cases where a single thread must acquire BOTH the pending
- * frame lock and the last frame lock, proper acquisition order must be
- * observed to avoid deadlock. The correct order is:
+ * IMPORTANT: In cases where a single thread must acquire multiple locks used
+ * by guac_display, proper acquisition order must be observed to avoid
+ * deadlock. The correct order is:
  *
  * 1) pending_frame.lock
  * 2) last_frame.lock
+ * 3) ops
+ * 4) op_path_lock
  *
- * The lock for the ops FIFO must NEVER be acquired before either of the frame
- * locks. All operations involving the ops FIFO should be performed quickly
- * and, if either pending_frame or last_frame must be involved, those locks
- * must be acquired first. Doing otherwise risks deadlock.
+ * Acquiring these locks in any other order risks deadlock. Don't do it.
  */
 
 /**
@@ -580,15 +579,6 @@ struct guac_display {
      */
     guac_display_state pending_frame;
 
-    /**
-     * Whether the pending_frame has been modified in any way since the last
-     * frame.
-     *
-     * IMPORTANT: The pending_frame.lock MUST be acquired before modifying or
-     * reading this member.
-     */
-    int pending_dirty;
-
     /* ---------------- WELL-KNOWN LAYERS / BUFFERS ---------------- */
 
     /**
@@ -645,6 +635,16 @@ struct guac_display {
      * FIFO is locked.
      */
     unsigned int active_workers;
+
+    /**
+     * Whether least one pending frame has been deferred due to the encoding
+     * process being underway for a previous frame at the time it was
+     * completed.
+     *
+     * IMPORTANT: This member must only be accessed or modified while the ops
+     * FIFO is locked.
+     */
+    int frame_deferred;
 
 };
 
