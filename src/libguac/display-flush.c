@@ -224,10 +224,13 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
     /* Defer rendering of further frames until after any in-progress frame has
      * finished. Graphical changes will meanwhile continue being accumulated in
      * the pending frame. */
+
     guac_fifo_lock(&display->ops);
-    if (display->ops.state.value & GUAC_FIFO_STATE_NONEMPTY || display->active_workers) {
-        goto finished_with_display_ops;
-    }
+    int encoding_in_progress = display->ops.state.value & GUAC_FIFO_STATE_NONEMPTY || display->active_workers;
+    guac_fifo_unlock(&display->ops);
+
+    if (encoding_in_progress)
+        goto finished_with_pending_frame_lock;
 
     guac_rwlock_acquire_write_lock(&display->last_frame.lock);
 
@@ -286,8 +289,7 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
 finished_with_last_frame_lock:
     guac_rwlock_release_lock(&display->last_frame.lock);
 
-finished_with_display_ops:
-    guac_fifo_unlock(&display->ops);
+finished_with_pending_frame_lock:
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
     if (plan != NULL) {

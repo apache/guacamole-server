@@ -73,9 +73,16 @@
 
 /*
  * IMPORTANT: In cases where a single thread must acquire BOTH the pending
- * frame lock and the last frame lock, the pending frame lock MUST be acquired
- * first to maintain consistent lock order and avoid deadlock conditions. All
- * functions within guac_display will follow this order.
+ * frame lock and the last frame lock, proper acquisition order must be
+ * observed to avoid deadlock. The correct order is:
+ *
+ * 1) pending_frame.lock
+ * 2) last_frame.lock
+ *
+ * The lock for the ops FIFO must NEVER be acquired before either of the frame
+ * locks. All operations involving the ops FIFO should be performed quickly
+ * and, if either pending_frame or last_frame must be involved, those locks
+ * must be acquired first. Doing otherwise risks deadlock.
  */
 
 /**
