@@ -56,9 +56,8 @@ static void LFR_guac_display_layer_flush_to_png(guac_display_layer* display_laye
     guac_socket* socket = client->socket;
     const guac_layer* layer = display_layer->layer;
 
-    /* Get Cairo layer for specified rect */
+    /* Get Cairo surface covering dirty rect */
     unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(display_layer->last_frame, *dirty);
-
     cairo_surface_t* rect;
 
     /* Use RGB24 if the image is fully opaque */
@@ -67,7 +66,7 @@ static void LFR_guac_display_layer_flush_to_png(guac_display_layer* display_laye
                 CAIRO_FORMAT_RGB24, guac_rect_width(dirty),
                 guac_rect_height(dirty), display_layer->last_frame.buffer_stride);
 
-    /* Otherwise ARGB32 is needed */
+    /* Otherwise ARGB32 is needed, and the destination must be cleared */
     else {
 
         rect = cairo_image_surface_create_for_data(buffer,
@@ -157,9 +156,8 @@ static void LFR_guac_display_layer_flush_to_jpeg(guac_display_layer* display_lay
     guac_rect_align(dirty, GUAC_SURFACE_JPEG_BLOCK_SIZE);
     guac_rect_constrain(dirty, &max);
 
-    /* Get Cairo layer for specified rect */
+    /* Get Cairo surface covering dirty rect */
     unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(display_layer->last_frame, *dirty);
-
     cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
             CAIRO_FORMAT_RGB24, guac_rect_width(dirty),
             guac_rect_height(dirty), display_layer->last_frame.buffer_stride);
@@ -209,22 +207,12 @@ static void LFR_guac_display_layer_flush_to_webp(guac_display_layer* display_lay
     guac_rect_align(dirty, GUAC_SURFACE_WEBP_BLOCK_SIZE);
     guac_rect_constrain(dirty, &max);
 
-    /* Get Cairo layer for specified rect */
+    /* Get Cairo surface covering dirty rect */
     unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(display_layer->last_frame, *dirty);
-
-    cairo_surface_t* rect;
-
-    /* Use RGB24 if the image is fully opaque */
-    if (display_layer->opaque)
-        rect = cairo_image_surface_create_for_data(buffer,
-                CAIRO_FORMAT_RGB24, guac_rect_width(dirty),
-                guac_rect_height(dirty), display_layer->last_frame.buffer_stride);
-
-    /* Otherwise ARGB32 is needed */
-    else
-        rect = cairo_image_surface_create_for_data(buffer,
-                CAIRO_FORMAT_ARGB32, guac_rect_width(dirty),
-                guac_rect_height(dirty), display_layer->last_frame.buffer_stride);
+    cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
+            display_layer->opaque ? CAIRO_FORMAT_RGB24 : CAIRO_FORMAT_ARGB32,
+            guac_rect_width(dirty), guac_rect_height(dirty),
+            display_layer->last_frame.buffer_stride);
 
     /* Send WebP for rect */
     guac_client_stream_webp(client, socket, GUAC_COMP_OVER, layer,
