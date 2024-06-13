@@ -197,22 +197,11 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
         int width = guac_rect_width(&layer_bounds);
         int height = guac_rect_height(&layer_bounds);
 
-        /* Get Cairo layer for specified rect */
+        /* Get Cairo surface covering layer bounds */
         unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(current->last_frame, layer_bounds);
-
-        cairo_surface_t* rect;
-
-        /* Use RGB24 if the image is fully opaque */
-        if (current->opaque)
-            rect = cairo_image_surface_create_for_data(buffer,
-                    CAIRO_FORMAT_RGB24, width, height,
-                    current->last_frame.buffer_stride);
-
-        /* Otherwise ARGB32 is needed */
-        else
-            rect = cairo_image_surface_create_for_data(buffer,
-                    CAIRO_FORMAT_ARGB32, width, height,
-                    current->last_frame.buffer_stride);
+        cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
+                    current->opaque ? CAIRO_FORMAT_RGB24 : CAIRO_FORMAT_ARGB32,
+                    width, height, current->last_frame.buffer_stride);
 
         /* Send PNG for rect */
         guac_protocol_send_size(socket, layer, width, height);
