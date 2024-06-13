@@ -339,9 +339,9 @@ void guac_display_remove_layer(guac_display_layer* display_layer) {
     if (display_layer->pending_frame.prev != NULL)
         display_layer->pending_frame.prev->pending_frame.next = display_layer->pending_frame.next;
 
-    /* If there is no previous element, then this element is the list head.
-     * Update the list head accordingly. */
-    else {
+    /* If there is no previous element, then this element is the list head if
+     * the list has any elements at all. Update the list head accordingly. */
+    else if (display->pending_frame.layers != NULL) {
         GUAC_ASSERT(display->pending_frame.layers == display_layer);
         display->pending_frame.layers = display_layer->pending_frame.next;
     }
@@ -362,9 +362,9 @@ void guac_display_remove_layer(guac_display_layer* display_layer) {
     if (display_layer->last_frame.prev != NULL)
         display_layer->last_frame.prev->last_frame.next = display_layer->last_frame.next;
 
-    /* If there is no previous element, then this element is the list head.
-     * Update the list head accordingly. */
-    else {
+    /* If there is no previous element, then this element is the list head if
+     * the list has any elements at all. Update the list head accordingly. */
+    else if (display->last_frame.layers != NULL) {
         GUAC_ASSERT(display->last_frame.layers == display_layer);
         display->last_frame.layers = display_layer->last_frame.next;
     }
