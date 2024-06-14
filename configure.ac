@@ -931,6 +931,7 @@ then
         int main() {
             CLIPRDR_FORMAT_LIST list;
             list.common.msgType = 0;
+            (void)list;
             return 0;
         }
         ]])],
@@ -989,10 +990,22 @@ then
     AC_MSG_CHECKING([whether GetPluginData requires const for the returned args])
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
         #include <freerdp/dvc.h>
+        /* A dummy function that matches the expected signature of GetPluginData */
+        const ADDIN_ARGV* dummy_GetPluginData(IDRDYNVC_ENTRY_POINTS* pEntryPoints) {
+            return NULL;
+        }
+
         int main() {
-            IDRDYNVC_ENTRY_POINTS test_entry_points;
-            const ADDIN_ARGV* args = test_entry_points.GetPluginData(&test_entry_points);
-            (void)args;
+            /* Create a dummy IDRDYNVC_ENTRY_POINTS struct */
+            IDRDYNVC_ENTRY_POINTS entryPoints;
+
+            /* Manually set the GetPluginData pointer for testing */
+            entryPoints.GetPluginData = dummy_GetPluginData;
+            const ADDIN_ARGV* result = entryPoints.GetPluginData(&entryPoints);
+
+            /* Casting to void to avoid unused variable warning */
+            (void)result;
+
             return 0;
         }
     ]])],
