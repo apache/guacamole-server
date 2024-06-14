@@ -26,6 +26,7 @@
 #include "common/display.h"
 #include "common/iconv.h"
 #include "common/surface.h"
+#include "display.h"
 #include "settings.h"
 
 #include <guacamole/client.h>
@@ -62,6 +63,11 @@ typedef struct guac_vnc_client {
      */
     pthread_mutex_t tls_lock;
 #endif
+
+    /**
+     * Lock which synchronizes messages sent to VNC server.
+     */
+    pthread_mutex_t message_lock;
 
     /**
      * The underlying VNC client.
