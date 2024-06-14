@@ -35,10 +35,13 @@
  * @param port
  *     The TCP port to which to attempt to connect.
  *
+ * @param timeout
+ *     The number of seconds to try the TCP connection before timing out.
+ *
  * @return
  *     A valid socket if the connection succeeds, or a negative integer if it
  *     fails.
  */
-int guac_socket_tcp_connect(const char* hostname, const char* port);
+int guac_socket_tcp_connect(const char* hostname, const char* port, const int timeout);
 
 #endif // __GUAC_SOCKET_TCP_H

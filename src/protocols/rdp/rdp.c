@@ -717,7 +717,8 @@ void* guac_rdp_client_thread(void* data) {
                     settings->wol_wait_time,
                     GUAC_WOL_DEFAULT_CONNECT_RETRIES,
                     settings->hostname,
-                    (const char *) str_port)) {
+                    (const char *) str_port,
+                    GUAC_WOL_DEFAULT_CONNECTION_TIMEOUT)) {
                 guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet, or server failed to wake up.");
                 guac_mem_free(str_port);
                 return NULL;
@@ -815,8 +816,8 @@ void* guac_rdp_client_thread(void* data) {
         /* Attempt SSH connection */
         rdp_client->sftp_session =
             guac_common_ssh_create_session(client, settings->sftp_hostname,
-                    settings->sftp_port, rdp_client->sftp_user, settings->sftp_server_alive_interval,
-                    settings->sftp_host_key, NULL);
+                    settings->sftp_port, rdp_client->sftp_user, settings->sftp_timeout,
+                    settings->sftp_server_alive_interval, settings->sftp_host_key, NULL);
 
         /* Fail if SSH connection does not succeed */
         if (rdp_client->sftp_session == NULL) {

@@ -34,6 +34,12 @@
 #define GUAC_WOL_DEFAULT_CONNECT_RETRIES 5
 
 /**
+ * The default number of seconds for the connection timeout when attempting
+ * to connect to the remote system to see if it is awake.
+ */
+#define GUAC_WOL_DEFAULT_CONNECTION_TIMEOUT 10
+
+/**
  * The value for the local IPv4 broadcast address.
  */
 #define GUAC_WOL_LOCAL_IPV4_BROADCAST "255.255.255.255"
