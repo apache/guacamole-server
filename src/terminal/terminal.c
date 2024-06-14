@@ -1885,10 +1885,6 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
 static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         int x, int y, int mask) {
 
-    /* Remove display margin from mouse position without going below 0 */
-    y = y >= term->display->margin ? y - term->display->margin : 0;
-    x = x >= term->display->margin ? x - term->display->margin : 0;
-
     /* Ignore user input if terminal is not started */
     if (!term->started) {
         guac_client_log(term->client, GUAC_LOG_DEBUG, "Ignoring user input "
@@ -1917,6 +1913,10 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
         return 0;
 
     }
+
+    /* Remove display margin from mouse position without going below 0 */
+    y = y >= term->display->margin ? y - term->display->margin : 0;
+    x = x >= term->display->margin ? x - term->display->margin : 0;
 
     term->mouse_mask = mask;
 
