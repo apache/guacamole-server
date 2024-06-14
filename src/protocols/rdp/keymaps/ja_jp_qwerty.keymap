@@ -34,3 +34,9 @@ map +shift      0x2C..0x35 0x73 ~ "ZXCVBNM<>?_"
 map -shift      0x29            ~ 0xFF28
 map -shift      0x29            ~ 0xFF2A
 map +shift      0x29            ~ 0xFF29
+map -shift      0x29            ~ 0xFF21 # KanjiMode
+map -shift      0x70            ~ 0xFF27 # HiraganaKatakana
+map -shift      0x70            ~ 0xFF24 # Romaji
+map -shift      0x7B            ~ 0xFF22 # NonConvert
+map -shift      0x79            ~ 0xFF23 # Convert
+map -shift      0x3A            ~ 0xFF30 # Alphanumeric
