@@ -46,7 +46,7 @@
  * within this period of time, the associated process will be forcibly
  * terminated.
  */
-#define GUACD_CLIENT_FREE_TIMEOUT 5
+#define GUACD_CLIENT_FREE_TIMEOUT 600
 
 /**
  * Process information of the internal remote desktop client.

@@ -215,7 +215,24 @@ void guac_client_free(guac_client* client) {
             guac_client_log(client, GUAC_LOG_ERROR, "Unable to close plugin: %s", dlerror());
     }
 
-    pthread_rwlock_destroy(&(client->__users_lock));
+    if (client->recording_path != NULL) {
+        // sleep(1);
+        char command[3000];
+        snprintf(command, sizeof(command), "touch %s.m4v.lock", client->recording_path);
+        guac_client_log(client, GUAC_LOG_INFO, "Running command \"%s\"", command);
+        system(command);
+
+        snprintf(command, sizeof(command), "/opt/guacamole/bin/guacenc -s 1920x1080 -f %s", client->recording_path);
+        guac_client_log(client, GUAC_LOG_INFO, "Running command \"%s\"", command);
+        system(command);
+
+        snprintf(command, sizeof(command), "rm %s.m4v.lock", client->recording_path);
+        guac_client_log(client, GUAC_LOG_INFO, "Running command \"%s\"", command);
+        system(command);
+
+        free(client->recording_path);
+    }
+
     free(client->connection_id);
     free(client);
 }

@@ -47,6 +47,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdio.h>
 
 /**
  * Tests whether the given path refers to a directory which the current user
@@ -183,8 +184,16 @@ int guac_rdp_client_free_handler(guac_client* client) {
     pthread_join(rdp_client->client_thread, NULL);
 
     /* Free parsed settings */
-    if (rdp_client->settings != NULL)
+    if (rdp_client->settings != NULL) {
+        if (rdp_client->settings->recording_path != NULL &&
+            rdp_client->settings->recording_name != NULL) {
+            client->recording_path = malloc(2048);
+            snprintf(client->recording_path, 2048, "%s/%s",
+                rdp_client->settings->recording_path,
+                rdp_client->settings->recording_name);
+        }
         guac_rdp_settings_free(rdp_client->settings);
+    }
 
     /* Clean up clipboard */
     guac_rdp_clipboard_free(rdp_client->clipboard);

@@ -42,11 +42,18 @@ RUN apk add --no-cache                \
         openssl1.1-compat-dev         \
         pango-dev                     \
         pulseaudio-dev                \
+        util-linux-dev                \
+        ffmpeg-dev \
+        krb5-libs \
+        krb5 \
+        krb5-dev \
+        libgss \
+        krb5-conf \
         util-linux-dev
 
 # Copy source to container for sake of build
-ARG BUILD_DIR=/tmp/guacamole-server
-COPY . ${BUILD_DIR}
+# ARG BUILD_DIR=/tmp/guacamole-server
+# COPY . ${BUILD_DIR}
 
 #
 # Base directory for installed build artifacts.
@@ -84,7 +91,7 @@ ARG FREERDP_OPTS="\
     -DWITH_DIRECTFB=OFF \
     -DWITH_FFMPEG=OFF \
     -DWITH_GSM=OFF \
-    -DWITH_GSSAPI=OFF \
+    -DWITH_GSSAPI=ON \
     -DWITH_IPP=OFF \
     -DWITH_JPEG=ON \
     -DWITH_LIBSYSTEMD=OFF \
@@ -110,7 +117,11 @@ ARG FREERDP_OPTS="\
     -DWITH_XRENDER=OFF \
     -DWITH_XTEST=OFF \
     -DWITH_XV=OFF \
-    -DWITH_ZLIB=ON"
+    -DWITH_ZLIB=ON \
+    -DWITH_KRB5=ON \
+    -DKRB5_TRACE=/dev/stdout \
+    -DDEBUG_NLA=ON \
+    -DGSS_ROOT_FLAVOUR=MIT"
 
 ARG GUACAMOLE_SERVER_OPTS="\
     --disable-guaclog"
@@ -134,6 +145,17 @@ ARG LIBWEBSOCKETS_OPTS="\
     -DLWS_WITHOUT_TEST_SERVER=ON \
     -DLWS_WITHOUT_TEST_SERVER_EXTPOLL=ON \
     -DLWS_WITH_STATIC=OFF"
+
+# Build the dependencies for guacamole-server
+ARG BUILD_DIR=/tmp/guacamole-server
+RUN mkdir -p ${BUILD_DIR}/src/guacd-docker/bin
+
+COPY ./src/guacd-docker/bin/build-deps.sh ${BUILD_DIR}/src/guacd-docker/bin
+RUN ${BUILD_DIR}/src/guacd-docker/bin/build-deps.sh
+RUN rm -f ${BUILD_DIR}/src/guacd-docker/bin/build-deps.sh
+
+# Copy source to container for sake of build
+COPY . ${BUILD_DIR}
 
 # Build guacamole-server and its core protocol library dependencies
 RUN ${BUILD_DIR}/src/guacd-docker/bin/build-all.sh
@@ -174,6 +196,12 @@ RUN apk add --no-cache                \
         terminus-font                 \
         ttf-dejavu                    \
         ttf-liberation                \
+        ffmpeg-dev                    \
+        krb5-conf \
+        krb5-libs \
+        krb5-dev \
+        krb5 \
+        libgss \
         util-linux-login && \
     xargs apk add --no-cache < ${PREFIX_DIR}/DEPENDENCIES
 
@@ -185,6 +213,14 @@ ARG UID=1000
 ARG GID=10001
 RUN groupadd --gid $GID guacd
 RUN useradd --system --create-home --shell /sbin/nologin --uid $UID --gid $GID guacd
+
+# Create symlinks to procyon krb5.conf and hosts
+RUN mkdir -p /etc/procyon
+RUN cp /etc/hosts /etc/procyon/hosts
+COPY ./src/guacd-docker/krb5.conf /etc/procyon/krb5.conf
+
+RUN ln -s /etc/procyon/krb5.conf /etc/krb5.conf
+RUN ln -s /etc/procyon/hosts /etc/hosts
 
 # Run with user guacd
 USER guacd
@@ -198,4 +234,3 @@ EXPOSE 4822
 # PREFIX_DIR build argument.
 #
 CMD /opt/guacamole/sbin/guacd -b 0.0.0.0 -L $GUACD_LOG_LEVEL -f
-
