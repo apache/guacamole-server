@@ -189,7 +189,8 @@ void guac_display_notify_user_left(guac_display* display, guac_user* user);
 /**
  * Notifies the given guac_display that a specific user has changed the state
  * of the mouse, such as through moving the pointer or pressing/releasing a
- * mouse button.
+ * mouse button. This function automatically invokes
+ * guac_display_end_mouse_frame().
  *
  * @param display
  *     The guac_display to notify.
@@ -228,6 +229,18 @@ void guac_display_notify_user_moved_mouse(guac_display* display, guac_user* user
  *     The guac_display that should send the current frame.
  */
 void guac_display_end_frame(guac_display* display);
+
+/**
+ * Ends the current frame only if the user-visible changes consist purely of
+ * updates to the mouse cursor position or icon. If other visible changes have
+ * been made, such as graphical updates to the display itself, this function
+ * has no effect.
+ *
+ * @param display
+ *     The guac_display that should send the current frame if only the mouse
+ *     cursor is visibly affected.
+ */
+void guac_display_end_mouse_frame(guac_display* display);
 
 /**
  * Ends the current frame, where that frame may combine or otherwise represent the
@@ -314,6 +327,11 @@ void guac_display_free_layer(guac_display_layer* display_layer);
  * contents of this layer will affect the remote mouse cursor after the current
  * pending frame is complete.
  *
+ * Callers should consider using guac_display_end_mouse_frame() to update
+ * connected users as soon as all changes to the mouse cursor are completed.
+ * Doing so avoids needing to couple changes to the mouse cursor with
+ * complicated logic around changes to the remote desktop display.
+ *
  * @param display
  *     The guac_display to return the cursor layer for.
  *
@@ -324,9 +342,13 @@ void guac_display_free_layer(guac_display_layer* display_layer);
 guac_display_layer* guac_display_cursor(guac_display* display);
 
 /**
- * Sets the remote mouse cursor to the given built-in cursor icon. Changes to
- * the remote mouse cursor will take effect after the current pending frame is
- * complete.
+ * Sets the remote mouse cursor to the given built-in cursor icon. This
+ * function automatically invokes guac_display_end_mouse_frame().
+ *
+ * Callers should consider using guac_display_end_mouse_frame() to update
+ * connected users as soon as all changes to the mouse cursor are completed.
+ * Doing so avoids needing to couple changes to the mouse cursor with
+ * complicated logic around changes to the remote desktop display.
  *
  * @param display
  *     The guac_display to set the cursor of.
@@ -342,6 +364,11 @@ void guac_display_set_cursor(guac_display* display,
  * point within the mouse cursor where the click occurs. Changes to the hotspot
  * of the remote mouse cursor will take effect after the current pending frame
  * is complete.
+ *
+ * Callers should consider using guac_display_end_mouse_frame() to update
+ * connected users as soon as all changes to the mouse cursor are completed.
+ * Doing so avoids needing to couple changes to the mouse cursor with
+ * complicated logic around changes to the remote desktop display.
  *
  * @param display
  *     The guac_display to set the cursor hotspot of.
