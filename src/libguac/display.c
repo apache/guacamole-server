@@ -127,6 +127,11 @@ guac_display* guac_display_alloc(guac_client* client) {
     guac_fifo_init(&display->ops, display->ops_items,
             GUAC_DISPLAY_WORKER_FIFO_SIZE, sizeof(guac_display_plan_operation));
 
+    /* Init flag used to notify threads that need to monitor whether a frame is
+     * currently being rendered */
+    guac_flag_init(&display->render_state);
+    guac_flag_set(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS);
+
     /* Init lock specific to the GUAC_DISPLAY_PLAN_OPERATION_RECT operation */
     pthread_mutex_init(&display->op_path_lock, NULL);
 
@@ -165,6 +170,13 @@ void guac_display_free(guac_display* display) {
     for (int i = 0; i < display->worker_thread_count; i++)
         pthread_join(display->worker_threads[i], NULL);
 
+    /* All locks, FIFOs, etc. are now unused and can be safely destroyed */
+    pthread_mutex_destroy(&display->op_path_lock);
+    guac_flag_destroy(&display->render_state);
+    guac_fifo_destroy(&display->ops);
+    guac_rwlock_destroy(&display->last_frame.lock);
+    guac_rwlock_destroy(&display->pending_frame.lock);
+
     /* Free all layers within the pending_frame list (NOTE: This will also free
      * those layers from the last_frame list) */
     while (display->pending_frame.layers != NULL)
@@ -175,7 +187,6 @@ void guac_display_free(guac_display* display) {
     while (display->last_frame.layers != NULL)
         guac_display_free_layer(display->last_frame.layers);
 
-    pthread_mutex_destroy(&display->op_path_lock);
     guac_mem_free(display->worker_threads);
     guac_mem_free(display);
 
@@ -186,6 +197,16 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
     guac_client* client = display->client;
     guac_rwlock_acquire_read_lock(&display->last_frame.lock);
 
+    /* Wait for any pending frame to finish being sent to established users of
+     * the connection before syncing any new users (doing otherwise could
+     * result in trailing instructions of that pending frame getting sent to
+     * new users after they finish joining, even though they are already in
+     * sync with that frame, and those trailing instructions may not have the
+     * intended meaning in context of the new users' remote displays) */
+    guac_flag_wait_and_lock(&display->render_state,
+            GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS);
+
+    /* Sync the state of all layers/buffers */
     guac_display_layer* current = display->last_frame.layers;
     while (current != NULL) {
 
@@ -252,7 +273,11 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
     guac_protocol_send_mouse(socket, display->last_frame.cursor_x, display->last_frame.cursor_y,
             display->last_frame.cursor_mask, client->last_sent_timestamp);
 
+    /* The initial frame synchronizing the newly-joined users is now complete */
     guac_protocol_send_sync(socket, client->last_sent_timestamp, display->last_frame.frames);
+
+    /* Further rendering for the current connection can now safely continue */
+    guac_flag_unlock(&display->render_state);
     guac_rwlock_release_lock(&display->last_frame.lock);
 
     guac_socket_flush(socket);

@@ -79,7 +79,8 @@
  * 1) pending_frame.lock
  * 2) last_frame.lock
  * 3) ops
- * 4) op_path_lock
+ * 4) render_state
+ * 5) op_path_lock
  *
  * Acquiring these locks in any other order risks deadlock. Don't do it.
  */
@@ -192,6 +193,20 @@
  */
 #define GUAC_DISPLAY_LAYER_STATE_CONST_BUFFER(layer_state, rect) \
     GUAC_RECT_CONST_BUFFER(rect, (layer_state).buffer, (layer_state).buffer_stride, GUAC_DISPLAY_LAYER_RAW_BPP)
+
+/**
+ * Bitwise flag set on the render_state flag in guac_display when rendering of
+ * a pending frame is in progress (Guacamole instructions that draw the pending
+ * frame are being sent to connected users).
+ */
+#define GUAC_DISPLAY_RENDER_STATE_FRAME_IN_PROGRESS 1
+
+/**
+ * Bitwise flag set on the render_state flag in guac_display when rendering of
+ * a pending frame is NOT in progress (Guacamole instructions that draw the
+ * pending frame are NOT being sent to connected users).
+ */
+#define GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS 2
 
 /**
  * Approximation of how often a region of a layer is modified, as well as what
@@ -645,6 +660,15 @@ struct guac_display {
      * FIFO is locked.
      */
     int frame_deferred;
+
+    /**
+     * The current state of the rendering process. Code that needs to be aware
+     * of whether a frame is currently in the process of being rendered can
+     * monitor the state of this flag, watching for either the
+     * GUAC_DISPLAY_RENDER_STATE_FRAME_IN_PROGRESS or
+     * GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS values.
+     */
+    guac_flag render_state;
 
 };
 
