@@ -2053,6 +2053,11 @@ static int __guac_terminal_send_mouse(guac_terminal* term, guac_user* user,
 
                     /* First click = start selection */
                     case 0:
+                        /* The rectangular selection is requested by pressing
+                         * the ALT key at the start of the selection */
+                        term->rectangle_selection = term->mod_alt;
+
+                        /* Start selection */
                         guac_terminal_select_start(term, row, col, side);
                         break;
                     

@@ -504,6 +504,11 @@ struct guac_terminal {
      */
     int click_counter;
 
+    /**
+     * Rectangular selection when ALT key is pressed when starting selection.
+     */
+    bool rectangle_selection;
+
 };
 
 /**
