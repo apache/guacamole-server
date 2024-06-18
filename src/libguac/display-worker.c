@@ -376,6 +376,11 @@ void* guac_display_worker_thread(void* data) {
     guac_display_plan_operation op;
     while (guac_fifo_dequeue_and_lock(&display->ops, &op)) {
 
+        /* Notify any watchers of render_state that a frame is now in progress */
+        guac_flag_set_and_lock(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_IN_PROGRESS);
+        guac_flag_clear(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS);
+        guac_flag_unlock(&display->render_state);
+
         /* NOTE: Any thread that locks the operation queue can know that there
          * are no pending operations in progress if the queue is empty and
          * there are no active workers */
@@ -534,6 +539,11 @@ void* guac_display_worker_thread(void* data) {
                     /* This is now absolutely everything for the current frame,
                      * and it's safe to flush any outstanding data */
                     guac_socket_flush(client->socket);
+
+                    /* Notify any watchers of render_state that a frame is no longer in progress */
+                    guac_flag_set_and_lock(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_NOT_IN_PROGRESS);
+                    guac_flag_clear(&display->render_state, GUAC_DISPLAY_RENDER_STATE_FRAME_IN_PROGRESS);
+                    guac_flag_unlock(&display->render_state);
 
                     /* Exclude local, server-side frame processing latency from
                      * waiting period */
