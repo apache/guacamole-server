@@ -192,6 +192,7 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
     display->last_frame.frames = display->pending_frame.frames;
 
     display->pending_frame.frames = 0;
+    display->pending_frame_dirty_excluding_mouse = 0;
 
     /* Commit cursor hotspot */
     display->last_frame.cursor_hotspot_x = display->pending_frame.cursor_hotspot_x;
@@ -210,6 +211,17 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
         guac_client_foreach_user(client, LFR_guac_display_broadcast_cursor_state, display);
 
     }
+
+}
+
+void guac_display_end_mouse_frame(guac_display* display) {
+
+    guac_rwlock_acquire_read_lock(&display->pending_frame.lock);
+
+    if (!display->pending_frame_dirty_excluding_mouse)
+        guac_display_end_multiple_frames(display, 0);
+
+    guac_rwlock_release_lock(&display->pending_frame.lock);
 
 }
 

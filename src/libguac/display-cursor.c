@@ -43,6 +43,7 @@ void guac_display_set_cursor_hotspot(guac_display* display, int x, int y) {
 void guac_display_set_cursor(guac_display* display,
         guac_display_cursor_type cursor_type) {
 
+    /* Translate requested type into built-in cursor */
     const guac_display_builtin_cursor* cursor;
     switch (cursor_type) {
 
@@ -65,8 +66,11 @@ void guac_display_set_cursor(guac_display* display,
 
     }
 
+    /* Resize cursor to fit requested icon */
     guac_display_layer* cursor_layer = guac_display_cursor(display);
     guac_display_layer_resize(cursor_layer, cursor->width, cursor->height);
+
+    /* Copy over graphical content of cursor icon ... */
 
     guac_display_layer_raw_context* context = guac_display_layer_open_raw(cursor_layer);
     GUAC_ASSERT(!cursor_layer->pending_frame.buffer_is_external);
@@ -81,6 +85,11 @@ void guac_display_set_cursor(guac_display* display,
         dst_cursor_row += context->stride;
     }
 
+    /* ... and cursor hotspot */
+    guac_display_set_cursor_hotspot(display, cursor->hotspot_x, cursor->hotspot_y);
+
+    /* Update to cursor icon is now complete - notify display */
+
     context->dirty = (guac_rect) {
         .left   = 0,
         .top    = 0,
@@ -88,8 +97,8 @@ void guac_display_set_cursor(guac_display* display,
         .bottom = cursor->height
     };
 
-    guac_display_set_cursor_hotspot(display, cursor->hotspot_x, cursor->hotspot_y);
-
     guac_display_layer_close_raw(cursor_layer, context);
+
+    guac_display_end_mouse_frame(display);
 
 }

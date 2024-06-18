@@ -594,6 +594,19 @@ struct guac_display {
      */
     guac_display_state pending_frame;
 
+    /**
+     * Whether the pending frame has been modified in any way outside of
+     * changing the mouse cursor or moving the mouse. This is used to help
+     * inform whether a frame should be flushed to update connected clients
+     * with respect to mouse cursor changes, or whether those changes can be
+     * safely assumed to be part of a larger frame containing general graphical
+     * updates.
+     *
+     * IMPORTANT: The display-level pending_frame.lock MUST be acquired before
+     * modifying or reading this member.
+     */
+    int pending_frame_dirty_excluding_mouse;
+
     /* ---------------- WELL-KNOWN LAYERS / BUFFERS ---------------- */
 
     /**

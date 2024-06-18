@@ -303,7 +303,7 @@ void guac_display_notify_user_moved_mouse(guac_display* display, guac_user* user
     display->pending_frame.cursor_mask = mask;
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
-    guac_display_end_multiple_frames(display, 0);
+    guac_display_end_mouse_frame(display);
 
 }
 
