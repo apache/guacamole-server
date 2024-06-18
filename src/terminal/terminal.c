@@ -1860,11 +1860,17 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
     if (col >= length)
         return;
 
-    /* (char)10 behind cursor */
-    int current_char = characters[col].value;
+    /* Get buffer row and char behind cursor */
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
+    int cursor_char = buffer_row->characters[col].value;
 
     /* Position of the word behind cursor. 
-     * Default = col required to select a char if not a word and not blank. */
+     * Default = col/row required to select a char if not a word and not blank. */
+    int word_col_head = col;
+    int word_col_tail = col;
+    int word_row_head = row;
+    int word_row_tail = row;
+    int flag;
 
     /* The function used to calculate the word borders */
     bool (*is_part_of_word)(int) = NULL;
@@ -1877,28 +1883,90 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
     else if (guac_terminal_is_blank(current_char))
         is_part_of_word = guac_terminal_is_blank;
 
-    int word_head = col;
-    int word_tail = col;
-
     if (is_part_of_word != NULL) {
 
         /* Get word head*/
-        for (; word_head - 1 >= 0; word_head--) {
-            if (!is_part_of_word(characters[word_head - 1].value))
+        do {
+
+            /* Buffer row to get */
+            int current_row = word_row_head;
+            int current_col = word_col_head;
+
+            /* Bound of screen reached: get previous row */
+            if (word_col_head == 0)
+                current_row--;
+
+            /* Get current buffer row */
+            buffer_row = guac_terminal_buffer_get_row(terminal->buffer, current_row, 0);
+
+            /* If we are on the previous row */
+            if (current_row < word_row_head) {
+
+                /* Line not wrapped: stop, it's the word boundary */
+                if (!buffer_row->wrapped_row)
+                    break;
+
+                /* Go to last column of this row */
+                current_col = buffer_row->length;
+            }
+
+            /* Get char of the current row/column */
+            flag = buffer_row->characters[current_col-1].value;
+
+            /* Word boundary reached, stop */
+            if (!is_part_of_word(flag))
                 break;
-        }
+
+            /* Store new position on previous row */
+            if (current_row < word_row_head) {
+                word_row_head = current_row;
+                word_col_head = current_col;
+            }
+
+        } while (word_col_head >= 0 && word_col_head--);
 
         /* Get word tail */
-        for (; word_tail + 1 < terminal->display->width && word_tail + 1 < length; word_tail++) {
-            if (!is_part_of_word(characters[word_tail + 1].value))
-                break;
-        }
+        do {
 
+            /* Get current buffer row */
+            buffer_row = guac_terminal_buffer_get_row(terminal->buffer, word_row_tail, 0);
+
+            /* Bound of screen reached and row is wrapped: get next row */
+            if (word_col_tail == buffer_row->length - 1 && buffer_row->wrapped_row) {
+
+                /* Get next buffer row */
+                guac_terminal_buffer_row* next_buffer_row =
+                        guac_terminal_buffer_get_row(terminal->buffer, word_row_tail + 1, 0);
+
+                /* Get first char of the next row */
+                flag = next_buffer_row->characters[0].value;
+
+            }
+
+            /* Otherwise, get char of next column on current row */
+            else
+                flag = buffer_row->characters[word_col_tail+1].value;
+
+            /* Word boundary reached, stop */
+            if (!is_part_of_word(flag))
+                break;
+
+            /* Store new position on next row */
+            if (word_col_tail == buffer_row->length - 1 && buffer_row->wrapped_row) {
+                word_row_tail++;
+                word_col_tail = 0;
+            }
+
+            /* Or go to next column of current row */
+            else
+                word_col_tail++;
+
+        } while (word_col_tail <= buffer_row->length);
     }
 
     /* Select and add to clipboard the "word" */
-    guac_terminal_select_start(terminal, row, word_head, GUAC_TERMINAL_COLUMN_SIDE_LEFT);
-    guac_terminal_select_update(terminal, row, word_tail, GUAC_TERMINAL_COLUMN_SIDE_RIGHT);
+    guac_terminal_select_start(terminal, word_row_head, word_col_head, GUAC_TERMINAL_COLUMN_SIDE_LEFT);
+    guac_terminal_select_update(terminal, word_row_tail, word_col_tail, GUAC_TERMINAL_COLUMN_SIDE_RIGHT);
 
 }
 
