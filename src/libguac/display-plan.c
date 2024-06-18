@@ -167,13 +167,6 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
          * boundary of a cell */
         guac_rect_align(&dirty, GUAC_DISPLAY_CELL_SIZE_EXPONENT);
 
-        guac_rect last_frame_bounds = {
-            .left = 0,
-            .top = 0,
-            .right = current->last_frame.width,
-            .bottom = current->last_frame.height
-        };
-
         guac_rect pending_frame_bounds = {
             .left = 0,
             .top = 0,
@@ -181,8 +174,10 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
             .bottom = current->pending_frame.height
         };
 
-        /* Limit size of dirty rect by bounds of backing surfaces */
-        guac_rect_constrain(&dirty, &last_frame_bounds);
+        /* Limit size of dirty rect by bounds of backing surface for pending
+         * frame ONLY (bounds checks against the last frame are performed
+         * within the loop such that everything outside the bounds of the last
+         * frame is considered dirty) */
         guac_rect_constrain(&dirty, &pending_frame_bounds);
 
         const unsigned char* flushed_row = GUAC_DISPLAY_LAYER_STATE_CONST_BUFFER(current->last_frame, dirty);
@@ -196,11 +191,11 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
          * each cell to more accurately contain only what has actually changed
          * since last frame */ 
         current->pending_frame.dirty = (guac_rect) { 0 };
-        for (int y = dirty.top; y < dirty.bottom; y += GUAC_DISPLAY_CELL_SIZE) {
+        for (int corner_y = dirty.top; corner_y < dirty.bottom; corner_y += GUAC_DISPLAY_CELL_SIZE) {
 
             int height = GUAC_DISPLAY_CELL_SIZE;
-            if (y + height > dirty.bottom)
-                height = dirty.bottom - y;
+            if (corner_y + height > dirty.bottom)
+                height = dirty.bottom - corner_y;
 
             /* Iteration through the pending_frame_cells array and the image
              * buffer is a bit complex here, as the pending_frame_cells array
@@ -213,24 +208,63 @@ guac_display_plan* PFW_LFR_guac_display_plan_create(guac_display* display) {
 
                 /* At this point, we need to loop through the horizontal
                  * dimension, comparing the 64-pixel rows of image data in the
-                 * current line (y + y_off) that are in each applicable cell.
-                 * We jump forward by one cell for each comparison. */
+                 * current line (corner_y + y_off) that are in each applicable
+                 * cell. We jump forward by one cell for each comparison. */
+
+                int y = corner_y + y_off;
 
                 guac_display_layer_cell* current_cell = cell_row;
                 uint32_t* current_flushed = (uint32_t*) flushed_row;
                 uint32_t* current_buffer = (uint32_t*) buffer_row;
-                for (int x = dirty.left; x < dirty.right; x += GUAC_DISPLAY_CELL_SIZE) {
+                for (int corner_x = dirty.left; corner_x < dirty.right; corner_x += GUAC_DISPLAY_CELL_SIZE) {
 
                     int width = GUAC_DISPLAY_CELL_SIZE;
-                    if (x + width > dirty.right)
-                        width = dirty.right - x;
+                    if (corner_x + width > dirty.right)
+                        width = dirty.right - corner_x;
 
-                    /* Mark the relevant region of the cell as dirty if the
-                     * current 64-pixel line has changed in any way */
-                    size_t length, pos;
-                    if ((length = guac_display_memcmp(current_buffer, current_flushed, width, &pos)) != 0) {
-                        guac_display_plan_mark_dirty(current, current_cell, &op_count, x + pos, y + y_off, length);
+                    /* This SHOULD be impossible, as corner_x would need to
+                     * somehow be outside the bounds of the dirty rect, which
+                     * would have failed the loop condition earlier) */
+                    GUAC_ASSERT(width >= 0);
+
+                    /* Any line that is completely outside the bounds of the
+                     * previous frame is dirty (nothing to compare against) */
+                    if (y >= current->last_frame.height || corner_x >= current->last_frame.width) {
+                        guac_display_plan_mark_dirty(current, current_cell, &op_count, corner_x, y, width);
                         guac_rect_extend(&current->pending_frame.dirty, &current_cell->dirty);
+                    }
+
+                    /* All other regions must be processed further to determine
+                     * what portion is dirty */
+                    else {
+
+                        /* Only the pixels that are within the bounds of BOTH
+                         * the last_frame and pending_frame are directly
+                         * comparable. Others are inherently dirty by virtue of
+                         * being outside the bounds of last_frame */
+                        int comparable_width = width;
+                        if (corner_x + comparable_width > current->last_frame.width)
+                            comparable_width = current->last_frame.width - corner_x;
+
+                        /* It is impossible for this value to be negative
+                         * because of the last_frame bounds checks that occur
+                         * in the if block prior to this else block */
+                        GUAC_ASSERT(comparable_width >= 0);
+
+                        /* Any region outside the right edge of the previous frame is dirty */
+                        if (width > comparable_width) {
+                            guac_display_plan_mark_dirty(current, current_cell, &op_count, corner_x + comparable_width, y, width - comparable_width);
+                            guac_rect_extend(&current->pending_frame.dirty, &current_cell->dirty);
+                        }
+
+                        /* Mark the relevant region of the cell as dirty if the
+                         * current 64-pixel line has changed in any way */
+                        size_t length, pos;
+                        if ((length = guac_display_memcmp(current_buffer, current_flushed, comparable_width, &pos)) != 0) {
+                            guac_display_plan_mark_dirty(current, current_cell, &op_count, corner_x + pos, y, length);
+                            guac_rect_extend(&current->pending_frame.dirty, &current_cell->dirty);
+                        }
+
                     }
 
                     current_flushed += GUAC_DISPLAY_CELL_SIZE;
