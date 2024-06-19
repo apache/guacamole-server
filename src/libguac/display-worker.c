@@ -480,6 +480,18 @@ void* guac_display_worker_thread(void* data) {
                  * users */
                 else {
 
+                    /* Update the mouse cursor if it's been changed since the
+                     * last frame */
+                    guac_display_layer* cursor = display->cursor_buffer;
+                    if (!guac_rect_is_empty(&cursor->last_frame.dirty)) {
+                        guac_protocol_send_cursor(client->socket,
+                                display->last_frame.cursor_hotspot_x,
+                                display->last_frame.cursor_hotspot_y,
+                                cursor->layer, 0, 0,
+                                cursor->last_frame.width,
+                                cursor->last_frame.height);
+                    }
+
                     /* Use the amount of time that the client has been waiting
                      * for a frame vs. the amount of time that it took the
                      * client to process the most recently acknowledged frame
@@ -494,11 +506,7 @@ void* guac_display_worker_thread(void* data) {
                     /* Allow connected clients to move forward with rendering */
                     guac_client_end_multiple_frames(client, display->last_frame.frames);
 
-                    /* Commit any changed contents to client-side backing
-                     * buffer, while also determining whether any changes have
-                     * been made to the mouse cursor graphic. */
-                    int cursor_modified = 0;
-                    guac_display_layer* cursor = display->cursor_buffer;
+                    /* Commit any changed contents to client-side backing buffer */
                     guac_display_layer* current = display->last_frame.layers;
                     while (current != NULL) {
 
@@ -506,34 +514,13 @@ void* guac_display_worker_thread(void* data) {
                          * been modified since the last frame */
                         guac_rect* dirty = &current->last_frame.dirty;
                         if (!guac_rect_is_empty(dirty)) {
-
                             guac_protocol_send_copy(client->socket, current->layer,
                                     0, 0, current->last_frame.width, current->last_frame.height,
                                     GUAC_COMP_SRC, current->last_frame_buffer, 0, 0);
-
-                            /* Additionally track whether the cursor is among
-                             * the changed layers - we will later send a
-                             * "cursor" instruction to actually update the
-                             * remote cursor using the graphics from the cursor
-                             * layer */
-                            if (current == cursor)
-                                cursor_modified = 1;
-
                         }
 
                         current = current->last_frame.next;
 
-                    }
-
-                    /* Update the mouse cursor if it's been changed since the
-                     * last frame */
-                    if (cursor_modified) {
-                        guac_protocol_send_cursor(client->socket,
-                                display->last_frame.cursor_hotspot_x,
-                                display->last_frame.cursor_hotspot_y,
-                                cursor->layer, 0, 0,
-                                cursor->last_frame.width,
-                                cursor->last_frame.height);
                     }
 
                     /* This is now absolutely everything for the current frame,
