@@ -177,6 +177,14 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
             current->last_frame.touches = current->pending_frame.touches;
         }
 
+        /* Commit any hinting regarding scroll/copy optimization (NOTE: While
+         * this value is copied for consistency, it will already have taken
+         * effect in the context of the pending frame due to the scroll/copy
+         * optimization pass having occurred prior to the call to this
+         * function) */
+        current->last_frame.search_for_copies = current->pending_frame.search_for_copies;
+        current->pending_frame.search_for_copies = 0;
+
         /* Commit any change in lossless setting (no need to synchronize this
          * to the client - it affects only how last_frame is interpreted) */
         current->last_frame.lossless = current->pending_frame.lossless;

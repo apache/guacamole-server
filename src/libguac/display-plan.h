@@ -134,6 +134,7 @@ typedef enum guac_display_plan_operation_type {
 
     /**
      * Copy image data from the associated source rect to the destination rect.
+     * The source and destination layers are not necessarily the same.
      */
     GUAC_DISPLAY_PLAN_OPERATION_COPY,
 
@@ -154,6 +155,25 @@ typedef enum guac_display_plan_operation_type {
     GUAC_DISPLAY_PLAN_END_FRAME
 
 } guac_display_plan_operation_type;
+
+/**
+ * A reference to a rectangular region of image data within a layer of the
+ * remote Guacamole display.
+ */
+typedef struct guac_display_plan_layer_rect {
+
+    /**
+     * The rectangular region that should serve as source data for an
+     * operation.
+     */
+    guac_rect rect;
+
+    /**
+     * The layer that the source data is coming from.
+     */
+    const guac_layer* layer;
+
+} guac_display_plan_layer_rect;
 
 /**
  * Any one of several operations that may be contained in a guac_display_plan.
@@ -208,7 +228,7 @@ typedef struct guac_display_plan_operation {
          * The rectangle that should be copied to the destination rect. This
          * value applies only to GUAC_DISPLAY_PLAN_OPERATION_COPY operations.
          */
-        guac_rect rect;
+        guac_display_plan_layer_rect layer_rect;
 
     } src;
 
