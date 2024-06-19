@@ -88,11 +88,21 @@ struct guac_display_layer_cairo_context {
 
     /**
      * A rectangle covering the region of the guac_display_layer that has
-     * changed since the last frame. This rectangle must be manually updated to
-     * cover any additional changed regions before closing the
-     * guac_display_layer_cairo_context.
+     * changed since the last frame. This rectangle is initially empty and must
+     * be manually updated to cover any additional changed regions before
+     * closing the guac_display_layer_cairo_context.
      */
     guac_rect dirty;
+
+    /**
+     * The layer that should be searched for possible scroll/copy operations
+     * related to the changes being made via this guac_display_layer_cairo_context.
+     * This value is initially the layer being drawn to and must be updated
+     * before closing the context if a different source layer should be
+     * considered for scroll/copy optimizations. This value may be set to NULL
+     * to hint that no scroll/copy optimization should be performed.
+     */
+    guac_display_layer* hint_from;
 
 };
 
@@ -125,11 +135,21 @@ struct guac_display_layer_raw_context {
 
     /**
      * A rectangle covering the region of the guac_display_layer that has
-     * changed since the last frame. This rectangle must be manually updated to
-     * cover any additional changed regions before closing the
-     * guac_display_layer_raw_context.
+     * changed since the last frame. This rectangle is initially empty and must
+     * be manually updated to cover any additional changed regions before
+     * closing the guac_display_layer_raw_context.
      */
     guac_rect dirty;
+
+    /**
+     * The layer that should be searched for possible scroll/copy operations
+     * related to the changes being made via this guac_display_layer_raw_context.
+     * This value is initially the layer being drawn to and must be updated
+     * before closing the context if a different source layer should be
+     * considered for scroll/copy optimizations. This value may be set to NULL
+     * to hint that no scroll/copy optimization should be performed.
+     */
+    guac_display_layer* hint_from;
 
 };
 
