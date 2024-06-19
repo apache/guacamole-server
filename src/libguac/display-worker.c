@@ -35,26 +35,27 @@
 #include <pthread.h>
 
 /**
- * Sends the contents of the given dirty rectangle from the given layer using
- * lossless PNG compression. The resulting instructions will be sent over the
- * client-wide broadcast socket associated with the given layer. The graphical
- * contents sent will be pulled from the layer's last_frame buffer. If sending
- * the contents of a pending frame, that pending frame must have been copied
- * over to the last_frame buffer before calling this function.
+ * Returns a new Cairo surface representing the contents of the given dirty
+ * rectangle from the given layer. The returned surface must eventually be
+ * freed with a call to cairo_surface_destroy(). The graphical contents will be
+ * referenced from the layer's last_frame buffer. If sending the contents of a
+ * pending frame, that pending frame must have been copied over to the
+ * last_frame buffer before calling this function.
  *
  * @param display_layer
- *     The layer whose data should be sent to connected users.
+ *     The layer whose data should be referenced by the returned Cairo surface.
  *
  * @param dirty
- *     The region of the layer that should be sent.
+ *     The region of the layer that should be referenced by the returned Cairo
+ *     surface.
+ *
+ * @return
+ *     A new Cairo surface that points to the given rectangle of image data
+ *     from the last_frame buffer of the given layer. This surface must
+ *     eventually be freed with a call to cairo_surface_destroy().
  */
-static void LFR_guac_display_layer_flush_to_png(guac_display_layer* display_layer,
+static cairo_surface_t* LFR_guac_display_layer_cairo_rect(guac_display_layer* display_layer,
         guac_rect* dirty) {
-
-    guac_display* display = display_layer->display;
-    guac_client* client = display->client;
-    guac_socket* socket = client->socket;
-    const guac_layer* layer = display_layer->layer;
 
     /* Get Cairo surface covering dirty rect */
     unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(display_layer->last_frame, *dirty);
@@ -67,28 +68,52 @@ static void LFR_guac_display_layer_flush_to_png(guac_display_layer* display_laye
                 guac_rect_height(dirty), display_layer->last_frame.buffer_stride);
 
     /* Otherwise ARGB32 is needed, and the destination must be cleared */
-    else {
-
+    else
         rect = cairo_image_surface_create_for_data(buffer,
                 CAIRO_FORMAT_ARGB32, guac_rect_width(dirty),
                 guac_rect_height(dirty), display_layer->last_frame.buffer_stride);
 
-        /* Clear destination rect first */
+    return rect;
+
+}
+
+/**
+ * Sends instructions over the Guacamole connection to clear the given
+ * rectangle of the given layer if that layer is non-opaque. This is necessary
+ * prior to sending image data to layers with alpha transparency, as image data
+ * from multiple updates will otherwise be composited together.
+ *
+ * @param display_layer
+ *     The layer that should possibly be cleared in preparation for a future
+ *     drawing operation.
+ *
+ * @param dirty
+ *     The rectangular region of the drawing operation.
+ */
+static void guac_display_layer_clear_non_opaque(guac_display_layer* display_layer,
+        guac_rect* dirty) {
+
+    guac_display* display = display_layer->display;
+    const guac_layer* layer = display_layer->layer;
+
+    guac_client* client = display->client;
+    guac_socket* socket = client->socket;
+
+    /* Clear destination region only if necessary due to the relevant layer
+     * being non-opaque */
+    if (!display_layer->opaque) {
+
         pthread_mutex_lock(&display->op_path_lock);
-        guac_protocol_send_rect(socket, layer,
-                dirty->left, dirty->top,
+
+        guac_protocol_send_rect(socket, layer, dirty->left, dirty->top,
                 guac_rect_width(dirty), guac_rect_height(dirty));
+
         guac_protocol_send_cfill(socket, GUAC_COMP_ROUT, layer,
                 0x00, 0x00, 0x00, 0xFF);
+
         pthread_mutex_unlock(&display->op_path_lock);
 
     }
-
-    /* Send PNG for rect */
-    guac_client_stream_png(client, socket, GUAC_COMP_OVER,
-            layer, dirty->left, dirty->top, rect);
-
-    cairo_surface_destroy(rect);
 
 }
 
@@ -119,108 +144,6 @@ static int guac_display_suggest_quality(guac_client* client) {
         return 30;
 
     return quality;
-
-}
-
-/**
- * Sends the contents of the given dirty rectangle from the given layer using
- * lossy JPEG compression. The resulting instructions will be sent over the
- * client-wide broadcast socket associated with the given layer. The graphical
- * contents sent will be pulled from the layer's last_frame buffer. If sending
- * the contents of a pending frame, that pending frame must have been copied
- * over to the last_frame buffer before calling this function.
- *
- * @param layer
- *     The layer whose data should be sent to connected users.
- *
- * @param dirty
- *     The region of the layer that should be sent.
- */
-static void LFR_guac_display_layer_flush_to_jpeg(guac_display_layer* display_layer,
-        guac_rect* dirty) {
-
-    guac_display* display = display_layer->display;
-    guac_client* client = display->client;
-    guac_socket* socket = client->socket;
-    const guac_layer* layer = display_layer->layer;
-
-    guac_rect max = {
-        .left   = 0,
-        .top    = 0,
-        .right  = display_layer->last_frame.width,
-        .bottom = display_layer->last_frame.height
-    };
-
-    /* Expand the dirty rect size to fit in a grid with cells equal to the
-     * minimum JPEG block size */
-    guac_rect_align(dirty, GUAC_SURFACE_JPEG_BLOCK_SIZE);
-    guac_rect_constrain(dirty, &max);
-
-    /* Get Cairo surface covering dirty rect */
-    unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(display_layer->last_frame, *dirty);
-    cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
-            CAIRO_FORMAT_RGB24, guac_rect_width(dirty),
-            guac_rect_height(dirty), display_layer->last_frame.buffer_stride);
-
-    /* Send JPEG for rect */
-    guac_client_stream_jpeg(client, socket, GUAC_COMP_OVER, layer,
-            dirty->left, dirty->top, rect,
-            guac_display_suggest_quality(client));
-
-    cairo_surface_destroy(rect);
-
-}
-
-/**
- * Sends the contents of the given dirty rectangle from the given layer using
- * WebP compression. Whether that WebP compression is lossless depends on the
- * lossless setting of the layer's last frame. The resulting instructions will
- * be sent over the client-wide broadcast socket associated with the given
- * layer. The graphical contents sent will be pulled from the layer's
- * last_frame buffer. If sending the contents of a pending frame, that pending
- * frame must have been copied over to the last_frame buffer before calling
- * this function.
- *
- * @param layer
- *     The layer whose data should be sent to connected users.
- *
- * @param dirty
- *     The region of the layer that should be sent.
- */
-static void LFR_guac_display_layer_flush_to_webp(guac_display_layer* display_layer,
-        guac_rect* dirty) {
-
-    guac_display* display = display_layer->display;
-    guac_client* client = display->client;
-    guac_socket* socket = client->socket;
-    const guac_layer* layer = display_layer->layer;
-
-    guac_rect max = {
-        .left   = 0,
-        .top    = 0,
-        .right  = display_layer->last_frame.width,
-        .bottom = display_layer->last_frame.height
-    };
-
-    /* Expand the dirty rect size to fit in a grid with cells equal to the
-     * minimum WebP block size */
-    guac_rect_align(dirty, GUAC_SURFACE_WEBP_BLOCK_SIZE);
-    guac_rect_constrain(dirty, &max);
-
-    /* Get Cairo surface covering dirty rect */
-    unsigned char* buffer = GUAC_DISPLAY_LAYER_STATE_MUTABLE_BUFFER(display_layer->last_frame, *dirty);
-    cairo_surface_t* rect = cairo_image_surface_create_for_data(buffer,
-            display_layer->opaque ? CAIRO_FORMAT_RGB24 : CAIRO_FORMAT_ARGB32,
-            guac_rect_width(dirty), guac_rect_height(dirty),
-            display_layer->last_frame.buffer_stride);
-
-    /* Send WebP for rect */
-    guac_client_stream_webp(client, socket, GUAC_COMP_OVER, layer,
-            dirty->left, dirty->top, rect,
-            guac_display_suggest_quality(client),
-            display_layer->last_frame.lossless ? 1 : 0);
-
-    cairo_surface_destroy(rect);
 
 }
 
@@ -372,6 +295,7 @@ void* guac_display_worker_thread(void* data) {
 
     guac_display* display = (guac_display*) data;
     guac_client* client = display->client;
+    guac_socket* socket = client->socket;
 
     guac_display_plan_operation op;
     while (guac_fifo_dequeue_and_lock(&display->ops, &op)) {
@@ -416,18 +340,33 @@ void* guac_display_worker_thread(void* data) {
                  * the size of the original image. Compositing via Guacamole
                  * protocol instructions can reassemble those stages. */
 
+                cairo_surface_t* rect = LFR_guac_display_layer_cairo_rect(display_layer, dirty);
+                const guac_layer* layer = display_layer->layer;
+
+                /* Clear relevant rect of destination layer if necessary to
+                 * ensure fresh data is not drawn on top of old data for layers
+                 * with alpha transparency */
+                guac_display_layer_clear_non_opaque(display_layer, dirty);
+
                 /* Prefer WebP when reasonable */
                 if (LFR_guac_display_layer_should_use_webp(display_layer, dirty, framerate))
-                    LFR_guac_display_layer_flush_to_webp(display_layer, dirty);
+                    guac_client_stream_webp(client, socket, GUAC_COMP_OVER, layer,
+                            dirty->left, dirty->top, rect,
+                            guac_display_suggest_quality(client),
+                            display_layer->last_frame.lossless ? 1 : 0);
 
                 /* If not WebP, JPEG is the next best (lossy) choice */
                 else if (display_layer->opaque && LFR_guac_display_layer_should_use_jpeg(display_layer, dirty, framerate))
-                    LFR_guac_display_layer_flush_to_jpeg(display_layer, dirty);
+                    guac_client_stream_jpeg(client, socket, GUAC_COMP_OVER, layer,
+                            dirty->left, dirty->top, rect,
+                            guac_display_suggest_quality(client));
 
                 /* Use PNG if no lossy formats are appropriate */
                 else
-                    LFR_guac_display_layer_flush_to_png(display_layer, dirty);
+                    guac_client_stream_png(client, socket, GUAC_COMP_OVER,
+                            layer, dirty->left, dirty->top, rect);
 
+                cairo_surface_destroy(rect);
                 break;
 
             case GUAC_DISPLAY_PLAN_OPERATION_COPY:
