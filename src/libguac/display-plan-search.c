@@ -374,13 +374,15 @@ static int guac_image_cmp(const unsigned char* restrict data_a, int width_a, int
 static void PFR_LFR_guac_display_plan_find_copies(guac_display_plan* plan,
         int x, int y, uint64_t hash, void* closure) {
 
-    guac_display_layer* layer = (guac_display_layer*) closure;
+    guac_display_layer* copy_from_layer = (guac_display_layer*) closure;
 
     /* Transform the matching operation into a copy of the current region if
      * any operations match, banning the underlying hash from further checks if
      * a collision occurs */
     guac_display_plan_operation* op = guac_display_plan_remove_indexed_op(plan, hash);
-    if (op != NULL && op->layer == layer) {
+    if (op != NULL) {
+
+        guac_display_layer* copy_to_layer = op->layer;
 
         guac_rect src_rect;
         guac_rect_init(&src_rect, x, y, GUAC_DISPLAY_CELL_SIZE, GUAC_DISPLAY_CELL_SIZE);
@@ -388,14 +390,15 @@ static void PFR_LFR_guac_display_plan_find_copies(guac_display_plan* plan,
         guac_rect dst_rect;
         guac_display_cell_init_rect(&dst_rect, op->dest.left, op->dest.top);
 
-        const unsigned char* copy_from = GUAC_DISPLAY_LAYER_STATE_CONST_BUFFER(layer->last_frame, src_rect);
-        const unsigned char* copy_to = GUAC_DISPLAY_LAYER_STATE_CONST_BUFFER(layer->pending_frame, dst_rect);
+        const unsigned char* copy_from = GUAC_DISPLAY_LAYER_STATE_CONST_BUFFER(copy_from_layer->last_frame, src_rect);
+        const unsigned char* copy_to = GUAC_DISPLAY_LAYER_STATE_CONST_BUFFER(copy_to_layer->pending_frame, dst_rect);
 
         /* Only transform into a copy if the image data is truly identical (not a collision) */
-        if (!guac_image_cmp(copy_from, GUAC_DISPLAY_CELL_SIZE, GUAC_DISPLAY_CELL_SIZE, layer->last_frame.buffer_stride,
-                copy_to, GUAC_DISPLAY_CELL_SIZE, GUAC_DISPLAY_CELL_SIZE, layer->pending_frame.buffer_stride)) {
+        if (!guac_image_cmp(copy_from, GUAC_DISPLAY_CELL_SIZE, GUAC_DISPLAY_CELL_SIZE, copy_from_layer->last_frame.buffer_stride,
+                copy_to, GUAC_DISPLAY_CELL_SIZE, GUAC_DISPLAY_CELL_SIZE, copy_to_layer->pending_frame.buffer_stride)) {
             op->type = GUAC_DISPLAY_PLAN_OPERATION_COPY;
-            op->src.rect = src_rect;
+            op->src.layer_rect.layer = copy_from_layer->last_frame_buffer;
+            op->src.layer_rect.rect = src_rect;
             op->dest = dst_rect;
         }
 
@@ -409,17 +412,22 @@ void PFR_LFR_guac_display_plan_rewrite_as_copies(guac_display_plan* plan) {
     guac_display_layer* current = display->last_frame.layers;
     while (current != NULL) {
 
-        guac_rect search_region;
-        guac_rect_init(&search_region, 0, 0, current->last_frame.width, current->last_frame.height);
+        /* Search only the layers that are specifically noted as possible
+         * sources for copies */
+        if (current->pending_frame.search_for_copies) {
 
-        /* Avoid excessive computation by restricting the search region to only
-         * the area that was changed in the upcoming frame (in the case of
-         * scrolling, absolutely all data relevant to the scroll will have been
-         * modified) */
-        guac_rect_constrain(&search_region, &current->pending_frame.dirty);
+            guac_rect search_region;
+            guac_rect_init(&search_region, 0, 0, current->last_frame.width, current->last_frame.height);
 
-        guac_hash_foreach_image_rect(plan, &current->last_frame, &search_region,
-                PFR_LFR_guac_display_plan_find_copies, current);
+            /* Avoid excessive computation by restricting the search region to only
+             * the area that was changed in the upcoming frame (in the case of
+             * scrolling, absolutely all data relevant to the scroll will have been
+             * modified) */
+            guac_rect_constrain(&search_region, &current->pending_frame.dirty);
+
+            guac_hash_foreach_image_rect(plan, &current->last_frame, &search_region,
+                    PFR_LFR_guac_display_plan_find_copies, current);
+        }
 
         current = current->last_frame.next;
 

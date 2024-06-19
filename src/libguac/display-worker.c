@@ -370,8 +370,9 @@ void* guac_display_worker_thread(void* data) {
                 break;
 
             case GUAC_DISPLAY_PLAN_OPERATION_COPY:
-                guac_protocol_send_copy(client->socket, display_layer->last_frame_buffer,
-                        op.src.rect.left, op.src.rect.top, guac_rect_width(&op.src.rect), guac_rect_height(&op.src.rect),
+                guac_protocol_send_copy(client->socket, op.src.layer_rect.layer,
+                        op.src.layer_rect.rect.left, op.src.layer_rect.rect.top,
+                        guac_rect_width(&op.src.layer_rect.rect), guac_rect_height(&op.src.layer_rect.rect),
                         GUAC_COMP_OVER, display_layer->layer, op.dest.left, op.dest.top);
                 break;
 

@@ -125,14 +125,16 @@ static int guac_display_plan_should_combine(const guac_display_plan_operation* o
         switch (op_a->type) {
 
             /* Copy operations can be combined if they are perfectly adjacent
-             * (exactly share an edge) and copy in the same direction */
+             * (exactly share an edge) and copy from the same source layer in
+             * the same direction */
             case GUAC_DISPLAY_PLAN_OPERATION_COPY:
-                if (guac_display_plan_has_common_edge(op_a, op_b)) {
+                if (op_a->src.layer_rect.layer == op_b->src.layer_rect.layer
+                        && guac_display_plan_has_common_edge(op_a, op_b)) {
 
-                    int delta_xa = op_a->dest.left - op_a->src.rect.left;
-                    int delta_ya = op_a->dest.top  - op_a->src.rect.top;
-                    int delta_xb = op_b->dest.left - op_b->src.rect.left;
-                    int delta_yb = op_b->dest.top  - op_b->src.rect.top;
+                    int delta_xa = op_a->dest.left - op_a->src.layer_rect.rect.left;
+                    int delta_ya = op_a->dest.top  - op_a->src.layer_rect.rect.top;
+                    int delta_xb = op_b->dest.left - op_b->src.layer_rect.rect.left;
+                    int delta_yb = op_b->dest.top  - op_b->src.layer_rect.rect.top;
 
                     return delta_xa == delta_xb
                         && delta_ya == delta_yb;
@@ -221,7 +223,7 @@ static int guac_display_plan_combine_if_improved(guac_display_plan_operation* op
         /* When combining two copy operations, additionally combine their
          * source rects (NOT just the destination rects) */
         else if (op_a->type == GUAC_DISPLAY_PLAN_OPERATION_COPY)
-                guac_rect_extend(&op_a->src.rect, &op_b->src.rect);
+            guac_rect_extend(&op_a->src.layer_rect.rect, &op_b->src.layer_rect.rect);
 
         op_a->dirty_size += op_b->dirty_size;
 

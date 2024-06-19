@@ -201,6 +201,7 @@ guac_display_layer_raw_context* guac_display_layer_open_raw(guac_display_layer* 
         .buffer = layer->pending_frame.buffer,
         .stride = layer->pending_frame.buffer_stride,
         .dirty = { 0 },
+        .hint_from = layer,
         .bounds = {
             .left   = 0,
             .top    = 0,
@@ -220,6 +221,10 @@ void guac_display_layer_close_raw(guac_display_layer* layer, guac_display_layer_
     guac_rect_extend(&layer->pending_frame.dirty, &context->dirty);
     PFW_guac_display_layer_touch(layer);
 
+    /* Apply any hinting regarding scroll/copy optimization */
+    if (context->hint_from != NULL)
+        context->hint_from->pending_frame.search_for_copies = 1;
+
     guac_rwlock_release_lock(&display->pending_frame.lock);
 
 }
@@ -232,6 +237,7 @@ guac_display_layer_cairo_context* guac_display_layer_open_cairo(guac_display_lay
     guac_display_layer_cairo_context* context = &(layer->pending_frame_cairo_context);
 
     context->dirty = (guac_rect) { 0 };
+    context->hint_from = layer;
     context->bounds = (guac_rect) {
         .left   = 0,
         .top    = 0,
@@ -262,6 +268,10 @@ void guac_display_layer_close_cairo(guac_display_layer* layer, guac_display_laye
 
     guac_rect_extend(&layer->pending_frame.dirty, &context->dirty);
     PFW_guac_display_layer_touch(layer);
+
+    /* Apply any hinting regarding scroll/copy optimization */
+    if (context->hint_from != NULL)
+        context->hint_from->pending_frame.search_for_copies = 1;
 
     guac_rwlock_release_lock(&display->pending_frame.lock);
 

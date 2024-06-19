@@ -355,6 +355,12 @@ typedef struct guac_display_layer_state {
      */
     guac_rect dirty;
 
+    /**
+     * Whether this layer should be searched for possible scroll/copy
+     * optimizations.
+     */
+    int search_for_copies;
+
     /* ---------------- LAYER LIST POINTERS ---------------- */
 
     /**
