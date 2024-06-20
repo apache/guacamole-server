@@ -583,14 +583,8 @@ static int __guac_common_surface_should_use_webp(guac_common_surface* surface,
     if (!guac_client_supports_webp(surface->client))
         return 0;
 
-    /* Calculate the average framerate for the given rect */
-    int framerate = __guac_common_surface_calculate_framerate(surface, rect);
-
-    /* WebP is preferred if:
-     * - frame rate is high enough
-     * - PNG is not more optimal based on image contents */
-    return framerate >= GUAC_COMMON_SURFACE_JPEG_FRAMERATE
-        && __guac_common_surface_png_optimality(surface, rect) < 0;
+    /* Prefer always WebP */
+    return 1;
 
 }
 
