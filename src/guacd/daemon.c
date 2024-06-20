@@ -17,6 +17,12 @@
  * under the License.
  */
 
+/**
+ * This is required for pthread_setattr_default_np() to be
+ * available and function correctly.
+ */
+#define _GNU_SOURCE 1
+
 #include "config.h"
 
 #include "conf.h"
@@ -37,6 +43,7 @@
 #include <libgen.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -319,6 +326,12 @@ int main(int argc, char* argv[]) {
 
     /* General */
     int retval;
+
+    /* Set default stack size of 8MB */
+    pthread_attr_t default_pthread_attr;
+    pthread_attr_init(&default_pthread_attr);
+    pthread_attr_setstacksize(&default_pthread_attr, GUACD_THREAD_STACK_SIZE);
+    pthread_setattr_default_np(&default_pthread_attr);
 
     /* Load configuration */
     guacd_config* config = guacd_conf_load();
