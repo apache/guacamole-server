@@ -371,17 +371,31 @@ void guac_terminal_select_end(guac_terminal* terminal) {
     /* Otherwise, copy multiple rows */
     else {
 
+        /* Get last char of the row */
+        guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, start_row, 0);
+
         /* Store first row */
         guac_terminal_clipboard_append_row(terminal, start_row, start_col, -1);
 
         /* Store all middle rows */
         for (int row = start_row + 1; row < end_row; row++) {
-            guac_common_clipboard_append(terminal->clipboard, "\n", 1);
+
+            /* Add a new line only if the line was not wrapped */
+            if (buffer_row->wrapped_row == false)
+                guac_common_clipboard_append(terminal->clipboard, "\n", 1);
+
+            /* Store middle row */
             guac_terminal_clipboard_append_row(terminal, row, 0, -1);
+
+            /* Update to last char of current row */
+            buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
         }
 
+        /* Add a new line only if the line was not wrapped */
+        if (buffer_row->wrapped_row == false)
+            guac_common_clipboard_append(terminal->clipboard, "\n", 1);
+
         /* Store last row */
-        guac_common_clipboard_append(terminal->clipboard, "\n", 1);
         guac_terminal_clipboard_append_row(terminal, end_row, 0, end_col);
 
     }
