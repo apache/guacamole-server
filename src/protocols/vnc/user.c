@@ -92,7 +92,7 @@ int guac_vnc_user_join_handler(guac_user* user, int argc, char** argv) {
 #endif
 
         /* If user is owner, set size handler. */
-        if (user->owner)
+        if (user->owner && !settings->disable_display_resize)
             user->size_handler = guac_vnc_user_size_handler;
 
     }

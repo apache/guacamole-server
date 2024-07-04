@@ -510,7 +510,8 @@ void* guac_vnc_client_thread(void* data) {
     }
 
     /* Update the display with the owner's screen size. */
-    guac_client_for_owner(client, guac_vnc_display_set_owner_size, rfb_client);
+    if (!settings->disable_display_resize)
+        guac_client_for_owner(client, guac_vnc_display_set_owner_size, rfb_client);
 
     guac_socket_flush(client->socket);
 
