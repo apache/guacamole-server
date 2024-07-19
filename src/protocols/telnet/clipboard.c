@@ -38,21 +38,37 @@ int guac_telnet_clipboard_handler(guac_user* user, guac_stream* stream,
     stream->blob_handler = guac_telnet_clipboard_blob_handler;
     stream->end_handler = guac_telnet_clipboard_end_handler;
 
+    /* Report clipboard within recording */
+    if (telnet_client->recording != NULL)
+        guac_recording_report_clipboard(telnet_client->recording, stream, mimetype);
+
     return 0;
 }
 
 int guac_telnet_clipboard_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
 
-    /* Append new data */
     guac_client* client = user->client;
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+
+    /* Report clipboard blob within recording */
+    if (telnet_client->recording != NULL)
+        guac_recording_report_clipboard_blob(telnet_client->recording, stream, data, length);
+
+    /* Append new data */
     guac_terminal_clipboard_append(telnet_client->term, data, length);
 
     return 0;
 }
 
 int guac_telnet_clipboard_end_handler(guac_user* user, guac_stream* stream) {
+
+    guac_client* client = user->client;
+    guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
+
+    /* Report clipboard stream end within recording */
+    if (telnet_client->recording != NULL)
+        guac_recording_report_clipboard_end(telnet_client->recording, stream);
 
     /* Nothing to do - clipboard is implemented within client */
 

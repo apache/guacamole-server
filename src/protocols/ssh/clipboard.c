@@ -38,21 +38,36 @@ int guac_ssh_clipboard_handler(guac_user* user, guac_stream* stream,
     stream->blob_handler = guac_ssh_clipboard_blob_handler;
     stream->end_handler = guac_ssh_clipboard_end_handler;
 
+    /* Report clipboard within recording */
+    if (ssh_client->recording != NULL)
+        guac_recording_report_clipboard(ssh_client->recording, stream, mimetype);
+
     return 0;
 }
 
 int guac_ssh_clipboard_blob_handler(guac_user* user, guac_stream* stream,
         void* data, int length) {
-
-    /* Append new data */
     guac_client* client = user->client;
     guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
+
+    /* Report clipboard blob within recording */
+    if (ssh_client->recording != NULL)
+        guac_recording_report_clipboard_blob(ssh_client->recording, stream, data, length);
+
+    /* Append new data */
     guac_terminal_clipboard_append(ssh_client->term, data, length);
 
     return 0;
 }
 
 int guac_ssh_clipboard_end_handler(guac_user* user, guac_stream* stream) {
+
+    guac_client* client = user->client;
+    guac_ssh_client* ssh_client = (guac_ssh_client*) client->data;
+
+    /* Report clipboard stream end within recording */
+    if (ssh_client->recording != NULL)
+        guac_recording_report_clipboard_end(ssh_client->recording, stream);
 
     /* Nothing to do - clipboard is implemented within client */
 

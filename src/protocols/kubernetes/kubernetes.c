@@ -238,7 +238,8 @@ void* guac_kubernetes_client_thread(void* data) {
                 !settings->recording_exclude_mouse,
                 0, /* Touch events not supported */
                 settings->recording_include_keys,
-                settings->recording_write_existing);
+                settings->recording_write_existing,
+                settings->recording_include_clipboard);
     }
 
     /* Create terminal options with required parameters */
