@@ -39,6 +39,10 @@ int guac_kubernetes_clipboard_handler(guac_user* user, guac_stream* stream,
     stream->blob_handler = guac_kubernetes_clipboard_blob_handler;
     stream->end_handler = guac_kubernetes_clipboard_end_handler;
 
+    /* Report clipboard within recording */
+    if (kubernetes_client->recording != NULL)
+        guac_recording_report_clipboard(kubernetes_client->recording, stream, mimetype);
+
     return 0;
 }
 
@@ -49,6 +53,10 @@ int guac_kubernetes_clipboard_blob_handler(guac_user* user,
     guac_kubernetes_client* kubernetes_client =
         (guac_kubernetes_client*) client->data;
 
+    /* Report clipboard blob within recording */
+    if (kubernetes_client->recording != NULL)
+        guac_recording_report_clipboard_blob(kubernetes_client->recording, stream, data, length);
+
     /* Append new data */
     guac_terminal_clipboard_append(kubernetes_client->term, data, length);
 
@@ -57,6 +65,14 @@ int guac_kubernetes_clipboard_blob_handler(guac_user* user,
 
 int guac_kubernetes_clipboard_end_handler(guac_user* user,
         guac_stream* stream) {
+
+    guac_client* client = user->client;
+    guac_kubernetes_client* kubernetes_client =
+        (guac_kubernetes_client*) client->data;
+
+    /* Report clipboard blob within recording */
+    if (kubernetes_client->recording != NULL)
+        guac_recording_report_clipboard_end(kubernetes_client->recording, stream);
 
     /* Nothing to do - clipboard is implemented within client */
 

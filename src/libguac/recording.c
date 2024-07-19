@@ -42,7 +42,7 @@
 guac_recording* guac_recording_create(guac_client* client,
         const char* path, const char* name, int create_path,
         int include_output, int include_mouse, int include_touch,
-        int include_keys, int allow_write_existing) {
+        int include_keys, int allow_write_existing, int include_clipboard) {
 
     char filename[GUAC_COMMON_RECORDING_MAX_NAME_LENGTH];
 
@@ -76,6 +76,7 @@ guac_recording* guac_recording_create(guac_client* client,
     recording->include_mouse = include_mouse;
     recording->include_touch = include_touch;
     recording->include_keys = include_keys;
+    recording->include_clipboard = include_clipboard;
 
     /* Replace client socket with wrapped recording socket only if including
      * output within the recording */
@@ -133,3 +134,20 @@ void guac_recording_report_key(guac_recording* recording,
 
 }
 
+void guac_recording_report_clipboard(guac_recording* recording, guac_stream* stream, char* mimetype) {
+    /* Report clipboard only if recording should contain it */
+    if (recording->include_clipboard)
+        guac_protocol_send_clipboard(recording->socket, stream, mimetype);
+}
+
+void guac_recording_report_clipboard_blob(guac_recording* recording, guac_stream* stream, void* data, int length) {
+    /* Report clipboard only if recording should contain it */
+    if (recording->include_clipboard)
+        guac_protocol_send_blob(recording->socket, stream, data, length);
+}
+
+void guac_recording_report_clipboard_end(guac_recording* recording, guac_stream* stream) {
+    /* Report clipboard only if recording should contain it */
+    if (recording->include_clipboard)
+        guac_protocol_send_end(recording->socket, stream);
+}
