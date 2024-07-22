@@ -29,6 +29,7 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/gdi/gdi.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <winpr/crt.h>
 
 BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
@@ -41,7 +42,8 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
             rdp_client->display, pointer->width, pointer->height);
 
     /* Allocate data for image */
-    unsigned char* data = _aligned_malloc(pointer->width * pointer->height * 4, 16);
+    unsigned char* data = _aligned_malloc(guac_mem_ckd_mul_or_die(pointer->width, 
+            pointer->height, 4), 16);
 
     cairo_surface_t* surface;
 
@@ -122,4 +124,3 @@ BOOL guac_rdp_pointer_set_default(rdpContext* context) {
 
     return TRUE;
 }
-
