@@ -298,7 +298,7 @@ static void guac_terminal_clipboard_append_row(guac_terminal* terminal,
         end = buffer_row->length - 1;
 
     /* Get position of last not null char */
-    for (eol = buffer_row->length; eol > start; eol--) {
+    for (eol = buffer_row->length - 1; eol > start; eol--) {
 
         if (buffer_row->characters[eol].value != 0)
             break;
