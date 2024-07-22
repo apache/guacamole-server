@@ -840,6 +840,32 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
 
                 break;
 
+            /* S: Scroll Up by amount */
+            case 'S':
+
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Scroll up */
+                guac_terminal_scroll_up(term, term->scroll_start,
+                        term->scroll_end, amount);
+
+                break;
+
+            /* T: Scroll Down by amount */
+            case 'T':
+
+                /* Get move amount */
+                amount = argv[0];
+                if (amount == 0) amount = 1;
+
+                /* Scroll Down */
+                guac_terminal_scroll_down(term, term->scroll_start,
+                        term->scroll_end, amount);
+
+                break;
+
             /* X: Erase characters (no scroll) */
             case 'X':
 
