@@ -111,6 +111,19 @@
  */
 #define GUAC_TERMINAL_PIPE_AUTOFLUSH 2
 
+/*
+ * Sequence to send to the client at the start of pasted clipboard data
+ * when in XTerm bracketed paste mode.
+ */
+#define GUAC_TERMINAL_BRACKETED_PASTE_START "\x1B[200~"
+
+/*
+ * Sequence to send to the client at the end of pasted clipboard data
+ * when in XTerm bracketed paste mode.
+ */
+#define GUAC_TERMINAL_BRACKETED_PASTE_STOP "\x1B[201~"
+
+
 /**
  * Represents a terminal emulator which uses a given Guacamole client to
  * render itself.
@@ -541,6 +554,22 @@ int guac_terminal_send_data(guac_terminal* term, const char* data, int length);
  *     the size of the data given unless data is intentionally dropped.
  */
 int guac_terminal_send_string(guac_terminal* term, const char* data);
+
+/**
+ * Sends the terminal clipboard contents after sanitisation. If terminal input
+ * is currently coming from a stream due to a prior call to
+ * guac_terminal_send_stream(), any input which would normally result from
+ * invoking this function is dropped.
+ *
+ * @param term
+ *     The terminal which should receive the given data on STDIN.
+ *
+ * @return
+ *     The number of bytes written to STDIN, or a negative value if an error
+ *     occurs preventing the data from being written. This should always be
+ *     the size of the data given unless data is intentionally dropped.
+ */
+int guac_terminal_send_clipboard(guac_terminal* term);
 
 /**
  * Writes the given buffer to the given terminal's STDOUT. All requested bytes

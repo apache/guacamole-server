@@ -423,6 +423,11 @@ struct guac_terminal {
     bool automatic_carriage_return;
 
     /**
+     * Whether the current application supports bracketed paste mode.
+     */
+    bool bracketed_paste_mode;
+
+    /**
      * Whether insert mode is enabled (DECIM).
      */
     bool insert_mode;
