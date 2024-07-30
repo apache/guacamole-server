@@ -1790,8 +1790,8 @@ int guac_terminal_send_key(guac_terminal* term, int keysym, int pressed) {
 
 /**
  * Determines if the given character is part of a word.
- * Match these chars :[0-9A-Za-z\$\%\&\-\.\/\:\=\?\\_~]
- * This allows a path, URL, variable name or IP address to be treated as a word.
+ * Match these chars :[0-9A-Za-z\$\-\.\/_~]
+ * This allows a path, variable name or IP address to be treated as a word.
  *
  * @param ascii_char
  *     The character to check.
@@ -1805,17 +1805,42 @@ static bool guac_terminal_is_part_of_word(int ascii_char) {
             (ascii_char >= 'A' && ascii_char <= 'Z') || 
             (ascii_char >= 'a' && ascii_char <= 'z') ||
             (ascii_char == '$') ||
-            (ascii_char == '%') ||
-            (ascii_char == '&') ||
             (ascii_char == '-') ||
             (ascii_char == '.') ||
             (ascii_char == '/') ||
-            (ascii_char == ':') ||
-            (ascii_char == '=') ||
-            (ascii_char == '?') ||
-            (ascii_char == '\\') ||
             (ascii_char == '_') ||
             (ascii_char == '~'));
+}
+
+/**
+ * Determines if the given character is part of URI.
+ * Match these chars :[%\&\+:;,=\?\!\*\\\(\)\[\]#] and word chars.
+ *
+ * @param ascii_char
+ *     The character to check.
+ *
+ * @return
+ *     true if match a "word" or "uri" char,
+ *     false otherwise.
+ */
+static bool guac_terminal_is_part_of_word_or_uri(int ascii_char) {
+    return (guac_terminal_is_part_of_word(ascii_char) ||
+            (ascii_char == '%') ||
+            (ascii_char == '&') ||
+            (ascii_char == '+') ||
+            (ascii_char == ':') ||
+            (ascii_char == ';') ||
+            (ascii_char == ',') ||
+            (ascii_char == '=') ||
+            (ascii_char == '?') ||
+            (ascii_char == '!') ||
+            (ascii_char == '*') ||
+            (ascii_char == '\\') ||
+            (ascii_char == '(') ||
+            (ascii_char == ')') ||
+            (ascii_char == '[') ||
+            (ascii_char == ']') ||
+            (ascii_char == '#'));
 }
 
 /**
@@ -1862,8 +1887,7 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
         return;
 
     /* Get buffer row and char behind cursor */
-    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(terminal->buffer, row, 0);
-    int cursor_char = buffer_row->characters[col].value;
+    int current_char = characters[col].value;
 
     /* Position of the word behind cursor. 
      * Default = col/row required to select a char if not a word and not blank. */
@@ -1877,8 +1901,8 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
     bool (*is_part_of_word)(int) = NULL;
 
     /* If selection is on a word, get its borders */
-    if (guac_terminal_is_part_of_word(current_char))
-        is_part_of_word = guac_terminal_is_part_of_word;
+    if (guac_terminal_is_part_of_word_or_uri(current_char))
+        is_part_of_word = guac_terminal_is_part_of_word_or_uri;
 
     /* If selection is on a blank, get its borders */
     else if (guac_terminal_is_blank(current_char))
@@ -1886,83 +1910,169 @@ static void guac_terminal_double_click(guac_terminal* terminal, int row, int col
 
     if (is_part_of_word != NULL) {
 
-        /* Get word head*/
+        /* Event to exit loop */
+        bool exit_loop = false;
+
         do {
 
-            /* Buffer row to get */
-            int current_row = word_row_head;
-            int current_col = word_col_head;
+            /* Position of the word behind cursor. 
+            * Default = col/row required to select a char if not a word and not blank. */
+            word_col_head = col;
+            word_col_tail = col;
+            word_row_head = row;
+            word_row_tail = row;
 
-            /* Bound of screen reached: get previous row */
-            if (word_col_head == 0)
-                current_row--;
+            /* Get word head*/
+            do {
+
+                /* Buffer row to get */
+                int current_row = word_row_head;
+                int current_col = word_col_head;
+
+                /* Bound of screen reached: get previous row */
+                if (word_col_head == 0)
+                    current_row--;
 
                 /* Get current buffer row */
                 length = guac_terminal_buffer_get_columns(terminal->current_buffer, &characters, &is_wrapped, current_row);
 
-            /* If we are on the previous row */
-            if (current_row < word_row_head) {
+                /* If we are on the previous row */
+                if (current_row < word_row_head) {
 
-                /* Line not wrapped: stop, it's the word boundary */
-                if (!buffer_row->wrapped_row)
+                    /* Line not wrapped: stop, it's the word boundary */
+                    if (!is_wrapped)
+                        break;
+
+                    /* Go to last column of this row */
+                    current_col = length;
+                }
+
+                /* Get char of the current row/column */
+                flag = characters[current_col-1].value;
+
+                /* Word boundary reached, stop */
+                if (!is_part_of_word(flag))
                     break;
 
-                /* Go to last column of this row */
-                current_col = buffer_row->length;
-            }
+                /* Store new position on previous row */
+                if (current_row < word_row_head) {
+                    word_row_head = current_row;
+                    word_col_head = current_col;
+                }
 
-            /* Get char of the current row/column */
-            flag = buffer_row->characters[current_col-1].value;
+            } while (word_col_head >= 0 && word_col_head--);
 
-            /* Word boundary reached, stop */
-            if (!is_part_of_word(flag))
-                break;
-
-            /* Store new position on previous row */
-            if (current_row < word_row_head) {
-                word_row_head = current_row;
-                word_col_head = current_col;
-            }
-
-        } while (word_col_head >= 0 && word_col_head--);
-
-        /* Get word tail */
-        do {
+            /* Get word tail */
+            do {
 
                 /* Get current buffer row */
                 length = guac_terminal_buffer_get_columns(terminal->current_buffer, &characters, &is_wrapped, word_row_tail);
 
-            /* Bound of screen reached and row is wrapped: get next row */
-            if (word_col_tail == buffer_row->length - 1 && buffer_row->wrapped_row) {
+                /* Bound of screen reached and row is wrapped: get next row */
+                if (word_col_tail == length - 1 && is_wrapped) {
 
-                /* Get next buffer row */
-                guac_terminal_buffer_row* next_buffer_row =
-                        guac_terminal_buffer_get_row(terminal->buffer, word_row_tail + 1, 0);
+                    /* Get next buffer row */
+                    bool next_is_wrapped;
+                    guac_terminal_char* next_characters;
+                    guac_terminal_buffer_get_columns(terminal->current_buffer, &next_characters, &next_is_wrapped, word_row_tail + 1);
 
-                /* Get first char of the next row */
-                flag = next_buffer_row->characters[0].value;
+                    /* Get first char of the next row */
+                    flag = next_characters[0].value;
 
-            }
+                }
 
-            /* Otherwise, get char of next column on current row */
-            else
-                flag = buffer_row->characters[word_col_tail+1].value;
+                /* Otherwise, get char of next column on current row */
+                else
+                    flag = characters[word_col_tail+1].value;
 
-            /* Word boundary reached, stop */
-            if (!is_part_of_word(flag))
+                /* Word boundary reached, stop */
+                if (!is_part_of_word(flag))
+                    break;
+
+                /* Store new position on next row */
+                if (word_col_tail == length - 1 && is_wrapped) {
+                    word_row_tail++;
+                    word_col_tail = 0;
+                }
+
+                /* Or go to next column of current row */
+                else
+                    word_col_tail++;
+
+            } while (word_col_tail <= length);
+
+            /* The following is only for URL scheme validation */
+            if (is_part_of_word != guac_terminal_is_part_of_word_or_uri)
                 break;
 
-            /* Store new position on next row */
-            if (word_col_tail == buffer_row->length - 1 && buffer_row->wrapped_row) {
-                word_row_tail++;
-                word_col_tail = 0;
-            }
+            /* Temp vars to avoid overwrite word_row_head and word_col_head */
+            int tmp_row = word_row_head;
+            int tmp_col = word_col_head;
 
-            /* Or go to next column of current row */
-            else
-                word_col_tail++;
+            /* Check for the presence of a uri scheme like /^[a-z]+\:\/{2}/ */
+            do {
 
-        } while (word_col_tail <= buffer_row->length);
+                /* Get first char of first row */
+                length = guac_terminal_buffer_get_columns(terminal->current_buffer, &characters, &is_wrapped, tmp_row);
+                current_char = characters[tmp_col].value;
+
+                /* End of [a-z]+ part */
+                if (current_char < 'a' || current_char > 'z') {
+
+                    /* URI scheme delimiter :// foud */
+                    if (current_char == ':' &&
+                        characters[tmp_col+1].value == '/' &&
+                        characters[tmp_col+2].value == '/') {
+
+                        /* Set exit event */
+                        exit_loop = true;
+                        break;
+                    }
+
+                    /* Not URI scheme */
+                    else
+                        break;
+                }
+
+                /* End of buffer row */
+                else if (tmp_col == length-1) {
+
+                    /* Confinue only if current buffer row is wrapped */
+                    if (is_wrapped) {
+
+                        /* Stop if latest row */
+                        if (tmp_row == word_row_tail)
+                            break;
+
+                        /* Go to next row */
+                        tmp_row++;
+
+                        /* Go to first row (-1 for auto increment on next iteration) */
+                        tmp_col = 0;
+
+                        /* Don't do further tests for this iteration */
+                        continue;
+
+                    }
+
+                    /* End of selection without matching uri scheme */
+                    else
+                        break;
+
+                }
+
+                /* End of selection without matching uri scheme */
+                else if (tmp_row == word_row_tail && tmp_col == word_col_tail)
+                    break;
+
+                tmp_col++;
+                //printf("tmp_row = %d | word_row_tail = %d | tmp_col = %d | word_col_tail = %d\n", tmp_row, word_row_tail, tmp_col, word_col_tail);
+            } while (true);
+
+            /* Get word boundaries instead of URI */
+            is_part_of_word = guac_terminal_is_part_of_word;
+
+        } while (!exit_loop);
     }
 
     /* Select and add to clipboard the "word" */
