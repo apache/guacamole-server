@@ -34,6 +34,11 @@
 #define RDP_CLIENT_HOSTNAME_SIZE 32
 
 /**
+ * The default server response timeout, in seconds.
+ */
+#define RDP_DEFAULT_SERVER_TIMEOUT 10
+
+/**
  * The default RDP port.
  */
 #define RDP_DEFAULT_PORT 3389
@@ -155,6 +160,11 @@ typedef struct guac_rdp_settings {
      * The port to connect to.
      */
     int port;
+
+    /**
+     * The timeout, in seconds, to wait for the remote host to respond.
+     */
+    int server_timeout;
 
     /**
      * The domain of the user logging in.
