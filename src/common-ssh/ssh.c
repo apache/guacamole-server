@@ -35,11 +35,17 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include <errno.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <pthread.h>
 #include <pwd.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
@@ -408,10 +414,10 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
 
 guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         const char* hostname, const char* port, guac_common_ssh_user* user,
-        int keepalive, const char* host_key,
+        int timeout, int keepalive, const char* host_key,
         guac_ssh_credential_handler* credential_handler) {
 
-    int fd = guac_socket_tcp_connect(hostname, port);
+    int fd = guac_socket_tcp_connect(hostname, port, timeout);
     if (fd < 0) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
             "Failed to open TCP connection to %s on %s.", hostname, port);
