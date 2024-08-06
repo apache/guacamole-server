@@ -38,6 +38,7 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "hostname",
     "port",
     "read-only",
+    "disable-display-resize",
     "encodings",
     GUAC_VNC_ARGV_USERNAME,
     GUAC_VNC_ARGV_PASSWORD,
@@ -118,6 +119,13 @@ enum VNC_ARGS_IDX {
      * dropped), "false" or blank otherwise.
      */
     IDX_READ_ONLY,
+
+    /**
+     * "true" if the VNC client should disable attempts to resize the remote
+     * display to the client's size, "false" or blank if those resize messages
+     * should be sent.
+     */
+    IDX_DISABLE_DISPLAY_RESIZE,
 
     /**
      * Space-separated list of encodings to use within the VNC session. If not
@@ -468,6 +476,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->disable_server_input =
             guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
                                          IDX_DISABLE_SERVER_INPUT, false);
+
+    /* Disable display resize */
+    settings->disable_display_resize =
+            guac_user_parse_args_boolean(user, GUAC_VNC_CLIENT_ARGS, argv,
+                                         IDX_DISABLE_DISPLAY_RESIZE, false);
 
     /* Parse color depth */
     settings->color_depth =
