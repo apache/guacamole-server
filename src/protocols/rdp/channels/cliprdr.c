@@ -82,7 +82,13 @@ static UINT guac_rdp_cliprdr_send_format_list(CliprdrClientContext* cliprdr) {
 
     /* We support CP-1252 and UTF-16 text */
     CLIPRDR_FORMAT_LIST format_list = {
+#ifdef HAVE_CLIPRDR_HEADER
+        .common = {
+            .msgType = CB_FORMAT_LIST
+        },
+#else
         .msgType = CB_FORMAT_LIST,
+#endif
         .formats = (CLIPRDR_FORMAT[]) {
             { .formatId = CF_TEXT },
             { .formatId = CF_UNICODETEXT }
@@ -298,9 +304,15 @@ static UINT guac_rdp_cliprdr_format_list(CliprdrClientContext* cliprdr,
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Received format list.");
 
     CLIPRDR_FORMAT_LIST_RESPONSE format_list_response = {
+#ifdef HAVE_CLIPRDR_HEADER
+        .common = {
+            .msgType = CB_FORMAT_LIST_RESPONSE,
+            .msgFlags = CB_RESPONSE_OK
+        }
+#else
         .msgFlags = CB_RESPONSE_OK
+#endif
     };
-
     /* Report successful processing of format list */
     pthread_mutex_lock(&(rdp_client->message_lock));
     cliprdr->ClientFormatListResponse(cliprdr, &format_list_response);
@@ -394,8 +406,16 @@ static UINT guac_rdp_cliprdr_format_data_request(CliprdrClientContext* cliprdr,
 
     CLIPRDR_FORMAT_DATA_RESPONSE data_response = {
         .requestedFormatData = (BYTE*) start,
+#ifdef HAVE_CLIPRDR_HEADER
+        .common = {
+            .msgType = CB_FORMAT_DATA_RESPONSE,
+            .msgFlags = CB_RESPONSE_OK,
+            .dataLen = ((BYTE*) output) - start,
+        }
+#else
         .dataLen = ((BYTE*) output) - start,
         .msgFlags = CB_RESPONSE_OK
+#endif
     };
 
     guac_client_log(client, GUAC_LOG_TRACE, "CLIPRDR: Sending format data response.");
@@ -482,9 +502,16 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
 
     }
 
+    int data_len;
+    #ifdef HAVE_CLIPRDR_HEADER
+    data_len = format_data_response->common.dataLen;
+    #else
+    data_len = format_data_response->dataLen;
+    #endif
+
     /* Convert, store, and forward the clipboard data received from RDP
      * server */
-    if (guac_iconv(remote_reader, &input, format_data_response->dataLen,
+    if (guac_iconv(remote_reader, &input, data_len,
             GUAC_WRITE_UTF8, &output, sizeof(received_data))) {
         int length = strnlen(received_data, sizeof(received_data));
         guac_common_clipboard_reset(clipboard->clipboard, "text/plain");
@@ -510,12 +537,12 @@ static UINT guac_rdp_cliprdr_format_data_response(CliprdrClientContext* cliprdr,
  * @param context
  *     The rdpContext associated with the active RDP session.
  *
- * @param e
+ * @param args
  *     Event-specific arguments, mainly the name of the channel, and a
  *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
-        ChannelConnectedEventArgs* e) {
+        ChannelConnectedEventArgs* args) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -527,12 +554,12 @@ static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
     assert(clipboard != NULL);
 
     /* Ignore connection event if it's not for the CLIPRDR channel */
-    if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
+    if (strcmp(args->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
         return;
 
     /* The structure pointed to by pInterface is guaranteed to be a
      * CliprdrClientContext if the channel is CLIPRDR */
-    CliprdrClientContext* cliprdr = (CliprdrClientContext*) e->pInterface;
+    CliprdrClientContext* cliprdr = (CliprdrClientContext*) args->pInterface;
 
     /* Associate FreeRDP CLIPRDR context and its Guacamole counterpart with
      * eachother */
@@ -563,12 +590,12 @@ static void guac_rdp_cliprdr_channel_connected(rdpContext* context,
  * @param context
  *     The rdpContext associated with the active RDP session.
  *
- * @param e
+ * @param args
  *     Event-specific arguments, mainly the name of the channel, and a
  *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_cliprdr_channel_disconnected(rdpContext* context,
-        ChannelDisconnectedEventArgs* e) {
+        ChannelDisconnectedEventArgs* args) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
@@ -580,7 +607,7 @@ static void guac_rdp_cliprdr_channel_disconnected(rdpContext* context,
     assert(clipboard != NULL);
 
     /* Ignore disconnection event if it's not for the CLIPRDR channel */
-    if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
+    if (strcmp(args->name, CLIPRDR_SVC_CHANNEL_NAME) != 0)
         return;
 
     /* Channel is no longer connected */
@@ -712,4 +739,3 @@ int guac_rdp_clipboard_end_handler(guac_user* user, guac_stream* stream) {
     return 0;
 
 }
-

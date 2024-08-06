@@ -55,6 +55,12 @@ typedef struct guac_vnc_settings {
     char* password;
 
     /**
+     * Disable the VNC client messages to request that the remote (server)
+     * display resize to match the client resolution.
+     */
+    bool disable_display_resize;
+
+    /**
      * Space-separated list of encodings to use within the VNC session.
      */
     char* encodings;
@@ -81,6 +87,16 @@ typedef struct guac_vnc_settings {
      * compression only.
      */
     bool lossless;
+
+    /**
+     * The level of compression to ask the VNC client library to perform.
+     */
+    int compress_level;
+
+     /**
+      * The quality level to ask the VNC client library to maintain.
+      */
+    int quality_level;
 
 #ifdef ENABLE_VNC_REPEATER
     /**
@@ -274,6 +290,12 @@ typedef struct guac_vnc_settings {
      * as passwords, credit card numbers, etc.
      */
     bool recording_include_keys;
+
+    /**
+     * Whether existing files should be appended to when creating a new recording.
+     * Disabled by default.
+     */
+    bool recording_write_existing;
     
     /**
      * Whether or not to send the magic Wake-on-LAN (WoL) packet prior to
@@ -304,6 +326,11 @@ typedef struct guac_vnc_settings {
      * attempting to connect to the remote host.
      */
     int wol_wait_time;
+
+    /**
+     * Whether or not to disable the input on the server side.
+     */
+    bool disable_server_input;
 
 } guac_vnc_settings;
 

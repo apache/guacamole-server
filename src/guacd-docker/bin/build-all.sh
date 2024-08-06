@@ -84,22 +84,44 @@ install_from_git() {
     # Configure build using CMake or GNU Autotools, whichever happens to be
     # used by the library being built
     if [ -e CMakeLists.txt ]; then
-        cmake -DCMAKE_INSTALL_PREFIX:PATH="$PREFIX_DIR" "$@" .
+        cmake \
+            -B "${REPO_DIR}-build" -S . \
+            -DCMAKE_INSTALL_PREFIX:PATH="$PREFIX_DIR" \
+            "$@"
+
+        # Build and install
+        cmake --build "${REPO_DIR}-build"
+        cmake --install "${REPO_DIR}-build"
     else
         [ -e configure ] || autoreconf -fi
         ./configure --prefix="$PREFIX_DIR" "$@"
+
+        # Build and install
+        make && make install
     fi
-
-    # Build and install
-    make && make install
-
 }
+
+#
+# Determine any option overrides to guarantee successful build
+#
+
+export BUILD_ARCHITECTURE="$(arch)" # Determine architecture building on
+echo "Build architecture: $BUILD_ARCHITECTURE"
+
+case $BUILD_ARCHITECTURE in
+    armv6l|armv7l|aarch64)
+        export FREERDP_OPTS_OVERRIDES="-DWITH_SSE2=OFF" # Disable SSE2 on ARM
+        ;;
+    *)
+        export FREERDP_OPTS_OVERRIDES=""
+        ;;
+esac
 
 #
 # Build and install core protocol library dependencies
 #
 
-install_from_git "https://github.com/FreeRDP/FreeRDP" "$WITH_FREERDP" $FREERDP_OPTS
+install_from_git "https://github.com/FreeRDP/FreeRDP" "$WITH_FREERDP" $FREERDP_OPTS $FREERDP_OPTS_OVERRIDES
 install_from_git "https://github.com/libssh2/libssh2" "$WITH_LIBSSH2" $LIBSSH2_OPTS
 install_from_git "https://github.com/seanmiddleditch/libtelnet" "$WITH_LIBTELNET" $LIBTELNET_OPTS
 install_from_git "https://github.com/LibVNC/libvncserver" "$WITH_LIBVNCCLIENT" $LIBVNCCLIENT_OPTS
@@ -111,5 +133,4 @@ install_from_git "https://github.com/warmcat/libwebsockets" "$WITH_LIBWEBSOCKETS
 
 cd "$BUILD_DIR"
 autoreconf -fi && ./configure --prefix="$PREFIX_DIR" $GUACAMOLE_SERVER_OPTS
-make && make install
-
+make && make check && make install

@@ -51,6 +51,11 @@
 #define GUAC_TERMINAL_OK          "\x1B[0n"
 
 /**
+ * Alternative buffer CSI sequence.
+ */
+#define GUAC_TERMINAL_ALT_BUFFER   1049
+
+/**
  * Advances the cursor to the next row, scrolling if the cursor would otherwise
  * leave the scrolling region. If the cursor is already outside the scrolling
  * region, the cursor is prevented from leaving the terminal bounds.
@@ -911,6 +916,10 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 if (flag != NULL)
                     *flag = true;
 
+                /* Open alternate screen buffer */
+                if (argv[0] == GUAC_TERMINAL_ALT_BUFFER)
+                    guac_terminal_switch_buffers(term, true);
+
                 break;
 
             /* l: Reset Mode */
@@ -920,6 +929,10 @@ int guac_terminal_csi(guac_terminal* term, unsigned char c) {
                 flag = __guac_terminal_get_flag(term, argv[0], private_mode_character);
                 if (flag != NULL)
                     *flag = false;
+                
+                /* Close alternate screen buffer */
+                if (argv[0] == GUAC_TERMINAL_ALT_BUFFER)
+                    guac_terminal_switch_buffers(term, false);
 
                 break;
 

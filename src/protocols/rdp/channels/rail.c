@@ -26,26 +26,14 @@
 #include <freerdp/event.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/rail.h>
+#include <freerdp/window.h>
 #include <guacamole/client.h>
+#include <guacamole/mem.h>
 #include <winpr/wtypes.h>
 #include <winpr/wtsapi.h>
 
 #include <stddef.h>
 #include <string.h>
-
-#ifdef FREERDP_RAIL_CALLBACKS_REQUIRE_CONST
-/**
- * FreeRDP 2.0.0-rc4 and newer requires the final argument for all RAIL
- * callbacks to be const.
- */
-#define RAIL_CONST const
-#else
-/**
- * FreeRDP 2.0.0-rc3 and older requires the final argument for all RAIL
- * callbacks to NOT be const.
- */
-#define RAIL_CONST
-#endif
 
 /**
  * Completes initialization of the RemoteApp session, responding to the server
@@ -86,6 +74,7 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
     };
 
     /* Send client handshake response */
+    guac_client_log(client, GUAC_LOG_TRACE, "Sending RAIL handshake.");
     pthread_mutex_lock(&(rdp_client->message_lock));
     status = rail->ClientHandshake(rail, &handshake);
     pthread_mutex_unlock(&(rdp_client->message_lock));
@@ -94,10 +83,13 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
         return status;
 
     RAIL_CLIENT_STATUS_ORDER client_status = {
-        .flags = 0x00
+        .flags =
+                TS_RAIL_CLIENTSTATUS_ALLOWLOCALMOVESIZE
+              | TS_RAIL_CLIENTSTATUS_APPBAR_REMOTING_SUPPORTED
     };
 
     /* Send client status */
+    guac_client_log(client, GUAC_LOG_TRACE, "Sending RAIL client status.");
     pthread_mutex_lock(&(rdp_client->message_lock));
     status = rail->ClientInformation(rail, &client_status);
     pthread_mutex_unlock(&(rdp_client->message_lock));
@@ -135,8 +127,7 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
         },
 
         .params =
-              SPI_MASK_SET_DRAG_FULL_WINDOWS
-            | SPI_MASK_SET_HIGH_CONTRAST
+              SPI_MASK_SET_HIGH_CONTRAST
             | SPI_MASK_SET_KEYBOARD_CUES
             | SPI_MASK_SET_KEYBOARD_PREF
             | SPI_MASK_SET_MOUSE_BUTTON_SWAP
@@ -145,6 +136,7 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
     };
 
     /* Send client system parameters */
+    guac_client_log(client, GUAC_LOG_TRACE, "Sending RAIL client system parameters.");
     pthread_mutex_lock(&(rdp_client->message_lock));
     status = rail->ClientSystemParam(rail, &sysparam);
     pthread_mutex_unlock(&(rdp_client->message_lock));
@@ -160,11 +152,43 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
     };
 
     /* Execute desired RemoteApp command */
+    guac_client_log(client, GUAC_LOG_TRACE, "Executing remote application.");
     pthread_mutex_lock(&(rdp_client->message_lock));
     status = rail->ClientExecute(rail, &exec);
     pthread_mutex_unlock(&(rdp_client->message_lock));
 
     return status;
+
+}
+
+/**
+ * A callback function that is invoked when the RDP server sends the result
+ * of the Remote App (RAIL) execution command back to the client, so that the
+ * client can handle any required actions associated with the result.
+ * 
+ * @param context
+ *     A pointer to the RAIL data structure associated with the current
+ *     RDP connection.
+ *
+ * @param execResult
+ *     A data structure containing the result of the RAIL command.
+ *
+ * @return
+ *     CHANNEL_RC_OK (zero) if the result was handled successfully, otherwise
+ *     a non-zero error code. This implementation always returns
+ *     CHANNEL_RC_OK.
+ */
+static UINT guac_rdp_rail_execute_result(RailClientContext* context,
+        const RAIL_EXEC_RESULT_ORDER* execResult) {
+
+    guac_client* client = (guac_client*) context->custom;
+
+    if (execResult->execResult != RAIL_EXEC_S_OK) {
+        guac_client_log(client, GUAC_LOG_DEBUG, "Failed to execute RAIL command on server: %d", execResult->execResult);
+        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_UNAVAILABLE, "Failed to execute RAIL command.");
+    }
+
+    return CHANNEL_RC_OK;
 
 }
 
@@ -189,6 +213,8 @@ static UINT guac_rdp_rail_complete_handshake(RailClientContext* rail) {
  */
 static UINT guac_rdp_rail_handshake(RailClientContext* rail,
         RAIL_CONST RAIL_HANDSHAKE_ORDER* handshake) {
+    guac_client* client = (guac_client*) rail->custom;
+    guac_client_log(client, GUAC_LOG_TRACE, "RAIL handshake callback.");
     return guac_rdp_rail_complete_handshake(rail);
 }
 
@@ -213,7 +239,61 @@ static UINT guac_rdp_rail_handshake(RailClientContext* rail,
  */
 static UINT guac_rdp_rail_handshake_ex(RailClientContext* rail,
         RAIL_CONST RAIL_HANDSHAKE_EX_ORDER* handshake_ex) {
+    guac_client* client = (guac_client*) rail->custom;
+    guac_client_log(client, GUAC_LOG_TRACE, "RAIL handshake ex callback.");
     return guac_rdp_rail_complete_handshake(rail);
+}
+
+/**
+ * A callback function that is executed when an update for a RAIL window is
+ * received from the RDP server.
+ *
+ * @param context
+ *     A pointer to the rdpContext structure used by FreeRDP to handle the
+ *     window update.
+ *
+ * @param orderInfo
+ *     A pointer to the data structure that contains information about what
+ *     window was updated what updates were performed.
+ *
+ * @param windowState
+ *     A pointer to the data structure that contains details of the updates
+ *     to the window, as indicated by flags in the orderInfo field.
+ *
+ * @return
+ *     TRUE if the client-side processing of the updates as successful; otherwise
+ *     FALSE. This implementation always returns TRUE.
+ */
+static BOOL guac_rdp_rail_window_update(rdpContext* context,
+        RAIL_CONST WINDOW_ORDER_INFO* orderInfo,
+        RAIL_CONST WINDOW_STATE_ORDER* windowState) {
+
+    guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    guac_client_log(client, GUAC_LOG_TRACE, "RAIL window update callback: %d", orderInfo->fieldFlags);
+
+    UINT32 fieldFlags = orderInfo->fieldFlags;
+
+    /* If the flag for window visibilty is set, check visibility. */
+    if (fieldFlags & WINDOW_ORDER_FIELD_SHOW) {
+        guac_client_log(client, GUAC_LOG_TRACE, "RAIL window visibility change: %d", windowState->showState);
+
+        /* State is either hidden or minimized - send restore command. */
+        if (windowState->showState == GUAC_RDP_RAIL_WINDOW_STATE_HIDDEN
+            || windowState->showState == GUAC_RDP_RAIL_WINDOW_STATE_MINIMIZED) {
+
+            guac_client_log(client, GUAC_LOG_DEBUG, "RAIL window minimized, sending restore command.");
+
+            RAIL_SYSCOMMAND_ORDER syscommand;
+            syscommand.windowId = orderInfo->windowId;
+            syscommand.command = SC_RESTORE;
+            rdp_client->rail_interface->ClientSystemCommand(rdp_client->rail_interface, &syscommand);
+        }
+    }
+
+    return true;
+
 }
 
 /**
@@ -230,28 +310,32 @@ static UINT guac_rdp_rail_handshake_ex(RailClientContext* rail,
  * @param context
  *     The rdpContext associated with the active RDP session.
  *
- * @param e
+ * @param args
  *     Event-specific arguments, mainly the name of the channel, and a
  *     reference to the associated plugin loaded for that channel by FreeRDP.
  */
 static void guac_rdp_rail_channel_connected(rdpContext* context,
-        ChannelConnectedEventArgs* e) {
+        ChannelConnectedEventArgs* args) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
+    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
     /* Ignore connection event if it's not for the RAIL channel */
-    if (strcmp(e->name, RAIL_SVC_CHANNEL_NAME) != 0)
+    if (strcmp(args->name, RAIL_SVC_CHANNEL_NAME) != 0)
         return;
 
     /* The structure pointed to by pInterface is guaranteed to be a
      * RailClientContext if the channel is RAIL */
-    RailClientContext* rail = (RailClientContext*) e->pInterface;
+    RailClientContext* rail = (RailClientContext*) args->pInterface;
+    rdp_client->rail_interface = rail;
 
     /* Init FreeRDP RAIL context, ensuring the guac_client can be accessed from
      * within any RAIL-specific callbacks */
     rail->custom = client;
+    rail->ServerExecuteResult = guac_rdp_rail_execute_result;
     rail->ServerHandshake = guac_rdp_rail_handshake;
     rail->ServerHandshakeEx = guac_rdp_rail_handshake_ex;
+    context->update->window->WindowUpdate = guac_rdp_rail_window_update;
 
     guac_client_log(client, GUAC_LOG_DEBUG, "RAIL (RemoteApp) channel "
             "connected.");
@@ -280,4 +364,3 @@ void guac_rdp_rail_load_plugin(rdpContext* context) {
             "registered. Awaiting channel connection.");
 
 }
-

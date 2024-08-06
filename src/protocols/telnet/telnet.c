@@ -27,7 +27,9 @@
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
+#include <guacamole/socket-tcp.h>
 #include <guacamole/timestamp.h>
+#include <guacamole/wol-constants.h>
 #include <guacamole/wol.h>
 #include <libtelnet.h>
 
@@ -381,81 +383,10 @@ static void* __guac_telnet_input_thread(void* data) {
  */
 static telnet_t* __guac_telnet_create_session(guac_client* client) {
 
-    int retval;
-
-    int fd;
-    struct addrinfo* addresses;
-    struct addrinfo* current_address;
-
-    char connected_address[1024];
-    char connected_port[64];
-
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
 
-    struct addrinfo hints = {
-        .ai_family   = AF_UNSPEC,
-        .ai_socktype = SOCK_STREAM,
-        .ai_protocol = IPPROTO_TCP
-    };
-
-    /* Get socket */
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-
-    /* Get addresses connection */
-    if ((retval = getaddrinfo(settings->hostname, settings->port,
-                    &hints, &addresses))) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR, "Error parsing given address or port: %s",
-                gai_strerror(retval));
-        return NULL;
-
-    }
-
-    /* Attempt connection to each address until success */
-    current_address = addresses;
-    while (current_address != NULL) {
-
-        int retval;
-
-        /* Resolve hostname */
-        if ((retval = getnameinfo(current_address->ai_addr,
-                current_address->ai_addrlen,
-                connected_address, sizeof(connected_address),
-                connected_port, sizeof(connected_port),
-                NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to resolve host: %s", gai_strerror(retval));
-
-        /* Connect */
-        if (connect(fd, current_address->ai_addr,
-                        current_address->ai_addrlen) == 0) {
-
-            guac_client_log(client, GUAC_LOG_DEBUG, "Successfully connected to "
-                    "host %s, port %s", connected_address, connected_port);
-
-            /* Done if successful connect */
-            break;
-
-        }
-
-        /* Otherwise log information regarding bind failure */
-        else
-            guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
-                    "host %s, port %s: %s",
-                    connected_address, connected_port, strerror(errno));
-
-        current_address = current_address->ai_next;
-
-    }
-
-    /* If unable to connect to anything, fail */
-    if (current_address == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Unable to connect to any addresses.");
-        return NULL;
-    }
-
-    /* Free addrinfo */
-    freeaddrinfo(addresses);
+    int fd = guac_socket_tcp_connect(settings->hostname, settings->port);
 
     /* Open telnet session */
     telnet_t* telnet = telnet_init(__telnet_options, __guac_telnet_event_handler, 0, client);
@@ -564,17 +495,35 @@ void* guac_telnet_client_thread(void* data) {
 
     /* If Wake-on-LAN is enabled, attempt to wake. */
     if (settings->wol_send_packet) {
-        guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
-                "and pausing for %d seconds.", settings->wol_wait_time);
 
-        /* Send the Wake-on-LAN request. */
-        if (guac_wol_wake(settings->wol_mac_addr, settings->wol_broadcast_addr,
-                settings->wol_udp_port))
+        /**
+         * If wait time is set, send the wake packet and try to connect to the
+         * server, failing if the server does not respond.
+         */
+        if (settings->wol_wait_time > 0) {
+            guac_client_log(client, GUAC_LOG_DEBUG, "Sending Wake-on-LAN packet, "
+                    "and pausing for %d seconds.", settings->wol_wait_time);
+
+            /* Send the Wake-on-LAN request and wait until the server is responsive. */
+            if (guac_wol_wake_and_wait(settings->wol_mac_addr,
+                    settings->wol_broadcast_addr,
+                    settings->wol_udp_port,
+                    settings->wol_wait_time,
+                    GUAC_WOL_DEFAULT_CONNECT_RETRIES,
+                    settings->hostname,
+                    settings->port)) {
+                guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet or connect to remote server.");
+                return NULL;
+            }
+        }
+
+        /* Just send the packet and continue the connection, or return if failed. */
+        else if(guac_wol_wake(settings->wol_mac_addr,
+                    settings->wol_broadcast_addr,
+                    settings->wol_udp_port)) {
+            guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet.");
             return NULL;
-
-        /* If wait time is specified, sleep for that amount of time. */
-        if (settings->wol_wait_time > 0)
-            guac_timestamp_msleep(settings->wol_wait_time * 1000);
+        }
     }
 
     /* Set up screen recording, if requested */
@@ -586,7 +535,8 @@ void* guac_telnet_client_thread(void* data) {
                 !settings->recording_exclude_output,
                 !settings->recording_exclude_mouse,
                 0, /* Touch events not supported */
-                settings->recording_include_keys);
+                settings->recording_include_keys,
+                settings->recording_write_existing);
     }
 
     /* Create terminal options with required parameters */
@@ -623,7 +573,8 @@ void* guac_telnet_client_thread(void* data) {
         guac_terminal_create_typescript(telnet_client->term,
                 settings->typescript_path,
                 settings->typescript_name,
-                settings->create_typescript_path);
+                settings->create_typescript_path,
+                settings->typescript_write_existing);
     }
 
     /* Open telnet session */

@@ -61,8 +61,8 @@
  *     The name of the plugin to load. If the plugin is not statically built
  *     into FreeRDP, this name will determine the filename of the library to be
  *     loaded dynamically. For a plugin named "NAME", the library called
- *     "libNAME-client" will be loaded from the "freerdp2" subdirectory of the
- *     main directory containing the FreeRDP libraries.
+ *     "libNAME-client" will be loaded from the "freerdp2" or "freerdp3"
+ *     subdirectory of the main directory containing the FreeRDP libraries.
  *
  * @param data
  *     Arbitrary data to be passed to the plugin entry point. For most plugins
@@ -105,8 +105,8 @@ int guac_freerdp_channels_load_plugin(rdpContext* context,
  *     The name of the plugin to load. If the plugin is not statically built
  *     into FreeRDP, this name will determine the filename of the library to be
  *     loaded dynamically. For a plugin named "NAME", the library called
- *     "libNAME-client" will be loaded from the "freerdp2" subdirectory of the
- *     main directory containing the FreeRDP libraries.
+ *     "libNAME-client" will be loaded from the "freerdp2" or "freerdp3"
+ *     subdirectory of the main directory containing the FreeRDP libraries.
  *
  * @param ...
  *     Arbitrary arguments to be passed to the plugin entry point. For most
@@ -204,4 +204,3 @@ PVIRTUALCHANNELENTRY guac_rdp_plugin_wrap_entry(guac_client* client,
         PVIRTUALCHANNELENTRY entry);
 
 #endif
-

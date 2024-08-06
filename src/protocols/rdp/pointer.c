@@ -21,6 +21,7 @@
 #include "common/cursor.h"
 #include "common/display.h"
 #include "common/surface.h"
+#include "gdi.h"
 #include "pointer.h"
 #include "rdp.h"
 
@@ -42,7 +43,7 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
             rdp_client->display, pointer->width, pointer->height);
 
     /* Allocate data for image */
-    unsigned char* data = _aligned_malloc(guac_mem_ckd_mul_or_die(pointer->width, 
+    unsigned char* data = GUAC_ALIGNED_MALLOC(guac_mem_ckd_mul_or_die(pointer->width, 
             pointer->height, 4), 16);
 
     cairo_surface_t* surface;
@@ -65,7 +66,7 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
     /* Free surface */
     cairo_surface_destroy(surface);
-    _aligned_free(data);
+    GUAC_ALIGNED_FREE(data);
 
     /* Remember buffer */
     ((guac_rdp_pointer*) pointer)->layer = buffer;
@@ -74,15 +75,26 @@ BOOL guac_rdp_pointer_new(rdpContext* context, rdpPointer* pointer) {
 
 }
 
-BOOL guac_rdp_pointer_set(rdpContext* context, const rdpPointer* pointer) {
+BOOL guac_rdp_pointer_set(rdpContext* context, POINTER_SET_CONST rdpPointer* pointer) {
 
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
+
+    /* Add explicit frame boundaries around cursor set operation if not already
+     * in a frame (the RDP protocol does not send nor expect frame boundaries
+     * for cursor changes, but Guacamole does expect this) */
+    int in_frame = rdp_client->in_frame;
+
+    if (rdp_client->frames_supported && !in_frame)
+        guac_rdp_gdi_mark_frame(context, 1);
 
     /* Set cursor */
     guac_common_cursor_set_surface(rdp_client->display->cursor,
             pointer->xPos, pointer->yPos,
             ((guac_rdp_pointer*) pointer)->layer->surface);
+
+    if (rdp_client->frames_supported && !in_frame)
+        guac_rdp_gdi_mark_frame(context, 0);
 
     return TRUE;
 
@@ -107,8 +119,19 @@ BOOL guac_rdp_pointer_set_null(rdpContext* context) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
+    /* Add explicit frame boundaries around cursor set operation if not already
+     * in a frame (the RDP protocol does not send nor expect frame boundaries
+     * for cursor changes, but Guacamole does expect this) */
+    int in_frame = rdp_client->in_frame;
+
+    if (rdp_client->frames_supported && !in_frame)
+        guac_rdp_gdi_mark_frame(context, 1);
+
     /* Set cursor to empty/blank graphic */
     guac_common_cursor_set_blank(rdp_client->display->cursor);
+
+    if (rdp_client->frames_supported && !in_frame)
+        guac_rdp_gdi_mark_frame(context, 0);
 
     return TRUE;
 
@@ -119,8 +142,19 @@ BOOL guac_rdp_pointer_set_default(rdpContext* context) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
+    /* Add explicit frame boundaries around cursor set operation if not already
+     * in a frame (the RDP protocol does not send nor expect frame boundaries
+     * for cursor changes, but Guacamole does expect this) */
+    int in_frame = rdp_client->in_frame;
+
+    if (rdp_client->frames_supported && !in_frame)
+        guac_rdp_gdi_mark_frame(context, 1);
+
     /* Set cursor to embedded pointer */
     guac_common_cursor_set_pointer(rdp_client->display->cursor);
+
+    if (rdp_client->frames_supported && !in_frame)
+        guac_rdp_gdi_mark_frame(context, 0);
 
     return TRUE;
 }

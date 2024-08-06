@@ -180,7 +180,41 @@ void guac_common_display_dup(
     guac_common_display_dup_layers(display->layers, client, socket);
     guac_common_display_dup_layers(display->buffers, client, socket);
 
+    /* Sends a sync instruction to mark the boundary of the first frame */
+    guac_protocol_send_sync(socket, client->last_sent_timestamp, 1);
+
     pthread_mutex_unlock(&display->_lock);
+
+}
+
+void guac_common_display_fit(int* a, int* b) {
+
+    int a_value = *a;
+    int b_value = *b;
+
+    /* Ensure first dimension is within allowed range */
+    if (a_value < GUAC_COMMON_DISPLAY_MIN_SIZE) {
+
+        /* Adjust other dimension to maintain aspect ratio */
+        int adjusted_b = b_value * GUAC_COMMON_DISPLAY_MIN_SIZE / a_value;
+        if (adjusted_b > GUAC_COMMON_DISPLAY_MAX_SIZE)
+            adjusted_b = GUAC_COMMON_DISPLAY_MAX_SIZE;
+
+        *a = GUAC_COMMON_DISPLAY_MIN_SIZE;
+        *b = adjusted_b;
+
+    }
+    else if (a_value > GUAC_COMMON_DISPLAY_MAX_SIZE) {
+
+        /* Adjust other dimension to maintain aspect ratio */
+        int adjusted_b = b_value * GUAC_COMMON_DISPLAY_MAX_SIZE / a_value;
+        if (adjusted_b < GUAC_COMMON_DISPLAY_MIN_SIZE)
+            adjusted_b = GUAC_COMMON_DISPLAY_MIN_SIZE;
+
+        *a = GUAC_COMMON_DISPLAY_MAX_SIZE;
+        *b = adjusted_b;
+
+    }
 
 }
 
@@ -386,4 +420,3 @@ void guac_common_display_free_buffer(guac_common_display* display,
     pthread_mutex_unlock(&display->_lock);
 
 }
-

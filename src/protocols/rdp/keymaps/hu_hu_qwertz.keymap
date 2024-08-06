@@ -17,7 +17,7 @@
 # under the License.
 #
 
-parent  "base"
+parent  "base_altgr"
 name    "hu-hu-qwertz"
 freerdp "KBD_HUNGARIAN"
 

@@ -24,6 +24,7 @@
 #include <guacamole/client.h>
 #include <guacamole/fips.h>
 #include <guacamole/mem.h>
+#include <guacamole/socket-tcp.h>
 #include <guacamole/string.h>
 #include <libssh2.h>
 
@@ -34,15 +35,11 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
-#include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <pthread.h>
 #include <pwd.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
@@ -182,9 +179,11 @@ int guac_common_ssh_init(guac_client* client) {
     CRYPTO_set_locking_callback(guac_common_ssh_openssl_locking_callback);
 #endif
 
-    /* Init OpenSSL */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    /* Init OpenSSL - only required for OpenSSL Versions < 1.1.0 */
     SSL_library_init();
     ERR_load_crypto_strings();
+#endif
 
     /* Init libssh2 */
     libssh2_init(0);
@@ -284,6 +283,8 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
     /* Get user credentials */
     guac_common_ssh_key* key = user->private_key;
 
+    char* public_key = user->public_key;
+
     /* Validate username provided */
     if (user->username == NULL) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
@@ -317,9 +318,11 @@ static int guac_common_ssh_authenticate(guac_common_ssh_session* common_session)
             return 1;
         }
 
+        int public_key_length = public_key == NULL ? 0 : strlen(public_key);
+
         /* Attempt public key auth */
         if (libssh2_userauth_publickey_frommemory(session, user->username,
-                    username_len, NULL, 0, key->private_key,
+                    username_len, public_key, public_key_length, key->private_key,
                     key->private_key_length, key->passphrase)) {
 
             /* Abort on failure */
@@ -408,81 +411,10 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         int keepalive, const char* host_key,
         guac_ssh_credential_handler* credential_handler) {
 
-    int retval;
-
-    int fd;
-    struct addrinfo* addresses;
-    struct addrinfo* current_address;
-
-    char connected_address[1024];
-    char connected_port[64];
-
-    struct addrinfo hints = {
-        .ai_family   = AF_UNSPEC,
-        .ai_socktype = SOCK_STREAM,
-        .ai_protocol = IPPROTO_TCP
-    };
-
-    /* Get addresses connection */
-    if ((retval = getaddrinfo(hostname, port, &hints, &addresses))) {
+    int fd = guac_socket_tcp_connect(hostname, port);
+    if (fd < 0) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                "Error parsing given address or port: %s",
-                gai_strerror(retval));
-        return NULL;
-    }
-
-    /* Attempt connection to each address until success */
-    current_address = addresses;
-    while (current_address != NULL) {
-
-        /* Resolve hostname */
-        if ((retval = getnameinfo(current_address->ai_addr,
-                current_address->ai_addrlen,
-                connected_address, sizeof(connected_address),
-                connected_port, sizeof(connected_port),
-                NI_NUMERICHOST | NI_NUMERICSERV)))
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Unable to resolve host: %s", gai_strerror(retval));
-
-        /* Get socket */
-        fd = socket(current_address->ai_family, SOCK_STREAM, 0);
-        if (fd < 0) {
-            guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
-                    "Unable to create socket: %s", strerror(errno));
-            freeaddrinfo(addresses);
-            return NULL;
-        }
-
-        /* Connect */
-        if (connect(fd, current_address->ai_addr,
-                        current_address->ai_addrlen) == 0) {
-
-            guac_client_log(client, GUAC_LOG_DEBUG,
-                    "Successfully connected to host %s, port %s",
-                    connected_address, connected_port);
-
-            /* Done if successful connect */
-            break;
-
-        }
-
-        /* Otherwise log information regarding bind failure */
-        guac_client_log(client, GUAC_LOG_DEBUG, "Unable to connect to "
-                "host %s, port %s: %s",
-                connected_address, connected_port, strerror(errno));
-
-        close(fd);
-        current_address = current_address->ai_next;
-
-    }
-
-    /* Free addrinfo */
-    freeaddrinfo(addresses);
-
-    /* If unable to connect to anything, fail */
-    if (current_address == NULL) {
-        guac_client_abort(client, GUAC_PROTOCOL_STATUS_UPSTREAM_NOT_FOUND,
-                "Unable to connect to any addresses.");
+            "Failed to open TCP connection to %s on %s.", hostname, port);
         return NULL;
     }
 

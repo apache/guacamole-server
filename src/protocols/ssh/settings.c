@@ -48,6 +48,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "sftp-disable-upload",
     "private-key",
     "passphrase",
+    "public-key",
 #ifdef ENABLE_SSH_AGENT
     "enable-agent",
 #endif
@@ -56,12 +57,14 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "typescript-path",
     "typescript-name",
     "create-typescript-path",
+    "typescript-write-existing",
     "recording-path",
     "recording-name",
     "recording-exclude-output",
     "recording-exclude-mouse",
     "recording-include-keys",
     "create-recording-path",
+    "recording-write-existing",
     "read-only",
     "server-alive-interval",
     "backspace",
@@ -149,6 +152,11 @@ enum SSH_ARGS_IDX {
      */
     IDX_PASSPHRASE,
 
+    /**
+     * The public key to use for authentication, if any.
+     */
+    IDX_PUBLIC_KEY,
+
 #ifdef ENABLE_SSH_AGENT
     /**
      * Whether SSH agent forwarding support should be enabled.
@@ -190,6 +198,12 @@ enum SSH_ARGS_IDX {
      * if it does not yet exist.
      */
     IDX_CREATE_TYPESCRIPT_PATH,
+
+    /**
+     * Whether existing files should be appended to when creating a new
+     * typescript. Disabled by default.
+     */
+    IDX_TYPESCRIPT_WRITE_EXISTING,
 
     /**
      * The full absolute path to the directory in which screen recordings
@@ -234,6 +248,12 @@ enum SSH_ARGS_IDX {
      * created if it does not yet exist.
      */
     IDX_CREATE_RECORDING_PATH,
+
+    /**
+     * Whether existing files should be appended to when creating a new recording.
+     * Disabled by default.
+     */
+    IDX_RECORDING_WRITE_EXISTING,
 
     /**
      * "true" if this connection should be read-only (user input should be
@@ -374,6 +394,10 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_PASSPHRASE, NULL);
 
+    settings->public_key_base64 =
+        guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_PUBLIC_KEY, NULL);
+
     /* Read maximum scrollback size */
     settings->max_scrollback =
         guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
@@ -455,6 +479,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_CREATE_TYPESCRIPT_PATH, false);
 
+    /* Parse allow write existing file flag */
+    settings->typescript_write_existing =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_TYPESCRIPT_WRITE_EXISTING, false);
+
     /* Read recording path */
     settings->recording_path =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
@@ -484,6 +513,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->create_recording_path =
         guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_CREATE_RECORDING_PATH, false);
+
+    /* Parse allow write existing file flag */
+    settings->recording_write_existing =
+        guac_user_parse_args_boolean(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_RECORDING_WRITE_EXISTING, false);
 
     /* Parse server alive interval */
     settings->server_alive_interval =
@@ -568,6 +602,7 @@ void guac_ssh_settings_free(guac_ssh_settings* settings) {
     guac_mem_free(settings->password);
     guac_mem_free(settings->key_base64);
     guac_mem_free(settings->key_passphrase);
+    guac_mem_free(settings->public_key_base64);
 
     /* Free display preferences */
     guac_mem_free(settings->font_name);

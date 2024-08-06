@@ -384,11 +384,22 @@ int guac_protocol_send_select(guac_socket* socket, const char* protocol);
  * If an error occurs sending the instruction, a non-zero value is
  * returned, and guac_error is set appropriately.
  *
- * @param socket The guac_socket connection to use.
- * @param timestamp The current timestamp (in milliseconds).
- * @return Zero on success, non-zero on error.
+ * @param socket
+ *     The guac_socket connection to use.
+ *
+ * @param timestamp
+ *     The current timestamp (in milliseconds).
+ *
+ * @param frames
+ *     The number of distinct frames that were considered or combined when
+ *     generating the frame terminated by this instruction, or zero if the
+ *     boundaries of relevant frames are unknown.
+ *
+ * @return
+ *     Zero on success, non-zero on error.
  */
-int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp);
+int guac_protocol_send_sync(guac_socket* socket, guac_timestamp timestamp,
+        int frames);
 
 /* OBJECT INSTRUCTIONS */
 

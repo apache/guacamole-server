@@ -42,6 +42,7 @@
 
 #include <freerdp/codec/color.h>
 #include <freerdp/freerdp.h>
+#include <freerdp/client/rail.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
 #include <guacamole/rwlock.h>
@@ -50,6 +51,20 @@
 
 #include <pthread.h>
 #include <stdint.h>
+
+#ifdef HAVE_WINPR_ALIGNED
+#define GUAC_ALIGNED_FREE winpr_aligned_free
+#define GUAC_ALIGNED_MALLOC winpr_aligned_malloc
+#else
+#define GUAC_ALIGNED_FREE _aligned_free
+#define GUAC_ALIGNED_MALLOC _aligned_malloc
+#endif
+
+#ifdef FREERDP_HAS_CONTEXT
+#define GUAC_RDP_CONTEXT(rdp_instance) ((rdp_instance)->context)
+#else
+#define GUAC_RDP_CONTEXT(rdp_instance) ((rdp_instance))
+#endif
 
 /**
  * RDP-specific client data.
@@ -91,6 +106,24 @@ typedef struct guac_rdp_client {
      * change this surface to allow drawing to occur off-screen.
      */
     guac_common_surface* current_surface;
+
+    /**
+     * Whether the RDP server supports defining explicit frame boundaries.
+     */
+    int frames_supported;
+
+    /**
+     * Whether the RDP server has reported that a new frame is in progress, and
+     * we are now receiving updates relevant to that frame.
+     */
+    int in_frame;
+
+    /**
+     * The number of distinct frames received from the RDP server since last
+     * flush, if the RDP server supports reporting frame boundaries. If the RDP
+     * server does not support tracking frames, this will be zero.
+     */
+    int frames_received;
 
     /**
      * The current state of the keyboard with respect to the RDP session.
@@ -178,6 +211,12 @@ typedef struct guac_rdp_client {
      * attempts to send RDP messages never overlap.
      */
     pthread_mutex_t message_lock;
+
+    /**
+     * A pointer to the RAIL interface provided by the RDP client when rail is
+     * in use.
+     */
+    RailClientContext* rail_interface;
 
 } guac_rdp_client;
 

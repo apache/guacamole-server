@@ -65,7 +65,7 @@ static void write_instructions(int fd) {
 
     /* Write instructions */
     guac_protocol_send_name(nested_socket, "a" UTF8_4 "b" UTF8_4 "c");
-    guac_protocol_send_sync(nested_socket, 12345);
+    guac_protocol_send_sync(nested_socket, 12345, 1);
 
     /* Close and free sockets */
     guac_socket_free(nested_socket);
@@ -86,9 +86,9 @@ static void write_instructions(int fd) {
 static void read_expected_instructions(int fd) {
 
     char expected[] =
-        "4.nest,3.123,37."
+        "4.nest,3.123,41."
             "4.name,11.a" UTF8_4 "b" UTF8_4 "c;"
-            "4.sync,5.12345;"
+            "4.sync,5.12345,1.1;"
         ";";
 
     int numread;

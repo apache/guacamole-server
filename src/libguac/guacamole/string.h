@@ -30,6 +30,24 @@
 #include <string.h>
 
 /**
+ * Convert the provided unsigned integer into a string, returning the number of
+ * characters written into the destination string, or a negative value if an
+ * error occurs.
+ *
+ * @param dest
+ *     The destination string to copy the data into, which should already be
+ *     allocated and at a size that can handle the string representation of the
+ *     inteer.
+ *
+ * @param integer
+ *     The unsigned integer to convert to a string.
+ * 
+ * @return
+ *     The number of characters written into the dest string.
+ */
+int guac_itoa(char* restrict dest, unsigned int integer);
+
+/**
  * Copies a limited number of bytes from the given source string to the given
  * destination buffer. The resulting buffer will always be null-terminated,
  * even if doing so means that the intended string is truncated, unless the
@@ -132,6 +150,38 @@ size_t guac_strlcat(char* restrict dest, const char* restrict src, size_t n);
 char* guac_strnstr(const char *haystack, const char *needle, size_t len);
 
 /**
+ * Duplicates up to the given number of characters from the provided string,
+ * returning a newly-allocated string containing the copied contents. The
+ * provided string must be null-terminated, and only the first 'n' characters
+ * will be considered for duplication, or the full string length if it is
+ * shorter than 'n'. The memory block for the newly-allocated string will
+ * include enough space for these characters, as well as for the null
+ * terminator.
+ *
+ * The pointer returned by guac_strndup() SHOULD be freed with a subsequent call
+ * to guac_mem_free(), but MAY instead be freed with a subsequent call to free().
+ *
+ * This function behaves similarly to the POSIX strndup() function, except that
+ * NULL will be returned if the provided string is NULL or if memory allocation
+ * fails. Also, the length of the string to be duplicated will be checked to
+ * prevent overflow if adding space for the null terminator.
+ *
+ * @param str
+ *     The string of which up to the first 'n' characters should be duplicated
+ *     as a newly-allocated string. If 'n' exceeds the length of the string,
+ *     the entire string is duplicated.
+ *
+ * @param n
+ *     The maximum number of characters to duplicate from the given string.
+ *
+ * @return
+ *     A newly-allocated string containing up to the first 'n' characters from
+ *     the given string, including a terminating null byte, or NULL if the
+ *     provided string was NULL or if memory allocation fails.
+ */
+char* guac_strndup(const char* str, size_t n);
+
+/**
  * Duplicates the given string, returning a newly-allocated string containing
  * the same contents. The provided string must be null-terminated. The size of
  * the memory block for the newly-allocated string is only guaranteed to
@@ -202,4 +252,3 @@ size_t guac_strljoin(char* restrict dest, const char* restrict const* elements,
         int nmemb, const char* restrict delim, size_t n);
 
 #endif
-
