@@ -111,6 +111,9 @@ int guac_client_init(guac_client* client) {
     pthread_mutex_init(&vnc_client->tls_lock, NULL);
 #endif
 
+    /* Initialize the message lock. */
+    pthread_mutex_init(&(vnc_client->message_lock), NULL);
+
     /* Init clipboard */
     vnc_client->clipboard = guac_common_clipboard_alloc();
 
@@ -208,6 +211,9 @@ int guac_vnc_client_free_handler(guac_client* client) {
     /* Clean up TLS lock mutex. */
     pthread_mutex_destroy(&(vnc_client->tls_lock));
 #endif
+
+    /* Clean up the message lock. */
+    pthread_mutex_destroy(&(vnc_client->message_lock));
 
     /* Free generic data struct */
     guac_mem_free(client->data);

@@ -187,6 +187,37 @@ void guac_common_display_dup(
 
 }
 
+void guac_common_display_fit(int* a, int* b) {
+
+    int a_value = *a;
+    int b_value = *b;
+
+    /* Ensure first dimension is within allowed range */
+    if (a_value < GUAC_COMMON_DISPLAY_MIN_SIZE) {
+
+        /* Adjust other dimension to maintain aspect ratio */
+        int adjusted_b = b_value * GUAC_COMMON_DISPLAY_MIN_SIZE / a_value;
+        if (adjusted_b > GUAC_COMMON_DISPLAY_MAX_SIZE)
+            adjusted_b = GUAC_COMMON_DISPLAY_MAX_SIZE;
+
+        *a = GUAC_COMMON_DISPLAY_MIN_SIZE;
+        *b = adjusted_b;
+
+    }
+    else if (a_value > GUAC_COMMON_DISPLAY_MAX_SIZE) {
+
+        /* Adjust other dimension to maintain aspect ratio */
+        int adjusted_b = b_value * GUAC_COMMON_DISPLAY_MAX_SIZE / a_value;
+        if (adjusted_b < GUAC_COMMON_DISPLAY_MIN_SIZE)
+            adjusted_b = GUAC_COMMON_DISPLAY_MIN_SIZE;
+
+        *a = GUAC_COMMON_DISPLAY_MAX_SIZE;
+        *b = adjusted_b;
+
+    }
+
+}
+
 void guac_common_display_set_lossless(guac_common_display* display,
         int lossless) {
 

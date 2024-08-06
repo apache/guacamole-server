@@ -26,8 +26,8 @@
 #include <rfb/rfbproto.h>
 
 /**
- * Callback invoked by libVNCServer when it receives a new binary image data.
- * the VNC server. The image itself will be stored in the designated sub-
+ * Callback invoked by libVNCServer when it receives a new binary image data
+ * from the VNC server. The image itself will be stored in the designated sub-
  * rectangle of client->framebuffer.
  *
  * @param client
@@ -83,6 +83,39 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h);
  */
 void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h,
         int dest_x, int dest_y);
+
+/**
+ * A callback for guac_client_for_owner that sets the VNC display size to the
+ * width and height of the owner's display.
+ *
+ * @param owner
+ *     A pointer to the  guac_user data structure that contains the owner of
+ *     the current connection.
+ *
+ * @param data
+ *     A pointer to the rfbClient data structure that represents the current
+ *     VNC client for the current connection.
+ *
+ * @return
+ *     This callback always returns NULL.
+ */
+void* guac_vnc_display_set_owner_size(guac_user* owner, void* data);
+
+/**
+ * Attempts to set the display size of the remote server to the size requested
+ * by the client, usually as part of a client (browser) resize, if supported by
+ * both the VNC client and the remote server.
+ *
+ * @param display
+ *     The VNC client to which the display size update should be sent.
+ *
+ * @param width
+ *     The width that is being requested, in pixels.
+ *
+ * @param height
+ *     The height that is being requested, in pixels.
+ */
+void guac_vnc_display_set_size(rfbClient* client, int width, int height);
 
 /**
  * Sets the pixel format to request of the VNC server. The request will be made
