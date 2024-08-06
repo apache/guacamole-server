@@ -18,6 +18,7 @@
  */
 
 #include "channels/disp.h"
+#include "common/display.h"
 #include "plugins/channels.h"
 #include "fs.h"
 #include "rdp.h"
@@ -149,56 +150,14 @@ void guac_rdp_disp_load_plugin(rdpContext* context) {
 
 }
 
-/**
- * Fits a given dimension within the allowed bounds for Display Update
- * messages, adjusting the other dimension such that aspect ratio is
- * maintained.
- *
- * @param a The dimension to fit within allowed bounds.
- *
- * @param b
- *     The other dimension to adjust if and only if necessary to preserve
- *     aspect ratio.
- */
-static void guac_rdp_disp_fit(int* a, int* b) {
-
-    int a_value = *a;
-    int b_value = *b;
-
-    /* Ensure first dimension is within allowed range */
-    if (a_value < GUAC_RDP_DISP_MIN_SIZE) {
-
-        /* Adjust other dimension to maintain aspect ratio */
-        int adjusted_b = b_value * GUAC_RDP_DISP_MIN_SIZE / a_value;
-        if (adjusted_b > GUAC_RDP_DISP_MAX_SIZE)
-            adjusted_b = GUAC_RDP_DISP_MAX_SIZE;
-
-        *a = GUAC_RDP_DISP_MIN_SIZE;
-        *b = adjusted_b;
-
-    }
-    else if (a_value > GUAC_RDP_DISP_MAX_SIZE) {
-
-        /* Adjust other dimension to maintain aspect ratio */
-        int adjusted_b = b_value * GUAC_RDP_DISP_MAX_SIZE / a_value;
-        if (adjusted_b < GUAC_RDP_DISP_MIN_SIZE)
-            adjusted_b = GUAC_RDP_DISP_MIN_SIZE;
-
-        *a = GUAC_RDP_DISP_MAX_SIZE;
-        *b = adjusted_b;
-
-    }
-
-}
-
 void guac_rdp_disp_set_size(guac_rdp_disp* disp, guac_rdp_settings* settings,
         freerdp* rdp_inst, int width, int height) {
 
     /* Fit width within bounds, adjusting height to maintain aspect ratio */
-    guac_rdp_disp_fit(&width, &height);
+    guac_common_display_fit(&width, &height);
 
     /* Fit height within bounds, adjusting width to maintain aspect ratio */
-    guac_rdp_disp_fit(&height, &width);
+    guac_common_display_fit(&height, &width);
 
     /* Width must be even */
     if (width % 2 == 1)
@@ -226,7 +185,7 @@ void guac_rdp_disp_update_size(guac_rdp_disp* disp,
     guac_timestamp now = guac_timestamp_current();
 
     /* Limit display update frequency */
-    if (now - disp->last_request <= GUAC_RDP_DISP_UPDATE_INTERVAL)
+    if (now - disp->last_request <= GUAC_COMMON_DISPLAY_UPDATE_INTERVAL)
         return;
 
     /* Do NOT send requests unless the size will change */

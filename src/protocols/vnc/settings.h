@@ -55,6 +55,12 @@ typedef struct guac_vnc_settings {
     char* password;
 
     /**
+     * Disable the VNC client messages to request that the remote (server)
+     * display resize to match the client resolution.
+     */
+    bool disable_display_resize;
+
+    /**
      * Space-separated list of encodings to use within the VNC session.
      */
     char* encodings;
