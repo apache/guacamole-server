@@ -21,6 +21,11 @@
 #define GUAC_DISPLAY_CONSTANTS_H
 
 /**
+ * @addtogroup display
+ * @{
+ */
+
+/**
  * Provides constants related to the abstract display implementation
  * (guac_display).
  *
@@ -43,5 +48,9 @@
  * guac_display_layer_open_raw().
  */
 #define GUAC_DISPLAY_LAYER_RAW_BPP 4
+
+/**
+ * @}
+ */
 
 #endif

@@ -21,8 +21,8 @@
 #define GUAC_DISPLAY_H
 
 /**
- * Provides an abstract display implementation (guac_display), which handles
- * optimization automatically. Current optimizations include:
+ * An abstract display implementation which handles optimization automatically.
+ * Current optimizations include:
  *
  * - Scroll/copy detection
  * - Solid color detection
@@ -30,6 +30,14 @@
  * - Dynamic selection of PNG/JPEG/WebP compression depending on update content
  *   and frequency
  * - Combining/rewriting of updates based on estimated cost
+ *
+ * @defgroup display guac_display
+ * @{
+ */
+
+/**
+ * Provides an abstract display implementation (guac_display), which handles
+ * optimization automatically.
  *
  * @file display.h
  */
@@ -440,7 +448,7 @@ void guac_display_layer_move(guac_display_layer* layer, int x, int y);
  * @param layer
  *     The layer to set the stacking position of.
  *
- * #param z
+ * @param z
  *     The relative order of this layer.
  */
 void guac_display_layer_stack(guac_display_layer* layer, int z);
@@ -659,5 +667,9 @@ guac_display_layer_cairo_context* guac_display_layer_open_cairo(guac_display_lay
  *     returned by a previous call to guac_display_layer_open_cairo().
  */
 void guac_display_layer_close_cairo(guac_display_layer* layer, guac_display_layer_cairo_context* context);
+
+/**
+ * @}
+ */
 
 #endif

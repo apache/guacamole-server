@@ -21,6 +21,11 @@
 #define GUAC_DISPLAY_TYPES_H
 
 /**
+ * @addtogroup display
+ * @{
+ */
+
+/**
  * Provides type definitions related to the abstract display implementation
  * (guac_display).
  *
@@ -87,5 +92,9 @@ typedef enum guac_display_cursor_type {
     GUAC_DISPLAY_CURSOR_POINTER
 
 } guac_display_cursor_type;
+
+/**
+ * @}
+ */
 
 #endif
