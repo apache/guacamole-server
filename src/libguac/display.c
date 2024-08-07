@@ -42,6 +42,11 @@
 #include <unistd.h>
 
 /**
+ * The number of worker threads to create per processor.
+ */
+#define GUAC_DISPLAY_CPU_THREAD_FACTOR 2
+
+/**
  * Returns the number of processors available to this process. If possible,
  * limits on otherwise available processors like CPU affinity will be taken
  * into account. If the number of available processors cannot be determined,
@@ -146,7 +151,7 @@ guac_display* guac_display_alloc(guac_client* client) {
                 "processor(s) are available.", cpu_count);
     }
 
-    display->worker_thread_count = cpu_count;
+    display->worker_thread_count = cpu_count * GUAC_DISPLAY_CPU_THREAD_FACTOR;
     display->worker_threads = guac_mem_alloc(display->worker_thread_count, sizeof(pthread_t));
     guac_client_log(client, GUAC_LOG_INFO, "Graphical updates will be encoded "
             "using %i worker thread(s).", display->worker_thread_count);
