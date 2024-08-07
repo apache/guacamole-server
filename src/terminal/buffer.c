@@ -48,6 +48,7 @@ guac_terminal_buffer* guac_terminal_buffer_alloc(int rows, guac_terminal_char* d
         /* Allocate row  */
         row->available = 256;
         row->length = 0;
+        row->wrapped_row = false;
         row->characters = guac_mem_alloc(sizeof(guac_terminal_char), row->available);
 
         /* Next row */
@@ -166,6 +167,10 @@ void guac_terminal_buffer_copy_rows(guac_terminal_buffer* buffer,
         /* Copy data */
         memcpy(dst_row->characters, src_row->characters, sizeof(guac_terminal_char) * src_row->length);
         dst_row->length = src_row->length;
+        dst_row->wrapped_row = src_row->wrapped_row;
+
+        /* Reset src wrapped_row */
+        src_row->wrapped_row = false;
 
         /* Next current_row */
         current_row += step;

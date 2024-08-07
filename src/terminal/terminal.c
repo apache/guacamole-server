@@ -242,9 +242,10 @@ void guac_terminal_reset(guac_terminal* term) {
     /* Reset display palette */
     guac_terminal_display_reset_palette(term->display);
 
-    /* Clear terminal */
+    /* Clear terminal with a row length of term_width-1 
+     * to avoid exceed the size of the display layer */
     for (row=0; row<term->term_height; row++)
-        guac_terminal_set_columns(term, row, 0, term->term_width, &(term->default_char));
+        guac_terminal_set_columns(term, row, 0, term->term_width-1, &(term->default_char));
 
 }
 

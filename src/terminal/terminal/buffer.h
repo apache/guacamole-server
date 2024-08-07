@@ -51,6 +51,12 @@ typedef struct guac_terminal_buffer_row {
      */
     int available;
 
+    /**
+     * True if the current row has been wrapped to avoid going off the screen.
+     * False otherwise.
+     */
+    bool wrapped_row;
+
 } guac_terminal_buffer_row;
 
 /**
