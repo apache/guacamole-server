@@ -78,13 +78,13 @@
 /**
  * The maximum duration of a single frame, in milliseconds.
  */
-#define GUAC_TERMINAL_FRAME_DURATION 40
+#define GUAC_TERMINAL_FRAME_DURATION 33
 
 /**
  * The maximum amount of time to wait for more data before declaring a frame
  * complete, in milliseconds.
  */
-#define GUAC_TERMINAL_FRAME_TIMEOUT 10
+#define GUAC_TERMINAL_FRAME_TIMEOUT 0
 
 /**
  * The maximum number of custom tab stops.

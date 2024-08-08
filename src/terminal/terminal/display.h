@@ -26,11 +26,13 @@
  * @file display.h
  */
 
-#include "common/surface.h"
+#include "buffer.h"
 #include "palette.h"
+#include "terminal.h"
 #include "types.h"
 
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/layer.h>
 #include <pango/pangocairo.h>
 
@@ -54,73 +56,17 @@
 #define GUAC_TERMINAL_MM_PER_INCH 25.4
 
 /**
- * All available terminal operations which affect character cells.
- */
-typedef enum guac_terminal_operation_type {
-
-    /**
-     * Operation which does nothing.
-     */
-    GUAC_CHAR_NOP,
-
-    /**
-     * Operation which copies a character from a given row/column coordinate.
-     */
-    GUAC_CHAR_COPY,
-
-    /**
-     * Operation which sets the character and attributes.
-     */
-    GUAC_CHAR_SET
-
-} guac_terminal_operation_type;
-
-/**
- * A pairing of a guac_terminal_operation_type and all parameters required by
- * that operation type.
- */
-typedef struct guac_terminal_operation {
-
-    /**
-     * The type of operation to perform.
-     */
-    guac_terminal_operation_type type;
-
-    /**
-     * The character (and attributes) to set the current location to. This is
-     * only applicable to GUAC_CHAR_SET.
-     */
-    guac_terminal_char character;
-
-    /**
-     * The row to copy a character from. This is only applicable to
-     * GUAC_CHAR_COPY.
-     */
-    int row;
-
-    /**
-     * The column to copy a character from. This is only applicable to
-     * GUAC_CHAR_COPY.
-     */
-    int column;
-
-} guac_terminal_operation;
-
-/**
- * Set of all pending operations for the currently-visible screen area, and the
- * contextual information necessary to interpret and render those changes.
+ * The rendering area and state of the text display used by the terminal
+ * emulator. The actual changes between successive frames are tracked by an
+ * underlying guac_display.
  */
 typedef struct guac_terminal_display {
 
     /**
-     * The Guacamole client this display will use for rendering.
+     * The Guacamole client associated with this terminal emulator having this
+     * display.
      */
     guac_client* client;
-
-    /**
-     * Array of all operations pending for the visible screen area.
-     */
-    guac_terminal_operation* operations;
 
     /**
      * The width of the screen, in characters.
@@ -136,6 +82,18 @@ typedef struct guac_terminal_display {
      * The size of margins between the console text and the border in pixels.
      */
     int margin;
+
+    /**
+     * The current mouse cursor (the mouse cursor already sent to connected
+     * users), to avoid re-setting the cursor image when effectively no change
+     * has been made.
+     */
+    guac_terminal_cursor_type current_cursor;
+
+    /**
+     * The mouse cursor that was most recently requested.
+     */
+    guac_terminal_cursor_type last_requested_cursor;
 
     /**
      * The description of the font to use for rendering.
@@ -174,64 +132,50 @@ typedef struct guac_terminal_display {
     guac_terminal_color default_background;
 
     /**
-     * The foreground color to be used for the next glyph rendered to the
-     * terminal.
+     * The Guacamole display that this terminal emulator should render to.
      */
-    guac_terminal_color glyph_foreground;
-
-    /**
-     * The background color to be used for the next glyph rendered to the
-     * terminal.
-     */
-    guac_terminal_color glyph_background;
-
-    /**
-     * The surface containing the actual terminal.
-     */
-    guac_common_surface* display_surface;
+    guac_display* graphical_display;
 
     /**
      * Layer which contains the actual terminal.
      */
-    guac_layer* display_layer;
-
-    /**
-     * Sub-layer of display layer which highlights selected text.
-     */
-    guac_layer* select_layer;
-
-    /**
-     * Whether text is currently selected.
-     */
-    bool text_selected;
-
-    /**
-     * The row that the selection starts at.
-     */
-    int selection_start_row;
-
-    /**
-     * The column that the selection starts at.
-     */
-    int selection_start_column;
-
-    /**
-     * The row that the selection ends at.
-     */
-    int selection_end_row;
-
-    /**
-     * The column that the selection ends at.
-     */
-    int selection_end_column;
+    guac_display_layer* display_layer;
 
 } guac_terminal_display;
 
 /**
- * Allocates a new display having the given default foreground and background
- * colors.
+ * Allocates a new display having the given text rendering properties and
+ * underlying graphical display.
+ *
+ * @param client
+ *     The guac_client associated with the terminal session.
+ *
+ * @param graphical_display
+ *     The guac_display that the new guac_terminal_display should render to.
+ *
+ * @param font_name
+ *     The name of the font to use to render characters.
+ *
+ * @param font_size
+ *     The font size to use when rendering characters, in points.
+ *
+ * @param dpi
+ *     The resolution that characters should be rendered at, in DPI (dots per
+ *     inch).
+ *
+ * @param foreground
+ *     The default foreground color to use for characters rendered to the
+ *     display.
+ *
+ * @param background
+ *     The default background color to use for characters rendered to the
+ *     display.
+ *
+ * @param palette
+ *     The palette to use for all other colors supported by the terminal.
  */
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
+        guac_display* graphical_display,
         const char* font_name, int font_size, int dpi,
         guac_terminal_color* foreground, guac_terminal_color* background,
         guac_terminal_color (*palette)[256]);
@@ -291,69 +235,9 @@ int guac_terminal_display_lookup_color(guac_terminal_display* display,
         int index, guac_terminal_color* color);
 
 /**
- * Copies the given range of columns to a new location, offset from
- * the original by the given number of columns.
- */
-void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
-        int start_column, int end_column, int offset);
-
-/**
- * Copies the given range of rows to a new location, offset from the
- * original by the given number of rows.
- */
-void guac_terminal_display_copy_rows(guac_terminal_display* display,
-        int start_row, int end_row, int offset);
-
-/**
- * Sets the given range of columns within the given row to the given
- * character.
- */
-void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
-        int start_column, int end_column, guac_terminal_char* character);
-
-/**
  * Resize the terminal to the given dimensions.
  */
 void guac_terminal_display_resize(guac_terminal_display* display, int width, int height);
-
-/**
- * Flushes all pending operations within the given guac_terminal_display.
- */
-void guac_terminal_display_flush(guac_terminal_display* display);
-
-/**
- * Initializes and syncs the current terminal display state for all joining
- * users associated with the provided socket, sending the necessary instructions
- * to completely recreate and redraw the terminal rendering over the given
- * socket.
- *
- * @param display
- *     The terminal display to sync to the users associated with the provided
- *     socket.
- *
- * @param client
- *     The client whose users are joining.
- *
- * @param socket
- *     The socket over which any necessary instructions should be sent.
- */
-void guac_terminal_display_dup(
-        guac_terminal_display* display, guac_client* client, guac_socket* socket);
-
-/**
- * Draws the text selection rectangle from the given coordinates to the given end coordinates.
- */
-void guac_terminal_display_select(guac_terminal_display* display,
-        int start_row, int start_col, int end_row, int end_col);
-
-/**
- * Clears the currently-selected region, removing the highlight.
- *
- * @param display
- *     The guac_terminal_display whose currently-selected region should be
- *     cleared.
- */
-void guac_terminal_display_clear_select(guac_terminal_display* display);
 
 /**
  * Alters the font of the terminal display. The available display area and the
@@ -384,6 +268,81 @@ void guac_terminal_display_clear_select(guac_terminal_display* display);
  */
 int guac_terminal_display_set_font(guac_terminal_display* display,
         const char* font_name, int font_size, int dpi);
+
+/**
+ * Renders the contents of the given buffer to the given terminal display. All
+ * characters within the buffer that fit within the display region will be
+ * rendered.
+ *
+ * @param display
+ *     The terminal display receiving the buffer contents.
+ *
+ * @param buffer
+ *     The buffer to render to the display.
+ *
+ * @param scroll_offset
+ *     The number of rows from the scrollback buffer that the user has scrolled
+ *     into view.
+ *
+ * @param default_char
+ *     The character that should be used to populate any character cell that
+ *     has not received any terminal output.
+ *
+ * @param cursor_visible
+ *     Whether the cursor is currently visible (ie: has not been hidden using
+ *     console codes that specifically hide the cursor). This does NOT refer to
+ *     whether the cursor is within the display region, which is handled
+ *     automatically.
+ *
+ * @oaran cursor_row
+ *     The current row position of the cursor.
+ *
+ * @oaran cursor_col
+ *     The current column position of the cursor.
+ *
+ * @param text_selected
+ *     Whether the user has selected text.
+ *
+ * @param selection_start_row
+ *     The row number where the user started their selection. This value only
+ *     has meaning if text_selected is true. There is no requirement that the
+ *     start row be less than the end row.
+ *
+ * @param selection_start_col
+ *     The column number where the user started their selection. This value
+ *     only has meaning if text_selected is true. There is no requirement that
+ *     the start column be less than the end column.
+ *
+ * @param selection_end_row
+ *     The row number where the user ended their selection. This value only has
+ *     meaning if text_selected is true. There is no requirement that the end
+ *     row be greated than the start row.
+ *
+ * @param selection_end_col
+ *     The column number where the user ended their selection. This value only
+ *     has meaning if text_selected is true. There is no requirement that the
+ *     end column be greater than the start column.
+ */
+void guac_terminal_display_render_buffer(guac_terminal_display* display,
+        guac_terminal_buffer* buffer, int scroll_offset,
+        guac_terminal_char* default_char,
+        bool cursor_visible, int cursor_row, int cursor_col,
+        bool text_selected, int selection_start_row, int selection_start_col,
+        int selection_end_row, int selection_end_col);
+
+/**
+ * Set the mouse cursor icon. If different from the mouse cursor in effect at
+ * the time of the previous guac_display frame, the requested cursor will take
+ * effect the next time the terminal display is flushed.
+ *
+ * @param display
+ *     The display to set the cursor of.
+ *
+ * @param cursor
+ *     The cursor to assign.
+ */
+void guac_terminal_display_set_cursor(guac_terminal_display* display,
+        guac_terminal_cursor_type cursor);
 
 #endif
 

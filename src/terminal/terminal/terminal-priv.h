@@ -21,12 +21,21 @@
 #define GUAC_TERMINAL_PRIV_H
 
 #include "common/clipboard.h"
-#include "common/cursor.h"
 #include "buffer.h"
 #include "display.h"
 #include "scrollbar.h"
 #include "terminal.h"
 #include "typescript.h"
+
+#include <guacamole/client.h>
+#include <guacamole/display.h>
+#include <guacamole/flag.h>
+
+/**
+ * The bitwise flag set on the modified flag of guac_terminal when the terminal
+ * state has been modified such that it is appropriate to flush a new frame.
+ */
+#define GUAC_TERMINAL_MODIFIED 1
 
 /**
  * Handler for characters printed to the terminal. When a character is printed,
@@ -50,6 +59,11 @@ struct guac_terminal {
      * The Guacamole client associated with this terminal emulator.
      */
     guac_client* client;
+
+    /**
+     * The Guacamole display that this terminal emulator should render to.
+     */
+    guac_display* graphical_display;
 
     /**
      * Whether user input should be handled and this terminal should render
@@ -85,24 +99,12 @@ struct guac_terminal {
     pthread_mutex_t lock;
 
     /**
-     * The mutex associated with the modified condition and flag, locked
-     * whenever a thread is waiting on the modified condition, the modified
-     * condition is being signalled, or the modified flag is being changed.
-     */
-    pthread_mutex_t modified_lock;
-
-    /**
      * Flag set whenever an operation has affected the terminal in a way that
-     * will require a frame flush. When this flag is set, the modified_cond
-     * condition will be signalled. The modified_lock will always be
-     * acquired before this flag is altered.
+     * will require a frame flush.
+     *
+     * @see GUAC_TERMINAL_MODIFIED
      */
-    int modified;
-
-    /**
-     * Condition which is signalled when the modified flag has been set
-     */
-    pthread_cond_t modified_cond;
+    guac_flag modified;
 
     /**
      * Pipe which will be the source of user input. When a terminal code
@@ -154,11 +156,6 @@ struct guac_terminal {
      * if no typescript is being used for the terminal session.
      */
     guac_terminal_typescript* typescript;
-
-    /**
-     * Terminal-wide mouse cursor, synchronized across all users.
-     */
-    guac_common_cursor* cursor;
 
     /**
      * Graphical representation of the current scroll state.
@@ -244,11 +241,6 @@ struct guac_terminal {
     int cursor_row;
 
     /**
-     * Backup of cursor_row when using alternate buffer.
-     */
-    int cursor_row_alt;
-
-    /**
      * The current column location of the cursor. Note that while most
      * terminal operations will clip the cursor location within the bounds
      * of the terminal, this is not guaranteed. There are times when the
@@ -258,36 +250,9 @@ struct guac_terminal {
     int cursor_col;
 
     /**
-     * Backup of cursor_col when using alternate buffer.
-     */
-    int cursor_col_alt;
-
-    /**
      * The desired visibility state of the cursor.
      */
     bool cursor_visible;
-
-    /**
-     * The row of the rendered cursor.
-     * Will be set to -1 if the cursor is not visible.
-     */
-    int visible_cursor_row;
-
-    /**
-     * Backup of visible_cursor_row when using alternate buffer.
-     */
-    int visible_cursor_row_alt;
-
-    /**
-     * The column of the rendered cursor.
-     * Will be set to -1 if the cursor is not visible.
-     */
-    int visible_cursor_col;
-
-    /**
-     * Backup of visible_cursor_col when using alternate buffer.
-     */
-    int visible_cursor_col_alt;
 
     /**
      * The row of the saved cursor (ESC 7).
@@ -325,23 +290,31 @@ struct guac_terminal {
     guac_terminal_display* display;
 
     /**
-     * Current terminal display state. All characters present on the screen
-     * are within this buffer. This has nothing to do with the display, which
-     * facilitates transfer of a set of changes to the remote display.
+     * The default, "normal" buffer containing all characters that should be
+     * displayed within the terminal emulator while not using the alternate
+     * buffer. Unless switched to the alternate buffer, all terminal operations
+     * will involve this buffer. The buffer that is relevant to terminal
+     * operations is determined by the current value of current_buffer.
      */
-    guac_terminal_buffer* buffer;
+    guac_terminal_buffer* normal_buffer;
 
     /**
-     * Alternate buffer.
+     * The non-default, "alternate" buffer containing all characters that should
+     * be displayed within the terminal emulator while not using the normal
+     * buffer. Unless switched to the normal buffer, all terminal operations
+     * will involve this buffer. The buffer that is relevant to terminal
+     * operations is determined by the current value of current_buffer.
      */
-    guac_terminal_buffer* buffer_alt;
+    guac_terminal_buffer* alternate_buffer;
 
     /**
-     * Actual state of the buffer:
-     *  - true if switched to alternate buffer.
-     *  - false if normal buffer.
+     * Pointer to the buffer representing the current text contents of the
+     * terminal, including any scrollback. All characters present on the screen
+     * are within this buffer. The buffer pointed to by this pointer may change
+     * over the course of the terminal session if console codes switch between
+     * the normal and alternate buffers.
      */
-    bool buffer_switched;
+    guac_terminal_buffer* current_buffer;
 
     /**
      * Automatically place a tabstop every N characters. If zero, then no
@@ -392,11 +365,6 @@ struct guac_terminal {
     int selection_start_column;
 
     /**
-     * The width of the character at selection start.
-     */
-    int selection_start_width;
-
-    /**
      * The row that the selection ends at.
      */
     int selection_end_row;
@@ -405,11 +373,6 @@ struct guac_terminal {
      * The column that the selection ends at.
      */
     int selection_end_column;
-
-    /**
-     * The width of the character at selection end.
-     */
-    int selection_end_width;
 
     /**
      * Whether the cursor (arrow) keys should send cursor sequences
@@ -451,11 +414,6 @@ struct guac_terminal {
      * The current mouse button state.
      */
     int mouse_mask;
-
-    /**
-     * The current mouse cursor, to avoid re-setting the cursor image.
-     */
-    guac_terminal_cursor_type current_cursor;
 
     /**
      * The current contents of the clipboard. This clipboard instance is
@@ -568,20 +526,14 @@ int guac_terminal_clear_range(guac_terminal* term,
 /**
  * Scrolls the terminal's current scroll region up by one row.
  */
-int guac_terminal_scroll_up(guac_terminal* term,
+void guac_terminal_scroll_up(guac_terminal* term,
         int start_row, int end_row, int amount);
 
 /**
  * Scrolls the terminal's current scroll region down by one row.
  */
-int guac_terminal_scroll_down(guac_terminal* term,
+void guac_terminal_scroll_down(guac_terminal* term,
         int start_row, int end_row, int amount);
-
-/**
- * Commits the current cursor location, updating the visible cursor
- * on the screen.
- */
-void guac_terminal_commit_cursor(guac_terminal* term);
 
 /**
  * Scroll down the display by the given amount, replacing the new space with
@@ -698,18 +650,4 @@ void guac_terminal_copy_rows(guac_terminal* terminal,
  */
 void guac_terminal_flush(guac_terminal* terminal);
 
-/**
- * Swith betwen normal and alternate buffer.
- *
- * @param terminal
- *      Terminal on which we switch buffers.
- *
- * @param to_alt
- *      Direction of buffer inversion.
- *      True if normal to alternate buffer.
- *      False if alternate to normal buffer.
- */
-void guac_terminal_switch_buffers(guac_terminal* terminal, bool to_alt);
-
 #endif
-

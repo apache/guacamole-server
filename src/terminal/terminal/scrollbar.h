@@ -27,7 +27,7 @@
  */
 
 #include <guacamole/client.h>
-#include <guacamole/layer.h>
+#include <guacamole/display.h>
 
 /**
  * The width of the scrollbar, in pixels.
@@ -97,6 +97,11 @@ typedef struct guac_terminal_scrollbar_render_state {
 
 } guac_terminal_scrollbar_render_state;
 
+/**
+ * A scrollbar, made up of a containing layer and inner draggable handle. The
+ * position of the handle within the layer represents the value of the
+ * scrollbar.
+ */
 typedef struct guac_terminal_scrollbar guac_terminal_scrollbar;
 
 /**
@@ -106,11 +111,6 @@ typedef struct guac_terminal_scrollbar guac_terminal_scrollbar;
 typedef void guac_terminal_scrollbar_scroll_handler(
         guac_terminal_scrollbar* scrollbar, int value);
 
-/**
- * A scrollbar, made up of a containing layer and inner draggable handle. The
- * position of the handle within the layer represents the value of the
- * scrollbar.
- */
 struct guac_terminal_scrollbar {
 
     /**
@@ -119,9 +119,14 @@ struct guac_terminal_scrollbar {
     guac_client* client;
 
     /**
+     * The Guacamole display that this scrollbar should render to.
+     */
+    guac_display* graphical_display;
+
+    /**
      * The layer containing the scrollbar.
      */
-    const guac_layer* parent;
+    guac_display_layer* parent;
 
     /**
      * The width of the parent layer, in pixels.
@@ -136,13 +141,13 @@ struct guac_terminal_scrollbar {
     /**
      * The scrollbar itself.
      */
-    guac_layer* container;
+    guac_display_layer* container;
 
     /**
      * The draggable handle within the scrollbar, representing the current
      * scroll value.
      */
-    guac_layer* handle;
+    guac_display_layer* handle;
 
     /**
      * The minimum scroll value.
@@ -230,8 +235,8 @@ struct guac_terminal_scrollbar {
  *     A newly allocated scrollbar.
  */
 guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
-        const guac_layer* parent, int parent_width, int parent_height,
-        int visible_area);
+        guac_display* graphical_display, guac_display_layer* parent,
+        int parent_width, int parent_height, int visible_area);
 
 /**
  * Frees the given scrollbar.
@@ -252,24 +257,6 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar);
  *     The scrollbar whose render state is to be flushed.
  */
 void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar);
-
-/**
- * Forces a complete redraw / resync of scrollbar state for all joining users
- * associated with the provided socket, sending the necessary instructions to
- * completely recreate and redraw the scrollbar rendering over the given
- * socket.
- *
- * @param scrollbar
- *     The scrollbar to sync to the given users.
- *
- * @param client
- *     The client associated with the joining users.
- *
- * @param socket
- *     The socket over which any necessary instructions should be sent.
- */
-void guac_terminal_scrollbar_dup(guac_terminal_scrollbar* scrollbar,
-        guac_client* client, guac_socket* socket);
 
 /**
  * Sets the minimum and maximum allowed scroll values of the given scrollbar
