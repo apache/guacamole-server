@@ -361,7 +361,7 @@ int guac_rdp_fs_open(guac_rdp_fs* fs, const char* path,
     }
 
     /* Get file ID, init file */
-    file_id = guac_pool_next_int(fs->file_id_pool);
+    file_id = guac_pool_next_int_below_or_die(fs->file_id_pool, GUAC_RDP_FS_MAX_FILES);
     file = &(fs->files[file_id]);
     file->id = file_id;
     file->fd  = fd;

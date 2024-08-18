@@ -132,7 +132,8 @@ guac_stream* guac_client_alloc_stream(guac_client* client) {
         return NULL;
 
     /* Allocate stream */
-    stream_index = guac_pool_next_int(client->__stream_pool);
+    stream_index = guac_pool_next_int_below_or_die(client->__stream_pool,
+            GUAC_CLIENT_MAX_STREAMS);
 
     /* Initialize stream with odd index (even indices are user-level) */
     allocd_stream = &(client->__output_streams[stream_index]);
