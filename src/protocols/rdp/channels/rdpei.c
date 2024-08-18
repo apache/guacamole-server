@@ -18,7 +18,6 @@
  */
 
 #include "channels/rdpei.h"
-#include "common/surface.h"
 #include "plugins/channels.h"
 #include "rdp.h"
 #include "settings.h"
@@ -27,6 +26,7 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/event.h>
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/mem.h>
 #include <guacamole/timestamp.h>
 
@@ -87,7 +87,7 @@ static void guac_rdp_rdpei_channel_connected(rdpContext* context,
     guac_rdpei->rdpei = rdpei;
 
     /* Declare level of multi-touch support */
-    guac_common_surface_set_multitouch(rdp_client->display->default_surface,
+    guac_display_layer_set_multitouch(guac_display_default_layer(rdp_client->display),
             GUAC_RDP_RDPEI_MAX_TOUCHES);
 
     guac_client_log(client, GUAC_LOG_DEBUG, "RDPEI channel will be used for "

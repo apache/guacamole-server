@@ -21,11 +21,10 @@
 #define GUAC_RDP_BITMAP_H
 
 #include "config.h"
-#include "common/display.h"
 
 #include <freerdp/freerdp.h>
 #include <freerdp/graphics.h>
-#include <guacamole/layer.h>
+#include <guacamole/display.h>
 #include <winpr/wtypes.h>
 
 /**
@@ -41,7 +40,7 @@ typedef struct guac_rdp_bitmap {
     /**
      * Layer containing cached image data.
      */
-    guac_common_display_layer* layer;
+    guac_display_layer* layer;
 
     /**
      * The number of times a bitmap has been used.

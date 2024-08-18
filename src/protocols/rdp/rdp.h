@@ -25,9 +25,7 @@
 #include "channels/disp.h"
 #include "channels/rdpei.h"
 #include "common/clipboard.h"
-#include "common/display.h"
 #include "common/list.h"
-#include "common/surface.h"
 #include "config.h"
 #include "fs.h"
 #include "keyboard.h"
@@ -45,6 +43,7 @@
 #include <freerdp/client/rail.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/rwlock.h>
 #include <guacamole/recording.h>
 #include <winpr/wtypes.h>
@@ -99,13 +98,13 @@ typedef struct guac_rdp_client {
     /**
      * The display.
      */
-    guac_common_display* display;
+    guac_display* display;
 
     /**
      * The surface that GDI operations should draw to. RDP messages exist which
      * change this surface to allow drawing to occur off-screen.
      */
-    guac_common_surface* current_surface;
+    guac_display_layer* current_surface;
 
     /**
      * Whether the RDP server supports defining explicit frame boundaries.

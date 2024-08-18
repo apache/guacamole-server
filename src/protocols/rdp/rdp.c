@@ -32,13 +32,11 @@
 #include "channels/rdpsnd/rdpsnd.h"
 #include "client.h"
 #include "color.h"
-#include "common/cursor.h"
-#include "common/display.h"
 #include "config.h"
 #include "error.h"
 #include "fs.h"
 #include "gdi.h"
-#include "glyph.h"
+#include "guacamole/display-types.h"
 #include "keyboard.h"
 #include "plugins/channels.h"
 #include "pointer.h"
@@ -64,6 +62,7 @@
 #include <guacamole/argv.h>
 #include <guacamole/audio.h>
 #include <guacamole/client.h>
+#include <guacamole/display.h>
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
@@ -207,16 +206,6 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     bitmap.SetSurface = guac_rdp_bitmap_setsurface;
     graphics_register_bitmap(graphics, &bitmap);
 
-    /* Set up glyph handling */
-    rdpGlyph glyph = *graphics->Glyph_Prototype;
-    glyph.size = sizeof(guac_rdp_glyph);
-    glyph.New = guac_rdp_glyph_new;
-    glyph.Free = guac_rdp_glyph_free;
-    glyph.Draw = guac_rdp_glyph_draw;
-    glyph.BeginDraw = guac_rdp_glyph_begindraw;
-    glyph.EndDraw = guac_rdp_glyph_enddraw;
-    graphics_register_glyph(graphics, &glyph);
-
     /* Set up pointer handling */
     rdpPointer pointer = *graphics->Pointer_Prototype;
     pointer.size = sizeof(guac_rdp_pointer);
@@ -237,17 +226,9 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     GUAC_RDP_CONTEXT(instance)->update->DesktopResize = guac_rdp_gdi_desktop_resize;
     GUAC_RDP_CONTEXT(instance)->update->BeginPaint = guac_rdp_gdi_begin_paint;
     GUAC_RDP_CONTEXT(instance)->update->EndPaint = guac_rdp_gdi_end_paint;
-    GUAC_RDP_CONTEXT(instance)->update->SetBounds = guac_rdp_gdi_set_bounds;
 
     GUAC_RDP_CONTEXT(instance)->update->SurfaceFrameMarker = guac_rdp_gdi_surface_frame_marker;
     GUAC_RDP_CONTEXT(instance)->update->altsec->FrameMarker = guac_rdp_gdi_frame_marker;
-
-    rdpPrimaryUpdate* primary = GUAC_RDP_CONTEXT(instance)->update->primary;
-    primary->DstBlt = guac_rdp_gdi_dstblt;
-    primary->PatBlt = guac_rdp_gdi_patblt;
-    primary->ScrBlt = guac_rdp_gdi_scrblt;
-    primary->MemBlt = guac_rdp_gdi_memblt;
-    primary->OpaqueRect = guac_rdp_gdi_opaquerect;
 
     /*
      * If the freerdp instance does not have a LoadChannels callback for
@@ -524,15 +505,16 @@ static int guac_rdp_handle_connection(guac_client* client) {
     guac_rwlock_acquire_write_lock(&(rdp_client->lock));
 
     /* Create display */
-    rdp_client->display = guac_common_display_alloc(client,
-            rdp_client->settings->width,
-            rdp_client->settings->height);
+    rdp_client->display = guac_display_alloc(client);
+
+    guac_display_layer* default_layer = guac_display_default_layer(rdp_client->display);
+    guac_display_layer_resize(default_layer, rdp_client->settings->width, rdp_client->settings->height);
 
     /* Use lossless compression only if requested (otherwise, use default
      * heuristics) */
-    guac_common_display_set_lossless(rdp_client->display, settings->lossless);
+    guac_display_layer_set_lossless(default_layer, settings->lossless);
 
-    rdp_client->current_surface = rdp_client->display->default_surface;
+    rdp_client->current_surface = default_layer;
 
     rdp_client->available_svc = guac_common_list_alloc();
 
@@ -573,7 +555,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
             settings->server_layout);
 
     /* Set default pointer */
-    guac_common_cursor_set_pointer(rdp_client->display->cursor);
+    guac_display_set_cursor(rdp_client->display, GUAC_DISPLAY_CURSOR_POINTER);
 
     /* 
      * Downgrade the lock to allow for concurrent read access.
@@ -686,8 +668,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
         /* Flush frame only if successful and an RDP frame is not known to be
          * in progress */
         else if (!rdp_client->frames_supported || rdp_client->frames_received) {
-            guac_common_display_flush(rdp_client->display);
-            guac_client_end_multiple_frames(client, rdp_client->frames_received);
+            guac_display_end_multiple_frames(rdp_client->display, rdp_client->frames_received);
             guac_socket_flush(client->socket);
             rdp_client->frames_received = 0;
         }
@@ -726,7 +707,7 @@ static int guac_rdp_handle_connection(guac_client* client) {
     rdp_client->keyboard = NULL;
 
     /* Free display */
-    guac_common_display_free(rdp_client->display);
+    guac_display_free(rdp_client->display);
     rdp_client->display = NULL;
 
     guac_rwlock_release_lock(&(rdp_client->lock));
