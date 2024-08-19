@@ -509,9 +509,11 @@ void* guac_vnc_client_thread(void* data) {
 
     }
 
+#ifdef LIBVNC_HAS_SIZE_MSG
     /* Update the display with the owner's screen size. */
     if (!settings->disable_display_resize)
         guac_client_for_owner(client, guac_vnc_display_set_owner_size, rfb_client);
+#endif // LIBVNC_HAS_SIZE_MSG
 
     guac_socket_flush(client->socket);
 

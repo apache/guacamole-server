@@ -648,6 +648,85 @@ then
 fi
 
 #
+# libVNCserver support for the rfbSetDesktopSizeMsg message, which allows the
+# VNC client to send its dimensions to the server, requesting that the server
+# resize itself to match. If libvnc lacks this message, remote resize will
+# be completely disabled.
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_size_msg=yes
+    AC_CHECK_DECL([rfbSetDesktopSizeMsg],
+                     [], [have_vnc_size_msg=no],
+                     [[#include <rfb/rfbproto.h>]])
+
+    if test "x${have_vnc_size_msg}" = "xno"
+    then
+        AC_MSG_WARN([
+      --------------------------------------------------------
+       No support for rfbSetDesktopSizeMsg in libvncclient.
+       VNC support for remote display resize will be disabled.
+      --------------------------------------------------------])
+    else
+        AC_DEFINE([LIBVNC_HAS_SIZE_MSG],,
+                  [Whether VNC client will support sending desktop size messages.])
+    fi
+
+fi
+
+#
+# libVNCserver support for the screen structure, which allows for tracking
+# multiple screens that are part of a larger frame buffer display. If this
+# feature is missing, the VNC client may still attempt to send the display
+# resize messages, but will assume that there is a one-to-one relationship
+# between the screen size and the frame buffer size (which is currently safe
+# for Guacamole, as it lacks multi-monitor/screen support).
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_screen=yes
+    AC_CHECK_MEMBERS([rfbClient.screen],
+                     [], [have_vnc_screen=no],
+                     [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_screen}" = "xyes"
+    then
+        AC_DEFINE([LIBVNC_CLIENT_HAS_SCREEN],,
+                  [Whether rfbClient contains the screen data structure.])
+    fi
+
+fi
+
+#
+# libVNCserver support for the requestedResize member, which enables the 
+# client to pause frame buffer updates during a resize operation. If support
+# for this is missing, Guacamole may still attempt to send the resize requests
+# to the remote display, but there may be odd display behavior just before,
+# during, or just after the resize, if a display update message happens to
+# coincide closely enough with a display resize message.
+#
+
+if test "x${have_libvncserver}" = "xyes"
+then
+
+    have_vnc_requestedresize=yes
+    AC_CHECK_MEMBERS([rfbClient.requestedResize],
+                     [], [have_vnc_requestedresize=no],
+                     [[#include <rfb/rfbclient.h>]])
+
+    if test "x${have_vnc_requestedresize}" = "xyes"
+    then
+        AC_DEFINE([LIBVNC_CLIENT_HAS_REQUESTED_RESIZE],,
+                  [Whether rfbClient contains the requestedResize member.])
+    fi
+
+fi
+
+#
 # FreeRDP (libfreerdpX, libfreerdp-clientX, and libwinprX)
 #
 
