@@ -658,7 +658,7 @@ if test "x${have_libvncserver}" = "xyes"
 then
 
     have_vnc_size_msg=yes
-    AC_CHECK_DECL([rfbSetDesktopSizeMsg],
+    AC_CHECK_TYPE([rfbSetDesktopSizeMsg],
                      [], [have_vnc_size_msg=no],
                      [[#include <rfb/rfbproto.h>]])
 

@@ -284,15 +284,9 @@ void* guac_vnc_display_set_owner_size(guac_user* owner, void* data) {
     rfbClient* rfb_client = (rfbClient*) data;
 
     guac_user_log(owner, GUAC_LOG_DEBUG, "Sending VNC display size for owner's display.");
-    
-#ifdef LIBVNC_CLIENT_HAS_SIZE_MSG
-    guac_user_log(owner, GUAC_LOG_DEBUG, "Sending VNC display size for owner's display.");
 
     /* Set the display size. */
     guac_vnc_display_set_size(rfb_client, owner->info.optimal_width, owner->info.optimal_height);
-#else
-    guac_user_log(owner, GUAC_LOG_WARNING, "VNC client lacks support for sending display size.");
-#endif // LIBVNC_CLIENT_HAS_SIZE_MSG
 
     /* Always return NULL. */
     return NULL;
