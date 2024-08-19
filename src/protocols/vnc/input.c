@@ -65,6 +65,7 @@ int guac_vnc_user_key_handler(guac_user* user, int keysym, int pressed) {
     return 0;
 }
 
+#ifdef LIBVNC_HAS_SIZE_MSG
 int guac_vnc_user_size_handler(guac_user* user, int width, int height) {
 
     guac_user_log(user, GUAC_LOG_TRACE, "Running user size handler.");
@@ -78,3 +79,4 @@ int guac_vnc_user_size_handler(guac_user* user, int width, int height) {
     return 0;
 
 }
+#endif //LIBVNC_HAS_SIZE_MSG
