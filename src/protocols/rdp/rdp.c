@@ -444,7 +444,7 @@ static int rdp_guac_client_wait_for_messages(guac_client* client,
             GUAC_RDP_MAX_FILE_DESCRIPTORS);
 
     /* Wait for data and construct a reasonable frame */
-    int result = WaitForMultipleObjects(num_handles, handles, FALSE,
+    DWORD result = WaitForMultipleObjects(num_handles, handles, FALSE,
             timeout_msecs);
 
     /* Translate WaitForMultipleObjects() return values */
