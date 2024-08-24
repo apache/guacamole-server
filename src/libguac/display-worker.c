@@ -23,6 +23,7 @@
 #include "guacamole/display.h"
 #include "guacamole/fifo.h"
 #include "guacamole/layer.h"
+#include "guacamole/protocol-types.h"
 #include "guacamole/protocol.h"
 #include "guacamole/rect.h"
 #include "guacamole/rwlock.h"
@@ -446,7 +447,8 @@ void* guac_display_worker_thread(void* data) {
                     /* Allow connected clients to move forward with rendering */
                     guac_client_end_multiple_frames(client, display->last_frame.frames);
 
-                    /* Commit any changed contents to client-side backing buffer */
+                    /* While connected clients moves forward with rendering,
+                     * commit any changed contents to client-side backing buffer */
                     guac_display_layer* current = display->last_frame.layers;
                     while (current != NULL) {
 
@@ -454,14 +456,33 @@ void* guac_display_worker_thread(void* data) {
                          * been modified since the last frame */
                         guac_rect* dirty = &current->last_frame.dirty;
                         if (!guac_rect_is_empty(dirty)) {
-                            guac_protocol_send_copy(client->socket, current->layer,
-                                    0, 0, current->last_frame.width, current->last_frame.height,
-                                    GUAC_COMP_SRC, current->last_frame_buffer, 0, 0);
+
+                            int x = dirty->left;
+                            int y = dirty->top;
+                            int width = guac_rect_width(dirty);
+                            int height = guac_rect_height(dirty);
+
+                            /* Ensure destination region is cleared out first if the alpha channel need be considered,
+                             * as GUAC_COMP_OVER is significantly faster than GUAC_COMP_SRC on the browser side */
+                            if (!current->opaque) {
+                                guac_protocol_send_rect(client->socket, current->last_frame_buffer, x, y, width, height);
+                                guac_protocol_send_cfill(client->socket, GUAC_COMP_RATOP, current->last_frame_buffer,
+                                        0x00, 0x00, 0x00, 0x00);
+                            }
+
+                            guac_protocol_send_copy(client->socket,
+                                    current->layer, x, y, width, height,
+                                    GUAC_COMP_OVER, current->last_frame_buffer, x, y);
+
                         }
 
                         current = current->last_frame.next;
 
                     }
+
+                    /* Include an additional frame boundary to allow the client to also move forward with committing
+                     * changes to the backing buffer while the server is receiving and preparing the next frame */
+                    guac_client_end_multiple_frames(client, 0);
 
                     /* This is now absolutely everything for the current frame,
                      * and it's safe to flush any outstanding data */

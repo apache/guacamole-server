@@ -236,7 +236,7 @@ void guac_display_dup(guac_display* display, guac_socket* socket) {
         /* Resync copy of previous frame */
         guac_protocol_send_copy(socket,
                 layer, 0, 0, width, height,
-                GUAC_COMP_SRC, current->last_frame_buffer, 0, 0);
+                GUAC_COMP_OVER, current->last_frame_buffer, 0, 0);
 
         /* Resync any properties that are specific to non-buffer layers */
         if (current->layer->index > 0) {
