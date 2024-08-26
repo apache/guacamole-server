@@ -111,6 +111,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "sftp-password",
     "sftp-private-key",
     "sftp-passphrase",
+    "sftp-public-key",
     "sftp-directory",
     "sftp-root-directory",
     "sftp-server-alive-interval",
@@ -491,6 +492,12 @@ enum RDP_ARGS_IDX {
      * key.
      */
     IDX_SFTP_PASSPHRASE,
+
+    /**
+     * The base64-encoded public key to use when authenticating with the SSH
+     * server for SFTP.
+     */
+    IDX_SFTP_PUBLIC_KEY,
 
     /**
      * The default location for file uploads within the SSH server. This will
@@ -1126,10 +1133,15 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_PRIVATE_KEY, NULL);
 
-    /* Passphrase for decrypting the SFTP private key (if applicable */
+    /* Passphrase for decrypting the SFTP private key (if applicable) */
     settings->sftp_passphrase =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_PASSPHRASE, "");
+
+    /* Public key for authenticating to SFTP server, if applicable. */
+    settings->sftp_public_key =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_PUBLIC_KEY, NULL);
 
     /* Default upload directory */
     settings->sftp_directory =
@@ -1397,6 +1409,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     guac_mem_free(settings->sftp_password);
     guac_mem_free(settings->sftp_port);
     guac_mem_free(settings->sftp_private_key);
+    guac_mem_free(settings->sftp_public_key);
     guac_mem_free(settings->sftp_username);
 #endif
 
