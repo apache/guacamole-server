@@ -106,6 +106,7 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "sftp-hostname",
     "sftp-host-key",
     "sftp-port",
+    "sftp-timeout",
     "sftp-username",
     "sftp-password",
     "sftp-private-key",
@@ -460,6 +461,12 @@ enum RDP_ARGS_IDX {
      * SSH port of "22" will be used.
      */
     IDX_SFTP_PORT,
+
+    /**
+     * The number of seconds to attempt to connect to the SSH server before
+     * timing out.
+     */
+    IDX_SFTP_TIMEOUT,
 
     /**
      * The username to provide when authenticating with the SSH server for
@@ -1097,6 +1104,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
     settings->sftp_port =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_PORT, "22");
+
+    /* SFTP timeout */
+    settings->sftp_timeout =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_TIMEOUT, RDP_DEFAULT_SFTP_TIMEOUT);
 
     /* Username for SSH/SFTP authentication */
     settings->sftp_username =
