@@ -185,7 +185,7 @@ int guac_common_ssh_verify_host_key(LIBSSH2_SESSION* session, guac_client* clien
     /* Otherwise, we look for a ssh_known_hosts file within GUACAMOLE_HOME and read that in. */
     else {
 
-        const char *guac_known_hosts = "/etc/guacamole/ssh_known_hosts";
+        const char *guac_known_hosts = GUAC_COMMON_SSH_KEY_DEFAULT_KNOWN_HOSTS;
         if (access(guac_known_hosts, F_OK) != -1)
             known_hosts = libssh2_knownhost_readfile(ssh_known_hosts, guac_known_hosts, LIBSSH2_KNOWNHOST_FILE_OPENSSH);
 

@@ -25,6 +25,7 @@
 #include "common/clipboard.h"
 #include "common-ssh/sftp.h"
 #include "common-ssh/ssh.h"
+#include "common-ssh/tunnel.h"
 #include "common-ssh/user.h"
 #include "settings.h"
 #include "terminal/terminal.h"
@@ -59,6 +60,11 @@ typedef struct guac_ssh_client {
      * The SSH client thread.
      */
     pthread_t client_thread;
+
+    /**
+     * If SSH tunneling is enabled, this is the object that tracks the tunnel.
+     */
+    guac_ssh_tunnel* ssh_tunnel;
 
     /**
      * The user and credentials to use for all SSH sessions.

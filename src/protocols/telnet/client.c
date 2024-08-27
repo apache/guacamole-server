@@ -24,6 +24,13 @@
 #include "telnet.h"
 #include "user.h"
 
+#ifdef ENABLE_COMMON_SSH
+#include "common-ssh/sftp.h"
+#include "common-ssh/ssh.h"
+#include "common-ssh/tunnel.h"
+#include "common-ssh/user.h"
+#endif
+
 #include <langinfo.h>
 #include <locale.h>
 #include <pthread.h>
@@ -83,6 +90,10 @@ int guac_client_init(guac_client* client) {
     client->free_handler = guac_telnet_client_free_handler;
     client->leave_handler = guac_telnet_user_leave_handler;
 
+#ifdef ENABLE_COMMON_SSH
+    guac_common_ssh_init(client);
+#endif
+
     /* Register handlers for argument values that may be sent after the handshake */
     guac_argv_register(GUAC_TELNET_ARGV_COLOR_SCHEME, guac_telnet_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
     guac_argv_register(GUAC_TELNET_ARGV_FONT_NAME, guac_telnet_argv_callback, NULL, GUAC_ARGV_OPTION_ECHO);
@@ -121,6 +132,25 @@ int guac_telnet_client_free_handler(guac_client* client) {
         pthread_join(telnet_client->client_thread, NULL);
         telnet_free(telnet_client->telnet);
     }
+
+#ifdef ENABLE_COMMON_SSH
+    /* Free SFTP filesystem, if loaded */
+    if (telnet_client->sftp_filesystem)
+        guac_common_ssh_destroy_sftp_filesystem(telnet_client->sftp_filesystem);
+
+    /* Free SFTP session */
+    if (telnet_client->sftp_session)
+        guac_common_ssh_destroy_session(telnet_client->sftp_session);
+
+    /* Free SFTP user */
+    if (telnet_client->sftp_user)
+        guac_common_ssh_destroy_user(telnet_client->sftp_user);
+
+    if (telnet_client->ssh_tunnel)
+        guac_common_ssh_tunnel_cleanup(telnet_client->ssh_tunnel);
+
+    guac_common_ssh_uninit();
+#endif
 
     /* Free settings */
     if (telnet_client->settings != NULL)
