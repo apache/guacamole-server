@@ -800,6 +800,33 @@ void* guac_rdp_client_thread(void* data) {
                 return NULL;
             }
 
+            /* Import the public key, if that is specified. */
+            if (settings->sftp_public_key != NULL) {
+
+                guac_client_log(client, GUAC_LOG_DEBUG,
+                        "Attempting public key import");
+
+                /* Attempt to read public key */
+                if (guac_common_ssh_user_import_public_key(rdp_client->sftp_user,
+                            settings->sftp_public_key)) {
+
+                    /* Public key import fails. */
+                    guac_client_abort(client,
+                           GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                           "Failed to import public key: %s",
+                            guac_common_ssh_key_error());
+
+                    guac_common_ssh_destroy_user(rdp_client->sftp_user);
+                    return NULL;
+
+                }
+
+                /* Success */
+                guac_client_log(client, GUAC_LOG_INFO,
+                        "Public key successfully imported.");
+
+            }
+
         }
 
         /* Otherwise, use specified password */

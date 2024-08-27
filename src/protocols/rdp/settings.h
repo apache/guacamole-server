@@ -498,6 +498,11 @@ typedef struct guac_rdp_settings {
     char* sftp_passphrase;
 
     /**
+     * The public key to use when connecting to the SFTP server, if applicable.
+     */
+    char* sftp_public_key;
+
+    /**
      * The default location for file uploads within the SSH server. This will
      * apply only to uploads which do not use the filesystem guac_object (where
      * the destination directory is otherwise ambiguous).

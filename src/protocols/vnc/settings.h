@@ -223,6 +223,12 @@ typedef struct guac_vnc_settings {
     char* sftp_passphrase;
 
     /**
+     * The base64-encoded public key to use when authenticating with the SSH
+     * server for SFTP using key-based authentication.
+     */
+    char* sftp_public_key;
+
+    /**
      * The default location for file uploads within the SSH server. This will
      * apply only to uploads which do not use the filesystem guac_object (where
      * the destination directory is otherwise ambiguous).

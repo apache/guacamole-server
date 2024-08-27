@@ -134,33 +134,34 @@ static guac_common_ssh_user* guac_ssh_get_user(guac_client* client) {
         guac_client_log(client, GUAC_LOG_INFO,
                 "Auth key successfully imported.");
 
-    } /* end if key given */
+        /* Import public key, if available. */
+        if (settings->public_key_base64 != NULL) {
 
-    if (settings->public_key_base64 != NULL) {
+            guac_client_log(client, GUAC_LOG_DEBUG,
+                    "Attempting public key import");
 
-        guac_client_log(client, GUAC_LOG_DEBUG,
-                "Attempting public key import");
+            /* Attempt to read public key */
+            if (guac_common_ssh_user_import_public_key(user,
+                        settings->public_key_base64)) {
 
-        /* Attempt to read public key */
-        if (guac_common_ssh_user_import_public_key(user,
-                    settings->public_key_base64)) {
+                /* Public key import fails. */
+                guac_client_abort(client,
+                       GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                       "Auth public key import failed: %s",
+                        guac_common_ssh_key_error());
 
-             /* If failing*/
-                 guac_client_abort(client,
-                        GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
-                        "Auth public key import failed: %s",
-                         guac_common_ssh_key_error());
+                guac_common_ssh_destroy_user(user);
+                return NULL;
 
-                 guac_common_ssh_destroy_user(user);
-                 return NULL;
+            }
+
+            /* Success */
+            guac_client_log(client, GUAC_LOG_INFO,
+                    "Auth public key successfully imported.");
 
         }
 
-        /* Success */
-        guac_client_log(client, GUAC_LOG_INFO,
-                "Auth public key successfully imported.");
-
-    }
+    } /* end if key given */
 
     /* If available, get password from settings */
     else if (settings->password != NULL) {
