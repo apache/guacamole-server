@@ -56,7 +56,7 @@ const char fips_nla_mode_warning[] = (
 const char* GUAC_RDP_CLIENT_ARGS[] = {
     "hostname",
     "port",
-    "server-timeout",
+    "timeout",
     GUAC_RDP_ARGV_DOMAIN,
     GUAC_RDP_ARGV_USERNAME,
     GUAC_RDP_ARGV_PASSWORD,
@@ -169,7 +169,7 @@ enum RDP_ARGS_IDX {
     /**
      * The amount of time to wait for the server to respond, in seconds.
      */
-    IDX_SERVER_TIMEOUT,
+    IDX_TIMEOUT,
 
     /**
      * The domain of the user logging in.
@@ -830,9 +830,9 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
                 settings->security_mode == GUAC_SECURITY_VMCONNECT ? RDP_DEFAULT_VMCONNECT_PORT : RDP_DEFAULT_PORT);
 
     /* Look for timeout settings and parse or set defaults. */
-    settings->server_timeout =
+    settings->timeout =
         guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
-                IDX_SERVER_TIMEOUT, RDP_DEFAULT_SERVER_TIMEOUT);
+                IDX_TIMEOUT, RDP_DEFAULT_TIMEOUT);
 
     guac_user_log(user, GUAC_LOG_DEBUG,
             "User resolution is %ix%i at %i DPI",
@@ -1744,7 +1744,7 @@ void guac_rdp_push_settings(guac_client* client,
     /* Connection */
     rdp_settings->ServerHostname = guac_strdup(guac_settings->hostname);
     rdp_settings->ServerPort = guac_settings->port;
-    rdp_settings->TcpAckTimeout = guac_settings->server_timeout * 1000;
+    rdp_settings->TcpAckTimeout = guac_settings->timeout * 1000;
 
     /* Session */
     rdp_settings->ColorDepth = guac_settings->color_depth;
