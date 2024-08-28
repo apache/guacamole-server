@@ -83,6 +83,10 @@ int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
  * @param port
  *     The TCP port of the remote system on which the connection will be
  *     attempted after the system has been woken.
+ *
+ * @param timeout
+ *     The number of seconds to wait when attempting the connection to the
+ *     remote system when checking to see if it is awake.
  * 
  * @return 
  *     Zero if the packet is successfully sent to the destination; non-zero
@@ -90,7 +94,7 @@ int guac_wol_wake(const char* mac_addr, const char* broadcast_addr,
  */
 int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
         const unsigned short udp_port, int wait_time, int retries,
-        const char* hostname, const char* port);
+        const char* hostname, const char* port, const int timeout);
 
 #endif /* GUAC_WOL_H */
 

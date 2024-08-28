@@ -56,6 +56,7 @@ const char fips_nla_mode_warning[] = (
 const char* GUAC_RDP_CLIENT_ARGS[] = {
     "hostname",
     "port",
+    "timeout",
     GUAC_RDP_ARGV_DOMAIN,
     GUAC_RDP_ARGV_USERNAME,
     GUAC_RDP_ARGV_PASSWORD,
@@ -105,10 +106,12 @@ const char* GUAC_RDP_CLIENT_ARGS[] = {
     "sftp-hostname",
     "sftp-host-key",
     "sftp-port",
+    "sftp-timeout",
     "sftp-username",
     "sftp-password",
     "sftp-private-key",
     "sftp-passphrase",
+    "sftp-public-key",
     "sftp-directory",
     "sftp-root-directory",
     "sftp-server-alive-interval",
@@ -163,6 +166,11 @@ enum RDP_ARGS_IDX {
      * used.
      */
     IDX_PORT,
+
+    /**
+     * The amount of time to wait for the server to respond, in seconds.
+     */
+    IDX_TIMEOUT,
 
     /**
      * The domain of the user logging in.
@@ -456,6 +464,12 @@ enum RDP_ARGS_IDX {
     IDX_SFTP_PORT,
 
     /**
+     * The number of seconds to attempt to connect to the SSH server before
+     * timing out.
+     */
+    IDX_SFTP_TIMEOUT,
+
+    /**
      * The username to provide when authenticating with the SSH server for
      * SFTP. If blank, the username provided for the RDP user will be used.
      */
@@ -478,6 +492,12 @@ enum RDP_ARGS_IDX {
      * key.
      */
     IDX_SFTP_PASSPHRASE,
+
+    /**
+     * The base64-encoded public key to use when authenticating with the SSH
+     * server for SFTP.
+     */
+    IDX_SFTP_PUBLIC_KEY,
 
     /**
      * The default location for file uploads within the SSH server. This will
@@ -816,6 +836,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv, IDX_PORT,
                 settings->security_mode == GUAC_SECURITY_VMCONNECT ? RDP_DEFAULT_VMCONNECT_PORT : RDP_DEFAULT_PORT);
 
+    /* Look for timeout settings and parse or set defaults. */
+    settings->timeout =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_TIMEOUT, RDP_DEFAULT_TIMEOUT);
+
     guac_user_log(user, GUAC_LOG_DEBUG,
             "User resolution is %ix%i at %i DPI",
             user->info.optimal_width,
@@ -1087,6 +1112,11 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_PORT, "22");
 
+    /* SFTP timeout */
+    settings->sftp_timeout =
+        guac_user_parse_args_int(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_TIMEOUT, RDP_DEFAULT_SFTP_TIMEOUT);
+
     /* Username for SSH/SFTP authentication */
     settings->sftp_username =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
@@ -1103,10 +1133,15 @@ guac_rdp_settings* guac_rdp_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_PRIVATE_KEY, NULL);
 
-    /* Passphrase for decrypting the SFTP private key (if applicable */
+    /* Passphrase for decrypting the SFTP private key (if applicable) */
     settings->sftp_passphrase =
         guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
                 IDX_SFTP_PASSPHRASE, "");
+
+    /* Public key for authenticating to SFTP server, if applicable. */
+    settings->sftp_public_key =
+        guac_user_parse_args_string(user, GUAC_RDP_CLIENT_ARGS, argv,
+                IDX_SFTP_PUBLIC_KEY, NULL);
 
     /* Default upload directory */
     settings->sftp_directory =
@@ -1374,6 +1409,7 @@ void guac_rdp_settings_free(guac_rdp_settings* settings) {
     guac_mem_free(settings->sftp_password);
     guac_mem_free(settings->sftp_port);
     guac_mem_free(settings->sftp_private_key);
+    guac_mem_free(settings->sftp_public_key);
     guac_mem_free(settings->sftp_username);
 #endif
 
@@ -1721,6 +1757,7 @@ void guac_rdp_push_settings(guac_client* client,
     /* Connection */
     rdp_settings->ServerHostname = guac_strdup(guac_settings->hostname);
     rdp_settings->ServerPort = guac_settings->port;
+    rdp_settings->TcpAckTimeout = guac_settings->timeout * 1000;
 
     /* Session */
     rdp_settings->ColorDepth = guac_settings->color_depth;

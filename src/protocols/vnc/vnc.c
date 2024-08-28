@@ -301,7 +301,8 @@ void* guac_vnc_client_thread(void* data) {
                     settings->wol_wait_time,
                     GUAC_WOL_DEFAULT_CONNECT_RETRIES,
                     settings->hostname,
-                    (const char *) str_port)) {
+                    (const char *) str_port,
+                    GUAC_WOL_DEFAULT_CONNECTION_TIMEOUT)) {
                 guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet or connect to remote system.");
                 guac_mem_free(str_port);
                 return NULL;
@@ -396,6 +397,33 @@ void* guac_vnc_client_thread(void* data) {
                 return NULL;
             }
 
+            /* Import the public key, if that is specified. */
+            if (settings->sftp_public_key != NULL) {
+
+                guac_client_log(client, GUAC_LOG_DEBUG,
+                        "Attempting public key import");
+
+                /* Attempt to read public key */
+                if (guac_common_ssh_user_import_public_key(vnc_client->sftp_user,
+                            settings->sftp_public_key)) {
+
+                    /* Public key import fails. */
+                    guac_client_abort(client,
+                           GUAC_PROTOCOL_STATUS_CLIENT_UNAUTHORIZED,
+                           "Failed to import public key: %s",
+                            guac_common_ssh_key_error());
+
+                    guac_common_ssh_destroy_user(vnc_client->sftp_user);
+                    return NULL;
+
+                }
+
+                /* Success */
+                guac_client_log(client, GUAC_LOG_INFO,
+                        "Public key successfully imported.");
+
+            }
+
         }
 
         /* Otherwise, use specified password */
@@ -409,8 +437,8 @@ void* guac_vnc_client_thread(void* data) {
         /* Attempt SSH connection */
         vnc_client->sftp_session =
             guac_common_ssh_create_session(client, settings->sftp_hostname,
-                    settings->sftp_port, vnc_client->sftp_user, settings->sftp_server_alive_interval,
-                    settings->sftp_host_key, NULL);
+                    settings->sftp_port, vnc_client->sftp_user, settings->sftp_timeout,
+                    settings->sftp_server_alive_interval, settings->sftp_host_key, NULL);
 
         /* Fail if SSH connection does not succeed */
         if (vnc_client->sftp_session == NULL) {
