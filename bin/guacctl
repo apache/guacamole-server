@@ -117,7 +117,7 @@ error() {
 ##
 usage() {
     cat >&2 <<END
-guacctl 1.5.5, Apache Guacamole terminal session control utility.
+guacctl 1.6.0, Apache Guacamole terminal session control utility.
 Usage: guacctl [OPTION] [FILE or NAME]...
 
     -d, --download         download each of the files listed.
