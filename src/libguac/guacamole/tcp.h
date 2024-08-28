@@ -17,17 +17,25 @@
  * under the License.
  */
 
-#ifndef __GUAC_SOCKET_TCP_H
-#define __GUAC_SOCKET_TCP_H
+#ifndef GUAC_TCP_H
+#define GUAC_TCP_H
+
+/**
+ * Provides convenience functions for establishing low-level TCP connections.
+ *
+ * @file tcp.h
+ */
 
 #include "config.h"
 
 #include <stddef.h>
 
 /**
- * Given a hostname or IP address and port, attempt to connect to that
- * system, returning an open socket if the connection succeeds, or a negative
- * value if it fails. If it fails the errno variable will be set.
+ * Given a hostname or IP address and port, attempt to connect to that system,
+ * returning the file descriptor of an open socket if the connection succeeds,
+ * or a negative value if it fails. The returned file descriptor must
+ * eventually be freed with a call to close(). If this function fails,
+ * guac_error will be set appropriately.
  *
  * @param hostname
  *     The hostname or IP address to which to attempt connections.
@@ -42,6 +50,6 @@
  *     A valid socket if the connection succeeds, or a negative integer if it
  *     fails.
  */
-int guac_socket_tcp_connect(const char* hostname, const char* port, const int timeout);
+int guac_tcp_connect(const char* hostname, const char* port, const int timeout);
 
-#endif // __GUAC_SOCKET_TCP_H
+#endif // GUAC_TCP_H
