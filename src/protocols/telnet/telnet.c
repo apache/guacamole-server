@@ -27,7 +27,7 @@
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/recording.h>
-#include <guacamole/socket-tcp.h>
+#include <guacamole/tcp.h>
 #include <guacamole/timestamp.h>
 #include <guacamole/wol-constants.h>
 #include <guacamole/wol.h>
@@ -386,7 +386,7 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
 
-    int fd = guac_socket_tcp_connect(settings->hostname, settings->port, settings->timeout);
+    int fd = guac_tcp_connect(settings->hostname, settings->port, settings->timeout);
 
     /* Open telnet session */
     telnet_t* telnet = telnet_init(__telnet_options, __guac_telnet_event_handler, 0, client);
