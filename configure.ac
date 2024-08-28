@@ -731,7 +731,7 @@ fi
 #
 
 freerdp_version=
-have_freerdp=
+have_freerdp=disabled
 FREERDP_PLUGIN_DIR=
 
 AC_ARG_WITH([rdp],
@@ -752,7 +752,7 @@ OLDCPPFLAGS="$CPPFLAGS"
 
 if test "x$with_rdp" != "xno"
 then
-    freerdp_version=3
+    freerdp_version="(3.x)"
     have_freerdp=yes
     PKG_CHECK_MODULES([RDP], [freerdp3 freerdp-client3 winpr3],
                       [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
@@ -768,7 +768,7 @@ fi
 
 if test "x$with_rdp" != "xno" -a "x${have_freerdp}" = "xno"
 then
-    freerdp_version=2
+    freerdp_version="(2.x)"
     have_freerdp=yes
     PKG_CHECK_MODULES([RDP], [freerdp2 freerdp-client2 winpr2],
                       [CPPFLAGS="${RDP_CFLAGS} -Werror $CPPFLAGS"]
@@ -1494,7 +1494,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
 
    Library status:
 
-     freerdp${freerdp_version} ............ ${have_freerdp}
+     freerdp ............. ${have_freerdp} ${freerdp_version}
      pango ............... ${have_pango}
      libavcodec .......... ${have_libavcodec}
      libavformat ......... ${have_libavformat}
@@ -1524,7 +1524,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
       guacenc .... ${build_guacenc}
       guaclog .... ${build_guaclog}
 
-   FreeRDP${freerdp_version} plugins: ${build_rdp_plugins}
+   FreeRDP plugins: ${build_rdp_plugins}
    Init scripts: ${build_init}
    Systemd units: ${build_systemd}
 
