@@ -24,8 +24,8 @@
 #include <guacamole/client.h>
 #include <guacamole/fips.h>
 #include <guacamole/mem.h>
-#include <guacamole/socket-tcp.h>
 #include <guacamole/string.h>
+#include <guacamole/tcp.h>
 #include <libssh2.h>
 
 #ifdef LIBSSH2_USES_GCRYPT
@@ -417,7 +417,7 @@ guac_common_ssh_session* guac_common_ssh_create_session(guac_client* client,
         int timeout, int keepalive, const char* host_key,
         guac_ssh_credential_handler* credential_handler) {
 
-    int fd = guac_socket_tcp_connect(hostname, port, timeout);
+    int fd = guac_tcp_connect(hostname, port, timeout);
     if (fd < 0) {
         guac_client_abort(client, GUAC_PROTOCOL_STATUS_SERVER_ERROR,
             "Failed to open TCP connection to %s on %s.", hostname, port);

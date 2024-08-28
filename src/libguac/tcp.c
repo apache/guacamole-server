@@ -19,7 +19,7 @@
 
 #include "config.h"
 #include "guacamole/error.h"
-#include "guacamole/socket.h"
+#include "guacamole/tcp.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -27,8 +27,9 @@
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
-int guac_socket_tcp_connect(const char* hostname, const char* port, const int timeout) {
+int guac_tcp_connect(const char* hostname, const char* port, const int timeout) {
 
     int retval;
 

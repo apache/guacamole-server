@@ -70,11 +70,11 @@ libguacinc_HEADERS =                  \
     guacamole/socket-constants.h      \
     guacamole/socket.h                \
     guacamole/socket-fntypes.h        \
-    guacamole/socket-tcp.h            \
     guacamole/socket-types.h          \
     guacamole/stream.h                \
     guacamole/stream-types.h          \
     guacamole/string.h                \
+    guacamole/tcp.h                   \
     guacamole/timestamp.h             \
     guacamole/timestamp-types.h       \
     guacamole/unicode.h               \
@@ -129,9 +129,9 @@ libguac_la_SOURCES =   \
     socket-broadcast.c \
     socket-fd.c        \
     socket-nest.c      \
-    socket-tcp.c       \
     socket-tee.c       \
     string.c           \
+    tcp.c              \
     timestamp.c        \
     unicode.c          \
     user.c             \

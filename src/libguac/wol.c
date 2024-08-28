@@ -20,7 +20,7 @@
 #include "config.h"
 
 #include "guacamole/error.h"
-#include "guacamole/socket-tcp.h"
+#include "guacamole/tcp.h"
 #include "guacamole/timestamp.h"
 #include "guacamole/wol.h"
 
@@ -204,7 +204,7 @@ int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
         const char* hostname, const char* port, const int timeout) {
 
     /* Attempt to connect, first. */
-    int sockfd = guac_socket_tcp_connect(hostname, port, timeout);
+    int sockfd = guac_tcp_connect(hostname, port, timeout);
 
     /* If connection succeeds, no need to wake the system. */
     if (sockfd > 0) {
@@ -225,7 +225,7 @@ int guac_wol_wake_and_wait(const char* mac_addr, const char* broadcast_addr,
     /* Try to connect on the specified TCP port and hostname or IP. */
     for (int i = 0; i < retries; i++) {
 
-        sockfd = guac_socket_tcp_connect(hostname, port, timeout);
+        sockfd = guac_tcp_connect(hostname, port, timeout);
 
         /* Connection succeeded - close socket and exit. */
         if (sockfd > 0) {
