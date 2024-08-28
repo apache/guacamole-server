@@ -38,6 +38,7 @@ const char* GUAC_SSH_CLIENT_ARGS[] = {
     "hostname",
     "host-key",
     "port",
+    "timeout",
     "username",
     "password",
     GUAC_SSH_ARGV_FONT_NAME,
@@ -98,6 +99,11 @@ enum SSH_ARGS_IDX {
      * The port to connect to. Optional.
      */
     IDX_PORT,
+
+    /**
+     * The timeout of the connection attempt, in seconds. Optional.
+     */
+    IDX_TIMEOUT,
 
     /**
      * The name of the user to login as. Optional.
@@ -453,6 +459,11 @@ guac_ssh_settings* guac_ssh_parse_args(guac_user* user,
     settings->port =
         guac_user_parse_args_string(user, GUAC_SSH_CLIENT_ARGS, argv,
                 IDX_PORT, GUAC_SSH_DEFAULT_PORT);
+
+    /* Parse the timeout value. */
+    settings->timeout =
+        guac_user_parse_args_int(user, GUAC_SSH_CLIENT_ARGS, argv,
+                IDX_TIMEOUT, GUAC_SSH_DEFAULT_TIMEOUT);
 
     /* Read-only mode */
     settings->read_only =
