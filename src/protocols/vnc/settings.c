@@ -68,10 +68,12 @@ const char* GUAC_VNC_CLIENT_ARGS[] = {
     "sftp-hostname",
     "sftp-host-key",
     "sftp-port",
+    "sftp-timeout",
     "sftp-username",
     "sftp-password",
     "sftp-private-key",
     "sftp-passphrase",
+    "sftp-public-key",
     "sftp-directory",
     "sftp-root-directory",
     "sftp-server-alive-interval",
@@ -242,6 +244,12 @@ enum VNC_ARGS_IDX {
     IDX_SFTP_PORT,
 
     /**
+     * The number of seconds to attempt to connect to the SFTP server before
+     * timing out.
+     */
+    IDX_SFTP_TIMEOUT,
+
+    /**
      * The username to provide when authenticating with the SSH server for
      * SFTP.
      */
@@ -264,6 +272,12 @@ enum VNC_ARGS_IDX {
      * key.
      */
     IDX_SFTP_PASSPHRASE,
+
+    /**
+     * The base64-encode public key to use when authentication with the SSH
+     * server for SFTP using key-based authentication.
+     */
+    IDX_SFTP_PUBLIC_KEY,
 
     /**
      * The default location for file uploads within the SSH server. This will
@@ -576,6 +590,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_SFTP_PORT, "22");
 
+    /* SFTP connection timeout */
+    settings->sftp_timeout =
+        guac_user_parse_args_int(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SFTP_TIMEOUT, GUAC_VNC_DEFAULT_SFTP_TIMEOUT);
+
     /* Username for SSH/SFTP authentication */
     settings->sftp_username =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
@@ -595,6 +614,11 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,
     settings->sftp_passphrase =
         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
                 IDX_SFTP_PASSPHRASE, "");
+
+    /* Public key for SFTP using key-based authentication. */
+    settings->sftp_public_key =
+        guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,
+                IDX_SFTP_PUBLIC_KEY, NULL);
 
     /* Default upload directory */
     settings->sftp_directory =
@@ -731,6 +755,7 @@ void guac_vnc_settings_free(guac_vnc_settings* settings) {
     guac_mem_free(settings->sftp_password);
     guac_mem_free(settings->sftp_port);
     guac_mem_free(settings->sftp_private_key);
+    guac_mem_free(settings->sftp_public_key);
     guac_mem_free(settings->sftp_username);
 #endif
 

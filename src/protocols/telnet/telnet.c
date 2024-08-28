@@ -386,7 +386,7 @@ static telnet_t* __guac_telnet_create_session(guac_client* client) {
     guac_telnet_client* telnet_client = (guac_telnet_client*) client->data;
     guac_telnet_settings* settings = telnet_client->settings;
 
-    int fd = guac_socket_tcp_connect(settings->hostname, settings->port);
+    int fd = guac_socket_tcp_connect(settings->hostname, settings->port, settings->timeout);
 
     /* Open telnet session */
     telnet_t* telnet = telnet_init(__telnet_options, __guac_telnet_event_handler, 0, client);
@@ -511,7 +511,8 @@ void* guac_telnet_client_thread(void* data) {
                     settings->wol_wait_time,
                     GUAC_WOL_DEFAULT_CONNECT_RETRIES,
                     settings->hostname,
-                    settings->port)) {
+                    settings->port,
+                    settings->timeout)) {
                 guac_client_log(client, GUAC_LOG_ERROR, "Failed to send WOL packet or connect to remote server.");
                 return NULL;
             }

@@ -30,6 +30,11 @@
 #define GUAC_VNC_DEFAULT_RECORDING_NAME "recording"
 
 /**
+ * The default number of seconds to attempt to connect to the SFTP server.
+ */
+#define GUAC_VNC_DEFAULT_SFTP_TIMEOUT 10
+
+/**
  * VNC-specific client data.
  */
 typedef struct guac_vnc_settings {
@@ -189,6 +194,11 @@ typedef struct guac_vnc_settings {
     char* sftp_port;
 
     /**
+     * The number of seconds to attempt to connect to the SFTP server.
+     */
+    int sftp_timeout;
+
+    /**
      * The username to provide when authenticating with the SSH server for
      * SFTP.
      */
@@ -211,6 +221,12 @@ typedef struct guac_vnc_settings {
      * key.
      */
     char* sftp_passphrase;
+
+    /**
+     * The base64-encoded public key to use when authenticating with the SSH
+     * server for SFTP using key-based authentication.
+     */
+    char* sftp_public_key;
 
     /**
      * The default location for file uploads within the SSH server. This will
