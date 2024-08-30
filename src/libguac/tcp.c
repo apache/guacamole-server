@@ -54,8 +54,7 @@ int guac_tcp_connect(const char* hostname, const char* port, const int timeout) 
     }
 
     /* Attempt connection to each address until success */
-    current_address = addresses;
-    while (current_address != NULL) {
+    for (current_address = addresses; current_address != NULL; current_address = current_address->ai_next) {
 
         /* Resolve hostname */
         if ((retval = getnameinfo(current_address->ai_addr,
@@ -69,40 +68,80 @@ int guac_tcp_connect(const char* hostname, const char* port, const int timeout) 
             continue;
         }
 
-        /* Get socket */
+        /* Get socket or return the error. */
         fd = socket(current_address->ai_family, SOCK_STREAM, 0);
         if (fd < 0) {
             freeaddrinfo(addresses);
             return fd;
         }
 
+        /* Variable to store current socket options. */
+        int opt;
+
+        /* Get current socket options */
+        if ((opt = fcntl(fd, F_GETFL, NULL)) < 0) {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "Failed to retrieve socket options.";
+            close(fd);
+            continue;
+        }
+
         /* Set socket to non-blocking */
-        fcntl(fd, F_SETFL, O_NONBLOCK);
+        if (fcntl(fd, F_SETFL, opt | O_NONBLOCK) < 0) {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "Failed to set non-blocking socket.";
+            close(fd);
+            continue;
+        }
 
-        /* Set up timeout. */
-        fd_set fdset;
-        FD_ZERO(&fdset);
-        FD_SET(fd, &fdset);
-
+        /* Structure that stores our timeout setting. */
         struct timeval tv;
         tv.tv_sec = timeout;
         tv.tv_usec = 0;
 
         /* Connect and wait for timeout */
-        if (connect(fd, current_address->ai_addr, current_address->ai_addrlen) < 0) {
-            guac_error = GUAC_STATUS_REFUSED;
-            guac_error_message = "Unable to connect via socket.";
-            close(fd);
+        if ((retval = connect(fd, current_address->ai_addr, current_address->ai_addrlen)) < 0) {
+            if (errno == EINPROGRESS) {
+                /* Set up timeout. */
+                fd_set fdset;
+                FD_ZERO(&fdset);
+                FD_SET(fd, &fdset);
+                
+                retval = select(fd + 1, NULL, &fdset, NULL, &tv);
+            }
+            
+            else {
+                guac_error = GUAC_STATUS_REFUSED;
+                guac_error_message = "Unable to connect via socket.";
+                close(fd);
+                continue;
+            }
+        }
+
+        /* Successful connection */
+        if (retval > 0) {
+            /* Restore previous socket options. */
+            if (fcntl(fd, F_SETFL, opt) < 0) {
+                guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+                guac_error_message = "Failed to reset socket options.";
+                close(fd);
+                continue;
+            }
+
             break;
         }
 
-        /* Check for the connection and break if successful */
-        if (select(fd + 1, NULL, &fdset, NULL, &tv) > 0)
-            break;
+        if (retval == 0) {
+            guac_error = GUAC_STATUS_REFUSED;
+            guac_error_message = "Timeout connecting via socket.";
+        }
+        else {
+            guac_error = GUAC_STATUS_INVALID_ARGUMENT;
+            guac_error_message = "Error attempting to connect via socket.";
+        }
 
-        /* Connection not successful - free resources and go to the next address. */
+        /* Some error has occurred - free resources before next iteration. */
         close(fd);
-        current_address = current_address->ai_next;
 
     }
 
