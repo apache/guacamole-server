@@ -19,7 +19,6 @@
 
 #include "argv.h"
 #include "beep.h"
-#include "bitmap.h"
 #include "channels/audio-input/audio-buffer.h"
 #include "channels/audio-input/audio-input.h"
 #include "channels/cliprdr.h"
@@ -196,15 +195,6 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
     /* Init FreeRDP internal GDI implementation */
     if (!gdi_init(instance, guac_rdp_get_native_pixel_format(FALSE)))
         return FALSE;
-
-    /* Set up bitmap handling */
-    rdpBitmap bitmap = *graphics->Bitmap_Prototype;
-    bitmap.size = sizeof(guac_rdp_bitmap);
-    bitmap.New = guac_rdp_bitmap_new;
-    bitmap.Free = guac_rdp_bitmap_free;
-    bitmap.Paint = guac_rdp_bitmap_paint;
-    bitmap.SetSurface = guac_rdp_bitmap_setsurface;
-    graphics_register_bitmap(graphics, &bitmap);
 
     /* Set up pointer handling */
     rdpPointer pointer = *graphics->Pointer_Prototype;

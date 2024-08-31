@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "bitmap.h"
 #include "color.h"
 #include "guacamole/display.h"
 #include "rdp.h"
