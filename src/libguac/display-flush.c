@@ -101,10 +101,15 @@ static void* LFR_guac_display_broadcast_cursor_state(guac_user* user, void* data
  * @param display
  *     The display whose pending frame should be finalized and persisted as the
  *     last frame.
+ *
+ * @return
+ *     Non-zero if any layers within the pending frame had any changes
+ *     whatsoever that needed to be sent as part of the frame, zero otherwise.
  */
-static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
+static int PFW_LFW_guac_display_frame_complete(guac_display* display) {
 
     guac_client* client = display->client;
+    int retval = 0;
 
     display->last_frame.layers = display->pending_frame.layers;
     guac_display_layer* current = display->pending_frame.layers;
@@ -126,6 +131,8 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
             current->last_frame.dirty = current->pending_frame.dirty;
             current->pending_frame.dirty = (guac_rect) { 0 };
 
+            retval = 1;
+
         }
 
         /* Commit any change in layer size */
@@ -138,6 +145,8 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
             current->last_frame.width = current->pending_frame.width;
             current->last_frame.height = current->pending_frame.height;
 
+            retval = 1;
+
         }
 
         /* Commit any change in layer opacity */
@@ -147,6 +156,8 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
                     current->pending_frame.opacity);
 
             current->last_frame.opacity = current->pending_frame.opacity;
+
+            retval = 1;
 
         }
 
@@ -166,6 +177,8 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
             current->last_frame.y = current->pending_frame.y;
             current->last_frame.z = current->pending_frame.z;
             current->last_frame.parent = current->pending_frame.parent;
+
+            retval = 1;
 
         }
 
@@ -218,7 +231,11 @@ static void PFW_LFW_guac_display_frame_complete(guac_display* display) {
         display->last_frame.cursor_mask = display->pending_frame.cursor_mask;
         guac_client_foreach_user(client, LFR_guac_display_broadcast_cursor_state, display);
 
+        retval = 1;
+
     }
+
+    return retval;
 
 }
 
@@ -264,36 +281,38 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
      * passes. */
     GUAC_DISPLAY_PLAN_BEGIN_PHASE();
     plan = PFW_LFR_guac_display_plan_create(display);
-    if (plan == NULL)
-        goto finished_with_last_frame_lock;
     GUAC_DISPLAY_PLAN_END_PHASE(display, "draft", 1, 5);
 
-    display->pending_frame.timestamp = plan->frame_end;
+    if (plan != NULL) {
 
-    /* PASS 1: Identify draw operations that only apply a single color, and
-     * replace those operations with simple rectangle draws. */
-    GUAC_DISPLAY_PLAN_BEGIN_PHASE();
-    PFR_guac_display_plan_rewrite_as_rects(plan);
-    GUAC_DISPLAY_PLAN_END_PHASE(display, "rects", 2, 5);
+        display->pending_frame.timestamp = plan->frame_end;
 
-    /* PASS 2 (and 3): Index all modified cells by their graphical contents and
-     * search the previous frame for occurrences of the same content. Where any
-     * draws could instead be represented as copies from the previous frame, do
-     * so instead of sending new image data. */
-    GUAC_DISPLAY_PLAN_BEGIN_PHASE();
-    PFR_guac_display_plan_index_dirty_cells(plan);
-    PFR_LFR_guac_display_plan_rewrite_as_copies(plan);
-    GUAC_DISPLAY_PLAN_END_PHASE(display, "search", 3, 5);
+        /* PASS 1: Identify draw operations that only apply a single color, and
+         * replace those operations with simple rectangle draws. */
+        GUAC_DISPLAY_PLAN_BEGIN_PHASE();
+        PFR_guac_display_plan_rewrite_as_rects(plan);
+        GUAC_DISPLAY_PLAN_END_PHASE(display, "rects", 2, 5);
 
-    /* PASS 4 (and 5): Combine adjacent updates in horizontal and vertical
-     * directions where doing so would be more efficient. The goal of these
-     * passes is to ensure that graphics can be encoded and decoded
-     * efficiently, without defeating the parralelism provided by providing the
-     * worker threads with many smaller operations. */
-    GUAC_DISPLAY_PLAN_BEGIN_PHASE();
-    PFW_guac_display_plan_combine_horizontally(plan);
-    PFW_guac_display_plan_combine_vertically(plan);
-    GUAC_DISPLAY_PLAN_END_PHASE(display, "combine", 4, 5);
+        /* PASS 2 (and 3): Index all modified cells by their graphical contents and
+         * search the previous frame for occurrences of the same content. Where any
+         * draws could instead be represented as copies from the previous frame, do
+         * so instead of sending new image data. */
+        GUAC_DISPLAY_PLAN_BEGIN_PHASE();
+        PFR_guac_display_plan_index_dirty_cells(plan);
+        PFR_LFR_guac_display_plan_rewrite_as_copies(plan);
+        GUAC_DISPLAY_PLAN_END_PHASE(display, "search", 3, 5);
+
+        /* PASS 4 (and 5): Combine adjacent updates in horizontal and vertical
+         * directions where doing so would be more efficient. The goal of these
+         * passes is to ensure that graphics can be encoded and decoded
+         * efficiently, without defeating the parralelism provided by providing the
+         * worker threads with many smaller operations. */
+        GUAC_DISPLAY_PLAN_BEGIN_PHASE();
+        PFW_guac_display_plan_combine_horizontally(plan);
+        PFW_guac_display_plan_combine_vertically(plan);
+        GUAC_DISPLAY_PLAN_END_PHASE(display, "combine", 4, 5);
+
+    }
 
     /*
      * With all optimizations now performed, finalize the pending frame. This
@@ -302,11 +321,22 @@ void guac_display_end_multiple_frames(guac_display* display, int frames) {
      * without disturbing the encoding performed by the worker threads.
      */
 
+    int frame_nonempty;
+
     GUAC_DISPLAY_PLAN_BEGIN_PHASE();
-    PFW_LFW_guac_display_frame_complete(display);
+    frame_nonempty = PFW_LFW_guac_display_frame_complete(display);
     GUAC_DISPLAY_PLAN_END_PHASE(display, "commit", 5, 5);
 
-finished_with_last_frame_lock:
+    /* Not all frames are graphical. If we end up with a frame containing
+     * nothing but layer property changes, then we must still send a frame
+     * boundary even though there is no display plan to optimize. */
+    if (plan == NULL && frame_nonempty) {
+        guac_display_plan_operation end_frame_op = {
+            .type = GUAC_DISPLAY_PLAN_END_FRAME
+        };
+        guac_fifo_enqueue(&display->ops, &end_frame_op);
+    }
+
     guac_rwlock_release_lock(&display->last_frame.lock);
 
 finished_with_pending_frame_lock:
