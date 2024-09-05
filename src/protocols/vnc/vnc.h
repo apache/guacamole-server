@@ -48,6 +48,12 @@
 #include <pthread.h>
 
 /**
+ * The ID of the RFB client screen. If multi-screen support is added, more than
+ * one ID will be needed as well.
+ */
+#define GUAC_VNC_SCREEN_ID 1
+
+/**
  * VNC-specific client data.
  */
 typedef struct guac_vnc_client {
