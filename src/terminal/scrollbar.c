@@ -20,39 +20,23 @@
 #include "terminal/scrollbar.h"
 
 #include <guacamole/client.h>
-#include <guacamole/display.h>
+#include <guacamole/layer.h>
 #include <guacamole/mem.h>
+#include <guacamole/socket.h>
 #include <guacamole/protocol.h>
+#include <guacamole/user.h>
 
-/**
- * The opacity of the entire scrollbar, including both container and handle. The
- * value 0x66 is 40% opacity.
- */
-#define GUAC_TERMINAL_SCROLLBAR_OPACITY 0x66
-
-/**
- * The color to assign to the scrollbar handle (the component of the scrollbar
- * that shows the current scroll position).
- */
-#define GUAC_TERMINAL_SCROLLBAR_HANDLE_COLOR 0xFFFFFFFF
-
-/**
- * The color to assign to the scrollbar container (the component of the
- * scrollbar that contains the handle).
- */
-#define GUAC_TERMINAL_SCROLLBAR_CONTAINER_COLOR 0xFF808080
+#include <stdlib.h>
 
 guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
-        guac_display* graphical_display, guac_display_layer* parent,
-        int parent_width, int parent_height, int visible_area) {
+        const guac_layer* parent, int parent_width, int parent_height, int visible_area) {
 
     /* Allocate scrollbar */
     guac_terminal_scrollbar* scrollbar =
         guac_mem_alloc(sizeof(guac_terminal_scrollbar));
 
-    /* Associate client and corresponding display */
+    /* Associate client */
     scrollbar->client = client;
-    scrollbar->graphical_display = graphical_display;
 
     /* Init default min/max and value */
     scrollbar->min   = 0;
@@ -78,17 +62,8 @@ guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
     scrollbar->render_state.container_height = 0;
 
     /* Allocate and init layers */
-    scrollbar->container = guac_display_alloc_layer(graphical_display, 1);
-    scrollbar->handle    = guac_display_alloc_layer(graphical_display, 1);
-
-    /* The parent layer contains the scrollbar container, while the container
-     * layer contains the scrollbar handle */
-    guac_display_layer_set_parent(scrollbar->container, scrollbar->parent);
-    guac_display_layer_set_parent(scrollbar->handle, scrollbar->container);
-
-    /* Use layer-level transparency to blend the scrollbar with the background
-     * color, rather than graphical updates leveraging the alpha channel */
-    guac_display_layer_set_opacity(scrollbar->container, GUAC_TERMINAL_SCROLLBAR_OPACITY);
+    scrollbar->container = guac_client_alloc_layer(client);
+    scrollbar->handle    = guac_client_alloc_layer(client);
 
     /* Init mouse event state tracking */
     scrollbar->dragging_handle = 0;
@@ -104,8 +79,8 @@ guac_terminal_scrollbar* guac_terminal_scrollbar_alloc(guac_client* client,
 void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
 
     /* Free layers */
-    guac_display_free_layer(scrollbar->handle);
-    guac_display_free_layer(scrollbar->container);
+    guac_client_free_layer(scrollbar->client, scrollbar->handle);
+    guac_client_free_layer(scrollbar->client, scrollbar->container);
 
     /* Free scrollbar */
     guac_mem_free(scrollbar);
@@ -114,8 +89,8 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
 
 /**
  * Moves the main scrollbar layer to the position indicated within the given
- * scrollbar render state, updating the underlying Guacamole display such that
- * the new position will be sent to connected users for the next frame.
+ * scrollbar render state, sending any necessary Guacamole instructions over
+ * the given socket.
  *
  * @param scrollbar
  *     The scrollbar to reposition.
@@ -123,20 +98,29 @@ void guac_terminal_scrollbar_free(guac_terminal_scrollbar* scrollbar) {
  * @param state
  *     The guac_terminal_scrollbar_render_state describing the new scrollbar
  *     position.
+ *
+ * @param socket
+ *     The guac_socket over which any instructions necessary to perform the
+ *     render operation should be sent.
  */
 static void guac_terminal_scrollbar_move_container(
         guac_terminal_scrollbar* scrollbar,
-        guac_terminal_scrollbar_render_state* state) {
+        guac_terminal_scrollbar_render_state* state,
+        guac_socket* socket) {
 
-    guac_display_layer_move(scrollbar->container,
-            state->container_x, state->container_y);
+    /* Send scrollbar position */
+    guac_protocol_send_move(socket,
+            scrollbar->container, scrollbar->parent,
+            state->container_x,
+            state->container_y,
+            0);
 
 }
 
 /**
  * Resizes and redraws the main scrollbar layer according to the given
- * scrollbar render state, updating the underlying Guacamole display such that
- * the new position will be sent to connected users for the next frame.
+ * scrollbar render state, sending any necessary Guacamole instructions over
+ * the given socket.
  *
  * @param scrollbar
  *     The scrollbar to resize and redraw.
@@ -144,40 +128,37 @@ static void guac_terminal_scrollbar_move_container(
  * @param state
  *     The guac_terminal_scrollbar_render_state describing the new scrollbar
  *     size and appearance.
+ *
+ * @param socket
+ *     The guac_socket over which any instructions necessary to perform the
+ *     render operation should be sent.
  */
 static void guac_terminal_scrollbar_draw_container(
         guac_terminal_scrollbar* scrollbar,
-        guac_terminal_scrollbar_render_state* state) {
+        guac_terminal_scrollbar_render_state* state,
+        guac_socket* socket) {
 
     /* Set container size */
-    guac_display_layer_resize(scrollbar->container,
-            state->container_width, state->container_height);
+    guac_protocol_send_size(socket, scrollbar->container,
+            state->container_width,
+            state->container_height);
 
     /* Fill container with solid color */
+    guac_protocol_send_rect(socket, scrollbar->container, 0, 0,
+            state->container_width,
+            state->container_height);
 
-    guac_rect rect = {
-        .left   = 0,
-        .top    = 0,
-        .right  = state->container_width,
-        .bottom = state->container_height
-    };
-
-    guac_display_layer_raw_context* context = guac_display_layer_open_raw(scrollbar->container);
-
-    guac_rect_constrain(&rect, &context->bounds);
-    guac_display_layer_raw_context_set(context, &rect, GUAC_TERMINAL_SCROLLBAR_CONTAINER_COLOR);
-    guac_rect_extend(&context->dirty, &rect);
-
-    guac_display_layer_close_raw(scrollbar->container, context);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->container,
+            0x80, 0x80, 0x80, 0x40);
 
 }
 
 /**
  * Moves the handle layer of the scrollbar to the position indicated within the
- * given scrollbar render state, updating the underlying Guacamole display such
- * that the new position will be sent to connected users for the next frame. The
- * handle is the portion of the scrollbar that indicates the current scroll
- * value and which the user can click and drag to change the value.
+ * given scrollbar render state, sending any necessary Guacamole instructions
+ * over the given socket. The handle is the portion of the scrollbar that
+ * indicates the current scroll value and which the user can click and drag to
+ * change the value.
  *
  * @param scrollbar
  *     The scrollbar associated with the handle being repositioned.
@@ -185,21 +166,31 @@ static void guac_terminal_scrollbar_draw_container(
  * @param state
  *     The guac_terminal_scrollbar_render_state describing the new scrollbar
  *     handle position.
+ *
+ * @param socket
+ *     The guac_socket over which any instructions necessary to perform the
+ *     render operation should be sent.
  */
 static void guac_terminal_scrollbar_move_handle(
         guac_terminal_scrollbar* scrollbar,
-        guac_terminal_scrollbar_render_state* state) {
+        guac_terminal_scrollbar_render_state* state,
+        guac_socket* socket) {
 
-    guac_display_layer_move(scrollbar->handle, state->handle_x, state->handle_y);
+    /* Send handle position */
+    guac_protocol_send_move(socket,
+            scrollbar->handle, scrollbar->container,
+            state->handle_x,
+            state->handle_y,
+            0);
 
 }
 
 /**
  * Resizes and redraws the handle layer of the scrollbar according to the given
- * scrollbar render state, updating the underlying Guacamole display such
- * that the new position will be sent to connected users for the next frame. The
- * handle is the portion of the scrollbar that indicates the current scroll
- * value and which the user can click and drag to change the value.
+ * scrollbar render state, sending any necessary Guacamole instructions over
+ * the given socket. The handle is the portion of the scrollbar that indicates
+ * the current scroll value and which the user can click and drag to change the
+ * value.
  *
  * @param scrollbar
  *     The scrollbar associated with the handle being resized and redrawn.
@@ -207,31 +198,28 @@ static void guac_terminal_scrollbar_move_handle(
  * @param state
  *     The guac_terminal_scrollbar_render_state describing the new scrollbar
  *     handle size and appearance.
+ *
+ * @param socket
+ *     The guac_socket over which any instructions necessary to perform the
+ *     render operation should be sent.
  */
 static void guac_terminal_scrollbar_draw_handle(
         guac_terminal_scrollbar* scrollbar,
-        guac_terminal_scrollbar_render_state* state) {
+        guac_terminal_scrollbar_render_state* state,
+        guac_socket* socket) {
 
     /* Set handle size */
-    guac_display_layer_resize(scrollbar->handle,
-            state->handle_width, state->handle_height);
+    guac_protocol_send_size(socket, scrollbar->handle,
+            state->handle_width,
+            state->handle_height);
 
     /* Fill handle with solid color */
+    guac_protocol_send_rect(socket, scrollbar->handle, 0, 0,
+            state->handle_width,
+            state->handle_height);
 
-    guac_rect rect = {
-        .left   = 0,
-        .top    = 0,
-        .right  = state->handle_width,
-        .bottom = state->handle_height
-    };
-
-    guac_display_layer_raw_context* context = guac_display_layer_open_raw(scrollbar->handle);
-
-    guac_rect_constrain(&rect, &context->bounds);
-    guac_display_layer_raw_context_set(context, &rect, GUAC_TERMINAL_SCROLLBAR_HANDLE_COLOR);
-    guac_rect_extend(&context->dirty, &rect);
-
-    guac_display_layer_close_raw(scrollbar->handle, context);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, scrollbar->handle,
+            0xA0, 0xA0, 0xA0, 0x8F);
 
 }
 
@@ -345,7 +333,25 @@ static void calculate_state(guac_terminal_scrollbar* scrollbar,
 
 }
 
+void guac_terminal_scrollbar_dup(guac_terminal_scrollbar* scrollbar,
+        guac_client* client, guac_socket* socket) {
+
+    /* Get old state */
+    guac_terminal_scrollbar_render_state* state = &scrollbar->render_state;
+
+    /* Send scrollbar container */
+    guac_terminal_scrollbar_draw_container(scrollbar, state, socket);
+    guac_terminal_scrollbar_move_container(scrollbar, state, socket);
+
+    /* Send handle */
+    guac_terminal_scrollbar_draw_handle(scrollbar, state, socket);
+    guac_terminal_scrollbar_move_handle(scrollbar, state, socket);
+
+}
+
 void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
+
+    guac_socket* socket = scrollbar->client->socket;
 
     /* Get old state */
     int old_value = scrollbar->value;
@@ -363,25 +369,25 @@ void guac_terminal_scrollbar_flush(guac_terminal_scrollbar* scrollbar) {
     /* Reposition container if moved */
     if (old_state->container_x != new_state.container_x
      || old_state->container_y != new_state.container_y) {
-        guac_terminal_scrollbar_move_container(scrollbar, &new_state);
+        guac_terminal_scrollbar_move_container(scrollbar, &new_state, socket);
     }
 
     /* Resize and redraw container if size changed */
     if (old_state->container_width  != new_state.container_width
      || old_state->container_height != new_state.container_height) {
-        guac_terminal_scrollbar_draw_container(scrollbar, &new_state);
+        guac_terminal_scrollbar_draw_container(scrollbar, &new_state, socket);
     }
 
     /* Reposition handle if moved */
     if (old_state->handle_x != new_state.handle_x
      || old_state->handle_y != new_state.handle_y) {
-        guac_terminal_scrollbar_move_handle(scrollbar, &new_state);
+        guac_terminal_scrollbar_move_handle(scrollbar, &new_state, socket);
     }
 
     /* Resize and redraw handle if size changed */
     if (old_state->handle_width  != new_state.handle_width
      || old_state->handle_height != new_state.handle_height) {
-        guac_terminal_scrollbar_draw_handle(scrollbar, &new_state);
+        guac_terminal_scrollbar_draw_handle(scrollbar, &new_state, socket);
     }
 
     /* Store current render state */

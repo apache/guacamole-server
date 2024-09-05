@@ -519,6 +519,28 @@ void guac_terminal_buffer_set_columns(guac_terminal_buffer* buffer, int row,
 
 }
 
+void guac_terminal_buffer_set_cursor(guac_terminal_buffer* buffer, int row,
+        int column, bool is_cursor) {
+
+    /* Do if nothing sanely can be done (row is impossibly large) */
+    if (row >= GUAC_TERMINAL_MAX_ROWS || row <= -GUAC_TERMINAL_MAX_ROWS)
+        return;
+
+    /* Do nothing if there is no such row within the buffer (the given row index
+     * does not refer to an actual row, even considering scrollback) */
+    guac_terminal_buffer_row* buffer_row = guac_terminal_buffer_get_row(buffer, row);
+    if (buffer_row == NULL)
+        return;
+
+    column = guac_terminal_fit_to_range(column, 0, GUAC_TERMINAL_MAX_COLUMNS - 1);
+
+    guac_terminal_buffer_row_expand(buffer_row, column + 1, &buffer->default_character);
+    GUAC_ASSERT(buffer_row->length > column + 1);
+
+    buffer_row->characters[column].attributes.cursor = is_cursor;
+
+}
+
 unsigned int guac_terminal_buffer_effective_length(guac_terminal_buffer* buffer, int scrollback) {
 
     /* If the buffer contains more rows than requested, pretend it only

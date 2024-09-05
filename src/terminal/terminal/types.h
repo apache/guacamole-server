@@ -63,6 +63,11 @@ typedef struct guac_terminal_attributes {
     bool half_bright : 1;
 
     /**
+     * Whether the associated character is highlighted by the cursor.
+     */
+    bool cursor : 1;
+
+    /**
      * Whether the character should be rendered with reversed colors
      * (background becomes foreground and vice-versa).
      */

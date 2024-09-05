@@ -168,5 +168,23 @@ unsigned int guac_terminal_buffer_effective_length(guac_terminal_buffer* buffer,
  */
 void guac_terminal_buffer_set_wrapped(guac_terminal_buffer* buffer, int row, bool wrapped);
 
+/**
+ * Sets whether the character at the given row and column contains the cursor.
+ *
+ * @param buffer
+ *     The buffer associated with character to modify.
+ *
+ * @param row
+ *     The row of the character to modify.
+ *
+ * @param column
+ *     The column of the character to modify.
+ *
+ * @param is_cursor
+ *     Whether the character contains the cursor.
+ */
+void guac_terminal_buffer_set_cursor(guac_terminal_buffer* buffer, int row,
+        int column, bool is_cursor);
+
 #endif
 

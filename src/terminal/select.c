@@ -76,7 +76,7 @@ static void guac_terminal_select_normalized_range(guac_terminal* terminal,
         *start_row = terminal->selection_start_row;
         *start_col = terminal->selection_start_column;
         *end_row   = terminal->selection_end_row;
-        *end_col   = terminal->selection_end_column;
+        *end_col   = terminal->selection_end_column + terminal->selection_end_width - 1;
 
     }
 
@@ -84,20 +84,106 @@ static void guac_terminal_select_normalized_range(guac_terminal* terminal,
      * final character width */
     else {
         *end_row   = terminal->selection_start_row;
-        *end_col   = terminal->selection_start_column;
+        *end_col   = terminal->selection_start_column + terminal->selection_start_width - 1;
         *start_row = terminal->selection_end_row;
         *start_col = terminal->selection_end_column;
     }
 
 }
 
+void guac_terminal_select_redraw(guac_terminal* terminal) {
+
+    /* Update the selected region of the display if text is currently
+     * selected */
+    if (terminal->text_selected) {
+
+        int start_row = terminal->selection_start_row + terminal->scroll_offset;
+        int start_column = terminal->selection_start_column;
+
+        int end_row = terminal->selection_end_row + terminal->scroll_offset;
+        int end_column = terminal->selection_end_column;
+
+        /* Update start/end columns to include character width */
+        if (start_row > end_row || (start_row == end_row && start_column > end_column))
+            start_column += terminal->selection_start_width - 1;
+        else
+            end_column += terminal->selection_end_width - 1;
+
+        guac_terminal_display_select(terminal->display, start_row, start_column, end_row, end_column);
+
+    }
+
+    /* Clear the display selection if no text is currently selected */
+    else
+        guac_terminal_display_clear_select(terminal->display);
+
+}
+
+/**
+ * Locates the beginning of the character at the given row and column, updating
+ * the column to the starting column of that character. The width, if available,
+ * is returned. If the character has no defined width, 1 is returned.
+ *
+ * @param terminal
+ *     The guac_terminal in which the character should be located.
+ *
+ * @param row
+ *     The row number of the desired character, where the first (top-most) row
+ *     in the terminal is row 0. Rows within the scrollback buffer (above the
+ *     top-most row of the terminal) will be negative.
+ *
+ * @param column
+ *     A pointer to an int containing the column number of the desired
+ *     character, where 0 is the first (left-most) column within the row. If
+ *     the character is a multi-column character, the value of this int will be
+ *     adjusted as necessary such that it contains the column number of the
+ *     first column containing the character.
+ *
+ * @return
+ *     The width of the specified character, in columns, or 1 if the character
+ *     has no defined width.
+ */
+static int guac_terminal_find_char(guac_terminal* terminal,
+        int row, int* column) {
+
+    guac_terminal_char* characters;
+    int start_column = *column;
+
+    int length = guac_terminal_buffer_get_columns(terminal->current_buffer, &characters, NULL, row);
+    if (start_column >= 0 && start_column < length) {
+
+        /* Find beginning of character */
+        guac_terminal_char* start_char = &(characters[start_column]);
+        while (start_column > 0 && start_char->value == GUAC_CHAR_CONTINUATION) {
+            start_char--;
+            start_column--;
+        }
+
+        /* Use width, if available */
+        if (start_char->value != GUAC_CHAR_CONTINUATION) {
+            *column = start_column;
+            return start_char->width;
+        }
+
+    }
+
+    /* Default to one column wide */
+    return 1;
+
+}
+
 void guac_terminal_select_start(guac_terminal* terminal, int row, int column) {
+
+    int width = guac_terminal_find_char(terminal, row, &column);
 
     terminal->selection_start_row =
     terminal->selection_end_row   = row;
 
     terminal->selection_start_column =
     terminal->selection_end_column   = column;
+
+    terminal->selection_start_width =
+    terminal->selection_end_width   = width;
 
     terminal->text_selected = false;
     terminal->selection_committed = false;
@@ -109,11 +195,14 @@ void guac_terminal_select_update(guac_terminal* terminal, int row, int column) {
 
     /* Only update if selection has changed */
     if (row != terminal->selection_end_row
-        || column <= terminal->selection_end_column
-        || column >= terminal->selection_end_column) {
+        || column <=  terminal->selection_end_column
+        || column >= terminal->selection_end_column + terminal->selection_end_width) {
+
+        int width = guac_terminal_find_char(terminal, row, &column);
 
         terminal->selection_end_row = row;
         terminal->selection_end_column = column;
+        terminal->selection_end_width = width;
         terminal->text_selected = true;
 
         guac_terminal_notify(terminal);

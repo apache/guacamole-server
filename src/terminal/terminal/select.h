@@ -31,6 +31,18 @@
 #include <stdbool.h>
 
 /**
+ * Forwards the visible portion of the text selection rectangle to the
+ * underlying terminal display, requesting that it be redrawn. If no
+ * visible change would result from redrawing the selection rectangle,
+ * this function may have no effect.
+ *
+ * @param terminal
+ *     The guac_terminal whose text selection rectangle should be
+ *     redrawn.
+ */
+void guac_terminal_select_redraw(guac_terminal* terminal);
+
+/**
  * Marks the start of text selection at the given row and column. Any existing
  * selection is cleared. This function should only be invoked while the
  * guac_terminal is locked through a call to guac_terminal_lock().

@@ -17,8 +17,7 @@
  * under the License.
  */
 
-#include "config.h"
-#include "guacamole/rect.h"
+#include "common/surface.h"
 #include "terminal/common.h"
 #include "terminal/display.h"
 #include "terminal/palette.h"
@@ -27,134 +26,43 @@
 #include "terminal/types.h"
 
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 
 #include <cairo/cairo.h>
 #include <glib-object.h>
+#include <guacamole/assert.h>
 #include <guacamole/client.h>
-#include <guacamole/display.h>
 #include <guacamole/mem.h>
 #include <guacamole/protocol.h>
 #include <guacamole/socket.h>
 #include <pango/pangocairo.h>
 
-/**
- * The palette index of the color to use when highlighting selected text.
- */
-#define GUAC_TERMINAL_HIGHLIGHT_COLOR 4
+/* Maps any codepoint onto a number between 0 and 511 inclusive */
+int __guac_terminal_hash_codepoint(int codepoint) {
 
-/**
- * Calculates the approximate luminance of the given color, where 0 represents
- * no luminance and 255 represents full luminance.
- *
- * @param color
- *     The color to calculate the luminance of.
- *
- * @return
- *     The approximate luminance of the given color, on a scale of 0 through
- *     255 inclusive.
- */
-static int guac_terminal_color_luminance(const guac_terminal_color* color) {
+    /* If within one byte, just return codepoint */
+    if (codepoint <= 0xFF)
+        return codepoint;
 
-    /*
-     * Y = 0.2126 R + 0.7152 G + 0.0722 B
-     *
-     * Here we multiply all coefficients by 16 to approximate luminance without
-     * having to resort to floating point, rounding to the nearest integer that
-     * minimizes error but still totals 16 when added to the other
-     * coefficients.
-     */
-
-    return (3 * color->red + 12 * color->green + color->blue) / 16;
+    /* Otherwise, map to next 256 values */
+    return (codepoint & 0xFF) + 0x100;
 
 }
 
 /**
- * Given the foreground and background colors of a character, updates those
- * colors to represent the fact that the character has been highlighted
- * (selected by the user).
- *
- * @param display
- *     The terminal display containing the character.
- *
- * @param glyph_foreground
- *     The foreground color of the character. The contents of this color may be
- *     modified to represent the effect of the highlight.
- *
- * @param glyph_background
- *     The background color of the character. The contents of this color may be
- *     modified to represent the effect of the highlight.
+ * Sets the attributes of the display such that future glyphs will render as
+ * expected.
  */
-static void guac_terminal_display_apply_highlight(guac_terminal_display* display,
-        guac_terminal_color* glyph_foreground, guac_terminal_color* glyph_background) {
-
-    guac_terminal_color highlight;
-    guac_terminal_display_lookup_color(display, GUAC_TERMINAL_HIGHLIGHT_COLOR, &highlight);
-
-    highlight.red   = (highlight.red   + glyph_background->red)   / 2;
-    highlight.green = (highlight.green + glyph_background->green) / 2;
-    highlight.blue  = (highlight.blue  + glyph_background->blue)  / 2;
-
-    int foreground_lum = guac_terminal_color_luminance(glyph_foreground);
-    int background_lum = guac_terminal_color_luminance(glyph_background);
-    int highlight_lum = guac_terminal_color_luminance(&highlight);
-
-    /* Replace background color for highlight color only if it's closer in
-     * perceived luminance to the backgrund color than it is to the
-     * foreground color (to preserve roughly the same degree of contrast) */
-    if (abs(foreground_lum - highlight_lum) >= abs(background_lum - highlight_lum)) {
-        *glyph_background = highlight;
-    }
-
-    /* If the highlight color can't be used while preserving contrast,
-     * simply inverting the colors will do the job */
-    else {
-        guac_terminal_color temp = *glyph_background;
-        *glyph_background = *glyph_foreground;
-        *glyph_foreground = temp;
-    }
-
-}
-
-/**
- * Given current attributes of a character, assigns foreground and background
- * colors to represent that character state.
- *
- * @param display
- *     The terminal display containing the character.
- *
- * @param attributes
- *     All attributes associated with the character (bold, foreground color,
- *     background color, etc.).
- *
- * @param is_cursor
- *     Whether the terminal cursor is currently on top of the character.
- *
- * @param is_selected
- *     Whether the user currently has this character selected.
- *
- * @param glyph_foreground
- *     A pointer to the guac_terminal_color that should receive the foreground
- *     color of the character.
- *
- * @param glyph_background
- *     A pointer to the guac_terminal_color that should receive the background
- *     color of the character.
- */
-static void guac_terminal_display_apply_render_attributes(guac_terminal_display* display,
-        guac_terminal_attributes* attributes, bool is_cursor, bool is_selected,
-        guac_terminal_color* glyph_foreground,
-        guac_terminal_color* glyph_background) {
+int __guac_terminal_set_colors(guac_terminal_display* display,
+        guac_terminal_attributes* attributes) {
 
     const guac_terminal_color* background;
     const guac_terminal_color* foreground;
 
-    /* Swap foreground and background color to represent reverse video and the
-     * cursor (this means that reverse and is_cursor cancel each other out) */
-    if (is_cursor ? !attributes->reverse : attributes->reverse) {
+    /* Handle reverse video */
+    if (attributes->reverse != attributes->cursor) {
         background = &attributes->foreground;
         foreground = &attributes->background;
     }
@@ -163,7 +71,7 @@ static void guac_terminal_display_apply_render_attributes(guac_terminal_display*
         background = &attributes->background;
     }
 
-    /* Represent bold with the corresponding intense (brighter) color */
+    /* Handle bold */
     if (attributes->bold && !attributes->half_bright
             && foreground->palette_index >= GUAC_TERMINAL_FIRST_DARK
             && foreground->palette_index <= GUAC_TERMINAL_LAST_DARK) {
@@ -171,115 +79,89 @@ static void guac_terminal_display_apply_render_attributes(guac_terminal_display*
             + GUAC_TERMINAL_INTENSE_OFFSET];
     }
 
-    *glyph_foreground = *foreground;
+    display->glyph_foreground = *foreground;
     guac_terminal_display_lookup_color(display,
-            foreground->palette_index, glyph_foreground);
+            foreground->palette_index, &display->glyph_foreground);
 
-    *glyph_background = *background;
+    display->glyph_background = *background;
     guac_terminal_display_lookup_color(display,
-            background->palette_index, glyph_background);
+            background->palette_index, &display->glyph_background);
 
     /* Modify color if half-bright (low intensity) */
     if (attributes->half_bright && !attributes->bold) {
-        glyph_foreground->red   /= 2;
-        glyph_foreground->green /= 2;
-        glyph_foreground->blue  /= 2;
+        display->glyph_foreground.red   /= 2;
+        display->glyph_foreground.green /= 2;
+        display->glyph_foreground.blue  /= 2;
     }
 
-    /* Apply highlight if selected (NOTE: We re-swap foreground/background
-     * again here if the cursor is selected, as the sudden appearance of
-     * foreground color for an otherwise invisible character is surprising
-     * behavior) */
-    if (is_selected) {
-        if (is_cursor)
-            guac_terminal_display_apply_highlight(display, glyph_background, glyph_foreground);
-        else
-            guac_terminal_display_apply_highlight(display, glyph_foreground, glyph_background);
-    }
+    return 0;
 
 }
 
 /**
- * Renders a single character at the given row and column. The character is
- * rendered immediately to the underlying guac_display and will be sent to
- * connected users when the next guac_display frame is completed.
- *
- * @param display
- *     The teriminal display receiving the character.
- *
- * @param row
- *     The row coordinate of the character, where 0 is the top-most row. While
- *     negative values generally represent rows of the scrollback buffer,
- *     supplying negative values here would result in rendering outside the
- *     visible display area and would be nonsensical.
- *
- * @param col
- *     The column coordinate of the character, where 0 is the left-most column.
- *
- * @param c
- *     The character to render.
- *
- * @param is_cursor
- *     Whether the terminal cursor is currently on top of the character.
- *
- * @param is_selected
- *     Whether the user currently has this character selected.
+ * Sends the given character to the terminal at the given row and column,
+ * rendering the character immediately. This bypasses the guac_terminal_display
+ * mechanism and is intended for flushing of updates only.
  */
-static void guac_terminal_display_render_glyph(guac_terminal_display* display, int row, int col,
-        guac_terminal_char* c, bool is_cursor, bool is_selected) {
+int __guac_terminal_set(guac_terminal_display* display, int row, int col, int codepoint) {
 
-    /* Use space if no glyph */
-    int codepoint = c->value;
-    if (!guac_terminal_has_glyph(codepoint))
-        codepoint = ' ';
+    int width;
+
+    int bytes;
+    char utf8[4];
+
+    /* Use foreground color */
+    const guac_terminal_color* color = &display->glyph_foreground;
+
+    /* Use background color */
+    const guac_terminal_color* background = &display->glyph_background;
+
+    cairo_surface_t* surface;
+    cairo_t* cairo;
+    int surface_width, surface_height;
+   
+    PangoLayout* layout;
+    int layout_width, layout_height;
+    int ideal_layout_width, ideal_layout_height;
 
     /* Calculate width in columns */
-    int width = wcwidth(codepoint);
+    width = wcwidth(codepoint);
     if (width < 0)
         width = 1;
 
     /* Do nothing if glyph is empty */
     if (width == 0)
-        return;
+        return 0;
 
     /* Convert to UTF-8 */
-    char utf8[4];
-    int bytes = guac_terminal_encode_utf8(codepoint, utf8);
+    bytes = guac_terminal_encode_utf8(codepoint, utf8);
 
-    int glyph_x = display->char_width * col;
-    int glyph_y = display->char_height * row;
-    int glyph_width = width * display->char_width;
-    int glyph_height = display->char_height;
+    surface_width = width * display->char_width;
+    surface_height = display->char_height;
 
-    int ideal_layout_width = glyph_width * PANGO_SCALE;
-    int ideal_layout_height = glyph_height * PANGO_SCALE;
+    ideal_layout_width = surface_width * PANGO_SCALE;
+    ideal_layout_height = surface_height * PANGO_SCALE;
 
-    guac_display_layer_cairo_context* context = guac_display_layer_open_cairo(display->display_layer);
-    cairo_t* cairo = context->cairo;
-
-    cairo_identity_matrix(cairo);
-    cairo_translate(cairo, glyph_x, glyph_y);
-
-    guac_terminal_color foreground, background;
-    guac_terminal_display_apply_render_attributes(display, &c->attributes,
-            is_cursor, is_selected, &foreground, &background);
+    /* Prepare surface */
+    surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
+                                         surface_width, surface_height);
+    cairo = cairo_create(surface);
 
     /* Fill background */
     cairo_set_source_rgb(cairo,
-            background.red   / 255.0,
-            background.green / 255.0,
-            background.blue  / 255.0);
+            background->red   / 255.0,
+            background->green / 255.0,
+            background->blue  / 255.0);
 
-    cairo_rectangle(cairo, 0, 0, glyph_width, glyph_height);
+    cairo_rectangle(cairo, 0, 0, surface_width, surface_height); 
     cairo_fill(cairo);
 
     /* Get layout */
-    PangoLayout* layout = pango_cairo_create_layout(cairo);
+    layout = pango_cairo_create_layout(cairo);
     pango_layout_set_font_description(layout, display->font_desc);
     pango_layout_set_text(layout, utf8, bytes);
     pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
 
-    int layout_width, layout_height;
     pango_layout_get_size(layout, &layout_width, &layout_height);
 
     /* If layout bigger than available space, scale it back */
@@ -299,21 +181,25 @@ static void guac_terminal_display_render_glyph(guac_terminal_display* display, i
 
     /* Draw */
     cairo_set_source_rgb(cairo,
-            foreground.red   / 255.0,
-            foreground.green / 255.0,
-            foreground.blue  / 255.0);
+            color->red   / 255.0,
+            color->green / 255.0,
+            color->blue  / 255.0);
 
     cairo_move_to(cairo, 0.0, 0.0);
     pango_cairo_show_layout(cairo, layout);
 
+    /* Draw */
+    guac_common_surface_draw(display->display_surface,
+        display->char_width * col,
+        display->char_height * row,
+        surface);
+
     /* Free all */
     g_object_unref(layout);
+    cairo_destroy(cairo);
+    cairo_surface_destroy(surface);
 
-    guac_rect char_rect;
-    guac_rect_init(&char_rect, glyph_x, glyph_y, glyph_width, glyph_height);
-    guac_rect_extend(&context->dirty, &char_rect);
-
-    guac_display_layer_close_cairo(display->display_layer, context);
+    return 0;
 
 }
 
@@ -331,7 +217,6 @@ static int get_margin_by_dpi(int dpi) {
 }
 
 guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
-        guac_display* graphical_display,
         const char* font_name, int font_size, int dpi,
         guac_terminal_color* foreground, guac_terminal_color* background,
         guac_terminal_color (*palette)[256]) {
@@ -346,29 +231,36 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
     display->char_height = 0;
 
     /* Create default surface */
-    display->graphical_display = graphical_display;
-    display->display_layer = guac_display_alloc_layer(display->graphical_display, 1);
-
-    /* Use blank (invisible) cursor by default */
-    display->current_cursor = display->last_requested_cursor = GUAC_TERMINAL_CURSOR_BLANK;
-    guac_display_set_cursor(display->graphical_display, GUAC_DISPLAY_CURSOR_NONE);
+    display->display_layer = guac_client_alloc_layer(client);
+    display->select_layer = guac_client_alloc_layer(client);
+    display->display_surface = guac_common_surface_alloc(client,
+            client->socket, display->display_layer, 0, 0);
 
     /* Never use lossy compression for terminal contents */
-    guac_display_layer_set_lossless(display->display_layer, 1);
+    guac_common_surface_set_lossless(display->display_surface, 1);
+
+    /* Select layer is a child of the display layer */
+    guac_protocol_send_move(client->socket, display->select_layer,
+            display->display_layer, 0, 0, 0);
 
     /* Calculate margin size by DPI */
     display->margin = get_margin_by_dpi(dpi);
 
     /* Offset the Default Layer to make margins even on all sides */
-    guac_display_layer_move(display->display_layer, display->margin, display->margin);
+    guac_protocol_send_move(client->socket, display->display_layer,
+        GUAC_DEFAULT_LAYER, display->margin, display->margin, 0);
 
-    display->default_foreground = *foreground;
-    display->default_background = *background;
+    display->default_foreground = display->glyph_foreground = *foreground;
+    display->default_background = display->glyph_background = *background;
     display->default_palette = palette;
 
     /* Initially empty */
     display->width = 0;
     display->height = 0;
+    display->operations = NULL;
+
+    /* Initially nothing selected */
+    display->text_selected = false;
 
     /* Attempt to load font */
     if (guac_terminal_display_set_font(display, font_name, font_size, dpi)) {
@@ -384,14 +276,14 @@ guac_terminal_display* guac_terminal_display_alloc(guac_client* client,
 
 void guac_terminal_display_free(guac_terminal_display* display) {
 
-    /* Free text rendering surface */
-    guac_display_free_layer(display->display_layer);
-
     /* Free font description */
     pango_font_description_free(display->font_desc);
 
     /* Free default palette. */
     guac_mem_free(display->default_palette);
+
+    /* Free operations buffers */
+    guac_mem_free(display->operations);
 
     /* Free display */
     guac_mem_free(display);
@@ -454,104 +346,659 @@ int guac_terminal_display_lookup_color(guac_terminal_display* display,
 
 }
 
+void guac_terminal_display_copy_columns(guac_terminal_display* display, int row,
+        int start_column, int end_column, int offset) {
+
+    /* Ignore operations outside display bounds */
+    if (row < 0 || row >= display->height)
+        return;
+
+    /* Fit relevant extents of operation within bounds (NOTE: Because this
+     * operation is relative and represents the destination with an offset,
+     * there's no need to recalculate the destination region - the offset
+     * simply remains the same) */
+    if (offset >= 0) {
+        start_column = guac_terminal_fit_to_range(start_column, 0,            display->width - offset - 1);
+        end_column   = guac_terminal_fit_to_range(end_column,   start_column, display->width - offset - 1);
+    }
+    else {
+        start_column = guac_terminal_fit_to_range(start_column, -offset,      display->width - 1);
+        end_column   = guac_terminal_fit_to_range(end_column,   start_column, display->width - 1);
+    }
+
+    /* Determine source and destination locations */
+
+    size_t row_offset = guac_mem_ckd_mul_or_die(row, display->width);
+    size_t src_offset = guac_mem_ckd_add_or_die(row_offset, start_column);
+
+    size_t dst_offset;
+    if (offset >= 0)
+        dst_offset = guac_mem_ckd_add_or_die(src_offset, offset);
+    else
+        dst_offset = guac_mem_ckd_sub_or_die(src_offset, -offset);
+
+    guac_terminal_operation* src = &(display->operations[src_offset]);
+    guac_terminal_operation* dst = &(display->operations[dst_offset]);
+
+    /* Copy data */
+    memmove(dst, src, guac_mem_ckd_mul_or_die(sizeof(guac_terminal_operation), (end_column - start_column + 1)));
+
+    /* Update operations */
+    for (int column = start_column; column <= end_column; column++) {
+
+        /* If no operation here, set as copy */
+        if (dst->type == GUAC_CHAR_NOP) {
+            dst->type = GUAC_CHAR_COPY;
+            dst->row = row;
+            dst->column = column;
+        }
+
+        /* Next column */
+        dst++;
+
+    }
+
+}
+
+void guac_terminal_display_copy_rows(guac_terminal_display* display,
+        int start_row, int end_row, int offset) {
+
+    /* Fit relevant extents of operation within bounds (NOTE: Because this
+     * operation is relative and represents the destination with an offset,
+     * there's no need to recalculate the destination region - the offset
+     * simply remains the same) */
+    if (offset >= 0) {
+        start_row = guac_terminal_fit_to_range(start_row, 0,         display->height - offset - 1);
+        end_row   = guac_terminal_fit_to_range(end_row,   start_row, display->height - offset - 1);
+    }
+    else {
+        start_row = guac_terminal_fit_to_range(start_row, -offset,   display->height - 1);
+        end_row   = guac_terminal_fit_to_range(end_row,   start_row, display->height - 1);
+    }
+
+    /* Determine source and destination locations */
+
+    size_t dst_start_row;
+    if (offset >= 0)
+        dst_start_row = guac_mem_ckd_add_or_die(start_row, offset);
+    else
+        dst_start_row = guac_mem_ckd_sub_or_die(start_row, -offset);
+
+    size_t src_offset = guac_mem_ckd_mul_or_die(start_row, display->width);
+    size_t dst_offset = guac_mem_ckd_mul_or_die(dst_start_row, display->width);
+
+    guac_terminal_operation* src = &(display->operations[src_offset]);
+    guac_terminal_operation* dst = &(display->operations[dst_offset]);
+
+    /* Copy data */
+    memmove(dst, src, guac_mem_ckd_mul_or_die(sizeof(guac_terminal_operation),
+                display->width, (end_row - start_row + 1)));
+
+    /* Update operations */
+    for (int row = start_row; row <= end_row; row++) {
+
+        guac_terminal_operation* current = dst;
+        for (int col = 0; col < display->width; col++) {
+
+            /* If no operation here, set as copy */
+            if (current->type == GUAC_CHAR_NOP) {
+                current->type = GUAC_CHAR_COPY;
+                current->row = row;
+                current->column = col;
+            }
+
+            /* Next column */
+            current++;
+
+        }
+
+        /* Next row */
+        dst += display->width;
+
+    }
+
+}
+
+void guac_terminal_display_set_columns(guac_terminal_display* display, int row,
+        int start_column, int end_column, guac_terminal_char* character) {
+
+    /* Do nothing if glyph is empty */
+    if (character->width == 0)
+        return;
+
+    /* Ignore operations outside display bounds */
+    if (row < 0 || row >= display->height)
+        return;
+
+    /* Fit range within bounds */
+    start_column = guac_terminal_fit_to_range(start_column, 0, display->width - 1);
+    end_column   = guac_terminal_fit_to_range(end_column,   0, display->width - 1);
+
+    size_t start_offset = guac_mem_ckd_add_or_die(guac_mem_ckd_mul_or_die(row, display->width), start_column);
+    guac_terminal_operation* current = &(display->operations[start_offset]);
+
+    /* For each column in range */
+    for (int col = start_column; col <= end_column; col += character->width) {
+
+        /* Set operation */
+        current->type      = GUAC_CHAR_SET;
+        current->character = *character;
+
+        /* Next character */
+        current += character->width;
+
+    }
+
+}
+
 void guac_terminal_display_resize(guac_terminal_display* display, int width, int height) {
 
     /* Resize display only if dimensions have changed */
     if (width == display->width && height == display->height)
         return;
 
+    GUAC_ASSERT(width >= 0 && width <= GUAC_TERMINAL_MAX_COLUMNS);
+    GUAC_ASSERT(height >= 0 && height <= GUAC_TERMINAL_MAX_ROWS);
+
+    /* Fill with background color */
+    guac_terminal_char fill = {
+        .value = 0,
+        .attributes = {
+            .foreground = display->default_background,
+            .background = display->default_background
+        },
+        .width = 1
+    };
+
+    /* Free old operations buffer */
+    if (display->operations != NULL)
+        guac_mem_free(display->operations);
+
+    /* Alloc operations */
+    display->operations = guac_mem_alloc(width, height,
+            sizeof(guac_terminal_operation));
+
+    /* Init each operation buffer row */
+    guac_terminal_operation* current = display->operations;
+    for (int y = 0; y < height; y++) {
+
+        /* Init entire row to NOP */
+        for (int x = 0; x < width; x++) {
+
+            /* If on old part of screen, do not clear */
+            if (x < display->width && y < display->height)
+                current->type = GUAC_CHAR_NOP;
+
+            /* Otherwise, clear contents first */
+            else {
+                current->type = GUAC_CHAR_SET;
+                current->character  = fill;
+            }
+
+            current++;
+
+        }
+
+    }
+
     /* Set width and height */
     display->width = width;
     display->height = height;
 
+    /* Send display size */
+    guac_common_surface_resize(
+            display->display_surface,
+            display->char_width  * width,
+            display->char_height * height);
+
+    guac_protocol_send_size(display->client->socket,
+            display->select_layer,
+            display->char_width  * width,
+            display->char_height * height);
+
 }
 
-void guac_terminal_display_set_cursor(guac_terminal_display* display,
-        guac_terminal_cursor_type cursor) {
-    display->last_requested_cursor = cursor;
-}
+void __guac_terminal_display_flush_copy(guac_terminal_display* display) {
 
-void guac_terminal_display_render_buffer(guac_terminal_display* display,
-        guac_terminal_buffer* buffer, int scroll_offset,
-        guac_terminal_char* default_char,
-        bool cursor_visible, int cursor_row, int cursor_col,
-        bool text_selected, int selection_start_row, int selection_start_col,
-        int selection_end_row, int selection_end_col) {
+    guac_terminal_operation* current = display->operations;
+    int row, col;
 
-    if (selection_start_row > selection_end_row) {
+    /* For each operation */
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
 
-        int old_end_row = selection_end_row;
-        selection_end_row = selection_start_row;
-        selection_start_row = old_end_row;
+            /* If operation is a copy operation */
+            if (current->type == GUAC_CHAR_COPY) {
 
-        int old_end_col = selection_end_col;
-        selection_end_col = selection_start_col;
-        selection_start_col = old_end_col;
+                /* The determined bounds of the rectangle of contiguous
+                 * operations */
+                int detected_right = -1;
+                int detected_bottom = row;
 
-    }
-    else if (selection_start_row == selection_end_row && selection_start_col > selection_end_col) {
-        int old_end_col = selection_end_col;
-        selection_end_col = selection_start_col;
-        selection_start_col = old_end_col;
-    }
+                /* The current row or column within a rectangle */
+                int rect_row, rect_col;
 
-    if (display->current_cursor != display->last_requested_cursor) {
+                /* The dimensions of the rectangle as determined */
+                int rect_width, rect_height;
 
-        switch (display->last_requested_cursor) {
+                /* The expected row and column source for the next copy
+                 * operation (if adjacent to current) */
+                int expected_row, expected_col;
 
-            case GUAC_TERMINAL_CURSOR_BLANK:
-                guac_display_set_cursor(display->graphical_display, GUAC_DISPLAY_CURSOR_NONE);
-                break;
+                /* Current row within a subrect */
+                guac_terminal_operation* rect_current_row;
 
-            case GUAC_TERMINAL_CURSOR_IBAR:
-                guac_display_set_cursor(display->graphical_display, GUAC_DISPLAY_CURSOR_IBAR);
-                break;
+                /* Determine bounds of rectangle */
+                rect_current_row = current;
+                expected_row = current->row;
+                for (rect_row=row; rect_row<display->height; rect_row++) {
 
-            case GUAC_TERMINAL_CURSOR_POINTER:
-                guac_display_set_cursor(display->graphical_display, GUAC_DISPLAY_CURSOR_POINTER);
-                break;
+                    guac_terminal_operation* rect_current = rect_current_row;
+                    expected_col = current->column;
+
+                    /* Find width */
+                    for (rect_col=col; rect_col<display->width; rect_col++) {
+
+                        /* If not identical operation, stop */
+                        if (rect_current->type != GUAC_CHAR_COPY
+                                || rect_current->row != expected_row
+                                || rect_current->column != expected_col)
+                            break;
+
+                        /* Next column */
+                        rect_current++;
+                        expected_col++;
+
+                    }
+
+                    /* If too small, cannot append row */
+                    if (rect_col-1 < detected_right)
+                        break;
+
+                    /* As row has been accepted, update rect_row of rect */
+                    detected_bottom = rect_row;
+
+                    /* For now, only set rect_col bound if uninitialized */
+                    if (detected_right == -1)
+                        detected_right = rect_col - 1;
+
+                    /* Next row */
+                    rect_current_row += display->width;
+                    expected_row++;
+
+                }
+
+                /* Calculate dimensions */
+                rect_width  = detected_right  - col + 1;
+                rect_height = detected_bottom - row + 1;
+
+                /* Mark rect as NOP (as it has been handled) */
+                rect_current_row = current;
+                expected_row = current->row;
+                for (rect_row=0; rect_row<rect_height; rect_row++) {
+                    
+                    guac_terminal_operation* rect_current = rect_current_row;
+                    expected_col = current->column;
+
+                    for (rect_col=0; rect_col<rect_width; rect_col++) {
+
+                        /* Mark copy operations as NOP */
+                        if (rect_current->type == GUAC_CHAR_COPY
+                                && rect_current->row == expected_row
+                                && rect_current->column == expected_col)
+                            rect_current->type = GUAC_CHAR_NOP;
+
+                        /* Next column */
+                        rect_current++;
+                        expected_col++;
+
+                    }
+
+                    /* Next row */
+                    rect_current_row += display->width;
+                    expected_row++;
+
+                }
+
+                /* Send copy */
+                guac_common_surface_copy(
+
+                        display->display_surface,
+                        current->column * display->char_width,
+                        current->row * display->char_height,
+                        rect_width * display->char_width,
+                        rect_height * display->char_height,
+
+                        display->display_surface,
+                        col * display->char_width,
+                        row * display->char_height);
+
+            } /* end if copy operation */
+
+            /* Next operation */
+            current++;
 
         }
-
-        display->current_cursor = display->last_requested_cursor;
-
     }
 
-    guac_display_layer_resize(display->display_layer,
+}
+
+void __guac_terminal_display_flush_clear(guac_terminal_display* display) {
+
+    guac_terminal_operation* current = display->operations;
+    int row, col;
+
+    /* For each operation */
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
+
+            /* If operation is a clear operation (set to space) */
+            if (current->type == GUAC_CHAR_SET &&
+                    !guac_terminal_has_glyph(current->character.value)) {
+
+                /* The determined bounds of the rectangle of contiguous
+                 * operations */
+                int detected_right = -1;
+                int detected_bottom = row;
+
+                /* The current row or column within a rectangle */
+                int rect_row, rect_col;
+
+                /* The dimensions of the rectangle as determined */
+                int rect_width, rect_height;
+
+                /* Color of the rectangle to draw */
+                guac_terminal_color color;
+                if (current->character.attributes.reverse != current->character.attributes.cursor)
+                   color = current->character.attributes.foreground;
+                else
+                   color = current->character.attributes.background;
+
+                /* Rely only on palette index if defined */
+                guac_terminal_display_lookup_color(display,
+                        color.palette_index, &color);
+
+                /* Current row within a subrect */
+                guac_terminal_operation* rect_current_row;
+
+                /* Determine bounds of rectangle */
+                rect_current_row = current;
+                for (rect_row=row; rect_row<display->height; rect_row++) {
+
+                    guac_terminal_operation* rect_current = rect_current_row;
+
+                    /* Find width */
+                    for (rect_col=col; rect_col<display->width; rect_col++) {
+
+                        const guac_terminal_color* joining_color;
+                        if (rect_current->character.attributes.reverse != rect_current->character.attributes.cursor)
+                           joining_color = &rect_current->character.attributes.foreground;
+                        else
+                           joining_color = &rect_current->character.attributes.background;
+
+                        /* If not identical operation, stop */
+                        if (rect_current->type != GUAC_CHAR_SET
+                                || guac_terminal_has_glyph(rect_current->character.value)
+                                || guac_terminal_colorcmp(joining_color, &color) != 0)
+                            break;
+
+                        /* Next column */
+                        rect_current++;
+
+                    }
+
+                    /* If too small, cannot append row */
+                    if (rect_col-1 < detected_right)
+                        break;
+
+                    /* As row has been accepted, update rect_row of rect */
+                    detected_bottom = rect_row;
+
+                    /* For now, only set rect_col bound if uninitialized */
+                    if (detected_right == -1)
+                        detected_right = rect_col - 1;
+
+                    /* Next row */
+                    rect_current_row += display->width;
+
+                }
+
+                /* Calculate dimensions */
+                rect_width  = detected_right  - col + 1;
+                rect_height = detected_bottom - row + 1;
+
+                /* Mark rect as NOP (as it has been handled) */
+                rect_current_row = current;
+                for (rect_row=0; rect_row<rect_height; rect_row++) {
+                    
+                    guac_terminal_operation* rect_current = rect_current_row;
+
+                    for (rect_col=0; rect_col<rect_width; rect_col++) {
+
+                        const guac_terminal_color* joining_color;
+                        if (rect_current->character.attributes.reverse != rect_current->character.attributes.cursor)
+                           joining_color = &rect_current->character.attributes.foreground;
+                        else
+                           joining_color = &rect_current->character.attributes.background;
+
+                        /* Mark clear operations as NOP */
+                        if (rect_current->type == GUAC_CHAR_SET
+                                && !guac_terminal_has_glyph(rect_current->character.value)
+                                && guac_terminal_colorcmp(joining_color, &color) == 0)
+                            rect_current->type = GUAC_CHAR_NOP;
+
+                        /* Next column */
+                        rect_current++;
+
+                    }
+
+                    /* Next row */
+                    rect_current_row += display->width;
+
+                }
+
+                /* Send rect */
+                guac_common_surface_set(
+                        display->display_surface,
+                        col * display->char_width,
+                        row * display->char_height,
+                        rect_width * display->char_width,
+                        rect_height * display->char_height,
+                        color.red, color.green, color.blue,
+                        0xFF);
+
+            } /* end if clear operation */
+
+            /* Next operation */
+            current++;
+
+        }
+    }
+
+}
+
+void __guac_terminal_display_flush_set(guac_terminal_display* display) {
+
+    guac_terminal_operation* current = display->operations;
+    int row, col;
+
+    /* For each operation */
+    for (row=0; row<display->height; row++) {
+        for (col=0; col<display->width; col++) {
+
+            /* Perform given operation */
+            if (current->type == GUAC_CHAR_SET) {
+
+                int codepoint = current->character.value;
+
+                /* Use space if no glyph */
+                if (!guac_terminal_has_glyph(codepoint))
+                    codepoint = ' ';
+
+                /* Set attributes */
+                __guac_terminal_set_colors(display,
+                        &(current->character.attributes));
+
+                /* Send character */
+                __guac_terminal_set(display, row, col, codepoint);
+
+                /* Mark operation as handled */
+                current->type = GUAC_CHAR_NOP;
+
+            }
+
+            /* Next operation */
+            current++;
+
+        }
+    }
+
+}
+
+void guac_terminal_display_flush(guac_terminal_display* display) {
+
+    /* Flush operations, copies first, then clears, then sets. */
+    __guac_terminal_display_flush_copy(display);
+    __guac_terminal_display_flush_clear(display);
+    __guac_terminal_display_flush_set(display);
+
+    /* Flush surface */
+    guac_common_surface_flush(display->display_surface);
+
+}
+
+void guac_terminal_display_dup(
+        guac_terminal_display* display, guac_client* client, guac_socket* socket) {
+
+    /* Create default surface */
+    guac_common_surface_dup(display->display_surface, client, socket);
+
+    /* Select layer is a child of the display layer */
+    guac_protocol_send_move(socket, display->select_layer,
+            display->display_layer, 0, 0, 0);
+
+    /* Offset the Default Layer to make margins even on all sides */
+    guac_protocol_send_move(socket, display->display_layer,
+        GUAC_DEFAULT_LAYER, display->margin, display->margin, 0);
+
+    /* Send select layer size */
+    guac_protocol_send_size(socket, display->select_layer,
             display->char_width  * display->width,
             display->char_height * display->height);
 
-    /* Redraw region */
-    for (int row = 0; row < display->height; row++) {
+}
 
-        int adjusted_row = row - scroll_offset;
+void guac_terminal_display_select(guac_terminal_display* display,
+        int start_row, int start_col, int end_row, int end_col) {
 
-        guac_terminal_char* characters;
-        unsigned int length = guac_terminal_buffer_get_columns(buffer, &characters, NULL, adjusted_row);
+    guac_socket* socket = display->client->socket;
+    guac_layer* select_layer = display->select_layer;
 
-        /* Copy characters */
-        for (int col = 0; col < display->width; col++) {
+    /* Do nothing if selection is unchanged */
+    if (display->text_selected
+            && display->selection_start_row    == start_row
+            && display->selection_start_column == start_col
+            && display->selection_end_row      == end_row
+            && display->selection_end_column   == end_col)
+        return;
 
-            bool is_cursor = cursor_visible
-                && adjusted_row == cursor_row
-                && col == cursor_col;
+    /* Text is now selected */
+    display->text_selected = true;
 
-            bool is_selected = text_selected
-                && adjusted_row >= selection_start_row
-                && adjusted_row <= selection_end_row
-                && (col >= selection_start_col || adjusted_row != selection_start_row)
-                && (col <= selection_end_col   || adjusted_row != selection_end_row);
+    display->selection_start_row = start_row;
+    display->selection_start_column = start_col;
+    display->selection_end_row = end_row;
+    display->selection_end_column = end_col;
 
-            if (col < length)
-                guac_terminal_display_render_glyph(display, row, col,
-                        &characters[col], is_cursor, is_selected);
-            else
-                guac_terminal_display_render_glyph(display, row, col,
-                        default_char, is_cursor, is_selected);
+    /* If single row, just need one rectangle */
+    if (start_row == end_row) {
+
+        /* Ensure proper ordering of columns */
+        if (start_col > end_col) {
+            int temp = start_col;
+            start_col = end_col;
+            end_col = temp;
+        }
+
+        /* Select characters between columns */
+        guac_protocol_send_rect(socket, select_layer,
+
+                start_col * display->char_width,
+                start_row * display->char_height,
+
+                (end_col - start_col + 1) * display->char_width,
+                display->char_height);
+
+    }
+
+    /* Otherwise, need three */
+    else {
+
+        /* Ensure proper ordering of start and end coords */
+        if (start_row > end_row) {
+
+            int temp;
+
+            temp = start_row;
+            start_row = end_row;
+            end_row = temp;
+
+            temp = start_col;
+            start_col = end_col;
+            end_col = temp;
 
         }
 
+        /* First row */
+        guac_protocol_send_rect(socket, select_layer,
+
+                start_col * display->char_width,
+                start_row * display->char_height,
+
+                display->width * display->char_width,
+                display->char_height);
+
+        /* Middle */
+        guac_protocol_send_rect(socket, select_layer,
+
+                0,
+                (start_row + 1) * display->char_height,
+
+                display->width * display->char_width,
+                (end_row - start_row - 1) * display->char_height);
+
+        /* Last row */
+        guac_protocol_send_rect(socket, select_layer,
+
+                0,
+                end_row * display->char_height,
+
+                (end_col + 1) * display->char_width,
+                display->char_height);
+
     }
+
+    /* Draw new selection, erasing old */
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
+            0x00, 0x80, 0xFF, 0x60);
+
+}
+
+void guac_terminal_display_clear_select(guac_terminal_display* display) {
+
+    /* Do nothing if nothing is selected */
+    if (!display->text_selected)
+        return;
+
+    guac_socket* socket = display->client->socket;
+    guac_layer* select_layer = display->select_layer;
+
+    guac_protocol_send_rect(socket, select_layer, 0, 0, 1, 1);
+    guac_protocol_send_cfill(socket, GUAC_COMP_SRC, select_layer,
+            0x00, 0x00, 0x00, 0x00);
+
+    /* Text is no longer selected */
+    display->text_selected = false;
 
 }
 

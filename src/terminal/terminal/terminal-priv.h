@@ -21,14 +21,13 @@
 #define GUAC_TERMINAL_PRIV_H
 
 #include "common/clipboard.h"
+#include "common/cursor.h"
 #include "buffer.h"
 #include "display.h"
 #include "scrollbar.h"
 #include "terminal.h"
 #include "typescript.h"
 
-#include <guacamole/client.h>
-#include <guacamole/display.h>
 #include <guacamole/flag.h>
 
 /**
@@ -59,11 +58,6 @@ struct guac_terminal {
      * The Guacamole client associated with this terminal emulator.
      */
     guac_client* client;
-
-    /**
-     * The Guacamole display that this terminal emulator should render to.
-     */
-    guac_display* graphical_display;
 
     /**
      * Whether user input should be handled and this terminal should render
@@ -103,7 +97,7 @@ struct guac_terminal {
      * will require a frame flush.
      *
      * @see GUAC_TERMINAL_MODIFIED
-     */
+      */
     guac_flag modified;
 
     /**
@@ -156,6 +150,11 @@ struct guac_terminal {
      * if no typescript is being used for the terminal session.
      */
     guac_terminal_typescript* typescript;
+
+    /**
+     * Terminal-wide mouse cursor, synchronized across all users.
+     */
+    guac_common_cursor* cursor;
 
     /**
      * Graphical representation of the current scroll state.
@@ -253,6 +252,18 @@ struct guac_terminal {
      * The desired visibility state of the cursor.
      */
     bool cursor_visible;
+
+    /**
+     * The row of the rendered cursor.
+     * Will be set to -1 if the cursor is not visible.
+     */
+    int visible_cursor_row;
+
+    /**
+     * The column of the rendered cursor.
+     * Will be set to -1 if the cursor is not visible.
+     */
+    int visible_cursor_col;
 
     /**
      * The row of the saved cursor (ESC 7).
@@ -365,6 +376,11 @@ struct guac_terminal {
     int selection_start_column;
 
     /**
+     * The width of the character at selection start.
+     */
+    int selection_start_width;
+
+    /**
      * The row that the selection ends at.
      */
     int selection_end_row;
@@ -373,6 +389,11 @@ struct guac_terminal {
      * The column that the selection ends at.
      */
     int selection_end_column;
+
+    /**
+     * The width of the character at selection end.
+     */
+    int selection_end_width;
 
     /**
      * Whether the cursor (arrow) keys should send cursor sequences
@@ -414,6 +435,11 @@ struct guac_terminal {
      * The current mouse button state.
      */
     int mouse_mask;
+
+    /**
+     * The current mouse cursor, to avoid re-setting the cursor image.
+     */
+    guac_terminal_cursor_type current_cursor;
 
     /**
      * The current contents of the clipboard. This clipboard instance is
@@ -534,6 +560,12 @@ void guac_terminal_scroll_up(guac_terminal* term,
  */
 void guac_terminal_scroll_down(guac_terminal* term,
         int start_row, int end_row, int amount);
+
+/**
+ * Commits the current cursor location, updating the visible cursor
+ * on the screen.
+ */
+void guac_terminal_commit_cursor(guac_terminal* term);
 
 /**
  * Scroll down the display by the given amount, replacing the new space with
