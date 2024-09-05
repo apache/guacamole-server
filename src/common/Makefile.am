@@ -31,20 +31,34 @@ SUBDIRS = . tests
 
 noinst_HEADERS =            \
     common/io.h             \
+    common/blank_cursor.h   \
     common/clipboard.h      \
+    common/cursor.h         \
     common/defaults.h       \
+    common/dot_cursor.h     \
+    common/ibar_cursor.h    \
     common/iconv.h          \
     common/json.h           \
     common/list.h           \
-    common/string.h
+    common/pointer_cursor.h \
+    common/rect.h           \
+    common/string.h         \
+    common/surface.h
 
 libguac_common_la_SOURCES = \
     io.c                    \
+    blank_cursor.c          \
     clipboard.c             \
+    cursor.c                \
+    dot_cursor.c            \
+    ibar_cursor.c           \
     iconv.c                 \
     json.c                  \
     list.c                  \
-    string.c
+    pointer_cursor.c        \
+    rect.c                  \
+    string.c                \
+    surface.c
 
 libguac_common_la_CFLAGS =  \
     -Werror -Wall -pedantic \

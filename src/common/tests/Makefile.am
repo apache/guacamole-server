@@ -39,6 +39,12 @@ noinst_HEADERS =               \
 test_common_SOURCES =          \
     iconv/convert.c            \
     iconv/convert-test-data.c  \
+    rect/clip_and_split.c      \
+    rect/constrain.c           \
+    rect/expand_to_grid.c      \
+    rect/extend.c              \
+    rect/init.c                \
+    rect/intersects.c          \
     string/count_occurrences.c \
     string/split.c
 
