@@ -292,7 +292,7 @@ static BOOL guac_rdp_rail_window_update(rdpContext* context,
         }
     }
 
-    return true;
+    return TRUE;
 
 }
 
