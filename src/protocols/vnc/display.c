@@ -51,6 +51,19 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
     guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
 
+    /* Resize the surface if VNC screen size has changed */
+    int old_height = vnc_client->display->default_surface->height;
+    int old_width  = vnc_client->display->default_surface->width;
+    int new_height = rfbClientSwap16IfLE(client->screen.height);
+    int new_width  = rfbClientSwap16IfLE(client->screen.width);
+    if (
+            new_height > 0 && new_width > 0
+            && (new_height != old_height || new_width != old_width)
+    ) {
+        guac_common_surface_resize(vnc_client->display->default_surface,
+                new_width, new_height);
+    }
+
     int dx, dy;
 
     /* Cairo image buffer */
@@ -309,14 +322,8 @@ void guac_vnc_display_set_size(rfbClient* client, int width, int height) {
 
     /* Send the display size update. */
     guac_client_log(gc, GUAC_LOG_TRACE, "Setting VNC display size.");
-    if (guac_vnc_send_desktop_size(client, width, height)) {
+    if (guac_vnc_send_desktop_size(client, width, height))
         guac_client_log(gc, GUAC_LOG_TRACE, "Successfully sent desktop size message.");
-
-        /* Resize the surface now that the VNC size update has completed */
-        if (vnc_client->display != NULL)
-            guac_common_surface_resize(vnc_client->display->default_surface,
-                    width, height);
-    }
 
     else
         guac_client_log(gc, GUAC_LOG_TRACE, "Failed to send desktop size message.");
