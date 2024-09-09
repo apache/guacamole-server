@@ -214,7 +214,6 @@ static BOOL rdp_freerdp_pre_connect(freerdp* instance) {
 
     /* Set up GDI */
     GUAC_RDP_CONTEXT(instance)->update->DesktopResize = guac_rdp_gdi_desktop_resize;
-    GUAC_RDP_CONTEXT(instance)->update->BeginPaint = guac_rdp_gdi_begin_paint;
     GUAC_RDP_CONTEXT(instance)->update->EndPaint = guac_rdp_gdi_end_paint;
 
     GUAC_RDP_CONTEXT(instance)->update->SurfaceFrameMarker = guac_rdp_gdi_surface_frame_marker;
@@ -581,17 +580,13 @@ static int guac_rdp_handle_connection(guac_client* client) {
         guac_rdp_disp_update_size(rdp_client->disp, settings, rdp_inst);
 
         /* Wait for data and construct a reasonable frame */
-        int wait_result = rdp_guac_client_wait_for_messages(client,
-                GUAC_RDP_FRAME_START_TIMEOUT);
+        int wait_result = rdp_guac_client_wait_for_messages(client, GUAC_RDP_FRAME_START_TIMEOUT);
         if (wait_result > 0) {
 
-            int processing_lag = guac_client_get_processing_lag(client);
-
             /* Read server messages until frame is built */
+            guac_timestamp frame_start = guac_timestamp_current();
+            int frames_at_start = rdp_client->frames_received;
             do {
-
-                guac_timestamp frame_end;
-                int frame_remaining;
 
                 /* Handle any queued FreeRDP events (this may result in RDP
                  * messages being sent) */
@@ -605,34 +600,29 @@ static int guac_rdp_handle_connection(guac_client* client) {
                     break;
                 }
 
-                /* Continue handling inbound data if we are in the middle of an RDP frame */
-                if (rdp_client->in_frame) {
-                    wait_result = rdp_guac_client_wait_for_messages(client, GUAC_RDP_FRAME_START_TIMEOUT);
-                    if (wait_result >= 0)
-                        continue;
+                int frame_duration = guac_timestamp_current() - frame_start;
+
+                if (!rdp_client->in_frame) {
+
+                    /* Flush frame if at least one frame has been produced */
+                    if (rdp_client->frames_received > frames_at_start)
+                        break;
+
+                    /* Continue processing messages for up to a reasonable
+                     * minimum framerate without an explicit frame boundary
+                     * indicating that the frame is not yet complete */
+                    if (frame_duration > GUAC_RDP_MAX_FRAME_DURATION)
+                        break;
+
                 }
 
-                /* Calculate time remaining in frame */
-                guac_timestamp frame_start = client->last_sent_timestamp;
-                frame_end = guac_timestamp_current();
-                frame_remaining = frame_start + GUAC_RDP_FRAME_DURATION
-                                - frame_end;
+                /* Do not exceed a reasonable maximum framerate without an
+                 * explicit frame boundary terminating the frame early */
+                int allowed_wait = GUAC_RDP_MIN_FRAME_DURATION - frame_duration;
+                if (allowed_wait < 0)
+                    allowed_wait = 0;
 
-                /* Calculate time that client needs to catch up */
-                int time_elapsed = frame_end - frame_start;
-                int required_wait = processing_lag - time_elapsed;
-
-                /* Increase the duration of this frame if client is lagging */
-                if (required_wait > GUAC_RDP_FRAME_TIMEOUT)
-                    wait_result = rdp_guac_client_wait_for_messages(client,
-                            required_wait);
-
-                /* Wait again if frame remaining */
-                else if (frame_remaining > 0)
-                    wait_result = rdp_guac_client_wait_for_messages(client,
-                            GUAC_RDP_FRAME_TIMEOUT);
-                else
-                    break;
+                wait_result = rdp_guac_client_wait_for_messages(client, allowed_wait);
 
             } while (wait_result > 0);
 
@@ -657,9 +647,8 @@ static int guac_rdp_handle_connection(guac_client* client) {
 
         /* Flush frame only if successful and an RDP frame is not known to be
          * in progress */
-        else if (!rdp_client->frames_supported || rdp_client->frames_received) {
+        else if (!rdp_client->in_frame) {
             guac_display_end_multiple_frames(rdp_client->display, rdp_client->frames_received);
-            guac_socket_flush(client->socket);
             rdp_client->frames_received = 0;
         }
 

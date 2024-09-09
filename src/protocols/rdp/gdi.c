@@ -38,29 +38,15 @@ void guac_rdp_gdi_mark_frame(rdpContext* context, int starting) {
     guac_client* client = ((rdp_freerdp_context*) context)->client;
     guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
 
-    /* The server supports defining explicit frames */
-    rdp_client->frames_supported = 1;
-
     /* A new frame is beginning */
     if (starting) {
         rdp_client->in_frame = 1;
         return;
     }
 
-    /* The current frame has ended */
-    guac_timestamp frame_end = guac_timestamp_current();
-    int time_elapsed = frame_end - client->last_sent_timestamp;
-    rdp_client->in_frame = 0;
-
     /* A new frame has been received from the RDP server and processed */
+    rdp_client->in_frame = 0;
     rdp_client->frames_received++;
-
-    /* Flush a new frame if the client is ready for it */
-    if (time_elapsed >= guac_client_get_processing_lag(client)) {
-        guac_display_end_multiple_frames(rdp_client->display, rdp_client->frames_received);
-        guac_socket_flush(client->socket);
-        rdp_client->frames_received = 0;
-    }
 
 }
 
@@ -83,19 +69,6 @@ BOOL guac_rdp_gdi_surface_frame_marker(rdpContext* context, const SURFACE_FRAME_
     if (frame_acknowledge > 0)
         IFCALL(context->update->SurfaceFrameAcknowledge, context,
                 surface_frame_marker->frameId);
-
-    return TRUE;
-
-}
-
-BOOL guac_rdp_gdi_begin_paint(rdpContext* context) {
-
-    guac_client* client = ((rdp_freerdp_context*) context)->client;
-    guac_rdp_client* rdp_client = (guac_rdp_client*) client->data;
-
-    /* Leverage BeginPaint handler to detect start of frame for RDPGFX channel */
-    if (rdp_client->settings->enable_gfx && rdp_client->frames_supported)
-        guac_rdp_gdi_mark_frame(context, 1);
 
     return TRUE;
 
@@ -134,11 +107,6 @@ BOOL guac_rdp_gdi_end_paint(rdpContext* context) {
     guac_rect_extend(&dst_context->dirty, &dst_rect);
 
     guac_display_layer_close_raw(default_layer, dst_context);
-
-    /* Next frame */
-    if (gdi->inGfxFrame) {
-        guac_rdp_gdi_mark_frame(context, 0);
-    }
 
     return TRUE;
 

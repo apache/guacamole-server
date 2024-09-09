@@ -23,16 +23,20 @@
 #include <guacamole/client.h>
 
 /**
- * The maximum duration of a frame in milliseconds.
+ * The maximum duration of a frame in milliseconds. This ensures we at least
+ * meet a reasonable minimum framerate in the case that the RDP server provides
+ * no frame boundaries and streams data continuously enough that frame
+ * boundaries are not discernable through timing.
  */
-#define GUAC_RDP_FRAME_DURATION 60
+#define GUAC_RDP_MAX_FRAME_DURATION 33
 
 /**
- * The amount of time to allow per message read within a frame, in
- * milliseconds. If the server is silent for at least this amount of time, the
- * frame will be considered finished.
+ * The minimum duration of a frame in milliseconds. This ensures we don't start
+ * flushing a ton of tiny frames if an RDP server provides no frame boundaries
+ * and streams data inconsistently enough that timing would suggest frame
+ * boundaries in the middle of a frame.
  */
-#define GUAC_RDP_FRAME_TIMEOUT 0
+#define GUAC_RDP_MIN_FRAME_DURATION 10
 
 /**
  * The amount of time to wait for a new message from the RDP server when
