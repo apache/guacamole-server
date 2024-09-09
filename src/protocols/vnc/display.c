@@ -133,15 +133,6 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
 }
 
-void guac_vnc_update_finished(rfbClient* client) {
-
-    guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);
-    guac_vnc_client* vnc_client = (guac_vnc_client*) gc->data;
-
-    guac_display_end_multiple_frames(vnc_client->display, 1);
-
-}
-
 void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y) {
 
     guac_client* gc = rfbClientGetClientData(client, GUAC_VNC_CLIENT_KEY);

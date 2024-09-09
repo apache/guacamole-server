@@ -52,17 +52,6 @@
 void guac_vnc_update(rfbClient* client, int x, int y, int w, int h);
 
 /**
- * Callback invoked by libVNCServer when all binary image data for the current
- * frame has been received from the VNC server. The image data that frame will
- * have been exposed via previous calls to guac_vnc_update().
- *
- * @param client
- *     The VNC client associated with the VNC session in which the new image
- *     was received.
- */
-void guac_vnc_update_finished(rfbClient* client);
-
-/**
  * Callback invoked by libVNCServer when it receives a CopyRect message.
  * CopyRect specified a rectangle of source data within the display and a
  * set of X/Y coordinates to which that rectangle should be copied.
